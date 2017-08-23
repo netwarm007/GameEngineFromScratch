@@ -282,7 +282,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
     // create the window and use the result as the handle
     hWnd = CreateWindowEx(0,
                           _T("WindowClass1"),                   // name of the window class
-                          _T("Hello, Engine![Direct 2D]"),      // title of the window
+                          _T("Hello, Engine![Direct 3D]"),      // title of the window
                           WS_OVERLAPPEDWINDOW,                  // window style
                           100,                                  // x-position of the window
                           100,                                  // y-position of the window
