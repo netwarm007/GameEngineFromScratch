@@ -32,3 +32,9 @@
 *.app
 
 build/
+*.*~
+*.pdb
+*.ilk
+*.vso
+*.pso
+**/.vs
