@@ -360,8 +360,7 @@ int main(void) {
     }
 
 
-    while(
-        (pEvent = xcb_wait_for_event(pConn)) && !isQuit) {
+    while(!isQuit && (pEvent = xcb_wait_for_event(pConn))) {
         switch(pEvent->response_type & ~0x80) {
         case XCB_EXPOSE:
             {       
@@ -378,10 +377,7 @@ int main(void) {
 
 
     /* Cleanup */
-    glXDestroyWindow(display, glxwindow);
-    glXDestroyContext(display, context);
-
-    XCloseDisplay(display);
+    xcb_disconnect(pConn);
 
     return 0;
 }
