@@ -2,7 +2,12 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <tchar.h>
-#include <gl/gl.h>
+#include <GL/gl.h>
+#include <fstream>
+
+#include "math.h"
+
+using namespace std;
 
 /////////////
 // DEFINES //
@@ -72,7 +77,7 @@ typedef void (APIENTRY * PFNGLDISABLEVERTEXATTRIBARRAYPROC) (GLuint index);
 typedef void (APIENTRY * PFNGLUNIFORM3FVPROC) (GLint location, GLsizei count, const GLfloat *value);
 typedef void (APIENTRY * PFNGLUNIFORM4FVPROC) (GLint location, GLsizei count, const GLfloat *value);
 
-xPFNGLATTACHSHADERPROC glAttachShader;
+PFNGLATTACHSHADERPROC glAttachShader;
 PFNGLBINDBUFFERPROC glBindBuffer;
 PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
 PFNGLBUFFERDATAPROC glBufferData;
@@ -110,11 +115,6 @@ PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
 PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
 PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
-struct VectorType
-{
-        float x, y, z;
-};
-
 struct VertexType
 {
         float x, y, z;
@@ -132,15 +132,14 @@ unsigned int g_vertexShader;
 unsigned int g_fragmentShader;
 unsigned int g_shaderProgram;
 
-const unsigned char VS_SHADER_SOURCE_FILE = "color.vs";
-const unsigned char PS_SHADER_SOURCE_FILE = "color.ps";
+const char VS_SHADER_SOURCE_FILE[] = "color.vs";
+const char PS_SHADER_SOURCE_FILE[] = "color.ps";
 
-float g_positionX, g_positionY, g_positionZ;
-float g_rotationX, g_rotationY, g_rotationZ;
+float g_positionX = 0, g_positionY = 0, g_positionZ = -10;
+float g_rotationX = 0, g_rotationY = 0, g_rotationZ = 0;
 float g_viewMatrix[16];
 
-bool InitializeOpenGL(HWND hwnd, int screenWidth, int screenHeight, float screenDepth, float screenNear, bool
- vsync)
+bool InitializeOpenGL(HWND hwnd, int screenWidth, int screenHeight, float screenDepth, float screenNear, bool vsync)
 {
         int attributeListInt[19];
         int pixelFormat[1];
@@ -498,7 +497,7 @@ bool LoadExtensionList()
         return true;
 }
 
-void Finalize(HWND hwnd)
+void FinalizeOpenGL(HWND hwnd)
 {
         // Release the rendering context.
         if(g_renderingContext)
@@ -578,7 +577,7 @@ bool InitializeExtensions(HWND hwnd)
         return true;
 }
 
-void OutputShaderErrorMessage(HWND hwnd, unsigned int shaderId, const unsigned char* shaderFilename)
+void OutputShaderErrorMessage(HWND hwnd, unsigned int shaderId, const char* shaderFilename)
 {
         int logSize, i;
         char* infoLog;
@@ -668,7 +667,7 @@ void OutputLinkerErrorMessage(HWND hwnd, unsigned int programId)
         MessageBox(hwnd, _T("Error compiling linker.  Check linker-error.txt for message."), _T("Linker Error"), MB_OK);
 }
 
-char* LoadShaderSourceFile(const unsigned char* filename)
+char* LoadShaderSourceFile(const char* filename)
 {
         ifstream fin;
         int fileSize;
@@ -723,7 +722,7 @@ char* LoadShaderSourceFile(const unsigned char* filename)
         return buffer;
 }
 
-bool InitializeShader(char* vsFilename, char* fsFilename, HWND hwnd)
+bool InitializeShader(HWND hwnd, const char* vsFilename, const char* fsFilename)
 {
         const char* vertexShaderBuffer;
         const char* fragmentShaderBuffer;
@@ -933,7 +932,7 @@ bool InitializeBuffers()
 
         // Specify the location and format of the color portion of the vertex buffer.
         glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferId);
-        glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(VertexType), (unsigned char*)NULL + (3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(VertexType), (char*)NULL + (3 * sizeof(float)));
 
         // Generate an ID for the index buffer.
         glGenBuffers(1, &g_indexBufferId);
@@ -976,7 +975,7 @@ void ShutdownBuffers()
 void RenderBuffers()
 {
         // Bind the vertex array object that stored all the information about the vertex and index buffers.
-        OpenGL->glBindVertexArray(g_vertexArrayId);
+        glBindVertexArray(g_vertexArrayId);
 
         // Render the vertex buffer using the index buffer.
         glDrawElements(GL_TRIANGLES, g_indexCount, GL_UNSIGNED_INT, 0);
@@ -1024,7 +1023,7 @@ void CalculateCameraPosition()
         lookAt.z = position.z + lookAt.z;
 
         // Finally create the view matrix from the three updated vectors.
-        BuildViewMatrix(position, lookAt, up);
+        BuildViewMatrix(position, lookAt, up, g_viewMatrix);
 }
 
 void Draw()
@@ -1042,7 +1041,7 @@ void Draw()
         CalculateCameraPosition();
 
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-        SetShader();
+	glUseProgram(g_shaderProgram);
         SetShaderParameters(worldMatrix, viewMatrix, projectionMatrix);
 
         // Render the model using the color shader.
@@ -1098,6 +1097,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
                           hInstance,    // application handle
                           NULL);    // used with multiple windows, NULL
 
+    InitializeOpenGL(hWnd, 500, 400, 24, 0.1, true);
+    InitializeShader(hWnd, VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
+    InitializeBuffers();
+
     // display the window on the screen
     ShowWindow(hWnd, nCmdShow);
 
@@ -1116,6 +1119,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
         DispatchMessage(&msg);
     }
 
+    ShutdownBuffers();
+    ShutdownShader();
+    FinalizeOpenGL(hWnd);
+
     // return this part of the WM_QUIT message to Windows
     return msg.wParam;
 }
@@ -1128,14 +1135,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     {
     case WM_PAINT:
         {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        RECT rec = { 20, 20, 60, 80 };
-        HBRUSH brush = (HBRUSH) GetStockObject(BLACK_BRUSH);
 
-        FillRect(hdc, &rec, brush);
+	Draw();
 
-        EndPaint(hWnd, &ps);
         } break;
         // this message is read when the window is closed
         case WM_DESTROY:
