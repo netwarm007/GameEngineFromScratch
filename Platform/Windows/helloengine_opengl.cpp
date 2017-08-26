@@ -115,15 +115,19 @@ PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
 PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
 PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
-struct VertexType
+typedef struct VertexType
 {
-        float x, y, z;
-        float r, g, b;
-};
+	VectorType position;
+	VectorType color;
+} VertexType;
 
 HDC     g_deviceContext = 0;
 HGLRC   g_renderingContext = 0;
 char    g_videoCardDescription[128];
+
+const bool VSYNC_ENABLED = true;
+const float SCREEN_DEPTH = 1000.0f;
+const float SCREEN_NEAR = 0.1f;
 
 int     g_vertexCount, g_indexCount;
 unsigned int g_vertexArrayId, g_vertexBufferId, g_indexBufferId;
@@ -137,7 +141,9 @@ const char PS_SHADER_SOURCE_FILE[] = "color.ps";
 
 float g_positionX = 0, g_positionY = 0, g_positionZ = -10;
 float g_rotationX = 0, g_rotationY = 0, g_rotationZ = 0;
+float g_worldMatrix[16];
 float g_viewMatrix[16];
+float g_projectionMatrix[16];
 
 bool InitializeOpenGL(HWND hwnd, int screenWidth, int screenHeight, float screenDepth, float screenNear, bool vsync)
 {
@@ -247,6 +253,16 @@ bool InitializeOpenGL(HWND hwnd, int screenWidth, int screenHeight, float screen
         // Enable back face culling.
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+
+		// Initialize the world/model matrix to the identity matrix.
+		BuildIdentityMatrix(g_worldMatrix);
+
+		// Set the field of view and screen aspect ratio.
+		fieldOfView = PI / 4.0f;
+		screenAspect = (float)screenWidth / (float)screenHeight;
+
+		// Build the perspective projection matrix.
+		BuildPerspectiveFovLHMatrix(g_projectionMatrix, fieldOfView, screenAspect, screenNear, screenDepth);
 
         // Get the name of the video card.
         vendorString = (char*)glGetString(GL_VENDOR);
@@ -852,62 +868,23 @@ bool SetShaderParameters(float* worldMatrix, float* viewMatrix, float* projectio
 
 bool InitializeBuffers()
 {
-        VertexType* vertices;
-        unsigned int* indices;
+        VertexType vertices[] = {
+			{{  1.0f,  1.0f,  1.0f }, { 1.0f, 0.0f, 0.0f }},
+			{{  1.0f,  1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }},
+			{{ -1.0f,  1.0f, -1.0f }, { 0.0f, 0.0f, 1.0f }},
+			{{ -1.0f,  1.0f,  1.0f }, { 1.0f, 1.0f, 0.0f }},
+			{{  1.0f, -1.0f,  1.0f }, { 1.0f, 0.0f, 1.0f }},
+			{{  1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f }},
+			{{ -1.0f, -1.0f, -1.0f }, { 0.5f, 1.0f, 0.5f }},
+			{{ -1.0f, -1.0f,  1.0f }, { 1.0f, 0.5f, 1.0f }},
+		};
+        uint16_t indices[] = { 1, 2, 3, 3, 2, 6, 6, 7, 3, 3, 0, 1, 0, 3, 7, 7, 6, 4, 4, 6, 5, 0, 7, 4, 1, 0, 4, 1, 4, 5, 2, 1, 5, 2, 5, 6 };
 
         // Set the number of vertices in the vertex array.
-        g_vertexCount = 3;
+        g_vertexCount = sizeof(vertices) / sizeof(VertexType);
 
         // Set the number of indices in the index array.
-        g_indexCount = 3;
-
-        // Create the vertex array.
-        vertices = new VertexType[g_vertexCount];
-        if(!vertices)
-        {
-                return false;
-        }
-
-        // Create the index array.
-        indices = new unsigned int[g_indexCount];
-        if(!indices)
-        {
-                return false;
-        }
-
-        // Load the vertex array with data.
-
-        // Bottom left.
-        vertices[0].x = -1.0f; // Position.
-        vertices[0].y = -1.0f;
-        vertices[0].z =  0.0f;
-
-        vertices[0].r = 0.0f;  // Color.
-        vertices[0].g = 1.0f;
-        vertices[0].b = 0.0f;
-
-        // Top middle.
-        vertices[1].x = 0.0f;  // Position.
-        vertices[1].y = 1.0f;
-        vertices[1].z = 0.0f;
-
-        vertices[1].r = 0.0f;  // Color.
-        vertices[1].g = 1.0f;
-        vertices[1].b = 0.0f;
-
-        // Bottom right.
-        vertices[2].x =  1.0f;  // Position.
-        vertices[2].y = -1.0f;
-        vertices[2].z =  0.0f;
-
-        vertices[2].r = 0.0f;  // Color.
-        vertices[2].g = 1.0f;
-        vertices[2].b = 0.0f;
-
-        // Load the index array with data.
-        indices[0] = 0;  // Bottom left.
-        indices[1] = 1;  // Top middle.
-        indices[2] = 2;  // Bottom right.
+        g_indexCount = sizeof(indices) / sizeof(uint16_t);
 
         // Allocate an OpenGL vertex array object.
         glGenVertexArrays(1, &g_vertexArrayId);
@@ -939,14 +916,7 @@ bool InitializeBuffers()
 
         // Bind the index buffer and load the index data into it.
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_indexBufferId);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, g_indexCount* sizeof(unsigned int), indices, GL_STATIC_DRAW);
-
-        // Now that the buffers have been loaded we can release the array data.
-        delete [] vertices;
-        vertices = 0;
-
-        delete [] indices;
-        indices = 0;
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, g_indexCount* sizeof(uint16_t), indices, GL_STATIC_DRAW);
 
         return true;
 }
@@ -978,77 +948,83 @@ void RenderBuffers()
         glBindVertexArray(g_vertexArrayId);
 
         // Render the vertex buffer using the index buffer.
-        glDrawElements(GL_TRIANGLES, g_indexCount, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, g_indexCount, GL_UNSIGNED_SHORT, 0);
 
         return;
 }
 
 void CalculateCameraPosition()
 {
-        VectorType up, position, lookAt;
-        float yaw, pitch, roll;
-        float rotationMatrix[9];
+    VectorType up, position, lookAt;
+    float yaw, pitch, roll;
+    float rotationMatrix[9];
 
 
-        // Setup the vector that points upwards.
-        up.x = 0.0f;
-        up.y = 1.0f;
-        up.z = 0.0f;
+    // Setup the vector that points upwards.
+    up.x = 0.0f;
+    up.y = 1.0f;
+    up.z = 0.0f;
 
-        // Setup the position of the camera in the world.
-        position.x = g_positionX;
-        position.y = g_positionY;
-        position.z = g_positionZ;
+    // Setup the position of the camera in the world.
+    position.x = g_positionX;
+    position.y = g_positionY;
+    position.z = g_positionZ;
 
-        // Setup where the camera is looking by default.
-        lookAt.x = 0.0f;
-        lookAt.y = 0.0f;
-        lookAt.z = 1.0f;
+    // Setup where the camera is looking by default.
+    lookAt.x = 0.0f;
+    lookAt.y = 0.0f;
+    lookAt.z = 1.0f;
 
-        // Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
-        pitch = g_rotationX * 0.0174532925f;
-        yaw   = g_rotationY * 0.0174532925f;
-        roll  = g_rotationZ * 0.0174532925f;
+    // Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
+    pitch = g_rotationX * 0.0174532925f;
+    yaw   = g_rotationY * 0.0174532925f;
+    roll  = g_rotationZ * 0.0174532925f;
 
-        // Create the rotation matrix from the yaw, pitch, and roll values.
-        MatrixRotationYawPitchRoll(rotationMatrix, yaw, pitch, roll);
+    // Create the rotation matrix from the yaw, pitch, and roll values.
+    MatrixRotationYawPitchRoll(rotationMatrix, yaw, pitch, roll);
 
-        // Transform the lookAt and up vector by the rotation matrix so the view is correctly rotated at the origin.
-        TransformCoord(lookAt, rotationMatrix);
-        TransformCoord(up, rotationMatrix);
+    // Transform the lookAt and up vector by the rotation matrix so the view is correctly rotated at the origin.
+    TransformCoord(lookAt, rotationMatrix);
+    TransformCoord(up, rotationMatrix);
 
-        // Translate the rotated camera position to the location of the viewer.
-        lookAt.x = position.x + lookAt.x;
-        lookAt.y = position.y + lookAt.y;
-        lookAt.z = position.z + lookAt.z;
+    // Translate the rotated camera position to the location of the viewer.
+    lookAt.x = position.x + lookAt.x;
+    lookAt.y = position.y + lookAt.y;
+    lookAt.z = position.z + lookAt.z;
 
-        // Finally create the view matrix from the three updated vectors.
-        BuildViewMatrix(position, lookAt, up, g_viewMatrix);
+    // Finally create the view matrix from the three updated vectors.
+    BuildViewMatrix(position, lookAt, up, g_viewMatrix);
 }
 
 void Draw()
 {
-        float worldMatrix[16];
-        float viewMatrix[16];
-        float projectionMatrix[16];
+	static float rotateAngle = 0.0f;
 
-        // Set the color to clear the screen to.
-        glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-        // Clear the screen and depth buffer.
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Set the color to clear the screen to.
+    glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+    // Clear the screen and depth buffer.
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Generate the view matrix based on the camera's position.
-        CalculateCameraPosition();
+	// Update world matrix to rotate the model
+	rotateAngle += PI / 120;
+	float rotationMatrixY[16];
+	float rotationMatrixZ[16];
+	MatrixRotationY(rotationMatrixY, rotateAngle);
+	MatrixRotationZ(rotationMatrixZ, rotateAngle);
+	MatrixMultiply(g_worldMatrix, rotationMatrixZ, rotationMatrixY);
 
-        // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    // Generate the view matrix based on the camera's position.
+	CalculateCameraPosition();
+
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
 	glUseProgram(g_shaderProgram);
-        SetShaderParameters(worldMatrix, viewMatrix, projectionMatrix);
+    SetShaderParameters(g_worldMatrix, g_viewMatrix, g_projectionMatrix);
 
-        // Render the model using the color shader.
-        RenderBuffers();
+    // Render the model using the color shader.
+    RenderBuffers();
 
-        // Present the back buffer to the screen since rendering is complete.
-        SwapBuffers(g_deviceContext);
+    // Present the back buffer to the screen since rendering is complete.
+    SwapBuffers(g_deviceContext);
 }
 
 // the WindowProc function prototype
@@ -1059,50 +1035,89 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 
 // the entry point for any Windows program
 int WINAPI WinMain(HINSTANCE hInstance,
-                   HINSTANCE hPrevInstance,
-                   LPTSTR lpCmdLine,
-                   int nCmdShow)
+	HINSTANCE hPrevInstance,
+	LPTSTR lpCmdLine,
+	int nCmdShow)
 {
-    // the handle for the window, filled by a function
-    HWND hWnd;
-    // this struct holds information for the window class
-    WNDCLASSEX wc;
+	// the handle for the window, filled by a function
+	HWND hWnd;
+	// this struct holds information for the window class
+	WNDCLASSEX wc;
 
-    // clear out the window class for use
-    ZeroMemory(&wc, sizeof(WNDCLASSEX));
+	// clear out the window class for use
+	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
-    // fill in the struct with the needed information
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WindowProc;
+	// fill in the struct with the needed information
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    wc.lpfnWndProc = DefWindowProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpszClassName = _T("WindowClass1");
+    wc.lpszClassName = _T("Temporary");
 
     // register the window class
     RegisterClassEx(&wc);
 
-    // create the window and use the result as the handle
-    hWnd = CreateWindowEx(0,
-                          _T("WindowClass1"),    // name of the window class
-                          _T("Hello, Engine!"),   // title of the window
+    // create the temporary window for OpenGL extension setup.
+    hWnd = CreateWindowEx(WS_EX_APPWINDOW,
+                          _T("Temporary"),    // name of the window class
+                          _T("Temporary"),   // title of the window
                           WS_OVERLAPPEDWINDOW,    // window style
-                          300,    // x-position of the window
-                          300,    // y-position of the window
-                          500,    // width of the window
-                          400,    // height of the window
+                          0,    // x-position of the window
+                          0,    // y-position of the window
+                          640,    // width of the window
+                          480,    // height of the window
                           NULL,    // we have no parent window, NULL
                           NULL,    // we aren't using menus, NULL
                           hInstance,    // application handle
                           NULL);    // used with multiple windows, NULL
 
-    InitializeOpenGL(hWnd, 500, 400, 24, 0.1, true);
+									// Don't show the window.
+	ShowWindow(hWnd, SW_HIDE);
+
+    InitializeExtensions(hWnd);
+
+	DestroyWindow(hWnd);
+	hWnd = NULL;
+
+	// clear out the window class for use
+	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+
+	// fill in the struct with the needed information
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wc.lpfnWndProc = WindowProc;
+	wc.hInstance = hInstance;
+	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+	wc.lpszClassName = _T("Hello, Engine!");
+
+	// register the window class
+	RegisterClassEx(&wc);
+
+	// create the window and use the result as the handle
+	hWnd = CreateWindowEx(WS_EX_APPWINDOW,
+		_T("Hello, Engine!"),    // name of the window class
+		_T("Hello, Engine!"),   // title of the window
+		WS_OVERLAPPEDWINDOW,    // window style
+		300,    // x-position of the window
+		300,    // y-position of the window
+		960,    // width of the window
+		540,    // height of the window
+		NULL,    // we have no parent window, NULL
+		NULL,    // we aren't using menus, NULL
+		hInstance,    // application handle
+		NULL);    // used with multiple windows, NULL
+
+    InitializeOpenGL(hWnd, 960, 540, SCREEN_DEPTH, SCREEN_NEAR, true);
+
+	// display the window on the screen
+	ShowWindow(hWnd, nCmdShow);
+	SetForegroundWindow(hWnd);
+
     InitializeShader(hWnd, VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
     InitializeBuffers();
-
-    // display the window on the screen
-    ShowWindow(hWnd, nCmdShow);
 
     // enter the main loop:
 
@@ -1135,17 +1150,16 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     {
     case WM_PAINT:
         {
-
-	Draw();
-
+          Draw();
+		  return 0;
         } break;
         // this message is read when the window is closed
-        case WM_DESTROY:
-            {
+    case WM_DESTROY:
+        {
                 // close the application entirely
-                PostQuitMessage(0);
-                return 0;
-            } break;
+           PostQuitMessage(0);
+           return 0;
+        } break;
     }
 
     // Handle any messages the switch statement didn't
