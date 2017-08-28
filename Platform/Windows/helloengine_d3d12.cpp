@@ -12,11 +12,13 @@
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
 #include <DirectXColors.h>
+#include "DirectXMath.h"
 
 #include <wrl/client.h>
 
-#include <string>
 #include <exception>
+
+#include "Mesh.h"
 
 namespace My {
     // Helper class for COM exceptions
@@ -51,22 +53,19 @@ using namespace My;
 using namespace DirectX;
 using namespace DirectX::PackedVector;
 using namespace Microsoft::WRL;
-using namespace std;
 
 const uint32_t nScreenWidth    =  960;
 const uint32_t nScreenHeight   =  480;
 
 const uint32_t nFrameCount     = 2;
 
-const bool     bUseWarpDevice = true;
-
 // global declarations
 D3D12_VIEWPORT                  g_ViewPort = {0.0f, 0.0f, 
-	                                 static_cast<float>(nScreenWidth), 
-	                                 static_cast<float>(nScreenHeight)};   // viewport structure
+                                     static_cast<float>(nScreenWidth), 
+                                     static_cast<float>(nScreenHeight)};   // viewport structure
 D3D12_RECT                      g_ScissorRect = {0, 0, 
                                      nScreenWidth, 
-	                                 nScreenHeight};                // scissor rect structure
+                                     nScreenHeight};                // scissor rect structure
 ComPtr<IDXGISwapChain3>         g_pSwapChain = nullptr;             // the pointer to the swap chain interface
 ComPtr<ID3D12Device>            g_pDev       = nullptr;             // the pointer to our Direct3D device interface
 ComPtr<ID3D12Resource>          g_pRenderTargets[nFrameCount];      // the pointer to rendering buffer. [descriptor]
@@ -74,15 +73,25 @@ ComPtr<ID3D12CommandAllocator>  g_pCommandAllocator;                // the point
 ComPtr<ID3D12CommandQueue>      g_pCommandQueue;                    // the pointer to command queue
 ComPtr<ID3D12RootSignature>     g_pRootSignature;                   // a graphics root signature defines what resources are bound to the pipeline
 ComPtr<ID3D12DescriptorHeap>    g_pRtvHeap;                         // an array of descriptors of GPU objects
+ComPtr<ID3D12DescriptorHeap>    g_pDsvHeap;                         // an array of descriptors of GPU objects
+ComPtr<ID3D12DescriptorHeap>    g_pCbvSrvHeap;                      // an array of descriptors of GPU objects
+ComPtr<ID3D12DescriptorHeap>    g_pSamplerHeap;                     // an array of descriptors of GPU objects
 ComPtr<ID3D12PipelineState>     g_pPipelineState;                   // an object maintains the state of all currently set shaders
                                                                     // and certain fixed function state objects
                                                                     // such as the input assembler, tesselator, rasterizer and output manager
 ComPtr<ID3D12GraphicsCommandList>   g_pCommandList;                 // a list to store GPU commands, which will be submitted to GPU to execute when done
 
 uint32_t    g_nRtvDescriptorSize;
+uint32_t    g_nCbvDescriptorSize;
 
-ComPtr<ID3D12Resource>          g_pVertexBuffer;                         // the pointer to the vertex buffer
+ComPtr<ID3D12Resource>          g_pVertexBuffer;                    // the pointer to the vertex buffer
+ComPtr<ID3D12Resource>          g_pVertexBufferUploadHeap;          // the pointer to the vertex buffer
 D3D12_VERTEX_BUFFER_VIEW        g_VertexBufferView;                 // a view of the vertex buffer
+
+ComPtr<ID3D12Resource>          g_pIndexBuffer;                    // the pointer to the vertex buffer
+ComPtr<ID3D12Resource>          g_pIndexBufferUploadHeap;          // the pointer to the vertex buffer
+D3D12_INDEX_BUFFER_VIEW         g_IndexBufferView;                 // a view of the vertex buffer
+
 
 // Synchronization objects
 uint32_t            g_nFrameIndex;
@@ -90,39 +99,111 @@ HANDLE              g_hFenceEvent;
 ComPtr<ID3D12Fence> g_pFence;
 uint32_t            g_nFenceValue;
 
+// vertex properties
+typedef enum VertexElements 
+{
+	kVertexPosition = 0,
+	kVertexColor,
+	kVertexNormal,
+	kVertexTangent,
+	kVertexUv,
+	kVertexElemCount
+} VertexElements;
+
 // vertex buffer structure
-struct VERTEX {
-        XMFLOAT3    Position;
-        XMFLOAT4    Color;
+struct SimpleMeshVertex 
+{
+	XMFLOAT3    m_position;
+	XMFLOAT3    m_color;
+	XMFLOAT3    m_normal;
+	XMFLOAT4    m_tangent;
+	XMFLOAT2    m_uv;
 };
 
-wstring g_AssetsPath;
 
-// Helper function for resolving the full path of assets.
-std::wstring GetAssetFullPath(LPCWSTR assetName)
+void BuildTorusMesh(
+                float outerRadius, float innerRadius, 
+                uint16_t outerQuads, uint16_t innerQuads, 
+                float outerRepeats, float innerRepeats,
+                SimpleMesh* pDestMesh) 
 {
-    return g_AssetsPath + assetName;
-}
+	const uint32_t outerVertices = outerQuads + 1;
+	const uint32_t innerVertices = innerQuads + 1;
+	const uint32_t vertices = outerVertices * innerVertices;
+	const uint32_t numInnerQuadsFullStripes = 1;
+	const uint32_t innerQuadsLastStripe = 0;
+	const uint32_t triangles = 2 * outerQuads * innerQuads; // 2 triangles per quad
 
-void GetAssetsPath(WCHAR* path, UINT pathSize)
-{
-    if (path == nullptr)
-    {
-        throw std::exception();
-    }
+	pDestMesh->m_vertexCount            = vertices;
+	pDestMesh->m_vertexStride           = sizeof(SimpleMeshVertex);
+	pDestMesh->m_vertexAttributeCount   = kVertexElemCount;
+	pDestMesh->m_vertexBufferSize       = pDestMesh->m_vertexCount * pDestMesh->m_vertexStride;
 
-    DWORD size = GetModuleFileNameW(nullptr, path, pathSize);
-    if (size == 0 || size == pathSize)
-    {
-        // Method failed or path was truncated.
-        throw std::exception();
-    }
+	pDestMesh->m_indexCount             = triangles * 3;            // 3 vertices per triangle
+	pDestMesh->m_indexType              = IndexSize::kIndexSize16;  // whenever possible, use smaller index 
+                                                                    // to save memory and enhance cache performance.
+	pDestMesh->m_primitiveType          = PrimitiveType::kPrimitiveTypeTriList;
+	pDestMesh->m_indexBufferSize        = pDestMesh->m_indexCount * sizeof(uint16_t);
 
-    WCHAR* lastSlash = wcsrchr(path, L'\\');
-    if (lastSlash)
-    {
-        *(lastSlash + 1) = L'\0';
-    }
+    // build vertices 
+	pDestMesh->m_vertexBuffer = new uint8_t(pDestMesh->m_vertexBufferSize);
+
+	SimpleMeshVertex* outV = static_cast<SimpleMeshVertex*>(pDestMesh->m_vertexBuffer);
+	const XMFLOAT2 textureScale = XMFLOAT2(outerRepeats / (outerVertices - 1.0f), innerRepeats / (innerVertices - 1.0f));
+	for (uint32_t o = 0; o < outerVertices; ++o)
+	{
+		const float outerTheta = o * 2 * XM_PI / (outerVertices - 1);
+		const XMMATRIX outerToWorld = XMMatrixRotationZ(outerTheta) * XMMatrixTranslation(outerRadius, 0, 0);
+
+		for (uint32_t i = 0; i < innerVertices; ++i)
+		{
+			const float innerTheta = i * 2 * XM_PI / (innerVertices - 1);
+			const XMMATRIX innerToOuter = XMMatrixRotationY(innerTheta) * XMMatrixTranslation(innerRadius, 0, 0);
+			const XMMATRIX localToWorld = outerToWorld * innerToOuter;
+            XMVECTOR v = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+            XMVector3Transform(v, localToWorld);
+            XMStoreFloat3(&outV->m_position, v);
+            v = XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+            XMVector3Transform(v, localToWorld);
+            XMStoreFloat3(&outV->m_normal, v);
+            v = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+            XMVector4Transform(v, localToWorld);
+            XMStoreFloat4(&outV->m_tangent, v);
+			outV->m_uv.x = o * textureScale.x;
+			outV->m_uv.y = i * textureScale.y;
+			++outV;
+		}
+	}
+
+    // build indices
+	pDestMesh->m_indexBuffer = new uint8_t(pDestMesh->m_indexBufferSize);
+
+	uint16_t* outI = static_cast<uint16_t*>(pDestMesh->m_indexBuffer);
+	uint16_t const numInnerQuadsStripes = numInnerQuadsFullStripes + (innerQuadsLastStripe > 0 ? 1 : 0);
+	for (uint16_t iStripe = 0; iStripe < numInnerQuadsStripes; ++iStripe)
+	{
+		uint16_t const innerVertex0 = iStripe * innerQuads;
+
+		for (uint16_t o = 0; o < outerQuads; ++o)
+		{
+			for (uint16_t i = 0; i < innerQuads; ++i)
+			{
+				const uint16_t index[4] = {
+					static_cast<uint16_t>((o + 0) * innerVertices + innerVertex0 + (i + 0)),
+					static_cast<uint16_t>((o + 0) * innerVertices + innerVertex0 + (i + 1)),
+					static_cast<uint16_t>((o + 1) * innerVertices + innerVertex0 + (i + 0)),
+					static_cast<uint16_t>((o + 1) * innerVertices + innerVertex0 + (i + 1)),
+				};
+				outI[0] = index[0];
+				outI[1] = index[1];
+				outI[2] = index[2];
+				outI[3] = index[2];
+				outI[4] = index[1];
+				outI[5] = index[3];
+				outI += 6;
+			}
+		}
+	}
 }
 
 void WaitForPreviousFrame() {
@@ -145,7 +226,7 @@ void WaitForPreviousFrame() {
     g_nFrameIndex = g_pSwapChain->GetCurrentBackBufferIndex();
 }
 
-void CreateRenderTarget() {
+void CreateDescriptorHeaps() {
     // Describe and create a render target view (RTV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
     rtvHeapDesc.NumDescriptors = nFrameCount;
@@ -153,8 +234,37 @@ void CreateRenderTarget() {
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     ThrowIfFailed(g_pDev->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&g_pRtvHeap)));
 
-    g_nRtvDescriptorSize = g_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	// Describe and create a depth stencil view (DSV) descriptor heap.
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	ThrowIfFailed(g_pDev->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&g_pDsvHeap)));
 
+	// Describe and create a shader resource view (SRV) and constant 
+	// buffer view (CBV) descriptor heap.
+	D3D12_DESCRIPTOR_HEAP_DESC cbvSrvHeapDesc = {};
+	cbvSrvHeapDesc.NumDescriptors =
+		nFrameCount 		                            // FrameCount frames.
+		+ 1;											// + 1 for the SRV.
+	cbvSrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	cbvSrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(g_pDev->CreateDescriptorHeap(&cbvSrvHeapDesc, IID_PPV_ARGS(&g_pCbvSrvHeap)));
+
+	// Describe and create a sampler descriptor heap.
+	D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
+	samplerHeapDesc.NumDescriptors = 1;
+	samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	ThrowIfFailed(g_pDev->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&g_pSamplerHeap)));
+
+    g_nRtvDescriptorSize = g_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    g_nCbvDescriptorSize = g_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    ThrowIfFailed(g_pDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_pCommandAllocator)));
+}
+
+void CreateRenderTarget() {
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(g_pRtvHeap->GetCPUDescriptorHandleForHeapStart());
 
     // Create a RTV for each frame.
@@ -168,16 +278,37 @@ void CreateRenderTarget() {
 
 // this is the function that loads and prepares the shaders
 void InitPipeline() {
-    ThrowIfFailed(g_pDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_pCommandAllocator)));
-
-    // create an empty root signature
-    CD3DX12_ROOT_SIGNATURE_DESC rsd;
-    rsd.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-    ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error;
-    ThrowIfFailed(D3D12SerializeRootSignature(&rsd, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
-    ThrowIfFailed(g_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&g_pRootSignature)));
+
+    // Create the root signature.
+	{
+		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+
+		// This is the highest version the sample supports. If CheckFeatureSupport succeeds, the HighestVersion returned will not be greater than this.
+		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+		if (FAILED(g_pDev->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+		{
+			featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+		}
+
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[3];
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+
+		CD3DX12_ROOT_PARAMETER1 rootParameters[3];
+		rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+		rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+		rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+		rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+        ComPtr<ID3DBlob> signature;
+		ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
+		ThrowIfFailed(g_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&g_pRootSignature)));
+	}
 
     // load the shaders
 #if defined(_DEBUG)
@@ -190,7 +321,7 @@ void InitPipeline() {
     ComPtr<ID3DBlob> pixelShader;
 
     D3DCompileFromFile(
-        GetAssetFullPath(L"copy.vs").c_str(),
+        L"copy.vs",
         nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         "main",
@@ -202,7 +333,7 @@ void InitPipeline() {
     if (error) { OutputDebugString((LPCTSTR)error->GetBufferPointer()); error->Release(); throw std::exception(); }
 
     D3DCompileFromFile(
-        GetAssetFullPath(L"copy.ps").c_str(),
+        L"copy.ps",
         nullptr,
         D3D_COMPILE_STANDARD_FILE_INCLUDE,
         "main",
@@ -249,40 +380,82 @@ void InitPipeline() {
 
 // this is the function that creates the shape to render
 void InitGraphics() {
-    // create a triangle using the VERTEX struct
-    VERTEX OurVertices[] =
+    SimpleMesh torus;
+    BuildTorusMesh(0.8f, 0.2f, 64, 32, 4, 1, &torus);
+
+    // create vertex buffer
     {
-        {XMFLOAT3(0.0f, 0.5f, 0.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)},
-        {XMFLOAT3(0.45f, -0.5, 0.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)},
-        {XMFLOAT3(-0.45f, -0.5f, 0.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)}
-    };
+       ThrowIfFailed(g_pDev->CreateCommittedResource(
+           &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+           D3D12_HEAP_FLAG_NONE,
+           &CD3DX12_RESOURCE_DESC::Buffer(torus.m_vertexBufferSize),
+           D3D12_RESOURCE_STATE_COPY_DEST,
+           nullptr,
+           IID_PPV_ARGS(&g_pVertexBuffer)));
     
-    const UINT vertexBufferSize = sizeof(OurVertices);
+       ThrowIfFailed(g_pDev->CreateCommittedResource(
+           &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+           D3D12_HEAP_FLAG_NONE,
+           &CD3DX12_RESOURCE_DESC::Buffer(torus.m_vertexBufferSize),
+           D3D12_RESOURCE_STATE_GENERIC_READ,
+           nullptr,
+           IID_PPV_ARGS(&g_pVertexBufferUploadHeap)));
+    
+       // Copy data to the intermediate upload heap and then schedule a copy 
+	   // from the upload heap to the vertex buffer.
+       D3D12_SUBRESOURCE_DATA vertexData = {};
+       vertexData.pData      = torus.m_vertexBuffer;
+       vertexData.RowPitch   = torus.m_vertexStride;
+       vertexData.SlicePitch = vertexData.RowPitch;
+    
+       UpdateSubresources<1>(g_pCommandList.Get(), g_pVertexBuffer.Get(), g_pVertexBufferUploadHeap.Get(), 0, 0, 1, &vertexData);
+       g_pCommandList->ResourceBarrier(1, 
+                       &CD3DX12_RESOURCE_BARRIER::Transition(g_pVertexBuffer.Get(),
+                               D3D12_RESOURCE_STATE_COPY_DEST,
+                               D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+    
+       // initialize the vertex buffer view
+       g_VertexBufferView.BufferLocation = g_pVertexBuffer->GetGPUVirtualAddress();
+       g_VertexBufferView.StrideInBytes  = torus.m_vertexStride;
+       g_VertexBufferView.SizeInBytes    = torus.m_vertexBufferSize;
+    }
 
-    // Note: using upload heaps to transfer static data like vert buffers is not 
-    // recommended. Every time the GPU needs it, the upload heap will be marshalled 
-    // over. Please read up on Default Heap usage. An upload heap is used here for 
-    // code simplicity and because there are very few verts to actually transfer.
-    ThrowIfFailed(g_pDev->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&g_pVertexBuffer)));
-
-    // copy the vertices into the buffer
-    uint8_t *pVertexDataBegin;
-    CD3DX12_RANGE readRange(0, 0);                  // we do not intend to read this buffer on CPU
-    ThrowIfFailed(g_pVertexBuffer->Map(0, &readRange, 
-                reinterpret_cast<void**>(&pVertexDataBegin)));               // map the buffer
-    memcpy(pVertexDataBegin, OurVertices, vertexBufferSize);                 // copy the data
-    g_pVertexBuffer->Unmap(0, nullptr);                                      // unmap the buffer
-
-    // initialize the vertex buffer view
-    g_VertexBufferView.BufferLocation = g_pVertexBuffer->GetGPUVirtualAddress();
-    g_VertexBufferView.StrideInBytes  = sizeof(VERTEX);
-    g_VertexBufferView.SizeInBytes    = vertexBufferSize;
+    // create index buffer
+    {
+       ThrowIfFailed(g_pDev->CreateCommittedResource(
+           &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+           D3D12_HEAP_FLAG_NONE,
+           &CD3DX12_RESOURCE_DESC::Buffer(torus.m_indexBufferSize),
+           D3D12_RESOURCE_STATE_COPY_DEST,
+           nullptr,
+           IID_PPV_ARGS(&g_pIndexBuffer)));
+    
+       ThrowIfFailed(g_pDev->CreateCommittedResource(
+           &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+           D3D12_HEAP_FLAG_NONE,
+           &CD3DX12_RESOURCE_DESC::Buffer(torus.m_indexBufferSize),
+           D3D12_RESOURCE_STATE_GENERIC_READ,
+           nullptr,
+           IID_PPV_ARGS(&g_pIndexBufferUploadHeap)));
+    
+       // Copy data to the intermediate upload heap and then schedule a copy 
+	   // from the upload heap to the vertex buffer.
+       D3D12_SUBRESOURCE_DATA indexData = {};
+       indexData.pData      = torus.m_indexBuffer;
+       indexData.RowPitch   = torus.m_indexType;
+       indexData.SlicePitch = indexData.RowPitch;
+    
+       UpdateSubresources<1>(g_pCommandList.Get(), g_pIndexBuffer.Get(), g_pIndexBufferUploadHeap.Get(), 0, 0, 1, &indexData);
+       g_pCommandList->ResourceBarrier(1, 
+                       &CD3DX12_RESOURCE_BARRIER::Transition(g_pIndexBuffer.Get(),
+                               D3D12_RESOURCE_STATE_COPY_DEST,
+                               D3D12_RESOURCE_STATE_INDEX_BUFFER));
+    
+       // initialize the vertex buffer view
+       g_IndexBufferView.BufferLocation = g_pIndexBuffer->GetGPUVirtualAddress();
+       g_IndexBufferView.Format         = DXGI_FORMAT_R8_UINT;
+       g_IndexBufferView.SizeInBytes    = torus.m_indexType;
+    }
 
     // create synchronization objects and wait until assets have been uploaded to the GPU
     ThrowIfFailed(g_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_pFence)));
@@ -348,24 +521,22 @@ void CreateGraphicsResources(HWND hWnd)
         ComPtr<IDXGIFactory4> factory;
         ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&factory)));
 
-        if (bUseWarpDevice)
+        ComPtr<IDXGIAdapter1> hardwareAdapter;
+        GetHardwareAdapter(factory.Get(), &hardwareAdapter);
+    
+        if (FAILED(D3D12CreateDevice(
+            hardwareAdapter.Get(),
+            D3D_FEATURE_LEVEL_11_0,
+            IID_PPV_ARGS(&g_pDev)
+            )))
         {
+            fprintf(stderr, "Hardware not support D3D12, fallback to Warp device.\n");
+            // roll back to Warp device
             ComPtr<IDXGIAdapter> warpAdapter;
             ThrowIfFailed(factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter)));
     
             ThrowIfFailed(D3D12CreateDevice(
                 warpAdapter.Get(),
-                D3D_FEATURE_LEVEL_11_0,
-                IID_PPV_ARGS(&g_pDev)
-                ));
-        }
-        else
-        {
-            ComPtr<IDXGIAdapter1> hardwareAdapter;
-            GetHardwareAdapter(factory.Get(), &hardwareAdapter);
-    
-            ThrowIfFailed(D3D12CreateDevice(
-                hardwareAdapter.Get(),
                 D3D_FEATURE_LEVEL_11_0,
                 IID_PPV_ARGS(&g_pDev)
                 ));
@@ -410,6 +581,8 @@ void CreateGraphicsResources(HWND hWnd)
         ThrowIfFailed(swapChain.As(&g_pSwapChain));
 
         g_nFrameIndex = g_pSwapChain->GetCurrentBackBufferIndex();
+
+        CreateDescriptorHeaps();
         CreateRenderTarget();
         InitPipeline();
         InitGraphics();
@@ -506,10 +679,6 @@ int WINAPI WinMain(HINSTANCE hInstance,
     HWND hWnd;
     // this struct holds information for the window class
     WNDCLASSEX wc;
-
-    WCHAR assetsPath[512];
-    GetAssetsPath(assetsPath, _countof(assetsPath));
-    g_AssetsPath = assetsPath;
 
     // clear out the window class for use
     ZeroMemory(&wc, sizeof(WNDCLASSEX));
