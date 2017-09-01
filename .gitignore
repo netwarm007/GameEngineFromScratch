@@ -38,3 +38,4 @@ build/
 *.vso
 *.pso
 **/.vs
+*.swp
