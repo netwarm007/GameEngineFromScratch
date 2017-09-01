@@ -38,7 +38,7 @@ float4 PSMain(v2p input) : SV_TARGET
 	float attenuation = saturate(1.0f/(lightAtten.x + lightAtten.y * d + lightAtten.z * d * d) - lightAtten.w);
 
 	//float4 normalGloss = bumpGlossMap.Sample(samp0, input.TextureUV.xy);
-	float4 normalGloss = { 1.0f, 0.2f, 0.2f, 0.004f };
+	float4 normalGloss = { 1.0f, 0.2f, 0.2f, 0.0f };
 	normalGloss.xyz = normalGloss.xyz * 2.0f - 1.0f;
 	normalGloss.y = -normalGloss.y; // normal map has green channel inverted
 
