@@ -856,7 +856,7 @@ void PopulateCommandList()
     g_pCommandList->SetGraphicsRootDescriptorTable(2, cbvSrvHandle);
     
     // clear the back buffer to a deep blue
-    const FLOAT clearColor[] = {0.0f, 0.2f, 0.4f, 1.0f};
+    const FLOAT clearColor[] = {0.0f, 0.1f, 0.2f, 1.0f};
     g_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     g_pCommandList->ClearDepthStencilView(g_pDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
@@ -883,7 +883,7 @@ void Update()
     
     rotationAngle += rotationSpeed;
     if (rotationAngle >= XM_PI * 2.0) rotationAngle -= XM_PI * 2.0;
-    const XMMATRIX m = XMMatrixRotationAxis(XMVectorSet(0.0f, 1.0f, 1.0f, 0.0f), rotationAngle);
+    const XMMATRIX m = XMMatrixRotationRollPitchYaw(rotationAngle, rotationAngle, 0.0f);
     XMStoreFloat4x4(&g_ConstantBufferData.m_modelView, XMMatrixTranspose(m * g_mWorldToViewMatrix));
     XMStoreFloat4x4(&g_ConstantBufferData.m_modelViewProjection, XMMatrixTranspose(m * g_mViewProjectionMatrix));
     XMVECTOR v = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
@@ -891,7 +891,7 @@ void Update()
     v = XMVector4Transform(v, g_mWorldToViewMatrix);
     XMStoreFloat4(&g_ConstantBufferData.m_lightPosition, v);
     g_ConstantBufferData.m_lightColor       = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-    g_ConstantBufferData.m_ambientColor     = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+    g_ConstantBufferData.m_ambientColor     = XMFLOAT4(0.0f, 0.0f, 0.7f, 1.0f);
     g_ConstantBufferData.m_lightAttenuation = XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f);
     
     memcpy(g_pCbvDataBegin, &g_ConstantBufferData, sizeof(g_ConstantBufferData));
