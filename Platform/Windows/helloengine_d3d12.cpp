@@ -141,18 +141,19 @@ XMMATRIX g_mViewProjectionMatrix;
 
 void InitConstants() {
     g_mViewToWorldMatrix = XMMatrixIdentity();
-    const XMVECTOR lightPositionX = XMVectorSet(-1.5f, 4.0f, -9.0f, 1.0f);
-    const XMVECTOR lightTargetX   = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f);
+    const XMVECTOR lightPositionX = XMVectorSet(-1.5f, 4.0f, 9.0f, 1.0f);
+    const XMVECTOR lightTargetX   = XMVectorSet( 0.0f, 0.0f, 0.0f, 1.0f);
     const XMVECTOR lightUpX       = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f);
-    g_mLightToWorldMatrix = XMMatrixInverse(nullptr, XMMatrixLookAtLH(lightPositionX, lightTargetX, lightUpX));
+    g_mLightToWorldMatrix = XMMatrixInverse(nullptr, XMMatrixLookAtRH(lightPositionX, lightTargetX, lightUpX));
 
     const float g_depthNear = 1.0f;
     const float g_depthFar  = 100.0f;
-    g_mProjectionMatrix  = XMMatrixPerspectiveLH(nScreenWidth, nScreenHeight, g_depthNear, g_depthFar);
-    const XMVECTOR eyePos         = XMVectorSet( 0.0f, 0.0f, -2.5f, 1.0f);
-    const XMVECTOR lookAtPos      = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f);
+    const float aspect      = static_cast<float>(nScreenWidth)/static_cast<float>(nScreenHeight);
+    g_mProjectionMatrix  = XMMatrixPerspectiveOffCenterRH(-aspect, aspect, -1, 1, g_depthNear, g_depthFar);
+    const XMVECTOR eyePos         = XMVectorSet( 0.0f, 0.0f, 2.5f, 1.0f);
+    const XMVECTOR lookAtPos      = XMVectorSet( 0.0f, 0.0f, 0.0f, 1.0f);
     const XMVECTOR upVec          = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f);
-    g_mWorldToViewMatrix = XMMatrixLookAtLH(eyePos, lookAtPos, upVec);
+    g_mWorldToViewMatrix = XMMatrixLookAtRH(eyePos, lookAtPos, upVec);
     g_mViewToWorldMatrix = XMMatrixInverse(nullptr, g_mWorldToViewMatrix);
 
     g_mViewProjectionMatrix = g_mWorldToViewMatrix * g_mProjectionMatrix;
@@ -232,10 +233,10 @@ void BuildTorusMesh(
                     static_cast<uint16_t>((o + 1) * innerVertices + innerVertex0 + (i + 1)),
                 };
                 outI[0] = index[0];
-                outI[1] = index[1];
-                outI[2] = index[2];
-                outI[3] = index[2];
-                outI[4] = index[1];
+                outI[1] = index[2];
+                outI[2] = index[1];
+                outI[3] = index[1];
+                outI[4] = index[2];
                 outI[5] = index[3];
                 outI += 6;
             }
@@ -882,9 +883,9 @@ void Update()
     
     rotationAngle += rotationSpeed;
     if (rotationAngle >= XM_PI * 2.0) rotationAngle -= XM_PI * 2.0;
-    const XMMATRIX m = XMMatrixRotationZ(rotationAngle) * XMMatrixRotationY(rotationAngle);
-    XMStoreFloat4x4(&g_ConstantBufferData.m_modelView, m * g_mWorldToViewMatrix);
-    XMStoreFloat4x4(&g_ConstantBufferData.m_modelViewProjection, m * g_mViewProjectionMatrix);
+    const XMMATRIX m = XMMatrixRotationAxis(XMVectorSet(0.0f, 1.0f, 1.0f, 0.0f), rotationAngle);
+    XMStoreFloat4x4(&g_ConstantBufferData.m_modelView, XMMatrixTranspose(m * g_mWorldToViewMatrix));
+    XMStoreFloat4x4(&g_ConstantBufferData.m_modelViewProjection, XMMatrixTranspose(m * g_mViewProjectionMatrix));
     XMVECTOR v = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
     v = XMVector4Transform(v, g_mLightToWorldMatrix);
     v = XMVector4Transform(v, g_mWorldToViewMatrix);
