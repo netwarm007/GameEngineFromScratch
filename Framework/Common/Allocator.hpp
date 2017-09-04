@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstdint>
 
 namespace My {
@@ -21,11 +22,11 @@ namespace My {
                 static const uint8_t PATTERN_ALLOC = 0xFD;
                 static const uint8_t PATTERN_FREE  = 0xFE;
 
-                Allocator(size_t data_size, size_t page_size, uint32_t alignment);
+                Allocator(size_t data_size, size_t page_size, size_t alignment);
                 ~Allocator();
 
                 // resets the allocator to a new configuration
-                void Reset(size_t data_size, size_t page_size, uint32_t alignment);
+                void Reset(size_t data_size, size_t page_size, size_t alignment);
 
                 // alloc and free blocks
                 void* Allocate();

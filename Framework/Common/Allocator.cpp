@@ -101,7 +101,7 @@ void My::Allocator::FreeAll()
         PageHeader* _p = pPage;
         pPage = pPage->pNext;
 
-        delete[] reinterpret_cast<void*>(_p);
+        delete[] reinterpret_cast<uint8_t*>(_p);
     }
 
     m_pPageList = nullptr;
