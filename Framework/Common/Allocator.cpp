@@ -147,10 +147,11 @@ void My::Allocator::FillAllocatedBlock(BlockHeader *pBlock)
                 PATTERN_ALIGN, m_szAlignmentSize);
 }
  
+#endif
+
 My::BlockHeader* My::Allocator::NextBlock(BlockHeader *pBlock)
 {
     return reinterpret_cast<BlockHeader *>(reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize);
 }
 
-#endif
 
