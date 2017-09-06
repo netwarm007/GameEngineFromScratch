@@ -1,4 +1,5 @@
 #include "MemoryManager.hpp"
+#include <malloc.h>
 
 using namespace My;
 
@@ -79,7 +80,7 @@ void* My::MemoryManager::Allocate(size_t size)
     if (pAlloc)
         return pAlloc->Allocate();
     else
-        return std::malloc(size);
+        return malloc(size);
 }
 
 void My::MemoryManager::Free(void* p, size_t size)
@@ -88,6 +89,6 @@ void My::MemoryManager::Free(void* p, size_t size)
     if (pAlloc)
         pAlloc->Free(p);
     else
-        std::free(p);
+        free(p);
 }
 

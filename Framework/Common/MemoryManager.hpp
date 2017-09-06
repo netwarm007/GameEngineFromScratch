@@ -4,23 +4,24 @@
 #include <new>
 
 namespace My {
-    template<typename T, typename... Arguments>
-    T* New(Arguments... parameters)
+    class MemoryManager : implements IRuntimeModule
     {
-        return new (Allocate(sizeof(T))) T(Arguments);
-    }
+    public:
+        template<typename T, typename... Arguments>
+        T* New(Arguments... parameters)
+        {
+            return new (Allocate(sizeof(T))) T(parameters...);
+        }
 
-    template<typename T>
-    void Delete(T *p)
-    {
-        reinterpret_cast<T*>(p)->~T();
-        Free(p, sizeof(T));
-    }
+        template<typename T>
+        void Delete(T *p)
+        {
+            reinterpret_cast<T*>(p)->~T();
+            Free(p, sizeof(T));
+        }
 
-	class MemoryManager : implements IRuntimeModule
-	{
-	public:
-		virtual ~MemoryManager() {}
+    public:
+        virtual ~MemoryManager() {}
 
         virtual int Initialize();
         virtual void Finalize();
@@ -33,6 +34,6 @@ namespace My {
         static Allocator*     m_pAllocators;
     private:
         static Allocator* LookUpAllocator(size_t size);
-	};
+    };
 }
 
