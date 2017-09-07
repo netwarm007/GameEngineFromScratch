@@ -9,9 +9,9 @@
 using namespace My;
 
 My::Allocator::Allocator()
-        : m_szDataSize(0), m_szPageSize(0), 
-        m_szBlockSize(0), m_szAlignmentSize(0), m_nBlocksPerPage(0),
-        m_pPageList(nullptr), m_pFreeList(nullptr)
+        : m_pPageList(nullptr), m_pFreeList(nullptr), 
+        m_szDataSize(0), m_szPageSize(0), 
+        m_szAlignmentSize(0), m_szBlockSize(0), m_nBlocksPerPage(0) 
 {
 }
 
