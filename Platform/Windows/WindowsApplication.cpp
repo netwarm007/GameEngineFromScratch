@@ -4,12 +4,6 @@
 
 using namespace My;
 
-// the WindowProc function prototype
-LRESULT CALLBACK WindowProc(HWND hWnd,
-                         UINT message,
-                         WPARAM wParam,
-                         LPARAM lParam);
-
 namespace My {
     GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, L"Game Engine From Scratch (Windows)");
     WindowsApplication  g_App(config);

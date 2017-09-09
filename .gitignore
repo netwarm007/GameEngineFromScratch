@@ -39,3 +39,5 @@ build/
 *.pso
 **/.vs
 *.swp
+**/Debug
+**/Release
