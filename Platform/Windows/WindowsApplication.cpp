@@ -1,6 +1,7 @@
 // include the basic windows header file
 #include "WindowsApplication.hpp"
 #include <tchar.h>
+#include <objbase.h>
 
 using namespace My;
 
@@ -8,6 +9,33 @@ namespace My {
     GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, L"Game Engine From Scratch (Windows)");
     WindowsApplication  g_App(config);
     IApplication*       g_pApp = &g_App;
+}
+
+void My::WindowsApplication::GetHardwareAdapter(IDXGIFactory4* pFactory, IDXGIAdapter1** ppAdapter)
+{
+    IDXGIAdapter1* pAdapter = nullptr;
+    *ppAdapter = nullptr;
+
+ 	for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != pFactory->EnumAdapters1(adapterIndex, &pAdapter); adapterIndex++)
+ 	{
+	   DXGI_ADAPTER_DESC1 desc;
+	   pAdapter->GetDesc1(&desc);
+
+	   if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+	   {
+		   // Don't select the Basic Render Driver adapter.
+		   continue;
+	   }
+
+	   // Check to see if the adapter supports Direct3D 12, but don't create the
+	   // actual device yet.
+	   if (SUCCEEDED(D3D12CreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr)))
+	   {
+		   break;
+	   }
+	}
+
+ 	*ppAdapter = pAdapter;
 }
 
 int My::WindowsApplication::Initialize()
@@ -58,6 +86,43 @@ int My::WindowsApplication::Initialize()
 
     // display the window on the screen
     ShowWindow(hWnd, SW_SHOW);
+
+#if defined(_DEBUG)
+	// Enable the D3D12 debug layer.
+	{
+		ID3D12Debug* pDebugController;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDebugController))))
+		{
+			pDebugController->EnableDebugLayer();
+		}
+		pDebugController->Release();
+	}
+#endif
+
+	IDXGIFactory4* pFactory;
+	if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&pFactory)))) {
+		return -1;
+	}
+
+	IDXGIAdapter1* pHardwareAdapter;
+	GetHardwareAdapter(pFactory, &pHardwareAdapter);
+
+	if (FAILED(D3D12CreateDevice(pHardwareAdapter,
+		D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDev)))) {
+
+		IDXGIAdapter* pWarpAdapter;
+		if (SUCCEEDED(pFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)))) {
+			if(FAILED(D3D12CreateDevice(pWarpAdapter, D3D_FEATURE_LEVEL_11_0,
+				IID_PPV_ARGS(&m_pDev)))) {
+				result = -1;
+			}
+		} else {
+			result = -1;
+		}
+
+	}
+
+	pFactory->Release();
 
     return result;
 }
