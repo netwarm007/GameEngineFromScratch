@@ -1,7 +1,5 @@
 #include <windows.h>
 #include <windowsx.h>
-#include <d3d12.h>
-#include <DXGI1_4.h>
 #include "BaseApplication.hpp"
 
 namespace My {
@@ -22,12 +20,10 @@ namespace My {
                          WPARAM wParam,
                          LPARAM lParam);
 
-    private:
-        void GetHardwareAdapter(IDXGIFactory4* pFactory, IDXGIAdapter1** ppAdapter);
+        inline HWND GetMainWindow() { return m_hWnd; };
 
     private:
-        IDXGISwapChain3*         m_pSwapChain = nullptr;             // the pointer to the swap chain interface
-        ID3D12Device*            m_pDev       = nullptr;             // the pointer to our Direct3D device interface
+        HWND m_hWnd;
     };
 }
 

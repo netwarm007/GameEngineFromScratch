@@ -35,7 +35,7 @@ namespace My {
 		uint32_t screenHeight;
         const wchar_t* appName;
 
-        friend std::ostream& operator<<(std::ostream& out, const GfxConfiguration& conf)
+        friend std::wostream& operator<<(std::wostream& out, const GfxConfiguration& conf)
         { 
             out << "App Name:" << conf.appName << std::endl;
             out << "GfxConfiguration:" << 
