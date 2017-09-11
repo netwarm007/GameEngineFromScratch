@@ -1,11 +1,12 @@
+#include <string.h>
 #include "XcbApplication.hpp"
 #include "MemoryManager.hpp"
-#include <cwchar>
+#include "GraphicsManager.hpp"
 
 using namespace My;
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, L"Game Engine From Scratch (XCB)");
+    GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, "Game Engine From Scratch (XCB)");
     IApplication* g_pApp                  = static_cast<IApplication*>(new XcbApplication(config));
     GraphicsManager* g_pGraphicsManager   = static_cast<GraphicsManager*>(new GraphicsManager);
     MemoryManager*   g_pMemoryManager     = static_cast<MemoryManager*>(new MemoryManager);
@@ -40,7 +41,7 @@ int My::XcbApplication::Initialize()
 	xcb_create_window (m_pConn,					/* connection */
 					   XCB_COPY_FROM_PARENT,	/* depth */
 					   m_Window,					/* window ID */
-					   pScreen->root,			/* parent window */
+					   m_pScreen->root,			/* parent window */
 					   20, 20,					/* x, y */
 					   m_Config.screenWidth,    /* width */
                        m_Config.screenHeight,	/* height */
@@ -52,13 +53,13 @@ int My::XcbApplication::Initialize()
 	/* set the title of the window */
 	xcb_change_property(m_pConn, XCB_PROP_MODE_REPLACE, m_Window,
 			    XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
-			    wcstrlen(m_Config.appName), m_Config.appName);
+			    strlen(m_Config.appName), m_Config.appName);
 
 	/* set the title of the window icon */
     /*
 	xcb_change_property(m_pConn, XCB_PROP_MODE_REPLACE, m_Window,
 			    XCB_ATOM_WM_ICON_NAME, XCB_ATOM_STRING, 8,
-			    wcstrlen(m_Config.appName), m_Config.appName);
+			    strlen(m_Config.appName), m_Config.appName);
     */
 
 	/* map the window on the screen */
@@ -76,17 +77,18 @@ void My::XcbApplication::Finalize()
 
 void My::XcbApplication::Tick()
 {
-    m_pEvent = xcb_wait_for_event(m_pConn);
-		switch(pEvent->response_type & ~0x80) {
-		case XCB_EXPOSE:
+    xcb_generic_event_t* pEvent;
+    pEvent = xcb_wait_for_event(m_pConn);
+    switch(pEvent->response_type & ~0x80) {
+	case XCB_EXPOSE:
 		    {		
 		    }
 			break;
-		case XCB_KEY_PRESS:
+	case XCB_KEY_PRESS:
             BaseApplication::m_bQuit = true;
 			break;
-		}
-	free(m_pEvent);
+	}
+	free(pEvent);
 }
 
 
