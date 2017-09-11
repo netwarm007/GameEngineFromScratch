@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="icon" href="vulkan_lunarg_icon.png">
+<link rel="stylesheet" href="github-markdown.css">
+<style>
+    body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+    }
+</style>
+</head>
+<body>
+<article class="markdown-body">
+<p>#<a href="images/lunarg_via_title.png" target="_blank"><img src="images/lunarg_via_title.png" alt="LunarG's Vulkan Installation Analyzer (VIA)" style="max-width:100%;"></a>
+This document is an overview of how to use the <a href="https://vulkan.lunarg.com/doc/sdk/latest/windows/via.html" TARGET="_blank">LunarG Vulkan Installation Analyzer (VIA)</a>.
+VIA is a tool that can:</p>
+<ol>
+<li>Determine the state of Vulkan components on your system</li>
+<li>Validate that your Vulkan Loader and drivers are installed properly</li>
+<li>Capture your system state in a form that can be used as an attachment when submitting bugs</li>
+</ol>
+<p>This document describes where to find the source for VIA, building it, runnning it, and how to understand the resulting command line output that is generated.</p>
+<br>
+<h2>
+<a id="user-content-building" class="anchor" href="#user-content-building" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building</h2>
+<p>Many components of the LunarG Vulkan SDK are Open Source, including VIA.  VIA is currently part of the LunarG
+<a href="https://github.com/LunarG/VulkanTools" TARGET="_blank">VulkanTools</a> GitHub respository.</p>
+<p><strong>Windows Note:</strong> VIA is already pre-built as part of the LunarG Windows Vulkan SDK, but should you wish to build a
+debug version or find the source, this section should provide you with the information you need.  Otherwise, simply
+skip down to the "Running" section below.</p>
+<h4>
+<a id="user-content-building-via-in-vulkantools" class="anchor" href="#user-content-building-via-in-vulkantools" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building VIA in VulkanTools</h4>
+<p>Because it is part of a group of tools, you build it from the top folder by
+following the instructions in the <a href="https://github.com/LunarG/VulkanTools/blob/master/BUILDVT.md" TARGET="_blank">BuilidVT.md</a>
+file at the top of the source tree.</p>
+<h4>
+<a id="user-content-building-via-in-the-linux-vulkan-sdk" class="anchor" href="#user-content-building-via-in-the-linux-vulkan-sdk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building VIA in the Linux Vulkan SDK</h4>
+<p>The source for VIA can also be found in the LunarG Linux <a href="https://vulkan.lunarg.com/sdk/home" TARGET="_blank">Vulkan SDK</a> in the "source/via" directory.</p>
+<ol>
+<li>Download and install the Linux SDK</li>
+<li>Run "source setup-env.sh" in the SDK root directory</li>
+<li>Run "./build_tools.sh"</li>
+</ol>
+<br>
+<h2>
+<a id="user-content-running" class="anchor" href="#user-content-running" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Running</h2>
+<p>You will find the VIA binary in a different location depending on which OS you are using and whether you have built it, or installed it as part of the SDK.  The following information states where to find the proper executable.</p>
+<p>Please note that if you are trying to diagnose a troublesome application, the <strong>best way</strong> to run VIA to assist in diagnosis is to change to the location of the application, and run via in that folder locally (by typing in a relative or absolute path to the via executable).</p>
+<h4>
+<a id="user-content-in-the-windows-vulkan-sdk" class="anchor" href="#user-content-in-the-windows-vulkan-sdk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>In the Windows Vulkan SDK</h4>
+<p>VIA is installed into your start menu as part of the Windows Vulkan SDK.  Simply open your start menu, search for the "Vulkan SDK" and click "via".  This will output the resulting via.html directly to your desktop.</p>
+<p>If you need to run via from the command-line, you will find it in your SDK folder (defined by the environment variable "VULKAN_SDK") under the "Bin" folder for 64-bit executables, and "Bin32" folder for 32-bit executables.  From there, simply run:</p>
+<pre><code>via.exe
+</code></pre>
+<h4>
+<a id="user-content-in-the-linux-vulkan-sdk" class="anchor" href="#user-content-in-the-linux-vulkan-sdk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>In the Linux Vulkan SDK</h4>
+<p>Once built, VIA can be found in the x86_64/bin directory.  You can simply execute it from there using:</p>
+<pre><code>via
+</code></pre>
+<br>
+<h4>
+<a id="user-content-if-built-from-vulkantools" class="anchor" href="#user-content-if-built-from-vulkantools" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>If Built from VulkanTools</h4>
+<p>Go into the folder where you generated the build items from the above building step.</p>
+<p><strong>Linux</strong></p>
+<p>Simply run:</p>
+<pre><code>via
+</code></pre>
+<p><strong>Windows</strong></p>
+<p>Windows has an additional required step to perform if you are building from VulkanTools before you can run VIA in the proper way.  This is because the CMake scripts have an important folder being copied one level too low.  To run, the first time you will have to copy this folder into the appropriate location.</p>
+<p>Steps to run the first time:</p>
+<ol>
+<li>Go into the folder you built, and then go into the "via" sub-folder.</li>
+<li>In this folder you should see an "images" folder.  Copy this into either or both of your "Debug" or "Release" folders.</li>
+<li>Go into the "Debug" or "Release" folder (whichever you are desiring to work with)</li>
+<li>Run</li>
+</ol>
+<pre><code>via.exe
+</code></pre>
+<p>After the first time, you just need to go into the folder and re-run "via.exe".</p>
+<br>
+<h3>
+<a id="user-content-resulting-output" class="anchor" href="#user-content-resulting-output" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Resulting Output</h3>
+<p>VIA outputs two things:</p>
+<ul>
+<li>A command-line output indicating the overall status</li>
+<li>An HTML file (called via.html) containing the details which will be output to one of two locations:</li>
+</ul>
+<ol>
+<li>If the current directory is writeable, the HTML will be placed in that location.</li>
+<li>Otherwise, it will be saved to your home folder, except for the Windows Start Menu short-cut which writes the file to your desktop.</li>
+</ol>
+<p>Your home folder is the following location (based on your OS):</p>
+<ul>
+<li>Windows: Wherever your environment variables %HOMEDRIVE%%HOMEPATH% point to.</li>
+<li>Linux: It will be placed in your home folder ("~/.").</li>
+</ul>
+<br>
+<h4>
+<a id="user-content-additional-command-line-arguments" class="anchor" href="#user-content-additional-command-line-arguments" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Additional command-line arguments</h4>
+<p>There are additional command-line parameters which can be used.  These simply augment existing behavior and do not capture any more information.
+The available command-line arguments are:</p>
+<h5>
+<a id="user-content---unique_output" class="anchor" href="#user-content---unique_output" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>--unique_output</h5>
+<p>The --unique_output argument, if provided, will cause the output html to be generated with a date/time suffix.  This will allow you to perform
+multiple state captures on your system without accidentally erasing previous results.  The new file has the following format:</p>
+<p><em>via_YYYY_MM_DD_HH_MM.html</em></p>
+<p>Where each component stands for the numeric values for year (YYYY), month (MM), day (DD), hour (HH), and minute (MM).</p>
+<h4>
+<a id="user-content---output_path" class="anchor" href="#user-content---output_path" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>--output_path</h4>
+<p>The --output_path arument allows the user to specify a location for the output html file. For
+example, if the user runs <code>via --output_path /home/me/Documents</code>, then the output file will be
+<code>/home/me/Documents/via.html</code>.</p>
+<br>
+<h2>
+<a id="user-content-common-command-line-outputs" class="anchor" href="#user-content-common-command-line-outputs" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Common Command-Line Outputs</h2>
+<h4>
+<a id="user-content-success-validation-completed-properly" class="anchor" href="#user-content-success-validation-completed-properly" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"SUCCESS: Validation completed properly"</h4>
+<h5>
+<a id="user-content-problem" class="anchor" href="#user-content-problem" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>LunarG's VIA could detect no problems with your setup.</p>
+<h5>
+<a id="user-content-possible-reason" class="anchor" href="#user-content-possible-reason" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>Your system is likely setup properly.  If you have trouble running Vulkan from another location, it could be that your environment variables aren't setup properly.</p>
+<h5>
+<a id="user-content-next-step" class="anchor" href="#user-content-next-step" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>Re-run VIA from the location your Vulkan application/game is supposed to run.</p>
+<h4>
+<a id="user-content-error-failed-to-find-vulkan-driver-json-in-registry" class="anchor" href="#user-content-error-failed-to-find-vulkan-driver-json-in-registry" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to find Vulkan Driver JSON in registry"</h4>
+<h5>
+<a id="user-content-problem-1" class="anchor" href="#user-content-problem-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>This is a Windows-specific error that indicates that no Vulkan Driver JSON files were referenced in the appropriate place in the Windows Registry.</p>
+<h5>
+<a id="user-content-possible-reason-1" class="anchor" href="#user-content-possible-reason-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can indicate that a Vulkan driver failed to install properly.</p>
+<h5>
+<a id="user-content-next-step-1" class="anchor" href="#user-content-next-step-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-graphics-driver-problems">Vulkan Graphics Driver Problems</a> section for more info.</p>
+<h4>
+<a id="user-content-error-failed-to-find-vulkan-driver-json" class="anchor" href="#user-content-error-failed-to-find-vulkan-driver-json" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to find Vulkan Driver JSON"</h4>
+<h5>
+<a id="user-content-problem-2" class="anchor" href="#user-content-problem-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>The Vulkan loader on your system failed to find any Vulkan Driver JSON files in the appropriate places.</p>
+<h5>
+<a id="user-content-possible-reason-2" class="anchor" href="#user-content-possible-reason-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can indicate that a Vulkan driver failed to install properly.</p>
+<h5>
+<a id="user-content-next-step-2" class="anchor" href="#user-content-next-step-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-graphics-driver-problems">Vulkan Graphics Driver Problems</a> section for more info.</p>
+<h4>
+<a id="user-content-error-failed-to-properly-parse-vulkan-driver-json" class="anchor" href="#user-content-error-failed-to-properly-parse-vulkan-driver-json" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to properly parse Vulkan Driver JSON"</h4>
+<h5>
+<a id="user-content-problem-3" class="anchor" href="#user-content-problem-3" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>The Vulkan loader on your system found at least one Vulkan Driver JSON file, but it contained invalid data.</p>
+<h5>
+<a id="user-content-possible-reason-3" class="anchor" href="#user-content-possible-reason-3" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can indicate that a Vulkan driver failed to install properly.</p>
+<h5>
+<a id="user-content-next-step-3" class="anchor" href="#user-content-next-step-3" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-graphics-driver-problems">Vulkan Graphics Driver Problems</a> section for more info.</p>
+<h4>
+<a id="user-content-error-failed-to-find-vulkan-driver-lib" class="anchor" href="#user-content-error-failed-to-find-vulkan-driver-lib" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to find Vulkan Driver Lib"</h4>
+<h5>
+<a id="user-content-problem-4" class="anchor" href="#user-content-problem-4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>The Vulkan loader on your system found at least one Vulkan Driver JSON file, but the Driver library referenced in that file appears invalid.</p>
+<h5>
+<a id="user-content-possible-reason-4" class="anchor" href="#user-content-possible-reason-4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can indicate that a Vulkan driver failed to install properly.</p>
+<h5>
+<a id="user-content-next-step-4" class="anchor" href="#user-content-next-step-4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-graphics-driver-problems">Vulkan Graphics Driver Problems</a> section for more info.</p>
+<h4>
+<a id="user-content-error-failed-to-find-vulkan-layer-json" class="anchor" href="#user-content-error-failed-to-find-vulkan-layer-json" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to find Vulkan Layer JSON"</h4>
+<h5>
+<a id="user-content-problem-5" class="anchor" href="#user-content-problem-5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>Normally a layer isn't a requirement, but in this case a layer was attempted to be used by VIA, which should have existed, and did not exist
+in the appropriate location.</p>
+<h5>
+<a id="user-content-possible-reason-5" class="anchor" href="#user-content-possible-reason-5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>If the layer is associated with a driver vendor (for example Nvidia), it likely failed during the driver install.  If the layer is associated
+with an application (for example RenderDoc), then it likely failed during application install.  Otherwise, it could be an invalid runtime
+or SDK install.</p>
+<h5>
+<a id="user-content-next-step-5" class="anchor" href="#user-content-next-step-5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>Look at the HTML file to determine which layer caused the problem, and then contact the appropriate person.  If it's an SDK layer, or you
+are having a hard time figuring out exactly what the problem is, follow the instructions in the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-error-failed-to-properly-parse-vulkan-layer-json" class="anchor" href="#user-content-error-failed-to-properly-parse-vulkan-layer-json" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to properly parse Vulkan Layer JSON"</h4>
+<h5>
+<a id="user-content-problem-6" class="anchor" href="#user-content-problem-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>Normally a layer isn't a requirement, but in this case a layer was attempted to be used by VIA, and the JSON file was found to be invalid.</p>
+<h5>
+<a id="user-content-possible-reason-6" class="anchor" href="#user-content-possible-reason-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>If the layer is associated with a driver vendor (for example Nvidia), it likely failed during the driver install.  If the layer is associated
+with an application (for example RenderDoc), then it likely failed during application install.  Otherwise, it could be an invalid runtime
+or SDK install.</p>
+<h5>
+<a id="user-content-next-step-6" class="anchor" href="#user-content-next-step-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>Look at the HTML file to determine which layer caused the problem, and then contact the appropriate person.  If it's an SDK layer, or you
+are having a hard time figuring out exactly what the problem is, follow the instructions in the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-error-failed-to-find-vulkan-layer-lib" class="anchor" href="#user-content-error-failed-to-find-vulkan-layer-lib" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to find Vulkan Layer Lib"</h4>
+<h5>
+<a id="user-content-problem-7" class="anchor" href="#user-content-problem-7" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>Normally a layer isn't a requirement, but in this case a layer was attempted to be used by VIA, and the JSON file was found to point to an
+invalid layer library file.</p>
+<h5>
+<a id="user-content-possible-reason-7" class="anchor" href="#user-content-possible-reason-7" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>If the layer is associated with a driver vendor (for example Nvidia), it likely failed during the driver install.  If the layer is associated
+with an application (for example RenderDoc), then it likely failed during application install.  Otherwise, it could be an invalid runtime
+or SDK install.</p>
+<h5>
+<a id="user-content-next-step-7" class="anchor" href="#user-content-next-step-7" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>Look at the HTML file to determine which layer caused the problem, and then contact the appropriate person.  If it's an SDK layer, or you
+are having a hard time figuring out exactly what the problem is, follow the instructions in the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-error-vulkan-failed-to-find-a-compatible-driver" class="anchor" href="#user-content-error-vulkan-failed-to-find-a-compatible-driver" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Vulkan failed to find a compatible driver"</h4>
+<h5>
+<a id="user-content-problem-8" class="anchor" href="#user-content-problem-8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>All the components appeared to be in place to allow Vulkan to load (from an external stand-point), but the loader still failed to find
+a Vulkan compatible driver.</p>
+<h5>
+<a id="user-content-possible-reason-8" class="anchor" href="#user-content-possible-reason-8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can indicate that either a Vulkan driver failed to install properly, or the run-time is failing for some reason.</p>
+<h5>
+<a id="user-content-next-step-8" class="anchor" href="#user-content-next-step-8" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-graphics-driver-problems">Vulkan Graphics Driver Problems</a> section for more info.</p>
+<h4>
+<a id="user-content-error-vulkan-failed-to-find-a-vulkan-runtime-to-use" class="anchor" href="#user-content-error-vulkan-failed-to-find-a-vulkan-runtime-to-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Vulkan failed to find a Vulkan Runtime to use"</h4>
+<h5>
+<a id="user-content-problem-9" class="anchor" href="#user-content-problem-9" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>The Vulkan loader "vulkan-1.dll" couldn't be found on your system.  This file is typically installed with some Vulkan driver installs,
+some Vulkan-capable games, or the LunarG Vulkan SDK.</p>
+<h5>
+<a id="user-content-possible-reason-9" class="anchor" href="#user-content-possible-reason-9" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>The last Vulkan Runtime install that executed on your system failed to behave properly.  Or, you have never installed a Vulkan loader
+on your system.</p>
+<h5>
+<a id="user-content-next-step-9" class="anchor" href="#user-content-next-step-9" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-error-unknown-error-while-attempting-to-create-vulkan-instance" class="anchor" href="#user-content-error-unknown-error-while-attempting-to-create-vulkan-instance" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Unknown error while attempting to create Vulkan Instance"</h4>
+<h5>
+<a id="user-content-problem-10" class="anchor" href="#user-content-problem-10" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>Some error occurred when trying to call Vulkan's vkCreateInstance function.</p>
+<h5>
+<a id="user-content-possible-reason-10" class="anchor" href="#user-content-possible-reason-10" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can usually indicate that there's something about the installed driver that the Vulkan Loader does not like.</p>
+<h5>
+<a id="user-content-next-step-10" class="anchor" href="#user-content-next-step-10" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-error-unknown-error-while-attempting-to-create-vulkan-device" class="anchor" href="#user-content-error-unknown-error-while-attempting-to-create-vulkan-device" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Unknown error while attempting to create Vulkan Device"</h4>
+<h5>
+<a id="user-content-problem-11" class="anchor" href="#user-content-problem-11" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>Some error occurred when trying to call Vulkan's vkCreateDevice function.</p>
+<h5>
+<a id="user-content-possible-reason-11" class="anchor" href="#user-content-possible-reason-11" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can usually indicate that there's something about the installed driver that the Vulkan Loader does not like.</p>
+<h5>
+<a id="user-content-next-step-11" class="anchor" href="#user-content-next-step-11" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-error-failed-to-find-expected-vulkan-extensions" class="anchor" href="#user-content-error-failed-to-find-expected-vulkan-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Failed to find expected Vulkan Extensions"</h4>
+<h5>
+<a id="user-content-problem-12" class="anchor" href="#user-content-problem-12" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>Some error occurred when trying to query the available drivers for the Vulkan Extensions that are supported.</p>
+<h5>
+<a id="user-content-possible-reason-12" class="anchor" href="#user-content-possible-reason-12" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This can usually indicate that there's something about the installed driver that the Vulkan Loader does not like.</p>
+<h5>
+<a id="user-content-next-step-12" class="anchor" href="#user-content-next-step-12" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-error-vulkan-loader-layer-or-driver-ran-out-of-memory" class="anchor" href="#user-content-error-vulkan-loader-layer-or-driver-ran-out-of-memory" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Vulkan Loader, Layer, or Driver ran out of memory"</h4>
+<h5>
+<a id="user-content-problem-13" class="anchor" href="#user-content-problem-13" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>The Vulkan Loader, a Layer, or a Vulkan Driver failed to be able to allocate memory for a required item.</p>
+<h5>
+<a id="user-content-possible-reason-13" class="anchor" href="#user-content-possible-reason-13" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>Check to see how much memory is available on your system.  It could also be caused by low hard-drive space.</p>
+<h5>
+<a id="user-content-next-step-13" class="anchor" href="#user-content-next-step-13" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>Attempt to free up some hard-drive space if you're currently using more that 90% of your hard-drive.</p>
+<p>Other things to try:</p>
+<ul>
+<li>Follow the instructions in <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</li>
+<li>If that doesn't help, try <a href="#user-content-vulkan-graphics-driver-problems">installing a new Vulkan Driver</a>
+</li>
+</ul>
+<h4>
+<a id="user-content-error-unknown-test-failure-occurred" class="anchor" href="#user-content-error-unknown-test-failure-occurred" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>"ERROR: Unknown Test failure occurred"</h4>
+<h5>
+<a id="user-content-problem-14" class="anchor" href="#user-content-problem-14" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>One of the Vulkan tests failed for some reason.</p>
+<h5>
+<a id="user-content-possible-reason-14" class="anchor" href="#user-content-possible-reason-14" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>This could just indicate an error in setting up the test environment.  Currently, the only tests used are in the SDK, so
+it's possible the SDK did not install properly.</p>
+<h5>
+<a id="user-content-next-step-14" class="anchor" href="#user-content-next-step-14" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-windows-dialog-box-pops-up-indicating-vulkan-1dll-is-missing-from-your-computer" class="anchor" href="#user-content-windows-dialog-box-pops-up-indicating-vulkan-1dll-is-missing-from-your-computer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>[WINDOWS] Dialog box pop's up indicating "vulkan-1.dll is missing from your computer."</h4>
+<h5>
+<a id="user-content-problem-15" class="anchor" href="#user-content-problem-15" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>The Vulkan loader "vulkan-1.dll" couldn't be found on your system.  This file is typically installed with some Vulkan driver installs,
+some Vulkan-capable games, or the LunarG Vulkan SDK.</p>
+<h5>
+<a id="user-content-possible-reason-15" class="anchor" href="#user-content-possible-reason-15" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<p>The last Vulkan Runtime install that executed on your system failed to behave properly.  Or, you have never installed a Vulkan loader
+on your system.</p>
+<h5>
+<a id="user-content-next-step-15" class="anchor" href="#user-content-next-step-15" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<h4>
+<a id="user-content-linux-message-indicating-error-while-loading-shared-libraries-libvulkanso1" class="anchor" href="#user-content-linux-message-indicating-error-while-loading-shared-libraries-libvulkanso1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>[LINUX] Message indicating "error while loading shared libraries: libvulkan.so.1"</h4>
+<h5>
+<a id="user-content-problem-16" class="anchor" href="#user-content-problem-16" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Problem:</h5>
+<p>The Vulkan loader "libvulkan.so.1" couldn't be found on your system.  This file is typically installed with some Vulkan driver installs,
+some Vulkan-capable games, or the LunarG Vulkan SDK.</p>
+<h5>
+<a id="user-content-possible-reason-16" class="anchor" href="#user-content-possible-reason-16" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Possible Reason:</h5>
+<ol>
+<li>There is no Vulkan loader installed to a system folder.</li>
+<li>The user didn't set up the LD_LIBRARY_PATH environment variable to point to a local folder containing libvulkan.so.1.</li>
+</ol>
+<pre><code> export LD_LIBRARY_PATH=/home/&lt;user&gt;/sdk/VulkanSDK/1.0.39.0/x64_86/lib
+</code></pre>
+<h5>
+<a id="user-content-next-step-16" class="anchor" href="#user-content-next-step-16" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Step:</h5>
+<p>See the <a href="#user-content-vulkan-sdk-issues">Vulkan SDK Issues</a> section below.</p>
+<br>
+<h2>
+<a id="user-content-vulkan-sdk-issues" class="anchor" href="#user-content-vulkan-sdk-issues" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Vulkan SDK Issues</h2>
+<p>If the problem you've encountered is possibly related to an SDK issue.  Visit <a href="https://vulkan.lunarg.com/" TARGET="_blank">LunarXchange</a>, and install
+the latest Vulkan SDK.  If that does not help, attempt to install a new <a href="#user-content-vulkan-graphics-driver-problems">Vulkan Driver</a>.  If that still
+fails, file an issue on <a href="https://vulkan.lunarg.com/" TARGET="_blank">LunarXchange</a>.  To file an issue, you may be required to create a free account
+(only requires an email address).</p>
+<br>
+<h2>
+<a id="user-content-vulkan-graphics-driver-problems" class="anchor" href="#user-content-vulkan-graphics-driver-problems" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Vulkan Graphics Driver Problems</h2>
+<p>If the problem is possibly related to your Graphics Driver, it could be for several reasons:</p>
+<ol>
+<li>The hardware you have doesn't support Vulkan.</li>
+<li>Your hardware supports Vulkan, but you haven't yet installed a driver with Vulkan support.</li>
+<li>There is no Vulkan driver with support for the OS on which you are currently running.
+<ul>
+<li>Sometimes, the company may provide Vulkan support for some devices on one Operatings System (say Windows), while still waiting to complete Vulkan on other systems.</li>
+</ul>
+</li>
+<li>Everything supports Vulkan, but the driver failed to install properly.</li>
+</ol>
+<p>Before approaching your Graphics driver vendor, it would help if you verified that your current driver for your current hardware on your current
+operating system <strong>does</strong> support Vulkan.</p>
+</article>
+</body>
+</html>

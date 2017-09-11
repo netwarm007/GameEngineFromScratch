@@ -1,0 +1,89 @@
+################################################################################
+#
+#  This file contains per-layer settings that configure layer behavior at
+#  execution time. Comments in this file are denoted with the "#" char.
+#  Settings lines are of the form:
+#      "<LayerIdentifier>.<SettingName> = <SettingValue>"
+#
+#  <LayerIdentifier> is typically the official layer name, minus the VK_LAYER
+#  prefix and all lower-camel-case -- i.e., for VK_LAYER_LUNARG_api_dump, the
+#  layer identifier is 'lunarg_api_dump'.
+#
+################################################################################
+################################################################################
+#  VK_LAYER_LUNARG_api_dump Settings:
+#  ==================================
+#
+#    OUTPUT_FORMAT:
+#    =========
+#    <LayerIdentifer>.output_format : Specifies the format used for output;
+#    can be Text (default -- outputs plain text) or Html.
+#
+#    DETAILED:
+#    =========
+#    <LayerIdentifer>.detailed : Setting this to TRUE causes parameter details
+#    to be dumped in addition to API calls.
+#
+#    NO_ADDR:
+#    ========
+#    <LayerIdentifier>.no_addr : Setting this to TRUE causes "address" to be
+#    dumped in place of hex addresses.
+#
+#    FILE:
+#    =====
+#    <LayerIdentifer>.file : Setting this to TRUE indicates that output
+#    should be written to file instead of STDOUT.
+#
+#    LOG_FILENAME:
+#    =============
+#    <LayerIdentifer>.log_filename : Specifies the file to dump to when
+#    "file = TRUE".  The default is "vk_apidump.txt".
+#
+#    FLUSH:
+#    ======
+#    <LayerIdentifier>.flush : Setting this to TRUE causes IO to be flushed
+#    each API call that is written.
+#
+#   INDENT SIZE:
+#   ==============
+#   <LayerIdentifier>.indent_size : Specifies the number of spaces that a tab
+#   is equal to.
+#
+#   SHOW TYPES:
+#   ==============
+#   <LayerIdentifier>.show_types : Setting this to TRUE causes types to be
+#   dumped in addition to values.
+#
+#   NAME SIZE:
+#   ==============
+#   <LayerIdentifier>.name_size : The number of characters the name of a
+#   variable should consume, assuming more are not required.
+#
+#   TYPE SIZE:
+#   ==============
+#   <LayerIdentifier>.type_size : The number of characters the type of a
+#   variable should consume, assuming more are not requires.
+#
+#   USE_SPACES:
+#   ==============
+#   <LayerIdentifier>.use_spaces : Setting this to TRUE causes all tabs
+#   characters to be replaced with spaces.
+#
+#   SHOW_SHADER:
+#   ==============
+#   <LayerIdentifier>.show_shader : Setting this to TRUE causes the shader
+#   binary code in pCode to be also written to output.
+
+#  VK_LUNARG_LAYER_api_dump Settings
+lunarg_api_dump.output_format = Text
+lunarg_api_dump.detailed = TRUE
+lunarg_api_dump.no_addr = FALSE
+lunarg_api_dump.file = FALSE
+lunarg_api_dump.log_filename = vk_apidump.txt
+lunarg_api_dump.flush = TRUE
+lunarg_api_dump.indent_size = 4
+lunarg_api_dump.show_types = TRUE
+lunarg_api_dump.name_size = 32
+lunarg_api_dump.type_size = 0
+lunarg_api_dump.use_spaces = TRUE
+lunarg_api_dump.show_shader = FALSE

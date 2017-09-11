@@ -1,0 +1,51 @@
+html { 
+    background: url('../images/bg-starfield.jpg');
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+body {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	line-height: 1.42857143;
+	color: #e8e8e8;
+	width: 700px;
+	margin: auto;
+	background-color: 3F3F3F;
+	position: relative;
+	padding: 0 30px;
+}
+
+pre {
+    background-color: rgba(0,0,0,.5);
+    font-size: 1em;
+    display: block;
+    padding: 9.5px;
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.42857143;
+    word-break: break-all;
+    word-wrap: break-word;
+    color: #2F2F2F;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+    overflow: auto;
+}
+
+code {
+    color: #D1D1D1;
+}
+
+a {
+    color: #3bdae6;
+    background-color:transparent;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.nav-bar {
+    margin: none;
+    padding: none;
+    position: static;
+}

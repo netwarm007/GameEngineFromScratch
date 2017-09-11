@@ -1,0 +1,160 @@
+<h1>Descriptor Set Layouts and Pipeline Layouts</h1>
+
+<p><link href="../css/lg_stylesheet.css" rel="stylesheet"></link></p>
+
+<p>Code file for this section is <code>08-init_pipeline_layout.cpp</code></p>
+
+<p>In the previous sample, you created a uniform buffer, but you have not
+done anything about describing how it is to be used by the shader.
+You know that the buffer contains a uniform variable for the MVP
+transform and that it
+will be used by just the vertex shader, but Vulkan doesn't know
+any of this yet.</p>
+
+<p>We accomplish this by using a descriptor.</p>
+
+<h2>Descriptors and Descriptor Sets</h2>
+
+<p>A descriptor is a special opaque shader variable that
+shaders use to access
+buffer and image resources in an indirect fashion.
+It can be thought of as a "pointer" to a resource.
+The Vulkan API allows these variables to be changed between
+draw operations so that the shaders can access different resources
+for each draw.</p>
+
+<p>In the sample example, you have only one uniform buffer.
+But you could create two uniform buffers, each with a
+different MVP to give different views of the scene.
+You could then easily change the descriptor to point to
+either uniform buffer to switch back and forth between
+the MVP matrices.</p>
+
+<p>A descriptor set is called a "set" because it can refer to an
+array of homogenous resources that can be described with the
+same layout binding.
+(The "layout binding" will be explained shortly.)</p>
+
+<p>You are not using textures in this sample, but one possible
+way to use multiple descriptors is to construct a
+descriptor set with two descriptors, with each descriptor
+referencing a separate texture.
+Both textures are therefore available during a draw.
+A command in a command buffer could then select the texture
+to use by specifying the index of the desired texture.</p>
+
+<p>It is important to note that you are just working on <em>describing</em>
+the descriptor set here and are not actually allocating or
+creating the descriptor set itself, which you will do later,
+in the descriptor_set sample.</p>
+
+<p>To describe a descriptor set, you use a descriptor set layout.</p>
+
+<h2>Descriptor Set Layouts</h2>
+
+<p>A descriptor set layout is used to describe the content of a
+list of descriptor sets.
+You also need one layout binding for each descriptor set,
+which you use to describe each descriptor set:</p>
+
+<pre><code>VkDescriptorSetLayoutBinding layout_binding = {};
+layout_binding.binding = 0;
+layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+layout_binding.descriptorCount = 1;
+layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+layout_binding.pImmutableSamplers = NULL;
+</code></pre>
+
+<ul>
+<li>You happen to be making only one descriptor set, so the only
+choice for the <code>binding</code> member is 0.</li>
+<li>Since this descriptor is referencing a uniform buffer, you set the
+<code>descriptorType</code> appropriately.</li>
+<li>You have only one descriptor in this descriptor set,
+which is indicated by the <code>descriptorCount</code> member.</li>
+<li>You indicate that this uniform buffer resource is to be bound to
+the shader vertex stage.</li>
+</ul>
+
+<p>With the binding for our one descriptor set defined, you are ready to
+create the descriptor set layout:</p>
+
+<pre><code>#define NUM_DESCRIPTOR_SETS 1
+VkDescriptorSetLayoutCreateInfo descriptor_layout = {};
+descriptor_layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+descriptor_layout.pNext = NULL;
+descriptor_layout.bindingCount = 1;
+descriptor_layout.pBindings = &amp;layout_binding;
+info.desc_layout.resize(NUM_DESCRIPTOR_SETS);
+res = vkCreateDescriptorSetLayout(info.device, &amp;descriptor_layout, NULL,
+                                  info.desc_layout.data());
+</code></pre>
+
+<h2>Pipeline Layouts</h2>
+
+<p>A pipeline layout contains a list of descriptor set layouts.
+It also can contain a list of push constant ranges, which
+is an alternate way to pass constants to a shader and will
+not be covered here.</p>
+
+<p>As with the descriptor sets, you are just defining the layout.
+The actual descriptor set is allocated and
+filled in with the uniform buffer reference later.</p>
+
+<pre><code>VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {};
+pPipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+pPipelineLayoutCreateInfo.pNext = NULL;
+pPipelineLayoutCreateInfo.pushConstantRangeCount = 0;
+pPipelineLayoutCreateInfo.pPushConstantRanges = NULL;
+pPipelineLayoutCreateInfo.setLayoutCount = NUM_DESCRIPTOR_SETS;
+pPipelineLayoutCreateInfo.pSetLayouts = info.desc_layout.data();
+
+res = vkCreatePipelineLayout(info.device, &amp;pPipelineLayoutCreateInfo, NULL,
+                             &amp;info.pipeline_layout);
+</code></pre>
+
+<p>You will use the pipeline layout later to create the graphics pipeline.</p>
+
+<h2>Shader Referencing of Descriptors</h2>
+
+<p>It is worth pointing out that the shader explicitly references these
+descriptors in the shader language.</p>
+
+<p>For example, in GLSL:</p>
+
+<pre><code> layout (set=M, binding=N) uniform sampler2D variableNameArray[I];
+</code></pre>
+
+<ul>
+<li>M refers the the M'th descriptor set layout in the <code>pSetLayouts</code> member
+of the pipeline layout</li>
+<li>N refers to the N'th descriptor set (binding) in M's <code>pBindings</code> member
+of the descriptor set layout</li>
+<li>I is the index into the array of descriptors in N's descriptor set</li>
+</ul>
+
+<p>The layout code for the uniform buffer in the vertex shader that you will use
+looks like:</p>
+
+<pre><code>layout (std140, binding = 0) uniform bufferVals {
+    mat4 mvp;
+} myBufferVals;
+</code></pre>
+
+<p>This maps the uniform buffer contents to the <code>myBufferVals</code> structure.
+"set=M" was not specified and defaults to 0.</p>
+
+<p>"std140" is a standard to describe how data is packed in uniform blocks.
+You may wish to refer to it if you wish to put more data in a uniform block.
+See <a href="https://www.opengl.org/registry/specs/ARB/uniform_buffer_object.txt" target="_blank">this doc</a>
+for more information.</p>
+
+<table border="1" width="100%">
+    <tr>
+        <td align="center" width="33%"><a href="07-init_uniform_buffer.html" title="Prev">Uniform Buffer</a></td>
+        <td align="center" width="33%"><a href="index.html" title="Index">Index</a></td>
+        <td align="center" width="33%"><a href="09-init_descriptor_set.html" title="Next">Descriptor Set</a></td>
+    </tr>
+</table>
+
+<p><footer>&copy; Copyright 2016 LunarG, Inc</footer></p>
