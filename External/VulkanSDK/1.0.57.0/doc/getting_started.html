@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="icon" href="vulkan_lunarg_icon.png">
+<link rel="stylesheet" href="github-markdown.css">
+<style>
+    body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+    }
+</style>
+</head>
+<body>
+<article class="markdown-body">
+<p><a href="https://www.LunarG.com/" TARGET="_blank"><img src="https://camo.githubusercontent.com/8284916f56546b1d1a9e4af0c8e308ef3b233e6d/68747470733a2f2f76756c6b616e2e6c756e6172672e636f6d2f696d672f4c756e6172474c6f676f2e706e67" alt="LunarG" title="www.LunarG.com" data-canonical-src="https://vulkan.lunarg.com/img/LunarGLogo.png" style="max-width:100%;"></a></p>
+<h1>
+<a id="user-content-getting-started-with-the-vulkan-sdk" class="anchor" href="#user-content-getting-started-with-the-vulkan-sdk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started with the Vulkan SDK</h1>
+<h4>
+<a id="user-content-version-for-linux" class="anchor" href="#user-content-version-for-linux" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version for Linux</h4>
+<p>Copyright © 2015-2017 LunarG, Inc.</p>
+<p><a href="https://creativecommons.org/licenses/by-nd/4.0/" TARGET="_blank"><img src="https://camo.githubusercontent.com/769ad34d33c3c36b21baa4c4838b311433fcdcd3/68747470733a2f2f692e6372656174697665636f6d6d6f6e732e6f72672f6c2f62792d6e642f342e302f38387833312e706e67" alt="Creative Commons" title="Creative Commons License" data-canonical-src="https://i.creativecommons.org/l/by-nd/4.0/88x31.png" style="max-width:100%;"></a></p>
+<p><br></p>
+<p>This guide describes the requirements and procedure for installing the LunarG Vulkan SDK for Linux.  It also includes compilation and runtime instructions for demo Vulkan applications.  Refer to the LunarG Vulkan SDK, Documentation and Known Issues at <a href="https://Vulkan.LunarG.com" TARGET="_blank" title="LunarXchange">Vulkan.LunarG.com</a> for the most up to date SDK information.</p>
+<p>The Vulkan API is a low overhead, explicit, cross-platform graphics API that provides applications with direct control over the GPU, maximizing application performance.  For more information on the Vulkan specification and API, refer to <a href="https://khronos.org/registry/vulkan" TARGET="_blank" title="Khronos Vulkan website">Khronos.org</a>.
+For tutorial-level information, refer to LunarG's Vulkan tutorial, which can be found in the SDK in the
+<code>samples/API-Samples/Tutorial</code> directory and on the <a href="https://vulkan.lunarg.com/doc/sdk/latest/linux/tutorial/html/index.html" TARGET="_blank">LunarXchange website</a>.</p>
+<p>The LunarG Vulkan SDK provides the development and runtime components required to build, run, and debug Vulkan applications.  This SDK is based on the Khronos Vulkan API header, whose version is reflected in the Vulkan SDK version number (for example, SDK version 1.0.24.0 indicates that the SDK uses Vulkan header revision 1.0.24).  The SDK also includes certain Vulkan extensions for window system integration and debug extensions (refer to the release notes for further details).</p>
+<p>This SDK does NOT include a Vulkan driver.  Please contact your GPU hardware vendor for a Vulkan Installable Client Driver (ICD).  This SDK will allow you to build Vulkan applications but you will need a Vulkan driver (ICD) to execute them.</p>
+<h2>
+<a id="user-content-terminology" class="anchor" href="#user-content-terminology" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Terminology</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DRI3</td>
+<td>Direct Rendering Infrastructure 3 — A Linux X-Windows extension for direct rendering</td>
+</tr>
+<tr>
+<td>ICD</td>
+<td>Installable Client Driver — A Vulkan-compatible display driver</td>
+</tr>
+<tr>
+<td>GLSL</td>
+<td>OpenGL Shading Language</td>
+</tr>
+<tr>
+<td>Layer</td>
+<td>A library designed to work as a plug-in for the loader.  It usually serves to provide validation and debugging functionality to applications</td>
+</tr>
+<tr>
+<td>Loader</td>
+<td>A library which implements the Vulkan API entry points and manages layers, extensions, and drivers. It can be found in the SDK, as well as independent hardware vendor driver installs</td>
+</tr>
+<tr>
+<td>SPIR-V</td>
+<td>Standard Portable Intermediate Representation — A cross-API intermediate language that natively represents parallel compute and graphics programs</td>
+</tr>
+<tr>
+<td>Vulkan</td>
+<td>A low overhead, explicit graphics API developed by the Khronos Group and member companies</td>
+</tr>
+<tr>
+<td>WSI</td>
+<td>Window System Integration</td>
+</tr>
+</tbody>
+</table>
+<h2>
+<a id="user-content-system-requirements" class="anchor" href="#user-content-system-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>System Requirements</h2>
+<p>Your Linux development and host systems must meet specific hardware and software requirements to install the LunarG Vulkan SDK and create Vulkan applications.  You will need a Vulkan ICD to execute Vulkan applications.</p>
+<p>The LunarG Vulkan SDK is supported on 64-bit Linux systems.  This guide provides instructions for the following Linux distributions:</p>
+<ul>
+<li>Ubuntu 14.04 and 16.04</li>
+<li>Fedora Core 25 and 26</li>
+<li>Arch Linux</li>
+</ul>
+<p>Other Linux distributions may work but have not been verified.</p>
+<p>For other distributions of Linux, we recommend that you search your distribution's package repository for Vulkan development libraries. Otherwise you may download and build from publicly available repositories.</p>
+<ul>
+<li>Loader and layers source: <a href="https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers" TARGET="_blank">https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers</a>
+</li>
+<li>Tools source: <a href="https://github.com/LunarG/VulkanTools" TARGET="_blank">https://github.com/LunarG/VulkanTools</a>
+</li>
+<li>Samples source: <a href="https://github.com/LunarG/VulkanSamples" TARGET="_blank">https://github.com/LunarG/VulkanSamples</a>
+</li>
+</ul>
+<p>You will find instructions to build all three in their respective repositories.</p>
+<h3>
+<a id="user-content-administrator-privileges" class="anchor" href="#user-content-administrator-privileges" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Administrator Privileges</h3>
+<p>Beginning with SDK version 1.0.13, the SDK installer no longer installs files to system locations that require administrator privileges.
+Administrator privileges are not required to install the SDK if you are installing version 1.0.13 or later
+and there are no SDK versions installed on the system that are prior to 1.0.13.</p>
+<p>If you have a version of the SDK on your system that is prior to 1.0.13 and you install version 1.0.13 or later, you will need administrator privileges
+in order to uninstall the older SDK from your system.</p>
+<h3>
+<a id="user-content-packages" class="anchor" href="#user-content-packages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Packages</h3>
+<h4>
+<a id="user-content-ubuntu-distributions-1404-and-newer" class="anchor" href="#user-content-ubuntu-distributions-1404-and-newer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Ubuntu Distributions (14.04 and newer)</h4>
+<p>Upgrade your system to be current on package updates.</p>
+<pre><code>sudo apt-get update
+sudo apt-get dist-upgrade
+</code></pre>
+<p>If all you want to do is install the SDK to look at the documentation, install the following packages and skip ahead to the "Download the SDK" section in this guide.</p>
+<pre><code>sudo apt-get install graphviz
+</code></pre>
+<p>If you want to build and run the samples or develop other Vulkan applications, install the following prerequisite packages:</p>
+<pre><code>sudo apt-get install libglm-dev graphviz libxcb-dri3-0 libxcb-present0 libpciaccess0 cmake \
+libpng-dev libxcb-dri3-dev libx11-dev libmirclient-dev libwayland-dev libxrandr-dev
+</code></pre>
+<p>Git and Python2 is required to build <code>shaderc</code>. This can be built with the included <code>build_tools.sh</code> script. Be sure python2 is in your PATH. (see <a href="#user-content-helper-build-scripts">Helper Build Scripts</a> for more information)</p>
+<pre><code>sudo apt-get install git libpython2.7
+</code></pre>
+<h4>
+<a id="user-content-fedora-core-distributions-23-and-newer" class="anchor" href="#user-content-fedora-core-distributions-23-and-newer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Fedora Core Distributions (23 and newer)</h4>
+<p>Update your system to be current on package updates.</p>
+<pre><code>sudo dnf update
+</code></pre>
+<p>If all you want to do is install the SDK to look at the documentation, install the following packages and skip ahead to the "Download the SDK" section in this guide.</p>
+<pre><code>sudo dnf install graphviz
+</code></pre>
+<p>If you want to build and run the samples or develop other Vulkan applications, install the following prerequisite packages:</p>
+<pre><code>sudo dnf install glm-dev graphviz cmake libpng-devel wayland-devel libpciaccess-devel \
+libX11-devel libXpresent libxcb xcb-util libxcb-devel libXrandr-devel \
+xcb-util-keysyms-devel.x86_64
+</code></pre>
+<p>Git and Python2 is required to build <code>shaderc</code>. This can be built with the included <code>build_tools.sh</code> script. Be sure python2 is in your PATH. (see <a href="#user-content-helper-build-scripts">Helper Build Scripts</a> for more information)</p>
+<pre><code>sudo dnf install git python
+</code></pre>
+<h2>
+<a id="user-content-download-the-sdk" class="anchor" href="#user-content-download-the-sdk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Download the SDK</h2>
+<p>Download the LunarG Vulkan SDK from <a href="https://Vulkan.LunarG.com" TARGET="_blank" title="LunarXchange">Vulkan.LunarG.com</a>.  The SDK download file is named <code>vulkansdk-linux-x86_64-</code><em><code>version</code></em><code>.run</code>.</p>
+<p>Make note of the directory to which the file was downloaded.
+The rest of these instructions assume that you have downloaded the file to <code>$HOME/Downloads</code>.</p>
+<h2>
+<a id="user-content-sdk-contents" class="anchor" href="#user-content-sdk-contents" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SDK Contents</h2>
+<p>The LunarG Vulkan SDK provides the development and runtime components to create, trace, and replay Vulkan applications.  The SDK also includes the runtime components to run Vulkan Application Validation and Debug Layers.</p>
+<h2>
+<a id="user-content-install-the-sdk" class="anchor" href="#user-content-install-the-sdk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install the SDK</h2>
+<p>The SDK installation process installs the software into a local directory.
+This directory can be placed anywhere on your system.</p>
+<p>The LunarG Vulkan SDK for Linux is a self-extracting installer.  The installer will create a local SDK directory of the form <code>VulkanSDK/&lt;version&gt;</code> in the current working directory.  Starting with version 1.0.13.0, the installer will no longer copy the Vulkan development and runtime headers, libraries, and binaries to system locations. You must correctly configure the environment variables LD_LIBRARY_PATH and VK_LAYER_PATH (see below). This is so Vulkan applications can find the loader and layers in your local SDK directory.</p>
+<ol>
+<li>
+<p>Create a work directory.  These instructions assume that you want to install the SDK under a folder called <code>vulkan</code> in your home directory.</p>
+<pre><code>cd ~
+mkdir vulkan
+cd vulkan
+</code></pre>
+</li>
+<li>
+<p>Copy the self-extracting installer to your work directory.  You may need to change the installer file permissions to include execute.  In the following commands, replace <code>&lt;version&gt;</code> with the 1.0.xx.y version number of the SDK.</p>
+<pre><code>cp $HOME/Downloads/vulkansdk-linux-x86_64-&lt;version&gt;.run ./
+chmod ugo+x vulkansdk-linux-x86_64-&lt;version&gt;.run
+</code></pre>
+</li>
+<li>
+<p>Run the self-extracting installer. You may also be prompted for your sudo password for removal of a previously installed version of the <code>vulkan-sdk-runtime</code>.</p>
+<pre><code>./vulkansdk-linux-x86_64-&lt;version&gt;.run
+Creating directory VulkanSDK
+Verifying archive integrity... All good.
+Uncompressing LunarG Vulkan SDK  100%
+</code></pre>
+</li>
+</ol>
+<h3>
+<a id="user-content-local-install-locations" class="anchor" href="#user-content-local-install-locations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Local Install Locations</h3>
+<p>The table below identifies specific SDK <strong><em>local</em></strong> install directories and their content.
+The <strong><em>local</em></strong> install location refers to the place where you installed the SDK, usually
+under the <code>VulkanSDK/&lt;version&gt;</code> folder created by the self-extracting installer. The top-level SDK directory contains a platform-specific folder. For 64-bit Intel CPU targets, it is named <code>x86_64</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Directory</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>x86_64/bin</td>
+<td>Vulkan tools and commands</td>
+</tr>
+<tr>
+<td>x86_64/include/vulkan</td>
+<td>Header files required to compile and link your Vulkan application</td>
+</tr>
+<tr>
+<td>x86_64/lib</td>
+<td>Vulkan loader library and layer runtime libraries</td>
+</tr>
+<tr>
+<td>x86_64/etc/explicit_layer.d</td>
+<td>.json manifest files for Vulkan validation layers</td>
+</tr>
+<tr>
+<td>config</td>
+<td>Sample layer settings file, system config instructions</td>
+</tr>
+<tr>
+<td>doc</td>
+<td>Khronos SPIRV, Vulkan, Loader, and WSI specifications</td>
+</tr>
+<tr>
+<td>examples</td>
+<td>Example Vulkan applications</td>
+</tr>
+<tr>
+<td>samples</td>
+<td>Sample code from the Vulkan Samples Kit</td>
+</tr>
+<tr>
+<td>source</td>
+<td>Source and debug libraries for glslang and selected Vulkan components</td>
+</tr>
+</tbody>
+</table>
+<h3>
+<a id="user-content-system-locations" class="anchor" href="#user-content-system-locations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>System Locations</h3>
+<p>Starting with version 1.0.13.0, the installer will no longer copy the Vulkan development and runtime headers, libraries, and binaries to system locations.
+Since these files are not installed to the default system search locations, you must
+configure the environment variables LD_LIBRARY_PATH and VK_LAYER_PATH (see below) in order for Vulkan applications to locate the loader and layer modules.
+If you have installed a Vulkan driver from a GPU vendor, you may wish to verify that there is a JSON file installed in one of the following locations:</p>
+<table>
+<thead>
+<tr>
+<th>Directory</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>/etc/vulkan/icd.d/ or /usr/share/vulkan/icd.d</td>
+<td>Vulkan driver .json manifest file, which is not modified by the SDK installer.</td>
+</tr>
+</tbody>
+</table>
+<h2>
+<a id="user-content-uninstalling-the-sdk" class="anchor" href="#user-content-uninstalling-the-sdk" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Uninstalling the SDK</h2>
+<p>To uninstall the SDK simply remove the local installation directory. e.g.</p>
+<pre><code>rm -rf /path/to/VulkanSDK/&lt;version&gt;
+</code></pre>
+<h2>
+<a id="user-content-set-up-the-runtime-environment" class="anchor" href="#user-content-set-up-the-runtime-environment" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Set up the Runtime Environment</h2>
+<p>Developing with a locally-installed LunarG Vulkan SDK version requires certain environment variables be set.
+These variables are identified in the table below.
+Paths are relative to the local platform-specific directory: <code>VULKAN_SDK=VULKAN_SDK_ROOT/VERSION/ARCH</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Environment Variable</th>
+<th>File/Path to Include</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PATH</td>
+<td>$VULKAN_SDK/bin</td>
+</tr>
+<tr>
+<td>LD_LIBRARY_PATH</td>
+<td>$VULKAN_SDK/lib</td>
+</tr>
+<tr>
+<td>VK_LAYER_PATH</td>
+<td>$VULKAN_SDK/etc/explicit_layer.d</td>
+</tr>
+</tbody>
+</table>
+<p>You can easily set these variables by changing your current directory to the top of the SDK you just installed.
+For example, if the SDK version is 1.0.xx.0 and you unpacked the SDK in the <code>~/vulkan</code> directory:</p>
+<pre><code>cd ~/vulkan/VulkanSDK/1.0.xx.0
+</code></pre>
+<p>Of course, you should replace 'xx' with the actual SDK version number.</p>
+<p>You can use the supplied script to set the variables in your environment:</p>
+<pre><code>source setup-env.sh
+</code></pre>
+<p>Alternatively you can setup your paths by setting these environment variables yourself:</p>
+<pre><code>export VULKAN_SDK=~/vulkan/VulkanSDK/1.0.xx.0/x86_64
+</code></pre>
+<p>again replacing the 'xx' with the version you are installing.</p>
+<p>Or, if you are already in the correct directory:</p>
+<pre><code>export VULKAN_SDK=$PWD/x86_64
+</code></pre>
+<p>and then:</p>
+<pre><code>export PATH=$VULKAN_SDK/bin:$PATH
+export LD_LIBRARY_PATH=$VULKAN_SDK/lib:$LD_LIBRARY_PATH
+export VK_LAYER_PATH=$VULKAN_SDK/etc/explicit_layer.d
+</code></pre>
+<p>It may be convenient to add these lines to your shell's login script, so that these variables are also available to desktop tools, such as cmake-gui, Qt-Creator or Android Studio.</p>
+<p>Refer to the <a href="./LoaderAndLayerInterface.html">Vulkan Common Loader</a> guide, Linux section, for detailed information on ICD and layer library search paths and order for this platform.</p>
+<h2>
+<a id="user-content-verify-the-installation" class="anchor" href="#user-content-verify-the-installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Verify the Installation</h2>
+<p>Verify the installation of the LunarG Vulkan SDK by running a few things:</p>
+<ol>
+<li>Run LunarG's Vulkan Installation Analyzer (VIA) to determine if it believes everything can execute properly.</li>
+</ol>
+<ul>
+<li>
+<code>via</code> does not come built in the Linux SDK by default, and requires building tools first before you can use it.
+<ul>
+<li>See <a href="#user-content-helper-build-scripts">Helper Build Scripts</a> for useful scripts to build the required dependencies.</li>
+</ul>
+</li>
+<li>More information on VIA can be found in the VIA.html doc found in this SDK's Documentation section.</li>
+</ul>
+<ol start="2">
+<li>Run a demo Vulkan application like <code>vulkaninfo</code>
+</li>
+</ol>
+<p><code>vulkaninfo</code> is a command provided in the SDK that outputs information describing the properties of the GPUs recognized in the system, extensions supported by each GPU, layers recognized, as well as information about the various image formats supported.</p>
+<p>Here is some example <code>vulkaninfo</code> output.
+The output on your system will vary slightly, depending the version of your Vulkan software and installed hardware.</p>
+<pre><code>$ vulkaninfo
+Instance Extensions     count = 2
+        DEBUG_REPORT                    : extension revision  1
+		VK_EXT_KHR_swapchain            : extension revision 17
+Instance Layers count = 11
+        VK_LAYER_LUNARG_object_tracker (LunarG Validation Layer) Vulkan version 1.0.0, layer version 1.0.0
+        VK_LAYER_LUNARG_object_tracker Extensions        count = 0
+
+        VK_LAYER_LUNARG_api_dump (LunarG debug layer) Vulkan version 1.0.0, layer version 1.0.0
+        VK_LAYER_LUNARG_api_dump Extensions      count = 0
+...
+Device Extensions and layers:
+=============================
+GPU0
+VkPhysicalDeviceProperties:
+===========================
+        apiVersion     = 696320
+        driverVersion  = 0
+        vendorId       = 0x8086
+        deviceId       = 0x0d26
+        deviceType     = INTEGRATED_GPU
+        deviceName     = Intel(R) Haswell Mobile
+        VkPhysicalDeviceLimits:
+        -----------------------
+                maxImageDimension1D                     = 0x2000
+                maxImageDimension2D                     = 0x2000
+...
+Device Extensions       count = 1
+        VK_EXT_KHR_device_swapchain     : extension revision 53
+...			
+</code></pre>
+<h2>
+<a id="user-content-build-and-run-the-example-applications" class="anchor" href="#user-content-build-and-run-the-example-applications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Build and Run the Example Applications</h2>
+<p>The LunarG Vulkan SDK includes the source for two example applications: <code>vulkaninfo</code>and <code>cube</code>. There are two versions of the cube example: one written in C using vulkan.h, and another written in C++11 using vulkan.hpp. The vulkan.hpp header file is a low-level C++11 API for Vulkan.</p>
+<p>To build and run the example applications:</p>
+<ol>
+<li>
+<p>Configure the example application build system for a release build and a debug build.</p>
+<pre><code>cd examples
+cmake -H. -Bbuild
+cmake -H. -Bdbuild -DCMAKE_BUILD_TYPE=Debug
+</code></pre>
+</li>
+<li>
+<p>Compile the example applications for both release and debug build environments.</p>
+<pre><code>make -C build
+make -C dbuild
+</code></pre>
+</li>
+<li>
+<p>Verify the build artifacts.</p>
+<pre><code>ll build dbuild
+</code></pre>
+<p><code>cube</code> <code>cubepp</code> and <code>vulkaninfo</code> executables should exist in both directories.</p>
+<p>Notice the <code>cube-vert.spv</code> and <code>cube-frag.spv</code> files.  These are SPIR-V form shaders generated from GLSL shaders by the <code>glslangValidator</code> tool.  Refer to the <a href="./spirv_toolchain.html">SPIR-V Toolchain</a> section for detailed information on  <code>glslangValidator</code>.</p>
+</li>
+<li>
+<p>Run the cube program.  Press the window close button to exit the application.</p>
+<pre><code>cd build
+./cube
+</code></pre>
+</li>
+</ol>
+<h2>
+<a id="user-content-helper-build-scripts" class="anchor" href="#user-content-helper-build-scripts" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Helper Build Scripts</h2>
+<p>The root SDK directory contains three helper scripts to aid building the Examples, Samples, and Tools. The scripts are appropriately named: <code>build_examples.sh</code>, <code>build_samples.sh</code>, and <code>build_tools.sh</code> respectively. Be sure that you have the necessary requirements (see <a href="#user-content-packages">Packages</a>) for running these scripts.</p>
+<p>After successfully running <code>build_examples.sh</code> or <code>build_samples</code>, the binaries will be located under the 'build' directory in 'examples' or 'samples' folders. Be sure your environmental variables are set before running the example or sample binaries, see <a href="#user-content-set-up-the-runtime-environment">Set up the Runtime Environment</a>. See <a href="#user-content-build-spirv-tools-spirv-cross-and-lunargs-vulkan-installation-analyzer-via">Build SPIRV-Tools, SPIRV-Cross, and VIA</a> for more information on <code>build_tools.sh</code>.</p>
+<h2>
+<a id="user-content-build-spirv-tools-spirv-cross-and-lunargs-vulkan-installation-analyzer-via" class="anchor" href="#user-content-build-spirv-tools-spirv-cross-and-lunargs-vulkan-installation-analyzer-via" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Build SPIRV-Tools, SPIRV-Cross, and LunarG's Vulkan Installation Analyzer (VIA)</h2>
+<p>LunarG's Vulkan SDK includes a <code>build_tools.sh</code> script to build SPIRV-Tools, SPIRV-Cross, and LunarG's Vulkan Installation Analyzer (VIA). Once built the tools will automatically be placed in the $VULKAN_SDK/x86_64/bin directory. Be sure to have your environmental variables set, see how to <a href="#user-content-set-up-the-runtime-environment">Set up the Runtime Environment</a>.</p>
+<p>Refer to <a href="./spirv_toolchain.html">SPIR-V Toolchain</a> for more information on SPIRV-Tools. LunarG's
+VIA is a tool used to analyze your Vulkan installation. The VIA tool creates an HTML file that
+describes your system and setup for help with bug submissions on <a href="https://vulkan.lunarg.com/" TARGET="_blank">LunarXchange</a>,
+see <a href="./via.html">VIA</a>.</p>
+<h2>
+<a id="user-content-trace-and-replay" class="anchor" href="#user-content-trace-and-replay" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Trace and Replay</h2>
+<p>The LunarG Vulkan SDK supports tracing and replaying Vulkan applications.</p>
+<p>Refer to the <a href="./trace_tools.html">Vulkan Trace and Replay Tools</a> guide for detailed information on Vulkan trace and replay.</p>
+<ol>
+<li>
+<p>Trace the <code>cube</code> example program.  Press the window close button to exit the application when you want to stop tracing.</p>
+<pre><code>vktrace -p cube -o cube_trace.vktrace
+</code></pre>
+<p>Close the program after a few seconds, using the window's close button.  Do not stop the program by using <code>ctrl+c</code> as doing so may result in a corrupted trace file.  Notice the trace options used in the command above.</p>
+<p><code>-p, --Program &lt;string&gt;</code> — name of the program to trace<br>
+<code>-o, --OutputTrace &lt;string&gt;</code> — path/name of the generated trace file</p>
+</li>
+<li>
+<p>The generated trace file, <code>cube_trace.vktrace</code>, is written to the current directory.</p>
+<pre><code>ls -als cube_trace.vktrace
+</code></pre>
+</li>
+<li>
+<p>Replay the cube trace file you just generated.</p>
+<pre><code>vkreplay -o cube_trace.vktrace -l 2
+</code></pre>
+<p>Notice the options used in the <code>vkreplay</code> command above.</p>
+<p><code>-o, --Open &lt;string&gt;</code> — name of trace file to replay; [required]<br>
+<code>-l, --NumLoops &lt;uint&gt;</code> — number of times to replay the trace</p>
+<p>The <code>-l 2</code> option replays the trace twice.</p>
+</li>
+</ol>
+<h2>
+<a id="user-content-enable-validation-layers" class="anchor" href="#user-content-enable-validation-layers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Enable Validation Layers</h2>
+<p>The LunarG Vulkan SDK includes runtime support for Debugging and Validation Layers.  These layers can be explicitly enabled for an application run or trace replay by setting the <code>VK_INSTANCE_LAYERS</code> environment variable to a colon-separated list of layer or extension names as found in the layer manifest files.  Refer to the <a href="./layers.html">Vulkan Validation and Debugging Layers</a> document for more information on layer manifest files.</p>
+<p>The LunarG Vulkan SDK includes the following layers:</p>
+<table>
+<thead>
+<tr>
+<th>Layer Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VK_LAYER_GOOGLE_unique_objects</td>
+<td>alias all Vulkan objects with a unique handle at create time. This is used during validation to ensure that duplicate object handles are correctly tracked.  Note that for optimal efficiency, this layer must be last in the chain (closest to the display driver)</td>
+</tr>
+<tr>
+<td>VK_LAYER_LUNARG_api_dump</td>
+<td>print API calls and their parameters and values</td>
+</tr>
+<tr>
+<td>VK_LAYER_LUNARG_core_validation</td>
+<td>print and validate the descriptor set, pipeline state, and dynamic state; validate the interfaces between SPIR-V modules and the graphics pipeline; track and validate GPU memory and its binding to objects and command buffers; validate texture formats and render target formats</td>
+</tr>
+<tr>
+<td>VK_LAYER_LUNARG_object_tracker</td>
+<td>print object create/use/destroy, tracking objects by category</td>
+</tr>
+<tr>
+<td>VK_LAYER_LUNARG_parameter_validation</td>
+<td>validate API parameters</td>
+</tr>
+<tr>
+<td>VK_LAYER_GOOGLE_threading</td>
+<td>check validity of multi-threaded API usage</td>
+</tr>
+<tr>
+<td>VK_LAYER_LUNARG_monitor</td>
+<td>Monitor the framerate of a program</td>
+</tr>
+</tbody>
+</table>
+<p>In addition to these layers, there is a built-in meta-layer definition which will load a standard set of validation layers in the optimal order:</p>
+<pre><code>     VK_LAYER_LUNARG_standard_validation
+</code></pre>
+<p>Loading this layer definition is equivalent to specifying the following layers in this order:</p>
+<pre><code>     VK_LAYER_GOOGLE_threading
+     VK_LAYER_LUNARG_parameter_validation
+     VK_LAYER_LUNARG_object_tracker
+     VK_LAYER_LUNARG_core_validation
+     VK_LAYER_GOOGLE_unique_objects
+</code></pre>
+<p>Refer to the <a href="./layers.html">Vulkan Validation and Debugging Layers</a> document for detailed information.</p>
+<h2>
+<a id="user-content-enable-other-layers" class="anchor" href="#user-content-enable-other-layers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Enable Other Layers</h2>
+<p>The Vulkan SDK also contains layers other than the validation layers.
+One example is the API Dump layer which outputs a textual report of the Vulkan API calls and parameters.</p>
+<p>You can explicitly activate the <code>VK_LAYER_LUNARG_api_dump</code> layer by setting the
+layer environment variables as described below.
+This example activates the API Dump layer while running the <code>cube</code> application that you built in the previous section:</p>
+<pre><code>VK_INSTANCE_LAYERS=VK_LAYER_LUNARG_api_dump ./cube
+</code></pre>
+<p>The API dump layer output should appear on the screen as the application runs, showing the
+API calls and parameter values.</p>
+<h2>
+<a id="user-content-debug-an-example-application-with-gdb" class="anchor" href="#user-content-debug-an-example-application-with-gdb" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Debug an Example Application with gdb</h2>
+<p>LunarG's Vulkan SDK includes debug libraries and source code for the loader and layer providing a rudimentary <code>gdb</code> debug environment for Vulkan applications.
+The source code for these components is found in the <code>source</code> directory.
+Note that the code shown in the sample debugger output below may not exactly match the code you see in your session.</p>
+<table>
+<thead>
+<tr>
+<th>Component/Directory Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>layers</td>
+<td>layer source and generated code</td>
+</tr>
+<tr>
+<td>lib</td>
+<td>debuggable shared libraries</td>
+</tr>
+<tr>
+<td>loader</td>
+<td>loader source and generated code</td>
+</tr>
+</tbody>
+</table>
+<p>Follow these steps to debug the <code>cube</code> example application built in a previous section.</p>
+<ol>
+<li>
+<p>Identify the location of the Vulkan application and framework source code to <code>gdb</code> by creating or adding to <code>$HOME/.gdbinit</code>.  Include the following lines.  (Substitute the complete path name to the SDK local install <code>source</code> directory for <code>$SOURCEDIR</code>. )</p>
+<pre><code>directory $SOURCEDIR/layers
+directory $SOURCEDIR/loader
+directory $SOURCEDIR/../examples
+</code></pre>
+</li>
+<li>
+<p>Set up the Vulkan debug environment to use the debug shared libraries.</p>
+<pre><code>export LD_LIBRARY_PATH=$SOURCEDIR/lib:$LD_LIBRARY_PATH
+export VK_LAYER_PATH=$VULKAN_SDK/etc/explicit_layer.d
+</code></pre>
+</li>
+<li>
+<p>Initiate debugging the <code>cube</code> example application from the debug build executable.</p>
+<pre><code>cd $SOURCEDIR/../examples/dbuild
+gdb ./cube
+</code></pre>
+</li>
+<li>
+<p>Set a breakpoint at the <code>vkCreateDevice()</code> function and begin execution.  The debugger stops at the breakpoint in the loader.</p>
+<pre><code>(gdb) b vkCreateDevice
+Breakpoint 1 at 0x4028d0
+(gdb) r
+Starting program: /home/dev/1.0.13.0/examples/dbuild/cube
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, vkCreateDevice (physicalDevice=0x63e5d0, pCreateInfo=0x7fffffffcf20, pAllocator=0x0,
+    pDevice=0x7fffffffd140)
+    at /home/lunarg/Development/LinuxSDK/Vulkan-LoaderAndValidationLayers/loader/trampoline.c:655
+655       assert(pCreateInfo-&gt;queueCreateInfoCount &gt;= 1);
+
+</code></pre>
+</li>
+<li>
+<p>Examine the backtrace and source.</p>
+<pre><code>(gdb) bt
+#0  vkCreateDevice (physicalDevice=0x63e5d0, pCreateInfo=0x7fffffffcf20, pAllocator=0x0, pDevice=0x7fffffffd140)
+    at /home/lunarg/Development/LinuxSDK/Vulkan-LoaderAndValidationLayers/loader/trampoline.c:655
+#1  0x0000000000407faa in demo_init_device (demo=0x7fffffffd100) at /home/dev/1.0.13.0/examples/cube.c:2205
+#2  0x000000000040820a in demo_init_vk_swapchain (demo=0x7fffffffd100) at /home/dev/1.0.13.0/examples/cube.c:2299
+#3  0x0000000000408f79 in main (argc=1, argv=0x7fffffffde58) at /home/dev/1.0.13.0/examples/cube.c:2668
+(gdb) list
+650       VkResult res;
+651       struct loader_physical_device_tramp *phys_dev;
+652       struct loader_device *dev;
+653       struct loader_instance *inst;
+654
+655       assert(pCreateInfo-&gt;queueCreateInfoCount &gt;= 1);
+656
+657       loader_platform_thread_lock_mutex(&amp;loader_lock);
+658
+659       phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
+</code></pre>
+</li>
+<li>
+<p>Step through a few lines and then resume execution.</p>
+<pre><code>(gdb) n
+657       loader_platform_thread_lock_mutex(&amp;loader_lock);
+(gdb) n
+659       phys_dev = (struct loader_physical_device_tramp *)physicalDevice;
+(gdb) n
+660       inst = (struct loader_instance *)phys_dev-&gt;this_instance;
+(gdb) n
+664       if (!loader_init_generic_list(inst, (struct loader_generic_list *)&amp;icd_exts,
+(gdb) c
+Continuing.
+</code></pre>
+</li>
+<li>
+<p>Exit the debugger (press CTRL-C to return to the gdb prompt).</p>
+<pre><code>(gdb) q
+</code></pre>
+</li>
+</ol>
+<h2>
+<a id="user-content-examine-vulkan-sample-code" class="anchor" href="#user-content-examine-vulkan-sample-code" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Examine Vulkan Sample Code</h2>
+<p>The LunarG Vulkan SDK includes the Vulkan Samples Kit. This set of Vulkan code <a href="./samples_index.html">Samples</a> is a work in progress.  Refer to the <a href="./vulkan_samples.html">Vulkan Samples Kit</a> guide for information about building and running the sample programs.</p>
+<p>Contact LunarG if you are interested in contributing to this effort.</p>
+<h2>
+<a id="user-content-next-steps" class="anchor" href="#user-content-next-steps" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Next Steps</h2>
+<p>This guide provided an introduction to the main components and tools in LunarG's Vulkan SDK.  Refer to <a href="https://Vulkan.LunarG.com" TARGET="_blank" title="LunarXchange">Vulkan.LunarG.com</a> for the most up to date SDK information, including the complete set of SDK documentation.</p>
+</article>
+</body>
+</html>

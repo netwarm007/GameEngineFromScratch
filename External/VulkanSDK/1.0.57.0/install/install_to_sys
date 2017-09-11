@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Check if dpkg is in the user's path.
+if command -v dpkg >/dev/null 2>&1; then
+	# if vulkan runtime previously installed, uninstall it
+	DPKG=`dpkg -l | grep vulkan`
+
+	if [[ $DPKG == *"vulkan-sdk-runtime"* ]]; then
+		echo "Removing previously installed LunarG Vulkan SDK runtime; requires root access"
+		sudo dpkg -P vulkan-sdk-runtime
+	fi
+
+	if [[ $DPKG == *"vulkan-loader"* ]]; then
+		echo "Removing previously installed LunarG Vulkan SDK loader; requires root access"
+		sudo dpkg -P vulkan-loader
+	fi
+
+	if [[ $DPKG == *"vulkan-sdk-headers"* ]]; then
+		echo "Removing previously installed LunarG Vulkan SDK headers; requires root access"
+		sudo dpkg -P vulkan-sdk-headers
+	fi
+fi
+
+# install the SDK to system locations
+#echo "Installing LunarG Vulkan SDK to system directories; requires root access"
+#sudo dpkg -i $1/install/*.deb

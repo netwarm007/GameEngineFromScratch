@@ -1,0 +1,272 @@
+<h1>Create a Graphics Pipeline</h1>
+
+<p><link href="../css/lg_stylesheet.css" rel="stylesheet"></link></p>
+
+<p>Code file for this section is <code>14-init_pipeline.cpp</code></p>
+
+<p>You are getting closer to pulling it all together enough to draw a cube!
+The next step is to configure the GPU for rendering by setting up a
+graphics pipeline.</p>
+
+<p>A graphics pipeline consists of shader stages, a pipeline layout,
+a render pass, and fixed-function pipeline stages.
+You defined shader stages and pipeline layouts in earlier sections.
+Here, you will configure the remaining fixed-function pipeline stages.
+This involves filling in some "create info" data structures for
+creating the pipeline.
+Most of the work performed here configures the per-fragment operations,
+just before the fragments are placed in the framebuffer.</p>
+
+<p>Here's a diagram showing the big picture:</p>
+
+<p><img src="../images/GraphicsPipeline.png" alt="Graphics Pipeline" title=""></p>
+
+<p>The next step is to configure the pipeline state objects, represented by the stack
+of grey boxes on the lower right.
+The final step is to connect the other objects pointed to from the purple pipeline box
+on the upper left in order to complete the definition of your graphics pipeline.</p>
+
+<h2>Dynamic State</h2>
+
+<p>A dynamic pipeline state is a state that can be changed by a command buffer command
+during the execution of a command buffer.
+Advance notification of what states are dynamic during command buffer execution may
+be useful for a driver as it sets up the GPU for command buffer execution.</p>
+
+<p>The sample provides a list of states that it intends to change during
+command buffer execution.
+Here, the code starts out by setting up a list of dynamic states and starts out with
+them all disabled.</p>
+
+<pre><code>VkDynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
+VkPipelineDynamicStateCreateInfo dynamicState = {};
+memset(dynamicStateEnables, 0, sizeof dynamicStateEnables);
+dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+dynamicState.pNext = NULL;
+dynamicState.pDynamicStates = dynamicStateEnables;
+dynamicState.dynamicStateCount = 0;
+</code></pre>
+
+<p>Later, the sample indicates that it intends to change some of the states dynamically
+with a command buffer command, so it will later change the <code>dynamicStateEnables</code>
+array, when it configures the viewport and scissors rectangles.
+The code to modify the <code>dynamicStateEnables</code> is kept with the viewport and scissors
+configuration code below for clarity.</p>
+
+<h2>Pipeline Vertex Input State</h2>
+
+<p>You already initialized the vertex input state when you created the vertex buffer because
+it was straightforward to do it at that time.
+The input state includes the format and arrangement of the vertex data.
+You can review the vertexbuffer sample to see how the <code>vi_binding</code> and
+<code>vi_attribs</code> variables are set.</p>
+
+<pre><code>VkPipelineVertexInputStateCreateInfo vi;
+vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+vi.pNext = NULL;
+vi.flags = 0;
+vi.vertexBindingDescriptionCount = 1;
+vi.pVertexBindingDescriptions = &amp;info.vi_binding;
+vi.vertexAttributeDescriptionCount = 2;
+vi.pVertexAttributeDescriptions = info.vi_attribs;
+</code></pre>
+
+<h2>Pipeline Vertex Input Assembly State</h2>
+
+<p>The input assembly state is basically where you declare how your vertices form
+the geometry you want to draw.
+For example, your vertices may be intended to form a triangle strip or
+triangle fan.
+Here, we are just using a list of triangles, where every three vertices
+describe a triangle:</p>
+
+<pre><code>VkPipelineInputAssemblyStateCreateInfo ia;
+ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+ia.pNext = NULL;
+ia.flags = 0;
+ia.primitiveRestartEnable = VK_FALSE;
+ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+</code></pre>
+
+<h2>Pipeline Rasterization State</h2>
+
+<p>The next data structure configures the rasterization operations in the GPU.</p>
+
+<pre><code>VkPipelineRasterizationStateCreateInfo rs;
+rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+rs.pNext = NULL;
+rs.flags = 0;
+rs.polygonMode = VK_POLYGON_MODE_FILL;
+rs.cullMode = VK_CULL_MODE_BACK_BIT;
+rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
+rs.depthClampEnable = VK_TRUE;
+rs.rasterizerDiscardEnable = VK_FALSE;
+rs.depthBiasEnable = VK_FALSE;
+rs.depthBiasConstantFactor = 0;
+rs.depthBiasClamp = 0;
+rs.depthBiasSlopeFactor = 0;
+rs.lineWidth = 1.0f;
+</code></pre>
+
+<p>These fields are set with fairly common values that you would expect for
+our straightforward cube rendering sample.
+You may recognize the correlation between the <code>frontFace</code> member and
+the GL function <code>glFrontFace()</code>.</p>
+
+<h2>Pipeline Color Blend State</h2>
+
+<p>Blending is another "end of the fixed pipe" operation that you configure here
+to do simple replacement of pixels in the destination:</p>
+
+<pre><code>VkPipelineColorBlendStateCreateInfo cb;
+cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+cb.pNext = NULL;
+cb.flags = 0;
+VkPipelineColorBlendAttachmentState att_state[1];
+att_state[0].colorWriteMask = 0xf;
+att_state[0].blendEnable = VK_FALSE;
+att_state[0].alphaBlendOp = VK_BLEND_OP_ADD;
+att_state[0].colorBlendOp = VK_BLEND_OP_ADD;
+att_state[0].srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+att_state[0].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+att_state[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+att_state[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+cb.attachmentCount = 1;
+cb.pAttachments = att_state;
+cb.logicOpEnable = VK_FALSE;
+cb.logicOp = VK_LOGIC_OP_NO_OP;
+cb.blendConstants[0] = 1.0f;
+cb.blendConstants[1] = 1.0f;
+cb.blendConstants[2] = 1.0f;
+cb.blendConstants[3] = 1.0f;
+</code></pre>
+
+<p>Note that some of the configuration info is provided on a per-attachment basis.
+You need to have one <code>VkPipelineColorBlendAttachmentState</code> for each color attachment
+in your pipeline.
+In this case, there is only one color attachment.</p>
+
+<p>The <code>colorWriteMask</code> selects which of the R, G, B, and/or A components are enabled for writing.
+Here, you enable all 4 components.</p>
+
+<p>You disable <code>blendEnable</code> which means that the rest of the settings in <code>att_state[0]</code>
+related to blending do not matter much.</p>
+
+<p>You also disable the pixel-writing logical operation, since this sample just does
+a simple replacement when writing pixels to the framebuffer.</p>
+
+<p>The blend constants are used for some of the "blend factors"
+(e.g., <code>VK_BLEND_FACTOR_CONSTANT_COLOR</code>)
+and are just set to something reasonable, as they are not used in this sample.</p>
+
+<h2>Pipeline Viewport State</h2>
+
+<p>The draw_cube sample is going to set the viewport and scissors rectangles using
+commands in the command buffer.
+This code tells the driver that these viewport and scissors states are dynamic and to
+ignore the <code>pViewPorts</code> and <code>pScissors</code> members.</p>
+
+<pre><code>VkPipelineViewportStateCreateInfo vp = {};
+vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+vp.pNext = NULL;
+vp.flags = 0;
+vp.viewportCount = 1;
+dynamicStateEnables[dynamicState.dynamicStateCount++] = VK_DYNAMIC_STATE_VIEWPORT;
+vp.scissorCount = 1;
+dynamicStateEnables[dynamicState.dynamicStateCount++] = VK_DYNAMIC_STATE_SCISSOR;
+vp.pScissors = NULL;
+vp.pViewports = NULL;
+</code></pre>
+
+<h2>Pipeline Depth Stencil State</h2>
+
+<p>Continue with the backend fixed-function initialization by setting up the
+depth buffer for the commonly used configuration and disable the stencil operations.</p>
+
+<pre><code>VkPipelineDepthStencilStateCreateInfo ds;
+ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+ds.pNext = NULL;
+ds.flags = 0;
+ds.depthTestEnable = VK_TRUE;
+ds.depthWriteEnable = VK_TRUE;
+ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+ds.depthBoundsTestEnable = VK_FALSE;
+ds.minDepthBounds = 0;
+ds.maxDepthBounds = 0;
+ds.stencilTestEnable = VK_FALSE;
+ds.back.failOp = VK_STENCIL_OP_KEEP;
+ds.back.passOp = VK_STENCIL_OP_KEEP;
+ds.back.compareOp = VK_COMPARE_OP_ALWAYS;
+ds.back.compareMask = 0;
+ds.back.reference = 0;
+ds.back.depthFailOp = VK_STENCIL_OP_KEEP;
+ds.back.writeMask = 0;
+ds.front = ds.back;
+</code></pre>
+
+<p>Since you do want to so depth buffering, you enable depth buffer writing and testing.
+In addition, you set the depth buffer compare operation to the commonly used
+<code>VK_COMPARE_OP_LESS_OR_EQUAL</code>.
+Finally, you disable stencil operations since this sample has no need for it.</p>
+
+<h2>Pipeline Multisample State</h2>
+
+<p>You're not going to do any fancy multisampling in this sample,
+so finish off the pipeline configuration by setting up for no multisampling.</p>
+
+<pre><code>VkPipelineMultisampleStateCreateInfo ms;
+ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+ms.pNext = NULL;
+ms.flags = 0;
+ms.pSampleMask = NULL;
+ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+ms.sampleShadingEnable = VK_FALSE;
+ms.alphaToCoverageEnable = VK_FALSE;
+ms.alphaToOneEnable = VK_FALSE;
+ms.minSampleShading = 0.0;
+</code></pre>
+
+<h2>Pulling It All Together - Create Graphics Pipeline</h2>
+
+<p>Finally, you have all the information needed to create the pipeline:</p>
+
+<pre><code>VkGraphicsPipelineCreateInfo pipeline;
+pipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+pipeline.pNext = NULL;
+pipeline.layout = info.pipeline_layout;
+pipeline.basePipelineHandle = VK_NULL_HANDLE;
+pipeline.basePipelineIndex = 0;
+pipeline.flags = 0;
+pipeline.pVertexInputState = &amp;vi;
+pipeline.pInputAssemblyState = &amp;ia;
+pipeline.pRasterizationState = &amp;rs;
+pipeline.pColorBlendState = &amp;cb;
+pipeline.pTessellationState = NULL;
+pipeline.pMultisampleState = &amp;ms;
+pipeline.pDynamicState = &amp;dynamicState;
+pipeline.pViewportState = &amp;vp;
+pipeline.pDepthStencilState = &amp;ds;
+pipeline.pStages = info.shaderStages;
+pipeline.stageCount = 2;
+pipeline.renderPass = info.render_pass;
+pipeline.subpass = 0;
+
+res = vkCreateGraphicsPipelines(info.device, NULL, 1,
+                                &amp;pipeline, NULL, &amp;info.pipeline);
+</code></pre>
+
+<p>The <code>info.pipeline_layout</code>, <code>info.shaderStages</code>, and <code>info.render_pass</code> members
+were initialized in previous sections of this tutorial.
+The rest of the members in this structure were set up in this section.</p>
+
+<p>With the pipeline created, you are ready to go on to the next section and draw the cube.</p>
+
+<table border="1" width="100%">
+    <tr>
+        <td align="center" width="33%"><a href="13-init_vertex_buffer.html" title="Prev">Vertex Buffer</a></td>
+        <td align="center" width="33%"><a href="index.html" title="Index">Index</a></td>
+        <td align="center" width="33%"><a href="15-draw_cube.html" title="Next">Draw Cube</a></td>
+    </tr>
+</table>
+
+<p><footer>&copy; Copyright 2016 LunarG, Inc</footer></p>

@@ -1,0 +1,73 @@
+// Copyright 2016 Google Inc. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+apply plugin: 'com.android.application'
+
+def ndkDir
+if (project.rootProject.file('local.properties').exists()) {
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    ndkDir = properties.getProperty('ndk.dir')
+}
+if (!ndkDir) {
+    ndkDir=System.getenv("ANDROID_NDK_HOME")
+}
+
+if(!ndkDir || ndkDir.empty) {
+   throw new GradleException('Environment Variable ANDROID_NDK_HOME for NDK path need to be setup')
+}
+
+
+def stlType = 'gnustl_static'
+
+android {
+    compileSdkVersion  24
+    buildToolsVersion '25.0.0'
+
+    defaultConfig {
+        applicationId '@PACKAGE_NAME@'
+        minSdkVersion    22
+        targetSdkVersion 24
+        versionCode  1
+        versionName '0.0.1'
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_PLATFORM=android-24', '-DANDROID_TOOLCHAIN=clang',
+                          "-DANDROID_STL=${stlType}", '-DSAMPLE_NAME=' + project.getName()
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path '../CMakeLists.txt'
+        }
+    }
+    @OTHER_FLAGS@
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-rules.pro'
+        }
+    }
+    @ASSET_DIR@
+    @VALIDATIONLAYER_PACKING@
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}

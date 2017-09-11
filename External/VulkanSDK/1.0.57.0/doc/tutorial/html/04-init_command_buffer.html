@@ -1,0 +1,143 @@
+<h1>Create a Command Buffer</h1>
+
+<p><link href="../css/lg_stylesheet.css" rel="stylesheet"></link></p>
+
+<p>Code file for this section is <code>04-init_command_buffer.cpp</code></p>
+
+<h2>Basic Command Buffer Operation</h2>
+
+<p>In other graphics APIs, an application might set an attribute such
+as line width by making an API call like <code>glLineWidth()</code>.
+Under the covers, the driver translates this API call into a GPU-specific
+command and puts the command into a command buffer.
+The driver also manages the command buffers, by creating and
+destroying them, out of view of the application.
+Eventually, the driver "submits" the command buffer to the
+GPU to process the commands.</p>
+
+<p>In Vulkan, you create a command buffer and make a similar Vulkan API
+call <code>vkCmdSetLineWidth()</code> to add a command to the command buffer.
+Since each GPU has its own "instruction set", the driver still needs
+to do a little work to generate the GPU-specific instructions to set
+the line width.</p>
+
+<p><img src="../images/CommandBufferInsert.png" alt="Command Buffer Insert" title=""></p>
+
+<p>Here, the driver determines the appropriate binary GPU instructions to
+insert into the command buffer to instruct the GPU to use a line width
+of 5 to draw subsequent lines.
+You don't need to see the actual command buffer contents since the driver is doing this
+part of the GPU programming for you.</p>
+
+<h3>Command Buffer Pools</h3>
+
+<p>The next step is to learn how to get a command buffer.
+Take a look at the <code>04-init_command_buffer.cpp</code> file in the samples
+repository for this section.</p>
+
+<p>Since creating and destroying individual command buffers can be
+expensive, Vulkan uses command buffer pools to manage command buffers.
+The motivations for using a command buffer pool include:</p>
+
+<ol>
+<li><p>Some applications use short-lived command buffers, meaning that they are
+created and destroyed frequently.
+Specialized pool allocators can generally handle these allocation patterns more efficiently.</p></li>
+<li><p>Command buffer memory is special in that it must be visible to
+both the CPU and GPU.
+In many systems, the mapping of memory to processors (CPU or GPU)
+can only be done using large granularities, which implies that a small
+command buffer may waste a lot of memory.</p></li>
+<li><p>Memory mapping is expensive because it usually involves
+modifying page tables and invalidating TLB caches.
+It is better to map a larger command buffer pool once and sub-allocate
+individual command buffers within it, rather than map each command
+buffer separately.</p></li>
+</ol>
+
+<h4>Command Buffer Pools and Queue Families</h4>
+
+<p>A driver allocates a command buffer pool using memory allocation
+attributes that are appropriate for the GPU hardware that reads
+the command buffer memory.
+Examples of such attributes include memory alignment requirements
+and cache behavior.</p>
+
+<p>If there is more than one hardware queue in the GPU hardware,
+as described by the physical device queue families, then
+the driver might need to allocate command buffer pools with
+different memory allocation attributes, specific to each GPU
+hardware queue.
+These details are handled for you by the driver as long as it
+knows the queue family containing the queue that the command buffer will use.</p>
+
+<p>This also means that a command buffer pool can be associated with only one
+queue family.
+This requirement shows up in the API design via the code needed to create a command
+buffer pool, where you specify the queue family index:</p>
+
+<pre><code>VkCommandPoolCreateInfo cmd_pool_info = {};
+cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+cmd_pool_info.pNext = NULL;
+cmd_pool_info.queueFamilyIndex = info.graphics_queue_family_index;
+cmd_pool_info.flags = 0;
+
+res = vkCreateCommandPool(info.device, &amp;cmd_pool_info, NULL, &amp;info.cmd_pool);
+</code></pre>
+
+<p>Note that you decided what queues to use when you created the device
+in the <a href="03-init_device.html">previous section</a>.
+Effectively, you would have to create a command buffer pool for
+each unique queue family that the application intends to use.
+Since you specified only one queue family when you created the device,
+one command buffer pool suffices for these samples.</p>
+
+<h2>Creating the Command Buffer</h2>
+
+<p>Once a command buffer pool is created, allocating a command buffer
+from that pool is easy:</p>
+
+<pre><code>VkCommandBufferAllocateInfo cmd = {};
+cmd.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+cmd.pNext = NULL;
+cmd.commandPool = info.cmd_pool;
+cmd.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+cmd.commandBufferCount = 1;
+
+res = vkAllocateCommandBuffers(info.device, &amp;cmd, &amp;info.cmd);
+</code></pre>
+
+<p>Note that this API call is designed to make it easy to allocate
+more than one command buffer in a single call.
+This can be useful for applications that need many command buffers.
+But the samples are simple enough to need only one.</p>
+
+<h2>Using Command Buffers</h2>
+
+<p>Once you have created a command buffer, you start "recording" into it by calling
+<code>vkBeginCommandBuffer()</code>.
+Calling this function puts the command buffer into "recording" state and allows you
+to call one of the many "vkCmd*" functions that insert commands into the command buffer.
+You have already seen the <code>vkCmdSetLineWidth()</code> example here in this section.
+Another example is <code>vkCmdDraw()</code>, which tells the GPU to draw some vertices.
+When you are finished inserting commands into the command buffer, you call
+<code>vkEndCommandBuffer()</code> to indicate you are done and take the command buffer out
+of recording state and make it ready for use.</p>
+
+<p>You will see code that actually populates command buffers in later sections.</p>
+
+<p>Finishing the command buffer recording does not make the GPU do anything.
+In order for the GPU to process a command buffer, you must submit it onto the GPU's
+queue using <code>vkQueueSubmit()</code>.
+There are still a lot of things to set up before you can submit a command
+buffer to the GPU, which will happen in the final section of this tutorial.</p>
+
+<table border="1" width="100%">
+    <tr>
+        <td align="center" width="33%">Previous: <a href="03-init_device.html" title="Prev">Device</a></td>
+        <td align="center" width="33%">Back to: <a href="index.html" title="Index">Index</a></td>
+        <td align="center" width="33%">Next: <a href="05-init_swapchain.html" title="Next">Swapchain</a></td>
+    </tr>
+</table>
+
+<p><footer>&copy; Copyright 2016 LunarG, Inc</footer></p>

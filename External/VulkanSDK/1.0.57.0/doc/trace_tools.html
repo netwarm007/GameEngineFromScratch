@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="icon" href="vulkan_lunarg_icon.png">
+<link rel="stylesheet" href="github-markdown.css">
+<style>
+    body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+    }
+</style>
+</head>
+<body>
+<article class="markdown-body">
+<h1>
+<a id="user-content-trace-and-replay-tools" class="anchor" href="#user-content-trace-and-replay-tools" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Trace and Replay Tools</h1>
+<p>The LunarG Vulkan SDK includes application trace, replay, and validation programs and libraries.</p>
+<h2>
+<a id="user-content-tracing-and-trace-files" class="anchor" href="#user-content-tracing-and-trace-files" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Tracing and Trace Files</h2>
+<p>The LunarG Vulkan SDK provides the capability to trace Vulkan applications.  The SDK includes executables and libraries to trace both local and remote apps.</p>
+<p>When tracing, the tools record the application's Vulkan API calls to a file named with a <code>.vktrace</code> suffix.  The call information is stored in the trace file in a compact binary format.</p>
+<p>The trace program is named <code>vktrace</code>.  Options to the <code>vktrace</code> command include:</p>
+<table>
+<thead>
+<tr>
+<th>Trace Option</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-a &lt;string&gt;<br>‑‑Arguments &lt;string&gt;</td>
+<td>Command line arguments to pass to the application to be traced</td>
+<td>none</td>
+</tr>
+<tr>
+<td>-o &lt;string&gt;<br>‑‑OutputTrace &lt;string&gt;</td>
+<td>Name of the generated trace file</td>
+<td><strong>required</strong></td>
+</tr>
+<tr>
+<td>-p &lt;string&gt;<br>‑‑Program &lt;string&gt;</td>
+<td>Name of the application to trace</td>
+<td>if not provided, server mode tracing is enabled</td>
+</tr>
+<tr>
+<td>-ptm &lt;bool&gt;<br>‑‑PrintTraceMessages &lt;bool&gt;</td>
+<td>Print trace messages to console</td>
+<td>on</td>
+</tr>
+<tr>
+<td>-s &lt;string&gt;<br>‑‑Screenshot &lt;string&gt;</td>
+<td>Comma-separated list of frame numbers of which to take screen shots</td>
+<td>no screenshots</td>
+</tr>
+<tr>
+<td>-w &lt;string&gt;<br>‑‑WorkingDir &lt;string&gt;</td>
+<td>Alternate working directory</td>
+<td>the application's directory</td>
+</tr>
+<tr>
+<td>-P &lt;string&gt;<br>‑‑PMB &lt;bool&gt;</td>
+<td>Optimize trace of persistently mapped buffers</td>
+<td>on</td>
+</tr>
+<tr>
+<td>-v &lt;string&gt;<br>‑‑Verbosity &lt;string&gt;</td>
+<td>Verbosity mode - "quiet", "errors", "warnings", or "full"</td>
+<td>errors</td>
+</tr>
+</tbody>
+</table>
+<p>In local tracing mode, both the <code>vktrace</code> and application executables reside on the same system.</p>
+<p>An example command to trace the SDK sample <code>cube</code> application in local mode follows.</p>
+<p>Linux shell:</p>
+<pre><code>$ cd examples/build
+$ vktrace -p ./cube -o cubetrace.vktrace
+</code></pre>
+<p>Windows Powershell:</p>
+<pre><code>PS&gt; cd C:\Users\&lt;Name&gt;\Desktop
+PS&gt; vktrace -p C:\VulkanSDK\&lt;Version&gt;\Bin\cube.exe -o cubetrace.vktrace
+</code></pre>
+<p><strong>Note:</strong> Subsequent command examples in this document are written using Linux shell commands. These example commands can be translated and used as Windows Powershell commands.</p>
+<p>Trace packets are written to the file <code>cubetrace.vktrace</code> in the local directory.  Output messages from the replay operation are written to <code>stdout</code>.</p>
+<p><em>Important</em>:  Subsequent <code>vktrace</code> runs with the same <code>-o</code> option value will overwrite the trace file, preventing the generation of multiple, large trace files.  Be sure to specify a unique output trace file name for each <code>vktrace</code> invocation if you do not desire this behaviour.</p>
+<h2>
+<a id="user-content-clientserver-mode" class="anchor" href="#user-content-clientserver-mode" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Client/Server Mode</h2>
+<p>The tools also support tracing Vulkan applications in client/server mode, where the trace server resides on a local or a remote system.</p>
+<h3>
+<a id="user-content-server" class="anchor" href="#user-content-server" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Server</h3>
+<p>In client/server mode, the <code>vktrace</code> <em>server</em> is started without specifying the <code>-p</code> or <code>--program</code> option.  Invoked in this fashion, the <code>vktrace</code> enters a waiting mode for trace packets.</p>
+<pre><code>$ mkdir examples/traces
+$ cd examples/traces
+$ vktrace -o cubetrace_s.vktrace
+No program (-p) parameter found: Running vktrace as server.
+</code></pre>
+<p>Trace files will be written to <code>cubetrace_s&lt;</code><em><code>N</code></em><code>&gt;.vktrace</code>, with the trace server incrementing <em><code>N</code></em> for each unique run of the application after the first.</p>
+<h3>
+<a id="user-content-client" class="anchor" href="#user-content-client" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Client</h3>
+<p>The tracer is implemented as a Vulkan layer.  When tracing in server mode, the local or remote client must enable the <code>Vktrace</code> layer.  The <code>Vktrace</code> layer <em>must</em> be the first layer identified in each of the <code>VK_INSTANCE_LAYERS</code> lists.</p>
+<pre><code>$ export VK_INSTANCE_LAYERS=Vktrace
+</code></pre>
+<h4>
+<a id="user-content-local-client" class="anchor" href="#user-content-local-client" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Local Client</h4>
+<p>Local client/server mode is particularly useful for Vulkan applications with multiple runtime options or complicated startup.</p>
+<p>In local client/server mode, the tracer layer must be eanbled before the local client application to be traced is launched.</p>
+<pre><code>$ cd examples/build
+$ export VK_INSTANCE_LAYERS=Vktrace
+$ ./cube
+</code></pre>
+<p>The generated trace file is found at <code>examples/traces/cubetrace_s0.vktrace</code>.</p>
+<p><em>Note</em>:  The <code>cube</code> application is used to demonstrate tracing in client/server mode.  <code>cube</code> is a very simple application, and would not be traced in this mode in practice.</p>
+<h4>
+<a id="user-content-remote-client" class="anchor" href="#user-content-remote-client" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Remote Client</h4>
+<p>Remote client/server mode is useful if the client is a mobile device or running in a lightweight environment that might not have the disk or other capabilities to store large trace files.</p>
+<p>In remote client/server mode, the remote client must additionally identify the IP address of the trace server system.</p>
+<pre><code>$ cd examples/build
+$ export VKTRACE_LIB_IPADDR=&lt;ip address of trace server system&gt;
+$ export VK_INSTANCE_LAYERS=Vktrace
+$ ./cube
+</code></pre>
+<p>The generated trace file is located at <code>examples/traces/cubetrace_s1.vktrace</code> on the remote trace server system.</p>
+<h2>
+<a id="user-content-replay" class="anchor" href="#user-content-replay" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Replay</h2>
+<p>The LunarG Vulkan SDK provides the capability to replay a Vulkan application trace.</p>
+<p><strong>Important</strong>:  Trace files generated with early release versions of the LunarG Vulkan SDK may not be replayable with tools from later LunarG Vulkan SDKs, particularly until the Vulkan specification is finalized and officially released by Khronos.</p>
+<p><strong>Important</strong>:  Trace files generated on one GPU architecture are not currently replayable on another GPU architecture.</p>
+<p>The trace replay program is <code>vkreplay</code>.  <code>vkreplay</code> options include:</p>
+<table>
+<thead>
+<tr>
+<th>Replay Option</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-o &lt;string&gt;<br>‑‑Open &lt;string&gt;</td>
+<td>Name of trace file to open and replay</td>
+<td><strong>required</strong></td>
+</tr>
+<tr>
+<td>-l &lt;int&gt;<br>‑‑NumLoops &lt;int&gt;</td>
+<td>Number of times to replay the trace file</td>
+<td>1</td>
+</tr>
+<tr>
+<td>-lsf &lt;int&gt;<br>‑‑LoopStartFrame &lt;int&gt;</td>
+<td>The start frame number of the loop range</td>
+<td>0</td>
+</tr>
+<tr>
+<td>-lef &lt;int&gt;<br>‑‑LoopEndFrame &lt;int&gt;</td>
+<td>The end frame number of the loop range</td>
+<td>the last frame in the tracefile</td>
+</tr>
+<tr>
+<td>-s &lt;string&gt;<br>‑‑Screenshot &lt;string&gt;</td>
+<td>Comma-separated list of frame numbers of which to take screen shots</td>
+<td>no screenshots</td>
+</tr>
+<tr>
+<td>-v &lt;string&gt;<br>‑‑Verbosity &lt;string&gt;</td>
+<td>Verbosity mode - "quiet", "errors", "warnings", or "full"</td>
+<td>errors</td>
+</tr>
+</tbody>
+</table>
+<p>To replay the cube application trace first captured in the example above:</p>
+<pre><code>$ cd examples/build
+$ vkreplay -o cubetrace.vktrace -l 5
+</code></pre>
+<p>If the trace is rather short, the replay may finish quickly.  Specify the <code>-l</code> or <code>--NumLoops</code> option to replay the trace <code>NumLoops</code> option value times.</p>
+<p>Output messages from the replay operation are written to <code>stdout</code>.</p>
+<h2>
+<a id="user-content-replayer-interaction-with-layers" class="anchor" href="#user-content-replayer-interaction-with-layers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Replayer Interaction with Layers</h2>
+<p>The Vulkan validation layers may be enabled for trace replay.  Replaying a trace with layers activated provides many benefits.  Developers can take advantage of new validation capabilities as they are developed with older and existing trace files.</p>
+<p>To activate specific layers on a trace replay, set the <code>VK_INSTANCE_LAYERS</code> environment variable to a colon-separated list of layer names before replaying the trace. Refer to the <a href="./layers.html">Vulkan Validation and Debugging Layers</a> guide for additional information on layers and how to configure layer output options.</p>
+<h2>
+<a id="user-content-vktraceviewer" class="anchor" href="#user-content-vktraceviewer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>vktraceviewer</h2>
+<p>The Vulkan SDK includes vktraceviewer. This tool allows interactive creation and viewing of Vulkan trace files. In the future, it will include support for interactively playing back trace files. This is alpha software.</p>
+<p>In order to run vktraceviewer on Linux, Qt5 libraries need to be installed on the system.</p>
+<h2>
+<a id="user-content-persistently-mapped-buffers-and-vktrace" class="anchor" href="#user-content-persistently-mapped-buffers-and-vktrace" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Persistently Mapped Buffers and vktrace</h2>
+<p>If a Vulkan program uses persistently mapped buffers (PMB) that are allocated via vkMapMemory, vktrace can track changes to PMB and automatically copy modified PMB pages to the trace file, rather than requiring that the Vulkan program call vkFlushMappedMemoryRanges to specify what PMB buffers should be copied. On Windows, the trace layer detects changes to PMB pages by setting the PAGE_GUARD flag for mapped memory pages and installing an exception handler for PAGE_GUARD that keeps track of which pages have been modified.  On Linux, the trace layer detects changes to PMB pages by examining /proc/self/pagemap.</p>
+<p>Tracking of changes to PMB using the above techniques is enabled by default. If you wish to disable PMB tracking, it can be disabled by with the <code>--PMB false</code> option to the vktrace command. Disabling PMB tracking can result in some mapped memory changes not being detected by the trace layer, a larger trace file, and/or slower trace/replay.</p>
+<h2>
+<a id="user-content-trace-tools-enviroment-variables" class="anchor" href="#user-content-trace-tools-enviroment-variables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Trace Tools Enviroment Variables</h2>
+<p>Several enviroment variables can be set to change the behavior of vktrace/vkrepay:</p>
+<ul>
+<li>
+<p>VKTRACE_PMB_ENABLE</p>
+<p>VKTRACE_PMB_ENABLE enables tracking of PMB if its value is 1.  Other values disable PMB tracking.  If this environment variable is not set, PMB tracking is enabled.  When creating a trace using client/server mode, set this variable to 0 when starting the client if you wish to disable PMB tracking.</p>
+</li>
+<li>
+<p>VKTRACE_PAGEGUARD_ENABLE_READ_PMB</p>
+<p>VKTRACE_PAGEGUARD_ENABLE_READ_PMB enables read PMB support if set to a non-NULL value.  If PMB data changes comes from the GPU side, PMB tracking does not usually capture those changes. This environment  variable is used to enable capture of such GPU initiated PMB data changes. It is supported only on Windows.</p>
+</li>
+<li>
+<p>VKTRACE_PAGEGUARD_ENABLE_READ_POST_PROCESS</p>
+<p>VKTRACE_PAGEGUARD_ENABLE_READ_POST_PROCESS, when set to a non-null value, enables post processing  when read PMB support is enabled.  When VKTRACE_PAGEGUARD_ENABLE_READ_PMB is set, PMB processing will sometimes miss writes following reads if writes occur on the same page as a read. Set this environment variable to enable post processing to fix missed pmb writes. It is supported only on Windows.</p>
+</li>
+</ul>
+</article>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<h1>Shaders</h1>
+
+<p><link href="../css/lg_stylesheet.css" rel="stylesheet"></link></p>
+
+<p>Code file for this section is <code>11-init_shaders.cpp</code></p>
+
+<h2>Compiling GLSL Shaders into SPIR-V</h2>
+
+<p>The low-level shader code representation for Vulkan is SPIR-V.
+The sample programs compile shader programs written in GLSL
+into SPIR-V with a call to a utility function:</p>
+
+<pre><code>GLSLtoSPV(VK_SHADER_STAGE_VERTEX_BIT, vertShaderText, vtx_spv);
+</code></pre>
+
+<p>The shader source code is in the <code>vertShaderText</code> variable and the
+compiled SPIR-V is returned in <code>vtx_spv</code>, which is a vector of
+<code>unsigned int</code> and is suitable for storing the SPIR-V code.</p>
+
+<p>Look at the sample code to find the shader source for this vertex
+shader and notice that the fragment shader source is provided as well,
+along with a similar call to compile it.</p>
+
+<p>Also notice that these are simple shaders.
+The vertex shader simply passes the color through to its output
+and transforms the incoming position with the MVP transform that
+we saw in previous sections.
+The fragment shader is even simpler and just passes the color through.</p>
+
+<p>In this simple sample, there are only two shader stages: the vertex and fragment
+stages, stored in that order in <code>info.shaderStages</code>.</p>
+
+<h2>Creating Vulkan Shader Modules</h2>
+
+<p>The compiled shader code is given to Vulkan by creating a <code>VkShaderModule</code> and
+storing it in a <code>VkPipelineShaderStageCreateInfo</code> structure that is used in another
+sample later as part of creating the overall graphics pipeline.</p>
+
+<pre><code>VkShaderModuleCreateInfo moduleCreateInfo;
+moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+moduleCreateInfo.pNext = NULL;
+moduleCreateInfo.flags = 0;
+moduleCreateInfo.codeSize = vtx_spv.size() * sizeof(unsigned int);
+moduleCreateInfo.pCode = vtx_spv.data();
+res = vkCreateShaderModule(info.device, &amp;moduleCreateInfo, NULL,
+                           &amp;info.shaderStages[0].module);
+</code></pre>
+
+<p>Note that the code resulting from the GLSL to SPIR-V conversion is used to
+create the shader module.
+The same procedure is used to create a <code>vkShaderModule</code> for the fragment
+shader, which is stored in <code>info.shaderStages[1].module</code>.</p>
+
+<p>Some additional initialization of the creation info for the pipeline
+shader stage is also performed at this time:</p>
+
+<pre><code>info.shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+info.shaderStages[0].pNext = NULL;
+info.shaderStages[0].pSpecializationInfo = NULL;
+info.shaderStages[0].flags = 0;
+info.shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+info.shaderStages[0].pName = "main";
+</code></pre>
+
+<p>At this point, the shaders are ready to go.</p>
+
+<table border="1" width="100%">
+    <tr>
+        <td align="center" width="33%"><a href="10-init_render_pass.html" title="Prev">Render Pass</a></td>
+        <td align="center" width="33%"><a href="index.html" title="Index">Index</a></td>
+        <td align="center" width="33%"><a href="12-init_frame_buffers.html" title="Next">Framebuffers</a></td>
+    </tr>
+</table>
+
+<p><footer>&copy; Copyright 2016 LunarG, Inc</footer></p>

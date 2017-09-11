@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="icon" href="vulkan_lunarg_icon.png">
+<link rel="stylesheet" href="github-markdown.css">
+<style>
+    body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+    }
+</style>
+</head>
+<body>
+<article class="markdown-body">
+<h1>
+<a id="user-content-spir-v-toolchain" class="anchor" href="#user-content-spir-v-toolchain" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SPIR-V Toolchain</h1>
+<p>The Vulkan graphics API requires that all shaders be presented in SPIR-V format.  SPIR-V is a binary intermediate representation for graphical shaders and compute kernels. The advantages and a high-level description of the representation are given in the <a href="https://www.khronos.org/registry/spir-v/papers/WhitePaper.pdf" TARGET="_blank">SPIR-V White Paper</a>. A more detailed description of the SPIR-V supported by this SDK can be found in <a href="https://www.khronos.org/registry/spir-v/specs/1.2/SPIRV.pdf">The SPIR-V Specification v1.2</a>.</p>
+<p>The LunarG Vulkan SDK includes tools for SPIR-V shader generation, inspection, editing, validation, optimization, constant manipulation and compression improvement.</p>
+<p>Chief member of the SPIR-V toolchain is glslangValidator, which can be used to create SPIR-V shaders from equivalent GLSL or HLSL shaders.</p>
+<p>The SDK also includes <code>spirv-opt</code> which can be used (along with spirv-remap, described below) to reduce the size of SPIR-V code by more than 60% through classic optimization tranformations. spirv-opt can also be used to set and optimize a SPIR-V file's specialization constants.</p>
+<p>The SPIR-V disassembler <code>spirv-dis</code> converts SPIR-V binary into a special text format for reading and editing. The SPIR-V assembler <code>spirv-as</code> converts such text back into SPIR-V binary format. The SPIR-V validator <code>spirv-val</code> can be used to assure that the resulting SPIR-V binary code is valid.</p>
+<p>The SDK also includes <code>spirv-remap</code>, a tool to improve the compressibility of a collection of SPIR-V modules.  This can result in up to a 50% reduction in the size of a compressed collection relative to the compressed originals. spirv-remap also has options (--dce all) to remove dead functions and types exposed by spirv-opt size reduction passes. It also can strip debug instructions from SPIR-V (--strip all) if not needed.</p>
+<p>Finally, the SDK also provides a tool for viewing a SPIR-V file's control flow with <code>spirv-cfg</code>, a tool for generating high-level language representation and reflection data for a SPIR-V file with <code>spirv-cross</code>, and a standard compilation command line with <code>shaderc</code>.</p>
+<h2>
+<a id="user-content-glslangvalidator-spir-v-generator" class="anchor" href="#user-content-glslangvalidator-spir-v-generator" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>glslangValidator (SPIR-V Generator)</h2>
+<p><code>glslangValidator</code> is the tool used to compile GLSL and HLSL shaders into SPIR-V, Vulkan's shader format. Additional information on compiling HLSL can be found in the <a href="https://github.com/KhronosGroup/glslang/wiki/HLSL-FAQ" TARGET="_blank">HLSL FAQ</a>.</p>
+<p>Executed without any options, <code>glslangValidator</code> returns the message:</p>
+<pre><code>Usage: glslangValidator [option]... [file]...
+
+Where: each 'file' ends in .&lt;stage&gt;, where &lt;stage&gt; is one of
+    .conf   to provide an optional config file that replaces the default configuration
+            (see -c option below for generating a template)
+    .vert   for a vertex shader
+    .tesc   for a tessellation control shader
+    .tese   for a tessellation evaluation shader
+    .geom   for a geometry shader
+    .frag   for a fragment shader
+    .comp   for a compute shader
+
+Compilation warnings and errors will be printed to stdout.
+
+To get other information, use one of the following options:
+Each option must be specified separately.
+  -V          create SPIR-V binary, under Vulkan semantics; turns on -l;
+              default file name is &lt;stage&gt;.spv (-o overrides this)
+  -G          create SPIR-V binary, under OpenGL semantics; turns on -l;
+              default file name is &lt;stage&gt;.spv (-o overrides this)
+  -H          print human readable form of SPIR-V; turns on -V
+  -E          print pre-processed GLSL; cannot be used with -l;
+              errors will appear on stderr.
+  -S &lt;stage&gt;  uses explicit stage specified, rather then the file extension.
+              valid choices are vert, tesc, tese, geom, frag, or comp
+  -c          configuration dump;
+              creates the default configuration file (redirect to a .conf file)
+  -C          cascading errors; risks crashes from accumulation of error recoveries
+  -d          default to desktop (#version 110) when there is no shader #version
+              (default is ES version 100)
+  -D          input is HLSL
+  -e          specify entry-point name
+  -h          print this usage message
+  -i          intermediate tree (glslang AST) is printed out
+  -l          link all input files together to form a single module
+  -m          memory leak mode
+  -o  &lt;file&gt;  save binary to &lt;file&gt;, requires a binary option (e.g., -V)
+  -q          dump reflection query database
+  -r          relaxed semantic error-checking mode
+  -s          silent mode
+  -t          multi-threaded mode
+  -v          print version strings
+  -w          suppress warnings (except as required by #extension : warn)
+  -x          save 32-bit hexadecimal numbers as text, requires a binary option (e.g., -V)
+
+  --shift-sampler-binding [stage] num     set base binding number for samplers
+  --ssb [stage] num                       synonym for --shift-sampler-binding
+
+  --shift-texture-binding [stage] num     set base binding number for textures
+  --stb [stage] num                       synonym for --shift-texture-binding
+
+  --shift-UBO-binding [stage] num         set base binding number for UBOs
+  --sub [stage] num                       synonym for --shift-UBO-binding
+
+  --auto-map-bindings                     automatically bind uniform variables without
+                                          explicit bindings.
+  --amb                                   synonym for --auto-map-bindings
+
+  --flatten-uniform-arrays                flatten uniform texture &amp; sampler arrays to scalars
+  --fua                                   synonym for --flatten-uniform-arrays
+</code></pre>
+<h2>
+<a id="user-content-spir-v-optimizer" class="anchor" href="#user-content-spir-v-optimizer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SPIR-V Optimizer</h2>
+<p>A programmer may wish to reduce the size of a SPIR-V file, especially as it is initially generated by the glslangValidator frontend. The SPIR-V optimizer <code>spirv-opt</code> can be used to apply classic optimization transformations to SPIR-V to reduce its size without changing its functionality. The following "recipe" of spirv-opt options can be effective at reducing SPIR-V size:</p>
+<pre><code>--inline-entry-points-exhaustive
+--convert-local-access-chains
+--eliminate-local-single-block
+--eliminate-local-single-store
+--eliminate-insert-extract
+--eliminate-dead-code-aggressive
+--eliminate-dead-branches
+--merge-blocks
+--eliminate-local-single-block
+--eliminate-local-single-store
+--eliminate-local-multi-store
+--eliminate-insert-extract
+--eliminate-dead-code-aggressive
+--eliminate-common-uniform
+</code></pre>
+<p>The transformations are applied in the order specified on the command line. Note some options are applied more than once. More detailed information can be found in the file SpirvOptSizeReduction.pdf in the SDK documentation folder.</p>
+<p>spirv-opt can also be used to manipulate the SPIR-V file's specialization constants.</p>
+<p>spirv-opt -h returns the message:</p>
+<pre><code>spirv-opt - Optimize a SPIR-V binary file.
+
+USAGE: spirv-opt [options] [&lt;input&gt;] -o &lt;output&gt;
+
+The SPIR-V binary is read from &lt;input&gt;. If no file is specified,
+or if &lt;input&gt; is "-", then the binary is read from standard input.
+if &lt;output&gt; is "-", then the optimized output is written to
+standard output.
+
+NOTE: The optimizer is a work in progress.
+
+Options:
+  --strip-debug
+               Remove all debug instructions.
+  --freeze-spec-const
+               Freeze the values of specialization constants to their default
+               values.
+  --eliminate-dead-const
+               Eliminate dead constants.
+  --fold-spec-const-op-composite
+               Fold the spec constants defined by OpSpecConstantOp or
+               OpSpecConstantComposite instructions to front-end constants
+               when possible.
+  --set-spec-const-default-value "&lt;spec id&gt;:&lt;default value&gt; ..."
+               Set the default values of the specialization constants with
+               &lt;spec id&gt;:&lt;default value&gt; pairs specified in a double-quoted
+               string. &lt;spec id&gt;:&lt;default value&gt; pairs must be separated by
+               blank spaces, and in each pair, spec id and default value must
+               be separated with colon ':' without any blank spaces in between.
+               e.g.: --set-spec-const-default-value "1:100 2:400"
+  --unify-const
+               Remove the duplicated constants.
+  --flatten-decorations
+               Replace decoration groups with repeated OpDecorate and
+               OpMemberDecorate instructions.
+  --compact-ids
+               Remap result ids to a compact range starting from %1 and without
+               any gaps.
+  --inline-entry-points-exhaustive
+               Exhaustively inline all function calls in entry point functions.
+               Currently does not inline calls to functions with early return
+               in a loop.
+  --convert-local-access-chains
+               Convert constant index access chain loads/stores into
+               equivalent load/stores with inserts and extracts. Performed
+               on function scope variables referenced only with load, store,
+               and constant index access chains.
+  --eliminate-common-uniform
+               Perform load/load elimination for duplicate uniform values.
+               Converts any constant index access chain uniform loads into
+               its equivalent load and extract. Some loads will be moved
+               to facilitate sharing. Performed only on entry point
+               functions.
+  --eliminate-local-single-block
+               Perform single-block store/load and load/load elimination.
+               Performed only on function scope variables in entry point
+               functions.
+  --eliminate-local-single-store
+               Replace stores and loads of function scope variables that are
+               only stored once. Performed on variables referenceed only with
+               loads and stores. Performed only on entry point functions.
+  --eliminate-local-multi-store
+               Replace stores and loads of function scope variables that are
+               stored multiple times. Performed on variables referenceed only
+               with loads and stores. Performed only on entry point functions.
+  --eliminate-insert-extract
+               Replace extract from a sequence of inserts with the
+               corresponding value. Performed only on entry point functions.
+  --eliminate-dead-code-aggressive
+               Delete instructions which do not contribute to a function's
+               output. Performed only on entry point functions.
+  --eliminate-dead-branches
+               Convert conditional branches with constant condition to the
+               indicated unconditional brranch. Delete all resulting dead
+               code. Performed only on entry point functions.
+  --merge-blocks
+               Join two blocks into a single block if the second has the
+               first as its only predecessor. Performed only on entry point
+               functions.
+  -h, --help   
+               Print this help.
+  --version    
+               Display optimizer version information.
+</code></pre>
+<h2>
+<a id="user-content-spir-v-disassembler-assembler-and-validator" class="anchor" href="#user-content-spir-v-disassembler-assembler-and-validator" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SPIR-V Disassembler, Assembler and Validator</h2>
+<p>A programmer may wish to view or change the contents of a shader while debugging a Vulkan application.  Since Vulkan accepts shaders only in SPIR-V, a binary format, the SDK provides <code>spirv-dis</code>, a standalone program which prints a SPIR-V shader in human-readable and parsable form, and spirv-as, which can assemble the possibly edited output of spirv-dis. Finally, <code>spirv-val</code> can be used to verify that the resulting SPIR-V code is valid.</p>
+<p>spirv-dis -h returns the message:</p>
+<pre><code>./spirv-dis - Disassemble a SPIR-V binary module
+
+Usage: ./spirv-dis [options] [&lt;filename&gt;]
+
+The SPIR-V binary is read from &lt;filename&gt;. If no file is specified,
+or if the filename is "-", then the binary is read from standard input.
+
+Options:
+
+  -h, --help      Print this help.
+  --version       Display disassembler version information.
+
+  -o &lt;filename&gt;   Set the output filename.
+                  Output goes to standard output if this option is
+                  not specified, or if the filename is "-".
+
+  --no-color      Don't print in color.
+                  The default when output goes to a file.
+
+  --no-indent     Don't indent instructions.
+
+  --offsets       Show byte offsets for each instruction.
+</code></pre>
+<p>spirv-as -h returns the message:</p>
+<pre><code>./spirv-as - Create a SPIR-V binary module from SPIR-V assembly text
+
+Usage: ./spirv-as [options] &lt;filename&gt;
+
+The SPIR-V assembly text is read from &lt;filename&gt;.  The SPIR-V binary
+module is written to file "out.spv", unless the -o option is used.
+
+Options:
+
+  -h              Print this help.
+
+  -o &lt;filename&gt;   Set the output filename.
+  --version       Display assembler version information.
+</code></pre>
+<p>spirv-val -h returns the message:</p>
+<pre><code>spirv-val - Validate a SPIR-V binary file.
+
+USAGE: spirv-val [options] [&lt;filename&gt;]
+
+The SPIR-V binary is read from &lt;filename&gt;. If no file is specified,
+or if the filename is "-", then the binary is read from standard input.
+
+NOTE: The validator is a work in progress.
+
+Options:
+  -h, --help                       Print this help.
+  --max-struct-members             &lt;maximum number of structure members allowed&gt;
+  --max-struct-depth               &lt;maximum allowed nesting depth of structures&gt;
+  --max-local-variables            &lt;maximum number of local variables allowed&gt;
+  --max-global-variables           &lt;maximum number of global variables allowed&gt;
+  --max-switch-branches            &lt;maximum number of branches allowed in switch statements&gt;
+  --max-function-args              &lt;maximum number arguments allowed per function&gt;
+  --max-control-flow-nesting-depth &lt;maximum Control Flow nesting depth allowed&gt;
+  --max-access-chain-indexes       &lt;maximum number of indexes allowed to use for Access Chain instructions&gt;
+  --version                        Display validator version information.
+  --target-env                     {vulkan1.0|spv1.0|spv1.1|spv1.2}
+                                   Use Vulkan1.0/SPIR-V1.0/SPIR-V1.1/SPIR-V1.2 validation rules.
+</code></pre>
+<h2>
+<a id="user-content-spir-v-remapper" class="anchor" href="#user-content-spir-v-remapper" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SPIR-V Remapper</h2>
+<p>The SPIR-V remapping tool, <code>spirv-remap</code>, enhances compression of SPIR-V binary files via entropy reduction, including optional stripping of debug information and dead functions.  <code>spirv-remap</code> transforms SPIR-V to SPIR-V, remapping IDs to reduce the size of a compressed image containing multiple SPIR-V modules.  This works with compression procedures that can find dictionary entries across multiple files.</p>
+<p>The SPIR-V Remapper supports two modes of use: command line and a C++11 API.</p>
+<p>Remapping is accomplished via ID canonicalization.  In this scheme, IDs become larger and are no longer tightly packed near zero, but should compress better when multiple modules are compressed together.  The command line tool operates serially on multiple modules.  The API accepts only a single module at a time.</p>
+<p><em>Note</em>:  The <code>spirv-remap</code> tool is in early stages of development and should be considered alpha quality.</p>
+<h3>
+<a id="user-content-command-line" class="anchor" href="#user-content-command-line" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Command Line</h3>
+<p><code>spirv-remap</code> supports multiple levels of verbosity, specified with <code>-v</code>, <code>-vv</code>, <code>-vvv</code>, etc or by providing an integer parameter to the <code>--verbose</code> option.  Note that higher levels of verbosity provide a considerable quantity of <code>stdout</code> messages.  With no verbosity, <code>spirv-remap</code> is silent, returning 0 on success and a positive integer error status on error.</p>
+<p>The SPIR-V remapper provides basic ID remapping, ID remapping with debug symbol and line number stripping, and ID remapping with those features plus dead function and type elimination.</p>
+<p>Executed without any options, <code>spirv-remap</code> returns a message similar to:</p>
+<pre><code>Usage: 
+  spirv-remap [-v[v[...]] | --verbose [int]] [--map (all|types|names|funcs)] [--dce (all|types|funcs)] [--opt (all|loadstore)] [--strip-all | --strip all | -s] [--do-everything] --input | -i file1 [file2...] --output|-o DESTDIR
+  spirv-remap [--version | -V]
+  spirv-remap [--help | -?]
+</code></pre>
+<p>Options supported by <code>spirv-remap</code> are identified in the table below.  Options can appear anywhere on the command line.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--dce</td>
+<td>dead code elimination mode; eliminates dead functions and types</td>
+</tr>
+<tr>
+<td>-i, --input</td>
+<td>*.spv shader input files</td>
+</tr>
+<tr>
+<td>--map</td>
+<td>remap types, names, functions, or all</td>
+</tr>
+<tr>
+<td>-o, --output</td>
+<td>write remapped shader files to this directory</td>
+</tr>
+<tr>
+<td>-s, --strip-all</td>
+<td>strip debug symbol information and line numbers</td>
+</tr>
+</tbody>
+</table>
+<p>Examples:</p>
+<ol>
+<li>
+<p>Basic ID remapping example:</p>
+<pre><code>spirv-remap --map all --input *.spv --output /tmp/out_dir
+</code></pre>
+</li>
+</ol>
+<p>Performs ID remapping on all shaders in the current directory, writing new files with the same basenames to <code>/tmp/out_dir</code>.</p>
+<ol start="2">
+<li>
+<p>ID remapping with debug symbol and line number stripping:</p>
+<pre><code>spirv-remap --map all --strip-all --input *.spv --output /tmp/out_dir
+</code></pre>
+</li>
+<li>
+<p>ID remapping with debug symbol and line number stripping <em>plus</em> dead function and type elimination:</p>
+<pre><code>spirv-remap --map all --dce all --strip-all --input *.spv --output /tmp/out_dir
+</code></pre>
+</li>
+</ol>
+<h3>
+<a id="user-content-api" class="anchor" href="#user-content-api" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>API</h3>
+<p>API access to the SPIR-V Remapper may be provided in future SDKs.</p>
+<h2>
+<a id="user-content-spir-v-control-flow-visualization" class="anchor" href="#user-content-spir-v-control-flow-visualization" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SPIR-V Control Flow Visualization</h2>
+<p>spirv-cfg shows the SPIR-V control flow in GraphiViz "dot" form. It is experimental. <code>spirv-cfg --help</code> prints the following:</p>
+<pre><code>./spirv-cfg - Show the control flow graph in GraphiViz "dot" form. EXPERIMENTAL
+
+Usage: ./spirv-cfg [options] [&lt;filename&gt;]
+
+The SPIR-V binary is read from &lt;filename&gt;. If no file is specified,
+or if the filename is "-", then the binary is read from standard input.
+
+Options:
+
+  -h, --help      Print this help.
+  --version       Display version information.
+
+  -o &lt;filename&gt;   Set the output filename.
+                  Output goes to standard output if this option is
+                  not specified, or if the filename is "-".
+</code></pre>
+<h2>
+<a id="user-content-spir-v-cross-compilation-and-reflection" class="anchor" href="#user-content-spir-v-cross-compilation-and-reflection" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SPIR-V Cross-Compilation and Reflection</h2>
+<p>spirv-cross translates SPIR-V files into readable shader languages including GLSL, MSL (experimental) and C++ (experimental). It can also generate reflection information for a SPIR-V shader. <code>spirv-cross --help</code> shows the latest command line options. Additional information for using this tool can be found at the <a href="https://github.com/KhronosGroup/SPIRV-Cross" TARGET="_blank">spirv-cross github page</a>.</p>
+<h2>
+<a id="user-content-shaderc---spir-v-compilation-wrapper" class="anchor" href="#user-content-shaderc---spir-v-compilation-wrapper" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Shaderc - SPIR-V Compilation Wrapper</h2>
+<p>Shaderc wraps around core functionality in glslang and SPIRV-Tools. Shaderc aims to to provide: a command line compiler with GCC and Clang-like usage for better integration with build systems, an API where functionality can be added without breaking existing clients, an API supporting standard concurrency patterns across multiple operating systems, and increased functionality such as file #include support.</p>
+<p>Shaderc consists of two components: a command line compiler and a static library. The command line compiler (glslc) is provided by the SDK and is put in the user's path so that it can be used from the command prompt. <code>glslc --help</code> shows the latest command line options.</p>
+<p>The static library is provided only as a release build. As such, to link a debuggable program to the shaderc included in the SDK, it is necessary to build the library from the source provided in the SDK. To build a 64-bit debuggable library from the SDK, use the folloing commands (you will need msbuild and cmake to be available from the command prompt):</p>
+<pre><code>cd %VULKAN_SDK%\shaderc
+cmake -H. -Bbuild -G "Visual Studio 14 Win64"
+cmake --build ./build --config Debug
+</code></pre>
+<p>Note that you may have to adjust the Visual Studio version, depending on which version you are using.</p>
+<p>Additional information for using shaderc can be found at the <a href="https://github.com/google/shaderc" TARGET="_blank">shaderc github page</a>.</p>
+</article>
+</body>
+</html>
