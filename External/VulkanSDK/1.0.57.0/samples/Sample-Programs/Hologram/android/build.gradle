@@ -1,0 +1,49 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.0'
+    }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion  25
+    buildToolsVersion  "25.0.2"
+
+    defaultConfig {
+        applicationId "com.example.Hologram"
+        minSdkVersion 23
+        targetSdkVersion 23
+        versionCode 1
+        versionName "0.1"
+        ndk {
+            abiFilters 'armeabi-v7a', 'x86'
+        }
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_PLATFORM=android-23',
+                          '-DANDROID_STL=c++_static',
+                          '-DANDROID_TOOLCHAIN=clang'
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path 'CMakeLists.txt'
+        }
+    }
+    buildTypes {
+        release {
+            ndk {
+                debuggable true
+            }
+            minifyEnabled = false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-rules.pro'
+        }
+    }
+}

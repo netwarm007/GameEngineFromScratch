@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="icon" href="vulkan_lunarg_icon.png">
+<link rel="stylesheet" href="github-markdown.css">
+<style>
+    body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+    }
+</style>
+</head>
+<body>
+<article class="markdown-body">
+<h1>
+<a id="user-content-vulkan-tools-framework" class="anchor" href="#user-content-vulkan-tools-framework" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Vulkan Tools Framework</h1>
+<p>The LunarG Vulkan SDK provides a framework to build and debug applications and games.  The main components in the Vulkan tools framework include:</p>
+<ul>
+<li>The Vulkan API</li>
+<li>Common Loader</li>
+<li>Validation and Debugging Layers</li>
+<li>Tracer and Replayer</li>
+</ul>
+<p><a href="vulktoolarch.png" target="_blank"><img src="vulktoolarch.png" style="max-width:100%;"></a></p>
+<h2>
+<a id="user-content-vulkan-api" class="anchor" href="#user-content-vulkan-api" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Vulkan API</h2>
+<p>The Vulkan API is a low overhead, explicit cross-platform graphics application programming interface.  This API provides applications direct control over the GPU, maximizing application performance.</p>
+<h2>
+<a id="user-content-common-loader" class="anchor" href="#user-content-common-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Common Loader</h2>
+<p>The Vulkan Common Loader provides the interface between Vulkan applications and layer and installable client driver libraries.</p>
+<p>Refer to the <a href="./LoaderAndLayerInterface.html">Vulkan Common Loader</a> guide for additional information on the loader and its driver, layer, and extension management capabilities.</p>
+<h2>
+<a id="user-content-validation-and-debugging-layers" class="anchor" href="#user-content-validation-and-debugging-layers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Validation and Debugging Layers</h2>
+<p>Vulkan supports intercepting, or hooking, API entry points via the Layer framework.  A layer can intercept a subset of, or all, Vulkan entry points. The SDK provides many validation layers, including those that track memory, objects, and state.</p>
+<p>Refer to the <a href="./layers.html">Vulkan Validation and Debugging Layers</a> guide for detailed information on the Layer framework and those layers included in the SDK.</p>
+<h2>
+<a id="user-content-supporting-tools" class="anchor" href="#user-content-supporting-tools" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supporting Tools</h2>
+<p>The Vulkan SDK also provides other debugging tools for Vulkan applications, including trace and replay and SPIR-V generation, disassembly, and remapping tools.</p>
+<p>Refer to the <a href="./trace_tools.html">Vulkan Trace and Replay Tools</a> guide for additional information on Vulkan application tracing and replay.</p>
+<p>Refer to the <a href="./spirv_toolchain.html">SPIR-V Toolchain</a> guide for additional information on SPIR-V related tools.</p>
+</article>
+</body>
+</html>
