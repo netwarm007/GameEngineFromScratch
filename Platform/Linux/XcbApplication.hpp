@@ -17,7 +17,6 @@ namespace My {
         xcb_connection_t*    m_pConn;
         xcb_screen_t*        m_pScreen;
         xcb_window_t		 m_Window;
-        xcb_generic_event_t* m_pEvent;
     };
 }
 
