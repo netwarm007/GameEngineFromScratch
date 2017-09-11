@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -e
+
+if [ -z "${ANDROID_SDK_HOME}" ];
+        then echo "Please set ANDROID_SDK_HOME, exiting"; exit;
+        else echo "ANDROID_SDK_HOME is ${ANDROID_SDK_HOME}";
+fi
+
+if [ -z "${ANDROID_NDK_HOME}" ];
+        then echo "Please set ANDROID_NDK_HOME, exiting"; exit;
+        else echo "ANDROID_NDK_HOME is ${ANDROID_NDK_HOME}";
+fi
+
+
+generate_local_properties() {
+        : > local.properties
+        echo "sdk.dir=${ANDROID_SDK_HOME}" >> local.properties
+        echo "ndk.dir=${ANDROID_NDK_HOME}" >> local.properties
+}
+
+build() {
+	./gradlew build
+}
+
+install() {
+	adb uninstall com.example.Hologram
+	adb install build/outputs/apk/android-debug.apk
+}
+
+run() {
+	adb shell am start com.example.Hologram/android.app.NativeActivity
+}
+
+generate_local_properties
+build
+install
+#run

@@ -1,0 +1,57 @@
+# Ubuntu 15.04 support of DRI 3
+
+DRI3 is required for the Vulkan Intel sample driver.  Ubuntu 15.04
+has never shipped an xserver-xorg-video-intel package with supported
+DRI 3 for Intel graphics.
+
+Use the following commands to build a DRI3-enabled xserver-xorg-video-intel
+package from source to enable DRI3 on Ubuntu 15.04.
+
+- Install packages used to build:
+  $ sudo apt-get update
+  $ sudo apt-get dist-upgrade
+  $ sudo apt-get install devscripts
+  $ sudo apt-get build-dep xserver-xorg-video-intel
+
+- Get the source code for xserver-xorg-video-intel
+  $ mkdir xserver-xorg-video-intel_source
+  $ cd xserver-xorg-video-intel_source
+  $ apt-get source xserver-xorg-video-intel
+  $ cd xserver-xorg-video-intel-2.99.917
+  $ debian/rules patch
+  $ quilt new 'enable-DRI3'
+  $ quilt edit configure.ac
+
+- Use an editor to make the following changes to the configure.ac file.
+--- a/configure.ac
++++ b/configure.ac
+@@ -340,9 +340,9 @@
+ 	      [DRI2=yes])
+ AC_ARG_ENABLE(dri3,
+ 	      AS_HELP_STRING([--enable-dri3],
+-			     [Enable DRI3 support [[default=no]]]),
++			     [Enable DRI3 support [[default=yes]]]),
+ 	      [DRI3=$enableval],
+-	      [DRI3=no])
++	      [DRI3=yes])
+
+ AC_ARG_ENABLE(xvmc, AS_HELP_STRING([--disable-xvmc],
+                                   [Disable XvMC support [[default=yes]]]),
+
+- Build and install the DRI3-enabled xserver-xorg-video-intel package.
+  $ quilt refresh
+  $ debian/rules clean
+  $ debuild -us -uc
+  $ sudo dpkg -i ../xserver-xorg-video-intel_2.99.917-1~exp1ubuntu2.2_amd64.deb
+
+- Prevent system updates from replacing this version of the package.
+  $ sudo bash -c 'echo xserver-xorg-video-intel hold | dpkg --set-selections'
+
+- Save your work.
+
+- Restart the X server.
+  $ sudo service lightdm restart
+
+- After logging back in, check for success, specifically looking for DRI3.
+  $ xdpyinfo | grep DRI
+

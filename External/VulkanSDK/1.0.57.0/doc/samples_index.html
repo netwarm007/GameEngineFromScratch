@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>LunarG SDK Samples (sponsored by Valve)</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" href="vulkan_lunarg_icon.png">
+    <style media="screen" type="text/css">
+        html {
+            background: url(samples_images/bg-planetfall.jpg) no-repeat center center fixed;
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
+            background-size: cover;
+            background-color: black;
+        }
+
+        #page-wrap { width: 400px; margin: 50px auto; padding: 20px; background: white; -moz-box-shadow: 0 0 20px black; -webkit-box-shadow: 0 0 20px black; box-shadow: 0 0 20px black; }
+    </style>
+
+    <script src="samples_images/sorttable.js"></script>
+    <style>
+      * {
+          padding: 0;
+          margin: 0;
+      }
+      .fit { /* set relative picture size */
+          max-width: 30%;
+          max-height: 30%;
+      }
+      .center {
+          display: block;
+          margin: auto;
+      }
+      div
+      {
+          color:white;
+          padding-top: 5px;
+          padding-bottom: 5px;
+          padding-right: 10%;
+          padding-left: 10%;
+      }
+    </style>
+  </head>
+  <body>
+
+    <img class="center fit" src="samples_images/lunarg-vulkan-sdk.png">
+
+    <script src="https://code.jquery.com/jquery-latest.js"></script>
+    <script type="text/javascript" language="JavaScript">
+      function set_body_height() { // set body height = window height
+    $('body').height($(window).height());
+      }
+      $(document).ready(function() {
+    $(window).bind('resize', set_body_height);
+    set_body_height()
+      });
+    </script>
+
+    <div>
+
+      <h2 align="right">Sponsored by</h2>
+      <h2 align="right"><a href="https://www.valvesoftware.com/" TARGET="_blank"><img src="samples_images/Valve_logo.png" width="15%" height="15%"></a></h3>
+
+      <h1>Intro</h1>
+
+      <br></br>
+      <p style="font-size:18px;">
+      The following samples and layers are hosted on the LunarG <a href="https://github.com/LunarG/VulkanSamples" style="color:yellow" TARGET="_blank">VulkanSamples</a> GitHub repository.
+      Many of these samples will be included as binaries in the LunarG Vulkan SDK.  In order to obtain the LunarG Vulkan SDK, please visit our
+      <a href="https://vulkan.lunarg.com/signin" style="color:yellow" TARGET="_blank">LunarXChange</a> host.
+      <br></br>
+      For more information on Khronos, Vulkan, or SPIR-V, visit: <a href="https://www.khronos.org/vulkan/" style="color:yellow" TARGET="_blank">https://www.khronos.org</a>.
+      </p>
+      <br></br>
+      <h1>Sections</h1>
+      <p style="font-size:18px;"> (click to jump to appropriate section)</p>
+      <table border="0" width="50%" cellspacing="15">
+        <tr>
+        <td>
+      <ul>
+         <li><a href="#HelloVulkan" style="color:cyan">LunarG Hello Vulkan Samples</a></li>
+         <li><a href="#AdditionalVulkan" style="color:cyan">LunarG Additional Vulkan Samples</a></li>
+         <li><a href="#DemosLayers" style="color:cyan">Other Demos and Layers</a></li>
+         <li><a href="#Thanks" style="color:cyan">Special Thanks</a></li>
+      </ul>
+      </td>
+      </tr>
+      </table>
+
+      <br></br>
+      <a name="HelloVulkan"></a>
+      <h1>LunarG Hello Vulkan Samples</h1>
+      <p style="font-size:18px;">
+      For those who have only heard of Vulkan, and not yet written a Vulkan graphics application, the following Vulkan
+      samples represent a basic progression towards your first rendered 3D image using the Vulkan API.  When possible,
+      functionality from previous steps is abstracted using utility calls to allow you to view just the code necessary for
+      the current step.
+      </p>
+      <br></br>
+      <table border="0" width="100%" cellspacing="20">
+        <tr>
+          <th style="width:12%;font-size:20px;text-align:center;">Step</th>
+          <th style="width:25%;font-size:20px;text-align:left;">Sample Name</th>
+          <th style="width:38%;font-size:20px;text-align:left;">Description</th>
+          <th style="width:25%;font-size:20px;text-align:center;">Primary Functions</th>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">1</td>
+          <td style="font-size:18px;text-align:left;">01-init_instance</td>
+          <td style="font-size:18px;text-align:left;">Create and destroy a Vulkan instance</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateInstance,<br>
+              vkDestroyInstance
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">2</td>
+          <td style="font-size:18px;text-align:left;">02-enumerate_devices</td>
+          <td style="font-size:18px;text-align:left;">Enumerate physical devices</td>
+          <td style="font-size:16px;text-align:center;">
+              vkEnumeratePhysicalDevices
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">3</td>
+          <td style="font-size:18px;text-align:left;">03-init_device</td>
+          <td style="font-size:18px;text-align:left;">Create and destroy a Vulkan device</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateDevice,<br>
+              vkDestroyDevice
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">4</td>
+          <td style="font-size:18px;text-align:left;">04-init_command_buffer</td>
+          <td style="font-size:18px;text-align:left;">Create a Vulkan Command buffer</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateCommandPool,<br>
+              vkDestroyCommandPool,<br>
+              vkAllocateCommandBuffers,<br>
+              vkFreeCommandBuffers
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">5</td>
+          <td style="font-size:18px;text-align:left;">05-init_swapchain</td>
+          <td style="font-size:18px;text-align:left;">Init a Vulkan Swapchain</td>
+          <td style="font-size:16px;text-align:center;">
+              PFN_vkCreateSwapchainKHR,<br>
+              PFN_vkDestroySwapchainKHR,<br>
+              PFN_vkGetSwapchainImagesKHR,<br>
+              PFN_vkAcquireNextImageKHR,<br>
+              vkGetDeviceQueue,<br>
+              vkCreateImageView,<br>
+              vkDestroyImageView
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">6</td>
+          <td style="font-size:18px;text-align:left;">06-init_depth_buffer</td>
+          <td style="font-size:18px;text-align:left;">Create a Vulkan Depth buffer</td>
+          <td style="font-size:16px;text-align:center;">
+              vkAllocateMemory,<br>
+              vkBindImageMemory,<br>
+              vkFreeMemory,<br>
+              vkDestroyImageView
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">7</td>
+          <td style="font-size:18px;text-align:left;">07-init_uniform_buffer</td>
+          <td style="font-size:18px;text-align:left;">Create a Vulkan Uniform buffer</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateBuffer,<br>
+              vkGetBufferMemoryRequirements,<br>
+              vkAllocateMemory,<br>
+              vkMapMemory,<br>
+              vkUnmapMemory,<br>
+              vkBindBufferMemory,<br>
+              vkDestroyBuffer
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">8</td>
+          <td style="font-size:18px;text-align:left;">08-init_pipeline_layout</td>
+          <td style="font-size:18px;text-align:left;">Create Descriptor Layout and Pipeline Layout</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateDescriptorSetLayout,<br>
+              vkDestroyDescriptorSetLayout,<br>
+              vkCreatePipelineLayout,<br>
+              vkDestroyPipelineLayout
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">9</td>
+          <td style="font-size:18px;text-align:left;">09-init_descriptor_set</td>
+          <td style="font-size:18px;text-align:left;">Allocate, setup, and destroy a Vulkan Descriptor Set</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateDescriptorPool,<br>
+              vkAllocateDescriptorSets,<br>
+              vkUpdateDescriptorSets,<br>
+              vkDestroyDescriptorPool
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">10</td>
+          <td style="font-size:18px;text-align:left;">10-init_render_pass</td>
+          <td style="font-size:18px;text-align:left;">Initialize a Vulkan Render pass</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateRenderPass,<br>
+              vkDestroyRenderPass
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">11</td>
+          <td style="font-size:18px;text-align:left;">11-init_shaders</td>
+          <td style="font-size:18px;text-align:left;">
+              Initialize Vertex and Fragment Shaders. <br>
+              <i><b>NOTE:</b> This example converts shaders from GLSL into SPIR-V using GLSLang</i></td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateShaderModule,<br>
+              vkDestroyShaderModule
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">12</td>
+          <td style="font-size:18px;text-align:left;">12-init_frame_buffers</td>
+          <td style="font-size:18px;text-align:left;">Initialize the Vulkan Framebuffer</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreateFramebuffer,<br>
+              vkDestroyFramebuffer
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">13</td>
+          <td style="font-size:18px;text-align:left;">13-init_vertex_buffer</td>
+          <td style="font-size:18px;text-align:left;">Create a Vulkan Vertex buffer</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCmdBindVertexBuffers
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">14</td>
+          <td style="font-size:18px;text-align:left;">14-init_pipeline</td>
+          <td style="font-size:18px;text-align:left;">Create a Vulkan Graphics Pipeline</td>
+          <td style="font-size:16px;text-align:center;">
+              vkCreatePipelineCache,<br>
+              vkDestroyPipelineCache,<br>
+              vkCreateGraphicsPipelines,<br>
+              vkDestroyPipeline
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:center;">15</td>
+          <td style="font-size:18px;text-align:left;">15-draw_cube</td>
+          <td style="font-size:18px;text-align:left;">Draw a 3D cube using Vulkan</td>
+          <td style="font-size:16px;text-align:center;">
+              PFN_vkQueuePresentKHR,<br>
+              vkCmdBeginRenderPass,<br>
+              vkCmdEndRenderPass,<br>
+              vkCmdDraw,<br>
+              vkQueueSubmit,<br>
+              vkCmdPipelineBarrier,<br>
+              vkCreateSemaphore,<br>
+              vkDestroySemaphore,<br>
+              vkCreateFence,<br>
+              vkDestroyFence<br>
+              vkWaitForFences
+          </td>
+        </tr>
+      </table>
+
+      <a href="samples_images/drawcube.png" TARGET="_blank">
+          <img class="center" height="200" width="200" src="samples_images/drawcube.png">
+      </a>
+
+      <br></br>
+      <br></br>
+      <hr>
+      <br></br>
+
+      <a name="AdditionalVulkan"></a>
+      <h1>LunarG Additional Vulkan Samples</h1>
+      <br></br>
+      <p style="font-size:18px;">These are additional LunarG created samples which build upon the above ones to provide
+      more coverage beyond basic rendering.
+      <br></br>
+
+      <h3>Community Sample Submission Policy</h3>
+      <p>
+      LunarG is interested in sharing your samples with the SDK.  If you are interested in providing
+      a sample for the Vulkan SDK, refer to the README-controb.md file found with the Vulkan Sample
+      source.  All contributed samples must be released under a BSD-style license.
+      </p>
+      <br></br>
+
+      <b>NOTE:</b>Items are sortable by column.</p>
+      <br></br>
+
+      <table class="sortable" width="100%" cellspacing="20">
+        <tr>
+          <th style="width:20%;font-size:20px;text-align:left;">Sample Name</th>
+          <th style="width:10%;font-size:20px;text-align:center;">Sample Image</th>
+          <th style="width:30%;font-size:20px;text-align:center;">Description</th>
+          <th style="width:20%;font-size:20px;text-align:center;">Noteable Features</th>
+          <th style="width:10%;font-size:20px;text-align:center;">Vulkan Version</th>
+          <th style="width:10%;font-size:20px;text-align:center;">Group</th>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">copy_blit_image</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/CopyBlitImage.png" TARGET="_blank">
+                    <img class="center"  width="60" height="60" src="samples_images/CopyBlitImage.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Copy/Blit an image from one buffer to another.</td>
+          <td style="font-size:16px;text-align:center;">VkImageCopy<br>VkImageBlit</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">dbg_create_msg_callback</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Create and Destroy a Debug message callback for Vulkan.</td>
+          <td style="font-size:16px;text-align:center;">PFN_vkDbgCreateMsgCallback<br>PFN_vkDbgDestroyMsgCallback</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Debug-01</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">draw_subpasses</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/drawsubpasses.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/drawsubpasses.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Render two multi-subpass render passes with different framebuffer attachments.</td>
+          <td style="font-size:16px;text-align:center;">Multiple Sub-passes</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">draw_textured_cube</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/drawtexturedcube.png" TARGET="_blank">
+                    <img class="center"  width="60" height="60" src="samples_images/drawtexturedcube.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Draw a textured 3D cube in Vulkan.</td>
+          <td style="font-size:16px;text-align:center;">Simple texturing</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Textured-Cube-2</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">dynamic_uniform</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/dynamicuniform.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/dynamicuniform.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Draw 2 cubes using a Dynamic Uniform Buffer.</td>
+          <td style="font-size:16px;text-align:center;">VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">enable_validation_with_callback</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Use Common Vulkan Validation Layers to Evaulate Usage.</td>
+          <td style="font-size:16px;text-align:center;">Layer usage</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Debug-02</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">enumerate_adv</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Explore the Physical Device properties.</td>
+          <td style="font-size:16px;text-align:center;">Physical Device Info</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Hello-Vulkan-02B (optional)</td>
+        </tr>
+	<tr>
+          <td style="font-size:16px;text-align:left;">events</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Wait for and set events on the GPU and CPU</td>
+          <td style="font-size:16px;text-align:center;">vkCmdWaitEvents<br>vkSetEvent<br>vkCmdSetEvent<br>vkGetEventStatus</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">immutable_sampler</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/immutable_sampler.png" TARGET="_blank">
+                    <img class="center"  width="60" height="60" src="samples_images/immutable_sampler.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use an Immutable Sampler to texture a cube.</td>
+          <td style="font-size:16px;text-align:center;">VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER<br>VkDescriptorSetLayoutBinding.pImmutableSamplers</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">init_texture</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Setup a texture and sampler.</td>
+          <td style="font-size:16px;text-align:center;">vkGetImageSubresourceLayout<br>vkCmdCopyImage<br>vkCreateImageView<br>vkDestroyImageView<br>vkCreateSampler<br>vkDestroySampler</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Textured-Cube-1</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">input_attachment</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/secondarycmd.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/inputattachment.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use an input attachment to color a triangle</td>
+          <td style="font-size:16px;text-align:center;">subpassLoad<br>VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT<br>VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">instance_extension_properties</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Get global extension properties to know what extension are available to enable at CreateInstance time.</td>
+          <td style="font-size:16px;text-align:center;">vkEnumerateInstanceExtensionProperties</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Hello-Vulkan-01B (optional)</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">instance_layer_extension_properties</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Get list of global layers and their associated extensions, if any.</td>
+          <td style="font-size:16px;text-align:center;">vkEnumerateInstanceExtensionProperties</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Hello-Vulkan-01D (optional)</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">instance_layer_properties</td>
+          <td style="font-size:16px;text-align:center;"></td>
+          <td style="font-size:16px;text-align:center;">Get global layer properties to know what layers are available to enable at CreateInstance time.</td>
+          <td style="font-size:16px;text-align:center;">vkEnumerateInstanceLayerProperties</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Hello-Vulkan-01C (optional)</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">memory_barriers</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/memory_barriers.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/memory_barriers.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use memory barriers to clear a texture between draws (read, write, read)</td>
+          <td style="font-size:12x;text-align:center;">VkCmdPipelineBarrier</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">multiple_sets</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/multiplesets.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/multiplesets.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use multiple descriptor sets to draw a textured cube.</td>
+          <td style="font-size:12x;text-align:center;">VkWriteDescriptorSet<br>vkUpdateDescriptorSets</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">multithreaded_command_buffer</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/multithreadedcmdbuf.png" TARGET="_blank">
+                    <img class="center"  width="60" height="60" src="samples_images/multithreadedcmdbuf.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use per-thread command buffers to draw 3 triangles.</td>
+          <td style="font-size:16px;text-align:center;">Multi-threading</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">occlusion_query</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/occlusionquery.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/occlusionquery.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use occlusion query to determine if drawing renders any samples. This could be used to quickly determine if more expensive rendering should be done.</td>
+          <td style="font-size:16px;text-align:center;">vkCmdBeginQuery<br>vkCmdCopyQueryPoolResults<br>vkCmdEndQuery<br>vkCreateQueryPool<br>vkDestroyQueryPool<br>vkGetQueryPoolResults</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">pipeline_cache</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/pipeline_cache.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/pipeline_cache.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Create and use a pipeline cache accross runs.</td>
+          <td style="font-size:16px;text-align:center;">vkCreatePipelineCache<br>vkGetPipelineCacheData</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">push_constants</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/push_constants.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/push_constants.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use push constants in a simple shader, validate the correct value was read.</td>
+          <td style="font-size:16px;text-align:center;">vkCmdPushConstants</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">push_descriptors</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/drawtexturedcube.png" TARGET="_blank">
+                    <img class="center"  width="60" height="60" src="samples_images/drawtexturedcube.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use VK_KHR_push_descriptor extension to draw textured cube</td>
+          <td style="font-size:16px;text-align:center;">vkCmdPushDescriptorSetKHR</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">secondary_command_buffer</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/secondarycmd.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/secondarycmd.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Draw several cubes using primary and secondary command buffers.</td>
+          <td style="font-size:16px;text-align:center;">VK_COMMAND_BUFFER_LEVEL_SECONDARY<br>VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">separate_image_sampler</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/separate_image_sampler.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/separate_image_sampler.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use separate image and sampler in descriptor set and shader to draw a textured cube.</td>
+          <td style="font-size:16px;text-align:center;">VkSampler</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">spirv_assembly</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/spirv_assembly.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/spirv_assembly.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Demonstrate how to use SPIR-V shaders with inline assembly.</td>
+          <td style="font-size:16px;text-align:center;">SPIR-V</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">spirv_specialization</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/spirv_specialization.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/spirv_specialization.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">This sample creates a mini-ubershader that changes its behavior based on specialization constants provided at pipeline creation.</td>
+          <td style="font-size:16px;text-align:center;">SPIR-V</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">template</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/template.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/template.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Template sample to start from. Draw textured cube with mostly helpers.</td>
+          <td style="font-size:16px;text-align:center;">Beginning Framework</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+        <tr>
+          <td style="font-size:16px;text-align:left;">texel_buffer</td>
+          <td style="font-size:16px;text-align:center;">
+                <a href="samples_images/texelbuffer.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/texelbuffer.png">
+                </a>
+          </td>
+          <td style="font-size:16px;text-align:center;">Use a texel buffer to draw a magenta triangle.</td>
+          <td style="font-size:16px;text-align:center;">vkCreateBufferView<br>vkDestroyBufferView</td>
+          <td style="font-size:16px;text-align:center;">1.0</td>
+          <td style="font-size:16px;text-align:center;">Vulkan-Extended</td>
+        </tr>
+      </table>
+
+      <br></br>
+      <hr>
+      <br></br>
+
+      <a name="DemosLayers"></a>
+      <h1>Other Demos and Layers</h1>
+      <br></br>
+      <p>
+      The following are additional Vulkan Demos and Layers included in the LunarG Vulkan SDK.
+      </p>
+      <br></br>
+      <br></br>
+      <h2>Demos</h2>
+      <br></br>
+      <table class="sortable" width="100%">
+        <tr>
+          <th style="width:15%;font-size:20px;text-align:left;">Name</th>
+          <th style="width:10%;font-size:20px;text-align:center;">Image</th>
+          <th style="width:20%;font-size:20px;text-align:center;">Contributor</th>
+          <th style="width:35%;font-size:20px;text-align:center;">Description</th>
+          <th style="width:10%;font-size:20px;text-align:center;">Vulkan Version</th>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:left;">cube</td>
+          <td style="font-size:18px;text-align:center;">
+                <a href="samples_images/cube.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/cube.png">
+                </a>
+          </td>
+          <td style="font-size:18px;text-align:center;">LunarG</td>
+          <td style="font-size:18px;text-align:center;">Spinning textured cube demo (C version).</td>
+          <td style="font-size:18px;text-align:center;">1.0</td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:left;">cubepp</td>
+          <td style="font-size:18px;text-align:center;">
+                <a href="samples_images/cube.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/cube.png">
+                </a>
+          </td>
+          <td style="font-size:18px;text-align:center;">LunarG</td>
+          <td style="font-size:18px;text-align:center;">Spinning textured cube demo (C++11 version).</td>
+          <td style="font-size:18px;text-align:center;">1.0</td>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:left;">Hologram</td>
+          <td style="font-size:18px;text-align:center;">
+                <a href="samples_images/Hologram.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/Hologram.png">
+                </a>
+          </td>
+          <td style="font-size:18px;text-align:center;">Google</td>
+          <td style="font-size:18px;text-align:center;">Particle style demo using multiple threads to render.</td>
+          <td style="font-size:18px;text-align:center;">1.0</td>
+        </tr>
+      </table>
+      <br></br>
+      <br></br>
+      <h2>Layers</h2>
+      <br></br>
+      <table class="sortable" width="100%">
+        <tr>
+          <th style="width:15%;font-size:20px;text-align:left;">Name</th>
+          <th style="width:10%;font-size:20px;text-align:center;">Layer Image</th>
+          <th style="width:20%;font-size:20px;text-align:center;">Contributor</th>
+          <th style="width:35%;font-size:20px;text-align:center;">Description</th>
+          <th style="width:10%;font-size:20px;text-align:center;">Vulkan Version</th>
+        </tr>
+        <tr>
+          <td style="font-size:18px;text-align:left;">overlay</td>
+          <td style="font-size:18px;text-align:center;">
+                <a href="samples_images/Overlay.png" TARGET="_blank">
+                    <img class="center" width="60" height="60" src="samples_images/Overlay.png">
+                </a>
+          </td>
+          <td style="font-size:18px;text-align:center;">Google</td>
+          <td style="font-size:18px;text-align:center;">Overlays text on the current application.</td>
+          <td style="font-size:18px;text-align:center;">1.0</td>
+        </tr>
+      </table>
+
+      <br></br>
+      <br></br>
+      <hr>
+      <br></br>
+
+      <a name="Thanks"></a>
+      <h1>Additional thanks</h1>
+      <br></br>
+      <table border="0" width="100%" cellspacing="15">
+        <tr>
+        <td>
+      <ul>
+         <li style="font-size:17px">
+            Stuart Langridge for making the sorttable javascript which is freely available 
+            (https://www.kryogenix.org/code/browser/sorttable/).  This javascript plug-in allows
+            you to sort the sample tables above by column.
+         </li>
+      </ul>
+      </td>
+      </tr>
+      </table>
+    </div>
+
+  </body>
+</html>

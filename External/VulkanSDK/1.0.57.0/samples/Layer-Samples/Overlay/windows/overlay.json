@@ -1,0 +1,11 @@
+{
+    "file_format_version" : "1.0.0",
+    "layer" : {
+        "name": "VK_LAYER_LUNARG_overlay",
+        "type": "GLOBAL",
+        "library_path": ".\\VKLayer_overlay.dll",
+        "api_version": "1.0.46",
+        "implementation_version": "1",
+        "description": "Example Overlay Layer"
+    }
+}

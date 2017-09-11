@@ -1,0 +1,2809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link rel="icon" href="vulkan_lunarg_icon.png">
+<link rel="stylesheet" href="github-markdown.css">
+<style>
+    body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+    }
+</style>
+</head>
+<body>
+<article class="markdown-body">
+<h1>
+<a id="user-content-architecture-of-the-vulkan-loader-interfaces" class="anchor" href="#user-content-architecture-of-the-vulkan-loader-interfaces" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Architecture of the Vulkan Loader Interfaces</h1>
+<h2>
+<a id="user-content-table-of-contents" class="anchor" href="#user-content-table-of-contents" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Table of Contents</h2>
+<ul>
+<li>
+<p><a href="#user-content-overview">Overview</a></p>
+<ul>
+<li><a href="#user-content-who-should-read-this-document">Who Should Read This Document</a></li>
+<li><a href="#user-content-the-loader">The Loader</a></li>
+<li><a href="#user-content-layers">Layers</a></li>
+<li><a href="#user-content-installable-client-drivers">Installable Client Drivers</a></li>
+<li><a href="#user-content-instance-versus-device">Instance Versus Device</a></li>
+<li><a href="#user-content-dispatch-tables-and-call-chains">Dispatch Tables and Call Chains</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#user-content-application-interface-to-the-loader">Application Interface to the Loader</a></p>
+<ul>
+<li><a href="#user-content-interfacing-with-vulkan-functions">Interfacing with Vulkan Functions</a></li>
+<li><a href="#user-content-application-layer-usage">Application Layer Usage</a></li>
+<li><a href="#user-content-application-usage-of-extensions">Application Usage of Extensions</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#user-content-loader-and-layer-interface">Loader and Layer Interface</a></p>
+<ul>
+<li><a href="#user-content-layer-discovery">Layer Discovery</a></li>
+<li><a href="#user-content-layer-version-negotiation">Layer Version Negotiation</a></li>
+<li><a href="#user-content-layer-call-chains-and-distributed-dispatch">Layer Call Chains and Distributed Dispatch</a></li>
+<li><a href="#user-content-layer-unknown-physical-device-extensions">Layer Unknown Physical Device Extensions</a></li>
+<li><a href="#user-content-layer-intercept-requirements">Layer Intercept Requirements</a></li>
+<li><a href="#user-content-distributed-dispatching-requirements">Distributed Dispatching Requirements</a></li>
+<li><a href="#user-content-layer-conventions-and-rules">Layer Conventions and Rules</a></li>
+<li><a href="#user-content-layer-dispatch-initialization">Layer Dispatch Initialization</a></li>
+<li><a href="#user-content-example-code-for-createinstance">Example Code for CreateInstance</a></li>
+<li><a href="#user-content-example-code-for-createdevice">Example Code for CreateDevice</a></li>
+<li><a href="#user-content-meta-layers">Meta-layers</a></li>
+<li><a href="#user-content-special-considerations">Special Considerations</a></li>
+<li><a href="#user-content-layer-manifest-file-format">Layer Manifest File Format</a></li>
+<li><a href="#user-content-layer-library-versions">Layer Library Versions</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#user-content-vulkan-installable-client-driver-interface-with-the-loader">Vulkan Installable Client Driver interface with the loader</a></p>
+<ul>
+<li><a href="#user-content-icd-discovery">ICD Discovery</a></li>
+<li><a href="#user-content-icd-manifest-file-format">ICD Manifest File Format</a></li>
+<li><a href="#user-content-icd-vulkan-entry-point-discovery">ICD Vulkan Entry-Point Discovery</a></li>
+<li><a href="#user-content-icd-unknown-physical-device-extensions">ICD Unknown Physical Device Extensions</a></li>
+<li><a href="#user-content-icd-dispatchable-object-creation">ICD Dispatchable Object Creation</a></li>
+<li><a href="#user-content-handling-khr-surface-objects-in-wsi-extensions">Handling KHR Surface Objects in WSI Extensions</a></li>
+<li><a href="#user-content-loader-and-icd-interface-negotiation">Loader and ICD Interface Negotiation</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#user-content-table-of-debug-environment-variables">Table of Debug Environment Variables</a></p>
+</li>
+<li>
+<p><a href="#user-content-glossary-of-terms">Glossary of Terms</a></p>
+</li>
+</ul>
+<h2>
+<a id="user-content-overview" class="anchor" href="#user-content-overview" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview</h2>
+<p>Vulkan is a layered architecture, made up of the following elements:</p>
+<ul>
+<li>The Vulkan Application</li>
+<li><a href="#user-content-the-loader">The Vulkan Loader</a></li>
+<li><a href="#user-content-layers">Vulkan Layers</a></li>
+<li><a href="#user-content-installable-client-drivers">Installable Client Drivers (ICDs)</a></li>
+</ul>
+<p><a href="./images/high_level_loader.png" target="_blank"><img src="./images/high_level_loader.png" alt="High Level View of Loader" style="max-width:100%;"></a></p>
+<p>The general concepts in this document are applicable to the loaders available
+for Windows, Linux and Android based systems.</p>
+<h4>
+<a id="user-content-who-should-read-this-document" class="anchor" href="#user-content-who-should-read-this-document" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Who Should Read This Document</h4>
+<p>While this document is primarily targeted at developers of Vulkan applications,
+drivers and layers, the information contained in it could be useful to anyone
+wanting a better understanding of the Vulkan runtime.</p>
+<h4>
+<a id="user-content-the-loader" class="anchor" href="#user-content-the-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The Loader</h4>
+<p>The application sits on one end of, and interfaces directly with, the
+loader.  On the other end of the loader from the application are the ICDs, which
+control the Vulkan-capable hardware.  An important point to remember is that
+Vulkan-capable hardware can be graphics-based, compute-based, or both. Between
+the application and the ICDs the loader can inject a number of optional
+<a href="#user-content-layers">layers</a> that provide special functionality.</p>
+<p>The loader is responsible for working with the various layers as well as
+supporting multiple GPUs and their drivers.  Any Vulkan function may
+wind up calling into a diverse set of modules: loader, layers, and ICDs.
+The loader is critical to managing the proper dispatching of Vulkan
+functions to the appropriate set of layers and ICDs. The Vulkan object
+model allows the loader to insert layers into a call chain so that the layers
+can process Vulkan functions prior to the ICD being called.</p>
+<p>This document is intended to provide an overview of the necessary interfaces
+between each of these.</p>
+<h5>
+<a id="user-content-goals-of-the-loader" class="anchor" href="#user-content-goals-of-the-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Goals of the Loader</h5>
+<p>The loader was designed with the following goals in mind.</p>
+<ol>
+<li>Support one or more Vulkan-capable ICD on a user's computer system without
+them interfering with one another.</li>
+<li>Support Vulkan Layers which are optional modules that can be enabled by an
+application, developer, or standard system settings.</li>
+<li>Impact the overall performance of a Vulkan application in the lowest
+possible fashion.</li>
+</ol>
+<h4>
+<a id="user-content-layers" class="anchor" href="#user-content-layers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layers</h4>
+<p>Layers are optional components that augment the Vulkan system.  They can
+intercept, evaluate, and modify existing Vulkan functions on their way from the
+application down to the hardware.  Layers are implemented as libraries that can
+be enabled in different ways (including by application request) and are loaded
+during CreateInstance.  Each layer can choose to hook (intercept) any Vulkan
+functions which in turn can be ignored or augmented.  A layer does not need to
+intercept all Vulkan functions.  It may choose to intercept all known functions,
+or, it may choose to intercept only one function.</p>
+<p>Some examples of features that layers may expose include:</p>
+<ul>
+<li>Validating API usage</li>
+<li>Adding the ability to perform Vulkan API tracing and debugging</li>
+<li>Overlay additional content on the applications surfaces</li>
+</ul>
+<p>Because layers are optionally, you may choose to enable layers for debugging
+your application, but then disable any layer usage when you release your
+product.</p>
+<h4>
+<a id="user-content-installable-client-drivers" class="anchor" href="#user-content-installable-client-drivers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installable Client Drivers</h4>
+<p>Vulkan allows multiple Installable Client Drivers (ICDs) each supporting one
+or more devices (represented by a Vulkan <code>VkPhysicalDevice</code> object) to be used
+collectively. The loader is responsible for discovering available Vulkan ICDs on
+the system. Given a list of available ICDs, the loader can enumerate all the
+physical devices available  for an application and return this information to
+the application.</p>
+<h4>
+<a id="user-content-instance-versus-device" class="anchor" href="#user-content-instance-versus-device" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instance Versus Device</h4>
+<p>There is an important concept which you will see brought up repeatedly
+throughout this document.  Many functions, extensions, and other things in
+Vulkan are separated into two main groups:</p>
+<ul>
+<li>Instance-related Objects</li>
+<li>Device-related Objects</li>
+</ul>
+<h5>
+<a id="user-content-instance-related-objects" class="anchor" href="#user-content-instance-related-objects" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instance-related Objects</h5>
+<p>A Vulkan Instance is a high-level construct used to provide Vulkan system-level
+information, or functionality.  Vulkan objects associated directly with an
+instance are:</p>
+<ul>
+<li><code>VkInstance</code></li>
+<li><code>VkPhysicalDevice</code></li>
+</ul>
+<p>An Instance function is any Vulkan function which takes as its first parameter
+either an object from the Instance list, or nothing at all.  Some Vulkan
+Instance functions are:</p>
+<ul>
+<li><code>vkEnumerateInstanceExtensionProperties</code></li>
+<li><code>vkEnumeratePhysicalDevices</code></li>
+<li><code>vkCreateInstance</code></li>
+<li><code>vkDestroyInstance</code></li>
+</ul>
+<p>You query Vulkan Instance functions using <code>vkGetInstanceProcAddr</code>.
+<code>vkGetInstanceProcAddr</code> can be used to query either device or instance entry-
+points in addition to all core entry-points.  The returned function pointer is
+valid for this Instance and any object created under this Instance (including
+all <code>VkDevice</code> objects).</p>
+<p>Similarly, an Instance extension is a set of Vulkan Instance functions extending
+the Vulkan language.  These will be discussed in more detail later.</p>
+<h5>
+<a id="user-content-device-related-objects" class="anchor" href="#user-content-device-related-objects" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Device-related Objects</h5>
+<p>A Vulkan Device, on the other-hand, is a logical identifier used to associate
+functions with a particular physical device on a user's system.  Vulkan
+constructs associated directly with a device include:</p>
+<ul>
+<li><code>VkDevice</code></li>
+<li><code>VkQueue</code></li>
+<li><code>VkCommandBuffer</code></li>
+<li>Any dispatchable object that is a child of a one of the above.</li>
+</ul>
+<p>A Device function is any Vulkan function which takes any Device Object as its
+first parameter.  Some Vulkan Device functions are:</p>
+<ul>
+<li><code>vkQueueSubmit</code></li>
+<li><code>vkBeginCommandBuffer</code></li>
+<li><code>vkCreateEvent</code></li>
+</ul>
+<p>You can query Vulkan Device functions using either <code>vkGetInstanceProcAddr</code> or
+<code>vkGetDeviceProcAddr</code>.  If you choose to use <code>vkGetInstanceProcAddr</code>, it will
+have an additional level built into the call chain, which will reduce
+performance slightly.  However, the function pointer returned can be used for
+any device created later, as long as it is associated with the same Vulkan
+Instance. If, instead you use <code>vkGetDeviceProcAddr</code>, the call chain will be more
+optimized to the specific device, but it will <strong>only</strong> work for the device used
+to query the function function pointer.  Also, unlike <code>vkGetInstanceProcAddr</code>,
+<code>vkGetDeviceProcAddr</code> can only be used on core Vulkan Device functions, or
+Device extension functions.</p>
+<p>The best solution is to query Instance extension functions using
+<code>vkGetInstanceProcAddr</code>, and to query Device extension functions using
+<code>vkGetDeviceProcAddr</code>.  See
+<a href="#user-content-best-application-performance-setup">Best Application Performance Setup</a> for
+more information on this.</p>
+<p>As with Instance extensions, a Device extension is a set of Vulkan Device
+functions extending the Vulkan language. You can read more about these later in
+the document.</p>
+<h4>
+<a id="user-content-dispatch-tables-and-call-chains" class="anchor" href="#user-content-dispatch-tables-and-call-chains" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dispatch Tables and Call Chains</h4>
+<p>Vulkan uses an object model to control the scope of a particular action /
+operation.  The object to be acted on is always the first parameter of a Vulkan
+call and is a dispatchable object (see Vulkan specification section 2.3 Object
+Model).  Under the covers, the dispatchable object handle is a pointer to a
+structure, which in turn, contains a pointer to a dispatch table maintained by
+the loader.  This dispatch table contains pointers to the Vulkan functions
+appropriate to that object.</p>
+<p>There are two types of dispatch tables the loader maintains:</p>
+<ul>
+<li>Instance Dispatch Table</li>
+<li>Created in the loader during the call to <code>vkCreateInstance</code>
+</li>
+<li>Device Dispatch Table</li>
+<li>Created in the loader during the call to <code>vkCreateDevice</code>
+</li>
+</ul>
+<p>At that time the application and/or system can specify optional layers to be
+included.  The loader will initialize the specified layers to create a call
+chain for each Vulkan function and each entry of the dispatch table will point
+to the first element of that chain. Thus, the loader builds an instance call
+chain for each <code>VkInstance</code> that is created and a device call chain for each
+<code>VkDevice</code> that is created.</p>
+<p>When an application calls a Vulkan function, this typically will first hit a
+<em>trampoline</em> function in the loader.  These <em>trampoline</em> functions are small,
+simple functions that jump to the appropriate dispatch table entry for the
+object they are given.  Additionally, for functions in the instance call chain,
+the loader has an additional function, called a <em>terminator</em>, which is called
+after all enabled layers to marshall the appropriate information to all
+available ICDs.</p>
+<h5>
+<a id="user-content-instance-call-chain-example" class="anchor" href="#user-content-instance-call-chain-example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instance Call Chain Example</h5>
+<p>For example, the diagram below represents what happens in the call chain for
+<code>vkCreateInstance</code>. After initializing the chain, the loader will call into the
+first layer's <code>vkCreateInstance</code> which will call the next finally terminating in
+the loader again where this function calls every ICD's <code>vkCreateInstance</code> and
+saves the results. This allows every enabled layer for this chain to set up
+what it needs based on the <code>VkInstanceCreateInfo</code> structure from the
+application.</p>
+<p><a href="./images/loader_instance_chain.png" target="_blank"><img src="./images/loader_instance_chain.png" alt="Instance Call Chain" style="max-width:100%;"></a></p>
+<p>This also highlights some of the complexity the loader must manage when using
+instance call chains. As shown here, the loader's <em>terminator</em> must aggregate
+information to and from multiple ICDs when they are present. This implies that
+the loader has to be aware of any instance-level extensions which work on a
+<code>VkInstance</code> to aggregate them correctly.</p>
+<h5>
+<a id="user-content-device-call-chain-example" class="anchor" href="#user-content-device-call-chain-example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Device Call Chain Example</h5>
+<p>Device call chains are created at <code>vkCreateDevice</code> and are generally simpler
+because they deal with only a single device and the ICD can always be the
+<em>terminator</em> of the chain.</p>
+<p><a href="./images/loader_device_chain_loader.png" target="_blank"><img src="./images/loader_device_chain_loader.png" alt="Loader Device Call Chain" style="max-width:100%;"></a></p>
+<br>
+<br>
+<h2>
+<a id="user-content-application-interface-to-the-loader" class="anchor" href="#user-content-application-interface-to-the-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Application Interface to the Loader</h2>
+<p>In this section we'll discuss how an application interacts with the loader,
+including:</p>
+<ul>
+<li>
+<a href="#user-content-interfacing-with-vulkan-functions">Interfacing with Vulkan Functions</a>
+<ul>
+<li><a href="#user-content-vulkan-direct-exports">Vulkan Direct Exports</a></li>
+<li>
+<a href="#user-content-directly-linking-to-the-loader">Directly Linking to the Loader</a>
+<ul>
+<li><a href="#user-content-dynamic-linking">Dynamic Linking</a></li>
+<li><a href="#user-content-static-linking">Static Linking</a></li>
+</ul>
+</li>
+<li><a href="#user-content-indirectly-linking-to-the-loader">Indirectly Linking to the Loader</a></li>
+<li><a href="#user-content-best-application-performance-setup">Best Application Performance Setup</a></li>
+<li><a href="#user-content-abi-versioning">ABI Versioning</a></li>
+</ul>
+</li>
+<li>
+<a href="#user-content-application-layer-usage">Application Layer Usage</a>
+<ul>
+<li><a href="#user-content-implicit-vs-explicit-layers">Implicit vs Explicit Layers</a></li>
+<li><a href="#user-content-forcing-layer-source-folders">Forcing Layer Source Folders</a></li>
+<li><a href="#user-content-forcing-layers-to-be-enabled">Forcing Layers to be Enabled</a></li>
+<li><a href="#user-content-overall-layer-ordering">Overall Layer Ordering</a></li>
+</ul>
+</li>
+<li>
+<a href="#user-content-application-usage-of-extensions">Application Usage of Extensions</a>
+<ul>
+<li><a href="#user-content-instance-and-device-extensions">Instance and Device Extensions</a></li>
+<li><a href="#user-content-wsi-extensions">WSI Extensions</a></li>
+<li><a href="#user-content-unknown-extensions">Unknown Extensions</a></li>
+</ul>
+</li>
+</ul>
+<h4>
+<a id="user-content-interfacing-with-vulkan-functions" class="anchor" href="#user-content-interfacing-with-vulkan-functions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Interfacing with Vulkan Functions</h4>
+<p>There are several ways you can interface with Vulkan functions through the
+loader.</p>
+<h5>
+<a id="user-content-vulkan-direct-exports" class="anchor" href="#user-content-vulkan-direct-exports" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Vulkan Direct Exports</h5>
+<p>The loader library on Windows, Linux and Android will export all core Vulkan
+and all appropriate Window System Interface (WSI) extensions. This is done to
+make it simpler to get started with Vulkan development. When an application
+links directly to the loader library in this way, the Vulkan calls are simple
+<em>trampoline</em> functions that jump to the appropriate dispatch table entry for the
+object they are given.</p>
+<h5>
+<a id="user-content-directly-linking-to-the-loader" class="anchor" href="#user-content-directly-linking-to-the-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Directly Linking to the Loader</h5>
+<h6>
+<a id="user-content-dynamic-linking" class="anchor" href="#user-content-dynamic-linking" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dynamic Linking</h6>
+<p>The loader is ordinarily distributed as a dynamic library (.dll on Windows or
+.so on Linux) which gets installed to the system path for dynamic libraries.
+Linking to the dynamic library is generally the preferred method of linking to
+the loader, as doing so allows the loader to be updated for bug fixes and
+improvements. Furthermore, the dynamic library is generally installed to Windows
+systems as part of driver installation and is generally provided on Linux
+through the system package manager. This means that applications can usually
+expect a copy of the loader to be present on a system. If applications want to
+be completely sure that a loader is present, they can include a loader or
+runtime installer with their application.</p>
+<h6>
+<a id="user-content-static-linking" class="anchor" href="#user-content-static-linking" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Static Linking</h6>
+<p>The loader can also be used as a static library (this is shipped in the
+Windows SDK as <code>VKstatic.1.lib</code>). Linking to the static loader means that the
+user does not need to have a Vulkan runtime installed, and it also guarantees
+that your application will use a specific version of the loader. However, there
+are several downsides to this approach:</p>
+<ul>
+<li>The static library can never be updated without re-linking the application</li>
+<li>This opens up the possibility that two included libraries could contain
+different versions of the loader
+<ul>
+<li>This could potentially cause conflicts between the different loader versions</li>
+</ul>
+</li>
+</ul>
+<p>As a result, it is recommended that users prefer linking to the .dll and
+.so versions of the loader.</p>
+<h5>
+<a id="user-content-indirectly-linking-to-the-loader" class="anchor" href="#user-content-indirectly-linking-to-the-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Indirectly Linking to the Loader</h5>
+<p>Applications are not required to link directly to the loader library, instead
+they can use the appropriate platform specific dynamic symbol lookup on the
+loader library to initialize the application's own dispatch table. This allows
+an application to fail gracefully if the loader cannot be found.  It also
+provides the fastest mechanism for the application to call Vulkan functions. An
+application will only need to query (via system calls such as dlsym()) the
+address of <code>vkGetInstanceProcAddr</code> from the loader library. Using
+<code>vkGetInstanceProcAddr</code> the application can then discover the address of all
+functions and extensions available, such as <code>vkCreateInstance</code>,
+<code>vkEnumerateInstanceExtensionProperties</code> and
+<code>vkEnumerateInstanceLayerProperties</code> in a platform-independent way.</p>
+<h5>
+<a id="user-content-best-application-performance-setup" class="anchor" href="#user-content-best-application-performance-setup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Best Application Performance Setup</h5>
+<p>If you desire the best performance possible, you should setup your own
+dispatch table so that all your Instance functions are queried using
+<code>vkGetInstanceProcAddr</code> and all your Device functions are queried using
+<code>vkGetDeviceProcAddr</code>.</p>
+<p><em>Why should you do this?</em></p>
+<p>The answer comes in how the call chain of Instance functions are implemented
+versus the call chain of a Device functions.  Remember, a [Vulkan Instance is a
+high-level construct used to provide Vulkan system-level information](#instance-
+related-objects). Because of this, Instance functions need to be broadcasted to
+every available ICD on the system.  The following diagram shows an approximate
+view of an Instance call chain with 3 enabled layers:</p>
+<p><a href="./images/loader_instance_chain.png" target="_blank"><img src="./images/loader_instance_chain.png" alt="Instance Call Chain" style="max-width:100%;"></a></p>
+<p>This is also how a Vulkan Device function call chain looks if you query it
+using <code>vkGetInstanceProcAddr</code>.  On the otherhand, a Device
+function doesn't need to worry about the broadcast becuase it knows specifically
+which associated ICD and which associated Physical Device the call should
+terminate at.  Because of this, the loader doesn't need to get involved between
+any enabled layers and the ICD.  Thus, if you used a loader-exported Vulkan
+Device function, the call chain in the same scenario as above would look like:</p>
+<p><a href="./images/loader_device_chain_loader.png" target="_blank"><img src="./images/loader_device_chain_loader.png" alt="Loader Device Call Chain" style="max-width:100%;"></a></p>
+<p>An even better solution would be for an application to perform a
+<code>vkGetDeviceProcAddr</code> call on all Device functions.  This further optimizes the
+call chain by removing the loader all-together under most scenarios:</p>
+<p><a href="./images/loader_device_chain_app.png" target="_blank"><img src="./images/loader_device_chain_app.png" alt="Application Device Call Chain" style="max-width:100%;"></a></p>
+<p>Also, notice if no layers are enabled, your application function pointer would
+point <strong>directly to the ICD</strong>.  If called enough, those fewer calls can add up
+to performance savings.</p>
+<p><strong>NOTE:</strong> There are some Device functions which still require the loader to
+intercept them with a <em>trampoline</em> and <em>terminator</em>. There are very few of
+these, but they are typically functions which the loader wraps with its own
+data.  In those cases, even the Device call chain will continue to look like the
+Instance call chain.  One example of a Device function requiring a <em>terminator</em>
+is <code>vkCreateSwapchainKHR</code>.  For that function, the loader needs to potentially
+convert the KHR_surface object into an ICD-specific KHR_surface object prior to
+passing down the rest of the function's information to the ICD.</p>
+<p>Remember:</p>
+<ul>
+<li>
+<code>vkGetInstanceProcAddr</code> can be used to query
+either device or instance entry-points in addition to all core entry-points.</li>
+<li>
+<code>vkGetDeviceProcAddr</code> can only be used to query for device
+extension or core device entry-points.</li>
+</ul>
+<h5>
+<a id="user-content-abi-versioning" class="anchor" href="#user-content-abi-versioning" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ABI Versioning</h5>
+<p>The Vulkan loader library will be distributed in various ways including Vulkan
+SDKs, OS package distributions and Independent Hardware Vendor (IHV) driver
+packages. These details are beyond the scope of this document. However, the name
+and versioning of the Vulkan loader library is specified so an app can link to
+the correct Vulkan ABI library version. Vulkan versioning is such that ABI
+backwards compatibility is guaranteed for all versions with the same major
+number (e.g. 1.0 and 1.1). On Windows, the loader library encodes the ABI
+version in its name such that multiple ABI incompatible versions of the loader
+can peacefully coexist on a given system. The Vulkan loader library file name is
+<code>vulkan-&lt;ABI version&gt;.dll</code>. For example, for Vulkan version 1.X on Windows the
+library filename is vulkan-1.dll. And this library file can typically be found
+in the windows/system32 directory (on 64-bit Windows installs, the 32-bit
+version of the loader with the same name can be found in the windows/sysWOW64
+directory).</p>
+<p>For Linux, shared libraries are versioned based on a suffix. Thus, the ABI
+number is not encoded in the base of the library filename as on Windows. On
+Linux an application wanting to link to the latest Vulkan ABI version would
+just link to the name vulkan (libvulkan.so).  A specific Vulkan ABI version can
+also be linked to by applications (e.g. libvulkan.so.1).</p>
+<h4>
+<a id="user-content-application-layer-usage" class="anchor" href="#user-content-application-layer-usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Application Layer Usage</h4>
+<p>Applications desiring Vulkan functionality beyond what the core API offers may
+use various layers or extensions. A layer cannot introduce new Vulkan core API
+entry-points to an application that are not exposed in Vulkan.h.  However,
+layers may offer extensions that introduce new Vulkan commands that can be
+queried through the extension interface.</p>
+<p>A common use of layers is for API validation which can be enabled by
+loading the layer during application development, but not loading the layer
+for application release. This eliminates the overhead of validating the
+application's usage of the API, something that wasn't available on some previous
+graphics APIs.</p>
+<p>To find out what layers are available to your application, use
+<code>vkEnumerateInstanceLayerProperties</code>.  This will report all layers
+that have been discovered by the loader.  The loader looks in various locations
+to find layers on the system.  For more information see the
+<a href="#user-content-layer-discovery">Layer discovery</a> section below.</p>
+<p>To enable a layer, or layers, simply pass the name of the layers you wish to
+enable in the <code>ppEnabledLayerNames</code> field of the <code>VkInstanceCreateInfo</code> during
+a call to <code>vkCreateInstance</code>.  Once done, the layers you have enabled will be
+active for all Vulkan functions using the created <code>VkInstance</code>, and any of
+its child objects.</p>
+<p><strong>NOTE:</strong> Layer ordering is important in several cases since some layers
+interact with each other.  Be careful when enabling layers as this may be
+the case.  See the <a href="#user-content-overall-layer-ordering">Overall Layer Ordering</a> section
+for more information.</p>
+<p>The following code section shows how you would go about enabling the
+VK_LAYER_LUNARG_standard_validation layer.</p>
+<pre><code>   char *instance_validation_layers[] = {
+        "VK_LAYER_LUNARG_standard_validation"
+    };
+    const VkApplicationInfo app = {
+        .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+        .pNext = NULL,
+        .pApplicationName = "TEST_APP",
+        .applicationVersion = 0,
+        .pEngineName = "TEST_ENGINE",
+        .engineVersion = 0,
+        .apiVersion = VK_API_VERSION_1_0,
+    };
+    VkInstanceCreateInfo inst_info = {
+        .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+        .pNext = NULL,
+        .pApplicationInfo = &amp;app,
+        .enabledLayerCount = 1,
+        .ppEnabledLayerNames = (const char *const *)instance_validation_layers,
+        .enabledExtensionCount = 0,
+        .ppEnabledExtensionNames = NULL,
+    };
+    err = vkCreateInstance(&amp;inst_info, NULL, &amp;demo-&gt;inst);
+</code></pre>
+<p>At <code>vkCreateInstance</code> and <code>vkCreateDevice</code>, the loader constructs call chains
+that include the application specified (enabled) layers.  Order is important in
+the <code>ppEnabledLayerNames</code> array; array element 0 is the topmost (closest to the
+application) layer inserted in the chain and the last array element is closest
+to the driver.  See the <a href="#user-content-overall-layer-ordering">Overall Layer Ordering</a>
+section for more information on layer ordering.</p>
+<p><strong>NOTE:</strong> <em>Device Layers Are Now Deprecated</em></p>
+<blockquote>
+<p><code>vkCreateDevice</code> originally was able to select layers in a similar manner to
+<code>vkCreateInstance</code>.  This lead to the concept of "instance
+layers" and "device layers".  It was decided by Khronos to deprecate the
+"device layer" functionality and only consider "instance layers".
+Therefore, <code>vkCreateDevice</code> will use the layers specified at
+<code>vkCreateInstance</code>.
+Because of this, the following items have been deprecated:</p>
+<ul>
+<li>
+<code>VkDeviceCreateInfo</code> fields:</li>
+<li><code>ppEnabledLayerNames</code></li>
+<li><code>enabledLayerCount</code></li>
+<li>The <code>vkEnumerateDeviceLayerProperties</code> function</li>
+</ul>
+</blockquote>
+<h5>
+<a id="user-content-implicit-vs-explicit-layers" class="anchor" href="#user-content-implicit-vs-explicit-layers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Implicit vs Explicit Layers</h5>
+<p>Explicit layers are layers which are enabled by an application (e.g. with the
+vkCreateInstance function), or by an environment variable (as mentioned
+previously).</p>
+<p>Implicit layers are those which are enabled by their existence. For example,
+certain application environments (e.g. Steam or an automotive infotainment
+system) may have layers which they always want enabled for all applications
+that they start. Other implicit layers may be for all applications started on a
+given system (e.g. layers that overlay frames-per-second). Implicit layers are
+enabled automatically, whereas explicit layers must be enabled explicitly.</p>
+<p>Implicit layers have an additional requirement over explicit layers in that they
+require being able to be disabled by an environmental variable.  This is due
+to the fact that they are not visible to the application and could cause issues.
+A good principle to keep in mind would be to define both an enable and disable
+environment variable so the users can deterministicly enable the functionality.
+On Desktop platforms (Windows and Linux), these enable/disable settings are
+defined in the layer's JSON file.</p>
+<p>Discovery of system-installed implicit and explicit layers is described later in
+the <a href="#user-content-layer-discovery">Layer Discovery Section</a>.  For now, simply know that what
+distinguishes a layer as implicit or explicit is dependent on the Operating
+system, as shown in the table below.</p>
+<table>
+<thead>
+<tr>
+<th>Operating System</th>
+<th>Implicit Layer Identification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td>Implicit Layers are located in a different Windows registry location than Explicit Layers.</td>
+</tr>
+<tr>
+<td>Linux</td>
+<td>Implicit Layers are located in a different directory location than Explicit Layers.</td>
+</tr>
+<tr>
+<td>Android</td>
+<td>There is <strong>No Support For Implicit Layers</strong> on Android.</td>
+</tr>
+</tbody>
+</table>
+<h5>
+<a id="user-content-forcing-layer-source-folders" class="anchor" href="#user-content-forcing-layer-source-folders" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Forcing Layer Source Folders</h5>
+<p>Developers may need to use special, pre-production layers, without modifying the
+system-installed layers. You can direct the loader to look for layers in a
+specific folder by defining the "VK_LAYER_PATH" environment variable.  This
+will override the mechanism used for finding system-installed layers. Because
+layers of interest may exist in several disinct folders on a system, this
+environment variable can containis several paths seperated by the operating
+specific path separator.  On Windows, each separate folder should be separated
+in the list using a semi-colon.  On Linux, each folder name should be separated
+using a colon.</p>
+<p>If "VK_LAYER_PATH" exists, <strong>only</strong> the folders listed in it will be scanned
+for layers.  Each directory listed should be the full pathname of a folder
+containing layer manifest files.</p>
+<h5>
+<a id="user-content-forcing-layers-to-be-enabled-on-windows-and-linux" class="anchor" href="#user-content-forcing-layers-to-be-enabled-on-windows-and-linux" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Forcing Layers to be Enabled on Windows and Linux</h5>
+<p>Developers may want to enable layers that are not enabled by the given
+application they are using. On Linux and Windows, the environment variable
+"VK_INSTANCE_LAYERS" can be used to enable additional layers which are
+not specified (enabled) by the application at <code>vkCreateInstance</code>.
+"VK_INSTANCE_LAYERS" is a colon (Linux)/semi-colon (Windows) separated
+list of layer names to enable. Order is relevant with the first layer in the
+list being the top-most layer (closest to the application) and the last
+layer in the list being the bottom-most layer (closest to the driver).
+See the <a href="#user-content-overall-layer-ordering">Overall Layer Ordering</a> section
+for more information.</p>
+<p>Application specified layers and user specified layers (via environment
+variables) are aggregated and duplicates removed by the loader when enabling
+layers. Layers specified via environment variable are top-most (closest to the
+application) while layers specified by the application are bottommost.</p>
+<p>An example of using these environment variables to activate the validation
+layer <code>VK_LAYER_LUNARG_parameter_validation</code> on Windows or Linux is as follows:</p>
+<pre><code>&gt; $ export VK_INSTANCE_LAYERS=VK_LAYER_LUNARG_parameter_validation
+</code></pre>
+<h5>
+<a id="user-content-overall-layer-ordering" class="anchor" href="#user-content-overall-layer-ordering" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overall Layer Ordering</h5>
+<p>The overall ordering of all layers by the loader based on the above looks
+as follows:</p>
+<p><a href="./images/loader_layer_order.png" target="_blank"><img src="./images/loader_layer_order.png" alt="Loader Layer Ordering" style="max-width:100%;"></a></p>
+<p>Ordering may also be important internal to the list of Explicit Layers.
+Some layers may be dependent on other behavior being implemented before
+or after the loader calls it.  For example: the VK_LAYER_LUNARG_core_validation
+layer expects the VK_LAYER_LUNARG_parameter_validation to be called first.
+This is because the VK_LAYER_LUNARG_parameter_validation will filter out any
+invalid <code>NULL</code> pointer calls prior to the rest of the validation checking
+done by VK_LAYER_LUNARG_core_validation.  If not done properly, you may see
+crashes in the VK_LAYER_LUNARG_core_validation layer that would otherwise be
+avoided.</p>
+<h4>
+<a id="user-content-application-usage-of-extensions" class="anchor" href="#user-content-application-usage-of-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Application Usage of Extensions</h4>
+<p>Extensions are optional functionality provided by a layer, the loader or an
+ICD. Extensions can modify the behavior of the Vulkan API and need to be
+specified and registered with Khronos.  These extensions can be created
+by an Independent Hardware Vendor (IHV) to expose new hardware functionality,
+or by a layer writer to expose some internal feature, or by the loader to
+improve functional behavior.  Information about various extensions can be
+found in the Vulkan Spec, and vulkan.h header file.</p>
+<h5>
+<a id="user-content-instance-and-device-extensions" class="anchor" href="#user-content-instance-and-device-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Instance and Device Extensions</h5>
+<p>As hinted at in the <a href="#user-content-instance-versus-device">Instance Versus Device</a> section,
+there are really two types of extensions:</p>
+<ul>
+<li>Instance Extensions</li>
+<li>Device Extensions</li>
+</ul>
+<p>An Instance extension is an extension which modifies existing behavior or
+implements new behavior on instance-level objects, like a <code>VkInstance</code> or
+a <code>VkPhysicalDevice</code>.  A Device extension is an extension which does the same,
+but for any <code>VkDevice</code> object, or any dispatchable object that is a child of a
+<code>VkDevice</code> (<code>VkQueue</code> and <code>VkCommandBuffer</code> are examples of these).</p>
+<p>It is <strong>very</strong> important to know what type of extension you are desiring to
+enable as you will enable Instance extensions during <code>vkCreateInstance</code> and
+Device extensions during <code>vkCreateDevice</code>.</p>
+<p>The loader discovers and aggregates all
+extensions from layers (both explicit and implicit), ICDs and the loader before
+reporting them to the application in <code>vkEnumerateXXXExtensionProperties</code>
+(where XXX is either "Instance" or "Device").</p>
+<ul>
+<li>Instance extensions are discovered via
+<code>vkEnumerateInstanceExtensionProperties</code>.</li>
+<li>Device extensions are be discovered via
+<code>vkEnumerateDeviceExtensionProperties</code>.</li>
+</ul>
+<p>Looking at <code>vulkan.h</code>, you'll notice that they are both similar.  For example,
+<code>vkEnumerateInstanceExtensionProperties</code> prototype looks as follows:</p>
+<pre><code>   VkResult
+   vkEnumerateInstanceExtensionProperties(const char *pLayerName,
+                                          uint32_t *pPropertyCount,
+                                          VkExtensionProperties *pProperties);
+</code></pre>
+<p>The "pLayerName" parameter in these functions is used to select either a single
+layer or the Vulkan platform implementation. If "pLayerName" is NULL, extensions
+from Vulkan implementation components (including loader, implicit layers, and
+ICDs) are enumerated. If "pLayerName" is equal to a discovered layer module name
+then only extensions from that layer (which may be implicit or explicit) are
+enumerated. Duplicate extensions (e.g. an implicit layer and ICD might report
+support for the same extension) are eliminated by the loader. For duplicates,
+the ICD version is reported and the layer version is culled.</p>
+<p>Also, Extensions <em>must be enabled</em> (in <code>vkCreateInstance</code> or <code>vkCreateDevice</code>)
+before the functions associated with the extensions can be used.  If you get an
+Extension function using either <code>vkGetInstanceProcAddr</code> or
+<code>vkGetDeviceProcAddr</code>, but fail to enable it, you could experience undefined
+behavior.  This should actually be flagged if you run with Validation layers
+enabled.</p>
+<h5>
+<a id="user-content-wsi-extensions" class="anchor" href="#user-content-wsi-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>WSI Extensions</h5>
+<p>Khronos approved WSI extensions are available and provide Windows System
+Integration support for various execution environments. It is important to
+understand that some WSI extensions are valid for all targets, but others are
+particular to a given execution environment (and loader). This desktop loader
+(currently targeting Windows and Linux) only enables and directly exports those
+WSI extensions that are appropriate to the current environment. For the most
+part, the selection is done in the loader using compile-time preprocessor flags.
+All versions of the desktop loader currently expose at least the following WSI
+extension support:</p>
+<ul>
+<li>VK_KHR_surface</li>
+<li>VK_KHR_swapchain</li>
+<li>VK_KHR_display</li>
+</ul>
+<p>In addition, each of the following OS targets for the loader support target-
+specific extensions:</p>
+<table>
+<thead>
+<tr>
+<th>Windowing System</th>
+<th>Extensions available</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td>VK_KHR_win32_surface</td>
+</tr>
+<tr>
+<td>Linux (Default)</td>
+<td>VK_KHR_xcb_surface and VK_KHR_xlib_surface</td>
+</tr>
+<tr>
+<td>Linux (Wayland)</td>
+<td>VK_KHR_wayland_surface</td>
+</tr>
+<tr>
+<td>Linux (Mir)</td>
+<td>VK_KHR_mir_surface</td>
+</tr>
+</tbody>
+</table>
+<p><strong>NOTE:</strong> Wayland and Mir targets are not fully supported at this time.  Wayland
+support is present, but should be considered Beta quality.  Mir support is not
+completely implemented at this time.</p>
+<p>It is important to understand that while the loader may support the various
+entry-points for these extensions, there is a hand-shake required to actually
+use them:</p>
+<ul>
+<li>At least one physical device must support the extension(s)</li>
+<li>The application must select such a physical device</li>
+<li>The application must request the extension(s) be enabled while creating the
+instance or logical device (This depends on whether or not the given extension
+works with an instance or a device).</li>
+<li>The instance and/or logical device creation must succeed.</li>
+</ul>
+<p>Only then can you expect to properly use a WSI extension in your Vulkan program.</p>
+<h5>
+<a id="user-content-unknown-extensions" class="anchor" href="#user-content-unknown-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Unknown Extensions</h5>
+<p>With the ability to expand Vulkan so easily, extensions will be created that the
+loader knows nothing about.  If the extension is a device extension, the loader
+will pass the unknown entry-point down the device call chain ending with the
+appropriate ICD entry-points.  The same thing will happen, if the extension is
+an instance extension which takes a physical device paramater as it's first
+component.  However, for all other instance extensions the loader will fail to
+load it.</p>
+<p><em>But why doesn't the loader support unknown instance extensions?</em>
+<br>
+Let's look again at the Instance call chain:</p>
+<p><a href="./images/loader_instance_chain.png" target="_blank"><img src="./images/loader_instance_chain.png" alt="Instance call chain" style="max-width:100%;"></a></p>
+<p>Notice that for a normal instance function call, the loader has to handle
+passing along the function call to the available ICDs.  If the loader has no
+idea of the parameters or return value of the instance call, it can't properly
+pass information along to the ICDs.  There may be ways to do this, which will be
+explored in the future.  However, for now, this loader does not support
+instance extensions which don't take a physical device as their first parameter.</p>
+<p>Because the device call-chain does not normally pass through the loader
+<em>terminator</em>, this is not a problem for device extensions.  Additionally,
+since a physical device is associated with one ICD, we can use a generic
+<em>terminator</em> pointing to one ICD.  This is because both of these extensions
+terminate directly in the ICD they are associated with.</p>
+<p><em>Is this a big problem?</em>
+<br>
+No!  Most extension functionality only affects either a physical or logical
+device and not an instance.  Thus, the overwhelming majority of extensions
+should be supported with direct loader support.</p>
+<h5>
+<a id="user-content-filtering-out-unknown-instance-extension-names" class="anchor" href="#user-content-filtering-out-unknown-instance-extension-names" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filtering Out Unknown Instance Extension Names</h5>
+<p>In some cases, an ICD may support instance extensions that the loader does not.
+For the above reasons, the loader will filter out the names of these unknown instance
+extensions when an application calls <code>vkEnumerateInstanceExtensionProperties</code>.
+Additionally, this behavior will cause the loader to throw an error during
+<code>vkCreateInstance</code> if you still attempt to use one of these extensions.  The intent is
+to protect applications so that they don't inadvertantly use functionality
+which could lead to a crash.</p>
+<p>On the other-hand, if you know you can safely use the extension, you may disable
+the filtering by defining the environment variable <code>VK_LOADER_DISABLE_INST_EXT_FILTER</code>
+and setting the value to a non-zero number.  This will effectively disable the
+loader's filtering out of instance extension names.</p>
+<br>
+<br>
+<h2>
+<a id="user-content-loader-and-layer-interface" class="anchor" href="#user-content-loader-and-layer-interface" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loader and Layer Interface</h2>
+<p>In this section we'll discuss how the loader interacts with layers, including:</p>
+<ul>
+<li>
+<a href="#user-content-layer-discovery">Layer Discovery</a>
+<ul>
+<li><a href="#user-content-layer-manifest-file-usage">Layer Manifest File Usage</a></li>
+<li><a href="#user-content-android-layer-discovery">Android Layer Discovery</a></li>
+<li><a href="#user-content-windows-layer-discovery">Windows Layer Discovery</a></li>
+<li><a href="#user-content-linux-layer-discovery">Linux Layer Discovery</a></li>
+</ul>
+</li>
+<li><a href="#user-content-layer-version-negotiation">Layer Version Negotiation</a></li>
+<li><a href="#user-content-layer-call-chains-and-distributed-dispatch">Layer Call Chains and Distributed Dispatch</a></li>
+<li><a href="#user-content-layer-unknown-physical-device-extensions">Layer Unknown Physical Device Extensions</a></li>
+<li><a href="#user-content-layer-intercept-requirements">Layer Intercept Requirements</a></li>
+<li><a href="#user-content-distributed-dispatching-requirements">Distributed Dispatching Requirements</a></li>
+<li><a href="#user-content-layer-conventions-and-rules">Layer Conventions and Rules</a></li>
+<li><a href="#user-content-layer-dispatch-initialization">Layer Dispatch Initialization</a></li>
+<li><a href="#user-content-example-code-for-createinstance">Example Code for CreateInstance</a></li>
+<li><a href="#user-content-example-code-for-createdevice">Example Code for CreateDevice</a></li>
+<li><a href="#user-content-meta-layers">Meta-layers</a></li>
+<li>
+<a href="#user-content-special-considerations">Special Considerations</a>
+<ul>
+<li>
+<a href="#user-content-associating-private-data-with-vulkan-objects-within-a-layer">Associating Private Data with Vulkan Objects Within a Layer</a>
+<ul>
+<li><a href="#user-content-wrapping">Wrapping</a></li>
+<li><a href="#user-content-hash-maps">Hash Maps</a></li>
+</ul>
+</li>
+<li><a href="#user-content-creating-new-dispatchable-objects">Creating New Dispatchable Objects</a></li>
+</ul>
+</li>
+<li>
+<a href="#user-content-layer-manifest-file-format">Layer Manifest File Format</a>
+<ul>
+<li><a href="#user-content-layer-manifest-file-version-history">Layer Manifest File Version History</a></li>
+</ul>
+</li>
+<li>
+<a href="#user-content-layer-library-versions">Layer Library Versions</a>
+<ul>
+<li><a href="#user-content-layer-library-api-version-2">Layer Library API Version 2</a></li>
+<li><a href="#user-content-layer-library-api-version-1">Layer Library API Version 1</a></li>
+<li><a href="#user-content-layer-library-api-version-0">Layer Library API Version 0</a></li>
+</ul>
+</li>
+</ul>
+<h4>
+<a id="user-content-layer-discovery" class="anchor" href="#user-content-layer-discovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Discovery</h4>
+<p>As mentioned in the
+<a href="#user-content-implicit-vs-explicit-layers">Application Interface section</a>,
+layers can be categorized into two categories:</p>
+<ul>
+<li>Implicit Layers</li>
+<li>Explicit Layers</li>
+</ul>
+<p>The main difference between the two is that Implicit Layers are automatically
+enabled, unless overriden, and Explicit Layers must be enabled.  Remember,
+Implicit Layers are not present on all Operating Systems (like Android).</p>
+<p>On any system, the loader looks in specific areas for information on the
+layers that it can load at a user's request.  The process of finding the
+available layers on a system is known as Layer Discovery.  During discovery,
+the loader determines what layers are available, the layer name, the layer
+version, and any extensions supported by the layer.  This information is
+provided back to an application through <code>vkEnumerateInstanceLayerProperties</code>.</p>
+<p>The group of layers available to the loader is known as a layer library.  This
+section defines an extensible interface to discover what layers are contained in
+the layer library.</p>
+<p>This section also specifies the minimal conventions and rules a layer must
+follow, especially with regards to interacting with the loader and other layers.</p>
+<h5>
+<a id="user-content-layer-manifest-file-usage" class="anchor" href="#user-content-layer-manifest-file-usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Manifest File Usage</h5>
+<p>On Windows and Linux systems, JSON formatted manifest files are used to store
+layer information.  In order to find system-installed layers, the Vulkan loader
+will read the JSON files to identify the names and attributes of layers and
+their extensions. The use of manifest files allows the loader to avoid loading
+any shared library files when the application does not query nor request any
+extensions.  The format of <a href="#user-content-layer-manifest-file-format">Layer Manifest File</a>
+is detailed below.</p>
+<p>The Android loader does not use manifest files.  Instead, the loader queries the
+layer properties using special functions known as "introspection" functions.
+The intent of these functions is to determine the same required information
+gathered from reading the manifest files.  These introspection functions are
+not used by the desktop loader but should be present in layers to maintain
+consistency.  The specific "introspection" functions are called out in
+the <a href="#user-content-layer-manifest-file-format">Layer Manifest File Format</a> table.</p>
+<h5>
+<a id="user-content-android-layer-discovery" class="anchor" href="#user-content-android-layer-discovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Android Layer Discovery</h5>
+<p>On Android, the loader looks for layers to enumerate in the
+/data/local/debug/vulkan folder.  An application enabled for debug has the
+ability to enumerate and enable any layers in that location.</p>
+<h5>
+<a id="user-content-windows-layer-discovery" class="anchor" href="#user-content-windows-layer-discovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Windows Layer Discovery</h5>
+<p>In order to find system-installed layers, the Vulkan loader will scan the
+values in the following Windows registry keys:</p>
+<pre><code>   HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ExplicitLayers
+   HKEY_CURRENT_USER\SOFTWARE\Khronos\Vulkan\ExplicitLayers
+   HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\ImplicitLayers
+   HKEY_CURRENT_USER\SOFTWARE\Khronos\Vulkan\ImplicitLayers
+</code></pre>
+<p>For each value in these keys which has DWORD data set to 0, the loader opens
+the JSON manifest file specified by the name of the value. Each name must be a
+full pathname to the manifest file.  The Vulkan loader will open each info file
+to obtain information about the layer, including the name or pathname of a
+shared library (".dll") file.  However, if VK_LAYER_PATH is defined, then the
+loader will instead look at the paths defined by that variable instead of using
+the information provided by these registry keys.  See
+<a href="#user-content-forcing-layer-source-folders">Forcing Layer Source Folders</a> for more
+information on this.</p>
+<h5>
+<a id="user-content-linux-layer-discovery" class="anchor" href="#user-content-linux-layer-discovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Linux Layer Discovery</h5>
+<p>On Linux, the Vulkan loader will scan the files in the following Linux
+directories:</p>
+<pre><code>/usr/local/etc/vulkan/explicit_layer.d
+/usr/local/etc/vulkan/implicit_layer.d
+/usr/local/share/vulkan/explicit_layer.d
+/usr/local/share/vulkan/implicit_layer.d
+/etc/vulkan/explicit_layer.d
+/etc/vulkan/implicit_layer.d
+/usr/share/vulkan/explicit_layer.d
+/usr/share/vulkan/implicit_layer.d
+$HOME/.local/share/vulkan/explicit_layer.d
+$HOME/.local/share/vulkan/implicit_layer.d
+</code></pre>
+<p>Of course, ther are some things you have to know about the above folders:</p>
+<ol>
+<li>The "/usr/local/*" directories can be configured to be other directories at
+build time.</li>
+<li>$HOME is the current home directory of the application's user id; this path
+will be ignored for suid programs.</li>
+<li>The "/usr/local/etc/vulkan/*_layer.d" and
+"/usr/local/share/vulkan/*_layer.d" directories are for layers that are
+installed from locally-built sources.</li>
+<li>The "/usr/share/vulkan/*_layer.d" directories are for layers that are
+installed from Linux-distribution-provided packages.</li>
+</ol>
+<p>As on Windows, if VK_LAYER_PATH is defined, then the
+loader will instead look at the paths defined by that variable instead of using
+the information provided by these default paths.  However, these
+environment variables are only used for non-suid programs.  See
+<a href="#user-content-forcing-layer-source-folders">Forcing Layer Source Folders</a> for more
+information on this.</p>
+<h4>
+<a id="user-content-layer-version-negotiation" class="anchor" href="#user-content-layer-version-negotiation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Version Negotiation</h4>
+<p>Now that a layer has been discovered, an application can choose to load it (or
+it is loaded by default if it is an Implicit layer).  When the loader attempts
+to load the layer, the first thing it does is attempt to negotiate the version
+of the loader to layer interface.  In order to negotiate the loader/layer
+interface version, the layer must implement the
+<code>vkNegotiateLoaderLayerInterfaceVersion</code> function.  The following information is
+provided for this interface in include/vulkan/vk_layer.h:</p>
+<div class="highlight highlight-source-c++"><pre>  <span class="pl-k">typedef</span> <span class="pl-k">enum</span> VkNegotiateLayerStructType {
+      LAYER_NEGOTIATE_INTERFACE_STRUCT = <span class="pl-c1">1</span>,
+  } VkNegotiateLayerStructType;
+
+  <span class="pl-k">typedef</span> <span class="pl-k">struct</span> <span class="pl-en">VkNegotiateLayerInterface</span> {
+      VkNegotiateLayerStructType <span class="pl-smi">sType</span>;
+      <span class="pl-k">void</span> *pNext;
+      <span class="pl-c1">uint32_t</span> loaderLayerInterfaceVersion;
+      PFN_vkGetInstanceProcAddr pfnGetInstanceProcAddr;
+      PFN_vkGetDeviceProcAddr pfnGetDeviceProcAddr;
+      PFN_GetPhysicalDeviceProcAddr pfnGetPhysicalDeviceProcAddr;
+  } VkNegotiateLayerInterface;
+
+  VkResult <span class="pl-en">vkNegotiateLoaderLayerInterfaceVersion</span>(
+                   VkNegotiateLayerInterface *pVersionStruct);</pre></div>
+<p>You'll notice the <code>VkNegotiateLayerInterface</code> structure is similar to other
+Vulkan structures.  The "sType" field, in this case takes a new enum defined
+just for internal loader/layer interfacing use.  The valid values for "sType"
+could grow in the future, but right only havs the one value
+"LAYER_NEGOTIATE_INTERFACE_STRUCT".</p>
+<p>This function (<code>vkNegotiateLoaderLayerInterfaceVersion</code>) should be exported by
+the layer so that using "GetProcAddress" on Windows or "dlsym" on Linux, should
+return a valid function pointer to it.  Once the loader has grabbed a valid
+address to the layers function, the loader will create a variable of type
+<code>VkNegotiateLayerInterface</code> and initialize it in the following ways:</p>
+<ol>
+<li>Set the structure "sType" to "LAYER_NEGOTIATE_INTERFACE_STRUCT"</li>
+<li>Set pNext to NULL.
+<ul>
+<li>This is for future growth</li>
+</ul>
+</li>
+<li>Set "loaderLayerInterfaceVersion" to the current version the loader desires
+to set the interface to.
+<ul>
+<li>The minimum value sent by the loader will be 2 since it is the first
+version supporting this function.</li>
+</ul>
+</li>
+</ol>
+<p>The loader will then individually call each layer’s
+<code>vkNegotiateLoaderLayerInterfaceVersion</code> function with the filled out
+“VkNegotiateLayerInterface”. The layer will either accept the loader's version
+set in "loaderLayerInterfaceVersion", or modify it to the closest value version
+of the interface that the layer can support.  The value should not be higher
+than the version requested by the loader.  If the layer can't support at a
+minimum the version requested, then the layer should return an error like
+"VK_ERROR_INITIALIZATION_FAILED".  If a layer can support some version, then
+the layer should do the following:</p>
+<ol>
+<li>Adjust the version to the layer's desired version.</li>
+<li>The layer should fill in the function pointer values to its internal
+functions:
+<ul>
+<li>"pfnGetInstanceProcAddr" should be set to the layer’s internal
+<code>GetInstanceProcAddr</code> function.</li>
+<li>"pfnGetDeviceProcAddr" should be set to the layer’s internal
+<code>GetDeviceProcAddr</code> function.</li>
+<li>"pfnGetPhysicalDeviceProcAddr" should be set to the layer’s internal
+<code>GetPhysicalDeviceProcAddr</code> function.
+<ul>
+<li>If the layer supports no physical device extensions, it may set the
+value to NULL.</li>
+<li>More on this function later</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>The layer should return "VK_SUCCESS"</li>
+</ol>
+<p>This function <strong>SHOULD NOT CALL DOWN</strong> the layer chain to the next layer.
+The loader will work with each layer individually.</p>
+<p>If the layer supports the new interface and reports version 2 or greater, then
+the loader will use the “fpGetInstanceProcAddr” and “fpGetDeviceProcAddr”
+functions from the “VkNegotiateLayerInterface” structure.  Prior to these
+changes, the loader would query each of those functions using "GetProcAddress"
+on Windows or "dlsym" on Linux.</p>
+<h4>
+<a id="user-content-layer-call-chains-and-distributed-dispatch" class="anchor" href="#user-content-layer-call-chains-and-distributed-dispatch" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Call Chains and Distributed Dispatch</h4>
+<p>There are two key architectural features that drive the loader to layer library
+interface:</p>
+<ol>
+<li>Separate and distinct instance and device call chains</li>
+<li>Distributed dispatch.</li>
+</ol>
+<p>You can read an overview of dispatch tables and call chains above in the
+<a href="#user-content-dispatch-tables-and-call-chains">Dispatch Tables and Call Chains</a> section.</p>
+<p>What's important to note here is that a layer can intercept Vulkan
+instance functions, device functions or both. For a layer to intercept instance
+functions, it must participate in the instance call chain.  For a layer to
+intercept device functions, it must participate in the device call chain.</p>
+<p>Remember, a layer does not need to intercept all instance or device functions,
+instead, it can choose to intercept only a subset of those functions.</p>
+<p>Normally, when a layer intercepts a given Vulkan function, it will call down the
+instance or device call chain as needed. The loader and all layer libraries that
+participate in a call chain cooperate to ensure the correct sequencing of calls
+from one entity to the next. This group effort for call chain sequencing is
+hereinafter referred to as <strong>distributed dispatch</strong>.</p>
+<p>In distributed dispatch each layer is responsible for properly calling the next
+entity in the call chain. This means that a dispatch mechanism is required for
+all Vulkan functions that a layer intercepts. If a Vulkan function is not
+intercepted by a layer, or if a layer chooses to terminate the function by not
+calling down the chain, then no dispatch is needed for that particular function.</p>
+<p>For example, if the enabled layers intercepted only certain instance functions,
+the call chain would look as follows:
+<a href="./images/function_instance_chain.png" target="_blank"><img src="./images/function_instance_chain.png" alt="Instance Function Chain" style="max-width:100%;"></a></p>
+<p>Likewise, if the enabled layers intercepted only a few of the device functions,
+the call chain could look this way:
+<a href="./images/function_device_chain.png" target="_blank"><img src="./images/function_device_chain.png" alt="Device Function Chain" style="max-width:100%;"></a></p>
+<p>The loader is responsible for dispatching all core and instance extension Vulkan
+functions to the first entity in the call chain.</p>
+<h4>
+<a id="user-content-layer-unknown-physical-device-extensions" class="anchor" href="#user-content-layer-unknown-physical-device-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Unknown Physical Device Extensions</h4>
+<p>Originally, if the loader was called with <code>vkGetInstanceProcAddr</code>, it would
+result in the following behavior:</p>
+<ol>
+<li>The loader would check if core function:
+<ul>
+<li>If it was, it would return the function pointer</li>
+</ul>
+</li>
+<li>The loader would check if known extension function:
+<ul>
+<li>If it was, it would return the function pointer</li>
+</ul>
+</li>
+<li>If the loader knew nothing about it, it would call down using
+<code>GetInstanceProcAddr</code>
+<ul>
+<li>If it returned non-NULL, treat it as an unknown logical device command.</li>
+<li>This meant setting up a generic trampoline function that takes in a
+VkDevice as the first parameter and adjusting the dispatch table to call the
+ICD/Layers function after getting the dispatch table from the VkDevice.</li>
+</ul>
+</li>
+<li>If all the above failed, the loader would return NULL to the application.</li>
+</ol>
+<p>This caused problems when a layer attempted to expose new physical device
+extensions the loader knew nothing about, but an application did.  Because the
+loader knew nothing about it, the loader would get to step 3 in the above
+process and would treat the function as an unknown logical device command.  The
+problem is, this would create a generic VkDevice trampoline function which, on
+the first call, would attempt to dereference the VkPhysicalDevice as a VkDevice.
+This would lead to a crash or corruption.</p>
+<p>In order to identify the extension entry-points specific to physical device
+extensions, the following function can be added to a layer:</p>
+<div class="highlight highlight-source-c++"><pre>PFN_vkVoidFunction <span class="pl-en">vk_layerGetPhysicalDeviceProcAddr</span>(VkInstance instance,
+                                                     <span class="pl-k">const</span> <span class="pl-k">char</span>* pName);</pre></div>
+<p>This function behaves similar to <code>vkGetInstanceProcAddr</code> and
+<code>vkGetDeviceProcAddr</code> except it should only return values for physical device
+extension entry-points.  In this way, it compares "pName" to every physical
+device function supported in the layer.</p>
+<p>The following rules apply:</p>
+<ul>
+<li>If it is the name of a physical device function supported by the layer, the
+pointer to the layer's corresponding function should be returned.</li>
+<li>If it is the name of a valid function which is <strong>not</strong> a physical device
+function (i.e. an Instance, Device, or other function implemented by the layer),
+then the value of NULL should be returned.
+<ul>
+<li>We don’t call down since we know the command is not a physical device
+extension).</li>
+</ul>
+</li>
+<li>If the layer has no idea what this function is, it should call down the layer
+chain to the next <code>vk_layerGetPhysicalDeviceProcAddr</code> call.
+<ul>
+<li>This can be retrieved in one of two ways:
+<ul>
+<li>During <code>vkCreateInstance</code>, it is passed to a layer in the
+chain information passed to a layer in the <code>VkLayerInstanceCreateInfo</code>
+structure.
+<ul>
+<li>Use <code>get_chain_info()</code> to get the pointer to the
+<code>VkLayerInstanceCreateInfo</code> structure.  Let's call it chain_info.</li>
+<li>The address is then under
+chain_info-&gt;u.pLayerInfo-&gt;pfnNextGetPhysicalDeviceProcAddr</li>
+<li>See
+<a href="#user-content-example-code-for-createinstance">Example Code for CreateInstance</a>
+</li>
+</ul>
+</li>
+<li>Using the next layer’s <code>GetInstanceProcAddr</code> function to query for
+<code>vk_layerGetPhysicalDeviceProcAddr</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>This support is optional and should not be considered a requirement.  This is
+only required if a layer intends to support some functionality not directly
+supported by loaders released in the public.  If a layer does implement this
+support, it should return the address of its <code>vk_layerGetPhysicalDeviceProcAddr</code>
+function in the "pfnGetPhysicalDeviceProcAddr" member of the
+<code>VkNegotiateLayerInterface</code> structure during
+<a href="#user-content-layer-version-negotiation">Layer Version Negotiation</a>.  Additionally, the
+layer should also make sure <code>vkGetInstanceProcAddr</code> returns a valid function
+pointer to a query of <code>vk_layerGetPhysicalDeviceProcAddr</code>.</p>
+<p>The new behavior of the loader's <code>vkGetInstanceProcAddr</code> with support for the
+<code>vk_layerGetPhysicalDeviceProcAddr</code> function is as follows:</p>
+<ol>
+<li>Check if core function:
+<ul>
+<li>If it is, return the function pointer</li>
+</ul>
+</li>
+<li>Check if known instance or device extension function:
+<ul>
+<li>If it is, return the function pointer</li>
+</ul>
+</li>
+<li>Call the layer/ICD <code>GetPhysicalDeviceProcAddr</code>
+<ul>
+<li>If it returns non-NULL, return a trampoline to a generic physical device
+function, and setup a generic terminator which will pass it to the proper ICD.</li>
+</ul>
+</li>
+<li>Call down using <code>GetInstanceProcAddr</code>
+<ul>
+<li>If it returns non-NULL, treat it as an unknown logical device command.
+This means setting up a generic trampoline function that takes in a VkDevice as
+the first parameter and adjusting the dispatch table to call the ICD/Layers
+function after getting the dispatch table from the VkDevice. Then, return the
+pointer to corresponding trampoline function.</li>
+</ul>
+</li>
+<li>Return NULL</li>
+</ol>
+<p>You can see now, that, if the command gets promoted to core later, it will no
+longer be setup using <code>vk_layerGetPhysicalDeviceProcAddr</code>.  Additionally, if the
+loader adds direct support for the extension, it will no longer get to step 3,
+because step 2 will return a valid function pointer.  However, the layer should
+continue to support the command query via <code>vk_layerGetPhysicalDeviceProcAddr</code>,
+until at least a Vulkan version bump, because an older loader may still be
+attempting to use the commands.</p>
+<h4>
+<a id="user-content-layer-intercept-requirements" class="anchor" href="#user-content-layer-intercept-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Intercept Requirements</h4>
+<ul>
+<li>Layers intercept a Vulkan function by defining a C/C++ function with
+signature <strong>identical</strong> to the Vulkan API for that function.</li>
+<li>A layer <strong>must intercept at least</strong> <code>vkGetInstanceProcAddr</code> and
+<code>vkCreateInstance</code> to participate in the instance call chain.</li>
+<li>A layer <strong>may also intercept</strong> <code>vkGetDeviceProcAddr</code> and <code>vkCreateDevice</code>
+to participate in the device call chain.</li>
+<li>For any Vulkan function a layer intercepts which has a non-void return value,
+<strong>an appropriate value must be returned</strong> by the layer intercept function.</li>
+<li>Most functions a layer intercepts <strong>should call down the chain</strong> to the
+corresponding Vulkan function in the next entity.
+<ul>
+<li>The common behavior for a layer is to intercept a call, perform some
+behavior, then pass it down to the next entity.
+<ul>
+<li>If you don't pass the information down, undefined behavior may occur.</li>
+<li>This is because the function will not be received by layers further down
+the chain, or any ICDs.</li>
+</ul>
+</li>
+<li>One function that <strong>must never call down the chain</strong> is:
+<ul>
+<li><code>vkNegotiateLoaderLayerInterfaceVersion</code></li>
+</ul>
+</li>
+<li>Three common functions that <strong>may not call down the chain</strong> are:
+<ul>
+<li><code>vkGetInstanceProcAddr</code></li>
+<li><code>vkGetDeviceProcAddr</code></li>
+<li><code>vk_layerGetPhysicalDeviceProcAddr</code></li>
+<li>These functions only call down the chain for Vulkan functions that they
+do not intercept.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Layer intercept functions <strong>may insert extra calls</strong> to Vulkan functions in
+addition to the intercept.
+<ul>
+<li>For example, a layer intercepting <code>vkQueueSubmit</code> may want to add a call to
+<code>vkQueueWaitIdle</code> after calling down the chain for <code>vkQueueSubmit</code>.</li>
+<li>This would result in two calls down the chain: First a call down the
+<code>vkQueueSubmit</code> chain, followed by a call down the <code>vkQueueWaitIdle</code> chain.</li>
+<li>Any additional calls inserted by a layer must be on the same chain
+<ul>
+<li>If the function is a device function, only other device functions should
+be added.</li>
+<li>Likewise, if the function is an instance function, only other instance
+functions should be added.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4>
+<a id="user-content-distributed-dispatching-requirements" class="anchor" href="#user-content-distributed-dispatching-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Distributed Dispatching Requirements</h4>
+<ul>
+<li>For each entry-point a layer intercepts, it must keep track of the entry
+point residing in the next entity in the chain it will call down into.
+<ul>
+<li>In other words, the layer must have a list of pointers to functions of the
+appropriate type to call into the next entity.</li>
+<li>This can be implemented in various ways but
+for clarity, will be referred to as a dispatch table.</li>
+</ul>
+</li>
+<li>A layer can use the <code>VkLayerDispatchTable</code> structure as a device dispatch
+table (see include/vulkan/vk_layer.h).</li>
+<li>A layer can use the <code>VkLayerInstanceDispatchTable</code> structure as a instance
+dispatch table (see include/vulkan/vk_layer.h).</li>
+<li>A Layer's <code>vkGetInstanceProcAddr</code> function uses the next entity's
+<code>vkGetInstanceProcAddr</code> to call down the chain for unknown (i.e.
+non-intercepted) functions.</li>
+<li>A Layer's <code>vkGetDeviceProcAddr</code> function uses the next entity's
+<code>vkGetDeviceProcAddr</code> to call down the chain for unknown (i.e. non-intercepted)
+functions.</li>
+<li>A Layer's <code>vk_layerGetPhysicalDeviceProcAddr</code> function uses the next entity's
+<code>vk_layerGetPhysicalDeviceProcAddr</code> to call down the chain for unknown (i.e.
+non-intercepted) functions.</li>
+</ul>
+<h4>
+<a id="user-content-layer-conventions-and-rules" class="anchor" href="#user-content-layer-conventions-and-rules" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Conventions and Rules</h4>
+<p>A layer, when inserted into an otherwise compliant Vulkan implementation, must
+still result in a compliant Vulkan implementation.  The intention is for layers
+to have a well-defined baseline behavior.  Therefore, it must follow some
+conventions and rules defined below.</p>
+<p>A layer is always chained with other layers.  It must not make invalid calls
+to, or rely on undefined behaviors of, its lower layers.  When it changes the
+behavior of a function, it must make sure its upper layers do not make invalid
+calls to or rely on undefined behaviors of its lower layers because of the
+changed behavior.  For example, when a layer intercepts an object creation
+function to wrap the objects created by its lower layers, it must make sure its
+lower layers never see the wrapping objects, directly from itself or
+indirectly from its upper layers.</p>
+<p>When a layer requires host memory, it may ignore the provided allocators.  It
+should use memory allocators if the layer is intended to run in a production
+environment.  For example, this usually applies to implicit layers that are
+always enabled.  That will allow applications to include the layer's memory
+usage.</p>
+<p>Additional rules include:</p>
+<ul>
+<li>
+<code>vkEnumerateInstanceLayerProperties</code> <strong>must</strong> enumerate and <strong>only</strong>
+enumerate the layer itself.</li>
+<li>
+<code>vkEnumerateInstanceExtensionProperties</code> <strong>must</strong> handle the case where
+<code>pLayerName</code> is itself.
+<ul>
+<li>It <strong>must</strong> return <code>VK_ERROR_LAYER_NOT_PRESENT</code> otherwise, including when
+<code>pLayerName</code> is <code>NULL</code>.</li>
+</ul>
+</li>
+<li>
+<code>vkEnumerateDeviceLayerProperties</code> <strong>is deprecated and may be omitted</strong>.
+<ul>
+<li>Using this will result in undefined behavior.</li>
+</ul>
+</li>
+<li>
+<code>vkEnumerateDeviceExtensionProperties</code> <strong>must</strong> handle the case where
+<code>pLayerName</code> is itself.
+<ul>
+<li>In other cases, it should normally chain to other layers.</li>
+</ul>
+</li>
+<li>
+<code>vkCreateInstance</code> <strong>must not</strong> generate an error for unrecognized layer
+names and extension names.
+<ul>
+<li>It may assume the layer names and extension names have been validated.</li>
+</ul>
+</li>
+<li>
+<code>vkGetInstanceProcAddr</code> intercepts a Vulkan function by returning a local
+entry-point
+<ul>
+<li>Otherwise it returns the value obtained by calling down the instance call
+chain.</li>
+</ul>
+</li>
+<li>
+<code>vkGetDeviceProcAddr</code> intercepts a Vulkan function by returning a local
+entry-point
+<ul>
+<li>Otherwise it returns the value obtained by calling down the device call
+chain.</li>
+<li>These additional functions must be intercepted if the layer implements
+device-level call chaining:
+<ul>
+<li><code>vkGetDeviceProcAddr</code></li>
+<li>
+<code>vkCreateDevice</code>(only required for any device-level chaining)
+<ul>
+<li>
+<strong>NOTE:</strong> older layer libraries may expect that <code>vkGetInstanceProcAddr</code>
+ignore <code>instance</code> when <code>pName</code> is <code>vkCreateDevice</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>The specification <strong>requires</strong> <code>NULL</code> to be returned from
+<code>vkGetInstanceProcAddr</code> and <code>vkGetDeviceProcAddr</code> for disabled functions.
+<ul>
+<li>A layer may return <code>NULL</code> itself or rely on the following layers to do so.</li>
+</ul>
+</li>
+</ul>
+<h4>
+<a id="user-content-layer-dispatch-initialization" class="anchor" href="#user-content-layer-dispatch-initialization" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Dispatch Initialization</h4>
+<ul>
+<li>A layer initializes its instance dispatch table within its <code>vkCreateInstance</code>
+function.</li>
+<li>A layer initializes its device dispatch table within its <code>vkCreateDevice</code>
+function.</li>
+<li>The loader passes a linked list of initialization structures to layers via
+the "pNext" field in the VkInstanceCreateInfo and <code>VkDeviceCreateInfo</code>
+structures for <code>vkCreateInstance</code> and <code>VkCreateDevice</code> respectively.</li>
+<li>The head node in this linked list is of type <code>VkLayerInstanceCreateInfo</code> for
+instance and VkLayerDeviceCreateInfo for device. See file
+<code>include/vulkan/vk_layer.h</code> for details.</li>
+<li>A VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO is used by the loader for the
+"sType" field in VkLayerInstanceCreateInfo.</li>
+<li>A VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO is used by the loader for the
+"sType" field in VkLayerDeviceCreateInfo.</li>
+<li>The "function" field indicates how the union field "u" should be interpreted
+within <code>VkLayer*CreateInfo</code>. The loader will set the "function" field to
+VK_LAYER_LINK_INFO. This indicates "u" field should be <code>VkLayerInstanceLink</code> or
+<code>VkLayerDeviceLink</code>.</li>
+<li>The <code>VkLayerInstanceLink</code> and <code>VkLayerDeviceLink</code> structures are the list
+nodes.</li>
+<li>The <code>VkLayerInstanceLink</code> contains the next entity's <code>vkGetInstanceProcAddr</code>
+used by a layer.</li>
+<li>The <code>VkLayerDeviceLink</code> contains the next entity's <code>vkGetInstanceProcAddr</code> and
+<code>vkGetDeviceProcAddr</code> used by a layer.</li>
+<li>Given the above structures set up by the loader, layer must initialize their
+dispatch table as follows:
+<ul>
+<li>Find the <code>VkLayerInstanceCreateInfo</code>/<code>VkLayerDeviceCreateInfo</code> structure in
+the VkInstanceCreateInfo/VkDeviceCreateInfo structure.</li>
+<li>Get the next entity's vkGet*ProcAddr from the "pLayerInfo" field.</li>
+<li>For CreateInstance get the next entity's <code>vkCreateInstance</code> by calling the
+"pfnNextGetInstanceProcAddr":
+pfnNextGetInstanceProcAddr(NULL, "vkCreateInstance").</li>
+<li>For CreateDevice get the next entity's <code>vkCreateDevice</code> by calling the
+"pfnNextGetInstanceProcAddr":
+pfnNextGetInstanceProcAddr(NULL, "vkCreateDevice").</li>
+<li>Advanced the linked list to the next node: pLayerInfo = pLayerInfo-&gt;pNext.</li>
+<li>Call down the chain either <code>vkCreateDevice</code> or <code>vkCreateInstance</code>
+</li>
+<li>Initialize your layer dispatch table by calling the next entity's
+Get*ProcAddr function once for each Vulkan function needed in your dispatch
+table</li>
+</ul>
+</li>
+</ul>
+<h4>
+<a id="user-content-example-code-for-createinstance" class="anchor" href="#user-content-example-code-for-createinstance" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example Code for CreateInstance</h4>
+<div class="highlight highlight-source-c++"><pre>VkResult <span class="pl-en">vkCreateInstance</span>(
+        <span class="pl-k">const</span> VkInstanceCreateInfo *pCreateInfo,
+        <span class="pl-k">const</span> VkAllocationCallbacks *pAllocator,
+        VkInstance *pInstance)
+{
+   VkLayerInstanceCreateInfo *chain_info =
+        <span class="pl-c1">get_chain_info</span>(pCreateInfo, VK_LAYER_LINK_INFO);
+
+    <span class="pl-c1">assert</span>(chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span>);
+    PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr =
+        chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span>-&gt;pfnNextGetInstanceProcAddr;
+    PFN_vkCreateInstance fpCreateInstance =
+        (PFN_vkCreateInstance)<span class="pl-c1">fpGetInstanceProcAddr</span>(<span class="pl-c1">NULL</span>, <span class="pl-s"><span class="pl-pds">"</span>vkCreateInstance<span class="pl-pds">"</span></span>);
+    <span class="pl-k">if</span> (fpCreateInstance == <span class="pl-c1">NULL</span>) {
+        <span class="pl-k">return</span> VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    <span class="pl-c"><span class="pl-c">//</span> Advance the link info for the next element of the chain</span>
+    chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span> = chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span>-&gt;pNext;
+
+    <span class="pl-c"><span class="pl-c">//</span> Continue call down the chain</span>
+    VkResult result = <span class="pl-c1">fpCreateInstance</span>(pCreateInfo, pAllocator, pInstance);
+    <span class="pl-k">if</span> (result != VK_SUCCESS)
+        <span class="pl-k">return</span> result;
+
+    <span class="pl-c"><span class="pl-c">//</span> Init layer's dispatch table using GetInstanceProcAddr of</span>
+    <span class="pl-c"><span class="pl-c">//</span> next layer in the chain.</span>
+    instance_dispatch_table = <span class="pl-k">new</span> VkLayerInstanceDispatchTable;
+    <span class="pl-c1">layer_init_instance_dispatch_table</span>(
+        *pInstance, my_data-&gt;instance_dispatch_table, fpGetInstanceProcAddr);
+
+    <span class="pl-c"><span class="pl-c">//</span> Other layer initialization</span>
+    ...
+
+    <span class="pl-k">return</span> VK_SUCCESS;
+}</pre></div>
+<h4>
+<a id="user-content-example-code-for-createdevice" class="anchor" href="#user-content-example-code-for-createdevice" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example Code for CreateDevice</h4>
+<div class="highlight highlight-source-c++"><pre>VkResult 
+<span class="pl-en">vkCreateDevice</span>(
+        VkPhysicalDevice gpu,
+        <span class="pl-k">const</span> VkDeviceCreateInfo *pCreateInfo,
+        <span class="pl-k">const</span> VkAllocationCallbacks *pAllocator,
+        VkDevice *pDevice)
+{
+    VkLayerDeviceCreateInfo *chain_info =
+        <span class="pl-c1">get_chain_info</span>(pCreateInfo, VK_LAYER_LINK_INFO);
+
+    PFN_vkGetInstanceProcAddr fpGetInstanceProcAddr =
+        chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span>-&gt;pfnNextGetInstanceProcAddr;
+    PFN_vkGetDeviceProcAddr fpGetDeviceProcAddr =
+        chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span>-&gt;pfnNextGetDeviceProcAddr;
+    PFN_vkCreateDevice fpCreateDevice =
+        (PFN_vkCreateDevice)<span class="pl-c1">fpGetInstanceProcAddr</span>(<span class="pl-c1">NULL</span>, <span class="pl-s"><span class="pl-pds">"</span>vkCreateDevice<span class="pl-pds">"</span></span>);
+    <span class="pl-k">if</span> (fpCreateDevice == <span class="pl-c1">NULL</span>) {
+        <span class="pl-k">return</span> VK_ERROR_INITIALIZATION_FAILED;
+    }
+
+    <span class="pl-c"><span class="pl-c">//</span> Advance the link info for the next element on the chain</span>
+    chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span> = chain_info-&gt;u.<span class="pl-smi">pLayerInfo</span>-&gt;pNext;
+
+    VkResult result = <span class="pl-c1">fpCreateDevice</span>(gpu, pCreateInfo, pAllocator, pDevice);
+    <span class="pl-k">if</span> (result != VK_SUCCESS) {
+        <span class="pl-k">return</span> result;
+    }
+
+    <span class="pl-c"><span class="pl-c">//</span> initialize layer's dispatch table</span>
+    device_dispatch_table = <span class="pl-k">new</span> VkLayerDispatchTable;
+    <span class="pl-c1">layer_init_device_dispatch_table</span>(
+        *pDevice, device_dispatch_table, fpGetDeviceProcAddr);
+
+    <span class="pl-c"><span class="pl-c">//</span> Other layer initialization</span>
+    ...
+
+    <span class="pl-k">return</span> VK_SUCCESS;
+}</pre></div>
+<h4>
+<a id="user-content-meta-layers" class="anchor" href="#user-content-meta-layers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Meta-layers</h4>
+<p>Meta-layers are a special kind of layer which is only available through the
+desktop loader.  While normal layers are associated with one particular library,
+a meta-layer is actually a collection layer which contains an ordered list of
+other layers (called component layers).</p>
+<p>The most common example of a meta-layer is the
+<code>VK_LAYER_LUNARG_standard_validation</code> layer which groups all the most common
+individual validation layers into a single layer for ease-of-use.</p>
+<p>The benefits of a meta-layer are:</p>
+<ol>
+<li>You can activate more than one layer using a single layer name by simply
+grouping multiple layers in a meta-layer.</li>
+<li>You can define the order the loader will activate individual layers within
+the meta-layer.</li>
+<li>You can easily share your special layer configuration with others.</li>
+<li>The loader will automatically collate all instance and device extensions in
+a meta-layer's component layers, and report them as the meta-layer's properties
+to the application when queried.</li>
+</ol>
+<p>Restrictions to defining and using a meta-layer are:</p>
+<ol>
+<li>A Meta-layer Manifest file <strong>must</strong> be a properly formated that contains one
+or more component layers.</li>
+<li>All component layers <strong>must be</strong> present on a system for the meta-layer to
+be used.</li>
+<li>All component layers <strong>must be</strong> at the same Vulkan API major and minor
+version for the meta-layer to be used.</li>
+</ol>
+<p>The ordering of a meta-layer's component layers in the instance or device
+call-chain is simple:</p>
+<ul>
+<li>The first layer listed will be the layer closest to the application.</li>
+<li>The last layer listed will be the layer closest to the drivers.</li>
+</ul>
+<p>Inside the meta-layer Manifest file, each component layer is listed by its
+layer name.  This is the "name" tag's value associated with each component layer's
+Manifest file under the "layer" or "layers" tag.  This is also the name that
+would normally be used when activating a layer during <code>vkCreateInstance</code>.</p>
+<p>Any duplicate layer names in either the component layer list, or globally among
+all enabled layers, will simply be ignored.  Only the first instance of any
+layer name will be used.</p>
+<p>For example, if you have a layer enabled using the environment variable
+<code>VK_INSTANCE_LAYERS</code> and have that same layer listed in a meta-layer, then the
+environment variable enabled layer will be used and the component layer will
+be dropped.  Likewise, if a person were to enable a meta-layer and then
+separately enable one of the component layers afterwards, the second
+instantiation of the layer name would be ignored.</p>
+<p>The
+Manifest file formatting necessary to define a meta-layer can be found in the
+<a href="#user-content-layer-manifest-file-format">Layer Manifest File Format</a> section.</p>
+<h4>
+<a id="user-content-special-considerations" class="anchor" href="#user-content-special-considerations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Special Considerations</h4>
+<h5>
+<a id="user-content-associating-private-data-with-vulkan-objects-within-a-layer" class="anchor" href="#user-content-associating-private-data-with-vulkan-objects-within-a-layer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Associating Private Data with Vulkan Objects Within a Layer</h5>
+<p>A layer may want to associate it's own private data with one or more Vulkan
+objects.  Two common methods to do this are hash maps and object wrapping.</p>
+<h6>
+<a id="user-content-wrapping" class="anchor" href="#user-content-wrapping" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Wrapping</h6>
+<p>The loader supports layers wrapping any Vulkan object, including dispatchable
+objects.  For functions that return object handles, each layer does not touch
+the value passed down the call chain.  This is because lower items may need to
+use the original value.  However, when the value is returned from a
+lower-level layer (possibly the ICD), the layer saves the handle  and returns
+its own handle to the layer above it (possibly the application).  When a layer
+receives a Vulkan function using something that it previously returned a handle
+for, the layer is required to unwrap the handle and pass along the saved handle
+to the layer below it.  This means that the layer <strong>must intercept every Vulkan
+function which uses the object in question</strong>, and wrap or unwrap the object, as
+appropriate.  This includes adding support for all extensions with functions
+using any object the layer wraps.</p>
+<p>Layers above the object wrapping layer will see the wrapped object. Layers
+which wrap dispatchable objects must ensure that the first field in the wrapping
+structure is a pointer to a dispatch table as defined in <code>vk_layer.h</code>.
+Specifically, an instance wrapped dispatchable object could be as follows:</p>
+<pre><code>struct my_wrapped_instance_obj_ {
+    VkLayerInstanceDispatchTable *disp;
+    // whatever data layer wants to add to this object
+};
+</code></pre>
+<p>A device wrapped dispatchable object could be as follows:</p>
+<pre><code>struct my_wrapped_instance_obj_ {
+    VkLayerDispatchTable *disp;
+    // whatever data layer wants to add to this object
+};
+</code></pre>
+<p>Layers that wrap dispatchable objects must follow the guidelines for creating
+new dispatchable objects (below).</p>
+<p>Cautions About Wrapping</p>
+<p>Layers are generally discouraged from wrapping objects, because of the
+potential for incompatibilities with new extensions.  For example, let's say
+that a layer wraps <code>VkImage</code> objects, and properly wraps and unwraps <code>VkImage</code>
+object handles for all core functions.  If a new extension is created which has
+functions that take <code>VkImage</code> objects as parameters, and if the layer does not
+support those new functions, an application that uses both the layer and the new
+extension will have undefined behavior when those new functions are called (e.g.
+the application may crash).  This is because the lower-level layers and ICD
+won't receive the handle that they generated.  Instead, they will receive a
+handle that is only known by the layer that is wrapping the object.</p>
+<p>Because of the potential for incompatibilities with unsupported extensions,
+layers that wrap objects must check which extensions are being used by the
+application, and take appropriate action if the layer is used with unsupported
+extensions (e.g. disable layer functionality, stop wrapping objects, issue a
+message to the user).</p>
+<p>The reason that the validation layers wrap objects, is to track the proper use
+and destruction of each object.  They issue a validation error if used with
+unsupported extensions, alerting the user to the potential for undefined
+behavior.</p>
+<h6>
+<a id="user-content-hash-maps" class="anchor" href="#user-content-hash-maps" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Hash Maps</h6>
+<p>Alternatively, a layer may want to use a hash map to associate data with a
+given object. The key to the map could be the object. Alternatively, for
+dispatchable objects at a given level (eg device or instance) the layer may
+want data associated with the <code>VkDevice</code> or <code>VkInstance</code> objects. Since
+there are multiple dispatchable objects for a given <code>VkInstance</code> or <code>VkDevice</code>,
+the <code>VkDevice</code> or <code>VkInstance</code> object is not a great map key. Instead the layer
+should use the dispatch table pointer within the <code>VkDevice</code> or <code>VkInstance</code>
+since that will be unique for a given <code>VkInstance</code> or <code>VkDevice</code>.</p>
+<h5>
+<a id="user-content-creating-new-dispatchable-objects" class="anchor" href="#user-content-creating-new-dispatchable-objects" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating New Dispatchable Objects</h5>
+<p>Layers which create dispatchable objects must take special care. Remember that
+loader <em>trampoline</em> code normally fills in the dispatch table pointer in the
+newly created object. Thus, the layer must fill in the dispatch table pointer if
+the loader <em>trampoline</em> will not do so.  Common cases where a layer (or ICD) may
+create a dispatchable object without loader <em>trampoline</em> code is as follows:</p>
+<ul>
+<li>layers that wrap dispatchable objects</li>
+<li>layers which add extensions that create dispatchable objects</li>
+<li>layers which insert extra Vulkan functions in the stream of functions they
+intercept from the application</li>
+<li>ICDs which add extensions that create dispatchable objects</li>
+</ul>
+<p>The desktop loader provides a callback that can be used for initializing
+a dispatchable object.  The callback is passed as an extension structure via the
+pNext field in the create info structure when creating an instance
+(<code>VkInstanceCreateInfo</code>) or device (<code>VkDeviceCreateInfo</code>).  The callback
+prototype is defined as follows for instance and device callbacks respectively
+(see <code>vk_layer.h</code>):</p>
+<div class="highlight highlight-source-c++"><pre>VKAPI_ATTR VkResult VKAPI_CALL <span class="pl-en">vkSetInstanceLoaderData</span>(VkInstance instance,
+                                                       <span class="pl-k">void</span> *object);
+VKAPI_ATTR VkResult VKAPI_CALL <span class="pl-en">vkSetDeviceLoaderData</span>(VkDevice device,
+                                                     <span class="pl-k">void</span> *object);</pre></div>
+<p>To obtain these callbacks the layer must search through the list of structures
+pointed to by the "pNext" field in the <code>VkInstanceCreateInfo</code> and
+<code>VkDeviceCreateInfo</code> parameters to find any callback structures inserted by the
+loader. The salient details are as follows:</p>
+<ul>
+<li>For <code>VkInstanceCreateInfo</code> the callback structure pointed to by "pNext" is
+<code>VkLayerInstanceCreateInfo</code> as defined in <code>include/vulkan/vk_layer.h</code>.</li>
+<li>A "sType" field in of VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO within
+<code>VkInstanceCreateInfo</code> parameter indicates a loader structure.</li>
+<li>Within <code>VkLayerInstanceCreateInfo</code>, the "function" field indicates how the
+union field "u" should be interpreted.</li>
+<li>A "function" equal to VK_LOADER_DATA_CALLBACK indicates the "u" field will
+contain the callback in "pfnSetInstanceLoaderData".</li>
+<li>For <code>VkDeviceCreateInfo</code> the callback structure pointed to by "pNext" is
+<code>VkLayerDeviceCreateInfo</code> as defined in <code>include/vulkan/vk_layer.h</code>.</li>
+<li>A "sType" field in of VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO within
+<code>VkDeviceCreateInfo</code> parameter indicates a loader structure.</li>
+<li>Within <code>VkLayerDeviceCreateInfo</code>, the "function" field indicates how the union
+field "u" should be interpreted.</li>
+<li>A "function" equal to VK_LOADER_DATA_CALLBACK indicates the "u" field will
+contain the callback in "pfnSetDeviceLoaderData".</li>
+</ul>
+<p>Alternatively, if an older loader is being used that doesn't provide these
+callbacks, the layer may manually initialize the newly created dispatchable
+object.  To fill in the dispatch table pointer in newly created dispatchable
+object, the layer should copy the dispatch pointer, which is always the first
+entry in the structure, from an existing parent object of the same level
+(instance versus device).</p>
+<p>For example, if there is a newly created <code>VkCommandBuffer</code> object, then the
+dispatch pointer from the <code>VkDevice</code> object, which is the parent of the
+<code>VkCommandBuffer</code> object, should be copied into the newly created object.</p>
+<h4>
+<a id="user-content-layer-manifest-file-format" class="anchor" href="#user-content-layer-manifest-file-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Manifest File Format</h4>
+<p>On Windows and Linux (desktop), the loader uses manifest files to discover
+layer libraries and layers.  The desktop loader doesn't directly query the
+layer library except during chaining.  This is to reduce the likelihood of
+loading a malicious layer into memory.  Instead, details are read from the
+Manifest file, which are then provided for applications to determine what
+layers should actually be loaded.</p>
+<p>The following section discusses the details of the Layer Manifest JSON file
+format.  The JSON file itself does not have any requirements for naming.  The
+only requirement is that the extension suffix of the file ends with ".json".</p>
+<p>Here is an example layer JSON Manifest file with a single layer:</p>
+<pre><code>{
+   "file_format_version" : "1.0.0",
+   "layer": {
+       "name": "VK_LAYER_LUNARG_overlay",
+       "type": "INSTANCE",
+       "library_path": "vkOverlayLayer.dll"
+       "api_version" : "1.0.5",
+       "implementation_version" : "2",
+       "description" : "LunarG HUD layer",
+       "functions": {
+           "vkNegotiateLoaderLayerInterfaceVersion":
+               "OverlayLayer_NegotiateLoaderLayerInterfaceVersion"
+       },
+       "instance_extensions": [
+           {
+               "name": "VK_EXT_debug_report",
+               "spec_version": "1"
+           },
+           {
+               "name": "VK_VENDOR_ext_x",
+               "spec_version": "3"
+            }
+       ],
+       "device_extensions": [
+           {
+               "name": "VK_EXT_debug_marker",
+               "spec_version": "1",
+               "entrypoints": ["vkCmdDbgMarkerBegin", "vkCmdDbgMarkerEnd"]
+           }
+       ],
+       "enable_environment": {
+           "ENABLE_LAYER_OVERLAY_1": "1"
+       }
+       "disable_environment": {
+           "DISABLE_LAYER_OVERLAY_1": ""
+       }
+   }
+}
+</code></pre>
+<p>Here's a snippet with the changes required to support multiple layers per
+manifest file:</p>
+<pre><code>{
+   "file_format_version" : "1.0.1",
+   "layers": [
+      {
+           "name": "VK_LAYER_layer_name1",
+           "type": "INSTANCE",
+           ...
+      },
+      {
+           "name": "VK_LAYER_layer_name2",
+           "type": "INSTANCE",
+           ...
+      }
+   ]
+}
+</code></pre>
+<p>Here's an example of a meta-layer manifest file:</p>
+<pre><code>{
+   "file_format_version" : "1.1.1",
+   "layer": {
+       "name": "VK_LAYER_LUNARG_standard_validation",
+       "type": "GLOBAL",
+       "api_version" : "1.0.40",
+       "implementation_version" : "1",
+       "description" : "LunarG Standard Validation Meta-layer",
+       "component_layers": [
+           "VK_LAYER_GOOGLE_threading",
+           "VK_LAYER_LUNARG_parameter_validation",
+           "VK_LAYER_LUNARG_object_tracker",
+           "VK_LAYER_LUNARG_core_validation",
+           "VK_LAYER_GOOGLE_unique_objects"
+       ]
+   }
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th align="center">JSON Node</th>
+<th>Description and Notes</th>
+<th align="center">Introspection Query</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">"file_format_version"</td>
+<td>Manifest format major.minor.patch version number.</td>
+<td align="center">N/A</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td>Supported versions are: 1.0.0, 1.0.1, and 1.1.0.</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">"layer"</td>
+<td>The identifier used to group a single layer's information together.</td>
+<td align="center">vkEnumerateInstanceLayerProperties</td>
+</tr>
+<tr>
+<td align="center">"layers"</td>
+<td>The identifier used to group multiple layers' information together.  This requires a minimum Manifest file format version of 1.0.1.</td>
+<td align="center">vkEnumerateInstanceLayerProperties</td>
+</tr>
+<tr>
+<td align="center">"name"</td>
+<td>The string used to uniquely identify this layer to applications.</td>
+<td align="center">vkEnumerateInstanceLayerProperties</td>
+</tr>
+<tr>
+<td align="center">"type"</td>
+<td>This field indicates the type of layer.  The values can be: GLOBAL, or INSTANCE</td>
+<td align="center">vkEnumerate*LayerProperties</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td>
+<strong>NOTES:</strong> Prior to deprecation, the "type" node was used to indicate which layer chain(s) to activate the layer upon: instance, device, or both. Distinct instance and device layers are deprecated; there are now just layers. Allowable values for type (both before and after deprecation) are "INSTANCE", "GLOBAL" and, "DEVICE." "DEVICE" layers are skipped over by the loader as if they were not found.</td>
+<td align="center"></td>
+</tr>
+<tr>
+<td align="center">"library_path"</td>
+<td>The "library_path" specifies either a filename, a relative pathname, or a full pathname to a layer shared library file.  If "library_path" specifies a relative pathname, it is relative to the path of the JSON manifest file (e.g. for cases when an application provides a layer that is in the same folder hierarchy as the rest of the application files).  If "library_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the layer shared library files other than it should end with the appropriate suffix (".DLL" on Windows, and ".so" on Linux).  <strong>This field must not be present if "component_layers" is defined</strong>
+</td>
+<td align="center">N/A</td>
+</tr>
+<tr>
+<td align="center">"api_version"</td>
+<td>The major.minor.patch version number of the Vulkan API that the shared library file for the library was built against. For example: 1.0.33.</td>
+<td align="center">vkEnumerateInstanceLayerProperties</td>
+</tr>
+<tr>
+<td align="center">"implementation_version"</td>
+<td>The version of the layer implemented.  If the layer itself has any major changes, this number should change so the loader and/or application can identify it properly.</td>
+<td align="center">vkEnumerateInstanceLayerProperties</td>
+</tr>
+<tr>
+<td align="center">"description"</td>
+<td>A high-level description of the layer and it's intended use.</td>
+<td align="center">vkEnumerateInstanceLayerProperties</td>
+</tr>
+<tr>
+<td align="center">"functions"</td>
+<td>
+<strong>OPTIONAL:</strong> This section can be used to identify a different function name for the loader to use in place of standard layer interface functions. The "functions" node is required if the layer is using an alternative name for <code>vkNegotiateLoaderLayerInterfaceVersion</code>.</td>
+<td align="center">vkGet*ProcAddr</td>
+</tr>
+<tr>
+<td align="center">"instance_extensions"</td>
+<td>
+<strong>OPTIONAL:</strong> Contains the list of instance extension names supported by this layer. One "instance_extensions" node with an array of one or more elements is required if any instance extensions are supported by a layer, otherwise the node is optional. Each element of the array must have the nodes "name" and "spec_version" which correspond to <code>VkExtensionProperties</code> "extensionName" and "specVersion" respectively.</td>
+<td align="center">vkEnumerateInstanceExtensionProperties</td>
+</tr>
+<tr>
+<td align="center">"device_extensions"</td>
+<td>
+<strong>OPTIONAL:</strong> Contains the list of device extension names supported by this layer. One "device_\extensions" node with an array of one or more elements is required if any device extensions are supported by a layer, otherwise the node is optional. Each element of the array must have the nodes "name" and "spec_version" which correspond to <code>VkExtensionProperties</code> "extensionName" and "specVersion" respectively. Additionally, each element of the array of device extensions must have the node "entrypoints" if the device extension adds Vulkan API functions, otherwise this node is not required. The "entrypoint" node is an array of the names of all entrypoints added by the supported extension.</td>
+<td align="center">vkEnumerateDeviceExtensionProperties</td>
+</tr>
+<tr>
+<td align="center">"enable_environment"</td>
+<td>
+<strong>Implicit Layers Only</strong> - <strong>OPTIONAL:</strong> Indicates an environment variable used to enable the Implicit Layer (w/ value of 1).  This environment variable (which should vary with each "version" of the layer) must be set to the given value or else the implicit layer is not loaded. This is for application environments (e.g. Steam) which want to enable a layer(s) only for applications that they launch, and allows for applications run outside of an application environment to not get that implicit layer(s).</td>
+<td align="center">N/A</td>
+</tr>
+<tr>
+<td align="center">"disable_environment"</td>
+<td>
+<strong>Implicit Layers Only</strong> - **REQUIRED:**Indicates an environment variable used to disable the Implicit Layer (w/ value of 1). In rare cases of an application not working with an implicit layer, the application can set this environment variable (before calling Vulkan functions) in order to "blacklist" the layer. This environment variable (which should vary with each "version" of the layer) must be set (not particularly to any value). If both the "enable_environment" and "disable_environment" variables are set, the implicit layer is disabled.</td>
+<td align="center">N/A</td>
+</tr>
+<tr>
+<td align="center">"component_layers"</td>
+<td>
+<strong>Meta-layers Only</strong> - Indicates the component layer names that are part of a meta-layer.  The names listed must be the "name" identified in each of the component layer's Mainfest file "name" tag (this is the same as the name of the layer that is passed to the <code>vkCreateInstance</code> command).  All component layers must be present on the system and found by the loader in order for this meta-layer to be available and activated. <strong>This field must not be present if "library_path" is defined</strong>
+</td>
+<td align="center">N/A</td>
+</tr>
+</tbody>
+</table>
+<h5>
+<a id="user-content-layer-manifest-file-version-history" class="anchor" href="#user-content-layer-manifest-file-version-history" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Manifest File Version History</h5>
+<p>The current highest supported Layer Manifest file format supported is 1.1.0.
+Information about each version is detailed in the following sub-sections:</p>
+<h6>
+<a id="user-content-layer-manifest-file-version-110" class="anchor" href="#user-content-layer-manifest-file-version-110" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Manifest File Version 1.1.0</h6>
+<p>Layer Manifest File Version 1.1.0 is tied to changes exposed by the Loader/Layer
+interface version 2.</p>
+<ol>
+<li>Renaming "vkGetInstanceProcAddr" in the "functions" section is
+deprecated since the loader no longer needs to query the layer about
+"vkGetInstanceProcAddr" directly.  It is now returned during the layer
+negotiation, so this field will be ignored.</li>
+<li>Renaming "vkGetDeviceProcAddr" in the "functions" section is
+deprecated since the loader no longer needs to query the layer about
+"vkGetDeviceProcAddr" directly.  It too is now returned during the layer
+negotiation, so this field will be ignored.</li>
+<li>Renaming the "vkNegotiateLoaderLayerInterfaceVersion" function is
+being added to the "functions" section, since this is now the only
+function the loader needs to query using OS-specific calls.
+<ul>
+<li>NOTE: This is an optional field and, as the two previous fields, only
+needed if the layer requires changing the name of the function for some reason.</li>
+</ul>
+</li>
+</ol>
+<p>You do not need to update your layer manifest file if you don't change the
+names of any of the listed functions.</p>
+<h6>
+<a id="user-content-layer-manifest-file-version-101" class="anchor" href="#user-content-layer-manifest-file-version-101" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Manifest File Version 1.0.1</h6>
+<p>The ability to define multiple layers using the "layers" array was added.  This
+JSON array field can be used when defining a single layer or multiple layers.
+The "layer" field is still present and valid for a single layer definition.</p>
+<h6>
+<a id="user-content-layer-manifest-file-version-100" class="anchor" href="#user-content-layer-manifest-file-version-100" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Manifest File Version 1.0.0</h6>
+<p>The initial version of the layer manifest file specified the basic format and
+fields of a layer JSON file.  The fields of the 1.0.0 file format include:</p>
+<ul>
+<li>"file_format_version"</li>
+<li>"layer"</li>
+<li>"name"</li>
+<li>"type"</li>
+<li>"library_path"</li>
+<li>"api_version"</li>
+<li>"implementation_version"</li>
+<li>"description"</li>
+<li>"functions"</li>
+<li>"instance_extensions"</li>
+<li>"device_extensions"</li>
+<li>"enable_environment"</li>
+<li>"disable_environment"</li>
+</ul>
+<p>It was also during this time that the value of "DEVICE" was deprecated from
+the "type" field.</p>
+<h4>
+<a id="user-content-layer-library-versions" class="anchor" href="#user-content-layer-library-versions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Library Versions</h4>
+<p>The current Layer Library interface is at version 2.  The following sections
+detail the differences between the various versions.</p>
+<h5>
+<a id="user-content-layer-library-api-version-2" class="anchor" href="#user-content-layer-library-api-version-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Library API Version 2</h5>
+<p>Introduced the concept of
+<a href="#user-content-layer-version-negotiation">loader and layer interface</a> using the new
+<code>vkNegotiateLoaderLayerInterfaceVersion</code> function. Additionally, it introduced
+the concept of
+[Layer Unknown Physical Device Extensions](#layer-unknown-physical-device-
+extensions)
+and the associated <code>vk_layerGetPhysicalDeviceProcAddr</code> function.  Finally, it
+changed the manifest file defition to 1.1.0.</p>
+<h5>
+<a id="user-content-layer-library-api-version-1" class="anchor" href="#user-content-layer-library-api-version-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Library API Version 1</h5>
+<p>A layer library supporting interface version 1 had the following behavior:</p>
+<ol>
+<li>
+<code>GetInstanceProcAddr</code> and <code>GetDeviceProcAddr</code> were directly exported</li>
+<li>The layer manifest file was able to override the names of the
+<code>GetInstanceProcAddr</code> and <code>GetDeviceProcAddr</code>functions.</li>
+</ol>
+<h5>
+<a id="user-content-layer-library-api-version-0" class="anchor" href="#user-content-layer-library-api-version-0" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Layer Library API Version 0</h5>
+<p>A layer library supporting interface version 0 must define and export these
+introspection functions, unrelated to any Vulkan function despite the names,
+signatures, and other similarities:</p>
+<ul>
+<li>
+<code>vkEnumerateInstanceLayerProperties</code> enumerates all layers in a layer
+library.
+<ul>
+<li>This function never fails.</li>
+<li>When a layer library contains only one layer, this function may be an alias
+to the layer's <code>vkEnumerateInstanceLayerProperties</code>.</li>
+</ul>
+</li>
+<li>
+<code>vkEnumerateInstanceExtensionProperties</code> enumerates instance extensions of
+layers in a layer library.
+<ul>
+<li>"pLayerName" is always a valid layer name.</li>
+<li>This function never fails.</li>
+<li>When a layer library contains only one layer, this function may be an alias
+to the layer's <code>vkEnumerateInstanceExtensionProperties</code>.</li>
+</ul>
+</li>
+<li>
+<code>vkEnumerateDeviceLayerProperties</code> enumerates a subset (can be full,
+proper, or empty subset) of layers in a layer library.
+<ul>
+<li>"physicalDevice" is always <code>VK_NULL_HANDLE</code>.</li>
+<li>This function never fails.</li>
+<li>If a layer is not enumerated by this function, it will not participate in
+device function interception.</li>
+</ul>
+</li>
+<li>
+<code>vkEnumerateDeviceExtensionProperties</code> enumerates device extensions of
+layers in a layer library.
+<ul>
+<li>"physicalDevice" is always <code>VK_NULL_HANDLE</code>.</li>
+<li>"pLayerName" is always a valid layer name.</li>
+<li>This function never fails.</li>
+</ul>
+</li>
+</ul>
+<p>It must also define and export these functions once for each layer in the
+library:</p>
+<ul>
+<li>
+<p><code>&lt;layerName&gt;GetInstanceProcAddr(instance, pName)</code> behaves identically to a
+layer's vkGetInstanceProcAddr except it is exported.</p>
+<p>When a layer library contains only one layer, this function may
+alternatively be named <code>vkGetInstanceProcAddr</code>.</p>
+</li>
+<li>
+<p><code>&lt;layerName&gt;GetDeviceProcAddr</code>  behaves identically to a layer's
+vkGetDeviceProcAddr except it is exported.</p>
+<p>When a layer library contains only one layer, this function may
+alternatively be named <code>vkGetDeviceProcAddr</code>.</p>
+</li>
+</ul>
+<p>All layers contained within a library must support <code>vk_layer.h</code>.  They do not
+need to implement functions that they do not intercept.  They are recommended
+not to export any functions.</p>
+<br>
+<br>
+<h2>
+<a id="user-content-vulkan-installable-client-driver-interface-with-the-loader" class="anchor" href="#user-content-vulkan-installable-client-driver-interface-with-the-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Vulkan Installable Client Driver Interface With the Loader</h2>
+<p>This section discusses the various requirements for the loader and a Vulkan
+ICD to properly hand-shake.</p>
+<ul>
+<li>
+<a href="#user-content-icd-discovery">ICD Discovery</a>
+<ul>
+<li><a href="#user-content-overriding-the-default-icd-usage">Overriding the Default ICD Usage</a></li>
+<li><a href="#user-content-icd-manifest-file-usage">ICD Manifest File Usage</a></li>
+<li><a href="#user-content-icd-discovery-on-windows">ICD Discovery on Windows</a></li>
+<li><a href="#user-content-icd-discovery-on-linux">ICD Discovery on Linux</a></li>
+<li><a href="#user-content-using-pre-production-icds-on-windows-and-linux">Using Pre-Production ICDs on Windows and Linux</a></li>
+<li><a href="#user-content-icd-discovery-on-android">ICD Discovery on Android</a></li>
+</ul>
+</li>
+<li>
+<a href="#user-content-icd-manifest-file-format">ICD Manifest File Format</a>
+<ul>
+<li>
+<a href="#user-content-icd-manifest-file-versions">ICD Manifest File Versions</a>
+<ul>
+<li><a href="#user-content-icd-manifest-file-version-1.0.0">ICD Manifest File Version 1.0.0</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#user-content-icd-vulkan-entry-point-discovery">ICD Vulkan Entry-Point Discovery</a></li>
+<li><a href="#user-content-icd-unknown-physical-device-extensions">ICD Unknown Physical Device Extensions</a></li>
+<li><a href="#user-content-icd-dispatchable-object-creation">ICD Dispatchable Object Creation</a></li>
+<li><a href="#user-content-handling-khr-surface-objects-in-wsi-extensions">Handling KHR Surface Objects in WSI Extensions</a></li>
+<li>
+<a href="#user-content-loader-and-icd-interface-negotiation">Loader and ICD Interface Negotiation</a>
+<ul>
+<li>
+<a href="#user-content-windows-and-linux-icd-negotiation">Windows and Linux ICD Negotiation</a>
+<ul>
+<li>
+<a href="#user-content-version-negotiation-between-loader-and-icds">Version Negotiation Between Loader and ICDs</a>
+<ul>
+<li><a href="#user-content-interfacing-with-legacy-icds-or-loader">Interfacing With Legacy ICDs or Loader</a></li>
+</ul>
+</li>
+<li><a href="#user-content-loader-version-5-interface-requirements">Loader Version 5 Interface Requirements</a></li>
+<li><a href="#user-content-loader-version-4-interface-requirements">Loader Version 4 Interface Requirements</a></li>
+<li><a href="#user-content-loader-version-3-interface-requirements">Loader Version 3 Interface Requirements</a></li>
+<li><a href="#user-content-loader-version-2-interface-requirements">Loader Version 2 Interface Requirements</a></li>
+<li><a href="#user-content-loader-versions-0-and-1-interface-requirements">Loader Versions 0 and 1 Interface Requirements</a></li>
+</ul>
+</li>
+<li><a href="#user-content-android-icd-negotiation">Android ICD Negotiation</a></li>
+</ul>
+</li>
+</ul>
+<h3>
+<a id="user-content-icd-discovery" class="anchor" href="#user-content-icd-discovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Discovery</h3>
+<p>Vulkan allows multiple drivers each with one or more devices (represented by a
+Vulkan <code>VkPhysicalDevice</code> object) to be used collectively. The loader is
+responsible for discovering available Vulkan ICDs on the system. Given a list
+of available ICDs, the loader can enumerate all the physical devices available
+for an application and return this information to the application. The process
+in which the loader discovers the available Installable Client Drivers (ICDs)
+on a system is platform dependent. Windows, Linux and Android ICD discovery
+details are listed below.</p>
+<h4>
+<a id="user-content-overriding-the-default-icd-usage" class="anchor" href="#user-content-overriding-the-default-icd-usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overriding the Default ICD Usage</h4>
+<p>There may be times that a developer wishes to force the loader to use a specific ICD.
+This could be for many reasons including : using a beta driver, or forcing the loader
+to skip a problematic ICD.  In order to support this, the loader can be forced to
+look at specific ICDs with the <code>VK_ICD_FILENAMES</code> environment variable.  In order
+to use the setting, simply set it to a properly delimited list of ICD Manifest
+files that you wish to use.  In this case, please provide the global path to these
+files to reduce issues.</p>
+<p>For example:</p>
+<h5>
+<a id="user-content-on-windows" class="anchor" href="#user-content-on-windows" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>On Windows</h5>
+<pre><code>set VK_ICD_FILENAMES=/windows/system32/nv-vk64.json
+</code></pre>
+<p>This is an example which is using the <code>VK_ICD_FILENAMES</code> override on Windows to point
+to the Nvidia Vulkan driver's ICD Manifest file.</p>
+<h5>
+<a id="user-content-on-linux" class="anchor" href="#user-content-on-linux" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>On Linux</h5>
+<pre><code>export VK_ICD_FILENAMES=/home/user/dev/mesa/share/vulkan/icd.d/intel_icd.x86_64.json
+</code></pre>
+<p>This is an example which is using the <code>VK_ICD_FILENAMES</code> override on Linux to point
+to the Intel Mesa driver's ICD Manifest file.</p>
+<h4>
+<a id="user-content-icd-manifest-file-usage" class="anchor" href="#user-content-icd-manifest-file-usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Manifest File Usage</h4>
+<p>As with layers, on Windows and Linux systems, JSON formatted manifest files are
+used to store ICD information.  In order to find system-installed drivers, the
+Vulkan loader will read the JSON files to identify the names and attributes of
+each driver.  One thing you will notice is that ICD Manifest files are much
+simpler than the corresponding layer Manifest files.</p>
+<p>See the <a href="#user-content-icd-manifest-file-format">Current ICD Manifest File Format</a> section
+for more details.</p>
+<h4>
+<a id="user-content-icd-discovery-on-windows" class="anchor" href="#user-content-icd-discovery-on-windows" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Discovery on Windows</h4>
+<p>In order to find installed ICDs, the Vulkan loader will scan the
+values in the following Windows registry key:</p>
+<pre><code>   HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers
+</code></pre>
+<p>For 32-bit applications on 64-bit Windows, the loader scan's the 32-bit
+registry location:</p>
+<pre><code>   HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Khronos\Vulkan\Drivers
+</code></pre>
+<p>The loader will look at the appropriate registry location and check each value
+listed.  If the key is of type DWORD, and it has a value of 0, the loader will
+open the JSON manifest file specified by the name.  Each name must be a full
+pathname to a text manifest file.  The Vulkan loader will attempt to open each
+manifest file to obtain the information about an ICD's shared library (".dll")
+file.</p>
+<p>For example, let us assume the registry contains the following data:</p>
+<pre><code>[HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\Vulkan\Drivers\]
+
+"C:\vendor a\vk_vendora.json"=dword:00000000
+"C:\windows\system32\vendorb_vk.json"=dword:00000001
+"C:\windows\system32\vendorc_icd.json"=dword:00000000
+</code></pre>
+<p>In this case, the loader will step through each entry, and check the value.  If
+the value is 0, then the loader will attempt to load the file.  In this case,
+the loader will open the first and last listings, but not the middle.  This
+is because the value of 1 for vendorb_vk.json disables the driver.</p>
+<p>Additionaly the loader will scan through registry keys specific to Display
+Adapters and all SoftwareComponents assocatied with these adapters for the
+locations of JSON manifest files. These keys are reflecting HKR device hive
+created during driver installation and contain configuration for base settings,
+including OpenGL/D3D ICD location.</p>
+<p>The Device Adapter and SoftwareComponent key paths should be obtained via PnP
+Configuration Manager API. In each of this path, a "VulkanDriverName" (and
+"VulkanDriverNameWow" for 32-bit Windows on Windows compatibility) key can be
+present, what should look like:</p>
+<pre><code>   HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Class\{Adapter GUID}\000X\VulkanDriverName
+   HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Class\{Adapter GUID}\000X\VulkanDriverNameWow
+   
+   HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Class\{SoftwareComponent GUID}\000X\VulkanDriverName
+   HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Class\{SoftwareComponent GUID}\000X\VulkanDriverNameWow
+</code></pre>
+<p>If any of these keys exsist and is of type REG_SZ, the loader will open the JSON
+manifest file specified by the key valye. Each value must be a full absolute
+path to a JSON manifest file.</p>
+<p>The Vulkan loader will open each enabled manifest file found to obtain the name
+or pathname of an ICD shared library (".DLL") file.</p>
+<p>See the <a href="#user-content-icd-manifest-file-format">ICD Manifest File Format</a> section for more
+details.</p>
+<h4>
+<a id="user-content-icd-discovery-on-linux" class="anchor" href="#user-content-icd-discovery-on-linux" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Discovery on Linux</h4>
+<p>In order to find installed ICDs, the Vulkan loader will scan the files
+in the following Linux directories:</p>
+<pre><code>    /usr/local/etc/vulkan/icd.d
+    /usr/local/share/vulkan/icd.d
+    /etc/vulkan/icd.d
+    /usr/share/vulkan/icd.d
+    $HOME/.local/share/vulkan/icd.d
+</code></pre>
+<p>The "/usr/local/*" directories can be configured to be other directories at
+build time.</p>
+<p>The typical usage of the directories is indicated in the table below.</p>
+<table>
+<thead>
+<tr>
+<th>Location</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$HOME/.local/share/vulkan/icd.d</td>
+<td>$HOME is the current home directory of the application's user id; this path will be ignored for suid programs</td>
+</tr>
+<tr>
+<td>"/usr/local/etc/vulkan/icd.d"</td>
+<td>Directory for locally built ICDs</td>
+</tr>
+<tr>
+<td>"/usr/local/share/vulkan/icd.d"</td>
+<td>Directory for locally built ICDs</td>
+</tr>
+<tr>
+<td>"/etc/vulkan/icd.d"</td>
+<td>Location of ICDs installed from non-Linux-distribution-provided packages</td>
+</tr>
+<tr>
+<td>"/usr/share/vulkan/icd.d"</td>
+<td>Location of ICDs installed from Linux-distribution-provided packages</td>
+</tr>
+</tbody>
+</table>
+<p>The Vulkan loader will open each manifest file found to obtain the name or
+pathname of an ICD shared library (".so") file.</p>
+<p>See the <a href="#user-content-icd-manifest-file-format">ICD Manifest File Format</a> section for more
+details.</p>
+<h5>
+<a id="user-content-additional-settings-for-icd-debugging" class="anchor" href="#user-content-additional-settings-for-icd-debugging" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Additional Settings For ICD Debugging</h5>
+<p>If you are seeing issues which may be related to the ICD.  A possible option to debug is to enable the
+<code>LD_BIND_NOW</code> environment variable.  This forces every dynamic library's symbols to be fully resolved on load.  If
+there is a problem with an ICD missing symbols on your system, this will expose it and cause the Vulkan loader
+to fail on loading the ICD.  It is recommended that you enable <code>LD_BIND_NOW</code> along with <code>VK_LOADER_DEBUG=warn</code>
+to expose any issues.</p>
+<h4>
+<a id="user-content-using-pre-production-icds-on-windows-and-linux" class="anchor" href="#user-content-using-pre-production-icds-on-windows-and-linux" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using Pre-Production ICDs on Windows and Linux</h4>
+<p>Independent Hardware Vendor (IHV) pre-production ICDs. In some cases, a
+pre-production ICD may be in an installable package. In other cases, a
+pre-production ICD may simply be a shared library in the developer's build tree.
+In this latter case, we want to allow developers to point to such an ICD without
+modifying the system-installed ICD(s) on their system.</p>
+<p>This need is met with the use of the "VK_ICD_FILENAMES" environment variable,
+which will override the mechanism used for finding system-installed ICDs. In
+other words, only the ICDs listed in "VK_ICD_FILENAMES" will be used.</p>
+<p>The "VK_ICD_FILENAMES" environment variable is a list of ICD
+manifest files, containing the full path to the ICD JSON Manifest file.  This
+list is colon-separated on Linux, and semi-colon separated on Windows.</p>
+<p>Typically, "VK_ICD_FILENAMES" will only contain a full pathname to one info
+file for a developer-built ICD. A separator (colon or semi-colon) is only used
+if more than one ICD is listed.</p>
+<p><strong>NOTE:</strong> On Linux, this environment variable will be ignored for suid programs.</p>
+<h4>
+<a id="user-content-icd-discovery-on-android" class="anchor" href="#user-content-icd-discovery-on-android" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Discovery on Android</h4>
+<p>The Android loader lives in the system library folder. The location cannot be
+changed. The loader will load the driver/ICD via hw_get_module with the ID
+of "vulkan". <strong>Due to security policies in Android, none of this can be modified
+under normal use.</strong></p>
+<h3>
+<a id="user-content-icd-manifest-file-format" class="anchor" href="#user-content-icd-manifest-file-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Manifest File Format</h3>
+<p>The following section discusses the details of the ICD Manifest JSON file
+format.  The JSON file itself does not have any requirements for naming.  The
+only requirement is that the extension suffix of the file ends with ".json".</p>
+<p>Here is an example layer JSON Manifest file:</p>
+<pre><code>{
+   "file_format_version": "1.0.0",
+   "ICD": {
+      "library_path": "path to ICD library",
+      "api_version": "1.0.5"
+   }
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Field Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"file_format_version"</td>
+<td>The JSON format major.minor.patch version number of this file.  Currently supported version is 1.0.0.</td>
+</tr>
+<tr>
+<td>"ICD"</td>
+<td>The identifier used to group all ICD information together.</td>
+</tr>
+<tr>
+<td>"library_path"</td>
+<td>The "library_path" specifies either a filename, a relative pathname, or a full pathname to a layer shared library file.  If "library_path" specifies a relative pathname, it is relative to the path of the JSON manifest file.  If "library_path" specifies a filename, the library must live in the system's shared object search path. There are no rules about the name of the ICD shared library files other than it should end with the appropriate suffix (".DLL" on Windows, and ".so" on Linux).</td>
+</tr>
+<tr>
+<td>"api_version"</td>
+<td>The major.minor.patch version number of the Vulkan API that the shared library files for the ICD was built against. For example: 1.0.33.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>NOTE:</strong> If the same ICD shared library supports multiple, incompatible
+versions of text manifest file format versions, it must have separate
+JSON files for each (all of which may point to the same shared library).</p>
+<h5>
+<a id="user-content-icd-manifest-file-versions" class="anchor" href="#user-content-icd-manifest-file-versions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Manifest File Versions</h5>
+<p>There has only been one version of the ICD manifest files supported.  This is
+version 1.0.0.</p>
+<h6>
+<a id="user-content-icd-manifest-file-version-100" class="anchor" href="#user-content-icd-manifest-file-version-100" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Manifest File Version 1.0.0</h6>
+<p>The initial version of the ICD Manifest file specified the basic format and
+fields of a layer JSON file.  The fields of the 1.0.0 file format include:</p>
+<ul>
+<li>"file_format_version"</li>
+<li>"ICD"</li>
+<li>"library_path"</li>
+<li>"api_version"</li>
+</ul>
+<h3>
+<a id="user-content-icd-vulkan-entry-point-discovery" class="anchor" href="#user-content-icd-vulkan-entry-point-discovery" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Vulkan Entry-Point Discovery</h3>
+<p>The Vulkan symbols exported by an ICD must not clash with the loader's exported
+Vulkan symbols.  This could be for several reasons.  Because of this, all ICDs
+must export the following function that is used for discovery of ICD Vulkan
+entry-points.  This entry-point is not a part of the Vulkan API itself, only a
+private interface between the loader and ICDs for version 1 and higher
+interfaces.</p>
+<div class="highlight highlight-source-c++"><pre>VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL <span class="pl-en">vk_icdGetInstanceProcAddr</span>(
+                                               VkInstance instance,
+                                               <span class="pl-k">const</span> <span class="pl-k">char</span>* pName);</pre></div>
+<p>This function has very similar semantics to <code>vkGetInstanceProcAddr</code>.
+<code>vk_icdGetInstanceProcAddr</code> returns valid function pointers for all the global-
+level and instance-level Vulkan functions, and also for <code>vkGetDeviceProcAddr</code>.
+Global-level functions are those which contain no dispatchable object as the
+first parameter, such as <code>vkCreateInstance</code> and
+<code>vkEnumerateInstanceExtensionProperties</code>. The ICD must support querying global-
+level entry-points by calling <code>vk_icdGetInstanceProcAddr</code> with a NULL
+<code>VkInstance</code> parameter. Instance-level functions are those that have either
+<code>VkInstance</code>, or <code>VkPhysicalDevice</code> as the first parameter dispatchable object.
+Both core entry-points and any instance extension entry-points the ICD supports
+should be available via <code>vk_icdGetInstanceProcAddr</code>. Future Vulkan instance
+extensions may define and use new instance-level dispatchable objects other
+than <code>VkInstance</code> and <code>VkPhysicalDevice</code>, in which case extension entry-points
+using these newly defined dispatchable objects must be queryable via
+<code>vk_icdGetInstanceProcAddr</code>.</p>
+<p>All other Vulkan entry-points must either:</p>
+<ul>
+<li>NOT be exported directly from the ICD library</li>
+<li>or NOT use the official Vulkan function names if they are exported</li>
+</ul>
+<p>This requirement is for ICD libraries that include other
+functionality (such as OpenGL) and thus could be loaded by the
+application prior to when the Vulkan loader library is loaded by the
+application.</p>
+<p>Beware of interposing by dynamic OS library loaders if the official Vulkan
+names are used. On Linux, if official names are used, the ICD library must be
+linked with -Bsymbolic.</p>
+<h3>
+<a id="user-content-icd-unknown-physical-device-extensions" class="anchor" href="#user-content-icd-unknown-physical-device-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Unknown Physical Device Extensions</h3>
+<p>Originally, if the loader was called with <code>vkGetInstanceProcAddr</code>, it would
+result in the following behavior:</p>
+<ol>
+<li>The loader would check if core function:
+<ul>
+<li>If it was, it would return the function pointer</li>
+</ul>
+</li>
+<li>The loader would check if known extension function:
+<ul>
+<li>If it was, it would return the function pointer</li>
+</ul>
+</li>
+<li>If the loader knew nothing about it, it would call down using
+<code>GetInstanceProcAddr</code>
+<ul>
+<li>If it returned non-NULL, treat it as an unknown logical device command.</li>
+<li>This meant setting up a generic trampoline function that takes in a
+VkDevice as the first parameter and adjusting the dispatch table to call the
+ICD/Layers function after getting the dispatch table from the VkDevice.</li>
+</ul>
+</li>
+<li>If all the above failed, the loader would return NULL to the application.</li>
+</ol>
+<p>This caused problems when an ICD attempted to expose new physical device
+extensions the loader knew nothing about, but an application did.  Because the
+loader knew nothing about it, the loader would get to step 3 in the above
+process and would treat the function as an unknown logical device command.  The
+problem is, this would create a generic VkDevice trampoline function which, on
+the first call, would attempt to dereference the VkPhysicalDevice as a VkDevice.
+This would lead to a crash or corruption.</p>
+<p>In order to identify the extension entry-points specific to physical device
+extensions, the following function can be added to an ICD:</p>
+<div class="highlight highlight-source-c++"><pre>PFN_vkVoidFunction <span class="pl-en">vk_icdGetPhysicalDeviceProcAddr</span>(VkInstance instance,
+                                                   <span class="pl-k">const</span> <span class="pl-k">char</span>* pName);</pre></div>
+<p>This function behaves similar to <code>vkGetInstanceProcAddr</code> and
+<code>vkGetDeviceProcAddr</code> except it should only return values for physical device
+extension entry-points.  In this way, it compares "pName" to every physical
+device function supported in the ICD.</p>
+<p>The following rules apply:</p>
+<ul>
+<li>If it is the name of a physical device function supported by the ICD, the
+pointer to the ICD's corresponding function should be returned.</li>
+<li>If it is the name of a valid function which is <strong>not</strong> a physical device
+function (i.e. an Instance, Device, or other function implemented by the ICD),
+then the value of NULL should be returned.</li>
+<li>If the ICD has no idea what this function is, it should return NULL.</li>
+</ul>
+<p>This support is optional and should not be considered a requirement.  This is
+only required if an ICD intends to support some functionality not directly
+supported by a significant population of loaders in the public.  If an ICD
+does implement this support, it should return the address of its
+<code>vk_icdGetPhysicalDeviceProcAddr</code> function through the <code>vkGetInstanceProcAddr</code>
+function.</p>
+<p>The new behavior of the loader's vkGetInstanceProcAddr with support for the
+<code>vk_icdGetPhysicalDeviceProcAddr</code> function is as follows:</p>
+<ol>
+<li>Check if core function:
+<ul>
+<li>If it is, return the function pointer</li>
+</ul>
+</li>
+<li>Check if known instance or device extension function:
+<ul>
+<li>If it is, return the function pointer</li>
+</ul>
+</li>
+<li>Call the layer/ICD <code>GetPhysicalDeviceProcAddr</code>
+<ul>
+<li>If it returns non-NULL, return a trampoline to a generic physical device
+function, and setup a generic terminator which will pass it to the proper ICD.</li>
+</ul>
+</li>
+<li>Call down using <code>GetInstanceProcAddr</code>
+<ul>
+<li>If it returns non-NULL, treat it as an unknown logical device command.
+This means setting up a generic trampoline function that takes in a VkDevice as
+the first parameter and adjusting the dispatch table to call the ICD/Layers
+function after getting the dispatch table from the VkDevice. Then, return the
+pointer to corresponding trampoline function.</li>
+</ul>
+</li>
+<li>Return NULL</li>
+</ol>
+<p>You can see now, that, if the command gets promoted to core later, it will no
+longer be setup using <code>vk_icdGetPhysicalDeviceProcAddr</code>.  Additionally, if the
+loader adds direct support for the extension, it will no longer get to step 3,
+because step 2 will return a valid function pointer.  However, the ICD should
+continue to support the command query via <code>vk_icdGetPhysicalDeviceProcAddr</code>,
+until at least a Vulkan version bump, because an older loader may still be
+attempting to use the commands.</p>
+<h3>
+<a id="user-content-icd-dispatchable-object-creation" class="anchor" href="#user-content-icd-dispatchable-object-creation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ICD Dispatchable Object Creation</h3>
+<p>As previously covered, the loader requires dispatch tables to be accessible
+within Vulkan dispatchable objects, such as: <code>VkInstance</code>, <code>VkPhysicalDevice</code>,
+<code>VkDevice</code>, <code>VkQueue</code>, and <code>VkCommandBuffer</code>. The specific requirements on all
+dispatchable objects created by ICDs are as follows:</p>
+<ul>
+<li>All dispatchable objects created by an ICD can be cast to void **</li>
+<li>The loader will replace the first entry with a pointer to the dispatch table
+which is owned by the loader. This implies three things for ICD drivers
+<ol>
+<li>The ICD must return a pointer for the opaque dispatchable object handle</li>
+<li>This pointer points to a regular C structure with the first entry being a
+pointer.</li>
+</ol>
+<ul>
+<li>
+<strong>NOTE:</strong> For any C++ ICD's that implement VK objects directly as C++
+classes.
+<ul>
+<li>The C++ compiler may put a vtable at offset zero if your class is non-
+POD due to the use of a virtual function.</li>
+<li>In this case use a regular C structure (see below).</li>
+</ul>
+</li>
+</ul>
+<ol start="3">
+<li>The loader checks for a magic value (ICD_LOADER_MAGIC) in all the created
+dispatchable objects, as follows (see <code>include/vulkan/vk_icd.h</code>):</li>
+</ol>
+</li>
+</ul>
+<div class="highlight highlight-source-c++"><pre>#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>vk_icd.h<span class="pl-pds">"</span></span>
+
+<span class="pl-k">union</span> _VK_LOADER_DATA {
+    uintptr loadermagic;
+    <span class="pl-k">void</span> *loaderData;
+} VK_LOADER_DATA;
+
+vkObj <span class="pl-en">alloc_icd_obj</span>()
+{
+    vkObj *newObj = <span class="pl-c1">alloc_obj</span>();
+    ...
+    <span class="pl-c"><span class="pl-c">//</span> Initialize pointer to loader's dispatch table with ICD_LOADER_MAGIC</span>
+
+    <span class="pl-c1">set_loader_magic_value</span>(newObj);
+    ...
+    <span class="pl-k">return</span> newObj;
+}</pre></div>
+<h3>
+<a id="user-content-handling-khr-surface-objects-in-wsi-extensions" class="anchor" href="#user-content-handling-khr-surface-objects-in-wsi-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Handling KHR Surface Objects in WSI Extensions</h3>
+<p>Normally, ICDs handle object creation and destruction for various Vulkan
+objects. The WSI surface extensions for Linux and Windows
+("VK_KHR_win32_surface", "VK_KHR_xcb_surface", "VK_KHR_xlib_surface",
+"VK_KHR_mir_surface", "VK_KHR_wayland_surface", and "VK_KHR_surface")
+are handled differently.  For these extensions, the <code>VkSurfaceKHR</code> object
+creation and destruction may be handled by either the loader, or an ICD.</p>
+<p>If the loader handles the management of the <code>VkSurfaceKHR</code> objects:</p>
+<ol>
+<li>The loader will handle the calls to <code>vkCreateXXXSurfaceKHR</code> and
+<code>vkDestroySurfaceKHR</code>
+functions without involving the ICDs.
+<ul>
+<li>Where XXX stands for the Windowing System name:
+<ul>
+<li>Mir</li>
+<li>Wayland</li>
+<li>Xcb</li>
+<li>Xlib</li>
+<li>Windows</li>
+<li>Android</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>The loader creates a <code>VkIcdSurfaceXXX</code> object for the corresponding
+<code>vkCreateXXXSurfaceKHR</code> call.
+<ul>
+<li>The <code>VkIcdSurfaceXXX</code> structures are defined in <code>include/vulkan/vk_icd.h</code>.</li>
+</ul>
+</li>
+<li>ICDs can cast any <code>VkSurfaceKHR</code> object to a pointer to the appropriate
+<code>VkIcdSurfaceXXX</code> structure.</li>
+<li>The first field of all the <code>VkIcdSurfaceXXX</code> structures is a
+<code>VkIcdSurfaceBase</code> enumerant that indicates whether the
+surface object is Win32, Xcb, Xlib, Mir, or Wayland.</li>
+</ol>
+<p>The ICD may choose to handle <code>VkSurfaceKHR</code> object creation instead.  If an ICD
+desires to handle creating and destroying it must do the following:</p>
+<ol>
+<li>Support version 3 or newer of the loader/ICD interface.</li>
+<li>Export and handle all functions that take in a <code>VkSurfaceKHR</code> object,
+including:
+<ul>
+<li><code>vkCreateXXXSurfaceKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfaceSupportKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfaceCapabilitiesKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfaceFormatsKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfacePresentModesKHR</code></li>
+<li><code>vkCreateSwapchainKHR</code></li>
+<li><code>vkDestroySurfaceKHR</code></li>
+</ul>
+</li>
+</ol>
+<p>Because the <code>VkSurfaceKHR</code> object is an instance-level object, one object can be
+associated with multiple ICDs.  Therefore, when the loader receives the
+<code>vkCreateXXXSurfaceKHR</code> call, it still creates an internal <code>VkSurfaceIcdXXX</code>
+object.  This object acts as a container for each ICD's version of the
+<code>VkSurfaceKHR</code> object.  If an ICD does not support the creation of its own
+<code>VkSurfaceKHR</code> object, the loader's container stores a NULL for that ICD.  On
+the otherhand, if the ICD does support <code>VkSurfaceKHR</code> creation, the loader will
+make the appropriate <code>vkCreateXXXSurfaceKHR</code> call to the ICD, and store the
+returned pointer in it's container object.  The loader then returns the
+<code>VkSurfaceIcdXXX</code> as a <code>VkSurfaceKHR</code> object back up the call chain.  Finally,
+when the loader receives the <code>vkDestroySurfaceKHR</code> call, it subsequently calls
+<code>vkDestroySurfaceKHR</code> for each ICD who's internal <code>VkSurfaceKHR</code> object is not
+NULL.  Then the loader destroys the container object before returning.</p>
+<h3>
+<a id="user-content-loader-and-icd-interface-negotiation" class="anchor" href="#user-content-loader-and-icd-interface-negotiation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loader and ICD Interface Negotiation</h3>
+<p>Generally, for functions issued by an application, the loader can be
+viewed as a pass through. That is, the loader generally doesn't modify the
+functions or their parameters, but simply calls the ICDs entry-point for that
+function. There are specific additional interface requirements an ICD needs to
+comply with that are not part of any requirements from the Vulkan specification.
+These addtional requirements are versioned to allow flexibility in the future.</p>
+<h4>
+<a id="user-content-windows-and-linux-icd-negotiation" class="anchor" href="#user-content-windows-and-linux-icd-negotiation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Windows and Linux ICD Negotiation</h4>
+<h5>
+<a id="user-content-version-negotiation-between-loader-and-icds" class="anchor" href="#user-content-version-negotiation-between-loader-and-icds" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version Negotiation Between Loader and ICDs</h5>
+<p>All ICDs (supporting interface version 2 or higher) must export the following
+function that is used for determination of the interface version that will be
+used.  This entry-point is not a part of the Vulkan API itself, only a private
+interface between the loader and ICDs.</p>
+<div class="highlight highlight-source-c++"><pre>   VKAPI_ATTR VkResult VKAPI_CALL
+       <span class="pl-en">vk_icdNegotiateLoaderICDInterfaceVersion</span>(
+           <span class="pl-c1">uint32_t</span>* pSupportedVersion);</pre></div>
+<p>This function allows the loader and ICD to agree on an interface version to use.
+The "pSupportedVersion" parameter is both an input and output parameter.
+"pSupportedVersion" is filled in by the loader with the desired latest interface
+version supported by the loader (typically the latest). The ICD receives this
+and returns back the version it desires in the same field.  Because it is
+setting up the interface version between the loader and ICD, this should be
+the first call made by a loader to the ICD (even prior to any calls to
+<code>vk_icdGetInstanceProcAddr</code>).</p>
+<p>If the ICD receiving the call no longer supports the interface version provided
+by the loader (due to deprecation), then it should report
+VK_ERROR_INCOMPATIBLE_DRIVER error.  Otherwise it sets the value pointed by
+"pSupportedVersion" to the latest interface version supported by both the ICD
+and the loader and returns VK_SUCCESS.</p>
+<p>The ICD should report VK_SUCCESS in case the loader provided interface version
+is newer than that supported by the ICD, as it's the loader's responsibility to
+determine whether it can support the older interface version supported by the
+ICD.  The ICD should also report VK_SUCCESS in the case its interface version
+is greater than the loader's, but return the loader's version. Thus, upon
+return of VK_SUCCESS the "pSupportedVersion" will contain the desired interface
+version to be used by the ICD.</p>
+<p>If the loader receives an interface version from the ICD that the loader no
+longer supports (due to deprecation), or it receives a
+VK_ERROR_INCOMPATIBLE_DRIVER error instead of VK_SUCCESS, then the loader will
+treat the ICD as incompatible and will not load it for use.  In this case, the
+application will not see the ICDs <code>vkPhysicalDevice</code> during enumeration.</p>
+<h6>
+<a id="user-content-interfacing-with-legacy-icds-or-loader" class="anchor" href="#user-content-interfacing-with-legacy-icds-or-loader" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Interfacing With Legacy ICDs or Loader</h6>
+<p>If a loader sees that an ICD does not export the
+<code>vk_icdNegotiateLoaderICDInterfaceVersion</code> function, then the loader assumes the
+corresponding ICD only supports either interface version 0 or 1.</p>
+<p>From the other side of the interface, if an ICD sees a call to
+<code>vk_icdGetInstanceProcAddr</code> before a call to
+<code>vk_icdGetLoaderICDInterfaceVersion</code>, then it knows that loader making the calls
+is a legacy loader supporting version 0 or 1.  If the loader calls
+<code>vk_icdGetInstanceProcAddr</code> first, it supports at least version 1.  Otherwise,
+the loader only supports version 0.</p>
+<h5>
+<a id="user-content-loader-version-5-interface-requirements" class="anchor" href="#user-content-loader-version-5-interface-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loader Version 5 Interface Requirements</h5>
+<p>Version 5 of the loader/ICD interface has no changes to the actual interface.
+If the loader requests interface version 5 or greater, it is simply
+an indication to ICDs that the loader is now evaluating if the API Version info
+passed into vkCreateInstance is a valid version for the loader.  If it is not,
+the loader will catch this during vkCreateInstance and fail with a
+VK_ERROR_INCOMPATIBLE_DRIVER error.</p>
+<p>On the other hand, if version 5 or newer is not requested by the loader, then it
+indicates to the ICD that the loader is ignorant of the API version being
+requested.  Because of this, it falls on the ICD to validate that the API
+Version is not greater than major = 1 and minor = 0.  If it is, then the ICD
+should automatically fail with a VK_ERROR_INCOMPATIBLE_DRIVER error since the
+loader is a 1.0 loader, and is unaware of the version.</p>
+<p>Here is a table of the expected behaviors:</p>
+<table>
+<thead>
+<tr>
+<th align="center">Loader Supports I/f Version</th>
+<th align="center">ICD Supports I/f Version</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">&lt;= 4</td>
+<td align="center">&lt;= 4</td>
+<td>ICD must fail with <code>VK_ERROR_INCOMPATIBLE_DRIVER</code> for all vkCreateInstance calls with apiVersion set to &gt; Vulkan 1.0 because both the loader and ICD support interface version &lt;= 4. Otherwise, the ICD should behave as normal.</td>
+</tr>
+<tr>
+<td align="center">&lt;= 4</td>
+<td align="center">&gt;= 5</td>
+<td>ICD must fail with <code>VK_ERROR_INCOMPATIBLE_DRIVER</code> for all vkCreateInstance calls with apiVersion set to &gt; Vulkan 1.0 because the loader is still at interface version &lt;= 4. Otherwise, the ICD should behave as normal.</td>
+</tr>
+<tr>
+<td align="center">&gt;= 5</td>
+<td align="center">&lt;= 4</td>
+<td>Loader will fail with <code>VK_ERROR_INCOMPATIBLE_DRIVER</code> if it can't handle the apiVersion.  ICD may pass for all apiVersions, but since it's interface is &lt;= 4, it is best if it assumes it needs to do the work of rejecting anything &gt; Vulkan 1.0 and fail with <code>VK_ERROR_INCOMPATIBLE_DRIVER</code>. Otherwise, the ICD should behave as normal.</td>
+</tr>
+<tr>
+<td align="center">&gt;= 5</td>
+<td align="center">&gt;= 5</td>
+<td>Loader will fail with <code>VK_ERROR_INCOMPATIBLE_DRIVER</code> if it can't handle the apiVersion, and ICDs should fail with <code>VK_ERROR_INCOMPATIBLE_DRIVER</code> <strong>only if</strong> they can not support the specified apiVersion. Otherwise, the ICD should behave as normal.</td>
+</tr>
+</tbody>
+</table>
+<h5>
+<a id="user-content-loader-version-4-interface-requirements" class="anchor" href="#user-content-loader-version-4-interface-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loader Version 4 Interface Requirements</h5>
+<p>The major change to version 4 of the loader/ICD interface is the support of
+[Unknown Physical Device Extensions](#icd-unknown-physical-device-
+extensions] using the <code>vk_icdGetPhysicalDeviceProcAddr</code> function.  This
+function is purely optional.  However, if an ICD supports a Physical Device
+extension, it must provide a <code>vk_icdGetPhysicalDeviceProcAddr</code> function.
+Otherwise, the loader will continue to treat any unknown functions as VkDevice
+functions and cause invalid behavior.</p>
+<h5>
+<a id="user-content-loader-version-3-interface-requirements" class="anchor" href="#user-content-loader-version-3-interface-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loader Version 3 Interface Requirements</h5>
+<p>The primary change that occurred in version 3 of the loader/ICD interface was to
+allow an ICD to handle creation/destruction of their own KHR_surfaces.  Up until
+this point, the loader created a surface object that was used by all ICDs.
+However, some ICDs may want to provide their own surface handles.  If an ICD
+chooses to enable this support, it must export support for version 3 of the
+loader/ICD interface, as well as any Vulkan function that uses a KHR_surface
+handle, such as:</p>
+<ul>
+<li>
+<code>vkCreateXXXSurfaceKHR</code> (where XXX is the platform specific identifier [i.e.
+<code>vkCreateWin32SurfaceKHR</code> for Windows])</li>
+<li><code>vkDestroySurfaceKHR</code></li>
+<li><code>vkCreateSwapchainKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfaceSupportKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfaceCapabilitiesKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfaceFormatsKHR</code></li>
+<li><code>vkGetPhysicalDeviceSurfacePresentModesKHR</code></li>
+</ul>
+<p>An ICD can still choose to not take advantage of this functionality by simply
+not exposing the above the <code>vkCreateXXXSurfaceKHR</code> and <code>vkDestroySurfaceKHR</code>
+functions.</p>
+<h5>
+<a id="user-content-loader-version-2-interface-requirements" class="anchor" href="#user-content-loader-version-2-interface-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loader Version 2 Interface Requirements</h5>
+<p>Version 2 interface has requirements in three areas:</p>
+<ol>
+<li>ICD Vulkan entry-point discovery,</li>
+<li>
+<code>KHR_surface</code> related requirements in the WSI extensions,</li>
+<li>Vulkan dispatchable object creation requirements.</li>
+</ol>
+<h5>
+<a id="user-content-loader-versions-0-and-1-interface-requirements" class="anchor" href="#user-content-loader-versions-0-and-1-interface-requirements" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loader Versions 0 and 1 Interface Requirements</h5>
+<p>Version 0 and 1 interfaces do not support version negotiation via
+<code>vk_icdNegotiateLoaderICDInterfaceVersion</code>.  ICDs can distinguish version 0 and
+version 1 interfaces as follows: if the loader calls <code>vk_icdGetInstanceProcAddr</code>
+first it supports version 1; otherwise the loader only supports version 0.</p>
+<p>Version 0 interface does not support <code>vk_icdGetInstanceProcAddr</code>.  Version 0
+interface requirements for obtaining ICD Vulkan entry-points are as follows:</p>
+<ul>
+<li>The function <code>vkGetInstanceProcAddr</code> <strong>must be exported</strong> in the ICD library
+and returns valid function pointers for all the Vulkan API entry-points.</li>
+<li>
+<code>vkCreateInstance</code> <strong>must be exported</strong> by the ICD library.</li>
+<li>
+<code>vkEnumerateInstanceExtensionProperties</code> <strong>must be exported</strong> by the ICD
+library.</li>
+</ul>
+<p>Additional Notes:</p>
+<ul>
+<li>The loader will filter out extensions requested in <code>vkCreateInstance</code> and
+<code>vkCreateDevice</code> before calling into the ICD; Filtering will be of extensions
+advertised by entities (e.g. layers) different from the ICD in question.</li>
+<li>The loader will not call the ICD for <code>vkEnumerate\*LayerProperties</code>() as layer
+properties are obtained from the layer libraries and layer JSON files.</li>
+<li>If an ICD library author wants to implement a layer, it can do so by having
+the appropriate layer JSON manifest file refer to the ICD library file.</li>
+<li>The loader will not call the ICD for
+<code>vkEnumerate\*ExtensionProperties</code> if "pLayerName" is not equal to <code>NULL</code>.</li>
+<li>ICDs creating new dispatchable objects via device extensions need to
+initialize the created dispatchable object.  The loader has generic <em>trampoline</em>
+code for unknown device extensions.  This generic <em>trampoline</em> code doesn't
+initialize the dispatch table within the newly created object.  See the
+<a href="#user-content-creating-new-dispatchable-objects">Creating New Dispatchable Objects</a> section
+for more information on how to initialize created dispatchable objects for
+extensions non known by the loader.</li>
+</ul>
+<h4>
+<a id="user-content-android-icd-negotiation" class="anchor" href="#user-content-android-icd-negotiation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Android ICD Negotiation</h4>
+<p>The Android loader uses the same protocol for initializing the dispatch
+table as described above. The only difference is that the Android
+loader queries layer and extension information directly from the
+respective libraries and does not use the json manifest files used
+by the Windows and Linux loaders.</p>
+<h2>
+<a id="user-content-table-of-debug-environment-variables" class="anchor" href="#user-content-table-of-debug-environment-variables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Table of Debug Environment Variables</h2>
+<p>The following are all the Debug Environment Variables available for use with the
+Loader.  These are referenced throughout the text, but collected here for ease
+of discovery.</p>
+<table>
+<thead>
+<tr>
+<th align="center">Environment Variable</th>
+<th>Behavior</th>
+<th>Example Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">VK_ICD_FILENAMES</td>
+<td>Force the loader to use the specific ICD JSON files.  The value should contain a list of delimited full path listings to ICD JSON Manifest files.  <strong>NOTE:</strong> If you fail to use the global path to a JSON file, you may encounter issues.</td>
+<td>
+<code>export VK_ICD_FILENAMES=&lt;folder_a&gt;\intel.json:&lt;folder_b&gt;\amd.json</code><br><br><code>set VK_ICD_FILENAMES=&lt;folder_a&gt;\nvidia.json;&lt;folder_b&gt;\mesa.json</code>
+</td>
+</tr>
+<tr>
+<td align="center">VK_INSTANCE_LAYERS</td>
+<td>Force the loader to add the given layers to the list of Enabled layers normally passed into <code>vkCreateInstance</code>.  These layers are added first, and the loader will remove any duplicate layers that appear in both this list as well as that passed into <code>ppEnabledLayerNames</code>.</td>
+<td>
+<code>export VK_INSTANCE_LAYERS=&lt;layer_a&gt;:&lt;layer_b&gt;</code><br><br><code>set VK_INSTANCE_LAYERS=&lt;layer_a&gt;;&lt;layer_b&gt;</code>
+</td>
+</tr>
+<tr>
+<td align="center">VK_LAYER_PATH</td>
+<td>Override the loader's standard Layer library search folders and use the provided delimited folders to search for layer Manifest files.</td>
+<td>
+<code>export VK_LAYER_PATH=&lt;path_a&gt;:&lt;path_b&gt;</code><br><br><code>set VK_LAYER_PATH=&lt;path_a&gt;;&lt;pathb&gt;</code>
+</td>
+</tr>
+<tr>
+<td align="center">VK_LOADER_DISABLE_INST_EXT_FILTER</td>
+<td>Disable the filtering out of instance extensions that the loader doesn't know about.  This will allow applications to enable instance extensions exposed by ICDs but that the loader has no support for.  <strong>NOTE:</strong> This may cause the loader or applciation to crash.</td>
+<td>
+<code>export VK_LOADER_DISABLE_INST_EXT_FILTER=1</code><br><br><code>set VK_LOADER_DISABLE_INST_EXT_FILTER=1</code>
+</td>
+</tr>
+<tr>
+<td align="center">VK_LOADER_DEBUG</td>
+<td>Enable loader debug messages.  Options are:<br>- error (only errors)<br>- warn (warnings and errors)<br>- info (info, warning, and errors)<br> - debug (debug + all before) <br> -all (report out all messages)</td>
+<td>
+<code>export VK_LOADER_DEBUG=all</code><br><br><code>set VK_LOADER_DEBUG=warn</code>
+</td>
+</tr>
+</tbody>
+</table>
+<h2>
+<a id="user-content-glossary-of-terms" class="anchor" href="#user-content-glossary-of-terms" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Glossary of Terms</h2>
+<table>
+<thead>
+<tr>
+<th align="center">Field Name</th>
+<th>Field Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">Android Loader</td>
+<td>The loader designed to work primarily for the Android OS.  This is generated from a different code-base than the desktop loader.  But, in all important aspects, should be functionally equivalent.</td>
+</tr>
+<tr>
+<td align="center">Desktop Loader</td>
+<td>The loader designed to work on both Windows and Linux.  This is generated from a different code-base than the Android loader.  But in all important aspects, should be functionally equivalent.</td>
+</tr>
+<tr>
+<td align="center">Core Function</td>
+<td>A function that is already part of the Vulkan core specification and not an extension.  For example, vkCreateDevice().</td>
+</tr>
+<tr>
+<td align="center">Device Call Chain</td>
+<td>The call chain of functions followed for device functions.  This call chain for a device function is usually as follows: first the application calls into a loader trampoline, then the loader trampoline calls enabled layers, the final layer calls into the ICD specific to the device.  See the <a href="#user-content-dispatch-tables-and-call-chains">Dispatch Tables and Call Chains</a> section for more information</td>
+</tr>
+<tr>
+<td align="center">Device Function</td>
+<td>A Device function is any Vulkan function which takes a <code>VkDevice</code>, <code>VkQueue</code>, <code>VkCommandBuffer</code>, or any child of these, as its first parameter.  Some Vulkan Device functions are: <code>vkQueueSubmit</code>, <code>vkBeginCommandBuffer</code>, <code>vkCreateEvent</code>.  See the <a href="#user-content-instance-versus-device">Instance Versus Device</a> section for more information.</td>
+</tr>
+<tr>
+<td align="center">Discovery</td>
+<td>The process of the loader searching for ICD and Layer files to setup the internal list of Vulkan objects available.  On Windows/Linux, the discovery process typically focuses on searching for Manifest files.  While on Android, the process focuses on searching for library files.</td>
+</tr>
+<tr>
+<td align="center">Dispatch Table</td>
+<td>An array of function pointers (including core and possibly extension functions) used to step to the next entity in a call chain.  The entity could be the loader, a layer or an ICD.  See <a href="#user-content-dispatch-tables-and-call-chains">Dispatch Tables and Call Chains</a> for more information.</td>
+</tr>
+<tr>
+<td align="center">Extension</td>
+<td>A concept of Vulkan used to expand the core Vulkan functionality.  Extensions may be IHV-specific, platform-specific, or more broadly available.  You should always query if an extension exists, and enable it during <code>vkCreateInstance</code> (if it is an instance extension) or during <code>vkCreateDevice</code> (if it is a device extension).</td>
+</tr>
+<tr>
+<td align="center">ICD</td>
+<td>Acronym for Installable Client Driver.  These are drivers that are provided by IHVs to interact with the hardware they provide.  See <a href="#user-content-installable-client-drivers">Installable Client Drivers</a> section for more information.</td>
+</tr>
+<tr>
+<td align="center">IHV</td>
+<td>Acronym for an Independent Hardware Vendor.  Typically the company that built the underlying hardware technology you are trying to use.  A typical examples for a Graphics IHV are: AMD, ARM, Imagination, Intel, Nvidia, Qualcomm, etc.</td>
+</tr>
+<tr>
+<td align="center">Instance Call Chain</td>
+<td>The call chain of functions followed for instance functions.  This call chain for an instance function is usually as follows: first the application calls into a loader trampoline, then the loader trampoline calls enabled layers, the final layer calls a loader terminator, and the loader terminator calls all available ICDs.  See the <a href="#user-content-dispatch-tables-and-call-chains">Dispatch Tables and Call Chains</a> section for more information</td>
+</tr>
+<tr>
+<td align="center">Instance Function</td>
+<td>An Instance function is any Vulkan function which takes as its first parameter either a <code>VkInstance</code> or a <code>VkPhysicalDevice</code> or nothing at all.  Some Vulkan Instance functions are: <code>vkEnumerateInstanceExtensionProperties</code>, <code>vkEnumeratePhysicalDevices</code>, <code>vkCreateInstance</code>, <code>vkDestroyInstance</code>.  See the <a href="#user-content-instance-versus-device">Instance Versus Device</a> section for more information.</td>
+</tr>
+<tr>
+<td align="center">Layer</td>
+<td>Layers are optional components that augment the Vulkan system.  They can intercept, evaluate, and modify existing Vulkan functions on their way from the application down to the hardware.  See the <a href="#user-content-layers">Layers</a> section for more information.</td>
+</tr>
+<tr>
+<td align="center">Loader</td>
+<td>The middle-ware program which acts as the mediator between Vulkan applications, Vulkan layers and Vulkan drivers.  See [The Loader](#the loader) section for more information.</td>
+</tr>
+<tr>
+<td align="center">Manifest Files</td>
+<td>Data files in JSON format used by the desktop loader.  These files contain specific information for either a <a href="#user-content-layer-manifest-file-format">Layer</a> or an <a href="#icd-manifest-file-format">ICD</a>.</td>
+</tr>
+<tr>
+<td align="center">Terminator Function</td>
+<td>The last function in the instance call chain above the ICDs and owned by the loader.  This function is required in the instance call chain because all instance functionality must be communicated to all ICDs capable of receiving the call.  See <a href="#user-content-dispatch-tables-and-call-chains">Dispatch Tables and Call Chains</a> for more information.</td>
+</tr>
+<tr>
+<td align="center">Trampoline Function</td>
+<td>The first function in an instance or device call chain owned by the loader which handles the setup and proper call chain walk using the appropriate dispatch table.  On device functions (in the device call chain) this function can actually be skipped.  See <a href="#user-content-dispatch-tables-and-call-chains">Dispatch Tables and Call Chains</a> for more information.</td>
+</tr>
+<tr>
+<td align="center">WSI Extension</td>
+<td>Acronym for Windowing System Integration.  A Vulkan extension targeting a particular Windowing and designed to interface between the Windowing system and Vulkan. See <a href="#user-content-wsi-extensions">WSI Extensions</a> for more information.</td>
+</tr>
+</tbody>
+</table>
+</article>
+</body>
+</html>

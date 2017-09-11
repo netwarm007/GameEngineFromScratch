@@ -1,0 +1,93 @@
+<h1>Enumerate Physical Devices</h1>
+
+<p><link href="../css/lg_stylesheet.css" rel="stylesheet"></link></p>
+
+<p>Code file for this section is <code>02-enumerate_devices.cpp</code></p>
+
+<p>The next step in the samples progression is determining the
+physical devices present on the system.</p>
+
+<p>After you have created an instance, the loader knows how many Vulkan
+physical devices are available, but your application doesn't know this yet.
+The application learns how many devices are available by asking the
+Vulkan API for a list of physical devices.</p>
+
+<p><img src="../images/PhysicalDevices.png" alt="PhysicalDevices" title=""></p>
+
+<p>Physical devices are related to the instance as shown in the above diagram.</p>
+
+<h2>Getting Lists of Objects from Vulkan</h2>
+
+<p>Obtaining list of objects is a fairly common operation in Vulkan,
+and the API has a consistent pattern for doing so.
+API functions that return lists have count and pointer arguments.
+The count argument is a pointer to an integer so that the API can
+set its value.  The steps are:</p>
+
+<ol>
+<li>Call the function with a valid pointer to an integer for the count argument
+and a NULL for the pointer argument.</li>
+<li>The API fills in the count argument with the number of objects in the list.</li>
+<li>The application allocates enough space to store the list.</li>
+<li>The application calls the function again with the pointer argument pointing
+to the space just allocated.</li>
+</ol>
+
+<p>You will see this pattern often in the Vulkan API.</p>
+
+<h2>vkEnumeratePhysicalDevices Function</h2>
+
+<p>The <code>vkEnumeratePhysicalDevices</code> function returns only a list of handles
+for each physical device on the system.
+A physical device might be a graphics card that one plugs into a desktop computer, some sort
+of GPU core on an SoC, etc.
+If there are multiple devices available, the application must decide somehow
+which of them it will use.</p>
+
+<p>Our sample code enumerates the physical devices as follows:</p>
+
+<pre><code>// Get the number of devices (GPUs) available.
+VkResult res = vkEnumeratePhysicalDevices(info.inst, &amp;gpu_count, NULL);
+// Allocate space and get the list of devices.
+info.gpus.resize(gpu_count);
+res = vkEnumeratePhysicalDevices(info.inst, &amp;gpu_count, info.gpus.data());
+</code></pre>
+
+<p>Note that the <code>info.gpus</code> variable is a vector of type <code>VkPhysicalDevice</code>,
+which is a handle.</p>
+
+<p>All <code>enumerate</code> does is get the list of physical device handles.
+The <code>device</code> program, which is the next step in the progression,
+looks at this list to decide which device to use.</p>
+
+<h2>The Samples <code>info</code> Structure</h2>
+
+<p>You'll notice the use of an <code>info</code> variable in the above code.
+Each sample program uses the global <code>info</code> structure
+variable to track Vulkan information and application state.
+This facilitates using more compact function calls to perform
+steps that have already been covered in this tutorial.
+For example, see the line of code in the <code>enumerate</code> program:</p>
+
+<pre><code>`init_instance(info, "vulkansamples_enumerate");`
+</code></pre>
+
+<p>which performs the steps discussed on the <code>instance</code> page
+of this tutorial.
+<code>init_instance()</code> creates the instance and stores the handle in <code>info</code>.
+And then <code>vkEnumeratePhysicalDevices()</code> uses <code>info.inst</code> in the call to
+<code>vkEnumeratePhysicalDevices()</code>.</p>
+
+<p>Now that you have the list of devices (GPUs), it is now time to select a GPU
+and create a Vulkan logical device object so that you can start working with
+that GPU.</p>
+
+<table border="1" width="100%">
+    <tr>
+        <td align="center" width="33%">Previous: <a href="01-init_instance.html" title="Prev">Instance</a></td>
+        <td align="center" width="33%">Back to: <a href="index.html" title="Index">Index</a></td>
+        <td align="center" width="33%">Next: <a href="03-init_device.html" title="Next">Device</a></td>
+    </tr>
+</table>
+
+<p><footer>&copy; Copyright 2016 LunarG, Inc</footer></p>

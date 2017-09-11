@@ -1,0 +1,153 @@
+<h1>Create a Depth Buffer</h1>
+
+<p><link href="../css/lg_stylesheet.css" rel="stylesheet"></link></p>
+
+<p>Code file for this section is <code>06-init_depth_buffer.cpp</code></p>
+
+<p>Depth buffers are optional, but you will need a depth buffer
+to render a 3D cube in the final sample.
+And you need only one for rendering each frame,
+even if the swapchain has more than one image.
+This is because you can reuse the same depth buffer while using
+each image in the swapchain.</p>
+
+<p>Unlike <code>vkCreateSwapchainKHR()</code>, where each of the images
+in the swapchain were created for you, you need to
+create and allocate your own image to represent the depth buffer.</p>
+
+<p>The steps are:</p>
+
+<ol>
+<li>Create the depth buffer image object</li>
+<li>Allocate the depth buffer device memory</li>
+<li>Bind the memory to the image object</li>
+<li>Create the depth buffer image view</li>
+</ol>
+
+<p>You end up with something that looks like this:</p>
+
+<p><img src="../images/DepthBufferBindView.png" alt="CreateDepth" title=""></p>
+
+<h2>Create the Depth Buffer Image Object</h2>
+
+<p>To create the image object for the depth buffer, we fill in the
+familiar create info structure:</p>
+
+<pre><code>image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+image_info.pNext = NULL;
+image_info.imageType = VK_IMAGE_TYPE_2D;
+image_info.format = VK_FORMAT_D16_UNORM;
+image_info.extent.width = info.width;
+image_info.extent.height = info.height;
+image_info.extent.depth = 1;
+image_info.mipLevels = 1;
+image_info.arrayLayers = 1;
+image_info.samples = NUM_SAMPLES;
+image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+image_info.queueFamilyIndexCount = 0;
+image_info.pQueueFamilyIndices = NULL;
+image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+image_info.flags = 0;
+
+vkCreateImage(info.device, &amp;image_info, NULL, &amp;info.depth.image);
+</code></pre>
+
+<p>This just creates an object for the image.
+There is no memory allocated yet for the depth buffer image memory itself,
+but note that you have filled in the information to indicate that you
+want a depth buffer that matches the window size.</p>
+
+<h2>Allocate the Memory for the Depth Buffer</h2>
+
+<p>At this point, even though you know the width, height, and the
+size of a buffer element, you still cannot determine exactly
+how much memory to allocate.
+This is because there may be alignment constraints placed by
+the GPU hardware, for example.
+And these constraints vary from device to device.</p>
+
+<p>Vulkan provides a function that you use to find out everything
+you need to allocate the memory for an image:</p>
+
+<pre><code>vkGetImageMemoryRequirements(info.device, info.depth.image, &amp;mem_reqs);
+</code></pre>
+
+<p>You then use this memory requirement info to fill in a request
+structure for a memory allocation.
+One of the key pieces of this requirements information is the memory size,
+which you use to fill in the allocation request structure, as shown below.</p>
+
+<pre><code>VkMemoryAllocateInfo mem_alloc = {};
+mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+mem_alloc.pNext = NULL;
+mem_alloc.allocationSize = mem_reqs.size;
+mem_alloc.memoryTypeIndex = memory_type_from_properties();
+</code></pre>
+
+<p>While it is tempting to guess at the allocationSize by multiplying
+width by height by sizeof(depth texel), there is the possibility
+of alignment constraints requiring additional padding.
+So it is better to not try to guess the amount needed and request
+the required size instead.</p>
+
+<p>The <code>memory_type_from_properties()</code> function is a samples utility
+function that determines the appropriate memory type index to use.
+Since you are allocating device memory here, memory that is directly
+accessible from the GPU, there are additional considerations
+such as alignment and cache behavior.
+The <em>Device Memory</em> section in the Vulkan spec is a good reference
+for the many details.</p>
+
+<p>Finally, you can allocate the memory:</p>
+
+<pre><code>vkAllocateMemory(info.device, &amp;mem_alloc, NULL, &amp;info.depth.mem);
+</code></pre>
+
+<h2>Bind the Memory to the Depth Buffer</h2>
+
+<p>Now you have an image object for the depth buffer and some device
+memory allocated for the depth buffer.</p>
+
+<p>Next, you associate the memory with the object by binding them:</p>
+
+<pre><code>vkBindImageMemory(info.device, info.depth.image, info.depth.mem, 0);
+</code></pre>
+
+<h2>Create the Image View</h2>
+
+<p>As with the swapchain images, you need to create an image view
+to indicate some of the specifics about how you will be using the
+depth buffer.
+For example, the image view you create below indicates that the image
+will be used as a depth buffer and has a 16-bit format.</p>
+
+<pre><code>VkImageViewCreateInfo view_info = {};
+view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+view_info.pNext = NULL;
+view_info.image = info.depth.image;
+view_info.format = VK_FORMAT_D16_UNORM;
+view_info.components.r = VK_COMPONENT_SWIZZLE_R;
+view_info.components.g = VK_COMPONENT_SWIZZLE_G;
+view_info.components.b = VK_COMPONENT_SWIZZLE_B;
+view_info.components.a = VK_COMPONENT_SWIZZLE_A;
+view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+view_info.subresourceRange.baseMipLevel = 0;
+view_info.subresourceRange.levelCount = 1;
+view_info.subresourceRange.baseArrayLayer = 0;
+view_info.subresourceRange.layerCount = 1;
+view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+view_info.flags = 0;
+
+res = vkCreateImageView(info.device, &amp;view_info, NULL, &amp;info.depth.view);
+</code></pre>
+
+<table border="1" width="100%">
+    <tr>
+        <td align="center" width="33%">Previous: <a href="05-init_swapchain.html" title="Prev">Swapchain</a></td>
+        <td align="center" width="33%">Back to: <a href="index.html" title="Index">Index</a></td>
+        <td align="center" width="33%">Next: <a href="07-init_uniform_buffer.html" title="Next">Uniform Buffer</a></td>
+    </tr>
+</table>
+
+<p><footer>&copy; Copyright 2016 LunarG, Inc</footer></p>

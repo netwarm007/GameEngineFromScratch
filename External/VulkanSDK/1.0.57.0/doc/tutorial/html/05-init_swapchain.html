@@ -1,0 +1,387 @@
+<h1>Create a Swapchain</h1>
+
+<p><link href="../css/lg_stylesheet.css" rel="stylesheet"></link></p>
+
+<p>Code file for this section is <code>05-init_swapchain.cpp</code></p>
+
+<p>This section describes how to create the swapchain, which is a
+list of image buffers that are eventually displayed to the user.
+This is one of the first steps needed to set up all the buffers
+needed for rendering.</p>
+
+<p>Here's a view of the Vulkan swapchain, in relation to various other parts
+of the system.
+Some of these parts are familiar and the rest you will learn about in this
+section.</p>
+
+<p><img src="../images/Swapchain.png" alt="Swapchain" title=""></p>
+
+<h2>Vulkan and the Windowing System</h2>
+
+<p>Like other graphics APIs, Vulkan keeps window system aspects
+separated from the core graphics API.
+In Vulkan, the windowing system particulars are exposed via the
+WSI (Window System Integration) extensions.
+You can find the documentation for these extensions in a Vulkan
+specification document that was prepared with the WSI content enabled.
+The Vulkan specification found on the
+<a href="https://vulkan.lunarg.com" target="_blank">LunarG LunarXchange website</a>
+and in the <a href="https://www.khronos.org/registry/vulkan/" target="_blank">Khronos Vulkan Registry</a>
+is built with this content.</p>
+
+<p>The WSI extensions contain support for various platforms.
+The extensions are activated for a particular platform by defining:</p>
+
+<ul>
+<li><code>VK_USE_PLATFORM_ANDROID_KHR</code> - Android</li>
+<li><code>VK_USE_PLATFORM_MIR_KHR</code> - Mir</li>
+<li><code>VK_USE_PLATFORM_WAYLAND_KHR</code> - Wayland</li>
+<li><code>VK_USE_PLATFORM_WIN32_KHR</code> - Microsoft Windows</li>
+<li><code>VK_USE_PLATFORM_XCB_KHR</code> - X Window System, using the XCB library</li>
+<li><code>VK_USE_PLATFORM_XLIB_KHR</code> - X Window System, using the Xlib library</li>
+</ul>
+
+<p>The "KHR" portion of the name indicates that the symbol is defined
+in a Khronos extension.</p>
+
+<h3>Surface Abstraction</h3>
+
+<p>Vulkan uses the <code>VkSurfaceKHR</code> object to abstract the native platform
+surface or window.
+This symbol is defined as part of the VK_KHR_surface extension.
+The various functions in the WSI extensions are used to create, manipulate,
+and destroy these surface objects.</p>
+
+<h2>Revisiting Instance and Device Extensions</h2>
+
+<p>Since you postponed using extensions in this tutorial in previous sections,
+now is the time to revisit them so you can activate the WSI
+extensions that you need to use to interface with the windowing
+system.</p>
+
+<h3>Instance Extensions</h3>
+
+<p>In order to use the WSI extensions, you need to activate the
+general surface extension.
+Find the code in the <code>init_instance_extension_names()</code> function
+in the samples that adds the <code>VK_KHR_SURFACE_EXTENSION_NAME</code> to the list
+of instance extensions to load.</p>
+
+<pre><code>info.instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+</code></pre>
+
+<p>Note also that this same function determines a platform-specific extension,
+depending on the platform for which the code is being built.
+For example, if building for Windows, the function adds
+<code>VK_KHR_WIN32_SURFACE_EXTENSION_NAME</code>
+to the list of instance extensions to load.</p>
+
+<pre><code>info.instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+</code></pre>
+
+<p>These extensions are loaded when the instance is created,
+in the <code>init_instance()</code> function.</p>
+
+<h3>Device Extensions</h3>
+
+<p>A swapchain is a list of image buffers that the GPU draws into and are also
+presented to the display hardware for scan-out to the display.
+Since it is the GPU hardware that is writing to these images,
+a device-level extension is needed to work with the swapchain.
+Therefore the sample code adds the <code>VK_KHR_SWAPCHAIN_EXTENSION_NAME</code>
+device extension to the list of device extensions to load in
+<code>init_device_extension_names()</code>.</p>
+
+<pre><code>info.device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+</code></pre>
+
+<p>This extension is used a bit later in this section to create
+the swapchain.</p>
+
+<p>To recap:</p>
+
+<ul>
+<li>This sample uses the <code>init_instance_extension_names()</code> function
+to load the general surface extension and the platform-specific surface extension
+as instance extensions.</li>
+<li>This sample uses the <code>init_device_extension_names()</code> function
+to load a swapchain extension as a device extension.</li>
+</ul>
+
+<p>You can learn more about instance and device extensions by visiting the
+documentation section on the <a href="https://vulkan.lunarg.com" target="_blank">LunarG LunarXchange website</a>.</p>
+
+<h2>Queue Family and Present</h2>
+
+<p>The "present" operation consists of getting one of the swapchain images
+onto the physical display so that it can be viewed.
+When the application wants to present an image to the display,
+it puts a present request onto one of the GPU's queues, using the
+<code>vkQueuePresentKHR()</code> function.
+Therefore, the queue referenced by this function must be able to support
+present requests, or graphics and present requests.
+The sample checks for this as follows:</p>
+
+<pre><code>// Iterate over each queue to learn whether it supports presenting:
+VkBool32 *pSupportsPresent =
+    (VkBool32 *)malloc(info.queue_family_count * sizeof(VkBool32));
+for (uint32_t i = 0; i &lt; info.queue_family_count; i++) {
+    vkGetPhysicalDeviceSurfaceSupportKHR(info.gpus[0], i, info.surface,
+                                         &amp;pSupportsPresent[i]);
+}
+
+// Search for a graphics and a present queue in the array of queue
+// families, try to find one that supports both
+info.graphics_queue_family_index = UINT32_MAX;
+info.present_queue_family_index = UINT32_MAX;
+for (uint32_t i = 0; i &lt; info.queue_family_count; ++i) {
+    if ((info.queue_props[i].queueFlags &amp; VK_QUEUE_GRAPHICS_BIT) != 0) {
+        if (info.graphics_queue_family_index == UINT32_MAX)
+            info.graphics_queue_family_index = i;
+
+        if (pSupportsPresent[i] == VK_TRUE) {
+            info.graphics_queue_family_index = i;
+            info.present_queue_family_index = i;
+            break;
+        }
+    }
+}
+
+if (info.present_queue_family_index == UINT32_MAX) {
+    // If didn't find a queue that supports both graphics and present, then
+    // find a separate present queue.
+    for (size_t i = 0; i &lt; info.queue_family_count; ++i)
+        if (pSupportsPresent[i] == VK_TRUE) {
+            info.present_queue_family_index = i;
+            break;
+        }
+}
+free(pSupportsPresent);
+</code></pre>
+
+<p>This code reuses the <code>info.queue_family_count</code> obtained earlier,
+since <code>vkGetPhysicalDeviceSurfaceSupportKHR()</code> returns
+one flag for each queue family.
+It then searches for a queue family that supports both
+present and graphics.
+If there is no queue family that supports both, the program
+remembers a queue family that supports graphics and then
+searches again for a queue that supports present.
+Since both <code>graphics_queue_family_index</code>
+and <code>present_queue_family_index</code> are set by this code,
+later on the samples must use a queue from <code>graphics_queue_family_index</code>
+for graphics commands and a queue from <code>present_queue_family_index</code> for presents.</p>
+
+<p>Yes, this is a bit redundant with the previous search performed in init_device
+for a queue family that supported just graphics,
+which was done only for illustrative purposes.
+A real application may do these steps in a different order to
+avoid the repetition.</p>
+
+<p>If no such queue family was found, the sample simply exits.</p>
+
+<h2>Swapchain Create Info</h2>
+
+<p>Much of the effort in the remainder of this section is directed
+towards filling in this create info structure, used to create the swapchain:</p>
+
+<pre><code>typedef struct VkSwapchainCreateInfoKHR {
+    VkStructureType                  sType;
+    const void*                      pNext;
+    VkSwapchainCreateFlagsKHR        flags;
+    VkSurfaceKHR                     surface;
+    uint32_t                         minImageCount;
+    VkFormat                         imageFormat;
+    VkColorSpaceKHR                  imageColorSpace;
+    VkExtent2D                       imageExtent;
+    uint32_t                         imageArrayLayers;
+    VkImageUsageFlags                imageUsage;
+    VkSharingMode                    imageSharingMode;
+    uint32_t                         queueFamilyIndexCount;
+    const uint32_t*                  pQueueFamilyIndices;
+    VkSurfaceTransformFlagBitsKHR    preTransform;
+    VkCompositeAlphaFlagBitsKHR      compositeAlpha;
+    VkPresentModeKHR                 presentMode;
+    VkBool32                         clipped;
+    VkSwapchainKHR                   oldSwapchain;
+} VkSwapchainCreateInfoKHR;
+</code></pre>
+
+<h3>Creating a Surface</h3>
+
+<p>With the WSI extensions loaded in the instance and the device, you
+can now create a <code>VkSurface</code> so that you can proceed with making the
+swapchain.
+You again need to use platform-specific code, appearing near the top
+of the <code>05-init_swapchain.cpp</code> file:</p>
+
+<pre><code>#ifdef _WIN32
+    VkWin32SurfaceCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    createInfo.pNext = NULL;
+    createInfo.hinstance = info.connection;
+    createInfo.hwnd = info.window;
+    res = vkCreateWin32SurfaceKHR(info.inst, &amp;createInfo, NULL, &amp;info.surface);
+#endif
+</code></pre>
+
+<p>The <code>info.connection</code> and <code>info.window</code> values are set up in more
+platform-specific code contained in the <code>init_connection()</code> and
+<code>init_window()</code> functions, which you can also find in the sample code.</p>
+
+<p>Note that the <code>init_connection()</code> and <code>init_window()</code> functions also
+took care of the platform-specific operations of connecting to the
+display and creating the actual window.
+The <code>VkSurfaceKHR</code> surface you just created with the
+<code>vkCreateWin32SurfaceKHR()</code> function is represented by a handle that is
+usable by Vulkan for the platform window object.</p>
+
+<p>You then add the resulting surface to the swapchain create info structure:</p>
+
+<pre><code>VkSwapchainCreateInfoKHR swapchain_ci = {};
+swapchain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+swapchain_ci.pNext = NULL;
+swapchain_ci.surface = info.surface;
+</code></pre>
+
+<h4>Device Surface Formats</h4>
+
+<p>You also need to specify the format of the surface
+when creating the swapchain.
+In this context, the "format" refers to the pixel formats
+as described by the <code>VkFormat</code> enumeration, where
+<code>VK_FORMAT_B8G8R8A8_UNORM</code> is one common example for a
+device surface format.</p>
+
+<p>The next section of code in the sample gets a list of
+<code>VkSurfaceFormatKHR</code> structures which contain the
+<code>VkFormat</code> formats that are supported by the display,
+along with other info.
+Since the samples really do not care what format is used
+for the display images and surfaces, the sample just
+picks the first available format, falling back to an
+arbitrary, but common, format if none are specified.</p>
+
+<p>Take a look at the code in the sample and see that it ends up
+setting the format in the create info structure:</p>
+
+<pre><code>swapchain_ci.imageFormat = info.format;
+</code></pre>
+
+<h3>Surface Capabilities</h3>
+
+<p>In order to continue filling out the swapchain create info structure,
+the sample calls <code>vkGetPhysicalDeviceSurfaceCapabilitiesKHR()</code>
+and <code>vkGetPhysicalDeviceSurfacePresentModesKHR()</code> to
+get the needed information.
+It can then fill in the following fields:</p>
+
+<pre><code>uint32_t desiredNumberOfSwapChainImages = surfCapabilities.minImageCount;
+
+swapchain_ci.minImageCount = desiredNumberOfSwapChainImages;
+swapchain_ci.imageExtent.width = swapChainExtent.width;
+swapchain_ci.imageExtent.height = swapChainExtent.height;
+swapchain_ci.preTransform = preTransform;
+swapchain_ci.presentMode = swapchainPresentMode;
+</code></pre>
+
+<p>You should set the <code>minImageCount</code> member to a value that represents the
+buffering strategy that your application uses, double-buffering or
+triple-buffering for example.
+This sample queries the minimum number of images that can be in a
+swapchain using the <code>vkGetPhysicalDeviceSurfaceCapabilitiesKHR()</code>
+function, storing the result in <code>surfCapabilities</code>.
+Asking for this minimum number of images ensures that we can acquire
+one presentable image as long as we present it before attempting
+to acquire another.
+This represents a double-buffered configuration, since you will be able
+to acquire one image to render into, while the other image is being presented.
+If you wanted to triple-buffer, then you would ask for one more image and then
+be able to acquire two buffers to render into before you present them.</p>
+
+<h2>Different Queue Families for Graphics and Present</h2>
+
+<p>You determined above the queue families for graphics and present queues.
+If they are different, you need to do some additional work to allow the
+images to  be shared between queue families.</p>
+
+<pre><code>swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+swapchain_ci.queueFamilyIndexCount = 0;
+swapchain_ci.pQueueFamilyIndices = NULL;
+uint32_t queueFamilyIndices[2] = {
+    (uint32_t)info.graphics_queue_family_index,
+    (uint32_t)info.present_queue_family_index};
+if (info.graphics_queue_family_index != info.present_queue_family_index) {
+    // If the graphics and present queues are from different queue families,
+    // we either have to explicitly transfer ownership of images between the
+    // queues, or we have to create the swapchain with imageSharingMode
+    // as VK_SHARING_MODE_CONCURRENT
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+    swapchain_ci.queueFamilyIndexCount = 2;
+    swapchain_ci.pQueueFamilyIndices = queueFamilyIndices;
+}
+</code></pre>
+
+<p>The above fields supply more of the basic info needed to create
+the swapchain.
+You can inspect the rest of the code in the sample to see
+how this information was obtained and how the rest of
+the create info structure is filled out.</p>
+
+<h2>Create Swapchain</h2>
+
+<p>With the swapchain create info structure filled out,
+you can now create the swapchain:</p>
+
+<pre><code>res = vkCreateSwapchainKHR(info.device, &amp;swapchain_ci, NULL, &amp;info.swap_chain);
+</code></pre>
+
+<p>This call creates a set of images that make up the swapchain.
+At some point, you need the handles to the individual images so that
+you can tell the GPU which images to use for rendering.
+The <code>vkCreateSwapchainKHR()</code> function creates the images itself
+and so has kept track of the handles.
+The sample obtains the image handles by using the familiar pattern
+of first querying how many handles exist by calling</p>
+
+<pre><code>vkGetSwapchainImagesKHR(info.device, info.swap_chain,
+                        &amp;info.swapchainImageCount, NULL);
+</code></pre>
+
+<p>to get the count and then calling the function again
+to get a list of image handles and storing them in <code>info.buffers[]</code>.
+Now you have a list of target image handles.</p>
+
+<h2>Create Image Views</h2>
+
+<p>You need to communicate to Vulkan how you intend to use these swapchain
+images by creating image views.
+A "view" is essentially additional information attached to a resource
+that describes how that resource is used.</p>
+
+<p>The region of memory belonging to an image can be arranged in
+a large variety of ways, depending on the intended use of the image.
+For example, an image can be 1D, 2D, or 3D.
+Or there can be an array of images, etc.
+It is also useful to describe the format of the image (<code>VK_FORMAT_R8G8B8A8_UNORM</code>,
+for example), the order of components, and layer information.
+All this information is the image metadata contained in a <code>VkImageView</code>.</p>
+
+<p>Creating an image view is straightforward.
+Find the <code>VkImageViewCreateInfo</code> structure in the <code>05-init_swapchain.cpp</code> file
+and see that it is filled in with the values you would expect for a
+2D framebuffer.
+Note that the image handle itself is stored in the image view.</p>
+
+<p>You then finish up the creation of the swapchain
+by storing the image view handles in the <code>info</code> data structure for use later on.</p>
+
+<table border="1" width="100%">
+    <tr>
+        <td align="center" width="33%">Previous: <a href="04-init_command_buffer.html" title="Prev">Command Buffer</a></td>
+        <td align="center" width="33%">Back to: <a href="index.html" title="Index">Index</a></td>
+        <td align="center" width="33%">Next: <a href="06-init_depth_buffer.html" title="Next">Depth Buffer</a></td>
+    </tr>
+</table>
+
+<p><footer>&copy; Copyright 2016 LunarG, Inc</footer></p>
