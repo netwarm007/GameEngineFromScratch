@@ -7,7 +7,7 @@
 using namespace My;
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, L"Game Engine From Scratch (Windows)");
+    GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, _T("Game Engine From Scratch (Windows)"));
 	IApplication* g_pApp                = static_cast<IApplication*>(new WindowsApplication(config));
     GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new D3d12GraphicsManager);
     MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
@@ -48,8 +48,8 @@ int My::WindowsApplication::Initialize()
     RegisterClassEx(&wc);
 
     // create the window and use the result as the handle
-    hWnd = CreateWindowExW(0,
-                          L"GameEngineFromScratch",      // name of the window class
+    hWnd = CreateWindowEx(0,
+                          _T("GameEngineFromScratch"),      // name of the window class
                           m_Config.appName,             // title of the window
                           WS_OVERLAPPEDWINDOW,              // window style
                           CW_USEDEFAULT,                    // x-position of the window
