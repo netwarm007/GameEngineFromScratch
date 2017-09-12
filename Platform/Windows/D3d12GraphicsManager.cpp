@@ -1,7 +1,7 @@
-#include "D3d12GraphicsManager.hpp"
-#include "WindowsApplication.hpp"
 #include <objbase.h>
 #include <d3dcompiler.h>
+#include "D3d12GraphicsManager.hpp"
+#include "WindowsApplication.hpp"
 
 using namespace My;
 
@@ -318,6 +318,18 @@ void My::D3d12GraphicsManager::Tick()
 
 void My::D3d12GraphicsManager::Finalize()
 {
+    SafeRelease(&m_pFence);
+    SafeRelease(&m_pVertexBuffer);
+    SafeRelease(&m_pCommandList);
+    SafeRelease(&m_pPipelineState);
+    SafeRelease(&m_pRtvHeap);
+    SafeRelease(&m_pRootSignature);
+    SafeRelease(&m_pCommandQueue);
+    SafeRelease(&m_pCommandAllocator);
+    for (uint32_t i = 0; i < kFrameCount; i++) {
+	    SafeRelease(&m_pRenderTargets[kFrameCount]);
+    }
+	SafeRelease(&m_pSwapChain);
 	SafeRelease(&m_pDev);
 }
 
