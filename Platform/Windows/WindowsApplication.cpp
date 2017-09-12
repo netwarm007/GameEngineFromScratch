@@ -1,6 +1,6 @@
 // include the basic windows header file
 #include "WindowsApplication.hpp"
-#include "D3d12GraphicsManager.hpp"
+#include "D3d/D3d12GraphicsManager.hpp"
 #include "MemoryManager.hpp"
 #include <tchar.h>
 
