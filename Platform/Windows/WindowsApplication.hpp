@@ -1,3 +1,5 @@
+#pragma once
+// include the basic windows header file
 #include <windows.h>
 #include <windowsx.h>
 #include "BaseApplication.hpp"
