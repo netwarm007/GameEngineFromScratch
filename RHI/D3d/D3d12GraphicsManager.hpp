@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 #include <d3d12.h>
 #include <DXGI1_4.h>
@@ -14,7 +15,6 @@ namespace My {
 
     private:
         HRESULT CreateRenderTarget();
-        HRESULT InitPipeline();
         HRESULT CreateGraphicsResources();
 
     private:
