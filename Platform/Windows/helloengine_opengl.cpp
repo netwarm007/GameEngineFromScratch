@@ -5,7 +5,7 @@
 #include <GL/gl.h>
 #include <fstream>
 
-#include "math.h"
+#include "vectormath.h"
 
 using namespace std;
 
