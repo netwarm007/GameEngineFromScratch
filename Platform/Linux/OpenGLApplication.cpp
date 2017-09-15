@@ -1,18 +1,21 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <X11/Xlib.h>
+#include <climits>
+#include <cstring>
 #include <X11/Xlib-xcb.h>
-#include <xcb/xcb.h>
+#include "OpenGLApplication.hpp"
+#include "OpenGL/OpenGLGraphicsManager.hpp"
+#include "MemoryManager.hpp"
+#include "glad/glad_glx.h"
 
-#include <GL/gl.h> 
-#include <GL/glx.h> 
-#include <GL/glu.h>
+using namespace My;
 
-#define GLX_CONTEXT_MAJOR_VERSION_ARB       0x2091
-#define GLX_CONTEXT_MINOR_VERSION_ARB       0x2092
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+namespace My {
+    GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, "Game Engine From Scratch (Linux)");
+    IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
+    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
+    MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
+
+}
 
 // Helper to check for extension string presence.  Adapted from:
 //   http://www.opengl.org/resources/features/OGLextensions/
@@ -54,44 +57,9 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev)
     return 0;
 }
 
-void DrawAQuad() {
-    glClearColor(1.0, 1.0, 1.0, 1.0); 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
-
-    glMatrixMode(GL_PROJECTION); 
-    glLoadIdentity(); 
-    glOrtho(-1., 1., -1., 1., 1., 20.); 
-
-    glMatrixMode(GL_MODELVIEW); 
-    glLoadIdentity(); 
-    gluLookAt(0., 0., 10., 0., 0., 0., 0., 1., 0.); 
-
-    glBegin(GL_QUADS); 
-    glColor3f(1., 0., 0.); 
-    glVertex3f(-.75, -.75, 0.); 
-    glColor3f(0., 1., 0.); 
-    glVertex3f( .75, -.75, 0.); 
-    glColor3f(0., 0., 1.); 
-    glVertex3f( .75, .75, 0.); 
-    glColor3f(1., 1., 0.); 
-    glVertex3f(-.75, .75, 0.); 
-    glEnd(); 
-} 
-
-int main(void) {
-    xcb_connection_t    *pConn;
-    xcb_screen_t        *pScreen;
-    xcb_window_t        window;
-    xcb_gcontext_t      foreground;
-    xcb_gcontext_t      background;
-    xcb_generic_event_t *pEvent;
-    xcb_colormap_t colormap;
-    uint32_t        mask = 0;
-    uint32_t        values[3];
-    uint8_t         isQuit = 0;
-
-    char title[] = "Hello, Engine![OpenGL]";
-    char title_icon[] = "Hello, Engine! (iconified)";
+int My::OpenGLApplication::Initialize()
+{
+    int result;
 
     Display *display;
     int default_screen;
@@ -99,10 +67,9 @@ int main(void) {
     GLXFBConfig fb_config;
     int num_fb_configs = 0;
     XVisualInfo *vi;
+    GLXWindow glxwindow;
     GLXContext context;
     GLXDrawable drawable;
-    GLXWindow glxwindow;
-    glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
     const char *glxExts;
 
     // Get a matching FB config
@@ -112,12 +79,12 @@ int main(void) {
       GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
       GLX_RENDER_TYPE     , GLX_RGBA_BIT,
       GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-      GLX_RED_SIZE        , 8,
-      GLX_GREEN_SIZE      , 8,
-      GLX_BLUE_SIZE       , 8,
-      GLX_ALPHA_SIZE      , 8,
-      GLX_DEPTH_SIZE      , 24,
-      GLX_STENCIL_SIZE    , 8,
+      GLX_RED_SIZE        , static_cast<int>(INT_MAX & m_Config.redBits),
+      GLX_GREEN_SIZE      , static_cast<int>(INT_MAX & m_Config.greenBits),
+      GLX_BLUE_SIZE       , static_cast<int>(INT_MAX & m_Config.blueBits),
+      GLX_ALPHA_SIZE      , static_cast<int>(INT_MAX & m_Config.alphaBits),
+      GLX_DEPTH_SIZE      , static_cast<int>(INT_MAX & m_Config.depthBits),
+      GLX_STENCIL_SIZE    , static_cast<int>(INT_MAX & m_Config.stencilBits),
       GLX_DOUBLEBUFFER    , True,
       //GLX_SAMPLE_BUFFERS  , 1,
       //GLX_SAMPLES         , 4,
@@ -134,6 +101,10 @@ int main(void) {
         return -1;
     }
 
+    default_screen = DefaultScreen(display);
+
+    gladLoadGLX(display, default_screen);
+
     // FBConfigs were added in GLX version 1.3.
     if (!glXQueryVersion(display, &glx_major, &glx_minor) || 
        ((glx_major == 1) && (glx_minor < 3)) || (glx_major < 1))
@@ -141,8 +112,6 @@ int main(void) {
         fprintf(stderr, "Invalid GLX version\n");
         return -1;
     }
-
-    default_screen = DefaultScreen(display);
 
     /* Query framebuffer configurations */
     fb_configs = glXChooseFBConfig(display, default_screen, visual_attribs, &num_fb_configs);
@@ -185,8 +154,8 @@ int main(void) {
     printf("Chosen visual ID = 0x%lx\n", vi->visualid);
 
     /* establish connection to X server */
-    pConn = XGetXCBConnection(display);
-    if(!pConn)
+    m_pConn = XGetXCBConnection(display);
+    if(!m_pConn)
     {
         XCloseDisplay(display);
         fprintf(stderr, "Can't get xcb connection from display\n");
@@ -198,67 +167,21 @@ int main(void) {
 
     /* Find XCB screen */
     xcb_screen_iterator_t screen_iter = 
-        xcb_setup_roots_iterator(xcb_get_setup(pConn));
+        xcb_setup_roots_iterator(xcb_get_setup(m_pConn));
     for(int screen_num = vi->screen;
         screen_iter.rem && screen_num > 0;
         --screen_num, xcb_screen_next(&screen_iter));
-    pScreen = screen_iter.data;
+    m_pScreen = screen_iter.data;
+    m_nVi = vi->visualid;
 
-    /* get the root window */
-    window = pScreen->root;
-
-    /* Create XID's for colormap */
-    colormap = xcb_generate_id(pConn);
-
-    xcb_create_colormap(
-        pConn,
-        XCB_COLORMAP_ALLOC_NONE,
-        colormap,
-        window,
-        vi->visualid 
-        );
-
-    /* create window */
-    window = xcb_generate_id(pConn);
-    mask = XCB_CW_EVENT_MASK  | XCB_CW_COLORMAP;
-    values[0] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS;
-    values[1] = colormap;
-    values[2] = 0;
-    xcb_create_window (pConn,                   /* connection */
-                       XCB_COPY_FROM_PARENT,    /* depth */
-                       window,                  /* window ID */
-                       pScreen->root,           /* parent window */
-                       20, 20,                  /* x, y */
-                       640, 480,                /* width, height */
-                       10,                      /* boarder width */
-                       XCB_WINDOW_CLASS_INPUT_OUTPUT, /* class */
-                       vi->visualid,            /* visual */
-                       mask, values);           /* masks */
-
-    XFree(vi);
-
-    /* set the title of the window */
-    xcb_change_property(pConn, XCB_PROP_MODE_REPLACE, window,
-                XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
-                strlen(title), title);
-
-    /* set the title of the window icon */
-    xcb_change_property(pConn, XCB_PROP_MODE_REPLACE, window,
-                XCB_ATOM_WM_ICON_NAME, XCB_ATOM_STRING, 8,
-                strlen(title_icon), title_icon);
-
-    /* map the window on the screen */
-    xcb_map_window(pConn, window);
-
-    xcb_flush(pConn);
+    result = XcbApplication::Initialize();
+    if (result) {
+        printf("Xcb Application initialize failed!");
+	return -1;
+    }
 
     /* Get the default screen's GLX extension list */
     glxExts = glXQueryExtensionsString(display, default_screen);
-
-    /* NOTE: It is not necessary to create or make current to a context before
-       calling glXGetProcAddressARB */
-    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)
-           glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
 
     /* Create OpenGL context */
     ctxErrorOccurred = false;
@@ -334,13 +257,13 @@ int main(void) {
             glXCreateWindow(
                 display,
                 fb_config,
-                window,
+                m_Window,
                 0
                 );
 
-    if(!window)
+    if(!m_Window)
     {
-        xcb_destroy_window(pConn, window);
+        xcb_destroy_window(m_pConn, m_Window);
         glXDestroyContext(display, context);
 
         fprintf(stderr, "glXDestroyContext failed\n");
@@ -352,33 +275,24 @@ int main(void) {
     /* make OpenGL context current */
     if(!glXMakeContextCurrent(display, drawable, drawable, context))
     {
-        xcb_destroy_window(pConn, window);
+        xcb_destroy_window(m_pConn, m_Window);
         glXDestroyContext(display, context);
 
         fprintf(stderr, "glXMakeContextCurrent failed\n");
         return -1;
     }
 
-
-    while(!isQuit && (pEvent = xcb_wait_for_event(pConn))) {
-        switch(pEvent->response_type & ~0x80) {
-        case XCB_EXPOSE:
-            {       
-                DrawAQuad();
-                glXSwapBuffers(display, drawable);
-            }
-            break;
-        case XCB_KEY_PRESS:
-            isQuit = 1;
-            break;
-        }
-        free(pEvent);
-    }
-
-
-    /* Cleanup */
-    xcb_disconnect(pConn);
-
-    return 0;
+    XFree(vi);
+    return result;
 }
-    
+
+void My::OpenGLApplication::Finalize()
+{
+    XcbApplication::Finalize();
+}
+
+void My::OpenGLApplication::Tick()
+{
+    XcbApplication::Tick();
+}
+

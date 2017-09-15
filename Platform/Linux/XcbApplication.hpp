@@ -13,10 +13,11 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
-    private:
-        xcb_connection_t*    m_pConn;
-        xcb_screen_t*        m_pScreen;
+    protected:
+        xcb_connection_t*    m_pConn   = nullptr;
+        xcb_screen_t*        m_pScreen = nullptr;
         xcb_window_t		 m_Window;
+        uint32_t             m_nVi     = 0;;
     };
 }
 
