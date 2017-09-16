@@ -39,7 +39,7 @@ int My::WindowsApplication::Initialize()
     // create the window and use the result as the handle
     hWnd = CreateWindowEx(0,
                           _T("GameEngineFromScratch"),      // name of the window class
-                          m_Config.appName,             // title of the window
+                          m_Config.appName,                 // title of the window
                           WS_OVERLAPPEDWINDOW,              // window style
                           CW_USEDEFAULT,                    // x-position of the window
                           CW_USEDEFAULT,                    // y-position of the window
@@ -48,7 +48,7 @@ int My::WindowsApplication::Initialize()
                           NULL,                             // we have no parent window, NULL
                           NULL,                             // we aren't using menus, NULL
                           hInstance,                        // application handle
-                          NULL);                            // used with multiple windows, NULL
+                          this);                            // pass pointer to current object
 
     // display the window on the screen
     ShowWindow(hWnd, SW_SHOW);
@@ -82,12 +82,30 @@ void My::WindowsApplication::Tick()
 // this is the main message handler for the program
 LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    WindowsApplication* pThis;
+    if (message == WM_NCCREATE)
+    {
+        pThis = static_cast<WindowsApplication*>(reinterpret_cast<CREATESTRUCT*>(lParam)->lpCreateParams);
+
+        SetLastError(0);
+        if (!SetWindowLongPtr(hWnd, GWL_USERDATA, reinterpret_cast<LONG_PTR>(pThis)))
+        {
+            if (GetLastError() != 0)
+                return FALSE;
+        }
+    }
+    else
+    {
+        pThis = reinterpret_cast<WindowsApplication*>(GetWindowLongPtr(hWnd, GWL_USERDATA));
+    }
+
     // sort through and find what code to run for the message given
     switch(message)
     {
 	case WM_PAINT:
         // we will replace this part with Rendering Module
 	    {
+          pThis->OnDraw();
 	    } break;
 
         // this message is read when the window is closed
@@ -95,7 +113,7 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
         {
             // close the application entirely
             PostQuitMessage(0);
-            BaseApplication::m_bQuit = true;
+            m_bQuit = true;
             return 0;
         }
     }
