@@ -9,7 +9,7 @@ int My::XcbApplication::Initialize()
 {
     int result;
     uint32_t        mask = 0;
-    uint32_t        values[2];
+    uint32_t        values[3];
 
     // first call base class initialization
     result = BaseApplication::Initialize();
@@ -92,6 +92,7 @@ void My::XcbApplication::Tick()
     switch(pEvent->response_type & ~0x80) {
     case XCB_EXPOSE:
             {       
+		OnDraw();
             }
             break;
     case XCB_KEY_PRESS:
