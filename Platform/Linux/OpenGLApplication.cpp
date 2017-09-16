@@ -5,12 +5,11 @@
 #include "OpenGLApplication.hpp"
 #include "OpenGL/OpenGLGraphicsManager.hpp"
 #include "MemoryManager.hpp"
-#include "glad/glad_glx.h"
 
 using namespace My;
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, "Game Engine From Scratch (Linux)");
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, "Game Engine From Scratch (Linux)");
     IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
     GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
     MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
@@ -61,15 +60,12 @@ int My::OpenGLApplication::Initialize()
 {
     int result;
 
-    Display *display;
     int default_screen;
     GLXFBConfig *fb_configs;
     GLXFBConfig fb_config;
     int num_fb_configs = 0;
     XVisualInfo *vi;
     GLXWindow glxwindow;
-    GLXContext context;
-    GLXDrawable drawable;
     const char *glxExts;
 
     // Get a matching FB config
@@ -91,30 +87,20 @@ int My::OpenGLApplication::Initialize()
       None
     };
 
-    int glx_major, glx_minor;
-
     /* Open Xlib Display */ 
-    display = XOpenDisplay(NULL);
-    if(!display)
+    m_pDisplay = XOpenDisplay(NULL);
+    if(!m_pDisplay)
     {
         fprintf(stderr, "Can't open display\n");
         return -1;
     }
 
-    default_screen = DefaultScreen(display);
+    default_screen = DefaultScreen(m_pDisplay);
 
-    gladLoadGLX(display, default_screen);
-
-    // FBConfigs were added in GLX version 1.3.
-    if (!glXQueryVersion(display, &glx_major, &glx_minor) || 
-       ((glx_major == 1) && (glx_minor < 3)) || (glx_major < 1))
-    {
-        fprintf(stderr, "Invalid GLX version\n");
-        return -1;
-    }
+    gladLoadGLX(m_pDisplay, default_screen);
 
     /* Query framebuffer configurations */
-    fb_configs = glXChooseFBConfig(display, default_screen, visual_attribs, &num_fb_configs);
+    fb_configs = glXChooseFBConfig(m_pDisplay, default_screen, visual_attribs, &num_fb_configs);
     if(!fb_configs || num_fb_configs == 0)
     {
         fprintf(stderr, "glXGetFBConfigs failed\n");
@@ -127,12 +113,12 @@ int My::OpenGLApplication::Initialize()
 
         for (int i=0; i<num_fb_configs; ++i)
         {
-            XVisualInfo *vi = glXGetVisualFromFBConfig(display, fb_configs[i]);
+            XVisualInfo *vi = glXGetVisualFromFBConfig(m_pDisplay, fb_configs[i]);
             if (vi)
             {
                 int samp_buf, samples;
-                glXGetFBConfigAttrib(display, fb_configs[i], GLX_SAMPLE_BUFFERS, &samp_buf);
-                glXGetFBConfigAttrib(display, fb_configs[i], GLX_SAMPLES, &samples);
+                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i], GLX_SAMPLES, &samples);
       
                 printf( "  Matching fbconfig %d, visual ID 0x%lx: SAMPLE_BUFFERS = %d,"
                         " SAMPLES = %d\n", 
@@ -150,20 +136,20 @@ int My::OpenGLApplication::Initialize()
     }
 
     /* Get a visual */
-    vi = glXGetVisualFromFBConfig(display, fb_config);
+    vi = glXGetVisualFromFBConfig(m_pDisplay, fb_config);
     printf("Chosen visual ID = 0x%lx\n", vi->visualid);
 
     /* establish connection to X server */
-    m_pConn = XGetXCBConnection(display);
+    m_pConn = XGetXCBConnection(m_pDisplay);
     if(!m_pConn)
     {
-        XCloseDisplay(display);
+        XCloseDisplay(m_pDisplay);
         fprintf(stderr, "Can't get xcb connection from display\n");
         return -1;
     }
 
     /* Acquire event queue ownership */
-    XSetEventQueueOwner(display, XCBOwnsEventQueue);
+    XSetEventQueueOwner(m_pDisplay, XCBOwnsEventQueue);
 
     /* Find XCB screen */
     xcb_screen_iterator_t screen_iter = 
@@ -181,7 +167,7 @@ int My::OpenGLApplication::Initialize()
     }
 
     /* Get the default screen's GLX extension list */
-    glxExts = glXQueryExtensionsString(display, default_screen);
+    glxExts = glXQueryExtensionsString(m_pDisplay, default_screen);
 
     /* Create OpenGL context */
     ctxErrorOccurred = false;
@@ -193,8 +179,8 @@ int My::OpenGLApplication::Initialize()
     {
         printf( "glXCreateContextAttribsARB() not found"
             " ... using old-style GLX context\n" );
-        context = glXCreateNewContext(display, fb_config, GLX_RGBA_TYPE, 0, True);
-        if(!context)
+        m_Context = glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, 0, True);
+        if(!m_Context)
         {
             fprintf(stderr, "glXCreateNewContext failed\n");
             return -1;
@@ -210,11 +196,11 @@ int My::OpenGLApplication::Initialize()
           };
 
         printf( "Creating context\n" );
-        context = glXCreateContextAttribsARB(display, fb_config, 0,
+        m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0,
                                           True, context_attribs );
 
-        XSync(display, False);
-        if (!ctxErrorOccurred && context)
+        XSync(m_pDisplay, False);
+        if (!ctxErrorOccurred && m_Context)
           printf( "Created GL 3.0 context\n" );
         else
         {
@@ -227,23 +213,23 @@ int My::OpenGLApplication::Initialize()
 
           printf( "Failed to create GL 3.0 context"
                   " ... using old-style GLX context\n" );
-          context = glXCreateContextAttribsARB(display, fb_config, 0, 
+          m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0, 
                                             True, context_attribs );
         }
     }
 
-    XSync(display, False);
+    XSync(m_pDisplay, False);
 
     XSetErrorHandler(oldHandler);
 
-    if (ctxErrorOccurred || !context)
+    if (ctxErrorOccurred || !m_Context)
     {
         printf( "Failed to create an OpenGL context\n" );
         return -1;
     }
 
     /* Verifying that context is a direct context */
-    if (!glXIsDirect (display, context))
+    if (!glXIsDirect (m_pDisplay, m_Context))
     {
         printf( "Indirect GLX rendering context obtained\n" );
     }
@@ -255,28 +241,28 @@ int My::OpenGLApplication::Initialize()
     /* Create GLX Window */
     glxwindow = 
             glXCreateWindow(
-                display,
+                m_pDisplay,
                 fb_config,
                 m_Window,
                 0
                 );
 
-    if(!m_Window)
+    if(!glxwindow)
     {
         xcb_destroy_window(m_pConn, m_Window);
-        glXDestroyContext(display, context);
+        glXDestroyContext(m_pDisplay, m_Context);
 
-        fprintf(stderr, "glXDestroyContext failed\n");
+        fprintf(stderr, "glxCreateWindow failed\n");
         return -1;
     }
 
-    drawable = glxwindow;
+    m_Drawable = glxwindow;
 
     /* make OpenGL context current */
-    if(!glXMakeContextCurrent(display, drawable, drawable, context))
+    if(!glXMakeContextCurrent(m_pDisplay, m_Drawable, m_Drawable, m_Context))
     {
         xcb_destroy_window(m_pConn, m_Window);
-        glXDestroyContext(display, context);
+        glXDestroyContext(m_pDisplay, m_Context);
 
         fprintf(stderr, "glXMakeContextCurrent failed\n");
         return -1;
@@ -294,5 +280,10 @@ void My::OpenGLApplication::Finalize()
 void My::OpenGLApplication::Tick()
 {
     XcbApplication::Tick();
+}
+
+void My::OpenGLApplication::OnDraw()
+{
+    glXSwapBuffers(m_pDisplay, m_Drawable);
 }
 
