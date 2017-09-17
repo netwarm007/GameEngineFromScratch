@@ -10,15 +10,94 @@
 #endif
 
 namespace My {
-    typedef struct VectorType
+	template< typename T, int ... Indexes>
+	class swizzle {
+		float v[sizeof...(Indexes)];
+
+	public:
+		
+		T& operator=(const T& rhs)
+		{
+            for (int i = 0; i < sizeof...(Indexes), i++) {
+			    v[Indexes[i]] = rhs[i];
+            }
+			return *(T*)this;
+		}
+	
+		operator T ()
+		{
+			return T( v[Indexes]... );
+		}
+		
+	};
+
+    typedef struct Vector2Type
     {
         union {
+            float data[2];
+            struct { float x, y; };
+            struct { float r, g; };
+            struct { float u, v; };
+		    swizzle<Vector2Type, 1, 0> yx;
+        };
+
+        Vector2Type() {};
+        Vector2Type(float _v) : x(_v), y(_v) {};
+        Vector2Type(float _x, float _y) : x(_x), y(_y) {};
+    } Vector2Type;
+
+    typedef struct Vector3Type
+    {
+        union {
+            float data[3];
             struct { float x, y, z; };
             struct { float r, g, b; };
         };
-    } VectorType;
 
-    void MatrixRotationYawPitchRoll(float* matrix, float yaw, float pitch, float roll)
+        Vector3Type() {};
+        Vector3Type(float _v) : x(_v), y(_v), z(_v) {};
+        Vector3Type(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {};
+        operator Vector2Type() { return Vector2Type(x, y); }; 
+    } Vector3Type;
+
+    typedef struct Vector4Type
+    {
+        union {
+            float data[4];
+            struct { float x, y, z, w; };
+            struct { float r, g, b, a; };
+            Vector3Type xyz;
+		    swizzle<Vector3Type, 0, 2, 1> xzy;
+		    swizzle<Vector3Type, 1, 0, 2> yxz;
+		    swizzle<Vector3Type, 1, 2, 0> yzx;
+		    swizzle<Vector3Type, 2, 0, 1> zxy;
+		    swizzle<Vector3Type, 2, 1, 0> zyx;
+        };
+
+        Vector4Type() {};
+        Vector4Type(float _v) : x(_v), y(_v), z(_v), w(_v) {};
+        Vector4Type(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {};
+        operator Vector3Type() { return Vector3Type(x, y, z); }; 
+    } Vector4Type;
+
+    typedef struct Matrix4X4
+    {
+        union {
+            float data[16];
+            struct { Vector4Type row[4]; };
+        };
+
+        float& operator[](int index) {
+            return data[index];
+        }
+
+        float operator[](int index) const {
+            return data[index];
+        }
+
+    } Matrix4X4;
+
+    void MatrixRotationYawPitchRoll(Matrix4X4& matrix, const float yaw, const float pitch, const float roll)
     {
         float cYaw, cPitch, cRoll, sYaw, sPitch, sRoll;
 
@@ -48,7 +127,7 @@ namespace My {
         return;
     }
 
-    void TransformCoord(VectorType& vector, float* matrix)
+    void TransformCoord(Vector3Type& vector, const Matrix4X4& matrix)
     {
         float x, y, z;
 
@@ -66,9 +145,9 @@ namespace My {
         return;
     }
 
-    void BuildViewMatrix(VectorType position, VectorType lookAt, VectorType up, float* result)
+    void BuildViewMatrix(const Vector3Type position, const Vector3Type lookAt, const Vector3Type up, float* result)
     {
-        VectorType zAxis, xAxis, yAxis;
+        Vector3Type zAxis, xAxis, yAxis;
         float length, result1, result2, result3;
 
 
