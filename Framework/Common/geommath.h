@@ -25,7 +25,7 @@ namespace My {
 			return *(T*)this;
 		}
 	
-		operator T ()
+		operator T () const
 		{
 			return T( v[Indexes]... );
 		}
@@ -39,6 +39,7 @@ namespace My {
             struct { float x, y; };
             struct { float r, g; };
             struct { float u, v; };
+		    swizzle<Vector2Type, 0, 1> xy;
 		    swizzle<Vector2Type, 1, 0> yx;
         };
 
@@ -53,12 +54,23 @@ namespace My {
             float data[3];
             struct { float x, y, z; };
             struct { float r, g, b; };
+		    swizzle<Vector2Type, 0, 1> xy;
+		    swizzle<Vector2Type, 1, 0> yx;
+		    swizzle<Vector2Type, 0, 2> xz;
+		    swizzle<Vector2Type, 2, 0> zx;
+		    swizzle<Vector2Type, 1, 2> yz;
+		    swizzle<Vector2Type, 2, 1> zy;
+		    swizzle<Vector3Type, 0, 1, 2> xyz;
+		    swizzle<Vector3Type, 1, 0, 2> yxz;
+		    swizzle<Vector3Type, 0, 2, 1> xzy;
+		    swizzle<Vector3Type, 2, 0, 1> zxy;
+		    swizzle<Vector3Type, 1, 2, 0> yzx;
+		    swizzle<Vector3Type, 2, 1, 0> zyx;
         };
 
         Vector3Type() {};
         Vector3Type(float _v) : x(_v), y(_v), z(_v) {};
         Vector3Type(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {};
-        operator Vector2Type() { return Vector2Type(x, y); }; 
     } Vector3Type;
 
     typedef struct Vector4Type
@@ -146,7 +158,7 @@ namespace My {
         return;
     }
 
-    void BuildViewMatrix(const Vector3Type position, const Vector3Type lookAt, const Vector3Type up, float* result)
+    void BuildViewMatrix(const Vector3Type position, const Vector3Type lookAt, const Vector3Type up, Matrix4X4& result)
     {
         Vector3Type zAxis, xAxis, yAxis;
         float length, result1, result2, result3;
@@ -206,7 +218,7 @@ namespace My {
         result[15] = 1.0f;
     }
 
-    void BuildIdentityMatrix(float* matrix)
+    void BuildIdentityMatrix(Matrix4X4& matrix)
     {
         matrix[0] = 1.0f;
         matrix[1] = 0.0f;
@@ -232,7 +244,7 @@ namespace My {
     }
 
 
-    void BuildPerspectiveFovLHMatrix(float* matrix, float fieldOfView, float screenAspect, float screenNear, float screenDepth)
+    void BuildPerspectiveFovLHMatrix(Matrix4X4& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
         matrix[0] = 1.0f / (screenAspect * tan(fieldOfView * 0.5f));
         matrix[1] = 0.0f;
@@ -258,7 +270,7 @@ namespace My {
     }
 
 
-    void MatrixRotationY(float* matrix, float angle)
+    void MatrixRotationY(Matrix4X4& matrix, const float angle)
     {
         matrix[0] = cosf(angle);
         matrix[1] = 0.0f;
@@ -284,7 +296,7 @@ namespace My {
     }
 
 
-    void MatrixTranslation(float* matrix, float x, float y, float z)
+    void MatrixTranslation(Matrix4X4& matrix, const float x, const float y, const float z)
     {
         matrix[0] = 1.0f;
         matrix[1] = 0.0f;
@@ -310,7 +322,7 @@ namespace My {
     }
 
 
-    void MatrixRotationZ(float* matrix, float angle)
+    void MatrixRotationZ(Matrix4X4& matrix, const float angle)
     {
         matrix[0] = cosf(angle);
         matrix[1] = -sinf(angle);
@@ -336,7 +348,7 @@ namespace My {
     }
 
 
-    void MatrixMultiply(float* result, float* matrix1, float* matrix2)
+    void MatrixMultiply(Matrix4X4& result, const Matrix4X4& matrix1, const Matrix4X4& matrix2)
     {
         result[0] = (matrix1[0] * matrix2[0]) + (matrix1[1] * matrix2[4]) + (matrix1[2] * matrix2[8]) + (matrix1[3] * matrix2[12]);
         result[1] = (matrix1[0] * matrix2[1]) + (matrix1[1] * matrix2[5]) + (matrix1[2] * matrix2[9]) + (matrix1[3] * matrix2[13]);
