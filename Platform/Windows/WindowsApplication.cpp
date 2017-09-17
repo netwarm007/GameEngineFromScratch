@@ -105,8 +105,15 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
 	case WM_PAINT:
         // we will replace this part with Rendering Module
 	    {
-          pThis->OnDraw();
-	    } break;
+            pThis->OnDraw();
+	    } 
+        break;
+
+    case WM_KEYDOWN:
+        {
+            m_bQuit = true;
+        } 
+        break;
 
         // this message is read when the window is closed
     case WM_DESTROY:
