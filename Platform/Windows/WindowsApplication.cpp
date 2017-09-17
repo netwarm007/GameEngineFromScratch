@@ -103,7 +103,6 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
     switch(message)
     {
 	case WM_PAINT:
-        // we will replace this part with Rendering Module
 	    {
             pThis->OnDraw();
 	    } 
@@ -111,6 +110,7 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
 
     case WM_KEYDOWN:
         {
+            // we will replace this with input manager
             m_bQuit = true;
         } 
         break;
