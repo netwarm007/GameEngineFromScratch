@@ -18,8 +18,9 @@ namespace My {
 		
 		T& operator=(const T& rhs)
 		{
-            for (int i = 0; i < sizeof...(Indexes), i++) {
-			    v[Indexes[i]] = rhs[i];
+            int indexes[] = { Indexes... };
+            for (int i = 0; i < sizeof...(Indexes); i++) {
+			    v[indexes[i]] = rhs[i];
             }
 			return *(T*)this;
 		}
