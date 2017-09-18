@@ -1,5 +1,6 @@
 #pragma once
 #include <math.h>
+#include "include/CrossProduct.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -92,6 +93,23 @@ namespace My {
         Vector4Type(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {};
         operator Vector3Type() { return Vector3Type(x, y, z); }; 
     } Vector4Type;
+
+    typedef struct Matrix3X3
+    {
+        union {
+            float data[9];
+            struct { Vector3Type row[3]; };
+        };
+
+        float& operator[](int index) {
+            return data[index];
+        }
+
+        float operator[](int index) const {
+            return data[index];
+        }
+
+    } Matrix3X3;
 
     typedef struct Matrix4X4
     {
@@ -371,6 +389,11 @@ namespace My {
         result[15] = (matrix1[12] * matrix2[3]) + (matrix1[13] * matrix2[7]) + (matrix1[14] * matrix2[11]) + (matrix1[15] * matrix2[15]);
 
         return;
+    }
+
+    void CrossProduct(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
+    {
+        ispc::CrossProduct(matrix1.data, matrix2.data, result.data);
     }
 }
 
