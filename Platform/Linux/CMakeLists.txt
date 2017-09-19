@@ -1,3 +1,6 @@
+add_executable(MyGameEngine XcbApplication.cpp)
+target_link_libraries(MyGameEngine Common xcb)
+
 add_executable(MyGameEngineOpenGL XcbApplication.cpp OpenGLApplication.cpp
 	${PROJECT_SOURCE_DIR}/External/GL/src/glad_glx.c
     )
