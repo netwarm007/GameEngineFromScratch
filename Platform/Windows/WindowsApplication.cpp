@@ -1,18 +1,7 @@
-// include the basic windows header file
 #include "WindowsApplication.hpp"
-#include "D3d12GraphicsManager.hpp"
-#include "MemoryManager.hpp"
 #include <tchar.h>
 
 using namespace My;
-
-namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 960, 540, _T("Game Engine From Scratch (Windows)"));
-	IApplication* g_pApp                = static_cast<IApplication*>(new WindowsApplication(config));
-    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new D3d12GraphicsManager);
-    MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
-
-}
 
 int My::WindowsApplication::Initialize()
 {
@@ -50,7 +39,7 @@ int My::WindowsApplication::Initialize()
     // create the window and use the result as the handle
     hWnd = CreateWindowEx(0,
                           _T("GameEngineFromScratch"),      // name of the window class
-                          m_Config.appName,             // title of the window
+                          m_Config.appName,                 // title of the window
                           WS_OVERLAPPEDWINDOW,              // window style
                           CW_USEDEFAULT,                    // x-position of the window
                           CW_USEDEFAULT,                    // y-position of the window
@@ -59,7 +48,7 @@ int My::WindowsApplication::Initialize()
                           NULL,                             // we have no parent window, NULL
                           NULL,                             // we aren't using menus, NULL
                           hInstance,                        // application handle
-                          NULL);                            // used with multiple windows, NULL
+                          this);                            // pass pointer to current object
 
     // display the window on the screen
     ShowWindow(hWnd, SW_SHOW);
@@ -93,20 +82,45 @@ void My::WindowsApplication::Tick()
 // this is the main message handler for the program
 LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    WindowsApplication* pThis;
+    if (message == WM_NCCREATE)
+    {
+        pThis = static_cast<WindowsApplication*>(reinterpret_cast<CREATESTRUCT*>(lParam)->lpCreateParams);
+
+        SetLastError(0);
+        if (!SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis)))
+        {
+            if (GetLastError() != 0)
+                return FALSE;
+        }
+    }
+    else
+    {
+        pThis = reinterpret_cast<WindowsApplication*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+    }
+
     // sort through and find what code to run for the message given
     switch(message)
     {
 	case WM_PAINT:
-        // we will replace this part with Rendering Module
 	    {
-	    } break;
+            pThis->OnDraw();
+	    } 
+        break;
+
+    case WM_KEYDOWN:
+        {
+            // we will replace this with input manager
+            m_bQuit = true;
+        } 
+        break;
 
         // this message is read when the window is closed
     case WM_DESTROY:
         {
             // close the application entirely
             PostQuitMessage(0);
-            BaseApplication::m_bQuit = true;
+            m_bQuit = true;
             return 0;
         }
     }

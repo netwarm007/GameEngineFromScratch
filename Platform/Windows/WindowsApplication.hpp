@@ -1,3 +1,5 @@
+#pragma once
+// include the basic windows header file
 #include <windows.h>
 #include <windowsx.h>
 #include "BaseApplication.hpp"
@@ -14,13 +16,14 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
+        inline HWND GetMainWindow() const { return m_hWnd; };
+
+    private:
         // the WindowProc function prototype
         static LRESULT CALLBACK WindowProc(HWND hWnd,
                          UINT message,
                          WPARAM wParam,
                          LPARAM lParam);
-
-        inline HWND GetMainWindow() { return m_hWnd; };
 
     private:
         HWND m_hWnd;
