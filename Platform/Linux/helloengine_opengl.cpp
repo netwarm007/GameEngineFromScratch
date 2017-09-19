@@ -95,11 +95,11 @@ int main(void) {
 
     Display *display;
     int default_screen;
-    GLXContext context;
     GLXFBConfig *fb_configs;
     GLXFBConfig fb_config;
     int num_fb_configs = 0;
     XVisualInfo *vi;
+    GLXContext context;
     GLXDrawable drawable;
     GLXWindow glxwindow;
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB;
