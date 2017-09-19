@@ -14,6 +14,7 @@ SET(GEOMMATH_LIB_HEADER_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_custom_command(OUTPUT ${GEOMMATH_LIB_FILE}
         COMMAND ${ISPC_COMPILER} ${ISPC_OPTIONS} -o CrossProduct.o -I${CMAKE_CURRENT_SOURCE_DIR} -h ${CMAKE_CURRENT_SOURCE_DIR}/include/CrossProduct.h ${CMAKE_CURRENT_SOURCE_DIR}/ispc/CrossProduct.ispc
         COMMAND ${LIBRARIAN_COMMAND} ${GEOMMATH_LIB_FILE} CrossProduct.o
+        COMMAND rm -v CrossProduct.o
         )
 
 add_custom_target(ISPC
