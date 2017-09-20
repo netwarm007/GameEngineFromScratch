@@ -14,20 +14,10 @@ ELSE()
         SET(ISPC_COMPILER ispc)
         SET(ISPC_COMPILER_PATH ${PROJECT_SOURCE_DIR}/External/ispc/)
         SET(ISPC_OPTIONS --arch=x86-64)
-        SET(LIBRARIAN_COMMAND ar -cr -o ${GEOMMATH_LIB_FILE})
+        SET(LIBRARIAN_COMMAND ar -crv -o ${GEOMMATH_LIB_FILE})
 ENDIF(${WIN32})
 
 SET(GEOMMATH_LIB_HEADER_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-add_custom_command(OUTPUT ${GEOMMATH_LIB_FILE}
-        COMMAND ${CMAKE_COMMAND} -E env "PATH=${ISPC_COMPILER_PATH}" ${ISPC_COMPILER} ${ISPC_OPTIONS} -o CrossProduct.o -I${CMAKE_CURRENT_SOURCE_DIR} -h ${CMAKE_CURRENT_SOURCE_DIR}/include/CrossProduct.h ${CMAKE_CURRENT_SOURCE_DIR}/ispc/CrossProduct.ispc
-        COMMAND ${LIBRARIAN_COMMAND} CrossProduct.o
-        COMMAND rm -v CrossProduct.o
-        )
-
-add_custom_target(GeomMathLib
-                   DEPENDS ${GEOMMATH_LIB_FILE}
-        )
 
 add_library(GeomMath STATIC IMPORTED GLOBAL)
 add_dependencies(GeomMath GeomMathLib)
@@ -37,4 +27,6 @@ set_target_properties(GeomMath
         IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
         INTERFACE_INCLUDE_DIRECTORIES ${GEOMMATH_LIB_HEADER_FOLDER}
         )
+
+add_subdirectory(ispc)
 

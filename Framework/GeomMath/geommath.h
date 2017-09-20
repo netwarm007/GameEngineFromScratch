@@ -1,6 +1,9 @@
 #pragma once
 #include <math.h>
 #include "include/CrossProduct.h"
+#include "include/DotProduct.h"
+#include "include/MulByElement.h"
+#include "include/Transpose.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -98,7 +101,7 @@ namespace My {
     {
         union {
             float data[9];
-            struct { Vector3Type row[3]; };
+            Vector3Type row[3];
         };
 
         float& operator[](int index) {
@@ -115,7 +118,7 @@ namespace My {
     {
         union {
             float data[16];
-            struct { Vector4Type row[4]; };
+            Vector4Type row[4];
         };
 
         float& operator[](int index) {
@@ -391,9 +394,39 @@ namespace My {
         return;
     }
 
-    void CrossProduct(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
+    inline void CrossProduct(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
     {
         ispc::CrossProduct(matrix1.data, matrix2.data, result.data);
+    }
+
+    inline void DotProduct(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
+    {
+        ispc::DotProduct(matrix1.data, matrix2.data, result.data, 3*3);
+    }
+
+    inline void DotProduct(Matrix4X4& result, const Matrix4X4 matrix1, const Matrix4X4 matrix2)
+    {
+        ispc::DotProduct(matrix1.data, matrix2.data, result.data, 4*4);
+    }
+
+    inline void MulByElement(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
+    {
+        ispc::MulByElement(matrix1.data, matrix2.data, result.data, 3*3);
+    }
+
+    inline void MulByElement(Matrix4X4& result, const Matrix4X4 matrix1, const Matrix4X4 matrix2)
+    {
+        ispc::MulByElement(matrix1.data, matrix2.data, result.data, 4*4);
+    }
+
+    inline void Transpose(Matrix3X3& result, const Matrix3X3 matrix1)
+    {
+        ispc::Transpose(matrix1.data, result.data, 3, 3);
+    }
+
+    inline void Transpose(Matrix4X4& result, const Matrix4X4 matrix1)
+    {
+        ispc::Transpose(matrix1.data, result.data, 4, 4);
     }
 }
 
