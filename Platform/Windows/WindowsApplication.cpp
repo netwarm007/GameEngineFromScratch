@@ -88,7 +88,7 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
         pThis = static_cast<WindowsApplication*>(reinterpret_cast<CREATESTRUCT*>(lParam)->lpCreateParams);
 
         SetLastError(0);
-        if (!SetWindowLongPtr(hWnd, GWL_USERDATA, reinterpret_cast<LONG_PTR>(pThis)))
+        if (!SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis)))
         {
             if (GetLastError() != 0)
                 return FALSE;
@@ -96,7 +96,7 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
     }
     else
     {
-        pThis = reinterpret_cast<WindowsApplication*>(GetWindowLongPtr(hWnd, GWL_USERDATA));
+        pThis = reinterpret_cast<WindowsApplication*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
 
     // sort through and find what code to run for the message given
