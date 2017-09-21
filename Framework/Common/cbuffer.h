@@ -6,20 +6,20 @@
 namespace My {
     struct BasicVertex
     {
-        Vector3Type m_Position;
-        Vector3Type m_Normal;
-        Vector4Type m_Tangent;
-        Vector2Type m_TextureUV;
+        Vector3f m_Position;
+        Vector3f m_Normal;
+        Vector4f m_Tangent;
+        Vector2f m_TextureUV;
     };
 
     unistruct Constants
     {
-        Matrix4X4        m_modelView;
-        Matrix4X4        m_modelViewProjection;
-        Vector4Type      m_lightPosition;
-        Vector4Type      m_lightColor;
-        Vector4Type      m_ambientColor;
-        Vector4Type      m_lightAttenuation;
+        Matrix4X4f       m_modelView;
+        Matrix4X4f       m_modelViewProjection;
+        Vector4f         m_lightPosition;
+        Vector4f         m_lightColor;
+        Vector4f         m_ambientColor;
+        Vector4f         m_lightAttenuation;
     };
 }
 
