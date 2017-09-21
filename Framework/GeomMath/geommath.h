@@ -4,6 +4,7 @@
 #include "include/DotProduct.h"
 #include "include/MulByElement.h"
 #include "include/Transpose.h"
+#include "include/Normalize.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -36,102 +37,95 @@ namespace My {
 		
 	};
 
-    typedef struct Vector2Type
+    template <typename T>
+    struct Vector2Type
     {
         union {
-            float data[2];
-            struct { float x, y; };
-            struct { float r, g; };
-            struct { float u, v; };
-		    swizzle<Vector2Type, 0, 1> xy;
-		    swizzle<Vector2Type, 1, 0> yx;
+            T data[2];
+            struct { T x, y; };
+            struct { T r, g; };
+            struct { T u, v; };
+		    swizzle<Vector2Type<T>, 0, 1> xy;
+		    swizzle<Vector2Type<T>, 1, 0> yx;
         };
 
-        Vector2Type() {};
-        Vector2Type(float _v) : x(_v), y(_v) {};
-        Vector2Type(float _x, float _y) : x(_x), y(_y) {};
-    } Vector2Type;
+        Vector2Type<T>() {};
+        Vector2Type<T>(T _v) : x(_v), y(_v) {};
+        Vector2Type<T>(T _x, T _y) : x(_x), y(_y) {};
+    };
+    
+    typedef Vector2Type<float> Vector2f;
 
-    typedef struct Vector3Type
+    template <typename T>
+    struct Vector3Type
     {
         union {
-            float data[3];
-            struct { float x, y, z; };
-            struct { float r, g, b; };
-		    swizzle<Vector2Type, 0, 1> xy;
-		    swizzle<Vector2Type, 1, 0> yx;
-		    swizzle<Vector2Type, 0, 2> xz;
-		    swizzle<Vector2Type, 2, 0> zx;
-		    swizzle<Vector2Type, 1, 2> yz;
-		    swizzle<Vector2Type, 2, 1> zy;
-		    swizzle<Vector3Type, 0, 1, 2> xyz;
-		    swizzle<Vector3Type, 1, 0, 2> yxz;
-		    swizzle<Vector3Type, 0, 2, 1> xzy;
-		    swizzle<Vector3Type, 2, 0, 1> zxy;
-		    swizzle<Vector3Type, 1, 2, 0> yzx;
-		    swizzle<Vector3Type, 2, 1, 0> zyx;
+            T data[3];
+            struct { T x, y, z; };
+            struct { T r, g, b; };
+		    swizzle<Vector2Type<T>, 0, 1> xy;
+		    swizzle<Vector2Type<T>, 1, 0> yx;
+		    swizzle<Vector2Type<T>, 0, 2> xz;
+		    swizzle<Vector2Type<T>, 2, 0> zx;
+		    swizzle<Vector2Type<T>, 1, 2> yz;
+		    swizzle<Vector2Type<T>, 2, 1> zy;
+		    swizzle<Vector3Type<T>, 0, 1, 2> xyz;
+		    swizzle<Vector3Type<T>, 1, 0, 2> yxz;
+		    swizzle<Vector3Type<T>, 0, 2, 1> xzy;
+		    swizzle<Vector3Type<T>, 2, 0, 1> zxy;
+		    swizzle<Vector3Type<T>, 1, 2, 0> yzx;
+		    swizzle<Vector3Type<T>, 2, 1, 0> zyx;
         };
 
-        Vector3Type() {};
-        Vector3Type(float _v) : x(_v), y(_v), z(_v) {};
-        Vector3Type(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {};
-    } Vector3Type;
+        Vector3Type<T>() {};
+        Vector3Type<T>(T _v) : x(_v), y(_v), z(_v) {};
+        Vector3Type<T>(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {};
+    };
 
-    typedef struct Vector4Type
+    typedef Vector3Type<float> Vector3f;
+
+    template <typename T>
+    struct Vector4Type
     {
         union {
-            float data[4];
-            struct { float x, y, z, w; };
-            struct { float r, g, b, a; };
-            Vector3Type xyz;
-		    swizzle<Vector3Type, 0, 2, 1> xzy;
-		    swizzle<Vector3Type, 1, 0, 2> yxz;
-		    swizzle<Vector3Type, 1, 2, 0> yzx;
-		    swizzle<Vector3Type, 2, 0, 1> zxy;
-		    swizzle<Vector3Type, 2, 1, 0> zyx;
+            T data[4];
+            struct { T x, y, z, w; };
+            struct { T r, g, b, a; };
+		    swizzle<Vector3Type<T>, 0, 2, 1> xzy;
+		    swizzle<Vector3Type<T>, 1, 0, 2> yxz;
+		    swizzle<Vector3Type<T>, 1, 2, 0> yzx;
+		    swizzle<Vector3Type<T>, 2, 0, 1> zxy;
+		    swizzle<Vector3Type<T>, 2, 1, 0> zyx;
         };
 
-        Vector4Type() {};
-        Vector4Type(float _v) : x(_v), y(_v), z(_v), w(_v) {};
-        Vector4Type(float _x, float _y, float _z, float _w) : x(_x), y(_y), z(_z), w(_w) {};
-        operator Vector3Type() { return Vector3Type(x, y, z); }; 
-    } Vector4Type;
+        Vector4Type<T>() {};
+        Vector4Type<T>(T _v) : x(_v), y(_v), z(_v), w(_v) {};
+        Vector4Type<T>(T _x, T _y, T _z, T _w) : x(_x), y(_y), z(_z), w(_w) {};
+    };
 
-    typedef struct Matrix3X3
+    typedef Vector4Type<float> Vector4f;
+
+    template <typename T, int ROWS, int COLS>
+    struct Matrix
     {
         union {
-            float data[9];
-            Vector3Type row[3];
+            T data[ROWS * COLS];
+            Vector3Type<T> row[ROWS];
         };
 
-        float& operator[](int index) {
+        T& operator[](int index) {
             return data[index];
         }
 
-        float operator[](int index) const {
+        T operator[](int index) const {
             return data[index];
         }
+    };
 
-    } Matrix3X3;
+    typedef Matrix<float, 3, 3> Matrix3X3f;
+    typedef Matrix<float, 4, 4> Matrix4X4f;
 
-    typedef struct Matrix4X4
-    {
-        union {
-            float data[16];
-            Vector4Type row[4];
-        };
-
-        float& operator[](int index) {
-            return data[index];
-        }
-
-        float operator[](int index) const {
-            return data[index];
-        }
-
-    } Matrix4X4;
-
-    void MatrixRotationYawPitchRoll(Matrix4X4& matrix, const float yaw, const float pitch, const float roll)
+    void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw, const float pitch, const float roll)
     {
         float cYaw, cPitch, cRoll, sYaw, sPitch, sRoll;
 
@@ -161,7 +155,7 @@ namespace My {
         return;
     }
 
-    void TransformCoord(Vector3Type& vector, const Matrix4X4& matrix)
+    void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix)
     {
         float x, y, z;
 
@@ -179,9 +173,9 @@ namespace My {
         return;
     }
 
-    void BuildViewMatrix(const Vector3Type position, const Vector3Type lookAt, const Vector3Type up, Matrix4X4& result)
+    void BuildViewMatrix(const Vector3f position, const Vector3f lookAt, const Vector3f up, Matrix4X4f& result)
     {
-        Vector3Type zAxis, xAxis, yAxis;
+        Vector3f zAxis, xAxis, yAxis;
         float length, result1, result2, result3;
 
 
@@ -239,7 +233,7 @@ namespace My {
         result[15] = 1.0f;
     }
 
-    void BuildIdentityMatrix(Matrix4X4& matrix)
+    void BuildIdentityMatrix(Matrix4X4f& matrix)
     {
         matrix[0] = 1.0f;
         matrix[1] = 0.0f;
@@ -265,7 +259,7 @@ namespace My {
     }
 
 
-    void BuildPerspectiveFovLHMatrix(Matrix4X4& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
+    void BuildPerspectiveFovLHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
         matrix[0] = 1.0f / (screenAspect * tanf(fieldOfView * 0.5f));
         matrix[1] = 0.0f;
@@ -291,7 +285,7 @@ namespace My {
     }
 
 
-    void MatrixRotationY(Matrix4X4& matrix, const float angle)
+    void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
         matrix[0] = cosf(angle);
         matrix[1] = 0.0f;
@@ -317,7 +311,7 @@ namespace My {
     }
 
 
-    void MatrixTranslation(Matrix4X4& matrix, const float x, const float y, const float z)
+    void MatrixTranslation(Matrix4X4f& matrix, const float x, const float y, const float z)
     {
         matrix[0] = 1.0f;
         matrix[1] = 0.0f;
@@ -343,7 +337,7 @@ namespace My {
     }
 
 
-    void MatrixRotationZ(Matrix4X4& matrix, const float angle)
+    void MatrixRotationZ(Matrix4X4f& matrix, const float angle)
     {
         matrix[0] = cosf(angle);
         matrix[1] = -sinf(angle);
@@ -369,7 +363,7 @@ namespace My {
     }
 
 
-    void MatrixMultiply(Matrix4X4& result, const Matrix4X4& matrix1, const Matrix4X4& matrix2)
+    void MatrixMultiply(Matrix4X4f& result, const Matrix4X4f& matrix1, const Matrix4X4f& matrix2)
     {
         result[0] = (matrix1[0] * matrix2[0]) + (matrix1[1] * matrix2[4]) + (matrix1[2] * matrix2[8]) + (matrix1[3] * matrix2[12]);
         result[1] = (matrix1[0] * matrix2[1]) + (matrix1[1] * matrix2[5]) + (matrix1[2] * matrix2[9]) + (matrix1[3] * matrix2[13]);
@@ -394,39 +388,49 @@ namespace My {
         return;
     }
 
-    inline void CrossProduct(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
+    inline void CrossProduct(Matrix3X3f& result, const Matrix3X3f matrix1, const Matrix3X3f matrix2)
     {
         ispc::CrossProduct(matrix1.data, matrix2.data, result.data);
     }
 
-    inline void DotProduct(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
+    inline void DotProduct(Matrix3X3f& result, const Matrix3X3f matrix1, const Matrix3X3f matrix2)
     {
         ispc::DotProduct(matrix1.data, matrix2.data, result.data, 3*3);
     }
 
-    inline void DotProduct(Matrix4X4& result, const Matrix4X4 matrix1, const Matrix4X4 matrix2)
+    inline void DotProduct(Matrix4X4f& result, const Matrix4X4f matrix1, const Matrix4X4f matrix2)
     {
         ispc::DotProduct(matrix1.data, matrix2.data, result.data, 4*4);
     }
 
-    inline void MulByElement(Matrix3X3& result, const Matrix3X3 matrix1, const Matrix3X3 matrix2)
+    inline void MulByElement(Matrix3X3f& result, const Matrix3X3f matrix1, const Matrix3X3f matrix2)
     {
         ispc::MulByElement(matrix1.data, matrix2.data, result.data, 3*3);
     }
 
-    inline void MulByElement(Matrix4X4& result, const Matrix4X4 matrix1, const Matrix4X4 matrix2)
+    inline void MulByElement(Matrix4X4f& result, const Matrix4X4f matrix1, const Matrix4X4f matrix2)
     {
         ispc::MulByElement(matrix1.data, matrix2.data, result.data, 4*4);
     }
 
-    inline void Transpose(Matrix3X3& result, const Matrix3X3 matrix1)
+    inline void Transpose(Matrix3X3f& result, const Matrix3X3f matrix1)
     {
         ispc::Transpose(matrix1.data, result.data, 3, 3);
     }
 
-    inline void Transpose(Matrix4X4& result, const Matrix4X4 matrix1)
+    inline void Transpose(Matrix4X4f& result, const Matrix4X4f matrix1)
     {
         ispc::Transpose(matrix1.data, result.data, 4, 4);
+    }
+
+    inline void Normalize(Vector3f& result)
+    {
+        ispc::Normalize(result.data, 3);
+    }
+
+    inline void Normalize(Vector4f& result)
+    {
+        ispc::Normalize(result.data, 4);
     }
 }
 
