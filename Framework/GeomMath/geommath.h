@@ -189,7 +189,7 @@ namespace My {
         zAxis.x = lookAt.x - position.x;
         zAxis.y = lookAt.y - position.y;
         zAxis.z = lookAt.z - position.z;
-        length = sqrt((zAxis.x * zAxis.x) + (zAxis.y * zAxis.y) + (zAxis.z * zAxis.z));
+        length = sqrtf((zAxis.x * zAxis.x) + (zAxis.y * zAxis.y) + (zAxis.z * zAxis.z));
         zAxis.x = zAxis.x / length;
         zAxis.y = zAxis.y / length;
         zAxis.z = zAxis.z / length;
@@ -198,7 +198,7 @@ namespace My {
         xAxis.x = (up.y * zAxis.z) - (up.z * zAxis.y);
         xAxis.y = (up.z * zAxis.x) - (up.x * zAxis.z);
         xAxis.z = (up.x * zAxis.y) - (up.y * zAxis.x);
-        length = sqrt((xAxis.x * xAxis.x) + (xAxis.y * xAxis.y) + (xAxis.z * xAxis.z));
+        length = sqrtf((xAxis.x * xAxis.x) + (xAxis.y * xAxis.y) + (xAxis.z * xAxis.z));
         xAxis.x = xAxis.x / length;
         xAxis.y = xAxis.y / length;
         xAxis.z = xAxis.z / length;
@@ -267,13 +267,13 @@ namespace My {
 
     void BuildPerspectiveFovLHMatrix(Matrix4X4& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
-        matrix[0] = 1.0f / (screenAspect * tan(fieldOfView * 0.5f));
+        matrix[0] = 1.0f / (screenAspect * tanf(fieldOfView * 0.5f));
         matrix[1] = 0.0f;
         matrix[2] = 0.0f;
         matrix[3] = 0.0f;
 
         matrix[4] = 0.0f;
-        matrix[5] = 1.0f / tan(fieldOfView * 0.5f);
+        matrix[5] = 1.0f / tanf(fieldOfView * 0.5f);
         matrix[6] = 0.0f;
         matrix[7] = 0.0f;
 
