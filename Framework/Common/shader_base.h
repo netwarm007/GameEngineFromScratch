@@ -39,7 +39,7 @@ uint FIRSTBITHIGH_SLOW(uint input)
 
 #else
 #include <stddef.h>
-#include "geommath.h"
+#include "geommath.hpp"
 
 #define __CBREGISTER( i )
 #define ATTR_OFFS			offsetof

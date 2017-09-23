@@ -1,4 +1,6 @@
-set(FUNCTIONS CrossProduct DotProduct MulByElement Transpose Normalize)
+set(FUNCTIONS CrossProduct DotProduct MulByElement Transpose Normalize
+              TransformCoord AddByElement SubByElement
+        )
 
 foreach(FUNC IN LISTS FUNCTIONS)
     add_custom_command(OUTPUT ${FUNC}.o

@@ -7,7 +7,7 @@ IF(${UNIX})
     set (CMAKE_CXX_FLAGS                "-Wall")
     set (CMAKE_CXX_FLAGS_DEBUG          "-g")
     set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
-    set (CMAKE_CXX_STANDARD 11)
+    set (CMAKE_CXX_STANDARD 14)
 ELSEIF(${WIN32})
     # Windows specific code
     if(${CMAKE_GENERATOR} MATCHES "Unix Makefiles")
