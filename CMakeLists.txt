@@ -207,7 +207,9 @@ IF(${UNIX})
 ELSEIF(${WIN32})
     include_directories("${PROJECT_SOURCE_DIR}/Platform/Windows")
 ENDIF(${UNIX})
+include(CTest)
 add_subdirectory(Framework)
 add_subdirectory(Platform)
 add_subdirectory(RHI)
+
 
