@@ -1,15 +1,19 @@
-#include "CrossProduct.h"
 #include <iostream>
+#include "geommath.hpp"
 
 using namespace std;
+using namespace My;
 
 int main()
 {
-	float a[] = { 1, 2, 3 };
-	float b[] = { 5, 6, 7 };
-	float c[3];
-	ispc::CrossProduct(a, b, c);
-	cout << c[0] << "," << c[1] << "," << c[2] << endl;
+    Vector3f a = { 1.0f, 2.0f, 3.0f };
+	Vector3f b = { 5.0f, 6.0f, 7.0f };
+	Vector3f c;
+
+	cout << a;
+	cout << b;
+    CrossProduct(c, a, b);
+	cout << c;
 
 	return 0;
 }
