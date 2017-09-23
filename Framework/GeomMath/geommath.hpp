@@ -1,5 +1,6 @@
 #pragma once
 #include <math.h>
+#include <iostream>
 #include "include/CrossProduct.h"
 #include "include/DotProduct.h"
 #include "include/MulByElement.h"
@@ -123,6 +124,16 @@ namespace My {
 
     typedef Vector4Type<float> Vector4f;
 
+    template <template <typename> class TT, typename T>
+    std::ostream& operator<<(std::ostream& out, TT<T> vector)
+    {
+        for (int i = 0; i < countof(vector.data); i++) {
+                out << vector.data[i] << ((i == countof(vector.data) - 1)? '\n' : ',');
+        }
+
+        return out;
+    }
+
     template <template<typename> class TT, typename T>
     void VectorAdd(TT<T>& result, const TT<T>& vec1, const TT<T>& vec2)
     {
@@ -176,6 +187,18 @@ namespace My {
 
     typedef Matrix<float, 3, 3> Matrix3X3f;
     typedef Matrix<float, 4, 4> Matrix4X4f;
+
+    template <typename T, int ROWS, int COLS>
+    std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix)
+    {
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < COLS; j++) {
+                out << matrix.data[i][j] << ((j == COLS - 1)? '\n' : ',');
+            }
+        }
+
+        return out;
+    }
 
     template <typename T, int ROWS, int COLS>
     void MatrixAdd(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
