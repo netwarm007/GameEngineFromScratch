@@ -64,7 +64,7 @@ namespace My {
         Vector2Type<T>(const T& _x, const T& _y) : x(_x), y(_y) {};
 
         operator float*() { return data; };
-        operator const float*() { return static_cast<const float*>(data); };
+        operator const float*() const { return static_cast<const float*>(data); };
     };
     
     typedef Vector2Type<float> Vector2f;
