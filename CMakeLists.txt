@@ -10,15 +10,31 @@ IF(${UNIX})
     set (CMAKE_CXX_STANDARD 11)
 ELSEIF(${WIN32})
     # Windows specific code
-    set (CMAKE_C_COMPILER               "clang-cl")
+    if(${CMAKE_GENERATOR} MATCHES "Unix Makefiles")
+            set (CMAKE_C_COMPILER               "clang-cl")
+            set (CMAKE_CXX_COMPILER             "clang-cl")
+            if($ENV{VSCMD_ARG_TGT_ARCH} MATCHES "x64")
+                set (CMAKE_C_FLAGS              "-Wall --target=x86_64-pc-windows-msvc")
+                set (CMAKE_CXX_FLAGS            "-Wall -Xclang -std=gnu++14 --target=x86_64-pc-windows-msvc")
+                set (CMAKE_MODULE_LINKER_FLAGS  "/MACHINE:X64")
+                set (CMAKE_STATIC_LINKER_FLAGS  "/MACHINE:X64")
+                set (CMAKE_EXE_LINKER_FLAGS     "/MACHINE:X64")
+            else($ENV{VSCMD_ARG_TGT_ARCH} MATCHES "x64")
+                set (CMAKE_C_FLAGS              "-Wall --target=i686-pc-windows-msvc")
+                set (CMAKE_CXX_FLAGS            "-Wall -Xclang -std=gnu++14 --target=i686-pc-windows-msvc")
+                set (CMAKE_MODULE_LINKER_FLAGS  "/MACHINE:X86")
+                set (CMAKE_STATIC_LINKER_FLAGS  "/MACHINE:X86")
+                set (CMAKE_EXE_LINKER_FLAGS     "/MACHINE:X86")
+            endif($ENV{VSCMD_ARG_TGT_ARCH} MATCHES "x64")
+    else()
+            set (CMAKE_C_FLAGS              "/W4 /wd4514")
+            set (CMAKE_CXX_FLAGS            "/W4 /wd4514 /EHsc /std:c++14")
+    endif(${CMAKE_GENERATOR MATCHES "Unix Makefiles"})
     set (CMAKE_C_FLAGS_DEBUG            "/Debug /Zi")
     set (CMAKE_C_FLAGS_RELWITHDEBINFO   "-O2 /Debug")
-    set (CMAKE_CXX_COMPILER             "clang-cl")
     set (CMAKE_CXX_FLAGS_DEBUG          "/Debug /Zi")
-    set (CMAKE_CXX_FLAGS                "-Wall -Xclang -std=c++14 --target=x86_64-pc-win32")
     set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 /Debug")
-ENDIF(${UNIX})
-set (CMAKE_C_FLAGS                  "-Wall")
+ENDIF()
 set (CMAKE_C_FLAGS_MINSIZEREL       "-Os -DNDEBUG")
 set (CMAKE_C_FLAGS_RELEASE          "-O4 -DNDEBUG")
 set (CMAKE_C_STANDARD 11)
@@ -29,6 +45,9 @@ set (CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
 
 # /*	C++ comment style not allowed	*/
 
+
+# current generator in use 
+MESSAGE( STATUS "CMAKE_GENERATOR:         " ${CMAKE_GENERATOR} )
 
 # if you are building in-source, this is the same as CMAKE_SOURCE_DIR, otherwise 
 # this is the top level directory of your build tree 
