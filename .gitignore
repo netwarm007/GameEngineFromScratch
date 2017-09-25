@@ -31,7 +31,7 @@
 *.out
 *.app
 
-build*/
+build/
 *.*~
 *.pdb
 *.ilk
@@ -41,4 +41,3 @@ build*/
 *.swp
 **/Debug
 **/Release
-Framework/GeomMath/include/
