@@ -54,7 +54,7 @@ void matrix_test()
     cout << "Idendity Matrix: ";
     cout << m1;
 
-    float yaw = 0.2, pitch = 0.3, roll = 0.4;
+    float yaw = 0.2f, pitch = 0.3f, roll = 0.4f;
     MatrixRotationYawPitchRoll(m1, yaw, pitch, roll);
 
     cout << "Matrix of yaw(" << yaw << ") pitch(" << pitch << ") roll(" << roll << "):";

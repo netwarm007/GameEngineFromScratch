@@ -130,7 +130,7 @@ namespace My {
     std::ostream& operator<<(std::ostream& out, TT<T> vector)
     {
         out << "( ";
-        for (int i = 0; i < countof(vector.data); i++) {
+        for (uint32_t i = 0; i < countof(vector.data); i++) {
                 out << vector.data[i] << ((i == countof(vector.data) - 1)? ' ' : ',');
         }
         out << ")\n";
