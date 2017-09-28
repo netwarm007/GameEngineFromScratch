@@ -1,6 +1,7 @@
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 #include "Allocator.hpp"
-#include <cassert>
-#include <cstring>
 
 #ifndef ALIGN
 #define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))

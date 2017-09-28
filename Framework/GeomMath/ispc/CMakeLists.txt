@@ -14,7 +14,7 @@ foreach(FUNC IN LISTS FUNCTIONS)
 endforeach(FUNC)
 
 add_custom_command(OUTPUT ${GEOMMATH_LIB_FILE}
-        COMMAND ${LIBRARIAN_COMMAND} ${OBJECTS}
+        COMMAND ${CMAKE_AR} ${ISPC_LIBRARIAN_OPTIONS} ${OBJECTS}
         COMMAND rm -v ${OBJECTS}
         DEPENDS ${OBJECTS}
         )
