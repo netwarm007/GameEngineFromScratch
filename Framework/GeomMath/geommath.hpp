@@ -1,5 +1,5 @@
 #pragma once
-#include <cmath>
+#include <math.h>
 #include <iostream>
 #include "include/CrossProduct.h"
 #include "include/DotProduct.h"
@@ -195,11 +195,11 @@ namespace My {
             T data[ROWS][COLS];
         };
 
-        auto operator[](int row_index) {
+        float* operator[](int row_index) {
             return data[row_index];
         }
 
-        const auto  operator[](int row_index) const {
+        const float* operator[](int row_index) const {
             return data[row_index];
         }
 

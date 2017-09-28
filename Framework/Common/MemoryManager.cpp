@@ -1,5 +1,6 @@
 #include "MemoryManager.hpp"
-#include <malloc.h>
+
+extern "C" void* malloc(size_t size);
 
 using namespace My;
 
