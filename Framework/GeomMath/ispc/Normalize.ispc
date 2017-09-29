@@ -1,6 +1,6 @@
-extern void DotProduct(uniform const float a[], uniform const float b[], uniform float* uniform result, uniform const int count);
+extern void DotProduct(uniform const float a[], uniform const float b[], uniform float* uniform result, uniform const size_t count);
 
-export void Normalize(uniform float v[], const uniform int count)
+export void Normalize(uniform float v[], const uniform size_t count)
 {
     uniform float length;
     DotProduct(v, v, &length, count);

@@ -58,7 +58,7 @@ namespace My {
                 size_t      m_szPageSize;
                 size_t      m_szAlignmentSize;
                 size_t      m_szBlockSize;
-                uint32_t    m_nBlocksPerPage;
+                size_t      m_nBlocksPerPage;
 
                 // statistics
                 uint32_t    m_nPages;

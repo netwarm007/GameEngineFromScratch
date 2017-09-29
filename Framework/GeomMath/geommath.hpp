@@ -20,10 +20,10 @@
 
 namespace My {
     template<typename T, size_t SizeOfArray>
-        constexpr size_t countof(T (&array)[SizeOfArray]) { return SizeOfArray; }
+        constexpr size_t countof(T (&)[SizeOfArray]) { return SizeOfArray; }
 
     template<typename T, size_t RowSize, size_t ColSize>
-        constexpr size_t countof(T (&array)[RowSize][ColSize]) { return RowSize * ColSize; }
+        constexpr size_t countof(T (&)[RowSize][ColSize]) { return RowSize * ColSize; }
 
 	template< typename T, int ... Indexes>
 	class swizzle {
