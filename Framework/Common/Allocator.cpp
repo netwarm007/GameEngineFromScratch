@@ -138,20 +138,20 @@ void My::Allocator::FillFreePage(PageHeader *pPage)
 void My::Allocator::FillFreeBlock(BlockHeader *pBlock)
 {
     // block header + data
-    std::memset(pBlock, PATTERN_FREE, m_szBlockSize - m_szAlignmentSize);
+    memset(pBlock, PATTERN_FREE, m_szBlockSize - m_szAlignmentSize);
  
     // alignment
-    std::memset(reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize - m_szAlignmentSize, 
+    memset(reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize - m_szAlignmentSize, 
                 PATTERN_ALIGN, m_szAlignmentSize);
 }
  
 void My::Allocator::FillAllocatedBlock(BlockHeader *pBlock)
 {
     // block header + data
-    std::memset(pBlock, PATTERN_ALLOC, m_szBlockSize - m_szAlignmentSize);
+    memset(pBlock, PATTERN_ALLOC, m_szBlockSize - m_szAlignmentSize);
  
     // alignment
-    std::memset(reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize - m_szAlignmentSize, 
+    memset(reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize - m_szAlignmentSize, 
                 PATTERN_ALIGN, m_szAlignmentSize);
 }
  
