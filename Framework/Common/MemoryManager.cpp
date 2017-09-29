@@ -1,6 +1,7 @@
 #include "MemoryManager.hpp"
 
 extern "C" void* malloc(size_t size);
+extern "C" void  free(void* p);
 
 using namespace My;
 
