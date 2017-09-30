@@ -41,4 +41,4 @@ build*/
 *.swp
 **/Debug
 **/Release
-Framework/GeomMath/include/
+Framework/GeomMath/include/*
