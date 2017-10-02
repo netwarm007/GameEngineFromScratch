@@ -7,3 +7,5 @@ MemoryManager.cpp
 main.cpp
 )
 target_link_libraries(Common GeomMath)
+
+add_subdirectory(test)

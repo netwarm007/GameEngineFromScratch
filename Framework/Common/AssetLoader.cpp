@@ -1,4 +1,3 @@
-#include <vector>
 #include "AssetLoader.hpp"
 
 int My::AssetLoader::Initialize()
