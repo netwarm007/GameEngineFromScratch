@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <string>
 #include <utility>
+#include <vector>
 #include "IRuntimeModule.hpp"
 #include "Buffer.hpp"
 
@@ -16,7 +17,6 @@ namespace My {
 
         virtual void Tick();
 
-    protected:
         typedef void* AssetFilePtr;
 
         enum AssetOpenMode {
