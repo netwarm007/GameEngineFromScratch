@@ -3,6 +3,10 @@
 extern "C" void* malloc(size_t size);
 extern "C" void  free(void* p);
 
+#ifndef ALIGN
+#define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
+#endif
+
 using namespace My;
 
 namespace My {
@@ -71,7 +75,6 @@ void My::MemoryManager::Tick()
 
 Allocator* My::MemoryManager::LookUpAllocator(size_t size)
 {
-
     // check eligibility for lookup
     if (size <= kMaxBlockSize)
         return m_pAllocators + m_pBlockSizeLookup[size];
@@ -86,6 +89,21 @@ void* My::MemoryManager::Allocate(size_t size)
         return pAlloc->Allocate();
     else
         return malloc(size);
+}
+
+void* My::MemoryManager::Allocate(size_t size, size_t alignment)
+{
+    uint8_t* p;
+    size += alignment;
+    Allocator* pAlloc = LookUpAllocator(size);
+    if (pAlloc)
+        p = reinterpret_cast<uint8_t*>(pAlloc->Allocate());
+    else
+        p = reinterpret_cast<uint8_t*>(malloc(size));
+
+    p = reinterpret_cast<uint8_t*>(ALIGN(reinterpret_cast<size_t>(p), alignment));
+    
+    return static_cast<void*>(p);
 }
 
 void My::MemoryManager::Free(void* p, size_t size)
