@@ -15,6 +15,7 @@ else()
         set(ARCH_BIT 32)
 endif()
 
+include_directories("${PROJECT_SOURCE_DIR}/Framework/Codec")
 include_directories("${PROJECT_SOURCE_DIR}/Framework/Common")
 include_directories("${PROJECT_SOURCE_DIR}/Framework/Interface")
 include_directories("${PROJECT_SOURCE_DIR}/Framework/GeomMath")
