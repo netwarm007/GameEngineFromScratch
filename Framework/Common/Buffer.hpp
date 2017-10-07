@@ -30,8 +30,6 @@ namespace My {
         Buffer& operator = (const Buffer& rhs) { 
             if (m_szSize >= rhs.m_szSize && m_szAlignment == rhs.m_szAlignment) {
                 memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
-                m_szSize = rhs.m_szSize;
-                m_szAlignment = rhs.m_szAlignment;
             } 
             else {
                 if (m_pData) g_pMemoryManager->Free(m_pData, m_szSize); 
