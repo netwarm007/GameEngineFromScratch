@@ -26,21 +26,6 @@ namespace My {
         uint32_t ClrUsed;
         uint32_t ClrImportant;
     } BITMAP_HEADER;
-
-    typedef struct _RGBA {
-        uint8_t Red;
-        uint8_t Green;
-        uint8_t Blue;
-        uint8_t Alpha;
-    } RGBA;
-
-    typedef struct _BGRA {
-        uint8_t Blue;
-        uint8_t Green;
-        uint8_t Red;
-        uint8_t Alpha;
-    } BGRA;
-
 #pragma pack(pop)
 
     class BmpParser : implements ImageParser
@@ -69,16 +54,15 @@ namespace My {
                 img.bitcount = pBmpHeader->BitCount;
                 img.pitch = ((img.Width * img.bitcount >> 3) + 3) & ~3;
                 img.data_size = img.pitch * img.Height;
-                img.data = reinterpret_cast<uint8_t*>(g_pMemoryManager->Allocate(img.data_size));
+                img.data = reinterpret_cast<Vector4unorm*>(g_pMemoryManager->Allocate(img.data_size));
 
                 if (img.bitcount < 24) {
                     std::cout << "Sorry, only true color BMP is supported at now." << std::endl;
                 } else {
                     uint8_t* pSourceData = buf.m_pData + pFileHeader->BitsOffset;
-                    BGRA* pDestData = reinterpret_cast<BGRA*>(img.data);
                     for (int32_t y = img.Height - 1; y >= 0; y--) {
                         for (uint32_t x = 0; x < img.Width; x++) {
-                            *(pDestData + img.Width * (img.Height - y - 1) + x) = *reinterpret_cast<BGRA*>(pSourceData + img.pitch * y + x * (img.bitcount >> 3));
+                            (img.data + img.Width * (img.Height - y - 1) + x)->bgra = *reinterpret_cast<Vector4unorm*>(pSourceData + img.pitch * y + x * (img.bitcount >> 3));
                         }
                     }
                 }

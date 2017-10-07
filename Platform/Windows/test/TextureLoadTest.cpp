@@ -77,7 +77,7 @@ void My::TestGraphicsManager::DrawBitmap(const Image* image, int32_t index)
     m_pRenderTarget->BeginDraw();
 
     D2D1_BITMAP_PROPERTIES props;
-    props.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    props.pixelFormat.format = DXGI_FORMAT_R8G8B8A8_UNORM;
     props.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
     props.dpiX = 72.0f;
     props.dpiY = 72.0f;
