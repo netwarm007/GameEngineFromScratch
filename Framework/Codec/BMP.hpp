@@ -51,10 +51,10 @@ namespace My {
 
                 img.Width = pBmpHeader->Width;
                 img.Height = pBmpHeader->Height;
-                img.bitcount = pBmpHeader->BitCount;
+                img.bitcount = 32;
                 img.pitch = ((img.Width * img.bitcount >> 3) + 3) & ~3;
                 img.data_size = img.pitch * img.Height;
-                img.data = reinterpret_cast<Vector4unorm*>(g_pMemoryManager->Allocate(img.data_size));
+                img.data = reinterpret_cast<R8G8B8A8Unorm*>(g_pMemoryManager->Allocate(img.data_size));
 
                 if (img.bitcount < 24) {
                     std::cout << "Sorry, only true color BMP is supported at now." << std::endl;
@@ -62,7 +62,7 @@ namespace My {
                     uint8_t* pSourceData = buf.m_pData + pFileHeader->BitsOffset;
                     for (int32_t y = img.Height - 1; y >= 0; y--) {
                         for (uint32_t x = 0; x < img.Width; x++) {
-                            (img.data + img.Width * (img.Height - y - 1) + x)->bgra = *reinterpret_cast<Vector4unorm*>(pSourceData + img.pitch * y + x * (img.bitcount >> 3));
+                            (img.data + img.Width * (img.Height - y - 1) + x)->bgra = *reinterpret_cast<R8G8B8A8Unorm*>(pSourceData + img.pitch * y + x * (img.bitcount >> 3));
                         }
                     }
                 }

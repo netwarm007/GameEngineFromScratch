@@ -136,7 +136,7 @@ namespace My {
     };
 
     typedef Vector4Type<float> Vector4f;
-    typedef Vector4Type<uint8_t> Vector4unorm;
+    typedef Vector4Type<uint8_t> R8G8B8A8Unorm;
     typedef Vector4Type<uint8_t> Vector4i;
 
     template <template <typename> class TT, typename T>

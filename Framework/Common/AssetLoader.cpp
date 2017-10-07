@@ -176,10 +176,6 @@ size_t My::AssetLoader::SyncRead(const AssetFilePtr& fp, Buffer& buf)
     sz = fread(buf.m_pData, buf.m_szSize, 1, static_cast<FILE*>(fp));
 
 
-#ifdef DEBUG
-    fprintf(stderr, "Read file '%s', %d bytes\n", filePath, length);
-#endif
-
     return sz;
 }
 
