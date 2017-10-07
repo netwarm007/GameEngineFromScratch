@@ -1,4 +1,5 @@
 #pragma once
+#include <memory.h>
 #include <stddef.h>
 #include "MemoryManager.hpp"
 
