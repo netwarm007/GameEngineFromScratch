@@ -31,7 +31,7 @@ namespace My {
     class BmpParser : implements ImageParser
     {
     public:
-        virtual Image& Parse(const Buffer& buf)
+        virtual Image Parse(const Buffer& buf)
         {
             Image img;
             BITMAP_FILEHEADER* pFileHeader = reinterpret_cast<BITMAP_FILEHEADER*>(buf.m_pData);
