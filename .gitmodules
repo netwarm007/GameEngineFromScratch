@@ -1,6 +1,6 @@
 [submodule "ispc"]
-	path = External/ispc
+	path = External/src/ispc
 	url = https://github.com/netwarm007/ispc.git
 [submodule "llvm"]
-	path = External/llvm
+	path = External/src/llvm
 	url = https://github.com/llvm-mirror/llvm.git

@@ -1,10 +1,11 @@
 # this one is important
-SET(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_SYSTEM_NAME PSP2)
 #this one not so much
 SET(CMAKE_SYSTEM_VERSION 3.570)
 
-SET(SNC_TOOLCHAIN_DIR "$ENV{SCE_PSP2_SDK_DIR}/host_tools/build/bin/")
-SET(SNC_TARGET_ROOT_DIR "$ENV{SCE_PSP2_SDK_DIR}/target")
+STRING(REGEX REPLACE "\\\\" "/" SCE_PSP2_SDK_DIR $ENV{SCE_PSP2_SDK_DIR})
+SET(SNC_TOOLCHAIN_DIR "${SCE_PSP2_SDK_DIR}/host_tools/build/bin/")
+SET(SNC_TARGET_ROOT_DIR "${SCE_PSP2_SDK_DIR}/target")
 
 # specify the cross compiler
 SET(CMAKE_C_COMPILER ${SNC_TOOLCHAIN_DIR}psp2snc.exe)

@@ -5,6 +5,7 @@ set (CMAKE_C_STANDARD 99)
 set (CMAKE_CXX_STANDARD 11)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/Platform")
 include(TargetArchDetect)
 
 target_architecture(TARGET_ARCH)
