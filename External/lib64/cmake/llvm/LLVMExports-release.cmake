@@ -1461,6 +1461,15 @@ set_target_properties(llvm-cat PROPERTIES
 list(APPEND _IMPORT_CHECK_TARGETS llvm-cat )
 list(APPEND _IMPORT_CHECK_FILES_FOR_llvm-cat "${_IMPORT_PREFIX}/bin/llvm-cat.exe" )
 
+# Import target "llvm-cfi-verify" for configuration "Release"
+set_property(TARGET llvm-cfi-verify APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(llvm-cfi-verify PROPERTIES
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/bin/llvm-cfi-verify.exe"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS llvm-cfi-verify )
+list(APPEND _IMPORT_CHECK_FILES_FOR_llvm-cfi-verify "${_IMPORT_PREFIX}/bin/llvm-cfi-verify.exe" )
+
 # Import target "llvm-cov" for configuration "Release"
 set_property(TARGET llvm-cov APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
 set_target_properties(llvm-cov PROPERTIES

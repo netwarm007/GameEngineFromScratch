@@ -1,1 +1,1 @@
-#define LLVM_REVISION "git-652f5e6"
+#define LLVM_REVISION "git-baf328e"
