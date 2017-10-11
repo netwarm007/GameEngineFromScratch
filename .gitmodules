@@ -3,4 +3,7 @@
 	url = https://github.com/netwarm007/ispc.git
 [submodule "llvm"]
 	path = External/src/llvm
-	url = https://github.com/llvm/llvm.git
+	url = http://llvm.org/git/llvm
+[submodule "External\\src\\clang"]
+	path = External/src/clang
+	url = http://llvm.org/git/clang
