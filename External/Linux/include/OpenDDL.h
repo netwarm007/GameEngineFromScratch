@@ -559,7 +559,7 @@ namespace ODDL
     //# \also   $@PrimitiveStructure@$
 
 
-    //# \function   Structure::SetBaseStructureType     Returns the base structure type.
+    //# \function   Structure::SetBaseStructureType     Sets the base structure type.
     //
     //# \proto  void SetBaseStructureType(StructureType type);
     //
