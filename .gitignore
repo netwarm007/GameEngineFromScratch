@@ -41,3 +41,5 @@ build*/
 *.swp
 **/Debug
 **/Release
+**/lib
+**/lib64
