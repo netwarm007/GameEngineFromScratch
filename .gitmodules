@@ -4,6 +4,6 @@
 [submodule "llvm"]
 	path = External/src/llvm
 	url = http://llvm.org/git/llvm
-[submodule "External\\src\\clang"]
+[submodule "clang"]
 	path = External/src/clang
 	url = http://llvm.org/git/clang
