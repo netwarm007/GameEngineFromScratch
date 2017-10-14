@@ -7,9 +7,9 @@
 [submodule "clang"]
 	path = External/src/clang
 	url = http://llvm.org/git/clang
-[submodule "External/src/libpng"]
+[submodule "libpng"]
 	path = External/src/libpng
 	url = git://git.code.sf.net/p/libpng/code
-[submodule "External\\src\\zlib"]
-	path = External\\src\\zlib
+[submodule "zlib"]
+	path = External/src/zlib
 	url = https://github.com/netwarm007/zlib.git
