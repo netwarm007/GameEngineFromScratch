@@ -1,5 +1,7 @@
 #pragma once
+#include <iostream>
 #include "Guid.hpp"
+#include "Mesh.h"
 
 namespace My {
     namespace details {
@@ -21,10 +23,22 @@ namespace My {
         kSceneObjectTypeClip    =   "CLIP"_i32,
     };
 
+    std::ostream& operator<<(std::ostream& out, SceneObjectType type)
+    {
+        char* c = reinterpret_cast<char*>(type);
+         
+        for (int32_t i = 0; i < sizeof(int32_t); i++) {
+            out << *c++;
+        }
+
+        return out;
+    }
+
+    using namespace xg;
     class BaseSceneObject
     {
         protected:
-            xg::Guid m_Guid;
+            Guid m_Guid;
             SceneObjectType m_Type;
         protected:
             // can only be used as base class
@@ -38,8 +52,28 @@ namespace My {
             // can not be copied
             BaseSceneObject(BaseSceneObject& obj) = delete;
             BaseSceneObject& operator=(BaseSceneObject& obj) = delete;
+
         public:
             const std::string& GetGuid() const { return m_Guid; };
+
+        friend std::ostream& operator<<(std::ostream& out, const BaseSceneObject& obj)
+        {
+            out << "SceneObject" << std::endl;
+            out << "-----------" << std::endl;
+            out << obj.m_Guid        << std::endl;
+            out << obj.m_Type        << std::endl;
+
+            return out;
+        }
+    };
+
+    class SceneObjectMesh : public BaseSceneObject
+    {
+        protected:
+            SimpleMesh m_mesh;
+            
+        public:
+            SceneObjectMesh() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
     };
 }
 
