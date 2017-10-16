@@ -27,6 +27,13 @@ namespace My {
     template<typename T, size_t RowSize, size_t ColSize>
         constexpr size_t countof(T (&)[RowSize][ColSize]) { return RowSize * ColSize; }
 
+#ifdef max
+    #undef max
+#endif
+#ifdef min
+    #undef min
+#endif
+
     template<typename T>
         constexpr float normalize(T value) {
             return value < 0

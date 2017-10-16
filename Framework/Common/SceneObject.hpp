@@ -1,7 +1,9 @@
 #pragma once
 #include <iostream>
+#include <memory>
 #include "Guid.hpp"
 #include "Mesh.h"
+#include "Image.hpp"
 
 namespace My {
     namespace details {
@@ -17,6 +19,7 @@ namespace My {
     enum class SceneObjectType : int32_t {
         kSceneObjectTypeMesh    =   "MESH"_i32,
         kSceneObjectTypeMaterial=   "MATL"_i32,
+        kSceneObjectTypeTexture =   "TXTU"_i32,
         kSceneObjectTypeLight   =   "LGHT"_i32,
         kSceneObjectTypeCamera  =   "CAMR"_i32,
         kSceneObjectTypeAnimator=   "ANIM"_i32,
@@ -43,6 +46,8 @@ namespace My {
         protected:
             // can only be used as base class
             BaseSceneObject(SceneObjectType type) : m_Type(type) { m_Guid = newGuid(); };
+            BaseSceneObject(Guid& guid, SceneObjectType type) : m_Guid(guid), m_Type(type) {};
+            BaseSceneObject(Guid&& guid, SceneObjectType type) : m_Guid(std::move(guid)), m_Type(type) {};
             BaseSceneObject(BaseSceneObject&& obj) : m_Guid(std::move(obj.m_Guid)), m_Type(obj.m_Type) {};
             BaseSceneObject& operator=(BaseSceneObject&& obj) { this->m_Guid = std::move(obj.m_Guid); this->m_Type = obj.m_Type; return *this; };
             
@@ -74,6 +79,18 @@ namespace My {
             
         public:
             SceneObjectMesh() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
+    };
+
+    class SceneObjectMaterial : public BaseSceneObject
+    {
+        protected:
+            std::shared_ptr<Image> m_texAlbedo;
+            std::shared_ptr<Image> m_texNormal;
+            std::shared_ptr<Image> m_texMetalic;
+            std::shared_ptr<Image> m_texAo;
+
+        public:
+            SceneObjectMaterial() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial) {};
     };
 }
 
