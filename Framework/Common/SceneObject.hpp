@@ -25,7 +25,7 @@ namespace My {
 
     std::ostream& operator<<(std::ostream& out, SceneObjectType type)
     {
-        char* c = reinterpret_cast<char*>(type);
+        char* c = reinterpret_cast<char*>(&type);
          
         for (int32_t i = 0; i < sizeof(int32_t); i++) {
             out << *c++;
@@ -42,7 +42,7 @@ namespace My {
             SceneObjectType m_Type;
         protected:
             // can only be used as base class
-            BaseSceneObject(SceneObjectType type) : m_Type(type) {};
+            BaseSceneObject(SceneObjectType type) : m_Type(type) { m_Guid = newGuid(); };
             BaseSceneObject(BaseSceneObject&& obj) : m_Guid(std::move(obj.m_Guid)), m_Type(obj.m_Type) {};
             BaseSceneObject& operator=(BaseSceneObject&& obj) { this->m_Guid = std::move(obj.m_Guid); this->m_Type = obj.m_Type; return *this; };
             
