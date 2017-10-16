@@ -69,7 +69,7 @@ void* My::Allocator::Allocate()
 
         BlockHeader* pBlock = pNewPage->Blocks();
         // link each block in the page
-        for (uint32_t i = 0; i < m_nBlocksPerPage; i++) {
+        for (uint32_t i = 0; i < m_nBlocksPerPage - 1; i++) {
             pBlock->pNext = NextBlock(pBlock);
             pBlock = NextBlock(pBlock);
         }
