@@ -78,7 +78,10 @@ namespace My {
     class SceneObjectMesh : public BaseSceneObject
     {
         protected:
-            SimpleMesh m_mesh;
+            SimpleMesh  m_mesh;
+            bool        m_bVisible      = true;
+            bool        m_bShadow       = false;
+            bool        m_bMotionBlur   = false;
             
         public:
             SceneObjectMesh() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
