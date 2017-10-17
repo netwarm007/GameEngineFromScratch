@@ -68,8 +68,8 @@ namespace My {
         {
             out << "SceneObject" << std::endl;
             out << "-----------" << std::endl;
-            out << obj.m_Guid        << std::endl;
-            out << obj.m_Type        << std::endl;
+            out << "GUID: " << obj.m_Guid << std::endl;
+            out << "Type: " << obj.m_Type << std::endl;
 
             return out;
         }
@@ -84,16 +84,75 @@ namespace My {
             SceneObjectMesh() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
     };
 
+    template <typename T>
+    struct ParameterMap
+    {
+        bool bUsingSingleValue = true;
+
+        union _ParameterMap {
+            T Value;
+            std::shared_ptr<Image> Map;
+        };
+    };
+
+    typedef ParameterMap<Vector3f> Color;
+    typedef ParameterMap<Vector3f> Normal;
+    typedef ParameterMap<float>    Parameter;
+
     class SceneObjectMaterial : public BaseSceneObject
     {
         protected:
-            std::shared_ptr<Image> m_texAlbedo;
-            std::shared_ptr<Image> m_texNormal;
-            std::shared_ptr<Image> m_texMetalic;
-            std::shared_ptr<Image> m_texAo;
+            Color       m_BaseColor;
+            Parameter   m_Metallic;
+            Parameter   m_Roughness;
+            Normal      m_Normal;
+            Parameter   m_Specular;
+            Parameter   m_AmbientOcclusion;
 
         public:
             SceneObjectMaterial() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial) {};
+    };
+
+    typedef float (*AttenFunc)(float /* Intensity */, float /* Distance */);
+
+    class SceneObjectLight : public BaseSceneObject
+    {
+        protected:
+            Color       m_LightColor;
+            float       m_Intensity;
+            AttenFunc   m_LightAttenuation;
+            float       m_fNearClipDistance;
+            float       m_fFarClipDistance;
+            bool        m_bCastShadows;
+
+        protected:
+            // can only be used as base class of delivered lighting objects
+            SceneObjectLight() : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight) {};
+    };
+
+    class SceneObjectOmniLight : public SceneObjectLight
+    {
+        public:
+            using SceneObjectLight::SceneObjectLight;
+    };
+
+    class SceneObjectSpotLight : public SceneObjectLight
+    {
+        protected:
+            float   m_fConeAngle;
+            float   m_fPenumbraAngle;
+        public:
+            using SceneObjectLight::SceneObjectLight;
+    };
+
+    class SceneObjectCamera : public BaseSceneObject
+    {
+        protected:
+            float m_fFov;
+            float m_fNearClipDistance;
+            float m_fFarClipDistance;
+        public:
+            SceneObjectCamera() : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera) {};
     };
 }
 
