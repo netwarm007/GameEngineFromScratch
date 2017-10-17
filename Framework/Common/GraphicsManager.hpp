@@ -1,7 +1,7 @@
 #pragma once
 #include "Image.hpp"
 #include "IRuntimeModule.hpp"
-#include "Mesh.h"
+#include "Mesh.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule

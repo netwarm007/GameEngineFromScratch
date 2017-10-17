@@ -2,8 +2,9 @@
 #include <iostream>
 #include <memory>
 #include "Guid.hpp"
-#include "Mesh.h"
+#include "Mesh.hpp"
 #include "Image.hpp"
+#include "portable.hpp"
 
 namespace My {
     namespace details {
@@ -16,7 +17,7 @@ namespace My {
         return details::i32(s, 0);
     }
 
-    enum class SceneObjectType : int32_t {
+    ENUM(SceneObjectType) {
         kSceneObjectTypeMesh    =   "MESH"_i32,
         kSceneObjectTypeMaterial=   "MATL"_i32,
         kSceneObjectTypeTexture =   "TXTU"_i32,
@@ -28,9 +29,11 @@ namespace My {
 
     std::ostream& operator<<(std::ostream& out, SceneObjectType type)
     {
-        char* c = reinterpret_cast<char*>(&type);
+        int32_t n = static_cast<int32_t>(type);
+        n = endian_net_unsigned_int<int32_t>(n);
+        char* c = reinterpret_cast<char*>(&n);
          
-        for (int32_t i = 0; i < sizeof(int32_t); i++) {
+        for (int i = 0; i < sizeof(int32_t); i++) {
             out << *c++;
         }
 

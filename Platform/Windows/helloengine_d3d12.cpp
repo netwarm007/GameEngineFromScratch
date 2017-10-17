@@ -18,7 +18,7 @@
 
 #include <exception>
 
-#include "Mesh.h"
+#include "Mesh.hpp"
 
 namespace My {
     // Helper class for COM exceptions
