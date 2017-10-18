@@ -30,7 +30,7 @@ void GraphicsManager::DrawSingleMesh(const Mesh& mesh)
     cout << endl;
     cout << "Index Buffer: "            << mesh.m_indexBuffer       << endl;
     cout << "Index Buffer Size: "       << mesh.m_indexBufferSize   << endl;
-    cout << "Index Count: "             << mesh.m_indexBufferSize   << endl;
-    cout << "Index Type: "              << mesh.m_indexType         << endl;
+    cout << "Index Count: "             << mesh.m_indexCount << endl;
+    // cout << "Index Type: "              << mesh.m_indexType         << endl;
 }
 

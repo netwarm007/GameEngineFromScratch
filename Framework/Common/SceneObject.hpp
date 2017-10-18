@@ -62,7 +62,7 @@ namespace My {
             BaseSceneObject& operator=(BaseSceneObject& obj) = delete;
 
         public:
-            const std::string& GetGuid() const { return m_Guid; };
+            const Guid& GetGuid() const { return m_Guid; };
 
         friend std::ostream& operator<<(std::ostream& out, const BaseSceneObject& obj)
         {
