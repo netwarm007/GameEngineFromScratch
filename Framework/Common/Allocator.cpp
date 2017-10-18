@@ -61,7 +61,7 @@ void* My::Allocator::Allocate()
 
         BlockHeader* pBlock = pNewPage->Blocks();
         // link each block in the page
-        for (uint32_t i = 0; i < m_nBlocksPerPage; i++) {
+        for (uint32_t i = 0; i < m_nBlocksPerPage - 1; i++) {
             pBlock->pNext = NextBlock(pBlock);
             pBlock = NextBlock(pBlock);
         }
@@ -147,10 +147,18 @@ void My::Allocator::FillAllocatedBlock(BlockHeader *pBlock)
                 PATTERN_ALIGN, m_szAlignmentSize);
 }
  
+<<<<<<< HEAD
+=======
+#endif
+
+>>>>>>> 820afc8ff64879a3b7d19a4ee2585495d7270f96
 My::BlockHeader* My::Allocator::NextBlock(BlockHeader *pBlock)
 {
     return reinterpret_cast<BlockHeader *>(reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize);
 }
 
+<<<<<<< HEAD
 #endif
+=======
+>>>>>>> 820afc8ff64879a3b7d19a4ee2585495d7270f96
 
