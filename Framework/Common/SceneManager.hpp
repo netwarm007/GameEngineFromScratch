@@ -1,7 +1,7 @@
 #pragma once
 #include "geommath.hpp"
 #include "IRuntimeModule.hpp"
-#include "SceneObject.hpp"
+#include "SceneNode.hpp"
 
 namespace My {
     class SceneManager : implements IRuntimeModule
@@ -15,7 +15,7 @@ namespace My {
         virtual void Tick();
 
     protected:
-        
+        SceneEmptyNode m_RootNode;
     };
 }
 
