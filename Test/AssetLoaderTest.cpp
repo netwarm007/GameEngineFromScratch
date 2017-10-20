@@ -15,6 +15,9 @@ int main(int , char** )
     g_pMemoryManager->Initialize();
 
     AssetLoader asset_loader;
+#ifdef __ORBIS__
+    asset_loader.AddSearchPath("/app0");
+#endif
     string shader_pgm = asset_loader.SyncOpenAndReadTextFileToString("Shaders/copy.vs");
 
     cout << shader_pgm;
