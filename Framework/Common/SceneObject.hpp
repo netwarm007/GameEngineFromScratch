@@ -1,8 +1,9 @@
 #pragma once
 #include <iostream>
 #include <memory>
+#include <vector>
+#include <string>
 #include "Guid.hpp"
-#include "Mesh.hpp"
 #include "Image.hpp"
 #include "portable.hpp"
 
@@ -75,10 +76,49 @@ namespace My {
         }
     };
 
+    ENUM(VertexDataType) {
+        kVertexDataTypeFloat    = "FLOT"_i32,
+        kVertexDataTypeDouble   = "DOUB"_i32
+    };
+
+    class SceneObjectVertexArray : public BaseSceneObject
+    {
+        protected:
+            std::string m_Attribute;
+            uint32_t    m_MorphTargetIndex;
+            VertexDataType m_DataType;
+
+            union {
+                float*      m_pDataFloat;
+                double*     m_pDataDouble;
+            };
+            size_t      m_szData;
+    };
+
+    ENUM(IndexDataType) {
+        kIndexDataTypeInt16 = "_I16"_i32,
+        kIndexDataTypeInt32 = "_I32"_i32,
+    };
+
+    class SceneObjectIndexArray : public BaseSceneObject
+    {
+        protected:
+            uint32_t    m_MaterialIndex;
+            size_t      m_RestartIndex;
+            IndexDataType m_DataType;
+
+            union {
+                uint16_t*   m_pDataI16;
+                uint32_t*   m_pDataI32;
+            };
+    };
+
     class SceneObjectMesh : public BaseSceneObject
     {
         protected:
-            SimpleMesh  m_mesh;
+            std::vector<SceneObjectIndexArray>  m_IndexArray;
+            std::vector<SceneObjectVertexArray> m_VertexArray;
+
             bool        m_bVisible      = true;
             bool        m_bShadow       = false;
             bool        m_bMotionBlur   = false;
@@ -98,7 +138,7 @@ namespace My {
         };
     };
 
-    typedef ParameterMap<Vector3f> Color;
+    typedef ParameterMap<Vector4f> Color;
     typedef ParameterMap<Vector3f> Normal;
     typedef ParameterMap<float>    Parameter;
 

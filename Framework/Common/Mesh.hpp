@@ -2,13 +2,13 @@
 #include "portable.hpp"
 
 namespace My {
-    typedef ENUM(IndexSize) {
+    typedef ENUM(_IndexSize) {
             kIndexSize16 = 0x00000010,
             kIndexSize32 = 0x00000020,
             kIndexSizePlatformDependent = 0x10000000, // start point of platform specific value
     } IndexSize;
 
-    typedef ENUM(PrimitiveType) {
+    typedef ENUM(_PrimitiveType) {
             kPrimitiveTypeNone                  = 0x00000000, ///< No particular primitive type.
             kPrimitiveTypePointList             = 0x00000001, ///< For N>=0, vertex N renders a point.
             kPrimitiveTypeLineList              = 0x00000002, ///< For N>=0, vertices [N*2+0, N*2+1] render a line.
