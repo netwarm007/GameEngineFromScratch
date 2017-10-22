@@ -218,11 +218,21 @@ namespace My {
     class SceneObjectCamera : public BaseSceneObject
     {
         protected:
-            float m_fFov;
+            float m_fAspect;
             float m_fNearClipDistance;
             float m_fFarClipDistance;
         public:
             SceneObjectCamera() : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera) {};
+    };
+
+    class SceneObjectOrthogonalCamera : public SceneObjectCamera
+    {
+    };
+
+    class SceneObjectPerspectiveCamera : public SceneObjectCamera
+    {
+        protected:
+            float m_fFov;
     };
 }
 
