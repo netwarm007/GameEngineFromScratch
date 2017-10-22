@@ -11,12 +11,11 @@ namespace My {
 
     template <typename T>
     struct SceneNode : public BaseSceneNode {
-        T* t;
+        T t;
     };
 
     typedef BaseSceneNode SceneEmptyNode;
-    typedef SceneNode<SceneObjectMesh> SceneGeometryNode;
-    typedef SceneNode<SceneObjectMaterial> SceneMaterialNode;
+    typedef SceneNode<SceneObjectGeometry> SceneGeometryNode;
     typedef SceneNode<SceneObjectLight> SceneLightNode;
     typedef SceneNode<SceneObjectCamera> SceneCameraNode;
 }

@@ -26,6 +26,9 @@ namespace My {
         kSceneObjectTypeCamera  =   "CAMR"_i32,
         kSceneObjectTypeAnimator=   "ANIM"_i32,
         kSceneObjectTypeClip    =   "CLIP"_i32,
+        kSceneObjectTypeVertexArray   =   "VARR"_i32,
+        kSceneObjectTypeIndexArray    =   "VARR"_i32,
+        kSceneObjectTypeGeometry =  "GEOM"_i32,
     };
 
     std::ostream& operator<<(std::ostream& out, SceneObjectType type)
@@ -34,7 +37,7 @@ namespace My {
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
-        for (int i = 0; i < sizeof(int32_t); i++) {
+        for (size_t i = 0; i < sizeof(int32_t); i++) {
             out << *c++;
         }
 
@@ -64,6 +67,7 @@ namespace My {
 
         public:
             const Guid& GetGuid() const { return m_Guid; };
+            const SceneObjectType GetType() const { return m_Type; };
 
         friend std::ostream& operator<<(std::ostream& out, const BaseSceneObject& obj)
         {
@@ -77,8 +81,14 @@ namespace My {
     };
 
     ENUM(VertexDataType) {
-        kVertexDataTypeFloat    = "FLOT"_i32,
-        kVertexDataTypeDouble   = "DOUB"_i32
+        kVertexDataTypeFloat1    = "FLT1"_i32,
+        kVertexDataTypeFloat2    = "FLT2"_i32,
+        kVertexDataTypeFloat3    = "FLT3"_i32,
+        kVertexDataTypeFloat4    = "FLT4"_i32,
+        kVertexDataTypeDouble1   = "DUB1"_i32,
+        kVertexDataTypeDouble2   = "DUB2"_i32,
+        kVertexDataTypeDouble3   = "DUB3"_i32,
+        kVertexDataTypeDouble4   = "DUB3"_i32
     };
 
     class SceneObjectVertexArray : public BaseSceneObject
@@ -88,11 +98,12 @@ namespace My {
             uint32_t    m_MorphTargetIndex;
             VertexDataType m_DataType;
 
-            union {
-                float*      m_pDataFloat;
-                double*     m_pDataDouble;
-            };
+            void*      m_pDataFloat;
+
             size_t      m_szData;
+
+        public:
+            SceneObjectVertexArray(const char* attr, void* data, size_t data_size, VertexDataType data_type, uint32_t morph_index = 0) : BaseSceneObject(SceneObjectType::kSceneObjectTypeVertexArray), m_Attribute(attr), m_MorphTargetIndex(morph_index), m_DataType(data_type), m_pDataFloat(data), m_szData(data_size) {};
     };
 
     ENUM(IndexDataType) {
@@ -107,10 +118,12 @@ namespace My {
             size_t      m_RestartIndex;
             IndexDataType m_DataType;
 
-            union {
-                uint16_t*   m_pDataI16;
-                uint32_t*   m_pDataI32;
-            };
+            void*       m_pData;
+
+            size_t      m_szData;
+
+        public:
+            SceneObjectIndexArray(uint32_t material_index, IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, uint32_t restart_index = 0) : BaseSceneObject(SceneObjectType::kSceneObjectTypeIndexArray), m_MaterialIndex(material_index), m_RestartIndex(restart_index), m_DataType(data_type) {};
     };
 
     class SceneObjectMesh : public BaseSceneObject
@@ -119,23 +132,27 @@ namespace My {
             std::vector<SceneObjectIndexArray>  m_IndexArray;
             std::vector<SceneObjectVertexArray> m_VertexArray;
 
-            bool        m_bVisible      = true;
-            bool        m_bShadow       = false;
-            bool        m_bMotionBlur   = false;
+            bool        m_bVisible;
+            bool        m_bShadow;
+            bool        m_bMotionBlur;
             
         public:
-            SceneObjectMesh() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
+            SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh), m_bVisible(visible), m_bShadow(shadow), m_bMotionBlur(motion_blur) {};
+            void AddIndexArray(SceneObjectIndexArray&& array) { m_IndexArray.push_back(std::move(array)); };
+            void AddVertxArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
     };
 
     template <typename T>
     struct ParameterMap
     {
-        bool bUsingSingleValue = true;
+        bool bUsingSingleValue;
 
-        union _ParameterMap {
+        union {
             T Value;
-            std::shared_ptr<Image> Map;
+            Image* Map;
         };
+
+        ParameterMap(T value) : bUsingSingleValue(true), Value(value) {};
     };
 
     typedef ParameterMap<Vector4f> Color;
@@ -153,7 +170,17 @@ namespace My {
             Parameter   m_AmbientOcclusion;
 
         public:
-            SceneObjectMaterial() : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial) {};
+            SceneObjectMaterial(Color base_color = Vector4f(1.0f), Parameter metallic = 0.0f, Parameter roughness = 0.0f, Normal normal = Vector3f(0.0f, 0.0f, 1.0f), Parameter specular = 0.0f, Parameter ao = 1.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_BaseColor(base_color), m_Metallic(metallic), m_Roughness(roughness), m_Normal(normal), m_Specular(specular), m_AmbientOcclusion(ao) {};
+    };
+
+    class SceneObjectGeometry : public BaseSceneObject
+    {
+        protected:
+            std::vector<SceneObjectMesh> m_Mesh;
+
+        public:
+            void AddMesh(SceneObjectMesh&& mesh) { m_Mesh.push_back(std::move(mesh)); };
+            SceneObjectGeometry() : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry) {};
     };
 
     typedef float (*AttenFunc)(float /* Intensity */, float /* Distance */);
@@ -170,7 +197,7 @@ namespace My {
 
         protected:
             // can only be used as base class of delivered lighting objects
-            SceneObjectLight() : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight) {};
+            SceneObjectLight() : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight), m_LightColor(0) {};
     };
 
     class SceneObjectOmniLight : public SceneObjectLight

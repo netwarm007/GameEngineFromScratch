@@ -3,6 +3,7 @@
 
 using namespace My;
 using namespace std;
+using namespace xg;
 
 int32_t main(int32_t argc, char** argv)
 {
