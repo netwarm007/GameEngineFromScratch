@@ -166,10 +166,24 @@ namespace My {
 
         ParameterMap(const ParameterMap& rhs)
         {
+            bUsingSingleValue = rhs.bUsingSingleValue;
+
             if (bUsingSingleValue) {
                 Value = rhs.Value;
             } else {
                 Map = rhs.Map;
+            }
+        }
+
+        ParameterMap(ParameterMap&& rhs)
+        {
+            bUsingSingleValue = rhs.bUsingSingleValue;
+
+            if (bUsingSingleValue) {
+                Value = rhs.Value;
+            } else {
+                Map = std::move(rhs.Map);
+                rhs.Map.reset();
             }
         }
 
@@ -208,7 +222,20 @@ namespace My {
             Parameter   m_AmbientOcclusion;
 
         public:
-            SceneObjectMaterial(Color base_color = Vector4f(1.0f), Parameter metallic = 0.0f, Parameter roughness = 0.0f, Normal normal = Vector3f(0.0f, 0.0f, 1.0f), Parameter specular = 0.0f, Parameter ao = 1.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_BaseColor(base_color), m_Metallic(metallic), m_Roughness(roughness), m_Normal(normal), m_Specular(specular), m_AmbientOcclusion(ao) {};
+            SceneObjectMaterial(Color&& base_color = Vector4f(1.0f), Parameter&& metallic = 0.0f, Parameter&& roughness = 0.0f, Normal&& normal = Vector3f(0.0f, 0.0f, 1.0f), Parameter&& specular = 0.0f, Parameter&& ao = 0.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_BaseColor(std::move(base_color)), m_Metallic(std::move(metallic)), m_Roughness(std::move(roughness)), m_Normal(std::move(normal)), m_Specular(std::move(specular)), m_AmbientOcclusion(std::move(ao)) {};
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj)
+        {
+            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
+            out << "Albedo: " << obj.m_BaseColor << std::endl;
+            out << "Metallic: " << obj.m_Metallic << std::endl;
+            out << "Roughness: " << obj.m_Roughness << std::endl;
+            out << "Normal: " << obj.m_Normal << std::endl;
+            out << "Specular: " << obj.m_Specular << std::endl;
+            out << "Ambient Occlusion:: " << obj.m_AmbientOcclusion << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectGeometry : public BaseSceneObject
@@ -223,6 +250,11 @@ namespace My {
 
     typedef float (*AttenFunc)(float /* Intensity */, float /* Distance */);
 
+    float DefaultAttenFunc(float intensity, float distance)
+    {
+        return intensity / (1 + distance);
+    }
+
     class SceneObjectLight : public BaseSceneObject
     {
         protected:
@@ -235,7 +267,7 @@ namespace My {
 
         protected:
             // can only be used as base class of delivered lighting objects
-            SceneObjectLight() : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight), m_LightColor(0) {};
+            SceneObjectLight(Color&& color = Vector4f(1.0f), float intensity = 10.0f, AttenFunc atten_func = DefaultAttenFunc, float near_clip = 1.0f, float far_clip = 100.0f, bool cast_shadows = false) : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight), m_LightColor(std::move(color)), m_fIntensity(intensity), m_LightAttenuation(atten_func), m_fNearClipDistance(near_clip), m_fFarClipDistance(far_clip), m_bCastShadows(cast_shadows) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectLight& obj)
         {
@@ -270,12 +302,14 @@ namespace My {
             float   m_fConeAngle;
             float   m_fPenumbraAngle;
         public:
-            using SceneObjectLight::SceneObjectLight;
+            SceneObjectSpotLight(Color&& color = Vector4f(1.0f), float intensity = 10.0f, AttenFunc atten_func = DefaultAttenFunc, float near_clip = 1.0f, float far_clip = 100.0f, bool cast_shadows = false, float cone_angle = PI / 4.0f, float penumbra_angle = PI / 3.0f) : SceneObjectLight(std::move(color), intensity, atten_func, near_clip, far_clip, cast_shadows), m_fConeAngle(cone_angle), m_fPenumbraAngle(penumbra_angle) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectSpotLight& obj)
         {
             out << static_cast<const SceneObjectLight&>(obj) << std::endl;
             out << "Light Type: Spot" << std::endl;
+            out << "Cone Angle: " << obj.m_fConeAngle << std::endl;
+            out << "Penumbra Angle: " << obj.m_fPenumbraAngle << std::endl;
 
             return out;
         }
@@ -287,18 +321,52 @@ namespace My {
             float m_fAspect;
             float m_fNearClipDistance;
             float m_fFarClipDistance;
-        public:
-            SceneObjectCamera() : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera) {};
+
+        protected:
+            // can only be used as base class
+            SceneObjectCamera(float aspect = 16.0f / 9.0f, float near_clip = 1.0f, float far_clip = 100.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(aspect), m_fNearClipDistance(near_clip), m_fFarClipDistance(far_clip) {};
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj)
+        {
+            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
+            out << "Aspect: " << obj.m_fAspect << std::endl;
+            out << "Near Clip Distance: " << obj.m_fNearClipDistance << std::endl;
+            out << "Far Clip Distance: " << obj.m_fFarClipDistance << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectOrthogonalCamera : public SceneObjectCamera
     {
+        public:
+            using SceneObjectCamera::SceneObjectCamera;
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectOrthogonalCamera& obj)
+        {
+            out << static_cast<const SceneObjectCamera&>(obj) << std::endl;
+            out << "Camera Type: Orthogonal" << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectPerspectiveCamera : public SceneObjectCamera
     {
         protected:
             float m_fFov;
+
+        public:
+            SceneObjectPerspectiveCamera(float aspect = 16.0f / 9.0f, float near_clip = 1.0f, float far_clip = 100.0f, float fov = PI / 2.0) : SceneObjectCamera(aspect, near_clip, far_clip), m_fFov(fov) {};
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj)
+        {
+            out << static_cast<const SceneObjectCamera&>(obj) << std::endl;
+            out << "Camera Type: Perspective" << std::endl;
+            out << "FOV: " << obj.m_fFov<< std::endl;
+
+            return out;
+        }
     };
 }
 
