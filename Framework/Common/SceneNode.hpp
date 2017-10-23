@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <vector>
 #include <string>
 #include "SceneObject.hpp"
@@ -11,7 +12,7 @@ namespace My {
 
     template <typename T>
     struct SceneNode : public BaseSceneNode {
-        T t;
+        std::shared_ptr<T> pSceneObject;
     };
 
     typedef BaseSceneNode SceneEmptyNode;

@@ -140,6 +140,16 @@ namespace My {
             SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh), m_bVisible(visible), m_bShadow(shadow), m_bMotionBlur(motion_blur) {};
             void AddIndexArray(SceneObjectIndexArray&& array) { m_IndexArray.push_back(std::move(array)); };
             void AddVertxArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj)
+        {
+            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
+            out << "Visible: " << obj.m_bVisible << std::endl;
+            out << "Shadow: " << obj.m_bShadow << std::endl;
+            out << "Motion Blur: " << obj.m_bMotionBlur << std::endl;
+
+            return out;
+        }
     };
 
     template <typename T>
@@ -149,10 +159,38 @@ namespace My {
 
         union {
             T Value;
-            Image* Map;
+            std::shared_ptr<Image> Map;
         };
 
         ParameterMap(T value) : bUsingSingleValue(true), Value(value) {};
+
+        ParameterMap(const ParameterMap& rhs)
+        {
+            if (bUsingSingleValue) {
+                Value = rhs.Value;
+            } else {
+                Map = rhs.Map;
+            }
+        }
+
+        ~ParameterMap()
+        {
+            if (!bUsingSingleValue) {
+                Map.reset();
+            }
+        }
+
+        friend std::ostream& operator<<(std::ostream& out, const ParameterMap& obj)
+        {
+            if (obj.bUsingSingleValue) {
+                out << "Parameter Type: Single Value" << std::endl;
+                out << "Parameter Value: " << obj.Value << std::endl;
+            } else {
+                out << "Parameter Type: Map" << std::endl;
+            }
+
+            return out;
+        }
     };
 
     typedef ParameterMap<Vector4f> Color;
@@ -189,7 +227,7 @@ namespace My {
     {
         protected:
             Color       m_LightColor;
-            float       m_Intensity;
+            float       m_fIntensity;
             AttenFunc   m_LightAttenuation;
             float       m_fNearClipDistance;
             float       m_fFarClipDistance;
@@ -198,12 +236,32 @@ namespace My {
         protected:
             // can only be used as base class of delivered lighting objects
             SceneObjectLight() : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight), m_LightColor(0) {};
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectLight& obj)
+        {
+            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
+            out << "Color: " << obj.m_LightColor << std::endl;
+            out << "Intensity: " << obj.m_fIntensity << std::endl;
+            out << "Near Clip Distance: " << obj.m_fNearClipDistance << std::endl;
+            out << "Far Clip Distance: " << obj.m_fFarClipDistance << std::endl;
+            out << "Cast Shadows: " << obj.m_bCastShadows << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectOmniLight : public SceneObjectLight
     {
         public:
             using SceneObjectLight::SceneObjectLight;
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectOmniLight& obj)
+        {
+            out << static_cast<const SceneObjectLight&>(obj) << std::endl;
+            out << "Light Type: Omni" << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectSpotLight : public SceneObjectLight
@@ -213,6 +271,14 @@ namespace My {
             float   m_fPenumbraAngle;
         public:
             using SceneObjectLight::SceneObjectLight;
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectSpotLight& obj)
+        {
+            out << static_cast<const SceneObjectLight&>(obj) << std::endl;
+            out << "Light Type: Spot" << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectCamera : public BaseSceneObject
