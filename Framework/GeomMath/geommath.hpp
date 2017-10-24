@@ -143,6 +143,7 @@ namespace My {
     };
 
     typedef Vector4Type<float> Vector4f;
+    typedef Vector4Type<float> Quaternion;
     typedef Vector4Type<uint8_t> R8G8B8A8Unorm;
     typedef Vector4Type<uint8_t> Vector4i;
 
@@ -226,6 +227,12 @@ namespace My {
 
         operator T*() { return &data[0][0]; };
         operator const T*() const { return static_cast<const T*>(&data[0][0]); };
+
+        Matrix& operator=(T* _data) 
+        {
+            memcpy(data, _data, ROWS * COLS * sizeof(T));
+            return *this;
+        }
     };
 
     typedef Matrix<float, 4, 4> Matrix4X4f;
@@ -474,5 +481,30 @@ namespace My {
         return;
     }
 
+    inline void MatrixRotationAxis(Matrix4X4f& matrix, const Vector3f& axis, const float angle)
+    {
+        float c = cosf(angle), s = sinf(angle), one_minus_c = 1.0f - c;
+
+        Matrix4X4f rotation = {{{
+            {   c + axis.x * axis.x * one_minus_c,  axis.x * axis.y * one_minus_c + axis.z * s, axis.x * axis.z * one_minus_c - axis.y * s, 0.0f    },
+            {   axis.x * axis.y * one_minus_c - axis.z * s, c + axis.y * axis.y * one_minus_c,  axis.y * axis.z * one_minus_c + axis.x * s, 0.0f    },
+            {   axis.x * axis.z * one_minus_c + axis.y * s, axis.y * axis.z * one_minus_c - axis.x * s, c + axis.z * axis.z * one_minus_c, 0.0f },
+            {   0.0f,  0.0f,  0.0f,  1.0f   }
+        }}};
+
+        matrix = rotation;
+    }
+
+    inline void MatrixRotationQuaternion(Matrix4X4f& matrix, Quaternion q)
+    {
+        Matrix4X4f rotation = {{{
+            {   1.0f - 2.0f * q.y * q.y - 2.0f * q.z * q.z,  2.0f * q.x * q.y + 2.0f * q.w * q.z,   2.0f * q.x * q.z - 2.0f * q.w * q.y,    0.0f    },
+            {   2.0f * q.x * q.y - 2.0f * q.w * q.z,    1.0f - 2.0f * q.x * q.x - 2.0f * q.z * q.z, 2.0f * q.y * q.z + 2.0f * q.w * q.x,    0.0f    },
+            {   2.0f * q.x * q.z + 2.0f * q.w * q.y,    2.0f * q.y * q.z - 2.0f * q.y * q.z - 2.0f * q.w * q.x, 1.0f - 2.0f * q.x * q.x - 2.0f * q.y * q.y, 0.0f    },
+            {   0.0f,   0.0f,   0.0f,   1.0f    }
+        }}};
+
+        matrix = rotation;
+    }
 }
 

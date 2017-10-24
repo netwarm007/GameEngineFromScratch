@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 #include "Guid.hpp"
 #include "Image.hpp"
 #include "portable.hpp"
@@ -91,11 +91,11 @@ namespace My {
         kVertexDataTypeDouble4   = "DUB3"_i32
     };
 
-    class SceneObjectVertexArray : public BaseSceneObject
+    class SceneObjectVertexArray 
     {
         protected:
-            std::string m_Attribute;
-            uint32_t    m_MorphTargetIndex;
+            std::string m_strAttribute;
+            uint32_t    m_nMorphTargetIndex;
             VertexDataType m_DataType;
 
             void*      m_pDataFloat;
@@ -103,7 +103,17 @@ namespace My {
             size_t      m_szData;
 
         public:
-            SceneObjectVertexArray(const char* attr, void* data, size_t data_size, VertexDataType data_type, uint32_t morph_index = 0) : BaseSceneObject(SceneObjectType::kSceneObjectTypeVertexArray), m_Attribute(attr), m_MorphTargetIndex(morph_index), m_DataType(data_type), m_pDataFloat(data), m_szData(data_size) {};
+            SceneObjectVertexArray(const char* attr, void* data, size_t data_size, VertexDataType data_type, uint32_t morph_index = 0) : m_strAttribute(attr), m_nMorphTargetIndex(morph_index), m_DataType(data_type), m_pDataFloat(data), m_szData(data_size) {};
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectVertexArray& obj)
+        {
+            out << "Attribute: " << obj.m_strAttribute << std::endl;
+            out << "Data Type: " << obj.m_DataType << std::endl;
+            out << "Data Size: " << obj.m_szData << std::endl;
+            out << "Morph Target Index: " << obj.m_nMorphTargetIndex << std::endl;
+
+            return out;
+        }
     };
 
     ENUM(IndexDataType) {
@@ -111,11 +121,11 @@ namespace My {
         kIndexDataTypeInt32 = "_I32"_i32,
     };
 
-    class SceneObjectIndexArray : public BaseSceneObject
+    class SceneObjectIndexArray
     {
         protected:
-            uint32_t    m_MaterialIndex;
-            size_t      m_RestartIndex;
+            uint32_t    m_nMaterialIndex;
+            size_t      m_szRestartIndex;
             IndexDataType m_DataType;
 
             void*       m_pData;
@@ -123,7 +133,17 @@ namespace My {
             size_t      m_szData;
 
         public:
-            SceneObjectIndexArray(uint32_t material_index, IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, uint32_t restart_index = 0) : BaseSceneObject(SceneObjectType::kSceneObjectTypeIndexArray), m_MaterialIndex(material_index), m_RestartIndex(restart_index), m_DataType(data_type) {};
+            SceneObjectIndexArray(uint32_t material_index, IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, uint32_t restart_index = 0) : m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type) {};
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectIndexArray& obj)
+        {
+            out << "Material Index: " << obj.m_nMaterialIndex << std::endl;
+            out << "Restart Index: " << obj.m_szRestartIndex << std::endl;
+            out << "Data Type: " << obj.m_DataType << std::endl;
+            out << "Data Size: " << obj.m_szData << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectMesh : public BaseSceneObject
@@ -144,6 +164,14 @@ namespace My {
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj)
         {
             out << static_cast<const BaseSceneObject&>(obj) << std::endl;
+            out << "This mesh contains " << obj.m_VertexArray.size() << " vertex properties." << std::endl;
+            for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
+                out << obj.m_VertexArray[i] << std::endl;
+            }
+            out << "This mesh contains " << obj.m_VertexArray.size() << " index arrays." << std::endl;
+            for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
+                out << obj.m_IndexArray[i] << std::endl;
+            }
             out << "Visible: " << obj.m_bVisible << std::endl;
             out << "Shadow: " << obj.m_bShadow << std::endl;
             out << "Motion Blur: " << obj.m_bMotionBlur << std::endl;
