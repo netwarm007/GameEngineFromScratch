@@ -1,4 +1,5 @@
 #pragma once
+#include <assert.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -91,6 +92,19 @@ namespace My {
         kVertexDataTypeDouble4   = "DUB3"_i32
     };
 
+    std::ostream& operator<<(std::ostream& out, VertexDataType type)
+    {
+        int32_t n = static_cast<int32_t>(type);
+        n = endian_net_unsigned_int<int32_t>(n);
+        char* c = reinterpret_cast<char*>(&n);
+         
+        for (size_t i = 0; i < sizeof(int32_t); i++) {
+            out << *c++;
+        }
+
+        return out;
+    }
+
     class SceneObjectVertexArray 
     {
         protected:
@@ -120,6 +134,19 @@ namespace My {
         kIndexDataTypeInt16 = "_I16"_i32,
         kIndexDataTypeInt32 = "_I32"_i32,
     };
+
+    std::ostream& operator<<(std::ostream& out, IndexDataType type)
+    {
+        int32_t n = static_cast<int32_t>(type);
+        n = endian_net_unsigned_int<int32_t>(n);
+        char* c = reinterpret_cast<char*>(&n);
+         
+        for (size_t i = 0; i < sizeof(int32_t); i++) {
+            out << *c++;
+        }
+
+        return out;
+    }
 
     class SceneObjectIndexArray
     {
@@ -395,6 +422,102 @@ namespace My {
 
             return out;
         }
+    };
+
+    class SceneObjectTransform
+    {
+        protected:
+            Matrix4X4f m_matrix;
+            bool m_bSceneObjectOnly;
+
+        public:
+            SceneObjectTransform() { BuildIdentityMatrix(m_matrix); m_bSceneObjectOnly = false; };
+
+            SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) { m_matrix = matrix; m_bSceneObjectOnly = object_only; };
+    };
+
+    class SceneObjectTranslation : public SceneObjectTransform
+    {
+        public:
+            SceneObjectTranslation(const char axis, const float amount)  
+            { 
+                switch (axis) {
+                    case 'x':
+                        MatrixTranslation(m_matrix, amount, 0.0f, 0.0f);
+                        break;
+                    case 'y':
+                        MatrixTranslation(m_matrix, 0.0f, amount, 0.0f);
+                        break;
+                    case 'z':
+                        MatrixTranslation(m_matrix, 0.0f, 0.0f, amount);
+                        break;
+                    default:
+                        assert(0);
+                }
+            }
+
+            SceneObjectTranslation(const float x, const float y, const float z) 
+            {
+                MatrixTranslation(m_matrix, x, y, z);
+            }
+    };
+
+    class SceneObjectRotation : public SceneObjectTransform
+    {
+        public:
+            SceneObjectRotation(const char axis, const float theta)
+            {
+                switch (axis) {
+                    case 'x':
+                        MatrixRotationX(m_matrix, theta);
+                        break;
+                    case 'y':
+                        MatrixRotationY(m_matrix, theta);
+                        break;
+                    case 'z':
+                        MatrixRotationZ(m_matrix, theta);
+                        break;
+                    default:
+                        assert(0);
+                }
+            }
+
+            SceneObjectRotation(Vector3f& axis, const float theta)
+            {
+                Normalize(axis);
+                MatrixRotationAxis(m_matrix, axis, theta);
+            }
+
+            SceneObjectRotation(const Quaternion quaternion)
+            {
+                MatrixRotationQuaternion(m_matrix, quaternion);
+            }
+    };
+
+    class SceneObjectScale : public SceneObjectTransform
+    {
+        public:
+            SceneObjectScale(const char axis, const float amount)  
+            { 
+                switch (axis) {
+                    case 'x':
+                        MatrixScale(m_matrix, amount, 0.0f, 0.0f);
+                        break;
+                    case 'y':
+                        MatrixScale(m_matrix, 0.0f, amount, 0.0f);
+                        break;
+                    case 'z':
+                        MatrixScale(m_matrix, 0.0f, 0.0f, amount);
+                        break;
+                    default:
+                        assert(0);
+                }
+            }
+
+            SceneObjectScale(const float x, const float y, const float z) 
+            {
+                MatrixScale(m_matrix, x, y, z);
+            }
     };
 }
 

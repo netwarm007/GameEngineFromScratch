@@ -448,6 +448,20 @@ namespace My {
         return;
     }
 
+    inline void MatrixScale(Matrix4X4f& matrix, const float x, const float y, const float z)
+    {
+        Matrix4X4f scale = {{{
+            {    x, 0.0f, 0.0f, 0.0f},
+            { 0.0f,    y, 0.0f, 0.0f},
+            { 0.0f, 0.0f,    z, 0.0f},
+            { 0.0f, 0.0f, 0.0f, 1.0f},
+        }}};
+
+        matrix = scale;
+
+        return;
+    }
+
     inline void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
         float c = cosf(angle), s = sinf(angle);
