@@ -8,4 +8,8 @@ target_link_libraries(SceneObjectTest Common)
 __add_xg_platform_dependencies(SceneObjectTest)
 add_test(NAME TEST_SceneObject COMMAND SceneObjectTest)
 
+add_executable(GeomMathTest GeomMathTest.cpp)
+target_link_libraries(GeomMathTest GeomMath)
+
+add_test(NAME Test_GeomMath COMMAND GeomMathTest)
 

@@ -35,6 +35,7 @@ include(CTest)
 add_subdirectory(Framework)
 add_subdirectory(Platform)
 add_subdirectory(RHI)
+add_subdirectory(Test)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 
