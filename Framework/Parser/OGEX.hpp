@@ -13,32 +13,39 @@ namespace My {
             switch(structure.GetStructureType()) {
                 case OGEX::kStructureNode:
                     {
-                        node = std::make_unique<SceneEmptyNode>(structure.GetStructureName());
-                        base_node->AppendChild(std::move(node));
+                        node = My::make_unique<SceneEmptyNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureGeometryNode:
                     {
-                        node = std::make_unique<SceneGeometryNode>(structure.GetStructureName());
-                        base_node->AppendChild(std::move(node));
+                        node = My::make_unique<SceneGeometryNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureLightNode:
                     {
-                        node = std::make_unique<SceneLightNode>(structure.GetStructureName());
-                        base_node->AppendChild(std::move(node));
+                        node = My::make_unique<SceneLightNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureCameraNode:
                     {
-                        node = std::make_unique<SceneCameraNode>(structure.GetStructureName());
-                        base_node->AppendChild(std::move(node));
+                        node = My::make_unique<SceneCameraNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureTransform:
                     {
-                        std::unique_ptr<SceneObjectTransform> transform (new SceneObjectTransform());
-                        base_node->AppendChild(std::move(transform));
+                        int32_t index, count;
+                        const OGEX::TransformStructure& _structure = dynamic_cast<const OGEX::TransformStructure&>(structure);
+                        bool object_flag = _structure.GetObjectFlag();
+                        Matrix4X4f matrix;
+                        std::unique_ptr<SceneObjectTransform> transform;
+
+                        count = _structure.GetTransformCount();
+                        for (index = 0; index < count; index++) {
+                            const float* data = _structure.GetTransform(index);
+                            matrix = data;
+                            transform = My::make_unique<SceneObjectTransform>(matrix, object_flag);
+                            base_node->AppendChild(std::move(transform));
+                        }
                     }
                     return;
                 default:
@@ -53,6 +60,8 @@ namespace My {
 
                 sub_structure = sub_structure->Next();
             }
+
+            base_node->AppendChild(std::move(node));
         }
 
     public:

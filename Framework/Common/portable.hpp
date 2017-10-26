@@ -10,7 +10,7 @@
 #endif
 
 #if __cplusplus < 201402L
-namespace std {
+namespace My {
     template<typename T, typename... Args>
     std::unique_ptr<T> make_unique(Args&&... args)
     {

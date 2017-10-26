@@ -1,6 +1,7 @@
 mkdir -p build
 pushd build
-cmake -G "Visual Studio 15 2017 Win64" ..
+rm -rf *
+cmake -G "Visual Studio 15 2017 Win64" -Thost=x64 ..
 cmake --build . --config debug
 popd
 

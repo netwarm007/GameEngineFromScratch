@@ -31,7 +31,7 @@ namespace My {
 
         friend std::ostream& operator<<(std::ostream& out, const BaseSceneNode& node)
         {
-            static __thread int32_t indent = 0;
+            static thread_local int32_t indent = 0;
 
             indent++;
 

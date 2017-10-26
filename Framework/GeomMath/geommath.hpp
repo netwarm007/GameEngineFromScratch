@@ -228,7 +228,7 @@ namespace My {
         operator T*() { return &data[0][0]; };
         operator const T*() const { return static_cast<const T*>(&data[0][0]); };
 
-        Matrix& operator=(T* _data) 
+        Matrix& operator=(const T* _data) 
         {
             memcpy(data, _data, ROWS * COLS * sizeof(T));
             return *this;

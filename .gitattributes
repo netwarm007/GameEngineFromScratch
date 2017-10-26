@@ -8,6 +8,7 @@
 *.hpp text
 *.ispc text
 *.txt text
+*.ogex text
 # Declare files that will always have CRLF line endings on checkout.
 *.sln text eol=crlf
 *.vcproj text eol=crlf
