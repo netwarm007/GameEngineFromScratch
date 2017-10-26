@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <list>
 #include <memory>
 #include <string>
@@ -10,7 +11,7 @@ namespace My {
         protected:
             std::string m_strName;
             std::list<std::unique_ptr<BaseSceneNode>> m_Children;
-            std::vector<std::unique_ptr<SceneObjectTransform>> m_Transforms;
+            std::list<std::unique_ptr<SceneObjectTransform>> m_Transforms;
 
         public:
             BaseSceneNode() {};
@@ -27,6 +28,31 @@ namespace My {
             {
                 m_Transforms.push_back(std::move(transform));
             }
+
+        friend std::ostream& operator<<(std::ostream& out, const BaseSceneNode& node)
+        {
+            static __thread int32_t indent = 0;
+
+            indent++;
+
+            out << std::string(indent, ' ') << "Scene Node" << std::endl;
+            out << std::string(indent, ' ') << "----------" << std::endl;
+            out << std::string(indent, ' ') << node.m_strName << std::endl;
+
+            for (const std::unique_ptr<BaseSceneNode>& sub_node : node.m_Children) {
+                out << *sub_node << std::endl;
+            }
+
+            for (const std::unique_ptr<SceneObjectTransform>& sub_node : node.m_Transforms) {
+                out << *sub_node << std::endl;
+            }
+
+            out << std::endl;
+
+            indent--;
+
+            return out;
+        }
     };
 
     template <typename T>
@@ -36,6 +62,9 @@ namespace My {
 
         public:
             using BaseSceneNode::BaseSceneNode;
+            SceneNode() { m_pSceneObject = std::make_shared<T>(); };
+            SceneNode(const std::shared_ptr<T>& object) { m_pSceneObject = object; };
+            SceneNode(const std::shared_ptr<T>&& object) { m_pSceneObject = std::move(object); };
     };
 
     typedef BaseSceneNode SceneEmptyNode;

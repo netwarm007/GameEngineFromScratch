@@ -434,6 +434,14 @@ namespace My {
             SceneObjectTransform() { BuildIdentityMatrix(m_matrix); m_bSceneObjectOnly = false; };
 
             SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) { m_matrix = matrix; m_bSceneObjectOnly = object_only; };
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj)
+        {
+            out << "Transform Matrix: " << obj.m_matrix << std::endl;
+            out << "Is Object Local: " << obj.m_bSceneObjectOnly << std::endl;
+
+            return out;
+        }
     };
 
     class SceneObjectTranslation : public SceneObjectTransform
