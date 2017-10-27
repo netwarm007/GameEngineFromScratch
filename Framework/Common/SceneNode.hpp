@@ -21,6 +21,7 @@ namespace My {
             BaseSceneNode(const char* name) { m_strName = name; };
             BaseSceneNode(const std::string& name) { m_strName = name; };
             BaseSceneNode(const std::string&& name) { m_strName = std::move(name); };
+			virtual ~BaseSceneNode() {};
 
             void AppendChild(std::unique_ptr<BaseSceneNode>&& sub_node)
             {
