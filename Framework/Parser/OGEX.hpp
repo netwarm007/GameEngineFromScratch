@@ -23,12 +23,16 @@ namespace My {
                 case OGEX::kStructureGeometryNode:
                     {
                         node = My::make_unique<SceneGeometryNode>(structure.GetStructureName());
-                        std::string key = dynamic_cast<const OGEX::GeometryNodeStructure&>(structure).GetObjectStructure()->GetStructureName();
-                        if(!m_SceneObjects[key]) {
-                            std::shared_ptr<BaseSceneObject> object (new SceneObjectGeometry());
-                            m_SceneObjects.insert({{key, object}});
+						SceneGeometryNode& _node = dynamic_cast<SceneGeometryNode&>(*node);
+						const OGEX::GeometryNodeStructure& _structure = dynamic_cast<const OGEX::GeometryNodeStructure&>(structure);
+                        std::string _key = _structure.GetObjectStructure()->GetStructureName();
+						_node.SetVisibility(_structure.GetVisibleFlag());
+						_node.SetIfCastShadow(_structure.GetShadowFlag());
+						_node.SetIfMotionBlur(_structure.GetMotionBlurFlag());
+                        if(!m_SceneObjects[_key]) {
+							m_SceneObjects[_key] = std::make_shared<SceneObjectGeometry>();
                         }
-                        dynamic_cast<SceneGeometryNode*>(node.get())->AddSceneObjectRef(std::dynamic_pointer_cast<SceneObjectGeometry>(m_SceneObjects[key]));
+                        _node.AddSceneObjectRef(std::dynamic_pointer_cast<SceneObjectGeometry>(m_SceneObjects[_key]));
                     }
                     break;
                 case OGEX::kStructureLightNode:
@@ -43,9 +47,51 @@ namespace My {
                     break;
                 case OGEX::kStructureGeometryObject:
                     {
-                        std::string key = structure.GetStructureName();
-                        std::shared_ptr<BaseSceneObject> object (new SceneObjectGeometry());
-                        m_SceneObjects.insert({{key, object}});
+						const OGEX::GeometryObjectStructure& _structure = dynamic_cast<const OGEX::GeometryObjectStructure&>(structure);
+                        std::string _key = _structure.GetStructureName();
+						std::shared_ptr<SceneObjectGeometry> _object;
+                        if(!m_SceneObjects[_key]) {
+							m_SceneObjects[_key] = std::make_shared<SceneObjectGeometry>();
+						}
+						else {
+							_object = std::dynamic_pointer_cast<SceneObjectGeometry>(m_SceneObjects[_key]);
+						}
+						_object->SetVisibility(_structure.GetVisibleFlag());
+						_object->SetIfCastShadow(_structure.GetShadowFlag());
+						_object->SetIfMotionBlur(_structure.GetMotionBlurFlag());
+						const ODDL::Map<OGEX::MeshStructure> *_meshs = _structure.GetMeshMap();
+						int32_t _count = _meshs->GetElementCount();
+						for (int32_t i = 0; i < _count; i++)
+						{
+							const OGEX::MeshStructure* _mesh = (*_meshs)[i];
+							SceneObjectMesh* mesh = new SceneObjectMesh();
+							const std::string _primitive_type = _mesh->GetMeshPrimitive();
+							if (_primitive_type == "points") {
+								mesh->SetPrimitiveType(kPrimitiveTypePointList);
+							}
+							else if (_primitive_type == "lines") {
+								mesh->SetPrimitiveType(kPrimitiveTypeLineList);
+							}
+							else if (_primitive_type == "line_strip") {
+								mesh->SetPrimitiveType(kPrimitiveTypeLineStrip);
+							}
+							else if (_primitive_type == "triangles") {
+								mesh->SetPrimitiveType(kPrimitiveTypeTriList);
+							}
+							else if (_primitive_type == "triangle_strip") {
+								mesh->SetPrimitiveType(kPrimitiveTypeTriStrip);
+							}
+							else if (_primitive_type == "quads") {
+								mesh->SetPrimitiveType(kPrimitiveTypeQuadList);
+							}
+							else {
+								// not supported
+								delete(mesh);
+								mesh = nullptr;
+							}
+							if (mesh)
+								_object->AddMesh(std::move(mesh));
+						}
                     }
                     return;
                 case OGEX::kStructureTransform:
@@ -65,6 +111,19 @@ namespace My {
                         }
                     }
                     return;
+				case OGEX::kStructureMesh:
+					{
+						const OGEX::MeshStructure& _structure = dynamic_cast<const OGEX::MeshStructure&>(structure);
+					}
+					return;
+				case OGEX::kStructureVertexArray:
+					{
+					}
+					return;
+				case OGEX::kStructureIndexArray:
+					{
+					}
+					return;
                 default:
                     // just ignore it and finish
                     return;

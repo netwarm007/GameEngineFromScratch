@@ -174,11 +174,32 @@ namespace My {
         }
     };
 
+	typedef ENUM(_PrimitiveType) {
+		kPrimitiveTypeNone = 0x00000000, ///< No particular primitive type.
+		kPrimitiveTypePointList = 0x00000001, ///< For N>=0, vertex N renders a point.
+		kPrimitiveTypeLineList = 0x00000002, ///< For N>=0, vertices [N*2+0, N*2+1] render a line.
+		kPrimitiveTypeLineStrip = 0x00000003, ///< For N>=0, vertices [N, N+1] render a line.
+		kPrimitiveTypeTriList = 0x00000004, ///< For N>=0, vertices [N*3+0, N*3+1, N*3+2] render a triangle.
+		kPrimitiveTypeTriFan = 0x00000005, ///< For N>=0, vertices [0, (N+1)%M, (N+2)%M] render a triangle, where M is the vertex count.
+		kPrimitiveTypeTriStrip = 0x00000006, ///< For N>=0, vertices [N*2+0, N*2+1, N*2+2] and [N*2+2, N*2+1, N*2+3] render triangles.
+		kPrimitiveTypePatch = 0x00000009, ///< Used for tessellation.
+		kPrimitiveTypeLineListAdjacency = 0x0000000a, ///< For N>=0, vertices [N*4..N*4+3] render a line from [1, 2]. Lines [0, 1] and [2, 3] are adjacent to the rendered line.
+		kPrimitiveTypeLineStripAdjacency = 0x0000000b, ///< For N>=0, vertices [N+1, N+2] render a line. Lines [N, N+1] and [N+2, N+3] are adjacent to the rendered line.
+		kPrimitiveTypeTriListAdjacency = 0x0000000c, ///< For N>=0, vertices [N*6..N*6+5] render a triangle from [0, 2, 4]. Triangles [0, 1, 2] [4, 2, 3] and [5, 0, 4] are adjacent to the rendered triangle.
+		kPrimitiveTypeTriStripAdjacency = 0x0000000d, ///< For N>=0, vertices [N*4..N*4+6] render a triangle from [0, 2, 4] and [4, 2, 6]. Odd vertices Nodd form adjacent triangles with indices min(Nodd+1,Nlast) and max(Nodd-3,Nfirst).
+		kPrimitiveTypeRectList = 0x00000011, ///< For N>=0, vertices [N*3+0, N*3+1, N*3+2] render a screen-aligned rectangle. 0 is upper-left, 1 is upper-right, and 2 is the lower-left corner.
+		kPrimitiveTypeLineLoop = 0x00000012, ///< Like <c>kPrimitiveTypeLineStrip</c>, but the first and last vertices also render a line.
+		kPrimitiveTypeQuadList = 0x00000013, ///< For N>=0, vertices [N*4+0, N*4+1, N*4+2] and [N*4+0, N*4+2, N*4+3] render triangles.
+		kPrimitiveTypeQuadStrip = 0x00000014, ///< For N>=0, vertices [N*2+0, N*2+1, N*2+3] and [N*2+0, N*2+3, N*2+2] render triangles.
+		kPrimitiveTypePolygon = 0x00000015, ///< For N>=0, vertices [0, N+1, N+2] render a triangle.
+	} PrimitiveType;
+
     class SceneObjectMesh : public BaseSceneObject
     {
         protected:
             std::vector<SceneObjectIndexArray>  m_IndexArray;
             std::vector<SceneObjectVertexArray> m_VertexArray;
+			PrimitiveType	m_PrimitiveType;
 
             bool        m_bVisible;
             bool        m_bShadow;
@@ -188,6 +209,7 @@ namespace My {
             SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh), m_bVisible(visible), m_bShadow(shadow), m_bMotionBlur(motion_blur) {};
             void AddIndexArray(SceneObjectIndexArray&& array) { m_IndexArray.push_back(std::move(array)); };
             void AddVertxArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
+			void SetPrimitiveType(PrimitiveType type) { m_PrimitiveType = type;  };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj)
         {
@@ -298,10 +320,21 @@ namespace My {
     {
         protected:
             std::vector<SceneObjectMesh> m_Mesh;
+			bool        m_bVisible;
+			bool        m_bShadow;
+			bool        m_bMotionBlur;
 
         public:
-            void AddMesh(SceneObjectMesh&& mesh) { m_Mesh.push_back(std::move(mesh)); };
             SceneObjectGeometry() : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry) {};
+
+			void SetVisibility(bool visible) { m_bVisible = visible; };
+			const bool Visible() { return m_bVisible; };
+			void SetIfCastShadow(bool shadow) { m_bShadow = shadow; };
+			const bool CastShadow() { return m_bShadow; };
+			void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
+			const bool MotionBlur() { return m_bMotionBlur; };
+
+            void AddMesh(SceneObjectMesh&& mesh) { m_Mesh.push_back(std::move(mesh)); };
     };
 
     typedef float (*AttenFunc)(float /* Intensity */, float /* Distance */);
