@@ -13,6 +13,9 @@ namespace My {
             std::list<std::unique_ptr<BaseSceneNode>> m_Children;
             std::list<std::unique_ptr<SceneObjectTransform>> m_Transforms;
 
+        protected:
+            virtual void dump(std::ostream& out) const {};
+
         public:
             BaseSceneNode() {};
             BaseSceneNode(const char* name) { m_strName = name; };
@@ -32,12 +35,13 @@ namespace My {
         friend std::ostream& operator<<(std::ostream& out, const BaseSceneNode& node)
         {
             static thread_local int32_t indent = 0;
-
             indent++;
 
             out << std::string(indent, ' ') << "Scene Node" << std::endl;
             out << std::string(indent, ' ') << "----------" << std::endl;
-            out << std::string(indent, ' ') << node.m_strName << std::endl;
+            out << std::string(indent, ' ') << "Name: " << node.m_strName << std::endl;
+            node.dump(out);
+            out << std::endl;
 
             for (const std::unique_ptr<BaseSceneNode>& sub_node : node.m_Children) {
                 out << *sub_node << std::endl;
@@ -46,8 +50,6 @@ namespace My {
             for (const std::unique_ptr<SceneObjectTransform>& sub_node : node.m_Transforms) {
                 out << *sub_node << std::endl;
             }
-
-            out << std::endl;
 
             indent--;
 
@@ -65,6 +67,9 @@ namespace My {
             SceneNode() { m_pSceneObject = std::make_shared<T>(); };
             SceneNode(const std::shared_ptr<T>& object) { m_pSceneObject = object; };
             SceneNode(const std::shared_ptr<T>&& object) { m_pSceneObject = std::move(object); };
+
+            void AddSceneObjectRef(const std::shared_ptr<T>& object) { m_pSceneObject = object; };
+
     };
 
     typedef BaseSceneNode SceneEmptyNode;
@@ -74,6 +79,16 @@ namespace My {
             bool        m_bVisible;
             bool        m_bShadow;
             bool        m_bMotionBlur;
+
+        protected:
+            virtual void dump(std::ostream& out) const 
+            { 
+                if (m_pSceneObject)
+                    out << *m_pSceneObject << std::endl;
+                out << "Visible: " << m_bVisible << std::endl;
+                out << "Shadow: " << m_bShadow << std::endl;
+                out << "Motion Blur: " << m_bMotionBlur << std::endl;
+            };
 
         public:
             using SceneNode::SceneNode;

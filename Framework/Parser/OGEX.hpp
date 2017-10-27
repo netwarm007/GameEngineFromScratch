@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include "OpenGEX.h"
 #include "portable.hpp"
 #include "SceneParser.hpp"
@@ -5,6 +6,9 @@
 namespace My {
     class OgexParser : implements SceneParser
     {
+    private:
+        std::unordered_map<std::string, std::shared_ptr<BaseSceneObject>> m_SceneObjects;
+
     private:
         void ConvertOddlStructureToSceneNode(const ODDL::Structure& structure, std::unique_ptr<BaseSceneNode>& base_node)
         {
@@ -19,6 +23,12 @@ namespace My {
                 case OGEX::kStructureGeometryNode:
                     {
                         node = My::make_unique<SceneGeometryNode>(structure.GetStructureName());
+                        std::string key = dynamic_cast<const OGEX::GeometryNodeStructure&>(structure).GetObjectStructure()->GetStructureName();
+                        if(!m_SceneObjects[key]) {
+                            std::shared_ptr<BaseSceneObject> object (new SceneObjectGeometry());
+                            m_SceneObjects.insert({{key, object}});
+                        }
+                        dynamic_cast<SceneGeometryNode*>(node.get())->AddSceneObjectRef(std::dynamic_pointer_cast<SceneObjectGeometry>(m_SceneObjects[key]));
                     }
                     break;
                 case OGEX::kStructureLightNode:
@@ -31,6 +41,13 @@ namespace My {
                         node = My::make_unique<SceneCameraNode>(structure.GetStructureName());
                     }
                     break;
+                case OGEX::kStructureGeometryObject:
+                    {
+                        std::string key = structure.GetStructureName();
+                        std::shared_ptr<BaseSceneObject> object (new SceneObjectGeometry());
+                        m_SceneObjects.insert({{key, object}});
+                    }
+                    return;
                 case OGEX::kStructureTransform:
                     {
                         int32_t index, count;
