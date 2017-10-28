@@ -53,9 +53,7 @@ namespace My {
                         if(!m_SceneObjects[_key]) {
 							m_SceneObjects[_key] = std::make_shared<SceneObjectGeometry>();
 						}
-						else {
-							_object = std::dynamic_pointer_cast<SceneObjectGeometry>(m_SceneObjects[_key]);
-						}
+						_object = std::dynamic_pointer_cast<SceneObjectGeometry>(m_SceneObjects[_key]);
 						_object->SetVisibility(_structure.GetVisibleFlag());
 						_object->SetIfCastShadow(_structure.GetShadowFlag());
 						_object->SetIfMotionBlur(_structure.GetMotionBlurFlag());
@@ -65,24 +63,24 @@ namespace My {
 						{
 							const OGEX::MeshStructure* _mesh = (*_meshs)[i];
 							SceneObjectMesh* mesh = new SceneObjectMesh();
-							const std::string _primitive_type = _mesh->GetMeshPrimitive();
+							const std::string _primitive_type = static_cast<const char*>(_mesh->GetMeshPrimitive());
 							if (_primitive_type == "points") {
-								mesh->SetPrimitiveType(kPrimitiveTypePointList);
+								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypePointList);
 							}
 							else if (_primitive_type == "lines") {
-								mesh->SetPrimitiveType(kPrimitiveTypeLineList);
+								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypeLineList);
 							}
 							else if (_primitive_type == "line_strip") {
-								mesh->SetPrimitiveType(kPrimitiveTypeLineStrip);
+								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypeLineStrip);
 							}
 							else if (_primitive_type == "triangles") {
-								mesh->SetPrimitiveType(kPrimitiveTypeTriList);
+								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypeTriList);
 							}
 							else if (_primitive_type == "triangle_strip") {
-								mesh->SetPrimitiveType(kPrimitiveTypeTriStrip);
+								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypeTriStrip);
 							}
 							else if (_primitive_type == "quads") {
-								mesh->SetPrimitiveType(kPrimitiveTypeQuadList);
+								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypeQuadList);
 							}
 							else {
 								// not supported
@@ -90,7 +88,138 @@ namespace My {
 								mesh = nullptr;
 							}
 							if (mesh)
-								_object->AddMesh(std::move(mesh));
+                            {
+                                const ODDL::Structure* sub_structure = _mesh->GetFirstSubnode();
+                                while (sub_structure)
+                                {
+                                    switch(sub_structure->GetStructureType()) 
+                                    {
+
+                                        case OGEX::kStructureVertexArray:
+                                            {
+                                                const OGEX::VertexArrayStructure* _v = dynamic_cast<const OGEX::VertexArrayStructure*>(sub_structure);
+                                                const char* attr = _v->GetArrayAttrib();
+                                                auto morph_index = _v->GetMorphIndex(); 
+
+                                                const ODDL::Structure* _data_structure = _v->GetFirstCoreSubnode();
+                                                const ODDL::DataStructure<FloatDataType>* dataStructure = dynamic_cast<const ODDL::DataStructure<FloatDataType>*>(_data_structure);
+
+                                                auto arraySize = dataStructure->GetArraySize();
+                                                auto elementCount = dataStructure->GetDataElementCount();
+                                                const void* _data = &dataStructure->GetDataElement(0);
+                                                void* data = new float[elementCount];
+                                                size_t buf_size = sizeof(float) * elementCount;
+                                                memcpy(data, _data, buf_size);
+                                                VertexDataType vertexDataType;
+                                                switch(arraySize) {
+                                                    case 1:
+                                                        vertexDataType = VertexDataType::kVertexDataTypeFloat1;
+                                                        break;
+                                                    case 2:
+                                                        vertexDataType = VertexDataType::kVertexDataTypeFloat2;
+                                                        break;
+                                                    case 3:
+                                                        vertexDataType = VertexDataType::kVertexDataTypeFloat3;
+                                                        break;
+                                                    case 4:
+                                                        vertexDataType = VertexDataType::kVertexDataTypeFloat4;
+                                                        break;
+                                                    default:
+                                                        continue;
+                                                }
+                                                SceneObjectVertexArray& _v_array = *new SceneObjectVertexArray(attr, morph_index, vertexDataType, data, elementCount);
+                                                mesh->AddVertexArray(std::move(_v_array));
+                                            }
+                                            break;
+                                        case OGEX::kStructureIndexArray:
+                                            {
+                                                const OGEX::IndexArrayStructure* _i = dynamic_cast<const OGEX::IndexArrayStructure*>(sub_structure);
+                                                auto material_index = _i->GetMaterialIndex();
+                                                auto restart_index = _i->GetRestartIndex();
+                                                const ODDL::Structure* _data_structure = _i->GetFirstCoreSubnode();
+                                                ODDL::StructureType type = _data_structure->GetStructureType();
+                                                int32_t elementCount = 0;
+                                                const void* _data = nullptr;
+                                                IndexDataType index_type = IndexDataType::kIndexDataTypeInt16;
+                                                switch(type)
+                                                {
+                                                    case ODDL::kDataUnsignedInt8:
+                                                        {
+                                                            index_type = IndexDataType::kIndexDataTypeInt8;
+                                                            const ODDL::DataStructure<UnsignedInt8DataType>* dataStructure = dynamic_cast<const ODDL::DataStructure<UnsignedInt8DataType>*>(_data_structure);
+                                                            elementCount = dataStructure->GetDataElementCount();
+                                                            _data = &dataStructure->GetDataElement(0);
+
+                                                        }
+                                                        break;
+                                                    case ODDL::kDataUnsignedInt16:
+                                                        {
+                                                            index_type = IndexDataType::kIndexDataTypeInt16;
+                                                            const ODDL::DataStructure<UnsignedInt16DataType>* dataStructure = dynamic_cast<const ODDL::DataStructure<UnsignedInt16DataType>*>(_data_structure);
+                                                            elementCount = dataStructure->GetDataElementCount();
+                                                            _data = &dataStructure->GetDataElement(0);
+
+                                                        }
+                                                        break;
+                                                    case ODDL::kDataUnsignedInt32:
+                                                        {
+                                                            index_type = IndexDataType::kIndexDataTypeInt32;
+                                                            const ODDL::DataStructure<UnsignedInt32DataType>* dataStructure = dynamic_cast<const ODDL::DataStructure<UnsignedInt32DataType>*>(_data_structure);
+                                                            elementCount = dataStructure->GetDataElementCount();
+                                                            _data = &dataStructure->GetDataElement(0);
+
+                                                        }
+                                                        break;
+                                                    case ODDL::kDataUnsignedInt64:
+                                                        {
+                                                            index_type = IndexDataType::kIndexDataTypeInt64;
+                                                            const ODDL::DataStructure<UnsignedInt64DataType>* dataStructure = dynamic_cast<const ODDL::DataStructure<UnsignedInt64DataType>*>(_data_structure);
+                                                            elementCount = dataStructure->GetDataElementCount();
+                                                            _data = &dataStructure->GetDataElement(0);
+
+                                                        }
+                                                        break;
+                                                    default:
+                                                        ;
+                                                }
+
+                                                int32_t data_size = 0;
+                                                switch(index_type)
+                                                {
+                                                    case IndexDataType::kIndexDataTypeInt8:
+                                                        data_size = 1;
+                                                        break;
+                                                    case IndexDataType::kIndexDataTypeInt16:
+                                                        data_size = 2;
+                                                        break;
+                                                    case IndexDataType::kIndexDataTypeInt32:
+                                                        data_size = 3;
+                                                        break;
+                                                    case IndexDataType::kIndexDataTypeInt64:
+                                                        data_size = 4;
+                                                        break;
+                                                    default:
+                                                        ;
+                                                }
+
+                                                size_t buf_size = elementCount * data_size;
+                                                void* data = new uint8_t[buf_size];
+                                                memcpy(data, _data, buf_size);
+                                                SceneObjectIndexArray& _i_array = *new SceneObjectIndexArray(material_index, restart_index, index_type, data, elementCount);
+                                                mesh->AddIndexArray(std::move(_i_array));
+
+                                            }
+                                            break;
+                                        default:
+                                            // ignore it
+                                            ;
+                                    }
+
+                                    sub_structure = sub_structure->Next();
+                                }
+
+								_object->AddMesh(std::move(*mesh));
+                            }
 						}
                     }
                     return;
@@ -111,19 +240,6 @@ namespace My {
                         }
                     }
                     return;
-				case OGEX::kStructureMesh:
-					{
-						const OGEX::MeshStructure& _structure = dynamic_cast<const OGEX::MeshStructure&>(structure);
-					}
-					return;
-				case OGEX::kStructureVertexArray:
-					{
-					}
-					return;
-				case OGEX::kStructureIndexArray:
-					{
-					}
-					return;
                 default:
                     // just ignore it and finish
                     return;

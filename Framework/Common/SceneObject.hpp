@@ -109,31 +109,40 @@ namespace My {
     class SceneObjectVertexArray 
     {
         protected:
-            std::string m_strAttribute;
-            uint32_t    m_nMorphTargetIndex;
-            VertexDataType m_DataType;
+            const std::string m_strAttribute;
+            const uint32_t    m_nMorphTargetIndex;
+            const VertexDataType m_DataType;
 
-            void*      m_pDataFloat;
+            const void*      m_pData;
 
-            size_t      m_szData;
+            const size_t     m_szData;
 
         public:
-            SceneObjectVertexArray(const char* attr, void* data, size_t data_size, VertexDataType data_type, uint32_t morph_index = 0) : m_strAttribute(attr), m_nMorphTargetIndex(morph_index), m_DataType(data_type), m_pDataFloat(data), m_szData(data_size) {};
+            SceneObjectVertexArray(const char* attr = "", const uint32_t morph_index = 0, const VertexDataType data_type = VertexDataType::kVertexDataTypeFloat3, const void* data = nullptr, const size_t data_size = 0) : m_strAttribute(attr), m_nMorphTargetIndex(morph_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
+            SceneObjectVertexArray(SceneObjectVertexArray& arr) = default; 
+            SceneObjectVertexArray(SceneObjectVertexArray&& arr) = default; 
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectVertexArray& obj)
         {
             out << "Attribute: " << obj.m_strAttribute << std::endl;
+            out << "Morph Target Index: 0x" << obj.m_nMorphTargetIndex << std::endl;
             out << "Data Type: " << obj.m_DataType << std::endl;
-            out << "Data Size: " << obj.m_szData << std::endl;
-            out << "Morph Target Index: " << obj.m_nMorphTargetIndex << std::endl;
+            out << "Data Size: 0x" << obj.m_szData << std::endl;
+            out << "Data: ";
+            for(size_t i = 0; i < obj.m_szData; i++)
+            {
+                out << *(reinterpret_cast<const float*>(obj.m_pData) + i) << ' ';;
+            }
 
             return out;
         }
     };
 
     ENUM(IndexDataType) {
-        kIndexDataTypeInt16 = "_I16"_i32,
-        kIndexDataTypeInt32 = "_I32"_i32,
+        kIndexDataTypeInt8  = "I8  "_i32,
+        kIndexDataTypeInt16 = "I16 "_i32,
+        kIndexDataTypeInt32 = "I32 "_i32,
+        kIndexDataTypeInt64 = "I64 "_i32,
     };
 
     std::ostream& operator<<(std::ostream& out, IndexDataType type)
@@ -152,48 +161,86 @@ namespace My {
     class SceneObjectIndexArray
     {
         protected:
-            uint32_t    m_nMaterialIndex;
-            size_t      m_szRestartIndex;
-            IndexDataType m_DataType;
+            const uint32_t    m_nMaterialIndex;
+            const size_t      m_szRestartIndex;
+            const IndexDataType m_DataType;
 
-            void*       m_pData;
+            const void*       m_pData;
 
-            size_t      m_szData;
+            const size_t      m_szData;
 
         public:
-            SceneObjectIndexArray(uint32_t material_index, IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, uint32_t restart_index = 0) : m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type) {};
+            SceneObjectIndexArray(const uint32_t material_index = 0, const uint32_t restart_index = 0, const IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, const void* data = nullptr, const size_t data_size = 0) 
+                : m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
+            SceneObjectIndexArray(SceneObjectIndexArray& arr) = default;
+            SceneObjectIndexArray(SceneObjectIndexArray&& arr) = default;
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectIndexArray& obj)
         {
-            out << "Material Index: " << obj.m_nMaterialIndex << std::endl;
-            out << "Restart Index: " << obj.m_szRestartIndex << std::endl;
+            out << "Material Index: 0x" << obj.m_nMaterialIndex << std::endl;
+            out << "Restart Index: 0x" << obj.m_szRestartIndex << std::endl;
             out << "Data Type: " << obj.m_DataType << std::endl;
-            out << "Data Size: " << obj.m_szData << std::endl;
+            out << "Data Size: 0x" << obj.m_szData << std::endl;
+            out << "Data: ";
+            for(size_t i = 0; i < obj.m_szData; i++)
+            {
+                switch(obj.m_DataType)
+                {
+                    case IndexDataType::kIndexDataTypeInt8:
+                        out << "0x" << *(reinterpret_cast<const uint8_t*>(obj.m_pData) + i) << ' ';;
+                        break;
+                    case IndexDataType::kIndexDataTypeInt16:
+                        out << "0x" << *(reinterpret_cast<const uint16_t*>(obj.m_pData) + i) << ' ';;
+                        break;
+                    case IndexDataType::kIndexDataTypeInt32:
+                        out << "0x" << *(reinterpret_cast<const uint32_t*>(obj.m_pData) + i) << ' ';;
+                        break;
+                    case IndexDataType::kIndexDataTypeInt64:
+                        out << "0x" << *(reinterpret_cast<const uint64_t*>(obj.m_pData) + i) << ' ';;
+                        break;
+                    default:
+                        ;
+                }
+            }
+
 
             return out;
         }
     };
 
-	typedef ENUM(_PrimitiveType) {
-		kPrimitiveTypeNone = 0x00000000, ///< No particular primitive type.
-		kPrimitiveTypePointList = 0x00000001, ///< For N>=0, vertex N renders a point.
-		kPrimitiveTypeLineList = 0x00000002, ///< For N>=0, vertices [N*2+0, N*2+1] render a line.
-		kPrimitiveTypeLineStrip = 0x00000003, ///< For N>=0, vertices [N, N+1] render a line.
-		kPrimitiveTypeTriList = 0x00000004, ///< For N>=0, vertices [N*3+0, N*3+1, N*3+2] render a triangle.
-		kPrimitiveTypeTriFan = 0x00000005, ///< For N>=0, vertices [0, (N+1)%M, (N+2)%M] render a triangle, where M is the vertex count.
-		kPrimitiveTypeTriStrip = 0x00000006, ///< For N>=0, vertices [N*2+0, N*2+1, N*2+2] and [N*2+2, N*2+1, N*2+3] render triangles.
-		kPrimitiveTypePatch = 0x00000009, ///< Used for tessellation.
-		kPrimitiveTypeLineListAdjacency = 0x0000000a, ///< For N>=0, vertices [N*4..N*4+3] render a line from [1, 2]. Lines [0, 1] and [2, 3] are adjacent to the rendered line.
-		kPrimitiveTypeLineStripAdjacency = 0x0000000b, ///< For N>=0, vertices [N+1, N+2] render a line. Lines [N, N+1] and [N+2, N+3] are adjacent to the rendered line.
-		kPrimitiveTypeTriListAdjacency = 0x0000000c, ///< For N>=0, vertices [N*6..N*6+5] render a triangle from [0, 2, 4]. Triangles [0, 1, 2] [4, 2, 3] and [5, 0, 4] are adjacent to the rendered triangle.
-		kPrimitiveTypeTriStripAdjacency = 0x0000000d, ///< For N>=0, vertices [N*4..N*4+6] render a triangle from [0, 2, 4] and [4, 2, 6]. Odd vertices Nodd form adjacent triangles with indices min(Nodd+1,Nlast) and max(Nodd-3,Nfirst).
-		kPrimitiveTypeRectList = 0x00000011, ///< For N>=0, vertices [N*3+0, N*3+1, N*3+2] render a screen-aligned rectangle. 0 is upper-left, 1 is upper-right, and 2 is the lower-left corner.
-		kPrimitiveTypeLineLoop = 0x00000012, ///< Like <c>kPrimitiveTypeLineStrip</c>, but the first and last vertices also render a line.
-		kPrimitiveTypeQuadList = 0x00000013, ///< For N>=0, vertices [N*4+0, N*4+1, N*4+2] and [N*4+0, N*4+2, N*4+3] render triangles.
-		kPrimitiveTypeQuadStrip = 0x00000014, ///< For N>=0, vertices [N*2+0, N*2+1, N*2+3] and [N*2+0, N*2+3, N*2+2] render triangles.
-		kPrimitiveTypePolygon = 0x00000015, ///< For N>=0, vertices [0, N+1, N+2] render a triangle.
+	typedef enum _PrimitiveType : int32_t {
+		kPrimitiveTypeNone = "NONE"_i32,        ///< No particular primitive type.
+		kPrimitiveTypePointList = "PLST"_i32,   ///< For N>=0, vertex N renders a point.
+		kPrimitiveTypeLineList = "LLST"_i32,    ///< For N>=0, vertices [N*2+0, N*2+1] render a line.
+		kPrimitiveTypeLineStrip = "LSTR"_i32,   ///< For N>=0, vertices [N, N+1] render a line.
+		kPrimitiveTypeTriList = "TLST"_i32,     ///< For N>=0, vertices [N*3+0, N*3+1, N*3+2] render a triangle.
+		kPrimitiveTypeTriFan = "TFAN"_i32,      ///< For N>=0, vertices [0, (N+1)%M, (N+2)%M] render a triangle, where M is the vertex count.
+		kPrimitiveTypeTriStrip = "TSTR"_i32,    ///< For N>=0, vertices [N*2+0, N*2+1, N*2+2] and [N*2+2, N*2+1, N*2+3] render triangles.
+		kPrimitiveTypePatch = "PACH"_i32,       ///< Used for tessellation.
+		kPrimitiveTypeLineListAdjacency = "LLSA"_i32,       ///< For N>=0, vertices [N*4..N*4+3] render a line from [1, 2]. Lines [0, 1] and [2, 3] are adjacent to the rendered line.
+		kPrimitiveTypeLineStripAdjacency = "LSTA"_i32,      ///< For N>=0, vertices [N+1, N+2] render a line. Lines [N, N+1] and [N+2, N+3] are adjacent to the rendered line.
+		kPrimitiveTypeTriListAdjacency = "TLSA"_i32,        ///< For N>=0, vertices [N*6..N*6+5] render a triangle from [0, 2, 4]. Triangles [0, 1, 2] [4, 2, 3] and [5, 0, 4] are adjacent to the rendered triangle.
+		kPrimitiveTypeTriStripAdjacency = "TSTA"_i32,       ///< For N>=0, vertices [N*4..N*4+6] render a triangle from [0, 2, 4] and [4, 2, 6]. Odd vertices Nodd form adjacent triangles with indices min(Nodd+1,Nlast) and max(Nodd-3,Nfirst).
+		kPrimitiveTypeRectList = "RLST"_i32,    ///< For N>=0, vertices [N*3+0, N*3+1, N*3+2] render a screen-aligned rectangle. 0 is upper-left, 1 is upper-right, and 2 is the lower-left corner.
+		kPrimitiveTypeLineLoop = "LLOP"_i32,    ///< Like <c>kPrimitiveTypeLineStrip</c>, but the first and last vertices also render a line.
+		kPrimitiveTypeQuadList = "QLST"_i32,    ///< For N>=0, vertices [N*4+0, N*4+1, N*4+2] and [N*4+0, N*4+2, N*4+3] render triangles.
+		kPrimitiveTypeQuadStrip = "QSTR"_i32,   ///< For N>=0, vertices [N*2+0, N*2+1, N*2+3] and [N*2+0, N*2+3, N*2+2] render triangles.
+		kPrimitiveTypePolygon = "POLY"_i32,     ///< For N>=0, vertices [0, N+1, N+2] render a triangle.
 	} PrimitiveType;
 
+    std::ostream& operator<<(std::ostream& out, PrimitiveType type)
+    {
+        int32_t n = static_cast<int32_t>(type);
+        n = endian_net_unsigned_int<int32_t>(n);
+        char* c = reinterpret_cast<char*>(&n);
+         
+        for (size_t i = 0; i < sizeof(int32_t); i++) {
+            out << *c++;
+        }
+
+        return out;
+    }
+  
     class SceneObjectMesh : public BaseSceneObject
     {
         protected:
@@ -207,19 +254,30 @@ namespace My {
             
         public:
             SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh), m_bVisible(visible), m_bShadow(shadow), m_bMotionBlur(motion_blur) {};
+            SceneObjectMesh(SceneObjectMesh&& mesh)
+                : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh), 
+                m_IndexArray(std::move(mesh.m_IndexArray)),
+                m_VertexArray(std::move(mesh.m_VertexArray)),
+                m_PrimitiveType(mesh.m_PrimitiveType),
+                m_bVisible(mesh.m_bVisible),
+                m_bShadow(mesh.m_bShadow),
+                m_bMotionBlur(mesh.m_bMotionBlur)
+            {
+            };
             void AddIndexArray(SceneObjectIndexArray&& array) { m_IndexArray.push_back(std::move(array)); };
-            void AddVertxArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
+            void AddVertexArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
 			void SetPrimitiveType(PrimitiveType type) { m_PrimitiveType = type;  };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj)
         {
             out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-            out << "This mesh contains " << obj.m_VertexArray.size() << " vertex properties." << std::endl;
+            out << "Primitive Type: " << obj.m_PrimitiveType << std::endl;
+            out << "This mesh contains 0x" << obj.m_VertexArray.size() << " vertex properties." << std::endl;
             for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
                 out << obj.m_VertexArray[i] << std::endl;
             }
-            out << "This mesh contains " << obj.m_VertexArray.size() << " index arrays." << std::endl;
-            for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
+            out << "This mesh contains 0x" << obj.m_IndexArray.size() << " index arrays." << std::endl;
+            for (size_t i = 0; i < obj.m_IndexArray.size(); i++) {
                 out << obj.m_IndexArray[i] << std::endl;
             }
             out << "Visible: " << obj.m_bVisible << std::endl;
@@ -233,53 +291,21 @@ namespace My {
     template <typename T>
     struct ParameterMap
     {
-        bool bUsingSingleValue;
+        T Value;
+        std::shared_ptr<Image> Map;
 
-        union {
-            T Value;
-            std::shared_ptr<Image> Map;
-        };
+        ParameterMap(T value) : Value(value) {};
 
-        ParameterMap(T value) : bUsingSingleValue(true), Value(value) {};
+        ParameterMap(const ParameterMap& rhs) = default;
 
-        ParameterMap(const ParameterMap& rhs)
-        {
-            bUsingSingleValue = rhs.bUsingSingleValue;
+        ParameterMap(ParameterMap&& rhs) = default;
 
-            if (bUsingSingleValue) {
-                Value = rhs.Value;
-            } else {
-                Map = rhs.Map;
-            }
-        }
-
-        ParameterMap(ParameterMap&& rhs)
-        {
-            bUsingSingleValue = rhs.bUsingSingleValue;
-
-            if (bUsingSingleValue) {
-                Value = rhs.Value;
-            } else {
-                Map = std::move(rhs.Map);
-                rhs.Map.reset();
-            }
-        }
-
-        ~ParameterMap()
-        {
-            if (!bUsingSingleValue) {
-                Map.reset();
-            }
-        }
+        ~ParameterMap() = default;
 
         friend std::ostream& operator<<(std::ostream& out, const ParameterMap& obj)
         {
-            if (obj.bUsingSingleValue) {
-                out << "Parameter Type: Single Value" << std::endl;
-                out << "Parameter Value: " << obj.Value << std::endl;
-            } else {
-                out << "Parameter Type: Map" << std::endl;
-            }
+            out << "Parameter Value: " << obj.Value << std::endl;
+            out << "Parameter Map: " << bool(obj.Map) << std::endl;
 
             return out;
         }
@@ -335,6 +361,16 @@ namespace My {
 			const bool MotionBlur() { return m_bMotionBlur; };
 
             void AddMesh(SceneObjectMesh&& mesh) { m_Mesh.push_back(std::move(mesh)); };
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj)
+        {
+            auto count = obj.m_Mesh.size();
+            for(decltype(count) i = 0; i < count; i++) {
+                out << "Mesh: " << obj.m_Mesh[i] << std::endl;
+            }
+
+            return out;
+        }
     };
 
     typedef float (*AttenFunc)(float /* Intensity */, float /* Distance */);

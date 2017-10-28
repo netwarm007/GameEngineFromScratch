@@ -91,6 +91,6 @@ Material $material1
 	Color (attrib = "diffuse") {float[3] {{0.588235, 0.588235, 0.588235}}}
 	Texture (attrib = "diffuse")
 	{
-		string {"Teextures/Concrete.tga"}
+		string {"Textures/Concrete.tga"}
 	}
 }
