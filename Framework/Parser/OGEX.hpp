@@ -193,10 +193,10 @@ namespace My {
                                                         data_size = 2;
                                                         break;
                                                     case IndexDataType::kIndexDataTypeInt32:
-                                                        data_size = 3;
+                                                        data_size = 4;
                                                         break;
                                                     case IndexDataType::kIndexDataTypeInt64:
-                                                        data_size = 4;
+                                                        data_size = 8;
                                                         break;
                                                     default:
                                                         ;
