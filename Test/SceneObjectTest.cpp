@@ -32,13 +32,13 @@ int32_t main(int32_t argc, char** argv)
     std::unique_ptr<SceneLightNode>     snLight(new SceneLightNode());
     std::unique_ptr<SceneCameraNode>     snCamera(new SceneCameraNode());
 
-    snEmpty.AppendChild(std::move(snGeometry));
-    snEmpty.AppendChild(std::move(snLight));
-    snEmpty.AppendChild(std::move(snCamera));
-
     snGeometry->AddSceneObjectRef(soGeometry);
     snLight->AddSceneObjectRef(soSpotLight);
     snCamera->AddSceneObjectRef(soOrthogonalCamera);
+
+    snEmpty.AppendChild(std::move(snGeometry));
+    snEmpty.AppendChild(std::move(snLight));
+    snEmpty.AppendChild(std::move(snCamera));
 
     cout << snEmpty << endl;
 
