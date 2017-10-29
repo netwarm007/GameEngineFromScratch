@@ -1,5 +1,6 @@
 #include <iostream>
 #include "SceneObject.hpp"
+#include "SceneNode.hpp"
 
 using namespace My;
 using namespace std;
@@ -8,19 +9,38 @@ using namespace xg;
 int32_t main(int32_t argc, char** argv)
 {
     int32_t result = 0;
-    SceneObjectMesh         soMesh;
-    SceneObjectMaterial     soMaterial;
-    SceneObjectOmniLight    soOmniLight;
-    SceneObjectSpotLight    soSpotLight;
-    SceneObjectOrthogonalCamera       soOrthogonalCamera;
-    SceneObjectPerspectiveCamera      soPerspectiveCamera;
+    std::shared_ptr<SceneObjectGeometry>    soGeometry(new SceneObjectGeometry());
+    std::shared_ptr<SceneObjectOmniLight>    soOmniLight(new SceneObjectOmniLight());
+    std::shared_ptr<SceneObjectSpotLight>    soSpotLight(new SceneObjectSpotLight());
+    std::shared_ptr<SceneObjectOrthogonalCamera>      soOrthogonalCamera(new SceneObjectOrthogonalCamera());
+    std::shared_ptr<SceneObjectPerspectiveCamera>     soPerspectiveCamera(new SceneObjectPerspectiveCamera());
 
-    cout << soMesh << endl;
-    cout << soMaterial << endl;
-    cout << soOmniLight << endl;
-    cout << soSpotLight << endl;
-    cout << soOrthogonalCamera  << endl;
-    cout << soPerspectiveCamera << endl;
+    std::shared_ptr<SceneObjectMesh>         soMesh(new SceneObjectMesh());
+    std::shared_ptr<SceneObjectMaterial>     soMaterial(new SceneObjectMaterial());
+
+    soGeometry->AddMesh(soMesh);
+
+    cout << *soGeometry << endl;
+    cout << *soMaterial << endl;
+    cout << *soOmniLight << endl;
+    cout << *soSpotLight << endl;
+    cout << *soOrthogonalCamera  << endl;
+    cout << *soPerspectiveCamera << endl;
+
+    SceneEmptyNode      snEmpty;
+    std::unique_ptr<SceneGeometryNode>   snGeometry(new SceneGeometryNode());
+    std::unique_ptr<SceneLightNode>     snLight(new SceneLightNode());
+    std::unique_ptr<SceneCameraNode>     snCamera(new SceneCameraNode());
+
+    snEmpty.AppendChild(std::move(snGeometry));
+    snEmpty.AppendChild(std::move(snLight));
+    snEmpty.AppendChild(std::move(snCamera));
+
+    snGeometry->AddSceneObjectRef(soGeometry);
+    snLight->AddSceneObjectRef(soSpotLight);
+    snCamera->AddSceneObjectRef(soOrthogonalCamera);
+
+    cout << snEmpty << endl;
 
     return result;
 }

@@ -345,7 +345,7 @@ namespace My {
     class SceneObjectGeometry : public BaseSceneObject
     {
         protected:
-            std::vector<SceneObjectMesh> m_Mesh;
+            std::vector<std::shared_ptr<SceneObjectMesh>> m_Mesh;
 			bool        m_bVisible;
 			bool        m_bShadow;
 			bool        m_bMotionBlur;
@@ -360,13 +360,13 @@ namespace My {
 			void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
 			const bool MotionBlur() { return m_bMotionBlur; };
 
-            void AddMesh(SceneObjectMesh&& mesh) { m_Mesh.push_back(std::move(mesh)); };
+            void AddMesh(std::shared_ptr<SceneObjectMesh>& mesh) { m_Mesh.push_back(std::move(mesh)); };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj)
         {
             auto count = obj.m_Mesh.size();
             for(decltype(count) i = 0; i < count; i++) {
-                out << "Mesh: " << obj.m_Mesh[i] << std::endl;
+                out << "Mesh: " << *obj.m_Mesh[i] << std::endl;
             }
 
             return out;

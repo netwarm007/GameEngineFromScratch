@@ -109,6 +109,7 @@ namespace My {
 
         public:
             using SceneNode::SceneNode;
+            SceneLightNode():SceneNode(std::make_shared<SceneObjectOmniLight>()){};
 
             void SetTarget(Vector3f& target) { m_Target = target; };
             const Vector3f& GetTarget() { return m_Target; };
@@ -121,6 +122,7 @@ namespace My {
 
         public:
             using SceneNode::SceneNode;
+            SceneCameraNode():SceneNode(std::make_shared<SceneObjectPerspectiveCamera>()){};
 
             void SetTarget(Vector3f& target) { m_Target = target; };
             const Vector3f& GetTarget() { return m_Target; };

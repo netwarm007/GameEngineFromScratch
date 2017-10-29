@@ -62,7 +62,7 @@ namespace My {
 						for (int32_t i = 0; i < _count; i++)
 						{
 							const OGEX::MeshStructure* _mesh = (*_meshs)[i];
-							SceneObjectMesh* mesh = new SceneObjectMesh();
+                            std::shared_ptr<SceneObjectMesh> mesh(new SceneObjectMesh());
 							const std::string _primitive_type = static_cast<const char*>(_mesh->GetMeshPrimitive());
 							if (_primitive_type == "points") {
 								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypePointList);
@@ -84,8 +84,7 @@ namespace My {
 							}
 							else {
 								// not supported
-								delete(mesh);
-								mesh = nullptr;
+								mesh.reset();
 							}
 							if (mesh)
                             {
@@ -218,7 +217,7 @@ namespace My {
                                     sub_structure = sub_structure->Next();
                                 }
 
-								_object->AddMesh(std::move(*mesh));
+								_object->AddMesh(mesh);
                             }
 						}
                     }
@@ -257,6 +256,9 @@ namespace My {
         }
 
     public:
+        OgexParser() = default;
+        virtual ~OgexParser() = default;
+
         virtual std::unique_ptr<BaseSceneNode> Parse(const std::string& buf)
         {
             std::unique_ptr<BaseSceneNode> root_node (new BaseSceneNode("scene_root"));
