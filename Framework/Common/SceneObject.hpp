@@ -293,21 +293,27 @@ namespace My {
     {
         protected:
             uint32_t m_nTexCoordIndex;
+            std::string m_Name;
             std::shared_ptr<Image> m_pImage;
             std::vector<Matrix4X4f> m_Transforms;
 
         public:
             SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0) {};
+            SceneObjectTexture(std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0), m_Name(name) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(image) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>&& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(std::move(image)) {};
-            SceneObjectTexture(SceneObjectTexture&) = delete;
+            SceneObjectTexture(SceneObjectTexture&) = default;
             SceneObjectTexture(SceneObjectTexture&&) = default;
+            void SetName(std::string& name) { m_Name = name; };
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj)
         {
+            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
             out << "Coord Index: " << obj.m_nTexCoordIndex << std::endl;
-            out << "Image: " << *obj.m_pImage << std::endl;
+            out << "Name: " << obj.m_Name << std::endl;
+            if (obj.m_pImage)
+                out << "Image: " << *obj.m_pImage << std::endl;
 
             return out;
         }
@@ -321,14 +327,20 @@ namespace My {
 
         ParameterValueMap() = default;
 
-        ParameterValueMap(T value) : Value(value) {};
+        ParameterValueMap(const T value) : Value(value) {};
+        ParameterValueMap(const std::shared_ptr<SceneObjectTexture>& value) : ValueMap(value) {};
 
         ParameterValueMap(const ParameterValueMap& rhs) = default;
 
         ParameterValueMap(ParameterValueMap&& rhs) = default;
 
-        ParameterValueMap& operator=(ParameterValueMap& rhs) = default;
+        ParameterValueMap& operator=(const ParameterValueMap& rhs) = default;
         ParameterValueMap& operator=(ParameterValueMap&& rhs) = default;
+        ParameterValueMap& operator=(const std::shared_ptr<SceneObjectTexture>& rhs) 
+        {
+            ValueMap = rhs;
+            return *this;
+        };
 
         ~ParameterValueMap() = default;
 
@@ -364,7 +376,30 @@ namespace My {
             SceneObjectMaterial(const std::string& name = "", Color&& base_color = Vector4f(1.0f), Parameter&& metallic = 0.0f, Parameter&& roughness = 0.0f, Normal&& normal = Vector3f(0.0f, 0.0f, 1.0f), Parameter&& specular = 0.0f, Parameter&& ao = 0.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(name), m_BaseColor(std::move(base_color)), m_Metallic(std::move(metallic)), m_Roughness(std::move(roughness)), m_Normal(std::move(normal)), m_Specular(std::move(specular)), m_AmbientOcclusion(std::move(ao)) {};
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
-            void SetBaseColor(Vector3f color) { m_BaseColor = Color(Vector4f(color, 1.0f)); };
+            void SetColor(std::string& attrib, Vector4f& color) 
+            { 
+                if(attrib == "deffuse") {
+                    m_BaseColor = Color(color); 
+                }
+            };
+
+            void SetParam(std::string& attrib, float param) 
+            { 
+            };
+
+            void SetTexture(std::string& attrib, std::string& textureName) 
+            { 
+                if(attrib == "diffuse") {
+                    m_BaseColor = std::make_shared<SceneObjectTexture>(textureName); 
+                }
+            };
+
+            void SetTexture(std::string& attrib, std::shared_ptr<SceneObjectTexture>& texture) 
+            { 
+                if(attrib == "diffuse") {
+                    m_BaseColor = texture; 
+                }
+            };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj)
         {

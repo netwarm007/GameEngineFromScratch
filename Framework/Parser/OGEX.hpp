@@ -1,5 +1,4 @@
 #include <unordered_map>
-#include "BMP.hpp"
 #include "OpenGEX.h"
 #include "portable.hpp"
 #include "SceneParser.hpp"
@@ -270,8 +269,40 @@ namespace My {
                         std::shared_ptr<SceneObjectMaterial> material = std::dynamic_pointer_cast<SceneObjectMaterial>(m_SceneObjects[_key]);
                         material->SetName(material_name);
 
-                        BmpParser parser;
-                        Image image;
+                        const ODDL::Structure* _sub_structure = _structure.GetFirstCoreSubnode();
+                        while(_sub_structure) {
+                            std::string attrib, textureName;
+                            Vector4f color;
+                            float param;
+                            switch(_sub_structure->GetStructureType())
+                            {
+                                case OGEX::kStructureColor:
+                                    {
+				                        attrib = dynamic_cast<const OGEX::ColorStructure*>(_sub_structure)->GetAttribString();
+				                        color = dynamic_cast<const OGEX::ColorStructure*>(_sub_structure)->GetColor();
+                                        material->SetColor(attrib, color);
+                                    }
+                                    break;
+                                case OGEX::kStructureParam:
+                                    {
+				                        attrib = dynamic_cast<const OGEX::ParamStructure*>(_sub_structure)->GetAttribString();
+				                        param = dynamic_cast<const OGEX::ParamStructure*>(_sub_structure)->GetParam();
+                                        material->SetParam(attrib, param);
+                                    }
+                                    break;
+                                case OGEX::kStructureTexture:
+                                    {
+				                        attrib = dynamic_cast<const OGEX::TextureStructure*>(_sub_structure)->GetAttribString();
+				                        textureName = dynamic_cast<const OGEX::TextureStructure*>(_sub_structure)->GetTextureName();
+                                        material->SetTexture(attrib, textureName);
+                                    }
+                                    break;
+                                default:
+                                    ;
+                            };
+                            
+                            _sub_structure = _sub_structure->Next();
+                        }
                     }
                     return;
                 default:
