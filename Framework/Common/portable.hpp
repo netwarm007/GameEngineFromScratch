@@ -11,18 +11,12 @@ typedef int32_t four_char_enum;
 #define ENUM(e) enum e : four_char_enum
 #endif
 
-#if __cplusplus < 201402L
-namespace My {
+#if __cplusplus <= 201103L
+namespace std {
     template<typename T, typename... Args>
     std::unique_ptr<T> make_unique(Args&&... args)
     {
             return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-    }
-
-    template<typename T, typename... Args>
-    std::shared_ptr<T> make_shared(Args&&... args)
-    {
-            return std::shared_ptr<T>(new T(std::forward<Args>(args)...));
     }
 }
 #endif

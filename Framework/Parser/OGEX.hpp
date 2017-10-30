@@ -1,4 +1,5 @@
 #include <unordered_map>
+#include "BMP.hpp"
 #include "OpenGEX.h"
 #include "portable.hpp"
 #include "SceneParser.hpp"
@@ -17,32 +18,47 @@ namespace My {
             switch(structure.GetStructureType()) {
                 case OGEX::kStructureNode:
                     {
-                        node = My::make_unique<SceneEmptyNode>(structure.GetStructureName());
+                        node = std::make_unique<SceneEmptyNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureGeometryNode:
                     {
-                        node = My::make_unique<SceneGeometryNode>(structure.GetStructureName());
+                        node = std::make_unique<SceneGeometryNode>(structure.GetStructureName());
 						SceneGeometryNode& _node = dynamic_cast<SceneGeometryNode&>(*node);
 						const OGEX::GeometryNodeStructure& _structure = dynamic_cast<const OGEX::GeometryNodeStructure&>(structure);
-                        std::string _key = _structure.GetObjectStructure()->GetStructureName();
+
 						_node.SetVisibility(_structure.GetVisibleFlag());
 						_node.SetIfCastShadow(_structure.GetShadowFlag());
 						_node.SetIfMotionBlur(_structure.GetMotionBlurFlag());
+                        // ref scene objects
+                        std::string _key = _structure.GetObjectStructure()->GetStructureName();
                         if(!m_SceneObjects[_key]) {
 							m_SceneObjects[_key] = std::make_shared<SceneObjectGeometry>();
                         }
                         _node.AddSceneObjectRef(std::dynamic_pointer_cast<SceneObjectGeometry>(m_SceneObjects[_key]));
+
+                        // ref materials
+                        auto materials = _structure.GetMaterialStructureArray();
+                        auto materials_count = materials.GetElementCount();
+                        for (auto i = 0; i < materials_count; i++)
+                        {
+                            auto material = materials[i];
+                            _key = material->GetStructureName();
+                            if(!m_SceneObjects[_key]) {
+                                m_SceneObjects[_key] = std::make_shared<SceneObjectMaterial>();
+                            }
+                            _node.AddSceneObjectRef(std::dynamic_pointer_cast<SceneObjectMaterial>(m_SceneObjects[_key]));
+                        }
                     }
                     break;
                 case OGEX::kStructureLightNode:
                     {
-                        node = My::make_unique<SceneLightNode>(structure.GetStructureName());
+                        node = std::make_unique<SceneLightNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureCameraNode:
                     {
-                        node = My::make_unique<SceneCameraNode>(structure.GetStructureName());
+                        node = std::make_unique<SceneCameraNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureGeometryObject:
@@ -234,9 +250,28 @@ namespace My {
                         for (index = 0; index < count; index++) {
                             const float* data = _structure.GetTransform(index);
                             matrix = data;
-                            transform = My::make_unique<SceneObjectTransform>(matrix, object_flag);
+                            transform = std::make_unique<SceneObjectTransform>(matrix, object_flag);
                             base_node->AppendChild(std::move(transform));
                         }
+                    }
+                    return;
+                case OGEX::kStructureMaterial:
+                    {
+                        const OGEX::MaterialStructure& _structure = dynamic_cast<const OGEX::MaterialStructure&>(structure);
+                        std::string material_name;
+                        const char* _name = _structure.GetMaterialName();
+                        if (_name) {
+                            material_name = _name;
+                        }
+                        std::string _key = _structure.GetStructureName();
+                        if(!m_SceneObjects[_key]) {
+                            m_SceneObjects[_key] = std::make_shared<SceneObjectMaterial>();
+                        }
+                        std::shared_ptr<SceneObjectMaterial> material = std::dynamic_pointer_cast<SceneObjectMaterial>(m_SceneObjects[_key]);
+                        material->SetName(material_name);
+
+                        BmpParser parser;
+                        Image image;
                     }
                     return;
                 default:

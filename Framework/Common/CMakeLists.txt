@@ -3,6 +3,7 @@ Allocator.cpp
 AssetLoader.cpp
 BaseApplication.cpp
 GraphicsManager.cpp
+Image.cpp
 MemoryManager.cpp
 SceneManager.cpp
 main.cpp
