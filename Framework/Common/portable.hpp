@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <climits>
 #include <memory>
+#include "config.h"
 
 typedef int32_t four_char_enum;
 
@@ -11,7 +12,7 @@ typedef int32_t four_char_enum;
 #define ENUM(e) enum e : four_char_enum
 #endif
 
-#if __cplusplus <= 201103L
+#ifndef HAVE_MAKE_UNIQUE 
 namespace std {
     template<typename T, typename... Args>
     std::unique_ptr<T> make_unique(Args&&... args)
