@@ -34,6 +34,7 @@ include_directories("${MYGE_EXTERNAL_ROOT}include")
 set(MYGE_EXTERNAL_LIBRARY_PATH ${MYGE_EXTERNAL_ROOT}lib/)
 include(CTest)
 include(CheckCXXSourceCompiles)
+include(PlatformDependencies)
 CHECK_CXX_SOURCE_COMPILES(
 "#include <memory>
 
