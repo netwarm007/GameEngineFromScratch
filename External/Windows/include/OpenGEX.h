@@ -474,6 +474,7 @@ namespace OGEX
             ~GeometryNodeStructure();
 
             const ObjectStructure *GetObjectStructure(void) const;
+            auto GetMaterialStructureArray(void) const -> decltype(materialStructureArray);
 			bool GetVisibleFlag(void) const;
 			bool GetShadowFlag(void) const;
 			bool GetMotionBlurFlag(void) const;
