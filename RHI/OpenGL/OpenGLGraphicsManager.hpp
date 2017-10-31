@@ -1,4 +1,5 @@
 #pragma once
+#include "glad/glad.h"
 #include "GraphicsManager.hpp"
 
 namespace My {
@@ -9,7 +10,13 @@ namespace My {
         virtual void Finalize();
 
         virtual void Tick();
+
+        bool InitializeShader(const char* vsFilename, const char* fsFilename);
+
     private:
+        GLuint m_VertexShader;
+        GLuint m_FragmentShader;
+        GLuint m_ShaderProgram;
     };
 }
 

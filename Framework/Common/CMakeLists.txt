@@ -6,6 +6,7 @@ GraphicsManager.cpp
 Image.cpp
 MemoryManager.cpp
 SceneManager.cpp
+SceneObject.cpp
 main.cpp
 )
 target_link_libraries(Common GeomMath)
