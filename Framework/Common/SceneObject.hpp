@@ -7,6 +7,7 @@
 #include "Guid.hpp"
 #include "Image.hpp"
 #include "portable.hpp"
+#include "geommath.hpp"
 
 namespace My {
     namespace details {
@@ -288,36 +289,80 @@ namespace My {
         }
     };
 
-    template <typename T>
-    struct ParameterMap
+    class SceneObjectTexture : public BaseSceneObject
     {
-        T Value;
-        std::shared_ptr<Image> Map;
+        protected:
+            uint32_t m_nTexCoordIndex;
+            std::string m_Name;
+            std::shared_ptr<Image> m_pImage;
+            std::vector<Matrix4X4f> m_Transforms;
 
-        ParameterMap(T value) : Value(value) {};
+        public:
+            SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0) {};
+            SceneObjectTexture(std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0), m_Name(name) {};
+            SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(image) {};
+            SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>&& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(std::move(image)) {};
+            SceneObjectTexture(SceneObjectTexture&) = default;
+            SceneObjectTexture(SceneObjectTexture&&) = default;
+            void SetName(std::string& name) { m_Name = name; };
+            void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
 
-        ParameterMap(const ParameterMap& rhs) = default;
-
-        ParameterMap(ParameterMap&& rhs) = default;
-
-        ~ParameterMap() = default;
-
-        friend std::ostream& operator<<(std::ostream& out, const ParameterMap& obj)
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj)
         {
-            out << "Parameter Value: " << obj.Value << std::endl;
-            out << "Parameter Map: " << bool(obj.Map) << std::endl;
+            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
+            out << "Coord Index: " << obj.m_nTexCoordIndex << std::endl;
+            out << "Name: " << obj.m_Name << std::endl;
+            if (obj.m_pImage)
+                out << "Image: " << *obj.m_pImage << std::endl;
 
             return out;
         }
     };
 
-    typedef ParameterMap<Vector4f> Color;
-    typedef ParameterMap<Vector3f> Normal;
-    typedef ParameterMap<float>    Parameter;
+    template <typename T>
+    struct ParameterValueMap
+    {
+        T Value;
+        std::shared_ptr<SceneObjectTexture> ValueMap;
+
+        ParameterValueMap() = default;
+
+        ParameterValueMap(const T value) : Value(value) {};
+        ParameterValueMap(const std::shared_ptr<SceneObjectTexture>& value) : ValueMap(value) {};
+
+        ParameterValueMap(const ParameterValueMap& rhs) = default;
+
+        ParameterValueMap(ParameterValueMap&& rhs) = default;
+
+        ParameterValueMap& operator=(const ParameterValueMap& rhs) = default;
+        ParameterValueMap& operator=(ParameterValueMap&& rhs) = default;
+        ParameterValueMap& operator=(const std::shared_ptr<SceneObjectTexture>& rhs) 
+        {
+            ValueMap = rhs;
+            return *this;
+        };
+
+        ~ParameterValueMap() = default;
+
+        friend std::ostream& operator<<(std::ostream& out, const ParameterValueMap& obj)
+        {
+            out << "Parameter Value: " << obj.Value << std::endl;
+            if (obj.ValueMap) {
+                out << "Parameter Map: " << *obj.ValueMap << std::endl;
+            }
+
+            return out;
+        }
+    };
+
+    typedef ParameterValueMap<Vector4f> Color;
+    typedef ParameterValueMap<Vector3f> Normal;
+    typedef ParameterValueMap<float>    Parameter;
 
     class SceneObjectMaterial : public BaseSceneObject
     {
         protected:
+            std::string m_Name;
             Color       m_BaseColor;
             Parameter   m_Metallic;
             Parameter   m_Roughness;
@@ -326,11 +371,40 @@ namespace My {
             Parameter   m_AmbientOcclusion;
 
         public:
-            SceneObjectMaterial(Color&& base_color = Vector4f(1.0f), Parameter&& metallic = 0.0f, Parameter&& roughness = 0.0f, Normal&& normal = Vector3f(0.0f, 0.0f, 1.0f), Parameter&& specular = 0.0f, Parameter&& ao = 0.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_BaseColor(std::move(base_color)), m_Metallic(std::move(metallic)), m_Roughness(std::move(roughness)), m_Normal(std::move(normal)), m_Specular(std::move(specular)), m_AmbientOcclusion(std::move(ao)) {};
+            SceneObjectMaterial(const std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(name) {};
+            SceneObjectMaterial(std::string&& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(std::move(name)) {};
+            SceneObjectMaterial(const std::string& name = "", Color&& base_color = Vector4f(1.0f), Parameter&& metallic = 0.0f, Parameter&& roughness = 0.0f, Normal&& normal = Vector3f(0.0f, 0.0f, 1.0f), Parameter&& specular = 0.0f, Parameter&& ao = 0.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(name), m_BaseColor(std::move(base_color)), m_Metallic(std::move(metallic)), m_Roughness(std::move(roughness)), m_Normal(std::move(normal)), m_Specular(std::move(specular)), m_AmbientOcclusion(std::move(ao)) {};
+            void SetName(const std::string& name) { m_Name = name; };
+            void SetName(std::string&& name) { m_Name = std::move(name); };
+            void SetColor(std::string& attrib, Vector4f& color) 
+            { 
+                if(attrib == "deffuse") {
+                    m_BaseColor = Color(color); 
+                }
+            };
+
+            void SetParam(std::string& attrib, float param) 
+            { 
+            };
+
+            void SetTexture(std::string& attrib, std::string& textureName) 
+            { 
+                if(attrib == "diffuse") {
+                    m_BaseColor = std::make_shared<SceneObjectTexture>(textureName); 
+                }
+            };
+
+            void SetTexture(std::string& attrib, std::shared_ptr<SceneObjectTexture>& texture) 
+            { 
+                if(attrib == "diffuse") {
+                    m_BaseColor = texture; 
+                }
+            };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj)
         {
             out << static_cast<const BaseSceneObject&>(obj) << std::endl;
+            out << "Name: " << obj.m_Name << std::endl;
             out << "Albedo: " << obj.m_BaseColor << std::endl;
             out << "Metallic: " << obj.m_Metallic << std::endl;
             out << "Roughness: " << obj.m_Roughness << std::endl;

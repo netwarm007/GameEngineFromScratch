@@ -140,6 +140,12 @@ namespace My {
 
         operator T*() { return data; };
         operator const T*() const { return static_cast<const T*>(data); };
+        Vector4Type& operator=(const T* f) 
+        { 
+            memcpy(data, f, sizeof(T) * 4); 
+            return *this;
+        };
+        
     };
 
     typedef Vector4Type<float> Vector4f;
