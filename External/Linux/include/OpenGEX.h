@@ -425,8 +425,6 @@ namespace OGEX
 
             const char      *nodeName;
 
-            virtual const ObjectStructure *GetObjectStructure(void) const;
-
             void CalculateTransforms(const OpenGexDataDescription *dataDescription);
 
         protected:
@@ -442,6 +440,8 @@ namespace OGEX
             {
                 return (nodeName);
             }
+
+            virtual const ObjectStructure *GetObjectStructure(void) const;
 
             bool ValidateSubstructure(const DataDescription *dataDescription, const Structure *structure) const;
             DataResult ProcessData(DataDescription *dataDescription);
@@ -468,12 +468,16 @@ namespace OGEX
             GeometryObjectStructure                 *geometryObjectStructure;
             Array<const MaterialStructure *, 4>     materialStructureArray;
 
-            const ObjectStructure *GetObjectStructure(void) const;
-
         public:
 
             GeometryNodeStructure();
             ~GeometryNodeStructure();
+
+            const ObjectStructure *GetObjectStructure(void) const;
+            const auto GetMaterialStructureArray(void) const -> decltype(materialStructureArray);
+			bool GetVisibleFlag(void) const;
+			bool GetShadowFlag(void) const;
+			bool GetMotionBlurFlag(void) const;
 
             bool ValidateProperty(const DataDescription *dataDescription, const String& identifier, DataType *type, void **value);
             bool ValidateSubstructure(const DataDescription *dataDescription, const Structure *structure) const;
@@ -489,12 +493,12 @@ namespace OGEX
 
             const LightObjectStructure      *lightObjectStructure;
 
-            const ObjectStructure *GetObjectStructure(void) const;
-
         public:
 
             LightNodeStructure();
             ~LightNodeStructure();
+
+            const ObjectStructure *GetObjectStructure(void) const;
 
             bool ValidateProperty(const DataDescription *dataDescription, const String& identifier, DataType *type, void **value);
             bool ValidateSubstructure(const DataDescription *dataDescription, const Structure *structure) const;
@@ -508,12 +512,12 @@ namespace OGEX
 
             const CameraObjectStructure     *cameraObjectStructure;
 
-            const ObjectStructure *GetObjectStructure(void) const;
-
         public:
 
             CameraNodeStructure();
             ~CameraNodeStructure();
+
+            const ObjectStructure *GetObjectStructure(void) const;
 
             bool ValidateSubstructure(const DataDescription *dataDescription, const Structure *structure) const;
             DataResult ProcessData(DataDescription *dataDescription);

@@ -1,2 +1,0 @@
-export void MulByElement(uniform float a[], uniform float b[], uniform float result[], uniform int count);
-
