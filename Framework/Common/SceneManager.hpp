@@ -14,8 +14,10 @@ namespace My {
 
         virtual void Tick();
 
+        void LoadOgexScene(const char* scene_file_name);
+
     protected:
-        SceneEmptyNode m_RootNode;
+        std::unique_ptr<BaseSceneNode> m_RootNode;
     };
 }
 
