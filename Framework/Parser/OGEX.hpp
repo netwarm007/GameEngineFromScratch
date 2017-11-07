@@ -342,7 +342,7 @@ namespace My {
                 }
             }
 
-            return std::move(root_node);
+            return root_node;
         }
     };
 }
