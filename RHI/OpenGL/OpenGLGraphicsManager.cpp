@@ -21,7 +21,7 @@ int OpenGLGraphicsManager::Initialize()
         result = -1;
     } else {
         result = 0;
-        cout << "OpenGL Version %d.%d loaded\n" << GLVersion.major << GLVersion.minor << endl;
+        cout << "OpenGL Version " << GLVersion.major << "." << GLVersion.minor << " loaded" << endl;
 
         if (GLAD_GL_VERSION_3_0) {
             // Set the depth buffer to be entirely cleared to 1.0 values.
