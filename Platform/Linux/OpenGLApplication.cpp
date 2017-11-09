@@ -102,14 +102,6 @@ int My::OpenGLApplication::Initialize()
 
     gladLoadGLX(m_pDisplay, default_screen);
 
-    // FBConfigs were added in GLX version 1.3.
-    if (!glXQueryVersion(display, &glx_major, &glx_minor) || 
-       ((glx_major == 1) && (glx_minor < 3)) || (glx_major < 1))
-    {
-        fprintf(stderr, "Invalid GLX version\n");
-        return -1;
-    }
-
     /* Query framebuffer configurations */
     fb_configs = glXChooseFBConfig(m_pDisplay, default_screen, visual_attribs, &num_fb_configs);
     if(!fb_configs || num_fb_configs == 0)
