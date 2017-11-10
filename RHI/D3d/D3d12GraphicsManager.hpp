@@ -15,8 +15,6 @@ namespace My {
 
 	    virtual void Tick();
 
-        virtual void DrawSingleMesh(const Mesh& mesh);
-
     private:
         HRESULT CreateDescriptorHeaps();
         HRESULT CreateRenderTarget();

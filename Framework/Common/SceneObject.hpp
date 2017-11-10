@@ -33,18 +33,7 @@ namespace My {
         kSceneObjectTypeGeometry =  "GEOM"_i32,
     };
 
-    std::ostream& operator<<(std::ostream& out, SceneObjectType type)
-    {
-        int32_t n = static_cast<int32_t>(type);
-        n = endian_net_unsigned_int<int32_t>(n);
-        char* c = reinterpret_cast<char*>(&n);
-         
-        for (size_t i = 0; i < sizeof(int32_t); i++) {
-            out << *c++;
-        }
-
-        return out;
-    }
+    std::ostream& operator<<(std::ostream& out, SceneObjectType type);
 
     using namespace xg;
     class BaseSceneObject
@@ -72,15 +61,7 @@ namespace My {
             const Guid& GetGuid() const { return m_Guid; };
             const SceneObjectType GetType() const { return m_Type; };
 
-        friend std::ostream& operator<<(std::ostream& out, const BaseSceneObject& obj)
-        {
-            out << "SceneObject" << std::endl;
-            out << "-----------" << std::endl;
-            out << "GUID: " << obj.m_Guid << std::endl;
-            out << "Type: " << obj.m_Type << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const BaseSceneObject& obj);
     };
 
     ENUM(VertexDataType) {
@@ -94,18 +75,7 @@ namespace My {
         kVertexDataTypeDouble4   = "DUB3"_i32
     };
 
-    std::ostream& operator<<(std::ostream& out, VertexDataType type)
-    {
-        int32_t n = static_cast<int32_t>(type);
-        n = endian_net_unsigned_int<int32_t>(n);
-        char* c = reinterpret_cast<char*>(&n);
-         
-        for (size_t i = 0; i < sizeof(int32_t); i++) {
-            out << *c++;
-        }
-
-        return out;
-    }
+    std::ostream& operator<<(std::ostream& out, VertexDataType type);
 
     class SceneObjectVertexArray 
     {
@@ -123,20 +93,7 @@ namespace My {
             SceneObjectVertexArray(SceneObjectVertexArray& arr) = default; 
             SceneObjectVertexArray(SceneObjectVertexArray&& arr) = default; 
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectVertexArray& obj)
-        {
-            out << "Attribute: " << obj.m_strAttribute << std::endl;
-            out << "Morph Target Index: 0x" << obj.m_nMorphTargetIndex << std::endl;
-            out << "Data Type: " << obj.m_DataType << std::endl;
-            out << "Data Size: 0x" << obj.m_szData << std::endl;
-            out << "Data: ";
-            for(size_t i = 0; i < obj.m_szData; i++)
-            {
-                out << *(reinterpret_cast<const float*>(obj.m_pData) + i) << ' ';;
-            }
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectVertexArray& obj);
     };
 
     ENUM(IndexDataType) {
@@ -146,18 +103,7 @@ namespace My {
         kIndexDataTypeInt64 = "I64 "_i32,
     };
 
-    std::ostream& operator<<(std::ostream& out, IndexDataType type)
-    {
-        int32_t n = static_cast<int32_t>(type);
-        n = endian_net_unsigned_int<int32_t>(n);
-        char* c = reinterpret_cast<char*>(&n);
-         
-        for (size_t i = 0; i < sizeof(int32_t); i++) {
-            out << *c++;
-        }
-
-        return out;
-    }
+    std::ostream& operator<<(std::ostream& out, IndexDataType type);
 
     class SceneObjectIndexArray
     {
@@ -176,40 +122,10 @@ namespace My {
             SceneObjectIndexArray(SceneObjectIndexArray& arr) = default;
             SceneObjectIndexArray(SceneObjectIndexArray&& arr) = default;
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectIndexArray& obj)
-        {
-            out << "Material Index: 0x" << obj.m_nMaterialIndex << std::endl;
-            out << "Restart Index: 0x" << obj.m_szRestartIndex << std::endl;
-            out << "Data Type: " << obj.m_DataType << std::endl;
-            out << "Data Size: 0x" << obj.m_szData << std::endl;
-            out << "Data: ";
-            for(size_t i = 0; i < obj.m_szData; i++)
-            {
-                switch(obj.m_DataType)
-                {
-                    case IndexDataType::kIndexDataTypeInt8:
-                        out << "0x" << *(reinterpret_cast<const uint8_t*>(obj.m_pData) + i) << ' ';;
-                        break;
-                    case IndexDataType::kIndexDataTypeInt16:
-                        out << "0x" << *(reinterpret_cast<const uint16_t*>(obj.m_pData) + i) << ' ';;
-                        break;
-                    case IndexDataType::kIndexDataTypeInt32:
-                        out << "0x" << *(reinterpret_cast<const uint32_t*>(obj.m_pData) + i) << ' ';;
-                        break;
-                    case IndexDataType::kIndexDataTypeInt64:
-                        out << "0x" << *(reinterpret_cast<const uint64_t*>(obj.m_pData) + i) << ' ';;
-                        break;
-                    default:
-                        ;
-                }
-            }
-
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectIndexArray& obj);
     };
 
-	typedef enum _PrimitiveType : int32_t {
+	ENUM(PrimitiveType) {
 		kPrimitiveTypeNone = "NONE"_i32,        ///< No particular primitive type.
 		kPrimitiveTypePointList = "PLST"_i32,   ///< For N>=0, vertex N renders a point.
 		kPrimitiveTypeLineList = "LLST"_i32,    ///< For N>=0, vertices [N*2+0, N*2+1] render a line.
@@ -227,20 +143,9 @@ namespace My {
 		kPrimitiveTypeQuadList = "QLST"_i32,    ///< For N>=0, vertices [N*4+0, N*4+1, N*4+2] and [N*4+0, N*4+2, N*4+3] render triangles.
 		kPrimitiveTypeQuadStrip = "QSTR"_i32,   ///< For N>=0, vertices [N*2+0, N*2+1, N*2+3] and [N*2+0, N*2+3, N*2+2] render triangles.
 		kPrimitiveTypePolygon = "POLY"_i32,     ///< For N>=0, vertices [0, N+1, N+2] render a triangle.
-	} PrimitiveType;
+	};
 
-    std::ostream& operator<<(std::ostream& out, PrimitiveType type)
-    {
-        int32_t n = static_cast<int32_t>(type);
-        n = endian_net_unsigned_int<int32_t>(n);
-        char* c = reinterpret_cast<char*>(&n);
-         
-        for (size_t i = 0; i < sizeof(int32_t); i++) {
-            out << *c++;
-        }
-
-        return out;
-    }
+    std::ostream& operator<<(std::ostream& out, PrimitiveType type);
   
     class SceneObjectMesh : public BaseSceneObject
     {
@@ -269,24 +174,7 @@ namespace My {
             void AddVertexArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
 			void SetPrimitiveType(PrimitiveType type) { m_PrimitiveType = type;  };
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj)
-        {
-            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-            out << "Primitive Type: " << obj.m_PrimitiveType << std::endl;
-            out << "This mesh contains 0x" << obj.m_VertexArray.size() << " vertex properties." << std::endl;
-            for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
-                out << obj.m_VertexArray[i] << std::endl;
-            }
-            out << "This mesh contains 0x" << obj.m_IndexArray.size() << " index arrays." << std::endl;
-            for (size_t i = 0; i < obj.m_IndexArray.size(); i++) {
-                out << obj.m_IndexArray[i] << std::endl;
-            }
-            out << "Visible: " << obj.m_bVisible << std::endl;
-            out << "Shadow: " << obj.m_bShadow << std::endl;
-            out << "Motion Blur: " << obj.m_bMotionBlur << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj);
     };
 
     class SceneObjectTexture : public BaseSceneObject
@@ -307,16 +195,7 @@ namespace My {
             void SetName(std::string& name) { m_Name = name; };
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj)
-        {
-            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-            out << "Coord Index: " << obj.m_nTexCoordIndex << std::endl;
-            out << "Name: " << obj.m_Name << std::endl;
-            if (obj.m_pImage)
-                out << "Image: " << *obj.m_pImage << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj);
     };
 
     template <typename T>
@@ -330,12 +209,12 @@ namespace My {
         ParameterValueMap(const T value) : Value(value) {};
         ParameterValueMap(const std::shared_ptr<SceneObjectTexture>& value) : ValueMap(value) {};
 
-        ParameterValueMap(const ParameterValueMap& rhs) = default;
+        ParameterValueMap(const ParameterValueMap<T>& rhs) = default;
 
-        ParameterValueMap(ParameterValueMap&& rhs) = default;
+        ParameterValueMap(ParameterValueMap<T>&& rhs) = default;
 
-        ParameterValueMap& operator=(const ParameterValueMap& rhs) = default;
-        ParameterValueMap& operator=(ParameterValueMap&& rhs) = default;
+        ParameterValueMap& operator=(const ParameterValueMap<T>& rhs) = default;
+        ParameterValueMap& operator=(ParameterValueMap<T>&& rhs) = default;
         ParameterValueMap& operator=(const std::shared_ptr<SceneObjectTexture>& rhs) 
         {
             ValueMap = rhs;
@@ -344,7 +223,7 @@ namespace My {
 
         ~ParameterValueMap() = default;
 
-        friend std::ostream& operator<<(std::ostream& out, const ParameterValueMap& obj)
+        friend std::ostream& operator<<(std::ostream& out, const ParameterValueMap<T>& obj)
         {
             out << "Parameter Value: " << obj.Value << std::endl;
             if (obj.ValueMap) {
@@ -401,19 +280,7 @@ namespace My {
                 }
             };
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj)
-        {
-            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-            out << "Name: " << obj.m_Name << std::endl;
-            out << "Albedo: " << obj.m_BaseColor << std::endl;
-            out << "Metallic: " << obj.m_Metallic << std::endl;
-            out << "Roughness: " << obj.m_Roughness << std::endl;
-            out << "Normal: " << obj.m_Normal << std::endl;
-            out << "Specular: " << obj.m_Specular << std::endl;
-            out << "Ambient Occlusion:: " << obj.m_AmbientOcclusion << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj);
     };
 
     class SceneObjectGeometry : public BaseSceneObject
@@ -436,23 +303,12 @@ namespace My {
 
             void AddMesh(std::shared_ptr<SceneObjectMesh>& mesh) { m_Mesh.push_back(std::move(mesh)); };
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj)
-        {
-            auto count = obj.m_Mesh.size();
-            for(decltype(count) i = 0; i < count; i++) {
-                out << "Mesh: " << *obj.m_Mesh[i] << std::endl;
-            }
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj);
     };
 
     typedef float (*AttenFunc)(float /* Intensity */, float /* Distance */);
 
-    float DefaultAttenFunc(float intensity, float distance)
-    {
-        return intensity / (1 + distance);
-    }
+    float DefaultAttenFunc(float intensity, float distance);
 
     class SceneObjectLight : public BaseSceneObject
     {
@@ -468,17 +324,7 @@ namespace My {
             // can only be used as base class of delivered lighting objects
             SceneObjectLight(Color&& color = Vector4f(1.0f), float intensity = 10.0f, AttenFunc atten_func = DefaultAttenFunc, float near_clip = 1.0f, float far_clip = 100.0f, bool cast_shadows = false) : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight), m_LightColor(std::move(color)), m_fIntensity(intensity), m_LightAttenuation(atten_func), m_fNearClipDistance(near_clip), m_fFarClipDistance(far_clip), m_bCastShadows(cast_shadows) {};
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectLight& obj)
-        {
-            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-            out << "Color: " << obj.m_LightColor << std::endl;
-            out << "Intensity: " << obj.m_fIntensity << std::endl;
-            out << "Near Clip Distance: " << obj.m_fNearClipDistance << std::endl;
-            out << "Far Clip Distance: " << obj.m_fFarClipDistance << std::endl;
-            out << "Cast Shadows: " << obj.m_bCastShadows << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectLight& obj);
     };
 
     class SceneObjectOmniLight : public SceneObjectLight
@@ -486,13 +332,7 @@ namespace My {
         public:
             using SceneObjectLight::SceneObjectLight;
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectOmniLight& obj)
-        {
-            out << static_cast<const SceneObjectLight&>(obj) << std::endl;
-            out << "Light Type: Omni" << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectOmniLight& obj);
     };
 
     class SceneObjectSpotLight : public SceneObjectLight
@@ -503,15 +343,7 @@ namespace My {
         public:
             SceneObjectSpotLight(Color&& color = Vector4f(1.0f), float intensity = 10.0f, AttenFunc atten_func = DefaultAttenFunc, float near_clip = 1.0f, float far_clip = 100.0f, bool cast_shadows = false, float cone_angle = PI / 4.0f, float penumbra_angle = PI / 3.0f) : SceneObjectLight(std::move(color), intensity, atten_func, near_clip, far_clip, cast_shadows), m_fConeAngle(cone_angle), m_fPenumbraAngle(penumbra_angle) {};
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectSpotLight& obj)
-        {
-            out << static_cast<const SceneObjectLight&>(obj) << std::endl;
-            out << "Light Type: Spot" << std::endl;
-            out << "Cone Angle: " << obj.m_fConeAngle << std::endl;
-            out << "Penumbra Angle: " << obj.m_fPenumbraAngle << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectSpotLight& obj);
     };
 
     class SceneObjectCamera : public BaseSceneObject
@@ -525,15 +357,7 @@ namespace My {
             // can only be used as base class
             SceneObjectCamera(float aspect = 16.0f / 9.0f, float near_clip = 1.0f, float far_clip = 100.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(aspect), m_fNearClipDistance(near_clip), m_fFarClipDistance(far_clip) {};
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj)
-        {
-            out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-            out << "Aspect: " << obj.m_fAspect << std::endl;
-            out << "Near Clip Distance: " << obj.m_fNearClipDistance << std::endl;
-            out << "Far Clip Distance: " << obj.m_fFarClipDistance << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj);
     };
 
     class SceneObjectOrthogonalCamera : public SceneObjectCamera
@@ -541,13 +365,7 @@ namespace My {
         public:
             using SceneObjectCamera::SceneObjectCamera;
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectOrthogonalCamera& obj)
-        {
-            out << static_cast<const SceneObjectCamera&>(obj) << std::endl;
-            out << "Camera Type: Orthogonal" << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectOrthogonalCamera& obj);
     };
 
     class SceneObjectPerspectiveCamera : public SceneObjectCamera
@@ -558,14 +376,7 @@ namespace My {
         public:
             SceneObjectPerspectiveCamera(float aspect = 16.0f / 9.0f, float near_clip = 1.0f, float far_clip = 100.0f, float fov = PI / 2.0) : SceneObjectCamera(aspect, near_clip, far_clip), m_fFov(fov) {};
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj)
-        {
-            out << static_cast<const SceneObjectCamera&>(obj) << std::endl;
-            out << "Camera Type: Perspective" << std::endl;
-            out << "FOV: " << obj.m_fFov<< std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj);
     };
 
     class SceneObjectTransform
@@ -579,13 +390,7 @@ namespace My {
 
             SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) { m_matrix = matrix; m_bSceneObjectOnly = object_only; };
 
-        friend std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj)
-        {
-            out << "Transform Matrix: " << obj.m_matrix << std::endl;
-            out << "Is Object Local: " << obj.m_bSceneObjectOnly << std::endl;
-
-            return out;
-        }
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj);
     };
 
     class SceneObjectTranslation : public SceneObjectTransform

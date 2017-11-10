@@ -142,7 +142,10 @@ namespace My {
         operator const T*() const { return static_cast<const T*>(data); };
         Vector4Type& operator=(const T* f) 
         { 
-            memcpy(data, f, sizeof(T) * 4); 
+            for (int32_t i = 0; i < 4; i++)
+            {
+                data[i] = *(f + i); 
+            }
             return *this;
         };
         
@@ -236,7 +239,11 @@ namespace My {
 
         Matrix& operator=(const T* _data) 
         {
-            memcpy(data, _data, ROWS * COLS * sizeof(T));
+            for (int i = 0; i < ROWS; i++) {
+                for (int j = 0; j < COLS; j++) {
+                    data[i][j] = *(_data + i * COLS + j);
+                }
+            }
             return *this;
         }
     };

@@ -457,9 +457,4 @@ void My::D3d12GraphicsManager::Finalize()
 	SafeRelease(&m_pDev);
 }
 
-void My::D3d12GraphicsManager::DrawSingleMesh(const Mesh& mesh)
-{
-    GraphicsManager::DrawSingleMesh(mesh);
-}
-
 
