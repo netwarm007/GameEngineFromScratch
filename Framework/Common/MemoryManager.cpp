@@ -1,4 +1,5 @@
 #include "MemoryManager.hpp"
+#include <cstdlib>
 
 #ifndef ALIGN
 #define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
