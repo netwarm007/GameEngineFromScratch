@@ -1,5 +1,7 @@
 #include "BaseApplication.hpp"
+#ifdef __OBJC__
 #include <Cocoa/Cocoa.h>
+#endif
 
 namespace My {
     class CocoaApplication : public BaseApplication
@@ -14,7 +16,9 @@ namespace My {
         virtual void Tick();
 
     protected:
+#ifdef __OBJC__
         NSWindow* m_pWindow;
+#endif
     };
 }
 

@@ -1,6 +1,8 @@
 #pragma once
-#include "CocoaApplication.hpp"
+#include "CocoaApplication.h"
+#ifdef __OBJC__
 #include "GLView.h"
+#endif
 
 namespace My {
     class CocoaOpenGLApplication : public CocoaApplication {
@@ -16,7 +18,9 @@ namespace My {
         virtual void OnDraw();
 
     private:
+#ifdef __OBJC__
         GLView* m_pGlView;
+#endif
     };
 }
 

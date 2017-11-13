@@ -1,11 +1,8 @@
 #include <string.h>
-#include "CocoaApplication.hpp"
-#include "MemoryManager.hpp"
-#include "GraphicsManager.hpp"
+#include "CocoaApplication.h"
 
 #import <AppDelegate.h>
 #import <WindowDelegate.h>
-#import <GLView.h>
 
 using namespace My;
 
@@ -37,11 +34,8 @@ int CocoaApplication::Initialize()
     NSInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                       NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
 
-    GLView* view = [[GLView alloc] initWithFrame:CGRectMake(0, 0, 800, 600)];
-
-    m_pWindow = [[NSWindow alloc] initWithContentRect:CGRectMake(0, 0, 800, 600) styleMask:style backing:NSBackingStoreBuffered defer:NO];
+    m_pWindow = [[NSWindow alloc] initWithContentRect:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight) styleMask:style backing:NSBackingStoreBuffered defer:NO];
     [m_pWindow setTitle:appName];
-    [m_pWindow setContentView:view];
     [m_pWindow makeKeyAndOrderFront:nil];
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
