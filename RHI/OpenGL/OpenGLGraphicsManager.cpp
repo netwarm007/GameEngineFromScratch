@@ -2,6 +2,7 @@
 #include <fstream>
 #include "OpenGLGraphicsManager.hpp"
 #include "AssetLoader.hpp"
+#include "glad/glad.h"
 
 const char VS_SHADER_SOURCE_FILE[] = "Shaders/color.vs";
 const char PS_SHADER_SOURCE_FILE[] = "Shaders/color.ps";

@@ -1,5 +1,4 @@
 #pragma once
-#include "glad/glad.h"
 #include "GraphicsManager.hpp"
 
 namespace My {
@@ -14,9 +13,9 @@ namespace My {
         bool InitializeShader(const char* vsFilename, const char* fsFilename);
 
     private:
-        GLuint m_VertexShader;
-        GLuint m_FragmentShader;
-        GLuint m_ShaderProgram;
+        unsigned int m_VertexShader;
+        unsigned int m_FragmentShader;
+        unsigned int m_ShaderProgram;
     };
 }
 

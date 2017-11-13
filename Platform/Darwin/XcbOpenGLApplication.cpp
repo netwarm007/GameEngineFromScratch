@@ -2,7 +2,7 @@
 #include <climits>
 #include <cstring>
 #include <X11/Xlib-xcb.h>
-#include "OpenGLApplication.hpp"
+#include "XcbOpenGLApplication.hpp"
 #include "OpenGL/OpenGLGraphicsManager.hpp"
 #include "MemoryManager.hpp"
 #include "AssetLoader.hpp"
@@ -12,7 +12,7 @@ using namespace My;
 
 namespace My {
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, "Game Engine From Scratch (MacOS)");
-    IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
+    IApplication* g_pApp                = static_cast<IApplication*>(new XcbOpenGLApplication(config));
     GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
     MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
     AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
@@ -59,7 +59,7 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev)
     return 0;
 }
 
-int My::OpenGLApplication::Initialize()
+int XcbOpenGLApplication::Initialize()
 {
     int result;
 
@@ -275,17 +275,17 @@ int My::OpenGLApplication::Initialize()
     return result;
 }
 
-void My::OpenGLApplication::Finalize()
+void XcbOpenGLApplication::Finalize()
 {
     XcbApplication::Finalize();
 }
 
-void My::OpenGLApplication::Tick()
+void XcbOpenGLApplication::Tick()
 {
     XcbApplication::Tick();
 }
 
-void My::OpenGLApplication::OnDraw()
+void XcbOpenGLApplication::OnDraw()
 {
     glXSwapBuffers(m_pDisplay, m_Drawable);
 }

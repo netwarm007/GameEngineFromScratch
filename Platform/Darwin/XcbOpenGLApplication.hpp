@@ -3,9 +3,9 @@
 #include "XcbApplication.hpp"
 
 namespace My {
-    class OpenGLApplication : public XcbApplication {
+    class XcbOpenGLApplication : public XcbApplication {
     public:
-        OpenGLApplication(GfxConfiguration& config)
+        XcbOpenGLApplication(GfxConfiguration& config)
             : XcbApplication(config) {};
 
         virtual int Initialize();
@@ -21,3 +21,4 @@ namespace My {
         GLXDrawable m_Drawable;
     };
 }
+
