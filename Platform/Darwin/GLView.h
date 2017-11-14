@@ -4,7 +4,6 @@
 {
     @private
     NSOpenGLContext* _openGLContext;
-    CVDisplayLinkRef _displayLink; //display link for managing rendering thread
 }
 
 @property (nonatomic, strong) NSOpenGLPixelFormat* pixelFormat;

@@ -25,17 +25,15 @@ namespace My {
 
     _openGLContext = [[NSOpenGLContext alloc] initWithFormat:_pixelFormat shareContext:nil];
 
+    [_openGLContext makeCurrentContext];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
-                                            selector:@selector(_surfaceNeedsUpdate:)
-                                                name:NSViewGlobalFrameDidChangeNotification
-                                               object:self];
-
-    [_openGLContext makeCurrentContext];
+        selector:@selector(_surfaceNeedsUpdate:)
+        name:NSViewGlobalFrameDidChangeNotification
+        object:self];
 
     return self;
 }
-
 
 - (void)lockFocus
 {
@@ -57,6 +55,14 @@ namespace My {
 {
     [self update];
 
+}
+
+- (void)dealloc
+{
+    [_pixelFormat release];
+    [_openGLContext release];
+
+    [super dealloc];
 }
 
 @end

@@ -57,7 +57,6 @@ target_link_libraries(MyGameEngineCocoaOpenGL
         ${XG_LIBRARY} 
         ${COCOA_LIBRARY} 
         ${OPENGL_LIBRARY}
-        ${CV_LIBRARY}
         dl
         )
 __add_xg_platform_dependencies(MyGameEngineCocoaOpenGL)

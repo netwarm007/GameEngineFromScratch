@@ -23,19 +23,19 @@ int CocoaOpenGLApplication::Initialize()
             0
         };
 
-        GLView* view = [GLView new];
-        view.pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
+        GLView* pGLView = [GLView new];
+        pGLView.pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
 
-        if(view.pixelFormat == nil)
+        if([pGLView pixelFormat] == nil)
         {
             NSLog(@"No valid matching OpenGL Pixel Format found");
-            [view release];
+            [pGLView release];
             return -1;
         }
 
-        [view initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)];
+        [pGLView initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)];
 
-        [m_pWindow setContentView:view];
+        [m_pWindow setContentView:pGLView];
     }
 
     return result;
@@ -49,9 +49,6 @@ void CocoaOpenGLApplication::Finalize()
 void CocoaOpenGLApplication::Tick()
 {
     CocoaApplication::Tick();
-}
-
-void CocoaOpenGLApplication::OnDraw()
-{
+    [[m_pWindow contentView] setNeedsDisplay:YES];
 }
 
