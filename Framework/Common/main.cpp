@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "EmptyApplication.hpp"
 
+using namespace My;
+
 int main(int argc, char** argv) {
 	int ret;
 

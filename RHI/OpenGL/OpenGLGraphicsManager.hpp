@@ -29,8 +29,8 @@ namespace My {
         unsigned int m_shaderProgram;
 
         const bool VSYNC_ENABLED = true;
-        const float SCREEN_DEPTH = 1000.0f;
-        const float SCREEN_NEAR = 0.1f;
+        const float screenDepth = 1000.0f;
+        const float screenNear = 0.1f;
 
         int     m_vertexCount, m_indexCount;
         unsigned int m_vertexArrayId, m_vertexBufferId, m_indexBufferId;

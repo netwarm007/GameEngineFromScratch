@@ -2,6 +2,7 @@ include_directories("/opt/local/include")
 link_directories("/opt/local/lib")
 find_library(COCOA_LIBRARY Cocoa required)
 find_library(OPENGL_LIBRARY OpenGL required)
+find_library(CV_LIBRARY CoreVideo required)
 
 # MyGameEngineXcbOpenGL
 add_executable(MyGameEngineXcbOpenGL 
@@ -56,6 +57,7 @@ target_link_libraries(MyGameEngineCocoaOpenGL
         ${XG_LIBRARY} 
         ${COCOA_LIBRARY} 
         ${OPENGL_LIBRARY}
+        ${CV_LIBRARY}
         dl
         )
 __add_xg_platform_dependencies(MyGameEngineCocoaOpenGL)

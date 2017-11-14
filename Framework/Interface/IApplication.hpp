@@ -15,6 +15,8 @@ namespace My {
 
         virtual GfxConfiguration& GetConfiguration() = 0;
     };
+
+	extern IApplication*    g_pApp;
 }
 
 

@@ -25,7 +25,6 @@ int CocoaOpenGLApplication::Initialize()
 
         GLView* view = [GLView new];
         view.pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-        [view initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)];
 
         if(view.pixelFormat == nil)
         {
@@ -33,6 +32,8 @@ int CocoaOpenGLApplication::Initialize()
             [view release];
             return -1;
         }
+
+        [view initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)];
 
         [m_pWindow setContentView:view];
     }

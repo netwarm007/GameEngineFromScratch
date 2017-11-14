@@ -3,6 +3,7 @@
 #include "OpenGLGraphicsManager.hpp"
 #include "AssetLoader.hpp"
 #include "glad/glad.h"
+#include "IApplication.hpp"
 
 const char VS_SHADER_SOURCE_FILE[] = "Shaders/color.vs";
 const char PS_SHADER_SOURCE_FILE[] = "Shaders/color.ps";
@@ -17,82 +18,82 @@ namespace My {
 
     static void OutputShaderErrorMessage(unsigned int shaderId, const char* shaderFilename)
     {
-            int logSize, i;
-            char* infoLog;
-            ofstream fout;
-            unsigned int error;
+        int logSize, i;
+        char* infoLog;
+        ofstream fout;
+        unsigned int error;
 
-            // Get the size of the string containing the information log for the failed shader compilation message.
-            glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &logSize);
+        // Get the size of the string containing the information log for the failed shader compilation message.
+        glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &logSize);
 
-            // Increment the size by one to handle also the null terminator.
-            logSize++;
+        // Increment the size by one to handle also the null terminator.
+        logSize++;
 
-            // Create a char buffer to hold the info log.
-            infoLog = new char[logSize];
-            if(!infoLog)
-            {
-                    return;
-            }
+        // Create a char buffer to hold the info log.
+        infoLog = new char[logSize];
+        if(!infoLog)
+        {
+                return;
+        }
 
-            // Now retrieve the info log.
-            glGetShaderInfoLog(shaderId, logSize, NULL, infoLog);
+        // Now retrieve the info log.
+        glGetShaderInfoLog(shaderId, logSize, NULL, infoLog);
 
-            // Open a file to write the error message to.
-            fout.open("shader-error.txt");
+        // Open a file to write the error message to.
+        fout.open("shader-error.txt");
 
-            // Write out the error message.
-            for(i=0; i<logSize; i++)
-            {
-                    fout << infoLog[i];
-            }
+        // Write out the error message.
+        for(i=0; i<logSize; i++)
+        {
+                fout << infoLog[i];
+        }
 
-            // Close the file.
-            fout.close();
+        // Close the file.
+        fout.close();
 
-            // Pop a message up on the screen to notify the user to check the text file for compile errors.
-            cerr << "Error compiling shader.  Check shader-error.txt for message." << shaderFilename << endl;
+        // Pop a message up on the screen to notify the user to check the text file for compile errors.
+        cerr << "Error compiling shader.  Check shader-error.txt for message." << shaderFilename << endl;
 
-            return;
+        return;
     }
 
     static void OutputLinkerErrorMessage(unsigned int programId)
     {
-            int logSize, i;
-            char* infoLog;
-            ofstream fout;
+        int logSize, i;
+        char* infoLog;
+        ofstream fout;
 
 
-            // Get the size of the string containing the information log for the failed shader compilation message.
-            glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &logSize);
+        // Get the size of the string containing the information log for the failed shader compilation message.
+        glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &logSize);
 
-            // Increment the size by one to handle also the null terminator.
-            logSize++;
+        // Increment the size by one to handle also the null terminator.
+        logSize++;
 
-            // Create a char buffer to hold the info log.
-            infoLog = new char[logSize];
-            if(!infoLog)
-            {
-                    return;
-            }
+        // Create a char buffer to hold the info log.
+        infoLog = new char[logSize];
+        if(!infoLog)
+        {
+                return;
+        }
 
-            // Now retrieve the info log.
-            glGetProgramInfoLog(programId, logSize, NULL, infoLog);
+        // Now retrieve the info log.
+        glGetProgramInfoLog(programId, logSize, NULL, infoLog);
 
-            // Open a file to write the error message to.
-            fout.open("linker-error.txt");
+        // Open a file to write the error message to.
+        fout.open("linker-error.txt");
 
-            // Write out the error message.
-            for(i=0; i<logSize; i++)
-            {
-                    fout << infoLog[i];
-            }
+        // Write out the error message.
+        for(i=0; i<logSize; i++)
+        {
+                fout << infoLog[i];
+        }
 
-            // Close the file.
-            fout.close();
+        // Close the file.
+        fout.close();
 
-            // Pop a message up on the screen to notify the user to check the text file for linker errors.
-            cerr << "Error compiling linker.  Check linker-error.txt for message." << endl;
+        // Pop a message up on the screen to notify the user to check the text file for linker errors.
+        cerr << "Error compiling linker.  Check linker-error.txt for message." << endl;
     }
 }
 
@@ -115,12 +116,24 @@ int OpenGLGraphicsManager::Initialize()
             // Enable depth testing.
             glEnable(GL_DEPTH_TEST);
 
-            // Set the polygon winding to front facing for the left handed system.
+            // Set the polygon winding to front facing for the right handed system.
             glFrontFace(GL_CW);
 
             // Enable back face culling.
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
+
+            // Initialize the world/model matrix to the identity matrix.
+            BuildIdentityMatrix(m_worldMatrix);
+
+            // Set the field of view and screen aspect ratio.
+            float fieldOfView = PI / 4.0f;
+            GfxConfiguration& conf = g_pApp->GetConfiguration();
+            float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
+
+            // Build the perspective projection matrix.
+            BuildPerspectiveFovLHMatrix(m_projectionMatrix, fieldOfView, screenAspect, screenNear, screenDepth);
+
         }
 
         InitializeShader(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
@@ -161,8 +174,6 @@ void OpenGLGraphicsManager::Finalize()
 
 void OpenGLGraphicsManager::Tick()
 {
-    // Generate the view matrix based on the camera's position.
-    CalculateCameraPosition();
 }
 
 void OpenGLGraphicsManager::Clear()
@@ -185,12 +196,17 @@ void OpenGLGraphicsManager::Draw()
     MatrixRotationZ(rotationMatrixZ, rotateAngle);
     MatrixMultiply(m_worldMatrix, rotationMatrixZ, rotationMatrixY);
 
+    // Generate the view matrix based on the camera's position.
+    CalculateCameraPosition();
+
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_shaderProgram);
     SetShaderParameters(m_worldMatrix, m_viewMatrix, m_projectionMatrix);
 
     // Render the model using the color shader.
     RenderBuffers();
+
+    glFlush();
 }
 
 bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewMatrix, float* projectionMatrix)

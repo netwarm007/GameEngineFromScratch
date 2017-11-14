@@ -16,5 +16,7 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
     };
+
+    extern GraphicsManager* g_pGraphicsManager;
 }
 
