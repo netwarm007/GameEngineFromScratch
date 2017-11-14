@@ -38,3 +38,4 @@
 *.eap filter=lfs diff=lfs merge=lfs -text
 *.ldb filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin filter=lfs diff=lfs merge=lfs -text
+External/Linux/bin/ispc filter=lfs diff=lfs merge=lfs -text
