@@ -12,6 +12,9 @@ namespace My {
         virtual void Finalize();
 
         virtual void Tick();
+
+        virtual void Clear();
+        virtual void Draw();
     };
 }
 

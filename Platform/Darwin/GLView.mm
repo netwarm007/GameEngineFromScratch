@@ -1,6 +1,11 @@
 #import "GLView.h"
 #import <OpenGL/gl.h>
 
+#import "GraphicsManager.hpp"
+namespace My {
+    extern GraphicsManager* g_pGraphicsManager;
+}
+
 @implementation GLView
 
 - (void)drawRect:(NSRect)dirtyRect {
@@ -8,8 +13,8 @@
 
     [_openGLContext makeCurrentContext];
 
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
+    My::g_pGraphicsManager->Clear();
+    My::g_pGraphicsManager->Draw();
 
     [_openGLContext flushBuffer];
 }
@@ -18,21 +23,6 @@
 {
     self = [super initWithFrame:frameRect];
 
-    NSOpenGLPixelFormatAttribute attrs[] = {
-        NSOpenGLPFAColorSize,32,
-        NSOpenGLPFADepthSize,16,
-        NSOpenGLPFADoubleBuffer,
-        NSOpenGLPFAAccelerated,
-        0
-    };
-
-    _pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-    if(_pixelFormat == nil)
-    {
-        NSLog(@"No valid matching OpenGL Pixel Format found");
-        return self;
-    }
-
     _openGLContext = [[NSOpenGLContext alloc] initWithFormat:_pixelFormat shareContext:nil];
 
 
@@ -40,6 +30,8 @@
                                             selector:@selector(_surfaceNeedsUpdate:)
                                                 name:NSViewGlobalFrameDidChangeNotification
                                                object:self];
+
+    [_openGLContext makeCurrentContext];
 
     return self;
 }

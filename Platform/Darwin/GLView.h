@@ -4,8 +4,9 @@
 {
     @private
     NSOpenGLContext* _openGLContext;
-    NSOpenGLPixelFormat* _pixelFormat;
 }
+
+@property (strong) NSOpenGLPixelFormat* pixelFormat;
 
 @end
 

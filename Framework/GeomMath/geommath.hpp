@@ -248,6 +248,7 @@ namespace My {
         }
     };
 
+    typedef Matrix<float, 3, 3> Matrix3X3f;
     typedef Matrix<float, 4, 4> Matrix4X4f;
 
     template <typename T, int ROWS, int COLS>

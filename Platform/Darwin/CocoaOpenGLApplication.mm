@@ -13,9 +13,29 @@ int CocoaOpenGLApplication::Initialize()
 
     result = CocoaApplication::Initialize();
 
-    GLView* view = [[GLView alloc] initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)];
+    if (!result) {
+        NSOpenGLPixelFormatAttribute attrs[] = {
+            NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+            NSOpenGLPFAColorSize,32,
+            NSOpenGLPFADepthSize,16,
+            NSOpenGLPFADoubleBuffer,
+            NSOpenGLPFAAccelerated,
+            0
+        };
 
-    [m_pWindow setContentView:view];
+        GLView* view = [GLView new];
+        view.pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
+        [view initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)];
+
+        if(view.pixelFormat == nil)
+        {
+            NSLog(@"No valid matching OpenGL Pixel Format found");
+            [view release];
+            return -1;
+        }
+
+        [m_pWindow setContentView:view];
+    }
 
     return result;
 }

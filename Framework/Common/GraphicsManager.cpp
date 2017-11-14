@@ -19,4 +19,11 @@ void GraphicsManager::Tick()
 {
 }
 
+void GraphicsManager::Clear()
+{
+}
+
+void GraphicsManager::Draw()
+{
+}
 
