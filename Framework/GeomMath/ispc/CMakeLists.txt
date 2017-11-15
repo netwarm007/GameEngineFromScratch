@@ -24,12 +24,20 @@ foreach(FUNC IN LISTS FUNCTIONS)
 
 endforeach(FUNC)
 
+IF(${WIN32})
+add_custom_command(OUTPUT ${GEOMMATH_LIB_FILE}
+        COMMAND ${CMAKE_AR} ${ISPC_LIBRARIAN_OPTIONS} ${OBJECTS}
+        COMMAND rm -v ${OBJECTS}
+        DEPENDS ${OBJECTS}
+        )
+ELSE(${WIN32})
 add_custom_command(OUTPUT ${GEOMMATH_LIB_FILE}
         COMMAND ${CMAKE_AR} ${ISPC_LIBRARIAN_OPTIONS} ${OBJECTS}
         COMMAND ${CMAKE_RANLIB} ${GEOMMATH_LIB_FILE}
         COMMAND rm -v ${OBJECTS}
         DEPENDS ${OBJECTS}
         )
+ENDIF(${WIN32})
 
 add_custom_target(GeomMathLib
                    DEPENDS ${GEOMMATH_LIB_FILE}
