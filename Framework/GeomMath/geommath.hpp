@@ -206,7 +206,7 @@ namespace My {
     template <typename T>
     inline void DotProduct(T& result, const T* a, const T* b, size_t count)
     {
-        float _result[count];
+        T* _result = new T[count];
 
         result = static_cast<T>(0);
 
@@ -214,6 +214,8 @@ namespace My {
         for (size_t i = 0; i < count; i++) {
             result += _result[i];
         }
+
+        delete[] _result;
     }
 
     template <template <typename> class TT, typename T>

@@ -128,7 +128,7 @@ int OpenGLGraphicsManager::Initialize()
 
             // Set the field of view and screen aspect ratio.
             float fieldOfView = PI / 4.0f;
-            GfxConfiguration& conf = g_pApp->GetConfiguration();
+            const GfxConfiguration& conf = g_pApp->GetConfiguration();
             float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
 
             // Build the perspective projection matrix.
@@ -137,6 +137,7 @@ int OpenGLGraphicsManager::Initialize()
         }
 
         InitializeShader(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
+        InitializeBuffers();
     }
 
     return result;
