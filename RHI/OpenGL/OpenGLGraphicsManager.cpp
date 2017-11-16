@@ -21,7 +21,6 @@ namespace My {
         int logSize, i;
         char* infoLog;
         ofstream fout;
-        unsigned int error;
 
         // Get the size of the string containing the information log for the failed shader compilation message.
         glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &logSize);

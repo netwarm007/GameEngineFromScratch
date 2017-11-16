@@ -61,9 +61,9 @@ namespace My {
                 size_t      m_nBlocksPerPage;
 
                 // statistics
-                uint32_t    m_nPages;
-                uint32_t    m_nBlocks;
-                uint32_t    m_nFreeBlocks;
+                size_t      m_nPages;
+                size_t      m_nBlocks;
+                size_t      m_nFreeBlocks;
 
                 // disable copy & assignment
                 Allocator(const Allocator& clone);
