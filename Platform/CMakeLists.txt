@@ -4,6 +4,11 @@ IF(${WIN32})
     # Windows specific code
     add_subdirectory(Windows)
 ELSEIF(${UNIX})
-    # Linux specific code
-    add_subdirectory(Linux)
+    IF(${APPLE})
+        # Apple specific code
+        add_subdirectory(Darwin)
+    ELSE(${APPLE})
+        # Linux specific code
+        add_subdirectory(Linux)
+    ENDIF(${APPLE})
 ENDIF(${WIN32})

@@ -16,7 +16,7 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
-        inline HWND GetMainWindow() const { return m_hWnd; };
+        HWND GetMainWindow() { return m_hWnd; }
 
     private:
         // the WindowProc function prototype
@@ -25,7 +25,7 @@ namespace My {
                          WPARAM wParam,
                          LPARAM lParam);
 
-    private:
+    protected:
         HWND m_hWnd;
     };
 }

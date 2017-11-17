@@ -293,8 +293,6 @@ HRESULT My::D3d12GraphicsManager::CreateTextureBuffer(const Image& image)
 
 HRESULT My::D3d12GraphicsManager::CreateSamplerBuffer()
 {
-    HRESULT hr;
-
     // Describe and create a sampler.
     D3D12_SAMPLER_DESC samplerDesc = {};
     samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -308,14 +306,13 @@ HRESULT My::D3d12GraphicsManager::CreateSamplerBuffer()
     samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
     m_pDev->CreateSampler(&samplerDesc, m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart());
 
-    return hr;
+    return S_OK;
 }
 
 HRESULT My::D3d12GraphicsManager::CreateConstantBuffer(const Buffer& buffer)
 {
-    HRESULT hr;
 
-    return hr;
+    return S_OK;
 }
 
 

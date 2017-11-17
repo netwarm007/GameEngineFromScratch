@@ -39,3 +39,8 @@
 *.ldb filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin/ispc filter=lfs diff=lfs merge=lfs -text
+*.a filter=lfs diff=lfs merge=lfs -text
+*.so filter=lfs diff=lfs merge=lfs -text
+External/Darwin/bin/ filter=lfs diff=lfs merge=lfs -text
+External/Darwin/lib/ filter=lfs diff=lfs merge=lfs -text
+External/Linux/lib filter=lfs diff=lfs merge=lfs -text

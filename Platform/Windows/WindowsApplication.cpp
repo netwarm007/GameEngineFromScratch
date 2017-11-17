@@ -102,12 +102,6 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
     // sort through and find what code to run for the message given
     switch(message)
     {
-	case WM_PAINT:
-	    {
-            pThis->OnDraw();
-	    } 
-        break;
-
     case WM_KEYDOWN:
         {
             // we will replace this with input manager

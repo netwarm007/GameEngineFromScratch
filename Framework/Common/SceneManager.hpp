@@ -19,5 +19,7 @@ namespace My {
     protected:
         std::unique_ptr<BaseSceneNode> m_RootNode;
     };
+
+    extern SceneManager*    g_pSceneManager;
 }
 
