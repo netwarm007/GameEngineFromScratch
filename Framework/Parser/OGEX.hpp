@@ -10,7 +10,7 @@ namespace My {
         std::unordered_map<std::string, std::shared_ptr<BaseSceneObject>> m_SceneObjects;
 
     private:
-        void ConvertOddlStructureToSceneNode(const ODDL::Structure& structure, std::unique_ptr<BaseSceneNode>& base_node)
+        void ConvertOddlStructureToSceneNode(const ODDL::Structure& structure, std::unique_ptr<BaseSceneNode>& base_node, Scene& scene)
         {
             std::unique_ptr<BaseSceneNode> node;
 
@@ -235,6 +235,8 @@ namespace My {
 								_object->AddMesh(mesh);
                             }
 						}
+
+                        scene.Geometries.push_front(_object);
                     }
                     return;
                 case OGEX::kStructureTransform:
@@ -303,6 +305,7 @@ namespace My {
                             
                             _sub_structure = _sub_structure->Next();
                         }
+                        scene.Materials.push_front(material);
                     }
                     return;
                 default:
@@ -313,7 +316,7 @@ namespace My {
             const ODDL::Structure* sub_structure = structure.GetFirstSubnode();
             while (sub_structure)
             {
-                ConvertOddlStructureToSceneNode(*sub_structure, node);
+                ConvertOddlStructureToSceneNode(*sub_structure, node, scene);
 
                 sub_structure = sub_structure->Next();
             }
@@ -325,9 +328,9 @@ namespace My {
         OgexParser() = default;
         virtual ~OgexParser() = default;
 
-        virtual std::unique_ptr<BaseSceneNode> Parse(const std::string& buf)
+        virtual std::unique_ptr<Scene> Parse(const std::string& buf)
         {
-            std::unique_ptr<BaseSceneNode> root_node (new BaseSceneNode("scene_root"));
+            std::unique_ptr<Scene> pScene(new Scene("OGEX Scene"));
             OGEX::OpenGexDataDescription  openGexDataDescription;
 
             ODDL::DataResult result = openGexDataDescription.ProcessText(buf.c_str());
@@ -336,13 +339,13 @@ namespace My {
                 const ODDL::Structure* structure = openGexDataDescription.GetRootStructure()->GetFirstSubnode();
                 while (structure)
                 {
-                    ConvertOddlStructureToSceneNode(*structure, root_node);
+                    ConvertOddlStructureToSceneNode(*structure, pScene->SceneGraph, *pScene.get());
 
                     structure = structure->Next();
                 }
             }
 
-            return root_node;
+            return pScene;
         }
     };
 }

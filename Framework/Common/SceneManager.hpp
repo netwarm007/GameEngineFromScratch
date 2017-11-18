@@ -1,8 +1,7 @@
 #pragma once
 #include "geommath.hpp"
 #include "IRuntimeModule.hpp"
-#include "SceneNode.hpp"
-#include <forward_list>
+#include "SceneParser.hpp"
 
 namespace My {
     class SceneManager : implements IRuntimeModule
@@ -29,11 +28,7 @@ namespace My {
         void LoadOgexScene(const char* ogex_scene_file_name);
 
     protected:
-        std::unique_ptr<BaseSceneNode>          m_RootNode;
-        std::forward_list<std::shared_ptr<SceneObjectCamera>>      m_Cameras;
-        std::forward_list<std::shared_ptr<SceneObjectLight>>       m_Lights;
-        std::forward_list<std::shared_ptr<SceneObjectMaterial>>    m_Materials;
-        std::forward_list<std::shared_ptr<SceneObjectGeometry>>    m_Geometries;
+        std::unique_ptr<Scene>  m_pScene;
     };
 
     extern SceneManager*    g_pSceneManager;

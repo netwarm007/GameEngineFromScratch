@@ -15,3 +15,9 @@ add_executable(SceneObjectTest SceneObjectTest.cpp)
 target_link_libraries(SceneObjectTest Common ${XG_LIBRARY})
 __add_xg_platform_dependencies(SceneObjectTest)
 add_test(NAME TEST_SceneObject COMMAND SceneObjectTest)
+
+add_executable(SceneLoadingTest SceneLoadingTest.cpp)
+target_link_libraries(SceneLoadingTest Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY})
+__add_xg_platform_dependencies(SceneLoadingTest)
+add_test(NAME TEST_SceneLoading COMMAND SceneLoadingTest)
+
