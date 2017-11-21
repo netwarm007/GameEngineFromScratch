@@ -1,5 +1,6 @@
 #include <cstdio>
-#include <unistd.h>
+#include <chrono>
+#include <thread>
 #include "EmptyApplication.hpp"
 
 using namespace My;
@@ -38,7 +39,7 @@ int main(int argc, char** argv) {
         g_pGraphicsManager->Tick();
         g_pAssetLoader->Tick();
         g_pSceneManager->Tick();
-        usleep(10000);
+        std::this_thread::sleep_for(std::chrono::microseconds(10000));
 	}
 
     g_pSceneManager->Finalize();
