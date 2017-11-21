@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
-#include "EmptyApplication.hpp"
+#include "BaseApplication.hpp"
 
 using namespace My;
 

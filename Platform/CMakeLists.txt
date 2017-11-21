@@ -11,4 +11,6 @@ ELSEIF(${UNIX})
         # Linux specific code
         add_subdirectory(Linux)
     ENDIF(${APPLE})
+ELSEIF(${ORBIS})
+    add_subdirectory(Orbis)
 ENDIF(${WIN32})
