@@ -1,4 +1,5 @@
-#include <stdio.h>
+#include <cstdio>
+#include <unistd.h>
 #include "EmptyApplication.hpp"
 
 using namespace My;
@@ -37,6 +38,7 @@ int main(int argc, char** argv) {
         g_pGraphicsManager->Tick();
         g_pAssetLoader->Tick();
         g_pSceneManager->Tick();
+        usleep(10000);
 	}
 
     g_pSceneManager->Finalize();

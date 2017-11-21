@@ -3,6 +3,7 @@ project (GameEngineFromScrath)
 
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_FLAGS "-Wno-gnu-anonymous-struct -Wno-nested-anon-types")
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(TargetArchDetect)

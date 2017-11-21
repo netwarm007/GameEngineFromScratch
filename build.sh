@@ -1,7 +1,7 @@
 #!/bin/bash
 mkdir -p build
-cd build
-rm -rf *
+pushd build
 cmake -DCMAKE_BUILD_TYPE=Debug ..
-cmake --build . --config debug
+cmake --build . --config Debug
+popd
 

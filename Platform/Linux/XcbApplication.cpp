@@ -88,18 +88,26 @@ void My::XcbApplication::Finalize()
 void My::XcbApplication::Tick()
 {
     xcb_generic_event_t* pEvent;
-    pEvent = xcb_wait_for_event(m_pConn);
-    switch(pEvent->response_type & ~0x80) {
-    case XCB_EXPOSE:
-            {       
-		OnDraw();
-            }
+    if((pEvent = xcb_poll_for_event(m_pConn)))
+    {
+        switch(pEvent->response_type & ~0x80) {
+        case XCB_EXPOSE:
             break;
-    case XCB_KEY_PRESS:
+        case XCB_KEY_PRESS:
             BaseApplication::m_bQuit = true;
             break;
+        default:
+            break;
+        }
+        free(pEvent);
+    } else {
+        if(xcb_connection_has_error(m_pConn)) {
+            m_bQuit = true;
+        } else {
+	        OnDraw();
+        }
     }
-    free(pEvent);
+
 }
 
 
