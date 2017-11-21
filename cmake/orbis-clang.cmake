@@ -1,5 +1,5 @@
 # this one is important
-SET(CMAKE_SYSTEM_NAME ORBIS)
+SET(CMAKE_SYSTEM_NAME Orbis)
 #this one not so much
 SET(CMAKE_SYSTEM_VERSION 5.008)
 
@@ -10,10 +10,12 @@ SET(ORBIS_TARGET_ROOT_DIR "${SCE_ORBIS_SDK_DIR}/target")
 # specify the cross compiler
 SET(CMAKE_C_COMPILER ${ORBIS_TOOLCHAIN_DIR}orbis-clang.exe)
 SET(CMAKE_CXX_COMPILER ${ORBIS_TOOLCHAIN_DIR}orbis-clang.exe)
-SET(CMAKE_AR ${ORBIS_TOOLCHAIN_DIR}orbis-ar.exe CACHE INTERNAL "Archieve")
+SET(CMAKE_AR ${ORBIS_TOOLCHAIN_DIR}orbis-ar.exe CACHE INTERNAL "AR_TOOL")
+
+SET(CMAKE_CXX_FLAGS "-frtti" CACHE INTERNAL "CFLAGS")
 
 # where is the target environment 
-SET(CMAKE_FIND_ROOT_PATH  ${ORBIS_TARGET_ROOT_DIR})
+SET(CMAKE_FIND_ROOT_PATH  ${ORBIS_TARGET_ROOT_DIR} ${PROJECT_SOURCE_DIR}/Platform/Orbis)
 
 # search for programs in the build host directories
 SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)

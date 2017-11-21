@@ -1,3 +1,3 @@
-add_executable(MyGameEngine OrbisApplication.cpp)
-target_link_libraries(MyGameEngine Common)
-set_target_properties(MyGameEngine PROPERTIES SUFFIX ".elf")
+add_executable(MyGameEngineOrbis.elf OrbisApplication.cpp)
+target_link_libraries(MyGameEngineOrbis.elf Common ${XG_LIBRARY} ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY})
+__add_xg_platform_dependencies(MyGameEngineOrbis.elf)
