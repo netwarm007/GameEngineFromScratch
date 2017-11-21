@@ -72,7 +72,7 @@ namespace My {
         kVertexDataTypeDouble1   = "DUB1"_i32,
         kVertexDataTypeDouble2   = "DUB2"_i32,
         kVertexDataTypeDouble3   = "DUB3"_i32,
-        kVertexDataTypeDouble4   = "DUB3"_i32
+        kVertexDataTypeDouble4   = "DUB4"_i32
     };
 
     std::ostream& operator<<(std::ostream& out, VertexDataType type);
@@ -92,6 +92,84 @@ namespace My {
             SceneObjectVertexArray(const char* attr = "", const uint32_t morph_index = 0, const VertexDataType data_type = VertexDataType::kVertexDataTypeFloat3, const void* data = nullptr, const size_t data_size = 0) : m_strAttribute(attr), m_nMorphTargetIndex(morph_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
             SceneObjectVertexArray(SceneObjectVertexArray& arr) = default; 
             SceneObjectVertexArray(SceneObjectVertexArray&& arr) = default; 
+
+            const std::string& GetAttributeName() const { return m_strAttribute; };
+            VertexDataType GetDataType() const { return m_DataType; };
+            size_t GetDataSize() const 
+            { 
+                size_t size = m_szData;
+
+                switch(m_DataType) {
+                    case VertexDataType::kVertexDataTypeFloat1:
+                        size *= 1 * sizeof(float);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat2:
+                        size *= 2 * sizeof(float);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat3:
+                        size *= 3 * sizeof(float);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat4:
+                        size *= 4 * sizeof(float);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble1:
+                        size *= 1 * sizeof(double);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble2:
+                        size *= 2 * sizeof(double);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble3:
+                        size *= 3 * sizeof(double);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble4:
+                        size *= 4 * sizeof(double);
+                        break;
+                    default:
+                        size = 0;
+                        assert(0);
+                        break;
+                }
+
+                return size;
+            }; 
+            const void* GetData() const { return m_pData; };
+            size_t GetVertexCount() const
+            {
+                size_t size = m_szData;
+
+                switch(m_DataType) {
+                    case VertexDataType::kVertexDataTypeFloat1:
+                        size /= 1;
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat2:
+                        size /= 2;
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat3:
+                        size /= 3;
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat4:
+                        size /= 4;
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble1:
+                        size /= 1;
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble2:
+                        size /= 2;
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble3:
+                        size /= 3;
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble4:
+                        size /= 4;
+                        break;
+                    default:
+                        size = 0;
+                        assert(0);
+                        break;
+                }
+
+                return size;
+            }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectVertexArray& obj);
     };
@@ -121,6 +199,39 @@ namespace My {
                 : m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
             SceneObjectIndexArray(SceneObjectIndexArray& arr) = default;
             SceneObjectIndexArray(SceneObjectIndexArray&& arr) = default;
+
+            const IndexDataType GetIndexType() const { return m_DataType; };
+            const void* GetData() const { return m_pData; };
+            size_t GetDataSize() const 
+            { 
+                size_t size = m_szData;
+
+                switch(m_DataType) {
+                    case IndexDataType::kIndexDataTypeInt8:
+                        size *= sizeof(int8_t);
+                        break;
+                    case IndexDataType::kIndexDataTypeInt16:
+                        size *= sizeof(int16_t);
+                        break;
+                    case IndexDataType::kIndexDataTypeInt32:
+                        size *= sizeof(int32_t);
+                        break;
+                    case IndexDataType::kIndexDataTypeInt64:
+                        size *= sizeof(int64_t);
+                        break;
+                    default:
+                        size = 0;
+                        assert(0);
+                        break;
+                }
+
+                return size;
+            };
+
+            size_t GetIndexCount() const
+            {
+                return m_szData;
+            }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectIndexArray& obj);
     };
@@ -173,6 +284,13 @@ namespace My {
             void AddIndexArray(SceneObjectIndexArray&& array) { m_IndexArray.push_back(std::move(array)); };
             void AddVertexArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
 			void SetPrimitiveType(PrimitiveType type) { m_PrimitiveType = type;  };
+
+            size_t GetIndexCount() const { return (m_IndexArray.empty()? 0 : m_IndexArray[0].GetIndexCount()); };
+            size_t GetVertexCount() const { return (m_VertexArray.empty()? 0 : m_VertexArray[0].GetVertexCount()); };
+            size_t GetVertexPropertiesCount() const { return m_VertexArray.size(); }; 
+            const SceneObjectVertexArray& GetVertexPropertyArray(const size_t index) const { return m_VertexArray[index]; };
+            const SceneObjectIndexArray& GetIndexArray(const size_t index) const { return m_IndexArray[index]; };
+            const PrimitiveType& GetPrimitiveType() { return m_PrimitiveType; };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj);
     };
@@ -302,6 +420,8 @@ namespace My {
 			const bool MotionBlur() { return m_bMotionBlur; };
 
             void AddMesh(std::shared_ptr<SceneObjectMesh>& mesh) { m_Mesh.push_back(std::move(mesh)); };
+            const std::weak_ptr<SceneObjectMesh> GetMesh() { return (m_Mesh.empty()? nullptr : m_Mesh[0]); };
+            const std::weak_ptr<SceneObjectMesh> GetMeshLOD(size_t lod) { return (lod < m_Mesh.size()? m_Mesh[lod] : nullptr); };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj);
     };

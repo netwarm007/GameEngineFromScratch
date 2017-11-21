@@ -4,9 +4,10 @@
 #include "AssetLoader.hpp"
 #include "glad/glad.h"
 #include "IApplication.hpp"
+#include "SceneManager.hpp"
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/color.vs";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/color.ps";
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic.vs";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic.ps";
 
 using namespace My;
 using namespace std;
@@ -145,21 +146,18 @@ int OpenGLGraphicsManager::Initialize()
 
 void OpenGLGraphicsManager::Finalize()
 {
-    // Disable the two vertex array attributes.
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+    for (auto i = 0; i < m_Buffers.size() - 1; i++) { 
+        glDisableVertexAttribArray(i);
+    }
 
-    // Release the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &m_vertexBufferId);
-
-    // Release the index buffer.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &m_indexBufferId);
-
-    // Release the vertex array object.
-    glBindVertexArray(0);
-    glDeleteVertexArrays(1, &m_vertexArrayId);
+    for (auto buf : m_Buffers) {
+        if(buf.first == "index") {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        glDeleteBuffers(1, &buf.second);
+    }
 
     // Detach the vertex and fragment shaders from the program.
     glDetachShader(m_shaderProgram, m_vertexShader);
@@ -241,74 +239,159 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
     return true;
 }
 
-bool OpenGLGraphicsManager::InitializeBuffers()
+void OpenGLGraphicsManager::InitializeBuffers()
 {
-    struct VertexType
+    auto pGeometry = g_pSceneManager->GetFirstGeometry();
+    while (pGeometry)
     {
-        Vector3f position;
-        Vector3f color;
-    };
+        auto pMesh = pGeometry->GetMesh().lock();
+        if (!pMesh) return;
 
-    VertexType vertices[] = {
-        {{  1.0f,  1.0f,  1.0f }, { 1.0f, 0.0f, 0.0f }},
-        {{  1.0f,  1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }},
-        {{ -1.0f,  1.0f, -1.0f }, { 0.0f, 0.0f, 1.0f }},
-        {{ -1.0f,  1.0f,  1.0f }, { 1.0f, 1.0f, 0.0f }},
-        {{  1.0f, -1.0f,  1.0f }, { 1.0f, 0.0f, 1.0f }},
-        {{  1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f }},
-        {{ -1.0f, -1.0f, -1.0f }, { 0.5f, 1.0f, 0.5f }},
-        {{ -1.0f, -1.0f,  1.0f }, { 1.0f, 0.5f, 1.0f }},
-    };
-    uint16_t indices[] = { 1, 2, 3, 3, 2, 6, 6, 7, 3, 3, 0, 1, 0, 3, 7, 7, 6, 4, 4, 6, 5, 0, 7, 4, 1, 0, 4, 1, 4, 5, 2, 1, 5, 2, 5, 6 };
+        // Set the number of vertex properties.
+        auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
 
-    // Set the number of vertices in the vertex array.
-    m_vertexCount = sizeof(vertices) / sizeof(VertexType);
+        // Set the number of vertices in the vertex array.
+        auto vertexCount = pMesh->GetVertexCount();
 
-    // Set the number of indices in the index array.
-    m_indexCount = sizeof(indices) / sizeof(uint16_t);
+        // Allocate an OpenGL vertex array object.
+        glGenVertexArrays(1, &m_VAO);
 
-    // Allocate an OpenGL vertex array object.
-    glGenVertexArrays(1, &m_vertexArrayId);
+        // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+        glBindVertexArray(m_VAO);
 
-    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
-    glBindVertexArray(m_vertexArrayId);
+        GLuint buffer_id;
 
-    // Generate an ID for the vertex buffer.
-    glGenBuffers(1, &m_vertexBufferId);
+        for (size_t i = 0; i < vertexPropertiesCount; i++)
+        {
+            const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
+            auto v_property_array_data_size = v_property_array.GetDataSize();
+            auto v_property_array_data = v_property_array.GetData();
 
-    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER, m_vertexCount * sizeof(VertexType), vertices, GL_STATIC_DRAW);
+            // Generate an ID for the vertex buffer.
+            glGenBuffers(1, &buffer_id);
 
-    // Enable the two vertex array attributes.
-    glEnableVertexAttribArray(0);  // Vertex position.
-    glEnableVertexAttribArray(1);  // Vertex color.
+            // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+            glBufferData(GL_ARRAY_BUFFER, v_property_array_data_size, v_property_array_data, GL_STATIC_DRAW);
 
-    // Specify the location and format of the position portion of the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferId);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VertexType), 0);
+            glEnableVertexAttribArray(i);
 
-    // Specify the location and format of the color portion of the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferId);
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(VertexType), (char*)NULL + (3 * sizeof(float)));
+            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+            switch (v_property_array.GetDataType()) {
+                case VertexDataType::kVertexDataTypeFloat1:
+                    glVertexAttribPointer(i, 1, GL_FLOAT, false, 0, 0);
+                    break;
+                case VertexDataType::kVertexDataTypeFloat2:
+                    glVertexAttribPointer(i, 2, GL_FLOAT, false, 0, 0);
+                    break;
+                case VertexDataType::kVertexDataTypeFloat3:
+                    glVertexAttribPointer(i, 3, GL_FLOAT, false, 0, 0);
+                    break;
+                case VertexDataType::kVertexDataTypeFloat4:
+                    glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, 0);
+                    break;
+                case VertexDataType::kVertexDataTypeDouble1:
+                    glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, 0);
+                    break;
+                case VertexDataType::kVertexDataTypeDouble2:
+                    glVertexAttribPointer(i, 2, GL_DOUBLE, false, 0, 0);
+                    break;
+                case VertexDataType::kVertexDataTypeDouble3:
+                    glVertexAttribPointer(i, 3, GL_DOUBLE, false, 0, 0);
+                    break;
+                case VertexDataType::kVertexDataTypeDouble4:
+                    glVertexAttribPointer(i, 4, GL_DOUBLE, false, 0, 0);
+                    break;
+                default:
+                    assert(0);
+            }
 
-    // Generate an ID for the index buffer.
-    glGenBuffers(1, &m_indexBufferId);
+            m_Buffers[v_property_array.GetAttributeName()] = buffer_id;
+        }
 
-    // Bind the index buffer and load the index data into it.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexCount* sizeof(uint16_t), indices, GL_STATIC_DRAW);
+        // Generate an ID for the index buffer.
+        glGenBuffers(1, &buffer_id);
 
-    return true;
+        const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
+        auto index_array_size = index_array.GetDataSize();
+        auto index_array_data = index_array.GetData();
+
+        // Bind the index buffer and load the index data into it.
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array_size, index_array_data, GL_STATIC_DRAW);
+
+        m_Buffers["index"] = buffer_id;
+
+        pGeometry = g_pSceneManager->GetNextGeometry();
+    }
+
+    return;
 }
 
 void OpenGLGraphicsManager::RenderBuffers()
 {
-    // Bind the vertex array object that stored all the information about the vertex and index buffers.
-    glBindVertexArray(m_vertexArrayId);
+	glBindVertexArray(m_VAO);
+    auto pGeometry = g_pSceneManager->GetFirstGeometry();
+    while (pGeometry)
+    {
+        auto pMesh = pGeometry->GetMesh().lock();
+        if (!pMesh) continue;
 
-    // Render the vertex buffer using the index buffer.
-    glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_SHORT, 0);
+        const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
+
+        // Set the number of indices in the index array.
+        auto indexCount = index_array.GetIndexCount();
+        GLenum  mode;
+        switch(pMesh->GetPrimitiveType())
+        {
+            case PrimitiveType::kPrimitiveTypePointList:
+                mode = GL_POINTS;
+                break;
+            case PrimitiveType::kPrimitiveTypeLineList:
+                mode = GL_LINES;
+                break;
+            case PrimitiveType::kPrimitiveTypeLineStrip:
+                mode = GL_LINE_STRIP;
+                break;
+            case PrimitiveType::kPrimitiveTypeTriList:
+                mode = GL_TRIANGLES;
+                break;
+            case PrimitiveType::kPrimitiveTypeTriStrip:
+                mode = GL_TRIANGLE_STRIP;
+                break;
+            case PrimitiveType::kPrimitiveTypeTriFan:
+                mode = GL_TRIANGLE_FAN;
+                break;
+            default:
+                // ignore
+                continue;
+        }
+        auto index_array_data = index_array.GetData();
+        GLenum type;
+        switch(index_array.GetIndexType())
+        {
+            case IndexDataType::kIndexDataTypeInt8:
+                type = GL_UNSIGNED_BYTE;
+                break;
+            case IndexDataType::kIndexDataTypeInt16:
+                type = GL_UNSIGNED_SHORT;
+                break;
+            case IndexDataType::kIndexDataTypeInt32:
+                type = GL_UNSIGNED_INT;
+                break;
+            default:
+                // not supported by OpenGL
+                cerr << "Error: Unsupported Index Type " << index_array << endl;
+                cerr << "Mesh: " << *pMesh << endl;
+                cerr << "Geometry: " << *pGeometry << endl;
+                continue;
+        }
+
+        // Render the vertex buffer using the index buffer.
+        glDrawElements(mode, indexCount, type, 0);
+
+        pGeometry = g_pSceneManager->GetNextGeometry();
+    }
 
     return;
 }
@@ -417,7 +500,7 @@ bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char*
 
     // Bind the shader input variables.
     glBindAttribLocation(m_shaderProgram, 0, "inputPosition");
-    glBindAttribLocation(m_shaderProgram, 1, "inputColor");
+    glBindAttribLocation(m_shaderProgram, 1, "inputNormal");
 
     // Link the shader program.
     glLinkProgram(m_shaderProgram);

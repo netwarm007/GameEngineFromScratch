@@ -30,7 +30,7 @@ int main(int , char** )
     g_pSceneManager->Initialize();
     g_pAssetLoader->Initialize();
 
-    g_pSceneManager->LoadScene("Scene/Example.ogex");
+    g_pSceneManager->LoadScene("Scene/cube.ogex");
 
     cout << "Dump of Cameras" << endl;
     cout << "---------------------------" << endl;

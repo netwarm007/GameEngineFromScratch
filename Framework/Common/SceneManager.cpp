@@ -39,6 +39,7 @@ void SceneManager::LoadOgexScene(const char* ogex_scene_file_name)
 
 const shared_ptr<SceneObjectCamera> SceneManager::GetFirstCamera()
 {
+    if (!m_pScene) return nullptr;
     return (m_pScene->Cameras.empty()? nullptr : m_pScene->Cameras.front());
 }
 
@@ -50,6 +51,7 @@ const shared_ptr<SceneObjectCamera> SceneManager::GetNextCamera()
 
 const shared_ptr<SceneObjectLight> SceneManager::GetFirstLight()
 {
+    if (!m_pScene) return nullptr;
     return (m_pScene->Lights.empty()? nullptr : m_pScene->Lights.front());
 }
 
@@ -61,6 +63,7 @@ const shared_ptr<SceneObjectLight> SceneManager::GetNextLight()
 
 const shared_ptr<SceneObjectMaterial> SceneManager::GetFirstMaterial()
 {
+    if (!m_pScene) return nullptr;
     return (m_pScene->Materials.empty()? nullptr : m_pScene->Materials.front());
 }
 
@@ -72,6 +75,7 @@ const shared_ptr<SceneObjectMaterial> SceneManager::GetNextMaterial()
 
 const shared_ptr<SceneObjectGeometry> SceneManager::GetFirstGeometry()
 {
+    if (!m_pScene) return nullptr;
     return (m_pScene->Geometries.empty()? nullptr : m_pScene->Geometries.front());
 }
 
