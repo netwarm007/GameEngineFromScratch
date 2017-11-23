@@ -53,11 +53,13 @@ namespace My {
                 case OGEX::kStructureLightNode:
                     {
                         node = std::make_unique<SceneLightNode>(structure.GetStructureName());
+						const OGEX::LightNodeStructure& _structure = dynamic_cast<const OGEX::LightNodeStructure&>(structure);
                     }
                     break;
                 case OGEX::kStructureCameraNode:
                     {
                         node = std::make_unique<SceneCameraNode>(structure.GetStructureName());
+						const OGEX::CameraNodeStructure& _structure = dynamic_cast<const OGEX::CameraNodeStructure&>(structure);
                     }
                     break;
                 case OGEX::kStructureGeometryObject:
@@ -307,6 +309,10 @@ namespace My {
                         }
                         scene.Materials.push_front(material);
                     }
+                    return;
+                case OGEX::kStructureLightObject:
+                    return;
+                case OGEX::kStructureCameraObject:
                     return;
                 default:
                     // just ignore it and finish

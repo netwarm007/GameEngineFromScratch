@@ -261,7 +261,7 @@ void OpenGLGraphicsManager::InitializeBuffers()
 
         GLuint buffer_id;
 
-        for (size_t i = 0; i < vertexPropertiesCount; i++)
+        for (int32_t i = 0; i < vertexPropertiesCount; i++)
         {
             const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
             auto v_property_array_data_size = v_property_array.GetDataSize();
@@ -340,7 +340,7 @@ void OpenGLGraphicsManager::RenderBuffers()
         const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
 
         // Set the number of indices in the index array.
-        auto indexCount = index_array.GetIndexCount();
+        GLsizei indexCount = static_cast<GLsizei>(index_array.GetIndexCount());
         GLenum  mode;
         switch(pMesh->GetPrimitiveType())
         {
