@@ -59,5 +59,6 @@ target_link_libraries(MyGameEngineCocoaOpenGL
         ${OPENGL_LIBRARY}
         dl
         )
+target_include_directories(MyGameEngineCocoaOpenGL PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 __add_xg_platform_dependencies(MyGameEngineCocoaOpenGL)
 

@@ -61,23 +61,19 @@ namespace My {
     template <typename T>
     class SceneNode : public BaseSceneNode {
         protected:
-            std::shared_ptr<T> m_pSceneObject;
+            std::string m_keySceneObject;
 
         protected:
             virtual void dump(std::ostream& out) const 
             { 
-                if ( m_pSceneObject)
-                    out << *m_pSceneObject << std::endl;
+                out << m_keySceneObject << std::endl;
             };
 
         public:
             using BaseSceneNode::BaseSceneNode;
             SceneNode() = default;
-            SceneNode(const std::shared_ptr<T>& object) { m_pSceneObject = object; };
-            SceneNode(const std::shared_ptr<T>&& object) { m_pSceneObject = std::move(object); };
 
-            void AddSceneObjectRef(const std::shared_ptr<T>& object) { m_pSceneObject = object; };
-            void AddSceneObjectRef(const std::shared_ptr<T>&& object) { m_pSceneObject = std::move(object); };
+            void AddSceneObjectRef(const std::string& key) { m_keySceneObject = key; };
 
     };
 
@@ -88,7 +84,7 @@ namespace My {
             bool        m_bVisible;
             bool        m_bShadow;
             bool        m_bMotionBlur;
-            std::vector<std::shared_ptr<SceneObjectMaterial>> m_Materials;
+            std::vector<std::string> m_Materials;
 
         protected:
             virtual void dump(std::ostream& out) const 
@@ -99,7 +95,7 @@ namespace My {
                 out << "Motion Blur: " << m_bMotionBlur << std::endl;
                 out << "Material(s): " << std::endl;
                 for (auto material : m_Materials) {
-                    out << *material << std::endl;
+                    out << material << std::endl;
                 }
             };
 
@@ -113,19 +109,20 @@ namespace My {
             void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
             const bool MotionBlur() { return m_bMotionBlur; };
             using SceneNode::AddSceneObjectRef;
-            void AddSceneObjectRef(const std::shared_ptr<SceneObjectMaterial>& object) { m_Materials.push_back(object); };
+            void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
+            void AddMaterialRef(const std::string&& key) { m_Materials.push_back(std::move(key)); };
     };
 
     class SceneLightNode : public SceneNode<SceneObjectLight> 
     {
         protected:
-            Vector3f m_Target;
+            bool        m_bShadow;
 
         public:
             using SceneNode::SceneNode;
 
-            void SetTarget(Vector3f& target) { m_Target = target; };
-            const Vector3f& GetTarget() { return m_Target; };
+            void SetIfCastShadow(bool shadow) { m_bShadow = shadow; };
+            const bool CastShadow() { return m_bShadow; };
     };
 
     class SceneCameraNode : public SceneNode<SceneObjectCamera>

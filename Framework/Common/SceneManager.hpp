@@ -15,14 +15,8 @@ namespace My {
         virtual void Tick();
 
         void LoadScene(const char* scene_file_name);
-        const std::shared_ptr<SceneObjectCamera> GetFirstCamera();
-        const std::shared_ptr<SceneObjectCamera> GetNextCamera();
-        const std::shared_ptr<SceneObjectLight> GetFirstLight();
-        const std::shared_ptr<SceneObjectLight> GetNextLight();
-        const std::shared_ptr<SceneObjectMaterial> GetFirstMaterial();
-        const std::shared_ptr<SceneObjectMaterial> GetNextMaterial();
-        const std::shared_ptr<SceneObjectGeometry> GetFirstGeometry();
-        const std::shared_ptr<SceneObjectGeometry> GetNextGeometry();
+
+        const Scene& GetSceneForRendering();
 
     protected:
         void LoadOgexScene(const char* ogex_scene_file_name);

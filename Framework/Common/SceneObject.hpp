@@ -298,20 +298,21 @@ namespace My {
     class SceneObjectTexture : public BaseSceneObject
     {
         protected:
-            uint32_t m_nTexCoordIndex;
             std::string m_Name;
+            uint32_t m_nTexCoordIndex;
             std::shared_ptr<Image> m_pImage;
             std::vector<Matrix4X4f> m_Transforms;
 
         public:
             SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0) {};
-            SceneObjectTexture(std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0), m_Name(name) {};
+            SceneObjectTexture(std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_Name(name), m_nTexCoordIndex(0) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(image) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>&& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(std::move(image)) {};
             SceneObjectTexture(SceneObjectTexture&) = default;
             SceneObjectTexture(SceneObjectTexture&&) = default;
-            void SetName(std::string& name) { m_Name = name; };
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
+            void SetName(const std::string& name) { m_Name = name; };
+            void SetName(std::string&& name) { m_Name = std::move(name); };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj);
     };
@@ -370,7 +371,7 @@ namespace My {
         public:
             SceneObjectMaterial(const std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(name) {};
             SceneObjectMaterial(std::string&& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(std::move(name)) {};
-            SceneObjectMaterial(const std::string& name = "", Color&& base_color = Vector4f(1.0f), Parameter&& metallic = 0.0f, Parameter&& roughness = 0.0f, Normal&& normal = Vector3f(0.0f, 0.0f, 1.0f), Parameter&& specular = 0.0f, Parameter&& ao = 0.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(name), m_BaseColor(std::move(base_color)), m_Metallic(std::move(metallic)), m_Roughness(std::move(roughness)), m_Normal(std::move(normal)), m_Specular(std::move(specular)), m_AmbientOcclusion(std::move(ao)) {};
+            SceneObjectMaterial(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), m_Name(""), m_BaseColor(Vector4f(1.0f)), m_Metallic(0.0f), m_Roughness(0.0f), m_Normal(Vector3f(0.0f, 0.0f, 1.0f)), m_Specular(0.0f), m_AmbientOcclusion(1.0f) {};
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
             void SetColor(std::string& attrib, Vector4f& color) 
@@ -410,7 +411,7 @@ namespace My {
 			bool        m_bMotionBlur;
 
         public:
-            SceneObjectGeometry() : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry) {};
+            SceneObjectGeometry(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry) {};
 
 			void SetVisibility(bool visible) { m_bVisible = visible; };
 			const bool Visible() { return m_bVisible; };
@@ -436,13 +437,36 @@ namespace My {
             Color       m_LightColor;
             float       m_fIntensity;
             AttenFunc   m_LightAttenuation;
-            float       m_fNearClipDistance;
-            float       m_fFarClipDistance;
             bool        m_bCastShadows;
+            std::string m_strTexture;
+
+        public:
+			void SetIfCastShadow(bool shadow) { m_bCastShadows = shadow; };
+
+            void SetColor(std::string& attrib, Vector4f& color) 
+            { 
+                if(attrib == "light") {
+                    m_LightColor = Color(color); 
+                }
+            };
+
+            void SetParam(std::string& attrib, float param) 
+            { 
+                if(attrib == "intensity") {
+                    m_fIntensity = param; 
+                }
+            };
+
+            void SetTexture(std::string& attrib, std::string& textureName) 
+            { 
+                if(attrib == "projection") {
+                    m_strTexture = textureName;
+                }
+            };
 
         protected:
             // can only be used as base class of delivered lighting objects
-            SceneObjectLight(Color&& color = Vector4f(1.0f), float intensity = 10.0f, AttenFunc atten_func = DefaultAttenFunc, float near_clip = 1.0f, float far_clip = 100.0f, bool cast_shadows = false) : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight), m_LightColor(std::move(color)), m_fIntensity(intensity), m_LightAttenuation(atten_func), m_fNearClipDistance(near_clip), m_fFarClipDistance(far_clip), m_bCastShadows(cast_shadows) {};
+            SceneObjectLight(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeLight), m_LightColor(Vector4f(1.0f)), m_fIntensity(100.0f), m_LightAttenuation(DefaultAttenFunc), m_bCastShadows(false) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectLight& obj);
     };
@@ -461,7 +485,7 @@ namespace My {
             float   m_fConeAngle;
             float   m_fPenumbraAngle;
         public:
-            SceneObjectSpotLight(Color&& color = Vector4f(1.0f), float intensity = 10.0f, AttenFunc atten_func = DefaultAttenFunc, float near_clip = 1.0f, float far_clip = 100.0f, bool cast_shadows = false, float cone_angle = PI / 4.0f, float penumbra_angle = PI / 3.0f) : SceneObjectLight(std::move(color), intensity, atten_func, near_clip, far_clip, cast_shadows), m_fConeAngle(cone_angle), m_fPenumbraAngle(penumbra_angle) {};
+            SceneObjectSpotLight(void) : SceneObjectLight(), m_fConeAngle(PI / 4.0f), m_fPenumbraAngle(PI / 3.0f) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectSpotLight& obj);
     };
@@ -473,9 +497,30 @@ namespace My {
             float m_fNearClipDistance;
             float m_fFarClipDistance;
 
+        public:
+            void SetColor(std::string& attrib, Vector4f& color) 
+            { 
+                // TODO: extension
+            };
+
+            void SetParam(std::string& attrib, float param) 
+            { 
+                if(attrib == "near") {
+                    m_fNearClipDistance = param; 
+                }
+                else if(attrib == "far") {
+                    m_fFarClipDistance = param; 
+                }
+            };
+
+            void SetTexture(std::string& attrib, std::string& textureName) 
+            { 
+                // TODO: extension
+            };
+
         protected:
             // can only be used as base class
-            SceneObjectCamera(float aspect = 16.0f / 9.0f, float near_clip = 1.0f, float far_clip = 100.0f) : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(aspect), m_fNearClipDistance(near_clip), m_fFarClipDistance(far_clip) {};
+            SceneObjectCamera(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(16.0f / 9.0f), m_fNearClipDistance(1.0f), m_fFarClipDistance(100.0f) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj);
     };
@@ -494,7 +539,16 @@ namespace My {
             float m_fFov;
 
         public:
-            SceneObjectPerspectiveCamera(float aspect = 16.0f / 9.0f, float near_clip = 1.0f, float far_clip = 100.0f, float fov = PI / 2.0) : SceneObjectCamera(aspect, near_clip, far_clip), m_fFov(fov) {};
+            void SetParam(std::string& attrib, float param) 
+            { 
+                // TODO: handle fovx, fovy
+                if(attrib == "fov") {
+                    m_fFov = param; 
+                }
+            };
+
+        public:
+            SceneObjectPerspectiveCamera(float fov = PI / 2.0) : SceneObjectCamera(), m_fFov(fov) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj);
     };

@@ -2,7 +2,6 @@
 #include <fstream>
 #include "OpenGLGraphicsManager.hpp"
 #include "AssetLoader.hpp"
-#include "glad/glad.h"
 #include "IApplication.hpp"
 #include "SceneManager.hpp"
 
@@ -241,7 +240,8 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
 
 void OpenGLGraphicsManager::InitializeBuffers()
 {
-    auto pGeometry = g_pSceneManager->GetFirstGeometry();
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pGeometry = scene.GetFirstGeometry(); 
     while (pGeometry)
     {
         auto pMesh = pGeometry->GetMesh().lock();
@@ -254,10 +254,11 @@ void OpenGLGraphicsManager::InitializeBuffers()
         auto vertexCount = pMesh->GetVertexCount();
 
         // Allocate an OpenGL vertex array object.
-        glGenVertexArrays(1, &m_VAO);
+        GLuint vao;
+        glGenVertexArrays(1, &vao);
 
         // Bind the vertex array object to store all the buffers and vertex attributes we create here.
-        glBindVertexArray(m_VAO);
+        glBindVertexArray(vao);
 
         GLuint buffer_id;
 
@@ -320,25 +321,6 @@ void OpenGLGraphicsManager::InitializeBuffers()
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array_size, index_array_data, GL_STATIC_DRAW);
 
-        m_Buffers["index"] = buffer_id;
-
-        pGeometry = g_pSceneManager->GetNextGeometry();
-    }
-
-    return;
-}
-
-void OpenGLGraphicsManager::RenderBuffers()
-{
-	glBindVertexArray(m_VAO);
-    auto pGeometry = g_pSceneManager->GetFirstGeometry();
-    while (pGeometry)
-    {
-        auto pMesh = pGeometry->GetMesh().lock();
-        if (!pMesh) continue;
-
-        const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
-
         // Set the number of indices in the index array.
         GLsizei indexCount = static_cast<GLsizei>(index_array.GetIndexCount());
         GLenum  mode;
@@ -366,7 +348,7 @@ void OpenGLGraphicsManager::RenderBuffers()
                 // ignore
                 continue;
         }
-        auto index_array_data = index_array.GetData();
+
         GLenum type;
         switch(index_array.GetIndexType())
         {
@@ -387,10 +369,29 @@ void OpenGLGraphicsManager::RenderBuffers()
                 continue;
         }
 
-        // Render the vertex buffer using the index buffer.
-        glDrawElements(mode, indexCount, type, 0);
+        m_Buffers["index"] = buffer_id;
 
-        pGeometry = g_pSceneManager->GetNextGeometry();
+        DrawBatchContext& dbc = *(new DrawBatchContext);
+        dbc.vao     = vao;
+        dbc.mode    = mode;
+        dbc.type    = type;
+        dbc.count   = indexCount;
+        m_VAO.push_back(std::move(dbc));
+
+        pGeometry = scene.GetNextGeometry();
+    }
+
+    return;
+}
+
+void OpenGLGraphicsManager::RenderBuffers()
+{
+    for (auto dbc : m_VAO)
+    {
+	    glBindVertexArray(dbc.vao);
+
+        // Render the vertex buffer using the index buffer.
+        glDrawElements(dbc.mode, dbc.count, dbc.type, 0);
     }
 
     return;

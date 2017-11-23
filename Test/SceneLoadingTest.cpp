@@ -14,11 +14,11 @@ namespace My {
 }
 
 template<typename T>
-static ostream& operator<<(ostream& out, forward_list<shared_ptr<T>> list)
+static ostream& operator<<(ostream& out, unordered_map<string, shared_ptr<T>> map)
 {
-    for (auto p : list)
+    for (auto p : map)
     {
-        out << *p << endl;
+        out << *p.second << endl;
     }
 
     return out;
@@ -31,41 +31,42 @@ int main(int , char** )
     g_pAssetLoader->Initialize();
 
     g_pSceneManager->LoadScene("Scene/cube.ogex");
+    auto& scene = g_pSceneManager->GetSceneForRendering();
 
     cout << "Dump of Cameras" << endl;
     cout << "---------------------------" << endl;
-    weak_ptr<SceneObjectCamera> pCamera = g_pSceneManager->GetFirstCamera();
+    weak_ptr<SceneObjectCamera> pCamera = scene.GetFirstCamera();
     while(auto pObj = pCamera.lock())
     {
         cout << *pObj << endl;
-        pCamera = g_pSceneManager->GetNextCamera();
+        pCamera = scene.GetNextCamera();
     }
 
     cout << "Dump of Lights" << endl;
     cout << "---------------------------" << endl;
-    weak_ptr<SceneObjectLight> pLight = g_pSceneManager->GetFirstLight();
+    weak_ptr<SceneObjectLight> pLight = scene.GetFirstLight();
     while(auto pObj = pLight.lock())
     {
         cout << *pObj << endl;
-        pLight = g_pSceneManager->GetNextLight();
+        pLight = scene.GetNextLight();
     }
 
     cout << "Dump of Geometries" << endl;
     cout << "---------------------------" << endl;
-    weak_ptr<SceneObjectGeometry> pGeometry = g_pSceneManager->GetFirstGeometry();
+    weak_ptr<SceneObjectGeometry> pGeometry = scene.GetFirstGeometry();
     while(auto pObj = pGeometry.lock())
     {
         cout << *pObj << endl;
-        pGeometry = g_pSceneManager->GetNextGeometry();
+        pGeometry = scene.GetNextGeometry();
     }
 
     cout << "Dump of Materials" << endl;
     cout << "---------------------------" << endl;
-    weak_ptr<SceneObjectMaterial> pMaterial = g_pSceneManager->GetFirstMaterial();
+    weak_ptr<SceneObjectMaterial> pMaterial = scene.GetFirstMaterial();
     while(auto pObj = pMaterial.lock())
     {
         cout << *pObj << endl;
-        pMaterial = g_pSceneManager->GetNextMaterial();
+        pMaterial = scene.GetNextMaterial();
     }
 
     g_pSceneManager->Finalize();

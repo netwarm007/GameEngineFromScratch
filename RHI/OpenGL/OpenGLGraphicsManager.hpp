@@ -2,7 +2,9 @@
 #include "GraphicsManager.hpp"
 #include "geommath.hpp"
 #include <unordered_map>
+#include <vector>
 #include <string>
+#include "glad/glad.h"
 
 namespace My {
     class OpenGLGraphicsManager : public GraphicsManager
@@ -34,7 +36,14 @@ namespace My {
         const float screenDepth = 1000.0f;
         const float screenNear = 0.1f;
 
-        unsigned int m_VAO;
+        struct DrawBatchContext {
+            GLuint  vao;
+            GLenum  mode;
+            GLenum  type;
+            GLsizei count;
+        };
+
+        std::vector<DrawBatchContext> m_VAO;
         std::unordered_map<std::string, unsigned int> m_Buffers;
 
         float m_positionX = 0, m_positionY = 0, m_positionZ = -10;

@@ -13,11 +13,11 @@ namespace My {
 }
 
 template<typename T>
-static ostream& operator<<(ostream& out, forward_list<shared_ptr<T>> list)
+static ostream& operator<<(ostream& out, unordered_map<string, shared_ptr<T>> map)
 {
-    for (auto p : list)
+    for (auto p : map)
     {
-        out << *p << endl;
+        out << *p.second << endl;
     }
 
     return out;
