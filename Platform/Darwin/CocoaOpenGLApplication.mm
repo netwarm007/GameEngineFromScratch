@@ -15,11 +15,16 @@ int CocoaOpenGLApplication::Initialize()
 
     if (!result) {
         NSOpenGLPixelFormatAttribute attrs[] = {
+            NSOpenGLPFAAccelerated,
             NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
             NSOpenGLPFAColorSize,32,
-            NSOpenGLPFADepthSize,16,
+            NSOpenGLPFADepthSize,24,
+            NSOpenGLPFAStencilSize,8,
             NSOpenGLPFADoubleBuffer,
             NSOpenGLPFAAccelerated,
+            NSOpenGLPFAMultisample,
+            NSOpenGLPFASampleBuffers,1,
+            NSOpenGLPFASamples,4, // 4x MSAA
             0
         };
 
