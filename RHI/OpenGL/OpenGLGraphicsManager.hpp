@@ -52,5 +52,7 @@ namespace My {
         Matrix4X4f m_viewMatrix;
         Matrix4X4f m_projectionMatrix;
     };
+
 }
+
 
