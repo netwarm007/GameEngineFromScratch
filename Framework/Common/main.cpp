@@ -18,11 +18,6 @@ int main(int argc, char** argv) {
 		return ret;
 	}
 
-	if ((ret = g_pGraphicsManager->Initialize()) != 0) {
-		printf("Graphics Manager Initialize failed, will exit now.");
-		return ret;
-	}
-
 	if ((ret = g_pAssetLoader->Initialize()) != 0) {
 		printf("Asset Loader Initialize failed, will exit now.");
 		return ret;
@@ -33,18 +28,26 @@ int main(int argc, char** argv) {
 		return ret;
 	}
 
+    g_pSceneManager->LoadScene("Scene/cube.ogex");
+
+
+	if ((ret = g_pGraphicsManager->Initialize()) != 0) {
+		printf("Graphics Manager Initialize failed, will exit now.");
+		return ret;
+	}
+
 	while (!g_pApp->IsQuit()) {
 		g_pApp->Tick();
         g_pMemoryManager->Tick();
-        g_pGraphicsManager->Tick();
         g_pAssetLoader->Tick();
         g_pSceneManager->Tick();
+        g_pGraphicsManager->Tick();
         std::this_thread::sleep_for(std::chrono::microseconds(10000));
 	}
 
+    g_pGraphicsManager->Finalize();
     g_pSceneManager->Finalize();
     g_pAssetLoader->Finalize();
-    g_pGraphicsManager->Finalize();
     g_pMemoryManager->Finalize();
 	g_pApp->Finalize();
 

@@ -169,8 +169,6 @@ namespace My {
 		out << static_cast<const BaseSceneObject&>(obj) << std::endl;
 		out << "Color: " << obj.m_LightColor << std::endl;
 		out << "Intensity: " << obj.m_fIntensity << std::endl;
-		out << "Near Clip Distance: " << obj.m_fNearClipDistance << std::endl;
-		out << "Far Clip Distance: " << obj.m_fFarClipDistance << std::endl;
 		out << "Cast Shadows: " << obj.m_bCastShadows << std::endl;
 
 		return out;

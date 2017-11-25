@@ -7,6 +7,7 @@ Image.cpp
 MemoryManager.cpp
 SceneManager.cpp
 SceneObject.cpp
+SceneParser.cpp
 main.cpp
 )
 target_link_libraries(Common GeomMath)

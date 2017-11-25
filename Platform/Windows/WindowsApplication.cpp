@@ -16,8 +16,6 @@ int My::WindowsApplication::Initialize()
     // get the HINSTANCE of the Console Program
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
-    // the handle for the window, filled by a function
-    HWND hWnd;
     // this struct holds information for the window class
     WNDCLASSEX wc;
 
@@ -37,7 +35,7 @@ int My::WindowsApplication::Initialize()
     RegisterClassEx(&wc);
 
     // create the window and use the result as the handle
-    hWnd = CreateWindowEx(0,
+    m_hWnd = CreateWindowEx(0,
                           _T("GameEngineFromScratch"),      // name of the window class
                           m_Config.appName,                 // title of the window
                           WS_OVERLAPPEDWINDOW,              // window style
@@ -51,9 +49,7 @@ int My::WindowsApplication::Initialize()
                           this);                            // pass pointer to current object
 
     // display the window on the screen
-    ShowWindow(hWnd, SW_SHOW);
-
-    m_hWnd = hWnd;
+    ShowWindow(m_hWnd, SW_SHOW);
 
     return result;
 }
