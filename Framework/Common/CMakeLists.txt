@@ -5,9 +5,9 @@ BaseApplication.cpp
 GraphicsManager.cpp
 Image.cpp
 MemoryManager.cpp
+Scene.cpp
 SceneManager.cpp
 SceneObject.cpp
-SceneParser.cpp
 main.cpp
 )
 target_link_libraries(Common GeomMath)

@@ -184,23 +184,6 @@ void OpenGLGraphicsManager::Clear()
 
 void OpenGLGraphicsManager::Draw()
 {
-    static float rotateAngle = 0.0f;
-
-    // Update world matrix to rotate the model
-    rotateAngle += PI / 120;
-    Matrix4X4f rotationMatrixY;
-    Matrix4X4f rotationMatrixZ;
-    MatrixRotationY(rotationMatrixY, rotateAngle);
-    MatrixRotationZ(rotationMatrixZ, rotateAngle);
-    MatrixMultiply(m_worldMatrix, rotationMatrixZ, rotationMatrixY);
-
-    // Generate the view matrix based on the camera's position.
-    CalculateCameraPosition();
-
-    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    glUseProgram(m_shaderProgram);
-    SetShaderParameters(m_worldMatrix, m_viewMatrix, m_projectionMatrix);
-
     // Render the model using the color shader.
     RenderBuffers();
 
@@ -241,9 +224,11 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
 void OpenGLGraphicsManager::InitializeBuffers()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pGeometry = scene.GetFirstGeometry(); 
-    while (pGeometry)
+    auto pGeometryNode = scene.GetFirstGeometryNode(); 
+    while (pGeometryNode)
     {
+        auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+        assert(pGeometry);
         auto pMesh = pGeometry->GetMesh().lock();
         if (!pMesh) return;
 
@@ -376,9 +361,10 @@ void OpenGLGraphicsManager::InitializeBuffers()
         dbc.mode    = mode;
         dbc.type    = type;
         dbc.count   = indexCount;
+        dbc.transform = pGeometryNode->GetCalculatedTransform();
         m_VAO.push_back(std::move(dbc));
 
-        pGeometry = scene.GetNextGeometry();
+        pGeometryNode = scene.GetNextGeometryNode();
     }
 
     return;
@@ -386,8 +372,25 @@ void OpenGLGraphicsManager::InitializeBuffers()
 
 void OpenGLGraphicsManager::RenderBuffers()
 {
+    static float rotateAngle = 0.0f;
+
+    // Update world matrix to rotate the model
+    rotateAngle += PI / 120;
+    Matrix4X4f rotationMatrixY;
+    Matrix4X4f rotationMatrixZ;
+    MatrixRotationY(rotationMatrixY, rotateAngle);
+    MatrixRotationZ(rotationMatrixZ, rotateAngle);
+    MatrixMultiply(m_worldMatrix, rotationMatrixZ, rotationMatrixY);
+
+    // Generate the view matrix based on the camera's position.
+    CalculateCameraPosition();
+
     for (auto dbc : m_VAO)
     {
+        // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+        glUseProgram(m_shaderProgram);
+        SetShaderParameters(*dbc.transform * m_worldMatrix, m_viewMatrix, m_projectionMatrix);
+
 	    glBindVertexArray(dbc.vao);
 
         // Render the vertex buffer using the index buffer.

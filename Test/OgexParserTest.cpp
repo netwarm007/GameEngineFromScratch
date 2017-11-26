@@ -12,8 +12,8 @@ namespace My {
     AssetLoader*   g_pAssetLoader   = new AssetLoader();
 }
 
-template<typename T>
-static ostream& operator<<(ostream& out, unordered_map<string, shared_ptr<T>> map)
+template<typename Key, typename T>
+static ostream& operator<<(ostream& out, unordered_map<Key, T> map)
 {
     for (auto p : map)
     {

@@ -7,29 +7,28 @@ namespace My {
     class OgexParser : implements SceneParser
     {
     private:
-        void ConvertOddlStructureToSceneNode(const ODDL::Structure& structure, std::unique_ptr<BaseSceneNode>& base_node, Scene& scene)
+        void ConvertOddlStructureToSceneNode(const ODDL::Structure& structure, std::shared_ptr<BaseSceneNode>& base_node, Scene& scene)
         {
-            std::unique_ptr<BaseSceneNode> node;
+            std::shared_ptr<BaseSceneNode> node;
 
             switch(structure.GetStructureType()) {
                 case OGEX::kStructureNode:
                     {
-                        node = std::make_unique<SceneEmptyNode>(structure.GetStructureName());
+                        node = std::make_shared<SceneEmptyNode>(structure.GetStructureName());
                     }
                     break;
                 case OGEX::kStructureGeometryNode:
                     {
-                        node = std::make_unique<SceneGeometryNode>(structure.GetStructureName());
+                        auto _node = std::make_shared<SceneGeometryNode>(structure.GetStructureName());
 						const OGEX::GeometryNodeStructure& _structure = dynamic_cast<const OGEX::GeometryNodeStructure&>(structure);
 
-                        SceneGeometryNode& _node = dynamic_cast<SceneGeometryNode&>(*node);
-						_node.SetVisibility(_structure.GetVisibleFlag());
-						_node.SetIfCastShadow(_structure.GetShadowFlag());
-						_node.SetIfMotionBlur(_structure.GetMotionBlurFlag());
+						_node->SetVisibility(_structure.GetVisibleFlag());
+						_node->SetIfCastShadow(_structure.GetShadowFlag());
+						_node->SetIfMotionBlur(_structure.GetMotionBlurFlag());
 
                         // ref scene objects
                         std::string _key = _structure.GetObjectStructure()->GetStructureName();
-                        _node.AddSceneObjectRef(_key);
+                        _node->AddSceneObjectRef(_key);
 
                         // ref materials
                         auto materials = _structure.GetMaterialStructureArray();
@@ -38,32 +37,42 @@ namespace My {
                         {
                             auto material = materials[i];
                             _key = material->GetStructureName();
-                            _node.AddMaterialRef(_key);
+                            _node->AddMaterialRef(_key);
                         }
+
+                        scene.GeometryNodes.emplace(_key, _node);
+
+                        node = _node;
                     }
                     break;
                 case OGEX::kStructureLightNode:
                     {
-                        node = std::make_unique<SceneLightNode>(structure.GetStructureName());
+                        auto _node = std::make_shared<SceneLightNode>(structure.GetStructureName());
 						const OGEX::LightNodeStructure& _structure = dynamic_cast<const OGEX::LightNodeStructure&>(structure);
 
-                        SceneLightNode& _node = dynamic_cast<SceneLightNode&>(*node);
-                        _node.SetIfCastShadow(_structure.GetShadowFlag());
+                        _node->SetIfCastShadow(_structure.GetShadowFlag());
 
                         // ref scene objects
                         std::string _key = _structure.GetObjectStructure()->GetStructureName();
-                        _node.AddSceneObjectRef(_key);
+                        _node->AddSceneObjectRef(_key);
+
+                        scene.LightNodes.emplace(_key, _node);
+
+                        node = _node;
                     }
                     break;
                 case OGEX::kStructureCameraNode:
                     {
-                        node = std::make_unique<SceneCameraNode>(structure.GetStructureName());
+                        auto _node = std::make_shared<SceneCameraNode>(structure.GetStructureName());
 						const OGEX::CameraNodeStructure& _structure = dynamic_cast<const OGEX::CameraNodeStructure&>(structure);
 
-                        SceneCameraNode& _node = dynamic_cast<SceneCameraNode&>(*node);
                         // ref scene objects
                         std::string _key = _structure.GetObjectStructure()->GetStructureName();
-                        _node.AddSceneObjectRef(_key);
+                        _node->AddSceneObjectRef(_key);
+
+                        scene.CameraNodes.emplace(_key, _node);
+
+                        node = _node;
                     }
                     break;
                 case OGEX::kStructureGeometryObject:
@@ -247,13 +256,13 @@ namespace My {
                         const OGEX::TransformStructure& _structure = dynamic_cast<const OGEX::TransformStructure&>(structure);
                         bool object_flag = _structure.GetObjectFlag();
                         Matrix4X4f matrix;
-                        std::unique_ptr<SceneObjectTransform> transform;
+                        std::shared_ptr<SceneObjectTransform> transform;
 
                         count = _structure.GetTransformCount();
                         for (index = 0; index < count; index++) {
                             const float* data = _structure.GetTransform(index);
                             matrix = data;
-                            transform = std::make_unique<SceneObjectTransform>(matrix, object_flag);
+                            transform = std::make_shared<SceneObjectTransform>(matrix, object_flag);
                             base_node->AppendChild(std::move(transform));
                         }
                     }
@@ -263,12 +272,9 @@ namespace My {
                         const OGEX::MaterialStructure& _structure = dynamic_cast<const OGEX::MaterialStructure&>(structure);
                         std::string material_name;
                         const char* _name = _structure.GetMaterialName();
-                        if (_name) {
-                            material_name = _name;
-                        }
                         std::string _key = _structure.GetStructureName();
                         auto material = std::make_shared<SceneObjectMaterial>();
-                        material->SetName(material_name);
+                        material->SetName(_name);
 
                         const ODDL::Structure* _sub_structure = _structure.GetFirstCoreSubnode();
                         while(_sub_structure) {
@@ -447,7 +453,7 @@ namespace My {
                 const ODDL::Structure* structure = openGexDataDescription.GetRootStructure()->GetFirstSubnode();
                 while (structure)
                 {
-                    ConvertOddlStructureToSceneNode(*structure, pScene->SceneGraph, *pScene.get());
+                    ConvertOddlStructureToSceneNode(*structure, pScene->SceneGraph, *pScene);
 
                     structure = structure->Next();
                 }

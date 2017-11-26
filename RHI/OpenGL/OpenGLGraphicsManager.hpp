@@ -41,6 +41,7 @@ namespace My {
             GLenum  mode;
             GLenum  type;
             GLsizei count;
+            std::shared_ptr<Matrix4X4f> transform;
         };
 
         std::vector<DrawBatchContext> m_VAO;

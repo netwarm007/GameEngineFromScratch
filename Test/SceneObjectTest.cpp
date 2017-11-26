@@ -28,9 +28,9 @@ int32_t main(int32_t argc, char** argv)
     cout << *soPerspectiveCamera << endl;
 
     SceneEmptyNode      snEmpty;
-    std::unique_ptr<SceneGeometryNode>   snGeometry(new SceneGeometryNode());
-    std::unique_ptr<SceneLightNode>     snLight(new SceneLightNode());
-    std::unique_ptr<SceneCameraNode>     snCamera(new SceneCameraNode());
+    std::shared_ptr<SceneGeometryNode>   snGeometry(new SceneGeometryNode());
+    std::shared_ptr<SceneLightNode>     snLight(new SceneLightNode());
+    std::shared_ptr<SceneCameraNode>     snCamera(new SceneCameraNode());
 
     snGeometry->AddSceneObjectRef(soGeometry);
     snLight->AddSceneObjectRef(soSpotLight);

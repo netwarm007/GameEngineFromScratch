@@ -564,6 +564,9 @@ namespace My {
 
             SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) { m_matrix = matrix; m_bSceneObjectOnly = object_only; };
 
+            operator Matrix4X4f() { return m_matrix; };
+            operator const Matrix4X4f() const { return m_matrix; };
+
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj);
     };
 
