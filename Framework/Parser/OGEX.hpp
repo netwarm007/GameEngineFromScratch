@@ -281,7 +281,7 @@ namespace My {
                             matrix = data;
                             if (!m_bUpIsYAxis) {
                                 // exchange y and z
-                                ExchangeYandZ(matrix);
+                                // ExchangeYandZ(matrix);
                             }
                             transform = std::make_shared<SceneObjectTransform>(matrix, object_flag);
                             base_node->AppendChild(std::move(transform));
