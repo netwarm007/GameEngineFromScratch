@@ -37,7 +37,9 @@ void main(void)
 {
     vec3 N = normalize(normal.xyz);
     vec3 L = normalize((viewMatrix * vec4(lightPosition, 1.0f)).xyz - v.xyz);
+    vec3 R = normalize(2 * dot(L,N) * N - L );
+    vec3 V = normalize(v.xyz);
     float diffuse = dot(N, L);
-	outputColor = vec4(lightColor.rgb * clamp(diffuse, 0.0f, 1.0f), 1.0f); 
+	outputColor = vec4(lightColor.rgb * clamp(diffuse + 0.01 * dot(R, V), 0.0f, 1.0f), 1.0f); 
 }
 
