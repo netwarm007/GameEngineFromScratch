@@ -125,6 +125,7 @@ namespace My {
             T data[4];
             struct { T x, y, z, w; };
             struct { T r, g, b, a; };
+		    swizzle<My::Vector3Type, T, 0, 1, 2> xyz;
 		    swizzle<My::Vector3Type, T, 0, 2, 1> xzy;
 		    swizzle<My::Vector3Type, T, 1, 0, 2> yxz;
 		    swizzle<My::Vector3Type, T, 1, 2, 0> yzx;

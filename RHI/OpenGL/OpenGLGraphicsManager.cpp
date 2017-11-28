@@ -123,20 +123,7 @@ int OpenGLGraphicsManager::Initialize()
             glCullFace(GL_BACK);
 
             // Initialize the world/model matrix to the identity matrix.
-            BuildIdentityMatrix(m_worldMatrix);
-
-            auto& scene = g_pSceneManager->GetSceneForRendering();
-            auto pCameraNode = scene.GetFirstCameraNode();
-            auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
-
-            // Set the field of view and screen aspect ratio.
-            float fieldOfView = dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)->GetFov();
-            const GfxConfiguration& conf = g_pApp->GetConfiguration();
-
-            float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
-
-            // Build the perspective projection matrix.
-            BuildPerspectiveFovRHMatrix(m_projectionMatrix, fieldOfView, screenAspect, pCamera->GetNearClipDistance(), pCamera->GetFarClipDistance());
+            BuildIdentityMatrix(m_DrawFrameContext.m_worldMatrix);
 
         }
 
@@ -194,7 +181,7 @@ void OpenGLGraphicsManager::Draw()
     glFlush();
 }
 
-bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewMatrix, float* projectionMatrix)
+bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
 {
     unsigned int location;
 
@@ -204,7 +191,7 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
     {
             return false;
     }
-    glUniformMatrix4fv(location, 1, false, worldMatrix);
+    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_worldMatrix);
 
     // Set the view matrix in the vertex shader.
     location = glGetUniformLocation(m_shaderProgram, "viewMatrix");
@@ -212,7 +199,7 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
     {
             return false;
     }
-    glUniformMatrix4fv(location, 1, false, viewMatrix);
+    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_viewMatrix);
 
     // Set the projection matrix in the vertex shader.
     location = glGetUniformLocation(m_shaderProgram, "projectionMatrix");
@@ -220,7 +207,36 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
     {
             return false;
     }
-    glUniformMatrix4fv(location, 1, false, projectionMatrix);
+    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_projectionMatrix);
+
+    // Set lighting parameters for PS shader
+    location = glGetUniformLocation(m_shaderProgram, "lightPosition");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform3fv(location, 1, m_DrawFrameContext.m_lightPosition);
+
+    location = glGetUniformLocation(m_shaderProgram, "lightColor");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform4fv(location, 1, m_DrawFrameContext.m_lightColor);
+
+    return true;
+}
+
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, float* param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniformMatrix4fv(location, 1, false, param);
 
     return true;
 }
@@ -384,16 +400,19 @@ void OpenGLGraphicsManager::RenderBuffers()
     Matrix4X4f rotationMatrixZ;
     MatrixRotationY(rotationMatrixY, rotateAngle);
     MatrixRotationZ(rotationMatrixZ, rotateAngle);
-    MatrixMultiply(m_worldMatrix, rotationMatrixZ, rotationMatrixY);
+    MatrixMultiply(m_DrawFrameContext.m_worldMatrix, rotationMatrixZ, rotationMatrixY);
 
     // Generate the view matrix based on the camera's position.
-    CalculateCameraPosition();
+    CalculateCameraMatrix();
+    CalculateLights();
+
+    SetPerFrameShaderParameters();
 
     for (auto dbc : m_VAO)
     {
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         glUseProgram(m_shaderProgram);
-        SetShaderParameters(*dbc.transform * m_worldMatrix, m_viewMatrix, m_projectionMatrix);
+        SetPerBatchShaderParameters("objectLocalMatrix", *dbc.transform);
 
 	    glBindVertexArray(dbc.vao);
 
@@ -404,18 +423,49 @@ void OpenGLGraphicsManager::RenderBuffers()
     return;
 }
 
-void OpenGLGraphicsManager::CalculateCameraPosition()
+void OpenGLGraphicsManager::CalculateCameraMatrix()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
     auto pCameraNode = scene.GetFirstCameraNode();
     if (pCameraNode) {
-        m_viewMatrix = *pCameraNode->GetCalculatedTransform();
-        InverseMatrix4X4f(m_viewMatrix);
+        m_DrawFrameContext.m_viewMatrix = *pCameraNode->GetCalculatedTransform();
+        InverseMatrix4X4f(m_DrawFrameContext.m_viewMatrix);
     }
     else {
         // use default build-in camera
         Vector3f position = { 0, 0, 5 }, lookAt = { 0, 0, 0 }, up = { 0, 1, 0 };
-        BuildViewMatrix(m_viewMatrix, position, lookAt, up);
+        BuildViewMatrix(m_DrawFrameContext.m_viewMatrix, position, lookAt, up);
+    }
+
+    auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
+
+    // Set the field of view and screen aspect ratio.
+    float fieldOfView = dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)->GetFov();
+    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+
+    float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
+
+    // Build the perspective projection matrix.
+    BuildPerspectiveFovRHMatrix(m_DrawFrameContext.m_projectionMatrix, fieldOfView, screenAspect, pCamera->GetNearClipDistance(), pCamera->GetFarClipDistance());
+}
+
+void OpenGLGraphicsManager::CalculateLights()
+{
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pLightNode = scene.GetFirstLightNode();
+    if (pLightNode) {
+        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f };
+        TransformCoord(m_DrawFrameContext.m_lightPosition, *pLightNode->GetCalculatedTransform());
+
+        auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
+        if (pLight) {
+            m_DrawFrameContext.m_lightColor = pLight->GetColor().Value;
+        }
+    }
+    else {
+        // use default build-in light 
+        m_DrawFrameContext.m_lightPosition = { 10.0f, 10.0f, 10.0f};
+        m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
     }
 }
 

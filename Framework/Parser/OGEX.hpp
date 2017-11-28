@@ -388,7 +388,8 @@ namespace My {
                                     break;
                                 case OGEX::kStructureAtten:
                                     {
-                                        // TODO: implement it
+                                        // TODO: truly implement it
+                                        light->SetAttenuation(DefaultAttenFunc);
                                     }
                                     break;
                                 default:

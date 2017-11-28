@@ -5,10 +5,24 @@
 
 
 /////////////////////
+// CONSTANTS       //
+/////////////////////
+// per frame
+uniform vec3   lightPosition;
+uniform vec4   lightColor;
+
+// update per frame
+uniform mat4 worldMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
+
+// per drawcall
+
+/////////////////////
 // INPUT VARIABLES //
 /////////////////////
 in vec4 normal;
-
+in vec4 v; 
 
 //////////////////////
 // OUTPUT VARIABLES //
@@ -21,6 +35,9 @@ out vec4 outputColor;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-	outputColor = vec4(1.0f, 1.0f, 1.0f, 1.0f); 
+    vec3 N = normalize(normal.xyz);
+    vec3 L = normalize((viewMatrix * vec4(lightPosition, 1.0f)).xyz - v.xyz);
+    float diffuse = dot(N, L);
+	outputColor = vec4(lightColor.rgb * clamp(diffuse, 0.0f, 1.0f), 1.0f); 
 }
 

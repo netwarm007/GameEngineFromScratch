@@ -14,10 +14,15 @@ in vec3 inputNormal;
 // OUTPUT VARIABLES //
 //////////////////////
 out vec4 normal;
+out vec4 v;
 
 ///////////////////////
 // UNIFORM VARIABLES //
 ///////////////////////
+// update per draw call
+uniform mat4 objectLocalMatrix;
+
+// update per frame
 uniform mat4 worldMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -27,12 +32,13 @@ uniform mat4 projectionMatrix;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
+    mat4 transformMatrix = worldMatrix * objectLocalMatrix;
 	// Calculate the position of the vertex against the world, view, and projection matrices.
-	gl_Position = worldMatrix * vec4(inputPosition, 1.0f);
-	gl_Position = viewMatrix * gl_Position;
-	gl_Position = projectionMatrix * gl_Position;
+	v = transformMatrix * vec4(inputPosition, 1.0f);
+	v = viewMatrix * v;
+	gl_Position = projectionMatrix * v;
 
-    normal = worldMatrix * vec4(inputNormal, 0.0f);
+    normal = transformMatrix * vec4(inputNormal, 0.0f);
     normal = viewMatrix * normal;
 }
 
