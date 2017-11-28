@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <memory>
 #include "glad/glad.h"
 
 namespace My {
