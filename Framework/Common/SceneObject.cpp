@@ -192,6 +192,14 @@ namespace My {
 		return out;
 	}
 
+	std::ostream& operator<<(std::ostream& out, const SceneObjectInfiniteLight& obj)
+	{
+		out << static_cast<const SceneObjectLight&>(obj) << std::endl;
+		out << "Light Type: Infinite" << std::endl;
+
+		return out;
+	}
+
 	std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj)
 	{
 		out << static_cast<const BaseSceneObject&>(obj) << std::endl;

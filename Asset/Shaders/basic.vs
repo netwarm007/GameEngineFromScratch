@@ -20,7 +20,7 @@ out vec4 v;
 // UNIFORM VARIABLES //
 ///////////////////////
 // update per draw call
-uniform mat4 objectLocalMatrix;
+uniform mat4 modelMatrix;
 
 // update per frame
 uniform mat4 worldMatrix;
@@ -32,7 +32,7 @@ uniform mat4 projectionMatrix;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-    mat4 transformMatrix = worldMatrix * objectLocalMatrix;
+    mat4 transformMatrix = worldMatrix * modelMatrix;
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	v = transformMatrix * vec4(inputPosition, 1.0f);
 	v = viewMatrix * v;

@@ -43,5 +43,8 @@ build*/
 **/Release
 **/lib
 **/lib64
+.DS_Store
 
 config.h
+
+shader-error.txt

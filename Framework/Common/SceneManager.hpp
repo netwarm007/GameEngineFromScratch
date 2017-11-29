@@ -14,12 +14,12 @@ namespace My {
 
         virtual void Tick();
 
-        void LoadScene(const char* scene_file_name);
+        int LoadScene(const char* scene_file_name);
 
         const Scene& GetSceneForRendering();
 
     protected:
-        void LoadOgexScene(const char* ogex_scene_file_name);
+        bool LoadOgexScene(const char* ogex_scene_file_name);
 
     protected:
         std::unique_ptr<Scene>  m_pScene;
