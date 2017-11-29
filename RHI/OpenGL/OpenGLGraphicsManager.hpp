@@ -52,8 +52,8 @@ namespace My {
         };
 
         DrawFrameContext    m_DrawFrameContext;
-        std::vector<DrawBatchContext> m_VAO;
-        std::unordered_map<std::string, unsigned int> m_Buffers;
+        std::vector<DrawBatchContext> m_DrawBatchContext;
+        std::vector<GLuint> m_Buffers;
     };
 
 }

@@ -136,18 +136,21 @@ int OpenGLGraphicsManager::Initialize()
 
 void OpenGLGraphicsManager::Finalize()
 {
+    for (auto dbc : m_DrawBatchContext) {
+        glDeleteVertexArrays(1, &dbc.vao);
+    }
+
+    m_DrawBatchContext.clear();
+
     for (auto i = 0; i < m_Buffers.size() - 1; i++) { 
         glDisableVertexAttribArray(i);
     }
 
     for (auto buf : m_Buffers) {
-        if(buf.first == "index") {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        } else {
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-        }
-        glDeleteBuffers(1, &buf.second);
+        glDeleteBuffers(1, &buf);
     }
+
+    m_Buffers.clear();
 
     // Detach the vertex and fragment shaders from the program.
     glDetachShader(m_shaderProgram, m_vertexShader);
@@ -312,7 +315,7 @@ void OpenGLGraphicsManager::InitializeBuffers()
                     assert(0);
             }
 
-            m_Buffers[v_property_array.GetAttributeName()] = buffer_id;
+            m_Buffers.push_back(buffer_id);
         }
 
         // Generate an ID for the index buffer.
@@ -374,7 +377,7 @@ void OpenGLGraphicsManager::InitializeBuffers()
                 continue;
         }
 
-        m_Buffers["index"] = buffer_id;
+        m_Buffers.push_back(buffer_id);
 
         DrawBatchContext& dbc = *(new DrawBatchContext);
         dbc.vao     = vao;
@@ -382,7 +385,7 @@ void OpenGLGraphicsManager::InitializeBuffers()
         dbc.type    = type;
         dbc.count   = indexCount;
         dbc.transform = pGeometryNode->GetCalculatedTransform();
-        m_VAO.push_back(std::move(dbc));
+        m_DrawBatchContext.push_back(std::move(dbc));
 
         pGeometryNode = scene.GetNextGeometryNode();
     }
@@ -398,9 +401,10 @@ void OpenGLGraphicsManager::RenderBuffers()
     rotateAngle += PI / 120;
     Matrix4X4f rotationMatrixY;
     Matrix4X4f rotationMatrixZ;
-    MatrixRotationY(rotationMatrixY, rotateAngle);
+    //MatrixRotationY(rotationMatrixY, rotateAngle);
     MatrixRotationZ(rotationMatrixZ, rotateAngle);
-    MatrixMultiply(m_DrawFrameContext.m_worldMatrix, rotationMatrixZ, rotationMatrixY);
+    //MatrixMultiply(m_DrawFrameContext.m_worldMatrix, rotationMatrixZ, rotationMatrixY);
+    m_DrawFrameContext.m_worldMatrix = rotationMatrixZ;
 
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
@@ -408,7 +412,7 @@ void OpenGLGraphicsManager::RenderBuffers()
 
     SetPerFrameShaderParameters();
 
-    for (auto dbc : m_VAO)
+    for (auto dbc : m_DrawBatchContext)
     {
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         glUseProgram(m_shaderProgram);
@@ -464,7 +468,7 @@ void OpenGLGraphicsManager::CalculateLights()
     }
     else {
         // use default build-in light 
-        m_DrawFrameContext.m_lightPosition = { 10.0f, 10.0f, 10.0f};
+        m_DrawFrameContext.m_lightPosition = { 10.0f, 10.0f, -10.0f};
         m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
     }
 }
