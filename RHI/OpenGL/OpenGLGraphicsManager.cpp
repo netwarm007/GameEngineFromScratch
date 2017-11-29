@@ -250,142 +250,145 @@ void OpenGLGraphicsManager::InitializeBuffers()
     auto pGeometryNode = scene.GetFirstGeometryNode(); 
     while (pGeometryNode)
     {
-        auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
-        assert(pGeometry);
-        auto pMesh = pGeometry->GetMesh().lock();
-        if (!pMesh) return;
-
-        // Set the number of vertex properties.
-        auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
-
-        // Set the number of vertices in the vertex array.
-        auto vertexCount = pMesh->GetVertexCount();
-
-        // Allocate an OpenGL vertex array object.
-        GLuint vao;
-        glGenVertexArrays(1, &vao);
-
-        // Bind the vertex array object to store all the buffers and vertex attributes we create here.
-        glBindVertexArray(vao);
-
-        GLuint buffer_id;
-
-        for (int32_t i = 0; i < vertexPropertiesCount; i++)
+        if (pGeometryNode->Visible()) 
         {
-            const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
-            auto v_property_array_data_size = v_property_array.GetDataSize();
-            auto v_property_array_data = v_property_array.GetData();
+            auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            assert(pGeometry);
+            auto pMesh = pGeometry->GetMesh().lock();
+            if (!pMesh) return;
 
-            // Generate an ID for the vertex buffer.
+            // Set the number of vertex properties.
+            auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
+
+            // Set the number of vertices in the vertex array.
+            auto vertexCount = pMesh->GetVertexCount();
+
+            // Allocate an OpenGL vertex array object.
+            GLuint vao;
+            glGenVertexArrays(1, &vao);
+
+            // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+            glBindVertexArray(vao);
+
+            GLuint buffer_id;
+
+            for (int32_t i = 0; i < vertexPropertiesCount; i++)
+            {
+                const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
+                auto v_property_array_data_size = v_property_array.GetDataSize();
+                auto v_property_array_data = v_property_array.GetData();
+
+                // Generate an ID for the vertex buffer.
+                glGenBuffers(1, &buffer_id);
+
+                // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+                glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+                glBufferData(GL_ARRAY_BUFFER, v_property_array_data_size, v_property_array_data, GL_STATIC_DRAW);
+
+                glEnableVertexAttribArray(i);
+
+                glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+                switch (v_property_array.GetDataType()) {
+                    case VertexDataType::kVertexDataTypeFloat1:
+                        glVertexAttribPointer(i, 1, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat2:
+                        glVertexAttribPointer(i, 2, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat3:
+                        glVertexAttribPointer(i, 3, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat4:
+                        glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble1:
+                        glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble2:
+                        glVertexAttribPointer(i, 2, GL_DOUBLE, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble3:
+                        glVertexAttribPointer(i, 3, GL_DOUBLE, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble4:
+                        glVertexAttribPointer(i, 4, GL_DOUBLE, false, 0, 0);
+                        break;
+                    default:
+                        assert(0);
+                }
+
+                m_Buffers.push_back(buffer_id);
+            }
+
+            // Generate an ID for the index buffer.
             glGenBuffers(1, &buffer_id);
 
-            // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
-            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-            glBufferData(GL_ARRAY_BUFFER, v_property_array_data_size, v_property_array_data, GL_STATIC_DRAW);
+            const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
+            auto index_array_size = index_array.GetDataSize();
+            auto index_array_data = index_array.GetData();
 
-            glEnableVertexAttribArray(i);
+            // Bind the index buffer and load the index data into it.
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array_size, index_array_data, GL_STATIC_DRAW);
 
-            glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-            switch (v_property_array.GetDataType()) {
-                case VertexDataType::kVertexDataTypeFloat1:
-                    glVertexAttribPointer(i, 1, GL_FLOAT, false, 0, 0);
+            // Set the number of indices in the index array.
+            GLsizei indexCount = static_cast<GLsizei>(index_array.GetIndexCount());
+            GLenum  mode;
+            switch(pMesh->GetPrimitiveType())
+            {
+                case PrimitiveType::kPrimitiveTypePointList:
+                    mode = GL_POINTS;
                     break;
-                case VertexDataType::kVertexDataTypeFloat2:
-                    glVertexAttribPointer(i, 2, GL_FLOAT, false, 0, 0);
+                case PrimitiveType::kPrimitiveTypeLineList:
+                    mode = GL_LINES;
                     break;
-                case VertexDataType::kVertexDataTypeFloat3:
-                    glVertexAttribPointer(i, 3, GL_FLOAT, false, 0, 0);
+                case PrimitiveType::kPrimitiveTypeLineStrip:
+                    mode = GL_LINE_STRIP;
                     break;
-                case VertexDataType::kVertexDataTypeFloat4:
-                    glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, 0);
+                case PrimitiveType::kPrimitiveTypeTriList:
+                    mode = GL_TRIANGLES;
                     break;
-                case VertexDataType::kVertexDataTypeDouble1:
-                    glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, 0);
+                case PrimitiveType::kPrimitiveTypeTriStrip:
+                    mode = GL_TRIANGLE_STRIP;
                     break;
-                case VertexDataType::kVertexDataTypeDouble2:
-                    glVertexAttribPointer(i, 2, GL_DOUBLE, false, 0, 0);
-                    break;
-                case VertexDataType::kVertexDataTypeDouble3:
-                    glVertexAttribPointer(i, 3, GL_DOUBLE, false, 0, 0);
-                    break;
-                case VertexDataType::kVertexDataTypeDouble4:
-                    glVertexAttribPointer(i, 4, GL_DOUBLE, false, 0, 0);
+                case PrimitiveType::kPrimitiveTypeTriFan:
+                    mode = GL_TRIANGLE_FAN;
                     break;
                 default:
-                    assert(0);
+                    // ignore
+                    continue;
+            }
+
+            GLenum type;
+            switch(index_array.GetIndexType())
+            {
+                case IndexDataType::kIndexDataTypeInt8:
+                    type = GL_UNSIGNED_BYTE;
+                    break;
+                case IndexDataType::kIndexDataTypeInt16:
+                    type = GL_UNSIGNED_SHORT;
+                    break;
+                case IndexDataType::kIndexDataTypeInt32:
+                    type = GL_UNSIGNED_INT;
+                    break;
+                default:
+                    // not supported by OpenGL
+                    cerr << "Error: Unsupported Index Type " << index_array << endl;
+                    cerr << "Mesh: " << *pMesh << endl;
+                    cerr << "Geometry: " << *pGeometry << endl;
+                    continue;
             }
 
             m_Buffers.push_back(buffer_id);
+
+            DrawBatchContext& dbc = *(new DrawBatchContext);
+            dbc.vao     = vao;
+            dbc.mode    = mode;
+            dbc.type    = type;
+            dbc.count   = indexCount;
+            dbc.transform = pGeometryNode->GetCalculatedTransform();
+            m_DrawBatchContext.push_back(std::move(dbc));
         }
-
-        // Generate an ID for the index buffer.
-        glGenBuffers(1, &buffer_id);
-
-        const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
-        auto index_array_size = index_array.GetDataSize();
-        auto index_array_data = index_array.GetData();
-
-        // Bind the index buffer and load the index data into it.
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array_size, index_array_data, GL_STATIC_DRAW);
-
-        // Set the number of indices in the index array.
-        GLsizei indexCount = static_cast<GLsizei>(index_array.GetIndexCount());
-        GLenum  mode;
-        switch(pMesh->GetPrimitiveType())
-        {
-            case PrimitiveType::kPrimitiveTypePointList:
-                mode = GL_POINTS;
-                break;
-            case PrimitiveType::kPrimitiveTypeLineList:
-                mode = GL_LINES;
-                break;
-            case PrimitiveType::kPrimitiveTypeLineStrip:
-                mode = GL_LINE_STRIP;
-                break;
-            case PrimitiveType::kPrimitiveTypeTriList:
-                mode = GL_TRIANGLES;
-                break;
-            case PrimitiveType::kPrimitiveTypeTriStrip:
-                mode = GL_TRIANGLE_STRIP;
-                break;
-            case PrimitiveType::kPrimitiveTypeTriFan:
-                mode = GL_TRIANGLE_FAN;
-                break;
-            default:
-                // ignore
-                continue;
-        }
-
-        GLenum type;
-        switch(index_array.GetIndexType())
-        {
-            case IndexDataType::kIndexDataTypeInt8:
-                type = GL_UNSIGNED_BYTE;
-                break;
-            case IndexDataType::kIndexDataTypeInt16:
-                type = GL_UNSIGNED_SHORT;
-                break;
-            case IndexDataType::kIndexDataTypeInt32:
-                type = GL_UNSIGNED_INT;
-                break;
-            default:
-                // not supported by OpenGL
-                cerr << "Error: Unsupported Index Type " << index_array << endl;
-                cerr << "Mesh: " << *pMesh << endl;
-                cerr << "Geometry: " << *pGeometry << endl;
-                continue;
-        }
-
-        m_Buffers.push_back(buffer_id);
-
-        DrawBatchContext& dbc = *(new DrawBatchContext);
-        dbc.vao     = vao;
-        dbc.mode    = mode;
-        dbc.type    = type;
-        dbc.count   = indexCount;
-        dbc.transform = pGeometryNode->GetCalculatedTransform();
-        m_DrawBatchContext.push_back(std::move(dbc));
 
         pGeometryNode = scene.GetNextGeometryNode();
     }

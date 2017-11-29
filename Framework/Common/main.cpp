@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 		return ret;
 	}
 
-    g_pSceneManager->LoadScene("Scene/test.ogex");
+    g_pSceneManager->LoadScene("Scene/aili.ogex");
 
 
 	if ((ret = g_pGraphicsManager->Initialize()) != 0) {
