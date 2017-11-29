@@ -40,6 +40,6 @@ void main(void)
     vec3 R = normalize(2 * dot(L,N) * N - L );
     vec3 V = normalize(v.xyz);
     float diffuse = dot(N, L);
-	outputColor = vec4(lightColor.rgb * clamp(diffuse + 0.01 * dot(R, V), 0.0f, 1.0f), 1.0f); 
+	outputColor = vec4(0.03, 0.03, 0.03, 1.0) + vec4(lightColor.rgb * clamp(diffuse + 0.01 * dot(R, V), 0.0f, 1.0f), 1.0f); 
 }
 
