@@ -18,7 +18,7 @@ namespace My {
     SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
 }
 
-static LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uiMsg)
 	{
@@ -36,26 +36,8 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lPa
 int My::OpenGLApplication::Initialize()
 {
     int result;
-	auto colorBits = m_Config.redBits + m_Config.greenBits + m_Config.blueBits + m_Config.alphaBits;
+	auto colorBits = m_Config.redBits + m_Config.greenBits + m_Config.blueBits; // note on windows this does not include alpha bitplane
 
-	// create a temporary window for OpenGL context loading
-	PIXELFORMATDESCRIPTOR temppfd =
-	{
-		sizeof(PIXELFORMATDESCRIPTOR),
-		1,
-		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-		PFD_TYPE_RGBA,
-		32,
-		0, 0, 0, 0, 0, 0,
-		0, 0,
-		0, 0, 0, 0, 0,
-		24,
-		8,//DesiredStencilBits,
-		0,
-		PFD_MAIN_PLANE,
-		0,
-		0, 0, 0
-	};
 	DWORD Style = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 	WNDCLASSEX WndClassEx;
 	memset(&WndClassEx, 0, sizeof(WNDCLASSEX));
@@ -64,7 +46,7 @@ int My::OpenGLApplication::Initialize()
 
 	WndClassEx.cbSize = sizeof(WNDCLASSEX);
 	WndClassEx.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-	WndClassEx.lpfnWndProc = WndProc;
+	WndClassEx.lpfnWndProc = TmpWndProc;
 	WndClassEx.hInstance = hInstance;
 	WndClassEx.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	WndClassEx.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
@@ -73,7 +55,6 @@ int My::OpenGLApplication::Initialize()
 
 	RegisterClassEx(&WndClassEx);
 	HWND TemphWnd = CreateWindowEx(WS_EX_APPWINDOW, WndClassEx.lpszClassName, _T("InitWindow"), Style, 0, 0, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
-	HDC TemphDC = GetDC(TemphWnd);
 
 	PIXELFORMATDESCRIPTOR pfd;
 	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
@@ -82,11 +63,15 @@ int My::OpenGLApplication::Initialize()
 	pfd.dwFlags    = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
 	pfd.iPixelType = PFD_TYPE_RGBA;
 	pfd.cColorBits = colorBits;
+	pfd.cRedBits = m_Config.redBits;
+	pfd.cGreenBits = m_Config.greenBits;
+	pfd.cBlueBits = m_Config.blueBits;
+	pfd.cAlphaBits = m_Config.alphaBits;
 	pfd.cDepthBits = m_Config.depthBits;
 	pfd.cStencilBits = m_Config.stencilBits;
 	pfd.iLayerType = PFD_MAIN_PLANE;
 
-	TemphDC = GetDC(TemphWnd);
+	HDC TemphDC = GetDC(TemphWnd);
 	// Set a temporary default pixel format.
 	int nPixelFormat = ChoosePixelFormat(TemphDC, &pfd);
 	if (nPixelFormat == 0) return -1;
@@ -125,6 +110,7 @@ int My::OpenGLApplication::Initialize()
 	ReleaseDC(TemphWnd, TemphDC);
 	DestroyWindow(TemphWnd);
 
+	// now initialize our application window
 	result = WindowsApplication::Initialize();
 	if (result) {
 		printf("Windows Application initialize failed!");
@@ -143,9 +129,13 @@ int My::OpenGLApplication::Initialize()
 			WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
 			WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
 			WGL_COLOR_BITS_ARB,     colorBits,
+			WGL_RED_BITS_ARB,		m_Config.redBits,
+			WGL_GREEN_BITS_ARB,		m_Config.greenBits,
+			WGL_BLUE_BITS_ARB,		m_Config.blueBits,
+			WGL_ALPHA_BITS_ARB,		m_Config.alphaBits,
 			WGL_DEPTH_BITS_ARB,     m_Config.depthBits,
 			WGL_STENCIL_BITS_ARB,   m_Config.stencilBits,
-			WGL_SAMPLE_BUFFERS_ARB, 1,
+			WGL_SAMPLE_BUFFERS_ARB, 1,  // 4x MSAA
 			WGL_SAMPLES_ARB,        4,  // 4x MSAA
 			0
 		};
@@ -166,7 +156,7 @@ int My::OpenGLApplication::Initialize()
 		
 		const int context_attributes[] = {
 			WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-			WGL_CONTEXT_MINOR_VERSION_ARB, 2,
+			WGL_CONTEXT_MINOR_VERSION_ARB, 3,
 			WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
 			WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB, 
 			0
@@ -189,17 +179,6 @@ int My::OpenGLApplication::Initialize()
 	}
 	else
 	{
-		PIXELFORMATDESCRIPTOR pfd;
-		memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
-		pfd.nSize  = sizeof(PIXELFORMATDESCRIPTOR);
-		pfd.nVersion   = 1;
-		pfd.dwFlags    = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
-		pfd.iPixelType = PFD_TYPE_RGBA;
-		pfd.cColorBits = colorBits;
-		pfd.cDepthBits = m_Config.depthBits;
-		pfd.cStencilBits = m_Config.stencilBits;
-		pfd.iLayerType = PFD_MAIN_PLANE;
-
 		// Set pixel format.
 		int nPixelFormat = ChoosePixelFormat(m_hDC, &pfd);
 		if (nPixelFormat == 0) return -1;

@@ -108,7 +108,7 @@ int OpenGLGraphicsManager::Initialize()
         result = 0;
         cout << "OpenGL Version " << GLVersion.major << "." << GLVersion.minor << " loaded" << endl;
 
-        if (GLAD_GL_VERSION_3_0) {
+        if (GLAD_GL_VERSION_3_3) {
             // Set the depth buffer to be entirely cleared to 1.0 values.
             glClearDepth(1.0f);
 
@@ -287,7 +287,6 @@ void OpenGLGraphicsManager::InitializeBuffers()
 
                 glEnableVertexAttribArray(i);
 
-                glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
                 switch (v_property_array.GetDataType()) {
                     case VertexDataType::kVertexDataTypeFloat1:
                         glVertexAttribPointer(i, 1, GL_FLOAT, false, 0, 0);
@@ -407,7 +406,7 @@ void OpenGLGraphicsManager::RenderBuffers()
 
     // Update world matrix to rotate the model
     rotateAngle += PI / 360;
-    Matrix4X4f rotationMatrixY;
+    //Matrix4X4f rotationMatrixY;
     Matrix4X4f rotationMatrixZ;
     //MatrixRotationY(rotationMatrixY, rotateAngle);
     MatrixRotationZ(rotationMatrixZ, rotateAngle);
@@ -430,6 +429,7 @@ void OpenGLGraphicsManager::RenderBuffers()
 
         auto indexBufferCount = dbc.counts.size();
         const GLvoid ** pIndicies = new const GLvoid*[indexBufferCount];
+		memset(pIndicies, 0x00, sizeof(GLvoid*) * indexBufferCount);
         // Render the vertex buffer using the index buffer.
         glMultiDrawElements(dbc.mode, dbc.counts.data(), dbc.type, pIndicies, indexBufferCount);
         delete[] pIndicies;

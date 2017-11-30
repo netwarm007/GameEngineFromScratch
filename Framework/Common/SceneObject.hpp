@@ -101,20 +101,14 @@ namespace My {
 
                 switch(m_DataType) {
                     case VertexDataType::kVertexDataTypeFloat1:
-                        [[fallthrough]];
                     case VertexDataType::kVertexDataTypeFloat2:
-                        [[fallthrough]];
                     case VertexDataType::kVertexDataTypeFloat3:
-                        [[fallthrough]];
                     case VertexDataType::kVertexDataTypeFloat4:
                         size *= sizeof(float);
                         break;
                     case VertexDataType::kVertexDataTypeDouble1:
-                        [[fallthrough]];
                     case VertexDataType::kVertexDataTypeDouble2:
-                        [[fallthrough]];
                     case VertexDataType::kVertexDataTypeDouble3:
-                        [[fallthrough]];
                     case VertexDataType::kVertexDataTypeDouble4:
                         size *= sizeof(double);
                         break;
