@@ -101,28 +101,16 @@ namespace My {
 
                 switch(m_DataType) {
                     case VertexDataType::kVertexDataTypeFloat1:
-                        size *= 1 * sizeof(float);
-                        break;
                     case VertexDataType::kVertexDataTypeFloat2:
-                        size *= 2 * sizeof(float);
-                        break;
                     case VertexDataType::kVertexDataTypeFloat3:
-                        size *= 3 * sizeof(float);
-                        break;
                     case VertexDataType::kVertexDataTypeFloat4:
-                        size *= 4 * sizeof(float);
+                        size *= sizeof(float);
                         break;
                     case VertexDataType::kVertexDataTypeDouble1:
-                        size *= 1 * sizeof(double);
-                        break;
                     case VertexDataType::kVertexDataTypeDouble2:
-                        size *= 2 * sizeof(double);
-                        break;
                     case VertexDataType::kVertexDataTypeDouble3:
-                        size *= 3 * sizeof(double);
-                        break;
                     case VertexDataType::kVertexDataTypeDouble4:
-                        size *= 4 * sizeof(double);
+                        size *= sizeof(double);
                         break;
                     default:
                         size = 0;
