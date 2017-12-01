@@ -12,6 +12,7 @@
 #include "include/SubByElement.h"
 #include "include/MatrixExchangeYandZ.h"
 #include "include/InverseMatrix4X4f.h"
+#include "include/DCT.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -251,6 +252,7 @@ namespace My {
             return data[row_index];
         }
 
+
         operator T*() { return &data[0][0]; };
         operator const T*() const { return static_cast<const T*>(&data[0][0]); };
 
@@ -267,6 +269,8 @@ namespace My {
 
     typedef Matrix<float, 3, 3> Matrix3X3f;
     typedef Matrix<float, 4, 4> Matrix4X4f;
+    typedef Matrix<int32_t, 8, 8> Matrix8X8i;
+    typedef Matrix<float, 8, 8> Matrix8X8f;
 
     template <typename T, int ROWS, int COLS>
     std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix)
@@ -578,6 +582,20 @@ namespace My {
     inline bool InverseMatrix4X4f(Matrix4X4f& matrix)
     {
         return ispc::InverseMatrix4X4f(matrix);
+    }
+
+    inline Matrix8X8f DCT8X8(const Matrix8X8i& matrix)
+    {
+        Matrix8X8f result;
+        ispc::DCT8X8(matrix, result);
+        return result;
+    }
+
+    inline Matrix8X8i IDCT8X8(const Matrix8X8i& matrix)
+    {
+        Matrix8X8i result;
+        ispc::IDCT8X8(matrix, result);
+        return result;
     }
 }
 
