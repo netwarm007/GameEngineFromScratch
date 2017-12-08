@@ -15,6 +15,10 @@ target_link_libraries(OgexParserTest Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY
 __add_xg_platform_dependencies(OgexParserTest)
 add_test(NAME TEST_OgexParser COMMAND OgexParserTest)
 
+add_executable(JpegParserTest JpegParserTest.cpp)
+target_link_libraries(JpegParserTest Common)
+add_test(NAME TEST_JpegParser COMMAND JpegParserTest)
+
 #add_executable(SceneObjectTest SceneObjectTest.cpp)
 #target_link_libraries(SceneObjectTest Common ${XG_LIBRARY})
 #__add_xg_platform_dependencies(SceneObjectTest)

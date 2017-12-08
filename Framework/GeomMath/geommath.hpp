@@ -107,6 +107,7 @@ namespace My {
 		    swizzle<My::Vector3Type, T, 2, 0, 1> zxy;
 		    swizzle<My::Vector3Type, T, 1, 2, 0> yzx;
 		    swizzle<My::Vector3Type, T, 2, 1, 0> zyx;
+		    swizzle<My::Vector3Type, T, 0, 1, 2> rgb;
         };
 
         Vector3Type<T>() {};
@@ -118,6 +119,8 @@ namespace My {
     };
 
     typedef Vector3Type<float> Vector3f;
+    typedef Vector3Type<int16_t> Vector3i16;
+    typedef Vector3Type<int32_t> Vector3i32;
 
     template <typename T>
     struct Vector4Type
@@ -132,6 +135,8 @@ namespace My {
 		    swizzle<My::Vector3Type, T, 1, 2, 0> yzx;
 		    swizzle<My::Vector3Type, T, 2, 0, 1> zxy;
 		    swizzle<My::Vector3Type, T, 2, 1, 0> zyx;
+		    swizzle<My::Vector3Type, T, 0, 1, 2> rgb;
+		    swizzle<My::Vector4Type, T, 0, 1, 2, 3> rgba;
 		    swizzle<My::Vector4Type, T, 2, 1, 0, 3> bgra;
         };
 
@@ -158,6 +163,30 @@ namespace My {
     typedef Vector4Type<float> Quaternion;
     typedef Vector4Type<uint8_t> R8G8B8A8Unorm;
     typedef Vector4Type<uint8_t> Vector4i;
+
+    template <template <typename> class TT>
+    std::ostream& operator<<(std::ostream& out, TT<int8_t> vector)
+    {
+        out << "( ";
+        for (uint32_t i = 0; i < countof(vector.data); i++) {
+                out << (int)vector.data[i] << ((i == countof(vector.data) - 1)? ' ' : ',');
+        }
+        out << ")\n";
+
+        return out;
+    }
+
+    template <template <typename> class TT>
+    std::ostream& operator<<(std::ostream& out, TT<uint8_t> vector)
+    {
+        out << "( ";
+        for (uint32_t i = 0; i < countof(vector.data); i++) {
+                out << (unsigned int)vector.data[i] << ((i == countof(vector.data) - 1)? ' ' : ',');
+        }
+        out << ")\n";
+
+        return out;
+    }
 
     template <template <typename> class TT, typename T>
     std::ostream& operator<<(std::ostream& out, TT<T> vector)
@@ -305,6 +334,18 @@ namespace My {
     void MatrixSub(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
         ispc::AddByElement(matrix1, matrix2, result, countof(result.data));
+    }
+
+    template <typename T, int ROWS, int COLS>
+    void MatrixMulByElement(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
+    {
+        ispc::MulByElement(matrix1, matrix2, result, countof(result.data));
+    }
+
+    template <int ROWS, int COLS>
+    void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result, const Matrix<int32_t, ROWS, COLS>& matrix1, const Matrix<int32_t, ROWS, COLS>& matrix2)
+    {
+        ispc::MulByElementi32(matrix1, matrix2, result, countof(result.data));
     }
 
     template <typename T, int ROWS, int COLS>

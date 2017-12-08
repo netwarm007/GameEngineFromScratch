@@ -106,8 +106,8 @@ My::Buffer My::AssetLoader::SyncOpenAndReadText(const char *filePath)
         size_t length = GetSize(fp);
 
         pBuff = new Buffer(length + 1);
-        length = fread(pBuff->m_pData, 1, length, static_cast<FILE*>(fp));
-        pBuff->m_pData[length] = '\0';
+        length = fread(pBuff->GetData(), 1, length, static_cast<FILE*>(fp));
+        pBuff->GetData()[length] = '\0';
 
         CloseFile(fp);
     } else {
@@ -131,7 +131,7 @@ My::Buffer My::AssetLoader::SyncOpenAndReadBinary(const char *filePath)
         size_t length = GetSize(fp);
 
         pBuff = new Buffer(length);
-        fread(pBuff->m_pData, length, 1, static_cast<FILE*>(fp));
+        fread(pBuff->GetData(), length, 1, static_cast<FILE*>(fp));
 
         CloseFile(fp);
     } else {
@@ -173,7 +173,7 @@ size_t My::AssetLoader::SyncRead(const AssetFilePtr& fp, Buffer& buf)
         return 0;
     }
 
-    sz = fread(buf.m_pData, buf.m_szSize, 1, static_cast<FILE*>(fp));
+    sz = fread(buf.GetData(), buf.GetDataSize(), 1, static_cast<FILE*>(fp));
 
 
     return sz;

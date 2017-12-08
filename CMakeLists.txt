@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 3.1) 
 project (GameEngineFromScrath)
 
-set (CMAKE_C_STANDARD 11)
+set (CMAKE_C_STANDARD 99)
 set (CMAKE_CXX_STANDARD 11)
 if(NOT MSVC)
 set (CMAKE_CXX_FLAGS "-Wno-gnu-anonymous-struct -Wno-nested-anon-types")
@@ -57,6 +57,17 @@ int main(int argc, char** argv)
 }
 "
  HAVE_MAKE_UNIQUE)
+CHECK_CXX_SOURCE_COMPILES(
+"#include <algorithm>
+
+int main(int argc, char** argv)
+{
+    int result = -1;
+    result = std::clamp(result, 0, 1);
+    return result;
+}
+"
+ HAVE_CLAMP)
 configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
 add_subdirectory(Framework)
 add_subdirectory(Platform)

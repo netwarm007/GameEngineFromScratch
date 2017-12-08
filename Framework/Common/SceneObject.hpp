@@ -10,16 +10,6 @@
 #include "geommath.hpp"
 
 namespace My {
-    namespace details {
-        constexpr int32_t i32(const char* s, int32_t v) {
-            return *s ? i32(s+1, v * 256 + *s) : v;
-        }
-    }
-
-    constexpr int32_t operator "" _i32(const char* s, size_t) {
-        return details::i32(s, 0);
-    }
-
     ENUM(SceneObjectType) {
         kSceneObjectTypeMesh    =   "MESH"_i32,
         kSceneObjectTypeMaterial=   "MATL"_i32,
