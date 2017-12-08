@@ -199,7 +199,7 @@ HRESULT My::D3d12GraphicsManager::CreateVertexBuffer(const Buffer& buffer)
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = buffer.m_szSize;
+    resourceDesc.Width = buffer.GetDataSize();
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -236,7 +236,7 @@ HRESULT My::D3d12GraphicsManager::CreateIndexBuffer(const Buffer& buffer)
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = buffer.m_szSize;
+    resourceDesc.Width = buffer.GetDataSize();
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
