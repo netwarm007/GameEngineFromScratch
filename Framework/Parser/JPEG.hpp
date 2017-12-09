@@ -10,6 +10,9 @@
 #include "HuffmanTree.hpp"
 #include "ColorSpaceConversion.hpp"
 
+// Enable this to print out very detailed decode information
+//#define DUMP_DETAILS
+
 namespace My {
 #pragma pack(push, 1)
     struct JFIF_FILEHEADER {
@@ -193,7 +196,9 @@ namespace My {
 
                                     auto num_symbo = m_treeHuffman[(pHtable->TableClass() << 1) | pHtable->DestinationIdentifier()].PopulateWithHuffmanTable(pHtable->NumOfHuffmanCodes, pCodeValueStart);
 
+#ifdef DUMP_DETAILS
                                     m_treeHuffman[(pHtable->TableClass() << 1) | pHtable->DestinationIdentifier()].Dump();
+#endif
 
                                     auto processed_length = sizeof(HUFFMAN_TABLE_SPEC) + num_symbo;
                                     pTmp += processed_length;
@@ -225,7 +230,9 @@ namespace My {
                                             m_tableQuantization[pQtable->DestinationIdentifier()][index >> 3][index & 0x7] = endian_net_unsigned_int(*((uint16_t*)pElementDataStart + i));
                                         }
                                     }
+#ifdef DUMP_DETAILS
                                     std::cout << m_tableQuantization[pQtable->DestinationIdentifier()];
+#endif
 
                                     auto processed_length = sizeof(QUANTIZATION_TABLE_SPEC) + 64 * (pQtable->ElementPrecision() + 1);
                                     pTmp += processed_length;
@@ -275,8 +282,7 @@ namespace My {
                                         std::cout << "Size Of Scan: " << scanLength << " bytes" << std::endl;
                                         std::cout << "Size Of Scan (after remove bitstuff): " << scan_data.size() << " bytes" << std::endl;
                                     } else {
-                                        std::cout << "File is mulformed!" << std::endl;
-                                        assert(0);
+                                        std::cout << "Find EOF when searching for EOS" << std::endl;
                                     }
                                 }
                                 
@@ -295,16 +301,20 @@ namespace My {
                                 std::cout << "Total MCU count: " << mcu_count << std::endl;
                                 
                                 while (byte_offset < scan_data.size() && mcu_index < mcu_count) {
+#if DUMP_DETAILS
                                     std::cout << "MCU: " << mcu_index << std::endl;
+#endif
                                     Matrix8X8i block[m_nComponentsInFrame];
                                     memset(&block, 0x00, sizeof(block));
 
                                     for (uint8_t i = 0; i < pScanHeader->NumOfComponents; i++) {
                                         const FRAME_COMPONENT_SPEC_PARAMS& fcsp = m_tableFrameComponentsSpec[i];
+#if DUMP_DETAILS
                                         std::cout << "\tComponent Selector: " << (uint16_t)pScsp[i].ComponentSelector << std::endl;
                                         std::cout << "\tQuantization Table Destination Selector: " << (uint16_t)fcsp.QuantizationTableDestSelector << std::endl;
                                         std::cout << "\tDC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].DcEntropyCodingTableDestSelector() << std::endl;
                                         std::cout << "\tAC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].AcEntropyCodingTableDestSelector() << std::endl;
+#endif
 
                                         // Decode DC
                                         uint8_t dc_code = m_treeHuffman[pScsp[i].DcEntropyCodingTableDestSelector()].DecodeSingleValue(scan_data.data(), scan_data.size(), &byte_offset, &bit_offset);
@@ -314,7 +324,9 @@ namespace My {
 
                                         if (!dc_code)
                                         {
+#if DUMP_DETAILS
                                             std::cout << "Found EOB when decode DC!" << std::endl;
+#endif
                                             dc_value = 0;
                                         } else {
                                             if (dc_bit_length + bit_offset <= 8)
@@ -341,9 +353,11 @@ namespace My {
                                         // save the value for next DC
                                         previous_dc[i] = dc_value;
 
+#ifdef DUMP_DETAILS
                                         printf("DC Code: %x\n", dc_code);
                                         printf("DC Bit Length: %d\n", dc_bit_length);
                                         printf("DC Value: %d\n", dc_value);
+#endif
 
                                         block[i][0][0] = dc_value;
 
@@ -362,12 +376,16 @@ namespace My {
 
                                             if (!ac_code)
                                             {
+#if DUMP_DETAILS
                                                 std::cout << "Found EOB when decode AC!" << std::endl;
+#endif
                                                 break;
                                             }
                                             else if (ac_code == 0xF0)
                                             {
+#if DUMP_DETAILS
                                                 std::cout << "Found ZRL when decode AC!" << std::endl;
+#endif
                                                 ac_index += 15;
                                                 break;
                                             }
@@ -387,9 +405,11 @@ namespace My {
 
                                             int16_t ac_value = (int16_t) tmp_value;
 
+#ifdef DUMP_DETAILS
                                             printf("AC Code: %x\n", ac_code);
                                             printf("AC Bit Length: %d\n", ac_bit_length);
                                             printf("AC Value: %d\n", ac_value);
+#endif
 
                                             int index = m_zigzagIndex[ac_index];
                                             block[i][index >> 3][index & 0x07] = ac_value;
@@ -404,12 +424,14 @@ namespace My {
                                             ac_index++;
                                         }
 
+#ifdef DUMP_DETAILS
                                         printf("Extracted Component[%d] 8x8 block: ", i);
                                         std::cout << block[i];
                                         MatrixMulByElementi32(block[i], block[i], m_tableQuantization[fcsp.QuantizationTableDestSelector]);
                                         std::cout << "After Quantization: " << block[i];
                                         block[i] = IDCT8X8(block[i]);
                                         std::cout << "After IDCT: " << block[i];
+#endif
                                     } 
 
                                     assert(m_nComponentsInFrame < 4);
