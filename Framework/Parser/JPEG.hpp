@@ -183,7 +183,7 @@ namespace My {
                                 std::cout << "Define Huffman Table" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
-                                auto segmentLength = endian_net_unsigned_int(pSegmentHeader->Length) - 2;
+                                size_t segmentLength = endian_net_unsigned_int(pSegmentHeader->Length) - 2;
 
                                 const uint8_t* pTmp = pData + sizeof(JPEG_SEGMENT_HEADER);
 
@@ -200,7 +200,7 @@ namespace My {
                                     m_treeHuffman[(pHtable->TableClass() << 1) | pHtable->DestinationIdentifier()].Dump();
 #endif
 
-                                    auto processed_length = sizeof(HUFFMAN_TABLE_SPEC) + num_symbo;
+                                    size_t processed_length = sizeof(HUFFMAN_TABLE_SPEC) + num_symbo;
                                     pTmp += processed_length;
                                     segmentLength -= processed_length;
                                 }
@@ -211,7 +211,7 @@ namespace My {
                                 std::cout << "Define Quantization Table" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
-                                auto segmentLength = endian_net_unsigned_int(pSegmentHeader->Length) - 2;
+                                size_t segmentLength = endian_net_unsigned_int(pSegmentHeader->Length) - 2;
 
                                 const uint8_t* pTmp = pData + sizeof(JPEG_SEGMENT_HEADER);
 
@@ -234,7 +234,7 @@ namespace My {
                                     std::cout << m_tableQuantization[pQtable->DestinationIdentifier()];
 #endif
 
-                                    auto processed_length = sizeof(QUANTIZATION_TABLE_SPEC) + 64 * (pQtable->ElementPrecision() + 1);
+                                    size_t processed_length = sizeof(QUANTIZATION_TABLE_SPEC) + 64 * (pQtable->ElementPrecision() + 1);
                                     pTmp += processed_length;
                                     segmentLength -= processed_length;
                                 }
@@ -295,7 +295,7 @@ namespace My {
                                 int mcu_count_x = ((m_nSamplesPerLine + 7) >> 3);
                                 int mcu_count_y = ((m_nLines + 7) >> 3);
                                 int mcu_count = mcu_count_x * mcu_count_y;
-                                int16_t previous_dc[m_nComponentsInFrame];
+                                int16_t previous_dc[4]; // 4 is max num of components defined by ITU-T81
                                 memset(previous_dc, 0x00, sizeof(previous_dc));
 
                                 std::cout << "Total MCU count: " << mcu_count << std::endl;
@@ -304,7 +304,7 @@ namespace My {
 #if DUMP_DETAILS
                                     std::cout << "MCU: " << mcu_index << std::endl;
 #endif
-                                    Matrix8X8i block[m_nComponentsInFrame];
+                                    Matrix8X8i block[4]; // 4 is max num of components defined by ITU-T81
                                     memset(&block, 0x00, sizeof(block));
 
                                     for (uint8_t i = 0; i < pScanHeader->NumOfComponents; i++) {
@@ -434,7 +434,7 @@ namespace My {
 #endif
                                     } 
 
-                                    assert(m_nComponentsInFrame < 4);
+                                    assert(m_nComponentsInFrame <= 4);
 
                                     YCbCru8 ycbcr;
                                     auto mcu_index_x = mcu_index % mcu_count_x;
