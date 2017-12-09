@@ -427,9 +427,13 @@ namespace My {
 #ifdef DUMP_DETAILS
                                         printf("Extracted Component[%d] 8x8 block: ", i);
                                         std::cout << block[i];
+#endif
                                         MatrixMulByElementi32(block[i], block[i], m_tableQuantization[fcsp.QuantizationTableDestSelector]);
+#ifdef DUMP_DETAILS
                                         std::cout << "After Quantization: " << block[i];
+#endif
                                         block[i] = IDCT8X8(block[i]);
+#ifdef DUMP_DETAILS
                                         std::cout << "After IDCT: " << block[i];
 #endif
                                     } 
