@@ -63,7 +63,7 @@ namespace My {
                     const uint8_t* pSourceData = reinterpret_cast<const uint8_t*>(buf.GetData()) + pFileHeader->BitsOffset;
                     for (int32_t y = img.Height - 1; y >= 0; y--) {
                         for (uint32_t x = 0; x < img.Width; x++) {
-                            (reinterpret_cast<R8G8B8A8Unorm*>(img.data) + img.Width * (img.Height - y - 1) + x)->bgra = *reinterpret_cast<const R8G8B8A8Unorm*>(pSourceData + img.pitch * y + x * byte_count);
+                            (reinterpret_cast<R8G8B8A8Unorm*>(reinterpret_cast<uint8_t*>(img.data) + img.pitch * (img.Height - y - 1) + x * byte_count))->bgra = *reinterpret_cast<const R8G8B8A8Unorm*>(pSourceData + img.pitch * y + x * byte_count);
                         }
                     }
                 }

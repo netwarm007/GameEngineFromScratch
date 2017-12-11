@@ -7,6 +7,7 @@
 #include "SceneManager.hpp"
 #include "utility.hpp"
 #include "BMP.hpp"
+#include "JPEG.hpp"
 
 using namespace My;
 using namespace std;
@@ -16,7 +17,7 @@ namespace My {
     {
         public:
             using D2dGraphicsManager::D2dGraphicsManager;
-            void DrawBitmap(const Image image[], int32_t index);
+            void DrawBitmap(const Image image);
         private:
             ID2D1Bitmap* m_pBitmap = nullptr;
     };
@@ -31,7 +32,7 @@ namespace My {
         virtual void OnDraw();
 
     private:
-        Image m_Image[2];
+        Image m_Image;
     };
 }
 
@@ -51,14 +52,12 @@ int My::TestApplication::Initialize()
     result = WindowsApplication::Initialize();
 
     if (result == 0) {
-        BmpParser   parser;
-        Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/icelogo-color.bmp");
+        Buffer buf;
 
-        m_Image[0] = parser.Parse(buf);
+        JfifParser  jfif_parser;
+        buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/b.jpg");
 
-        buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/icelogo-normal.bmp");
-
-        m_Image[1] = parser.Parse(buf);
+        m_Image = jfif_parser.Parse(buf);
     }
 
     return result;
@@ -66,11 +65,10 @@ int My::TestApplication::Initialize()
 
 void My::TestApplication::OnDraw()
 {
-    dynamic_cast<TestGraphicsManager*>(g_pGraphicsManager)->DrawBitmap(m_Image, 0);
-    dynamic_cast<TestGraphicsManager*>(g_pGraphicsManager)->DrawBitmap(m_Image, 1);
+    dynamic_cast<TestGraphicsManager*>(g_pGraphicsManager)->DrawBitmap(m_Image);
 }
 
-void My::TestGraphicsManager::DrawBitmap(const Image* image, int32_t index)
+void My::TestGraphicsManager::DrawBitmap(const Image image)
 {
 	HRESULT hr;
 
@@ -83,8 +81,8 @@ void My::TestGraphicsManager::DrawBitmap(const Image* image, int32_t index)
     props.dpiX = 72.0f;
     props.dpiY = 72.0f;
     SafeRelease(&m_pBitmap);
-    hr = m_pRenderTarget->CreateBitmap(D2D1::SizeU(image[index].Width, image[index].Height), 
-                                                    image[index].data, image[index].pitch, props, &m_pBitmap);
+    hr = m_pRenderTarget->CreateBitmap(D2D1::SizeU(image.Width, image.Height), 
+                                                    image.data, image.pitch, props, &m_pBitmap);
 
     D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
     D2D1_SIZE_F bmpSize = m_pBitmap->GetSize();
@@ -101,9 +99,9 @@ void My::TestGraphicsManager::DrawBitmap(const Image* image, int32_t index)
 	float dest_width = rtSize.height * aspect;
 
     D2D1_RECT_F dest_rect = D2D1::RectF(
-                     dest_width * index,
                      0,
-                     dest_width * (index + 1),
+                     0,
+                     dest_width,
                      dest_height 
                      );
 

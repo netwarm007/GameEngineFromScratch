@@ -172,7 +172,7 @@ namespace My {
 
                                 img.Width = m_nSamplesPerLine;
                                 img.Height = m_nLines;
-                                img.bitcount = 24;
+                                img.bitcount = 32;
                                 img.pitch = ((img.Width * img.bitcount >> 3) + 3) & ~3;
                                 img.data_size = img.pitch * img.Height;
                                 img.data = g_pMemoryManager->Allocate(img.data_size);
@@ -331,18 +331,27 @@ namespace My {
                                         } else {
                                             if (dc_bit_length + bit_offset <= 8)
                                             {
-                                                tmp_value = ((scan_data[byte_offset] << bit_offset) & 0x00FF) >> bit_offset >> (8 - dc_bit_length - bit_offset);
+                                                tmp_value = ((scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1)) >> (8 - dc_bit_length - bit_offset));
                                             }
                                             else
                                             {
-                                                tmp_value = scan_data[byte_offset] << 24 | scan_data[byte_offset+1] << 16 | scan_data[byte_offset+2] << 8 | scan_data[byte_offset+3];
-                                                tmp_value = ((uint32_t)(tmp_value << bit_offset)) >> bit_offset >> (32 - dc_bit_length - bit_offset);
+                                                uint8_t bits_in_first_byte = 8 - bit_offset;
+                                                uint8_t append_full_bytes = (dc_bit_length - bits_in_first_byte) / 8;
+                                                uint8_t bits_in_last_byte = dc_bit_length - bits_in_first_byte - 8 * append_full_bytes;
+                                                tmp_value = (scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1));
+                                                for (int m = 1; m <= append_full_bytes; m++)
+                                                {
+                                                    tmp_value <<= 8;
+                                                    tmp_value += scan_data[byte_offset + m];
+                                                }
+                                                tmp_value <<= bits_in_last_byte;
+                                                tmp_value += (scan_data[byte_offset + append_full_bytes + 1] >> (8 - bits_in_last_byte));
                                             }
 
                                             // decode dc value
                                             if ((tmp_value >> (dc_bit_length - 1)) == 0) {
                                                 // MSB = 1, turn it to minus value
-                                                dc_value = -(~tmp_value & ((0x0001 << dc_bit_length) - 1));
+                                                dc_value = -(~tmp_value & ((0x0001u << dc_bit_length) - 1));
                                             } else {
                                                 dc_value = tmp_value;
                                             }
@@ -393,17 +402,34 @@ namespace My {
                                             uint8_t ac_zero_length = ac_code >> 4;
                                             ac_index += ac_zero_length;
                                             uint8_t ac_bit_length = ac_code & 0x0F;
+                                            int16_t ac_value;
+
                                             if (ac_bit_length + bit_offset <= 8)
                                             {
-                                                tmp_value = ((scan_data[byte_offset] << bit_offset) & 0x00FF) >> bit_offset >> (8 - ac_bit_length - bit_offset);
+                                                tmp_value = ((scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1)) >> (8 - ac_bit_length - bit_offset));
                                             }
                                             else
                                             {
-                                                tmp_value = scan_data[byte_offset] << 24 | scan_data[byte_offset+1] << 16 | scan_data[byte_offset+2] << 8 | scan_data[byte_offset+3];
-                                                tmp_value = ((uint32_t)(tmp_value << bit_offset)) >> bit_offset >> (32 - ac_bit_length - bit_offset);
+                                                uint8_t bits_in_first_byte = 8 - bit_offset;
+                                                uint8_t append_full_bytes = (ac_bit_length - bits_in_first_byte) / 8;
+                                                uint8_t bits_in_last_byte = ac_bit_length - bits_in_first_byte - 8 * append_full_bytes;
+                                                tmp_value = (scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1));
+                                                for (int m = 1; m <= append_full_bytes; m++)
+                                                {
+                                                    tmp_value <<= 8;
+                                                    tmp_value += scan_data[byte_offset + m];
+                                                }
+                                                tmp_value <<= bits_in_last_byte;
+                                                tmp_value += (scan_data[byte_offset + append_full_bytes + 1] >> (8 - bits_in_last_byte));
                                             }
 
-                                            int16_t ac_value = (int16_t) tmp_value;
+                                            // decode ac value
+                                            if ((tmp_value >> (ac_bit_length - 1)) == 0) {
+                                                // MSB = 1, turn it to minus value
+                                                ac_value = -(~tmp_value & ((0x0001u << ac_bit_length) - 1));
+                                            } else {
+                                                ac_value = tmp_value;
+                                            }
 
 #ifdef DUMP_DETAILS
                                             printf("AC Code: %x\n", ac_code);
@@ -452,8 +478,9 @@ namespace My {
                                             }
 
                                             pBuf = reinterpret_cast<uint8_t*>(img.data)
-                                                + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * sizeof(RGBu8));
-                                            reinterpret_cast<RGBu8*>(pBuf)->rgb = ConvertYCbCr2RGB(ycbcr);
+                                                + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * (img.bitcount >> 3));
+                                            reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->rgb = ConvertYCbCr2RGB(ycbcr);
+                                            reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->a = 255;
                                         }
                                     }
 

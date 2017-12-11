@@ -19,7 +19,6 @@ namespace My {
 
         inline GfxConfiguration& GetConfiguration() { return m_Config; };
 
-    protected:
         virtual void OnDraw() {};
 
     protected:
