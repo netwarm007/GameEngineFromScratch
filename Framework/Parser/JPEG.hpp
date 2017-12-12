@@ -11,7 +11,7 @@
 #include "ColorSpaceConversion.hpp"
 
 // Enable this to print out very detailed decode information
-//#define DUMP_DETAILS
+//#define DUMP_DETAILS 1
 
 namespace My {
 #pragma pack(push, 1)
@@ -119,6 +119,7 @@ namespace My {
         uint16_t m_nLines;
         uint16_t m_nSamplesPerLine;
         uint16_t m_nComponentsInFrame;
+        uint16_t m_nRestartInterval;
         int mcu_index;
         int mcu_count_x;
         int mcu_count_y;
@@ -140,7 +141,7 @@ namespace My {
                     if(*p == 0xFF && *(p + 1) >= 0xD0 && *(p + 1) <= 0xD7) 
                     {
                         // found restart mark
-                        std::cout << "Found RST while scan the ECS.";
+                        std::cout << "Found RST while scan the ECS." << std::endl;
                         break;
                     }
 
@@ -336,8 +337,8 @@ namespace My {
 
                 assert(m_nComponentsInFrame <= 4);
 
-                YCbCr ycbcr;
-                RGB   rgb;
+                YCbCru8 ycbcr;
+                RGBu8   rgb;
                 auto mcu_index_x = mcu_index % mcu_count_x;
                 auto mcu_index_y = mcu_index / mcu_count_x;
                 uint8_t* pBuf;
@@ -351,14 +352,20 @@ namespace My {
                         pBuf = reinterpret_cast<uint8_t*>(img.data)
                             + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * (img.bitcount >> 3));
                         rgb = ConvertYCbCr2RGB(ycbcr);
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->r = (uint8_t)std::clamp(rgb.r, 0.0f, 255.0f);
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->g = (uint8_t)std::clamp(rgb.g, 0.0f, 255.0f);
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->b = (uint8_t)std::clamp(rgb.b, 0.0f, 255.0f);
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->a = (uint8_t)255;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->r = rgb.r;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->g = rgb.g;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->b = rgb.b;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->a = 255;
                     }
                 }
 
                 mcu_index++;
+                if (m_nRestartInterval != 0 && (mcu_index % m_nRestartInterval == 0)) {
+                    // close the byte
+                    bit_offset = 0;
+                    byte_offset++;
+                    assert(byte_offset == scan_data.size()); // we must at the end of the ECS 
+                }
             }
 
             return scanLength;
@@ -500,7 +507,8 @@ namespace My {
                                 std::cout << "----------------------------" << std::endl;
 
                                 RESTART_INTERVAL_DEF* pRestartHeader = (RESTART_INTERVAL_DEF*) pData;
-                                std::cout << "Restart interval: " << endian_net_unsigned_int((uint16_t)pRestartHeader->RestartInterval) << std::endl;
+                                m_nRestartInterval = endian_net_unsigned_int((uint16_t)pRestartHeader->RestartInterval);
+                                std::cout << "Restart interval: " << m_nRestartInterval << std::endl;
                             }
                             break;
                         case 0xFFDA:
@@ -534,7 +542,7 @@ namespace My {
                                 std::cout << "Restart Of Scan" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
-                                const uint8_t* pScanData = pData + endian_net_unsigned_int((uint16_t)pSegmentHeader->Length) + 2;
+                                const uint8_t* pScanData = pData + 2;
                                 scanLength = parseScanData(pScanData, pDataEnd, img);
                             }
                             break;
