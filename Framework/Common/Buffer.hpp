@@ -2,6 +2,7 @@
 #include <memory>
 #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 #include "MemoryManager.hpp"
 
 namespace My {
