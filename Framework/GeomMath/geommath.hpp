@@ -113,7 +113,7 @@ namespace My {
         Vector3Type<T>() {};
         Vector3Type<T>(const T& _v) : x(_v), y(_v), z(_v) {};
         Vector3Type<T>(const T& _x, const T& _y, const T& _z) : x(_x), y(_y), z(_z) {};
-
+        
         operator T*() { return data; };
         operator const T*() const { return static_cast<const T*>(data); };
     };

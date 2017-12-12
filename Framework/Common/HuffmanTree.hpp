@@ -73,7 +73,7 @@ namespace My {
                         }
                     }
 
-                    int childrenCount = node_queue.size();
+                    auto childrenCount = node_queue.size();
 
                     if(l) {
                         // create leaf node for level i

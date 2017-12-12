@@ -46,3 +46,5 @@ External/Darwin/lib/ filter=lfs diff=lfs merge=lfs -text
 External/Linux/lib filter=lfs diff=lfs merge=lfs -text
 External/FreeBSD/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/FreeBSD/bin/ filter=lfs diff=lfs merge=lfs -text
+External\Darwin\bin filter=lfs diff=lfs merge=lfs -text
+*.ogex filter=lfs diff=lfs merge=lfs -text

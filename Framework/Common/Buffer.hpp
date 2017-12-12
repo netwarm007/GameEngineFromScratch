@@ -1,11 +1,10 @@
 #pragma once
-#include <memory.h>
-#include <stddef.h>
+#include <memory>
+#include <cstddef>
+#include <cstdlib>
 #include "MemoryManager.hpp"
 
 namespace My {
-    extern MemoryManager* g_pMemoryManager;
-
     class Buffer {
     public:
         Buffer() : m_pData(nullptr), m_szSize(0), m_szAlignment(alignof(uint32_t)) {}

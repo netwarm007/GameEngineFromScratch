@@ -55,7 +55,11 @@ int My::TestApplication::Initialize()
         Buffer buf;
 
         JfifParser  jfif_parser;
-        buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/b.jpg");
+        if (m_nArgC > 1) {
+            buf = g_pAssetLoader->SyncOpenAndReadBinary(m_ppArgV[1]);
+        } else {
+            buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/jpeg_decoder_test.jpg");
+        }
 
         m_Image = jfif_parser.Parse(buf);
     }

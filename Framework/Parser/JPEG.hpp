@@ -99,6 +99,10 @@ namespace My {
             uint16_t DestinationIdentifier() const { return data & 0x07; };
     };
 
+    struct RESTART_INTERVAL_DEF : public JPEG_SEGMENT_HEADER {
+        uint16_t RestartInterval;
+    };
+
 #pragma pack(pop)
 
     class JfifParser : implements ImageParser
@@ -115,11 +119,256 @@ namespace My {
         uint16_t m_nLines;
         uint16_t m_nSamplesPerLine;
         uint16_t m_nComponentsInFrame;
+        int mcu_index;
+        int mcu_count_x;
+        int mcu_count_y;
+        int mcu_count;
+        const SCAN_COMPONENT_SPEC_PARAMS* pScsp;
+
+    protected:
+        size_t parseScanData(const uint8_t* pScanData, const uint8_t* pDataEnd, Image& img)
+        {
+            std::vector<uint8_t> scan_data;
+            size_t scanLength = 0;
+
+            {
+                const uint8_t* p = pScanData;
+
+                // scan for scan data buffer size and remove bitstuff
+                bool bitstuff = false;
+                while (p < pDataEnd && (*(uint16_t*)p != endian_net_unsigned_int((uint16_t)0xFFD9))) {
+                    if(*p == 0xFF && *(p + 1) >= 0xD0 && *(p + 1) <= 0xD7) 
+                    {
+                        // found restart mark
+                        std::cout << "Found RST while scan the ECS.";
+                        break;
+                    }
+
+                    if(!bitstuff) {
+                        scan_data.push_back(*p);
+                    } else {
+                        // ignore it and reset the flag
+                        assert(*p == 0x00);
+                        bitstuff = false;
+                    }
+
+                    if(*(uint16_t*)p == endian_net_unsigned_int((uint16_t)0xFF00)) {
+                        bitstuff = true;
+                    }
+
+                    p++;
+                    scanLength++;
+                }
+
+                std::cout << "Size Of Scan: " << scanLength << " bytes" << std::endl;
+                std::cout << "Size Of Scan (after remove bitstuff): " << scan_data.size() << " bytes" << std::endl;
+            }
+            
+            int16_t previous_dc[4]; // 4 is max num of components defined by ITU-T81
+            memset(previous_dc, 0x00, sizeof(previous_dc));
+
+            size_t byte_offset = 0;
+            uint8_t bit_offset = 0;
+
+            while (byte_offset < scan_data.size() && mcu_index < mcu_count) {
+#if DUMP_DETAILS
+                std::cout << "MCU: " << mcu_index << std::endl;
+#endif
+                Matrix8X8i block[4]; // 4 is max num of components defined by ITU-T81
+                memset(&block, 0x00, sizeof(block));
+
+                for (uint8_t i = 0; i < m_nComponentsInFrame; i++) {
+                    const FRAME_COMPONENT_SPEC_PARAMS& fcsp = m_tableFrameComponentsSpec[i];
+#if DUMP_DETAILS
+                    std::cout << "\tComponent Selector: " << (uint16_t)pScsp[i].ComponentSelector << std::endl;
+                    std::cout << "\tQuantization Table Destination Selector: " << (uint16_t)fcsp.QuantizationTableDestSelector << std::endl;
+                    std::cout << "\tDC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].DcEntropyCodingTableDestSelector() << std::endl;
+                    std::cout << "\tAC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].AcEntropyCodingTableDestSelector() << std::endl;
+#endif
+
+                    // Decode DC
+                    uint8_t dc_code = m_treeHuffman[pScsp[i].DcEntropyCodingTableDestSelector()].DecodeSingleValue(scan_data.data(), scan_data.size(), &byte_offset, &bit_offset);
+                    uint8_t dc_bit_length = dc_code & 0x0F;
+                    int16_t dc_value;
+                    uint32_t tmp_value;
+
+                    if (!dc_code)
+                    {
+#if DUMP_DETAILS
+                        std::cout << "Found EOB when decode DC!" << std::endl;
+#endif
+                        dc_value = 0;
+                    } else {
+                        if (dc_bit_length + bit_offset <= 8)
+                        {
+                            tmp_value = ((scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1)) >> (8 - dc_bit_length - bit_offset));
+                        }
+                        else
+                        {
+                            uint8_t bits_in_first_byte = 8 - bit_offset;
+                            uint8_t append_full_bytes = (dc_bit_length - bits_in_first_byte) / 8;
+                            uint8_t bits_in_last_byte = dc_bit_length - bits_in_first_byte - 8 * append_full_bytes;
+                            tmp_value = (scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1));
+                            for (int m = 1; m <= append_full_bytes; m++)
+                            {
+                                tmp_value <<= 8;
+                                tmp_value += scan_data[byte_offset + m];
+                            }
+                            tmp_value <<= bits_in_last_byte;
+                            tmp_value += (scan_data[byte_offset + append_full_bytes + 1] >> (8 - bits_in_last_byte));
+                        }
+
+                        // decode dc value
+                        if ((tmp_value >> (dc_bit_length - 1)) == 0) {
+                            // MSB = 1, turn it to minus value
+                            dc_value = -(int16_t)(~tmp_value & ((0x0001u << dc_bit_length) - 1));
+                        } else {
+                            dc_value = tmp_value;
+                        }
+                    }
+
+                    // add with previous DC value
+                    dc_value += previous_dc[i];
+                    // save the value for next DC
+                    previous_dc[i] = dc_value;
+
+#ifdef DUMP_DETAILS
+                    printf("DC Code: %x\n", dc_code);
+                    printf("DC Bit Length: %d\n", dc_bit_length);
+                    printf("DC Value: %d\n", dc_value);
+#endif
+
+                    block[i][0][0] = dc_value;
+
+                    // forward pointers to end of DC
+                    bit_offset += dc_bit_length;
+                    while (bit_offset >= 8 ) {
+                        bit_offset -= 8;
+                        byte_offset++;
+                    }
+
+                    // Decode AC 
+                    int ac_index = 1;
+                    while (byte_offset < scan_data.size() && ac_index < 64)
+                    {
+                        uint8_t ac_code = m_treeHuffman[2 + pScsp[i].AcEntropyCodingTableDestSelector()].DecodeSingleValue(scan_data.data(), scan_data.size(), &byte_offset, &bit_offset);
+
+                        if (!ac_code)
+                        {
+#if DUMP_DETAILS
+                            std::cout << "Found EOB when decode AC!" << std::endl;
+#endif
+                            break;
+                        }
+                        else if (ac_code == 0xF0)
+                        {
+#if DUMP_DETAILS
+                            std::cout << "Found ZRL when decode AC!" << std::endl;
+#endif
+                            ac_index += 16;
+                            break;
+                        }
+
+                        uint8_t ac_zero_length = ac_code >> 4;
+                        ac_index += ac_zero_length;
+                        uint8_t ac_bit_length = ac_code & 0x0F;
+                        int16_t ac_value;
+
+                        if (ac_bit_length + bit_offset <= 8)
+                        {
+                            tmp_value = ((scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1)) >> (8 - ac_bit_length - bit_offset));
+                        }
+                        else
+                        {
+                            uint8_t bits_in_first_byte = 8 - bit_offset;
+                            uint8_t append_full_bytes = (ac_bit_length - bits_in_first_byte) / 8;
+                            uint8_t bits_in_last_byte = ac_bit_length - bits_in_first_byte - 8 * append_full_bytes;
+                            tmp_value = (scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1));
+                            for (int m = 1; m <= append_full_bytes; m++)
+                            {
+                                tmp_value <<= 8;
+                                tmp_value += scan_data[byte_offset + m];
+                            }
+                            tmp_value <<= bits_in_last_byte;
+                            tmp_value += (scan_data[byte_offset + append_full_bytes + 1] >> (8 - bits_in_last_byte));
+                        }
+
+                        // decode ac value
+                        if ((tmp_value >> (ac_bit_length - 1)) == 0) {
+                            // MSB = 1, turn it to minus value
+                            ac_value = -(int16_t)(~tmp_value & ((0x0001u << ac_bit_length) - 1));
+                        } else {
+                            ac_value = tmp_value;
+                        }
+
+#ifdef DUMP_DETAILS
+                        printf("AC Code: %x\n", ac_code);
+                        printf("AC Bit Length: %d\n", ac_bit_length);
+                        printf("AC Value: %d\n", ac_value);
+#endif
+
+                        int index = m_zigzagIndex[ac_index];
+                        block[i][index >> 3][index & 0x07] = ac_value;
+
+                        // forward pointers to end of AC
+                        bit_offset += ac_bit_length;
+                        while (bit_offset >= 8 ) {
+                            bit_offset -= 8;
+                            byte_offset++;
+                        }
+
+                        ac_index++;
+                    }
+
+#ifdef DUMP_DETAILS
+                    printf("Extracted Component[%d] 8x8 block: ", i);
+                    std::cout << block[i];
+#endif
+                    MatrixMulByElementi32(block[i], block[i], m_tableQuantization[fcsp.QuantizationTableDestSelector]);
+#ifdef DUMP_DETAILS
+                    std::cout << "After Quantization: " << block[i];
+#endif
+                    block[i] = IDCT8X8(block[i]);
+#ifdef DUMP_DETAILS
+                    std::cout << "After IDCT: " << block[i];
+#endif
+                } 
+
+                assert(m_nComponentsInFrame <= 4);
+
+                YCbCr ycbcr;
+                RGB   rgb;
+                auto mcu_index_x = mcu_index % mcu_count_x;
+                auto mcu_index_y = mcu_index / mcu_count_x;
+                uint8_t* pBuf;
+
+                for (int i = 0; i < 8; i++) {
+                    for (int j = 0; j < 8; j++) {
+                        for (int k = 0; k < m_nComponentsInFrame; k++) {
+                            ycbcr[k] = std::clamp(block[k][i][j] + 128, 0, 255);
+                        }
+
+                        pBuf = reinterpret_cast<uint8_t*>(img.data)
+                            + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * (img.bitcount >> 3));
+                        rgb = ConvertYCbCr2RGB(ycbcr);
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->r = (uint8_t)std::clamp(rgb.r, 0.0f, 255.0f);
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->g = (uint8_t)std::clamp(rgb.g, 0.0f, 255.0f);
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->b = (uint8_t)std::clamp(rgb.b, 0.0f, 255.0f);
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->a = (uint8_t)255;
+                    }
+                }
+
+                mcu_index++;
+            }
+
+            return scanLength;
+        }
 
     public:
         virtual Image Parse(const Buffer& buf)
         {
             Image img;
+
             const uint8_t* pData = buf.GetData();
             const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
 
@@ -152,11 +401,16 @@ namespace My {
                                 m_nLines = endian_net_unsigned_int((uint16_t)pFrameHeader->NumOfLines);
                                 m_nSamplesPerLine = endian_net_unsigned_int((uint16_t)pFrameHeader->NumOfSamplesPerLine);
                                 m_nComponentsInFrame = pFrameHeader->NumOfComponentsInFrame;
-                                
+                                mcu_index = 0;
+                                mcu_count_x = ((m_nSamplesPerLine + 7) >> 3);
+                                mcu_count_y = ((m_nLines + 7) >> 3);
+                                mcu_count = mcu_count_x * mcu_count_y;
+
                                 std::cout << "Sample Precision: " << m_nSamplePrecision << std::endl;
                                 std::cout << "Num of Lines: " << m_nLines << std::endl;
                                 std::cout << "Num of Samples per Line: " << m_nSamplesPerLine << std::endl;
                                 std::cout << "Num of Components In Frame: " << m_nComponentsInFrame << std::endl;
+                                std::cout << "Total MCU count: " << mcu_count << std::endl;
 
                                 const uint8_t* pTmp = pData + sizeof(FRAME_HEADER);
                                 const FRAME_COMPONENT_SPEC_PARAMS* pFcsp = reinterpret_cast<const FRAME_COMPONENT_SPEC_PARAMS*>(pTmp);
@@ -244,6 +498,9 @@ namespace My {
                             {
                                 std::cout << "Define Restart Interval" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
+
+                                RESTART_INTERVAL_DEF* pRestartHeader = (RESTART_INTERVAL_DEF*) pData;
+                                std::cout << "Restart interval: " << endian_net_unsigned_int((uint16_t)pRestartHeader->RestartInterval) << std::endl;
                             }
                             break;
                         case 0xFFDA:
@@ -254,238 +511,31 @@ namespace My {
 
                                 SCAN_HEADER* pScanHeader = (SCAN_HEADER*) pData;
                                 std::cout << "Image Conponents in Scan: " << (uint16_t)pScanHeader->NumOfComponents << std::endl;
-
-                                std::vector<uint8_t> scan_data;
-
-                                {
-                                    const uint8_t* pImageData = pData + endian_net_unsigned_int((uint16_t)pScanHeader->Length) + 2;
-
-                                    // scan for scan data buffer size and remove bitstuff
-                                    bool bitstuff = false;
-                                    while (pImageData < pDataEnd && (*pImageData != 0xFF || *(pImageData + 1) == 0x00)) {
-                                        if(!bitstuff) {
-                                            scan_data.push_back(*pImageData);
-                                        } else {
-                                            // ignore it and reset the flag
-                                            bitstuff = false;
-                                        }
-
-                                        if(*pImageData == 0xFF) {
-                                            bitstuff = true;
-                                        }
-
-                                        pImageData++;
-                                        scanLength++;
-                                    }
-
-                                    if (*(uint16_t*)pImageData == endian_net_unsigned_int((uint16_t)0xFFD9)) {
-                                        std::cout << "Size Of Scan: " << scanLength << " bytes" << std::endl;
-                                        std::cout << "Size Of Scan (after remove bitstuff): " << scan_data.size() << " bytes" << std::endl;
-                                    } else {
-                                        std::cout << "Find EOF when searching for EOS" << std::endl;
-                                    }
-                                }
-                                
-                                size_t byte_offset = 0;
-                                uint8_t bit_offset = 0;
+                                assert(pScanHeader->NumOfComponents == m_nComponentsInFrame);
 
                                 const uint8_t* pTmp = pData + sizeof(SCAN_HEADER);
-                                const SCAN_COMPONENT_SPEC_PARAMS* pScsp = reinterpret_cast<const SCAN_COMPONENT_SPEC_PARAMS*>(pTmp);
-                                int mcu_index = 0;
-                                int mcu_count_x = ((m_nSamplesPerLine + 7) >> 3);
-                                int mcu_count_y = ((m_nLines + 7) >> 3);
-                                int mcu_count = mcu_count_x * mcu_count_y;
-                                int16_t previous_dc[4]; // 4 is max num of components defined by ITU-T81
-                                memset(previous_dc, 0x00, sizeof(previous_dc));
+                                pScsp = reinterpret_cast<const SCAN_COMPONENT_SPEC_PARAMS*>(pTmp);
 
-                                std::cout << "Total MCU count: " << mcu_count << std::endl;
-                                
-                                while (byte_offset < scan_data.size() && mcu_index < mcu_count) {
-#if DUMP_DETAILS
-                                    std::cout << "MCU: " << mcu_index << std::endl;
-#endif
-                                    Matrix8X8i block[4]; // 4 is max num of components defined by ITU-T81
-                                    memset(&block, 0x00, sizeof(block));
+                                const uint8_t* pScanData = pData + endian_net_unsigned_int((uint16_t)pScanHeader->Length) + 2;
 
-                                    for (uint8_t i = 0; i < pScanHeader->NumOfComponents; i++) {
-                                        const FRAME_COMPONENT_SPEC_PARAMS& fcsp = m_tableFrameComponentsSpec[i];
-#if DUMP_DETAILS
-                                        std::cout << "\tComponent Selector: " << (uint16_t)pScsp[i].ComponentSelector << std::endl;
-                                        std::cout << "\tQuantization Table Destination Selector: " << (uint16_t)fcsp.QuantizationTableDestSelector << std::endl;
-                                        std::cout << "\tDC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].DcEntropyCodingTableDestSelector() << std::endl;
-                                        std::cout << "\tAC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].AcEntropyCodingTableDestSelector() << std::endl;
-#endif
+                                scanLength = parseScanData(pScanData, pDataEnd, img);
+                            }
+                            break;
+                        case 0xFFD0:
+                        case 0xFFD1:
+                        case 0xFFD2:
+                        case 0xFFD3:
+                        case 0xFFD4:
+                        case 0xFFD5:
+                        case 0xFFD6:
+                        case 0xFFD7:
+                            {
+                                foundStartOfScan = true;
+                                std::cout << "Restart Of Scan" << std::endl;
+                                std::cout << "----------------------------" << std::endl;
 
-                                        // Decode DC
-                                        uint8_t dc_code = m_treeHuffman[pScsp[i].DcEntropyCodingTableDestSelector()].DecodeSingleValue(scan_data.data(), scan_data.size(), &byte_offset, &bit_offset);
-                                        uint8_t dc_bit_length = dc_code & 0x0F;
-                                        int16_t dc_value;
-                                        uint32_t tmp_value;
-
-                                        if (!dc_code)
-                                        {
-#if DUMP_DETAILS
-                                            std::cout << "Found EOB when decode DC!" << std::endl;
-#endif
-                                            dc_value = 0;
-                                        } else {
-                                            if (dc_bit_length + bit_offset <= 8)
-                                            {
-                                                tmp_value = ((scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1)) >> (8 - dc_bit_length - bit_offset));
-                                            }
-                                            else
-                                            {
-                                                uint8_t bits_in_first_byte = 8 - bit_offset;
-                                                uint8_t append_full_bytes = (dc_bit_length - bits_in_first_byte) / 8;
-                                                uint8_t bits_in_last_byte = dc_bit_length - bits_in_first_byte - 8 * append_full_bytes;
-                                                tmp_value = (scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1));
-                                                for (int m = 1; m <= append_full_bytes; m++)
-                                                {
-                                                    tmp_value <<= 8;
-                                                    tmp_value += scan_data[byte_offset + m];
-                                                }
-                                                tmp_value <<= bits_in_last_byte;
-                                                tmp_value += (scan_data[byte_offset + append_full_bytes + 1] >> (8 - bits_in_last_byte));
-                                            }
-
-                                            // decode dc value
-                                            if ((tmp_value >> (dc_bit_length - 1)) == 0) {
-                                                // MSB = 1, turn it to minus value
-                                                dc_value = -(~tmp_value & ((0x0001u << dc_bit_length) - 1));
-                                            } else {
-                                                dc_value = tmp_value;
-                                            }
-                                        }
-
-                                        // add with previous DC value
-                                        dc_value += previous_dc[i];
-                                        // save the value for next DC
-                                        previous_dc[i] = dc_value;
-
-#ifdef DUMP_DETAILS
-                                        printf("DC Code: %x\n", dc_code);
-                                        printf("DC Bit Length: %d\n", dc_bit_length);
-                                        printf("DC Value: %d\n", dc_value);
-#endif
-
-                                        block[i][0][0] = dc_value;
-
-                                        // forward pointers to end of DC
-                                        bit_offset += dc_bit_length;
-                                        while (bit_offset >= 8 ) {
-                                            bit_offset -= 8;
-                                            byte_offset++;
-                                        }
-
-                                        // Decode AC 
-                                        int ac_index = 0;
-                                        while (byte_offset < scan_data.size() && ac_index < 64)
-                                        {
-                                            uint8_t ac_code = m_treeHuffman[2 + pScsp[i].AcEntropyCodingTableDestSelector()].DecodeSingleValue(scan_data.data(), scan_data.size(), &byte_offset, &bit_offset);
-
-                                            if (!ac_code)
-                                            {
-#if DUMP_DETAILS
-                                                std::cout << "Found EOB when decode AC!" << std::endl;
-#endif
-                                                break;
-                                            }
-                                            else if (ac_code == 0xF0)
-                                            {
-#if DUMP_DETAILS
-                                                std::cout << "Found ZRL when decode AC!" << std::endl;
-#endif
-                                                ac_index += 15;
-                                                break;
-                                            }
-
-                                            uint8_t ac_zero_length = ac_code >> 4;
-                                            ac_index += ac_zero_length;
-                                            uint8_t ac_bit_length = ac_code & 0x0F;
-                                            int16_t ac_value;
-
-                                            if (ac_bit_length + bit_offset <= 8)
-                                            {
-                                                tmp_value = ((scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1)) >> (8 - ac_bit_length - bit_offset));
-                                            }
-                                            else
-                                            {
-                                                uint8_t bits_in_first_byte = 8 - bit_offset;
-                                                uint8_t append_full_bytes = (ac_bit_length - bits_in_first_byte) / 8;
-                                                uint8_t bits_in_last_byte = ac_bit_length - bits_in_first_byte - 8 * append_full_bytes;
-                                                tmp_value = (scan_data[byte_offset] & ((0x01u << (8 - bit_offset)) - 1));
-                                                for (int m = 1; m <= append_full_bytes; m++)
-                                                {
-                                                    tmp_value <<= 8;
-                                                    tmp_value += scan_data[byte_offset + m];
-                                                }
-                                                tmp_value <<= bits_in_last_byte;
-                                                tmp_value += (scan_data[byte_offset + append_full_bytes + 1] >> (8 - bits_in_last_byte));
-                                            }
-
-                                            // decode ac value
-                                            if ((tmp_value >> (ac_bit_length - 1)) == 0) {
-                                                // MSB = 1, turn it to minus value
-                                                ac_value = -(~tmp_value & ((0x0001u << ac_bit_length) - 1));
-                                            } else {
-                                                ac_value = tmp_value;
-                                            }
-
-#ifdef DUMP_DETAILS
-                                            printf("AC Code: %x\n", ac_code);
-                                            printf("AC Bit Length: %d\n", ac_bit_length);
-                                            printf("AC Value: %d\n", ac_value);
-#endif
-
-                                            int index = m_zigzagIndex[ac_index];
-                                            block[i][index >> 3][index & 0x07] = ac_value;
-
-                                            // forward pointers to end of AC
-                                            bit_offset += ac_bit_length;
-                                            while (bit_offset >= 8 ) {
-                                                bit_offset -= 8;
-                                                byte_offset++;
-                                            }
-
-                                            ac_index++;
-                                        }
-
-#ifdef DUMP_DETAILS
-                                        printf("Extracted Component[%d] 8x8 block: ", i);
-                                        std::cout << block[i];
-#endif
-                                        MatrixMulByElementi32(block[i], block[i], m_tableQuantization[fcsp.QuantizationTableDestSelector]);
-#ifdef DUMP_DETAILS
-                                        std::cout << "After Quantization: " << block[i];
-#endif
-                                        block[i] = IDCT8X8(block[i]);
-#ifdef DUMP_DETAILS
-                                        std::cout << "After IDCT: " << block[i];
-#endif
-                                    } 
-
-                                    assert(m_nComponentsInFrame <= 4);
-
-                                    YCbCru8 ycbcr;
-                                    auto mcu_index_x = mcu_index % mcu_count_x;
-                                    auto mcu_index_y = mcu_index / mcu_count_x;
-                                    uint8_t* pBuf;
-
-                                    for (int i = 0; i < 8; i++) {
-                                        for (int j = 0; j < 8; j++) {
-                                            for (int k = 0; k < m_nComponentsInFrame; k++) {
-                                                ycbcr[k] = std::clamp(block[k][i][j] + 128, 0, 255);
-                                            }
-
-                                            pBuf = reinterpret_cast<uint8_t*>(img.data)
-                                                + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * (img.bitcount >> 3));
-                                            reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->rgb = ConvertYCbCr2RGB(ycbcr);
-                                            reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->a = 255;
-                                        }
-                                    }
-
-                                    mcu_index++;
-                                }
+                                const uint8_t* pScanData = pData + endian_net_unsigned_int((uint16_t)pSegmentHeader->Length) + 2;
+                                scanLength = parseScanData(pScanData, pDataEnd, img);
                             }
                             break;
                         case 0xFFD9:
