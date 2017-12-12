@@ -119,7 +119,7 @@ namespace My {
         uint16_t m_nLines;
         uint16_t m_nSamplesPerLine;
         uint16_t m_nComponentsInFrame;
-        uint16_t m_nRestartInterval;
+        uint16_t m_nRestartInterval = 0;
         int mcu_index;
         int mcu_count_x;
         int mcu_count_y;
@@ -131,20 +131,14 @@ namespace My {
         {
             std::vector<uint8_t> scan_data;
             size_t scanLength = 0;
+            bool bLastRestartSegment = true;
 
             {
                 const uint8_t* p = pScanData;
 
                 // scan for scan data buffer size and remove bitstuff
                 bool bitstuff = false;
-                while (p < pDataEnd && (*(uint16_t*)p != endian_net_unsigned_int((uint16_t)0xFFD9))) {
-                    if(*p == 0xFF && *(p + 1) >= 0xD0 && *(p + 1) <= 0xD7) 
-                    {
-                        // found restart mark
-                        std::cout << "Found RST while scan the ECS." << std::endl;
-                        break;
-                    }
-
+                while (p < pDataEnd && (*p != 0xFF || *(p+1) == 0x00)) {
                     if(!bitstuff) {
                         scan_data.push_back(*p);
                     } else {
@@ -159,6 +153,13 @@ namespace My {
 
                     p++;
                     scanLength++;
+                }
+
+                if(*p == 0xFF && *(p + 1) >= 0xD0 && *(p + 1) <= 0xD7) 
+                {
+                    // found restart mark
+                    std::cout << "Found RST while scan the ECS." << std::endl;
+                    bLastRestartSegment = false;
                 }
 
                 std::cout << "Size Of Scan: " << scanLength << " bytes" << std::endl;
@@ -360,11 +361,9 @@ namespace My {
                 }
 
                 mcu_index++;
+
                 if (m_nRestartInterval != 0 && (mcu_index % m_nRestartInterval == 0)) {
-                    // close the byte
-                    bit_offset = 0;
-                    byte_offset++;
-                    assert(byte_offset == scan_data.size()); // we must at the end of the ECS 
+                    break;
                 }
             }
 
@@ -387,11 +386,11 @@ namespace My {
                 while(pData < pDataEnd)
                 {
                     bool foundStartOfScan = false;
+                    bool foundRestartOfScan = false;
                     size_t scanLength = 0;
 
                     const JPEG_SEGMENT_HEADER* pSegmentHeader = reinterpret_cast<const JPEG_SEGMENT_HEADER*>(pData);
                     std::cout << "============================" << std::endl;
-                    std::printf("Segment Length: %d bytes\n" ,endian_net_unsigned_int(pSegmentHeader->Length));
                     switch (endian_net_unsigned_int(pSegmentHeader->Marker)) {
                         case 0xFFC0:
                         case 0xFFC2:
@@ -437,6 +436,8 @@ namespace My {
                                 img.pitch = ((img.Width * img.bitcount >> 3) + 3) & ~3;
                                 img.data_size = img.pitch * img.Height;
                                 img.data = g_pMemoryManager->Allocate(img.data_size);
+
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFC4:
@@ -465,6 +466,7 @@ namespace My {
                                     pTmp += processed_length;
                                     segmentLength -= processed_length;
                                 }
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFDB:
@@ -499,6 +501,7 @@ namespace My {
                                     pTmp += processed_length;
                                     segmentLength -= processed_length;
                                 }
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFDD:
@@ -509,6 +512,7 @@ namespace My {
                                 RESTART_INTERVAL_DEF* pRestartHeader = (RESTART_INTERVAL_DEF*) pData;
                                 m_nRestartInterval = endian_net_unsigned_int((uint16_t)pRestartHeader->RestartInterval);
                                 std::cout << "Restart interval: " << m_nRestartInterval << std::endl;
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFDA:
@@ -527,6 +531,7 @@ namespace My {
                                 const uint8_t* pScanData = pData + endian_net_unsigned_int((uint16_t)pScanHeader->Length) + 2;
 
                                 scanLength = parseScanData(pScanData, pDataEnd, img);
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 + scanLength /* length of marker */;
                             }
                             break;
                         case 0xFFD0:
@@ -538,18 +543,21 @@ namespace My {
                         case 0xFFD6:
                         case 0xFFD7:
                             {
-                                foundStartOfScan = true;
+                                foundRestartOfScan = true;
                                 std::cout << "Restart Of Scan" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
                                 const uint8_t* pScanData = pData + 2;
                                 scanLength = parseScanData(pScanData, pDataEnd, img);
+                                pData += 2 + scanLength /* length of marker */;
                             }
                             break;
                         case 0xFFD9:
                             {
+                                foundStartOfScan = false;
                                 std::cout << "End Of Scan" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
+                                pData += 2 /* length of marker */;
                             }
                             break;
                         case 0xFFE0:
@@ -599,25 +607,22 @@ namespace My {
                                     default:
                                         std::cout << "Ignor Unrecognized APP0 segment." << std::endl;
                                 }
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFFE:
                             {
                                 std::cout << "Text Comment" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         default:
-                            std::printf("Ignor Unrecognized Segment. Marker=%0x\n", endian_net_unsigned_int(pSegmentHeader->Marker));
+                            {
+                                std::printf("Ignor Unrecognized Segment. Marker=%0x\n", endian_net_unsigned_int(pSegmentHeader->Marker));
+                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                            }
                             break;
-                    }
-
-                    pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
-
-                    if (foundStartOfScan) {
-                        // jump to the end of the scan data
-                        pData += scanLength;
-                        foundStartOfScan = false;
                     }
                 }
             }
