@@ -1,0 +1,12 @@
+dependencies:
+    pre:
+        - sudo apt-get install clang uuid-dev
+compile:
+    override:
+        - ./build_crossguid.sh
+        - ./build_opengex.sh
+        - ./build.sh
+test:
+    override:
+        - cmake --build ./build --target test
+
