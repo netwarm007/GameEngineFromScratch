@@ -1,12 +1,17 @@
-dependencies:
-    pre:
-        - sudo apt-get install clang uuid-dev
-compile:
-    override:
-        - ./build_crossguid.sh
-        - ./build_opengex.sh
-        - ./build.sh
-test:
-    override:
-        - cmake --build ./build --target test
+version: 2
+jobs:
+  build:
+    docker:
+      - image: ubuntu:16.04
+    steps:
+      - run: apt update 
+      - run: apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
+      - run: curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
+      - run: apt install -y git-lfs
+      - checkout
+      - run: git lfs checkout
+      - run: ./build_crossguid.sh
+      - run: ./build_opengex.sh
+      - run: ./build.sh
+      - run: cmake --build ./build --target test
 
