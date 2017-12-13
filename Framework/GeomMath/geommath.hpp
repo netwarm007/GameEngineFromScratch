@@ -333,7 +333,7 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void MatrixSub(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
-        ispc::AddByElement(matrix1, matrix2, result, countof(result.data));
+        ispc::SubByElement(matrix1, matrix2, result, countof(result.data));
     }
 
     template <typename T, int ROWS, int COLS>
@@ -625,16 +625,16 @@ namespace My {
         return ispc::InverseMatrix4X4f(matrix);
     }
 
-    inline Matrix8X8f DCT8X8(const Matrix8X8i& matrix)
+    inline Matrix8X8f DCT8X8(const Matrix8X8f& matrix)
     {
         Matrix8X8f result;
         ispc::DCT8X8(matrix, result);
         return result;
     }
 
-    inline Matrix8X8i IDCT8X8(const Matrix8X8i& matrix)
+    inline Matrix8X8f IDCT8X8(const Matrix8X8f& matrix)
     {
-        Matrix8X8i result;
+        Matrix8X8f result;
         ispc::IDCT8X8(matrix, result);
         return result;
     }

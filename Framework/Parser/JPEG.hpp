@@ -113,7 +113,7 @@ namespace My {
 
     protected:
         HuffmanTree<uint8_t> m_treeHuffman[4];
-        Matrix8X8i m_tableQuantization[4];
+        Matrix8X8f m_tableQuantization[4];
         std::vector<FRAME_COMPONENT_SPEC_PARAMS> m_tableFrameComponentsSpec;
         uint16_t m_nSamplePrecision;
         uint16_t m_nLines;
@@ -180,7 +180,7 @@ namespace My {
 #if DUMP_DETAILS
                 std::cout << "MCU: " << mcu_index << std::endl;
 #endif
-                Matrix8X8i block[4]; // 4 is max num of components defined by ITU-T81
+                Matrix8X8f block[4]; // 4 is max num of components defined by ITU-T81
                 memset(&block, 0x00, sizeof(block));
 
                 for (uint8_t i = 0; i < m_nComponentsInFrame; i++) {
@@ -272,7 +272,7 @@ namespace My {
                             std::cout << "Found ZRL when decode AC!" << std::endl;
 #endif
                             ac_index += 16;
-                            break;
+                            continue;
                         }
 
                         uint8_t ac_zero_length = ac_code >> 4;
@@ -330,10 +330,11 @@ namespace My {
                     printf("Extracted Component[%d] 8x8 block: ", i);
                     std::cout << block[i];
 #endif
-                    MatrixMulByElementi32(block[i], block[i], m_tableQuantization[fcsp.QuantizationTableDestSelector]);
+                    MatrixMulByElement(block[i], block[i], m_tableQuantization[fcsp.QuantizationTableDestSelector]);
 #ifdef DUMP_DETAILS
                     std::cout << "After Quantization: " << block[i];
 #endif
+                    block[i][0][0] += 1024.0f; // level shift. same as +128 to each element after IDCT
                     block[i] = IDCT8X8(block[i]);
 #ifdef DUMP_DETAILS
                     std::cout << "After IDCT: " << block[i];
@@ -342,24 +343,24 @@ namespace My {
 
                 assert(m_nComponentsInFrame <= 4);
 
-                YCbCru8 ycbcr;
-                RGBu8   rgb;
-                auto mcu_index_x = mcu_index % mcu_count_x;
-                auto mcu_index_y = mcu_index / mcu_count_x;
+                YCbCrf ycbcr;
+                RGBf   rgb;
+                int mcu_index_x = mcu_index % mcu_count_x;
+                int mcu_index_y = mcu_index / mcu_count_x;
                 uint8_t* pBuf;
 
                 for (int i = 0; i < 8; i++) {
                     for (int j = 0; j < 8; j++) {
                         for (int k = 0; k < m_nComponentsInFrame; k++) {
-                            ycbcr[k] = std::clamp(block[k][i][j] + 128, 0, 255);
+                            ycbcr[k] = block[k][i][j];
                         }
 
                         pBuf = reinterpret_cast<uint8_t*>(img.data)
                             + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * (img.bitcount >> 3));
                         rgb = ConvertYCbCr2RGB(ycbcr);
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->r = rgb.r;
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->g = rgb.g;
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->b = rgb.b;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->r = (uint8_t)rgb.r;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->g = (uint8_t)rgb.g;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->b = (uint8_t)rgb.b;
                         reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->a = 255;
                     }
                 }
@@ -367,6 +368,13 @@ namespace My {
                 mcu_index++;
 
                 if (m_nRestartInterval != 0 && (mcu_index % m_nRestartInterval == 0)) {
+					if (bit_offset)
+					{
+						// finish current byte
+						bit_offset = 0;
+						byte_offset++;
+					}
+                    assert(byte_offset == scan_data.size());
                     break;
                 }
             }

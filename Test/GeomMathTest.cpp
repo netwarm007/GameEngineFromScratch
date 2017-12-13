@@ -151,7 +151,7 @@ void matrix_test()
     assert(!InverseMatrix4X4f(non_invertable));
     cout << "InverseMatrix4X4f returns false." << endl;
 
-    Matrix8X8i pixel_block = {{{
+    Matrix8X8f pixel_block = {{{
         {-76, -73, -67, -62, -58, -67, -64, -55},
         {-65, -69, -73, -38, -19, -43, -59, -56},
         {-66, -69, -60, -15,  16, -24, -62, -55},
@@ -165,19 +165,11 @@ void matrix_test()
     Matrix8X8f pixel_block_dct = DCT8X8(pixel_block);
     cout << "After DCTII: " << pixel_block_dct;
 
-    Matrix8X8i pixel_idct_block = {{{
-        {-416, -33, -60,  32,  48, -40,   0,   0},
-        {   0, -24, -56,  19,  26,   0,   0,   0},
-        { -42,  13,  80, -24, -40,   0,   0,   0},
-        { -42,  17,  44, -29,   0,   0,   0,   0},
-        {  18,   0,   0,   0,   0,   0,   0,   0},
-        {   0,   0,   0,   0,   0,   0,   0,   0},
-        {   0,   0,   0,   0,   0,   0,   0,   0},
-        {   0,   0,   0,   0,   0,   0,   0,   0}
-    }}};
-    cout << "A 8X8 int32 block before IDCT: " << pixel_idct_block;
-    Matrix8X8i pixel_block_reconstructed = IDCT8X8(pixel_idct_block);
+    Matrix8X8f pixel_block_reconstructed = IDCT8X8(pixel_block_dct);
     cout << "After IDCTII: " << pixel_block_reconstructed;
+
+    Matrix8X8f pixel_error = pixel_block_reconstructed - pixel_block;
+    cout << "DCT-IDCT error: " << pixel_error;
 }
 
 int main()

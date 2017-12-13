@@ -1,12 +1,12 @@
 uniform const float one_over_four = 1.0f / 4.0f;
 uniform const float PI_over_sixteen = PI / 16.0f;
 
-inline float normalizing_scale_factor(int32 a)
+inline float normalizing_scale_factor(float a)
 {
     return (a == 0)? 1.0f/sqrt(2.0f) : 1.0f;
 }
 
-export void DCT8X8(uniform const int32 g[64], uniform float G[64])
+export void DCT8X8(uniform const float g[64], uniform float G[64])
 {
     uniform float result_cache[8][8][8][8];
 
@@ -28,7 +28,7 @@ export void DCT8X8(uniform const int32 g[64], uniform float G[64])
     }
 }
 
-export void IDCT8X8(uniform const int32 G[64], uniform int32 g[64])
+export void IDCT8X8(uniform const float G[64], uniform float g[64])
 {
     uniform float result_cache[8][8][8][8];
 
@@ -47,7 +47,7 @@ export void IDCT8X8(uniform const int32 G[64], uniform int32 g[64])
                 sum += result_cache[x][y][u][v];
             }
         }
-        g[x*8+y] = round(sum);
+        g[x*8+y] = sum;
     }
 }
 
