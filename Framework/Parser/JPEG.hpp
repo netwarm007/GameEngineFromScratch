@@ -158,12 +158,16 @@ namespace My {
                 if(*p == 0xFF && *(p + 1) >= 0xD0 && *(p + 1) <= 0xD7) 
                 {
                     // found restart mark
+#if DUMP_DETAILS
                     std::cout << "Found RST while scan the ECS." << std::endl;
+#endif
                     bLastRestartSegment = false;
                 }
 
+#if DUMP_DETAILS
                 std::cout << "Size Of Scan: " << scanLength << " bytes" << std::endl;
                 std::cout << "Size Of Scan (after remove bitstuff): " << scan_data.size() << " bytes" << std::endl;
+#endif
             }
             
             int16_t previous_dc[4]; // 4 is max num of components defined by ITU-T81
@@ -390,7 +394,9 @@ namespace My {
                     size_t scanLength = 0;
 
                     const JPEG_SEGMENT_HEADER* pSegmentHeader = reinterpret_cast<const JPEG_SEGMENT_HEADER*>(pData);
+#if DUMP_DETAILS
                     std::cout << "============================" << std::endl;
+#endif
                     switch (endian_net_unsigned_int(pSegmentHeader->Marker)) {
                         case 0xFFC0:
                         case 0xFFC2:
@@ -544,8 +550,10 @@ namespace My {
                         case 0xFFD7:
                             {
                                 foundRestartOfScan = true;
+#if DUMP_DETAILS
                                 std::cout << "Restart Of Scan" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
+#endif
 
                                 const uint8_t* pScanData = pData + 2;
                                 scanLength = parseScanData(pScanData, pDataEnd, img);
