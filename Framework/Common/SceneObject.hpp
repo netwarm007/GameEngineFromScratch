@@ -8,6 +8,8 @@
 #include "Image.hpp"
 #include "portable.hpp"
 #include "geommath.hpp"
+#include "AssetLoader.hpp"
+#include "JPEG.hpp"
 
 namespace My {
     ENUM(SceneObjectType) {
@@ -293,6 +295,12 @@ namespace My {
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
+            void LoadTexture() {
+                Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
+                JfifParser jfif_parser;
+                m_pImage = std::make_shared<Image>(jfif_parser.Parse(buf));
+            }
+            const Image& GetTextureImage() const { return *m_pImage; };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj);
     };
@@ -467,6 +475,13 @@ namespace My {
 
                 if(attrib == "normal") {
                     m_Normal = texture;
+                }
+            };
+
+            void LoadTextures()
+            {
+                if (m_BaseColor.ValueMap) {
+                    m_BaseColor.ValueMap->LoadTexture();
                 }
             };
 

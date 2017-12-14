@@ -27,6 +27,7 @@ int SceneManager::LoadScene(const char* scene_file_name)
 {
     // now we only has ogex scene parser, call it directly
     if(LoadOgexScene(scene_file_name)) {
+        m_pScene->LoadResource();
         return 0;
     }
     else {

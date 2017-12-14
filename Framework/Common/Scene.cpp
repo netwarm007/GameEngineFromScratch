@@ -99,3 +99,10 @@ const shared_ptr<SceneCameraNode> Scene::GetNextCameraNode() const
             : _it->second);
 }
 
+void Scene::LoadResource()
+{
+    for (auto material : Materials)
+    {
+        material.second->LoadTextures();
+    }
+}

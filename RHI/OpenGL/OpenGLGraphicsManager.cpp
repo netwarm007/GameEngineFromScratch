@@ -461,6 +461,8 @@ void OpenGLGraphicsManager::RenderBuffers()
         if (dbc.material) {
             Color color = dbc.material->GetBaseColor();
             SetPerBatchShaderParameters("defuseColor", color.Value.rgb);
+            if (color.ValueMap) {
+            }
 
             color = dbc.material->GetSpecularColor();
             SetPerBatchShaderParameters("specularColor", color.Value.rgb);

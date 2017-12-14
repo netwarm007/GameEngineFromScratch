@@ -1,3 +1,4 @@
+#pragma once
 #include "geommath.hpp"
 #include "portable.hpp"
 
@@ -19,7 +20,7 @@ namespace My {
         { -179.456f,  135.458816f, -226.816f,    0.0f },
     }}};
 
-    YCbCrf ConvertRGB2YCbCr(const RGBf& rgb)
+    inline YCbCrf ConvertRGB2YCbCr(const RGBf& rgb)
     {
         Vector4f result (rgb.r, rgb.g, rgb.b, 1.0f);
         ispc::Transform(result, RGB2YCbCr);
@@ -28,7 +29,7 @@ namespace My {
                       std::clamp<float>(result.z + 0.5f, 0.0f, 255.0f));
     }
 
-    RGBf ConvertYCbCr2RGB(const YCbCrf& ycbcr)
+    inline RGBf ConvertYCbCr2RGB(const YCbCrf& ycbcr)
     {
         Vector4f result (ycbcr.x, ycbcr.y, ycbcr.z, 1.0f);
         ispc::Transform(result, YCbCr2RGB);
