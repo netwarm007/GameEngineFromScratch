@@ -124,6 +124,13 @@ namespace My {
             using SceneNode::AddSceneObjectRef;
             void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
             void AddMaterialRef(const std::string&& key) { m_Materials.push_back(std::move(key)); };
+            std::string GetMaterialRef(const size_t index) 
+            { 
+                if (index < m_Materials.size())
+                    return m_Materials[index]; 
+                else
+                    return std::string();
+            };
     };
 
     class SceneLightNode : public SceneNode<SceneObjectLight> 

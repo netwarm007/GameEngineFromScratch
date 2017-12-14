@@ -6,6 +6,7 @@
 #include <string>
 #include <memory>
 #include "glad/glad.h"
+#include "SceneObject.hpp"
 
 namespace My {
     class OpenGLGraphicsManager : public GraphicsManager
@@ -21,7 +22,9 @@ namespace My {
         virtual void Draw();
 
     private:
-        bool SetPerBatchShaderParameters(const char* paramName, float* param);
+        bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
+        bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
+        bool SetPerBatchShaderParameters(const char* paramName, const float param);
         bool SetPerFrameShaderParameters();
 
         void InitializeBuffers();
@@ -49,6 +52,7 @@ namespace My {
             GLenum  type;
             std::vector<GLsizei> counts;
             std::shared_ptr<Matrix4X4f> transform;
+            std::shared_ptr<SceneObjectMaterial> material;
         };
 
         DrawFrameContext    m_DrawFrameContext;

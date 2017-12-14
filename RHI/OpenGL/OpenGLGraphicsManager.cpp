@@ -5,8 +5,8 @@
 #include "IApplication.hpp"
 #include "SceneManager.hpp"
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic.vs";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic.ps";
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
 
 using namespace My;
 using namespace std;
@@ -230,7 +230,7 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
     return true;
 }
 
-bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, float* param)
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param)
 {
     unsigned int location;
 
@@ -244,9 +244,39 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, f
     return true;
 }
 
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Vector3f& param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform3fv(location, 1, param);
+
+    return true;
+}
+
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const float param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1f(location, param);
+
+    return true;
+}
+
 void OpenGLGraphicsManager::InitializeBuffers()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
+
+    // Geometries
     auto pGeometryNode = scene.GetFirstGeometryNode(); 
     while (pGeometryNode)
     {
@@ -384,12 +414,16 @@ void OpenGLGraphicsManager::InitializeBuffers()
 
                 m_Buffers.push_back(buffer_id);
 
+                size_t material_index = index_array.GetMaterialIndex();
+                std::string material_key = pGeometryNode->GetMaterialRef(material_index);
+
                 DrawBatchContext& dbc = *(new DrawBatchContext);
                 dbc.vao     = vao;
                 dbc.mode    = mode;
                 dbc.type    = type;
                 dbc.counts.push_back(indexCount);
                 dbc.transform = pGeometryNode->GetCalculatedTransform();
+                dbc.material = scene.GetMaterial(material_key);
                 m_DrawBatchContext.push_back(std::move(dbc));
             }
         }
@@ -424,6 +458,16 @@ void OpenGLGraphicsManager::RenderBuffers()
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         glUseProgram(m_shaderProgram);
         SetPerBatchShaderParameters("modelMatrix", *dbc.transform);
+        if (dbc.material) {
+            Color color = dbc.material->GetBaseColor();
+            SetPerBatchShaderParameters("defuseColor", color.Value.rgb);
+
+            color = dbc.material->GetSpecularColor();
+            SetPerBatchShaderParameters("specularColor", color.Value.rgb);
+
+            Parameter param = dbc.material->GetSpecularPower();
+            SetPerBatchShaderParameters("specularPower", param.Value);
+        }
 
 	    glBindVertexArray(dbc.vao);
 

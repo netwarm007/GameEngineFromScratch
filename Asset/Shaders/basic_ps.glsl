@@ -17,6 +17,10 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
 // per drawcall
+uniform vec3 ambientColor = vec3( 0.03f, 0.03f, 0.03f );
+uniform vec3 defuseColor = vec3( 0.5f, 0.5f, 0.5f );
+uniform vec3 specularColor = vec3( 1.0f, 1.0f, 1.0f );
+uniform float specularPower = 50.0f;
 
 /////////////////////
 // INPUT VARIABLES //
@@ -39,7 +43,6 @@ void main(void)
     vec3 L = normalize((viewMatrix * vec4(lightPosition, 1.0f)).xyz - v.xyz);
     vec3 R = normalize(2 * dot(L,N) * N - L );
     vec3 V = normalize(v.xyz);
-    float diffuse = dot(N, L);
-	outputColor = vec4(0.03, 0.03, 0.03, 1.0) + vec4(lightColor.rgb * clamp(diffuse + 0.01 * dot(R, V), 0.0f, 1.0f), 1.0f); 
+	outputColor = vec4(ambientColor.rgb + lightColor.rgb * defuseColor.rgb * dot(N, L) + specularColor * pow(dot(R, V), specularPower), 1.0f); 
 }
 
