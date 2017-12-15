@@ -150,7 +150,12 @@ void OpenGLGraphicsManager::Finalize()
         glDeleteBuffers(1, &buf);
     }
 
+    for (auto texture : m_Textures) {
+        glDeleteTextures(1, &texture);
+    }
+
     m_Buffers.clear();
+    m_Textures.clear();
 
     // Detach the vertex and fragment shaders from the program.
     glDetachShader(m_shaderProgram, m_vertexShader);
@@ -270,6 +275,21 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     glUniform1f(location, param);
 
     return true;
+}
+
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const GLint texture_index)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+
+    if (texture_index < GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
+        glUniform1i(location, texture_index);
+    }
 }
 
 void OpenGLGraphicsManager::InitializeBuffers()
@@ -416,14 +436,37 @@ void OpenGLGraphicsManager::InitializeBuffers()
 
                 size_t material_index = index_array.GetMaterialIndex();
                 std::string material_key = pGeometryNode->GetMaterialRef(material_index);
+                auto material = scene.GetMaterial(material_key);
+                if (material) {
+                    auto color = material->GetBaseColor();
+                    if (color.ValueMap) {
+                        auto texture = color.ValueMap->GetTextureImage();
+                        auto it = m_TextureIndex.find(material_key);
+                        if (it == m_TextureIndex.end()) {
+                            GLuint texture_id;
+                            glGenTextures(1, &texture_id);
+                            glActiveTexture(GL_TEXTURE0 + texture_id);
+                            glBindTexture(GL_TEXTURE_2D, texture_id);
+                            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 
+                                    0, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+                            m_TextureIndex[color.ValueMap->GetName()] = texture_id;
+                            m_Textures.push_back(texture_id);
+                        }
+                    }
+                }
 
                 DrawBatchContext& dbc = *(new DrawBatchContext);
                 dbc.vao     = vao;
                 dbc.mode    = mode;
                 dbc.type    = type;
-                dbc.counts.push_back(indexCount);
+                dbc.count  = indexCount;
                 dbc.transform = pGeometryNode->GetCalculatedTransform();
-                dbc.material = scene.GetMaterial(material_key);
+                dbc.material = material;
                 m_DrawBatchContext.push_back(std::move(dbc));
             }
         }
@@ -458,10 +501,26 @@ void OpenGLGraphicsManager::RenderBuffers()
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         glUseProgram(m_shaderProgram);
         SetPerBatchShaderParameters("modelMatrix", *dbc.transform);
+        glBindVertexArray(dbc.vao);
+
+        /* well, we have different material for each index buffer so we can not draw them together
+         * in future we should group indicies according to its material and draw them together
+        auto indexBufferCount = dbc.counts.size();
+        const GLvoid ** pIndicies = new const GLvoid*[indexBufferCount];
+        memset(pIndicies, 0x00, sizeof(GLvoid*) * indexBufferCount);
+        // Render the vertex buffer using the index buffer.
+        glMultiDrawElements(dbc.mode, dbc.counts.data(), dbc.type, pIndicies, indexBufferCount);
+        delete[] pIndicies;
+        */
+
         if (dbc.material) {
             Color color = dbc.material->GetBaseColor();
-            SetPerBatchShaderParameters("defuseColor", color.Value.rgb);
             if (color.ValueMap) {
+                SetPerBatchShaderParameters("defaultSampler", m_TextureIndex[color.ValueMap->GetName()]);
+                // set this to tell shader to use texture
+                SetPerBatchShaderParameters("diffuseColor", Vector3f(-1.0f));
+            } else {
+                SetPerBatchShaderParameters("diffuseColor", color.Value.rgb);
             }
 
             color = dbc.material->GetSpecularColor();
@@ -471,14 +530,7 @@ void OpenGLGraphicsManager::RenderBuffers()
             SetPerBatchShaderParameters("specularPower", param.Value);
         }
 
-	    glBindVertexArray(dbc.vao);
-
-        auto indexBufferCount = dbc.counts.size();
-        const GLvoid ** pIndicies = new const GLvoid*[indexBufferCount];
-		memset(pIndicies, 0x00, sizeof(GLvoid*) * indexBufferCount);
-        // Render the vertex buffer using the index buffer.
-        glMultiDrawElements(dbc.mode, dbc.counts.data(), dbc.type, pIndicies, indexBufferCount);
-        delete[] pIndicies;
+        glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
     }
 
     return;
@@ -600,6 +652,7 @@ bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char*
     // Bind the shader input variables.
     glBindAttribLocation(m_shaderProgram, 0, "inputPosition");
     glBindAttribLocation(m_shaderProgram, 1, "inputNormal");
+    glBindAttribLocation(m_shaderProgram, 2, "inputUV");
 
     // Link the shader program.
     glLinkProgram(m_shaderProgram);

@@ -295,12 +295,28 @@ namespace My {
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
+            const std::string& GetName() const { return m_Name; };
             void LoadTexture() {
-                Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
-                JfifParser jfif_parser;
-                m_pImage = std::make_shared<Image>(jfif_parser.Parse(buf));
+                if (!m_pImage)
+                {
+                    // we should lookup if the texture has been loaded already to prevent
+                    // duplicated load. This could be done in Asset Loader Manager.
+                    Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
+                    JfifParser jfif_parser;
+                    m_pImage = std::make_shared<Image>(jfif_parser.Parse(buf));
+                }
             }
-            const Image& GetTextureImage() const { return *m_pImage; };
+            const Image& GetTextureImage() 
+            { 
+                if (!m_pImage)
+                {
+                    Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
+                    JfifParser jfif_parser;
+                    m_pImage = std::make_shared<Image>(jfif_parser.Parse(buf));
+                }
+
+                return *m_pImage; 
+            };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj);
     };

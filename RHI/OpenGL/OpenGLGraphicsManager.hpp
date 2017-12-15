@@ -3,6 +3,7 @@
 #include "geommath.hpp"
 #include <unordered_map>
 #include <vector>
+#include <map>
 #include <string>
 #include <memory>
 #include "glad/glad.h"
@@ -25,6 +26,7 @@ namespace My {
         bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
         bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
         bool SetPerBatchShaderParameters(const char* paramName, const float param);
+        bool SetPerBatchShaderParameters(const char* paramName, const GLint texture_index);
         bool SetPerFrameShaderParameters();
 
         void InitializeBuffers();
@@ -37,6 +39,7 @@ namespace My {
         unsigned int m_vertexShader;
         unsigned int m_fragmentShader;
         unsigned int m_shaderProgram;
+        std::map<std::string, GLint> m_TextureIndex;
 
         struct DrawFrameContext {
             Matrix4X4f  m_worldMatrix;
@@ -50,7 +53,7 @@ namespace My {
             GLuint  vao;
             GLenum  mode;
             GLenum  type;
-            std::vector<GLsizei> counts;
+            GLsizei count;
             std::shared_ptr<Matrix4X4f> transform;
             std::shared_ptr<SceneObjectMaterial> material;
         };
@@ -58,6 +61,7 @@ namespace My {
         DrawFrameContext    m_DrawFrameContext;
         std::vector<DrawBatchContext> m_DrawBatchContext;
         std::vector<GLuint> m_Buffers;
+        std::vector<GLuint> m_Textures;
     };
 
 }
