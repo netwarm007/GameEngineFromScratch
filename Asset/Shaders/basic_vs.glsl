@@ -42,7 +42,6 @@ void main(void)
 
     normal = transformMatrix * vec4(inputNormal, 0.0f);
     normal = viewMatrix * normal;
-
     uv = inputUV;
 }
 

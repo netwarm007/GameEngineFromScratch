@@ -305,7 +305,7 @@ void OpenGLGraphicsManager::InitializeBuffers()
             auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);
             auto pMesh = pGeometry->GetMesh().lock();
-            if (!pMesh) return;
+            if (!pMesh) continue;
 
             // Set the number of vertex properties.
             auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
