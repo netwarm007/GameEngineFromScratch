@@ -390,6 +390,8 @@ namespace My {
                 m_Opacity(1.0f), 
                 m_Transparency(0.0f), 
                 m_Emission(0.0f) {};
+            SceneObjectMaterial(const char* name) : SceneObjectMaterial()
+                { m_Name = name; };
             SceneObjectMaterial(const std::string& name) : SceneObjectMaterial()
                 { m_Name = name; };
             SceneObjectMaterial(std::string&& name) : SceneObjectMaterial()
