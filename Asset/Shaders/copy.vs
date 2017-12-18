@@ -1,11 +1,3 @@
-#include "cbuffer.h"
-#include "vsoutput.hs"
-
-v2p main(a2v input) {
-	v2p output;
-	output.position = float4(input.position, 1.0);
-	output.color = input.color;
-
-	return output;
-}
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:9f090334261fe8f836d58fea0ac5c39c9d3021133e5a7848bfae4c78f80f4e8e
+size 188
