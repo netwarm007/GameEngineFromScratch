@@ -129,7 +129,7 @@ namespace My {
                 if (index < m_Materials.size())
                     return m_Materials[index]; 
                 else
-                    return std::string();
+                    return std::string("default");
             };
     };
 
