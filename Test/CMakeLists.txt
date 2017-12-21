@@ -19,6 +19,10 @@ add_executable(JpegParserTest JpegParserTest.cpp)
 target_link_libraries(JpegParserTest Common)
 add_test(NAME TEST_JpegParser COMMAND JpegParserTest)
 
+add_executable(PngParserTest PngParserTest.cpp)
+target_link_libraries(PngParserTest Common)
+add_test(NAME TEST_PngParser COMMAND PngParserTest)
+
 #add_executable(SceneObjectTest SceneObjectTest.cpp)
 #target_link_libraries(SceneObjectTest Common ${XG_LIBRARY})
 #__add_xg_platform_dependencies(SceneObjectTest)
