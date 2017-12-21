@@ -169,10 +169,6 @@ void OpenGLGraphicsManager::Finalize()
     glDeleteProgram(m_shaderProgram);
 }
 
-void OpenGLGraphicsManager::Tick()
-{
-}
-
 void OpenGLGraphicsManager::Clear()
 {
     // Set the color to clear the screen to.
@@ -277,7 +273,7 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     return true;
 }
 
-bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const GLint texture_index)
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const int param)
 {
     unsigned int location;
 
@@ -286,10 +282,9 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     {
             return false;
     }
+    glUniform1i(location, param);
 
-    if (texture_index < GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
-        glUniform1i(location, texture_index);
-    }
+	return true;
 }
 
 void OpenGLGraphicsManager::InitializeBuffers()
@@ -490,10 +485,6 @@ void OpenGLGraphicsManager::RenderBuffers()
     //MatrixMultiply(m_DrawFrameContext.m_worldMatrix, rotationMatrixZ, rotationMatrixY);
     m_DrawFrameContext.m_worldMatrix = rotationMatrixZ;
 
-    // Generate the view matrix based on the camera's position.
-    CalculateCameraMatrix();
-    CalculateLights();
-
     SetPerFrameShaderParameters();
 
     for (auto dbc : m_DrawBatchContext)
@@ -534,60 +525,6 @@ void OpenGLGraphicsManager::RenderBuffers()
     }
 
     return;
-}
-
-void OpenGLGraphicsManager::CalculateCameraMatrix()
-{
-    auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pCameraNode = scene.GetFirstCameraNode();
-    if (pCameraNode) {
-        m_DrawFrameContext.m_viewMatrix = *pCameraNode->GetCalculatedTransform();
-        InverseMatrix4X4f(m_DrawFrameContext.m_viewMatrix);
-    }
-    else {
-        // use default build-in camera
-        Vector3f position = { 0, -5, 0 }, lookAt = { 0, 0, 0 }, up = { 0, 0, 1 };
-        BuildViewMatrix(m_DrawFrameContext.m_viewMatrix, position, lookAt, up);
-    }
-
-    float fieldOfView = PI / 2.0f;
-    float nearClipDistance = 1.0f;
-    float farClipDistance = 100.0f;
-
-    if (pCameraNode) {
-        auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
-        // Set the field of view and screen aspect ratio.
-        fieldOfView = dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)->GetFov();
-        nearClipDistance = pCamera->GetNearClipDistance();
-        farClipDistance = pCamera->GetFarClipDistance();
-    }
-
-    const GfxConfiguration& conf = g_pApp->GetConfiguration();
-
-    float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
-
-    // Build the perspective projection matrix.
-    BuildPerspectiveFovRHMatrix(m_DrawFrameContext.m_projectionMatrix, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
-}
-
-void OpenGLGraphicsManager::CalculateLights()
-{
-    auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pLightNode = scene.GetFirstLightNode();
-    if (pLightNode) {
-        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f };
-        TransformCoord(m_DrawFrameContext.m_lightPosition, *pLightNode->GetCalculatedTransform());
-
-        auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
-        if (pLight) {
-            m_DrawFrameContext.m_lightColor = pLight->GetColor().Value;
-        }
-    }
-    else {
-        // use default build-in light 
-        m_DrawFrameContext.m_lightPosition = { -1.0f, -5.0f, 0.0f};
-        m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-    }
 }
 
 bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char* fsFilename)

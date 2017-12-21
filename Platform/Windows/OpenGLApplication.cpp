@@ -33,7 +33,7 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM 
 	return 0;
 }
 
-int My::OpenGLApplication::Initialize()
+int OpenGLApplication::Initialize()
 {
     int result;
 	auto colorBits = m_Config.redBits + m_Config.greenBits + m_Config.blueBits; // note on windows this does not include alpha bitplane
@@ -210,7 +210,7 @@ int My::OpenGLApplication::Initialize()
     return result;
 }
 
-void My::OpenGLApplication::Finalize()
+void OpenGLApplication::Finalize()
 {
     if (m_RenderContext) {
         wglMakeCurrent(NULL, NULL);
@@ -221,7 +221,7 @@ void My::OpenGLApplication::Finalize()
     WindowsApplication::Finalize();
 }
 
-void My::OpenGLApplication::Tick()
+void OpenGLApplication::Tick()
 {
     WindowsApplication::Tick();
     g_pGraphicsManager->Clear();
