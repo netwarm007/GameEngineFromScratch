@@ -20,7 +20,7 @@ target_link_libraries(JpegParserTest Common)
 add_test(NAME TEST_JpegParser COMMAND JpegParserTest)
 
 add_executable(PngParserTest PngParserTest.cpp)
-target_link_libraries(PngParserTest Common)
+target_link_libraries(PngParserTest Common ${ZLIB_LIBRARY})
 add_test(NAME TEST_PngParser COMMAND PngParserTest)
 
 #add_executable(SceneObjectTest SceneObjectTest.cpp)

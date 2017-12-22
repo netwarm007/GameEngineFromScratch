@@ -8,6 +8,7 @@
 #include "utility.hpp"
 #include "BMP.hpp"
 #include "JPEG.hpp"
+#include "PNG.hpp"
 
 using namespace My;
 using namespace std;
@@ -54,14 +55,14 @@ int My::TestApplication::Initialize()
     if (result == 0) {
         Buffer buf;
 
-        JfifParser  jfif_parser;
+        PngParser  png_parser;
         if (m_nArgC > 1) {
             buf = g_pAssetLoader->SyncOpenAndReadBinary(m_ppArgV[1]);
         } else {
-            buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/jpeg_decoder_test.jpg");
+            buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/eye.png");
         }
 
-        m_Image = jfif_parser.Parse(buf);
+        m_Image = png_parser.Parse(buf);
     }
 
     return result;
