@@ -13,6 +13,7 @@ jobs:
       - run: git lfs checkout
       - run: ./build_crossguid.sh
       - run: ./build_opengex.sh
+      - run: ./build_zlib.sh
       - run: ./build.sh
       - run: cmake --build ./build --target test
   build_macos:
@@ -30,6 +31,7 @@ jobs:
              sudo -E port -q install cmake xorg-libX11 xorg-libxcb mesa libGLU
              ./build_crossguid.sh
              ./build_opengex.sh
+             ./build_zlib.sh
              ./build.sh
              cmake --build ./build --target test
 workflows:
