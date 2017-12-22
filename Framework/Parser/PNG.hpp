@@ -208,7 +208,7 @@ namespace My {
 
                                 const uint8_t* pIn = pData + sizeof(PNG_CHUNK_HEADER);  // point to the start of the input data buffer
                                 uint8_t* pOut = reinterpret_cast<uint8_t*>(img.data);  // point to the start of the input data buffer
-                                uint8_t* pDecompressedBuffer = (uint8_t*)g_pMemoryManager->Allocate(kChunkSize);
+                                uint8_t* pDecompressedBuffer = new uint8_t[kChunkSize];
                                 uint8_t filter_type = 0;
                                 int current_row = 0;
                                 int current_col = -1;   // -1 means we need read filter type
@@ -338,7 +338,7 @@ namespace My {
                 std::cout << "File is not a PNG file!" << std::endl;
             }
 
-            return img;
+            return std::move(img);
         }
     };
 }
