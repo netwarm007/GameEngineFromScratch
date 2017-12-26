@@ -11,7 +11,7 @@ target_link_libraries(ColorSpaceConversionTest GeomMath)
 add_test(NAME Test_ColorSpaceConversion COMMAND ColorSpaceConversionTest)
 
 add_executable(OgexParserTest OgexParserTest.cpp)
-target_link_libraries(OgexParserTest Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY})
+target_link_libraries(OgexParserTest Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY} ${ZLIB_LIBRARY})
 __add_xg_platform_dependencies(OgexParserTest)
 add_test(NAME TEST_OgexParser COMMAND OgexParserTest)
 
@@ -29,7 +29,7 @@ add_test(NAME TEST_PngParser COMMAND PngParserTest)
 #add_test(NAME TEST_SceneObject COMMAND SceneObjectTest)
 
 add_executable(SceneLoadingTest SceneLoadingTest.cpp)
-target_link_libraries(SceneLoadingTest Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY})
+target_link_libraries(SceneLoadingTest Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY} ${ZLIB_LIBRARY})
 __add_xg_platform_dependencies(SceneLoadingTest)
 add_test(NAME TEST_SceneLoading COMMAND SceneLoadingTest)
 
