@@ -338,7 +338,7 @@ namespace My {
                 std::cout << "File is not a PNG file!" << std::endl;
             }
 
-            return std::move(img);
+            return img;
         }
     };
 }
