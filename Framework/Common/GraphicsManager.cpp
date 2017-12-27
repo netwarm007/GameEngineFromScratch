@@ -10,6 +10,7 @@ using namespace std;
 int GraphicsManager::Initialize()
 {
     int result = 0;
+	InitConstants();
     return result;
 }
 
