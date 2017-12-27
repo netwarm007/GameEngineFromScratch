@@ -1,0 +1,13 @@
+prefix=/project/External
+exec_prefix=/project/External
+libdir=/project/External/Android/lib
+sharedlibdir=/project/External/Android/lib
+includedir=/project/External/Android/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.11
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}
