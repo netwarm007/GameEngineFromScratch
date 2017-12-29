@@ -10,6 +10,8 @@
 #include "geommath.hpp"
 #include "AssetLoader.hpp"
 #include "JPEG.hpp"
+#include "PNG.hpp"
+#include "BMP.hpp"
 
 namespace My {
     ENUM(SceneObjectType) {
@@ -302,17 +304,30 @@ namespace My {
                     // we should lookup if the texture has been loaded already to prevent
                     // duplicated load. This could be done in Asset Loader Manager.
                     Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
-                    JfifParser jfif_parser;
-                    m_pImage = std::make_shared<Image>(jfif_parser.Parse(buf));
+                    std::string ext = m_Name.substr(m_Name.find_last_of("."));
+                    if (ext == ".jpg" || ext == ".jpeg")
+                    {
+                        JfifParser jfif_parser;
+                        m_pImage = std::make_shared<Image>(jfif_parser.Parse(buf));
+                    }
+                    else if (ext == ".png")
+                    {
+                        PngParser png_parser;
+                        m_pImage = std::make_shared<Image>(png_parser.Parse(buf));
+                    }
+                    else if (ext == ".bmp")
+                    {
+                        BmpParser bmp_parser;
+                        m_pImage = std::make_shared<Image>(bmp_parser.Parse(buf));
+                    }
                 }
             }
+
             const Image& GetTextureImage() 
             { 
                 if (!m_pImage)
                 {
-                    Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
-                    JfifParser jfif_parser;
-                    m_pImage = std::make_shared<Image>(jfif_parser.Parse(buf));
+                    LoadTexture();
                 }
 
                 return *m_pImage; 

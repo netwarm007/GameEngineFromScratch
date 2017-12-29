@@ -16,6 +16,7 @@ target_link_libraries(MyGameEngineXcbOpenGL
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 
+        ${ZLIB_LIBRARY}
         xcb 
         X11 
         X11-xcb 
@@ -36,6 +37,7 @@ target_link_libraries(MyGameEngineCocoa
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 
+        ${ZLIB_LIBRARY}
         ${COCOA_LIBRARY} 
         )
 __add_xg_platform_dependencies(MyGameEngineCocoa)
@@ -55,6 +57,7 @@ target_link_libraries(MyGameEngineCocoaOpenGL
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 
+        ${ZLIB_LIBRARY}
         ${COCOA_LIBRARY} 
         ${OPENGL_LIBRARY}
         dl
