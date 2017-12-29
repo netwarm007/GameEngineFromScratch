@@ -1,7 +1,7 @@
 add_library(WindowsApplication WindowsApplication.cpp)
 
 add_executable(MyGameEngineD3d12 D3d12Application.cpp)
-target_link_libraries(MyGameEngineD3d12 WindowsApplication Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY} ${ZLIB_LIBRARY} D3dRHI d3d12 dxgi d3dcompiler)
+target_link_libraries(MyGameEngineD3d12 WindowsApplication Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY} ${ZLIB_LIBRARY} D3dRHI d3d12 dxgi)
 __add_xg_platform_dependencies(MyGameEngineD3d12)
 
 add_custom_command(TARGET MyGameEngineD3d12 POST_BUILD

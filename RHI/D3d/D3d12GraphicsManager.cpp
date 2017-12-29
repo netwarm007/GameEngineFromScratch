@@ -571,7 +571,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer()
 		&prop,
 		D3D12_HEAP_FLAG_NONE,
 		&textureDesc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 		nullptr,
 		IID_PPV_ARGS(&m_pTextureBuffer))))
 	{
@@ -864,12 +864,6 @@ HRESULT D3d12GraphicsManager::InitializeShader(const char* vsFilename, const cha
     HRESULT hr = S_OK;
 
     // load the shaders
-#if defined(_DEBUG_SHADER)
-    // Enable better shader debugging with the graphics debugging tools.
-    UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-    UINT compileFlags = 0;
-#endif
     Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
     Buffer pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(fsFilename);
 
@@ -886,7 +880,7 @@ HRESULT D3d12GraphicsManager::InitializeShader(const char* vsFilename, const cha
     {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        //{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
     };
 
     D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
@@ -936,6 +930,7 @@ HRESULT D3d12GraphicsManager::InitializeShader(const char* vsFilename, const cha
     psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     psod.NumRenderTargets = 1;
     psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     psod.SampleDesc.Count = 1;
 
     if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineState))))
@@ -1066,9 +1061,13 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pCommandList);
     SafeRelease(&m_pPipelineState);
     SafeRelease(&m_pRtvHeap);
+    SafeRelease(&m_pDsvHeap);
+    SafeRelease(&m_pCbvHeap);
     SafeRelease(&m_pRootSignature);
     SafeRelease(&m_pCommandQueue);
     SafeRelease(&m_pCommandAllocator);
+	SafeRelease(&m_pDepthStencilBuffer);
+	SafeRelease(&m_pTextureBuffer);
     for (uint32_t i = 0; i < kFrameCount; i++) {
         SafeRelease(&m_pRenderTargets[kFrameCount]);
     }
@@ -1094,6 +1093,16 @@ void D3d12GraphicsManager::Clear()
 	{
 		return;
 	}
+
+    // Indicate that the back buffer will be used as a render target.
+	D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    m_pCommandList->ResourceBarrier(1, &barrier);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
 	rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
@@ -1145,16 +1154,6 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 
     SetPerFrameShaderParameters();
 
-    // Indicate that the back buffer will be used as a render target.
-	D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_pCommandList->ResourceBarrier(1, &barrier);
-
     // do 3D rendering on the back buffer here
     cbvSrvHandle[1].ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + nFrameResourceDescriptorOffset * m_nCbvSrvDescriptorSize;
 	int32_t i = 0;
@@ -1175,7 +1174,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 		i++;
     }
 
-    memset(&barrier, 0x00, sizeof(barrier));
+	D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];

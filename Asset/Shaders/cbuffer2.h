@@ -5,7 +5,7 @@ struct a2v
 {
 	float3 Position		: POSITION;
 	float3 Normal		: NORMAL;
-	float2 TextureUV	: TEXCOORD;
+	//float2 TextureUV	: TEXCOORD;
 };
 
 cbuffer PerFrameConstants : register(b0)
