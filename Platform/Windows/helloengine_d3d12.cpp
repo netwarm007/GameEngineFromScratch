@@ -453,6 +453,7 @@ void InitPipeline() {
     psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     psod.NumRenderTargets = 1;
     psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     psod.SampleDesc.Count = 1;
 
     ThrowIfFailed(g_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&g_pPipelineState)));
