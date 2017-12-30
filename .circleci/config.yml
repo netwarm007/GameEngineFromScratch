@@ -4,17 +4,19 @@ jobs:
     docker:
       - image: ubuntu:16.04
     steps:
-      - run: apt update 
-      - run: apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
-      - run: curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
-      - run: apt install -y git-lfs
+      - run: |
+             apt update 
+             apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
+             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
+             apt install -y git-lfs
       - checkout
-      - run: git lfs fetch
-      - run: git lfs checkout
-      - run: ./build_crossguid.sh
-      - run: ./build_opengex.sh
-      - run: ./build_zlib.sh
-      - run: ./build.sh
+      - run: |
+             git lfs fetch
+             git lfs checkout
+             ./build_crossguid.sh
+             ./build_opengex.sh
+             ./build_zlib.sh
+             ./build.sh
       - run: cmake --build ./build --target test
   build_macos:
     macos:
@@ -34,10 +36,29 @@ jobs:
              ./build_zlib.sh
              ./build.sh
              cmake --build ./build --target test
+  build_android:
+    working_directory: ~/project
+    docker:
+      - image: circleci/android:api-25-alpha
+    steps:
+      - run: |
+             sudo apt update 
+             sudo apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
+             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+             sudo apt install -y git-lfs
+      - checkout
+      - run: |
+             git lfs fetch
+             git lfs checkout
+             ./build_crossguid_android.sh
+             ./build_opengex_android.sh
+             ./build_zlib_android.sh
+             ./build_android.sh
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build_linux
       - build_macos
+      - build_android
 
