@@ -39,11 +39,9 @@ jobs:
   build_android:
     working_directory: ~/project
     docker:
-      - image: circleci/android:api-25-alpha
+      - image: tim03/android-sdk-ndk
     steps:
       - run: |
-             sudo apt update 
-             sudo apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
       - checkout
