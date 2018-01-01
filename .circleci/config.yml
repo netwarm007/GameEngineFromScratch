@@ -59,7 +59,7 @@ jobs:
       - run:
           name: Download Dependencies
           command: |
-                   sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout;1.0.1"       
+                   sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout;1.0.2"
                    ./gradlew androidDependencies
           working_directory: Platform/Android
       - save_cache:
@@ -69,7 +69,7 @@ jobs:
       - run:
           name: Run Tests
           command: |
-                   ./gradlew lint test
+                   ./gradlew build
           working_directory: Platform/Android
       - store_artifacts:
           path: Platform/Android/app/build/reports
@@ -77,6 +77,12 @@ jobs:
       - store_artifacts:
           path: Platform/Android/app/build/test-results
           destination: test-results
+      - store_artifacts:
+          path: Platform/Android/app/build/outputs/apk/debug
+          destination: debug
+      - store_artifacts:
+          path: Platform/Android/app/build/outputs/apk/release
+          destination: release
 workflows:
   version: 2
   build_and_test:
