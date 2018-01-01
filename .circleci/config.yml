@@ -40,6 +40,8 @@ jobs:
     working_directory: ~/project
     docker:
       - image: tim03/android-sdk-ndk
+    environment:
+      JVM_OPTS: -Xmx3200m
     steps:
       - run: |
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
@@ -52,6 +54,29 @@ jobs:
              ./build_opengex_android.sh
              ./build_zlib_android.sh
              ./build_android.sh
+      - restore_cache:
+          key: jars-{{ checksum "Platform/Android/build.gradle" }}-{{ checksum  "Platform/Android/app/build.gradle" }}
+      - run:
+          name: Download Dependencies
+          command: |
+                   sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout;1.0.1"       
+                   ./gradlew androidDependencies
+          working_directory: Platform/Android
+      - save_cache:
+          paths:
+            - Platform/Android/.gradle
+          key: jars-{{ checksum "Platform/Android/build.gradle" }}-{{ checksum  "Platform/Android/app/build.gradle" }}
+      - run:
+          name: Run Tests
+          command: |
+                   ./gradlew lint test
+          working_directory: Platform/Android
+      - store_artifacts:
+          path: Platform/Android/app/build/reports
+          destination: reports
+      - store_artifacts:
+          path: Platform/Android/app/build/test-results
+          destination: test-results
 workflows:
   version: 2
   build_and_test:
