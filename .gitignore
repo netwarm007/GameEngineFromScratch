@@ -49,3 +49,4 @@ build*/
 config.h
 
 shader-error.txt
+**/.externalNativeBuild
