@@ -83,10 +83,14 @@ int My::XcbApplication::Initialize()
 void My::XcbApplication::Finalize()
 {
     xcb_disconnect(m_pConn);
+
+    BaseApplication::Finalize();
 }
 
 void My::XcbApplication::Tick()
 {
+    BaseApplication::Tick();
+
     xcb_generic_event_t* pEvent;
     if((pEvent = xcb_poll_for_event(m_pConn)))
     {
@@ -107,7 +111,6 @@ void My::XcbApplication::Tick()
 	        OnDraw();
         }
     }
-
 }
 
 

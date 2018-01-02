@@ -3,16 +3,8 @@
 
 using namespace My;
 
-int My::WindowsApplication::Initialize()
+void WindowsApplication::CreateMainWindow()
 {
-    int result;
-
-	// first call base class initialization
-    result = BaseApplication::Initialize();
-
-    if (result != 0)
-        exit(result);
-
     // get the HINSTANCE of the Console Program
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
@@ -51,15 +43,32 @@ int My::WindowsApplication::Initialize()
     // display the window on the screen
     ShowWindow(m_hWnd, SW_SHOW);
 
+}
+
+int WindowsApplication::Initialize()
+{
+    int result;
+
+    CreateMainWindow();
+
+	// first call base class initialization
+    result = BaseApplication::Initialize();
+
+    if (result != 0)
+        exit(result);
+
     return result;
 }
 
-void My::WindowsApplication::Finalize()
+void WindowsApplication::Finalize()
 {
+    BaseApplication::Finalize();
 }
 
-void My::WindowsApplication::Tick()
+void WindowsApplication::Tick()
 {
+    BaseApplication::Tick();
+
     // this struct holds Windows event messages
     MSG msg;
 
@@ -76,7 +85,7 @@ void My::WindowsApplication::Tick()
 }
 
 // this is the main message handler for the program
-LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WindowsApplication* pThis;
     if (message == WM_NCCREATE)

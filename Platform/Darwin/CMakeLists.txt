@@ -4,27 +4,6 @@ find_library(COCOA_LIBRARY Cocoa required)
 find_library(OPENGL_LIBRARY OpenGL required)
 find_library(CV_LIBRARY CoreVideo required)
 
-# MyGameEngineXcbOpenGL
-add_executable(MyGameEngineXcbOpenGL 
-        XcbApplication.cpp 
-        XcbOpenGLApplication.cpp
-	    ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_glx.c
-    )
-target_link_libraries(MyGameEngineXcbOpenGL 
-        OpenGLRHI 
-        Common 
-        ${OPENGEX_LIBRARY} 
-        ${OPENDDL_LIBRARY} 
-        ${XG_LIBRARY} 
-        ${ZLIB_LIBRARY}
-        xcb 
-        X11 
-        X11-xcb 
-        dl
-        )
-target_include_directories(MyGameEngineXcbOpenGL PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-__add_xg_platform_dependencies(MyGameEngineXcbOpenGL)
-
 # MyGameEngineCocoa
 add_executable(MyGameEngineCocoa MACOSX_BUNDLE
         CocoaApplication.mm 
