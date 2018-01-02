@@ -9,7 +9,7 @@ android {
         targetSdkVersion  27
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_static'
+                arguments '-DANDROID_STL=gnustl_static'
             }
         }
         ndk{
@@ -25,7 +25,7 @@ android {
     }
     externalNativeBuild {
         cmake {
-            path '../CMakeLists.txt'
+            path '../../../CMakeLists.txt'
         }
     }
 }
