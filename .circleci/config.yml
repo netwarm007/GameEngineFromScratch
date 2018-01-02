@@ -78,11 +78,14 @@ jobs:
           path: Platform/Android/app/build/test-results
           destination: test-results
       - store_artifacts:
-          path: Platform/Android/app/build/outputs/apk/debug
-          destination: debug
+          path: Platform/Android/app/build/outputs/apk
+          destination: apk
       - store_artifacts:
-          path: Platform/Android/app/build/outputs/apk/release
-          destination: release
+          path: Platform/Android/app/build/intermediates/cmake/debug/obj/
+          destination: engine-debug
+      - store_artifacts:
+          path: Platform/Android/app/build/intermediates/cmake/release/obj/
+          destination: engine-release
 workflows:
   version: 2
   build_and_test:
