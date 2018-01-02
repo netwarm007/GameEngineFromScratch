@@ -12,6 +12,9 @@ android {
                 arguments '-DANDROID_STL=c++_static'
             }
         }
+        ndk{
+            abiFilters "armeabi", "armeabi-v7a"
+        }
     }
     buildTypes {
         release {
