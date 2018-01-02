@@ -9,7 +9,7 @@ android {
         targetSdkVersion  27
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=gnustl_static'
+                arguments '-DANDROID_STL=gnustl_static', '-DBUILD_TESTING=false'
             }
         }
         ndk{

@@ -1,5 +1,3 @@
-# Empty
-add_subdirectory(Empty)
 IF(${WIN32})
     # Windows specific code
     add_subdirectory(Windows)
@@ -15,4 +13,7 @@ ELSEIF(${UNIX})
     ENDIF(${APPLE})
 ELSEIF(${ORBIS})
     add_subdirectory(Orbis)
+ELSE()
+    # Empty
+    add_subdirectory(Empty)
 ENDIF(${WIN32})

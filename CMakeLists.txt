@@ -79,7 +79,9 @@ configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
 add_subdirectory(Framework)
 add_subdirectory(Platform)
 add_subdirectory(RHI)
+if(BUILD_TESTING)
 add_subdirectory(Test)
+endif(BUILD_TESTING)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 
