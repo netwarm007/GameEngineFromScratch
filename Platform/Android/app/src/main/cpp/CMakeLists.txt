@@ -31,6 +31,7 @@ target_include_directories(native-activity PRIVATE
 
 # add lib dependencies
 target_link_libraries(native-activity
+    MyGameEngine
     android
     native_app_glue
     EGL

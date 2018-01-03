@@ -55,7 +55,6 @@ jobs:
       - run:
           name: Download Dependencies
           command: |
-                   sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout;1.0.2"
                    ./gradlew androidDependencies
           working_directory: Platform/Android
       - save_cache:

@@ -30,38 +30,14 @@
 #include <android/sensor.h>
 #include <android/log.h>
 #include <android_native_app_glue.h>
+#include "AndroidApplication.hpp"
 
 #define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "native-activity", __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "native-activity", __VA_ARGS__))
 
-/**
- * Our saved state data.
- */
-struct saved_state {
-    float angle;
-    int32_t x;
-    int32_t y;
-};
+using namespace My;
 
-/**
- * Shared state for our app.
- */
-struct engine {
-    struct android_app* app;
-
-    ASensorManager* sensorManager;
-    const ASensor* accelerometerSensor;
-    ASensorEventQueue* sensorEventQueue;
-
-    int animating;
-    EGLDisplay display;
-    EGLSurface surface;
-    EGLContext context;
-    int32_t width;
-    int32_t height;
-    struct saved_state state;
-};
-
+#if 0
 /**
  * Initialize an EGL context for the current display.
  */
@@ -190,16 +166,17 @@ static void engine_term_display(struct engine* engine) {
     engine->context = EGL_NO_CONTEXT;
     engine->surface = EGL_NO_SURFACE;
 }
+#endif
 
 /**
  * Process the next input event.
  */
 static int32_t engine_handle_input(struct android_app* app, AInputEvent* event) {
-    struct engine* engine = (struct engine*)app->userData;
+    AndroidApplication* engine = (AndroidApplication*)app->userData;
     if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-        engine->animating = 1;
-        engine->state.x = AMotionEvent_getX(event, 0);
-        engine->state.y = AMotionEvent_getY(event, 0);
+        engine->m_bAnimating = true;
+        engine->m_State.x = AMotionEvent_getX(event, 0);
+        engine->m_State.y = AMotionEvent_getY(event, 0);
         return 1;
     }
     return 0;
@@ -209,46 +186,46 @@ static int32_t engine_handle_input(struct android_app* app, AInputEvent* event) 
  * Process the next main command.
  */
 static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
-    struct engine* engine = (struct engine*)app->userData;
+    AndroidApplication* engine = (AndroidApplication*)app->userData;
     switch (cmd) {
         case APP_CMD_SAVE_STATE:
             // The system has asked us to save our current state.  Do so.
-            engine->app->savedState = malloc(sizeof(struct saved_state));
-            *((struct saved_state*)engine->app->savedState) = engine->state;
-            engine->app->savedStateSize = sizeof(struct saved_state);
+            engine->m_pApp->savedState = malloc(sizeof(AndroidApplication::saved_state));
+            *((AndroidApplication::saved_state*)engine->m_pApp->savedState) = engine->m_State;
+            engine->m_pApp->savedStateSize = sizeof(AndroidApplication::saved_state);
             break;
         case APP_CMD_INIT_WINDOW:
             // The window is being shown, get it ready.
-            if (engine->app->window != NULL) {
-                engine_init_display(engine);
-                engine_draw_frame(engine);
+            if (engine->m_pApp->window != NULL) {
+                engine->Initialize();
+                engine->OnDraw();
             }
             break;
         case APP_CMD_TERM_WINDOW:
             // The window is being hidden or closed, clean it up.
-            engine_term_display(engine);
+            engine->Finalize();
             break;
         case APP_CMD_GAINED_FOCUS:
             // When our app gains focus, we start monitoring the accelerometer.
-            if (engine->accelerometerSensor != NULL) {
-                ASensorEventQueue_enableSensor(engine->sensorEventQueue,
-                                               engine->accelerometerSensor);
+            if (engine->m_pAccelerometerSensor != NULL) {
+                ASensorEventQueue_enableSensor(engine->m_pSensorEventQueue,
+                                               engine->m_pAccelerometerSensor);
                 // We'd like to get 60 events per second (in us).
-                ASensorEventQueue_setEventRate(engine->sensorEventQueue,
-                                               engine->accelerometerSensor,
+                ASensorEventQueue_setEventRate(engine->m_pSensorEventQueue,
+                                               engine->m_pAccelerometerSensor,
                                                (1000L/60)*1000);
             }
             break;
         case APP_CMD_LOST_FOCUS:
             // When our app loses focus, we stop monitoring the accelerometer.
             // This is to avoid consuming battery while not being used.
-            if (engine->accelerometerSensor != NULL) {
-                ASensorEventQueue_disableSensor(engine->sensorEventQueue,
-                                                engine->accelerometerSensor);
+            if (engine->m_pAccelerometerSensor != NULL) {
+                ASensorEventQueue_disableSensor(engine->m_pSensorEventQueue,
+                                                engine->m_pAccelerometerSensor);
             }
             // Also stop animating.
-            engine->animating = 0;
-            engine_draw_frame(engine);
+            engine->m_bAnimating = false;
+            engine->OnDraw();
             break;
     }
 }
@@ -306,27 +283,25 @@ ASensorManager* AcquireASensorManagerInstance(android_app* app) {
  * event loop for receiving input events and doing other things.
  */
 void android_main(struct android_app* state) {
-    struct engine engine;
-
-    memset(&engine, 0, sizeof(engine));
-    state->userData = &engine;
+    state->userData = g_pApp;
     state->onAppCmd = engine_handle_cmd;
     state->onInputEvent = engine_handle_input;
-    engine.app = state;
+    AndroidApplication* engine = dynamic_cast<AndroidApplication*>(g_pApp);
+    engine->m_pApp = state;
 
     // Prepare to monitor accelerometer
-    engine.sensorManager = AcquireASensorManagerInstance(state);
-    engine.accelerometerSensor = ASensorManager_getDefaultSensor(
-                                        engine.sensorManager,
+    engine->m_pSensorManager = AcquireASensorManagerInstance(state);
+    engine->m_pAccelerometerSensor = ASensorManager_getDefaultSensor(
+                                        engine->m_pSensorManager,
                                         ASENSOR_TYPE_ACCELEROMETER);
-    engine.sensorEventQueue = ASensorManager_createEventQueue(
-                                    engine.sensorManager,
+    engine->m_pSensorEventQueue = ASensorManager_createEventQueue(
+                                    engine->m_pSensorManager,
                                     state->looper, LOOPER_ID_USER,
                                     NULL, NULL);
 
     if (state->savedState != NULL) {
         // We are starting with a previous saved state; restore from it.
-        engine.state = *(struct saved_state*)state->savedState;
+        engine->m_State = *(AndroidApplication::saved_state*)state->savedState;
     }
 
     // loop waiting for stuff to do.
@@ -340,7 +315,7 @@ void android_main(struct android_app* state) {
         // If not animating, we will block forever waiting for events.
         // If animating, we loop until all events are read, then continue
         // to draw the next frame of animation.
-        while ((ident=ALooper_pollAll(engine.animating ? 0 : -1, NULL, &events,
+        while ((ident=ALooper_pollAll(engine->m_bAnimating ? 0 : -1, NULL, &events,
                                       (void**)&source)) >= 0) {
 
             // Process this event.
@@ -350,9 +325,9 @@ void android_main(struct android_app* state) {
 
             // If a sensor has data, process it now.
             if (ident == LOOPER_ID_USER) {
-                if (engine.accelerometerSensor != NULL) {
+                if (engine->m_pAccelerometerSensor != nullptr) {
                     ASensorEvent event;
-                    while (ASensorEventQueue_getEvents(engine.sensorEventQueue,
+                    while (ASensorEventQueue_getEvents(engine->m_pSensorEventQueue,
                                                        &event, 1) > 0) {
                         LOGI("accelerometer: x=%f y=%f z=%f",
                              event.acceleration.x, event.acceleration.y,
@@ -363,21 +338,23 @@ void android_main(struct android_app* state) {
 
             // Check if we are exiting.
             if (state->destroyRequested != 0) {
-                engine_term_display(&engine);
+                engine->Finalize();
                 return;
             }
         }
 
-        if (engine.animating) {
+        if (engine->m_bAnimating) {
             // Done with events; draw next animation frame.
-            engine.state.angle += .01f;
-            if (engine.state.angle > 1) {
-                engine.state.angle = 0;
+            engine->m_State.angle += .01f;
+            if (engine->m_State.angle > 1) {
+                engine->m_State.angle = 0;
             }
+
+            engine->Tick();
 
             // Drawing is throttled to the screen update rate, so there
             // is no need to do timing here.
-            engine_draw_frame(&engine);
+            engine->OnDraw();
         }
     }
 }
