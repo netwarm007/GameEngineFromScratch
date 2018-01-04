@@ -7,7 +7,7 @@ add_library(native_app_glue STATIC
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 
-add_library(MyGameEngine SHARED AndroidApplication.cpp)
+add_library(MyGameEngine SHARED AndroidApplication.cpp OpenGLESApplication.cpp AndroidApplicationConfig.cpp)
 
 target_include_directories(MyGameEngine PRIVATE
     ${ANDROID_NDK}/sources/android/native_app_glue)
