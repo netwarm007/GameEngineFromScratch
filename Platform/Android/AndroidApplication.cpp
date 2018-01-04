@@ -1,5 +1,6 @@
 #include "AndroidApplication.hpp"
-#include "Logger.hpp"
+#include <unistd.h>
+#include <thread>
 
 using namespace My;
 using namespace std;
@@ -130,6 +131,24 @@ ASensorManager* AcquireASensorManagerInstance(android_app* app) {
   return getInstanceFunc();
 }
 
+static int pfd[2];
+static const char *tag = "MyGameEngine";
+
+static void *thread_func()
+{
+    ssize_t rdsz;
+    char buf[128];
+    while((rdsz = read(pfd[0], buf, sizeof(buf) - 1)) > 0)
+    {
+        if(buf[rdsz - 1] == '\n') --rdsz;
+        buf[rdsz] = 0; /* add null-terminator */
+        __android_log_write(ANDROID_LOG_DEBUG, tag, buf);
+    }
+
+    close(pfd[0]);
+    
+    return 0;
+}
 
 /**
  * This is the main entry point of a native application that is using
@@ -139,8 +158,26 @@ ASensorManager* AcquireASensorManagerInstance(android_app* app) {
 void android_main(struct android_app* state) {
     LOGI("Entering android_main");
 
-    start_logger("MyGameEngine");
-    LOGI("Started stdout stderr redirector");
+    tag = "MyGameEngine";
+
+    /* make stdout line-buffered and stderr unbuffered */
+    setvbuf(stdout, 0, _IOLBF, 0);
+    setvbuf(stderr, 0, _IONBF, 0);
+
+    /* create the pipe and redirect stdout and stderr */
+    if(pipe(pfd) == -1)
+    {
+        LOGW("Unable to create pipe to redirect stdout/stderr to logs.");
+        return;
+    }
+
+    dup2(pfd[1], 1);
+    dup2(pfd[1], 2);
+
+    /* spawn the logging thread */
+    thread log_thread(thread_func);
+
+    LOGI("STDOUT/STDERR > Log redirection thread started");
 
     state->userData = g_pApp;
     state->onAppCmd = engine_handle_cmd;
@@ -165,7 +202,7 @@ void android_main(struct android_app* state) {
 
     // loop waiting for stuff to do.
 
-    while (1) {
+    while (!g_pApp->IsQuit()) {
         // Read all pending events.
         int ident;
         int events;
@@ -198,6 +235,8 @@ void android_main(struct android_app* state) {
             // Check if we are exiting.
             if (state->destroyRequested != 0) {
                 engine->Finalize();
+                close(pfd[1]);
+                log_thread.join();
                 return;
             }
         }

@@ -10,8 +10,7 @@ set(CMAKE_SHARED_LINKER_FLAGS
 add_library(MyGameEngine SHARED 
         AndroidApplication.cpp 
         AndroidApplicationConfig.cpp
-        OpenGLESApplication.cpp 
-        Logger.cpp)
+        OpenGLESApplication.cpp)
 
 target_include_directories(MyGameEngine PRIVATE
     ${ANDROID_NDK}/sources/android/native_app_glue
