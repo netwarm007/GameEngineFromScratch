@@ -12,15 +12,17 @@ AndroidApplication::AndroidApplication(GfxConfiguration& cfg)
 
 int AndroidApplication::Initialize()
 {
-        return 0;
+    return BaseApplication::Initialize();
 }
 
 void AndroidApplication::Finalize()
 {
+    BaseApplication::Finalize();
 }
 
 void AndroidApplication::Tick()
 {
+    BaseApplication::Tick();
 }
 
 /**
@@ -52,8 +54,13 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
         case APP_CMD_INIT_WINDOW:
             // The window is being shown, get it ready.
             if (engine->m_pApp->window != NULL) {
-                engine->Initialize();
-                engine->OnDraw();
+                auto err = engine->Initialize();
+                if (!err) {
+                    g_pGraphicsManager->Clear();
+                    g_pGraphicsManager->Draw();
+                } else {
+                    LOGF("Engine Initialize Failed. error code = %d", err);
+                }
             }
             break;
         case APP_CMD_TERM_WINDOW:
@@ -80,7 +87,8 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             }
             // Also stop animating.
             engine->m_bAnimating = false;
-            engine->OnDraw();
+            g_pGraphicsManager->Clear();
+            g_pGraphicsManager->Draw();
             break;
     }
 }
@@ -132,7 +140,6 @@ ASensorManager* AcquireASensorManagerInstance(android_app* app) {
 }
 
 static int pfd[2];
-static const char *tag = "MyGameEngine";
 
 static void *thread_func()
 {
@@ -142,7 +149,7 @@ static void *thread_func()
     {
         if(buf[rdsz - 1] == '\n') --rdsz;
         buf[rdsz] = 0; /* add null-terminator */
-        __android_log_write(ANDROID_LOG_DEBUG, tag, buf);
+        LOGI("%s", buf);
     }
 
     close(pfd[0]);
@@ -158,8 +165,6 @@ static void *thread_func()
 void android_main(struct android_app* state) {
     LOGI("Entering android_main");
 
-    tag = "MyGameEngine";
-
     /* make stdout line-buffered and stderr unbuffered */
     setvbuf(stdout, 0, _IOLBF, 0);
     setvbuf(stderr, 0, _IONBF, 0);
@@ -167,7 +172,7 @@ void android_main(struct android_app* state) {
     /* create the pipe and redirect stdout and stderr */
     if(pipe(pfd) == -1)
     {
-        LOGW("Unable to create pipe to redirect stdout/stderr to logs.");
+        LOGF("Unable to create pipe to redirect stdout/stderr to logs.");
         return;
     }
 
@@ -201,7 +206,6 @@ void android_main(struct android_app* state) {
     }
 
     // loop waiting for stuff to do.
-
     while (!g_pApp->IsQuit()) {
         // Read all pending events.
         int ident;
@@ -225,7 +229,7 @@ void android_main(struct android_app* state) {
                     ASensorEvent event;
                     while (ASensorEventQueue_getEvents(engine->m_pSensorEventQueue,
                                                        &event, 1) > 0) {
-                        LOGI("accelerometer: x=%f y=%f z=%f",
+                        LOGV("accelerometer: x=%f y=%f z=%f",
                              event.acceleration.x, event.acceleration.y,
                              event.acceleration.z);
                     }

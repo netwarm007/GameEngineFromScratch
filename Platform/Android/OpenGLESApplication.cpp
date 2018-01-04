@@ -78,7 +78,7 @@ int OpenGLESApplication::Initialize()
     m_Height = h;
     m_State.angle = 0;
 
-    return 0;
+    return AndroidApplication::Initialize();
 }
 
 void OpenGLESApplication::Finalize()
@@ -97,5 +97,7 @@ void OpenGLESApplication::Finalize()
     m_Display = EGL_NO_DISPLAY;
     m_Context = EGL_NO_CONTEXT;
     m_Surface = EGL_NO_SURFACE;
+
+    AndroidApplication::Finalize();
 }
 
