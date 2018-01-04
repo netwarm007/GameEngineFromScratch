@@ -137,7 +137,10 @@ ASensorManager* AcquireASensorManagerInstance(android_app* app) {
  * event loop for receiving input events and doing other things.
  */
 void android_main(struct android_app* state) {
+    LOGI("Entering android_main");
+
     start_logger("MyGameEngine");
+    LOGI("Started stdout stderr redirector");
 
     state->userData = g_pApp;
     state->onAppCmd = engine_handle_cmd;
