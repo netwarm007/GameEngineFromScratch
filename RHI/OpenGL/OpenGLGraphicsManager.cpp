@@ -290,6 +290,8 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     if (texture_index < GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
         glUniform1i(location, texture_index);
     }
+
+    return true;
 }
 
 void OpenGLGraphicsManager::InitializeBuffers()

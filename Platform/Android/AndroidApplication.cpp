@@ -1,4 +1,5 @@
 #include "AndroidApplication.hpp"
+#include "Logger.hpp"
 
 using namespace My;
 using namespace std;
@@ -136,6 +137,8 @@ ASensorManager* AcquireASensorManagerInstance(android_app* app) {
  * event loop for receiving input events and doing other things.
  */
 void android_main(struct android_app* state) {
+    start_logger("MyGameEngine");
+
     state->userData = g_pApp;
     state->onAppCmd = engine_handle_cmd;
     state->onInputEvent = engine_handle_input;
