@@ -5,17 +5,10 @@
 
 using namespace My;
 
-int My::XcbApplication::Initialize()
+void XcbApplication::CreateMainWindow()
 {
-    int result;
     uint32_t        mask = 0;
     uint32_t        values[3];
-
-    // first call base class initialization
-    result = BaseApplication::Initialize();
-
-    if (result != 0)
-        exit(result);
 
     if (!m_pConn) {
         /* establish connection to X server */
@@ -76,18 +69,32 @@ int My::XcbApplication::Initialize()
     xcb_map_window(m_pConn, m_Window);
 
     xcb_flush(m_pConn);
+}
+
+int XcbApplication::Initialize()
+{
+    int result;
+
+    CreateMainWindow();
+
+    // first call base class initialization
+    result = BaseApplication::Initialize();
+
+    if (result != 0)
+        exit(result);
+
 
     return result;
 }
 
-void My::XcbApplication::Finalize()
+void XcbApplication::Finalize()
 {
     xcb_disconnect(m_pConn);
 
     BaseApplication::Finalize();
 }
 
-void My::XcbApplication::Tick()
+void XcbApplication::Tick()
 {
     BaseApplication::Tick();
 

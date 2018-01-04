@@ -163,11 +163,7 @@ int My::OpenGLApplication::Initialize()
     m_pScreen = screen_iter.data;
     m_nVi = vi->visualid;
 
-    result = XcbApplication::Initialize();
-    if (result) {
-        printf("Xcb Application initialize failed!");
-	return -1;
-    }
+    CreateMainWindow();
 
     /* Get the default screen's GLX extension list */
     glxExts = glXQueryExtensionsString(m_pDisplay, default_screen);
@@ -272,6 +268,9 @@ int My::OpenGLApplication::Initialize()
     }
 
     XFree(vi);
+
+    result = BaseApplication::Initialize();
+
     return result;
 }
 

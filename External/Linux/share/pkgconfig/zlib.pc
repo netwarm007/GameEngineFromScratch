@@ -1,8 +1,8 @@
-prefix=/home/tim/source/repos/GameEngineFromScratch/External/Linux
-exec_prefix=/home/tim/source/repos/GameEngineFromScratch/External/Linux
-libdir=/home/tim/source/repos/GameEngineFromScratch/External/Linux/lib
-sharedlibdir=/home/tim/source/repos/GameEngineFromScratch/External/Linux/lib
-includedir=/home/tim/source/repos/GameEngineFromScratch/External/Linux/include
+prefix=/home/tim/src/GameEngineFromScratch/External
+exec_prefix=/home/tim/src/GameEngineFromScratch/External
+libdir=/home/tim/src/GameEngineFromScratch/External/Linux/lib
+sharedlibdir=/home/tim/src/GameEngineFromScratch/External/Linux/lib
+includedir=/home/tim/src/GameEngineFromScratch/External/Linux/include
 
 Name: zlib
 Description: zlib compression library
