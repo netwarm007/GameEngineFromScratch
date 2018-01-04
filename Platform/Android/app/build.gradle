@@ -3,6 +3,12 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion = 27
 
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../../Asset']
+        }
+    }
+
     defaultConfig {
         applicationId = 'com.chenwenli.com.game_engine_from_scratch'
         minSdkVersion 18

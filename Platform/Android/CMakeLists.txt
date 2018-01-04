@@ -9,13 +9,14 @@ set(CMAKE_SHARED_LINKER_FLAGS
 
 add_library(MyGameEngine SHARED 
         AndroidApplication.cpp 
-        OpenGLESApplication.cpp 
         AndroidApplicationConfig.cpp
+        OpenGLESApplication.cpp 
         Logger.cpp)
 
 target_include_directories(MyGameEngine PRIVATE
-    ${ANDROID_NDK}/sources/android/native_app_glue)
-target_include_directories(MyGameEngine PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
+    ${ANDROID_NDK}/sources/android/native_app_glue
+    "${PROJECT_SOURCE_DIR}/External/src/glad/include")
+
 __add_xg_platform_dependencies(MyGameEngine)
 
 target_link_libraries(MyGameEngine 

@@ -3,16 +3,16 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
-#include "include/CrossProduct.h"
-#include "include/MulByElement.h"
-#include "include/Normalize.h"
-#include "include/Transform.h"
-#include "include/Transpose.h"
-#include "include/AddByElement.h"
-#include "include/SubByElement.h"
-#include "include/MatrixExchangeYandZ.h"
-#include "include/InverseMatrix4X4f.h"
-#include "include/DCT.h"
+#include "CrossProduct.h"
+#include "MulByElement.h"
+#include "Normalize.h"
+#include "Transform.h"
+#include "Transpose.h"
+#include "AddByElement.h"
+#include "SubByElement.h"
+#include "MatrixExchangeYandZ.h"
+#include "InverseMatrix4X4f.h"
+#include "DCT.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f

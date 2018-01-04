@@ -36,6 +36,7 @@ else()
         set(ARCH_BIT 32)
 endif()
 
+include_directories("${PROJECT_SOURCE_DIR}/Framework/GeomMath/include")
 include_directories("${PROJECT_SOURCE_DIR}/Framework/Common")
 include_directories("${PROJECT_SOURCE_DIR}/Framework/GeomMath")
 include_directories("${PROJECT_SOURCE_DIR}/Framework/Interface")
