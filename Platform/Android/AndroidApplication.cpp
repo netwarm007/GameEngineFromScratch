@@ -1,4 +1,5 @@
 #include "AndroidApplication.hpp"
+#include "AndroidAssetLoader.hpp"
 #include <unistd.h>
 #include <thread>
 
@@ -12,7 +13,11 @@ AndroidApplication::AndroidApplication(GfxConfiguration& cfg)
 
 int AndroidApplication::Initialize()
 {
-    return BaseApplication::Initialize();
+    int result = BaseApplication::Initialize();
+    if (!result)
+        dynamic_cast<AndroidAssetLoader*>(g_pAssetLoader)->SetPlatformAssetManager(m_pApp->activity->assetManager);
+
+    return result;
 }
 
 void AndroidApplication::Finalize()

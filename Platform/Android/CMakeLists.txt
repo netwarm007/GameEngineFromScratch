@@ -10,6 +10,7 @@ set(CMAKE_SHARED_LINKER_FLAGS
 add_library(MyGameEngine SHARED 
         AndroidApplication.cpp 
         AndroidApplicationConfig.cpp
+        AndroidAssetLoader.cpp
         OpenGLESApplication.cpp)
 
 target_include_directories(MyGameEngine PRIVATE
