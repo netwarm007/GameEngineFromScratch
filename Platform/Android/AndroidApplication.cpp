@@ -61,8 +61,7 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             if (engine->m_pApp->window != NULL) {
                 auto err = engine->Initialize();
                 if (!err) {
-                    g_pGraphicsManager->Clear();
-                    g_pGraphicsManager->Draw();
+                    engine->OnDraw();
                 } else {
                     LOGF("Engine Initialize Failed. error code = %d", err);
                 }
@@ -92,8 +91,7 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             }
             // Also stop animating.
             engine->m_bAnimating = false;
-            g_pGraphicsManager->Clear();
-            g_pGraphicsManager->Draw();
+            engine->OnDraw();
             break;
     }
 }

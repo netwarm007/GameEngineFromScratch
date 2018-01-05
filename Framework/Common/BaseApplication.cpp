@@ -16,37 +16,48 @@ int BaseApplication::Initialize()
 {
     int ret = 0;
 
-    std::cout << m_Config;
+    cout << m_Config;
 
+    cout << "Initialize Memory Manager: ";
 	if ((ret = g_pMemoryManager->Initialize()) != 0) {
-		printf("Memory Manager Initialize failed, will exit now.");
+        cout << "Failed. err = " << ret;
 		return ret;
 	}
+    cout << "Success";
 
+    cout << "Initialize Asset Loader: ";
 	if ((ret = g_pAssetLoader->Initialize()) != 0) {
-		printf("Asset Loader Initialize failed, will exit now.");
+        cout << "Failed. err = " << ret;
 		return ret;
 	}
+    cout << "Success";
 
+    cout << "Initialize Scene Manager: ";
 	if ((ret = g_pSceneManager->Initialize()) != 0) {
-		printf("Scene Manager Initialize failed, will exit now.");
+        cout << "Failed. err = " << ret;
 		return ret;
 	}
+    cout << "Success";
 
     string scene_file_name = "Scene/test.ogex";
     if (m_nArgC > 1) {
         scene_file_name = m_ppArgV[1];
     }
+    cout << "Success";
 
+    cout << "Load Scene(" << scene_file_name << "): ";
     if ((ret = g_pSceneManager->LoadScene(scene_file_name.c_str())) != 0) {
-        printf("Unable to load scene: %s\n", scene_file_name.c_str());
+        cout << "Failed. err = " << ret;
         return ret;
     }
+    cout << "Success";
 
+    cout << "Initialize Graphics Manager: ";
 	if ((ret = g_pGraphicsManager->Initialize()) != 0) {
-		printf("Graphics Manager Initialize failed, will exit now.");
+        cout << "Failed. err = " << ret;
 		return ret;
 	}
+    cout << "Success";
 
 	return ret;
 }
