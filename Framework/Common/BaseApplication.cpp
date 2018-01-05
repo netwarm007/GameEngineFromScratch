@@ -18,46 +18,45 @@ int BaseApplication::Initialize()
 
     cout << m_Config;
 
-    cout << "Initialize Memory Manager: ";
+    cerr << "Initialize Memory Manager: ";
 	if ((ret = g_pMemoryManager->Initialize()) != 0) {
-        cout << "Failed. err = " << ret;
+        cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cout << "Success";
+    cerr << "Success";
 
-    cout << "Initialize Asset Loader: ";
+    cerr << "Initialize Asset Loader: ";
 	if ((ret = g_pAssetLoader->Initialize()) != 0) {
-        cout << "Failed. err = " << ret;
+        cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cout << "Success";
+    cerr << "Success";
 
-    cout << "Initialize Scene Manager: ";
+    cerr << "Initialize Scene Manager: ";
 	if ((ret = g_pSceneManager->Initialize()) != 0) {
-        cout << "Failed. err = " << ret;
+        cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cout << "Success";
+    cerr << "Success";
 
     string scene_file_name = "Scene/test.ogex";
     if (m_nArgC > 1) {
         scene_file_name = m_ppArgV[1];
     }
-    cout << "Success";
 
-    cout << "Load Scene(" << scene_file_name << "): ";
+    cerr << "Load Scene(" << scene_file_name << "): ";
     if ((ret = g_pSceneManager->LoadScene(scene_file_name.c_str())) != 0) {
-        cout << "Failed. err = " << ret;
+        cerr << "Failed. err = " << ret;
         return ret;
     }
-    cout << "Success";
+    cerr << "Success";
 
-    cout << "Initialize Graphics Manager: ";
+    cerr << "Initialize Graphics Manager: ";
 	if ((ret = g_pGraphicsManager->Initialize()) != 0) {
-        cout << "Failed. err = " << ret;
+        cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cout << "Success";
+    cerr << "Success";
 
 	return ret;
 }
