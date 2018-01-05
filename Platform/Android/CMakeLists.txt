@@ -14,8 +14,7 @@ add_library(MyGameEngine SHARED
         OpenGLESApplication.cpp)
 
 target_include_directories(MyGameEngine PRIVATE
-    ${ANDROID_NDK}/sources/android/native_app_glue
-    "${PROJECT_SOURCE_DIR}/External/src/glad/include")
+    ${ANDROID_NDK}/sources/android/native_app_glue)
 
 __add_xg_platform_dependencies(MyGameEngine)
 
