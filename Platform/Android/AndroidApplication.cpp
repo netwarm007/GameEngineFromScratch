@@ -13,10 +13,9 @@ AndroidApplication::AndroidApplication(GfxConfiguration& cfg)
 
 int AndroidApplication::Initialize()
 {
+    dynamic_cast<AndroidAssetLoader*>(g_pAssetLoader)->SetPlatformAssetManager(m_pApp->activity->assetManager);
     int result = BaseApplication::Initialize();
-    if (!result)
-        dynamic_cast<AndroidAssetLoader*>(g_pAssetLoader)->SetPlatformAssetManager(m_pApp->activity->assetManager);
-    else
+    if (result)
         LOGE("AndroidApplication Initialize Failed!");
 
     return result;

@@ -10,7 +10,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = 'com.chenwenli.com.game_engine_from_scratch'
+        applicationId = 'com.chenwenli.game_engine_from_scratch'
         minSdkVersion 18
         targetSdkVersion  27
         externalNativeBuild {

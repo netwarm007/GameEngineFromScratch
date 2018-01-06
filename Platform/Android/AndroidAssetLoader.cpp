@@ -15,7 +15,13 @@ AndroidAssetLoader::AssetFilePtr AndroidAssetLoader::OpenFile(const char* name, 
     string assetPath = "assets/";
     assetPath.append(name);
     LOGI("Open Asset: %s", assetPath.c_str());
-    AAsset* fp = AAssetManager_open(m_pPlatformAssetManager, assetPath.c_str(), AASSET_MODE_BUFFER);
+    AAsset* fp = nullptr;;
+    if(m_pPlatformAssetManager)
+    	fp = AAssetManager_open(m_pPlatformAssetManager, assetPath.c_str(), AASSET_MODE_BUFFER);
+    else {
+    	LOGE("m_pPlatfornAssetManager is null!");
+    }
+    LOGI("fp: %p", fp);
     return (AssetFilePtr)fp;
 }
 
@@ -26,13 +32,14 @@ Buffer AndroidAssetLoader::SyncOpenAndReadText(const char* assetPath)
 
     if (fp) {
         size_t fileLength = AAsset_getLength(fp);
+        LOGD("asset file size: %zu", fileLength);
 
         pBuff = new Buffer(fileLength + 1);
         AAsset_read(fp, pBuff->GetData(), fileLength);
         pBuff->GetData()[fileLength] = '\0';
         AAsset_close(fp);
     } else {
-        fprintf(stderr, "Error opening asset file '%s'\n", assetPath);
+        LOGE("Error opening asset file '%s'", assetPath);
         pBuff = new Buffer();
     }
 
@@ -46,12 +53,13 @@ Buffer AndroidAssetLoader::SyncOpenAndReadBinary(const char* assetPath)
 
     if (fp) {
         size_t fileLength = AAsset_getLength(fp);
+        LOGD("asset file size: %zu", fileLength);
 
-        pBuff = new Buffer(fileLength + 1);
+        pBuff = new Buffer(fileLength);
         AAsset_read(fp, pBuff->GetData(), fileLength);
         AAsset_close(fp);
     } else {
-        fprintf(stderr, "Error opening asset file '%s'\n", assetPath);
+        LOGE("Error opening asset file '%s'", assetPath);
         pBuff = new Buffer();
     }
 
