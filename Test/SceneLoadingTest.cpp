@@ -30,7 +30,7 @@ int main(int , char** )
     g_pSceneManager->Initialize();
     g_pAssetLoader->Initialize();
 
-    g_pSceneManager->LoadScene("Scene/aili.ogex");
+    g_pSceneManager->LoadScene("Scene/Example.ogex");
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
     cout << "Dump of Cameras" << endl;
