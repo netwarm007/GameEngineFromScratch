@@ -12,12 +12,10 @@ void AndroidAssetLoader::SetPlatformAssetManager(AAssetManager* assetManager)
 
 AndroidAssetLoader::AssetFilePtr AndroidAssetLoader::OpenFile(const char* name, AssetOpenMode mode)
 {
-    string assetPath = "assets/";
-    assetPath.append(name);
-    LOGI("Open Asset: %s", assetPath.c_str());
+    LOGI("Open Asset: %s", name);
     AAsset* fp = nullptr;;
     if(m_pPlatformAssetManager)
-    	fp = AAssetManager_open(m_pPlatformAssetManager, assetPath.c_str(), AASSET_MODE_BUFFER);
+    	fp = AAssetManager_open(m_pPlatformAssetManager, name, AASSET_MODE_BUFFER);
     else {
     	LOGE("m_pPlatfornAssetManager is null!");
     }
