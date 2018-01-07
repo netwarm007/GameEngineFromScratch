@@ -44,6 +44,7 @@ jobs:
              curl -L -o $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg https://github.com/macports/macports-base/releases/download/v2.4.2/MacPorts-2.4.2-10.12-Sierra.pkg
              sudo installer -package $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg -target /
              rm $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg
+             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              sudo -E port -q install cmake xorg-libX11 xorg-libxcb mesa libGLU
       - run:
           name: Build
