@@ -38,5 +38,6 @@ void OpenGLESGraphicsManager::Clear()
 
 void OpenGLESGraphicsManager::Draw()
 {
+    glFlush();
 }
 
