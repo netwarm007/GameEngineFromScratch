@@ -393,7 +393,7 @@ namespace My {
         T length;
         DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), countof(a.data));
         length = sqrt(length);
-        ispc::Normalize(a, length, countof(a.data));
+        ispc::Normalize(countof(a.data), a, length);
     }
 
     inline void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw, const float pitch, const float roll)

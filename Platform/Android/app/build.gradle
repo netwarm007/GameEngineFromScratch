@@ -15,11 +15,11 @@ android {
         targetSdkVersion  27
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=gnustl_static', '-DBUILD_TESTING=false'
+                arguments '-DANDROID_STL=gnustl_static'
             }
         }
         ndk{
-            abiFilters "armeabi", "armeabi-v7a"
+            abiFilters "armeabi-v7a"
         }
     }
     buildTypes {

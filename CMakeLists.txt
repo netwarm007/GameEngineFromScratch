@@ -22,6 +22,7 @@ if(NOT MSVC)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-gnu-anonymous-struct -Wno-nested-anon-types")
 endif(NOT MSVC)
 if(ANDROID)
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-command-line-argument -Wl,--no-warn-mismatch")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument -Wl,--no-warn-mismatch")
 endif(ANDROID)
 
@@ -80,9 +81,7 @@ configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
 add_subdirectory(Framework)
 add_subdirectory(Platform)
 add_subdirectory(RHI)
-if(BUILD_TESTING)
 add_subdirectory(Test)
-endif(BUILD_TESTING)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 
