@@ -95,6 +95,48 @@ jobs:
                    adb shell chmod +x /data/local/tmp/GeomMathTest
                    adb shell "cd /data/local/tmp && ./GeomMathTest"
           working_directory: Platform/Android
+      - run:
+          name: Run Color Space Conversion Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/ColorSpaceConversionTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/ColorSpaceConversionTest
+                   adb shell "cd /data/local/tmp && ./ColorSpaceConversionTest"
+          working_directory: Platform/Android
+      - run:
+          name: Run Asset Loader Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/AssetLoaderTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/AssetLoaderTest
+                   adb shell "cd /data/local/tmp && ./AssetLoaderTest"
+          working_directory: Platform/Android
+      - run:
+          name: Run JPEG decoder Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/JpegParserTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/JpegParserTest
+                   adb shell "cd /data/local/tmp && ./JpegParserTest"
+          working_directory: Platform/Android
+      - run:
+          name: Run PNG decoder Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/PngParserTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/PngParserTest
+                   adb shell "cd /data/local/tmp && ./PngParserTest"
+          working_directory: Platform/Android
+      - run:
+          name: Run OGEX parser Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/OgexParserTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/OgexParserTest
+                   adb shell "cd /data/local/tmp && ./OgexParserTest"
+          working_directory: Platform/Android
+      - run:
+          name: Run Scene Loading Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/SceneLoadingTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/SceneLoadingTest
+                   adb shell "cd /data/local/tmp && ./SceneLoadingTest"
+          working_directory: Platform/Android
       - store_artifacts:
           path: Platform/Android/app/build/reports
           destination: reports
