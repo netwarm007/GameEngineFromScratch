@@ -1,6 +1,13 @@
 #pragma once
+#include <unordered_map>
+#include <vector>
+#include <map>
+#include <string>
+#include <memory>
 #include "GraphicsManager.hpp"
 #include "geommath.hpp"
+#include "glad/glad.h"
+#include "SceneObject.hpp"
 
 namespace My {
     class OpenGLGraphicsManager : public GraphicsManager
@@ -16,30 +23,47 @@ namespace My {
         virtual void Draw();
 
     private:
-        bool SetShaderParameters(float* worldMatrix, float* viewMatrix, float* projectionMatrix);
+        bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
+        bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
+        bool SetPerBatchShaderParameters(const char* paramName, const float param);
+        bool SetPerBatchShaderParameters(const char* paramName, const GLint texture_index);
+        bool SetPerFrameShaderParameters();
 
-        bool InitializeBuffers();
+        void InitializeBuffers();
         void RenderBuffers();
-        void CalculateCameraPosition();
+        void CalculateCameraMatrix();
+        void CalculateLights();
         bool InitializeShader(const char* vsFilename, const char* fsFilename);
 
     private:
         unsigned int m_vertexShader;
         unsigned int m_fragmentShader;
         unsigned int m_shaderProgram;
+        std::map<std::string, GLint> m_TextureIndex;
 
-        const bool VSYNC_ENABLED = true;
-        const float screenDepth = 1000.0f;
-        const float screenNear = 0.1f;
+        struct DrawFrameContext {
+            Matrix4X4f  m_worldMatrix;
+            Matrix4X4f  m_viewMatrix;
+            Matrix4X4f  m_projectionMatrix;
+            Vector3f    m_lightPosition;
+            Vector4f    m_lightColor;
+        };
 
-        int     m_vertexCount, m_indexCount;
-        unsigned int m_vertexArrayId, m_vertexBufferId, m_indexBufferId;
+        struct DrawBatchContext {
+            GLuint  vao;
+            GLenum  mode;
+            GLenum  type;
+            GLsizei count;
+            std::shared_ptr<Matrix4X4f> transform;
+            std::shared_ptr<SceneObjectMaterial> material;
+        };
 
-        float m_positionX = 0, m_positionY = 0, m_positionZ = -10;
-        float m_rotationX = 0, m_rotationY = 0, m_rotationZ = 0;
-        Matrix4X4f m_worldMatrix;
-        Matrix4X4f m_viewMatrix;
-        Matrix4X4f m_projectionMatrix;
+        DrawFrameContext    m_DrawFrameContext;
+        std::vector<DrawBatchContext> m_DrawBatchContext;
+        std::vector<GLuint> m_Buffers;
+        std::vector<GLuint> m_Textures;
     };
+
 }
+
 

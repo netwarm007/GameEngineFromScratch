@@ -1,4 +1,5 @@
 #include <iostream>
+#include <assert.h>
 #include "geommath.hpp"
 
 using namespace std;
@@ -54,11 +55,12 @@ void matrix_test()
     cout << "Idendity Matrix: ";
     cout << m1;
 
+    Matrix4X4f mEu;
     float yaw = 0.2f, pitch = 0.3f, roll = 0.4f;
-    MatrixRotationYawPitchRoll(m1, yaw, pitch, roll);
+    MatrixRotationYawPitchRoll(mEu, yaw, pitch, roll);
 
     cout << "Matrix of yaw(" << yaw << ") pitch(" << pitch << ") roll(" << roll << "):";
-    cout << m1;
+    cout << mEu;
 
     Matrix4X4f ry;
     float angle = PI / 2.0f;
@@ -119,11 +121,55 @@ void matrix_test()
     float fov = PI / 2.0f, aspect = 16.0f / 9.0f, near = 1.0f, far = 100.0f;
     Matrix4X4f perspective;
     BuildPerspectiveFovLHMatrix(perspective, fov, aspect, near, far);
-    cout << "Perspective Matrix with fov(" << fov << ") aspect(" << aspect << ") near ... far(" << near << " ... " << far << "):";
+    cout << "(Left-Handed Coordinate System) Perspective Matrix with fov(" << fov << ") aspect(" << aspect << ") near ... far(" << near << " ... " << far << "):";
+    cout << perspective;
+
+    BuildPerspectiveFovRHMatrix(perspective, fov, aspect, near, far);
+    cout << "(Right-Handed Coordinate System) Perspective Matrix with fov(" << fov << ") aspect(" << aspect << ") near ... far(" << near << " ... " << far << "):";
     cout << perspective;
 
     Matrix4X4f mvp = view * perspective;
-    cout << "MVP:" << mvp;
+    cout << "MVP: " << mvp;
+
+    Matrix4X4f invertable = {{{
+        { 1.0f,  0.0f,  0.0f,  0.0f},
+        { 0.0f,  1.0f,  0.0f,  0.0f},
+        { 0.0f,  0.0f,  1.0f,  0.0f},
+        {13.0f, 14.0f, 15.0f,  1.0f}
+    }}};
+    cout << "Known Invertable Matrix: " << invertable;
+    assert(InverseMatrix4X4f(invertable));
+    cout << "Inverse of Matrix: " << invertable;
+
+    Matrix4X4f non_invertable = {{{
+        { 1.0f,  2.0f,  3.0f,  4.0f},
+        { 5.0f,  6.0f,  7.0f,  8.0f},
+        { 9.0f, 10.0f, 11.0f, 12.0f},
+        {13.0f, 14.0f, 15.0f, 16.0f}
+    }}};
+    cout << "Known Sigular(Not Ivertable) Matrix: " << non_invertable;
+    assert(!InverseMatrix4X4f(non_invertable));
+    cout << "InverseMatrix4X4f returns false." << endl;
+
+    Matrix8X8f pixel_block = {{{
+        {-76, -73, -67, -62, -58, -67, -64, -55},
+        {-65, -69, -73, -38, -19, -43, -59, -56},
+        {-66, -69, -60, -15,  16, -24, -62, -55},
+        {-65, -70, -57, - 6,  26, -22, -58, -59},
+        {-61, -67, -60, -24, - 2, -40, -60, -58},
+        {-49, -63, -68, -58, -51, -60, -70, -53},
+        {-43, -57, -64, -69, -73, -67, -63, -45},
+        {-41, -49, -59, -60, -63, -52, -50, -34}
+    }}};
+    cout << "A 8X8 int pixel block: " << pixel_block;
+    Matrix8X8f pixel_block_dct = DCT8X8(pixel_block);
+    cout << "After DCTII: " << pixel_block_dct;
+
+    Matrix8X8f pixel_block_reconstructed = IDCT8X8(pixel_block_dct);
+    cout << "After IDCTII: " << pixel_block_reconstructed;
+
+    Matrix8X8f pixel_error = pixel_block_reconstructed - pixel_block;
+    cout << "DCT-IDCT error: " << pixel_error;
 }
 
 int main()

@@ -43,5 +43,10 @@ build*/
 **/Release
 **/lib
 **/lib64
+**/.gradle
+.DS_Store
 
 config.h
+
+shader-error.txt
+**/.externalNativeBuild

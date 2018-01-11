@@ -5,6 +5,7 @@ BaseApplication.cpp
 GraphicsManager.cpp
 Image.cpp
 MemoryManager.cpp
+Scene.cpp
 SceneManager.cpp
 SceneObject.cpp
 main.cpp

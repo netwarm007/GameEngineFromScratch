@@ -1,4 +1,4 @@
-export void Normalize(uniform float v[], uniform float length, const uniform size_t count)
+export void Normalize(uniform const size_t count, uniform float v[], uniform float length)
 {
     length = 1.0f / length;
     foreach (index = 0 ... count) {

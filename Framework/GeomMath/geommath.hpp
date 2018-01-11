@@ -3,13 +3,16 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
-#include "include/CrossProduct.h"
-#include "include/MulByElement.h"
-#include "include/Normalize.h"
-#include "include/Transform.h"
-#include "include/Transpose.h"
-#include "include/AddByElement.h"
-#include "include/SubByElement.h"
+#include "CrossProduct.h"
+#include "MulByElement.h"
+#include "Normalize.h"
+#include "Transform.h"
+#include "Transpose.h"
+#include "AddByElement.h"
+#include "SubByElement.h"
+#include "MatrixExchangeYandZ.h"
+#include "InverseMatrix4X4f.h"
+#include "DCT.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -104,17 +107,20 @@ namespace My {
 		    swizzle<My::Vector3Type, T, 2, 0, 1> zxy;
 		    swizzle<My::Vector3Type, T, 1, 2, 0> yzx;
 		    swizzle<My::Vector3Type, T, 2, 1, 0> zyx;
+		    swizzle<My::Vector3Type, T, 0, 1, 2> rgb;
         };
 
         Vector3Type<T>() {};
         Vector3Type<T>(const T& _v) : x(_v), y(_v), z(_v) {};
         Vector3Type<T>(const T& _x, const T& _y, const T& _z) : x(_x), y(_y), z(_z) {};
-
+        
         operator T*() { return data; };
         operator const T*() const { return static_cast<const T*>(data); };
     };
 
     typedef Vector3Type<float> Vector3f;
+    typedef Vector3Type<int16_t> Vector3i16;
+    typedef Vector3Type<int32_t> Vector3i32;
 
     template <typename T>
     struct Vector4Type
@@ -123,11 +129,14 @@ namespace My {
             T data[4];
             struct { T x, y, z, w; };
             struct { T r, g, b, a; };
+		    swizzle<My::Vector3Type, T, 0, 1, 2> xyz;
 		    swizzle<My::Vector3Type, T, 0, 2, 1> xzy;
 		    swizzle<My::Vector3Type, T, 1, 0, 2> yxz;
 		    swizzle<My::Vector3Type, T, 1, 2, 0> yzx;
 		    swizzle<My::Vector3Type, T, 2, 0, 1> zxy;
 		    swizzle<My::Vector3Type, T, 2, 1, 0> zyx;
+		    swizzle<My::Vector3Type, T, 0, 1, 2> rgb;
+		    swizzle<My::Vector4Type, T, 0, 1, 2, 3> rgba;
 		    swizzle<My::Vector4Type, T, 2, 1, 0, 3> bgra;
         };
 
@@ -154,6 +163,30 @@ namespace My {
     typedef Vector4Type<float> Quaternion;
     typedef Vector4Type<uint8_t> R8G8B8A8Unorm;
     typedef Vector4Type<uint8_t> Vector4i;
+
+    template <template <typename> class TT>
+    std::ostream& operator<<(std::ostream& out, TT<int8_t> vector)
+    {
+        out << "( ";
+        for (uint32_t i = 0; i < countof(vector.data); i++) {
+                out << (int)vector.data[i] << ((i == countof(vector.data) - 1)? ' ' : ',');
+        }
+        out << ")\n";
+
+        return out;
+    }
+
+    template <template <typename> class TT>
+    std::ostream& operator<<(std::ostream& out, TT<uint8_t> vector)
+    {
+        out << "( ";
+        for (uint32_t i = 0; i < countof(vector.data); i++) {
+                out << (unsigned int)vector.data[i] << ((i == countof(vector.data) - 1)? ' ' : ',');
+        }
+        out << ")\n";
+
+        return out;
+    }
 
     template <template <typename> class TT, typename T>
     std::ostream& operator<<(std::ostream& out, TT<T> vector)
@@ -204,9 +237,9 @@ namespace My {
     }
 
     template <typename T>
-    inline void DotProduct(T& result, const T* a, const T* b, size_t count)
+    inline void DotProduct(T& result, const T* a, const T* b, const size_t count)
     {
-        float _result[count];
+        T* _result = new T[count];
 
         result = static_cast<T>(0);
 
@@ -214,6 +247,8 @@ namespace My {
         for (size_t i = 0; i < count; i++) {
             result += _result[i];
         }
+
+        delete[] _result;
     }
 
     template <template <typename> class TT, typename T>
@@ -246,6 +281,7 @@ namespace My {
             return data[row_index];
         }
 
+
         operator T*() { return &data[0][0]; };
         operator const T*() const { return static_cast<const T*>(&data[0][0]); };
 
@@ -262,6 +298,8 @@ namespace My {
 
     typedef Matrix<float, 3, 3> Matrix3X3f;
     typedef Matrix<float, 4, 4> Matrix4X4f;
+    typedef Matrix<int32_t, 8, 8> Matrix8X8i;
+    typedef Matrix<float, 8, 8> Matrix8X8f;
 
     template <typename T, int ROWS, int COLS>
     std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix)
@@ -295,7 +333,19 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void MatrixSub(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
-        ispc::AddByElement(matrix1, matrix2, result, countof(result.data));
+        ispc::SubByElement(matrix1, matrix2, result, countof(result.data));
+    }
+
+    template <typename T, int ROWS, int COLS>
+    void MatrixMulByElement(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
+    {
+        ispc::MulByElement(matrix1, matrix2, result, countof(result.data));
+    }
+
+    template <int ROWS, int COLS>
+    void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result, const Matrix<int32_t, ROWS, COLS>& matrix1, const Matrix<int32_t, ROWS, COLS>& matrix2)
+    {
+        ispc::MulByElementi32(matrix1, matrix2, result, countof(result.data));
     }
 
     template <typename T, int ROWS, int COLS>
@@ -342,7 +392,7 @@ namespace My {
         T length;
         DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), countof(a.data));
         length = sqrt(length);
-        ispc::Normalize(a, length, countof(a.data));
+        ispc::Normalize(countof(a.data), a, length);
     }
 
     inline void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw, const float pitch, const float roll)
@@ -382,6 +432,12 @@ namespace My {
         ispc::Transform(vector, matrix);
 
         return;
+    }
+
+    template <typename T, int ROWS, int COLS>
+    inline void ExchangeYandZ(Matrix<T,ROWS,COLS>& matrix)
+    {
+        ispc::MatrixExchangeYandZ(matrix, ROWS, COLS);
     }
 
     inline void BuildViewMatrix(Matrix4X4f& result, const Vector3f position, const Vector3f lookAt, const Vector3f up)
@@ -446,6 +502,19 @@ namespace My {
         return;
     }
 
+    inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
+    {
+        Matrix4X4f perspective = {{{
+            { 1.0f / (screenAspect * tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f / tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
+            { 0.0f, 0.0f, screenDepth / (screenNear - screenDepth), -1.0f },
+            { 0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear), 0.0f }
+        }}};
+
+        matrix = perspective;
+
+        return;
+    }
 
     inline void MatrixTranslation(Matrix4X4f& matrix, const float x, const float y, const float z)
     {
@@ -548,6 +617,25 @@ namespace My {
         }}};
 
         matrix = rotation;
+    }
+
+    inline bool InverseMatrix4X4f(Matrix4X4f& matrix)
+    {
+        return ispc::InverseMatrix4X4f(matrix);
+    }
+
+    inline Matrix8X8f DCT8X8(const Matrix8X8f& matrix)
+    {
+        Matrix8X8f result;
+        ispc::DCT8X8(matrix, result);
+        return result;
+    }
+
+    inline Matrix8X8f IDCT8X8(const Matrix8X8f& matrix)
+    {
+        Matrix8X8f result;
+        ispc::IDCT8X8(matrix, result);
+        return result;
     }
 }
 

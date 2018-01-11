@@ -63,6 +63,8 @@ void* My::Allocator::Allocate()
 
         if (m_pPageList) {
             pNewPage->pNext = m_pPageList;
+        } else {
+            pNewPage->pNext = nullptr;
         }
 
         m_pPageList = pNewPage;

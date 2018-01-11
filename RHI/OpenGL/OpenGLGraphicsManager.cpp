@@ -2,11 +2,11 @@
 #include <fstream>
 #include "OpenGLGraphicsManager.hpp"
 #include "AssetLoader.hpp"
-#include "glad/glad.h"
 #include "IApplication.hpp"
+#include "SceneManager.hpp"
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/color.vs";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/color.ps";
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
 
 using namespace My;
 using namespace std;
@@ -108,7 +108,7 @@ int OpenGLGraphicsManager::Initialize()
         result = 0;
         cout << "OpenGL Version " << GLVersion.major << "." << GLVersion.minor << " loaded" << endl;
 
-        if (GLAD_GL_VERSION_3_0) {
+        if (GLAD_GL_VERSION_3_3) {
             // Set the depth buffer to be entirely cleared to 1.0 values.
             glClearDepth(1.0f);
 
@@ -116,23 +116,14 @@ int OpenGLGraphicsManager::Initialize()
             glEnable(GL_DEPTH_TEST);
 
             // Set the polygon winding to front facing for the right handed system.
-            glFrontFace(GL_CW);
+            glFrontFace(GL_CCW);
 
             // Enable back face culling.
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
 
             // Initialize the world/model matrix to the identity matrix.
-            BuildIdentityMatrix(m_worldMatrix);
-
-            // Set the field of view and screen aspect ratio.
-            float fieldOfView = PI / 4.0f;
-            const GfxConfiguration& conf = g_pApp->GetConfiguration();
-
-            float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
-
-            // Build the perspective projection matrix.
-            BuildPerspectiveFovLHMatrix(m_projectionMatrix, fieldOfView, screenAspect, screenNear, screenDepth);
+            BuildIdentityMatrix(m_DrawFrameContext.m_worldMatrix);
 
         }
 
@@ -145,21 +136,26 @@ int OpenGLGraphicsManager::Initialize()
 
 void OpenGLGraphicsManager::Finalize()
 {
-    // Disable the two vertex array attributes.
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+    for (auto dbc : m_DrawBatchContext) {
+        glDeleteVertexArrays(1, &dbc.vao);
+    }
 
-    // Release the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &m_vertexBufferId);
+    m_DrawBatchContext.clear();
 
-    // Release the index buffer.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &m_indexBufferId);
+    for (auto i = 0; i < m_Buffers.size() - 1; i++) { 
+        glDisableVertexAttribArray(i);
+    }
 
-    // Release the vertex array object.
-    glBindVertexArray(0);
-    glDeleteVertexArrays(1, &m_vertexArrayId);
+    for (auto buf : m_Buffers) {
+        glDeleteBuffers(1, &buf);
+    }
+
+    for (auto texture : m_Textures) {
+        glDeleteTextures(1, &texture);
+    }
+
+    m_Buffers.clear();
+    m_Textures.clear();
 
     // Detach the vertex and fragment shaders from the program.
     glDetachShader(m_shaderProgram, m_vertexShader);
@@ -187,30 +183,13 @@ void OpenGLGraphicsManager::Clear()
 
 void OpenGLGraphicsManager::Draw()
 {
-    static float rotateAngle = 0.0f;
-
-    // Update world matrix to rotate the model
-    rotateAngle += PI / 120;
-    Matrix4X4f rotationMatrixY;
-    Matrix4X4f rotationMatrixZ;
-    MatrixRotationY(rotationMatrixY, rotateAngle);
-    MatrixRotationZ(rotationMatrixZ, rotateAngle);
-    MatrixMultiply(m_worldMatrix, rotationMatrixZ, rotationMatrixY);
-
-    // Generate the view matrix based on the camera's position.
-    CalculateCameraPosition();
-
-    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    glUseProgram(m_shaderProgram);
-    SetShaderParameters(m_worldMatrix, m_viewMatrix, m_projectionMatrix);
-
     // Render the model using the color shader.
     RenderBuffers();
 
     glFlush();
 }
 
-bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewMatrix, float* projectionMatrix)
+bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
 {
     unsigned int location;
 
@@ -220,7 +199,7 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
     {
             return false;
     }
-    glUniformMatrix4fv(location, 1, false, worldMatrix);
+    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_worldMatrix);
 
     // Set the view matrix in the vertex shader.
     location = glGetUniformLocation(m_shaderProgram, "viewMatrix");
@@ -228,7 +207,7 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
     {
             return false;
     }
-    glUniformMatrix4fv(location, 1, false, viewMatrix);
+    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_viewMatrix);
 
     // Set the projection matrix in the vertex shader.
     location = glGetUniformLocation(m_shaderProgram, "projectionMatrix");
@@ -236,124 +215,381 @@ bool OpenGLGraphicsManager::SetShaderParameters(float* worldMatrix, float* viewM
     {
             return false;
     }
-    glUniformMatrix4fv(location, 1, false, projectionMatrix);
+    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_projectionMatrix);
 
-    return true;
-}
-
-bool OpenGLGraphicsManager::InitializeBuffers()
-{
-    struct VertexType
+    // Set lighting parameters for PS shader
+    location = glGetUniformLocation(m_shaderProgram, "lightPosition");
+    if(location == -1)
     {
-        Vector3f position;
-        Vector3f color;
-    };
+            return false;
+    }
+    glUniform3fv(location, 1, m_DrawFrameContext.m_lightPosition);
 
-    VertexType vertices[] = {
-        {{  1.0f,  1.0f,  1.0f }, { 1.0f, 0.0f, 0.0f }},
-        {{  1.0f,  1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }},
-        {{ -1.0f,  1.0f, -1.0f }, { 0.0f, 0.0f, 1.0f }},
-        {{ -1.0f,  1.0f,  1.0f }, { 1.0f, 1.0f, 0.0f }},
-        {{  1.0f, -1.0f,  1.0f }, { 1.0f, 0.0f, 1.0f }},
-        {{  1.0f, -1.0f, -1.0f }, { 0.0f, 1.0f, 1.0f }},
-        {{ -1.0f, -1.0f, -1.0f }, { 0.5f, 1.0f, 0.5f }},
-        {{ -1.0f, -1.0f,  1.0f }, { 1.0f, 0.5f, 1.0f }},
-    };
-    uint16_t indices[] = { 1, 2, 3, 3, 2, 6, 6, 7, 3, 3, 0, 1, 0, 3, 7, 7, 6, 4, 4, 6, 5, 0, 7, 4, 1, 0, 4, 1, 4, 5, 2, 1, 5, 2, 5, 6 };
-
-    // Set the number of vertices in the vertex array.
-    m_vertexCount = sizeof(vertices) / sizeof(VertexType);
-
-    // Set the number of indices in the index array.
-    m_indexCount = sizeof(indices) / sizeof(uint16_t);
-
-    // Allocate an OpenGL vertex array object.
-    glGenVertexArrays(1, &m_vertexArrayId);
-
-    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
-    glBindVertexArray(m_vertexArrayId);
-
-    // Generate an ID for the vertex buffer.
-    glGenBuffers(1, &m_vertexBufferId);
-
-    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferId);
-    glBufferData(GL_ARRAY_BUFFER, m_vertexCount * sizeof(VertexType), vertices, GL_STATIC_DRAW);
-
-    // Enable the two vertex array attributes.
-    glEnableVertexAttribArray(0);  // Vertex position.
-    glEnableVertexAttribArray(1);  // Vertex color.
-
-    // Specify the location and format of the position portion of the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferId);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(VertexType), 0);
-
-    // Specify the location and format of the color portion of the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferId);
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(VertexType), (char*)NULL + (3 * sizeof(float)));
-
-    // Generate an ID for the index buffer.
-    glGenBuffers(1, &m_indexBufferId);
-
-    // Bind the index buffer and load the index data into it.
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBufferId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexCount* sizeof(uint16_t), indices, GL_STATIC_DRAW);
+    location = glGetUniformLocation(m_shaderProgram, "lightColor");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform4fv(location, 1, m_DrawFrameContext.m_lightColor);
 
     return true;
 }
 
-void OpenGLGraphicsManager::RenderBuffers()
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param)
 {
-    // Bind the vertex array object that stored all the information about the vertex and index buffers.
-    glBindVertexArray(m_vertexArrayId);
+    unsigned int location;
 
-    // Render the vertex buffer using the index buffer.
-    glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_SHORT, 0);
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniformMatrix4fv(location, 1, false, param);
+
+    return true;
+}
+
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Vector3f& param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform3fv(location, 1, param);
+
+    return true;
+}
+
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const float param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1f(location, param);
+
+    return true;
+}
+
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const GLint texture_index)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_shaderProgram, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+
+    if (texture_index < GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
+        glUniform1i(location, texture_index);
+    }
+
+    return true;
+}
+
+void OpenGLGraphicsManager::InitializeBuffers()
+{
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+
+    // Geometries
+    auto pGeometryNode = scene.GetFirstGeometryNode(); 
+    while (pGeometryNode)
+    {
+        if (pGeometryNode->Visible()) 
+        {
+            auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            assert(pGeometry);
+            auto pMesh = pGeometry->GetMesh().lock();
+            if (!pMesh) continue;
+
+            // Set the number of vertex properties.
+            auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
+
+            // Set the number of vertices in the vertex array.
+            auto vertexCount = pMesh->GetVertexCount();
+
+            // Allocate an OpenGL vertex array object.
+            GLuint vao;
+            glGenVertexArrays(1, &vao);
+
+            // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+            glBindVertexArray(vao);
+
+            GLuint buffer_id;
+
+            for (int32_t i = 0; i < vertexPropertiesCount; i++)
+            {
+                const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
+                auto v_property_array_data_size = v_property_array.GetDataSize();
+                auto v_property_array_data = v_property_array.GetData();
+
+                // Generate an ID for the vertex buffer.
+                glGenBuffers(1, &buffer_id);
+
+                // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+                glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+                glBufferData(GL_ARRAY_BUFFER, v_property_array_data_size, v_property_array_data, GL_STATIC_DRAW);
+
+                glEnableVertexAttribArray(i);
+
+                switch (v_property_array.GetDataType()) {
+                    case VertexDataType::kVertexDataTypeFloat1:
+                        glVertexAttribPointer(i, 1, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat2:
+                        glVertexAttribPointer(i, 2, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat3:
+                        glVertexAttribPointer(i, 3, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeFloat4:
+                        glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble1:
+                        glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble2:
+                        glVertexAttribPointer(i, 2, GL_DOUBLE, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble3:
+                        glVertexAttribPointer(i, 3, GL_DOUBLE, false, 0, 0);
+                        break;
+                    case VertexDataType::kVertexDataTypeDouble4:
+                        glVertexAttribPointer(i, 4, GL_DOUBLE, false, 0, 0);
+                        break;
+                    default:
+                        assert(0);
+                }
+
+                m_Buffers.push_back(buffer_id);
+            }
+
+            auto indexGroupCount = pMesh->GetIndexGroupCount();
+
+            GLenum  mode;
+            switch(pMesh->GetPrimitiveType())
+            {
+                case PrimitiveType::kPrimitiveTypePointList:
+                    mode = GL_POINTS;
+                    break;
+                case PrimitiveType::kPrimitiveTypeLineList:
+                    mode = GL_LINES;
+                    break;
+                case PrimitiveType::kPrimitiveTypeLineStrip:
+                    mode = GL_LINE_STRIP;
+                    break;
+                case PrimitiveType::kPrimitiveTypeTriList:
+                    mode = GL_TRIANGLES;
+                    break;
+                case PrimitiveType::kPrimitiveTypeTriStrip:
+                    mode = GL_TRIANGLE_STRIP;
+                    break;
+                case PrimitiveType::kPrimitiveTypeTriFan:
+                    mode = GL_TRIANGLE_FAN;
+                    break;
+                default:
+                    // ignore
+                    continue;
+            }
+
+            for (decltype(indexGroupCount) i = 0; i < indexGroupCount; i++)
+            {
+                // Generate an ID for the index buffer.
+                glGenBuffers(1, &buffer_id);
+
+                const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(i);
+                auto index_array_size = index_array.GetDataSize();
+                auto index_array_data = index_array.GetData();
+
+                // Bind the index buffer and load the index data into it.
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array_size, index_array_data, GL_STATIC_DRAW);
+
+                // Set the number of indices in the index array.
+                GLsizei indexCount = static_cast<GLsizei>(index_array.GetIndexCount());
+                GLenum type;
+                switch(index_array.GetIndexType())
+                {
+                    case IndexDataType::kIndexDataTypeInt8:
+                        type = GL_UNSIGNED_BYTE;
+                        break;
+                    case IndexDataType::kIndexDataTypeInt16:
+                        type = GL_UNSIGNED_SHORT;
+                        break;
+                    case IndexDataType::kIndexDataTypeInt32:
+                        type = GL_UNSIGNED_INT;
+                        break;
+                    default:
+                        // not supported by OpenGL
+                        cerr << "Error: Unsupported Index Type " << index_array << endl;
+                        cerr << "Mesh: " << *pMesh << endl;
+                        cerr << "Geometry: " << *pGeometry << endl;
+                        continue;
+                }
+
+                m_Buffers.push_back(buffer_id);
+
+                size_t material_index = index_array.GetMaterialIndex();
+                std::string material_key = pGeometryNode->GetMaterialRef(material_index);
+                auto material = scene.GetMaterial(material_key);
+                if (material) {
+                    auto color = material->GetBaseColor();
+                    if (color.ValueMap) {
+                        auto texture = color.ValueMap->GetTextureImage();
+                        auto it = m_TextureIndex.find(material_key);
+                        if (it == m_TextureIndex.end()) {
+                            GLuint texture_id;
+                            glGenTextures(1, &texture_id);
+                            glActiveTexture(GL_TEXTURE0 + texture_id);
+                            glBindTexture(GL_TEXTURE_2D, texture_id);
+                            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 
+                                    0, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+                            m_TextureIndex[color.ValueMap->GetName()] = texture_id;
+                            m_Textures.push_back(texture_id);
+                        }
+                    }
+                }
+
+                DrawBatchContext& dbc = *(new DrawBatchContext);
+                dbc.vao     = vao;
+                dbc.mode    = mode;
+                dbc.type    = type;
+                dbc.count  = indexCount;
+                dbc.transform = pGeometryNode->GetCalculatedTransform();
+                dbc.material = material;
+                m_DrawBatchContext.push_back(std::move(dbc));
+            }
+        }
+
+        pGeometryNode = scene.GetNextGeometryNode();
+    }
 
     return;
 }
 
-void OpenGLGraphicsManager::CalculateCameraPosition()
+void OpenGLGraphicsManager::RenderBuffers()
 {
-    Vector3f up, position, lookAt;
-    float yaw, pitch, roll;
-    Matrix4X4f rotationMatrix;
+    static float rotateAngle = 0.0f;
 
+    // Update world matrix to rotate the model
+    rotateAngle += PI / 360;
+    //Matrix4X4f rotationMatrixY;
+    Matrix4X4f rotationMatrixZ;
+    //MatrixRotationY(rotationMatrixY, rotateAngle);
+    MatrixRotationZ(rotationMatrixZ, rotateAngle);
+    //MatrixMultiply(m_DrawFrameContext.m_worldMatrix, rotationMatrixZ, rotationMatrixY);
+    m_DrawFrameContext.m_worldMatrix = rotationMatrixZ;
 
-    // Setup the vector that points upwards.
-    up.x = 0.0f;
-    up.y = 1.0f;
-    up.z = 0.0f;
+    // Generate the view matrix based on the camera's position.
+    CalculateCameraMatrix();
+    CalculateLights();
 
-    // Setup the position of the camera in the world.
-    position.x = m_positionX;
-    position.y = m_positionY;
-    position.z = m_positionZ;
+    SetPerFrameShaderParameters();
 
-    // Setup where the camera is looking by default.
-    lookAt.x = 0.0f;
-    lookAt.y = 0.0f;
-    lookAt.z = 1.0f;
+    for (auto dbc : m_DrawBatchContext)
+    {
+        // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+        glUseProgram(m_shaderProgram);
+        SetPerBatchShaderParameters("modelMatrix", *dbc.transform);
+        glBindVertexArray(dbc.vao);
 
-    // Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
-    pitch = m_rotationX * 0.0174532925f;
-    yaw   = m_rotationY * 0.0174532925f;
-    roll  = m_rotationZ * 0.0174532925f;
+        /* well, we have different material for each index buffer so we can not draw them together
+         * in future we should group indicies according to its material and draw them together
+        auto indexBufferCount = dbc.counts.size();
+        const GLvoid ** pIndicies = new const GLvoid*[indexBufferCount];
+        memset(pIndicies, 0x00, sizeof(GLvoid*) * indexBufferCount);
+        // Render the vertex buffer using the index buffer.
+        glMultiDrawElements(dbc.mode, dbc.counts.data(), dbc.type, pIndicies, indexBufferCount);
+        delete[] pIndicies;
+        */
 
-    // Create the rotation matrix from the yaw, pitch, and roll values.
-    MatrixRotationYawPitchRoll(rotationMatrix, yaw, pitch, roll);
+        if (dbc.material) {
+            Color color = dbc.material->GetBaseColor();
+            if (color.ValueMap) {
+                SetPerBatchShaderParameters("defaultSampler", m_TextureIndex[color.ValueMap->GetName()]);
+                // set this to tell shader to use texture
+                SetPerBatchShaderParameters("diffuseColor", Vector3f(-1.0f));
+            } else {
+                SetPerBatchShaderParameters("diffuseColor", color.Value.rgb);
+            }
 
-    // Transform the lookAt and up vector by the rotation matrix so the view is correctly rotated at the origin.
-    TransformCoord(lookAt, rotationMatrix);
-    TransformCoord(up, rotationMatrix);
+            color = dbc.material->GetSpecularColor();
+            SetPerBatchShaderParameters("specularColor", color.Value.rgb);
 
-    // Translate the rotated camera position to the location of the viewer.
-    lookAt.x = position.x + lookAt.x;
-    lookAt.y = position.y + lookAt.y;
-    lookAt.z = position.z + lookAt.z;
+            Parameter param = dbc.material->GetSpecularPower();
+            SetPerBatchShaderParameters("specularPower", param.Value);
+        }
 
-    // Finally create the view matrix from the three updated vectors.
-    BuildViewMatrix(m_viewMatrix, position, lookAt, up);
+        glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+    }
+
+    return;
+}
+
+void OpenGLGraphicsManager::CalculateCameraMatrix()
+{
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pCameraNode = scene.GetFirstCameraNode();
+    if (pCameraNode) {
+        m_DrawFrameContext.m_viewMatrix = *pCameraNode->GetCalculatedTransform();
+        InverseMatrix4X4f(m_DrawFrameContext.m_viewMatrix);
+    }
+    else {
+        // use default build-in camera
+        Vector3f position = { 0, -5, 0 }, lookAt = { 0, 0, 0 }, up = { 0, 0, 1 };
+        BuildViewMatrix(m_DrawFrameContext.m_viewMatrix, position, lookAt, up);
+    }
+
+    float fieldOfView = PI / 2.0f;
+    float nearClipDistance = 1.0f;
+    float farClipDistance = 100.0f;
+
+    if (pCameraNode) {
+        auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
+        // Set the field of view and screen aspect ratio.
+        fieldOfView = dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)->GetFov();
+        nearClipDistance = pCamera->GetNearClipDistance();
+        farClipDistance = pCamera->GetFarClipDistance();
+    }
+
+    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+
+    float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
+
+    // Build the perspective projection matrix.
+    BuildPerspectiveFovRHMatrix(m_DrawFrameContext.m_projectionMatrix, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+}
+
+void OpenGLGraphicsManager::CalculateLights()
+{
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pLightNode = scene.GetFirstLightNode();
+    if (pLightNode) {
+        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f };
+        TransformCoord(m_DrawFrameContext.m_lightPosition, *pLightNode->GetCalculatedTransform());
+
+        auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
+        if (pLight) {
+            m_DrawFrameContext.m_lightColor = pLight->GetColor().Value;
+        }
+    }
+    else {
+        // use default build-in light 
+        m_DrawFrameContext.m_lightPosition = { -1.0f, -5.0f, 0.0f};
+        m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+    }
 }
 
 bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char* fsFilename)
@@ -417,7 +653,8 @@ bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char*
 
     // Bind the shader input variables.
     glBindAttribLocation(m_shaderProgram, 0, "inputPosition");
-    glBindAttribLocation(m_shaderProgram, 1, "inputColor");
+    glBindAttribLocation(m_shaderProgram, 1, "inputNormal");
+    glBindAttribLocation(m_shaderProgram, 2, "inputUV");
 
     // Link the shader program.
     glLinkProgram(m_shaderProgram);

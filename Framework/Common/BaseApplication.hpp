@@ -15,17 +15,20 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
+        virtual void SetCommandLineParameters(int argc, char** argv);
+
         virtual bool IsQuit();
 
         inline GfxConfiguration& GetConfiguration() { return m_Config; };
 
-    protected:
         virtual void OnDraw() {};
 
     protected:
         // Flag if need quit the main loop of the application
-        static bool m_bQuit;
-        GfxConfiguration m_Config;
+        static bool         m_bQuit;
+        GfxConfiguration    m_Config;
+        int                 m_nArgC;
+        char**              m_ppArgV;
 
     private:
         // hide the default construct to enforce a configuration

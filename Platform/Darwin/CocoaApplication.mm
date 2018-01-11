@@ -6,10 +6,8 @@
 
 using namespace My;
 
-int CocoaApplication::Initialize()
+void CocoaApplication::CreateWindow()
 {
-    int result = 0;
-
     [NSApplication  sharedApplication];
 
     // Menu
@@ -39,6 +37,15 @@ int CocoaApplication::Initialize()
     [m_pWindow makeKeyAndOrderFront:nil];
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
+}
+
+int CocoaApplication::Initialize()
+{
+    int result = 0;
+
+    CreateWindow();
+
+    result = BaseApplication::Initialize();
 
     return result;
 }
@@ -46,10 +53,12 @@ int CocoaApplication::Initialize()
 void CocoaApplication::Finalize()
 {
     [m_pWindow release];
+    BaseApplication::Finalize();
 }
 
 void CocoaApplication::Tick()
 {
+    BaseApplication::Tick();
     NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
     untilDate:nil
     inMode:NSDefaultRunLoopMode

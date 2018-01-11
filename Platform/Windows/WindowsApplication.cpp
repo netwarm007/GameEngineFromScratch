@@ -3,21 +3,11 @@
 
 using namespace My;
 
-int My::WindowsApplication::Initialize()
+void WindowsApplication::CreateMainWindow()
 {
-    int result;
-
-	// first call base class initialization
-    result = BaseApplication::Initialize();
-
-    if (result != 0)
-        exit(result);
-
     // get the HINSTANCE of the Console Program
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
-    // the handle for the window, filled by a function
-    HWND hWnd;
     // this struct holds information for the window class
     WNDCLASSEX wc;
 
@@ -37,7 +27,7 @@ int My::WindowsApplication::Initialize()
     RegisterClassEx(&wc);
 
     // create the window and use the result as the handle
-    hWnd = CreateWindowEx(0,
+    m_hWnd = CreateWindowEx(0,
                           _T("GameEngineFromScratch"),      // name of the window class
                           m_Config.appName,                 // title of the window
                           WS_OVERLAPPEDWINDOW,              // window style
@@ -51,19 +41,34 @@ int My::WindowsApplication::Initialize()
                           this);                            // pass pointer to current object
 
     // display the window on the screen
-    ShowWindow(hWnd, SW_SHOW);
+    ShowWindow(m_hWnd, SW_SHOW);
 
-    m_hWnd = hWnd;
+}
+
+int WindowsApplication::Initialize()
+{
+    int result;
+
+    CreateMainWindow();
+
+	// first call base class initialization
+    result = BaseApplication::Initialize();
+
+    if (result != 0)
+        exit(result);
 
     return result;
 }
 
-void My::WindowsApplication::Finalize()
+void WindowsApplication::Finalize()
 {
+    BaseApplication::Finalize();
 }
 
-void My::WindowsApplication::Tick()
+void WindowsApplication::Tick()
 {
+    BaseApplication::Tick();
+
     // this struct holds Windows event messages
     MSG msg;
 
@@ -80,7 +85,7 @@ void My::WindowsApplication::Tick()
 }
 
 // this is the main message handler for the program
-LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     WindowsApplication* pThis;
     if (message == WM_NCCREATE)
@@ -102,21 +107,25 @@ LRESULT CALLBACK My::WindowsApplication::WindowProc(HWND hWnd, UINT message, WPA
     // sort through and find what code to run for the message given
     switch(message)
     {
-    case WM_KEYDOWN:
-        {
-            // we will replace this with input manager
-            m_bQuit = true;
-        } 
-        break;
+        case WM_PAINT:
+            {
+                g_pApp->OnDraw();
+            }
+            break;
+        case WM_KEYDOWN:
+            {
+                // we will replace this with input manager
+                m_bQuit = true;
+            } 
+            break;
 
-        // this message is read when the window is closed
-    case WM_DESTROY:
-        {
-            // close the application entirely
-            PostQuitMessage(0);
-            m_bQuit = true;
-            return 0;
-        }
+            // this message is read when the window is closed
+        case WM_DESTROY:
+            {
+                // close the application entirely
+                PostQuitMessage(0);
+                m_bQuit = true;
+            }
     }
 
     // Handle any messages the switch statement didn't

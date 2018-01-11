@@ -1,14 +1,12 @@
 #pragma once
-#include <memory>
-#include <string>
 #include "Interface.hpp"
-#include "SceneNode.hpp"
+#include "Scene.hpp"
 
 namespace My {
     Interface SceneParser
     {
     public:
-        virtual std::unique_ptr<BaseSceneNode> Parse(const std::string& buf) = 0;
+        virtual std::unique_ptr<Scene> Parse(const std::string& buf) = 0;
     };
 }
 

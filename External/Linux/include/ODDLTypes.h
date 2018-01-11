@@ -66,6 +66,8 @@
 #include <cstdlib>
 
 
+using namespace std;
+
 namespace ODDL
 {
 	#define restrict __restrict
@@ -81,7 +83,7 @@ namespace ODDL
 	typedef unsigned int			unsigned_int32;
 
 	typedef int64_t					int64;
-	typedef uint64_t			unsigned_int64;
+	typedef uint64_t                unsigned_int64;
 
 	#if defined(_WIN64)
 

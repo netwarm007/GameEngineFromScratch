@@ -9,23 +9,55 @@ using namespace std;
 
 namespace My {
     MemoryManager* g_pMemoryManager = new MemoryManager();
+    AssetLoader*   g_pAssetLoader   = new AssetLoader();
+}
+
+template<typename Key, typename T>
+static ostream& operator<<(ostream& out, unordered_map<Key, T> map)
+{
+    for (auto p : map)
+    {
+        out << *p.second << endl;
+    }
+
+    return out;
 }
 
 int main(int , char** )
 {
     g_pMemoryManager->Initialize();
+    g_pAssetLoader->Initialize();
 
-    AssetLoader asset_loader;
-    string ogex_text = asset_loader.SyncOpenAndReadTextFileToString("Scene/Example.ogex");
+    string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/Example.ogex");
 
     OgexParser* ogex_parser = new OgexParser ();
-    unique_ptr<BaseSceneNode> root_node = ogex_parser->Parse(ogex_text);
+    unique_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);
     delete ogex_parser;
 
-    cout << *root_node << endl;
+    cout << "Dump of Scene Graph" << endl;
+    cout << "---------------------------" << endl;
+    cout << *pScene->SceneGraph << endl;
 
+    cout << "Dump of Cameras" << endl;
+    cout << "---------------------------" << endl;
+    cout << pScene->Cameras << endl;
+
+    cout << "Dump of Lights" << endl;
+    cout << "---------------------------" << endl;
+    cout << pScene->Lights  << endl;
+
+    cout << "Dump of Geometries" << endl;
+    cout << "---------------------------" << endl;
+    cout << pScene->Geometries << endl;
+
+    cout << "Dump of Materials" << endl;
+    cout << "---------------------------" << endl;
+    cout << pScene->Materials << endl;
+
+    g_pAssetLoader->Finalize();
     g_pMemoryManager->Finalize();
 
+    delete g_pAssetLoader;
     delete g_pMemoryManager;
 
     return 0;

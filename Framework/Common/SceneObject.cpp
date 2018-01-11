@@ -169,8 +169,6 @@ namespace My {
 		out << static_cast<const BaseSceneObject&>(obj) << std::endl;
 		out << "Color: " << obj.m_LightColor << std::endl;
 		out << "Intensity: " << obj.m_fIntensity << std::endl;
-		out << "Near Clip Distance: " << obj.m_fNearClipDistance << std::endl;
-		out << "Far Clip Distance: " << obj.m_fFarClipDistance << std::endl;
 		out << "Cast Shadows: " << obj.m_bCastShadows << std::endl;
 
 		return out;
@@ -190,6 +188,14 @@ namespace My {
 		out << "Light Type: Spot" << std::endl;
 		out << "Cone Angle: " << obj.m_fConeAngle << std::endl;
 		out << "Penumbra Angle: " << obj.m_fPenumbraAngle << std::endl;
+
+		return out;
+	}
+
+	std::ostream& operator<<(std::ostream& out, const SceneObjectInfiniteLight& obj)
+	{
+		out << static_cast<const SceneObjectLight&>(obj) << std::endl;
+		out << "Light Type: Infinite" << std::endl;
 
 		return out;
 	}
@@ -233,7 +239,7 @@ namespace My {
 
     float DefaultAttenFunc(float intensity, float distance)
     {
-        return intensity / (1 + distance);
+        return intensity / pow(1 + distance, 2.0f);
     }
 
 }

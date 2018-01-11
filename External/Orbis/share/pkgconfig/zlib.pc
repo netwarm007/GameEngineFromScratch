@@ -1,0 +1,13 @@
+prefix=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External
+exec_prefix=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External
+libdir=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External/Orbis/lib
+sharedlibdir=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External/Orbis/lib
+includedir=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External/Orbis/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.11
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

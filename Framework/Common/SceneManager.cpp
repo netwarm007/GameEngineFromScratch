@@ -23,13 +23,38 @@ void SceneManager::Tick()
 {
 }
 
-void SceneManager::LoadOgexScene(const char* scene_file_name)
+int SceneManager::LoadScene(const char* scene_file_name)
 {
-    AssetLoader asset_loader;
-    string ogex_text = asset_loader.SyncOpenAndReadTextFileToString(scene_file_name);
-
-    OgexParser ogex_parser;
-    m_RootNode = ogex_parser.Parse(ogex_text);
+    // now we only has ogex scene parser, call it directly
+    if(LoadOgexScene(scene_file_name)) {
+        m_pScene->LoadResource();
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
 
+bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name)
+{
+    string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString(ogex_scene_file_name);
+
+    if (ogex_text.empty()) {
+        return false;
+    }
+
+    OgexParser ogex_parser;
+    m_pScene = ogex_parser.Parse(ogex_text);
+
+    if (!m_pScene) {
+        return false;
+    }
+
+    return true;
+}
+
+const Scene& SceneManager::GetSceneForRendering()
+{
+    return *m_pScene;
+}
 

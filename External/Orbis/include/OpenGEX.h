@@ -499,6 +499,7 @@ namespace OGEX
             ~LightNodeStructure();
 
             const ObjectStructure *GetObjectStructure(void) const;
+            bool GetShadowFlag(void) const;
 
             bool ValidateProperty(const DataDescription *dataDescription, const String& identifier, DataType *type, void **value);
             bool ValidateSubstructure(const DataDescription *dataDescription, const Structure *structure) const;

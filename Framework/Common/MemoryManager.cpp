@@ -34,13 +34,12 @@ namespace My {
 
     size_t*        MemoryManager::m_pBlockSizeLookup;
     Allocator*     MemoryManager::m_pAllocators;
+    bool           MemoryManager::m_bInitialized = false;
 }
 
 int My::MemoryManager::Initialize()
 {
-    // one-time initialization
-    static bool s_bInitialized = false;
-    if (!s_bInitialized) {
+    if (!m_bInitialized) {
         // initialize block size lookup table
         m_pBlockSizeLookup = new size_t[kMaxBlockSize + 1];
         size_t j = 0;
@@ -55,7 +54,7 @@ int My::MemoryManager::Initialize()
             m_pAllocators[i].Reset(kBlockSizes[i], kPageSize, kAlignment);
         }
 
-        s_bInitialized = true;
+        m_bInitialized = true;
     }
 
     return 0;
@@ -65,6 +64,7 @@ void My::MemoryManager::Finalize()
 {
     delete[] m_pAllocators;
     delete[] m_pBlockSizeLookup;
+    m_bInitialized = false;
 }
 
 void My::MemoryManager::Tick()
@@ -106,10 +106,12 @@ void* My::MemoryManager::Allocate(size_t size, size_t alignment)
 
 void My::MemoryManager::Free(void* p, size_t size)
 {
-    Allocator* pAlloc = LookUpAllocator(size);
-    if (pAlloc)
-        pAlloc->Free(p);
-    else
-        free(p);
+    if (m_bInitialized) {
+        Allocator* pAlloc = LookUpAllocator(size);
+        if (pAlloc)
+            pAlloc->Free(p);
+        else
+            free(p);
+    }
 }
 
