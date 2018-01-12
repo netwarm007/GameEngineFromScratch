@@ -77,9 +77,8 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
                 looping = false;
             }
             fullPath.append(name);
-#ifdef DEBUG
             fprintf(stderr, "Trying to open %s\n", fullPath.c_str());
-#endif
+
             switch(mode) {
                 case MY_OPEN_TEXT:
                 fp = fopen(fullPath.c_str(), "r");

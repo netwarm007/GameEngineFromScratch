@@ -23,44 +23,31 @@ int BaseApplication::Initialize()
         cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cerr << "Success";
+    cerr << "Success" << endl;
 
     cerr << "Initialize Asset Loader: ";
 	if ((ret = g_pAssetLoader->Initialize()) != 0) {
         cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cerr << "Success";
+    cerr << "Success" << endl;
 
     cerr << "Initialize Scene Manager: ";
 	if ((ret = g_pSceneManager->Initialize()) != 0) {
         cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cerr << "Success";
-
-    string scene_file_name = "Scene/test.ogex";
-    if (m_nArgC > 1) {
-        scene_file_name = m_ppArgV[1];
-    }
-
-    cerr << "Load Scene(" << scene_file_name << "): ";
-    if ((ret = g_pSceneManager->LoadScene(scene_file_name.c_str())) != 0) {
-        cerr << "Failed. err = " << ret;
-        return ret;
-    }
-    cerr << "Success";
+    cerr << "Success" << endl;
 
     cerr << "Initialize Graphics Manager: ";
 	if ((ret = g_pGraphicsManager->Initialize()) != 0) {
         cerr << "Failed. err = " << ret;
 		return ret;
 	}
-    cerr << "Success";
+    cerr << "Success" << endl;
 
 	return ret;
 }
-
 
 // Finalize all sub modules and clean up all runtime temporary files.
 void BaseApplication::Finalize()
@@ -91,4 +78,25 @@ bool BaseApplication::IsQuit()
 {
 	return m_bQuit;
 }
+
+int BaseApplication::LoadScene()
+{
+    int ret;
+
+    string scene_file_name = "Scene/test.ogex";
+    if (m_nArgC > 1) {
+        scene_file_name = m_ppArgV[1];
+    }
+
+    cerr << "Load Scene(" << scene_file_name << "): ";
+    if ((ret = g_pSceneManager->LoadScene(scene_file_name.c_str())) != 0) {
+        cerr << "Failed. err = " << ret;
+        return ret;
+    }
+
+    cerr << "Success";
+
+    return 0;
+}
+
 

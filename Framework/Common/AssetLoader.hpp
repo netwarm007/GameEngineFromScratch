@@ -54,11 +54,14 @@ namespace My {
         {
             std::string result;
             Buffer buffer = SyncOpenAndReadText(fileName);
-            char* content = reinterpret_cast<char*>(buffer.GetData());
-
-            if (content)
+            if (buffer.GetDataSize())
             {
-                result = std::string(std::move(content));
+                char* content = reinterpret_cast<char*>(buffer.GetData());
+
+                if (content)
+                {
+                    result = std::string(std::move(content));
+                }
             }
 
             return result;
