@@ -424,7 +424,9 @@ namespace My {
 
     inline void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix)
     {
-        ispc::Transform(vector, matrix);
+		Vector4f tmp (vector, 1.0f);
+        ispc::Transform(tmp, matrix);
+		vector.xyz = tmp.xyz;
     }
 
     inline void Transform(Vector4f& vector, const Matrix4X4f& matrix)

@@ -5,18 +5,24 @@ struct a2v
 {
 	float3 Position		: POSITION;
 	float3 Normal		: NORMAL;
-	float4 Tangent		: TANGENT;
-	float2 TextureUV	: TEXCOORD;
+	//float2 TextureUV	: TEXCOORD;
 };
 
-cbuffer Constants : register(b0)
+cbuffer PerFrameConstants : register(b0)
 {
-	float4x4 m_modelView;
-	float4x4 m_modelViewProjection;
+    float4x4 m_worldMatrix;
+	float4x4 m_viewMatrix;
+	float4x4 m_projectionMatrix;
 	float4   m_lightPosition;
 	float4   m_lightColor;
-	float4   m_ambientColor;
-	float4   m_lightAttenuation;
+};
+
+cbuffer PerBatchConstants : register(b1)
+{
+    float3 ambientColor;
+    float3 diffuseColor;
+    float3 specularColor;
+    float specularPower;
 };
 
 #endif // !__STDCBUFFER_H__

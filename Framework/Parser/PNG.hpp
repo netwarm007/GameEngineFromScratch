@@ -188,11 +188,11 @@ namespace My {
                                 std::cout << "IDAT (Image Data Start)" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
-                                size_t compressed_data_size = endian_net_unsigned_int(pChunkHeader->Length);
+                                uint32_t compressed_data_size = endian_net_unsigned_int(pChunkHeader->Length);
 
                                 std::cout << "Compressed Data Length: " << compressed_data_size << std::endl;
 
-                                const size_t kChunkSize = 256 * 1024;
+                                const uint32_t kChunkSize = 256 * 1024;
                                 z_stream strm;
                                 strm.zalloc = Z_NULL;
                                 strm.zfree  = Z_NULL;
@@ -214,7 +214,7 @@ namespace My {
                                 int current_col = -1;   // -1 means we need read filter type
 
                                 do {
-                                    size_t next_in_size = (compressed_data_size > kChunkSize) ? kChunkSize : compressed_data_size;
+                                    uint32_t next_in_size = (compressed_data_size > kChunkSize) ? kChunkSize : compressed_data_size;
                                     if (next_in_size == 0) break;
                                     compressed_data_size -= next_in_size;
                                     strm.next_in = const_cast<Bytef*>(pIn); 

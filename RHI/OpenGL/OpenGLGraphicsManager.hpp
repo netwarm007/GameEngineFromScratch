@@ -20,17 +20,15 @@ namespace My {
 
         virtual void Draw();
 
-    private:
+    protected:
         bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
         bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
         bool SetPerBatchShaderParameters(const char* paramName, const float param);
-        bool SetPerBatchShaderParameters(const char* paramName, const GLint texture_index);
+        bool SetPerBatchShaderParameters(const char* paramName, const int param);
         bool SetPerFrameShaderParameters();
 
         void InitializeBuffers();
         void RenderBuffers();
-        void CalculateCameraMatrix();
-        void CalculateLights();
         bool InitializeShader(const char* vsFilename, const char* fsFilename);
 
     private:
