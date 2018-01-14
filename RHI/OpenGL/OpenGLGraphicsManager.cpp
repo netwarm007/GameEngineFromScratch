@@ -100,6 +100,12 @@ int OpenGLGraphicsManager::Initialize()
 {
     int result;
 
+    result = GraphicsManager::Initialize();
+
+    if (result) {
+        return result;
+    }
+
     result = gladLoadGL();
     if (!result) {
         cerr << "OpenGL load failed!" << endl;
@@ -121,10 +127,6 @@ int OpenGLGraphicsManager::Initialize()
             // Enable back face culling.
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
-
-            // Initialize the world/model matrix to the identity matrix.
-            BuildIdentityMatrix(m_DrawFrameContext.m_worldMatrix);
-
         }
 
         InitializeShader(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
@@ -153,20 +155,34 @@ void OpenGLGraphicsManager::Finalize()
     m_Buffers.clear();
     m_Textures.clear();
 
-    // Detach the vertex and fragment shaders from the program.
-    glDetachShader(m_shaderProgram, m_vertexShader);
-    glDetachShader(m_shaderProgram, m_fragmentShader);
+    if (m_shaderProgram) {
+        if (m_vertexShader)
+        {
+            // Detach the vertex shaders from the program.
+            glDetachShader(m_shaderProgram, m_vertexShader);
+            // Delete the vertex shaders.
+            glDeleteShader(m_vertexShader);
+        }
 
-    // Delete the vertex and fragment shaders.
-    glDeleteShader(m_vertexShader);
-    glDeleteShader(m_fragmentShader);
+        if (m_fragmentShader)
+        {
+            // Detach the fragment shaders from the program.
+            glDetachShader(m_shaderProgram, m_fragmentShader);
+            // Delete the fragment shaders.
+            glDeleteShader(m_fragmentShader);
+        }
 
-    // Delete the shader program.
-    glDeleteProgram(m_shaderProgram);
+        // Delete the shader program.
+        glDeleteProgram(m_shaderProgram);
+    }
+
+    GraphicsManager::Finalize();
 }
 
 void OpenGLGraphicsManager::Clear()
 {
+    GraphicsManager::Clear();
+
     // Set the color to clear the screen to.
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
@@ -175,6 +191,8 @@ void OpenGLGraphicsManager::Clear()
 
 void OpenGLGraphicsManager::Draw()
 {
+    GraphicsManager::Draw();
+
     // Render the model using the color shader.
     RenderBuffers();
 
@@ -473,17 +491,6 @@ void OpenGLGraphicsManager::InitializeBuffers()
 
 void OpenGLGraphicsManager::RenderBuffers()
 {
-    static float rotateAngle = 0.0f;
-
-    // Update world matrix to rotate the model
-    rotateAngle += PI / 360;
-    //Matrix4X4f rotationMatrixY;
-    Matrix4X4f rotationMatrixZ;
-    //MatrixRotationY(rotationMatrixY, rotateAngle);
-    MatrixRotationZ(rotationMatrixZ, rotateAngle);
-    //MatrixMultiply(m_DrawFrameContext.m_worldMatrix, rotationMatrixZ, rotationMatrixY);
-    m_DrawFrameContext.m_worldMatrix = rotationMatrixZ;
-
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
     CalculateLights();

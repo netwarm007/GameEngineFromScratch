@@ -39,14 +39,6 @@ namespace My {
         unsigned int m_shaderProgram;
         std::map<std::string, GLint> m_TextureIndex;
 
-        struct DrawFrameContext {
-            Matrix4X4f  m_worldMatrix;
-            Matrix4X4f  m_viewMatrix;
-            Matrix4X4f  m_projectionMatrix;
-            Vector3f    m_lightPosition;
-            Vector4f    m_lightColor;
-        };
-
         struct DrawBatchContext {
             GLuint  vao;
             GLenum  mode;
@@ -56,7 +48,6 @@ namespace My {
             std::shared_ptr<SceneObjectMaterial> material;
         };
 
-        DrawFrameContext    m_DrawFrameContext;
         std::vector<DrawBatchContext> m_DrawBatchContext;
         std::vector<GLuint> m_Buffers;
         std::vector<GLuint> m_Textures;
