@@ -66,8 +66,63 @@ void CocoaApplication::Tick()
 
     switch([(NSEvent *)event type])
     {
+        case NSEventTypeKeyUp:
+            NSLog(@"[CocoaApp] Key Up Event Received!");
+            if ([event modifierFlags] & NSEventModifierFlagNumericPad)
+            {
+                // arrow keys
+                NSString* theArrow = [event charactersIgnoringModifiers];
+                unichar keyChar = 0;
+                if ([theArrow length] == 1)
+                {
+                    keyChar = [theArrow characterAtIndex:0];
+                    if (keyChar == NSLeftArrowFunctionKey) {
+                        g_pInputManager->LeftArrowKeyUp();
+                        break;
+                    }
+                    if (keyChar == NSRightArrowFunctionKey) {
+                        g_pInputManager->RightArrowKeyUp();
+                        break;
+                    }
+                    if (keyChar == NSUpArrowFunctionKey) {
+                        g_pInputManager->UpArrowKeyUp();
+                        break;
+                    }
+                    if (keyChar == NSDownArrowFunctionKey) {
+                        g_pInputManager->DownArrowKeyUp();
+                        break;
+                    }
+                }
+            }
+            break;
         case NSEventTypeKeyDown:
-            NSLog(@"Key Down Event Received!");
+            NSLog(@"[CocoaApp] Key Down Event Received!");
+            if ([event modifierFlags] & NSEventModifierFlagNumericPad)
+            {
+                // arrow keys
+                NSString* theArrow = [event charactersIgnoringModifiers];
+                unichar keyChar = 0;
+                if ([theArrow length] == 1)
+                {
+                    keyChar = [theArrow characterAtIndex:0];
+                    if (keyChar == NSLeftArrowFunctionKey) {
+                        g_pInputManager->LeftArrowKeyDown();
+                        break;
+                    }
+                    if (keyChar == NSRightArrowFunctionKey) {
+                        g_pInputManager->RightArrowKeyDown();
+                        break;
+                    }
+                    if (keyChar == NSUpArrowFunctionKey) {
+                        g_pInputManager->UpArrowKeyDown();
+                        break;
+                    }
+                    if (keyChar == NSDownArrowFunctionKey) {
+                        g_pInputManager->DownArrowKeyDown();
+                        break;
+                    }
+                }
+            }
             break;
         default:
             break;
