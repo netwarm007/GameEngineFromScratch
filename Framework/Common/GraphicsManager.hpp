@@ -2,7 +2,6 @@
 #include "geommath.hpp"
 #include "Image.hpp"
 #include "IRuntimeModule.hpp"
-#include "geommath.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
@@ -17,6 +16,10 @@ namespace My {
 
         virtual void Clear();
         virtual void Draw();
+
+        // temporary. should be moved to scene manager and script engine (policy engine)
+        void WorldRotateX(float radians);
+        void WorldRotateY(float radians);
 
     protected:
         bool SetPerFrameShaderParameters();
