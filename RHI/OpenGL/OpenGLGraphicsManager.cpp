@@ -142,10 +142,6 @@ void OpenGLGraphicsManager::Finalize()
 
     m_DrawBatchContext.clear();
 
-    for (auto i = 0; i < m_Buffers.size() - 1; i++) { 
-        glDisableVertexAttribArray(i);
-    }
-
     for (auto buf : m_Buffers) {
         glDeleteBuffers(1, &buf);
     }
@@ -167,10 +163,6 @@ void OpenGLGraphicsManager::Finalize()
 
     // Delete the shader program.
     glDeleteProgram(m_shaderProgram);
-}
-
-void OpenGLGraphicsManager::Tick()
-{
 }
 
 void OpenGLGraphicsManager::Clear()

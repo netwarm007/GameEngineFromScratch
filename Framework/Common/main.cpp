@@ -16,6 +16,11 @@ int main(int argc, char** argv) {
 		return ret;
 	}
 
+	if ((ret = g_pApp->LoadScene()) != 0) {
+		printf("Load Scene failed, will exit now.");
+		return ret;
+	}
+
 	while (!g_pApp->IsQuit()) {
 		g_pApp->Tick();
 	}

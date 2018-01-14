@@ -42,7 +42,6 @@
 *.ogex filter=lfs diff=lfs merge=lfs -text
 *.ps filter=lfs diff=lfs merge=lfs -text
 *.vs filter=lfs diff=lfs merge=lfs -text
-*.ogex filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/Linux/lib filter=lfs diff=lfs merge=lfs -text
@@ -52,3 +51,4 @@ External/Darwin/lib/ filter=lfs diff=lfs merge=lfs -text
 External/FreeBSD/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/FreeBSD/bin/ filter=lfs diff=lfs merge=lfs -text
 External/Android/bin/ispc filter=lfs diff=lfs merge=lfs -text
+External/FreeBSD/bin/ispc filter=lfs diff=lfs merge=lfs -text

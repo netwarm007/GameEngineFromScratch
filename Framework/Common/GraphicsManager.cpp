@@ -1,5 +1,6 @@
 #include <iostream>
 #include "GraphicsManager.hpp"
+#include "SceneManager.hpp"
 #include "cbuffer.h"
 
 using namespace My;
@@ -17,6 +18,12 @@ void GraphicsManager::Finalize()
 
 void GraphicsManager::Tick()
 {
+    if (g_pSceneManager->IsSceneChanged())
+    {
+        cout << "Detected Scene Change, reinitialize Graphics Manager..." << endl;
+        Finalize();
+        Initialize();
+    }
 }
 
 void GraphicsManager::Clear()

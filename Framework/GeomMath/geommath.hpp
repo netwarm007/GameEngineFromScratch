@@ -237,7 +237,7 @@ namespace My {
     }
 
     template <typename T>
-    inline void DotProduct(T& result, const T* a, const T* b, size_t count)
+    inline void DotProduct(T& result, const T* a, const T* b, const size_t count)
     {
         T* _result = new T[count];
 
@@ -365,7 +365,6 @@ namespace My {
         for (int i = 0; i < Da; i++) {
             for (int j = 0; j < Dc; j++) {
                 DotProduct(result[i][j], matrix1[i], matrix2_transpose[j], Db);
-
             }
         }
 

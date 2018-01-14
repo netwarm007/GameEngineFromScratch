@@ -16,6 +16,7 @@ namespace My {
 
         int LoadScene(const char* scene_file_name);
 
+        bool IsSceneChanged();
         const Scene& GetSceneForRendering();
 
     protected:
@@ -23,6 +24,7 @@ namespace My {
 
     protected:
         std::unique_ptr<Scene>  m_pScene;
+        bool m_bDirtyFlag = false;
     };
 
     extern SceneManager*    g_pSceneManager;

@@ -16,8 +16,6 @@ namespace My {
         virtual int Initialize();
         virtual void Finalize();
 
-        virtual void Tick();
-
         virtual void Clear();
 
         virtual void Draw();
