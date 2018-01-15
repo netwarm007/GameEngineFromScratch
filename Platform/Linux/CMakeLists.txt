@@ -1,4 +1,7 @@
-add_executable(MyGameEngineOpenGL XcbApplication.cpp OpenGLApplication.cpp
+add_executable(MyGameEngineOpenGL 
+                XcbApplication.cpp 
+                OpenGLApplication.cpp
+                OpenGLApplicationConfig.cpp
 	${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_glx.c
     )
 find_library(XCB_LIBRARY xcb)
