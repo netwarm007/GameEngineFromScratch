@@ -112,10 +112,46 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
                 g_pApp->OnDraw();
             }
             break;
+        case WM_KEYUP:
+            {
+                switch(wParam)
+                {
+                    case VK_LEFT:
+                        g_pInputManager->LeftArrowKeyUp();
+                        break;
+                    case VK_RIGHT:
+                        g_pInputManager->RightArrowKeyUp();
+                        break;
+                    case VK_UP:
+                        g_pInputManager->UpArrowKeyUp();
+                        break;
+                    case VK_DOWN:
+                        g_pInputManager->DownArrowKeyUp();
+                        break;
+                    default:
+                        break;
+                }
+            } 
+            break;
         case WM_KEYDOWN:
             {
-                // we will replace this with input manager
-                m_bQuit = true;
+                switch(wParam)
+                {
+                    case VK_LEFT:
+                        g_pInputManager->LeftArrowKeyDown();
+                        break;
+                    case VK_RIGHT:
+                        g_pInputManager->RightArrowKeyDown();
+                        break;
+                    case VK_UP:
+                        g_pInputManager->UpArrowKeyDown();
+                        break;
+                    case VK_DOWN:
+                        g_pInputManager->DownArrowKeyDown();
+                        break;
+                    default:
+                        break;
+                }
             } 
             break;
 

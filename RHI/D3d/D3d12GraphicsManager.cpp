@@ -625,7 +625,7 @@ HRESULT D3d12GraphicsManager::CreateConstantBuffer()
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = kSizePerFrameConstantBuffer + kSizePerBatchConstantBuffer * kMaxSceneObjectCount;
+    resourceDesc.Width = kSizeConstantBufferPerFrame * kFrameCount;
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -764,6 +764,8 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
         SafeRelease(&pFactory);
         return hr;
     }
+
+    SafeRelease(&pFactory);
 
     m_pSwapChain = reinterpret_cast<IDXGISwapChain3*>(pSwapChain);
 
@@ -1053,6 +1055,8 @@ int  D3d12GraphicsManager::Initialize()
 
 void D3d12GraphicsManager::Finalize()
 {
+	WaitForPreviousFrame();
+
     SafeRelease(&m_pFence);
     for (auto p : m_Buffers) {
         SafeRelease(&p);
@@ -1063,13 +1067,14 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pRtvHeap);
     SafeRelease(&m_pDsvHeap);
     SafeRelease(&m_pCbvHeap);
+    SafeRelease(&m_pSamplerHeap);
     SafeRelease(&m_pRootSignature);
     SafeRelease(&m_pCommandQueue);
     SafeRelease(&m_pCommandAllocator);
 	SafeRelease(&m_pDepthStencilBuffer);
 	SafeRelease(&m_pTextureBuffer);
     for (uint32_t i = 0; i < kFrameCount; i++) {
-        SafeRelease(&m_pRenderTargets[kFrameCount]);
+        SafeRelease(&m_pRenderTargets[i]);
     }
     SafeRelease(&m_pSwapChain);
     SafeRelease(&m_pDev);

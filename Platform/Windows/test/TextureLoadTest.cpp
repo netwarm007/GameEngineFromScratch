@@ -2,9 +2,6 @@
 #include <tchar.h>
 #include "WindowsApplication.hpp"
 #include "D2d/D2dGraphicsManager.hpp"
-#include "MemoryManager.hpp"
-#include "AssetLoader.hpp"
-#include "SceneManager.hpp"
 #include "utility.hpp"
 #include "BMP.hpp"
 #include "JPEG.hpp"
@@ -44,6 +41,7 @@ namespace My {
     MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
     AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
     SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
+    InputManager*    g_pInputManager    = static_cast<InputManager*>(new InputManager);
 }
 
 int My::TestApplication::Initialize()
