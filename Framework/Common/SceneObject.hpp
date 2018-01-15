@@ -12,6 +12,7 @@
 #include "JPEG.hpp"
 #include "PNG.hpp"
 #include "BMP.hpp"
+#include "TGA.hpp"
 
 namespace My {
     ENUM(SceneObjectType) {
@@ -319,6 +320,11 @@ namespace My {
                     {
                         BmpParser bmp_parser;
                         m_pImage = std::make_shared<Image>(bmp_parser.Parse(buf));
+                    }
+                    else if (ext == ".tga")
+                    {
+                        TgaParser tga_parser;
+                        m_pImage = std::make_shared<Image>(tga_parser.Parse(buf));
                     }
                 }
             }
