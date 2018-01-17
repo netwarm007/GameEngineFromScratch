@@ -25,6 +25,9 @@ target_link_libraries(MyGameEngine
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${ZLIB_LIBRARY}
+        ${BULLET_COLLISION_LIBRARY}
+        ${BULLET_DYNAMICS_LIBRARY}
+        ${BULLET_LINEARMATH_LIBRARY}
         android
         native_app_glue
         EGL

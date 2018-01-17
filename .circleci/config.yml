@@ -23,6 +23,7 @@ jobs:
              ./build_crossguid.sh
              ./build_opengex.sh
              ./build_zlib.sh
+             ./build_bullet.sh
              ./build.sh
       - run:
           name: Test
@@ -53,6 +54,7 @@ jobs:
              ./build_crossguid.sh
              ./build_opengex.sh
              ./build_zlib.sh
+             ./build_bullet.sh
              ./build.sh
       - run:
           name: Test
