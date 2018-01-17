@@ -37,3 +37,7 @@ target_link_libraries(SceneLoadingTest Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRA
 __add_xg_platform_dependencies(SceneLoadingTest)
 add_test(NAME TEST_SceneLoading COMMAND SceneLoadingTest)
 
+add_executable(BulletTest BulletTest.cpp)
+target_link_libraries(BulletTest ${BULLET_COLLISION_LIBRARY} ${BULLET_DYNAMICS_LIBRARY} ${BULLET_LINEARMATH_LIBRARY})
+add_test(NAME TEST_Bullet COMMAND BulletTest)
+
