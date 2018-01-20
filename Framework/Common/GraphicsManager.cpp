@@ -26,10 +26,14 @@ void GraphicsManager::Tick()
         cout << "Detected Scene Change, reinitialize Graphics Manager..." << endl;
         Finalize();
         Initialize();
+        g_pSceneManager->NotifySceneIsRenderingQueued();
     }
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
     CalculateLights();
+
+    Clear();
+    Draw();
 }
 
 void GraphicsManager::Clear()

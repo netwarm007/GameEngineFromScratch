@@ -22,10 +22,6 @@ int main(int argc, char** argv) {
 	}
 
 	while (!g_pApp->IsQuit()) {
-        g_pMemoryManager->Tick();
-        g_pAssetLoader->Tick();
-        g_pSceneManager->Tick();
-        g_pGraphicsManager->Tick();
 		g_pApp->Tick();
 	}
 

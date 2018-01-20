@@ -970,9 +970,8 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 	}
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pGeometryNode = scene.GetFirstGeometryNode();
 	int32_t n = 0;
-    while(pGeometryNode)
+    for (pGeometryNode : scene.GeometryNodes)
     {
         if (pGeometryNode->Visible())
         {

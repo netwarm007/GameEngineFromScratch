@@ -7,7 +7,7 @@
 #include "GraphicsManager.hpp"
 #include "geommath.hpp"
 #include "glad/glad.h"
-#include "SceneObject.hpp"
+#include "SceneManager.hpp"
 
 namespace My {
     class OpenGLGraphicsManager : public GraphicsManager
@@ -42,7 +42,7 @@ namespace My {
             GLenum  mode;
             GLenum  type;
             GLsizei count;
-            std::shared_ptr<Matrix4X4f> transform;
+            std::shared_ptr<SceneGeometryNode> node;
             std::shared_ptr<SceneObjectMaterial> material;
         };
 

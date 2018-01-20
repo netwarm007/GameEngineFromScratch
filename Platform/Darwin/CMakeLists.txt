@@ -13,10 +13,6 @@ add_executable(MyGameEngineCocoa MACOSX_BUNDLE
     )
 target_link_libraries(MyGameEngineCocoa
         Common 
-        ${OPENGEX_LIBRARY} 
-        ${OPENDDL_LIBRARY} 
-        ${XG_LIBRARY} 
-        ${ZLIB_LIBRARY}
         ${COCOA_LIBRARY} 
         )
 __add_xg_platform_dependencies(MyGameEngineCocoa)
@@ -33,10 +29,6 @@ add_executable(MyGameEngineCocoaOpenGL MACOSX_BUNDLE
 target_link_libraries(MyGameEngineCocoaOpenGL 
         OpenGLRHI 
         Common 
-        ${OPENGEX_LIBRARY} 
-        ${OPENDDL_LIBRARY} 
-        ${XG_LIBRARY} 
-        ${ZLIB_LIBRARY}
         ${COCOA_LIBRARY} 
         ${OPENGL_LIBRARY}
         dl

@@ -25,8 +25,7 @@ int main(int, char**)
     btCollisionShape* fallShape = new btSphereShape(1.0f);
 
     // Create Rigid Body
-    btDefaultMotionState* groundMotionState = 
-        new btDefaultMotionState(btTransform(btQuaternion(0.0f, 0.0f, 0.0f, 1.0f), btVector3(0.0f, -1.0f, 0.0f)));
+    btDefaultMotionState* groundMotionState =        new btDefaultMotionState(btTransform(btQuaternion(0.0f, 0.0f, 0.0f, 1.0f), btVector3(0.0f, -1.0f, 0.0f)));
     btRigidBody::btRigidBodyConstructionInfo
         groundRigidBodyCI(0.0f, groundMotionState, groundShape, btVector3(0.0f, 0.0f, 0.0f));
     btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
