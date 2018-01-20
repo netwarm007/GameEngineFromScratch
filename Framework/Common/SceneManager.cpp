@@ -38,6 +38,11 @@ int SceneManager::LoadScene(const char* scene_file_name)
     }
 }
 
+void SceneManager::ResetScene()
+{
+    m_bDirtyFlag = true;
+}
+
 bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name)
 {
     string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString(ogex_scene_file_name);

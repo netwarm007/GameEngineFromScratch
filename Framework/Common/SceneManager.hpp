@@ -21,6 +21,8 @@ namespace My {
 
         const Scene& GetSceneForRendering();
 
+        void ResetScene();
+
     protected:
         bool LoadOgexScene(const char* ogex_scene_file_name);
 

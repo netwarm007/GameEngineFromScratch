@@ -14,11 +14,7 @@ int PhysicsManager::Initialize()
     m_btDispatcher = new btCollisionDispatcher(m_btCollisionConfiguration);
 
     // The actual physics solver
-    btSequentialImpulseConstraintSolver* m_btSolver = new btSequentialImpulseConstraintSolver;
-
-    // The world
-    m_btDynamicsWorld = new btDiscreteDynamicsWorld(m_btDispatcher, m_btBroadphase, m_btSolver, m_btCollisionConfiguration);
-    m_btDynamicsWorld->setGravity(btVector3(0.0f, 0.0f, -9.8f));
+    m_btSolver = new btSequentialImpulseConstraintSolver;
 
     return 0;
 }
@@ -28,7 +24,6 @@ void PhysicsManager::Finalize()
     // Clean up
     ClearRigidBodies();
 
-    delete m_btDynamicsWorld;
     delete m_btSolver;
     delete m_btDispatcher;
     delete m_btCollisionConfiguration;
@@ -138,6 +133,10 @@ void PhysicsManager::DeleteRigidBody(SceneGeometryNode& node)
 
 int PhysicsManager::CreateRigidBodies()
 {
+    // The world
+    m_btDynamicsWorld = new btDiscreteDynamicsWorld(m_btDispatcher, m_btBroadphase, m_btSolver, m_btCollisionConfiguration);
+    m_btDynamicsWorld->setGravity(btVector3(0.0f, 0.0f, -9.8f));
+
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
     // Geometries
@@ -165,8 +164,13 @@ void PhysicsManager::ClearRigidBodies()
     }
 
     for (auto shape : m_btCollisionShapes)
+    {
         delete shape;
+    }
 
+    m_btCollisionShapes.clear();
+
+    delete m_btDynamicsWorld;
 }
 
 Matrix4X4f PhysicsManager::GetRigidBodyTransform(void* rigidBody)

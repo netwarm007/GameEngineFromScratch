@@ -96,7 +96,7 @@ void CocoaApplication::Tick()
             }
             break;
         case NSEventTypeKeyDown:
-            NSLog(@"[CocoaApp] Key Down Event Received!");
+            NSLog(@"[CocoaApp] Key Down Event Received! keycode=%d", [event keyCode]);
             if ([event modifierFlags] & NSEventModifierFlagNumericPad)
             {
                 // arrow keys
@@ -121,6 +121,12 @@ void CocoaApplication::Tick()
                         g_pInputManager->DownArrowKeyDown();
                         break;
                     }
+                }
+            } else {
+                switch ([event keyCode])
+                {
+                    case 0x0F: // r key
+                        g_pInputManager->ResetKeyDown();
                 }
             }
             break;
