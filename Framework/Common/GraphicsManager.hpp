@@ -17,10 +17,6 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
-        // temporary. should be moved to scene manager and script engine (policy engine)
-        void WorldRotateX(float radians);
-        void WorldRotateY(float radians);
-
     protected:
         bool SetPerFrameShaderParameters();
         bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);

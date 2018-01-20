@@ -25,7 +25,6 @@ void InputManager::UpArrowKeyDown()
 #ifdef DEBUG
     cerr << "[InputManager] Up Arrow Key Down!" << endl;
 #endif
-    g_pGraphicsManager->WorldRotateX(PI / 60.0f);
 }
 
 void InputManager::UpArrowKeyUp()
@@ -40,7 +39,6 @@ void InputManager::DownArrowKeyDown()
 #ifdef DEBUG
     cerr << "[InputManager] Down Arrow Key Down!" << endl;
 #endif
-    g_pGraphicsManager->WorldRotateX(-PI / 60.0f);
 }
 
 void InputManager::DownArrowKeyUp()
@@ -55,7 +53,6 @@ void InputManager::LeftArrowKeyDown()
 #ifdef DEBUG
     cerr << "[InputManager] Left Arrow Key Down!" << endl;
 #endif
-    g_pGraphicsManager->WorldRotateY(-PI / 60.0f);
 }
 
 void InputManager::LeftArrowKeyUp()
@@ -70,7 +67,6 @@ void InputManager::RightArrowKeyDown()
 #ifdef DEBUG
     cerr << "[InputManager] Right Arrow Key Down!" << endl;
 #endif
-    g_pGraphicsManager->WorldRotateY(PI / 60.0f);
 }
 
 void InputManager::RightArrowKeyUp()

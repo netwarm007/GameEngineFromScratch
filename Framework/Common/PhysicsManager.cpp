@@ -57,14 +57,6 @@ void PhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjectG
                     new btDefaultMotionState(
                             btTransform(
                                 btQuaternion(0.0f, 0.0f, 0.0f, 1.0f), 
-                                /* we should not use this because it contains not only rotation but
-                                   also scale, which my makes bullet not working properly
-
-                                btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
-                                            trans->data[0][1], trans->data[1][1], trans->data[2][1],
-                                            trans->data[0][2], trans->data[1][2], trans->data[2][2]
-                                            ), 
-                                */
                                 btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2])
                                 )
                             );
@@ -106,7 +98,7 @@ void PhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjectG
                     new btDefaultMotionState(
                             btTransform(
                                 btQuaternion(0.0f, 0.0f, 0.0f, 1.0f), 
-                                btVector3(0.0f, 0.0f, 0.0f)
+                                btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2])
                                 )
                             );
                 btRigidBody::btRigidBodyConstructionInfo
@@ -196,3 +188,4 @@ Matrix4X4f PhysicsManager::GetRigidBodyTransform(void* rigidBody)
 
     return result;
 }
+

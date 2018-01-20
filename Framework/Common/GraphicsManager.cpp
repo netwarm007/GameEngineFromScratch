@@ -159,17 +159,3 @@ void GraphicsManager::RenderBuffers()
     cout << "[RHI] GraphicsManager::RenderBuffers()" << endl;
 }
 
-void GraphicsManager::WorldRotateX(float radians)
-{
-    Matrix4X4f rotationMatrix;
-    MatrixRotationX(rotationMatrix, radians);
-    m_DrawFrameContext.m_worldMatrix = m_DrawFrameContext.m_worldMatrix * rotationMatrix;
-}
-
-void GraphicsManager::WorldRotateY(float radians)
-{
-    Matrix4X4f rotationMatrix;
-    MatrixRotationY(rotationMatrix, radians);
-    m_DrawFrameContext.m_worldMatrix = m_DrawFrameContext.m_worldMatrix * rotationMatrix;
-}
-
