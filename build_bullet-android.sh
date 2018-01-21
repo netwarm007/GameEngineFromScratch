@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+
 git submodule update --init External/src/bullet
 mkdir -p External/build/bullet
 cd External/build/bullet
