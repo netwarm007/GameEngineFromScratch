@@ -500,8 +500,8 @@ void OpenGLGraphicsManager::RenderBuffers()
             // the geometry has rigid body bounded, we blend the simlation result here.
             Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
 
-            // replace the translation part of the matrix with simlation result directly
-            memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
+            // reset the translation part of the matrix
+            memcpy(trans[3], Vector3f(0.0f, 0.0f, 0.0f), sizeof(float) * 3);
 
             // apply the rotation part of the simlation result
             Matrix4X4f rotation;
@@ -510,6 +510,10 @@ void OpenGLGraphicsManager::RenderBuffers()
             memcpy(rotation[1], simulated_result[1], sizeof(float) * 3);
             memcpy(rotation[2], simulated_result[2], sizeof(float) * 3);
             trans = trans * rotation;
+
+            // replace the translation part of the matrix with simlation result directly
+            memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
+
         }
 
         SetPerBatchShaderParameters("modelMatrix", trans);
