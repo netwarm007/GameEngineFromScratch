@@ -63,7 +63,7 @@ int OpenGLESApplication::Initialize()
      * ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID. */
     eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
     surface = eglCreateWindowSurface(display, config, m_pApp->window, NULL);
-    EGLint contextAttributes[] = { EGL_CONTEXT_CLIENT_VERSIOn, 3, EGL_NONE };
+    EGLint contextAttributes[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
     context = eglCreateContext(display, config, NULL, contextAttributes);
 
     if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
