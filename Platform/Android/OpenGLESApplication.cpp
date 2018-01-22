@@ -29,6 +29,8 @@ int OpenGLESApplication::Initialize()
 
     eglInitialize(display, 0, 0);
 
+    eglBindAPI(EGL_OPENGL_ES_API);
+
     /* Here, the application chooses the configuration it desires.
      * find the best match if possible, otherwise use the very first one
      */
@@ -61,7 +63,8 @@ int OpenGLESApplication::Initialize()
      * ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID. */
     eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
     surface = eglCreateWindowSurface(display, config, m_pApp->window, NULL);
-    context = eglCreateContext(display, config, NULL, NULL);
+    EGLint contextAttributes[] = { EGL_CONTEXT_CLIENT_VERSIOn, 3, EGL_NONE };
+    context = eglCreateContext(display, config, NULL, contextAttributes);
 
     if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
         LOGW("Unable to eglMakeCurrent");
@@ -100,4 +103,10 @@ void OpenGLESApplication::Finalize()
 
     AndroidApplication::Finalize();
 }
+
+void OpenGLESApplication::Tick()
+{
+    eglSwapBuffers(m_Display, m_Surface);
+}
+
 

@@ -9,6 +9,7 @@ namespace My {
             using AndroidApplication::AndroidApplication;
             virtual int Initialize();
             virtual void Finalize();
+            virtual void Tick();
 
         protected:
             EGLSurface m_Surface;
