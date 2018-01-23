@@ -84,4 +84,10 @@ void InputManager::ResetKeyDown()
     g_pSceneManager->ResetScene();
 }
 
+void InputManager::ResetKeyUp()
+{
+#ifdef DEBUG
+    cerr << "[InputManager] Reset Key Up!" << endl;
+#endif
+}
 

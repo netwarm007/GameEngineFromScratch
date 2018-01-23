@@ -1,8 +1,8 @@
-prefix=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External
-exec_prefix=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External
-libdir=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External/Windows/lib
-sharedlibdir=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External/Windows/lib
-includedir=C:/Users/Tim.AzureAD/Source/Repos/GameEngineFromScratch/External/Windows/include
+prefix=D:/GitHub/GameEngineFromScratch/External
+exec_prefix=D:/GitHub/GameEngineFromScratch/External
+libdir=D:/GitHub/GameEngineFromScratch/External/Windows/lib
+sharedlibdir=D:/GitHub/GameEngineFromScratch/External/Windows/lib
+includedir=D:/GitHub/GameEngineFromScratch/External/Windows/include
 
 Name: zlib
 Description: zlib compression library
