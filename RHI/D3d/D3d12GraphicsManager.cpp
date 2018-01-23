@@ -971,8 +971,10 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
 	int32_t n = 0;
-    for (pGeometryNode : scene.GeometryNodes)
+    for (auto _it : scene.GeometryNodes)
     {
+	auto pGeometryNode = _it.second;
+
         if (pGeometryNode->Visible())
         {
             auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
@@ -1007,8 +1009,6 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 			SetPerBatchShaderParameters(n);
 			n++;
         }
-
-        pGeometryNode = scene.GetNextGeometryNode();
     }
 
     if (SUCCEEDED(hr = m_pCommandList->Close()))
