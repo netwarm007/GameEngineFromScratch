@@ -123,6 +123,9 @@ void XcbApplication::Tick()
                 case 116:
                     g_pInputManager->DownArrowKeyDown();
                     break;
+                case 27:
+                    g_pInputManager->ResetKeyDown();
+                    break;
                 }
                 break;
             }
@@ -143,6 +146,9 @@ void XcbApplication::Tick()
                     break;
                 case 116:
                     g_pInputManager->DownArrowKeyUp();
+                    break;
+                case 27:
+                    g_pInputManager->ResetKeyUp();
                     break;
                 }
             }
