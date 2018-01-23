@@ -21,4 +21,4 @@
 	url = https://github.com/netwarm007/crossguid
 [submodule "bullet"]
 	path = External/src/bullet
-	url = git@github.com:netwarm007/bullet3.git
+	url = https://github.com/netwarm007/bullet3.git
