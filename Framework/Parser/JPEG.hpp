@@ -381,7 +381,7 @@ namespace My {
         }
 
     public:
-        virtual Image Parse(const Buffer& buf)
+        virtual Image Parse(Buffer& buf)
         {
             Image img;
 

@@ -450,15 +450,23 @@ void OpenGLGraphicsManager::InitializeBuffers()
                 if (material) {
                     auto color = material->GetBaseColor();
                     if (color.ValueMap) {
-                        auto texture = color.ValueMap->GetTextureImage();
+                        Image texture = color.ValueMap->GetTextureImage();
                         auto it = m_TextureIndex.find(material_key);
                         if (it == m_TextureIndex.end()) {
                             GLuint texture_id;
                             glGenTextures(1, &texture_id);
                             glActiveTexture(GL_TEXTURE0 + texture_id);
                             glBindTexture(GL_TEXTURE_2D, texture_id);
-                            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 
+                            if(texture.bitcount == 24)
+                            {
+                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.Width, texture.Height, 
+                                    0, GL_RGB, GL_UNSIGNED_BYTE, texture.data);
+                            }
+                            else
+                            {
+                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 
                                     0, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
+                            }
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
