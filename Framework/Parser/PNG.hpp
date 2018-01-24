@@ -229,7 +229,7 @@ namespace My {
                                 std::cout << "IEND (Image Data End)" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
-                                uint32_t compressed_data_size = imageDataEndPos - imageDataStartPos;
+                                size_t compressed_data_size = imageDataEndPos - imageDataStartPos;
 
                                 if(!imageDataStarted) {
                                     std::cout << "PNG file looks corrupted. Found IEND before IDAT." << std::endl;
@@ -260,7 +260,7 @@ namespace My {
                                 int current_col = -1;   // -1 means we need read filter type
 
                                 do {
-                                    uint32_t next_in_size = (compressed_data_size > kChunkSize) ? kChunkSize : compressed_data_size;
+                                    uint32_t next_in_size = (compressed_data_size > kChunkSize) ? kChunkSize : (uint32_t)compressed_data_size;
                                     if (next_in_size == 0) break;
                                     compressed_data_size -= next_in_size;
                                     strm.next_in = const_cast<Bytef*>(pIn); 

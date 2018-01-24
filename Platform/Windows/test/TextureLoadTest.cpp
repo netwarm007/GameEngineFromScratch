@@ -64,6 +64,29 @@ int My::TestApplication::Initialize()
         m_Image = png_parser.Parse(buf);
     }
 
+    if (m_Image.bitcount == 24) {
+        // DXGI does not have 24bit formats so we have to extend it to 32bit
+        uint32_t new_pitch = m_Image.pitch / 3 * 4;
+        size_t data_size = new_pitch * m_Image.Height;
+        void* data = g_pMemoryManager->Allocate(data_size);
+        uint8_t* buf = reinterpret_cast<uint8_t*>(data);
+        uint8_t* src = reinterpret_cast<uint8_t*>(m_Image.data);
+        for (auto row = 0; row < m_Image.Height; row++) {
+            buf = reinterpret_cast<uint8_t*>(data) + row * new_pitch;
+            src = reinterpret_cast<uint8_t*>(m_Image.data) + row * m_Image.pitch;
+            for (auto col = 0; col < m_Image.Width; col++) {
+                *(uint32_t*)buf = *(uint32_t*)src;
+                buf[3] = 0;  // set alpha to 0
+                buf += 4;
+                src += 3;
+            }
+        }
+        g_pMemoryManager->Free(m_Image.data, m_Image.data_size);
+        m_Image.data = data;
+        m_Image.data_size = data_size;
+        m_Image.pitch = new_pitch;
+    }
+
     return result;
 }
 
