@@ -7,30 +7,27 @@ add_library(native_app_glue STATIC
 set(CMAKE_SHARED_LINKER_FLAGS
     "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 
-add_library(MyGameEngine SHARED 
+add_library(PlatformInterface STATIC
         AndroidApplication.cpp 
-        AndroidApplicationConfig.cpp
         AndroidAssetLoader.cpp
-        OpenGLESApplication.cpp)
-
-target_include_directories(MyGameEngine PRIVATE
+        OpenGLESApplication.cpp
+        )
+target_include_directories(PlatformInterface PRIVATE
     ${ANDROID_NDK}/sources/android/native_app_glue)
+__add_xg_platform_dependencies(PlatformInterface)
 
-__add_xg_platform_dependencies(MyGameEngine)
-
-target_link_libraries(MyGameEngine 
-        OpenGLRHI
-        Common 
-        ${XG_LIBRARY} 
-        ${OPENGEX_LIBRARY} 
-        ${OPENDDL_LIBRARY} 
-        ${ZLIB_LIBRARY}
-        ${BULLET_DYNAMICS_LIBRARY}
-        ${BULLET_COLLISION_LIBRARY}
-        ${BULLET_LINEARMATH_LIBRARY}
+target_link_libraries(PlatformInterface
         android
         native_app_glue
         EGL
         GLESv1_CM
         log)
 
+add_library(MyGameEngine SHARED
+        AndroidApplicationConfig.cpp
+)
+target_link_libraries(PlatformInterface
+        Common 
+        OpenGLRHI
+        PlatformInterface
+)

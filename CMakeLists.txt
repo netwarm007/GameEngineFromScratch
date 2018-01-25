@@ -88,6 +88,7 @@ add_subdirectory(Framework)
 add_subdirectory(Platform)
 add_subdirectory(RHI)
 add_subdirectory(Test)
+add_subdirectory(Game)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 

@@ -11,5 +11,6 @@ namespace My {
     SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager());
     InputManager*    g_pInputManager    = static_cast<InputManager*>(new InputManager());
     PhysicsManager*  g_pPhysicsManager  = static_cast<PhysicsManager*>(new PhysicsManager);
+    GameLogic*       g_pGameLogic       = static_cast<GameLogic*>(new GameLogic);
 }
 

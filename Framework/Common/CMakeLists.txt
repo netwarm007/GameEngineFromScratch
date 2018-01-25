@@ -2,6 +2,7 @@ add_library(Common
 Allocator.cpp
 AssetLoader.cpp
 BaseApplication.cpp
+GameLogic.cpp
 GraphicsManager.cpp
 InputManager.cpp
 Image.cpp

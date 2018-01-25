@@ -60,6 +60,12 @@ int BaseApplication::Initialize()
 	}
     cerr << "Success" << endl;
 
+    cerr << "Initialize Game Logic: ";
+    if ((ret = g_pGameLogic->Initialize()) != 0) {
+        cerr << "Failed. err =" << ret;
+        return ret;
+    }
+
 	return ret;
 }
 

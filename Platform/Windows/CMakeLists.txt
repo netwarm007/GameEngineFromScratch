@@ -1,9 +1,26 @@
-add_library(WindowsApplication WindowsApplication.cpp)
+find_package(OpenGL REQUIRED)
+
+add_library(PlatformInterface
+                WindowsApplication.cpp
+                D3d12Application.cpp
+                OpenGLApplication.cpp
+                ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_wgl.c
+)
+target_link_libraries(PlatformInterface
+                d2d1
+                d3d12
+                dxgi
+                ${OPENGL_LIBRARIES}
+)
 
 add_executable(MyGameEngineD3d12 
-    D3d12Application.cpp
-    D3d12ApplicationConfig.cpp)
-target_link_libraries(MyGameEngineD3d12 WindowsApplication Common ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY} ${ZLIB_LIBRARY} D3dRHI d3d12 dxgi)
+                   D3d12ApplicationConfig.cpp
+)
+target_link_libraries(MyGameEngineD3d12 
+                        Common 
+                        D3dRHI 
+                        PlatformInterface
+)
 __add_xg_platform_dependencies(MyGameEngineD3d12)
 
 add_custom_command(TARGET MyGameEngineD3d12 POST_BUILD
@@ -11,15 +28,16 @@ add_custom_command(TARGET MyGameEngineD3d12 POST_BUILD
         "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
         $<TARGET_FILE_DIR:MyGameEngineD3d12>)
 
-find_package(OpenGL REQUIRED)
-
 add_executable(MyGameEngineOpenGL 
-    OpenGLApplication.cpp
-    OpenGLApplicationConfig.cpp
-    ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_wgl.c
-    )
-target_link_libraries(MyGameEngineOpenGL WindowsApplication Common  ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${XG_LIBRARY} ${ZLIB_LIBRARY} OpenGLRHI ${OPENGL_LIBRARIES})
-target_include_directories(MyGameEngineOpenGL PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
+                OpenGLApplicationConfig.cpp
+)
+target_link_libraries(MyGameEngineOpenGL 
+                        Common 
+                        OpenGLRHI 
+                        PlatformInterface
+)
+target_include_directories(MyGameEngineOpenGL PRIVATE 
+        "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 __add_xg_platform_dependencies(MyGameEngineOpenGL)
 
 add_custom_command(TARGET MyGameEngineOpenGL POST_BUILD
