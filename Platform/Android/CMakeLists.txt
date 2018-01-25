@@ -27,7 +27,9 @@ add_library(MyGameEngine SHARED
         AndroidApplicationConfig.cpp
 )
 target_link_libraries(MyGameEngine
-        Common 
         OpenGLRHI
         PlatformInterface
+        Common 
 )
+target_include_directories(MyGameEngine PRIVATE
+    ${ANDROID_NDK}/sources/android/native_app_glue)
