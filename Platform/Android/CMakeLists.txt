@@ -26,7 +26,7 @@ target_link_libraries(PlatformInterface
 add_library(MyGameEngine SHARED
         AndroidApplicationConfig.cpp
 )
-target_link_libraries(PlatformInterface
+target_link_libraries(MyGameEngine
         Common 
         OpenGLRHI
         PlatformInterface
