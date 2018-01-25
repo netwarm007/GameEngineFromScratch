@@ -12,6 +12,8 @@ target_link_libraries(PlatformInterface
                 dxgi
                 ${OPENGL_LIBRARIES}
 )
+target_include_directories(PlatformInterface PRIVATE 
+        "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 
 add_executable(MyGameEngineD3d12 
                    D3d12ApplicationConfig.cpp
@@ -27,6 +29,7 @@ add_custom_command(TARGET MyGameEngineD3d12 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
         $<TARGET_FILE_DIR:MyGameEngineD3d12>)
+
 
 add_executable(MyGameEngineOpenGL 
                 OpenGLApplicationConfig.cpp
