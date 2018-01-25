@@ -113,16 +113,24 @@ namespace My {
                                 auto _type = _extension->GetTypeString();
                                 if (_type == "collision") {
                                     const ODDL::Structure *sub_structure = _extension->GetFirstCoreSubnode();
-                                    const ODDL::DataStructure<ODDL::StringDataType> *dataStructure = static_cast<const ODDL::DataStructure<ODDL::StringDataType> *>(sub_structure);
-                                    auto collision_type = dataStructure->GetDataElement(0);
+                                    const ODDL::DataStructure<ODDL::StringDataType> *dataStructure1 = static_cast<const ODDL::DataStructure<ODDL::StringDataType> *>(sub_structure);
+                                    auto collision_type = dataStructure1->GetDataElement(0);
+
+                                    sub_structure = _extension->GetLastCoreSubnode();
+                                    const ODDL::DataStructure<ODDL::FloatDataType> *dataStructure2 = static_cast<const ODDL::DataStructure<ODDL::FloatDataType> *>(sub_structure);
+                                    auto elementCount = dataStructure2->GetDataElementCount();
+                                    float* _data = (float*)&dataStructure2->GetDataElement(0);
                                     if (collision_type  == "plane") {
                                         _object->SetCollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypePlane);
+                                        _object->SetCollisionParameters(_data, elementCount);
                                     }
                                     else if (collision_type == "sphere") {
                                         _object->SetCollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeSphere);
+                                        _object->SetCollisionParameters(_data, elementCount);
                                     }
                                     else if (collision_type == "box") {
                                         _object->SetCollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeBox);
+                                        _object->SetCollisionParameters(_data, elementCount);
                                     }
                                     break;
                                 }

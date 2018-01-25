@@ -543,6 +543,7 @@ namespace My {
 			bool        m_bShadow;
 			bool        m_bMotionBlur;
             SceneObjectCollisionType m_CollisionType;
+            float       m_CollisionParameters[10];
 
         public:
             SceneObjectGeometry(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry), m_CollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeNone) {};
@@ -555,6 +556,12 @@ namespace My {
 			const bool MotionBlur() { return m_bMotionBlur; };
             void SetCollisionType(SceneObjectCollisionType collision_type) { m_CollisionType = collision_type; };
             const SceneObjectCollisionType CollisionType() const { return  m_CollisionType; }
+            void SetCollisionParameters(const float* param, int32_t count)
+            {
+                assert(count > 0 && count < 10);
+                memcpy(m_CollisionParameters, param, sizeof(float) * count);
+            }
+            const float* CollisionParameters() const { return m_CollisionParameters; }
 
             void AddMesh(std::shared_ptr<SceneObjectMesh>& mesh) { m_Mesh.push_back(std::move(mesh)); };
             const std::weak_ptr<SceneObjectMesh> GetMesh() { return (m_Mesh.empty()? nullptr : m_Mesh[0]); };
