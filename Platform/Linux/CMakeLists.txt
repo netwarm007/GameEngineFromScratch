@@ -21,6 +21,8 @@ target_link_libraries(PlatformInterface
         ${OPENGL_LIBRARY} 
         ${DL_LIBRARY}
 )
+target_include_directories(PlatformInterface PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
+
 add_executable(MyGameEngineOpenGL 
                 OpenGLApplicationConfig.cpp
     )
