@@ -19,7 +19,7 @@ target_link_libraries(PlatformInterface
         ${X11_LIBRARY} 
         ${X11_XCB_LIBRARY} 
         ${OPENGL_LIBRARY} 
-        ${DL_LIBRARY})
+        ${DL_LIBRARY}
 )
 add_executable(MyGameEngineOpenGL 
                 OpenGLApplicationConfig.cpp
