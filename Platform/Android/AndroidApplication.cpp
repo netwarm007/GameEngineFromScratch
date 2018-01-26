@@ -1,7 +1,8 @@
-#include "AndroidApplication.hpp"
-#include "AndroidAssetLoader.hpp"
 #include <unistd.h>
 #include <thread>
+#include <dlfcn.h>
+#include "AndroidApplication.hpp"
+#include "AndroidAssetLoader.hpp"
 
 using namespace My;
 using namespace std;

@@ -97,6 +97,12 @@ jobs:
             - Platform/Android/.gradle
           key: jars-{{ checksum "Platform/Android/build.gradle" }}-{{ checksum  "Platform/Android/app/build.gradle" }}
       - run:
+          name: Build External Dependencies
+          command: |
+                   ./build_crossguid-android.sh
+                   ./build_opengex-android.sh
+                   ./build_bullet-android.sh
+      - run:
           name: Build
           command: |
                    ./gradlew build

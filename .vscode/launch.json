@@ -5,7 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Windows)(Open GL) Launch Bulliard",
+            "name": "(Mac OS)(Open GL) Launch Billiard Game",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame",
+            "args": ["Scene/billiard.ogex"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(Windows)(Open GL) Launch Billiard Game",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
