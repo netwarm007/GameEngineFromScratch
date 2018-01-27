@@ -20,7 +20,7 @@
               android:configChanges="orientation|keyboardHidden">
       <!-- Tell NativeActivity the name of our .so -->
       <meta-data android:name="android.app.lib_name"
-                 android:value="MyGameEngine" />
+                 android:value="BilliardGame" />
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />

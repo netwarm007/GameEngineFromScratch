@@ -22,7 +22,7 @@ target_link_libraries(PlatformInterface
         GLESv1_CM
         log)
 
-add_library(MyGameEngine SHARED
+add_library(MyGameEngine 
         AndroidApplicationConfig.cpp
 )
 target_link_libraries(MyGameEngine
