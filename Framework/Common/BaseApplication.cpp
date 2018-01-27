@@ -103,24 +103,4 @@ bool BaseApplication::IsQuit()
 	return m_bQuit;
 }
 
-int BaseApplication::LoadScene()
-{
-    int ret;
-
-    string scene_file_name = "Scene/test.ogex";
-    if (m_nArgC > 1) {
-        scene_file_name = m_ppArgV[1];
-    }
-
-    cerr << "Load Scene(" << scene_file_name << "): ";
-    if ((ret = g_pSceneManager->LoadScene(scene_file_name.c_str())) != 0) {
-        cerr << "Failed. err = " << ret;
-        return ret;
-    }
-
-    cerr << "Success";
-
-    return 0;
-}
-
 

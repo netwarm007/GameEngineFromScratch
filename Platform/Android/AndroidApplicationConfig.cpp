@@ -3,6 +3,7 @@
 #include "OpenGL/OpenGLESGraphicsManager.hpp"
 
 namespace My {
+    extern GfxConfiguration config;
     IApplication*    g_pApp             = static_cast<IApplication*>(new OpenGLESApplication(config));
     GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLESGraphicsManager());
     MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager());

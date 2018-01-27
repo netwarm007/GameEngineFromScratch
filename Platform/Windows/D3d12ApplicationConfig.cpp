@@ -3,6 +3,7 @@
 #include "D3d/D3d12GraphicsManager.hpp"
 
 namespace My {
+    extern GfxConfiguration config;
 	IApplication* g_pApp                = static_cast<IApplication*>(new D3d12Application(config));
     GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new D3d12GraphicsManager);
     MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);

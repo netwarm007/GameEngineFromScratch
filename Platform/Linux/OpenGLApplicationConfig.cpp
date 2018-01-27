@@ -2,6 +2,7 @@
 #include "OpenGL/OpenGLGraphicsManager.hpp"
 
 namespace My {
+    extern GfxConfiguration config;
     IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
     GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
     MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);

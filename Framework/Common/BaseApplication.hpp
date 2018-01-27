@@ -24,8 +24,6 @@ namespace My {
 
         inline GfxConfiguration& GetConfiguration() { return m_Config; };
 
-        virtual int LoadScene();
-
         virtual void OnDraw() {};
 
     protected:

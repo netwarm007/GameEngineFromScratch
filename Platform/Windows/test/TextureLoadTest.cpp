@@ -36,13 +36,6 @@ namespace My {
 
 namespace My {
     GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 1024, 512, _T("Texture Load Test (Windows)"));
-	IApplication* g_pApp                = static_cast<IApplication*>(new TestApplication(config));
-    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new TestGraphicsManager);
-    MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
-    AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
-    SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
-    InputManager*    g_pInputManager    = static_cast<InputManager*>(new InputManager);
-    PhysicsManager*  g_pPhysicsManager  = static_cast<PhysicsManager*>(new PhysicsManager);
     GameLogic*       g_pGameLogic       = static_cast<GameLogic*>(new GameLogic);
 }
 
