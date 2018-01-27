@@ -15,7 +15,7 @@ target_link_libraries(PlatformInterface
 target_include_directories(PlatformInterface PRIVATE 
         "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 
-add_executable(MyGameEngineD3d12 
+add_library(MyGameEngineD3d12 
                    D3d12ApplicationConfig.cpp
 )
 target_link_libraries(MyGameEngineD3d12 
@@ -24,13 +24,7 @@ target_link_libraries(MyGameEngineD3d12
                         PlatformInterface
 )
 
-add_custom_command(TARGET MyGameEngineD3d12 POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
-        $<TARGET_FILE_DIR:MyGameEngineD3d12>)
-
-
-add_executable(MyGameEngine
+add_library(MyGameEngine
                 OpenGLApplicationConfig.cpp
 )
 target_link_libraries(MyGameEngine
@@ -40,11 +34,6 @@ target_link_libraries(MyGameEngine
 )
 target_include_directories(MyGameEngine PRIVATE 
         "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-
-add_custom_command(TARGET MyGameEngineO POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
-        $<TARGET_FILE_DIR:MyGameEngineOpenGL>)
 
 add_subdirectory(test)
 
