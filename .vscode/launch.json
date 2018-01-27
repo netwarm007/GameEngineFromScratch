@@ -8,7 +8,7 @@
             "name": "(Mac OS)(Open GL) Launch Billiard Game",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame",
+            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
             "args": ["Scene/billiard.ogex"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

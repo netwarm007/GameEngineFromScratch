@@ -20,6 +20,12 @@ namespace My {
 
             void ResetKeyDown();
             void ResetKeyUp();
+
+        protected:
+            bool m_bUpKeyPressed    = false;
+            bool m_bDownKeyPressed  = false;
+            bool m_bLeftKeyPressed  = false;
+            bool m_bRightKeyPressed = false;
     };
 
     extern InputManager* g_pInputManager;

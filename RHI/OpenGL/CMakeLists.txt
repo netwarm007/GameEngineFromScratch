@@ -2,7 +2,7 @@ IF(ANDROID)
 add_library(OpenGLRHI
         OpenGLESGraphicsManager.cpp
 )
-ELSE()
+ELSE(ANDROID)
 add_library(OpenGLRHI
         OpenGLGraphicsManager.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad.c
