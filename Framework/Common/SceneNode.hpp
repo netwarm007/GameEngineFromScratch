@@ -21,6 +21,8 @@ namespace My {
             BaseSceneNode(const std::string& name) { m_strName = name; };
 			virtual ~BaseSceneNode() {};
 
+            const std::string GetName() const { return m_strName; };
+
             void AppendChild(std::shared_ptr<BaseSceneNode>&& sub_node)
             {
                 m_Children.push_back(std::move(sub_node));

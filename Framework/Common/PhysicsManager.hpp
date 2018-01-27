@@ -21,6 +21,8 @@ namespace My {
 
         Matrix4X4f GetRigidBodyTransform(void* rigidBody);
 
+        void ApplyCentralForce(void* rigidBody, Vector3f force);
+
     protected:
 
     protected:

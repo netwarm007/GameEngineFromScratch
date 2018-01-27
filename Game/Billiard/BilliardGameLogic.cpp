@@ -1,6 +1,7 @@
 #include <iostream>
 #include "BilliardGameLogic.hpp"
 #include "SceneManager.hpp"
+#include "PhysicsManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -24,4 +25,17 @@ void BilliardGameLogic::Finalize()
 void BilliardGameLogic::Tick()
 {
 
+}
+
+void BilliardGameLogic::OnLeftKey()
+{
+    auto ptr = g_pSceneManager->GetSceneGeometryNode("pbb_cue");
+    if (auto node = ptr.lock())
+    {
+        auto rigidBody = node->RigidBody();
+        if (rigidBody)
+        {
+            g_pPhysicsManager->ApplyCentralForce(rigidBody, Vector3f(-200.0f, 0.0f, 0.0f));
+        }
+    }
 }

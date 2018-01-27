@@ -195,3 +195,9 @@ Matrix4X4f PhysicsManager::GetRigidBodyTransform(void* rigidBody)
     return result;
 }
 
+void PhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
+{
+    btRigidBody* _rigidBody = reinterpret_cast<btRigidBody*>(rigidBody);
+    btVector3 _force(force.x, force.y, force.z);
+    _rigidBody->applyCentralForce(_force);
+}

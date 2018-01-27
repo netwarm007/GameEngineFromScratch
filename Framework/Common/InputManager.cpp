@@ -74,7 +74,7 @@ void InputManager::LeftArrowKeyDown()
     if (!m_bLeftKeyPressed)
     {
         g_pGameLogic->OnLeftKey();
-        m_bLeftKeyPressed =true;
+        m_bLeftKeyPressed = true;
     }
 }
 

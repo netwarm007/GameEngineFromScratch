@@ -36,7 +36,8 @@ namespace My {
                     break;
                 case OGEX::kStructureGeometryNode:
                     {
-                        auto _node = std::make_shared<SceneGeometryNode>(structure.GetStructureName());
+                        std::string _key = structure.GetStructureName();
+                        auto _node = std::make_shared<SceneGeometryNode>(_key);
 						const OGEX::GeometryNodeStructure& _structure = dynamic_cast<const OGEX::GeometryNodeStructure&>(structure);
 
 						_node->SetVisibility(_structure.GetVisibleFlag());
@@ -44,7 +45,7 @@ namespace My {
 						_node->SetIfMotionBlur(_structure.GetMotionBlurFlag());
 
                         // ref scene objects
-                        std::string _key = _structure.GetObjectStructure()->GetStructureName();
+                        _key = _structure.GetObjectStructure()->GetStructureName();
                         _node->AddSceneObjectRef(_key);
 
                         // ref materials
@@ -57,6 +58,8 @@ namespace My {
                             _node->AddMaterialRef(_key);
                         }
 
+                        std::string name = _structure.GetNodeName();
+                        scene.LUT_Name_GeometryNode.emplace(name, _node);
                         scene.GeometryNodes.emplace(_key, _node);
 
                         node = _node;

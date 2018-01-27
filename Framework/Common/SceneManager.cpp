@@ -76,3 +76,16 @@ void SceneManager::NotifySceneIsRenderingQueued()
     m_bDirtyFlag = false;
 }
 
+weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(string name)
+{
+    auto it = m_pScene->LUT_Name_GeometryNode.find(name);
+    if (it != m_pScene->LUT_Name_GeometryNode.end())
+        return it->second;
+    else
+        return weak_ptr<SceneGeometryNode>();
+}
+
+weak_ptr<SceneObjectGeometry> SceneManager::GetSceneGeometryObject(string key)
+{
+    return m_pScene->Geometries.find(key)->second;
+}
