@@ -23,7 +23,6 @@ target_link_libraries(MyGameEngineD3d12
                         D3dRHI 
                         PlatformInterface
 )
-__add_xg_platform_dependencies(MyGameEngineD3d12)
 
 add_custom_command(TARGET MyGameEngineD3d12 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -31,19 +30,18 @@ add_custom_command(TARGET MyGameEngineD3d12 POST_BUILD
         $<TARGET_FILE_DIR:MyGameEngineD3d12>)
 
 
-add_executable(MyGameEngineOpenGL 
+add_executable(MyGameEngine
                 OpenGLApplicationConfig.cpp
 )
-target_link_libraries(MyGameEngineOpenGL 
+target_link_libraries(MyGameEngine
                         Common 
                         OpenGLRHI 
                         PlatformInterface
 )
-target_include_directories(MyGameEngineOpenGL PRIVATE 
+target_include_directories(MyGameEngine PRIVATE 
         "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-__add_xg_platform_dependencies(MyGameEngineOpenGL)
 
-add_custom_command(TARGET MyGameEngineOpenGL POST_BUILD
+add_custom_command(TARGET MyGameEngineO POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
         $<TARGET_FILE_DIR:MyGameEngineOpenGL>)

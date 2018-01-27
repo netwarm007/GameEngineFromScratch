@@ -23,14 +23,13 @@ target_link_libraries(PlatformInterface
 )
 target_include_directories(PlatformInterface PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 
-add_executable(MyGameEngineOpenGL 
+add_library(MyGameEngine
                 OpenGLApplicationConfig.cpp
     )
-target_link_libraries(MyGameEngineOpenGL 
+target_link_libraries(MyGameEngine
                         Common 
                         OpenGLRHI 
                         PlatformInterface
 )
-target_include_directories(MyGameEngineOpenGL PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-__add_xg_platform_dependencies(MyGameEngineOpenGL)
+target_include_directories(MyGameEngine PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 

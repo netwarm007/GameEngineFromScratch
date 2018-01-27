@@ -14,7 +14,6 @@ add_library(PlatformInterface STATIC
         )
 target_include_directories(PlatformInterface PRIVATE
     ${ANDROID_NDK}/sources/android/native_app_glue)
-__add_xg_platform_dependencies(PlatformInterface)
 
 target_link_libraries(PlatformInterface
         android
