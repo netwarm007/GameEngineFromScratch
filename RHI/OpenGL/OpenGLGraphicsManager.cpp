@@ -4,7 +4,7 @@
 #include "AssetLoader.hpp"
 #include "IApplication.hpp"
 #include "SceneManager.hpp"
-#include "PhysicsManager.hpp"
+#include "IPhysicsManager.hpp"
 
 const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
 const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";

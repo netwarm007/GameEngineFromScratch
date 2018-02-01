@@ -1,12 +1,10 @@
 #pragma once
-#include <vector>
+#include "IPhysicsManager.hpp"
 #define BT_USE_DOUBLE_PRECISION 1
 #include <btBulletDynamicsCommon.h>
-#include "IRuntimeModule.hpp"
-#include "SceneManager.hpp"
 
 namespace My {
-    class PhysicsManager : implements IRuntimeModule
+    class BulletPhysicsManager : public IPhysicsManager
     {
     public:
         virtual int Initialize();
@@ -24,8 +22,6 @@ namespace My {
         void ApplyCentralForce(void* rigidBody, Vector3f force);
 
     protected:
-
-    protected:
         btBroadphaseInterface*                  m_btBroadphase;
         btDefaultCollisionConfiguration*        m_btCollisionConfiguration;
         btCollisionDispatcher*                  m_btDispatcher;
@@ -34,7 +30,5 @@ namespace My {
 
         std::vector<btCollisionShape*>          m_btCollisionShapes;
     };
-
-    extern PhysicsManager* g_pPhysicsManager;
 }
 

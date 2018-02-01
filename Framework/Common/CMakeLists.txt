@@ -7,7 +7,6 @@ GraphicsManager.cpp
 InputManager.cpp
 Image.cpp
 MemoryManager.cpp
-PhysicsManager.cpp
 Scene.cpp
 SceneManager.cpp
 SceneObject.cpp

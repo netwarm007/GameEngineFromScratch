@@ -5,7 +5,7 @@
 #include "AssetLoader.hpp"
 #include "SceneManager.hpp"
 #include "InputManager.hpp"
-#include "PhysicsManager.hpp"
+#include "IPhysicsManager.hpp"
 #include "GameLogic.hpp"
 
 namespace My {
