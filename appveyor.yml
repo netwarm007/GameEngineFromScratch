@@ -8,4 +8,6 @@ build_script:
 
     build_zlib
 
+    build_bullet
+
     build
