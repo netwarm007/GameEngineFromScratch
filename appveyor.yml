@@ -1,0 +1,11 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+build_script:
+- cmd: >-
+    build_crossguid
+
+    build_opengex
+
+    build_zlib
+
+    build
