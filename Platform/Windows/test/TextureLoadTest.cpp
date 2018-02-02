@@ -2,6 +2,7 @@
 #include <tchar.h>
 #include "WindowsApplication.hpp"
 #include "D2d/D2dGraphicsManager.hpp"
+#include "Bullet/BulletPhysicsManager.hpp"
 #include "utility.hpp"
 #include "BMP.hpp"
 #include "JPEG.hpp"
@@ -37,6 +38,7 @@ namespace My {
 namespace My {
     GfxConfiguration config(8, 8, 8, 8, 32, 0, 0, 1024, 512, _T("Texture Load Test (Windows)"));
     GameLogic*       g_pGameLogic       = static_cast<GameLogic*>(new GameLogic);
+    IPhysicsManager*  g_pPhysicsManager  = static_cast<IPhysicsManager*>(new BulletPhysicsManager);
 }
 
 int My::TestApplication::Initialize()
