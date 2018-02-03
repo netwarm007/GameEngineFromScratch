@@ -11,3 +11,6 @@ build_script:
     build_bullet
 
     build
+
+test_script:
+- cmd: cmake --build build --target test

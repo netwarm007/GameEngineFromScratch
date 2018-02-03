@@ -35,5 +35,4 @@ target_link_libraries(MyGameEngine
 target_include_directories(MyGameEngine PRIVATE 
         "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 
-add_subdirectory(test)
 
