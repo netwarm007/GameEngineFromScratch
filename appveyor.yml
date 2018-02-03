@@ -13,4 +13,4 @@ build_script:
     build
 
 test_script:
-- cmd: cmake --build build --target test
+- cmd: cmake --build build --target RUN_TESTS
