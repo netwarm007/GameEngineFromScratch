@@ -17,7 +17,9 @@
                 "${workspaceRoot}/Framework/Parser",
                 "${workspaceRoot}/External/Darwin/include/bullet",
                 "${workspaceRoot}/RHI",
-                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad"
+                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad",
+                "${workspaceRoot}/Framework/Geometries",
+                "${workspaceRoot}/Framework/Geometries"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",

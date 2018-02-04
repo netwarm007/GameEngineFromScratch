@@ -1,12 +1,12 @@
 #pragma once
-#include "Shape.hpp"
+#include "Geometry.hpp"
 
 namespace My {
-    class Plane : public Shape
+    class Plane : public Geometry 
     {
     public:
-        Plane() : Shape(ShapeType::kPlane) {};
-        Plane(Vector3f normal, float intercept) : Shape(ShapeType::kPlane), m_vNormal(normal), m_fIntercept(intercept) {};
+        Plane() : Geometry(GeometryType::kPlane) {};
+        Plane(Vector3f normal, float intercept) : Geometry(GeometryType::kPlane), m_vNormal(normal), m_fIntercept(intercept) {};
 
         virtual void GetAabb(const Matrix4X4f& trans, 
                                 Vector3f& aabbMin, 

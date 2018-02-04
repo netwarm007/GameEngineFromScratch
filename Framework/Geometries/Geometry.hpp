@@ -3,7 +3,7 @@
 #include "portable.hpp"
 
 namespace My {
-    ENUM(ShapeType) {
+    ENUM(GeometryType) {
         kBox,
         kSphere,
         kCylinder,
@@ -13,12 +13,12 @@ namespace My {
         kTriangle
     };
 
-    class Shape
+    class Geometry 
     {
         public:
-            Shape(ShapeType shape_type) : m_kShapeType(shape_type) {};
-            Shape() = delete;
-            virtual ~Shape() = default;
+            Geometry(GeometryType geometry_type) : m_kGeometryType(geometry_type) {};
+            Geometry() = delete;
+            virtual ~Geometry() = default;
 
 	        // GetAabb returns the axis aligned bounding box in the coordinate frame of the given transform trans.
 	        virtual void GetAabb(const Matrix4X4f& trans, 
@@ -40,10 +40,10 @@ namespace My {
                                         Vector3f& temporalAabbMin,
                                         Vector3f& temporalAabbMax) const;
 
-            ShapeType GetCollisionShapeType() const { return m_kShapeType; };
+            GeometryType GetGeometryType() const { return m_kGeometryType; };
 
         protected:
-            ShapeType m_kShapeType;
+            GeometryType m_kGeometryType;
             float    m_fMargin;
     };
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "IPhysicsManager.hpp"
-#include "Shape.hpp"
+#include "Geometry.hpp"
 
 namespace My {
     class MyPhysicsManager : public IPhysicsManager
@@ -21,6 +21,6 @@ namespace My {
         virtual void ApplyCentralForce(void* rigidBody, Vector3f force);
 
     protected:
-        std::vector<Shape*>          m_CollisionShapes;
+        std::vector<Geometry*>          m_CollisionShapes;
     };
 }

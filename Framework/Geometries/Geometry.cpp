@@ -1,8 +1,8 @@
-#include "Shape.hpp"
+#include "Geometry.hpp"
 
 using namespace My;
 
-void Shape::CalculateTemporalAabb(const Matrix4X4f& curTrans,
+void Geometry::CalculateTemporalAabb(const Matrix4X4f& curTrans,
                                         const Vector3f& linvel,
                                         const Vector3f& angvel,
                                         float timeStep, 
@@ -45,7 +45,7 @@ void Shape::CalculateTemporalAabb(const Matrix4X4f& curTrans,
 	temporalAabbMax = temporalAabbMax + angularMotion3d;
 }
 
-void Shape::GetBoundingSphere(Vector3f& center, float& radius) const
+void Geometry::GetBoundingSphere(Vector3f& center, float& radius) const
 {
 	Matrix4X4f tran;
 	BuildIdentityMatrix(tran);
@@ -57,7 +57,7 @@ void Shape::GetBoundingSphere(Vector3f& center, float& radius) const
 	center = (aabbMin + aabbMax) * 0.5f;
 }
 
-float Shape::GetAngularMotionDisc() const
+float Geometry::GetAngularMotionDisc() const
 {
 	Vector3f    center;
 	float       disc = 0.0f;

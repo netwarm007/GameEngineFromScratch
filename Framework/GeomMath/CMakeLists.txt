@@ -43,8 +43,6 @@ ELSE()
     SET(ISPC_LIBRARIAN_OPTIONS -rcv -o ${GEOMMATH_LIB_FILE})
 ENDIF(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
 
-add_library(Shapes Shape.cpp Box.cpp Sphere.cpp Plane.cpp)
-
 SET(GEOMMATH_LIB_HEADER_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_library(GeomMath STATIC IMPORTED GLOBAL)

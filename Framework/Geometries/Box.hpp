@@ -1,12 +1,12 @@
 #pragma once
-#include "Shape.hpp"
+#include "Geometry.hpp"
 
 namespace My {
-    class Box : public Shape
+    class Box : public Geometry
     {
     public:
-        Box() : Shape(ShapeType::kBox) {};
-        Box(Vector3f dimension) : Shape(ShapeType::kBox), m_vDimension(dimension) {};
+        Box() : Geometry(GeometryType::kBox) {};
+        Box(Vector3f dimension) : Geometry(GeometryType::kBox), m_vDimension(dimension) {};
 
         virtual void GetAabb(const Matrix4X4f& trans, 
                                 Vector3f& aabbMin, 

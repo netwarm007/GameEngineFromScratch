@@ -1,11 +1,11 @@
 #pragma once
-#include "Shape.hpp"
+#include "Geometry.hpp"
 
 namespace My {
-    class Sphere : public Shape
+    class Sphere : public Geometry
     {
     public:
-        Sphere() : Shape(ShapeType::kSphere) {};
+        Sphere() : Geometry(GeometryType::kSphere) {};
 
         virtual void GetAabb(const Matrix4X4f& trans, 
                                 Vector3f& aabbMin, 
