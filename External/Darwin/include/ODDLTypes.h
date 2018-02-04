@@ -82,8 +82,8 @@ namespace ODDL
 	typedef int						int32;
 	typedef unsigned int			unsigned_int32;
 
-	typedef long					int64;
-	typedef unsigned long			unsigned_int64;
+	typedef int64_t					int64;
+	typedef uint64_t                unsigned_int64;
 
 	#if defined(_WIN64)
 

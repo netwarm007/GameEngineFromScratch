@@ -16,7 +16,10 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
-        HWND GetMainWindow() { return m_hWnd; }
+        HWND GetMainWindow() { return m_hWnd; };
+
+    protected:
+        void CreateMainWindow();
 
     private:
         // the WindowProc function prototype

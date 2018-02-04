@@ -34,31 +34,34 @@ namespace My {
 
         bool RemoveSearchPath(const char *path);
 
-        bool FileExists(const char *filePath);
+        virtual bool FileExists(const char *filePath);
 
-        AssetFilePtr OpenFile(const char* name, AssetOpenMode mode);
+        virtual AssetFilePtr OpenFile(const char* name, AssetOpenMode mode);
 
-        Buffer SyncOpenAndReadText(const char *filePath);
+        virtual Buffer SyncOpenAndReadText(const char *filePath);
 
-        Buffer SyncOpenAndReadBinary(const char *filePath);
+        virtual Buffer SyncOpenAndReadBinary(const char *filePath);
 
-        size_t SyncRead(const AssetFilePtr& fp, Buffer& buf);
+        virtual size_t SyncRead(const AssetFilePtr& fp, Buffer& buf);
 
-        void CloseFile(AssetFilePtr& fp);
+        virtual void CloseFile(AssetFilePtr& fp);
 
-        size_t GetSize(const AssetFilePtr& fp);
+        virtual size_t GetSize(const AssetFilePtr& fp);
 
-        int32_t Seek(AssetFilePtr fp, long offset, AssetSeekBase where);
+        virtual int32_t Seek(AssetFilePtr fp, long offset, AssetSeekBase where);
 
         inline std::string SyncOpenAndReadTextFileToString(const char* fileName)
         {
             std::string result;
             Buffer buffer = SyncOpenAndReadText(fileName);
-            char* content = reinterpret_cast<char*>(buffer.GetData());
-
-            if (content)
+            if (buffer.GetDataSize())
             {
-                result = std::string(std::move(content));
+                char* content = reinterpret_cast<char*>(buffer.GetData());
+
+                if (content)
+                {
+                    result = std::string(std::move(content));
+                }
             }
 
             return result;

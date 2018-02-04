@@ -1,22 +1,9 @@
 #include <stdio.h>
 #include <tchar.h>
 #include "OpenGLApplication.hpp"
-#include "OpenGL/OpenGLGraphicsManager.hpp"
-#include "MemoryManager.hpp"
-#include "AssetLoader.hpp"
-#include "SceneManager.hpp"
 #include "glad/glad_wgl.h"
 
 using namespace My;
-
-namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, _T("Game Engine From Scratch (Win32 + OpenGL)"));
-	IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
-    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
-    MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
-    AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
-    SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
-}
 
 static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -33,7 +20,7 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM 
 	return 0;
 }
 
-int My::OpenGLApplication::Initialize()
+int OpenGLApplication::Initialize()
 {
     int result;
 	auto colorBits = m_Config.redBits + m_Config.greenBits + m_Config.blueBits; // note on windows this does not include alpha bitplane
@@ -111,11 +98,7 @@ int My::OpenGLApplication::Initialize()
 	DestroyWindow(TemphWnd);
 
 	// now initialize our application window
-	result = WindowsApplication::Initialize();
-	if (result) {
-		printf("Windows Application initialize failed!");
-		return result;
-	}
+    WindowsApplication::CreateMainWindow();
 
 	m_hDC  = GetDC(m_hWnd);
 
@@ -203,14 +186,19 @@ int My::OpenGLApplication::Initialize()
 		{
 				return result;
 		}
+	}
 
-		result = 0;
+    result = BaseApplication::Initialize();
+
+	if (result) {
+		printf("Windows Application initialize failed!");
+		return result;
 	}
 
     return result;
 }
 
-void My::OpenGLApplication::Finalize()
+void OpenGLApplication::Finalize()
 {
     if (m_RenderContext) {
         wglMakeCurrent(NULL, NULL);
@@ -221,7 +209,7 @@ void My::OpenGLApplication::Finalize()
     WindowsApplication::Finalize();
 }
 
-void My::OpenGLApplication::Tick()
+void OpenGLApplication::Tick()
 {
     WindowsApplication::Tick();
     g_pGraphicsManager->Clear();

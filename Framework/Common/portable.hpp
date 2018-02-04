@@ -27,13 +27,13 @@ namespace std {
 #ifndef HAVE_CLAMP
 namespace std {
     template<class T>
-    constexpr const T& clamp( const T& v, const T& lo, const T& hi )
+    const T& clamp( const T& v, const T& lo, const T& hi )
     {
         return clamp( v, lo, hi, std::less<T>() );
     }
 
     template<class T, class Compare>
-    constexpr const T& clamp( const T& v, const T& lo, const T& hi, Compare comp )
+    const T& clamp( const T& v, const T& lo, const T& hi, Compare comp )
     {
         return assert( !comp(hi, lo) ),
             comp(v, lo) ? lo : comp(hi, v) ? hi : v;

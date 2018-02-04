@@ -169,6 +169,7 @@ namespace OGEX
 
             Structure *GetFirstCoreSubnode(void) const;
             Structure *GetLastCoreSubnode(void) const;
+            Structure *GetFirstExtensionSubnode(void) const;
 
             bool ValidateSubstructure(const DataDescription *dataDescription, const Structure *structure) const;
     };

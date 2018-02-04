@@ -4,6 +4,7 @@
 #include "AssetLoader.hpp"
 #include "IApplication.hpp"
 #include "SceneManager.hpp"
+#include "IPhysicsManager.hpp"
 
 const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
 const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
@@ -100,6 +101,12 @@ int OpenGLGraphicsManager::Initialize()
 {
     int result;
 
+    result = GraphicsManager::Initialize();
+
+    if (result) {
+        return result;
+    }
+
     result = gladLoadGL();
     if (!result) {
         cerr << "OpenGL load failed!" << endl;
@@ -121,10 +128,6 @@ int OpenGLGraphicsManager::Initialize()
             // Enable back face culling.
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
-
-            // Initialize the world/model matrix to the identity matrix.
-            BuildIdentityMatrix(m_DrawFrameContext.m_worldMatrix);
-
         }
 
         InitializeShader(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
@@ -142,10 +145,6 @@ void OpenGLGraphicsManager::Finalize()
 
     m_DrawBatchContext.clear();
 
-    for (auto i = 0; i < m_Buffers.size() - 1; i++) { 
-        glDisableVertexAttribArray(i);
-    }
-
     for (auto buf : m_Buffers) {
         glDeleteBuffers(1, &buf);
     }
@@ -157,24 +156,34 @@ void OpenGLGraphicsManager::Finalize()
     m_Buffers.clear();
     m_Textures.clear();
 
-    // Detach the vertex and fragment shaders from the program.
-    glDetachShader(m_shaderProgram, m_vertexShader);
-    glDetachShader(m_shaderProgram, m_fragmentShader);
+    if (m_shaderProgram) {
+        if (m_vertexShader)
+        {
+            // Detach the vertex shaders from the program.
+            glDetachShader(m_shaderProgram, m_vertexShader);
+            // Delete the vertex shaders.
+            glDeleteShader(m_vertexShader);
+        }
 
-    // Delete the vertex and fragment shaders.
-    glDeleteShader(m_vertexShader);
-    glDeleteShader(m_fragmentShader);
+        if (m_fragmentShader)
+        {
+            // Detach the fragment shaders from the program.
+            glDetachShader(m_shaderProgram, m_fragmentShader);
+            // Delete the fragment shaders.
+            glDeleteShader(m_fragmentShader);
+        }
 
-    // Delete the shader program.
-    glDeleteProgram(m_shaderProgram);
-}
+        // Delete the shader program.
+        glDeleteProgram(m_shaderProgram);
+    }
 
-void OpenGLGraphicsManager::Tick()
-{
+    GraphicsManager::Finalize();
 }
 
 void OpenGLGraphicsManager::Clear()
 {
+    GraphicsManager::Clear();
+
     // Set the color to clear the screen to.
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
@@ -183,6 +192,8 @@ void OpenGLGraphicsManager::Clear()
 
 void OpenGLGraphicsManager::Draw()
 {
+    GraphicsManager::Draw();
+
     // Render the model using the color shader.
     RenderBuffers();
 
@@ -277,7 +288,7 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     return true;
 }
 
-bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const GLint texture_index)
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const int param)
 {
     unsigned int location;
 
@@ -286,10 +297,9 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     {
             return false;
     }
+    glUniform1i(location, param);
 
-    if (texture_index < GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) {
-        glUniform1i(location, texture_index);
-    }
+	return true;
 }
 
 void OpenGLGraphicsManager::InitializeBuffers()
@@ -297,9 +307,9 @@ void OpenGLGraphicsManager::InitializeBuffers()
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
     // Geometries
-    auto pGeometryNode = scene.GetFirstGeometryNode(); 
-    while (pGeometryNode)
+    for (auto _it : scene.GeometryNodes)
     {
+        auto pGeometryNode = _it.second;
         if (pGeometryNode->Visible()) 
         {
             auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
@@ -440,15 +450,23 @@ void OpenGLGraphicsManager::InitializeBuffers()
                 if (material) {
                     auto color = material->GetBaseColor();
                     if (color.ValueMap) {
-                        auto texture = color.ValueMap->GetTextureImage();
+                        Image texture = color.ValueMap->GetTextureImage();
                         auto it = m_TextureIndex.find(material_key);
                         if (it == m_TextureIndex.end()) {
                             GLuint texture_id;
                             glGenTextures(1, &texture_id);
                             glActiveTexture(GL_TEXTURE0 + texture_id);
                             glBindTexture(GL_TEXTURE_2D, texture_id);
-                            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 
+                            if(texture.bitcount == 24)
+                            {
+                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.Width, texture.Height, 
+                                    0, GL_RGB, GL_UNSIGNED_BYTE, texture.data);
+                            }
+                            else
+                            {
+                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 
                                     0, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
+                            }
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -464,14 +482,12 @@ void OpenGLGraphicsManager::InitializeBuffers()
                 dbc.vao     = vao;
                 dbc.mode    = mode;
                 dbc.type    = type;
-                dbc.count  = indexCount;
-                dbc.transform = pGeometryNode->GetCalculatedTransform();
+                dbc.count   = indexCount;
+                dbc.node    = pGeometryNode;
                 dbc.material = material;
                 m_DrawBatchContext.push_back(std::move(dbc));
             }
         }
-
-        pGeometryNode = scene.GetNextGeometryNode();
     }
 
     return;
@@ -479,28 +495,36 @@ void OpenGLGraphicsManager::InitializeBuffers()
 
 void OpenGLGraphicsManager::RenderBuffers()
 {
-    static float rotateAngle = 0.0f;
-
-    // Update world matrix to rotate the model
-    rotateAngle += PI / 360;
-    //Matrix4X4f rotationMatrixY;
-    Matrix4X4f rotationMatrixZ;
-    //MatrixRotationY(rotationMatrixY, rotateAngle);
-    MatrixRotationZ(rotationMatrixZ, rotateAngle);
-    //MatrixMultiply(m_DrawFrameContext.m_worldMatrix, rotationMatrixZ, rotationMatrixY);
-    m_DrawFrameContext.m_worldMatrix = rotationMatrixZ;
-
-    // Generate the view matrix based on the camera's position.
-    CalculateCameraMatrix();
-    CalculateLights();
-
     SetPerFrameShaderParameters();
 
     for (auto dbc : m_DrawBatchContext)
     {
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         glUseProgram(m_shaderProgram);
-        SetPerBatchShaderParameters("modelMatrix", *dbc.transform);
+
+        Matrix4X4f trans = *dbc.node->GetCalculatedTransform();
+
+        if (void* rigidBody = dbc.node->RigidBody()) {
+            // the geometry has rigid body bounded, we blend the simlation result here.
+            Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
+
+            // reset the translation part of the matrix
+            memcpy(trans[3], Vector3f(0.0f, 0.0f, 0.0f), sizeof(float) * 3);
+
+            // apply the rotation part of the simlation result
+            Matrix4X4f rotation;
+            BuildIdentityMatrix(rotation);
+            memcpy(rotation[0], simulated_result[0], sizeof(float) * 3);
+            memcpy(rotation[1], simulated_result[1], sizeof(float) * 3);
+            memcpy(rotation[2], simulated_result[2], sizeof(float) * 3);
+            trans = trans * rotation;
+
+            // replace the translation part of the matrix with simlation result directly
+            memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
+
+        }
+
+        SetPerBatchShaderParameters("modelMatrix", trans);
         glBindVertexArray(dbc.vao);
 
         /* well, we have different material for each index buffer so we can not draw them together
@@ -534,60 +558,6 @@ void OpenGLGraphicsManager::RenderBuffers()
     }
 
     return;
-}
-
-void OpenGLGraphicsManager::CalculateCameraMatrix()
-{
-    auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pCameraNode = scene.GetFirstCameraNode();
-    if (pCameraNode) {
-        m_DrawFrameContext.m_viewMatrix = *pCameraNode->GetCalculatedTransform();
-        InverseMatrix4X4f(m_DrawFrameContext.m_viewMatrix);
-    }
-    else {
-        // use default build-in camera
-        Vector3f position = { 0, -5, 0 }, lookAt = { 0, 0, 0 }, up = { 0, 0, 1 };
-        BuildViewMatrix(m_DrawFrameContext.m_viewMatrix, position, lookAt, up);
-    }
-
-    float fieldOfView = PI / 2.0f;
-    float nearClipDistance = 1.0f;
-    float farClipDistance = 100.0f;
-
-    if (pCameraNode) {
-        auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
-        // Set the field of view and screen aspect ratio.
-        fieldOfView = dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)->GetFov();
-        nearClipDistance = pCamera->GetNearClipDistance();
-        farClipDistance = pCamera->GetFarClipDistance();
-    }
-
-    const GfxConfiguration& conf = g_pApp->GetConfiguration();
-
-    float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
-
-    // Build the perspective projection matrix.
-    BuildPerspectiveFovRHMatrix(m_DrawFrameContext.m_projectionMatrix, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
-}
-
-void OpenGLGraphicsManager::CalculateLights()
-{
-    auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pLightNode = scene.GetFirstLightNode();
-    if (pLightNode) {
-        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f };
-        TransformCoord(m_DrawFrameContext.m_lightPosition, *pLightNode->GetCalculatedTransform());
-
-        auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
-        if (pLight) {
-            m_DrawFrameContext.m_lightColor = pLight->GetColor().Value;
-        }
-    }
-    else {
-        // use default build-in light 
-        m_DrawFrameContext.m_lightPosition = { -1.0f, -5.0f, 0.0f};
-        m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-    }
 }
 
 bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char* fsFilename)

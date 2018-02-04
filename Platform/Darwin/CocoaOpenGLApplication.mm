@@ -11,7 +11,7 @@ int CocoaOpenGLApplication::Initialize()
 {
     int result = 0;
 
-    result = CocoaApplication::Initialize();
+    CocoaApplication::CreateWindow();
 
     if (!result) {
         NSOpenGLPixelFormatAttribute attrs[] = {
@@ -42,6 +42,8 @@ int CocoaOpenGLApplication::Initialize()
 
         [m_pWindow setContentView:pGLView];
     }
+
+    result = BaseApplication::Initialize();
 
     return result;
 }

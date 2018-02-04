@@ -1,21 +1,15 @@
+#include <cstdio>
+#include <iostream>
 #include <string.h>
 #include "XcbApplication.hpp"
-#include "MemoryManager.hpp"
-#include "GraphicsManager.hpp"
 
 using namespace My;
+using namespace std;
 
-int My::XcbApplication::Initialize()
+void XcbApplication::CreateMainWindow()
 {
-    int result;
     uint32_t        mask = 0;
     uint32_t        values[3];
-
-    // first call base class initialization
-    result = BaseApplication::Initialize();
-
-    if (result != 0)
-        exit(result);
 
     if (!m_pConn) {
         /* establish connection to X server */
@@ -76,17 +70,35 @@ int My::XcbApplication::Initialize()
     xcb_map_window(m_pConn, m_Window);
 
     xcb_flush(m_pConn);
+}
+
+int XcbApplication::Initialize()
+{
+    int result;
+
+    CreateMainWindow();
+
+    // first call base class initialization
+    result = BaseApplication::Initialize();
+
+    if (result != 0)
+        exit(result);
+
 
     return result;
 }
 
-void My::XcbApplication::Finalize()
+void XcbApplication::Finalize()
 {
     xcb_disconnect(m_pConn);
+
+    BaseApplication::Finalize();
 }
 
-void My::XcbApplication::Tick()
+void XcbApplication::Tick()
 {
+    BaseApplication::Tick();
+
     xcb_generic_event_t* pEvent;
     if((pEvent = xcb_poll_for_event(m_pConn)))
     {
@@ -94,7 +106,52 @@ void My::XcbApplication::Tick()
         case XCB_EXPOSE:
             break;
         case XCB_KEY_PRESS:
-            BaseApplication::m_bQuit = true;
+            {
+                auto key_code = reinterpret_cast<xcb_key_press_event_t*>(pEvent)->detail;
+                printf("[XcbApplication] Key Press: Keycode: %d\n", key_code);
+                switch (key_code)
+                {
+                case 113:
+                    g_pInputManager->LeftArrowKeyDown();
+                    break;
+                case 114:
+                    g_pInputManager->RightArrowKeyDown();
+                    break;
+                case 111:
+                    g_pInputManager->UpArrowKeyDown();
+                    break;
+                case 116:
+                    g_pInputManager->DownArrowKeyDown();
+                    break;
+                case 27:
+                    g_pInputManager->ResetKeyDown();
+                    break;
+                }
+                break;
+            }
+        case XCB_KEY_RELEASE:
+            {
+                auto key_code = reinterpret_cast<xcb_key_release_event_t*>(pEvent)->detail;
+                printf("[XcbApplication] Key Release: Keycode: %d\n", key_code);
+                switch (key_code)
+                {
+                case 113:
+                    g_pInputManager->LeftArrowKeyUp();
+                    break;
+                case 114:
+                    g_pInputManager->RightArrowKeyUp();
+                    break;
+                case 111:
+                    g_pInputManager->UpArrowKeyUp();
+                    break;
+                case 116:
+                    g_pInputManager->DownArrowKeyUp();
+                    break;
+                case 27:
+                    g_pInputManager->ResetKeyUp();
+                    break;
+                }
+            }
             break;
         default:
             break;
@@ -107,7 +164,6 @@ void My::XcbApplication::Tick()
 	        OnDraw();
         }
     }
-
 }
 
 

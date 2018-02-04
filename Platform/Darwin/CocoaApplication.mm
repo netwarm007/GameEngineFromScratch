@@ -6,10 +6,8 @@
 
 using namespace My;
 
-int CocoaApplication::Initialize()
+void CocoaApplication::CreateWindow()
 {
-    int result = 0;
-
     [NSApplication  sharedApplication];
 
     // Menu
@@ -39,6 +37,15 @@ int CocoaApplication::Initialize()
     [m_pWindow makeKeyAndOrderFront:nil];
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
+}
+
+int CocoaApplication::Initialize()
+{
+    int result = 0;
+
+    CreateWindow();
+
+    result = BaseApplication::Initialize();
 
     return result;
 }
@@ -46,10 +53,12 @@ int CocoaApplication::Initialize()
 void CocoaApplication::Finalize()
 {
     [m_pWindow release];
+    BaseApplication::Finalize();
 }
 
 void CocoaApplication::Tick()
 {
+    BaseApplication::Tick();
     NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
     untilDate:nil
     inMode:NSDefaultRunLoopMode
@@ -57,8 +66,69 @@ void CocoaApplication::Tick()
 
     switch([(NSEvent *)event type])
     {
+        case NSEventTypeKeyUp:
+            NSLog(@"[CocoaApp] Key Up Event Received!");
+            if ([event modifierFlags] & NSEventModifierFlagNumericPad)
+            {
+                // arrow keys
+                NSString* theArrow = [event charactersIgnoringModifiers];
+                unichar keyChar = 0;
+                if ([theArrow length] == 1)
+                {
+                    keyChar = [theArrow characterAtIndex:0];
+                    if (keyChar == NSLeftArrowFunctionKey) {
+                        g_pInputManager->LeftArrowKeyUp();
+                        break;
+                    }
+                    if (keyChar == NSRightArrowFunctionKey) {
+                        g_pInputManager->RightArrowKeyUp();
+                        break;
+                    }
+                    if (keyChar == NSUpArrowFunctionKey) {
+                        g_pInputManager->UpArrowKeyUp();
+                        break;
+                    }
+                    if (keyChar == NSDownArrowFunctionKey) {
+                        g_pInputManager->DownArrowKeyUp();
+                        break;
+                    }
+                }
+            }
+            break;
         case NSEventTypeKeyDown:
-            NSLog(@"Key Down Event Received!");
+            NSLog(@"[CocoaApp] Key Down Event Received! keycode=%d", [event keyCode]);
+            if ([event modifierFlags] & NSEventModifierFlagNumericPad)
+            {
+                // arrow keys
+                NSString* theArrow = [event charactersIgnoringModifiers];
+                unichar keyChar = 0;
+                if ([theArrow length] == 1)
+                {
+                    keyChar = [theArrow characterAtIndex:0];
+                    if (keyChar == NSLeftArrowFunctionKey) {
+                        g_pInputManager->LeftArrowKeyDown();
+                        break;
+                    }
+                    if (keyChar == NSRightArrowFunctionKey) {
+                        g_pInputManager->RightArrowKeyDown();
+                        break;
+                    }
+                    if (keyChar == NSUpArrowFunctionKey) {
+                        g_pInputManager->UpArrowKeyDown();
+                        break;
+                    }
+                    if (keyChar == NSDownArrowFunctionKey) {
+                        g_pInputManager->DownArrowKeyDown();
+                        break;
+                    }
+                }
+            } else {
+                switch ([event keyCode])
+                {
+                    case 0x0F: // r key
+                        g_pInputManager->ResetKeyDown();
+                }
+            }
             break;
         default:
             break;

@@ -1,17 +1,187 @@
 version: 2
 jobs:
-  build:
+  build_linux:
     docker:
       - image: ubuntu:16.04
     steps:
-      - run: apt update 
-      - run: apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
-      - run: curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
-      - run: apt install -y git-lfs
+      - run: 
+          name: Install Dependencies
+          command: |
+             apt update 
+             apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
+             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
+             apt install -y git-lfs
       - checkout
-      - run: git lfs checkout
-      - run: ./build_crossguid.sh
-      - run: ./build_opengex.sh
-      - run: ./build.sh
-      - run: cmake --build ./build --target test
+      - run: 
+          name: Git LFS Checkout
+          command: |
+             git lfs fetch
+             git lfs checkout
+      - run:
+          name: Build
+          command: |
+             ./build_crossguid.sh
+             ./build_opengex.sh
+             ./build_zlib.sh
+             ./build_bullet.sh
+             ./build.sh
+      - run:
+          name: Test
+          command: |
+             cmake --build ./build --target test
+  build_macos:
+    macos:
+      xcode: "9.2.0"
+    steps:
+      - checkout
+      - run: 
+          name: Git LFS Checkout
+          command: |
+             git lfs fetch
+             git lfs checkout
+      - run: 
+          name: Install Dependencies via MacPorts
+          command: |
+             curl -L -o $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg https://github.com/macports/macports-base/releases/download/v2.4.2/MacPorts-2.4.2-10.12-Sierra.pkg
+             sudo installer -package $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg -target /
+             rm $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg
+             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+             sudo -E port -q install cmake xorg-libX11 xorg-libxcb mesa libGLU
+      - run:
+          name: Build
+          command: |
+             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+             ./build_crossguid.sh
+             ./build_opengex.sh
+             ./build_zlib.sh
+             ./build_bullet.sh
+             ./build.sh
+      - run:
+          name: Test
+          command: |
+             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+             cmake --build ./build --target test
+  build_android:
+    working_directory: ~/project
+    docker:
+      - image: tim03/android-sdk-ndk
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - run: 
+          name: Install Git LFS
+          command: |
+             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+             sudo apt install -y git-lfs
+      - checkout
+      - run: 
+          name: Git Lfs Checkout
+          command: |
+             git lfs fetch
+             git lfs checkout
+      - restore_cache:
+          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
+      - run:
+          name: Setup Emulator
+          command: |
+                   sdkmanager "system-images;android-24;default;armeabi-v7a"
+                   echo "no" | avdmanager create avd -n test -k "system-images;android-24;default;armeabi-v7a"
+          working_directory: Game/Billiard
+      - run:
+          name: Download Dependencies
+          command: |
+                   ./gradlew androidDependencies
+          working_directory: Game/Billiard
+      - save_cache:
+          paths:
+            - Game/Billiard/.gradle
+          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
+      - run:
+          name: Build External Dependencies
+          command: |
+                   ./build_crossguid-android.sh
+                   ./build_opengex-android.sh
+                   ./build_bullet-android.sh
+      - run:
+          name: Build
+          command: |
+                   ./gradlew build
+          working_directory: Game/Billiard
+      - run:
+          name: Launch Emulator 
+          command: |
+                   emulator @test -no-audio -no-window -no-boot-anim -accel on
+          background: true
+          working_directory: Game/Billiard
+      - run:
+          name: Deploy Assets
+          command: |
+                   adb wait-for-device
+                   adb push ../../Asset /data/local/tmp/
+          working_directory: Game/Billiard
+      - run:
+          name: Run Geom Math Library Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/GeomMathTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/GeomMathTest
+                   adb shell "cd /data/local/tmp && ./GeomMathTest"
+          working_directory: Game/Billiard
+      - run:
+          name: Run Color Space Conversion Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/ColorSpaceConversionTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/ColorSpaceConversionTest
+                   adb shell "cd /data/local/tmp && ./ColorSpaceConversionTest"
+          working_directory: Game/Billiard
+      - run:
+          name: Run Asset Loader Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/AssetLoaderTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/AssetLoaderTest
+                   adb shell "cd /data/local/tmp && ./AssetLoaderTest"
+          working_directory: Game/Billiard
+      - run:
+          name: Run JPEG decoder Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/JpegParserTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/JpegParserTest
+                   adb shell "cd /data/local/tmp && ./JpegParserTest"
+          working_directory: Game/Billiard
+      - run:
+          name: Run PNG decoder Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/PngParserTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/PngParserTest
+                   adb shell "cd /data/local/tmp && ./PngParserTest"
+          working_directory: Game/Billiard
+      - run:
+          name: Run OGEX parser Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/OgexParserTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/OgexParserTest
+                   adb shell "cd /data/local/tmp && ./OgexParserTest"
+          working_directory: Game/Billiard
+      - run:
+          name: Run Scene Loading Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/SceneLoadingTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/SceneLoadingTest
+                   adb shell "cd /data/local/tmp && ./SceneLoadingTest"
+          working_directory: Game/Billiard
+      - store_artifacts:
+          path: Game/Billiard/app/build/reports
+          destination: reports
+      - store_artifacts:
+          path: Game/Billiard/app/build/test-results
+          destination: test-results
+      - store_artifacts:
+          path: Game/Billiard/app/build/outputs/apk
+          destination: apk
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build_linux
+      - build_macos
+      - build_android
 

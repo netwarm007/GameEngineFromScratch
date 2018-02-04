@@ -131,7 +131,6 @@ namespace My {
         {
             std::vector<uint8_t> scan_data;
             size_t scanLength = 0;
-            bool bLastRestartSegment = true;
 
             {
                 const uint8_t* p = pScanData;
@@ -161,7 +160,6 @@ namespace My {
 #if DUMP_DETAILS
                     std::cout << "Found RST while scan the ECS." << std::endl;
 #endif
-                    bLastRestartSegment = false;
                 }
 
 #if DUMP_DETAILS
@@ -383,7 +381,7 @@ namespace My {
         }
 
     public:
-        virtual Image Parse(const Buffer& buf)
+        virtual Image Parse(Buffer& buf)
         {
             Image img;
 
@@ -397,8 +395,6 @@ namespace My {
 
                 while(pData < pDataEnd)
                 {
-                    bool foundStartOfScan = false;
-                    bool foundRestartOfScan = false;
                     size_t scanLength = 0;
 
                     const JPEG_SEGMENT_HEADER* pSegmentHeader = reinterpret_cast<const JPEG_SEGMENT_HEADER*>(pData);
@@ -531,7 +527,6 @@ namespace My {
                             break;
                         case 0xFFDA:
                             {
-                                foundStartOfScan = true;
                                 std::cout << "Start Of Scan" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
@@ -557,7 +552,6 @@ namespace My {
                         case 0xFFD6:
                         case 0xFFD7:
                             {
-                                foundRestartOfScan = true;
 #if DUMP_DETAILS
                                 std::cout << "Restart Of Scan" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
@@ -570,7 +564,6 @@ namespace My {
                             break;
                         case 0xFFD9:
                             {
-                                foundStartOfScan = false;
                                 std::cout << "End Of Scan" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
                                 pData += 2 /* length of marker */;

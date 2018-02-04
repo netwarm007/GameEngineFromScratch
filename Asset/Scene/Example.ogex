@@ -89,8 +89,4 @@ Material $material1
 	Name {string {"03 - Default"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.588235, 0.588235, 0.588235}}}
-	Texture (attrib = "diffuse")
-	{
-		string {"Textures/Concrete.tga"}
-	}
 }

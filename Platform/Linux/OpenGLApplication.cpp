@@ -1,23 +1,11 @@
-#include <stdio.h>
+#include <cstdio>
 #include <climits>
 #include <cstring>
 #include <X11/Xlib-xcb.h>
 #include "OpenGLApplication.hpp"
-#include "OpenGL/OpenGLGraphicsManager.hpp"
-#include "MemoryManager.hpp"
-#include "AssetLoader.hpp"
-#include "SceneManager.hpp"
 
 using namespace My;
-
-namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, "Game Engine From Scratch (XCB + OpenGL)");
-    IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
-    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
-    MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
-    AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
-    SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
-}
+using namespace std;
 
 // Helper to check for extension string presence.  Adapted from:
 //   http://www.opengl.org/resources/features/OGLextensions/
@@ -163,11 +151,7 @@ int My::OpenGLApplication::Initialize()
     m_pScreen = screen_iter.data;
     m_nVi = vi->visualid;
 
-    result = XcbApplication::Initialize();
-    if (result) {
-        printf("Xcb Application initialize failed!");
-	return -1;
-    }
+    CreateMainWindow();
 
     /* Get the default screen's GLX extension list */
     glxExts = glXQueryExtensionsString(m_pDisplay, default_screen);
@@ -272,6 +256,9 @@ int My::OpenGLApplication::Initialize()
     }
 
     XFree(vi);
+
+    result = BaseApplication::Initialize();
+
     return result;
 }
 

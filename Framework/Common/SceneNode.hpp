@@ -21,6 +21,8 @@ namespace My {
             BaseSceneNode(const std::string& name) { m_strName = name; };
 			virtual ~BaseSceneNode() {};
 
+            const std::string GetName() const { return m_strName; };
+
             void AppendChild(std::shared_ptr<BaseSceneNode>&& sub_node)
             {
                 m_Children.push_back(std::move(sub_node));
@@ -91,6 +93,7 @@ namespace My {
     };
 
     typedef BaseSceneNode SceneEmptyNode;
+
     class SceneGeometryNode : public SceneNode<SceneObjectGeometry> 
     {
         protected:
@@ -98,6 +101,7 @@ namespace My {
             bool        m_bShadow;
             bool        m_bMotionBlur;
             std::vector<std::string> m_Materials;
+            void*       m_pRigidBody = nullptr;
 
         protected:
             virtual void dump(std::ostream& out) const 
@@ -131,6 +135,21 @@ namespace My {
                 else
                     return std::string("default");
             };
+
+            void LinkRigidBody(void* rigidBody)
+            {
+                m_pRigidBody = rigidBody;
+            }
+
+            void* UnlinkRigidBody()
+            {
+                void* rigidBody = m_pRigidBody;
+                m_pRigidBody = nullptr;
+
+                return rigidBody;
+            }
+
+            void* RigidBody() { return m_pRigidBody; }
     };
 
     class SceneLightNode : public SceneNode<SceneObjectLight> 

@@ -1,2 +1,5 @@
 #cmakedefine HAVE_MAKE_UNIQUE
 #cmakedefine HAVE_CLAMP
+// Enable this to print out very detailed decode information
+// #define DUMP_DETAILS 1
+

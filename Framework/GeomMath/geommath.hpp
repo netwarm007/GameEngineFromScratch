@@ -3,16 +3,16 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
-#include "include/CrossProduct.h"
-#include "include/MulByElement.h"
-#include "include/Normalize.h"
-#include "include/Transform.h"
-#include "include/Transpose.h"
-#include "include/AddByElement.h"
-#include "include/SubByElement.h"
-#include "include/MatrixExchangeYandZ.h"
-#include "include/InverseMatrix4X4f.h"
-#include "include/DCT.h"
+#include "CrossProduct.h"
+#include "MulByElement.h"
+#include "Normalize.h"
+#include "Transform.h"
+#include "Transpose.h"
+#include "AddByElement.h"
+#include "SubByElement.h"
+#include "MatrixExchangeYandZ.h"
+#include "InverseMatrix4X4f.h"
+#include "DCT.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -237,7 +237,7 @@ namespace My {
     }
 
     template <typename T>
-    inline void DotProduct(T& result, const T* a, const T* b, size_t count)
+    inline void DotProduct(T& result, const T* a, const T* b, const size_t count)
     {
         T* _result = new T[count];
 
@@ -365,7 +365,6 @@ namespace My {
         for (int i = 0; i < Da; i++) {
             for (int j = 0; j < Dc; j++) {
                 DotProduct(result[i][j], matrix1[i], matrix2_transpose[j], Db);
-
             }
         }
 
@@ -393,7 +392,7 @@ namespace My {
         T length;
         DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), countof(a.data));
         length = sqrt(length);
-        ispc::Normalize(a, length, countof(a.data));
+        ispc::Normalize(countof(a.data), a, length);
     }
 
     inline void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw, const float pitch, const float roll)
@@ -425,7 +424,9 @@ namespace My {
 
     inline void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix)
     {
-        ispc::Transform(vector, matrix);
+		Vector4f tmp (vector, 1.0f);
+        ispc::Transform(tmp, matrix);
+		vector.xyz = tmp.xyz;
     }
 
     inline void Transform(Vector4f& vector, const Matrix4X4f& matrix)

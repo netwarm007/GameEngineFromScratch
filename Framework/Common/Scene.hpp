@@ -22,6 +22,8 @@ namespace My {
         std::unordered_map<std::string, std::shared_ptr<SceneObjectMaterial>>   Materials;
         std::unordered_map<std::string, std::shared_ptr<SceneObjectGeometry>>   Geometries;
 
+        std::unordered_map<std::string, std::weak_ptr<SceneGeometryNode>>     LUT_Name_GeometryNode;
+
     public:
         Scene() {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
@@ -36,19 +38,15 @@ namespace My {
 
         const std::shared_ptr<SceneObjectCamera> GetCamera(const std::string& key) const;
         const std::shared_ptr<SceneCameraNode> GetFirstCameraNode() const;
-        const std::shared_ptr<SceneCameraNode> GetNextCameraNode() const;
 
         const std::shared_ptr<SceneObjectLight> GetLight(const std::string& key) const;
         const std::shared_ptr<SceneLightNode> GetFirstLightNode() const;
-        const std::shared_ptr<SceneLightNode> GetNextLightNode() const;
 
         const std::shared_ptr<SceneObjectGeometry> GetGeometry(const std::string& key) const;
         const std::shared_ptr<SceneGeometryNode> GetFirstGeometryNode() const;
-        const std::shared_ptr<SceneGeometryNode> GetNextGeometryNode() const;
 
         const std::shared_ptr<SceneObjectMaterial> GetMaterial(const std::string& key) const;
         const std::shared_ptr<SceneObjectMaterial> GetFirstMaterial() const;
-        const std::shared_ptr<SceneObjectMaterial> GetNextMaterial() const;
 
         void LoadResource(void);
     };

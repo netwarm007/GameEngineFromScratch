@@ -36,7 +36,8 @@ namespace My {
                     break;
                 case OGEX::kStructureGeometryNode:
                     {
-                        auto _node = std::make_shared<SceneGeometryNode>(structure.GetStructureName());
+                        std::string _key = structure.GetStructureName();
+                        auto _node = std::make_shared<SceneGeometryNode>(_key);
 						const OGEX::GeometryNodeStructure& _structure = dynamic_cast<const OGEX::GeometryNodeStructure&>(structure);
 
 						_node->SetVisibility(_structure.GetVisibleFlag());
@@ -44,7 +45,7 @@ namespace My {
 						_node->SetIfMotionBlur(_structure.GetMotionBlurFlag());
 
                         // ref scene objects
-                        std::string _key = _structure.GetObjectStructure()->GetStructureName();
+                        _key = _structure.GetObjectStructure()->GetStructureName();
                         _node->AddSceneObjectRef(_key);
 
                         // ref materials
@@ -57,6 +58,8 @@ namespace My {
                             _node->AddMaterialRef(_key);
                         }
 
+                        std::string name = _structure.GetNodeName();
+                        scene.LUT_Name_GeometryNode.emplace(name, _node);
                         scene.GeometryNodes.emplace(_key, _node);
 
                         node = _node;
@@ -97,9 +100,48 @@ namespace My {
 						const OGEX::GeometryObjectStructure& _structure = dynamic_cast<const OGEX::GeometryObjectStructure&>(structure);
                         std::string _key = _structure.GetStructureName();
 						auto _object = std::make_shared<SceneObjectGeometry>();
+
+                        // properties
 						_object->SetVisibility(_structure.GetVisibleFlag());
 						_object->SetIfCastShadow(_structure.GetShadowFlag());
 						_object->SetIfMotionBlur(_structure.GetMotionBlurFlag());
+
+                        // extensions
+                        //// collision shape
+                        ODDL::Structure* extension = _structure.GetFirstExtensionSubnode();
+                        while (extension) {
+                            const OGEX::ExtensionStructure* _extension = dynamic_cast<const OGEX::ExtensionStructure*>(extension);
+                            auto _appid = _extension->GetApplicationString();
+                            if (_appid == "MyGameEngine") {
+                                auto _type = _extension->GetTypeString();
+                                if (_type == "collision") {
+                                    const ODDL::Structure *sub_structure = _extension->GetFirstCoreSubnode();
+                                    const ODDL::DataStructure<ODDL::StringDataType> *dataStructure1 = static_cast<const ODDL::DataStructure<ODDL::StringDataType> *>(sub_structure);
+                                    auto collision_type = dataStructure1->GetDataElement(0);
+
+                                    sub_structure = _extension->GetLastCoreSubnode();
+                                    const ODDL::DataStructure<ODDL::FloatDataType> *dataStructure2 = static_cast<const ODDL::DataStructure<ODDL::FloatDataType> *>(sub_structure);
+                                    auto elementCount = dataStructure2->GetDataElementCount();
+                                    float* _data = (float*)&dataStructure2->GetDataElement(0);
+                                    if (collision_type  == "plane") {
+                                        _object->SetCollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypePlane);
+                                        _object->SetCollisionParameters(_data, elementCount);
+                                    }
+                                    else if (collision_type == "sphere") {
+                                        _object->SetCollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeSphere);
+                                        _object->SetCollisionParameters(_data, elementCount);
+                                    }
+                                    else if (collision_type == "box") {
+                                        _object->SetCollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeBox);
+                                        _object->SetCollisionParameters(_data, elementCount);
+                                    }
+                                    break;
+                                }
+                            }
+                            extension = extension->Next();
+                        }
+
+                        // meshs
 						const ODDL::Map<OGEX::MeshStructure> *_meshs = _structure.GetMeshMap();
 						int32_t _count = _meshs->GetElementCount();
 						for (int32_t i = 0; i < _count; i++)

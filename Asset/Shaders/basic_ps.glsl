@@ -44,11 +44,11 @@ void main(void)
 {
     vec3 N = normalize(normal.xyz);
     vec3 L = normalize((viewMatrix * vec4(lightPosition, 1.0f)).xyz - v.xyz);
-    vec3 R = normalize(2 * dot(L,N) * N - L);
+    vec3 R = normalize(2.0f * clamp(dot(L,N), 0.0f, 1.0f) * N - L);
     vec3 V = normalize(v.xyz);
     if (diffuseColor.r < 0)
-        outputColor = vec4(ambientColor.rgb + lightColor.rgb * texture(defaultSampler, uv).rgb * dot(N, L) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower), 1.0f); 
+        outputColor = vec4(ambientColor.rgb + lightColor.rgb * texture(defaultSampler, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower), 1.0f); 
     else
-        outputColor = vec4(ambientColor.rgb + lightColor.rgb * diffuseColor.rgb * dot(N, L) + specularColor.rgb * pow(clamp(dot(R,V), 0.0f, 1.0f), specularPower), 1.0f); 
+        outputColor = vec4(ambientColor.rgb + lightColor.rgb * diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R,V), 0.0f, 1.0f), specularPower), 1.0f); 
 }
 

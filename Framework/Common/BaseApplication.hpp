@@ -4,6 +4,9 @@
 #include "MemoryManager.hpp"
 #include "AssetLoader.hpp"
 #include "SceneManager.hpp"
+#include "InputManager.hpp"
+#include "IPhysicsManager.hpp"
+#include "GameLogic.hpp"
 
 namespace My {
     class BaseApplication : implements IApplication

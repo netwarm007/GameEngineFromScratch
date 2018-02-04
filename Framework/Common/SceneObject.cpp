@@ -122,9 +122,6 @@ namespace My {
 		for (size_t i = 0; i < obj.m_IndexArray.size(); i++) {
 			out << obj.m_IndexArray[i] << std::endl;
 		}
-		out << "Visible: " << obj.m_bVisible << std::endl;
-		out << "Shadow: " << obj.m_bShadow << std::endl;
-		out << "Motion Blur: " << obj.m_bMotionBlur << std::endl;
 
 		return out;
 	}
