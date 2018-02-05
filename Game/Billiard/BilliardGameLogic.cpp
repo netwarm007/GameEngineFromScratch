@@ -1,7 +1,7 @@
 #include <iostream>
 #include "BilliardGameLogic.hpp"
 #include "SceneManager.hpp"
-#include "PhysicsManager.hpp"
+#include "IPhysicsManager.hpp"
 
 using namespace My;
 using namespace std;

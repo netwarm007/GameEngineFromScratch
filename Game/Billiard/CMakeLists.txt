@@ -10,6 +10,7 @@ add_executable(BilliardGame
 ENDIF(ANDROID)
 target_link_libraries(BilliardGame 
                         MyGameEngine
+                        BulletPhysics
                      )
 IF(WIN32)
 add_custom_command(TARGET BilliardGame POST_BUILD

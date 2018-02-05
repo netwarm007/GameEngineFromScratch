@@ -41,3 +41,9 @@ add_executable(BulletTest BulletTest.cpp)
 target_link_libraries(BulletTest ${BULLET_DYNAMICS_LIBRARY} ${BULLET_COLLISION_LIBRARY} ${BULLET_LINEARMATH_LIBRARY})
 add_test(NAME TEST_Bullet COMMAND BulletTest)
 
+IF(WIN32)
+add_custom_command(TARGET PngParserTest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
+        $<TARGET_FILE_DIR:PngParserTest>)
+ENDIF(WIN32)
