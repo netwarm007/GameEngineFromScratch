@@ -1140,7 +1140,6 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle[2];
     uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * (1 + kMaxSceneObjectCount);
     cbvSrvHandle[0].ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + nFrameResourceDescriptorOffset * m_nCbvSrvDescriptorSize;
-	m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle[0]);
 
 	// Sampler
     m_pCommandList->SetGraphicsRootDescriptorTable(1, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
@@ -1162,6 +1161,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     {
 		// CBV Per Batch
 		cbvSrvHandle[1].ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (nFrameResourceDescriptorOffset + i + 1) * m_nCbvSrvDescriptorSize;
+		m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle[0]);
 
 		// select which vertex buffer(s) to use
 		m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView[i * 3]);    // POSITION
@@ -1211,7 +1211,7 @@ bool D3d12GraphicsManager::SetPerFrameShaderParameters()
 
 bool D3d12GraphicsManager::SetPerBatchShaderParameters(int32_t index)
 {
-    memcpy(m_pCbvDataBegin + m_nFrameIndex * kSizeConstantBufferPerFrame + kSizePerFrameConstantBuffer + index * kSizePerFrameConstantBuffer, 
+    memcpy(m_pCbvDataBegin + m_nFrameIndex * kSizeConstantBufferPerFrame + (index + 1) * kSizePerFrameConstantBuffer, 
 		&m_DrawBatchContext, sizeof(m_DrawBatchContext));
     return true;
 }
