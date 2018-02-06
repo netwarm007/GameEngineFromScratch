@@ -51,7 +51,9 @@ int WindowsApplication::Initialize()
 
     CreateMainWindow();
 
-	// first call base class initialization
+    m_hDc = GetDC(m_hWnd);
+
+	// call base class initialization
     result = BaseApplication::Initialize();
 
     if (result != 0)
@@ -62,6 +64,8 @@ int WindowsApplication::Initialize()
 
 void WindowsApplication::Finalize()
 {
+	ReleaseDC(m_hWnd, m_hDc);
+
     BaseApplication::Finalize();
 }
 

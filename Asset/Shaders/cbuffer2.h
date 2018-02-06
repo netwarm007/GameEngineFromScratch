@@ -5,7 +5,7 @@ struct a2v
 {
 	float3 Position		: POSITION;
 	float3 Normal		: NORMAL;
-	//float2 TextureUV	: TEXCOORD;
+	float2 TextureUV	: TEXCOORD;
 };
 
 cbuffer PerFrameConstants : register(b0)
@@ -19,6 +19,8 @@ cbuffer PerFrameConstants : register(b0)
 
 cbuffer PerBatchConstants : register(b1)
 {
+	int  	objectID;
+	float4x4 objectMatrix;
     float3 ambientColor;
     float3 diffuseColor;
     float3 specularColor;

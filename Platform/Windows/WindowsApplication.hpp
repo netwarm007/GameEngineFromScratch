@@ -30,6 +30,7 @@ namespace My {
 
     protected:
         HWND m_hWnd;
+        HDC  m_hDc;
     };
 }
 

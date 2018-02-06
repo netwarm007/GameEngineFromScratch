@@ -64,7 +64,10 @@
             "includePath": [
                 "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
                 "${workspaceRoot}",
-                "${workspaceRoot}/RHI"
+                "${workspaceRoot}/RHI",
+                "${workspaceRoot}/Framework/Common",
+                "${workspaceRoot}/Framework/Interface",
+                "${workspaceRoot}/Framework/GeomMath"
             ],
             "defines": [
                 "_DEBUG",

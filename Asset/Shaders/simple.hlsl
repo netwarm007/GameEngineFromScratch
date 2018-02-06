@@ -10,7 +10,7 @@ v2p VSMain(a2v input) {
 
 	output.vNorm = vN;
 
-	//output.TextureUV = input.TextureUV;
+	output.TextureUV = input.TextureUV;
 
 	return output;
 }

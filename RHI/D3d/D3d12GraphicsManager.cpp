@@ -881,8 +881,8 @@ HRESULT D3d12GraphicsManager::InitializeShader(const char* vsFilename, const cha
     D3D12_INPUT_ELEMENT_DESC ied[] =
     {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        //{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
     };
 
     D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
@@ -973,7 +973,7 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 	int32_t n = 0;
     for (auto _it : scene.GeometryNodes)
     {
-	auto pGeometryNode = _it.second;
+	    auto pGeometryNode = _it.second;
 
         if (pGeometryNode->Visible())
         {
@@ -999,12 +999,9 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 
             auto indexGroupCount = pMesh->GetIndexGroupCount();
 
-            for (decltype(indexGroupCount) i = 0; i < indexGroupCount; i++)
-            {
-                const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(i);
-
-                CreateIndexBuffer(index_array);
-            }
+			// TODO: Implement LOD switching
+            const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
+            CreateIndexBuffer(index_array);
 
 			SetPerBatchShaderParameters(n);
 			n++;
@@ -1143,6 +1140,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle[2];
     uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * (1 + kMaxSceneObjectCount);
     cbvSrvHandle[0].ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + nFrameResourceDescriptorOffset * m_nCbvSrvDescriptorSize;
+	m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle[0]);
 
 	// Sampler
     m_pCommandList->SetGraphicsRootDescriptorTable(1, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
@@ -1159,17 +1157,16 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     SetPerFrameShaderParameters();
 
     // do 3D rendering on the back buffer here
-    cbvSrvHandle[1].ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + nFrameResourceDescriptorOffset * m_nCbvSrvDescriptorSize;
 	int32_t i = 0;
     for (auto dbc : m_DrawBatchContext)
     {
-
 		// CBV Per Batch
-		cbvSrvHandle[1].ptr = m_nCbvSrvDescriptorSize;
-		m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle[0]);
+		cbvSrvHandle[1].ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (nFrameResourceDescriptorOffset + i + 1) * m_nCbvSrvDescriptorSize;
 
 		// select which vertex buffer(s) to use
-		m_pCommandList->IASetVertexBuffers(0, 2, &m_VertexBufferView[i * 2]);
+		m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView[i * 3]);    // POSITION
+		m_pCommandList->IASetVertexBuffers(1, 1, &m_VertexBufferView[i * 3 + 1]);  // NORMAL
+		m_pCommandList->IASetVertexBuffers(2, 1, &m_VertexBufferView[i * 3 + 2]);  // UV
 		// select which index buffer to use
 		m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[i]);
 
