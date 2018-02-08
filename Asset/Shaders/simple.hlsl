@@ -1,12 +1,12 @@
-#include "cbuffer2.h"
-#include "vsoutput2.hs"
+#include "cbuffer.h"
+#include "vsoutput.hs"
 
 v2p VSMain(a2v input) {
     v2p output;
 
-	//output.Position = mul(mul(mul(float4(input.Position.xyz, 1.0f), m_worldMatrix), m_viewMatrix), m_projectionMatrix);
-	output.vPosInView = (mul(m_viewMatrix, mul(m_worldMatrix, float4(input.Position.xyz, 1.0f)))).xyz;
-	output.Position = mul(m_projectionMatrix, float4(output.vPosInView, 1.0f));
+	float4 temp = (mul(m_viewMatrix, mul(m_worldMatrix, float4(input.Position.xyz, 1.0f))));
+	output.vPosInView = temp.xyz;
+	output.Position = mul(m_projectionMatrix, temp);
 	float3 vN = (mul(m_viewMatrix, mul(m_worldMatrix, float4(input.Normal, 0.0f)))).xyz;
 
 	output.vNorm = vN;

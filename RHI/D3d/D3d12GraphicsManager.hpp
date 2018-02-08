@@ -3,6 +3,7 @@
 #include <d3d12.h>
 #include <DXGI1_4.h>
 #include <vector>
+#include <map>
 #include "GraphicsManager.hpp"
 #include "Buffer.hpp"
 #include "Image.hpp"
@@ -33,7 +34,7 @@ namespace My {
         HRESULT CreateDepthStencil();
         HRESULT CreateGraphicsResources();
         HRESULT CreateSamplerBuffer();
-        HRESULT CreateTextureBuffer();
+        HRESULT CreateTextureBuffer(SceneObjectTexture& image);
         HRESULT CreateConstantBuffer();
         HRESULT CreateIndexBuffer(const SceneObjectIndexArray& index_array);
         HRESULT CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
@@ -69,9 +70,10 @@ namespace My {
         uint32_t                        m_nCbvSrvDescriptorSize;
 
         std::vector<ID3D12Resource*>    m_Buffers;                          // the pointer to the vertex buffer
+        std::vector<ID3D12Resource*>    m_Textures;                          // the pointer to the vertex buffer
+        std::map<std::string, D3D12_CPU_DESCRIPTOR_HANDLE>  m_TextureIndex;
         std::vector<D3D12_VERTEX_BUFFER_VIEW>       m_VertexBufferView;                 // a view of the vertex buffer
         std::vector<D3D12_INDEX_BUFFER_VIEW>        m_IndexBufferView;                  // a view of the vertex buffer
-        ID3D12Resource*                 m_pTextureBuffer = nullptr;         // the pointer to the texture buffer
 
         struct DrawBatchContext {
             int32_t count;

@@ -17,7 +17,7 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(Open GL) Launch Billiard Game",
+            "name": "(Windows)(DX12) Launch Billiard Game",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",

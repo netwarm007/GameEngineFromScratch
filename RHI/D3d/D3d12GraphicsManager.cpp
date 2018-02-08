@@ -91,6 +91,24 @@ namespace My {
 	//*********************************************************
 
 	//------------------------------------------------------------------------------------------------
+	// Returns required size of a buffer to be used for data upload
+	inline UINT64 GetRequiredIntermediateSize(
+		_In_ ID3D12Resource* pDestinationResource,
+		_In_range_(0, D3D12_REQ_SUBRESOURCES) UINT FirstSubresource,
+		_In_range_(0, D3D12_REQ_SUBRESOURCES - FirstSubresource) UINT NumSubresources)
+	{
+		D3D12_RESOURCE_DESC Desc = pDestinationResource->GetDesc();
+		UINT64 RequiredSize = 0;
+
+		ID3D12Device* pDevice;
+		pDestinationResource->GetDevice(__uuidof(*pDevice), reinterpret_cast<void**>(&pDevice));
+		pDevice->GetCopyableFootprints(&Desc, FirstSubresource, NumSubresources, 0, nullptr, nullptr, nullptr, &RequiredSize);
+		pDevice->Release();
+
+		return RequiredSize;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	// All arrays must be populated (e.g. by calling GetCopyableFootprints)
 	inline UINT64 UpdateSubresources(
 		_In_ ID3D12GraphicsCommandList* pCmdList,
@@ -141,7 +159,7 @@ namespace My {
 			for (UINT i = 0; i < NumSubresources; ++i)
 			{
 				D3D12_TEXTURE_COPY_LOCATION Dst = { pDestinationResource, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, i + FirstSubresource };
-				D3D12_TEXTURE_COPY_LOCATION Src = { pIntermediate, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, pLayouts[i] };
+				D3D12_TEXTURE_COPY_LOCATION Src = { pIntermediate, D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, pLayouts[i] };
 				pCmdList->CopyTextureRegion(&Dst, 0, 0, 0, &Src, nullptr);
 			}
 		}
@@ -544,51 +562,116 @@ HRESULT D3d12GraphicsManager::CreateIndexBuffer(const SceneObjectIndexArray& ind
     return hr;
 }
 
-HRESULT D3d12GraphicsManager::CreateTextureBuffer()
+HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 {
-    HRESULT hr;
+    HRESULT hr = S_OK;
 
-    // Describe and create a Texture2D.
-    D3D12_HEAP_PROPERTIES prop = {};
-    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
-    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    prop.CreationNodeMask = 1;
-    prop.VisibleNodeMask = 1;
+    auto it = m_TextureIndex.find(texture.GetName());
+	if (it == m_TextureIndex.end()) {
+		auto image = texture.GetTextureImage();
 
-    D3D12_RESOURCE_DESC textureDesc = {};
-    textureDesc.MipLevels = 1;
-    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    textureDesc.Width = 1;
-    textureDesc.Height = 1;
-    textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-    textureDesc.DepthOrArraySize = 1;
-    textureDesc.SampleDesc.Count = 1;
-    textureDesc.SampleDesc.Quality = 0;
-    textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		// Describe and create a Texture2D.
+		D3D12_HEAP_PROPERTIES prop = {};
+		prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+		prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		prop.CreationNodeMask = 1;
+		prop.VisibleNodeMask = 1;
 
-	if (FAILED(hr = m_pDev->CreateCommittedResource(
-		&prop,
-		D3D12_HEAP_FLAG_NONE,
-		&textureDesc,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		nullptr,
-		IID_PPV_ARGS(&m_pTextureBuffer))))
-	{
-		return hr;
-	}
+		D3D12_RESOURCE_DESC textureDesc = {};
+		textureDesc.MipLevels = 1;
+		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Width = image.Width;
+		textureDesc.Height = image.Height;
+		textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		textureDesc.DepthOrArraySize = 1;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.SampleDesc.Quality = 0;
+		textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
-	for (int32_t i = 0; i < kMaxTextureCount; i++)
-	{
+		ID3D12Resource* pTextureBuffer;
+		ID3D12Resource* pTextureUploadHeap;
+
+		if (FAILED(hr = m_pDev->CreateCommittedResource(
+			&prop,
+			D3D12_HEAP_FLAG_NONE,
+			&textureDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			nullptr,
+			IID_PPV_ARGS(&pTextureBuffer))))
+		{
+			return hr;
+		}
+
+		const UINT subresourceCount = textureDesc.DepthOrArraySize * textureDesc.MipLevels;
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(pTextureBuffer, 0, subresourceCount);
+
+		prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+		D3D12_RESOURCE_DESC resourceDesc = {};
+		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		resourceDesc.Alignment = 0;
+		resourceDesc.Width = uploadBufferSize;
+		resourceDesc.Height = 1;
+		resourceDesc.DepthOrArraySize = 1;
+		resourceDesc.MipLevels = 1;
+		resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		resourceDesc.SampleDesc.Count = 1;
+		resourceDesc.SampleDesc.Quality = 0;
+		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+		if (FAILED(hr = m_pDev->CreateCommittedResource(
+			&prop,
+			D3D12_HEAP_FLAG_NONE,
+			&resourceDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&pTextureUploadHeap)
+		)))
+		{
+			return hr;
+		}
+
+		// Copy data to the intermediate upload heap and then schedule a copy 
+		// from the upload heap to the Texture2D.
+		D3D12_SUBRESOURCE_DATA textureData = {};
+		if (image.bitcount == 24)
+		{
+			textureData.pData = image.data;
+		}
+		else
+		{
+			textureData.pData = image.data;
+		}
+		textureData.RowPitch = image.pitch;
+		textureData.SlicePitch = image.pitch * image.Height;
+
+		UpdateSubresources(m_pCommandList, pTextureBuffer, pTextureUploadHeap, 0, 0, subresourceCount, &textureData);
+		D3D12_RESOURCE_BARRIER barrier = {};
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = pTextureBuffer;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_GENERIC_READ;
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		m_pCommandList->ResourceBarrier(1, &barrier);
+
 		// Describe and create a SRV for the texture.
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MipLevels = -1;
+        srvDesc.Texture2D.MostDetailedMip = 0;
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-		srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + i) * m_nCbvSrvDescriptorSize;
-		m_pDev->CreateShaderResourceView(m_pTextureBuffer, &srvDesc, srvHandle);
+		int32_t texture_id = m_TextureIndex.size();
+		srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
+		m_pDev->CreateShaderResourceView(pTextureBuffer, &srvDesc, srvHandle);
+		m_TextureIndex[texture.GetName()] = srvHandle;
+
+		m_Buffers.push_back(pTextureUploadHeap);
+		m_Textures.push_back(pTextureBuffer);
 	}
 
     return hr;
@@ -961,15 +1044,25 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 		return hr;
 	}
 
-	if (FAILED(hr = CreateTextureBuffer())) {
-		return hr;
-	}
-
 	if (FAILED(hr = CreateSamplerBuffer())) {
 		return hr;
 	}
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
+
+	for (auto _it : scene.Materials)
+	{
+		auto material = _it.second;
+		if (material) {
+			auto color = material->GetBaseColor();
+			if (auto texture = color.ValueMap) {
+				if (FAILED(hr = CreateTextureBuffer(*texture))) {
+					return hr;
+				}
+			}
+		}
+	}
+
 	int32_t n = 0;
     for (auto _it : scene.GeometryNodes)
     {
@@ -1057,6 +1150,9 @@ void D3d12GraphicsManager::Finalize()
     for (auto p : m_Buffers) {
         SafeRelease(&p);
     }
+    for (auto p : m_Textures) {
+        SafeRelease(&p);
+    }
     m_Buffers.clear();
     SafeRelease(&m_pCommandList);
     SafeRelease(&m_pPipelineState);
@@ -1068,7 +1164,6 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pCommandQueue);
     SafeRelease(&m_pCommandAllocator);
 	SafeRelease(&m_pDepthStencilBuffer);
-	SafeRelease(&m_pTextureBuffer);
     for (uint32_t i = 0; i < kFrameCount; i++) {
         SafeRelease(&m_pRenderTargets[i]);
     }

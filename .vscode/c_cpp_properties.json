@@ -63,11 +63,24 @@
             "name": "Win32",
             "includePath": [
                 "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/ucrt",
+                "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.6.1/include/um",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/shared",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/um",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/winrt",
                 "${workspaceRoot}",
-                "${workspaceRoot}/RHI",
-                "${workspaceRoot}/Framework/Common",
                 "${workspaceRoot}/Framework/Interface",
-                "${workspaceRoot}/Framework/GeomMath"
+                "${workspaceRoot}/Framework/Common",
+                "${workspaceRoot}/Framework/Geometries",
+                "${workspaceRoot}/Framework/GeomMath",
+                "${workspaceRoot}/Framework/GeomMath/include",
+                "${workspaceRoot}/Framework/Parser",
+                "${workspaceRoot}/Platform/Windows",
+                "${workspaceRoot}/RHI/OpenGL",
+                "${workspaceRoot}/RHI/D3d",
+                "${workspaceRoot}/RHI/D2d",
+                "${workspaceRoot}/External/Windows/include",
+                "${workspaceRoot}/External/Windows/include/bullet"
             ],
             "defines": [
                 "_DEBUG",
