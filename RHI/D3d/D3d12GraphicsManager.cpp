@@ -555,10 +555,6 @@ HRESULT D3d12GraphicsManager::CreateIndexBuffer(const SceneObjectIndexArray& ind
     m_Buffers.push_back(pIndexBuffer);
     m_Buffers.push_back(pIndexBufferUploadHeap);
 
-	DrawBatchContext dbc;
-	dbc.count = (UINT)index_array.GetIndexCount();
-	m_DrawBatchContext.push_back(std::move(dbc));
-
     return hr;
 }
 
@@ -668,7 +664,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		int32_t texture_id = m_TextureIndex.size();
 		srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
 		m_pDev->CreateShaderResourceView(pTextureBuffer, &srvDesc, srvHandle);
-		m_TextureIndex[texture.GetName()] = srvHandle;
+		m_TextureIndex[texture.GetName()] = texture_id;
 
 		m_Buffers.push_back(pTextureUploadHeap);
 		m_Textures.push_back(pTextureBuffer);
@@ -1090,11 +1086,23 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
                 CreateVertexBuffer(v_property_array);
             }
 
-            auto indexGroupCount = pMesh->GetIndexGroupCount();
-
 			// TODO: Implement LOD switching
+            // auto indexGroupCount = pMesh->GetIndexGroupCount();
+
             const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
             CreateIndexBuffer(index_array);
+
+			auto material_index = index_array.GetMaterialIndex();
+			auto material_key = pGeometryNode->GetMaterialRef(material_index);
+			auto material = scene.GetMaterial(material_key);
+
+			DrawBatchContext dbc;
+			dbc.count = (UINT)index_array.GetIndexCount();
+			if (material) {
+				dbc.material = material;
+			}
+			m_DrawBatchContext.push_back(std::move(dbc));
+
 
 			SetPerBatchShaderParameters(n);
 			n++;
@@ -1239,11 +1247,6 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 	// Sampler
     m_pCommandList->SetGraphicsRootDescriptorTable(1, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
 
-	// SRV
-    D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
-	srvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + kTextureDescStartIndex * m_nCbvSrvDescriptorSize;
-	m_pCommandList->SetGraphicsRootDescriptorTable(2, srvHandle);
-
     m_pCommandList->RSSetViewports(1, &m_ViewPort);
     m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
     m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1264,6 +1267,18 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 		m_pCommandList->IASetVertexBuffers(2, 1, &m_VertexBufferView[i * 3 + 2]);  // UV
 		// select which index buffer to use
 		m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[i]);
+
+		// Texture
+		if(dbc.material)
+		{
+			if(auto texture = dbc.material->GetBaseColor().ValueMap)
+			{
+				auto texture_index = m_TextureIndex[texture->GetName()];
+				D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
+				srvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
+				m_pCommandList->SetGraphicsRootDescriptorTable(2, srvHandle);
+			}
+		}
 
         // draw the vertex buffer to the back buffer
         m_pCommandList->DrawIndexedInstanced(dbc.count, 1, 0, 0, 0);

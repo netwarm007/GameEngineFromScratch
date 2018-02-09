@@ -11,7 +11,8 @@ v2p VSMain(a2v input) {
 
 	output.vNorm = vN;
 
-	output.TextureUV = input.TextureUV;
+	output.TextureUV.x = input.TextureUV.x;
+	output.TextureUV.y = 1.0f - input.TextureUV.y;
 
 	return output;
 }
@@ -32,7 +33,7 @@ float4 PSMain(v2p input) : SV_TARGET
 
 	//float3 vLightInts = float3(0.0f, 0.0f, 0.01f) + lightRgb * diffuseColor * dot(vN, vL) + specularColor * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower);
 	float3 vLightInts = float3(0.0f, 0.0f, 0.01f) 
-							+ lightRgb * float3(0.5f, 0.5f, 0.5f) * clamp(dot(vN, vL), 0.0f, 1.0f) 
+							+ lightRgb * colorMap.Sample(samp0, input.TextureUV) * clamp(dot(vN, vL), 0.0f, 1.0f) 
 							+ float3(0.0f, 0.0f, 0.8f) * pow(clamp(dot(vR,vV), 0.0f, 1.0f), 1.0f);
 
 	return float4(vLightInts, 1.0f);

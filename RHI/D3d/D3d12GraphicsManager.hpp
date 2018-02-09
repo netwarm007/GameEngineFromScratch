@@ -71,7 +71,7 @@ namespace My {
 
         std::vector<ID3D12Resource*>    m_Buffers;                          // the pointer to the vertex buffer
         std::vector<ID3D12Resource*>    m_Textures;                          // the pointer to the vertex buffer
-        std::map<std::string, D3D12_CPU_DESCRIPTOR_HANDLE>  m_TextureIndex;
+        std::map<std::string, int32_t>  m_TextureIndex;
         std::vector<D3D12_VERTEX_BUFFER_VIEW>       m_VertexBufferView;                 // a view of the vertex buffer
         std::vector<D3D12_INDEX_BUFFER_VIEW>        m_IndexBufferView;                  // a view of the vertex buffer
 
