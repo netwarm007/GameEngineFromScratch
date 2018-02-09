@@ -634,6 +634,26 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		D3D12_SUBRESOURCE_DATA textureData = {};
 		if (image.bitcount == 24)
 		{
+            // DXGI does not have 24bit formats so we have to extend it to 32bit
+            uint32_t new_pitch = image.pitch / 3 * 4;
+            size_t data_size = new_pitch * image.Height;
+            void* data = g_pMemoryManager->Allocate(data_size);
+            uint8_t* buf = reinterpret_cast<uint8_t*>(data);
+            uint8_t* src = reinterpret_cast<uint8_t*>(image.data);
+            for (auto row = 0; row < image.Height; row++) {
+                buf = reinterpret_cast<uint8_t*>(data) + row * new_pitch;
+                src = reinterpret_cast<uint8_t*>(image.data) + row * image.pitch;
+                for (auto col = 0; col < image.Width; col++) {
+                    *(uint32_t*)buf = *(uint32_t*)src;
+                    buf[3] = 0;  // set alpha to 0
+                    buf += 4;
+                    src += 3;
+                }
+            }
+            g_pMemoryManager->Free(image.data, image.data_size);
+            image.data = data;
+            image.data_size = data_size;
+            image.pitch = new_pitch;
 			textureData.pData = image.data;
 		}
 		else
