@@ -75,6 +75,15 @@ namespace My {
         std::vector<D3D12_VERTEX_BUFFER_VIEW>       m_VertexBufferView;                 // a view of the vertex buffer
         std::vector<D3D12_INDEX_BUFFER_VIEW>        m_IndexBufferView;                  // a view of the vertex buffer
 
+        struct PerBatchConstants
+        {
+            Matrix4X4f objectMatrix;
+            Vector4f   ambientColor;
+            Vector4f   diffuseColor;
+            Vector4f   specularColor;
+            float specularPower;
+        };
+
         struct DrawBatchContext {
             int32_t count;
             std::shared_ptr<Matrix4X4f> transform;

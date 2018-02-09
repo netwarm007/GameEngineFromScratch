@@ -650,16 +650,14 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
                     src += 3;
                 }
             }
-            g_pMemoryManager->Free(image.data, image.data_size);
+            // we do not need to free the old data because the old data is still referenced by the
+            // SceneObject
+            // g_pMemoryManager->Free(image.data, image.data_size);
             image.data = data;
             image.data_size = data_size;
             image.pitch = new_pitch;
-			textureData.pData = image.data;
 		}
-		else
-		{
-			textureData.pData = image.data;
-		}
+    	textureData.pData = image.data;
 		textureData.RowPitch = image.pitch;
 		textureData.SlicePitch = image.pitch * image.Height;
 
@@ -1119,10 +1117,34 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 			DrawBatchContext dbc;
 			dbc.count = (UINT)index_array.GetIndexCount();
 			if (material) {
-				dbc.material = material;
+                dbc.material = material;
 			}
-			m_DrawBatchContext.push_back(std::move(dbc));
 
+            auto pTrans = pGeometryNode->GetCalculatedTransform();
+
+            if (void* rigidBody = pGeometryNode->RigidBody()) {
+                // the geometry has rigid body bounded, we blend the simlation result here.
+                Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
+
+                // reset the translation part of the matrix
+                memcpy((*pTrans)[3], Vector3f(0.0f, 0.0f, 0.0f), sizeof(float) * 3);
+
+                // apply the rotation part of the simlation result
+                Matrix4X4f rotation;
+                BuildIdentityMatrix(rotation);
+                memcpy(rotation[0], simulated_result[0], sizeof(float) * 3);
+                memcpy(rotation[1], simulated_result[1], sizeof(float) * 3);
+                memcpy(rotation[2], simulated_result[2], sizeof(float) * 3);
+                *pTrans = *pTrans * rotation;
+
+                // replace the translation part of the matrix with simlation result directly
+                memcpy((*pTrans)[3], simulated_result[3], sizeof(float) * 3);
+
+            }
+
+            dbc.transform = pTrans;
+
+            m_DrawBatchContext.push_back(dbc);
 
 			SetPerBatchShaderParameters(n);
 			n++;
@@ -1178,10 +1200,16 @@ void D3d12GraphicsManager::Finalize()
     for (auto p : m_Buffers) {
         SafeRelease(&p);
     }
+    m_Buffers.clear();
     for (auto p : m_Textures) {
         SafeRelease(&p);
     }
-    m_Buffers.clear();
+    m_Textures.clear();
+    m_TextureIndex.clear();
+    m_VertexBufferView.clear();
+    m_IndexBufferView.clear();
+    m_DrawBatchContext.clear();
+
     SafeRelease(&m_pCommandList);
     SafeRelease(&m_pPipelineState);
     SafeRelease(&m_pRtvHeap);
@@ -1339,10 +1367,31 @@ bool D3d12GraphicsManager::SetPerFrameShaderParameters()
     return true;
 }
 
-bool D3d12GraphicsManager::SetPerBatchShaderParameters(int32_t index)
+bool D3d12GraphicsManager::SetPerBatchShaderParameters(const int32_t index)
 {
+    PerBatchConstants pbc;
+
+    pbc.objectMatrix = *(m_DrawBatchContext[index].transform);
+
+    Color color = m_DrawBatchContext[index].material->GetBaseColor();
+    if (color.ValueMap) {
+        pbc.ambientColor = Vector4f(-1.0f);
+    } else {
+        pbc.ambientColor = color.Value;
+    }
+
+    color = m_DrawBatchContext[index].material->GetSpecularColor();
+    if (color.ValueMap) {
+        pbc.specularColor = Vector4f(-1.0f);
+    } else {
+        pbc.specularColor = color.Value;
+    }
+
+    Parameter param = m_DrawBatchContext[index].material->GetSpecularPower();
+    pbc.specularPower = param.Value;
+
     memcpy(m_pCbvDataBegin + m_nFrameIndex * kSizeConstantBufferPerFrame + (index + 1) * kSizePerFrameConstantBuffer, 
-		&m_DrawBatchContext, sizeof(m_DrawBatchContext));
+		&pbc, sizeof(pbc));
     return true;
 }
 

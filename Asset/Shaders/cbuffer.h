@@ -19,11 +19,10 @@ cbuffer PerFrameConstants : register(b0)
 
 cbuffer PerBatchConstants : register(b1)
 {
-	int  	objectID;
 	float4x4 objectMatrix;
-    float3 ambientColor;
-    float3 diffuseColor;
-    float3 specularColor;
+    float4 ambientColor;
+    float4 diffuseColor;
+    float4 specularColor;
     float specularPower;
 };
 

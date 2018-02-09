@@ -4,10 +4,10 @@
 v2p VSMain(a2v input) {
     v2p output;
 
-	float4 temp = (mul(m_viewMatrix, mul(m_worldMatrix, float4(input.Position.xyz, 1.0f))));
+	float4 temp = mul(m_viewMatrix, mul(m_worldMatrix, mul(objectMatrix, float4(input.Position.xyz, 1.0f))));
 	output.vPosInView = temp.xyz;
 	output.Position = mul(m_projectionMatrix, temp);
-	float3 vN = (mul(m_viewMatrix, mul(m_worldMatrix, float4(input.Normal, 0.0f)))).xyz;
+	float3 vN = mul(m_viewMatrix, mul(m_worldMatrix, mul(objectMatrix, float4(input.Normal, 0.0f)))).xyz;
 
 	output.vNorm = vN;
 
@@ -34,7 +34,7 @@ float4 PSMain(v2p input) : SV_TARGET
 	//float3 vLightInts = float3(0.0f, 0.0f, 0.01f) + lightRgb * diffuseColor * dot(vN, vL) + specularColor * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower);
 	float3 vLightInts = float3(0.0f, 0.0f, 0.01f) 
 							+ lightRgb * colorMap.Sample(samp0, input.TextureUV) * clamp(dot(vN, vL), 0.0f, 1.0f) 
-							+ float3(0.0f, 0.0f, 0.8f) * pow(clamp(dot(vR,vV), 0.0f, 1.0f), 1.0f);
+							+ specularColor * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower);
 
 	return float4(vLightInts, 1.0f);
 }
