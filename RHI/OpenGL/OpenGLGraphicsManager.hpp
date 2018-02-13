@@ -27,9 +27,10 @@ namespace My {
         bool SetPerBatchShaderParameters(const char* paramName, const int param);
         bool SetPerFrameShaderParameters();
 
-        void InitializeBuffers();
-        void RenderBuffers();
+        void InitializeBuffers(const Scene& scene);
+        void ClearBuffers();
         bool InitializeShader(const char* vsFilename, const char* fsFilename);
+        void RenderBuffers();
 
     private:
         unsigned int m_vertexShader;

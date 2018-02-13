@@ -8,6 +8,9 @@
 using namespace My;
 using namespace std;
 
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
+
 int GraphicsManager::Initialize()
 {
     int result = 0;
@@ -23,11 +26,14 @@ void GraphicsManager::Tick()
 {
     if (g_pSceneManager->IsSceneChanged())
     {
-        cout << "Detected Scene Change, reinitialize Graphics Manager..." << endl;
-        Finalize();
-        Initialize();
+        cout << "[BilliardGameLogic] Detected Scene Change, reinitialize buffers ..." << endl;
+        InitializeShader(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
+        ClearBuffers();
+        const Scene& scene = g_pSceneManager->GetSceneForRendering();
+        InitializeBuffers(scene);
         g_pSceneManager->NotifySceneIsRenderingQueued();
     }
+
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
     CalculateLights();
@@ -96,6 +102,11 @@ bool GraphicsManager::InitializeShader(const char* vsFilename, const char* fsFil
     return true;
 }
 
+void GraphicsManager::ClearShaders()
+{
+    cout << "[RHI] GraphicsManager::ClearShaders()" << endl;
+}
+
 void GraphicsManager::CalculateCameraMatrix()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
@@ -150,8 +161,14 @@ void GraphicsManager::CalculateLights()
     }
 }
 
-void GraphicsManager::InitializeBuffers()
+void GraphicsManager::InitializeBuffers(const Scene& scene)
 {
+    cout << "[RHI] GraphicsManager::InitializeBuffers()" << endl;
+}
+
+void GraphicsManager::ClearBuffers()
+{
+    cout << "[RHI] GraphicsManager::ClearBuffers()" << endl;
 }
 
 void GraphicsManager::RenderBuffers()

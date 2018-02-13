@@ -1,7 +1,8 @@
 #pragma once
+#include "IRuntimeModule.hpp"
 #include "geommath.hpp"
 #include "Image.hpp"
-#include "IRuntimeModule.hpp"
+#include "Scene.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
@@ -14,22 +15,25 @@ namespace My {
 
         virtual void Tick();
 
+        virtual bool InitializeShader(const char* vsFilename, const char* fsFilename);
+        virtual void ClearShaders();
+        virtual void InitializeBuffers(const Scene& scene);
+        virtual void ClearBuffers();
+
         virtual void Clear();
         virtual void Draw();
 
     protected:
-        bool SetPerFrameShaderParameters();
-        bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const float param);
-        bool SetPerBatchShaderParameters(const char* paramName, const int param);
+        virtual bool SetPerFrameShaderParameters();
+        virtual bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
+        virtual bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
+        virtual bool SetPerBatchShaderParameters(const char* paramName, const float param);
+        virtual bool SetPerBatchShaderParameters(const char* paramName, const int param);
 
-        void InitConstants();
-        bool InitializeShader(const char* vsFilename, const char* fsFilename);
-        void InitializeBuffers();
-        void CalculateCameraMatrix();
-        void CalculateLights();
-        void RenderBuffers();
+        virtual void InitConstants();
+        virtual void CalculateCameraMatrix();
+        virtual void CalculateLights();
+        virtual void RenderBuffers();
 
     protected:
         struct DrawFrameContext {

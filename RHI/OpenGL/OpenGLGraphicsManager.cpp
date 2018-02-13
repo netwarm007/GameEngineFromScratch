@@ -6,9 +6,6 @@
 #include "SceneManager.hpp"
 #include "IPhysicsManager.hpp"
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
-
 using namespace My;
 using namespace std;
 
@@ -129,9 +126,6 @@ int OpenGLGraphicsManager::Initialize()
             glEnable(GL_CULL_FACE);
             glCullFace(GL_BACK);
         }
-
-        InitializeShader(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
-        InitializeBuffers();
     }
 
     return result;
@@ -139,22 +133,7 @@ int OpenGLGraphicsManager::Initialize()
 
 void OpenGLGraphicsManager::Finalize()
 {
-    for (auto dbc : m_DrawBatchContext) {
-        glDeleteVertexArrays(1, &dbc.vao);
-    }
-
-    m_DrawBatchContext.clear();
-
-    for (auto buf : m_Buffers) {
-        glDeleteBuffers(1, &buf);
-    }
-
-    for (auto texture : m_Textures) {
-        glDeleteTextures(1, &texture);
-    }
-
-    m_Buffers.clear();
-    m_Textures.clear();
+    ClearBuffers();
 
     if (m_shaderProgram) {
         if (m_vertexShader)
@@ -302,10 +281,8 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
 	return true;
 }
 
-void OpenGLGraphicsManager::InitializeBuffers()
+void OpenGLGraphicsManager::InitializeBuffers(const Scene& scene)
 {
-    auto& scene = g_pSceneManager->GetSceneForRendering();
-
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
@@ -491,6 +468,27 @@ void OpenGLGraphicsManager::InitializeBuffers()
     }
 
     return;
+}
+
+void OpenGLGraphicsManager::ClearBuffers()
+{
+    for (auto dbc : m_DrawBatchContext) {
+        glDeleteVertexArrays(1, &dbc.vao);
+    }
+
+    m_DrawBatchContext.clear();
+
+    for (auto buf : m_Buffers) {
+        glDeleteBuffers(1, &buf);
+    }
+
+    for (auto texture : m_Textures) {
+        glDeleteTextures(1, &texture);
+    }
+
+    m_Buffers.clear();
+    m_Textures.clear();
+
 }
 
 void OpenGLGraphicsManager::RenderBuffers()

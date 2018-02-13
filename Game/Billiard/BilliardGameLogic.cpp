@@ -1,5 +1,6 @@
 #include <iostream>
 #include "BilliardGameLogic.hpp"
+#include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
 #include "IPhysicsManager.hpp"
 
@@ -10,8 +11,8 @@ int BilliardGameLogic::Initialize()
 {
     int result;
 
-    cout << "Biiliard Game Logic Initialize" << endl;
-    cout << "Start Loading Game Scene" << endl;
+    cout << "[BilliardGameLogic] Biiliard Game Logic Initialize" << endl;
+    cout << "[BilliardGameLogic] Start Loading Game Scene" << endl;
     result = g_pSceneManager->LoadScene("Scene/billiard.ogex");
 
     return result;
