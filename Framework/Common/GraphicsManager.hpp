@@ -15,15 +15,15 @@ namespace My {
 
         virtual void Tick();
 
+        virtual void Clear();
+        virtual void Draw();
+
+    protected:
         virtual bool InitializeShader(const char* vsFilename, const char* fsFilename);
         virtual void ClearShaders();
         virtual void InitializeBuffers(const Scene& scene);
         virtual void ClearBuffers();
 
-        virtual void Clear();
-        virtual void Draw();
-
-    protected:
         virtual bool SetPerFrameShaderParameters();
         virtual bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
         virtual bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);

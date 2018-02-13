@@ -23,7 +23,7 @@ namespace My {
         bool SetPerFrameShaderParameters();
         bool SetPerBatchShaderParameters(int32_t index);
 
-        HRESULT InitializeBuffers();
+        HRESULT InitializeBuffers(const Scene& scene);
         HRESULT InitializeShader(const char* vsFilename, const char* fsFilename);
         HRESULT RenderBuffers();
 

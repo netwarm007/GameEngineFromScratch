@@ -949,7 +949,7 @@ HRESULT D3d12GraphicsManager::InitializeShader(const char* vsFilename, const cha
     return hr;
 }
 
-HRESULT D3d12GraphicsManager::InitializeBuffers()
+HRESULT D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 {
     HRESULT hr = S_OK;
 
@@ -969,7 +969,6 @@ HRESULT D3d12GraphicsManager::InitializeBuffers()
 		return hr;
 	}
 
-    auto& scene = g_pSceneManager->GetSceneForRendering();
 	int32_t n = 0;
     for (auto _it : scene.GeometryNodes)
     {
