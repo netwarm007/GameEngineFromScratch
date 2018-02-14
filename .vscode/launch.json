@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS)(Open GL) Launch Billiard Game",
+            "name": "(Mac OS)(Open GL) Launch article_41 Game",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
-            "args": ["Scene/billiard.ogex"],
+            "program": "${workspaceFolder}/build/Game/article_41/article_41.app/Contents/MacOS/article_41",
+            "args": ["Scene/article_41.ogex"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -17,11 +17,11 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(Open GL) Launch Billiard Game",
+            "name": "(Windows)(Open GL) Launch article_41 Game",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
-            "args": ["Scene/billiard.ogex"],
+            "program": "${workspaceFolder}/build/Game/article_41/Debug/article_41.exe",
+            "args": ["Scene/article_41.ogex"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
