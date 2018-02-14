@@ -1,6 +1,6 @@
 IF(ANDROID)
 add_library(article_41 SHARED 
-    article_41.cpp article_41_config.cpp)
+    article_41_logic.cpp article_41_config.cpp)
 ELSEIF(APPLE)
 add_executable(article_41 MACOSX_BUNDLE
     article_41_logic.cpp article_41_config.cpp)
