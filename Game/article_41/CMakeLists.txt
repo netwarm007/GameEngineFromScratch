@@ -5,7 +5,7 @@ ELSEIF(APPLE)
 add_executable(article_41 MACOSX_BUNDLE
     article_41_logic.cpp article_41_config.cpp)
 ELSE(ANDROID)
-add_executable(aritcle_41
+add_executable(article_41
     article_41_logic.cpp article_41_config.cpp)
 ENDIF(ANDROID)
 target_link_libraries(article_41
