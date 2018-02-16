@@ -22,6 +22,7 @@ namespace My {
 
 #ifdef DEBUG
         void DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color);
+        void DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color);
 #endif
 
     protected:

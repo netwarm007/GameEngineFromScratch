@@ -780,9 +780,134 @@ void OpenGLGraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, c
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;
     dbc.mode    = GL_LINES;
-    dbc.count   = 6;
+    dbc.count   = 2;
     dbc.color   = color;
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
+
+void OpenGLGraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color)
+{
+    GLfloat vertices[12 * 2 * 3];
+
+    // top
+    vertices[0] = bbMax.x;
+    vertices[1] = bbMax.y;
+    vertices[2] = bbMax.z;
+    vertices[3] = bbMax.x;
+    vertices[4] = bbMin.y;
+    vertices[5] = bbMax.z;
+
+    vertices[6] = bbMax.x;
+    vertices[7] = bbMin.y;
+    vertices[8] = bbMax.z;
+    vertices[9] = bbMin.x;
+    vertices[10] = bbMin.y;
+    vertices[11] = bbMax.z;
+
+    vertices[12] = bbMin.x;
+    vertices[13] = bbMin.y;
+    vertices[14] = bbMax.z;
+    vertices[15] = bbMin.x;
+    vertices[16] = bbMax.y;
+    vertices[17] = bbMax.z;
+
+    vertices[18] = bbMin.x;
+    vertices[19] = bbMax.y;
+    vertices[20] = bbMax.z;
+    vertices[21] = bbMax.x;
+    vertices[22] = bbMax.y;
+    vertices[23] = bbMax.z;
+
+    // bottom
+    vertices[24] = bbMax.x;
+    vertices[25] = bbMax.y;
+    vertices[26] = bbMin.z;
+    vertices[27] = bbMax.x;
+    vertices[28] = bbMin.y;
+    vertices[29] = bbMin.z;
+
+    vertices[30] = bbMax.x;
+    vertices[31] = bbMin.y;
+    vertices[32] = bbMin.z;
+    vertices[33] = bbMin.x;
+    vertices[34] = bbMin.y;
+    vertices[35] = bbMin.z;
+
+    vertices[36] = bbMin.x;
+    vertices[37] = bbMin.y;
+    vertices[38] = bbMin.z;
+    vertices[39] = bbMin.x;
+    vertices[40] = bbMax.y;
+    vertices[41] = bbMin.z;
+
+    vertices[42] = bbMin.x;
+    vertices[43] = bbMax.y;
+    vertices[44] = bbMin.z;
+    vertices[45] = bbMax.x;
+    vertices[46] = bbMax.y;
+    vertices[47] = bbMin.z;
+
+    // side 1
+    vertices[48] = bbMax.x;
+    vertices[49] = bbMax.y;
+    vertices[50] = bbMax.z;
+    vertices[51] = bbMax.x;
+    vertices[52] = bbMax.y;
+    vertices[53] = bbMin.z;
+
+    // side 2
+    vertices[54] = bbMin.x;
+    vertices[55] = bbMax.y;
+    vertices[56] = bbMax.z;
+    vertices[57] = bbMin.x;
+    vertices[58] = bbMax.y;
+    vertices[59] = bbMin.z;
+
+    // side 3
+    vertices[60] = bbMin.x;
+    vertices[61] = bbMin.y;
+    vertices[62] = bbMax.z;
+    vertices[63] = bbMin.x;
+    vertices[64] = bbMin.y;
+    vertices[65] = bbMin.z;
+
+    // side 4
+    vertices[66] = bbMax.x;
+    vertices[67] = bbMin.y;
+    vertices[68] = bbMax.z;
+    vertices[69] = bbMax.x;
+    vertices[70] = bbMin.y;
+    vertices[71] = bbMin.z;
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id;
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(1, &buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    m_Buffers.push_back(buffer_id);
+
+    DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
+    dbc.vao     = vao;
+    dbc.mode    = GL_LINES;
+    dbc.count   = 24;
+    dbc.color   = color;
+
+    m_DebugDrawBatchContext.push_back(std::move(dbc));
+}
+
 #endif

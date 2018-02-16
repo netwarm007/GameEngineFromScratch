@@ -122,9 +122,9 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
 #ifdef DEBUG
 void MyPhysicsManager::DrawDebugInfo()
 {
-    Vector3f from (-10.0f, 0.0f, 0.0f);
-    Vector3f to (10.0f, 0.0f, 0.0f);
-    Vector3f color(1.0f, 0.0f, 0.0f);
-    g_pGraphicsManager->DrawLine(from, to, color);
+    Vector3f bbmin (-2.0f, -2.0f, -2.0f);
+    Vector3f bbmax (2.0f, 2.0f, 2.0f);
+    Vector3f color(0.5f, 0.5f, 0.5f);
+    g_pGraphicsManager->DrawBox(bbmin, bbmax, color);
 }
 #endif

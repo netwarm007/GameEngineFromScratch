@@ -141,5 +141,12 @@ void GraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const V
         << to << "," 
         << color << ")" << endl;
 }
+
+void GraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawBox(" << bbMin << ","
+        << bbMax << "," 
+        << color << ")" << endl;
+}
 #endif
 
