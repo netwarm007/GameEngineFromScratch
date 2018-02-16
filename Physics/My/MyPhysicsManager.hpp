@@ -20,6 +20,10 @@ namespace My {
 
         virtual void ApplyCentralForce(void* rigidBody, Vector3f force);
 
+#ifdef DEBUG
+	    void DrawDebugInfo();
+#endif
+
     protected:
         std::vector<Geometry*>          m_CollisionShapes;
     };

@@ -11,6 +11,13 @@ using namespace std;
 
 extern struct gladGLversionStruct GLVersion;
 
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
+#ifdef DEBUG
+const char DEBUG_VS_SHADER_SOURCE_FILE[] = "Shaders/debug_vs.glsl";
+const char DEBUG_PS_SHADER_SOURCE_FILE[] = "Shaders/debug_ps.glsl";
+#endif
+
 namespace My {
     extern AssetLoader* g_pAssetLoader;
 
@@ -179,12 +186,12 @@ void OpenGLGraphicsManager::Draw()
     glFlush();
 }
 
-bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
+bool OpenGLGraphicsManager::SetPerFrameShaderParameters(GLuint shader)
 {
     unsigned int location;
 
     // Set the world matrix in the vertex shader.
-    location = glGetUniformLocation(m_shaderProgram, "worldMatrix");
+    location = glGetUniformLocation(shader, "worldMatrix");
     if(location == -1)
     {
             return false;
@@ -192,7 +199,7 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
     glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_worldMatrix);
 
     // Set the view matrix in the vertex shader.
-    location = glGetUniformLocation(m_shaderProgram, "viewMatrix");
+    location = glGetUniformLocation(shader, "viewMatrix");
     if(location == -1)
     {
             return false;
@@ -200,7 +207,7 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
     glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_viewMatrix);
 
     // Set the projection matrix in the vertex shader.
-    location = glGetUniformLocation(m_shaderProgram, "projectionMatrix");
+    location = glGetUniformLocation(shader, "projectionMatrix");
     if(location == -1)
     {
             return false;
@@ -208,14 +215,14 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
     glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_projectionMatrix);
 
     // Set lighting parameters for PS shader
-    location = glGetUniformLocation(m_shaderProgram, "lightPosition");
+    location = glGetUniformLocation(shader, "lightPosition");
     if(location == -1)
     {
             return false;
     }
     glUniform3fv(location, 1, m_DrawFrameContext.m_lightPosition);
 
-    location = glGetUniformLocation(m_shaderProgram, "lightColor");
+    location = glGetUniformLocation(shader, "lightColor");
     if(location == -1)
     {
             return false;
@@ -225,11 +232,11 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters()
     return true;
 }
 
-bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param)
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Matrix4X4f& param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(m_shaderProgram, paramName);
+    location = glGetUniformLocation(shader, paramName);
     if(location == -1)
     {
             return false;
@@ -239,11 +246,11 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     return true;
 }
 
-bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Vector3f& param)
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(m_shaderProgram, paramName);
+    location = glGetUniformLocation(shader, paramName);
     if(location == -1)
     {
             return false;
@@ -253,11 +260,11 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     return true;
 }
 
-bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const float param)
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const float param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(m_shaderProgram, paramName);
+    location = glGetUniformLocation(shader, paramName);
     if(location == -1)
     {
             return false;
@@ -267,11 +274,11 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, c
     return true;
 }
 
-bool OpenGLGraphicsManager::SetPerBatchShaderParameters(const char* paramName, const int param)
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const int param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(m_shaderProgram, paramName);
+    location = glGetUniformLocation(shader, paramName);
     if(location == -1)
     {
             return false;
@@ -493,13 +500,13 @@ void OpenGLGraphicsManager::ClearBuffers()
 
 void OpenGLGraphicsManager::RenderBuffers()
 {
-    SetPerFrameShaderParameters();
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    glUseProgram(m_shaderProgram);
+
+    SetPerFrameShaderParameters(m_shaderProgram);
 
     for (auto dbc : m_DrawBatchContext)
     {
-        // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-        glUseProgram(m_shaderProgram);
-
         Matrix4X4f trans = *dbc.node->GetCalculatedTransform();
 
         if (void* rigidBody = dbc.node->RigidBody()) {
@@ -522,7 +529,7 @@ void OpenGLGraphicsManager::RenderBuffers()
 
         }
 
-        SetPerBatchShaderParameters("modelMatrix", trans);
+        SetPerBatchShaderParameters(m_shaderProgram, "modelMatrix", trans);
         glBindVertexArray(dbc.vao);
 
         /* well, we have different material for each index buffer so we can not draw them together
@@ -538,28 +545,50 @@ void OpenGLGraphicsManager::RenderBuffers()
         if (dbc.material) {
             Color color = dbc.material->GetBaseColor();
             if (color.ValueMap) {
-                SetPerBatchShaderParameters("defaultSampler", m_TextureIndex[color.ValueMap->GetName()]);
+                SetPerBatchShaderParameters(m_shaderProgram, "defaultSampler", m_TextureIndex[color.ValueMap->GetName()]);
                 // set this to tell shader to use texture
-                SetPerBatchShaderParameters("diffuseColor", Vector3f(-1.0f));
+                SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", Vector3f(-1.0f));
             } else {
-                SetPerBatchShaderParameters("diffuseColor", color.Value.rgb);
+                SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", color.Value.rgb);
             }
 
             color = dbc.material->GetSpecularColor();
-            SetPerBatchShaderParameters("specularColor", color.Value.rgb);
+            SetPerBatchShaderParameters(m_shaderProgram, "specularColor", color.Value.rgb);
 
             Parameter param = dbc.material->GetSpecularPower();
-            SetPerBatchShaderParameters("specularPower", param.Value);
+            SetPerBatchShaderParameters(m_shaderProgram, "specularPower", param.Value);
         }
 
         glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
     }
 
+#ifdef DEBUG 
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    glUseProgram(m_debugShaderProgram);
+
+    SetPerFrameShaderParameters(m_debugShaderProgram);
+
+    for (auto dbc : m_DebugDrawBatchContext)
+    {
+        SetPerBatchShaderParameters(m_debugShaderProgram, "lineColor", dbc.color);
+
+        glBindVertexArray(dbc.vao);
+        glDrawArrays(dbc.mode, 0x00, dbc.count);
+    }
+#endif
+
     return;
 }
 
-bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char* fsFilename)
+bool OpenGLGraphicsManager::InitializeShaders()
 {
+    const char* vsFilename = VS_SHADER_SOURCE_FILE;
+    const char* fsFilename = PS_SHADER_SOURCE_FILE;
+#ifdef DEBUG
+    const char* debugVsFilename = DEBUG_VS_SHADER_SOURCE_FILE;
+    const char* debugFsFilename = DEBUG_PS_SHADER_SOURCE_FILE;
+#endif
+
     std::string vertexShaderBuffer;
     std::string fragmentShaderBuffer;
     int status;
@@ -578,19 +607,52 @@ bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char*
             return false;
     }
 
+#ifdef DEBUG
+    std::string debugVertexShaderBuffer;
+    std::string debugFragmentShaderBuffer;
+
+    // Load the fragment shader source file into a text buffer.
+    debugVertexShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString(debugVsFilename);
+    if(debugVertexShaderBuffer.empty())
+    {
+            return false;
+    }
+
+    // Load the fragment shader source file into a text buffer.
+    debugFragmentShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString(debugFsFilename);
+    if(debugFragmentShaderBuffer.empty())
+    {
+            return false;
+    }
+#endif
+
     // Create a vertex and fragment shader object.
     m_vertexShader = glCreateShader(GL_VERTEX_SHADER);
     m_fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+#ifdef DEBUG
+    m_debugVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    m_debugFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+#endif
 
     // Copy the shader source code strings into the vertex and fragment shader objects.
     const char* _v_c_str =  vertexShaderBuffer.c_str();
     glShaderSource(m_vertexShader, 1, &_v_c_str, NULL);
     const char* _f_c_str =  fragmentShaderBuffer.c_str();
     glShaderSource(m_fragmentShader, 1, &_f_c_str, NULL);
+#ifdef DEBUG
+    const char* _v_c_str_debug = debugVertexShaderBuffer.c_str();
+    glShaderSource(m_debugVertexShader, 1, &_v_c_str_debug, NULL);
+    const char* _f_c_str_debug = debugFragmentShaderBuffer.c_str();
+    glShaderSource(m_debugFragmentShader, 1, &_f_c_str_debug, NULL);
+#endif
 
     // Compile the shaders.
     glCompileShader(m_vertexShader);
     glCompileShader(m_fragmentShader);
+#ifdef DEBUG
+    glCompileShader(m_debugVertexShader);
+    glCompileShader(m_debugFragmentShader);
+#endif
 
     // Check to see if the vertex shader compiled successfully.
     glGetShaderiv(m_vertexShader, GL_COMPILE_STATUS, &status);
@@ -610,12 +672,39 @@ bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char*
             return false;
     }
 
+#ifdef DEBUG
+    // Check to see if the fragment shader compiled successfully.
+    glGetShaderiv(m_debugVertexShader, GL_COMPILE_STATUS, &status);
+    if(status != 1)
+    {
+            // If it did not compile then write the syntax error message out to a text file for review.
+            OutputShaderErrorMessage(m_debugVertexShader, debugVsFilename);
+            return false;
+    }
+
+    // Check to see if the fragment shader compiled successfully.
+    glGetShaderiv(m_debugFragmentShader, GL_COMPILE_STATUS, &status);
+    if(status != 1)
+    {
+            // If it did not compile then write the syntax error message out to a text file for review.
+            OutputShaderErrorMessage(m_debugFragmentShader, debugFsFilename);
+            return false;
+    }
+#endif
+
     // Create a shader program object.
     m_shaderProgram = glCreateProgram();
+#ifdef DEBUG
+    m_debugShaderProgram = glCreateProgram();
+#endif
 
     // Attach the vertex and fragment shader to the program object.
     glAttachShader(m_shaderProgram, m_vertexShader);
     glAttachShader(m_shaderProgram, m_fragmentShader);
+#ifdef DEBUG
+    glAttachShader(m_debugShaderProgram, m_debugVertexShader);
+    glAttachShader(m_debugShaderProgram, m_debugFragmentShader);
+#endif
 
     // Bind the shader input variables.
     glBindAttribLocation(m_shaderProgram, 0, "inputPosition");
@@ -624,6 +713,14 @@ bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char*
 
     // Link the shader program.
     glLinkProgram(m_shaderProgram);
+
+#ifdef DEBUG
+    // Bind the shader input variables.
+    glBindAttribLocation(m_debugShaderProgram, 0, "inputPosition");
+
+    // Link the shader program.
+    glLinkProgram(m_debugShaderProgram);
+#endif
 
     // Check the status of the link.
     glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &status);
@@ -634,6 +731,58 @@ bool OpenGLGraphicsManager::InitializeShader(const char* vsFilename, const char*
             return false;
     }
 
+#ifdef DEBUG
+    // Check the status of the link.
+    glGetProgramiv(m_debugShaderProgram, GL_LINK_STATUS, &status);
+    if(status != 1)
+    {
+            // If it did not link then write the syntax error message out to a text file for review.
+            OutputLinkerErrorMessage(m_debugShaderProgram);
+            return false;
+    }
+#endif
+
     return true;
 }
 
+#ifdef DEBUG
+void OpenGLGraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color)
+{
+    GLfloat vertices[6];
+    vertices[0] = from.x;
+    vertices[1] = from.y;
+    vertices[2] = from.z;
+    vertices[3] = to.x;
+    vertices[4] = to.y;
+    vertices[5] = to.z;
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id;
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(1, &buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    m_Buffers.push_back(buffer_id);
+
+    DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
+    dbc.vao     = vao;
+    dbc.mode    = GL_LINES;
+    dbc.count   = 6;
+    dbc.color   = color;
+
+    m_DebugDrawBatchContext.push_back(std::move(dbc));
+}
+#endif

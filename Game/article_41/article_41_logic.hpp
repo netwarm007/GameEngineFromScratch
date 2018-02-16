@@ -4,10 +4,13 @@
 namespace My {
     class article_41_logic : public GameLogic
     {
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
+        int Initialize();
+        void Finalize();
+        void Tick();
 
-        virtual void OnLeftKey();
+        void OnLeftKey();
+        void OnRightKey();
+        void OnUpKey();
+        void OnDownKey();
     };
 }

@@ -78,12 +78,15 @@ namespace My {
 		    swizzle<My::Vector2Type, T, 1, 0> yx;
         };
 
-        Vector2Type<T>() {};
-        Vector2Type<T>(const T& _v) : x(_v), y(_v) {};
-        Vector2Type<T>(const T& _x, const T& _y) : x(_x), y(_y) {};
+        Vector2Type<T>() {}
+        Vector2Type<T>(const T& _v) : x(_v), y(_v) {}
+        Vector2Type<T>(const T& _x, const T& _y) : x(_x), y(_y) {}
 
         operator T*() { return data; };
-        operator const T*() const { return static_cast<const T*>(data); };
+        operator const T*() const { return static_cast<const T*>(data); }
+
+        void Set(const T& _v) { x = _v; y = _v; }
+        void Set(const T& _x, const T& _y) { x = _x; y = _y; }
     };
     
     typedef Vector2Type<float> Vector2f;
@@ -110,12 +113,15 @@ namespace My {
 		    swizzle<My::Vector3Type, T, 0, 1, 2> rgb;
         };
 
-        Vector3Type<T>() {};
-        Vector3Type<T>(const T& _v) : x(_v), y(_v), z(_v) {};
-        Vector3Type<T>(const T& _x, const T& _y, const T& _z) : x(_x), y(_y), z(_z) {};
+        Vector3Type<T>() {}
+        Vector3Type<T>(const T& _v) : x(_v), y(_v), z(_v) {}
+        Vector3Type<T>(const T& _x, const T& _y, const T& _z) : x(_x), y(_y), z(_z) {}
         
         operator T*() { return data; };
         operator const T*() const { return static_cast<const T*>(data); };
+
+        void Set(const T& _v) { x = _v; y = _v; z=_v; }
+        void Set(const T& _x, const T& _y, const T& _z) { x = _x; y = _y; z = _z; }
     };
 
     typedef Vector3Type<float> Vector3f;
@@ -148,6 +154,10 @@ namespace My {
 
         operator T*() { return data; };
         operator const T*() const { return static_cast<const T*>(data); };
+
+        void Set(const T& _v) { x = _v; y = _v; z=_v; w=_v; }
+        void Set(const T& _x, const T& _y, const T& _z, const T& _w) { x = _x; y = _y; z = _z; w = _w; }
+        
         Vector4Type& operator=(const T* f) 
         { 
             for (int32_t i = 0; i < 4; i++)

@@ -8,9 +8,6 @@
 using namespace My;
 using namespace std;
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
-
 int GraphicsManager::Initialize()
 {
     int result = 0;
@@ -26,10 +23,11 @@ void GraphicsManager::Tick()
 {
     if (g_pSceneManager->IsSceneChanged())
     {
-        cout << "[BilliardGameLogic] Detected Scene Change, reinitialize buffers ..." << endl;
-        InitializeShader(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE);
+        cout << "[GraphicsManager] Detected Scene Change, reinitialize buffers ..." << endl;
         ClearBuffers();
+        ClearShaders();
         const Scene& scene = g_pSceneManager->GetSceneForRendering();
+        InitializeShaders();
         InitializeBuffers(scene);
         g_pSceneManager->NotifySceneIsRenderingQueued();
     }
@@ -50,61 +48,21 @@ void GraphicsManager::Draw()
 {
 }
 
-bool GraphicsManager::SetPerFrameShaderParameters()
-{
-    cout << "[RHI] GraphicsManager::SetPerFrameShaderParameters(void)" << endl;
-    return true;
-}
-
-bool GraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param)
-{
-    cout << "[RHI] GraphicsManager::SetPerFrameShaderParameters(const char* paramName, const Matrix4X4f& param)" << endl;
-    cout << "paramName = " << paramName << endl;
-    cout << "param = " << param << endl;
-    return true;
-}
-
-bool GraphicsManager::SetPerBatchShaderParameters(const char* paramName, const Vector3f& param)
-{
-    cout << "[RHI] GraphicsManager::SetPerFrameShaderParameters(const char* paramName, const Vector3f& param)" << endl;
-    cout << "paramName = " << paramName << endl;
-    cout << "param = " << param << endl;
-    return true;
-}
-
-bool GraphicsManager::SetPerBatchShaderParameters(const char* paramName, const float param)
-{
-    cout << "[RHI] GraphicsManager::SetPerFrameShaderParameters(const char* paramName, const float param)" << endl;
-    cout << "paramName = " << paramName << endl;
-    cout << "param = " << param << endl;
-    return true;
-}
-
-bool GraphicsManager::SetPerBatchShaderParameters(const char* paramName, const int param)
-{
-    cout << "[RHI] GraphicsManager::SetPerFrameShaderParameters(const char* paramName, const int param)" << endl;
-    cout << "paramName = " << paramName << endl;
-    cout << "param = " << param << endl;
-    return true;
-}
-
 void GraphicsManager::InitConstants()
 {
     // Initialize the world/model matrix to the identity matrix.
     BuildIdentityMatrix(m_DrawFrameContext.m_worldMatrix);
 }
 
-bool GraphicsManager::InitializeShader(const char* vsFilename, const char* fsFilename)
+bool GraphicsManager::InitializeShaders()
 {
-    cout << "[RHI] GraphicsManager::InitializeShader(const char* vsFilename, const char* fsFilename)" << endl;
-    cout << "VS Filename: " << vsFilename << endl;
-    cout << "PS Filename: " << fsFilename << endl;
+    cout << "[GraphicsManager] GraphicsManager::InitializeShader()" << endl;
     return true;
 }
 
 void GraphicsManager::ClearShaders()
 {
-    cout << "[RHI] GraphicsManager::ClearShaders()" << endl;
+    cout << "[GraphicsManager] GraphicsManager::ClearShaders()" << endl;
 }
 
 void GraphicsManager::CalculateCameraMatrix()
@@ -163,16 +121,25 @@ void GraphicsManager::CalculateLights()
 
 void GraphicsManager::InitializeBuffers(const Scene& scene)
 {
-    cout << "[RHI] GraphicsManager::InitializeBuffers()" << endl;
+    cout << "[GraphicsManager] GraphicsManager::InitializeBuffers()" << endl;
 }
 
 void GraphicsManager::ClearBuffers()
 {
-    cout << "[RHI] GraphicsManager::ClearBuffers()" << endl;
+    cout << "[GraphicsManager] GraphicsManager::ClearBuffers()" << endl;
 }
 
 void GraphicsManager::RenderBuffers()
 {
-    cout << "[RHI] GraphicsManager::RenderBuffers()" << endl;
+    cout << "[GraphicsManager] GraphicsManager::RenderBuffers()" << endl;
 }
+
+#ifdef DEBUG
+void GraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawLine(" << from << ","
+        << to << "," 
+        << color << ")" << endl;
+}
+#endif
 

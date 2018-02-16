@@ -39,8 +39,8 @@ void BulletPhysicsManager::Tick()
 {
     if (g_pSceneManager->IsSceneChanged())
     {
-        g_pPhysicsManager->ClearRigidBodies();
-        g_pPhysicsManager->CreateRigidBodies();
+        ClearRigidBodies();
+        CreateRigidBodies();
         g_pSceneManager->NotifySceneIsPhysicalSimulationQueued();
     }
 

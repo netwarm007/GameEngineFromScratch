@@ -5,7 +5,7 @@ namespace My {
     class Box : public Geometry
     {
     public:
-        Box() : Geometry(GeometryType::kBox) {};
+        Box() = delete; 
         Box(Vector3f dimension) : Geometry(GeometryType::kBox), m_vDimension(dimension) {};
 
         virtual void GetAabb(const Matrix4X4f& trans, 

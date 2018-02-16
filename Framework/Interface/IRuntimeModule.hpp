@@ -11,6 +11,10 @@ public:
 	virtual void Finalize() = 0;
 
 	virtual void Tick() = 0;
+
+#ifdef DEBUG
+	virtual void DrawDebugInfo() {};
+#endif
 	};
 
 }

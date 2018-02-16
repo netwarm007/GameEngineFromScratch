@@ -25,6 +25,7 @@ namespace My {
 
         void ResetScene();
 
+        std::weak_ptr<BaseSceneNode> GetRootNode();
         std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(std::string name);
         std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(std::string key);
 

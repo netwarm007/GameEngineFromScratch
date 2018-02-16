@@ -93,6 +93,18 @@ void CocoaApplication::Tick()
                         break;
                     }
                 }
+            } else {
+                switch ([event keyCode])
+                {
+                    case 0x02: // d key
+#ifdef DEBUG
+                        g_pInputManager->DebugKeyUp();
+#endif
+                        break;
+                    case 0x0F: // r key
+                        g_pInputManager->ResetKeyUp();
+                        break;
+                }
             }
             break;
         case NSEventTypeKeyDown:
@@ -125,8 +137,14 @@ void CocoaApplication::Tick()
             } else {
                 switch ([event keyCode])
                 {
+                    case 0x02: // d key
+#ifdef DEBUG
+                        g_pInputManager->DebugKeyDown();
+#endif
+                        break;
                     case 0x0F: // r key
                         g_pInputManager->ResetKeyDown();
+                        break;
                 }
             }
             break;

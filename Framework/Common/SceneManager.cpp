@@ -100,6 +100,11 @@ void SceneManager::NotifySceneIsPhysicalSimulationQueued()
     }
 }
 
+weak_ptr<BaseSceneNode> SceneManager::GetRootNode()
+{
+    return m_pScene->SceneGraph;
+}
+
 weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(string name)
 {
     auto it = m_pScene->LUT_Name_GeometryNode.find(name);

@@ -21,6 +21,11 @@ namespace My {
             void ResetKeyDown();
             void ResetKeyUp();
 
+#ifdef DEBUG
+            void DebugKeyDown();
+            void DebugKeyUp();
+#endif
+
         protected:
             bool m_bUpKeyPressed    = false;
             bool m_bDownKeyPressed  = false;

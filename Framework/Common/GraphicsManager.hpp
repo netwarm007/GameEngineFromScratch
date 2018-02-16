@@ -18,17 +18,15 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
+#ifdef DEBUG
+        virtual void DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color);
+#endif
+
     protected:
-        virtual bool InitializeShader(const char* vsFilename, const char* fsFilename);
+        virtual bool InitializeShaders();
         virtual void ClearShaders();
         virtual void InitializeBuffers(const Scene& scene);
         virtual void ClearBuffers();
-
-        virtual bool SetPerFrameShaderParameters();
-        virtual bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
-        virtual bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
-        virtual bool SetPerBatchShaderParameters(const char* paramName, const float param);
-        virtual bool SetPerBatchShaderParameters(const char* paramName, const int param);
 
         virtual void InitConstants();
         virtual void CalculateCameraMatrix();
