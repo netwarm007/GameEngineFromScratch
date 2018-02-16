@@ -6,25 +6,28 @@ namespace My {
     class MyPhysicsManager : public IPhysicsManager
     {
     public:
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
+        int Initialize();
+        void Finalize();
+        void Tick();
 
-        virtual void CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry);
-        virtual void DeleteRigidBody(SceneGeometryNode& node);
+        void CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry);
+        void DeleteRigidBody(SceneGeometryNode& node);
 
-        virtual int CreateRigidBodies();
-        virtual void ClearRigidBodies();
+        int CreateRigidBodies();
+        void ClearRigidBodies();
 
-        virtual Matrix4X4f GetRigidBodyTransform(void* rigidBody);
+        Matrix4X4f GetRigidBodyTransform(void* rigidBody);
+        void UpdateRigidBodyTransform(SceneGeometryNode& node);
 
-        virtual void ApplyCentralForce(void* rigidBody, Vector3f force);
+        void ApplyCentralForce(void* rigidBody, Vector3f force);
 
 #ifdef DEBUG
 	    void DrawDebugInfo();
 #endif
 
     protected:
-        std::vector<Geometry*>          m_CollisionShapes;
+#ifdef DEBUG
+        void DrawAabb(const Geometry& geometry, const Matrix4X4f& trans);
+#endif
     };
 }

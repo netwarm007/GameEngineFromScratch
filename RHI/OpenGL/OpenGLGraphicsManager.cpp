@@ -479,6 +479,8 @@ void OpenGLGraphicsManager::InitializeBuffers(const Scene& scene)
 
 void OpenGLGraphicsManager::ClearBuffers()
 {
+    ClearDebugBuffers();
+
     for (auto dbc : m_DrawBatchContext) {
         glDeleteVertexArrays(1, &dbc.vao);
     }
@@ -507,26 +509,23 @@ void OpenGLGraphicsManager::RenderBuffers()
 
     for (auto dbc : m_DrawBatchContext)
     {
-        Matrix4X4f trans = *dbc.node->GetCalculatedTransform();
-
+        Matrix4X4f trans;
         if (void* rigidBody = dbc.node->RigidBody()) {
             // the geometry has rigid body bounded, we blend the simlation result here.
             Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
 
-            // reset the translation part of the matrix
-            memcpy(trans[3], Vector3f(0.0f, 0.0f, 0.0f), sizeof(float) * 3);
+            BuildIdentityMatrix(trans);
 
             // apply the rotation part of the simlation result
-            Matrix4X4f rotation;
-            BuildIdentityMatrix(rotation);
-            memcpy(rotation[0], simulated_result[0], sizeof(float) * 3);
-            memcpy(rotation[1], simulated_result[1], sizeof(float) * 3);
-            memcpy(rotation[2], simulated_result[2], sizeof(float) * 3);
-            trans = trans * rotation;
+            memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
+            memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
+            memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
 
             // replace the translation part of the matrix with simlation result directly
             memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
 
+        } else {
+            trans = *dbc.node->GetCalculatedTransform();
         }
 
         SetPerBatchShaderParameters(m_shaderProgram, "modelMatrix", trans);
@@ -908,6 +907,19 @@ void OpenGLGraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax
     dbc.color   = color;
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));
+}
+
+void OpenGLGraphicsManager::ClearDebugBuffers()
+{
+    for (auto dbc : m_DebugDrawBatchContext) {
+        glDeleteVertexArrays(1, &dbc.vao);
+    }
+
+    m_DebugDrawBatchContext.clear();
+
+    for (auto buf : m_DebugBuffers) {
+        glDeleteBuffers(1, &buf);
+    }
 }
 
 #endif

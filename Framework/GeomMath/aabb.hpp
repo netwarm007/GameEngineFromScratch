@@ -9,7 +9,10 @@ namespace My {
         Vector3f  center;
         Vector3f  extent;
         GetOrigin(center, trans);
-        DotProduct3(extent, trans);
+        Matrix3X3f basis;
+        Shrink(basis, trans);
+        Absolute(basis, basis);
+        DotProduct3(extent, halfExtentsWithMargin, basis);
         aabbMinOut = center - extent;
         aabbMaxOut = center + extent;
     }

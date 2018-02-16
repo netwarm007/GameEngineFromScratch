@@ -148,5 +148,10 @@ void GraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, cons
         << bbMax << "," 
         << color << ")" << endl;
 }
+
+void GraphicsManager::ClearDebugBuffers()
+{
+    cout << "[GraphicsManager] GraphicsManager::ClearDebugBuffers(void)" << endl;
+}
 #endif
 

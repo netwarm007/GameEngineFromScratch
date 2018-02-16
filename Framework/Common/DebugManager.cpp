@@ -20,6 +20,7 @@ void DebugManager::Tick()
 {
     if(m_bDrawDebugInfo)
     {
+        g_pGraphicsManager->ClearDebugBuffers();
         DrawDebugInfo();
         g_pPhysicsManager->DrawDebugInfo();
     }
@@ -28,6 +29,8 @@ void DebugManager::Tick()
 void DebugManager::ToggleDebugInfo()
 {
     m_bDrawDebugInfo = !m_bDrawDebugInfo;
+    if(!m_bDrawDebugInfo)
+        g_pGraphicsManager->ClearDebugBuffers();
 }
 
 void DebugManager::DrawDebugInfo()

@@ -1,4 +1,5 @@
 #pragma once
+#include <limits>
 #include "aabb.hpp"
 #include "portable.hpp"
 
@@ -44,6 +45,6 @@ namespace My {
 
         protected:
             GeometryType m_kGeometryType;
-            float    m_fMargin;
+            float    m_fMargin = std::numeric_limits<float>::epsilon();
     };
 }

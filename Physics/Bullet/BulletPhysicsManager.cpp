@@ -64,6 +64,9 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
                 btTransform startTransform;
                 startTransform.setIdentity();
                 startTransform.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+                startTransform.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                            trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                            trans->data[0][2], trans->data[1][2], trans->data[2][2]));
                 btDefaultMotionState* motionState = 
                     new btDefaultMotionState(
                                 startTransform
@@ -86,6 +89,9 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
                 btTransform startTransform;
                 startTransform.setIdentity();
                 startTransform.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+                startTransform.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                            trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                            trans->data[0][2], trans->data[1][2], trans->data[2][2]));
                 btDefaultMotionState* motionState = 
                     new btDefaultMotionState(
                                 startTransform
@@ -106,6 +112,9 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
                 btTransform startTransform;
                 startTransform.setIdentity();
                 startTransform.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+                startTransform.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                            trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                            trans->data[0][2], trans->data[1][2], trans->data[2][2]));
                 btDefaultMotionState* motionState = 
                     new btDefaultMotionState(
                                 startTransform
@@ -122,6 +131,20 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
     }
 
     node.LinkRigidBody(rigidBody);
+}
+
+void BulletPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node)
+{
+    const auto trans = node.GetCalculatedTransform();
+    auto rigidBody = node.RigidBody();
+    auto motionState = reinterpret_cast<btRigidBody*>(rigidBody)->getMotionState();
+    btTransform _trans;
+    _trans.setIdentity();
+    _trans.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+    _trans.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                trans->data[0][2], trans->data[1][2], trans->data[2][2]));
+    motionState->setWorldTransform(_trans);
 }
 
 void BulletPhysicsManager::DeleteRigidBody(SceneGeometryNode& node)

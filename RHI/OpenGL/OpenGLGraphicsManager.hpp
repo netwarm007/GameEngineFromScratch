@@ -23,6 +23,7 @@ namespace My {
 #ifdef DEBUG
         void DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color);
         void DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color);
+        void ClearDebugBuffers();
 #endif
 
     protected:
@@ -67,12 +68,14 @@ namespace My {
 #endif
 
         std::vector<DrawBatchContext> m_DrawBatchContext;
-#ifdef DEBUG
-        std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;
-#endif
 
         std::vector<GLuint> m_Buffers;
         std::vector<GLuint> m_Textures;
+
+#ifdef DEBUG
+        std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;
+        std::vector<GLuint> m_DebugBuffers;
+#endif
     };
 
 }

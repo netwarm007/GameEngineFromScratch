@@ -31,35 +31,39 @@ void article_41_logic::Tick()
 void article_41_logic::OnLeftKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node = node_weak_ptr.lock())
+    if(auto node_ptr = node_weak_ptr.lock())
     {
-        node->RotateBy(-PI/6.0f, 0.0f, 0.0f);
+        node_ptr->RotateBy(-PI/6.0f, 0.0f, 0.0f);
+        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
     }
 }
 
 void article_41_logic::OnRightKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node = node_weak_ptr.lock())
+    if(auto node_ptr = node_weak_ptr.lock())
     {
-        node->RotateBy(PI/6.0f, 0.0f, 0.0f);
+        node_ptr->RotateBy(PI/6.0f, 0.0f, 0.0f);
+        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
     }
 }
 
 void article_41_logic::OnUpKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node = node_weak_ptr.lock())
+    if(auto node_ptr = node_weak_ptr.lock())
     {
-        node->RotateBy(0.0f, 0.0f, PI/6.0f);
+        node_ptr->RotateBy(0.0f, 0.0f, PI/6.0f);
+        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
     }
 }
 
 void article_41_logic::OnDownKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node = node_weak_ptr.lock())
+    if(auto node_ptr = node_weak_ptr.lock())
     {
-        node->RotateBy(0.0f, 0.0f, -PI/6.0f);
+        node_ptr->RotateBy(0.0f, 0.0f, -PI/6.0f);
+        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
     }
 }
