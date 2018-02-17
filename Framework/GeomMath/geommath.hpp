@@ -441,7 +441,7 @@ namespace My {
         size_t size = sizeof(T) * COLS1;
         for (int i = 0; i < ROWS1; i++)
         {
-            memcpy(matrix1[i], matrix2[i], size);
+            std::memcpy(matrix1[i], matrix2[i], size);
         }
     }
 
