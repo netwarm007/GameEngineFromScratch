@@ -23,10 +23,10 @@ namespace My {
         bool SetPerFrameShaderParameters();
         bool SetPerBatchShaderParameters(int32_t index);
 
-        HRESULT InitializeBuffers(const Scene& scene);
+        void InitializeBuffers(const Scene& scene);
         void ClearBuffers();
-        HRESULT InitializeShaders();
-        HRESULT RenderBuffers();
+        bool InitializeShaders();
+        void RenderBuffers();
 
     private:
         HRESULT CreateDescriptorHeaps();

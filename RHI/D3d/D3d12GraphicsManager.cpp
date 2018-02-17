@@ -874,10 +874,10 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
 
 
 // this is the function that loads and prepares the shaders
-HRESULT D3d12GraphicsManager::InitializeShaders() {
+bool D3d12GraphicsManager::InitializeShaders() {
     HRESULT hr = S_OK;
     const char* vsFilename = "Shaders/simple.hlsl.vs"; 
-    const char* fsFilename = "Shaders/simple.hlsl.ps"
+    const char* fsFilename = "Shaders/simple.hlsl.ps";
 
     // load the shaders
     Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
@@ -951,19 +951,22 @@ HRESULT D3d12GraphicsManager::InitializeShaders() {
 
     if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineState))))
     {
-        return hr;
+        return false;
     }
 
-    hr = m_pDev->CreateCommandList(0, 
+    if (FAILED(hr = m_pDev->CreateCommandList(0, 
                 D3D12_COMMAND_LIST_TYPE_DIRECT, 
                 m_pCommandAllocator, 
                 m_pPipelineState, 
-                IID_PPV_ARGS(&m_pCommandList));
+                IID_PPV_ARGS(&m_pCommandList)))
+    {
+        return false;
+    }
 
-    return hr;
+    return true;
 }
 
-HRESULT D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
+void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 {
     HRESULT hr = S_OK;
 
@@ -1015,7 +1018,7 @@ HRESULT D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 
         if (FAILED(hr = m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
         {
-            return hr;
+            return;
         }
 
         m_nFenceValue = 1;
@@ -1025,13 +1028,13 @@ HRESULT D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
         {
             hr = HRESULT_FROM_WIN32(GetLastError());
             if (FAILED(hr))
-                return hr;
+                return;
         }
 
         WaitForPreviousFrame();
     }
 
-    return hr;
+    return;
 }
 
 int  D3d12GraphicsManager::Initialize()
@@ -1195,7 +1198,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     return hr;
 }
 
-HRESULT D3d12GraphicsManager::RenderBuffers()
+void D3d12GraphicsManager::RenderBuffers()
 {
     HRESULT hr;
 
@@ -1206,7 +1209,7 @@ HRESULT D3d12GraphicsManager::RenderBuffers()
     // swap the back buffer and the front buffer
     hr = m_pSwapChain->Present(1, 0);
 
-    return hr;
+    void(hr);
 }
 
 bool D3d12GraphicsManager::SetPerFrameShaderParameters()
