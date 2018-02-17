@@ -9,8 +9,8 @@ add_executable(article_41
     article_41_logic.cpp article_41_config.cpp)
 ENDIF(ANDROID)
 target_link_libraries(article_41
-                        MyGameEngine
                         MyPhysics
+                        MyGameEngine
                      )
 IF(WIN32)
 add_custom_command(TARGET article_41 POST_BUILD
