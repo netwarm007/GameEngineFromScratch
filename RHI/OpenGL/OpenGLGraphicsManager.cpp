@@ -920,6 +920,8 @@ void OpenGLGraphicsManager::ClearDebugBuffers()
     for (auto buf : m_DebugBuffers) {
         glDeleteBuffers(1, &buf);
     }
+
+    m_DebugBuffers.clear();
 }
 
 #endif
