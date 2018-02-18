@@ -958,7 +958,7 @@ bool D3d12GraphicsManager::InitializeShaders() {
                 D3D12_COMMAND_LIST_TYPE_DIRECT, 
                 m_pCommandAllocator, 
                 m_pPipelineState, 
-                IID_PPV_ARGS(&m_pCommandList)))
+                IID_PPV_ARGS(&m_pCommandList))))
     {
         return false;
     }
@@ -1209,7 +1209,7 @@ void D3d12GraphicsManager::RenderBuffers()
     // swap the back buffer and the front buffer
     hr = m_pSwapChain->Present(1, 0);
 
-    void(hr);
+    (void)hr;
 }
 
 bool D3d12GraphicsManager::SetPerFrameShaderParameters()
