@@ -76,7 +76,17 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             }
             break;
         default:
-            ;
+            {
+                // create AABB box according to Bounding Box 
+                auto collision_box = make_shared<Box>(geometry.GetBoundingBox());
+
+                const auto trans = node.GetCalculatedTransform();
+                auto motionState = 
+                    make_shared<MotionState>(
+                                *trans 
+                            );
+                rigidBody = new RigidBody(collision_box, motionState);
+            }
     }
 
     node.LinkRigidBody(rigidBody);
