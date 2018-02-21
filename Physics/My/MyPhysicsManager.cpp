@@ -154,29 +154,29 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
 }
 
 #ifdef DEBUG
-void MyPhysicsManager::DrawDebugInfo()
-{
-    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
-
-    // Geometries
-    for (auto _it : scene.GeometryNodes)
+    void MyPhysicsManager::DrawDebugInfo()
     {
-        auto pGeometryNode = _it.second;
-        if (void* rigidBody = pGeometryNode->RigidBody()) {
-            RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
-            Matrix4X4f simulated_result = GetRigidBodyTransform(_rigidBody);
-            auto pGeometry = _rigidBody->GetCollisionShape();
-            DrawAabb(*pGeometry, simulated_result);
+        auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+
+        // Geometries
+        for (auto _it : scene.GeometryNodes)
+        {
+            auto pGeometryNode = _it.second;
+            if (void* rigidBody = pGeometryNode->RigidBody()) {
+                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                Matrix4X4f simulated_result = GetRigidBodyTransform(_rigidBody);
+                auto pGeometry = _rigidBody->GetCollisionShape();
+                DrawAabb(*pGeometry, simulated_result);
+            }
         }
     }
-}
 
-void MyPhysicsManager::DrawAabb(const Geometry& geometry, const Matrix4X4f& trans)
-{
-    Vector3f bbMin, bbMax;
-    Vector3f color(0.5f, 0.5f, 0.5f);
+    void MyPhysicsManager::DrawAabb(const Geometry& geometry, const Matrix4X4f& trans)
+    {
+        Vector3f bbMin, bbMax;
+        Vector3f color(0.5f, 0.5f, 0.5f);
 
-    geometry.GetAabb(trans, bbMin, bbMax);
-    g_pGraphicsManager->DrawBox(bbMin, bbMax, color);
-}
+        geometry.GetAabb(trans, bbMin, bbMax);
+        g_pGraphicsManager->DrawBox(bbMin, bbMax, color);
+    }
 #endif

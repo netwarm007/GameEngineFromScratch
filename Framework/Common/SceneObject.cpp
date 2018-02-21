@@ -285,6 +285,6 @@ namespace My {
 			}
 		}
 
-		return bbmax - bbmin;
+		return (bbmax - bbmin) * 0.5f;
 	}
 }
