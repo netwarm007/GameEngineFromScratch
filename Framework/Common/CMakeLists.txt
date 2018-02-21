@@ -15,6 +15,7 @@ main.cpp
 )
 target_link_libraries(Common 
         GeomMath
+        Geometries
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 
