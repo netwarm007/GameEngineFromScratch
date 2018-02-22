@@ -27,7 +27,7 @@ namespace My {
 
     protected:
 #ifdef DEBUG
-        void DrawAabb(const Geometry& geometry, const Matrix4X4f& trans);
+        void DrawAabb(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass);
 #endif
     };
 }

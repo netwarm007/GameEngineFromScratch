@@ -241,7 +241,7 @@ namespace My {
         return intensity / pow(1 + distance, 2.0f);
     }
 
-	Vector3f SceneObjectMesh::GetBoundingBox() const
+	BoundingBox SceneObjectMesh::GetBoundingBox() const
 	{
 		Vector3f bbmin (numeric_limits<float>::max());
 		Vector3f bbmax (numeric_limits<float>::min());
@@ -285,6 +285,10 @@ namespace My {
 			}
 		}
 
-		return (bbmax - bbmin) * 0.5f;
+		BoundingBox result;
+		result.extent = (bbmax - bbmin) * 0.5f;
+		result.centroid = (bbmax + bbmin) * 0.5f;
+
+		return result;
 	}
 }
