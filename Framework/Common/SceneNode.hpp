@@ -4,18 +4,15 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "Tree.hpp"
 #include "SceneObject.hpp"
 
 namespace My {
-    class BaseSceneNode {
+    class BaseSceneNode : public TreeNode {
         protected:
             std::string m_strName;
-            std::list<std::shared_ptr<BaseSceneNode>> m_Children;
             std::list<std::shared_ptr<SceneObjectTransform>> m_Transforms;
             Matrix4X4f m_RuntimeTransform;
-
-        protected:
-            virtual void dump(std::ostream& out) const {};
 
         public:
             BaseSceneNode() { BuildIdentityMatrix(m_RuntimeTransform); };
@@ -24,12 +21,7 @@ namespace My {
 
             const std::string GetName() const { return m_strName; };
 
-            void AppendChild(std::shared_ptr<BaseSceneNode>&& sub_node)
-            {
-                m_Children.push_back(std::move(sub_node));
-            }
-
-            void AppendChild(std::shared_ptr<SceneObjectTransform>&& transform)
+            void AppendTransform(std::shared_ptr<SceneObjectTransform>&& transform)
             {
                 m_Transforms.push_back(std::move(transform));
             }
@@ -69,11 +61,11 @@ namespace My {
             node.dump(out);
             out << std::endl;
 
-            for (const std::shared_ptr<BaseSceneNode>& sub_node : node.m_Children) {
+            for (auto sub_node : node.m_Children) {
                 out << *sub_node << std::endl;
             }
 
-            for (const std::shared_ptr<SceneObjectTransform>& sub_node : node.m_Transforms) {
+            for (auto sub_node : node.m_Transforms) {
                 out << *sub_node << std::endl;
             }
 

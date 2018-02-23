@@ -127,6 +127,7 @@ namespace My {
     };
 
     typedef Vector3Type<float> Vector3f;
+    typedef Vector3Type<double> Vector3;
     typedef Vector3Type<int16_t> Vector3i16;
     typedef Vector3Type<int32_t> Vector3i32;
 

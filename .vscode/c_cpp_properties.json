@@ -19,7 +19,8 @@
                 "${workspaceRoot}/RHI",
                 "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad",
                 "${workspaceRoot}/Framework/Geometries",
-                "${workspaceRoot}/Framework/Geometries"
+                "${workspaceRoot}/Framework/Geometries",
+                "${workspaceRoot}/Framework/Algorism"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",

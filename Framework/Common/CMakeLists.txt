@@ -14,6 +14,7 @@ SceneObject.cpp
 main.cpp
 )
 target_link_libraries(Common 
+        Geometries
         GeomMath
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 

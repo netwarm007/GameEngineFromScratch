@@ -5,11 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS)(Open GL) Launch article_41 Game",
+            "name": "(Mac OS)(Open GL) Launch article_43 Game",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/article_41/article_41.app/Contents/MacOS/article_41",
-            "args": ["Scene/article_41.ogex"],
+            "program": "${workspaceFolder}/build/Game/article_43/article_43.app/Contents/MacOS/article_43",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -17,11 +16,10 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(Open GL) Launch article_41 Game",
+            "name": "(Windows)(Open GL) Launch article_43 Game",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/article_41/Debug/article_41.exe",
-            "args": ["Scene/article_41.ogex"],
+            "program": "${workspaceFolder}/build/Game/article_43/Debug/article_43.exe",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

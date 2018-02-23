@@ -331,6 +331,7 @@ namespace OGEX
         private:
 
             String      translationKind;
+            const float* translationArray;     
 
         public:
 
@@ -340,6 +341,11 @@ namespace OGEX
             const String& GetTranslationKind(void) const
             {
                 return (translationKind);
+            }
+
+            const float* GetTranslation(void) const
+            {
+                return (translationArray);
             }
 
             bool ValidateProperty(const DataDescription *dataDescription, const String& identifier, DataType *type, void **value);
