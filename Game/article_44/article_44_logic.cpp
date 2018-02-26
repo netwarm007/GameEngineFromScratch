@@ -1,5 +1,5 @@
 #include <iostream>
-#include "article_43_logic.hpp"
+#include "article_44_logic.hpp"
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
 #include "IPhysicsManager.hpp"
@@ -7,7 +7,7 @@
 using namespace My;
 using namespace std;
 
-int article_43_logic::Initialize()
+int article_44_logic::Initialize()
 {
     int result;
 
@@ -18,17 +18,17 @@ int article_43_logic::Initialize()
     return result;
 }
 
-void article_43_logic::Finalize()
+void article_44_logic::Finalize()
 {
     cout << "[GameLogic] Finalize" << endl;
 }
 
-void article_43_logic::Tick()
+void article_44_logic::Tick()
 {
 
 }
 
-void article_43_logic::OnLeftKey()
+void article_44_logic::OnLeftKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
     if(auto node_ptr = node_weak_ptr.lock())
@@ -38,7 +38,7 @@ void article_43_logic::OnLeftKey()
     }
 }
 
-void article_43_logic::OnRightKey()
+void article_44_logic::OnRightKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
     if(auto node_ptr = node_weak_ptr.lock())
@@ -48,7 +48,7 @@ void article_43_logic::OnRightKey()
     }
 }
 
-void article_43_logic::OnUpKey()
+void article_44_logic::OnUpKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
     if(auto node_ptr = node_weak_ptr.lock())
@@ -58,7 +58,7 @@ void article_43_logic::OnUpKey()
     }
 }
 
-void article_43_logic::OnDownKey()
+void article_44_logic::OnDownKey()
 {
     auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
     if(auto node_ptr = node_weak_ptr.lock())

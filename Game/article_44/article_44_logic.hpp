@@ -2,7 +2,7 @@
 #include "GameLogic.hpp"
 
 namespace My {
-    class article_43_logic : public GameLogic
+    class article_44_logic : public GameLogic
     {
         int Initialize();
         void Finalize();

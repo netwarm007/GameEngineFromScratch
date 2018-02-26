@@ -1,9 +1,10 @@
 #pragma once
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <math.h>
-#include <cstring>
+#include <set>
 #include "CrossProduct.h"
 #include "MulByElement.h"
 #include "Normalize.h"
@@ -733,5 +734,17 @@ namespace My {
         ispc::IDCT8X8(matrix, result);
         return result;
     }
+
+    typedef Vector3Type<float> Point;
+    typedef std::shared_ptr<Point> PointPtr;
+    typedef std::set<PointPtr> PointSet;
+    typedef std::pair<PointPtr, PointPtr> Edge;
+    typedef std::shared_ptr<Edge> EdgePtr;
+
+    struct TriangleFace {
+        PointPtr    m_Points[3];
+        EdgePtr     m_Edges[3];
+        Vector3f    m_Normal;
+    };
 }
 
