@@ -774,7 +774,7 @@ void OpenGLGraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, c
 
     glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-    m_Buffers.push_back(buffer_id);
+    m_DebugBuffers.push_back(buffer_id);
 
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;
@@ -898,7 +898,7 @@ void OpenGLGraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax
 
     glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-    m_Buffers.push_back(buffer_id);
+    m_DebugBuffers.push_back(buffer_id);
 
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;

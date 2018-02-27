@@ -256,6 +256,11 @@ namespace My {
 		kPrimitiveTypePolygon = "POLY"_i32,     ///< For N>=0, vertices [0, N+1, N+2] render a triangle.
 	};
 
+    struct BoundingBox {
+        Vector3f centroid;
+        Vector3f extent;
+    };
+
     std::ostream& operator<<(std::ostream& out, PrimitiveType type);
   
     class SceneObjectMesh : public BaseSceneObject
@@ -285,7 +290,7 @@ namespace My {
             const SceneObjectVertexArray& GetVertexPropertyArray(const size_t index) const { return m_VertexArray[index]; };
             const SceneObjectIndexArray& GetIndexArray(const size_t index) const { return m_IndexArray[index]; };
             const PrimitiveType& GetPrimitiveType() { return m_PrimitiveType; };
-            Vector3f GetBoundingBox() const;
+            BoundingBox GetBoundingBox() const;
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj);
     };
@@ -568,7 +573,7 @@ namespace My {
             void AddMesh(std::shared_ptr<SceneObjectMesh>& mesh) { m_Mesh.push_back(std::move(mesh)); }
             const std::weak_ptr<SceneObjectMesh> GetMesh() { return (m_Mesh.empty()? nullptr : m_Mesh[0]); }
             const std::weak_ptr<SceneObjectMesh> GetMeshLOD(size_t lod) { return (lod < m_Mesh.size()? m_Mesh[lod] : nullptr); }
-            Vector3f GetBoundingBox() const { return m_Mesh.empty()? Vector3f(0) : m_Mesh[0]->GetBoundingBox(); }
+            BoundingBox GetBoundingBox() const { return m_Mesh.empty()? BoundingBox() : m_Mesh[0]->GetBoundingBox(); }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj);
     };
