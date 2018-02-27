@@ -4,31 +4,24 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "Tree.hpp"
 #include "SceneObject.hpp"
 
 namespace My {
-    class BaseSceneNode {
+    class BaseSceneNode : public TreeNode {
         protected:
             std::string m_strName;
-            std::list<std::shared_ptr<BaseSceneNode>> m_Children;
             std::list<std::shared_ptr<SceneObjectTransform>> m_Transforms;
-
-        protected:
-            virtual void dump(std::ostream& out) const {};
+            Matrix4X4f m_RuntimeTransform;
 
         public:
-            BaseSceneNode() {};
-            BaseSceneNode(const std::string& name) { m_strName = name; };
+            BaseSceneNode() { BuildIdentityMatrix(m_RuntimeTransform); };
+            BaseSceneNode(const std::string& name) { m_strName = name; BuildIdentityMatrix(m_RuntimeTransform); };
 			virtual ~BaseSceneNode() {};
 
             const std::string GetName() const { return m_strName; };
 
-            void AppendChild(std::shared_ptr<BaseSceneNode>&& sub_node)
-            {
-                m_Children.push_back(std::move(sub_node));
-            }
-
-            void AppendChild(std::shared_ptr<SceneObjectTransform>&& transform)
+            void AppendTransform(std::shared_ptr<SceneObjectTransform>&& transform)
             {
                 m_Transforms.push_back(std::move(transform));
             }
@@ -44,7 +37,17 @@ namespace My {
                     *result = *result * static_cast<Matrix4X4f>(*trans);
                 }
 
+                // apply runtime transforms
+                *result = *result * m_RuntimeTransform;
+
                 return result;
+            }
+
+            void RotateBy(float rotation_angle_x, float rotation_angle_y, float rotation_angle_z)
+            {
+                Matrix4X4f rotate;
+                MatrixRotationYawPitchRoll(rotate, rotation_angle_x, rotation_angle_y, rotation_angle_z);
+                m_RuntimeTransform = m_RuntimeTransform * rotate;
             }
 
         friend std::ostream& operator<<(std::ostream& out, const BaseSceneNode& node)
@@ -58,11 +61,11 @@ namespace My {
             node.dump(out);
             out << std::endl;
 
-            for (const std::shared_ptr<BaseSceneNode>& sub_node : node.m_Children) {
+            for (auto sub_node : node.m_Children) {
                 out << *sub_node << std::endl;
             }
 
-            for (const std::shared_ptr<SceneObjectTransform>& sub_node : node.m_Transforms) {
+            for (auto sub_node : node.m_Transforms) {
                 out << *sub_node << std::endl;
             }
 

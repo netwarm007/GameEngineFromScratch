@@ -18,6 +18,7 @@ namespace My {
         virtual void ClearRigidBodies();
 
         Matrix4X4f GetRigidBodyTransform(void* rigidBody);
+        void UpdateRigidBodyTransform(SceneGeometryNode& node);
 
         void ApplyCentralForce(void* rigidBody, Vector3f force);
 

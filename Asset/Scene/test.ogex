@@ -169,6 +169,15 @@ GeometryObject $geometry1		// Cone
 			}
 		}
 	}
+
+    Extension (applic = "MyGameEngine", type = "collision")
+    {
+        string {"box"}
+        float[3] // size 
+        {
+            {1.0, 1.0, 1.0}
+        } 
+    }
 }
 
 GeometryObject $geometry2		// Cylinder
@@ -256,6 +265,15 @@ GeometryObject $geometry2		// Cylinder
 			}
 		}
 	}
+
+    Extension (applic = "MyGameEngine", type = "collision")
+    {
+        string {"box"}
+        float[3] // size 
+        {
+            {1.0, 1.0, 1.0}
+        } 
+    }
 }
 
 GeometryObject $geometry3		// Suzanne
@@ -836,6 +854,15 @@ GeometryObject $geometry3		// Suzanne
 			}
 		}
 	}
+
+    Extension (applic = "MyGameEngine", type = "collision")
+    {
+        string {"box"}
+        float[3] // size 
+        {
+            {1.2, 1.0, 1.0}
+        } 
+    }
 }
 
 GeometryObject $geometry4		// Cube
@@ -870,6 +897,15 @@ GeometryObject $geometry4		// Cube
 			}
 		}
 	}
+
+    Extension (applic = "MyGameEngine", type = "collision")
+    {
+        string {"box"}
+        float[3] // size 
+        {
+            {1.0, 1.0, 1.0}
+        } 
+    }
 }
 
 LightObject $light1 (type = "point")		// Lamp

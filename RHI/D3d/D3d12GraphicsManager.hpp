@@ -24,9 +24,11 @@ namespace My {
         bool SetPerFrameShaderParameters();
         bool SetPerBatchShaderParameters(int32_t index);
 
-        HRESULT InitializeBuffers();
-        HRESULT InitializeShader(const char* vsFilename, const char* fsFilename);
-        HRESULT RenderBuffers();
+        void InitializeBuffers(const Scene& scene);
+        void ClearBuffers();
+        bool InitializeShaders();
+        void ClearShaders();
+        void RenderBuffers();
 
     private:
         HRESULT CreateDescriptorHeaps();
@@ -34,7 +36,7 @@ namespace My {
         HRESULT CreateDepthStencil();
         HRESULT CreateGraphicsResources();
         HRESULT CreateSamplerBuffer();
-        HRESULT CreateTextureBuffer(SceneObjectTexture& image);
+        HRESULT CreateTextureBuffer(SceneObjectTexture& texture);
         HRESULT CreateConstantBuffer();
         HRESULT CreateIndexBuffer(const SceneObjectIndexArray& index_array);
         HRESULT CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
@@ -86,7 +88,7 @@ namespace My {
 
         struct DrawBatchContext {
             int32_t count;
-            std::shared_ptr<Matrix4X4f> transform;
+            std::shared_ptr<SceneGeometryNode> node;
             std::shared_ptr<SceneObjectMaterial> material;
         };
 

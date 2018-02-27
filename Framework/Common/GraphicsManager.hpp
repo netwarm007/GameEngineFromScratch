@@ -1,7 +1,8 @@
 #pragma once
+#include "IRuntimeModule.hpp"
 #include "geommath.hpp"
 #include "Image.hpp"
-#include "IRuntimeModule.hpp"
+#include "Scene.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
@@ -17,19 +18,22 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
-    protected:
-        bool SetPerFrameShaderParameters();
-        bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const float param);
-        bool SetPerBatchShaderParameters(const char* paramName, const int param);
+#ifdef DEBUG
+        virtual void DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color);
+        virtual void DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color);
+        virtual void ClearDebugBuffers();
+#endif
 
-        void InitConstants();
-        bool InitializeShader(const char* vsFilename, const char* fsFilename);
-        void InitializeBuffers();
-        void CalculateCameraMatrix();
-        void CalculateLights();
-        void RenderBuffers();
+    protected:
+        virtual bool InitializeShaders();
+        virtual void ClearShaders();
+        virtual void InitializeBuffers(const Scene& scene);
+        virtual void ClearBuffers();
+
+        virtual void InitConstants();
+        virtual void CalculateCameraMatrix();
+        virtual void CalculateLights();
+        virtual void RenderBuffers();
 
     protected:
         struct DrawFrameContext {

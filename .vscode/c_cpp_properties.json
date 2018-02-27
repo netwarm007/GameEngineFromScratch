@@ -19,7 +19,8 @@
                 "${workspaceRoot}/RHI",
                 "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad",
                 "${workspaceRoot}/Framework/Geometries",
-                "${workspaceRoot}/Framework/Geometries"
+                "${workspaceRoot}/Framework/Geometries",
+                "${workspaceRoot}/Framework/Algorism"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -80,7 +81,10 @@
                 "${workspaceRoot}/RHI/D3d",
                 "${workspaceRoot}/RHI/D2d",
                 "${workspaceRoot}/External/Windows/include",
-                "${workspaceRoot}/External/Windows/include/bullet"
+                "${workspaceRoot}/External/Windows/include/bullet",
+                "${workspaceRoot}/Framework/Algorism",
+                "${workspaceRoot}/RHI",
+                "${workspaceRoot}/External/src/glad/include"
             ],
             "defines": [
                 "_DEBUG",

@@ -8,5 +8,8 @@ namespace My {
     AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
     SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
     InputManager*    g_pInputManager    = static_cast<InputManager*>(new InputManager);
+#ifdef DEBUG
+    DebugManager*    g_pDebugManager    = static_cast<DebugManager*>(new DebugManager);
+#endif
 }
 

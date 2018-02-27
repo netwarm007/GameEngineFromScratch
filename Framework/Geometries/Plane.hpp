@@ -5,7 +5,7 @@ namespace My {
     class Plane : public Geometry 
     {
     public:
-        Plane() : Geometry(GeometryType::kPlane) {};
+        Plane() = delete;
         Plane(Vector3f normal, float intercept) : Geometry(GeometryType::kPlane), m_vNormal(normal), m_fIntercept(intercept) {};
 
         virtual void GetAabb(const Matrix4X4f& trans, 

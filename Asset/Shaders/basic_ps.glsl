@@ -10,8 +10,6 @@
 // per frame
 uniform vec3   lightPosition;
 uniform vec4   lightColor;
-
-// update per frame
 uniform mat4 worldMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;

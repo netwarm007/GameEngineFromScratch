@@ -4,9 +4,12 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "(Windows)(DX12) Build Billiard Game",
+            "label": "Build Billiard Game",
             "type": "shell",
-            "command": "build.bat",
+            "command": "./build.sh",
+            "windows": {
+                "command": "build.bat"
+            },
             "problemMatcher": [
                 "$msCompile"
             ],
