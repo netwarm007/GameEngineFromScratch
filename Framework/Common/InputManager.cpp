@@ -2,7 +2,7 @@
 #include "InputManager.hpp"
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
-#include "GameLogic.hpp"
+#include "IGameLogic.hpp"
 #include "DebugManager.hpp"
 #include "geommath.hpp"
 

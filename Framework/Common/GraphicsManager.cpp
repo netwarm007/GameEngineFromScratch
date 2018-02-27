@@ -135,6 +135,18 @@ void GraphicsManager::RenderBuffers()
 }
 
 #ifdef DEBUG
+void GraphicsManager::DrawPoint(const Point &point, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawPoint(" << point << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawPointSet(const PointSet &point_set, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawPointSet(" << point_set.size() << ","
+        << color << ")" << endl;
+}
+
 void GraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawLine(" << from << ","

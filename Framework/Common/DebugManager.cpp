@@ -2,6 +2,7 @@
 #include "DebugManager.hpp"
 #include "GraphicsManager.hpp"
 #include "IPhysicsManager.hpp"
+#include "IGameLogic.hpp"
 
 using namespace My;
 using namespace std;
@@ -29,6 +30,7 @@ void DebugManager::ToggleDebugInfo()
     {
         DrawDebugInfo();
         g_pPhysicsManager->DrawDebugInfo();
+        g_pGameLogic->DrawDebugInfo();
     }
     else
     {

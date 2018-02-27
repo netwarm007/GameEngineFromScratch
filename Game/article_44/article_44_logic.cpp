@@ -1,4 +1,5 @@
 #include <iostream>
+#include <random>
 #include "article_44_logic.hpp"
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
@@ -13,7 +14,20 @@ int article_44_logic::Initialize()
 
     cout << "[GameLogic] Initialize" << endl;
     cout << "[GameLogic] Start Loading Game Scene" << endl;
-    result = g_pSceneManager->LoadScene("Scene/study.ogex");
+    result = g_pSceneManager->LoadScene("Scene/Empty.ogex");
+
+    // generate random point cloud
+    default_random_engine generator;
+    uniform_real_distribution<float> distribution(-3.0f, 3.0f);
+    auto dice = std::bind(distribution, generator);
+
+    for(auto i = 0; i < 100; i++)
+    {
+        PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());
+        m_QuickHull.AddPoint(std::move(point_ptr));
+    }
+
+    m_QuickHull.ComputeHull();
 
     return result;
 }
@@ -28,42 +42,34 @@ void article_44_logic::Tick()
 
 }
 
+void article_44_logic::DrawDebugInfo()
+{
+    auto point_set = m_QuickHull.GetPointSet();
+    auto hull = m_QuickHull.GetHull();
+
+    // draw the hull
+    g_pGraphicsManager->DrawPointSet(hull, Vector3f(0.9f, 0.5f, 0.5f));
+
+    // draw the point cloud
+    g_pGraphicsManager->DrawPointSet(point_set, Vector3f(0.5f));
+}
+
 void article_44_logic::OnLeftKey()
 {
-    auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node_ptr = node_weak_ptr.lock())
-    {
-        node_ptr->RotateBy(-PI/6.0f, 0.0f, 0.0f);
-        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
-    }
+
 }
 
 void article_44_logic::OnRightKey()
 {
-    auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node_ptr = node_weak_ptr.lock())
-    {
-        node_ptr->RotateBy(PI/6.0f, 0.0f, 0.0f);
-        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
-    }
+
 }
 
 void article_44_logic::OnUpKey()
 {
-    auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node_ptr = node_weak_ptr.lock())
-    {
-        node_ptr->RotateBy(0.0f, 0.0f, PI/6.0f);
-        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
-    }
+
 }
 
 void article_44_logic::OnDownKey()
 {
-    auto node_weak_ptr = g_pSceneManager->GetSceneGeometryNode("Suzanne");
-    if(auto node_ptr = node_weak_ptr.lock())
-    {
-        node_ptr->RotateBy(0.0f, 0.0f, -PI/6.0f);
-        g_pPhysicsManager->UpdateRigidBodyTransform(*node_ptr);
-    }
+
 }

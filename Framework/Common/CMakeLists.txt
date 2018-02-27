@@ -3,7 +3,6 @@ Allocator.cpp
 AssetLoader.cpp
 BaseApplication.cpp
 DebugManager.cpp
-GameLogic.cpp
 GraphicsManager.cpp
 InputManager.cpp
 Image.cpp

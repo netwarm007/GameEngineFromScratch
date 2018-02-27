@@ -16,6 +16,7 @@ namespace My {
         void AddPoint(const PointPtr& new_point) { m_PointSet.insert(new_point); }
         void AddPoint(PointPtr&& new_point) { m_PointSet.insert(std::move(new_point)); }
         void AddPointSet(const PointSet& point_set) { m_PointSet.insert(point_set.begin(), point_set.end()); }
+        const PointSet& GetPointSet() const { return m_PointSet; }
         void ComputeHull() { ComputeHullInternal(); }
         const PointSet& GetHull() const { return m_ConvexHull; }
 

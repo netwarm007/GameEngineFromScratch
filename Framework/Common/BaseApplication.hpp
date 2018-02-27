@@ -6,7 +6,7 @@
 #include "SceneManager.hpp"
 #include "InputManager.hpp"
 #include "IPhysicsManager.hpp"
-#include "GameLogic.hpp"
+#include "IGameLogic.hpp"
 #include "DebugManager.hpp"
 
 namespace My {

@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS)(Open GL) Launch article_43 Game",
+            "name": "(Mac OS)(Open GL) Launch article_44 Game",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/article_43/article_43.app/Contents/MacOS/article_43",
+            "program": "${workspaceFolder}/build/Game/article_44/article_44.app/Contents/MacOS/article_44",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -16,10 +16,10 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(Open GL) Launch article_43 Game",
+            "name": "(Windows)(Open GL) Launch article_44 Game",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/article_43/Debug/article_43.exe",
+            "program": "${workspaceFolder}/build/Game/article_44/Debug/article_44.exe",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
