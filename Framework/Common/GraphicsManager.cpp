@@ -17,6 +17,9 @@ int GraphicsManager::Initialize()
 
 void GraphicsManager::Finalize()
 {
+    ClearDebugBuffers();
+    ClearBuffers();
+    ClearShaders();
 }
 
 void GraphicsManager::Tick()

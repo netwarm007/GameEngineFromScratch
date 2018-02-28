@@ -1201,8 +1201,7 @@ void D3d12GraphicsManager::ClearBuffers()
 
 void D3d12GraphicsManager::Finalize()
 {
-    ClearShaders();
-    ClearBuffers();
+    GraphicsManager::Finalize();
 
     SafeRelease(&m_pRtvHeap);
     SafeRelease(&m_pDsvHeap);

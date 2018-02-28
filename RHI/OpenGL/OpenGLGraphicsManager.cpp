@@ -140,29 +140,6 @@ int OpenGLGraphicsManager::Initialize()
 
 void OpenGLGraphicsManager::Finalize()
 {
-    ClearBuffers();
-
-    if (m_shaderProgram) {
-        if (m_vertexShader)
-        {
-            // Detach the vertex shaders from the program.
-            glDetachShader(m_shaderProgram, m_vertexShader);
-            // Delete the vertex shaders.
-            glDeleteShader(m_vertexShader);
-        }
-
-        if (m_fragmentShader)
-        {
-            // Detach the fragment shaders from the program.
-            glDetachShader(m_shaderProgram, m_fragmentShader);
-            // Delete the fragment shaders.
-            glDeleteShader(m_fragmentShader);
-        }
-
-        // Delete the shader program.
-        glDeleteProgram(m_shaderProgram);
-    }
-
     GraphicsManager::Finalize();
 }
 
@@ -476,8 +453,6 @@ void OpenGLGraphicsManager::InitializeBuffers(const Scene& scene)
 
 void OpenGLGraphicsManager::ClearBuffers()
 {
-    ClearDebugBuffers();
-
     for (auto dbc : m_DrawBatchContext) {
         glDeleteVertexArrays(1, &dbc.vao);
     }
@@ -739,6 +714,30 @@ bool OpenGLGraphicsManager::InitializeShaders()
 #endif
 
     return true;
+}
+
+void OpenGLGraphicsManager::ClearShaders()
+{
+    if (m_shaderProgram) {
+        if (m_vertexShader)
+        {
+            // Detach the vertex shaders from the program.
+            glDetachShader(m_shaderProgram, m_vertexShader);
+            // Delete the vertex shaders.
+            glDeleteShader(m_vertexShader);
+        }
+
+        if (m_fragmentShader)
+        {
+            // Detach the fragment shaders from the program.
+            glDetachShader(m_shaderProgram, m_fragmentShader);
+            // Delete the fragment shaders.
+            glDeleteShader(m_fragmentShader);
+        }
+
+        // Delete the shader program.
+        glDeleteProgram(m_shaderProgram);
+    }
 }
 
 #ifdef DEBUG
