@@ -24,6 +24,7 @@ namespace My {
         bool SetPerFrameShaderParameters();
         bool SetPerBatchShaderParameters(int32_t index);
 
+        void UpdateConstants();
         void InitializeBuffers(const Scene& scene);
         void ClearBuffers();
         bool InitializeShaders();
@@ -48,7 +49,7 @@ namespace My {
         static const uint32_t           kFrameCount  = 2;
         static const uint32_t           kMaxSceneObjectCount  = 65535;
         static const uint32_t           kMaxTextureCount  = 2048;
-		static const uint32_t		    kTextureDescStartIndex = kFrameCount * (1 + kMaxSceneObjectCount);
+		static const uint32_t		    kTextureDescStartIndex = kFrameCount * kMaxSceneObjectCount * 2;
 
         ID3D12Device*                   m_pDev       = nullptr;             // the pointer to our Direct3D device interface
         D3D12_VIEWPORT                  m_ViewPort;                         // viewport structure

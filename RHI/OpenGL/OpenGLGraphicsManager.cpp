@@ -180,9 +180,6 @@ void OpenGLGraphicsManager::Draw()
 {
     GraphicsManager::Draw();
 
-    // Render the model using the color shader.
-    RenderBuffers();
-
     glFlush();
 }
 

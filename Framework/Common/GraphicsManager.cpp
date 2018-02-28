@@ -32,20 +32,29 @@ void GraphicsManager::Tick()
         g_pSceneManager->NotifySceneIsRenderingQueued();
     }
 
-    // Generate the view matrix based on the camera's position.
-    CalculateCameraMatrix();
-    CalculateLights();
+    UpdateConstants();
 
     Clear();
     Draw();
 }
 
+void GraphicsManager::UpdateConstants()
+{
+    // Generate the view matrix based on the camera's position.
+    CalculateCameraMatrix();
+    CalculateLights();
+}
+
 void GraphicsManager::Clear()
 {
+
 }
 
 void GraphicsManager::Draw()
 {
+    UpdateConstants();
+
+    RenderBuffers();
 }
 
 void GraphicsManager::InitConstants()

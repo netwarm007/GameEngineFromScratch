@@ -76,14 +76,14 @@
                 "${workspaceRoot}/Framework/GeomMath",
                 "${workspaceRoot}/Framework/GeomMath/include",
                 "${workspaceRoot}/Framework/Parser",
+                "${workspaceRoot}/Framework/Algorism",
                 "${workspaceRoot}/Platform/Windows",
+                "${workspaceRoot}/RHI",
                 "${workspaceRoot}/RHI/OpenGL",
                 "${workspaceRoot}/RHI/D3d",
                 "${workspaceRoot}/RHI/D2d",
                 "${workspaceRoot}/External/Windows/include",
                 "${workspaceRoot}/External/Windows/include/bullet",
-                "${workspaceRoot}/Framework/Algorism",
-                "${workspaceRoot}/RHI",
                 "${workspaceRoot}/External/src/glad/include"
             ],
             "defines": [
