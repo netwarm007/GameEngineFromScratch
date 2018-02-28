@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
+#include <memory>
 #include <set>
 #include "CrossProduct.h"
 #include "MulByElement.h"
