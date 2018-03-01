@@ -4,7 +4,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
-#include <math.h>
+#include <cmath>
 #include <memory>
 #include <set>
 #include <vector>

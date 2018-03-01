@@ -121,7 +121,7 @@ void QuickHull::ComputeHullInternal()
                 CrossProduct(normal, *B - *A, *C - *A);
                 Normalize(normal);
                 DotProduct(distance, normal, *point_ptr - *A);
-                distance = abs(distance);
+                distance = std::abs(distance);
                 if (distance > max_distance)
                 {
                     D = point_ptr;
