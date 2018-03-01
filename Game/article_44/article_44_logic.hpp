@@ -11,10 +11,10 @@ namespace My {
         void Finalize();
         void Tick();
 
-        void OnLeftKey();
-        void OnRightKey();
-        void OnUpKey();
-        void OnDownKey();
+        void OnLeftKeyDown();
+        void OnRightKeyDown();
+        void OnUpKeyDown();
+        void OnDownKeyDown();
 
 #ifdef DEBUG
         void DrawDebugInfo();

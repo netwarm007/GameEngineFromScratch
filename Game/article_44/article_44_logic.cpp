@@ -54,22 +54,58 @@ void article_44_logic::DrawDebugInfo()
     g_pGraphicsManager->DrawPointSet(point_set, Vector3f(0.5f));
 }
 
-void article_44_logic::OnLeftKey()
+void article_44_logic::OnLeftKeyDown()
 {
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pCameraNode = scene.GetFirstCameraNode();
+    if (pCameraNode) {
+        auto local_axis = pCameraNode->GetLocalAxis(); 
+        Vector3f camera_x_axis;
+        memcpy(camera_x_axis.data, local_axis[0], sizeof(camera_x_axis));
 
+        // move camera along its local axis x direction
+        pCameraNode->MoveBy(camera_x_axis);
+    }
 }
 
-void article_44_logic::OnRightKey()
+void article_44_logic::OnRightKeyDown()
 {
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pCameraNode = scene.GetFirstCameraNode();
+    if (pCameraNode) {
+        auto local_axis = pCameraNode->GetLocalAxis(); 
+        Vector3f camera_x_axis;
+        memcpy(camera_x_axis.data, local_axis[0], sizeof(camera_x_axis));
 
+        // move along camera local axis -x direction
+        pCameraNode->MoveBy(camera_x_axis * -1.0f);
+    }
 }
 
-void article_44_logic::OnUpKey()
+void article_44_logic::OnUpKeyDown()
 {
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pCameraNode = scene.GetFirstCameraNode();
+    if (pCameraNode) {
+        auto local_axis = pCameraNode->GetLocalAxis(); 
+        Vector3f camera_y_axis;
+        memcpy(camera_y_axis.data, local_axis[1], sizeof(camera_y_axis));
 
+        // move camera along its local axis y direction
+        pCameraNode->MoveBy(camera_y_axis);
+    }
 }
 
-void article_44_logic::OnDownKey()
+void article_44_logic::OnDownKeyDown()
 {
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pCameraNode = scene.GetFirstCameraNode();
+    if (pCameraNode) {
+        auto local_axis = pCameraNode->GetLocalAxis(); 
+        Vector3f camera_y_axis;
+        memcpy(camera_y_axis.data, local_axis[1], sizeof(camera_y_axis));
 
+        // move camera along its local axis -y direction
+        pCameraNode->MoveBy(camera_y_axis * -1.0f);
+    }
 }

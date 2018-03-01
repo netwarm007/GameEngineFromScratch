@@ -112,7 +112,7 @@ void QuickHull::ComputeHullInternal()
         // now we find the 4th point to form a tetrahydron
         PointPtr D;
         {
-            float max_distance = 0.0f;
+            float max_distance = 0;
 
             for (auto point_ptr : workingPointSet)
             {
@@ -121,6 +121,7 @@ void QuickHull::ComputeHullInternal()
                 CrossProduct(normal, *B - *A, *C - *A);
                 Normalize(normal);
                 DotProduct(distance, normal, *point_ptr - *A);
+                distance = abs(distance);
                 if (distance > max_distance)
                 {
                     D = point_ptr;

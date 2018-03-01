@@ -70,12 +70,13 @@ void GraphicsManager::CalculateCameraMatrix()
     auto& scene = g_pSceneManager->GetSceneForRendering();
     auto pCameraNode = scene.GetFirstCameraNode();
     if (pCameraNode) {
-        m_DrawFrameContext.m_viewMatrix = *pCameraNode->GetCalculatedTransform();
-        InverseMatrix4X4f(m_DrawFrameContext.m_viewMatrix);
+        auto transform = *pCameraNode->GetCalculatedTransform();
+        InverseMatrix4X4f(transform);
+        m_DrawFrameContext.m_viewMatrix = transform;
     }
     else {
         // use default build-in camera
-        Vector3f position = { 0, -5, 0 }, lookAt = { 0, 0, 0 }, up = { 0, 0, 1 };
+        Vector3f position = { 0.0f, -5.0f, 0.0f }, lookAt = { 0.0f, 0.0f, 0.0f }, up = { 0.0f, 0.0f, 1.0f };
         BuildViewMatrix(m_DrawFrameContext.m_viewMatrix, position, lookAt, up);
     }
 
