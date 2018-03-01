@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <iostream>
@@ -739,13 +740,73 @@ namespace My {
     typedef Vector3Type<float> Point;
     typedef std::shared_ptr<Point> PointPtr;
     typedef std::set<PointPtr> PointSet;
+    typedef std::vector<PointPtr> PointList;
     typedef std::pair<PointPtr, PointPtr> Edge;
     typedef std::shared_ptr<Edge> EdgePtr;
+    typedef std::set<EdgePtr> EdgeSet;
+    typedef std::vector<EdgePtr> EdgeList;
+    struct Face {
+        EdgeSet     Edges;
+    };
+    typedef std::shared_ptr<Face> FacePtr;
+    typedef std::set<FacePtr> FaceSet;
+    typedef std::vector<FacePtr> FaceList;
+    struct Polyhedron {
+        FaceSet     Faces;
+        void AddPoligon(const PointSet vertices)
+        {
+            assert(vertices.size() >= 3);
+            FacePtr pFace = std::make_shared<Face>();
+            auto it = vertices.begin(); 
+            while(it != vertices.end())
+            {
+                auto previous_vertex = *it++;
+                if(it != vertices.end())
+                    pFace->Edges.insert(std::make_shared<Edge>(previous_vertex, *it));
+                else
+                    pFace->Edges.insert(std::make_shared<Edge>(previous_vertex, *vertices.begin()));
+            }
+            Faces.insert(std::move(pFace));
+        }
+        void AddTetrahydron(const PointSet vertices)
+        {
+            assert(vertices.size() == 4);
+            PointPtr _vertices[4];
+            auto i = 0;
+            auto it = vertices.begin();
+            while(it != vertices.end())
+            {
+                _vertices[i++] = *it++;
+            }
 
-    struct TriangleFace {
-        PointPtr    m_Points[3];
-        EdgePtr     m_Edges[3];
-        Vector3f    m_Normal;
+            // ABC
+            FacePtr pFace = std::make_shared<Face>();
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[0], _vertices[1])); // AB
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[1], _vertices[2])); // BC
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[2], _vertices[0])); // CA
+            Faces.insert(std::move(pFace));
+
+            // ABD
+            pFace = std::make_shared<Face>();
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[0], _vertices[1])); // AB
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[1], _vertices[3])); // BD
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[3], _vertices[0])); // DA
+            Faces.insert(std::move(pFace));
+
+            // BCD
+            pFace = std::make_shared<Face>();
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[1], _vertices[2])); // BC
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[2], _vertices[3])); // CD
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[3], _vertices[1])); // DB
+            Faces.insert(std::move(pFace));
+
+            // CAD
+            pFace = std::make_shared<Face>();
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[2], _vertices[0])); // CA
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[0], _vertices[3])); // AD
+            pFace->Edges.insert(std::make_shared<Edge>(_vertices[3], _vertices[2])); // DC
+            Faces.insert(std::move(pFace));
+        }
     };
 }
 

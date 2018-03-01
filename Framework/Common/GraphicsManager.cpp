@@ -154,6 +154,48 @@ void GraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const V
         << color << ")" << endl;
 }
 
+void GraphicsManager::DrawTriangleStrip(const PointList &vertices, const Vector3f &color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawTriangleStrip(" << vertices.size() << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawPolygon(const Face &polygon, const Vector3f& color)
+{
+    PointSet vertices;
+    for (auto pEdge : polygon.Edges)
+    {
+        DrawLine(*pEdge->first, *pEdge->second, color);
+        vertices.insert({pEdge->first, pEdge->second});
+    }
+    DrawPointSet(vertices, color);
+
+    PointList _vertices;
+    auto it = vertices.begin();
+
+    // push first 2 vertices
+    _vertices.push_back(*it++); // A
+    _vertices.push_back(*it);   // B
+
+    // now push remains in reversed order
+    auto remains = vertices.size() - 2;
+    it = vertices.end();
+    while(remains-- > 0)
+    {
+        _vertices.push_back(*--it);
+    }
+
+    DrawTriangleStrip(_vertices, color);
+}
+
+void GraphicsManager::DrawPolyhydron(const Polyhedron &polyhedron, const Vector3f& color)
+{
+    for (auto pFace : polyhedron.Faces)
+    {
+        DrawPolygon(*pFace, color);
+    }
+}
+
 void GraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawBox(" << bbMin << ","

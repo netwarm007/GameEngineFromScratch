@@ -48,7 +48,7 @@ void article_44_logic::DrawDebugInfo()
     auto hull = m_QuickHull.GetHull();
 
     // draw the hull
-    g_pGraphicsManager->DrawPointSet(hull, Vector3f(0.9f, 0.5f, 0.5f));
+    g_pGraphicsManager->DrawPolyhydron(hull, Vector3f(0.9f, 0.5f, 0.5f));
 
     // draw the point cloud
     g_pGraphicsManager->DrawPointSet(point_set, Vector3f(0.5f));

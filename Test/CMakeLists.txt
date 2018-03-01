@@ -52,5 +52,5 @@ add_executable(NumericalMethodsTest NumericalMethodsTest.cpp)
 add_test(NAME TEST_NumericalMethods COMMAND NumericalMethodsTest)
 
 add_executable(QuickhullTest QuickhullTest.cpp)
-target_link_libraries(QuickhullTest GeomMath)
+target_link_libraries(QuickhullTest Algorism GeomMath)
 add_test(NAME TEST_Quickhull COMMAND QuickhullTest)

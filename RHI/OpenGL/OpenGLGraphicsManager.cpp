@@ -571,7 +571,7 @@ void OpenGLGraphicsManager::RenderBuffers()
 
     for (auto dbc : m_DebugDrawBatchContext)
     {
-        SetPerBatchShaderParameters(m_debugShaderProgram, "lineColor", dbc.color);
+        SetPerBatchShaderParameters(m_debugShaderProgram, "FrontColor", dbc.color);
 
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);
@@ -856,6 +856,47 @@ void OpenGLGraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, c
     dbc.mode    = GL_LINES;
     dbc.count   = 2;
     dbc.color   = color;
+
+    m_DebugDrawBatchContext.push_back(std::move(dbc));
+}
+
+void OpenGLGraphicsManager::DrawTriangleStrip(const PointList &vertices, const Vector3f& color)
+{
+    auto count = vertices.size();
+    assert(count >= 3);
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id;
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(1, &buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+    Vector3f* data = new Vector3f[count];
+    for(auto i = 0; i < count; i++)
+    {
+        data[i] = *vertices[i];
+    }
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3f) * count, data, GL_STATIC_DRAW);
+    delete[] data;
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    m_DebugBuffers.push_back(buffer_id);
+
+    DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
+    dbc.vao     = vao;
+    dbc.mode    = GL_TRIANGLE_STRIP;
+    dbc.count   = vertices.size();
+    dbc.color   = color * 0.5f;
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }

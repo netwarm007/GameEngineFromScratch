@@ -32,9 +32,11 @@ int main(int argc, char** argv)
     auto convex_hull = quick_hull.GetHull();
 
     cout << "Points On the Convex Hull:" << endl;
-    for (auto point_ptr : convex_hull)
+    for (auto pFace : convex_hull.Faces)
     {
-        cout << *point_ptr;
+        cout << "Face:" << endl;
+        for (auto pEdge : pFace->Edges)
+            cout << *pEdge->first << "--" << *pEdge->second;
     }
 
     return 0;
