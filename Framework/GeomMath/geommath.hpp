@@ -7,6 +7,7 @@
 #include <math.h>
 #include <memory>
 #include <set>
+#include <vector>
 #include "CrossProduct.h"
 #include "MulByElement.h"
 #include "Normalize.h"
