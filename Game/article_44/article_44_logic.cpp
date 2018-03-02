@@ -43,6 +43,7 @@ void article_44_logic::Tick()
 
 }
 
+#ifdef DEBUG
 void article_44_logic::DrawDebugInfo()
 {
     auto point_set = m_QuickHull.GetPointSet();
@@ -54,6 +55,7 @@ void article_44_logic::DrawDebugInfo()
     // draw the point cloud
     g_pGraphicsManager->DrawPointSet(point_set, Vector3f(0.5f));
 }
+#endif
 
 void article_44_logic::OnLeftKeyDown()
 {
