@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 #include "article_44_logic.hpp"
+#include "IApplication.hpp"
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
 #include "IPhysicsManager.hpp"
@@ -107,5 +108,17 @@ void article_44_logic::OnDownKeyDown()
 
         // move camera along its local axis -y direction
         pCameraNode->MoveBy(camera_y_axis * -1.0f);
+    }
+}
+
+void article_44_logic::OnAnalogStick(int id, float deltaX, float deltaY)
+{
+    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pCameraNode = scene.GetFirstCameraNode();
+    if (pCameraNode) {
+        auto screen_width = g_pApp->GetConfiguration().screenWidth;
+        auto screen_height = g_pApp->GetConfiguration().screenHeight;
+        // move camera along its local axis -y direction
+        pCameraNode->RotateBy(deltaX / screen_width * PI, deltaY / screen_height * PI, 0.0f);
     }
 }

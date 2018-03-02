@@ -24,6 +24,8 @@ namespace My {
         virtual void OnRightKeyDown() {};
         virtual void OnRightKeyUp() {};
         virtual void OnRightKey() {};
+
+        virtual void OnAnalogStick(int id, float deltaX, float deltaY) {};
     };
 
     extern IGameLogic* g_pGameLogic;
