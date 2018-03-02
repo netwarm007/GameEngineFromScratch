@@ -342,11 +342,11 @@ namespace My {
                         auto data = _structure.GetTranslation();
                         if(kind == "xyz")
                         {
-                            translation = std::make_shared<SceneObjectTranslation>(data[0], data[1], data[2]);
+                            translation = std::make_shared<SceneObjectTranslation>(data[0], data[1], data[2], object_flag);
                         }
                         else
                         {
-                            translation = std::make_shared<SceneObjectTranslation>(kind[0], data[0]);
+                            translation = std::make_shared<SceneObjectTranslation>(kind[0], data[0], object_flag);
                         }
                         base_node->AppendTransform(std::move(translation));
                 }

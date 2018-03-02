@@ -745,7 +745,7 @@ namespace My {
     class SceneObjectTranslation : public SceneObjectTransform
     {
         public:
-            SceneObjectTranslation(const char axis, const float amount)  
+            SceneObjectTranslation(const char axis, const float amount, const bool object_only = false)  
             { 
                 switch (axis) {
                     case 'x':
@@ -760,11 +760,14 @@ namespace My {
                     default:
                         assert(0);
                 }
+
+                m_bSceneObjectOnly = object_only;
             }
 
-            SceneObjectTranslation(const float x, const float y, const float z) 
+            SceneObjectTranslation(const float x, const float y, const float z, const bool object_only = false) 
             {
                 MatrixTranslation(m_matrix, x, y, z);
+                m_bSceneObjectOnly = object_only;
             }
     };
 
@@ -776,7 +779,6 @@ namespace My {
                 switch (axis) {
                     case 'x':
                         MatrixRotationX(m_matrix, theta);
-                        break;
                     case 'y':
                         MatrixRotationY(m_matrix, theta);
                         break;

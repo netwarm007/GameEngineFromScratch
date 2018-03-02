@@ -278,9 +278,6 @@ void OpenGLGraphicsManager::InitializeBuffers(const Scene& scene)
             // Set the number of vertex properties.
             auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
 
-            // Set the number of vertices in the vertex array.
-            auto vertexCount = pMesh->GetVertexCount();
-
             // Allocate an OpenGL vertex array object.
             GLuint vao;
             glGenVertexArrays(1, &vao);
