@@ -779,7 +779,7 @@ void OpenGLGraphicsManager::DrawPoint(const Point &point, const Vector3f& color)
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void OpenGLGraphicsManager::DrawPointSet(const PointSet &point_set, const Vector3f& color)
+void OpenGLGraphicsManager::DrawPoints(const Point* buffer, const size_t count, const Vector3f& color)
 {
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -794,16 +794,7 @@ void OpenGLGraphicsManager::DrawPointSet(const PointSet &point_set, const Vector
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    auto count = point_set.size();
-    Point* buffer = new Point[count];
-    int i = 0;
-    for(auto point_ptr : point_set)
-    {
-        buffer[i++] = *point_ptr;
-    }
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(Point) * count, buffer, GL_STATIC_DRAW);
-    delete[] buffer;
 
     glEnableVertexAttribArray(0);
 
@@ -820,7 +811,22 @@ void OpenGLGraphicsManager::DrawPointSet(const PointSet &point_set, const Vector
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void OpenGLGraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color)
+void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Vector3f& color)
+{
+    auto count = point_set.size();
+    Point* buffer = new Point[count];
+    int i = 0;
+    for(auto point_ptr : point_set)
+    {
+        buffer[i++] = *point_ptr;
+    }
+
+    DrawPoints(buffer, count, color);
+
+    delete[] buffer;
+}
+
+void OpenGLGraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color)
 {
     GLfloat vertices[6];
     vertices[0] = from.x;
@@ -860,7 +866,48 @@ void OpenGLGraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, c
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void OpenGLGraphicsManager::DrawTriangleStrip(const PointList &vertices, const Vector3f& color)
+void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
+{
+    auto count = vertices.size();
+    assert(count >= 3);
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id;
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(1, &buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+    Vector3f* data = new Vector3f[count];
+    for(auto i = 0; i < count; i++)
+    {
+        data[i] = *vertices[i];
+    }
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3f) * count, data, GL_STATIC_DRAW);
+    delete[] data;
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    m_DebugBuffers.push_back(buffer_id);
+
+    DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
+    dbc.vao     = vao;
+    dbc.mode    = GL_TRIANGLES;
+    dbc.count   = vertices.size();
+    dbc.color   = color * 0.5f;
+
+    m_DebugDrawBatchContext.push_back(std::move(dbc));
+}
+
+void OpenGLGraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
 {
     auto count = vertices.size();
     assert(count >= 3);
@@ -901,7 +948,7 @@ void OpenGLGraphicsManager::DrawTriangleStrip(const PointList &vertices, const V
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void OpenGLGraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color)
+void OpenGLGraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color)
 {
     GLfloat vertices[12 * 2 * 3];
 

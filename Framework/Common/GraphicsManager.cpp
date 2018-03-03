@@ -136,60 +136,53 @@ void GraphicsManager::RenderBuffers()
 }
 
 #ifdef DEBUG
-void GraphicsManager::DrawPoint(const Point &point, const Vector3f& color)
+void GraphicsManager::DrawPoint(const Point& point, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawPoint(" << point << ","
         << color << ")" << endl;
 }
 
-void GraphicsManager::DrawPointSet(const PointSet &point_set, const Vector3f& color)
+void GraphicsManager::DrawPointSet(const PointSet& point_set, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawPointSet(" << point_set.size() << ","
         << color << ")" << endl;
 }
 
-void GraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color)
+void GraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawLine(" << from << ","
         << to << "," 
         << color << ")" << endl;
 }
 
-void GraphicsManager::DrawTriangleStrip(const PointList &vertices, const Vector3f &color)
+void GraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawTriangle(" << vertices.size() << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawTriangleStrip(" << vertices.size() << ","
         << color << ")" << endl;
 }
 
-void GraphicsManager::DrawPolygon(const Face &polygon, const Vector3f& color)
+void GraphicsManager::DrawPolygon(const Face& polygon, const Vector3f& color)
 {
     PointSet vertices;
+    PointList _vertices;
     for (auto pEdge : polygon.Edges)
     {
         DrawLine(*pEdge->first, *pEdge->second, color);
         vertices.insert({pEdge->first, pEdge->second});
+        _vertices.push_back(pEdge->first);
     }
     DrawPointSet(vertices, color);
 
-    PointList _vertices;
-    auto it = vertices.begin();
-
-    // push first 2 vertices
-    _vertices.push_back(*it++); // A
-    _vertices.push_back(*it);   // B
-
-    // now push remains in reversed order
-    auto remains = vertices.size() - 2;
-    it = vertices.end();
-    while(remains-- > 0)
-    {
-        _vertices.push_back(*--it);
-    }
-
-    DrawTriangleStrip(_vertices, color);
+    DrawTriangle(_vertices, color);
 }
 
-void GraphicsManager::DrawPolyhydron(const Polyhedron &polyhedron, const Vector3f& color)
+void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color)
 {
     for (auto pFace : polyhedron.Faces)
     {
@@ -197,7 +190,7 @@ void GraphicsManager::DrawPolyhydron(const Polyhedron &polyhedron, const Vector3
     }
 }
 
-void GraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color)
+void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawBox(" << bbMin << ","
         << bbMax << "," 

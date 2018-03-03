@@ -744,69 +744,56 @@ namespace My {
     typedef std::vector<PointPtr> PointList;
     typedef std::pair<PointPtr, PointPtr> Edge;
     typedef std::shared_ptr<Edge> EdgePtr;
-    typedef std::set<EdgePtr> EdgeSet;
     typedef std::vector<EdgePtr> EdgeList;
     struct Face {
-        EdgeSet     Edges;
+        EdgeList     Edges;
     };
     typedef std::shared_ptr<Face> FacePtr;
-    typedef std::set<FacePtr> FaceSet;
     typedef std::vector<FacePtr> FaceList;
     struct Polyhedron {
-        FaceSet     Faces;
-        void AddPoligon(const PointSet vertices)
+        FaceList     Faces;
+        void AddFace(PointList vertices, const Vector3f negtive_dir)
         {
-            assert(vertices.size() >= 3);
-            FacePtr pFace = std::make_shared<Face>();
-            auto it = vertices.begin(); 
-            while(it != vertices.end())
+            auto count = vertices.size();
+            assert(count > 2);
+            auto ab = *vertices[1] - *vertices[0];
+            auto ac = *vertices[2] - *vertices[0];
+            Vector3f normal;
+            float cos_theta;
+            CrossProduct(normal, ab, ac);
+            DotProduct(cos_theta, normal, negtive_dir);
+            if (cos_theta > 0)
             {
-                auto previous_vertex = *it++;
-                if(it != vertices.end())
-                    pFace->Edges.insert(std::make_shared<Edge>(previous_vertex, *it));
-                else
-                    pFace->Edges.insert(std::make_shared<Edge>(previous_vertex, *vertices.begin()));
+                std::reverse(std::begin(vertices), std::end(vertices));
             }
-            Faces.insert(std::move(pFace));
+
+            FacePtr pFace = std::make_shared<Face>();
+            for (auto i = 0; i < vertices.size(); i++)
+            {
+                pFace->Edges.push_back(std::make_shared<Edge>(vertices[i], vertices[(i + 1)==count?0:i + 1]));
+            }
+            Faces.push_back(std::move(pFace));
         }
-        void AddTetrahydron(const PointSet vertices)
+
+        void AddTetrahydron(const PointList vertices)
         {
             assert(vertices.size() == 4);
-            PointPtr _vertices[4];
-            auto i = 0;
-            auto it = vertices.begin();
-            while(it != vertices.end())
-            {
-                _vertices[i++] = *it++;
-            }
 
             // ABC
-            FacePtr pFace = std::make_shared<Face>();
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[0], _vertices[1])); // AB
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[1], _vertices[2])); // BC
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[2], _vertices[0])); // CA
-            Faces.insert(std::move(pFace));
+            auto negetive_dir = *vertices[3] - *vertices[0];  // AD
+            AddFace({vertices[0], vertices[1], vertices[2]}, negetive_dir);
 
             // ABD
-            pFace = std::make_shared<Face>();
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[0], _vertices[1])); // AB
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[1], _vertices[3])); // BD
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[3], _vertices[0])); // DA
-            Faces.insert(std::move(pFace));
+            negetive_dir = *vertices[2] - *vertices[0];       // AC
+            AddFace({vertices[0], vertices[1], vertices[3]}, negetive_dir);
 
-            // BCD
-            pFace = std::make_shared<Face>();
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[1], _vertices[2])); // BC
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[2], _vertices[3])); // CD
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[3], _vertices[1])); // DB
-            Faces.insert(std::move(pFace));
+            // CDB
+            negetive_dir = *vertices[0] - *vertices[1];       // BA
+            AddFace({vertices[2], vertices[3], vertices[1]}, negetive_dir);
 
-            // CAD
-            pFace = std::make_shared<Face>();
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[2], _vertices[0])); // CA
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[0], _vertices[3])); // AD
-            pFace->Edges.insert(std::make_shared<Edge>(_vertices[3], _vertices[2])); // DC
-            Faces.insert(std::move(pFace));
+            // ADC
+            negetive_dir = *vertices[1] - *vertices[2];       // CB
+            AddFace({vertices[0], vertices[3], vertices[2]}, negetive_dir);
         }
     };
 }
