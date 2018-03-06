@@ -170,16 +170,14 @@ void GraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3
 void GraphicsManager::DrawPolygon(const Face& polygon, const Vector3f& color)
 {
     PointSet vertices;
-    PointList _vertices;
     for (auto pEdge : polygon.Edges)
     {
         DrawLine(*pEdge->first, *pEdge->second, color);
         vertices.insert({pEdge->first, pEdge->second});
-        _vertices.push_back(pEdge->first);
     }
     DrawPointSet(vertices, color);
 
-    DrawTriangle(_vertices, color);
+    DrawTriangle(polygon.GetVertices(), color);
 }
 
 void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color)

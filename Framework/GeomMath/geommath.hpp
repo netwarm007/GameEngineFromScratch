@@ -745,35 +745,71 @@ namespace My {
     typedef std::vector<PointPtr> PointList;
     typedef std::pair<PointPtr, PointPtr> Edge;
     typedef std::shared_ptr<Edge> EdgePtr;
+    typedef std::set<EdgePtr> EdgeSet;
     typedef std::vector<EdgePtr> EdgeList;
     struct Face {
         EdgeList     Edges;
+        PointList GetVertices() const 
+        {
+            PointList vertices;
+            for (auto edge : Edges)
+            {
+                vertices.push_back(edge->first);
+            }
+
+            return vertices;
+        }
     };
     typedef std::shared_ptr<Face> FacePtr;
+    typedef std::set<FacePtr> FaceSet;
     typedef std::vector<FacePtr> FaceList;
+
+    inline bool isPointAbovePlane(const PointList& vertices, const PointPtr& point)
+    {
+        auto count = vertices.size();
+        assert(count > 2);
+        auto ab = *vertices[1] - *vertices[0];
+        auto ac = *vertices[2] - *vertices[0];
+        Vector3f normal;
+        float cos_theta;
+        CrossProduct(normal, ab, ac);
+        auto dir = *point - *vertices[0];
+        DotProduct(cos_theta, normal, dir);
+
+        return cos_theta > 0;
+    }
+
+    inline float PointToPlaneDistance(const PointList& vertices, const PointPtr& point_ptr)
+    {
+        Vector3f normal;
+        float distance;
+        auto A = vertices[0];
+        auto B = vertices[1];
+        auto C = vertices[2];
+        CrossProduct(normal, *B - *A, *C - *A);
+        Normalize(normal);
+        DotProduct(distance, normal, *point_ptr - *A);
+        distance = std::abs(distance);
+
+        return distance;
+    }
+
     struct Polyhedron {
-        FaceList     Faces;
-        void AddFace(PointList vertices, const Vector3f negtive_dir)
+        FaceSet     Faces;
+        void AddFace(PointList vertices, const PointPtr& inner_point)
         {
-            auto count = vertices.size();
-            assert(count > 2);
-            auto ab = *vertices[1] - *vertices[0];
-            auto ac = *vertices[2] - *vertices[0];
-            Vector3f normal;
-            float cos_theta;
-            CrossProduct(normal, ab, ac);
-            DotProduct(cos_theta, normal, negtive_dir);
-            if (cos_theta > 0)
+            if (isPointAbovePlane(vertices, inner_point))
             {
                 std::reverse(std::begin(vertices), std::end(vertices));
             }
 
             FacePtr pFace = std::make_shared<Face>();
+            auto count = vertices.size();
             for (auto i = 0; i < vertices.size(); i++)
             {
                 pFace->Edges.push_back(std::make_shared<Edge>(vertices[i], vertices[(i + 1)==count?0:i + 1]));
             }
-            Faces.push_back(std::move(pFace));
+            Faces.insert(std::move(pFace));
         }
 
         void AddTetrahydron(const PointList vertices)
@@ -781,20 +817,16 @@ namespace My {
             assert(vertices.size() == 4);
 
             // ABC
-            auto negetive_dir = *vertices[3] - *vertices[0];  // AD
-            AddFace({vertices[0], vertices[1], vertices[2]}, negetive_dir);
+            AddFace({vertices[0], vertices[1], vertices[2]}, vertices[3]);
 
             // ABD
-            negetive_dir = *vertices[2] - *vertices[0];       // AC
-            AddFace({vertices[0], vertices[1], vertices[3]}, negetive_dir);
+            AddFace({vertices[0], vertices[1], vertices[3]}, vertices[2]);
 
             // CDB
-            negetive_dir = *vertices[0] - *vertices[1];       // BA
-            AddFace({vertices[2], vertices[3], vertices[1]}, negetive_dir);
+            AddFace({vertices[2], vertices[3], vertices[1]}, vertices[0]);
 
             // ADC
-            negetive_dir = *vertices[1] - *vertices[2];       // CB
-            AddFace({vertices[0], vertices[3], vertices[2]}, negetive_dir);
+            AddFace({vertices[0], vertices[3], vertices[2]}, vertices[1]);
         }
     };
 }

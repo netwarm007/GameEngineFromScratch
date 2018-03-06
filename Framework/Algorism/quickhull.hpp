@@ -1,8 +1,8 @@
 #pragma once
 #include <cassert>
 #include <limits>
+#include <unordered_map>
 #include <memory>
-#include <set>
 #include <utility>
 #include "geommath.hpp"
 
@@ -22,9 +22,15 @@ namespace My {
 
     protected:
         void ComputeHullInternal();
+        void AssignPointsToFaces();
 
     protected:
         PointSet m_PointSet;
         Polyhedron m_ConvexHull;
+
+        // temporary buffers
+        PointSet m_PointWaitProcess;
+        std::unordered_multimap<FacePtr, PointPtr> m_PointsAboveFace;
+        std::unordered_multimap<PointPtr, FacePtr> m_PointAboveWhichFacies;
     };
 }

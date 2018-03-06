@@ -22,7 +22,7 @@ int article_44_logic::Initialize()
     uniform_real_distribution<float> distribution(-3.0f, 3.0f);
     auto dice = std::bind(distribution, generator);
 
-    for(auto i = 0; i < 100; i++)
+    for(auto i = 0; i < 20; i++)
     {
         PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());
         m_QuickHull.AddPoint(std::move(point_ptr));

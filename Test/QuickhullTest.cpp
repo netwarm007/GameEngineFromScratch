@@ -8,7 +8,7 @@ using namespace My;
 
 int main(int argc, char** argv)
 {
-    int point_num = 100;
+    int point_num = 10;
 
     if(argc > 1)
     {
