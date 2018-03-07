@@ -30,6 +30,9 @@ namespace My {
 
     protected:
         HWND m_hWnd;
+        bool m_bInDrag = false;
+        int  m_iPreviousX = 0;
+        int  m_iPreviousY = 0;
     };
 }
 
