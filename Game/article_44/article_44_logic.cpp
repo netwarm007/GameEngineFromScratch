@@ -22,7 +22,11 @@ int article_44_logic::Initialize()
     uniform_real_distribution<float> distribution(-3.0f, 3.0f);
     auto dice = std::bind(distribution, generator);
 
-    for(auto i = 0; i < 30; i++)
+    int point_count = 30;
+    if (g_pApp->GetCommandLineArgumentsCount() > 1)
+        point_count = atoi(g_pApp->GetCommandLineArgument(1));
+
+    for(auto i = 0; i < point_count; i++)
     {
         PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());
         m_QuickHull.AddPoint(std::move(point_ptr));

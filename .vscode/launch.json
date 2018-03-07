@@ -9,6 +9,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Game/article_44/article_44.app/Contents/MacOS/article_44",
+            "args": [
+                "100"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
