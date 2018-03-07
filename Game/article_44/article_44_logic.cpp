@@ -32,8 +32,6 @@ int article_44_logic::Initialize()
         m_QuickHull.AddPoint(std::move(point_ptr));
     }
 
-    m_QuickHull.Init();
-
     return result;
 }
 
@@ -119,6 +117,14 @@ void article_44_logic::OnDownKeyDown()
 
 void article_44_logic::OnButton1Down()
 {
+    static bool first_time = true;
+
+    if (first_time)
+    {
+        m_QuickHull.Init();
+        first_time = false;
+    }
+
     m_QuickHull.Iterate();
 }
 
