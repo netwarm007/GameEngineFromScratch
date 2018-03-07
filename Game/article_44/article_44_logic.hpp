@@ -15,6 +15,7 @@ namespace My {
         void OnRightKeyDown();
         void OnUpKeyDown();
         void OnDownKeyDown();
+        void OnButton1Down();
 
         void OnAnalogStick(int id, float deltaX, float deltaY);
 #ifdef DEBUG

@@ -3,7 +3,19 @@
 using namespace My;
 using namespace std;
 
-void QuickHull::ComputeHullInternal() 
+void QuickHull::Init()
+{
+    ComputeInitialTetrahydron();
+}
+
+bool QuickHull::Iterate()
+{
+    if (m_PointWaitProcess.size() != 0)
+        IterateHull();
+    return m_PointWaitProcess.size() != 0;
+}
+
+void QuickHull::ComputeInitialTetrahydron()
 {
     if(m_PointSet.size() < 4)
     {
@@ -125,83 +137,80 @@ void QuickHull::ComputeHullInternal()
             }
         }
 
-        auto center_of_tetrahydron = make_shared<Point>((*A + *B + *C + *D) * 0.25f);
+        center_of_tetrahydron = make_shared<Point>((*A + *B + *C + *D) * 0.25f);
         m_ConvexHull.AddTetrahydron({A,B,C,D});
         m_PointWaitProcess.erase(D);
+    }
+}
 
-        // now we assign points to each face
-        AssignPointsToFaces();
+void QuickHull::IterateHull() 
+{
+    AssignPointsToFaces();
 
-        while (m_PointWaitProcess.size() > 0)
-        {
-            cerr << "remaim point count: " << m_PointWaitProcess.size() << endl;
-            auto pPoint = *m_PointWaitProcess.begin();
-            auto pFace = m_PointAboveWhichFacies.find(pPoint)->second;
-            float max_distance = 0.0f;
-            auto vertices = pFace->GetVertices();
-            auto range = m_PointsAboveFace.equal_range(pFace);
-            PointPtr far_point = nullptr;
-            for_each(
-                        range.first,
-                        range.second,
-                        [&](decltype(m_PointsAboveFace)::value_type x)
-                        { 
-                            auto distance = PointToPlaneDistance(vertices, x.second);
-                            if (distance > max_distance)
+    cerr << "remain point count: " << m_PointWaitProcess.size() << endl;
+    auto pPoint = *m_PointWaitProcess.begin();
+    auto pFace = m_PointAboveWhichFacies.find(pPoint)->second;
+    float max_distance = 0.0f;
+    auto vertices = pFace->GetVertices();
+    auto range = m_PointsAboveFace.equal_range(pFace);
+    PointPtr far_point = nullptr;
+    for_each(
+                range.first,
+                range.second,
+                [&](decltype(m_PointsAboveFace)::value_type x)
+                { 
+                    auto distance = PointToPlaneDistance(vertices, x.second);
+                    if (distance > max_distance)
+                    {
+                        far_point = x.second;
+                        max_distance = distance;
+                    }
+                }
+    );
+
+    if (far_point)
+    {
+        // remove all faces this point can see and
+        // create new faces by connecting all vertices
+        // on the border of hole to the new point
+        set<Edge> edges_on_hole;
+        auto range = m_PointAboveWhichFacies.equal_range(far_point);
+        for_each(
+                    range.first,
+                    range.second,
+                    [&](decltype(m_PointAboveWhichFacies)::value_type x)
+                    { 
+                        auto face_to_be_removed = x.second;
+                        for (auto edge : face_to_be_removed->Edges)
+                        {
+                            if (edges_on_hole.find(*edge) != edges_on_hole.end())
                             {
-                                far_point = x.second;
-                                max_distance = distance;
+                                // this edge is shared by faces going to be removed
+                                // so it is not on the border of hole, remove it
+                                edges_on_hole.erase(*edge);
+                            }
+                            else
+                            {
+                                // temporary add it
+                                edges_on_hole.insert(*edge);
                             }
                         }
-            );
+                        m_ConvexHull.Faces.erase(face_to_be_removed); 
+                    }
+        );
 
-            if (far_point)
-            {
-                // remove all faces this point can see and
-                // create new faces by connecting all vertices
-                // on the border of hole to the new point
-                EdgeSet edges_on_hole;
-                auto range = m_PointAboveWhichFacies.equal_range(far_point);
-                for_each(
-                            range.first,
-                            range.second,
-                            [&](decltype(m_PointAboveWhichFacies)::value_type x)
-                            { 
-                                auto face_to_be_removed = x.second;
-                                for (auto edge : face_to_be_removed->Edges)
-                                {
-                                    if (edges_on_hole.find(edge) != edges_on_hole.end())
-                                    {
-                                        // this edge is shared by faces going to be removed
-                                        // so it is not on the border of hole, remove it
-                                        edges_on_hole.erase(edge);
-                                    }
-                                    else
-                                    {
-                                        // temporary add it
-                                        edges_on_hole.insert(edge);
-                                    }
-                                }
-                                m_ConvexHull.Faces.erase(face_to_be_removed); 
-                            }
-                );
-
-                // now we have edges on the hole
-                // so we create new faces by connecting
-                // them with the new point
-                assert(edges_on_hole.size() >= 3);
-                for (auto edge : edges_on_hole)
-                {
-                    m_ConvexHull.AddFace({edge->first, edge->second, far_point}, center_of_tetrahydron);
-                }
-
-                // now the point has been proceeded
-                // so remove it from the waiting queue
-                m_PointWaitProcess.erase(far_point);
-            }
-
-            AssignPointsToFaces();
+        // now we have edges on the hole
+        // so we create new faces by connecting
+        // them with the new point
+        //assert(edges_on_hole.size() >= 3);
+        for (auto edge : edges_on_hole)
+        {
+            m_ConvexHull.AddFace({edge.first, edge.second, far_point}, center_of_tetrahydron);
         }
+
+        // now the point has been proceeded
+        // so remove it from the waiting queue
+        m_PointWaitProcess.erase(far_point);
     }
 }
 
@@ -210,39 +219,33 @@ void QuickHull::AssignPointsToFaces()
     m_PointsAboveFace.clear();
     m_PointAboveWhichFacies.clear();
 
-    auto points = m_PointWaitProcess;
-    for (auto pPoint : points)
+    auto it = m_PointWaitProcess.begin();
+    while (it != m_PointWaitProcess.end())
     {
         bool isInsideHull = true;
-        bool isAssignedToFace = false;
         for (auto pFace : m_ConvexHull.Faces)
         {
-            if (isPointAbovePlane(pFace->GetVertices(), pPoint))
+            if (isPointAbovePlane(pFace->GetVertices(), *it))
             {
-                // each point can be front of multiple facies
-                // so make sure to assign it only to the first
-                // face
-                if (!isAssignedToFace)
-                {
-                    m_PointsAboveFace.insert({pFace, pPoint});
-                    isAssignedToFace = true;
-                }
+                m_PointsAboveFace.insert({pFace, *it});
 
-                // however, we still need to record all faces
+                // record all faces
                 // the point can "see" in order to extrude the
                 // convex hull face
-                m_PointAboveWhichFacies.insert({pPoint, pFace});
+                m_PointAboveWhichFacies.insert({*it, pFace});
                 isInsideHull = false;
             }
         }
 
         if (isInsideHull)
         {
-            // we should not pass pPoint directly to
-            // erase() since it will invalidate the
-            // input argument
-            auto it = m_PointWaitProcess.find(pPoint);
-            m_PointWaitProcess.erase(it);
+            // return an iterator to the element that follows the last element removed 
+            // (or set::end, if the last element was removed).
+            it = m_PointWaitProcess.erase(it);
+        }
+        else
+        {
+            it++;
         }
     }
 }

@@ -22,13 +22,13 @@ int article_44_logic::Initialize()
     uniform_real_distribution<float> distribution(-3.0f, 3.0f);
     auto dice = std::bind(distribution, generator);
 
-    for(auto i = 0; i < 20; i++)
+    for(auto i = 0; i < 30; i++)
     {
         PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());
         m_QuickHull.AddPoint(std::move(point_ptr));
     }
 
-    m_QuickHull.ComputeHull();
+    m_QuickHull.Init();
 
     return result;
 }
@@ -111,6 +111,11 @@ void article_44_logic::OnDownKeyDown()
         // move camera along its local axis -y direction
         pCameraNode->MoveBy(camera_y_axis * -1.0f);
     }
+}
+
+void article_44_logic::OnButton1Down()
+{
+    m_QuickHull.Iterate();
 }
 
 void article_44_logic::OnAnalogStick(int id, float deltaX, float deltaY)

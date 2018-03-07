@@ -8,7 +8,7 @@ using namespace My;
 
 int main(int argc, char** argv)
 {
-    int point_num = 10;
+    int point_num = 30;
 
     if(argc > 1)
     {
@@ -28,15 +28,11 @@ int main(int argc, char** argv)
         quick_hull.AddPoint(std::move(point_ptr));
     }
 
-    quick_hull.ComputeHull();
-    auto convex_hull = quick_hull.GetHull();
-
-    cout << "Points On the Convex Hull:" << endl;
-    for (auto pFace : convex_hull.Faces)
+    quick_hull.Init();
+    while (quick_hull.Iterate())
     {
-        cout << "Face:" << endl;
-        for (auto pEdge : pFace->Edges)
-            cout << *pEdge->first << "--" << *pEdge->second;
+        auto convex_hull = quick_hull.GetHull();
+        cerr << "num of faces after this iteration: " << convex_hull.Faces.size() << endl;
     }
 
     return 0;

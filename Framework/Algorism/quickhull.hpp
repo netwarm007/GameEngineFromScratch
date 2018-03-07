@@ -17,11 +17,13 @@ namespace My {
         void AddPoint(PointPtr&& new_point) { m_PointSet.insert(std::move(new_point)); }
         void AddPointSet(const PointSet& point_set) { m_PointSet.insert(point_set.begin(), point_set.end()); }
         const PointSet& GetPointSet() const { return m_PointSet; }
-        void ComputeHull() { ComputeHullInternal(); }
+        void Init();
+        bool Iterate();
         const Polyhedron& GetHull() const { return m_ConvexHull; }
 
     protected:
-        void ComputeHullInternal();
+        void ComputeInitialTetrahydron();
+        void IterateHull();
         void AssignPointsToFaces();
 
     protected:
@@ -32,5 +34,8 @@ namespace My {
         PointSet m_PointWaitProcess;
         std::unordered_multimap<FacePtr, PointPtr> m_PointsAboveFace;
         std::unordered_multimap<PointPtr, FacePtr> m_PointAboveWhichFacies;
+
+    private:
+        PointPtr center_of_tetrahydron;
     };
 }

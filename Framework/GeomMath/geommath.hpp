@@ -744,6 +744,10 @@ namespace My {
     typedef std::set<PointPtr> PointSet;
     typedef std::vector<PointPtr> PointList;
     typedef std::pair<PointPtr, PointPtr> Edge;
+    inline bool operator==(const Edge& a, const Edge& b)
+    {
+        return (a.first == b.first && a.second == b.second) || (a.first == b.second && a.second == b.first);
+    }
     typedef std::shared_ptr<Edge> EdgePtr;
     typedef std::set<EdgePtr> EdgeSet;
     typedef std::vector<EdgePtr> EdgeList;

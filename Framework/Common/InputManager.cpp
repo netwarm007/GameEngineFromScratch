@@ -110,35 +110,47 @@ void InputManager::RightArrowKeyUp()
     m_bRightKeyPressed = false;
 }
 
-void InputManager::ResetKeyDown()
+void InputManager::AsciiKeyDown(char keycode)
 {
 #ifdef DEBUG
-    cerr << "[InputManager] Reset Key Down!" << endl;
+    cerr << "[InputManager] ASCII Key Down! (" << keycode << ")" << endl;
 #endif
-    g_pSceneManager->ResetScene();
+    switch (keycode)
+    {
+        case 'd':
+#ifdef DEBUG
+            g_pDebugManager->ToggleDebugInfo();
+#endif
+            break;
+        case 'r':
+            g_pSceneManager->ResetScene();
+            break;
+        case 'u':
+            g_pGameLogic->OnButton1Down();
+            break;
+        default:
+            cerr << "[InputManager] unhandled key." << endl;
+    }
 }
 
-void InputManager::ResetKeyUp()
+void InputManager::AsciiKeyUp(char keycode)
 {
 #ifdef DEBUG
-    cerr << "[InputManager] Reset Key Up!" << endl;
+    cerr << "[InputManager] ASCII Key Up! (" << keycode << ")" << endl;
 #endif
+    switch (keycode)
+    {
+        case 'd':
+            break;
+        case 'r':
+            break;
+        case 'u':
+            g_pGameLogic->OnButton1Up();
+            break;
+        default:
+            cerr << "[InputManager] unhandled key." << endl;
+    }
 }
-
-#ifdef DEBUG
-void InputManager::DebugKeyDown()
-{
-    cerr << "[InputManager] Debug Key Down!" << endl;
-    g_pDebugManager->ToggleDebugInfo();
-}
-#endif
-
-#ifdef DEBUG
-void InputManager::DebugKeyUp()
-{
-    cerr << "[InputManager] Debug Key Up!" << endl;
-}
-#endif
 
 void InputManager::LeftMouseButtonDown()
 {

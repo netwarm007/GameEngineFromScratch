@@ -124,7 +124,7 @@ void XcbApplication::Tick()
                     g_pInputManager->DownArrowKeyDown();
                     break;
                 case 27:
-                    g_pInputManager->ResetKeyDown();
+                    g_pInputManager->AsciiKeyDown('r');
                     break;
                 }
                 break;
@@ -148,7 +148,7 @@ void XcbApplication::Tick()
                     g_pInputManager->DownArrowKeyUp();
                     break;
                 case 27:
-                    g_pInputManager->ResetKeyUp();
+                    g_pInputManager->AsciiKeyUp('r');
                     break;
                 }
             }

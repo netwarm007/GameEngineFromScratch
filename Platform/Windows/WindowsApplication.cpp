@@ -128,9 +128,9 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
                     case VK_DOWN:
                         g_pInputManager->DownArrowKeyUp();
                         break;
-		    case 0x52: // R Key
-			g_pInputManager->ResetKeyUp();
-			break;
+                    case 0x52: // R Key
+                        g_pInputManager->AsciiKeyUp('r');
+                        break;
                     default:
                         break;
                 }
@@ -152,9 +152,9 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
                     case VK_DOWN:
                         g_pInputManager->DownArrowKeyDown();
                         break;
-		    case 0x52: // R Key
-			g_pInputManager->ResetKeyDown();
-			break;
+                    case 0x52: // R Key
+                        g_pInputManager->AsciiKeyDown('r');
+                        break;
                     default:
                         break;
                 }

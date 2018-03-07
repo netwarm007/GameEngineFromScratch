@@ -19,13 +19,9 @@ namespace My {
             void RightArrowKeyDown();
             void RightArrowKeyUp();
 
-            void ResetKeyDown();
-            void ResetKeyUp();
+            void AsciiKeyDown(char keycode);
+            void AsciiKeyUp(char keycode);
 
-#ifdef DEBUG
-            void DebugKeyDown();
-            void DebugKeyUp();
-#endif
             // mouse handling
             void LeftMouseButtonDown();
             void LeftMouseButtonUp();
