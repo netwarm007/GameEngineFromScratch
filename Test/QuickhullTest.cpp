@@ -1,6 +1,7 @@
+#include <functional>
 #include <iostream>
-#include <random>
 #include <limits>
+#include <random>
 #include "quickhull.hpp"
 
 using namespace std;
