@@ -4,7 +4,7 @@
 // CONSTANTS       //
 /////////////////////
 // per drawcall
-uniform vec3 lineColor;
+uniform vec3 FrontColor;
 
 //////////////////////
 // OUTPUT VARIABLES //
@@ -16,5 +16,5 @@ out vec4 outputColor;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-    outputColor = vec4(lineColor, 1.0f);
+    outputColor = vec4(FrontColor, 1.0f);
 }

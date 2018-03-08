@@ -24,6 +24,8 @@
         "string_view": "cpp",
         "unordered_map": "cpp",
         "utility": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "random": "cpp",
+        "memory": "cpp"
     }
 }

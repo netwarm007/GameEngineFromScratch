@@ -21,12 +21,18 @@ namespace My {
         void Draw();
 
 #ifdef DEBUG
-        void DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color);
-        void DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color);
+        void DrawPoint(const Point& point, const Vector3f& color);
+        void DrawPointSet(const PointSet& point_set, const Vector3f& color);
+        void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color);
+        void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
+        void DrawTriangle(const PointList& vertices, const Vector3f& color);
+        void DrawTriangleStrip(const PointList& vertices, const Vector3f& color);
         void ClearDebugBuffers();
 #endif
 
     protected:
+        void DrawPoints(const Point* buffer, const size_t count, const Vector3f& color);
+
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Matrix4X4f& param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const float param);

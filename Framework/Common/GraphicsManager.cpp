@@ -82,12 +82,13 @@ void GraphicsManager::CalculateCameraMatrix()
     auto& scene = g_pSceneManager->GetSceneForRendering();
     auto pCameraNode = scene.GetFirstCameraNode();
     if (pCameraNode) {
-        m_DrawFrameContext.m_viewMatrix = *pCameraNode->GetCalculatedTransform();
-        InverseMatrix4X4f(m_DrawFrameContext.m_viewMatrix);
+        auto transform = *pCameraNode->GetCalculatedTransform();
+        InverseMatrix4X4f(transform);
+        m_DrawFrameContext.m_viewMatrix = transform;
     }
     else {
         // use default build-in camera
-        Vector3f position = { 0, -5, 0 }, lookAt = { 0, 0, 0 }, up = { 0, 0, 1 };
+        Vector3f position = { 0.0f, -5.0f, 0.0f }, lookAt = { 0.0f, 0.0f, 0.0f }, up = { 0.0f, 0.0f, 1.0f };
         BuildViewMatrix(m_DrawFrameContext.m_viewMatrix, position, lookAt, up);
     }
 
@@ -147,14 +148,59 @@ void GraphicsManager::RenderBuffers()
 }
 
 #ifdef DEBUG
-void GraphicsManager::DrawLine(const Vector3f &from, const Vector3f &to, const Vector3f &color)
+void GraphicsManager::DrawPoint(const Point& point, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawPoint(" << point << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawPointSet(const PointSet& point_set, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawPointSet(" << point_set.size() << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawLine(" << from << ","
         << to << "," 
         << color << ")" << endl;
 }
 
-void GraphicsManager::DrawBox(const Vector3f &bbMin, const Vector3f &bbMax, const Vector3f &color)
+void GraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawTriangle(" << vertices.size() << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawTriangleStrip(" << vertices.size() << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawPolygon(const Face& polygon, const Vector3f& color)
+{
+    PointSet vertices;
+    for (auto pEdge : polygon.Edges)
+    {
+        DrawLine(*pEdge->first, *pEdge->second, color);
+        vertices.insert({pEdge->first, pEdge->second});
+    }
+    DrawPointSet(vertices, color);
+
+    DrawTriangle(polygon.GetVertices(), color);
+}
+
+void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color)
+{
+    for (auto pFace : polyhedron.Faces)
+    {
+        DrawPolygon(*pFace, color);
+    }
+}
+
+void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawBox(" << bbMin << ","
         << bbMax << "," 

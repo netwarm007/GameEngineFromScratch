@@ -17,6 +17,9 @@ uniform mat4 projectionMatrix;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
+	// Some configuration
+	gl_PointSize = 5.0f;
+
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	vec4 v = worldMatrix * vec4(inputPosition, 1.0f);
 	v = viewMatrix * v;

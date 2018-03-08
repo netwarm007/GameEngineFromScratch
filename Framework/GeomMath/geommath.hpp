@@ -1,9 +1,14 @@
 #pragma once
+#include <algorithm>
+#include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <limits>
-#include <math.h>
-#include <cstring>
+#include <cmath>
+#include <memory>
+#include <set>
+#include <vector>
 #include "CrossProduct.h"
 #include "MulByElement.h"
 #include "Normalize.h"
@@ -733,5 +738,100 @@ namespace My {
         ispc::IDCT8X8(matrix, result);
         return result;
     }
+
+    typedef Vector3Type<float> Point;
+    typedef std::shared_ptr<Point> PointPtr;
+    typedef std::set<PointPtr> PointSet;
+    typedef std::vector<PointPtr> PointList;
+    typedef std::pair<PointPtr, PointPtr> Edge;
+    inline bool operator==(const Edge& a, const Edge& b)
+    {
+        return (a.first == b.first && a.second == b.second) || (a.first == b.second && a.second == b.first);
+    }
+    typedef std::shared_ptr<Edge> EdgePtr;
+    typedef std::set<EdgePtr> EdgeSet;
+    typedef std::vector<EdgePtr> EdgeList;
+    struct Face {
+        EdgeList     Edges;
+        PointList GetVertices() const 
+        {
+            PointList vertices;
+            for (auto edge : Edges)
+            {
+                vertices.push_back(edge->first);
+            }
+
+            return vertices;
+        }
+    };
+    typedef std::shared_ptr<Face> FacePtr;
+    typedef std::set<FacePtr> FaceSet;
+    typedef std::vector<FacePtr> FaceList;
+
+    inline bool isPointAbovePlane(const PointList& vertices, const PointPtr& point)
+    {
+        auto count = vertices.size();
+        assert(count > 2);
+        auto ab = *vertices[1] - *vertices[0];
+        auto ac = *vertices[2] - *vertices[0];
+        Vector3f normal;
+        float cos_theta;
+        CrossProduct(normal, ab, ac);
+        auto dir = *point - *vertices[0];
+        DotProduct(cos_theta, normal, dir);
+
+        return cos_theta > 0;
+    }
+
+    inline float PointToPlaneDistance(const PointList& vertices, const PointPtr& point_ptr)
+    {
+        Vector3f normal;
+        float distance;
+        auto A = vertices[0];
+        auto B = vertices[1];
+        auto C = vertices[2];
+        CrossProduct(normal, *B - *A, *C - *A);
+        Normalize(normal);
+        DotProduct(distance, normal, *point_ptr - *A);
+        distance = std::abs(distance);
+
+        return distance;
+    }
+
+    struct Polyhedron {
+        FaceSet     Faces;
+        void AddFace(PointList vertices, const PointPtr& inner_point)
+        {
+            if (isPointAbovePlane(vertices, inner_point))
+            {
+                std::reverse(std::begin(vertices), std::end(vertices));
+            }
+
+            FacePtr pFace = std::make_shared<Face>();
+            auto count = vertices.size();
+            for (auto i = 0; i < vertices.size(); i++)
+            {
+                pFace->Edges.push_back(std::make_shared<Edge>(vertices[i], vertices[(i + 1)==count?0:i + 1]));
+            }
+            Faces.insert(std::move(pFace));
+        }
+
+        void AddTetrahydron(const PointList vertices)
+        {
+            assert(vertices.size() == 4);
+
+            // ABC
+            AddFace({vertices[0], vertices[1], vertices[2]}, vertices[3]);
+
+            // ABD
+            AddFace({vertices[0], vertices[1], vertices[3]}, vertices[2]);
+
+            // CDB
+            AddFace({vertices[2], vertices[3], vertices[1]}, vertices[0]);
+
+            // ADC
+            AddFace({vertices[0], vertices[3], vertices[2]}, vertices[1]);
+        }
+    };
 }
 

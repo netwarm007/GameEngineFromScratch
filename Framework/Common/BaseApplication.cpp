@@ -95,7 +95,19 @@ void BaseApplication::SetCommandLineParameters(int argc, char** argv)
     m_ppArgV = argv;
 }
 
-bool BaseApplication::IsQuit()
+int  BaseApplication::GetCommandLineArgumentsCount() const
+{
+    return m_nArgC;
+}
+
+const char* BaseApplication::GetCommandLineArgument(int index) const
+{
+    assert(index < m_nArgC);
+    return m_ppArgV[index];
+}
+
+
+bool BaseApplication::IsQuit() const
 {
 	return m_bQuit;
 }

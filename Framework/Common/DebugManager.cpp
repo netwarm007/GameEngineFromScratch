@@ -2,6 +2,7 @@
 #include "DebugManager.hpp"
 #include "GraphicsManager.hpp"
 #include "IPhysicsManager.hpp"
+#include "IGameLogic.hpp"
 
 using namespace My;
 using namespace std;
@@ -18,22 +19,20 @@ void DebugManager::Finalize()
 
 void DebugManager::Tick()
 {
+    g_pGraphicsManager->ClearDebugBuffers();
 
+    if(m_bDrawDebugInfo)
+    {
+        DrawDebugInfo();
+        g_pPhysicsManager->DrawDebugInfo();
+        g_pGameLogic->DrawDebugInfo();
+    }
 }
 
 void DebugManager::ToggleDebugInfo()
 {
 #ifdef DEBUG
     m_bDrawDebugInfo = !m_bDrawDebugInfo;
-    if(m_bDrawDebugInfo)
-    {
-        DrawDebugInfo();
-        g_pPhysicsManager->DrawDebugInfo();
-    }
-    else
-    {
-        g_pGraphicsManager->ClearDebugBuffers();
-    }
 #endif
 }
 
