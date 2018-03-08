@@ -4,11 +4,12 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
-            "name": "(Mac OS)(Open GL) Launch Billiard Game",
+            "name": "(Mac OS)(OpenGL) Launch Editor",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
+            "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -16,10 +17,10 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows) Launch Billiard Game",
+            "name": "(Windows)(OpenGL) Launch Editor",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
+            "program": "${workspaceFolder}/build/Editor/Editor/Debug/Editor.exe",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

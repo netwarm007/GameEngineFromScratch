@@ -10,10 +10,10 @@ target_link_libraries(PlatformInterface
                 dxgi
 )
 
-add_library(MyGameEngine
+add_library(MyGameEngineD3d12
                    D3d12ApplicationConfig.cpp
 )
-target_link_libraries(MyGameEngine
+target_link_libraries(MyGameEngineD3d12
                         Common 
                         D3dRHI 
                         PlatformInterface

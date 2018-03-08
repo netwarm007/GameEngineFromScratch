@@ -8,15 +8,20 @@ ELSE(ANDROID)
 add_executable(BilliardGame 
     BilliardGameLogic.cpp BilliardGameConfig.cpp)
 ENDIF(ANDROID)
+IF(WIN32)
 target_link_libraries(BilliardGame 
                         BulletPhysics
-                        MyGameEngine
+                        MyGameEngineOpenGL
                      )
-IF(WIN32)
 add_custom_command(TARGET BilliardGame POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
         $<TARGET_FILE_DIR:BilliardGame>)
+ELSE(WIN32)
+target_link_libraries(BilliardGame 
+                        BulletPhysics
+                        MyGameEngine
+                     )
 ENDIF(WIN32)
 
 

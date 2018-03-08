@@ -98,6 +98,9 @@ add_subdirectory(Physics)
 add_subdirectory(RHI)
 add_subdirectory(Test)
 add_subdirectory(Game)
+IF(NOT ANDROID)
+add_subdirectory(Editor)
+ENDIF(NOT ANDROID)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 
