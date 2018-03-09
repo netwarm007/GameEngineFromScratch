@@ -17,7 +17,9 @@ int GraphicsManager::Initialize()
 
 void GraphicsManager::Finalize()
 {
+#ifdef DEBUG
     ClearDebugBuffers();
+#endif
     ClearBuffers();
     ClearShaders();
 }

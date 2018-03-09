@@ -4,11 +4,23 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Build External Dependencies",
+            "type": "shell",
+            "command": "./build_crossguid.sh && ./build_opengex.sh && ./build_zlib.sh && ./build_bullet.sh",
+            "windows": {
+                "command": "build_crossguid && build_opengex && build_zlib && build_bullet"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build"
+        },
+        {
             "label": "Build Billiard Game",
             "type": "shell",
             "command": "./build.sh",
             "windows": {
-                "command": "build.bat"
+                "command": "build"
             },
             "problemMatcher": [
                 "$msCompile"
