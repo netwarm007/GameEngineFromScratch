@@ -52,5 +52,6 @@ shader-error.txt
 **/.externalNativeBuild
 External/Windows/share/man/man3/zlib.3
 External/Windows/share/pkgconfig/zlib.pc
+External/*/include
 
 *.baiduyun.uploading.cfg
