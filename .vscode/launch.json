@@ -5,27 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS)(Open GL) Launch Billiard Game",
+            "name": "Launch Billiard Game",
             "type": "cppdbg",
             "request": "launch",
-            "preLaunchTask": "Build Billiard Game",
             "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "MIMode": "lldb"
-        },
-        {
-            "name": "(Windows) Launch Billiard Game",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "preLaunchTask": "Build Billiard Game",
-            "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false
+            "windows": {
+                "type": "cppvsdbg",
+                "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe"
+            },
+            "linux": {
+                "MIMode": "lldb"
+            },
+            "osx": {
+                "MIMode": "lldb"
+            }
         }
     ]
 }
