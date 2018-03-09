@@ -1,5 +1,7 @@
 #include "SceneObject.hpp"
 
+using namespace std;
+
 namespace My {
     std::ostream& operator<<(std::ostream& out, SceneObjectType type)
     {
@@ -122,9 +124,6 @@ namespace My {
 		for (size_t i = 0; i < obj.m_IndexArray.size(); i++) {
 			out << obj.m_IndexArray[i] << std::endl;
 		}
-		out << "Visible: " << obj.m_bVisible << std::endl;
-		out << "Shadow: " << obj.m_bShadow << std::endl;
-		out << "Motion Blur: " << obj.m_bMotionBlur << std::endl;
 
 		return out;
 	}
@@ -242,4 +241,54 @@ namespace My {
         return intensity / pow(1 + distance, 2.0f);
     }
 
+	BoundingBox SceneObjectMesh::GetBoundingBox() const
+	{
+		Vector3f bbmin (numeric_limits<float>::max());
+		Vector3f bbmax (numeric_limits<float>::min());
+		auto count = m_VertexArray.size();
+		for (auto n = 0; n < count; n++)
+		{
+			if (m_VertexArray[n].GetAttributeName() == "position")
+			{
+				auto data_type = m_VertexArray[n].GetDataType();
+				auto vertices_count = m_VertexArray[n].GetVertexCount();	
+				auto data = m_VertexArray[n].GetData();
+				for (auto i = 0; i < vertices_count; i++)
+				{
+					switch(data_type) {
+					case VertexDataType::kVertexDataTypeFloat3:
+					{
+						const Vector3f* vertex = reinterpret_cast<const Vector3f*>(data) + i;
+						bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
+						bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
+						bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
+						bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
+						bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
+						bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
+						break;
+					}
+					case VertexDataType::kVertexDataTypeDouble3:
+					{
+						const Vector3* vertex = reinterpret_cast<const Vector3*>(data) + i;
+						bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
+						bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
+						bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
+						bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
+						bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
+						bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
+						break;
+					}
+					default:
+						assert(0);
+					}
+				}
+			}
+		}
+
+		BoundingBox result;
+		result.extent = (bbmax - bbmin) * 0.5f;
+		result.centroid = (bbmax + bbmin) * 0.5f;
+
+		return result;
+	}
 }

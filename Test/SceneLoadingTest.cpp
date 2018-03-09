@@ -35,53 +35,50 @@ int main(int , char** )
 
     cout << "Dump of Cameras" << endl;
     cout << "---------------------------" << endl;
-    auto pCameraNode = scene.GetFirstCameraNode();
-    if (pCameraNode) {
-        weak_ptr<SceneObjectCamera> pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
-        while(auto pObj = pCamera.lock())
-        {
-            cout << *pObj << endl;
-            pCameraNode = scene.GetNextCameraNode();
-            if(!pCameraNode) break;
-            pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
+    for (auto _it : scene.CameraNodes)
+    {
+        auto pCameraNode = _it.second;
+        if (pCameraNode) {
+            weak_ptr<SceneObjectCamera> pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
+            auto pObj = pCamera.lock();
+            if (pObj)
+                cout << *pObj << endl;
         }
     }
 
     cout << "Dump of Lights" << endl;
     cout << "---------------------------" << endl;
-    auto pLightNode = scene.GetFirstLightNode();
-    if (pLightNode) {
-        weak_ptr<SceneObjectLight> pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
-        while(auto pObj = pLight.lock())
-        {
-            cout << *pObj << endl;
-            pLightNode = scene.GetNextLightNode();
-            if(!pLightNode) break;
-            pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
+    for (auto _it : scene.LightNodes)
+    {
+        auto pLightNode = _it.second;
+        if (pLightNode) {
+            weak_ptr<SceneObjectLight> pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
+            auto pObj = pLight.lock();
+            if (pObj)
+                cout << *pObj << endl;
         }
     }
 
     cout << "Dump of Geometries" << endl;
     cout << "---------------------------" << endl;
-    auto pGeometryNode = scene.GetFirstGeometryNode();
-    if (pGeometryNode) {
-        weak_ptr<SceneObjectGeometry> pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
-        while(auto pObj = pGeometry.lock())
-        {
-            cout << *pObj << endl;
-            pGeometryNode = scene.GetNextGeometryNode();
-            if(!pGeometryNode) break;
-            pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+    for (auto _it : scene.GeometryNodes)
+    {
+        auto pGeometryNode = _it.second;
+        if (pGeometryNode) {
+            weak_ptr<SceneObjectGeometry> pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            auto pObj = pGeometry.lock();
+            if (pObj)
+                cout << *pObj << endl;
         }
     }
 
     cout << "Dump of Materials" << endl;
     cout << "---------------------------" << endl;
-    weak_ptr<SceneObjectMaterial> pMaterial = scene.GetFirstMaterial();
-    while(auto pObj = pMaterial.lock())
+    for (auto _it : scene.Materials)
     {
-        cout << *pObj << endl;
-        pMaterial = scene.GetNextMaterial();
+        auto pMaterial = _it.second;
+        if (pMaterial)
+            cout << *pMaterial << endl;
     }
 
     g_pSceneManager->Finalize();

@@ -23,6 +23,7 @@ jobs:
              ./build_crossguid.sh
              ./build_opengex.sh
              ./build_zlib.sh
+             ./build_bullet.sh
              ./build.sh
       - run:
           name: Test
@@ -53,6 +54,7 @@ jobs:
              ./build_crossguid.sh
              ./build_opengex.sh
              ./build_zlib.sh
+             ./build_bullet.sh
              ./build.sh
       - run:
           name: Test
@@ -78,96 +80,102 @@ jobs:
              git lfs fetch
              git lfs checkout
       - restore_cache:
-          key: jars-{{ checksum "Platform/Android/build.gradle" }}-{{ checksum  "Platform/Android/app/build.gradle" }}
+          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
       - run:
           name: Setup Emulator
           command: |
                    sdkmanager "system-images;android-24;default;armeabi-v7a"
                    echo "no" | avdmanager create avd -n test -k "system-images;android-24;default;armeabi-v7a"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Download Dependencies
           command: |
                    ./gradlew androidDependencies
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - save_cache:
           paths:
-            - Platform/Android/.gradle
-          key: jars-{{ checksum "Platform/Android/build.gradle" }}-{{ checksum  "Platform/Android/app/build.gradle" }}
+            - Game/Billiard/.gradle
+          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
+      - run:
+          name: Build External Dependencies
+          command: |
+                   ./build_crossguid-android.sh
+                   ./build_opengex-android.sh
+                   ./build_bullet-android.sh
       - run:
           name: Build
           command: |
                    ./gradlew build
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Launch Emulator 
           command: |
                    emulator @test -no-audio -no-window -no-boot-anim -accel on
           background: true
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Deploy Assets
           command: |
                    adb wait-for-device
                    adb push ../../Asset /data/local/tmp/
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Run Geom Math Library Test
           command: |
                    adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/GeomMathTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/GeomMathTest
                    adb shell "cd /data/local/tmp && ./GeomMathTest"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Run Color Space Conversion Test
           command: |
                    adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/ColorSpaceConversionTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/ColorSpaceConversionTest
                    adb shell "cd /data/local/tmp && ./ColorSpaceConversionTest"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Run Asset Loader Test
           command: |
                    adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/AssetLoaderTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/AssetLoaderTest
                    adb shell "cd /data/local/tmp && ./AssetLoaderTest"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Run JPEG decoder Test
           command: |
                    adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/JpegParserTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/JpegParserTest
                    adb shell "cd /data/local/tmp && ./JpegParserTest"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Run PNG decoder Test
           command: |
                    adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/PngParserTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/PngParserTest
                    adb shell "cd /data/local/tmp && ./PngParserTest"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Run OGEX parser Test
           command: |
                    adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/OgexParserTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/OgexParserTest
                    adb shell "cd /data/local/tmp && ./OgexParserTest"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - run:
           name: Run Scene Loading Test
           command: |
                    adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/SceneLoadingTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/SceneLoadingTest
                    adb shell "cd /data/local/tmp && ./SceneLoadingTest"
-          working_directory: Platform/Android
+          working_directory: Game/Billiard
       - store_artifacts:
-          path: Platform/Android/app/build/reports
+          path: Game/Billiard/app/build/reports
           destination: reports
       - store_artifacts:
-          path: Platform/Android/app/build/test-results
+          path: Game/Billiard/app/build/test-results
           destination: test-results
       - store_artifacts:
-          path: Platform/Android/app/build/outputs/apk
+          path: Game/Billiard/app/build/outputs/apk
           destination: apk
 workflows:
   version: 2

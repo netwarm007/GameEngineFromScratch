@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 git submodule update --init External/src/llvm External/src/clang
 mkdir -p External/build/llvm
 pushd External/build/llvm

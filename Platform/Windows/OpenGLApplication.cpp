@@ -1,22 +1,9 @@
 #include <stdio.h>
 #include <tchar.h>
 #include "OpenGLApplication.hpp"
-#include "OpenGL/OpenGLGraphicsManager.hpp"
-#include "MemoryManager.hpp"
-#include "AssetLoader.hpp"
-#include "SceneManager.hpp"
 #include "glad/glad_wgl.h"
 
 using namespace My;
-
-namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, _T("Game Engine From Scratch (Win32 + OpenGL)"));
-	IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
-    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
-    MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
-    AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
-    SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
-}
 
 static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -225,8 +212,6 @@ void OpenGLApplication::Finalize()
 void OpenGLApplication::Tick()
 {
     WindowsApplication::Tick();
-    g_pGraphicsManager->Clear();
-    g_pGraphicsManager->Draw();
     
     // Present the back buffer to the screen since rendering is complete.
     SwapBuffers(m_hDC);

@@ -7,4 +7,3 @@ cmake -DCMAKE_INSTALL_PREFIX=../../ -G "Visual Studio 15 2017 Win64" -DBUILD_SHA
 cmake --build . --config release --target install
 popd
 
-

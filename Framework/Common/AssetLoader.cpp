@@ -108,6 +108,10 @@ Buffer AssetLoader::SyncOpenAndReadText(const char *filePath)
 
         pBuff = new Buffer(length + 1);
         length = fread(pBuff->GetData(), 1, length, static_cast<FILE*>(fp));
+#ifdef DEBUG
+        fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
+#endif
+
         pBuff->GetData()[length] = '\0';
 
         CloseFile(fp);
@@ -115,10 +119,6 @@ Buffer AssetLoader::SyncOpenAndReadText(const char *filePath)
         fprintf(stderr, "Error opening file '%s'\n", filePath);
         pBuff = new Buffer();
     }
-
-#ifdef DEBUG
-    fprintf(stderr, "Read file '%s', %d bytes\n", filePath, length);
-#endif
 
     return *pBuff;
 }
@@ -133,6 +133,9 @@ Buffer AssetLoader::SyncOpenAndReadBinary(const char *filePath)
 
         pBuff = new Buffer(length);
         fread(pBuff->GetData(), length, 1, static_cast<FILE*>(fp));
+#ifdef DEBUG
+        fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
+#endif
 
         CloseFile(fp);
     } else {
@@ -140,9 +143,6 @@ Buffer AssetLoader::SyncOpenAndReadBinary(const char *filePath)
         pBuff = new Buffer();
     }
 
-#ifdef DEBUG
-    fprintf(stderr, "Read file '%s', %d bytes\n", filePath, length);
-#endif
 
     return *pBuff;
 }

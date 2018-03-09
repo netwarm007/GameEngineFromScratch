@@ -19,3 +19,6 @@
 [submodule "crossguid"]
 	path = External/src/crossguid
 	url = https://github.com/netwarm007/crossguid
+[submodule "bullet"]
+	path = External/src/bullet
+	url = https://github.com/netwarm007/bullet3.git

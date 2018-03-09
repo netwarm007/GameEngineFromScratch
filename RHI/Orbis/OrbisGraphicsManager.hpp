@@ -4,6 +4,7 @@
 #include "GraphicsManager.hpp"
 #include "OrbisShaderStructures.hpp"
 #include "geommath.hpp"
+#include "Scene.hpp"
 
 namespace My {
 	class OrbisGraphicsManager : public GraphicsManager

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 git submodule update --init External/src/libpng
 mkdir -p External/build/libpng
 cd External/build/libpng

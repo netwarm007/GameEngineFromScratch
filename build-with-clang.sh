@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 PATH=$(pwd)/External/Linux/bin:$PATH
 mkdir -p build
 cd build

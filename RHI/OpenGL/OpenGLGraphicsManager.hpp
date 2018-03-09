@@ -7,61 +7,82 @@
 #include "GraphicsManager.hpp"
 #include "geommath.hpp"
 #include "glad/glad.h"
-#include "SceneObject.hpp"
+#include "SceneManager.hpp"
 
 namespace My {
     class OpenGLGraphicsManager : public GraphicsManager
     {
     public:
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize();
+        void Finalize();
 
-        virtual void Tick();
+        void Clear();
 
-        virtual void Clear();
+        void Draw();
 
-        virtual void Draw();
+#ifdef DEBUG
+        void DrawPoint(const Point& point, const Vector3f& color);
+        void DrawPointSet(const PointSet& point_set, const Vector3f& color);
+        void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color);
+        void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
+        void DrawTriangle(const PointList& vertices, const Vector3f& color);
+        void DrawTriangleStrip(const PointList& vertices, const Vector3f& color);
+        void ClearDebugBuffers();
+#endif
 
-    private:
-        bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const float param);
-        bool SetPerBatchShaderParameters(const char* paramName, const GLint texture_index);
-        bool SetPerFrameShaderParameters();
+    protected:
+        void DrawPoints(const Point* buffer, const size_t count, const Vector3f& color);
 
-        void InitializeBuffers();
+        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Matrix4X4f& param);
+        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param);
+        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const float param);
+        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const int param);
+        bool SetPerFrameShaderParameters(GLuint shader);
+
+        void InitializeBuffers(const Scene& scene);
+        void ClearBuffers();
+        bool InitializeShaders();
+        void ClearShaders();
         void RenderBuffers();
-        void CalculateCameraMatrix();
-        void CalculateLights();
-        bool InitializeShader(const char* vsFilename, const char* fsFilename);
 
     private:
-        unsigned int m_vertexShader;
-        unsigned int m_fragmentShader;
-        unsigned int m_shaderProgram;
+        GLuint m_vertexShader;
+        GLuint m_fragmentShader;
+        GLuint m_shaderProgram;
+#ifdef DEBUG
+        GLuint m_debugVertexShader;
+        GLuint m_debugFragmentShader;
+        GLuint m_debugShaderProgram;
+#endif
         std::map<std::string, GLint> m_TextureIndex;
-
-        struct DrawFrameContext {
-            Matrix4X4f  m_worldMatrix;
-            Matrix4X4f  m_viewMatrix;
-            Matrix4X4f  m_projectionMatrix;
-            Vector3f    m_lightPosition;
-            Vector4f    m_lightColor;
-        };
 
         struct DrawBatchContext {
             GLuint  vao;
             GLenum  mode;
             GLenum  type;
             GLsizei count;
-            std::shared_ptr<Matrix4X4f> transform;
+            std::shared_ptr<SceneGeometryNode> node;
             std::shared_ptr<SceneObjectMaterial> material;
         };
 
-        DrawFrameContext    m_DrawFrameContext;
+#ifdef DEBUG
+        struct DebugDrawBatchContext {
+            GLuint  vao;
+            GLenum  mode;
+            GLsizei count;
+            Vector3f color;
+        };
+#endif
+
         std::vector<DrawBatchContext> m_DrawBatchContext;
+
         std::vector<GLuint> m_Buffers;
         std::vector<GLuint> m_Textures;
+
+#ifdef DEBUG
+        std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;
+        std::vector<GLuint> m_DebugBuffers;
+#endif
     };
 
 }

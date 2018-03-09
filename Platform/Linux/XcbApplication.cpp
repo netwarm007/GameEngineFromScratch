@@ -1,9 +1,10 @@
+#include <cstdio>
+#include <iostream>
 #include <string.h>
 #include "XcbApplication.hpp"
-#include "MemoryManager.hpp"
-#include "GraphicsManager.hpp"
 
 using namespace My;
+using namespace std;
 
 void XcbApplication::CreateMainWindow()
 {
@@ -105,7 +106,52 @@ void XcbApplication::Tick()
         case XCB_EXPOSE:
             break;
         case XCB_KEY_PRESS:
-            BaseApplication::m_bQuit = true;
+            {
+                auto key_code = reinterpret_cast<xcb_key_press_event_t*>(pEvent)->detail;
+                printf("[XcbApplication] Key Press: Keycode: %d\n", key_code);
+                switch (key_code)
+                {
+                case 113:
+                    g_pInputManager->LeftArrowKeyDown();
+                    break;
+                case 114:
+                    g_pInputManager->RightArrowKeyDown();
+                    break;
+                case 111:
+                    g_pInputManager->UpArrowKeyDown();
+                    break;
+                case 116:
+                    g_pInputManager->DownArrowKeyDown();
+                    break;
+                case 27:
+                    g_pInputManager->AsciiKeyDown('r');
+                    break;
+                }
+                break;
+            }
+        case XCB_KEY_RELEASE:
+            {
+                auto key_code = reinterpret_cast<xcb_key_release_event_t*>(pEvent)->detail;
+                printf("[XcbApplication] Key Release: Keycode: %d\n", key_code);
+                switch (key_code)
+                {
+                case 113:
+                    g_pInputManager->LeftArrowKeyUp();
+                    break;
+                case 114:
+                    g_pInputManager->RightArrowKeyUp();
+                    break;
+                case 111:
+                    g_pInputManager->UpArrowKeyUp();
+                    break;
+                case 116:
+                    g_pInputManager->DownArrowKeyUp();
+                    break;
+                case 27:
+                    g_pInputManager->AsciiKeyUp('r');
+                    break;
+                }
+            }
             break;
         default:
             break;
