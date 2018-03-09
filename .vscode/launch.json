@@ -8,6 +8,7 @@
             "name": "(Mac OS)(Open GL) Launch Billiard Game",
             "type": "cppdbg",
             "request": "launch",
+            "preLaunchTask": "Build Billiard Game",
             "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -16,9 +17,10 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(DX12) Launch Billiard Game",
+            "name": "(Windows) Launch Billiard Game",
             "type": "cppvsdbg",
             "request": "launch",
+            "preLaunchTask": "Build Billiard Game",
             "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
