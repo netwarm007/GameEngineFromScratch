@@ -27,6 +27,10 @@ namespace My {
         kSceneObjectTypeVertexArray   =   "VARR"_i32,
         kSceneObjectTypeIndexArray    =   "VARR"_i32,
         kSceneObjectTypeGeometry =  "GEOM"_i32,
+        kSceneObjectTypeTransform =  "TRFM"_i32,
+        kSceneObjectTypeTranslate =  "TSLT"_i32,
+        kSceneObjectTypeRotate =  "ROTA"_i32,
+        kSceneObjectTypeScale =  "SCAL"_i32
     };
 
     ENUM(SceneObjectCollisionType) {
@@ -725,19 +729,21 @@ namespace My {
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj);
     };
 
-    class SceneObjectTransform
+    class SceneObjectTransform : public BaseSceneObject
     {
         protected:
             Matrix4X4f m_matrix;
             bool m_bSceneObjectOnly;
 
         public:
-            SceneObjectTransform() { BuildIdentityMatrix(m_matrix); m_bSceneObjectOnly = false; };
+            SceneObjectTransform() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTransform) 
+            { BuildIdentityMatrix(m_matrix); m_bSceneObjectOnly = false; }
 
-            SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) { m_matrix = matrix; m_bSceneObjectOnly = object_only; };
+            SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) : SceneObjectTransform() 
+            { m_matrix = matrix; m_bSceneObjectOnly = object_only; }
 
-            operator Matrix4X4f() { return m_matrix; };
-            operator const Matrix4X4f() const { return m_matrix; };
+            operator Matrix4X4f() { return m_matrix; }
+            operator const Matrix4X4f() const { return m_matrix; }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj);
     };
@@ -745,7 +751,9 @@ namespace My {
     class SceneObjectTranslation : public SceneObjectTransform
     {
         public:
+            SceneObjectTranslation() { m_Type = SceneObjectType::kSceneObjectTypeTranslate; }
             SceneObjectTranslation(const char axis, const float amount, const bool object_only = false)  
+                : SceneObjectTranslation()
             { 
                 switch (axis) {
                     case 'x':
@@ -765,6 +773,7 @@ namespace My {
             }
 
             SceneObjectTranslation(const float x, const float y, const float z, const bool object_only = false) 
+                : SceneObjectTranslation()
             {
                 MatrixTranslation(m_matrix, x, y, z);
                 m_bSceneObjectOnly = object_only;
@@ -774,11 +783,14 @@ namespace My {
     class SceneObjectRotation : public SceneObjectTransform
     {
         public:
-            SceneObjectRotation(const char axis, const float theta)
+            SceneObjectRotation() { m_Type = SceneObjectType::kSceneObjectTypeRotate; }
+            SceneObjectRotation(const char axis, const float theta, const bool object_only = false)
+                : SceneObjectRotation()
             {
                 switch (axis) {
                     case 'x':
                         MatrixRotationX(m_matrix, theta);
+                        break;
                     case 'y':
                         MatrixRotationY(m_matrix, theta);
                         break;
@@ -788,24 +800,34 @@ namespace My {
                     default:
                         assert(0);
                 }
+
+                m_bSceneObjectOnly = object_only;
             }
 
-            SceneObjectRotation(Vector3f& axis, const float theta)
+            SceneObjectRotation(Vector3f axis, const float theta, const bool object_only = false)
+                : SceneObjectRotation()
             {
                 Normalize(axis);
                 MatrixRotationAxis(m_matrix, axis, theta);
+
+                m_bSceneObjectOnly = object_only;
             }
 
-            SceneObjectRotation(const Quaternion quaternion)
+            SceneObjectRotation(const Quaternion quaternion, const bool object_only = false)
+                : SceneObjectRotation()
             {
                 MatrixRotationQuaternion(m_matrix, quaternion);
+
+                m_bSceneObjectOnly = object_only;
             }
     };
 
     class SceneObjectScale : public SceneObjectTransform
     {
         public:
+            SceneObjectScale() { m_Type = SceneObjectType::kSceneObjectTypeScale; }
             SceneObjectScale(const char axis, const float amount)  
+                : SceneObjectScale()
             { 
                 switch (axis) {
                     case 'x':
@@ -823,6 +845,7 @@ namespace My {
             }
 
             SceneObjectScale(const float x, const float y, const float z) 
+                : SceneObjectScale()
             {
                 MatrixScale(m_matrix, x, y, z);
             }

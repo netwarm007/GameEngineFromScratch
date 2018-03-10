@@ -26,6 +26,11 @@ namespace My {
                 m_Transforms.push_back(std::move(transform));
             }
 
+            void PrependTransform(std::shared_ptr<SceneObjectTransform>&& transform)
+            {
+                m_Transforms.push_front(std::move(transform));
+            }
+
             const std::shared_ptr<Matrix4X4f> GetCalculatedTransform() const
             {
                 std::shared_ptr<Matrix4X4f> result (new Matrix4X4f());
