@@ -60,7 +60,7 @@ int OrbisGraphicsManager::Initialize()
 		void *drawCommandBuffer = m_onionHeapAllocator.allocate(kCommandBufferSizeInBytes, Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_COMMAND, "Draw Command buffer");
 		void *constantCommandBuffer = m_onionHeapAllocator.allocate(kConstantBufferSizeInBytes, Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_COMMAND, "Constant Update Command buffer");
 		m_frames[i].commandBuffer.init(constantUpdateEngine, kNumRingEntries, drawCommandBuffer, kCommandBufferSizeInBytes, constantCommandBuffer, kCommandBufferSizeInBytes);
-		m_frames[i].constants = static_cast<Constants *>(m_onionHeapAllocator.allocate(sizeof(m_frames[i].constants), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PARAMETER, "Constant buffer"));
+		m_frames[i].constants = static_cast<DrawFrameContext*>(m_onionHeapAllocator.allocate(sizeof(m_frames[i].constants), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PARAMETER, "Constant buffer"));
 	}
 	
     ///////////////////////////////////////////////
@@ -235,57 +235,6 @@ int OrbisGraphicsManager::Initialize()
     /////////////////////////////////////////////////////
 	// Setup Vertex and Index buffer
     //
-	{
-		// Allocate the vertex buffer memory
-		m_meshs[0].m_vertexCount = 4;
-		m_meshs[0].m_vertexStride = sizeof(SimpleMeshVertex);
-		m_meshs[0].m_primitiveType = PrimitiveType::kPrimitiveTypeTriList;
-		m_meshs[0].m_vertexBufferSize = sizeof(kVertexData);
-		m_meshs[0].m_vertexBuffer = static_cast<SimpleMeshVertex*>(m_galicHeapAllocator.allocate(
-			m_meshs[0].m_vertexBufferSize, Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_VERTEX, "Vertex buffer"));
-		SCE_GNM_ASSERT(m_meshs[0].m_vertexBuffer);
-
-		// Allocate the index buffer memory
-		m_meshs[0].m_indexCount = kIndexCount;
-		m_meshs[0].m_indexType = IndexSize::kIndexSize16;
-		m_meshs[0].m_indexBufferSize = sizeof(kIndexData);
-		m_meshs[0].m_indexBuffer = static_cast<uint16_t*>(m_galicHeapAllocator.allocate(
-			m_meshs[0].m_indexBufferSize, Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_INDEX, "Index buffer"));
-		SCE_GNM_ASSERT(m_meshs[0].m_indexBuffer);
-
-		// Copy the vertex/index data onto the GPU mapped memory
-		memcpy(m_meshs[0].m_vertexBuffer, kVertexData, sizeof(kVertexData));
-		memcpy(m_meshs[0].m_indexBuffer, kIndexData, sizeof(kIndexData));
-
-		const VertexElements element[] = { VertexElements::kVertexPosition, VertexElements::kVertexColor, VertexElements::kVertexUv };
-		const uint32_t elements = sizeof(element) / sizeof(element[0]);
-		setMeshVertexBufferFormat(m_vertexBuffers[0], m_meshs[0], element, elements);
-
-		MeshBuilder::BuildTorusMesh(m_onionHeapAllocator, 0.8f, 0.2f, 64, 32, 4, 1, m_meshs[1]);
-		const VertexElements element1[] = { VertexElements::kVertexPosition, VertexElements::kVertexNormal, VertexElements::kVertexTangent, VertexElements::kVertexUv };
-		const uint32_t elements1 = sizeof(element1) / sizeof(element1[0]);
-		setMeshVertexBufferFormat(m_vertexBuffers[1], m_meshs[1], element1, elements1);
-	}
-
-    /////////////////////////////////////////////////////
-	// Setup Constents
-    //
-    {
-        m_viewToWorldMatrix = Matrix4::identity();
-        Point3 lightPositionX = { -1.5, 4, 9 };
-        Point3 lightTargetX = { 0, 0, 0 };
-        Vector3 lightUpX = { 0.f, 1.f, 0.f };
-        m_lightToWorldMatrix = inverse(Matrix4::lookAt(lightPositionX, lightTargetX, lightUpX));
-
-        m_depthNear = 1.f;
-        m_depthFar = 100.f;
-        const float aspect = (float)m_targetWidth / (float)m_targetHeight;
-        m_projectionMatrix = Matrix4::frustum(-aspect, aspect, -1, 1, m_depthNear, m_depthFar);
-        Point3 eyePos = { 0,0,2.5f };
-        Point3 lookAtPos = { 0, 0, 0 };
-        Vector3 upVec = { 0, 1, 0 };
-        SetViewToWorldMatrix(inverse(Matrix4::lookAt(eyePos, lookAtPos, upVec)));
-    }
 
 	return SCE_GNM_OK;
 }
@@ -433,23 +382,15 @@ void OrbisGraphicsManager::Tick()
 	gfxc->setSamplers(Gnm::kShaderStagePs, 0, 1, &m_sampler[0]);
 
 	// Allocate the vertex shader constants from the command buffer
-	Constants *constants = static_cast<Constants*>(
-		gfxc->allocateFromCommandBuffer(sizeof(Constants), Gnm::kEmbeddedDataAlignment4));
+	DrawFrameContext* constants = static_cast<DrawFrameContext*>(
+		gfxc->allocateFromCommandBuffer(sizeof(DrawFrameContext), Gnm::kEmbeddedDataAlignment4));
 
 	SCE_GNM_ASSERT(constants);
 
 	// Update the constants
 	{
-		const Matrix4 m = Matrix4::rotationZYX(Vector3(rotationAngle, rotationAngle, 0.f));
-		constants->m_modelView = transpose(m_worldToViewMatrix*m);
-		constants->m_modelViewProjection = transpose(m_viewProjectionMatrix*m);
-		constants->m_lightPosition = getLightPositionInViewSpace();
-		constants->m_lightColor = getLightColor();
-		constants->m_ambientColor = getAmbientColor();
-		constants->m_lightAttenuation = Vector4f(1, 0, 0, 0);
-
 		Gnm::Buffer constBuffer;
-		constBuffer.initAsConstantBuffer(constants, sizeof(Constants));
+		constBuffer.initAsConstantBuffer(constants, sizeof(DrawFrameContext));
 		constBuffer.setResourceMemoryType(Gnm::kResourceMemoryTypeRO); // it's a constant buffer, so read-only is OK
 
 		gfxc->setConstantBuffers(Gnm::kShaderStageVs, 0, 1, &constBuffer);
@@ -510,10 +451,10 @@ void OrbisGraphicsManager::clearDepthStencil(Gnmx::GnmxGfxContext * gfxc, const 
 
 	gfxc->setPsShader(m_pixelShader[1].m_shader, &m_pixelShader[1].m_offsetsTable);
 
-	Vector4fUnaligned *constantBuffer = static_cast<Vector4fUnaligned*>(gfxc->allocateFromCommandBuffer(sizeof(Vector4fUnaligned), Gnm::kEmbeddedDataAlignment4));
+	Vector4f *constantBuffer = static_cast<Vector4f*>(gfxc->allocateFromCommandBuffer(sizeof(Vector4f), Gnm::kEmbeddedDataAlignment4));
 	*constantBuffer = Vector4f(0.f, 0.f, 0.f, 0.f);
 	Gnm::Buffer buffer;
-	buffer.initAsConstantBuffer(constantBuffer, sizeof(Vector4fUnaligned));
+	buffer.initAsConstantBuffer(constantBuffer, sizeof(Vector4f));
 	buffer.setResourceMemoryType(Gnm::kResourceMemoryTypeRO);
 	gfxc->setConstantBuffers(Gnm::kShaderStagePs, 0, 1, &buffer);
 
@@ -770,7 +711,7 @@ int OrbisGraphicsManager::loadTextureFromGnf(const char * filename, const char *
 	return kGnfErrorNone;
 }
 
-void OrbisGraphicsManager::setMeshVertexBufferFormat(Gnm::Buffer* buffer, SimpleMesh& destMesh, const VertexElements * element, uint32_t elements)
+void OrbisGraphicsManager::setMeshVertexBufferFormat(Gnm::Buffer& buffer)
 {
 	destMesh.m_vertexAttributeCount = elements;
 	while (elements--)
@@ -854,223 +795,3 @@ void OrbisGraphicsManager::requestFlipAndWait()
 	ret = sceKernelWaitEqueue(m_videoInfo.eq, &ev, 1, &out, 0);
 }
 
-
-void EmbeddedPsShader::initialize()
-{
-	Gnmx::ShaderInfo shaderInfo;
-	Gnmx::parseShader(&shaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *shaderBinary = allocator.allocate(shaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "PS Shader Binary");
-	void *shaderHeader = allocator.allocate(shaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "PS Shader Header");
-
-	memcpy(shaderBinary, shaderInfo.m_gpuShaderCode, shaderInfo.m_gpuShaderCodeSize);
-	memcpy(shaderHeader, shaderInfo.m_psShader, shaderInfo.m_psShader->computeSize());
-
-	m_shader = static_cast<Gnmx::PsShader*>(shaderHeader);
-	m_shader->patchShaderGpuAddress(shaderBinary);
-
-	if (0 != m_name && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getBaseAddress(), shaderInfo.m_gpuShaderCodeSize, m_name, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	Gnmx::generateInputOffsetsCache(&m_offsetsTable, Gnm::kShaderStagePs, m_shader);
-}
-
-void EmbeddedCsShader::initialize()
-{
-	Gnmx::ShaderInfo shaderInfo;
-	Gnmx::parseShader(&shaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *shaderBinary = allocator.allocate(shaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "CS Shader Binary");
-	void *shaderHeader = allocator.allocate(shaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "CS Shader Header");
-
-	memcpy(shaderBinary, shaderInfo.m_gpuShaderCode, shaderInfo.m_gpuShaderCodeSize);
-	memcpy(shaderHeader, shaderInfo.m_csShader, shaderInfo.m_csShader->computeSize());
-
-	m_shader = static_cast<Gnmx::CsShader*>(shaderHeader);
-	m_shader->patchShaderGpuAddress(shaderBinary);
-
-	if (0 != m_name && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getBaseAddress(), shaderInfo.m_gpuShaderCodeSize, m_name, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	Gnmx::generateInputOffsetsCache(&m_offsetsTable, Gnm::kShaderStageCs, m_shader);
-}
-
-void EmbeddedVsShader::initialize()
-{
-	Gnmx::ShaderInfo shaderInfo;
-	Gnmx::parseShader(&shaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *shaderBinary = allocator.allocate(shaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "VS Shader Binary");
-	void *shaderHeader = allocator.allocate(shaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "VS Shader Header");
-
-	memcpy(shaderBinary, shaderInfo.m_gpuShaderCode, shaderInfo.m_gpuShaderCodeSize);
-	memcpy(shaderHeader, shaderInfo.m_vsShader, shaderInfo.m_vsShader->computeSize());
-
-	m_shader = static_cast<Gnmx::VsShader*>(shaderHeader);
-	m_shader->patchShaderGpuAddress(shaderBinary);
-
-	// Allocate the memory for the fetch shader
-	m_fetchShader = allocator.allocate(Gnmx::computeVsFetchShaderSize(m_shader), Gnm::kAlignmentOfFetchShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "FS Shader");
-	SCE_GNM_ASSERT(m_fetchShader);
-
-	Gnm::FetchShaderInstancingMode *instancingData = NULL;
-	uint32_t shaderModifier;
-	Gnmx::generateVsFetchShader(m_fetchShader, &shaderModifier, m_shader, instancingData, instancingData != nullptr ? 256 : 0);
-
-	if (0 != m_name && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getBaseAddress(), shaderInfo.m_gpuShaderCodeSize, m_name, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	Gnmx::generateInputOffsetsCache(&m_offsetsTable, Gnm::kShaderStageVs, m_shader);
-}
-
-void EmbeddedEsShader::initialize()
-{
-	Gnmx::ShaderInfo shaderInfo;
-	Gnmx::parseShader(&shaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *shaderBinary = allocator.allocate(shaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "ES Shader Binary");
-	void *shaderHeader = allocator.allocate(shaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "ES Shader Header");
-
-	memcpy(shaderBinary, shaderInfo.m_gpuShaderCode, shaderInfo.m_gpuShaderCodeSize);
-	memcpy(shaderHeader, shaderInfo.m_esShader, shaderInfo.m_esShader->computeSize());
-
-	m_shader = static_cast<Gnmx::EsShader*>(shaderHeader);
-	m_shader->patchShaderGpuAddress(shaderBinary);
-
-	if (0 != m_name && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getBaseAddress(), shaderInfo.m_gpuShaderCodeSize, m_name, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	Gnmx::generateInputOffsetsCache(&m_offsetsTable, Gnm::kShaderStageEs, m_shader);
-}
-
-void EmbeddedGsShader::initialize()
-{
-	Gnmx::ShaderInfo gsShaderInfo;
-	Gnmx::ShaderInfo vsShaderInfo;
-	Gnmx::parseGsShader(&gsShaderInfo, &vsShaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *gsShaderBinary = allocator.allocate(gsShaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "GS Shader Binary");
-	void *vsShaderBinary = allocator.allocate(vsShaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "VS Shader Binary");
-	void *gsShaderHeader = allocator.allocate(gsShaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "GS Shader Header");
-
-	memcpy(gsShaderBinary, gsShaderInfo.m_gpuShaderCode, gsShaderInfo.m_gpuShaderCodeSize);
-	memcpy(vsShaderBinary, vsShaderInfo.m_gpuShaderCode, vsShaderInfo.m_gpuShaderCodeSize);
-	memcpy(gsShaderHeader, gsShaderInfo.m_gsShader, gsShaderInfo.m_gsShader->computeSize());
-
-	m_shader = static_cast<Gnmx::GsShader*>(gsShaderHeader);
-	m_shader->patchShaderGpuAddresses(gsShaderBinary, vsShaderBinary);
-
-	if (0 != m_gsName && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getBaseAddress(), gsShaderInfo.m_gpuShaderCodeSize, m_gsName, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	if (0 != m_vsName && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getCopyShader()->getBaseAddress(), vsShaderInfo.m_gpuShaderCodeSize, m_vsName, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	Gnmx::generateInputOffsetsCache(&m_offsetsTable, Gnm::kShaderStageGs, m_shader);
-}
-
-void EmbeddedLsShader::initialize()
-{
-	Gnmx::ShaderInfo shaderInfo;
-	Gnmx::parseShader(&shaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *shaderBinary = allocator.allocate(shaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "LS Shader Binary");
-	void *shaderHeader = allocator.allocate(shaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "LS Shader Header");
-
-	memcpy(shaderBinary, shaderInfo.m_gpuShaderCode, shaderInfo.m_gpuShaderCodeSize);
-	memcpy(shaderHeader, shaderInfo.m_lsShader, shaderInfo.m_lsShader->computeSize());
-
-	m_shader = static_cast<Gnmx::LsShader*>(shaderHeader);
-	m_shader->patchShaderGpuAddress(shaderBinary);
-
-	if (0 != m_name && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getBaseAddress(), shaderInfo.m_gpuShaderCodeSize, m_name, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	Gnmx::generateInputOffsetsCache(&m_offsetsTable, Gnm::kShaderStageLs, m_shader);
-}
-
-void EmbeddedHsShader::initialize()
-{
-	Gnmx::ShaderInfo shaderInfo;
-	Gnmx::parseShader(&shaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *shaderBinary = allocator.allocate(shaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "HS Shader Binary");
-	void *shaderHeader = allocator.allocate(shaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "HS Shader Header");
-
-	memcpy(shaderBinary, shaderInfo.m_gpuShaderCode, shaderInfo.m_gpuShaderCodeSize);
-	memcpy(shaderHeader, shaderInfo.m_hsShader, shaderInfo.m_hsShader->computeSize());
-
-	m_shader = static_cast<Gnmx::HsShader*>(shaderHeader);
-	m_shader->patchShaderGpuAddress(shaderBinary);
-
-	if (0 != m_name && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getBaseAddress(), shaderInfo.m_gpuShaderCodeSize, m_name, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	Gnmx::generateInputOffsetsCache(&m_offsetsTable, Gnm::kShaderStageHs, m_shader);
-}
-
-void EmbeddedCsVsShader::initialize()
-{
-	Gnmx::ShaderInfo csShaderInfo;
-	Gnmx::ShaderInfo csvsShaderInfo;
-	Gnmx::parseCsVsShader(&csvsShaderInfo, &csShaderInfo, m_source);
-
-	OrbisGalicHeapAllocator allocator;
-	void *vsShaderBinary = allocator.allocate(csvsShaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "CS Shader Binary");
-	void *csShaderBinary = allocator.allocate(csShaderInfo.m_gpuShaderCodeSize, Gnm::kAlignmentOfShaderInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "CS Shader Binary");
-	void *csvsShaderHeader = allocator.allocate(csShaderInfo.m_psShader->computeSize(), Gnm::kAlignmentOfBufferInBytes, MM_HINT::MEM_USAGE_SHADER_PROGRAM, "VS Shader Header");
-
-	memcpy(vsShaderBinary, csvsShaderInfo.m_gpuShaderCode, csvsShaderInfo.m_gpuShaderCodeSize);
-	memcpy(csShaderBinary, csShaderInfo.m_gpuShaderCode, csShaderInfo.m_gpuShaderCodeSize);
-	memcpy(csvsShaderHeader, csvsShaderInfo.m_csvsShader, csvsShaderInfo.m_csvsShader->computeSize());
-
-	m_shader = static_cast<Gnmx::CsVsShader*>(csvsShaderHeader);
-	m_shader->patchShaderGpuAddresses(vsShaderBinary, csShaderBinary);
-
-	if (0 != m_csName && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getComputeShader()->getBaseAddress(), csShaderInfo.m_gpuShaderCodeSize, m_csName, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	if (0 != m_vsName && Gnm::kInvalidOwnerHandle != OrbisGraphicsManager::Instance().GetOwnerHandle())
-	{
-		Gnm::registerResource(nullptr, OrbisGraphicsManager::Instance().GetOwnerHandle(), m_shader->getVertexShader()->getBaseAddress(), csvsShaderInfo.m_gpuShaderCodeSize, m_vsName, Gnm::kResourceTypeShaderBaseAddress, 0);
-	}
-	generateInputOffsetsCacheForDispatchDraw(&m_offsetsTableCs, &m_offsetsTableVs, m_shader);
-}
-
-void EmbeddedShaders::initialize()
-{
-	for (uint32_t i = 0; i < m_embeddedCsShaders; ++i)
-		m_embeddedCsShader[i]->initialize();
-	for (uint32_t i = 0; i < m_embeddedPsShaders; ++i)
-		m_embeddedPsShader[i]->initialize();
-	for (uint32_t i = 0; i < m_embeddedVsShaders; ++i)
-		m_embeddedVsShader[i]->initialize();
-	for (uint32_t i = 0; i < m_embeddedEsShaders; ++i)
-		m_embeddedEsShader[i]->initialize();
-	for (uint32_t i = 0; i < m_embeddedGsShaders; ++i)
-		m_embeddedGsShader[i]->initialize();
-	for (uint32_t i = 0; i < m_embeddedLsShaders; ++i)
-		m_embeddedLsShader[i]->initialize();
-	for (uint32_t i = 0; i < m_embeddedHsShaders; ++i)
-		m_embeddedHsShader[i]->initialize();
-	for (uint32_t i = 0; i < m_embeddedCsVsShaders; ++i)
-		m_embeddedCsVsShader[i]->initialize();
-}
-
-#endif

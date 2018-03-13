@@ -1,0 +1,20 @@
+#include "std_cbuffer.h"
+#include "vsoutput.hs"
+
+struct VS_INPUT
+{
+	float3 Position		: POSITION0;
+	float3 Color		: COLOR0;
+	float2 UV			: TEXCOORD0;
+};
+
+VS_OUTPUT main( VS_INPUT Input )
+{
+	VS_OUTPUT Output;
+
+	Output.Position = mul(m_modelViewProjection, float4(Input.Position.xyz, 1));
+	Output.Color = Input.Color;
+	Output.UV = Input.UV;
+
+	return Output;
+}

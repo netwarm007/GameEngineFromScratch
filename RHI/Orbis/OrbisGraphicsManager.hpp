@@ -1,6 +1,7 @@
 #pragma once
 #include <gnmx.h>
 #include <video_out.h>
+#include <vector>
 #include "GraphicsManager.hpp"
 #include "OrbisShaderStructures.hpp"
 #include "geommath.hpp"
@@ -39,7 +40,7 @@ namespace My {
 
 		int loadTextureFromGnf(const char *filename, const char *name, uint8_t textureIndex, sce::Gnm::Texture& texture);
 
-		void setMeshVertexBufferFormat(sce::Gnm::Buffer* buffer, SimpleMesh& destMesh, const VertexElements* element, uint32_t elements);
+		void setMeshVertexBufferFormat(sce::Gnm::Buffer& buffer);
 
 		void registerRenderTargetForDisplay(sce::Gnm::RenderTarget *renderTarget);
 		void requestFlip();
@@ -62,7 +63,7 @@ namespace My {
 		// Per-frame context
 		struct Frame {
 			sce::Gnmx::GnmxGfxContext commandBuffer;
-			Constants *constants;
+			DrawFrameContext *constants;
 		};
 
 		enum { kNumFB = 3 };
@@ -90,9 +91,7 @@ namespace My {
 		VideoInfo m_videoInfo;
 		Frame m_frames[kNumFB];
 
-		enum { kMeshMaxCount = 100 };
-		SimpleMesh m_meshs[kMeshMaxCount];
-		sce::Gnm::Buffer m_vertexBuffers[kMeshMaxCount][VertexElements::kVertexElemCount];
+		std::vector<sce::Gnm::Buffer> m_Buffers;
 
 		OrbisGalicHeapAllocator m_galicHeapAllocator;
 		OrbisOnionHeapAllocator m_onionHeapAllocator;

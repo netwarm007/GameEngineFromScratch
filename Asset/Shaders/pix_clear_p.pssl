@@ -1,0 +1,21 @@
+#include "shader_base.h"
+
+#pragma PSSL_target_output_format (default FMT_32_ABGR)
+
+struct PS_OUT
+{
+	float4 Color : S_TARGET_OUTPUT0;
+};
+
+ConstantBuffer pix_clear_constants : register(c0)
+{
+	float4 m_color;
+};
+
+
+PS_OUT main()
+{
+	PS_OUT output = (PS_OUT)0;
+	output.Color = m_color;
+	return output;
+}

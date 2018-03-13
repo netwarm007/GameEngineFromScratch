@@ -1,0 +1,28 @@
+#include "std_cbuffer.h"
+#include "vsoutput2.hs"
+
+struct VS_INPUT
+{
+	float3 Position		: POSITION0;
+	float3 Normal		: NORMAL;
+	float4 Tangent		: TEXCOORD0;
+	float2 TextureUV	: TEXCOORD1;
+};
+
+VS_OUTPUT main(VS_INPUT input)
+{
+	VS_OUTPUT Output;
+
+	Output.Position = mul(float4(input.Position.xyz, 1), m_modelViewProjection);
+	float3 vN = normalize(mul(float4(input.Normal, 0), m_modelView).xyz);
+	float3 vT = normalize(mul(float4(input.Tangent.xyz, 0), m_modelView).xyz);
+	Output.vPosInView = mul(float4(input.Position.xyz, 1), m_modelView).xyz;
+
+	Output.vNorm = vN;
+	Output.vTang = float4(vT, input.Tangent.w);
+
+	Output.TextureUV = input.TextureUV;
+
+	return Output;
+}
+

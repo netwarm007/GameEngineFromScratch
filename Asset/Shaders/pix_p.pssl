@@ -1,0 +1,11 @@
+#include "std_cbuffer.h"
+#include "vsoutput.hs"
+
+SamplerState samp0 : register(s0);
+Texture2D colorMap : register(t0);
+
+float4 main(VS_OUTPUT Input) : S_TARGET_OUTPUT
+{
+	return colorMap.Sample(samp0, Input.UV) * float4(Input.Color, 1.0f);
+}
+

@@ -1,0 +1,15 @@
+#include "shader_base.h"
+
+#define THREADS_PER_WAVEFRONT 64
+
+RW_DataBuffer<uint> Destination : register(u0);
+DataBuffer<uint> Source : register(t0);
+ConstantBuffer Constants : register(c0) {uint m_destUints; uint m_srcUints;};
+
+[NUM_THREADS(THREADS_PER_WAVEFRONT,1,1)]
+void main(uint ID : S_DISPATCH_THREAD_ID)
+{
+    if(ID < m_destUints)
+		Destination[ID] = Source[ID % m_srcUints];
+}
+

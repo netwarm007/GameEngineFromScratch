@@ -1,0 +1,38 @@
+#include "std_cbuffer.h"
+#include "vsoutput2.hs"
+#include "illum.hs"
+
+SamplerState samp0 : register(s0);
+
+Texture2D colorMap : register(t0);
+Texture2D bumpGlossMap : register(t1);
+
+float4 main( VS_OUTPUT In ) : S_TARGET_OUTPUT
+{
+	float3 lightRgb = m_lightColor.xyz;
+	float4 lightAtten = m_lightAttenuation;
+	float3 ambientRgb = m_ambientColor.rgb;
+	float	specPow = 30;
+
+	const float3 vN = In.vNorm;
+	const float3 vT = In.vTang.xyz;
+	const float3 vB = In.vTang.w * cross(vN, vT);
+	float3 vL = m_lightPosition.xyz - In.vPosInView;
+	const float3 vV = normalize(float3(0,0,0) - In.vPosInView);
+	float d = length(vL); vL = normalize(vL);
+	float attenuation = saturate(1.0f/(lightAtten.x + lightAtten.y * d + lightAtten.z * d * d) - lightAtten.w);
+
+	float4 normalGloss = bumpGlossMap.Sample(samp0, In.TextureUV.xy);
+	normalGloss.xyz = normalGloss.xyz * 2.0f - 1.0f;
+	normalGloss.y = -normalGloss.y; // normal map has green channel inverted
+
+	float3 vBumpNorm = normalize(normalGloss.x * vT + normalGloss.y * vB + normalGloss.z * vN);
+	float3 vGeomNorm = normalize(vN);
+
+	float3 diff_col = colorMap.Sample(samp0, In.TextureUV.xy).xyz;
+	float3 spec_col = 0.4 * normalGloss.w + 0.1;
+	float3 vLightInts = attenuation * lightRgb * BRDF2_ts_nphong_nofr(vBumpNorm, vGeomNorm, vL, vV, diff_col, spec_col, specPow);
+	vLightInts += (diff_col * ambientRgb);
+
+	return float4(vLightInts, 1);
+}
