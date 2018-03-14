@@ -9,7 +9,10 @@
             "name": "(Mac OS)(OpenGL) Launch article_45",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Test/GjkTest",
+            "program": "${workspaceFolder}/build/Game/article_45/article_45.app/Contents/MacOS/article_45",
+            "args": [
+                "1000"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -20,7 +23,10 @@
             "name": "(Windows)(OpenGL) Launch article_45",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Test/GjkTest",
+            "program": "${workspaceFolder}/build/Game/article_45/Debug/article_45.exe",
+            "args": [
+                "1000"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

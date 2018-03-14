@@ -21,7 +21,7 @@ int main(int argc, char** argv)
     {
         cout << "Generate Polyhedron A" << endl;
         default_random_engine generator;
-        generator.seed(1.0f);
+        generator.seed(1);
         uniform_real_distribution<float> distribution(-1.0f, 1.0f);
         auto dice = std::bind(distribution, generator);
 
@@ -44,7 +44,7 @@ int main(int argc, char** argv)
     {
         cout << "Generate Polyhedron B" << endl;
         default_random_engine generator;
-        generator.seed(2.0f);
+        generator.seed(200);
         uniform_real_distribution<float> distribution(0.6f, 1.7f);
         auto dice = std::bind(distribution, generator);
 
