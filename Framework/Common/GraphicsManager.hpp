@@ -3,6 +3,7 @@
 #include "geommath.hpp"
 #include "Image.hpp"
 #include "Scene.hpp"
+#include "Polyhedron.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule

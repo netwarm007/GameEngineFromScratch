@@ -5,6 +5,7 @@
 #include <memory>
 #include <utility>
 #include "geommath.hpp"
+#include "Polyhedron.hpp"
 
 namespace My {
     class QuickHull {
@@ -22,7 +23,7 @@ namespace My {
         const Polyhedron& GetHull() const { return m_ConvexHull; }
 
     protected:
-        void ComputeInitialTetrahydron();
+        void ComputeInitialTetrahedron();
         void IterateHull();
         void AssignPointsToFaces();
 
@@ -36,6 +37,6 @@ namespace My {
         std::unordered_multimap<PointPtr, FacePtr> m_PointAboveWhichFacies;
 
     private:
-        PointPtr center_of_tetrahydron;
+        PointPtr center_of_tetrahedron;
     };
 }

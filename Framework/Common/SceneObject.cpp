@@ -244,7 +244,7 @@ namespace My {
 	BoundingBox SceneObjectMesh::GetBoundingBox() const
 	{
 		Vector3f bbmin (numeric_limits<float>::max());
-		Vector3f bbmax (numeric_limits<float>::min());
+		Vector3f bbmax (numeric_limits<float>::lowest());
 		auto count = m_VertexArray.size();
 		for (auto n = 0; n < count; n++)
 		{

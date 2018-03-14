@@ -30,11 +30,14 @@ int main(int argc, char** argv)
     }
 
     quick_hull.Init();
+    Polyhedron convex_hull;
     while (quick_hull.Iterate())
     {
-        auto convex_hull = quick_hull.GetHull();
+        convex_hull = quick_hull.GetHull();
         cerr << "num of faces after this iteration: " << convex_hull.Faces.size() << endl;
     }
+
+    cerr << "num of faces generated: " << convex_hull.Faces.size() << endl;
 
     return 0;
 }

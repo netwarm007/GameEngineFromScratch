@@ -5,7 +5,7 @@ using namespace std;
 
 void QuickHull::Init()
 {
-    ComputeInitialTetrahydron();
+    ComputeInitialTetrahedron();
 }
 
 bool QuickHull::Iterate()
@@ -15,7 +15,7 @@ bool QuickHull::Iterate()
     return m_PointWaitProcess.size() != 0;
 }
 
-void QuickHull::ComputeInitialTetrahydron()
+void QuickHull::ComputeInitialTetrahedron()
 {
     if(m_PointSet.size() < 4)
     {
@@ -26,9 +26,9 @@ void QuickHull::ComputeInitialTetrahydron()
     PointPtr ExtremePointXMin = make_shared<Point>(numeric_limits<float>::max());
     PointPtr ExtremePointYMin = make_shared<Point>(numeric_limits<float>::max());
     PointPtr ExtremePointZMin = make_shared<Point>(numeric_limits<float>::max());
-    PointPtr ExtremePointXMax = make_shared<Point>(numeric_limits<float>::min());
-    PointPtr ExtremePointYMax = make_shared<Point>(numeric_limits<float>::min());
-    PointPtr ExtremePointZMax = make_shared<Point>(numeric_limits<float>::min());
+    PointPtr ExtremePointXMax = make_shared<Point>(numeric_limits<float>::lowest());
+    PointPtr ExtremePointYMax = make_shared<Point>(numeric_limits<float>::lowest());
+    PointPtr ExtremePointZMax = make_shared<Point>(numeric_limits<float>::lowest());
 
     // copy the point set into temporary working set
     m_PointWaitProcess = m_PointSet;
@@ -121,7 +121,7 @@ void QuickHull::ComputeInitialTetrahydron()
         m_PointWaitProcess.erase(B);
         m_PointWaitProcess.erase(C);
 
-        // now we find the 4th point to form a tetrahydron
+        // now we find the 4th point to form a tetrahedron
         PointPtr D;
         {
             float max_distance = 0;
@@ -137,8 +137,8 @@ void QuickHull::ComputeInitialTetrahydron()
             }
         }
 
-        center_of_tetrahydron = make_shared<Point>((*A + *B + *C + *D) * 0.25f);
-        m_ConvexHull.AddTetrahydron({A,B,C,D});
+        center_of_tetrahedron = make_shared<Point>((*A + *B + *C + *D) * 0.25f);
+        m_ConvexHull.AddTetrahedron({A,B,C,D});
         m_PointWaitProcess.erase(D);
     }
 }
@@ -147,7 +147,6 @@ void QuickHull::IterateHull()
 {
     AssignPointsToFaces();
 
-    cerr << "remain point count: " << m_PointWaitProcess.size() << endl;
     auto pPoint = *m_PointWaitProcess.begin();
     auto pFace = m_PointAboveWhichFacies.find(pPoint)->second;
     float max_distance = 0.0f;
@@ -175,6 +174,7 @@ void QuickHull::IterateHull()
         // on the border of hole to the new point
         set<Edge> edges_on_hole;
         auto range = m_PointAboveWhichFacies.equal_range(far_point);
+        assert(range.first != range.second);
         for_each(
                     range.first,
                     range.second,
@@ -213,7 +213,7 @@ void QuickHull::IterateHull()
         assert(edges_on_hole.size() >= 3);
         for (auto edge : edges_on_hole)
         {
-            m_ConvexHull.AddFace({edge.first, edge.second, far_point}, center_of_tetrahydron);
+            m_ConvexHull.AddFace({edge.first, edge.second, far_point}, center_of_tetrahedron);
         }
 
         // now the point has been proceeded
@@ -233,7 +233,7 @@ void QuickHull::AssignPointsToFaces()
         bool isInsideHull = true;
         for (auto pFace : m_ConvexHull.Faces)
         {
-            if (isPointAbovePlane(pFace->GetVertices(), *it))
+            if (isPointAbovePlane(pFace->GetVertices(), **it))
             {
                 m_PointsAboveFace.insert({pFace, *it});
 
