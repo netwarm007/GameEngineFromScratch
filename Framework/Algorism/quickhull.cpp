@@ -183,11 +183,18 @@ void QuickHull::IterateHull()
                         auto face_to_be_removed = x.second;
                         for (auto edge : face_to_be_removed->Edges)
                         {
+                            Edge reverse_edge = {edge->second, edge->first};
                             if (edges_on_hole.find(*edge) != edges_on_hole.end())
                             {
                                 // this edge is shared by faces going to be removed
                                 // so it is not on the border of hole, remove it
                                 edges_on_hole.erase(*edge);
+                            }
+                            else if (edges_on_hole.find(reverse_edge) != edges_on_hole.end())
+                            {
+                                // this edge is shared by faces going to be removed
+                                // so it is not on the border of hole, remove it
+                                edges_on_hole.erase(reverse_edge);
                             }
                             else
                             {
@@ -196,13 +203,14 @@ void QuickHull::IterateHull()
                             }
                         }
                         m_ConvexHull.Faces.erase(face_to_be_removed); 
+ 
                     }
         );
 
         // now we have edges on the hole
         // so we create new faces by connecting
         // them with the new point
-        //assert(edges_on_hole.size() >= 3);
+        assert(edges_on_hole.size() >= 3);
         for (auto edge : edges_on_hole)
         {
             m_ConvexHull.AddFace({edge.first, edge.second, far_point}, center_of_tetrahydron);
