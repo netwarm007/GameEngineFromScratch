@@ -8,15 +8,20 @@ ELSE(ANDROID)
 add_executable(article_45
     article_45_logic.cpp article_45_config.cpp)
 ENDIF(ANDROID)
+IF(WIN32)
 target_link_libraries(article_45
                         MyPhysics
-                        MyGameEngine
+                        MyGameEngineOpenGL
                      )
-IF(WIN32)
 add_custom_command(TARGET article_45 POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
         $<TARGET_FILE_DIR:article_45>)
+ELSE(WIN32)
+target_link_libraries(article_45
+                        MyPhysics
+                        MyGameEngine
+                     )
 ENDIF(WIN32)
 
 
