@@ -41,8 +41,11 @@ build*/
 *.swp
 **/Debug
 **/Release
+**/bin
 **/lib
 **/lib64
+**/libexec
+**/share
 **/.gradle
 .DS_Store
 

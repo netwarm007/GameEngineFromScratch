@@ -6,12 +6,11 @@
     "configurations": [
         
         {
-            "name": "(Mac OS)(OpenGL) Launch article_45",
+            "name": "(Mac OS)(OpenGL) Launch Editor",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/article_45/article_45.app/Contents/MacOS/article_45",
+            "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "1000"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -20,12 +19,11 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(OpenGL) Launch article_45",
+            "name": "(Windows)(OpenGL) Launch Editor",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/article_45/Debug/article_45.exe",
+            "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "1000"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
