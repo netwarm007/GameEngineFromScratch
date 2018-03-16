@@ -22,3 +22,9 @@
 [submodule "bullet"]
 	path = External/src/bullet
 	url = https://github.com/netwarm007/bullet3.git
+[submodule "libcxx"]
+	path = External/src/libcxx
+	url = http://llvm.org/git/libcxx
+[submodule "libcxxabi"]
+	path = External/src/libcxxabi
+	url = http://llvm.org/git/libcxxabi
