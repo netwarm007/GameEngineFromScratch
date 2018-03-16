@@ -55,7 +55,7 @@ namespace My {
                 auto byte_count = img.bitcount >> 3;
                 img.pitch = ((img.Width * byte_count) + 3) & ~3;
                 img.data_size = img.pitch * img.Height;
-                img.data = g_pMemoryManager->Allocate(img.data_size);
+                img.data = new uint8_t[img.data_size];
 
                 if (img.bitcount < 24) {
                     std::cout << "Sorry, only true color BMP is supported at now." << std::endl;

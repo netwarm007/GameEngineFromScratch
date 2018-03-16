@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "BlockAllocator.hpp"
+#include "MemoryManager.hpp"
 
 #ifndef ALIGN
 #define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
@@ -58,7 +59,7 @@ void* BlockAllocator::Allocate()
 {
     if (!m_pFreeList) {
         // allocate a new page
-        PageHeader* pNewPage = reinterpret_cast<PageHeader*>(new uint8_t[m_szPageSize]);
+        PageHeader* pNewPage = reinterpret_cast<PageHeader*>(g_pMemoryManager->AllocatePage(m_szPageSize));
         ++m_nPages;
         m_nBlocks += m_nBlocksPerPage;
         m_nFreeBlocks += m_nBlocksPerPage;
@@ -117,7 +118,7 @@ void BlockAllocator::FreeAll()
         PageHeader* _p = pPage;
         pPage = pPage->pNext;
 
-        delete[] reinterpret_cast<uint8_t*>(_p);
+        g_pMemoryManager->FreePage(reinterpret_cast<void*>(_p));
     }
 
     m_pPageList = nullptr;

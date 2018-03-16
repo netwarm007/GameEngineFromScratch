@@ -2,7 +2,7 @@
 #include "IRuntimeModule.hpp"
 
 namespace My {
-    class IGameLogic : implements IRuntimeModule
+    Interface IGameLogic : implements IRuntimeModule
     {
     public:
         virtual int Initialize() = 0;

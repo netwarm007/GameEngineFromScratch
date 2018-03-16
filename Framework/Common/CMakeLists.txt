@@ -10,6 +10,7 @@ MemoryManager.cpp
 Scene.cpp
 SceneManager.cpp
 SceneObject.cpp
+StackAllocator.cpp
 main.cpp
 )
 target_link_libraries(Common 

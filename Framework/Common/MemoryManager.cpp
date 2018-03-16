@@ -1,87 +1,58 @@
-#include "MemoryManager.hpp"
+#include <cassert>
 #include <cstdlib>
-
-#ifndef ALIGN
-#define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
-#endif
+#include <iostream>
+#include "MemoryManager.hpp"
 
 using namespace My;
+using namespace std;
 
 int MemoryManager::Initialize()
 {
-    if (!m_bInitialized) {
-        // initialize block size lookup table
-        m_pBlockSizeLookup = new size_t[kMaxBlockSize + 1];
-        size_t j = 0;
-        for (size_t i = 0; i <= kMaxBlockSize; i++) {
-            if (i > kBlockSizes[j]) ++j;
-            m_pBlockSizeLookup[i] = j;
-        }
-
-        // initialize the allocators
-        m_pBlockAllocators = new BlockAllocator[kNumBlockSizes];
-        for (size_t i = 0; i < kNumBlockSizes; i++) {
-            m_pBlockAllocators[i].Reset(kBlockSizes[i], kPageSize, kAlignment);
-        }
-
-        m_bInitialized = true;
-    }
-
     return 0;
 }
 
 void MemoryManager::Finalize()
 {
-    delete[] m_pBlockAllocators;
-    delete[] m_pBlockSizeLookup;
-    m_bInitialized = false;
+    assert(m_mapMemoryAllocationInfo.size() == 0);
 }
 
 void MemoryManager::Tick()
 {
+#if DEBUG
+    static int count = 0;
+
+    if (count++ == 3600)
+    {
+        for (auto info : m_mapMemoryAllocationInfo)
+        {
+            cerr << info.first << '\t';
+            out << info.second.PageMemoryType;
+            out << info.second.PageSize;
+        }
+    }
+#endif
 }
 
-IAllocator* MemoryManager::LookUpAllocator(size_t size)
-{
-    // check eligibility for lookup
-    if (size <= kMaxBlockSize)
-        return m_pBlockAllocators + m_pBlockSizeLookup[size];
-    else
-        return nullptr;
-}
-
-void* MemoryManager::Allocate(size_t size)
-{
-    IAllocator* pAlloc = LookUpAllocator(size);
-    if (pAlloc)
-        return pAlloc->Allocate(size);
-    else
-        return malloc(size);
-}
-
-void* MemoryManager::Allocate(size_t size, size_t alignment)
+void* MemoryManager::AllocatePage(size_t size)
 {
     uint8_t* p;
-    size += alignment;
-    IAllocator* pAlloc = LookUpAllocator(size);
-    if (pAlloc)
-        p = reinterpret_cast<uint8_t*>(pAlloc->Allocate(size));
-    else
-        p = reinterpret_cast<uint8_t*>(malloc(size));
 
-    p = reinterpret_cast<uint8_t*>(ALIGN(reinterpret_cast<size_t>(p), alignment));
-    
+    p = static_cast<uint8_t*>(malloc(size));
+    if (p)
+    {
+        MemoryAllocationInfo info = {size, MemoryType::CPU};
+        m_mapMemoryAllocationInfo.insert({p, info});
+    }
+
     return static_cast<void*>(p);
 }
 
-void MemoryManager::Free(void* p, size_t size)
+void MemoryManager::FreePage(void* p)
 {
-    if (m_bInitialized) {
-        IAllocator* pAlloc = LookUpAllocator(size);
-        if (pAlloc)
-            pAlloc->Free(p);
-        else
-            free(p);
+    auto it = m_mapMemoryAllocationInfo.find(p);
+    if (it != m_mapMemoryAllocationInfo.end())
+    {
+        m_mapMemoryAllocationInfo.erase(it);
+        free(p);
     }
 }
-
