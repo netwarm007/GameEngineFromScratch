@@ -147,8 +147,6 @@ void My::Allocator::FillAllocatedBlock(BlockHeader *pBlock)
                 PATTERN_ALIGN, m_szAlignmentSize);
 }
  
-<<<<<<< HEAD
-=======
 #endif
 
 >>>>>>> 820afc8ff64879a3b7d19a4ee2585495d7270f96
@@ -157,8 +155,5 @@ My::BlockHeader* My::Allocator::NextBlock(BlockHeader *pBlock)
     return reinterpret_cast<BlockHeader *>(reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize);
 }
 
-<<<<<<< HEAD
 #endif
-=======
->>>>>>> 820afc8ff64879a3b7d19a4ee2585495d7270f96
 
