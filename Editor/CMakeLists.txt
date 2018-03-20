@@ -7,7 +7,7 @@ add_executable(Editor
 ENDIF(APPLE)
 IF(WIN32)
     target_link_libraries(Editor
-                            BulletPhysics
+                            MyPhysics
                             MyGameEngineOpenGL
                         )
     add_custom_command(TARGET Editor POST_BUILD
@@ -16,7 +16,7 @@ IF(WIN32)
             $<TARGET_FILE_DIR:Editor>)
 ELSE(WIN32)
     target_link_libraries(Editor
-                            BulletPhysics
+                            MyPhysics
                             MyGameEngine
                         )
 ENDIF(WIN32)

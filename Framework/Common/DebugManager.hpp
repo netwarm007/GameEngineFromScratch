@@ -14,6 +14,9 @@ namespace My {
         void DrawDebugInfo();
 
     protected:
+        void DrawAxis();
+        void DrawGrid();
+
         bool m_bDrawDebugInfo = false;
     };
 

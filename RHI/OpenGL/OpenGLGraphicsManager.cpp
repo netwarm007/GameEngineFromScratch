@@ -900,6 +900,48 @@ void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Vector
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
+void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
+{
+    auto count = vertices.size();
+    assert(count >= 3);
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id;
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(1, &buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+    Vector3f* data = new Vector3f[count];
+    for(auto i = 0; i < count; i++)
+    {
+        data[i] = *vertices[i];
+        TransformCoord(data[i], trans);
+    }
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3f) * count, data, GL_STATIC_DRAW);
+    delete[] data;
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    m_DebugBuffers.push_back(buffer_id);
+
+    DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
+    dbc.vao     = vao;
+    dbc.mode    = GL_TRIANGLES;
+    dbc.count   = vertices.size();
+    dbc.color   = color * 0.5f;
+
+    m_DebugDrawBatchContext.push_back(std::move(dbc));
+}
+
 void OpenGLGraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
 {
     auto count = vertices.size();

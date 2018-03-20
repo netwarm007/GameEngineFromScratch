@@ -26,6 +26,7 @@ namespace My {
         void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color);
         void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
         void DrawTriangle(const PointList& vertices, const Vector3f& color);
+        void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color);
         void DrawTriangleStrip(const PointList& vertices, const Vector3f& color);
         void ClearDebugBuffers();
 #endif

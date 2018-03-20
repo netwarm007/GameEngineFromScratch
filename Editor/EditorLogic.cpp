@@ -10,8 +10,18 @@ int EditorLogic::Initialize()
     int result;
 
     cout << "[EditorLogic] Editor Logic Initialize" << endl;
-    cout << "[EditorLogic] Loading Splash Scene" << endl;
-    result = g_pSceneManager->LoadScene("Scene/splash.ogex");
+
+    if (g_pApp->GetCommandLineArgumentsCount() > 1)
+    {
+        auto scene_filename = g_pApp->GetCommandLineArgument(1);
+        cout << "[EditorLogic] Loading Scene: " << scene_filename << endl;
+        result = g_pSceneManager->LoadScene(scene_filename);
+    }
+    else
+    {
+        cout << "[EditorLogic] Loading Splash Scene" << endl;
+        result = g_pSceneManager->LoadScene("Scene/splash.ogex");
+    }
 
     return result;
 }

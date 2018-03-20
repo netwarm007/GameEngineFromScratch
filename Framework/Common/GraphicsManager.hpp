@@ -24,9 +24,12 @@ namespace My {
         virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
         virtual void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
+        virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
         virtual void DrawPolygon(const Face& face, const Vector3f& color);
+        virtual void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
         virtual void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
+        virtual void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
         virtual void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
         virtual void ClearDebugBuffers();
 #endif

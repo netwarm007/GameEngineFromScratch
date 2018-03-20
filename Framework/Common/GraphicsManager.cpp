@@ -175,6 +175,12 @@ void GraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& co
         << color << ")" << endl;
 }
 
+void GraphicsManager::DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawTriangle(" << vertices.size() << ","
+        << color << ")" << endl;
+}
+
 void GraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawTriangleStrip(" << vertices.size() << ","
@@ -194,11 +200,35 @@ void GraphicsManager::DrawPolygon(const Face& polygon, const Vector3f& color)
     DrawTriangle(polygon.GetVertices(), color);
 }
 
+void GraphicsManager::DrawPolygon(const Face& polygon, const Matrix4X4f& trans, const Vector3f& color)
+{
+    PointSet vertices;
+    for (auto pEdge : polygon.Edges)
+    {
+        Point a = *pEdge->first, b = *pEdge->second;
+        TransformCoord(a, trans);
+        TransformCoord(b, trans);
+        DrawLine(a, b, color);
+        vertices.insert({make_shared<Point>(a), make_shared<Point>(b)});
+    }
+    DrawPointSet(vertices, color);
+
+    DrawTriangle(polygon.GetVertices(), trans, color);
+}
+
 void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color)
 {
     for (auto pFace : polyhedron.Faces)
     {
         DrawPolygon(*pFace, color);
+    }
+}
+
+void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color)
+{
+    for (auto pFace : polyhedron.Faces)
+    {
+        DrawPolygon(*pFace, trans, color);
     }
 }
 

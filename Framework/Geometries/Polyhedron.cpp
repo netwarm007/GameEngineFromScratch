@@ -49,6 +49,19 @@ void Polyhedron::GetAabb(const Matrix4X4f& trans,
 
     for (auto pFace : Faces)
     {
-        
+        for (auto pEdge : pFace->Edges)
+        {
+            auto pVertex = pEdge->first;
+            aabbMin.x = (aabbMin.x < pVertex->x)? aabbMin.x : pVertex->x;
+            aabbMin.y = (aabbMin.y < pVertex->y)? aabbMin.y : pVertex->y;
+            aabbMin.z = (aabbMin.z < pVertex->z)? aabbMin.z : pVertex->z;
+            aabbMax.x = (aabbMax.x > pVertex->x)? aabbMax.x : pVertex->x;
+            aabbMax.y = (aabbMax.y > pVertex->y)? aabbMax.y : pVertex->y;
+            aabbMax.z = (aabbMax.z > pVertex->z)? aabbMax.z : pVertex->z;
+        }
     }
+
+    Vector3f halfExtents = (aabbMax - aabbMin) * 0.5f;
+    TransformAabb(halfExtents, m_fMargin, trans, 
+                               aabbMin, aabbMax);
 }
