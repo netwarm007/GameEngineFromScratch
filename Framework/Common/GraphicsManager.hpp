@@ -57,6 +57,7 @@ namespace My {
             Matrix4X4f  m_projectionMatrix;
             Vector3f    m_lightPosition;
             Vector4f    m_lightColor;
+            Vector3f    m_ambientColor;
         };
 
         DrawFrameContext    m_DrawFrameContext;

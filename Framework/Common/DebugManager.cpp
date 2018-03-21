@@ -7,6 +7,7 @@
 using namespace My;
 using namespace std;
 
+#ifdef DEBUG
 int DebugManager::Initialize()
 {
     return 0;
@@ -79,3 +80,5 @@ void DebugManager::DrawGrid()
         g_pGraphicsManager->DrawLine(from, to, color);
     }
 }
+
+#endif

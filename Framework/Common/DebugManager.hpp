@@ -1,4 +1,5 @@
 #pragma once
+#ifdef DEBUG
 #include "IRuntimeModule.hpp"
 
 namespace My {
@@ -22,3 +23,5 @@ namespace My {
 
     extern DebugManager* g_pDebugManager;
 }
+
+#endif

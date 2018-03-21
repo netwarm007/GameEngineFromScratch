@@ -205,6 +205,12 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters(GLuint shader)
     }
     glUniform4fv(location, 1, m_DrawFrameContext.m_lightColor);
 
+    location = glGetUniformLocation(shader, "ambientColor");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform4fv(location, 1, m_DrawFrameContext.m_ambientColor);
     return true;
 }
 

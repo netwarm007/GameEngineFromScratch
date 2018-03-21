@@ -119,6 +119,8 @@ void GraphicsManager::CalculateCameraMatrix()
 
 void GraphicsManager::CalculateLights()
 {
+    m_DrawFrameContext.m_ambientColor = {0.01f, 0.01f, 0.01f};
+
     auto& scene = g_pSceneManager->GetSceneForRendering();
     auto pLightNode = scene.GetFirstLightNode();
     if (pLightNode) {
