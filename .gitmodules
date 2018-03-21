@@ -28,3 +28,6 @@
 [submodule "libcxxabi"]
 	path = External/src/libcxxabi
 	url = http://llvm.org/git/libcxxabi
+[submodule "freetype"]
+	path = External/src/freetype
+	url = git://git.savannah.gnu.org/freetype/freetype2.git
