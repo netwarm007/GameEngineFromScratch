@@ -47,6 +47,7 @@ namespace My {
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const float param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const int param);
+        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const bool param);
         bool SetPerFrameShaderParameters(GLuint shader);
 
     private:

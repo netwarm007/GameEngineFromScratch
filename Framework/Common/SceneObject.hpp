@@ -443,6 +443,7 @@ namespace My {
             const Color& GetBaseColor() const { return m_BaseColor; };
             const Color& GetSpecularColor() const { return m_Specular; };
             const Parameter& GetSpecularPower() const { return m_SpecularPower; };
+            const Normal& GetNormal() const { return m_Normal; };
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
             void SetColor(const std::string& attrib, const Vector4f& color) 

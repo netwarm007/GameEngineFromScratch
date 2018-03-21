@@ -270,6 +270,20 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const cha
 	return true;
 }
 
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const bool param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(shader, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1f(location, param);
+
+	return true;
+}
+
 void OpenGLGraphicsManager::InitializeBuffers(const Scene& scene)
 {
     // Geometries
@@ -518,14 +532,26 @@ void OpenGLGraphicsManager::RenderBuffers()
         delete[] pIndicies;
         */
 
+        SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", false);
+        SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", false);
+
         if (dbc.material) {
             Color color = dbc.material->GetBaseColor();
             if (color.ValueMap) {
-                SetPerBatchShaderParameters(m_shaderProgram, "defaultSampler", m_TextureIndex[color.ValueMap->GetName()]);
+                SetPerBatchShaderParameters(m_shaderProgram, "diffuseMap", m_TextureIndex[color.ValueMap->GetName()]);
                 // set this to tell shader to use texture
-                SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", Vector3f(-1.0f));
-            } else {
+                SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", true);
+            }
+            else
+            {
                 SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", color.Value.rgb);
+            }
+
+            Normal normal = dbc.material->GetNormal();
+            if (normal.ValueMap) {
+                SetPerBatchShaderParameters(m_shaderProgram, "normalMap", m_TextureIndex[normal.ValueMap->GetName()]);
+                // set this to tell shader to use texture
+                SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", true);
             }
 
             color = dbc.material->GetSpecularColor();
