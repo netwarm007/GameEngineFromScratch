@@ -26,11 +26,12 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
-        virtual void DrawPolygon(const Face& face, const Vector3f& color);
-        virtual void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
-        virtual void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
-        virtual void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
-        virtual void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
+        void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
+        void DrawPolygon(const Face& face, const Vector3f& color);
+        void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
+        void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
         virtual void ClearDebugBuffers();
 #endif
 
@@ -45,6 +46,9 @@ namespace My {
         virtual void CalculateLights();
         virtual void UpdateConstants();
         virtual void RenderBuffers();
+#ifdef DEBUG
+        virtual void RenderDebugBuffers();
+#endif
 
     protected:
         struct DrawFrameContext {

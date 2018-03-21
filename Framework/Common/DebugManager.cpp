@@ -19,7 +19,6 @@ void DebugManager::Finalize()
 
 void DebugManager::Tick()
 {
-#ifdef DEBUG
     g_pGraphicsManager->ClearDebugBuffers();
 
     if(m_bDrawDebugInfo)
@@ -28,22 +27,17 @@ void DebugManager::Tick()
         g_pPhysicsManager->DrawDebugInfo();
         g_pGameLogic->DrawDebugInfo();
     }
-#endif
 }
 
 void DebugManager::ToggleDebugInfo()
 {
-#ifdef DEBUG
     m_bDrawDebugInfo = !m_bDrawDebugInfo;
-#endif
 }
 
 void DebugManager::DrawDebugInfo()
 {
-#ifdef DEBUG
     DrawGrid();
     DrawAxis();
-#endif
 }
 
 void DebugManager::DrawAxis()

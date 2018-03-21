@@ -60,6 +60,9 @@ void GraphicsManager::Draw()
     UpdateConstants();
 
     RenderBuffers();
+#ifdef DEBUG
+    RenderDebugBuffers();
+#endif
 }
 
 void GraphicsManager::InitConstants()
@@ -149,6 +152,11 @@ void GraphicsManager::RenderBuffers()
     cout << "[GraphicsManager] GraphicsManager::RenderBuffers()" << endl;
 }
 
+void GraphicsManager::RenderDebugBuffers()
+{
+    cout << "[GraphicsManager] GraphicsManager::RenderDebugBuffers()" << endl;
+}
+
 #ifdef DEBUG
 void GraphicsManager::DrawPoint(const Point& point, const Vector3f& color)
 {
@@ -167,6 +175,14 @@ void GraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, const V
     cout << "[GraphicsManager] GraphicsManager::DrawLine(" << from << ","
         << to << "," 
         << color << ")" << endl;
+}
+
+void GraphicsManager::DrawEdgeList(const EdgeList& edges, const Vector3f& color)
+{
+    for (auto edge : edges)
+    {
+        DrawLine(*edge->first, *edge->second, color);
+    }
 }
 
 void GraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
@@ -234,9 +250,48 @@ void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4
 
 void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawBox(" << bbMin << ","
-        << bbMax << "," 
-        << color << ")" << endl;
+    //  ******0--------3********
+    //  *****/:       /|********
+    //  ****1--------2 |********
+    //  ****| :      | |********
+    //  ****| 4- - - | 7********
+    //  ****|/       |/*********
+    //  ****5--------6**********
+
+    // vertices
+    PointPtr points[8];
+    for (int i = 0; i < 8; i++)
+        points[i] = make_shared<Point>(bbMin);
+    *points[0] = *points[2] = *points[3] = *points[7] = bbMax;
+    points[0]->x = bbMin.x;
+    points[2]->y = bbMin.y;
+    points[7]->z = bbMin.z;
+    points[1]->z = bbMax.z;
+    points[4]->y = bbMax.y;
+    points[6]->x = bbMax.x;
+
+    // edges
+    EdgeList edges;
+    
+    // top
+    edges.push_back(make_shared<Edge>(make_pair(points[0], points[3])));
+    edges.push_back(make_shared<Edge>(make_pair(points[3], points[2])));
+    edges.push_back(make_shared<Edge>(make_pair(points[2], points[1])));
+    edges.push_back(make_shared<Edge>(make_pair(points[1], points[0])));
+
+    // bottom
+    edges.push_back(make_shared<Edge>(make_pair(points[4], points[7])));
+    edges.push_back(make_shared<Edge>(make_pair(points[7], points[5])));
+    edges.push_back(make_shared<Edge>(make_pair(points[5], points[6])));
+    edges.push_back(make_shared<Edge>(make_pair(points[6], points[7])));
+
+    // side
+    edges.push_back(make_shared<Edge>(make_pair(points[0], points[4])));
+    edges.push_back(make_shared<Edge>(make_pair(points[1], points[5])));
+    edges.push_back(make_shared<Edge>(make_pair(points[2], points[6])));
+    edges.push_back(make_shared<Edge>(make_pair(points[3], points[7])));
+
+    DrawEdgeList(edges, color);
 }
 
 void GraphicsManager::ClearDebugBuffers()
