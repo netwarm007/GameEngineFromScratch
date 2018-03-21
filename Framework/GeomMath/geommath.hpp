@@ -8,6 +8,7 @@
 #include <cmath>
 #include <memory>
 #include <set>
+#include <unordered_set>
 #include <vector>
 #include "CrossProduct.h"
 #include "MulByElement.h"
@@ -741,7 +742,7 @@ namespace My {
 
     typedef Vector3Type<float> Point;
     typedef std::shared_ptr<Point> PointPtr;
-    typedef std::set<PointPtr> PointSet;
+    typedef std::unordered_set<PointPtr> PointSet;
     typedef std::vector<PointPtr> PointList;
     typedef std::pair<PointPtr, PointPtr> Edge;
     inline bool operator==(const Edge& a, const Edge& b)
@@ -753,7 +754,7 @@ namespace My {
     {
         return (a->first == b->first && a->second == b->second) || (a->first == b->second && a->second == b->first);
     }
-    typedef std::set<EdgePtr> EdgeSet;
+    typedef std::unordered_set<EdgePtr> EdgeSet;
     typedef std::vector<EdgePtr> EdgeList;
     struct Face {
         EdgeList    Edges;
@@ -770,7 +771,7 @@ namespace My {
         }
     };
     typedef std::shared_ptr<Face> FacePtr;
-    typedef std::set<FacePtr> FaceSet;
+    typedef std::unordered_set<FacePtr> FaceSet;
     typedef std::vector<FacePtr> FaceList;
 
     inline bool isPointAbovePlane(const PointList& vertices, const Point& point)

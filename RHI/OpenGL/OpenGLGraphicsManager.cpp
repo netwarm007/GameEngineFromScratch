@@ -809,7 +809,7 @@ void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Vector
 void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
 {
     auto count = point_set.size();
-    Point buffer[count];
+    Point* buffer = new Point[count];
     int i = 0;
     for(auto point_ptr : point_set)
     {
@@ -817,6 +817,8 @@ void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Matrix
     }
 
     DrawPoints(buffer, count, trans, color);
+
+    delete[] buffer;
 }
 
 void OpenGLGraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
@@ -905,12 +907,13 @@ void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Matrix
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    Vector3f data[count];
+    Vector3f* data = new Vector3f[count];
     for(auto i = 0; i < count; i++)
     {
         data[i] = *vertices[i];
     }
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3f) * count, data, GL_STATIC_DRAW);
+    delete[] data;
 
     glEnableVertexAttribArray(0);
 
@@ -946,12 +949,13 @@ void OpenGLGraphicsManager::DrawTriangleStrip(const PointList& vertices, const V
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    Vector3f data[count];
+    Vector3f* data = new Vector3f[count];
     for(auto i = 0; i < count; i++)
     {
         data[i] = *vertices[i];
     }
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3f) * count, data, GL_STATIC_DRAW);
+    delete[] data;
 
     glEnableVertexAttribArray(0);
 
