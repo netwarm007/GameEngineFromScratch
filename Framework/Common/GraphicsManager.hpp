@@ -22,7 +22,10 @@ namespace My {
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
         virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
-        virtual void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f &color);
+        virtual void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color);
+        virtual void DrawLine(const Point& from, const Point& to, const Vector3f &color);
+        virtual void DrawLine(const PointList& vertices, const Vector3f &color);
+        virtual void DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);

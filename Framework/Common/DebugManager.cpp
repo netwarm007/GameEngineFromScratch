@@ -65,20 +65,25 @@ void DebugManager::DrawAxis()
 void DebugManager::DrawGrid()
 {
     Vector3f color(0.1f, 0.1f, 0.1f);
+    PointList grid;
 
     for (int x = -100; x <= 100; x += 10)
     {
-        Vector3f from (x, -100.0f, 0.0f);
-        Vector3f to (x, 100.0f, 0.0f);
-        g_pGraphicsManager->DrawLine(from, to, color);
+        PointPtr from = make_shared<Point>(x, -100.0f, 0.0f);
+        PointPtr to = make_shared<Point>(x, 100.0f, 0.0f);
+        grid.push_back(from);
+        grid.push_back(to);
     }
 
     for (int y = -100; y <= 100; y += 10)
     {
-        Vector3f from (-100.0f, y, 0.0f);
-        Vector3f to (100.0f, y, 0.0f);
-        g_pGraphicsManager->DrawLine(from, to, color);
+        PointPtr from = make_shared<Point>(-100.0f, y, 0.0f);
+        PointPtr to = make_shared<Point>(100.0f, y, 0.0f);
+        grid.push_back(from);
+        grid.push_back(to);
     }
+
+    g_pGraphicsManager->DrawLine(grid, color);
 }
 
 #endif

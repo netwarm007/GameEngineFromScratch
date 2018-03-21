@@ -23,7 +23,10 @@ namespace My {
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;
         void DrawPointSet(const PointSet& point_set, const Vector3f& color) final;
-        void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color) final;
+        void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color) final;
+        void DrawLine(const Point& from, const Point& to, const Vector3f& color) final;
+        void DrawLine(const PointList& vertices, const Vector3f& color) final;
+        void DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color) final;
         void DrawTriangle(const PointList& vertices, const Vector3f& color) final;
         void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color) final;
         void DrawTriangleStrip(const PointList& vertices, const Vector3f& color) final;
@@ -38,7 +41,7 @@ namespace My {
         void RenderBuffers() final;
 
     protected:
-        void DrawPoints(const Point* buffer, const size_t count, const Vector3f& color);
+        void DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
 
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Matrix4X4f& param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param);
@@ -72,6 +75,7 @@ namespace My {
             GLenum  mode;
             GLsizei count;
             Vector3f color;
+            Matrix4X4f trans;
         };
 #endif
 
