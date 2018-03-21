@@ -535,22 +535,6 @@ void OpenGLGraphicsManager::RenderBuffers()
     return;
 }
 
-void OpenGLGraphicsManager::RenderDebugBuffers()
-{
-    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    glUseProgram(m_debugShaderProgram);
-
-    SetPerFrameShaderParameters(m_debugShaderProgram);
-
-    for (auto dbc : m_DebugDrawBatchContext)
-    {
-        SetPerBatchShaderParameters(m_debugShaderProgram, "FrontColor", dbc.color);
-
-        glBindVertexArray(dbc.vao);
-        glDrawArrays(dbc.mode, 0x00, dbc.count);
-    }
-}
-
 bool OpenGLGraphicsManager::InitializeShaders()
 {
     const char* vsFilename = VS_SHADER_SOURCE_FILE;
@@ -741,6 +725,7 @@ void OpenGLGraphicsManager::ClearShaders()
 }
 
 #ifdef DEBUG
+
 void OpenGLGraphicsManager::DrawPoint(const Point &point, const Vector3f& color)
 {
     GLuint vao;
@@ -997,6 +982,22 @@ void OpenGLGraphicsManager::ClearDebugBuffers()
     }
 
     m_DebugBuffers.clear();
+}
+
+void OpenGLGraphicsManager::RenderDebugBuffers()
+{
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    glUseProgram(m_debugShaderProgram);
+
+    SetPerFrameShaderParameters(m_debugShaderProgram);
+
+    for (auto dbc : m_DebugDrawBatchContext)
+    {
+        SetPerBatchShaderParameters(m_debugShaderProgram, "FrontColor", dbc.color);
+
+        glBindVertexArray(dbc.vao);
+        glDrawArrays(dbc.mode, 0x00, dbc.count);
+    }
 }
 
 #endif

@@ -152,12 +152,12 @@ void GraphicsManager::RenderBuffers()
     cout << "[GraphicsManager] GraphicsManager::RenderBuffers()" << endl;
 }
 
+#ifdef DEBUG
 void GraphicsManager::RenderDebugBuffers()
 {
     cout << "[GraphicsManager] GraphicsManager::RenderDebugBuffers()" << endl;
 }
 
-#ifdef DEBUG
 void GraphicsManager::DrawPoint(const Point& point, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawPoint(" << point << ","
