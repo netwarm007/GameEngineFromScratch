@@ -850,7 +850,7 @@ void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Matrix
 void OpenGLGraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
     auto count = vertices.size();
-    GLfloat _vertices[3 * count];
+    GLfloat* _vertices = new GLfloat[3 * count];
 
     for (auto i = 0; i < count; i++)
     {
@@ -872,7 +872,9 @@ void OpenGLGraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(_vertices), _vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * count, _vertices, GL_STATIC_DRAW);
+
+    delete[] _vertices;
 
     glEnableVertexAttribArray(0);
 
