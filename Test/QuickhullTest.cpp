@@ -21,19 +21,18 @@ int main(int argc, char** argv)
     auto dice = std::bind(distribution, generator);
 
     QuickHull quick_hull;
+    PointSet point_set;
     cout << "Points Generated:" << endl;
     for(auto i = 0; i < point_num; i++)
     {
         PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());
         cout << *point_ptr;
-        quick_hull.AddPoint(std::move(point_ptr));
+        point_set.insert(std::move(point_ptr));
     }
 
-    quick_hull.Init();
     Polyhedron convex_hull;
-    while (quick_hull.Iterate())
+    while (quick_hull.Iterate(convex_hull, point_set))
     {
-        convex_hull = quick_hull.GetHull();
         cerr << "num of faces after this iteration: " << convex_hull.Faces.size() << endl;
     }
 

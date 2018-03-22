@@ -30,6 +30,24 @@ void MyPhysicsManager::Tick()
         CreateRigidBodies();
         g_pSceneManager->NotifySceneIsPhysicalSimulationQueued();
     }
+    else
+    {
+        auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+
+        // Geometries
+        for (auto _it : scene.GeometryNodes)
+        {
+            auto pGeometryNode = _it.second;
+            if (void* rigidBody = pGeometryNode->RigidBody()) {
+                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                auto pGeometry = _rigidBody->GetCollisionShape();
+                if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron)
+                {
+                    dynamic_pointer_cast<ConvexHull>(pGeometry)->Iterate();
+                }
+            }
+        }
+    }
 }
 
 void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry)
@@ -79,7 +97,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             {
                 // create collision box using convex hull
                 auto bounding_box = geometry.GetBoundingBox();
-                auto collision_box = make_shared<Polyhedron>(geometry.GetConvexHull());
+                auto collision_box = make_shared<ConvexHull>(geometry.GetConvexHull());
 
                 const auto trans = node.GetCalculatedTransform();
                 auto motionState = 

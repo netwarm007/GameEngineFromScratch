@@ -1,7 +1,7 @@
 #include <functional>
 #include <iostream>
 #include <random>
-#include "quickhull.hpp"
+#include "ConvexHull.hpp"
 #include "Gjk.hpp"
 
 using namespace My;
@@ -25,19 +25,18 @@ int main(int argc, char** argv)
         uniform_real_distribution<float> distribution(-1.0f, 1.0f);
         auto dice = std::bind(distribution, generator);
 
-        QuickHull quick_hull;
+        ConvexHull convex_hull;
         cout << "Points Generated:" << endl;
         for(auto i = 0; i < point_num; i++)
         {
             PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());
-            quick_hull.AddPoint(std::move(point_ptr));
+            convex_hull.AddPoint(std::move(point_ptr));
         }
 
-        quick_hull.Init();
-        while (quick_hull.Iterate())
+        while (convex_hull.Iterate())
             ;
 
-        A = quick_hull.GetHull();
+        A = convex_hull.GetHull();
         cerr << "num of faces generated: " << A.Faces.size() << endl;
     }
 
@@ -48,19 +47,18 @@ int main(int argc, char** argv)
         uniform_real_distribution<float> distribution(0.6f, 1.7f);
         auto dice = std::bind(distribution, generator);
 
-        QuickHull quick_hull;
+        ConvexHull convex_hull;
         cout << "Points Generated:" << endl;
         for(auto i = 0; i < point_num; i++)
         {
             PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());
-            quick_hull.AddPoint(std::move(point_ptr));
+            convex_hull.AddPoint(std::move(point_ptr));
         }
 
-        quick_hull.Init();
-        while (quick_hull.Iterate())
+        while (convex_hull.Iterate())
             ;
 
-        B = quick_hull.GetHull();
+        B = convex_hull.GetHull();
         cerr << "num of faces generated: " << B.Faces.size() << endl;
     }
 

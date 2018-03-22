@@ -12,33 +12,17 @@ namespace My {
     public:
         QuickHull() = default;
         ~QuickHull() = default;
-        QuickHull(const PointSet& point_set) : m_PointSet(point_set) {}
-        QuickHull(PointSet&& point_set) : m_PointSet(std::move(point_set)) {}
-        void AddPoint(const Vector3f& new_point) { m_PointSet.insert(std::make_shared<Point>(new_point)); }
-        void AddPoint(const Vector3& new_point) { m_PointSet.insert(std::make_shared<Point>(Vector3f(new_point.x, new_point.y, new_point.z))); }
-        void AddPoint(const PointPtr& new_point) { m_PointSet.insert(new_point); }
-        void AddPoint(PointPtr&& new_point) { m_PointSet.insert(std::move(new_point)); }
-        void AddPointSet(const PointSet& point_set) { m_PointSet.insert(point_set.begin(), point_set.end()); }
-        const PointSet GetPointSet() const { return m_PointSet; }
-        void Init();
-        bool Iterate();
-        const Polyhedron GetHull() const { return m_ConvexHull; }
+        bool Iterate(Polyhedron& hull, PointSet& point_set);
 
     protected:
-        void ComputeInitialTetrahedron();
-        void IterateHull();
-        void AssignPointsToFaces();
+        bool Init(Polyhedron& hull, PointSet& point_set);
+        void IterateHull(Polyhedron& hull, PointSet& point_set); 
+        void AssignPointsToFaces(const Polyhedron& hull, PointSet& point_set);
 
     protected:
-        PointSet m_PointSet;
-        Polyhedron m_ConvexHull;
-
-        // temporary buffers
-        PointSet m_PointWaitProcess;
         std::unordered_multimap<FacePtr, PointPtr> m_PointsAboveFace;
         std::unordered_multimap<PointPtr, FacePtr> m_PointAboveWhichFacies;
 
-    private:
         PointPtr center_of_tetrahedron;
     };
 }

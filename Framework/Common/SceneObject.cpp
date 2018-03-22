@@ -293,9 +293,9 @@ namespace My {
 		return result;
 	}
 
-	Polyhedron SceneObjectMesh::GetConvexHull() const
+	ConvexHull SceneObjectMesh::GetConvexHull() const
 	{
-		QuickHull hull;
+		ConvexHull hull;
 
 		auto count = m_VertexArray.size();
 		for (auto n = 0; n < count; n++)
@@ -328,11 +328,8 @@ namespace My {
 		}
 
 		// calculate the convex hull
-		int iterate_count = 0;
-		hull.Init();
-		while(hull.Iterate() && iterate_count < 100)
-			iterate_count++;
+		hull.Iterate();
 
-		return hull.GetHull();
+		return hull;
 	}
 }
