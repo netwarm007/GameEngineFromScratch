@@ -234,7 +234,7 @@ namespace My {
                 {
                     Polyhedron tetrahedron;
                     tetrahedron.AddTetrahedron(simplex);
-                    FacePtr pNextFace;
+                    FacePtr pNextFace = nullptr;
                     for (auto pFace : tetrahedron.Faces)
                     {
                         if (isPointAbovePlane(pFace, Point(0.0f)))   
