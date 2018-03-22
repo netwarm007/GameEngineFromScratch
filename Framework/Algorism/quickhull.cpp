@@ -153,6 +153,8 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
 {
     AssignPointsToFaces(hull, point_set);
 
+    if (point_set.size() == 0) return;
+
     auto pPoint = *point_set.begin();
     auto pFace = m_PointAboveWhichFacies.find(pPoint)->second;
     float max_distance = 0.0f;
@@ -165,7 +167,7 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
                 [&](decltype(m_PointsAboveFace)::value_type x)
                 { 
                     auto distance = PointToPlaneDistance(vertices, x.second);
-                    if (distance > max_distance)
+                    if (distance >= max_distance)
                     {
                         far_point = x.second;
                         max_distance = distance;

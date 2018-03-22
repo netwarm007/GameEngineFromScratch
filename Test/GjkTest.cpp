@@ -48,7 +48,6 @@ int main(int argc, char** argv)
         auto dice = std::bind(distribution, generator);
 
         ConvexHull convex_hull;
-        cout << "Points Generated:" << endl;
         for(auto i = 0; i < point_num; i++)
         {
             PointPtr point_ptr = make_shared<Point>(dice(), dice(), dice());

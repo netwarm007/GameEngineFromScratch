@@ -26,7 +26,7 @@ namespace My {
                 m_bFullyBuild = !QuickHull::Iterate(*this, m_PointSet); 
             }
 
-            return m_bFullyBuild;
+            return !m_bFullyBuild;
         }
         const PointSet GetPointSet() const { return m_PointSet; }
         const Polyhedron GetHull() const { return *static_cast<const Polyhedron*>(this); }
