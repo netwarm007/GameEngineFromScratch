@@ -641,10 +641,10 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
             void* data = g_pMemoryManager->Allocate(data_size);
             uint8_t* buf = reinterpret_cast<uint8_t*>(data);
             uint8_t* src = reinterpret_cast<uint8_t*>(image.data);
-            for (auto row = 0; row < image.Height; row++) {
+            for (uint32_t row = 0; row < image.Height; row++) {
                 buf = reinterpret_cast<uint8_t*>(data) + row * new_pitch;
                 src = reinterpret_cast<uint8_t*>(image.data) + row * image.pitch;
-                for (auto col = 0; col < image.Width; col++) {
+                for (uint32_t col = 0; col < image.Width; col++) {
                     *(uint32_t*)buf = *(uint32_t*)src;
                     buf[3] = 0;  // set alpha to 0
                     buf += 4;
@@ -680,7 +680,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		srvDesc.Texture2D.MipLevels = -1;
         srvDesc.Texture2D.MostDetailedMip = 0;
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-		int32_t texture_id = m_TextureIndex.size();
+		size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
 		srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
 		m_pDev->CreateShaderResourceView(pTextureBuffer, &srvDesc, srvHandle);
 		m_TextureIndex[texture.GetName()] = texture_id;
@@ -1126,7 +1126,8 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 			auto material = scene.GetMaterial(material_key);
 
 			DrawBatchContext dbc;
-			dbc.count = (UINT)index_array.GetIndexCount();
+			dbc.index_count = (UINT)index_array.GetIndexCount();
+            dbc.property_count = vertexPropertiesCount;
 			if (material) {
                 dbc.material = material;
 			}
@@ -1288,6 +1289,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 
     // do 3D rendering on the back buffer here
 	int32_t i = 0;
+    size_t vertex_buffer_view_offset = 0;
     for (auto dbc : m_DrawBatchContext)
     {
         // CBV Per Batch
@@ -1298,9 +1300,10 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
 
 		// select which vertex buffer(s) to use
-		m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferView[i * 3]);    // POSITION
-		m_pCommandList->IASetVertexBuffers(1, 1, &m_VertexBufferView[i * 3 + 1]);  // NORMAL
-		m_pCommandList->IASetVertexBuffers(2, 1, &m_VertexBufferView[i * 3 + 2]);  // UV
+        for (uint32_t j = 0; j < dbc.property_count; j++)
+        {
+            m_pCommandList->IASetVertexBuffers(j, 1, &m_VertexBufferView[vertex_buffer_view_offset++]);
+        }
 		// select which index buffer to use
 		m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[i]);
 
@@ -1317,7 +1320,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 		}
 
         // draw the vertex buffer to the back buffer
-        m_pCommandList->DrawIndexedInstanced(dbc.count, 1, 0, 0, 0);
+        m_pCommandList->DrawIndexedInstanced(dbc.index_count, 1, 0, 0, 0);
 		i++;
     }
 

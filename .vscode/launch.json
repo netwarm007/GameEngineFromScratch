@@ -20,7 +20,7 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(OpenGL) Launch Editor",
+            "name": "(Windows) Launch Editor",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",

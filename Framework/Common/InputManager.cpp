@@ -162,11 +162,11 @@ void InputManager::LeftMouseButtonUp()
     cerr << "[InputManager] Left Mouse Button Up!" << endl;
 }
 
-void InputManager::LeftMouseDrag(float deltaX, float deltaY)
+void InputManager::LeftMouseDrag(int deltaX, int deltaY)
 {
     cerr << "[InputManager] Left Mouse Dragged! (" 
         << deltaX << ","
         << deltaY << ")"
         << endl;
-    g_pGameLogic->OnAnalogStick(0, deltaX, deltaY);
+    g_pGameLogic->OnAnalogStick(0, (float)deltaX, (float)deltaY);
 }
