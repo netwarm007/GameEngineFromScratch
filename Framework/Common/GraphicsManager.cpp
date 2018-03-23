@@ -295,12 +295,12 @@ void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, cons
     for (int i = 0; i < 8; i++)
         points[i] = make_shared<Point>(bbMin);
     *points[0] = *points[2] = *points[3] = *points[7] = bbMax;
-    points[0]->x = bbMin.x;
-    points[2]->y = bbMin.y;
-    points[7]->z = bbMin.z;
-    points[1]->z = bbMax.z;
-    points[4]->y = bbMax.y;
-    points[6]->x = bbMax.x;
+    points[0]->data[0] = bbMin[0];
+    points[2]->data[1] = bbMin[1];
+    points[7]->data[2] = bbMin[2];
+    points[1]->data[2] = bbMax[2];
+    points[4]->data[1] = bbMax[1];
+    points[6]->data[0] = bbMax[0];
 
     // edges
     EdgeList edges;

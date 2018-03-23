@@ -71,7 +71,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             break;
         case SceneObjectCollisionType::kSceneObjectCollisionTypeBox:
             {
-                auto collision_box = make_shared<Box>(Vector3f(param[0], param[1], param[2]));
+                auto collision_box = make_shared<Box>(Vector3f({param[0], param[1], param[2]}));
 
                 const auto trans = node.GetCalculatedTransform();
                 auto motionState = 
@@ -83,7 +83,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             break;
         case SceneObjectCollisionType::kSceneObjectCollisionTypePlane:
             {
-                auto collision_box = make_shared<Plane>(Vector3f(param[0], param[1], param[2]), param[3]);
+                auto collision_box = make_shared<Plane>(Vector3f({param[0], param[1], param[2]}), param[3]);
 
                 const auto trans = node.GetCalculatedTransform();
                 auto motionState = 
@@ -193,13 +193,13 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
     void MyPhysicsManager::DrawAabb(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass)
     {
         Vector3f bbMin, bbMax;
-        Vector3f color(0.7f, 0.6f, 0.5f);
+        Vector3f color({0.7f, 0.6f, 0.5f});
 
         Matrix4X4f _trans;
         BuildIdentityMatrix(_trans);
-        _trans.data[3][0] = centerOfMass.x * trans.data[0][0]; // scale by x-scale
-        _trans.data[3][1] = centerOfMass.y * trans.data[1][1]; // scale by y-scale
-        _trans.data[3][2] = centerOfMass.z * trans.data[2][2]; // scale by z-scale
+        _trans.data[3][0] = centerOfMass[0] * trans.data[0][0]; // scale by x-scale
+        _trans.data[3][1] = centerOfMass[1] * trans.data[1][1]; // scale by y-scale
+        _trans.data[3][2] = centerOfMass[2] * trans.data[2][2]; // scale by z-scale
         MatrixMultiply(_trans, trans, _trans);
 
         geometry.GetAabb(_trans, bbMin, bbMax);
@@ -208,13 +208,13 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
 
     void MyPhysicsManager::DrawShape(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass)
     {
-        Vector3f color(0.8f, 0.7f, 0.6f);
+        Vector3f color({0.8f, 0.7f, 0.6f});
 
         Matrix4X4f _trans;
         BuildIdentityMatrix(_trans);
-        _trans.data[3][0] = centerOfMass.x * trans.data[0][0]; // scale by x-scale
-        _trans.data[3][1] = centerOfMass.y * trans.data[1][1]; // scale by y-scale
-        _trans.data[3][2] = centerOfMass.z * trans.data[2][2]; // scale by z-scale
+        _trans.data[3][0] = centerOfMass[0] * trans.data[0][0]; // scale by x-scale
+        _trans.data[3][1] = centerOfMass[1] * trans.data[1][1]; // scale by y-scale
+        _trans.data[3][2] = centerOfMass[2] * trans.data[2][2]; // scale by z-scale
         MatrixMultiply(_trans, trans, _trans);
 
         if (geometry.GetGeometryType() == GeometryType::kPolyhydron)

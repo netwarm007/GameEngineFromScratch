@@ -544,7 +544,7 @@ void OpenGLGraphicsManager::RenderBuffers()
             }
             else
             {
-                SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", color.Value.rgb);
+                SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
             }
 
             Normal normal = dbc.material->GetNormal();
@@ -555,7 +555,7 @@ void OpenGLGraphicsManager::RenderBuffers()
             }
 
             color = dbc.material->GetSpecularColor();
-            SetPerBatchShaderParameters(m_shaderProgram, "specularColor", color.Value.rgb);
+            SetPerBatchShaderParameters(m_shaderProgram, "specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
 
             Parameter param = dbc.material->GetSpecularPower();
             SetPerBatchShaderParameters(m_shaderProgram, "specularPower", param.Value);
@@ -854,9 +854,9 @@ void OpenGLGraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f
 
     for (auto i = 0; i < count; i++)
     {
-        _vertices[3 * i] = vertices[i]->x;
-        _vertices[3 * i + 1] = vertices[i]->y;
-        _vertices[3 * i + 2] = vertices[i]->z;
+        _vertices[3 * i] = vertices[i]->data[0];
+        _vertices[3 * i + 1] = vertices[i]->data[1];
+        _vertices[3 * i + 2] = vertices[i]->data[2];
     }
 
     GLuint vao;

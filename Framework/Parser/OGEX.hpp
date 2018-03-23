@@ -373,11 +373,11 @@ namespace My {
                         }
                         else if(kind == "axis")
                         {
-                            rotation = std::make_shared<SceneObjectRotation>(Vector3f(data[0], data[1], data[2]), data[3], object_flag);
+                            rotation = std::make_shared<SceneObjectRotation>(Vector3f({data[0], data[1], data[2]}), data[3], object_flag);
                         }
                         else if(kind == "quaternion")
                         {
-                            rotation = std::make_shared<SceneObjectRotation>(Quaternion(data[0], data[1], data[2], data[3]), object_flag);
+                            rotation = std::make_shared<SceneObjectRotation>(Quaternion({data[0], data[1], data[2], data[3]}), object_flag);
                         }
                         base_node->PrependTransform(std::move(rotation));
                     }

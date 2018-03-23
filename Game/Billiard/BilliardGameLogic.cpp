@@ -36,7 +36,7 @@ void BilliardGameLogic::OnLeftKey()
         auto rigidBody = node->RigidBody();
         if (rigidBody)
         {
-            g_pPhysicsManager->ApplyCentralForce(rigidBody, Vector3f(-100.0f, 0.0f, 0.0f));
+            g_pPhysicsManager->ApplyCentralForce(rigidBody, Vector3f({-100.0f, 0.0f, 0.0f}));
         }
     }
 }

@@ -6,7 +6,7 @@ void Sphere::GetAabb(const Matrix4X4f& trans, Vector3f& aabbMin, Vector3f& aabbM
 {
 	Vector3f center; 
     GetOrigin(center, trans);
-	Vector3f extent(m_fMargin, m_fMargin, m_fMargin);
+	Vector3f extent({m_fMargin, m_fMargin, m_fMargin});
 	aabbMin = center - extent;
 	aabbMax = center + extent;
 }

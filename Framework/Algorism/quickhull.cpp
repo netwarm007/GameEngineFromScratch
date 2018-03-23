@@ -21,17 +21,17 @@ bool QuickHull::Init(Polyhedron& hull, PointSet& point_set)
     // finding the Extreme Points [O(n) complexity]
     for(auto point_ptr : point_set)
     {
-        if(point_ptr->x < ExtremePointXMin->x)
+        if(point_ptr->data[0] < ExtremePointXMin->data[0])
             ExtremePointXMin = point_ptr;
-        if(point_ptr->y < ExtremePointYMin->y)
+        if(point_ptr->data[1] < ExtremePointYMin->data[1])
             ExtremePointYMin = point_ptr;
-        if(point_ptr->z < ExtremePointZMin->z)
+        if(point_ptr->data[2] < ExtremePointZMin->data[2])
             ExtremePointZMin = point_ptr;
-        if(point_ptr->x > ExtremePointXMax->x)
+        if(point_ptr->data[0] > ExtremePointXMax->data[0])
             ExtremePointXMax = point_ptr;
-        if(point_ptr->y > ExtremePointYMax->y)
+        if(point_ptr->data[1] > ExtremePointYMax->data[1])
             ExtremePointYMax = point_ptr;
-        if(point_ptr->z > ExtremePointZMax->z)
+        if(point_ptr->data[2] > ExtremePointZMax->data[2])
             ExtremePointZMax = point_ptr;
     }
 

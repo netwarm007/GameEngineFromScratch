@@ -260,23 +260,23 @@ namespace My {
 						case VertexDataType::kVertexDataTypeFloat3:
 						{
 							const Vector3f* vertex = reinterpret_cast<const Vector3f*>(data) + i;
-							bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
-							bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
-							bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
-							bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
-							bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
-							bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
+							bbmin[0] = (bbmin[0] < vertex->data[0])? bbmin[0] : vertex->data[0];
+							bbmin[1] = (bbmin[1] < vertex->data[1])? bbmin[1] : vertex->data[1];
+							bbmin[2] = (bbmin[2] < vertex->data[2])? bbmin[2] : vertex->data[2];
+							bbmax[0] = (bbmax[0] > vertex->data[0])? bbmax[0] : vertex->data[0];
+							bbmax[1] = (bbmax[1] > vertex->data[1])? bbmax[1] : vertex->data[1];
+							bbmax[2] = (bbmax[2] > vertex->data[2])? bbmax[2] : vertex->data[2];
 							break;
 						}
 						case VertexDataType::kVertexDataTypeDouble3:
 						{
 							const Vector3* vertex = reinterpret_cast<const Vector3*>(data) + i;
-							bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
-							bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
-							bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
-							bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
-							bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
-							bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
+							bbmin[0] = (bbmin[0] < vertex->data[0])? bbmin[0] : vertex->data[0];
+							bbmin[1] = (bbmin[1] < vertex->data[1])? bbmin[1] : vertex->data[1];
+							bbmin[2] = (bbmin[2] < vertex->data[2])? bbmin[2] : vertex->data[2];
+							bbmax[0] = (bbmax[0] > vertex->data[0])? bbmax[0] : vertex->data[0];
+							bbmax[1] = (bbmax[1] > vertex->data[1])? bbmax[1] : vertex->data[1];
+							bbmax[2] = (bbmax[2] > vertex->data[2])? bbmax[2] : vertex->data[2];
 							break;
 						}
 						default:
