@@ -42,7 +42,7 @@ int main(int, char**)
     dynamicsWorld->addRigidBody(fallRigidBody);
 
     for (int i = 0; i < 300; i++) {
-        dynamicsWorld->stepSimulation(1.0f / 60.0f, 10.0f);
+        dynamicsWorld->stepSimulation(1.0f / 60.0f, 10);
 
         btTransform trans;
         fallRigidBody->getMotionState()->getWorldTransform(trans);

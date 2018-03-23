@@ -113,7 +113,7 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
     {
         case WM_CHAR:
             {
-                g_pInputManager->AsciiKeyDown(wParam);
+                g_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
             }
             break;
         case WM_KEYUP:
