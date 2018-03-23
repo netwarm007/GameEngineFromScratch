@@ -51,6 +51,9 @@ add_test(NAME TEST_Bullet COMMAND BulletTest)
 add_executable(NumericalMethodsTest NumericalMethodsTest.cpp)
 add_test(NAME TEST_NumericalMethods COMMAND NumericalMethodsTest)
 
+add_executable(BezierCubic1DTest BezierCubic1DTest.cpp)
+add_test(NAME TEST_BezierCubic1D COMMAND BezierCubic1DTest)
+
 add_executable(QuickhullTest QuickhullTest.cpp)
 target_link_libraries(QuickhullTest Algorism Geometries GeomMath)
 add_test(NAME TEST_Quickhull COMMAND QuickhullTest)
