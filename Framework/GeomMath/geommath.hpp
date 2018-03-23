@@ -81,10 +81,6 @@ namespace My {
 
         operator const T*() const { return reinterpret_cast<const T*>(this); }
 
-        T& operator[](const size_t i) { return data[i]; }
-
-        const T& operator[](const size_t i) const { return data[i]; }
-
         void Set(const T val)
         {
             for (int i = 0; i < N; i++)
