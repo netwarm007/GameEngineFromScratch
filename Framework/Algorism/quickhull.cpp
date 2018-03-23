@@ -220,7 +220,7 @@ void QuickHull::AssignPointsToFaces(const Polyhedron& hull, PointSet& point_set,
         for (auto pFace : hull.Faces)
         {
             float d;
-            if ((d = PointToPlaneDistance(pFace->GetVertices(), **it)) >= 0.0f)
+            if ((d = PointToPlaneDistance(pFace->GetVertices(), **it)) > 0.0f)
             {
 
                 // record all faces
