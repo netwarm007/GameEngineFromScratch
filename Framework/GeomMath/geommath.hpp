@@ -142,7 +142,7 @@ namespace My {
     std::ostream& operator<<(std::ostream& out, Vector<T, N> vector)
     {
         out.precision(4);
-        out.setf(ios::fixed);
+        out.setf(std::ios::fixed);
         out << "( ";
         for (uint32_t i = 0; i < N; i++) {
                 out << vector.data[i] << ((i == N - 1)? ' ' : ',');
