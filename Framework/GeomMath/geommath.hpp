@@ -704,19 +704,24 @@ namespace My {
     typedef std::unordered_set<FacePtr> FaceSet;
     typedef std::vector<FacePtr> FaceList;
 
+    inline float PointToPlaneDistance(const PointList& vertices, const Point& point)
+    {
+        Vector3f normal;
+        float distance;
+        assert(vertices.size() > 2);
+        auto A = vertices[0];
+        auto B = vertices[1];
+        auto C = vertices[2];
+        CrossProduct(normal, *B - *A, *C - *A);
+        Normalize(normal);
+        DotProduct(distance, normal, point - *A);
+
+        return distance;
+    }
+
     inline bool isPointAbovePlane(const PointList& vertices, const Point& point)
     {
-        auto count = vertices.size();
-        assert(count > 2);
-        auto ab = *vertices[1] - *vertices[0];
-        auto ac = *vertices[2] - *vertices[0];
-        Vector3f normal;
-        float cos_theta;
-        CrossProduct(normal, ab, ac);
-        auto dir = point - *vertices[0];
-        DotProduct(cos_theta, normal, dir);
-
-        return cos_theta > 0;
+        return PointToPlaneDistance(vertices, point) > 0;
     }
 
     inline bool isPointAbovePlane(const FacePtr& pface, const Point& point)
@@ -725,21 +730,5 @@ namespace My {
         PointList vertices = {pface->Edges[0]->first, pface->Edges[1]->first, pface->Edges[2]->first};
         return isPointAbovePlane(vertices, point);
     }
-
-    inline float PointToPlaneDistance(const PointList& vertices, const PointPtr& point_ptr)
-    {
-        Vector3f normal;
-        float distance;
-        auto A = vertices[0];
-        auto B = vertices[1];
-        auto C = vertices[2];
-        CrossProduct(normal, *B - *A, *C - *A);
-        Normalize(normal);
-        DotProduct(distance, normal, *point_ptr - *A);
-        distance = std::abs(distance);
-
-        return distance;
-    }
-
 }
 

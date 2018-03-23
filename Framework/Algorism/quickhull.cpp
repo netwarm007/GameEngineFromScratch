@@ -113,7 +113,7 @@ bool QuickHull::Init(Polyhedron& hull, PointSet& point_set)
 
             for (auto point_ptr : point_set)
             {
-                auto distance = PointToPlaneDistance({A,B,C}, point_ptr);
+                auto distance = PointToPlaneDistance({A,B,C}, *point_ptr);
                 if (distance > max_distance)
                 {
                     D = point_ptr;
@@ -151,29 +151,12 @@ bool QuickHull::Iterate(Polyhedron& hull, PointSet& point_set)
 
 void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set) 
 {
-    AssignPointsToFaces(hull, point_set);
+    PointPtr far_point = nullptr;
+    vector<FacePtr> faces;
+
+    AssignPointsToFaces(hull, point_set, far_point, faces);
 
     if (point_set.size() == 0) return;
-
-    auto pPoint = *point_set.begin();
-    auto pFace = m_PointAboveWhichFacies.find(pPoint)->second;
-    float max_distance = 0.0f;
-    auto vertices = pFace->GetVertices();
-    auto range = m_PointsAboveFace.equal_range(pFace);
-    PointPtr far_point = nullptr;
-    for_each(
-                range.first,
-                range.second,
-                [&](decltype(m_PointsAboveFace)::value_type x)
-                { 
-                    auto distance = PointToPlaneDistance(vertices, x.second);
-                    if (distance >= max_distance)
-                    {
-                        far_point = x.second;
-                        max_distance = distance;
-                    }
-                }
-    );
 
     if (far_point)
     {
@@ -181,15 +164,12 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
         // create new faces by connecting all vertices
         // on the border of hole to the new point
         set<Edge> edges_on_hole;
-        auto range = m_PointAboveWhichFacies.equal_range(far_point);
-        assert(range.first != range.second);
         for_each(
-                    range.first,
-                    range.second,
-                    [&](decltype(m_PointAboveWhichFacies)::value_type x)
+                    faces.begin(),
+                    faces.end(),
+                    [&](FacePtr x)
                     { 
-                        auto face_to_be_removed = x.second;
-                        for (auto edge : face_to_be_removed->Edges)
+                        for (auto edge : x->Edges)
                         {
                             Edge reverse_edge = {edge->second, edge->first};
                             if (edges_on_hole.find(*edge) != edges_on_hole.end())
@@ -210,7 +190,7 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
                                 edges_on_hole.insert(*edge);
                             }
                         }
-                        hull.Faces.erase(face_to_be_removed); 
+                        hull.Faces.erase(x); 
                     }
         );
 
@@ -229,26 +209,30 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
     }
 }
 
-void QuickHull::AssignPointsToFaces(const Polyhedron& hull, PointSet& point_set)
+void QuickHull::AssignPointsToFaces(const Polyhedron& hull, PointSet& point_set, PointPtr& far_point, FaceList& faces)
 {
-    m_PointsAboveFace.clear();
-    m_PointAboveWhichFacies.clear();
-
+    float max_distance = 0.0f;
     auto it = point_set.begin();
     while (it != point_set.end())
     {
         bool isInsideHull = true;
+        FaceList tmp;
         for (auto pFace : hull.Faces)
         {
-            if (isPointAbovePlane(pFace->GetVertices(), **it))
+            float d;
+            if ((d = PointToPlaneDistance(pFace->GetVertices(), **it)) >= 0.0f)
             {
-                m_PointsAboveFace.insert({pFace, *it});
 
                 // record all faces
                 // the point can "see" in order to extrude the
                 // convex hull face
-                m_PointAboveWhichFacies.insert({*it, pFace});
+                tmp.push_back(pFace);
                 isInsideHull = false;
+                if (d >= max_distance)
+                {
+                    far_point = *it;
+                    max_distance = d;
+                }
             }
         }
 
@@ -260,6 +244,8 @@ void QuickHull::AssignPointsToFaces(const Polyhedron& hull, PointSet& point_set)
         }
         else
         {
+            if (far_point == *it)
+                faces = tmp;
             it++;
         }
     }
