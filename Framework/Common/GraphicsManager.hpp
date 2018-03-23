@@ -3,6 +3,7 @@
 #include "geommath.hpp"
 #include "Image.hpp"
 #include "Scene.hpp"
+#include "Polyhedron.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
@@ -21,12 +22,19 @@ namespace My {
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
         virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
-        virtual void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f &color);
+        virtual void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color);
+        virtual void DrawLine(const Point& from, const Point& to, const Vector3f &color);
+        virtual void DrawLine(const PointList& vertices, const Vector3f &color);
+        virtual void DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
+        virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
-        virtual void DrawPolygon(const Face& face, const Vector3f& color);
-        virtual void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
-        virtual void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
+        void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
+        void DrawPolygon(const Face& face, const Vector3f& color);
+        void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
+        void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
         virtual void ClearDebugBuffers();
 #endif
 
@@ -41,6 +49,9 @@ namespace My {
         virtual void CalculateLights();
         virtual void UpdateConstants();
         virtual void RenderBuffers();
+#ifdef DEBUG
+        virtual void RenderDebugBuffers();
+#endif
 
     protected:
         struct DrawFrameContext {
@@ -49,6 +60,7 @@ namespace My {
             Matrix4X4f  m_projectionMatrix;
             Vector3f    m_lightPosition;
             Vector4f    m_lightColor;
+            Vector3f    m_ambientColor;
         };
 
         DrawFrameContext    m_DrawFrameContext;

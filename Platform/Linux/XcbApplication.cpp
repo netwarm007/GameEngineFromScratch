@@ -160,8 +160,6 @@ void XcbApplication::Tick()
     } else {
         if(xcb_connection_has_error(m_pConn)) {
             m_bQuit = true;
-        } else {
-	        OnDraw();
         }
     }
 }

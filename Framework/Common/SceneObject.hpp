@@ -14,6 +14,7 @@
 #include "PNG.hpp"
 #include "BMP.hpp"
 #include "TGA.hpp"
+#include "ConvexHull.hpp"
 
 namespace My {
     ENUM(SceneObjectType) {
@@ -27,6 +28,10 @@ namespace My {
         kSceneObjectTypeVertexArray   =   "VARR"_i32,
         kSceneObjectTypeIndexArray    =   "VARR"_i32,
         kSceneObjectTypeGeometry =  "GEOM"_i32,
+        kSceneObjectTypeTransform =  "TRFM"_i32,
+        kSceneObjectTypeTranslate =  "TSLT"_i32,
+        kSceneObjectTypeRotate =  "ROTA"_i32,
+        kSceneObjectTypeScale =  "SCAL"_i32
     };
 
     ENUM(SceneObjectCollisionType) {
@@ -291,6 +296,7 @@ namespace My {
             const SceneObjectIndexArray& GetIndexArray(const size_t index) const { return m_IndexArray[index]; };
             const PrimitiveType& GetPrimitiveType() { return m_PrimitiveType; };
             BoundingBox GetBoundingBox() const;
+            ConvexHull GetConvexHull() const;
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj);
     };
@@ -437,6 +443,7 @@ namespace My {
             const Color& GetBaseColor() const { return m_BaseColor; };
             const Color& GetSpecularColor() const { return m_Specular; };
             const Parameter& GetSpecularPower() const { return m_SpecularPower; };
+            const Normal& GetNormal() const { return m_Normal; };
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
             void SetColor(const std::string& attrib, const Vector4f& color) 
@@ -574,6 +581,7 @@ namespace My {
             const std::weak_ptr<SceneObjectMesh> GetMesh() { return (m_Mesh.empty()? nullptr : m_Mesh[0]); }
             const std::weak_ptr<SceneObjectMesh> GetMeshLOD(size_t lod) { return (lod < m_Mesh.size()? m_Mesh[lod] : nullptr); }
             BoundingBox GetBoundingBox() const { return m_Mesh.empty()? BoundingBox() : m_Mesh[0]->GetBoundingBox(); }
+            ConvexHull GetConvexHull() const { return m_Mesh.empty()? ConvexHull() : m_Mesh[0]->GetConvexHull(); }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj);
     };
@@ -725,19 +733,21 @@ namespace My {
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj);
     };
 
-    class SceneObjectTransform
+    class SceneObjectTransform : public BaseSceneObject
     {
         protected:
             Matrix4X4f m_matrix;
             bool m_bSceneObjectOnly;
 
         public:
-            SceneObjectTransform() { BuildIdentityMatrix(m_matrix); m_bSceneObjectOnly = false; };
+            SceneObjectTransform() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTransform) 
+            { BuildIdentityMatrix(m_matrix); m_bSceneObjectOnly = false; }
 
-            SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) { m_matrix = matrix; m_bSceneObjectOnly = object_only; };
+            SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) : SceneObjectTransform() 
+            { m_matrix = matrix; m_bSceneObjectOnly = object_only; }
 
-            operator Matrix4X4f() { return m_matrix; };
-            operator const Matrix4X4f() const { return m_matrix; };
+            operator Matrix4X4f() { return m_matrix; }
+            operator const Matrix4X4f() const { return m_matrix; }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj);
     };
@@ -745,7 +755,9 @@ namespace My {
     class SceneObjectTranslation : public SceneObjectTransform
     {
         public:
+            SceneObjectTranslation() { m_Type = SceneObjectType::kSceneObjectTypeTranslate; }
             SceneObjectTranslation(const char axis, const float amount, const bool object_only = false)  
+                : SceneObjectTranslation()
             { 
                 switch (axis) {
                     case 'x':
@@ -765,6 +777,7 @@ namespace My {
             }
 
             SceneObjectTranslation(const float x, const float y, const float z, const bool object_only = false) 
+                : SceneObjectTranslation()
             {
                 MatrixTranslation(m_matrix, x, y, z);
                 m_bSceneObjectOnly = object_only;
@@ -774,11 +787,14 @@ namespace My {
     class SceneObjectRotation : public SceneObjectTransform
     {
         public:
-            SceneObjectRotation(const char axis, const float theta)
+            SceneObjectRotation() { m_Type = SceneObjectType::kSceneObjectTypeRotate; }
+            SceneObjectRotation(const char axis, const float theta, const bool object_only = false)
+                : SceneObjectRotation()
             {
                 switch (axis) {
                     case 'x':
                         MatrixRotationX(m_matrix, theta);
+                        break;
                     case 'y':
                         MatrixRotationY(m_matrix, theta);
                         break;
@@ -788,24 +804,34 @@ namespace My {
                     default:
                         assert(0);
                 }
+
+                m_bSceneObjectOnly = object_only;
             }
 
-            SceneObjectRotation(Vector3f& axis, const float theta)
+            SceneObjectRotation(Vector3f axis, const float theta, const bool object_only = false)
+                : SceneObjectRotation()
             {
                 Normalize(axis);
                 MatrixRotationAxis(m_matrix, axis, theta);
+
+                m_bSceneObjectOnly = object_only;
             }
 
-            SceneObjectRotation(const Quaternion quaternion)
+            SceneObjectRotation(const Quaternion quaternion, const bool object_only = false)
+                : SceneObjectRotation()
             {
                 MatrixRotationQuaternion(m_matrix, quaternion);
+
+                m_bSceneObjectOnly = object_only;
             }
     };
 
     class SceneObjectScale : public SceneObjectTransform
     {
         public:
+            SceneObjectScale() { m_Type = SceneObjectType::kSceneObjectTypeScale; }
             SceneObjectScale(const char axis, const float amount)  
+                : SceneObjectScale()
             { 
                 switch (axis) {
                     case 'x':
@@ -823,6 +849,7 @@ namespace My {
             }
 
             SceneObjectScale(const float x, const float y, const float z) 
+                : SceneObjectScale()
             {
                 MatrixScale(m_matrix, x, y, z);
             }

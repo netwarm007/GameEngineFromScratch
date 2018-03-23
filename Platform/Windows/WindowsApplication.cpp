@@ -111,11 +111,6 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
     // sort through and find what code to run for the message given
     switch(message)
     {
-        case WM_PAINT:
-            {
-                g_pApp->OnDraw();
-            }
-            break;
         case WM_CHAR:
             {
                 g_pInputManager->AsciiKeyDown(wParam);

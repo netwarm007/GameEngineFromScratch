@@ -30,6 +30,24 @@ void MyPhysicsManager::Tick()
         CreateRigidBodies();
         g_pSceneManager->NotifySceneIsPhysicalSimulationQueued();
     }
+    else
+    {
+        auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+
+        // Geometries
+        for (auto _it : scene.GeometryNodes)
+        {
+            auto pGeometryNode = _it.second;
+            if (void* rigidBody = pGeometryNode->RigidBody()) {
+                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                auto pGeometry = _rigidBody->GetCollisionShape();
+                if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron)
+                {
+                    dynamic_pointer_cast<ConvexHull>(pGeometry)->Iterate();
+                }
+            }
+        }
+    }
 }
 
 void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry)
@@ -77,9 +95,9 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             break;
         default:
             {
-                // create AABB box according to Bounding Box 
+                // create collision box using convex hull
                 auto bounding_box = geometry.GetBoundingBox();
-                auto collision_box = make_shared<Box>(bounding_box.extent);
+                auto collision_box = make_shared<ConvexHull>(geometry.GetConvexHull());
 
                 const auto trans = node.GetCalculatedTransform();
                 auto motionState = 
@@ -167,6 +185,7 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
                 auto trans = motionState->GetTransition();
                 auto pGeometry = _rigidBody->GetCollisionShape();
                 DrawAabb(*pGeometry, trans, centerOfMass);
+                DrawShape(*pGeometry, trans, centerOfMass);
             }
         }
     }
@@ -185,5 +204,22 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
 
         geometry.GetAabb(_trans, bbMin, bbMax);
         g_pGraphicsManager->DrawBox(bbMin, bbMax, color);
+    }
+
+    void MyPhysicsManager::DrawShape(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass)
+    {
+        Vector3f color(0.8f, 0.7f, 0.6f);
+
+        Matrix4X4f _trans;
+        BuildIdentityMatrix(_trans);
+        _trans.data[3][0] = centerOfMass.x * trans.data[0][0]; // scale by x-scale
+        _trans.data[3][1] = centerOfMass.y * trans.data[1][1]; // scale by y-scale
+        _trans.data[3][2] = centerOfMass.z * trans.data[2][2]; // scale by z-scale
+        MatrixMultiply(_trans, trans, _trans);
+
+        if (geometry.GetGeometryType() == GeometryType::kPolyhydron)
+        {
+            g_pGraphicsManager->DrawPolyhydron(reinterpret_cast<const Polyhedron&>(geometry), trans, color);
+        }
     }
 #endif

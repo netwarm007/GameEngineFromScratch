@@ -62,9 +62,7 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             // The window is being shown, get it ready.
             if (engine->m_pApp->window != NULL) {
                 auto err = engine->Initialize();
-                if (!err) {
-                    engine->OnDraw();
-                } else {
+                if (err) {
                     LOGF("Engine Initialize Failed. error code = %d", err);
                 }
             }
@@ -93,7 +91,6 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             }
             // Also stop animating.
             engine->m_bAnimating = false;
-            engine->OnDraw();
             break;
     }
 }
@@ -258,10 +255,6 @@ void android_main(struct android_app* state) {
             }
 
             engine->Tick();
-
-            // Drawing is throttled to the screen update rate, so there
-            // is no need to do timing here.
-            engine->OnDraw();
         }
     }
 }

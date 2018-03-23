@@ -205,6 +205,12 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters(GLuint shader)
     }
     glUniform4fv(location, 1, m_DrawFrameContext.m_lightColor);
 
+    location = glGetUniformLocation(shader, "ambientColor");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform4fv(location, 1, m_DrawFrameContext.m_ambientColor);
     return true;
 }
 
@@ -260,6 +266,20 @@ bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const cha
             return false;
     }
     glUniform1i(location, param);
+
+	return true;
+}
+
+bool OpenGLGraphicsManager::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const bool param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(shader, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1f(location, param);
 
 	return true;
 }
@@ -512,14 +532,26 @@ void OpenGLGraphicsManager::RenderBuffers()
         delete[] pIndicies;
         */
 
+        SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", false);
+        SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", false);
+
         if (dbc.material) {
             Color color = dbc.material->GetBaseColor();
             if (color.ValueMap) {
-                SetPerBatchShaderParameters(m_shaderProgram, "defaultSampler", m_TextureIndex[color.ValueMap->GetName()]);
+                SetPerBatchShaderParameters(m_shaderProgram, "diffuseMap", m_TextureIndex[color.ValueMap->GetName()]);
                 // set this to tell shader to use texture
-                SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", Vector3f(-1.0f));
-            } else {
+                SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", true);
+            }
+            else
+            {
                 SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", color.Value.rgb);
+            }
+
+            Normal normal = dbc.material->GetNormal();
+            if (normal.ValueMap) {
+                SetPerBatchShaderParameters(m_shaderProgram, "normalMap", m_TextureIndex[normal.ValueMap->GetName()]);
+                // set this to tell shader to use texture
+                SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", true);
             }
 
             color = dbc.material->GetSpecularColor();
@@ -531,21 +563,6 @@ void OpenGLGraphicsManager::RenderBuffers()
 
         glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
     }
-
-#ifdef DEBUG 
-    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    glUseProgram(m_debugShaderProgram);
-
-    SetPerFrameShaderParameters(m_debugShaderProgram);
-
-    for (auto dbc : m_DebugDrawBatchContext)
-    {
-        SetPerBatchShaderParameters(m_debugShaderProgram, "FrontColor", dbc.color);
-
-        glBindVertexArray(dbc.vao);
-        glDrawArrays(dbc.mode, 0x00, dbc.count);
-    }
-#endif
 
     return;
 }
@@ -740,6 +757,7 @@ void OpenGLGraphicsManager::ClearShaders()
 }
 
 #ifdef DEBUG
+
 void OpenGLGraphicsManager::DrawPoint(const Point &point, const Vector3f& color)
 {
     GLuint vao;
@@ -768,11 +786,12 @@ void OpenGLGraphicsManager::DrawPoint(const Point &point, const Vector3f& color)
     dbc.mode    = GL_POINTS;
     dbc.count   = 1;
     dbc.color   = color;
+    BuildIdentityMatrix(dbc.trans);
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void OpenGLGraphicsManager::DrawPoints(const Point* buffer, const size_t count, const Vector3f& color)
+void OpenGLGraphicsManager::DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color)
 {
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -800,11 +819,20 @@ void OpenGLGraphicsManager::DrawPoints(const Point* buffer, const size_t count, 
     dbc.mode    = GL_POINTS;
     dbc.count   = count;
     dbc.color   = color;
+    dbc.trans   = trans;
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
 void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Vector3f& color)
+{
+    Matrix4X4f trans;
+    BuildIdentityMatrix(trans);
+
+    DrawPointSet(point_set, trans, color);
+}
+
+void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
 {
     auto count = point_set.size();
     Point* buffer = new Point[count];
@@ -814,20 +842,22 @@ void OpenGLGraphicsManager::DrawPointSet(const PointSet& point_set, const Vector
         buffer[i++] = *point_ptr;
     }
 
-    DrawPoints(buffer, count, color);
+    DrawPoints(buffer, count, trans, color);
 
     delete[] buffer;
 }
 
-void OpenGLGraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color)
+void OpenGLGraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
-    GLfloat vertices[6];
-    vertices[0] = from.x;
-    vertices[1] = from.y;
-    vertices[2] = from.z;
-    vertices[3] = to.x;
-    vertices[4] = to.y;
-    vertices[5] = to.z;
+    auto count = vertices.size();
+    GLfloat* _vertices = new GLfloat[3 * count];
+
+    for (auto i = 0; i < count; i++)
+    {
+        _vertices[3 * i] = vertices[i]->x;
+        _vertices[3 * i + 1] = vertices[i]->y;
+        _vertices[3 * i + 2] = vertices[i]->z;
+    }
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -842,7 +872,9 @@ void OpenGLGraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, c
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * count, _vertices, GL_STATIC_DRAW);
+
+    delete[] _vertices;
 
     glEnableVertexAttribArray(0);
 
@@ -853,13 +885,39 @@ void OpenGLGraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, c
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;
     dbc.mode    = GL_LINES;
-    dbc.count   = 2;
+    dbc.count   = count;
     dbc.color   = color;
+    dbc.trans   = trans;
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
+void OpenGLGraphicsManager::DrawLine(const PointList& vertices, const Vector3f& color)
+{
+    Matrix4X4f trans;
+    BuildIdentityMatrix(trans);
+
+    DrawLine(vertices, trans, color);
+}
+
+void OpenGLGraphicsManager::DrawLine(const Point& from, const Point& to, const Vector3f& color)
+{
+    PointList point_list;
+    point_list.push_back(make_shared<Point>(from));
+    point_list.push_back(make_shared<Point>(to));
+
+    DrawLine(point_list, color);
+}
+
 void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
+{
+    Matrix4X4f trans;
+    BuildIdentityMatrix(trans);
+
+    DrawTriangle(vertices, trans, color);
+}
+
+void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
     auto count = vertices.size();
     assert(count >= 3);
@@ -895,7 +953,8 @@ void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Vector
     dbc.vao     = vao;
     dbc.mode    = GL_TRIANGLES;
     dbc.count   = vertices.size();
-    dbc.color   = color * 0.5f;
+    dbc.color   = color;
+    dbc.trans   = trans;
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
@@ -941,130 +1000,6 @@ void OpenGLGraphicsManager::DrawTriangleStrip(const PointList& vertices, const V
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void OpenGLGraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color)
-{
-    GLfloat vertices[12 * 2 * 3];
-
-    // top
-    vertices[0] = bbMax.x;
-    vertices[1] = bbMax.y;
-    vertices[2] = bbMax.z;
-    vertices[3] = bbMax.x;
-    vertices[4] = bbMin.y;
-    vertices[5] = bbMax.z;
-
-    vertices[6] = bbMax.x;
-    vertices[7] = bbMin.y;
-    vertices[8] = bbMax.z;
-    vertices[9] = bbMin.x;
-    vertices[10] = bbMin.y;
-    vertices[11] = bbMax.z;
-
-    vertices[12] = bbMin.x;
-    vertices[13] = bbMin.y;
-    vertices[14] = bbMax.z;
-    vertices[15] = bbMin.x;
-    vertices[16] = bbMax.y;
-    vertices[17] = bbMax.z;
-
-    vertices[18] = bbMin.x;
-    vertices[19] = bbMax.y;
-    vertices[20] = bbMax.z;
-    vertices[21] = bbMax.x;
-    vertices[22] = bbMax.y;
-    vertices[23] = bbMax.z;
-
-    // bottom
-    vertices[24] = bbMax.x;
-    vertices[25] = bbMax.y;
-    vertices[26] = bbMin.z;
-    vertices[27] = bbMax.x;
-    vertices[28] = bbMin.y;
-    vertices[29] = bbMin.z;
-
-    vertices[30] = bbMax.x;
-    vertices[31] = bbMin.y;
-    vertices[32] = bbMin.z;
-    vertices[33] = bbMin.x;
-    vertices[34] = bbMin.y;
-    vertices[35] = bbMin.z;
-
-    vertices[36] = bbMin.x;
-    vertices[37] = bbMin.y;
-    vertices[38] = bbMin.z;
-    vertices[39] = bbMin.x;
-    vertices[40] = bbMax.y;
-    vertices[41] = bbMin.z;
-
-    vertices[42] = bbMin.x;
-    vertices[43] = bbMax.y;
-    vertices[44] = bbMin.z;
-    vertices[45] = bbMax.x;
-    vertices[46] = bbMax.y;
-    vertices[47] = bbMin.z;
-
-    // side 1
-    vertices[48] = bbMax.x;
-    vertices[49] = bbMax.y;
-    vertices[50] = bbMax.z;
-    vertices[51] = bbMax.x;
-    vertices[52] = bbMax.y;
-    vertices[53] = bbMin.z;
-
-    // side 2
-    vertices[54] = bbMin.x;
-    vertices[55] = bbMax.y;
-    vertices[56] = bbMax.z;
-    vertices[57] = bbMin.x;
-    vertices[58] = bbMax.y;
-    vertices[59] = bbMin.z;
-
-    // side 3
-    vertices[60] = bbMin.x;
-    vertices[61] = bbMin.y;
-    vertices[62] = bbMax.z;
-    vertices[63] = bbMin.x;
-    vertices[64] = bbMin.y;
-    vertices[65] = bbMin.z;
-
-    // side 4
-    vertices[66] = bbMax.x;
-    vertices[67] = bbMin.y;
-    vertices[68] = bbMax.z;
-    vertices[69] = bbMax.x;
-    vertices[70] = bbMin.y;
-    vertices[71] = bbMin.z;
-
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-
-    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
-    glBindVertexArray(vao);
-
-    GLuint buffer_id;
-
-    // Generate an ID for the vertex buffer.
-    glGenBuffers(1, &buffer_id);
-
-    // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
-    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-
-    m_DebugBuffers.push_back(buffer_id);
-
-    DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
-    dbc.vao     = vao;
-    dbc.mode    = GL_LINES;
-    dbc.count   = 24;
-    dbc.color   = color;
-
-    m_DebugDrawBatchContext.push_back(std::move(dbc));
-}
-
 void OpenGLGraphicsManager::ClearDebugBuffers()
 {
     for (auto dbc : m_DebugDrawBatchContext) {
@@ -1078,6 +1013,23 @@ void OpenGLGraphicsManager::ClearDebugBuffers()
     }
 
     m_DebugBuffers.clear();
+}
+
+void OpenGLGraphicsManager::RenderDebugBuffers()
+{
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    glUseProgram(m_debugShaderProgram);
+
+    SetPerFrameShaderParameters(m_debugShaderProgram);
+
+    for (auto dbc : m_DebugDrawBatchContext)
+    {
+        SetPerBatchShaderParameters(m_debugShaderProgram, "FrontColor", dbc.color);
+        SetPerBatchShaderParameters(m_debugShaderProgram, "modelMatrix", dbc.trans);
+
+        glBindVertexArray(dbc.vao);
+        glDrawArrays(dbc.mode, 0x00, dbc.count);
+    }
 }
 
 #endif

@@ -328,12 +328,12 @@ namespace My {
                                 // ExchangeYandZ(matrix);
                             }
                             transform = std::make_shared<SceneObjectTransform>(matrix, object_flag);
-                            base_node->AppendTransform(std::move(transform));
+                            base_node->PrependTransform(std::move(transform));
                         }
                     }
                     return;
                 case OGEX::kStructureTranslation:
-                {
+                    {
                         const OGEX::TranslationStructure& _structure = dynamic_cast<const OGEX::TranslationStructure&>(structure);
                         bool object_flag = _structure.GetObjectFlag();
                         std::shared_ptr<SceneObjectTranslation> translation;
@@ -348,9 +348,40 @@ namespace My {
                         {
                             translation = std::make_shared<SceneObjectTranslation>(kind[0], data[0], object_flag);
                         }
-                        base_node->AppendTransform(std::move(translation));
-                }
-                return;
+                        base_node->PrependTransform(std::move(translation));
+                    }
+                    return;
+                case OGEX::kStructureRotation:
+                    {
+                        const OGEX::RotationStructure& _structure = dynamic_cast<const OGEX::RotationStructure&>(structure);
+                        bool object_flag = _structure.GetObjectFlag();
+                        std::shared_ptr<SceneObjectRotation> rotation;
+
+                        auto kind = _structure.GetRotationKind();
+                        auto data = _structure.GetRotation();
+                        if(kind == "x")
+                        {
+                            rotation = std::make_shared<SceneObjectRotation>('x', data[0], object_flag);
+                        }
+                        else if(kind == "y")
+                        {
+                            rotation = std::make_shared<SceneObjectRotation>('y', data[0], object_flag);
+                        }
+                        else if(kind == "z")
+                        {
+                            rotation = std::make_shared<SceneObjectRotation>('z', data[0], object_flag);
+                        }
+                        else if(kind == "axis")
+                        {
+                            rotation = std::make_shared<SceneObjectRotation>(Vector3f(data[0], data[1], data[2]), data[3], object_flag);
+                        }
+                        else if(kind == "quaternion")
+                        {
+                            rotation = std::make_shared<SceneObjectRotation>(Quaternion(data[0], data[1], data[2], data[3]), object_flag);
+                        }
+                        base_node->PrependTransform(std::move(rotation));
+                    }
+                    return;
                 case OGEX::kStructureMaterial:
                     {
                         const OGEX::MaterialStructure& _structure = dynamic_cast<const OGEX::MaterialStructure&>(structure);

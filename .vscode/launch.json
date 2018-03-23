@@ -4,25 +4,33 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
-            "name": "Launch Billiard Game",
+            "name": "(Mac OS)(OpenGL) Launch Editor",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
+            "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
+            "args": [
+                "Scene/Rocks_02.ogex"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
-            "windows": {
-                "type": "cppvsdbg",
-                "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe"
-            },
-            "linux": {
-                "MIMode": "lldb"
-            },
-            "osx": {
-                "MIMode": "lldb"
-            }
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(Windows)(OpenGL) Launch Editor",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
+            "args": [
+                "Scene/Rocks_02.ogex"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
         }
     ]
 }

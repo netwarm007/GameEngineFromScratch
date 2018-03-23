@@ -86,4 +86,8 @@ using namespace My;
     }
 }
 
+- (void)scrollWheel:(NSEvent *)theEvent {
+        g_pInputManager->LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+}
+
 @end

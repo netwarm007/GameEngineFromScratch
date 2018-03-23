@@ -12,38 +12,43 @@
 namespace My {
     class OpenGLGraphicsManager : public GraphicsManager
     {
-    public:
-        int Initialize();
-        void Finalize();
+        // overrides
+        int Initialize() final;
+        void Finalize() final;
 
-        void Clear();
+        void Clear() final;
 
-        void Draw();
+        void Draw() final;
 
 #ifdef DEBUG
-        void DrawPoint(const Point& point, const Vector3f& color);
-        void DrawPointSet(const PointSet& point_set, const Vector3f& color);
-        void DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color);
-        void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
-        void DrawTriangle(const PointList& vertices, const Vector3f& color);
-        void DrawTriangleStrip(const PointList& vertices, const Vector3f& color);
-        void ClearDebugBuffers();
+        void DrawPoint(const Point& point, const Vector3f& color) final;
+        void DrawPointSet(const PointSet& point_set, const Vector3f& color) final;
+        void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color) final;
+        void DrawLine(const Point& from, const Point& to, const Vector3f& color) final;
+        void DrawLine(const PointList& vertices, const Vector3f& color) final;
+        void DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color) final;
+        void DrawTriangle(const PointList& vertices, const Vector3f& color) final;
+        void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color) final;
+        void DrawTriangleStrip(const PointList& vertices, const Vector3f& color) final;
+        void ClearDebugBuffers() final;
+        void RenderDebugBuffers();
 #endif
 
+        void InitializeBuffers(const Scene& scene) final;
+        void ClearBuffers() final;
+        bool InitializeShaders() final;
+        void ClearShaders() final;
+        void RenderBuffers() final;
+
     protected:
-        void DrawPoints(const Point* buffer, const size_t count, const Vector3f& color);
+        void DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
 
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Matrix4X4f& param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const float param);
         bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const int param);
+        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const bool param);
         bool SetPerFrameShaderParameters(GLuint shader);
-
-        void InitializeBuffers(const Scene& scene);
-        void ClearBuffers();
-        bool InitializeShaders();
-        void ClearShaders();
-        void RenderBuffers();
 
     private:
         GLuint m_vertexShader;
@@ -71,6 +76,7 @@ namespace My {
             GLenum  mode;
             GLsizei count;
             Vector3f color;
+            Matrix4X4f trans;
         };
 #endif
 

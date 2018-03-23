@@ -8,6 +8,7 @@
 #include <cmath>
 #include <memory>
 #include <set>
+#include <unordered_set>
 #include <vector>
 #include "CrossProduct.h"
 #include "MulByElement.h"
@@ -741,7 +742,7 @@ namespace My {
 
     typedef Vector3Type<float> Point;
     typedef std::shared_ptr<Point> PointPtr;
-    typedef std::set<PointPtr> PointSet;
+    typedef std::unordered_set<PointPtr> PointSet;
     typedef std::vector<PointPtr> PointList;
     typedef std::pair<PointPtr, PointPtr> Edge;
     inline bool operator==(const Edge& a, const Edge& b)
@@ -749,10 +750,15 @@ namespace My {
         return (a.first == b.first && a.second == b.second) || (a.first == b.second && a.second == b.first);
     }
     typedef std::shared_ptr<Edge> EdgePtr;
-    typedef std::set<EdgePtr> EdgeSet;
+    inline bool operator==(const EdgePtr& a, const EdgePtr& b)
+    {
+        return (a->first == b->first && a->second == b->second) || (a->first == b->second && a->second == b->first);
+    }
+    typedef std::unordered_set<EdgePtr> EdgeSet;
     typedef std::vector<EdgePtr> EdgeList;
     struct Face {
-        EdgeList     Edges;
+        EdgeList    Edges;
+        Vector3f    Normal;
         PointList GetVertices() const 
         {
             PointList vertices;
@@ -765,10 +771,10 @@ namespace My {
         }
     };
     typedef std::shared_ptr<Face> FacePtr;
-    typedef std::set<FacePtr> FaceSet;
+    typedef std::unordered_set<FacePtr> FaceSet;
     typedef std::vector<FacePtr> FaceList;
 
-    inline bool isPointAbovePlane(const PointList& vertices, const PointPtr& point)
+    inline bool isPointAbovePlane(const PointList& vertices, const Point& point)
     {
         auto count = vertices.size();
         assert(count > 2);
@@ -777,10 +783,17 @@ namespace My {
         Vector3f normal;
         float cos_theta;
         CrossProduct(normal, ab, ac);
-        auto dir = *point - *vertices[0];
+        auto dir = point - *vertices[0];
         DotProduct(cos_theta, normal, dir);
 
         return cos_theta > 0;
+    }
+
+    inline bool isPointAbovePlane(const FacePtr& pface, const Point& point)
+    {
+        assert(pface->Edges.size() > 2);
+        PointList vertices = {pface->Edges[0]->first, pface->Edges[1]->first, pface->Edges[2]->first};
+        return isPointAbovePlane(vertices, point);
     }
 
     inline float PointToPlaneDistance(const PointList& vertices, const PointPtr& point_ptr)
@@ -798,40 +811,5 @@ namespace My {
         return distance;
     }
 
-    struct Polyhedron {
-        FaceSet     Faces;
-        void AddFace(PointList vertices, const PointPtr& inner_point)
-        {
-            if (isPointAbovePlane(vertices, inner_point))
-            {
-                std::reverse(std::begin(vertices), std::end(vertices));
-            }
-
-            FacePtr pFace = std::make_shared<Face>();
-            auto count = vertices.size();
-            for (auto i = 0; i < vertices.size(); i++)
-            {
-                pFace->Edges.push_back(std::make_shared<Edge>(vertices[i], vertices[(i + 1)==count?0:i + 1]));
-            }
-            Faces.insert(std::move(pFace));
-        }
-
-        void AddTetrahydron(const PointList vertices)
-        {
-            assert(vertices.size() == 4);
-
-            // ABC
-            AddFace({vertices[0], vertices[1], vertices[2]}, vertices[3]);
-
-            // ABD
-            AddFace({vertices[0], vertices[1], vertices[3]}, vertices[2]);
-
-            // CDB
-            AddFace({vertices[2], vertices[3], vertices[1]}, vertices[0]);
-
-            // ADC
-            AddFace({vertices[0], vertices[3], vertices[2]}, vertices[1]);
-        }
-    };
 }
 

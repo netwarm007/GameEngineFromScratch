@@ -1,4 +1,5 @@
 #include "SceneObject.hpp"
+#include "quickhull.hpp"
 
 using namespace std;
 
@@ -244,7 +245,7 @@ namespace My {
 	BoundingBox SceneObjectMesh::GetBoundingBox() const
 	{
 		Vector3f bbmin (numeric_limits<float>::max());
-		Vector3f bbmax (numeric_limits<float>::min());
+		Vector3f bbmax (numeric_limits<float>::lowest());
 		auto count = m_VertexArray.size();
 		for (auto n = 0; n < count; n++)
 		{
@@ -256,30 +257,30 @@ namespace My {
 				for (auto i = 0; i < vertices_count; i++)
 				{
 					switch(data_type) {
-					case VertexDataType::kVertexDataTypeFloat3:
-					{
-						const Vector3f* vertex = reinterpret_cast<const Vector3f*>(data) + i;
-						bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
-						bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
-						bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
-						bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
-						bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
-						bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
-						break;
-					}
-					case VertexDataType::kVertexDataTypeDouble3:
-					{
-						const Vector3* vertex = reinterpret_cast<const Vector3*>(data) + i;
-						bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
-						bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
-						bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
-						bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
-						bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
-						bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
-						break;
-					}
-					default:
-						assert(0);
+						case VertexDataType::kVertexDataTypeFloat3:
+						{
+							const Vector3f* vertex = reinterpret_cast<const Vector3f*>(data) + i;
+							bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
+							bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
+							bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
+							bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
+							bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
+							bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
+							break;
+						}
+						case VertexDataType::kVertexDataTypeDouble3:
+						{
+							const Vector3* vertex = reinterpret_cast<const Vector3*>(data) + i;
+							bbmin.x = (bbmin.x < vertex->x)? bbmin.x : vertex->x;
+							bbmin.y = (bbmin.y < vertex->y)? bbmin.y : vertex->y;
+							bbmin.z = (bbmin.z < vertex->z)? bbmin.z : vertex->z;
+							bbmax.x = (bbmax.x > vertex->x)? bbmax.x : vertex->x;
+							bbmax.y = (bbmax.y > vertex->y)? bbmax.y : vertex->y;
+							bbmax.z = (bbmax.z > vertex->z)? bbmax.z : vertex->z;
+							break;
+						}
+						default:
+							assert(0);
 					}
 				}
 			}
@@ -290,5 +291,45 @@ namespace My {
 		result.centroid = (bbmax + bbmin) * 0.5f;
 
 		return result;
+	}
+
+	ConvexHull SceneObjectMesh::GetConvexHull() const
+	{
+		ConvexHull hull;
+
+		auto count = m_VertexArray.size();
+		for (auto n = 0; n < count; n++)
+		{
+			if (m_VertexArray[n].GetAttributeName() == "position")
+			{
+				auto data_type = m_VertexArray[n].GetDataType();
+				auto vertices_count = m_VertexArray[n].GetVertexCount();	
+				auto data = m_VertexArray[n].GetData();
+				for (auto i = 0; i < vertices_count; i++)
+				{
+					switch(data_type) {
+						case VertexDataType::kVertexDataTypeFloat3:
+						{
+							const Vector3f* vertex = reinterpret_cast<const Vector3f*>(data) + i;
+							hull.AddPoint(*vertex);
+							break;
+						}
+						case VertexDataType::kVertexDataTypeDouble3:
+						{
+							const Vector3* vertex = reinterpret_cast<const Vector3*>(data) + i;
+							hull.AddPoint(*vertex);
+							break;
+						}
+						default:
+							assert(0);
+					}
+				}
+			}
+		}
+
+		// calculate the convex hull
+		hull.Iterate();
+
+		return hull;
 	}
 }

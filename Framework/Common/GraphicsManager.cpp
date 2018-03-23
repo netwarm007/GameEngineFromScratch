@@ -60,6 +60,9 @@ void GraphicsManager::Draw()
     UpdateConstants();
 
     RenderBuffers();
+#ifdef DEBUG
+    RenderDebugBuffers();
+#endif
 }
 
 void GraphicsManager::InitConstants()
@@ -116,6 +119,8 @@ void GraphicsManager::CalculateCameraMatrix()
 
 void GraphicsManager::CalculateLights()
 {
+    m_DrawFrameContext.m_ambientColor = {0.01f, 0.01f, 0.01f};
+
     auto& scene = g_pSceneManager->GetSceneForRendering();
     auto pLightNode = scene.GetFirstLightNode();
     if (pLightNode) {
@@ -150,6 +155,11 @@ void GraphicsManager::RenderBuffers()
 }
 
 #ifdef DEBUG
+void GraphicsManager::RenderDebugBuffers()
+{
+    cout << "[GraphicsManager] GraphicsManager::RenderDebugBuffers()" << endl;
+}
+
 void GraphicsManager::DrawPoint(const Point& point, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawPoint(" << point << ","
@@ -162,14 +172,53 @@ void GraphicsManager::DrawPointSet(const PointSet& point_set, const Vector3f& co
         << color << ")" << endl;
 }
 
-void GraphicsManager::DrawLine(const Vector3f& from, const Vector3f& to, const Vector3f& color)
+void GraphicsManager::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawPointSet(" << point_set.size() << ","
+        << trans << "," 
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawLine(const Point& from, const Point& to, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawLine(" << from << ","
         << to << "," 
         << color << ")" << endl;
 }
 
+void GraphicsManager::DrawLine(const PointList& vertices, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawLine(" << vertices.size() << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawLine(" << vertices.size() << ","
+        << trans << "," 
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawEdgeList(const EdgeList& edges, const Vector3f& color)
+{
+    PointList point_list;
+
+    for (auto edge : edges)
+    {
+        point_list.push_back(edge->first);
+        point_list.push_back(edge->second);
+    }
+
+    DrawLine(point_list, color);
+}
+
 void GraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
+{
+    cout << "[GraphicsManager] GraphicsManager::DrawTriangle(" << vertices.size() << ","
+        << color << ")" << endl;
+}
+
+void GraphicsManager::DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
     cout << "[GraphicsManager] GraphicsManager::DrawTriangle(" << vertices.size() << ","
         << color << ")" << endl;
@@ -184,14 +233,35 @@ void GraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3
 void GraphicsManager::DrawPolygon(const Face& polygon, const Vector3f& color)
 {
     PointSet vertices;
+    PointList edges;
     for (auto pEdge : polygon.Edges)
     {
-        DrawLine(*pEdge->first, *pEdge->second, color);
         vertices.insert({pEdge->first, pEdge->second});
+        edges.push_back(pEdge->first);
+        edges.push_back(pEdge->second);
     }
+    DrawLine(edges, color);
+
     DrawPointSet(vertices, color);
 
-    DrawTriangle(polygon.GetVertices(), color);
+    DrawTriangle(polygon.GetVertices(), color * 0.5f);
+}
+
+void GraphicsManager::DrawPolygon(const Face& polygon, const Matrix4X4f& trans, const Vector3f& color)
+{
+    PointSet vertices;
+    PointList edges;
+    for (auto pEdge : polygon.Edges)
+    {
+        vertices.insert({pEdge->first, pEdge->second});
+        edges.push_back(pEdge->first);
+        edges.push_back(pEdge->second);
+    }
+    DrawLine(edges, trans, color);
+
+    DrawPointSet(vertices, trans, color);
+
+    DrawTriangle(polygon.GetVertices(), trans, color * 0.5f);
 }
 
 void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color)
@@ -202,11 +272,58 @@ void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3
     }
 }
 
+void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color)
+{
+    for (auto pFace : polyhedron.Faces)
+    {
+        DrawPolygon(*pFace, trans, color);
+    }
+}
+
 void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawBox(" << bbMin << ","
-        << bbMax << "," 
-        << color << ")" << endl;
+    //  ******0--------3********
+    //  *****/:       /|********
+    //  ****1--------2 |********
+    //  ****| :      | |********
+    //  ****| 4- - - | 7********
+    //  ****|/       |/*********
+    //  ****5--------6**********
+
+    // vertices
+    PointPtr points[8];
+    for (int i = 0; i < 8; i++)
+        points[i] = make_shared<Point>(bbMin);
+    *points[0] = *points[2] = *points[3] = *points[7] = bbMax;
+    points[0]->x = bbMin.x;
+    points[2]->y = bbMin.y;
+    points[7]->z = bbMin.z;
+    points[1]->z = bbMax.z;
+    points[4]->y = bbMax.y;
+    points[6]->x = bbMax.x;
+
+    // edges
+    EdgeList edges;
+    
+    // top
+    edges.push_back(make_shared<Edge>(make_pair(points[0], points[3])));
+    edges.push_back(make_shared<Edge>(make_pair(points[3], points[2])));
+    edges.push_back(make_shared<Edge>(make_pair(points[2], points[1])));
+    edges.push_back(make_shared<Edge>(make_pair(points[1], points[0])));
+
+    // bottom
+    edges.push_back(make_shared<Edge>(make_pair(points[4], points[7])));
+    edges.push_back(make_shared<Edge>(make_pair(points[7], points[6])));
+    edges.push_back(make_shared<Edge>(make_pair(points[6], points[5])));
+    edges.push_back(make_shared<Edge>(make_pair(points[5], points[4])));
+
+    // side
+    edges.push_back(make_shared<Edge>(make_pair(points[0], points[4])));
+    edges.push_back(make_shared<Edge>(make_pair(points[1], points[5])));
+    edges.push_back(make_shared<Edge>(make_pair(points[2], points[6])));
+    edges.push_back(make_shared<Edge>(make_pair(points[3], points[7])));
+
+    DrawEdgeList(edges, color);
 }
 
 void GraphicsManager::ClearDebugBuffers()
