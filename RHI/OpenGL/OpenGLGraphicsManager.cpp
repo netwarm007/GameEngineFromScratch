@@ -289,8 +289,8 @@ void OpenGLGraphicsManager::InitializeBuffers(const Scene& scene)
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second;
-        if (pGeometryNode->Visible()) 
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode && pGeometryNode->Visible()) 
         {
             auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);

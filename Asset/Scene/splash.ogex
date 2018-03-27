@@ -16,12 +16,12 @@ GeometryNode $node1
 
 	Rotation %zrot (kind = "z")
 	{
-		float {0.7736089825630188}
+		float {0.0}
 	}
 
 	Rotation %xrot (kind = "x")
 	{
-		float {1.3821349143981934}
+		float {0.0}
 	}
 
 	Animation (begin = 0.0, end = 2.458333333333333)

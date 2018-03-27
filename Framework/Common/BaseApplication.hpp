@@ -8,6 +8,7 @@
 #include "IPhysicsManager.hpp"
 #include "IGameLogic.hpp"
 #include "DebugManager.hpp"
+#include "AnimationManager.hpp"
 
 namespace My {
     class BaseApplication : implements IApplication

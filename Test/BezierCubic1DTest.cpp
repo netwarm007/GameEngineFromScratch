@@ -1,32 +1,22 @@
 #include <iostream>
 #include <iomanip>
-#include "numerical.hpp"
+#include "Bezier.hpp"
 
 using namespace My;
 using namespace std;
 
 int main(int argc, char** argv)
 {
-    double t1 = 0, t2 = 15;
-    double c1 = 4, c2 = 9;
-    double t;
+    float t;
+    Bezier<float> bezier1({0, 2.4583}, {-0.9598, 0.9598}, {1.4986, 3.4181});
+    Bezier<float> bezier2({0, 1.3821}, {0, 0}, {1.3821, 1.3821});
+
     cout.precision(4);
     cout.setf(ios::fixed);
     for (int p = 0; p <=100; p++)
     {
-        t = p / 100.0 * (t2 - t1) + t1;
-        nr_f f = [t2, t1, c2, c1, t](double s) { 
-            return (t2 - 3 * c2 + 3 * c1 - t1) * pow(s, 3.0) 
-                + 3 * (c2 - 2 * c1 + t1) * pow(s, 2.0)
-                + 3 * (c1 - t1) * s 
-                + t1 - t; 
-        };
-        nr_fprime fprime = [t2, t1, c2, c1](double s) {
-            return 3 * (t2 - 3 * c2 + 3 * c1 - t1) * pow(s, 2.0) 
-                + 6 * (c2 - 2 * c1 + t1) * s
-                + 3 * (c1 - t1);
-        };
-        auto result = newton_raphson(0.5, f, fprime);
+        t = p / 100.0 * (2.4583 - 0) + 0;
+        auto result = bezier2.Interpolate(bezier1.Reverse(t));
         cout << t << ": " << result << endl;
     }
 

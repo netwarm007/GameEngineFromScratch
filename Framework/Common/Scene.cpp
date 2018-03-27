@@ -9,7 +9,9 @@ const shared_ptr<SceneObjectCamera> Scene::GetCamera(const std::string& key) con
     if (i == Cameras.end())
         return nullptr;
     else
+    {
         return i->second;
+    }
 }
 
 const shared_ptr<SceneObjectLight> Scene::GetLight(const std::string& key) const
@@ -18,7 +20,9 @@ const shared_ptr<SceneObjectLight> Scene::GetLight(const std::string& key) const
     if (i == Lights.end())
         return nullptr;
     else
+    {
         return i->second;
+    }
 }
 
 const shared_ptr<SceneObjectGeometry> Scene::GetGeometry(const std::string& key) const
@@ -27,7 +31,9 @@ const shared_ptr<SceneObjectGeometry> Scene::GetGeometry(const std::string& key)
     if (i == Geometries.end())
         return nullptr;
     else
+    {
         return i->second;
+    }
 }
 
 const shared_ptr<SceneObjectMaterial> Scene::GetMaterial(const std::string& key) const
@@ -36,7 +42,9 @@ const shared_ptr<SceneObjectMaterial> Scene::GetMaterial(const std::string& key)
     if (i == Materials.end())
         return m_pDefaultMaterial;
     else
+    {
         return i->second;
+    }
 }
 
 const shared_ptr<SceneObjectMaterial> Scene::GetFirstMaterial() const
@@ -48,27 +56,28 @@ const shared_ptr<SceneGeometryNode> Scene::GetFirstGeometryNode() const
 {
     return (GeometryNodes.empty()? 
             nullptr 
-            : GeometryNodes.cbegin()->second);
+            : GeometryNodes.cbegin()->second.lock());
 }
 
 const shared_ptr<SceneLightNode> Scene::GetFirstLightNode() const
 {
     return (LightNodes.empty()? 
             nullptr 
-            : LightNodes.cbegin()->second);
+            : LightNodes.cbegin()->second.lock());
 }
 
 const shared_ptr<SceneCameraNode> Scene::GetFirstCameraNode() const
 {
     return (CameraNodes.empty()? 
             nullptr 
-            : CameraNodes.cbegin()->second);
+            : CameraNodes.cbegin()->second.lock());
 }
 
 void Scene::LoadResource()
 {
     for (auto material : Materials)
     {
-        material.second->LoadTextures();
+        if (auto ptr = material.second)
+            ptr->LoadTextures();
     }
 }
