@@ -166,11 +166,14 @@ int BulletPhysicsManager::CreateRigidBodies()
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second;
-        auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
-        assert(pGeometry);
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode)
+        {
+            auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            assert(pGeometry);
 
-        CreateRigidBody(*pGeometryNode, *pGeometry);
+            CreateRigidBody(*pGeometryNode, *pGeometry);
+        }
     }
 
     return 0;
@@ -183,8 +186,9 @@ void BulletPhysicsManager::ClearRigidBodies()
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second;
-        DeleteRigidBody(*pGeometryNode);
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode)
+            DeleteRigidBody(*pGeometryNode);
     }
 
     for (auto shape : m_btCollisionShapes)

@@ -6,13 +6,13 @@
 namespace My {
     ENUM(GeometryType) {
         kBox,
-        kSphere,
-        kCylinder,
-        kCone,
-        kPlane,
         kCapsule,
-        kTriangle,
-        kPolyhydron
+        kCone,
+        kCylinder,
+        kPlane,
+        kPolyhydron,
+        kSphere,
+        kTriangle
     };
 
     class Geometry 

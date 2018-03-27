@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <list>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -11,8 +12,13 @@ namespace My {
     class BaseSceneNode : public TreeNode {
         protected:
             std::string m_strName;
-            std::list<std::shared_ptr<SceneObjectTransform>> m_Transforms;
+            std::vector<std::shared_ptr<SceneObjectTransform>> m_Transforms;
+            std::map<int, std::shared_ptr<SceneObjectAnimationClip>> m_AnimationClips;
+            std::map<std::string, std::shared_ptr<SceneObjectTransform>> m_LUTtransform;
             Matrix4X4f m_RuntimeTransform;
+        
+        public:
+            typedef std::map<int, std::shared_ptr<SceneObjectAnimationClip>>::const_iterator animation_clip_iterator;
 
         public:
             BaseSceneNode() { BuildIdentityMatrix(m_RuntimeTransform); };
@@ -21,14 +27,40 @@ namespace My {
 
             const std::string GetName() const { return m_strName; };
 
-            void AppendTransform(std::shared_ptr<SceneObjectTransform>&& transform)
+            void AttachAnimationClip(int clip_index, std::shared_ptr<SceneObjectAnimationClip> clip)
             {
-                m_Transforms.push_back(std::move(transform));
+                m_AnimationClips.insert({clip_index, clip});
             }
 
-            void PrependTransform(std::shared_ptr<SceneObjectTransform>&& transform)
+            inline bool GetFirstAnimationClip(animation_clip_iterator& it) 
+            { 
+                it = m_AnimationClips.cbegin(); 
+                return it != m_AnimationClips.cend();
+            }
+
+            inline bool GetNextAnimationClip(animation_clip_iterator& it)
             {
-                m_Transforms.push_front(std::move(transform));
+                it++;
+                return it != m_AnimationClips.cend();
+            }
+
+            void AppendTransform(const char* key, const std::shared_ptr<SceneObjectTransform>& transform)
+            {
+                m_Transforms.push_back(transform);
+                m_LUTtransform.insert({std::string(key), transform});
+            }
+
+            std::shared_ptr<SceneObjectTransform> GetTransform(const std::string& key) 
+            {
+                auto it = m_LUTtransform.find(key);
+                if (it != m_LUTtransform.end())
+                {
+                    return it->second;
+                }
+                else
+                {
+                    return std::shared_ptr<SceneObjectTransform>();
+                }
             }
 
             const std::shared_ptr<Matrix4X4f> GetCalculatedTransform() const
@@ -37,9 +69,9 @@ namespace My {
                 BuildIdentityMatrix(*result);
 
                 // TODO: cascading calculation
-                for (auto trans : m_Transforms)
+                for (auto it = m_Transforms.rbegin(); it != m_Transforms.rend(); it++)
                 {
-                    *result = *result * static_cast<Matrix4X4f>(*trans);
+                    *result = *result * static_cast<Matrix4X4f>(**it);
                 }
 
                 // apply runtime transforms
@@ -91,8 +123,12 @@ namespace My {
                 out << *sub_node << std::endl;
             }
 
-            for (auto sub_node : node.m_Transforms) {
-                out << *sub_node << std::endl;
+            for (auto trans : node.m_Transforms) {
+                out << *trans << std::endl;
+            }
+
+            for (auto anim_clip : node.m_AnimationClips) {
+                out << *anim_clip.second << std::endl;
             }
 
             indent--;
