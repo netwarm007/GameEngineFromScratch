@@ -961,8 +961,8 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
 // this is the function that loads and prepares the shaders
 bool D3d12GraphicsManager::InitializeShaders() {
     HRESULT hr = S_OK;
-    const char* vsFilename = "Shaders/simple.hlsl.vs"; 
-    const char* fsFilename = "Shaders/simple.hlsl.ps";
+    const char* vsFilename = "Shaders/basic_vs.cso"; 
+    const char* fsFilename = "Shaders/basic_ps.cso";
 
     // load the shaders
     Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
@@ -1400,9 +1400,10 @@ bool D3d12GraphicsManager::SetPerBatchShaderParameters(int32_t index)
     if (m_DrawBatchContext[index].material) {
         Color color = m_DrawBatchContext[index].material->GetBaseColor();
         if (color.ValueMap) {
-            pbc.ambientColor = Vector4f(-1.0f);
+            pbc.usingDiffuseMap = true;
         } else {
-            pbc.ambientColor = color.Value;
+            pbc.diffuseColor = color.Value;
+            pbc.usingDiffuseMap = false;
         }
 
         color = m_DrawBatchContext[index].material->GetSpecularColor();

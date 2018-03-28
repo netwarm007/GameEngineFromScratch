@@ -20,5 +20,3 @@ ELSE(WIN32)
                             MyGameEngine
                         )
 ENDIF(WIN32)
-
-

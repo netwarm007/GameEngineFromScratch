@@ -26,15 +26,22 @@ float4 PSMain(v2p input) : SV_TARGET
 	float3 lightRgb = m_lightColor.xyz;
 
 	const float3 vN = normalize(input.vNorm);
-	const float3 vL = normalize(m_lightPosition.xyz - input.vPosInView);
-    const float3 vR = normalize(2 * dot(vL, vN) * vN - vL);
-	const float3 vV = normalize(float3(0.0f,0.0f,0.0f) - input.vPosInView);
-	float d = length(vL); 
+	const float3 vL = normalize(mul(m_viewMatrix, mul(m_worldMatrix, float4(m_lightPosition, 1.0f))).xyz - input.vPosInView);
+    const float3 vR = normalize(2 * clamp(dot(vL, vN), 0.0f, 1.0f) * vN - vL);
+	const float3 vV = normalize(-input.vPosInView);
 
-	//float3 vLightInts = float3(0.0f, 0.0f, 0.01f) + lightRgb * diffuseColor * dot(vN, vL) + specularColor * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower);
-	float3 vLightInts = float3(0.0f, 0.0f, 0.01f) 
-							+ lightRgb * colorMap.Sample(samp0, input.TextureUV) * clamp(dot(vN, vL), 0.0f, 1.0f) 
-							+ specularColor * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower);
+	float3 vLightInts; 
+	if (usingDiffuseMap)
+	{
+		vLightInts = ambientColor 
+								+ lightRgb * (colorMap.Sample(samp0, input.TextureUV).rgb * clamp(dot(vN, vL), 0.0f, 1.0f) 
+								+ specularColor.rgb * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower));
+	}
+	else{
+		vLightInts = ambientColor 
+								+ lightRgb * (diffuseColor.rgb * clamp(dot(vN, vL), 0.0f, 1.0f) 
+								+ specularColor.rgb * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower));
+	}
 
 	return float4(vLightInts, 1.0f);
 }
