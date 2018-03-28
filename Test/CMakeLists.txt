@@ -63,3 +63,7 @@ add_test(NAME TEST_Quickhull COMMAND QuickhullTest)
 add_executable(GjkTest GjkTest.cpp)
 target_link_libraries(GjkTest Algorism Geometries GeomMath)
 add_test(NAME TEST_Gjk COMMAND GjkTest)
+
+add_executable(ChronoTest ChronoTest.cpp)
+add_test(NAME TEST_Chrono COMMAND ChronoTest)
+
