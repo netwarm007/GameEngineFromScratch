@@ -81,10 +81,11 @@ namespace My {
         struct PerBatchConstants
         {
             Matrix4X4f objectMatrix;
-            Vector4f   ambientColor;
             Vector4f   diffuseColor;
             Vector4f   specularColor;
             float specularPower;
+	        bool usingDiffuseMap;
+	        bool usingNormalMap;
         };
 
         struct DrawBatchContext {
