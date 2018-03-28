@@ -295,7 +295,7 @@ namespace My {
             size_t GetIndexGroupCount() const { return m_IndexArray.size(); };
             size_t GetIndexCount(const size_t index) const { return (m_IndexArray.empty()? 0 : m_IndexArray[index].GetIndexCount()); };
             size_t GetVertexCount() const { return (m_VertexArray.empty()? 0 : m_VertexArray[0].GetVertexCount()); };
-            size_t GetVertexPropertiesCount() const { return m_VertexArray.size(); }; 
+            uint32_t GetVertexPropertiesCount() const { return static_cast<uint32_t>(m_VertexArray.size()); }; 
             const SceneObjectVertexArray& GetVertexPropertyArray(const size_t index) const { return m_VertexArray[index]; };
             const SceneObjectIndexArray& GetIndexArray(const size_t index) const { return m_IndexArray[index]; };
             const PrimitiveType& GetPrimitiveType() { return m_PrimitiveType; };

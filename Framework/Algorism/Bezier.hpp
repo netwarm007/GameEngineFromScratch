@@ -92,7 +92,7 @@ namespace My {
                     + 3 * (c1 - t1);
             };
 
-            return NewtonRapson<T>::Solve(0.5 * (t1 + t2), f, fprime);
+            return NewtonRapson<T>::Solve(0.5f * (t1 + t2), f, fprime);
         }
 
         T Interpolate(T s) const final
@@ -125,8 +125,8 @@ namespace My {
                 c1 = m_OutgoingControlPoints.find(t1)->second;
                 c2 = m_IncomingControlPoints.find(t2)->second;
 
-                return (t2 - 3 * c2 + 3 * c1 - t1) * pow(s, 3.0) 
-                    + 3 * (c2 - 2 * c1 + t1) * pow(s, 2.0)
+                return (t2 - 3 * c2 + 3 * c1 - t1) * pow(s, 3.0f) 
+                    + 3 * (c2 - 2 * c1 + t1) * pow(s, 2.0f)
                     + 3 * (c1 - t1) * s 
                     + t1; 
             }

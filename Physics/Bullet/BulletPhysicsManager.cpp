@@ -207,18 +207,18 @@ Matrix4X4f BulletPhysicsManager::GetRigidBodyTransform(void* rigidBody)
     auto basis  = trans.getBasis();
     auto origin = trans.getOrigin();
     BuildIdentityMatrix(result);
-    result.data[0][0] = basis[0][0];
-    result.data[1][0] = basis[0][1];
-    result.data[2][0] = basis[0][2];
-    result.data[0][1] = basis[1][0];
-    result.data[1][1] = basis[1][1];
-    result.data[2][1] = basis[1][2];
-    result.data[0][2] = basis[2][0];
-    result.data[1][2] = basis[2][1];
-    result.data[2][2] = basis[2][2];
-    result.data[3][0] = origin.getX();
-    result.data[3][1] = origin.getY();
-    result.data[3][2] = origin.getZ();
+    result.data[0][0] = static_cast<float>(basis[0][0]);
+    result.data[1][0] = static_cast<float>(basis[0][1]);
+    result.data[2][0] = static_cast<float>(basis[0][2]);
+    result.data[0][1] = static_cast<float>(basis[1][0]);
+    result.data[1][1] = static_cast<float>(basis[1][1]);
+    result.data[2][1] = static_cast<float>(basis[1][2]);
+    result.data[0][2] = static_cast<float>(basis[2][0]);
+    result.data[1][2] = static_cast<float>(basis[2][1]);
+    result.data[2][2] = static_cast<float>(basis[2][2]);
+    result.data[3][0] = static_cast<float>(origin.getX());
+    result.data[3][1] = static_cast<float>(origin.getY());
+    result.data[3][2] = static_cast<float>(origin.getZ());
 
     return result;
 }

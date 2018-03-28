@@ -305,12 +305,12 @@ namespace My {
 						case VertexDataType::kVertexDataTypeDouble3:
 						{
 							const Vector3* vertex = reinterpret_cast<const Vector3*>(data) + i;
-							bbmin[0] = (bbmin[0] < vertex->data[0])? bbmin[0] : vertex->data[0];
-							bbmin[1] = (bbmin[1] < vertex->data[1])? bbmin[1] : vertex->data[1];
-							bbmin[2] = (bbmin[2] < vertex->data[2])? bbmin[2] : vertex->data[2];
-							bbmax[0] = (bbmax[0] > vertex->data[0])? bbmax[0] : vertex->data[0];
-							bbmax[1] = (bbmax[1] > vertex->data[1])? bbmax[1] : vertex->data[1];
-							bbmax[2] = (bbmax[2] > vertex->data[2])? bbmax[2] : vertex->data[2];
+							bbmin[0] = static_cast<float>((bbmin[0] < vertex->data[0])? bbmin[0] : vertex->data[0]);
+							bbmin[1] = static_cast<float>((bbmin[1] < vertex->data[1])? bbmin[1] : vertex->data[1]);
+							bbmin[2] = static_cast<float>((bbmin[2] < vertex->data[2])? bbmin[2] : vertex->data[2]);
+							bbmax[0] = static_cast<float>((bbmax[0] > vertex->data[0])? bbmax[0] : vertex->data[0]);
+							bbmax[1] = static_cast<float>((bbmax[1] > vertex->data[1])? bbmax[1] : vertex->data[1]);
+							bbmax[2] = static_cast<float>((bbmax[2] > vertex->data[2])? bbmax[2] : vertex->data[2]);
 							break;
 						}
 						default:

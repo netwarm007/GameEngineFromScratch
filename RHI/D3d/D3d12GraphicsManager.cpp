@@ -1091,9 +1091,9 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 	int32_t n = 0;
     for (auto _it : scene.GeometryNodes)
     {
-	    auto pGeometryNode = _it.second;
+	    auto pGeometryNode = _it.second.lock();
 
-        if (pGeometryNode->Visible())
+        if (pGeometryNode && pGeometryNode->Visible())
         {
             auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);

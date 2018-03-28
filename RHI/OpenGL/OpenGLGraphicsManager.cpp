@@ -309,7 +309,7 @@ void OpenGLGraphicsManager::InitializeBuffers(const Scene& scene)
 
             GLuint buffer_id;
 
-            for (int32_t i = 0; i < vertexPropertiesCount; i++)
+            for (uint32_t i = 0; i < vertexPropertiesCount; i++)
             {
                 const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
                 auto v_property_array_data_size = v_property_array.GetDataSize();
@@ -817,7 +817,7 @@ void OpenGLGraphicsManager::DrawPoints(const Point* buffer, const size_t count, 
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;
     dbc.mode    = GL_POINTS;
-    dbc.count   = count;
+    dbc.count   = static_cast<GLsizei>(count);
     dbc.color   = color;
     dbc.trans   = trans;
 
@@ -885,7 +885,7 @@ void OpenGLGraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;
     dbc.mode    = GL_LINES;
-    dbc.count   = count;
+    dbc.count   = static_cast<GLsizei>(count);
     dbc.color   = color;
     dbc.trans   = trans;
 
@@ -952,7 +952,7 @@ void OpenGLGraphicsManager::DrawTriangle(const PointList& vertices, const Matrix
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;
     dbc.mode    = GL_TRIANGLES;
-    dbc.count   = vertices.size();
+    dbc.count   = static_cast<GLsizei>(vertices.size());
     dbc.color   = color;
     dbc.trans   = trans;
 
@@ -994,7 +994,7 @@ void OpenGLGraphicsManager::DrawTriangleStrip(const PointList& vertices, const V
     DebugDrawBatchContext& dbc = *(new DebugDrawBatchContext);
     dbc.vao     = vao;
     dbc.mode    = GL_TRIANGLE_STRIP;
-    dbc.count   = vertices.size();
+    dbc.count   = static_cast<GLsizei>(vertices.size());
     dbc.color   = color * 0.5f;
 
     m_DebugDrawBatchContext.push_back(std::move(dbc));

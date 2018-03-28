@@ -3,6 +3,8 @@
 #include <limits>
 #include <cmath>
 
+using namespace std;
+
 namespace My {
     template <typename T>
     struct NewtonRapson
