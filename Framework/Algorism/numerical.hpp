@@ -3,21 +3,27 @@
 #include <limits>
 #include <cmath>
 
+using namespace std;
+
 namespace My {
-    typedef std::function<double(double)> nr_f;
-    typedef std::function<double(double)> nr_fprime;
-
-    inline double newton_raphson(double x0, nr_f f, nr_fprime fprime)
+    template <typename T>
+    struct NewtonRapson
     {
-        double x, x1 = x0;
+        typedef std::function<T(T)> nr_f;
+        typedef std::function<T(T)> nr_fprime;
 
-        do {
-            x = x1;
-            double fx = f(x);
-            double fx1 = fprime(x);
-            x1 = x-(fx/fx1);
-        } while (fabs(x1 - x) >= std::numeric_limits<double>::epsilon());
+        static inline T Solve(T x0, nr_f f, nr_fprime fprime)
+        {
+            T x, x1 = x0;
 
-        return x1;
-    }
+            do {
+                x = x1;
+                T fx = f(x);
+                T fx1 = fprime(x);
+                x1 = x-(fx/fx1);
+            } while (abs(x1 - x) >= 10E-6);
+
+            return x1;
+        }
+    };
 }

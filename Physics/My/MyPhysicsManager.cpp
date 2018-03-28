@@ -22,6 +22,38 @@ void MyPhysicsManager::Finalize()
     ClearRigidBodies();
 }
 
+void MyPhysicsManager::IterateConvexHull()
+{
+    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+
+    // Geometries
+    for (auto _it : scene.GeometryNodes)
+    {
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode)
+        {
+            void* rigidBody = pGeometryNode->RigidBody();
+            if (rigidBody) {
+                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                auto pGeometry = _rigidBody->GetCollisionShape();
+                if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron)
+                {
+                    if (dynamic_pointer_cast<ConvexHull>(pGeometry)->Iterate())
+                    {
+                        // The geometry convex hull is not fully iterated,
+                        // so we break the loop to postpending the process to
+                        // next loop, to avoid too much process in single tick.
+                        break;
+                    }
+
+                    // The geometry convex hull is fully iterated,
+                    // so we move to next geometry
+                }
+            }
+        }
+    }
+}
+
 void MyPhysicsManager::Tick()
 {
     if (g_pSceneManager->IsSceneChanged())
@@ -29,24 +61,6 @@ void MyPhysicsManager::Tick()
         ClearRigidBodies();
         CreateRigidBodies();
         g_pSceneManager->NotifySceneIsPhysicalSimulationQueued();
-    }
-    else
-    {
-        auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
-
-        // Geometries
-        for (auto _it : scene.GeometryNodes)
-        {
-            auto pGeometryNode = _it.second;
-            if (void* rigidBody = pGeometryNode->RigidBody()) {
-                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
-                auto pGeometry = _rigidBody->GetCollisionShape();
-                if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron)
-                {
-                    dynamic_pointer_cast<ConvexHull>(pGeometry)->Iterate();
-                }
-            }
-        }
     }
 }
 
@@ -71,7 +85,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             break;
         case SceneObjectCollisionType::kSceneObjectCollisionTypeBox:
             {
-                auto collision_box = make_shared<Box>(Vector3f(param[0], param[1], param[2]));
+                auto collision_box = make_shared<Box>(Vector3f({param[0], param[1], param[2]}));
 
                 const auto trans = node.GetCalculatedTransform();
                 auto motionState = 
@@ -83,7 +97,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             break;
         case SceneObjectCollisionType::kSceneObjectCollisionTypePlane:
             {
-                auto collision_box = make_shared<Plane>(Vector3f(param[0], param[1], param[2]), param[3]);
+                auto collision_box = make_shared<Plane>(Vector3f({param[0], param[1], param[2]}), param[3]);
 
                 const auto trans = node.GetCalculatedTransform();
                 auto motionState = 
@@ -95,6 +109,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
             break;
         default:
             {
+                /*
                 // create collision box using convex hull
                 auto bounding_box = geometry.GetBoundingBox();
                 auto collision_box = make_shared<ConvexHull>(geometry.GetConvexHull());
@@ -106,6 +121,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneObjec
                                 bounding_box.centroid 
                             );
                 rigidBody = new RigidBody(collision_box, motionState);
+                */
             }
     }
 
@@ -135,11 +151,14 @@ int MyPhysicsManager::CreateRigidBodies()
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second;
-        auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
-        assert(pGeometry);
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode)
+        {
+            auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            assert(pGeometry);
 
-        CreateRigidBody(*pGeometryNode, *pGeometry);
+            CreateRigidBody(*pGeometryNode, *pGeometry);
+        }
     }
 
     return 0;
@@ -152,8 +171,11 @@ void MyPhysicsManager::ClearRigidBodies()
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second;
-        DeleteRigidBody(*pGeometryNode);
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode)
+        {
+            DeleteRigidBody(*pGeometryNode);
+        }
     }
 }
 
@@ -177,15 +199,18 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
         // Geometries
         for (auto _it : scene.GeometryNodes)
         {
-            auto pGeometryNode = _it.second;
-            if (void* rigidBody = pGeometryNode->RigidBody()) {
-                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
-                auto motionState = _rigidBody->GetMotionState();
-                auto centerOfMass = motionState->GetCenterOfMassOffset();
-                auto trans = motionState->GetTransition();
-                auto pGeometry = _rigidBody->GetCollisionShape();
-                DrawAabb(*pGeometry, trans, centerOfMass);
-                DrawShape(*pGeometry, trans, centerOfMass);
+            auto pGeometryNode = _it.second.lock();
+            if (pGeometryNode)
+            {
+                if (void* rigidBody = pGeometryNode->RigidBody()) {
+                    RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                    auto motionState = _rigidBody->GetMotionState();
+                    auto centerOfMass = motionState->GetCenterOfMassOffset();
+                    auto trans = motionState->GetTransition();
+                    auto pGeometry = _rigidBody->GetCollisionShape();
+                    DrawAabb(*pGeometry, trans, centerOfMass);
+                    DrawShape(*pGeometry, trans, centerOfMass);
+                }
             }
         }
     }
@@ -193,13 +218,13 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
     void MyPhysicsManager::DrawAabb(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass)
     {
         Vector3f bbMin, bbMax;
-        Vector3f color(0.7f, 0.6f, 0.5f);
+        Vector3f color({0.7f, 0.6f, 0.5f});
 
         Matrix4X4f _trans;
         BuildIdentityMatrix(_trans);
-        _trans.data[3][0] = centerOfMass.x * trans.data[0][0]; // scale by x-scale
-        _trans.data[3][1] = centerOfMass.y * trans.data[1][1]; // scale by y-scale
-        _trans.data[3][2] = centerOfMass.z * trans.data[2][2]; // scale by z-scale
+        _trans.data[3][0] = centerOfMass[0] * trans.data[0][0]; // scale by x-scale
+        _trans.data[3][1] = centerOfMass[1] * trans.data[1][1]; // scale by y-scale
+        _trans.data[3][2] = centerOfMass[2] * trans.data[2][2]; // scale by z-scale
         MatrixMultiply(_trans, trans, _trans);
 
         geometry.GetAabb(_trans, bbMin, bbMax);
@@ -208,13 +233,13 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
 
     void MyPhysicsManager::DrawShape(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass)
     {
-        Vector3f color(0.8f, 0.7f, 0.6f);
+        Vector3f color({0.8f, 0.7f, 0.6f});
 
         Matrix4X4f _trans;
         BuildIdentityMatrix(_trans);
-        _trans.data[3][0] = centerOfMass.x * trans.data[0][0]; // scale by x-scale
-        _trans.data[3][1] = centerOfMass.y * trans.data[1][1]; // scale by y-scale
-        _trans.data[3][2] = centerOfMass.z * trans.data[2][2]; // scale by z-scale
+        _trans.data[3][0] = centerOfMass[0] * trans.data[0][0]; // scale by x-scale
+        _trans.data[3][1] = centerOfMass[1] * trans.data[1][1]; // scale by y-scale
+        _trans.data[3][2] = centerOfMass[2] * trans.data[2][2]; // scale by z-scale
         MatrixMultiply(_trans, trans, _trans);
 
         if (geometry.GetGeometryType() == GeometryType::kPolyhydron)

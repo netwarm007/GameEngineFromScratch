@@ -12,34 +12,34 @@ void Geometry::CalculateTemporalAabb(const Matrix4X4f& curTrans,
 	//start with static aabb
 	GetAabb(curTrans,temporalAabbMin,temporalAabbMax);
 
-	float temporalAabbMaxx = temporalAabbMax.x;
-	float temporalAabbMaxy = temporalAabbMax.y;
-	float temporalAabbMaxz = temporalAabbMax.z;
-	float temporalAabbMinx = temporalAabbMin.x;
-	float temporalAabbMiny = temporalAabbMin.y;
-	float temporalAabbMinz = temporalAabbMin.z;
+	float temporalAabbMaxx = temporalAabbMax[0];
+	float temporalAabbMaxy = temporalAabbMax[1];
+	float temporalAabbMaxz = temporalAabbMax[2];
+	float temporalAabbMinx = temporalAabbMin[0];
+	float temporalAabbMiny = temporalAabbMin[1];
+	float temporalAabbMinz = temporalAabbMin[2];
 
 	// add linear motion
 	Vector3f linMotion = linvel * timeStep;
 	///@todo: simd would have a vector max/min operation, instead of per-element access
-	if (linMotion.x > 0.0f)
-		temporalAabbMaxx += linMotion.x; 
+	if (linMotion[0] > 0.0f)
+		temporalAabbMaxx += linMotion[0]; 
 	else
-		temporalAabbMinx += linMotion.x;
-	if (linMotion.y > 0.0f)
-		temporalAabbMaxy += linMotion.y; 
+		temporalAabbMinx += linMotion[0];
+	if (linMotion[1] > 0.0f)
+		temporalAabbMaxy += linMotion[1]; 
 	else
-		temporalAabbMiny += linMotion.y;
-	if (linMotion.z > 0.0f)
-		temporalAabbMaxz += linMotion.z; 
+		temporalAabbMiny += linMotion[1];
+	if (linMotion[2] > 0.0f)
+		temporalAabbMaxz += linMotion[2]; 
 	else
-		temporalAabbMinz += linMotion.z;
+		temporalAabbMinz += linMotion[2];
 
 	//add conservative angular motion
 	float angularMotion = Length(angvel) * GetAngularMotionDisc() * timeStep;
-	Vector3f angularMotion3d(angularMotion,angularMotion,angularMotion);
-	temporalAabbMin = Vector3f(temporalAabbMinx,temporalAabbMiny,temporalAabbMinz);
-	temporalAabbMax = Vector3f(temporalAabbMaxx,temporalAabbMaxy,temporalAabbMaxz);
+	Vector3f angularMotion3d({angularMotion, angularMotion, angularMotion});
+	temporalAabbMin = Vector3f({temporalAabbMinx,temporalAabbMiny,temporalAabbMinz});
+	temporalAabbMax = Vector3f({temporalAabbMaxx,temporalAabbMaxy,temporalAabbMaxz});
 
 	temporalAabbMin = temporalAabbMin - angularMotion3d;
 	temporalAabbMax = temporalAabbMax + angularMotion3d;

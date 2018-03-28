@@ -52,7 +52,7 @@ namespace My {
     };
 
     struct PNG_PLTE_HEADER : PNG_CHUNK_HEADER {
-        Vector3Type<uint8_t>* pEntries;
+        Vector<uint8_t, 3>* pEntries;
     };
 #pragma pack(pop)
 

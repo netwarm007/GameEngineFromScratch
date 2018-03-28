@@ -21,7 +21,9 @@
                 "${workspaceRoot}/Physics",
                 "${workspaceRoot}/External/Darwin/include",
                 "${workspaceRoot}/External/Darwin/include/bullet",
-                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad"
+                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad",
+                "${workspaceRoot}/Framework/Ability",
+                "${workspaceRoot}/Framework/Ability"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -85,7 +87,8 @@
                 "${workspaceRoot}/RHI/D2d",
                 "${workspaceRoot}/External/Windows/include",
                 "${workspaceRoot}/External/Windows/include/bullet",
-                "${workspaceRoot}/External/src/glad/include"
+                "${workspaceRoot}/External/src/glad/include",
+                "${workspaceRoot}/Framework/Ability"
             ],
             "defines": [
                 "_DEBUG",
