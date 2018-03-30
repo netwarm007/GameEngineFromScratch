@@ -10,7 +10,6 @@ namespace My {
     {
         private:
             int m_nIndex = 0;
-            bool m_bLoop = false;
             std::vector<std::shared_ptr<SceneObjectTrack>> m_Tracks;
 
         public:
