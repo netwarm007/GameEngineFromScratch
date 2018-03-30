@@ -142,6 +142,7 @@ namespace My {
     {
     public:
         using Vector<T, 4>::Vector;
+	Quaternion() = default;
         Quaternion(const Vector<T, 4> rhs)
         {
             std::memcpy(this, &rhs, sizeof(Quaternion));    
