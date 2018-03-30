@@ -4,7 +4,8 @@
 #include "Animatable.hpp"
 
 namespace My {
-    class SceneObjectTransform : public BaseSceneObject
+    class SceneObjectTransform : public BaseSceneObject, 
+        implements Animatable<float>, Animatable<Vector3f>, Animatable<Quaternion<float>>, Animatable<Matrix4X4f>
     {
         protected:
             Matrix4X4f m_matrix;
@@ -20,10 +21,33 @@ namespace My {
             operator Matrix4X4f() { return m_matrix; }
             operator const Matrix4X4f() const { return m_matrix; }
 
+            void Update(const float amount) 
+            {
+                // should not be used.
+                assert(0);
+            }
+
+            void Update(const Vector3f amount) 
+            {
+                // should not be used.
+                assert(0);
+            }
+
+            void Update(const Quaternion<float> amount) 
+            {
+                // should not be used.
+                assert(0);
+            }
+
+            void Update(const Matrix4X4f amount) final
+            {
+                m_matrix = amount;
+            }
+
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj);
     };
 
-    class SceneObjectTranslation : public SceneObjectTransform, implements Animatable<float>
+    class SceneObjectTranslation : public SceneObjectTransform
     {
         private:
             char m_Kind = 0;
@@ -76,9 +100,14 @@ namespace My {
                         assert(0);
                 }
             }
+
+            void Update(const Vector3f amount) final
+            {
+                MatrixTranslation(m_matrix, amount);
+            }
     };
 
-    class SceneObjectRotation : public SceneObjectTransform, implements Animatable<float>
+    class SceneObjectRotation : public SceneObjectTransform 
     {
         private:
             char m_Kind = 0;
@@ -118,7 +147,8 @@ namespace My {
                 m_bSceneObjectOnly = object_only;
             }
 
-            SceneObjectRotation(const Quaternion quaternion, const bool object_only = false)
+            template<typename T>
+            SceneObjectRotation(const Quaternion<T> quaternion, const bool object_only = false)
                 : SceneObjectRotation()
             {
                 m_Kind = 0;
@@ -144,9 +174,19 @@ namespace My {
                         assert(0);
                 }
             }
+
+            void Update(const Vector3f amount) final
+            {
+                MatrixRotationYawPitchRoll(m_matrix, amount[0], amount[1], amount[2]);
+            }
+
+            void Update(const Quaternion<float> quaternion) final
+            {
+                MatrixRotationQuaternion(m_matrix, quaternion);
+            }
     };
 
-    class SceneObjectScale : public SceneObjectTransform, implements Animatable<float>
+    class SceneObjectScale : public SceneObjectTransform
     {
         private:
             char m_Kind = 0;
@@ -196,7 +236,10 @@ namespace My {
                         assert(0);
                 }
             }
+
+            void Update(const Vector3f amount) final
+            {
+                MatrixScale(m_matrix, amount);
+            }
     };
-
-
 }

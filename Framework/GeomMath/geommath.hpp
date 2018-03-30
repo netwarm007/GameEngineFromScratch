@@ -23,6 +23,8 @@
 #include "InverseMatrix4X4f.h"
 #include "DCT.h"
 #include "Absolute.h"
+#include "Pow.h"
+#include "DivByElement.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -33,6 +35,8 @@
 #endif
 
 namespace My {
+    typedef float Scalar;
+
     template<typename T, size_t SizeOfArray>
         constexpr size_t countof(T (&)[SizeOfArray]) { return SizeOfArray; }
 
@@ -130,9 +134,19 @@ namespace My {
     typedef Vector<int32_t, 3> Vector3i32;
 
     typedef Vector<float, 4> Vector4f;
-    typedef Vector<float, 4> Quaternion;
     typedef Vector<uint8_t, 4> R8G8B8A8Unorm;
     typedef Vector<uint8_t, 4> Vector4i;
+
+    template<typename T>
+    class Quaternion : public Vector<T, 4>
+    {
+    public:
+        using Vector<T, 4>::Vector;
+        Quaternion(const Vector<T, 4> rhs)
+        {
+            std::memcpy(this, &rhs, sizeof(Quaternion));    
+        }
+    };
 
     template <typename T, int N>
     std::ostream& operator<<(std::ostream& out, Vector<T, N> vector)
@@ -237,11 +251,97 @@ namespace My {
     }
 
     template <typename T, int N>
-    Vector<T, N> operator*(const Vector<T, N>& vec, const T scalar)
+    Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar scalar)
     {
         Vector<T, N> result;
         MulByElement(result, vec, scalar);
 
+        return result;
+    }
+
+    template <typename T, int N>
+    Vector<T, N> operator*(const Scalar scalar, const Vector<T, N>& vec)
+    {
+        Vector<T, N> result;
+        MulByElement(result, vec, scalar);
+
+        return result;
+    }
+
+    template <typename T, int N>
+    Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2)
+    {
+        Vector<T, N> result;
+        MulByElement(result, vec1, vec2);
+
+        return result;
+    }
+
+    template <typename T, int N>
+    inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a, const Vector<T, N>& b)
+    {
+        ispc::DivByElement(a, b, result, N);
+    }
+
+    template <typename T, int N>
+    inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a, const T scalar)
+    {
+        Vector<T, N> v(scalar);
+        ispc::DivByElement(a, v, result, countof(result.data));
+    }
+
+    template <typename T, int N>
+    Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar scalar)
+    {
+        Vector<T, N> result;
+        DivByElement(result, vec, scalar);
+
+        return result;
+    }
+
+    template <typename T, int N>
+    Vector<T, N> operator/(const Scalar scalar, const Vector<T, N>& vec)
+    {
+        Vector<T, N> result;
+        DivByElement(result, vec, scalar);
+
+        return result;
+    }
+
+    template <typename T, int N>
+    Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2)
+    {
+        Vector<T, N> result;
+        DivByElement(result, vec1, vec2);
+
+        return result;
+    }
+
+    template <typename T>
+    inline T pow(const T base, const Scalar exponent)
+    {
+        return std::pow(base, exponent);
+    }
+
+    template <typename T, int N>
+    Vector<T, N> pow(const Vector<T, N>& vec, const Scalar exponent)
+    {
+        Vector<T, N> result;
+        ispc::Pow(vec, countof(vec.data), exponent, result);
+        return result;
+    }
+
+    template <typename T>
+    inline T abs(const T data)
+    {
+        return std::abs(data);
+    }
+
+    template <typename T, int N>
+    Vector<T, N> abs(const Vector<T, N>& vec)
+    {
+        Vector<T, N> result;
+        ispc::Absolute(result, vec, countof(vec.data));
         return result;
     }
 
@@ -251,6 +351,30 @@ namespace My {
         T result;
         DotProduct(result, vec, vec);
         return static_cast<T>(sqrt(result));
+    }
+
+    template <typename T, int N>
+    inline bool operator>=(Vector<T, N>&vec, Scalar scalar)
+    {
+        return Length(vec) >= scalar;
+    }
+
+    template <typename T, int N>
+    inline bool operator>(Vector<T, N>&vec, Scalar scalar)
+    {
+        return Length(vec) > scalar;
+    }
+
+    template <typename T, int N>
+    inline bool operator<=(Vector<T, N>&vec, Scalar scalar)
+    {
+        return Length(vec) <= scalar;
+    }
+
+    template <typename T, int N>
+    inline bool operator<(Vector<T, N>&vec, Scalar scalar)
+    {
+        return Length(vec) < scalar;
     }
 
     template <typename T, int N>
@@ -562,6 +686,17 @@ namespace My {
         return;
     }
 
+    inline void MatrixTranslation(Matrix4X4f& matrix, const Vector3f& v)
+    {
+        MatrixTranslation(matrix, v[0], v[1], v[2]);
+    }
+
+    inline void MatrixTranslation(Matrix4X4f& matrix, const Vector4f& v)
+    {
+        assert(v[3]);
+        MatrixTranslation(matrix, v[0]/v[3], v[1]/v[3], v[2]/v[3]);
+    }
+
     inline void MatrixRotationX(Matrix4X4f& matrix, const float angle)
     {
         float c = cosf(angle), s = sinf(angle);
@@ -574,20 +709,6 @@ namespace My {
         }}};
 
         matrix = rotation;
-
-        return;
-    }
-
-    inline void MatrixScale(Matrix4X4f& matrix, const float x, const float y, const float z)
-    {
-        Matrix4X4f scale = {{{
-            {    x, 0.0f, 0.0f, 0.0f},
-            { 0.0f,    y, 0.0f, 0.0f},
-            { 0.0f, 0.0f,    z, 0.0f},
-            { 0.0f, 0.0f, 0.0f, 1.0f},
-        }}};
-
-        matrix = scale;
 
         return;
     }
@@ -639,7 +760,8 @@ namespace My {
         matrix = rotation;
     }
 
-    inline void MatrixRotationQuaternion(Matrix4X4f& matrix, Quaternion q)
+    template<typename T>
+    inline void MatrixRotationQuaternion(Matrix4X4f& matrix, Quaternion<T> q)
     {
         Matrix4X4f rotation = {{{
             {   1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2],  2.0f * q[0] * q[1] + 2.0f * q[3] * q[2],   2.0f * q[0] * q[2] - 2.0f * q[3] * q[1],    0.0f    },
@@ -649,6 +771,31 @@ namespace My {
         }}};
 
         matrix = rotation;
+    }
+
+    inline void MatrixScale(Matrix4X4f& matrix, const float x, const float y, const float z)
+    {
+        Matrix4X4f scale = {{{
+            {    x, 0.0f, 0.0f, 0.0f},
+            { 0.0f,    y, 0.0f, 0.0f},
+            { 0.0f, 0.0f,    z, 0.0f},
+            { 0.0f, 0.0f, 0.0f, 1.0f},
+        }}};
+
+        matrix = scale;
+
+        return;
+    }
+
+    inline void MatrixScale(Matrix4X4f& matrix, const Vector3f& v)
+    {
+        MatrixScale(matrix, v[0], v[1], v[2]);
+    }
+
+    inline void MatrixScale(Matrix4X4f& matrix, const Vector4f& v)
+    {
+        assert(v[3]);
+        MatrixScale(matrix, v[0]/v[3], v[1]/v[3], v[2]/v[3]);
     }
 
     inline bool InverseMatrix4X4f(Matrix4X4f& matrix)

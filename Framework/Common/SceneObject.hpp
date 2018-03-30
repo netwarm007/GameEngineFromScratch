@@ -8,4 +8,5 @@
 #include "SceneObjectLight.hpp"
 #include "SceneObjectCamera.hpp"
 #include "SceneObjectTransform.hpp"
+#include "SceneObjectTrack.hpp"
 #include "SceneObjectAnimation.hpp"

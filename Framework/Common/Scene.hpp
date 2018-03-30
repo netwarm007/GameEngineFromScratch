@@ -18,9 +18,10 @@ namespace My {
         std::unordered_map<std::string, std::shared_ptr<SceneObjectMaterial>>       Materials;
         std::unordered_map<std::string, std::shared_ptr<SceneObjectGeometry>>       Geometries;
 
-        std::unordered_multimap<std::string, std::weak_ptr<SceneCameraNode>>      CameraNodes;
-        std::unordered_multimap<std::string, std::weak_ptr<SceneLightNode>>       LightNodes;
-        std::unordered_multimap<std::string, std::weak_ptr<SceneGeometryNode>>    GeometryNodes;
+        std::unordered_multimap<std::string, std::weak_ptr<SceneCameraNode>>        CameraNodes;
+        std::unordered_multimap<std::string, std::weak_ptr<SceneLightNode>>         LightNodes;
+        std::unordered_multimap<std::string, std::weak_ptr<SceneGeometryNode>>      GeometryNodes;
+        std::unordered_map<std::string, std::weak_ptr<SceneBoneNode>>               BoneNodes;
 
         std::vector<std::weak_ptr<BaseSceneNode>>                                 AnimatableNodes;
         

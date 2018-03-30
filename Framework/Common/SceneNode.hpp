@@ -3,3 +3,4 @@
 #include "SceneGeometryNode.hpp"
 #include "SceneLightNode.hpp"
 #include "SceneCameraNode.hpp"
+#include "SceneBoneNode.hpp"
