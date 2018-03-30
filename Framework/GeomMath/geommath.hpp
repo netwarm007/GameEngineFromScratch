@@ -63,7 +63,7 @@ namespace My {
     {
         T data[N];
 
-        Vector() {}
+        Vector() = default;
         Vector(const T val)
         {
             for (int i = 0; i < N; i++)
