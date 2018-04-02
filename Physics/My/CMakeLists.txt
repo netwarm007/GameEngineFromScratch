@@ -1,1 +1,3 @@
 add_library(MyPhysics MyPhysicsManager.cpp)
+target_include_directories(MyPhysics PUBLIC GeomMath)
+target_link_libraries(MyPhysics GeomMath)

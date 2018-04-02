@@ -21,6 +21,8 @@ target_link_libraries(PlatformInterface
         EGL
         GLESv1_CM
         log)
+target_include_directories(PlatformInterface PUBLIC GeomMath)
+target_link_libraries(PlatformInterface GeomMath)
 
 add_library(MyGameEngine 
         AndroidApplicationConfig.cpp

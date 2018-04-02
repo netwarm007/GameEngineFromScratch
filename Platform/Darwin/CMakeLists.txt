@@ -15,6 +15,8 @@ target_link_libraries(PlatformInterface
         ${OPENGL_LIBRARY}
         dl
     )
+target_include_directories(PlatformInterface PUBLIC GeomMath)
+target_link_libraries(PlatformInterface GeomMath)
 
 # MyGameEngineOpenGL
 add_library(MyGameEngine

@@ -9,6 +9,8 @@ target_link_libraries(PlatformInterface
                 d3d12
                 dxgi
 )
+target_include_directories(PlatformInterface PUBLIC GeomMath)
+target_link_libraries(PlatformInterface GeomMath)
 
 add_library(MyGameEngineD3d12
                    D3d12ApplicationConfig.cpp

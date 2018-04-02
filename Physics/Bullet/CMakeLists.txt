@@ -1,1 +1,3 @@
 add_library(BulletPhysics BulletPhysicsManager.cpp)
+target_include_directories(BulletPhysics PUBLIC GeomMath)
+target_link_libraries(BulletPhysics GeomMath)

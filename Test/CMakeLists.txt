@@ -55,6 +55,8 @@ add_test(NAME TEST_NumericalMethods COMMAND NumericalMethodsTest)
 
 add_executable(BezierCubic1DTest BezierCubic1DTest.cpp)
 add_test(NAME TEST_BezierCubic1D COMMAND BezierCubic1DTest)
+target_include_directories(BezierCubic1DTest PUBLIC GeomMath)
+target_link_libraries(BezierCubic1DTest GeomMath)
 
 add_executable(QuickhullTest QuickhullTest.cpp)
 target_link_libraries(QuickhullTest Algorism Geometries GeomMath)
