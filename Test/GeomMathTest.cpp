@@ -1,6 +1,7 @@
 #include <iostream>
 #include <assert.h>
 #include "geommath.hpp"
+#include "MatrixComposeDecompose.hpp"
 
 using namespace std;
 using namespace My;
@@ -27,7 +28,7 @@ void vector_test()
     float d;
     DotProduct(d, a, b);
     cout << "Dot Product of vec 1 and vec 2: ";
-    cout << d << std::endl;
+    cout << d << endl;
 
     MulByElement(c, a, b);
     cout << "Element Product of vec 1 and vec 2: ";
@@ -86,6 +87,19 @@ void matrix_test()
     Matrix4X4f transform = m1 * ry * rz * translate;
     cout << transform;
 
+    Vector3f rotation, scalar, translation;
+    Matrix4X4fDecompose(transform, rotation, scalar, translation);
+    cout << "Decompose of Transform Matrix: " << endl;
+    cout << "Rotation: " << rotation;
+    cout << "Scalar: " << scalar;
+    cout << "Translation: " << translation;
+    cout << endl;
+
+    Matrix4X4f recomposed_transform;
+    Matrix4X4fCompose(recomposed_transform, rotation, scalar, translation);
+    cout << "Re-composed Transform Matrix: " << endl;
+    cout << recomposed_transform;
+
     Vector3f v = { 1.0f, 0.0f, 0.0f };
 
     Vector3f v1 = v;
@@ -94,7 +108,7 @@ void matrix_test()
     cout << ry;
     TransformCoord(v1, ry);
     cout << "Now the vector becomes: " << v1;
-    cout << std::endl;
+    cout << endl;
 
     v1 = v;
     cout << "Vector : " << v1;
@@ -102,7 +116,7 @@ void matrix_test()
     cout << rz;
     TransformCoord(v1, rz);
     cout << "Now the vector becomes: " << v1;
-    cout << std::endl;
+    cout << endl;
 
     v1 = v;
     cout << "Vector : " << v1;
@@ -110,7 +124,26 @@ void matrix_test()
     cout << translate;
     TransformCoord(v1, translate);
     cout << "Now the vector becomes: " << v1;
-    cout << std::endl;
+    cout << endl;
+
+    v1 = v;
+    cout << "Vector : " << v1;
+    cout << "Transform by Transform Matrix:";
+    cout << transform;
+    TransformCoord(v1, transform);
+    cout << "Now the vector becomes: " << v1;
+    cout << endl;
+
+    Vector3f v2 = v;
+    cout << "Vector : " << v2;
+    cout << "Transform by Re-Composed Transform Matrix:";
+    cout << recomposed_transform;
+    TransformCoord(v2, recomposed_transform);
+    cout << "Now the vector becomes: " << v2;
+    cout << "Error between vector transformed by origin and recomposed transform:" << endl;
+    cout << v1 - v2;
+    cout << endl;
+    assert(Length(v1 - v2) < 10E-6f);
 
     Vector3f position = { 0, 0, -5 }, lookAt = { 0, 0, 0 }, up = { 0, 1, 0 };
     Matrix4X4f view;
@@ -174,7 +207,7 @@ void matrix_test()
 
 int main()
 {
-    cout << std::fixed;
+    cout << fixed;
 
     vector_test();
     matrix_test();

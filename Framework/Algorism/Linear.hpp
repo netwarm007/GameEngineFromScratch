@@ -1,5 +1,7 @@
 #pragma once
 #include "Curve.hpp"
+#include "geommath.hpp"
+#include "MatrixComposeDecompose.hpp"
 
 namespace My {
     template<typename TVAL, typename TPARAM>
@@ -70,7 +72,7 @@ namespace My {
                 auto t1 = Curve<TVAL, TPARAM>::m_Knots[index - 1];                
                 auto t2 = Curve<TVAL, TPARAM>::m_Knots[index];
 
-                return t1 + s * (t2 - t1);
+                return (TPARAM(1) - s) * t1 + s * t2;
             }
         }
     };
@@ -144,7 +146,36 @@ namespace My {
         {
             Matrix4X4f result;
             BuildIdentityMatrix(result);
-            assert(0);
+            if (Curve<Matrix4X4f, float>::m_Knots.size() == 0)
+                return result;
+            else if (Curve<Matrix4X4f, float>::m_Knots.size() == 1)
+                return Curve<Matrix4X4f, float>::m_Knots[0];
+            else if (Curve<Matrix4X4f, float>::m_Knots.size() < index + 1)
+                return Curve<Matrix4X4f, float>::m_Knots.back();
+            else if (index == 0)
+                return Curve<Matrix4X4f, float>::m_Knots.front();
+            else
+            {
+                auto v1 = Curve<Matrix4X4f, float>::m_Knots[index - 1];                
+                auto v2 = Curve<Matrix4X4f, float>::m_Knots[index];
+
+                Vector3f translation1, translation2; 
+                Vector3f scalar1, scalar2;
+                Vector3f rotation1, rotation2;
+
+                Matrix4X4fDecompose(v1, rotation1, scalar1, translation1);
+                Matrix4X4fDecompose(v2, rotation2, scalar2, translation2);
+
+                // Interpolate tranlation
+                Vector3f translation = (1.0f - s) * translation1 + s * translation2;
+                // Interpolate scalar 
+                Vector3f scalar = (1.0f - s) * scalar1 + s * scalar2;
+                // Interpolate rotation
+                Vector3f rotation = (1.0f - s) * rotation1 + s * rotation2;
+
+                // compose the interpolated matrix
+                Matrix4X4fCompose(result, rotation, scalar, translation);
+            }
 
             return result;
         }

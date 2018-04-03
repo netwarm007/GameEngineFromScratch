@@ -69,3 +69,10 @@ add_test(NAME TEST_Gjk COMMAND GjkTest)
 add_executable(ChronoTest ChronoTest.cpp)
 add_test(NAME TEST_Chrono COMMAND ChronoTest)
 
+add_executable(LinearInterpolateTest LinearInterpolateTest.cpp)
+target_link_libraries(LinearInterpolateTest Algorism GeomMath)
+add_test(NAME TEST_LinearInterpolate COMMAND LinearInterpolateTest)
+
+add_executable(QRDecomposeTest QRDecomposeTest.cpp)
+target_link_libraries(QRDecomposeTest Algorism GeomMath)
+add_test(NAME TEST_QRDecompose COMMAND QRDecomposeTest)

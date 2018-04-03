@@ -404,7 +404,6 @@ namespace My {
             return data[row_index];
         }
 
-
         operator T*() { return &data[0][0]; };
         operator const T*() const { return static_cast<const T*>(&data[0][0]); };
 
@@ -553,7 +552,6 @@ namespace My {
     inline void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw, const float pitch, const float roll)
     {
         float cYaw, cPitch, cRoll, sYaw, sPitch, sRoll;
-
 
         // Get the cosine and sin of the yaw, pitch, and roll.
         cYaw = cosf(yaw);
