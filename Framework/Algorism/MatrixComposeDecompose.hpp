@@ -55,21 +55,34 @@ namespace My {
         translation.Set({matrix[3][0], matrix[3][1], matrix[3][2]});
 
         // QR decompose the top-left 3x3 matrix
-        Matrix3X3f bases = {{{
+        Vector3f bases[3] = {
             {matrix[0][0], matrix[0][1], matrix[0][2]},
             {matrix[1][0], matrix[1][1], matrix[1][2]},
             {matrix[2][0], matrix[2][1], matrix[2][2]}
-        }}};
-        Matrix3X3f Q, R;
-        MatrixQRDecompose(bases, Q, R);
+        };
 
+	float scale_x = Length(bases[0]);
+	float scale_y = Length(bases[1]);
+	float scale_z = Length(bases[2]);
         // decompose the scale
-        scalar.Set({R[0][0], R[1][1], R[2][2]});
+        scalar.Set({scale_x, scale_y, scale_z});
 
         // decompose the rotation matrix
-        float theta_x = atan2f(Q[0][2], Q[1][2]);
-        float theta_y = acosf(Q[2][2]);
-        float theta_z = -atan2f(Q[2][0], Q[2][1]);
+        float theta_x;
+        float theta_y = asinf(matrix[2][0]/scale_x);
+        float theta_z;
+
+        float C = cosf(theta_y); 
+        if (fabs(C) > 0.005 ) /* Gimball lock? */ 
+        { 
+            theta_x = atan2f(matrix[2][2]/scale_z, -matrix[2][1]/scale_y); 
+            theta_z = atan2f(matrix[1][0]/scale_x, matrix[0][0]/scale_x); 
+        } 
+        else /* Gimball lock has occurred */ 
+        { 
+            theta_x = 0; /* Set X-axis angle to zero */ 
+            theta_z = atan2f(matrix[0][1]/scale_y, matrix[1][1]/scale_y); 
+        } 
         
         rotation.Set({theta_x, theta_y, theta_z});
     }
