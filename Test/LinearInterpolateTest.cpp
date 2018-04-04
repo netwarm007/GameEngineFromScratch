@@ -26,32 +26,38 @@ int main (int argc, char** argv)
 
     // generate start point matrix
     Vector3f translation_1 ({dice_t(), dice_t(), dice_t()});
-    Vector3f scale_1 ({dice_s(), dice_s(), dice_s()});
+    //Vector3f scale_1 ({dice_s(), dice_s(), dice_s()});
+    Vector3f scale_1 (dice_s());
     Vector3f rotation_1 ({dice_r(), dice_r(), dice_r()});
     Matrix4X4f matrix_transform_1;
     Matrix4X4fCompose(matrix_transform_1, rotation_1, scale_1, translation_1);
 
-    cout << "Start Point:" << endl;
-    cout << "_________________" << endl;
-    cout << "Translation: " << translation_1;
-    cout << "Scalar: " << scale_1;
-    cout << "Rotation: " << rotation_1;
-    cout << "Transform Matrix: " << matrix_transform_1;
-
+    Vector3f v ({dice_t(), dice_t(), dice_t()});
 
     // generate end point matrix
     Vector3f translation_2 ({dice_t(), dice_t(), dice_t()});
-    Vector3f scale_2 ({dice_s(), dice_s(), dice_s()});
+    //Vector3f scale_2 ({dice_s(), dice_s(), dice_s()});
+    Vector3f scale_2 (dice_s());
     Vector3f rotation_2 ({dice_r(), dice_r(), dice_r()});
     Matrix4X4f matrix_transform_2;
     Matrix4X4fCompose(matrix_transform_2, rotation_2, scale_2, translation_2);
 
-    cout << "End Point:" << endl;
+    auto v1 = v;
+    TransformCoord(v1, matrix_transform_1);
+    auto v2 = v;
+    TransformCoord(v2, matrix_transform_2);
+
+    cout << "Start Point:" << v1;
+    cout << "End Point:" << v2;
     cout << "_________________" << endl;
-    cout << "Translation: " << translation_2;
-    cout << "Scalar: " << scale_2;
-    cout << "Rotation: " << rotation_2;
-    cout << "Transform Matrix: " << matrix_transform_2;
+    cout << "Start Translation: " << translation_1;
+    cout << "End Translation: " << translation_2;
+    cout << "_________________" << endl;
+    cout << "Start Scalar: " << scale_1;
+    cout << "End Scalar: " << scale_2;
+    cout << "_________________" << endl;
+    cout << "Start Rotation: " << rotation_1;
+    cout << "End Rotation: " << rotation_2;
 
     Linear<Matrix4X4f, float> linear_introplator({matrix_transform_1, matrix_transform_2});
 
@@ -59,11 +65,15 @@ int main (int argc, char** argv)
     cout << "Interpolate: " << endl;
     for (int i = 0; i <= interpolate_count; i++)
     {
-        cout << "#" << i << endl;
         auto inter_matrix = linear_introplator.Interpolate(i * 1.0f / interpolate_count, 1);
         Vector3f rotation, scalar, translation;
         Matrix4X4fDecompose(inter_matrix, rotation, scalar, translation);
-        cout << inter_matrix;
+        auto v_inter = v;
+        TransformCoord(v_inter, inter_matrix);
+        cout << "#" << i << endl;
+        cout << "_________________" << endl;
+        cout << "Interpolated Position: " << v_inter;
+        cout << "_________________" << endl;
         cout << "Rotation: " << rotation;
         cout << "Scalar: " <<  scalar;
         cout << "Translation: " << translation;

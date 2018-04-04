@@ -301,6 +301,12 @@ namespace My {
     }
 
     template <typename T, int N>
+    Vector<T, N> operator/=(const Vector<T, N>& vec, const Scalar scalar)
+    {
+        return vec / scalar;
+    }
+
+    template <typename T, int N>
     Vector<T, N> operator/(const Scalar scalar, const Vector<T, N>& vec)
     {
         Vector<T, N> result;
@@ -316,6 +322,12 @@ namespace My {
         DivByElement(result, vec1, vec2);
 
         return result;
+    }
+
+    template <typename T, int N>
+    Vector<T, N> operator/=(const Vector<T, N>& vec1, const Vector<T, N>& vec2)
+    {
+        return vec1 / vec2;
     }
 
     template <typename T>
@@ -393,14 +405,14 @@ namespace My {
     struct Matrix
     {
         union {
-            T data[ROWS][COLS];
+            Vector<T, COLS> data[ROWS];
         };
 
-        T* operator[](int row_index) {
+        Vector<T, COLS>& operator[](int row_index) {
             return data[row_index];
         }
 
-        const T* operator[](int row_index) const {
+        const Vector<T, COLS>& operator[](int row_index) const {
             return data[row_index];
         }
 
@@ -409,11 +421,13 @@ namespace My {
 
         Matrix& operator=(const T* _data) 
         {
-            for (int i = 0; i < ROWS; i++) {
-                for (int j = 0; j < COLS; j++) {
-                    data[i][j] = *(_data + i * COLS + j);
-                }
-            }
+            std::memcpy(this, data, sizeof(T) * COLS * ROWS);
+            return *this;
+        }
+
+        Matrix& operator=(const Matrix& rhs) 
+        {
+            std::memcpy(this, rhs, sizeof(T) * COLS * ROWS);
             return *this;
         }
     };
@@ -428,9 +442,7 @@ namespace My {
     {
         out << std::endl;
         for (int i = 0; i < ROWS; i++) {
-            for (int j = 0; j < COLS; j++) {
-                out << matrix.data[i][j] << ((j == COLS - 1)? '\n' : ',');
-            }
+            out << matrix.data[i];
         }
         out << std::endl;
 
@@ -486,7 +498,7 @@ namespace My {
         Transpose(matrix2_transpose, matrix2);
         for (int i = 0; i < Da; i++) {
             for (int j = 0; j < Dc; j++) {
-                DotProduct(result[i][j], matrix1[i], matrix2_transpose[j], Db);
+                DotProduct(result[i][j], matrix1[i], matrix2_transpose[j]);
             }
         }
 
@@ -563,14 +575,12 @@ namespace My {
         sRoll = sinf(roll);
 
         // Calculate the yaw, pitch, roll rotation matrix.
-        Matrix4X4f tmp = {{{
+        matrix = {{{
             { (cRoll * cYaw) + (sRoll * sPitch * sYaw), (sRoll * cPitch), (cRoll * -sYaw) + (sRoll * sPitch * cYaw), 0.0f },
             { (-sRoll * cYaw) + (cRoll * sPitch * sYaw), (cRoll * cPitch), (sRoll * sYaw) + (cRoll * sPitch * cYaw), 0.0f },
             { (cPitch * sYaw), -sPitch, (cPitch * cYaw), 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
         }}};
-
-        matrix = tmp;
 
         return;
     }
