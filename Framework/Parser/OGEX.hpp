@@ -398,6 +398,34 @@ namespace My {
                         base_node->AppendTransform(_key, std::move(rotation));
                     }
                     return;
+                case OGEX::kStructureScale:
+                    {
+                        const OGEX::ScaleStructure& _structure = dynamic_cast<const OGEX::ScaleStructure&>(structure);
+                        bool object_flag = _structure.GetObjectFlag();
+                        std::shared_ptr<SceneObjectScale> scale;
+
+                        auto kind = _structure.GetScaleKind();
+                        auto data = _structure.GetScale();
+                        if(kind == "x")
+                        {
+                            scale = std::make_shared<SceneObjectScale>('x', data[0], object_flag);
+                        }
+                        else if(kind == "y")
+                        {
+                            scale = std::make_shared<SceneObjectScale>('y', data[0], object_flag);
+                        }
+                        else if(kind == "z")
+                        {
+                            scale = std::make_shared<SceneObjectScale>('z', data[0], object_flag);
+                        }
+                        else if(kind == "xyz")
+                        {
+                            scale = std::make_shared<SceneObjectScale>(data[0], data[1], data[2], object_flag);
+                        }
+                        auto _key = _structure.GetStructureName();
+                        base_node->AppendTransform(_key, std::move(scale));
+                    }
+                    return;
                 case OGEX::kStructureMaterial:
                     {
                         const OGEX::MaterialStructure& _structure = dynamic_cast<const OGEX::MaterialStructure&>(structure);
@@ -557,7 +585,7 @@ namespace My {
                     {
                         const OGEX::AnimationStructure& _structure = dynamic_cast<const OGEX::AnimationStructure&>(structure);
                         auto clip_index = _structure.GetClipIndex();
-                        auto clip = std::make_shared<SceneObjectAnimationClip>(clip_index);
+                        std::shared_ptr<SceneObjectAnimationClip> clip = std::make_shared<SceneObjectAnimationClip>(clip_index);
 
                         const ODDL::Structure* _sub_structure = _structure.GetFirstCoreSubnode();
                         while(_sub_structure) {

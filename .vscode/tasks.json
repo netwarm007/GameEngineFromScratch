@@ -18,7 +18,7 @@
         {
             "label": "Build Billiard Game",
             "type": "shell",
-            "command": "./build.sh",
+            "command": "./build-ninja.sh",
             "windows": {
                 "command": "build.bat"
             },

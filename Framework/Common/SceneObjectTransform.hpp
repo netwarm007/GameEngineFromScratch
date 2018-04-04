@@ -193,47 +193,50 @@ namespace My {
 
         public:
             SceneObjectScale() { m_Type = SceneObjectType::kSceneObjectTypeScale; }
-            SceneObjectScale(const char axis, const float amount)  
+            SceneObjectScale(const char axis, const float amount, const bool object_only = false)  
                 : SceneObjectScale()
             { 
                 m_Kind = axis;
 
                 switch (axis) {
                     case 'x':
-                        MatrixScale(m_matrix, amount, 0.0f, 0.0f);
+                        MatrixScale(m_matrix, amount, 1.0f, 1.0f);
                         break;
                     case 'y':
-                        MatrixScale(m_matrix, 0.0f, amount, 0.0f);
+                        MatrixScale(m_matrix, 1.0f, amount, 1.0f);
                         break;
                     case 'z':
-                        MatrixScale(m_matrix, 0.0f, 0.0f, amount);
+                        MatrixScale(m_matrix, 1.0f, 1.0f, amount);
                         break;
                     default:
                         assert(0);
                 }
+
+                m_bSceneObjectOnly = object_only;
             }
 
-            SceneObjectScale(const float x, const float y, const float z) 
+            SceneObjectScale(const float x, const float y, const float z, const bool object_only = false) 
                 : SceneObjectScale()
             {
                 m_Kind = 0;
                 MatrixScale(m_matrix, x, y, z);
+                m_bSceneObjectOnly = object_only;
             }
 
             void Update(const float amount) final
             {
                 switch (m_Kind) {
                     case 'x':
-                        MatrixScale(m_matrix, amount, 0.0f, 0.0f);
+                        MatrixScale(m_matrix, amount, 1.0f, 1.0f);
                         break;
                     case 'y':
-                        MatrixScale(m_matrix, 0.0f, amount, 0.0f);
+                        MatrixScale(m_matrix, 1.0f, amount, 1.0f);
                         break;
                     case 'z':
-                        MatrixScale(m_matrix, 0.0f, 0.0f, amount);
+                        MatrixScale(m_matrix, 1.0f, 1.0f, amount);
                         break;
                     default:
-                        assert(0);
+                        Update(Vector3f(amount));
                 }
             }
 

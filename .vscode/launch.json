@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/splash.ogex"
+                "Scene/interpolation_test.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -421,13 +421,13 @@ namespace My {
 
         Matrix& operator=(const T* _data) 
         {
-            std::memcpy(this, data, sizeof(T) * COLS * ROWS);
+            std::memcpy(data, _data, sizeof(T) * COLS * ROWS);
             return *this;
         }
 
         Matrix& operator=(const Matrix& rhs) 
         {
-            std::memcpy(this, rhs, sizeof(T) * COLS * ROWS);
+            std::memcpy(data, rhs, sizeof(T) * COLS * ROWS);
             return *this;
         }
     };
