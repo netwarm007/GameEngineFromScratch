@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <iostream>
+#include <random>
 #include "MatrixComposeDecompose.hpp"
 
 using namespace My;
@@ -7,10 +8,25 @@ using namespace std;
 
 int main(int , char** )
 {
+    default_random_engine generator;
+    generator.seed(48);
+    uniform_real_distribution<float> distribution_r(-1.0f * PI, 1.0f * PI);
+    uniform_real_distribution<float> distribution_s(0.1f, 100.0f);
+    uniform_real_distribution<float> distribution_t(-1000.0f, 1000.0f);
+    auto dice_r = std::bind(distribution_r, generator);
+    auto dice_s = std::bind(distribution_s, generator);
+    auto dice_t = std::bind(distribution_t, generator);
+
+    Vector3f translation ({dice_t(), dice_t(), dice_t()});
+    Vector3f scale ({dice_s(), dice_s(), dice_s()});
+    Vector3f rotation ({dice_r(), dice_r(), dice_r()});
+    Matrix4X4f matrix;
+    Matrix4X4fCompose(matrix, rotation, scale, translation);
+
     Matrix3X3f A = {{{
-        {12.0f, 6.0f, -4.0f},
-        {-51.0f, 167.0f, 24.0f},
-        {4.0f, -68.0f, -41.0f},
+        {matrix[0][0], matrix[0][1], matrix[0][2]},
+        {matrix[1][0], matrix[1][1], matrix[1][2]},
+        {matrix[2][0], matrix[2][1], matrix[2][2]}
     }}};
     Matrix3X3f Q, R;
 
