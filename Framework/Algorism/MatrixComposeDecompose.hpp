@@ -44,14 +44,19 @@ namespace My {
 	U = in_matrix;
 	T detU = 1;
 	Matrix<T, 3, 3> U_inv = U;
+	if (!InverseMatrix3X3f(U_inv)) return;
+	Matrix<T, 3, 3> U_inv_trans;
+	Transpose(U_inv_trans, U_inv);
 	
 	do {
 		// now we calculate the inverse of U
-		U = (U + U_inv) * (T)0.5;
+		Matrix<T, 3, 3> U_pre = U;
+		U = (U + U_inv_trans) * (T)0.5;
 		U_inv = U;
 		if (!InverseMatrix3X3f(U_inv)) return;
+		Transpose(U_inv_trans, U_inv);
 
-		auto D = U - U_inv;
+		auto D = U - U_pre;
 
 		// we QR decompose D for acceleration
 		Matrix<T, 3, 3> Q;
