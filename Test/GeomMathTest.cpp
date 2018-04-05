@@ -164,9 +164,18 @@ void matrix_test()
     Matrix4X4f mvp = view * perspective;
     cout << "MVP: " << mvp;
 
+    Matrix3X3f invertable3x3 = {{{
+        { 1.0f,  1.0f,  0.0f},
+        { 0.0f,  2.0f,  0.0f},
+        { 0.0f,  0.0f,  1.0f},
+    }}};
+    cout << "Known Invertable Matrix: " << invertable3x3;
+    assert(InverseMatrix3X3f(invertable3x3));
+    cout << "Inverse of Matrix: " << invertable3x3;
+
     Matrix4X4f invertable = {{{
-        { 1.0f,  0.0f,  0.0f,  0.0f},
-        { 0.0f,  1.0f,  0.0f,  0.0f},
+        { 1.0f,  1.0f,  0.0f,  0.0f},
+        { 0.0f,  2.0f,  0.0f,  0.0f},
         { 0.0f,  0.0f,  1.0f,  0.0f},
         {13.0f, 14.0f, 15.0f,  1.0f}
     }}};
@@ -180,7 +189,7 @@ void matrix_test()
         { 9.0f, 10.0f, 11.0f, 12.0f},
         {13.0f, 14.0f, 15.0f, 16.0f}
     }}};
-    cout << "Known Sigular(Not Ivertable) Matrix: " << non_invertable;
+    cout << "Known Sigular(Not Invertable) Matrix: " << non_invertable;
     assert(!InverseMatrix4X4f(non_invertable));
     cout << "InverseMatrix4X4f returns false." << endl;
 

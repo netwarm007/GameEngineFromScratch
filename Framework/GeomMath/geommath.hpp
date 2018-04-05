@@ -442,7 +442,7 @@ namespace My {
     {
         out << std::endl;
         for (int i = 0; i < ROWS; i++) {
-            out << matrix.data[i];
+            out << matrix[i];
         }
         out << std::endl;
 

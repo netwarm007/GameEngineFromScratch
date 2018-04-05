@@ -35,7 +35,7 @@ int main(int , char** )
     cout.precision(4);
     cout.setf(ios::fixed);
 
-    cout << "QR Decompose of matrix A: " << endl;
+    cout << "Polar Decompose of matrix A: " << endl;
     cout << A;
     cout << "U:" << endl;
     cout << U;

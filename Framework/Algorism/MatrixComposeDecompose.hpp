@@ -20,13 +20,14 @@ namespace My {
                 T numerator, denominator;
                 DotProduct(numerator, U[i], U[j]);
                 denominator = Length(U[j]);
-                auto coefficient = numerator / denominator;
+                auto coefficient = (denominator)? numerator / denominator : 0;
                 U[i] = U[i] - coefficient * U[j];
                 R[i][j] = coefficient;
             }
 
             R[i][i] = Length(U[i]);
-            U[i] = U[i] / R[i][i];
+	    if (R[i][i])
+            	U[i] = U[i] / R[i][i];
 
             if (i < COLS)
             {
@@ -41,11 +42,13 @@ namespace My {
         Matrix<T, 3, 3>& P)
     {
 	U = in_matrix;
-	T detU = T(1);
-	Matrix<T, 3, 3>& U_inv = U;
+	T detU = 1;
+	Matrix<T, 3, 3> U_inv = U;
 	
 	do {
 		// now we calculate the inverse of U
+		U = (U + U_inv) * (T)0.5;
+		U_inv = U;
 		if (!InverseMatrix3X3f(U_inv)) return;
 
 		auto D = U - U_inv;
@@ -63,8 +66,7 @@ namespace My {
 		    detU *= R[i][i];
 		}
 
-		U = (U + U_inv) * T(0.5);
-
+		std::cerr << detU << std::endl;
 	} while(abs(detU) > T(10E-6));
 
 	P = in_matrix * U_inv;
