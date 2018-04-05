@@ -76,3 +76,7 @@ add_test(NAME TEST_LinearInterpolate COMMAND LinearInterpolateTest)
 add_executable(QRDecomposeTest QRDecomposeTest.cpp)
 target_link_libraries(QRDecomposeTest Algorism GeomMath)
 add_test(NAME TEST_QRDecompose COMMAND QRDecomposeTest)
+
+add_executable(PolarDecomposeTest PolarDecomposeTest.cpp)
+target_link_libraries(PolarDecomposeTest Algorism GeomMath)
+add_test(NAME TEST_PolarDecompose COMMAND PolarDecomposeTest)

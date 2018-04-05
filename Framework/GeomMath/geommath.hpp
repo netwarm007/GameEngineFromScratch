@@ -514,6 +514,19 @@ namespace My {
         return result;
     }
 
+    template <typename T, int ROWS, int COLS>
+    Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix, const Scalar scalar)
+    {
+        Matrix<T, ROWS, COLS> result;
+
+        for (int i = 0; i < ROWS; i++)
+        {
+            result[i] = matrix[i] * scalar;
+        }
+
+        return matrix;
+    }
+
     template <typename T, int ROWS1, int COLS1, int ROWS2, int COLS2>
     void Shrink(Matrix<T, ROWS1, COLS1>& matrix1, const Matrix<T, ROWS2, COLS2>& matrix2)
     {
@@ -805,6 +818,11 @@ namespace My {
     {
         assert(v[3]);
         MatrixScale(matrix, v[0]/v[3], v[1]/v[3], v[2]/v[3]);
+    }
+
+    inline bool InverseMatrix3X3f(Matrix3X3f& matrix)
+    {
+        return ispc::InverseMatrix3X3f(matrix);
     }
 
     inline bool InverseMatrix4X4f(Matrix4X4f& matrix)

@@ -35,6 +35,41 @@ namespace My {
         }
     }
 
+    template <typename T>
+    inline void MatrixPolarDecompose(const Matrix<T, 3, 3>& in_matrix,
+        Matrix<T, 3, 3>& U,
+        Matrix<T, 3, 3>& P)
+    {
+	U = in_matrix;
+	T detU = T(1);
+	Matrix<T, 3, 3>& U_inv = U;
+	
+	do {
+		// now we calculate the inverse of U
+		if (!InverseMatrix3X3f(U_inv)) return;
+
+		auto D = U - U_inv;
+
+		// we QR decompose D for acceleration
+		Matrix<T, 3, 3> Q;
+		Matrix<T, 3, 3> R;
+		MatrixQRDecompose(D, Q, R);
+
+		// now, since Q is a pure rotation matrix (special orthogonal matrix), its det is 1,
+		// we can get the det(U) by det(R). And, R is a triangular matrix, so we can calculate
+		// its det by its diagonal entries
+		for (int i = 0; i < 3; i++)
+		{
+		    detU *= R[i][i];
+		}
+
+		U = (U + U_inv) * T(0.5);
+
+	} while(abs(detU) > T(10E-6));
+
+	P = in_matrix * U_inv;
+    }
+
     inline void Matrix4X4fCompose(Matrix4X4f& matrix, const Vector3f& rotation, const Vector3f& scalar, const Vector3f& translation)
     {
         Matrix4X4f matrix_rotate_x, matrix_rotate_y, matrix_rotate_z, matrix_rotate;
