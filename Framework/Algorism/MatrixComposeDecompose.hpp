@@ -91,11 +91,11 @@ namespace My {
         translation.Set({matrix[3][0], matrix[3][1], matrix[3][2]});
 
         // QR decompose the top-left 3x3 matrix
-        Matrix3X3f bases = {{{
+        Matrix3X3f bases = {{
             {matrix[0][0], matrix[0][1], matrix[0][2]},
             {matrix[1][0], matrix[1][1], matrix[1][2]},
             {matrix[2][0], matrix[2][1], matrix[2][2]}
-        }}};
+        }};
 
         Matrix3X3f Q, R;
         MatrixQRDecompose(bases, Q, R);

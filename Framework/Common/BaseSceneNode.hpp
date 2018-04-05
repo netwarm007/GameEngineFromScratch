@@ -99,11 +99,11 @@ namespace My {
 
             virtual Matrix3X3f GetLocalAxis()
             {
-                return {{{
+                return {{
                             {1.0f, 0.0f, 0.0f},
                             {0.0f, 1.0f, 0.0f},
                             {0.0f, 0.0f, 1.0f}
-                       }}};
+                       }};
             }
 
         friend std::ostream& operator<<(std::ostream& out, const BaseSceneNode& node)

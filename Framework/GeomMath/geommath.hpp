@@ -37,12 +37,6 @@
 namespace My {
     typedef float Scalar;
 
-    template<typename T, size_t SizeOfArray>
-        constexpr size_t countof(T (&)[SizeOfArray]) { return SizeOfArray; }
-
-    template<typename T, size_t RowSize, size_t ColSize>
-        constexpr size_t countof(T (&)[RowSize][ColSize]) { return RowSize * ColSize; }
-
 #ifdef max
     #undef max
 #endif
@@ -248,7 +242,7 @@ namespace My {
     inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a, const T scalar)
     {
         Vector<T, N> v(scalar);
-        ispc::MulByElement(a, v, result, countof(result.data));
+        ispc::MulByElement(a, v, result, N);
     }
 
     template <typename T, int N>
@@ -288,7 +282,7 @@ namespace My {
     inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a, const T scalar)
     {
         Vector<T, N> v(scalar);
-        ispc::DivByElement(a, v, result, countof(result.data));
+        ispc::DivByElement(a, v, result, N);
     }
 
     template <typename T, int N>
@@ -340,7 +334,7 @@ namespace My {
     Vector<T, N> pow(const Vector<T, N>& vec, const Scalar exponent)
     {
         Vector<T, N> result;
-        ispc::Pow(vec, countof(vec.data), exponent, result);
+        ispc::Pow(vec, N, exponent, result);
         return result;
     }
 
@@ -354,7 +348,7 @@ namespace My {
     Vector<T, N> abs(const Vector<T, N>& vec)
     {
         Vector<T, N> result;
-        ispc::Absolute(result, vec, countof(vec.data));
+        ispc::Absolute(result, vec, N);
         return result;
     }
 
@@ -396,7 +390,7 @@ namespace My {
         T length;
         DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), N);
         length = sqrt(length);
-        ispc::Normalize(countof(a.data), a, length);
+        ispc::Normalize(N, a, length);
     }
 
     // Matrix
@@ -404,9 +398,7 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     struct Matrix
     {
-        union {
-            Vector<T, COLS> data[ROWS];
-        };
+        Vector<T, COLS> data[ROWS];
 
         Vector<T, COLS>& operator[](int row_index) {
             return data[row_index];
@@ -427,7 +419,7 @@ namespace My {
 
         Matrix& operator=(const Matrix& rhs) 
         {
-            std::memcpy(data, rhs, sizeof(T) * COLS * ROWS);
+            std::memcpy(data, rhs, sizeof(Matrix));
             return *this;
         }
     };
@@ -452,7 +444,7 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void MatrixAdd(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
-        ispc::AddByElement(matrix1, matrix2, result, countof(result.data));
+        ispc::AddByElement(matrix1, matrix2, result, ROWS * COLS);
     }
 
     template <typename T, int ROWS, int COLS>
@@ -467,19 +459,19 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void MatrixSub(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
-        ispc::SubByElement(matrix1, matrix2, result, countof(result.data));
+        ispc::SubByElement(matrix1, matrix2, result, ROWS * COLS);
     }
 
     template <typename T, int ROWS, int COLS>
     void MatrixMulByElement(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
-        ispc::MulByElement(matrix1, matrix2, result, countof(result.data));
+        ispc::MulByElement(matrix1, matrix2, result, ROWS * COLS);
     }
 
     template <int ROWS, int COLS>
     void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result, const Matrix<int32_t, ROWS, COLS>& matrix1, const Matrix<int32_t, ROWS, COLS>& matrix2)
     {
-        ispc::MulByElementi32(matrix1, matrix2, result, countof(result.data));
+        ispc::MulByElementi32(matrix1, matrix2, result, ROWS * COLS);
     }
 
     template <typename T, int ROWS, int COLS>
@@ -524,7 +516,7 @@ namespace My {
             result[i] = matrix[i] * scalar;
         }
 
-        return matrix;
+        return result;
     }
 
     template <typename T, int ROWS1, int COLS1, int ROWS2, int COLS2>
@@ -543,7 +535,7 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void Absolute(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix)
     {
-        ispc::Absolute(result, matrix, countof(matrix.data));
+        ispc::Absolute(result, matrix, ROWS * COLS);
     }
 
     template <typename T, int ROWS, int COLS>
@@ -588,12 +580,12 @@ namespace My {
         sRoll = sinf(roll);
 
         // Calculate the yaw, pitch, roll rotation matrix.
-        matrix = {{{
+        matrix = {{
             { (cRoll * cYaw) + (sRoll * sPitch * sYaw), (sRoll * cPitch), (cRoll * -sYaw) + (sRoll * sPitch * cYaw), 0.0f },
             { (-sRoll * cYaw) + (cRoll * sPitch * sYaw), (cRoll * cPitch), (sRoll * sYaw) + (cRoll * sPitch * cYaw), 0.0f },
             { (cPitch * sYaw), -sPitch, (cPitch * cYaw), 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
-        }}};
+        }};
 
         return;
     }
@@ -641,24 +633,24 @@ namespace My {
         result3 = -result3;
 
         // Set the computed values in the view matrix.
-        Matrix4X4f tmp = {{{
+        Matrix4X4f tmp = {{
             { xAxis[0], yAxis[0], zAxis[0], 0.0f },
             { xAxis[1], yAxis[1], zAxis[1], 0.0f },
             { xAxis[2], yAxis[2], zAxis[2], 0.0f },
             { result1, result2, result3, 1.0f }
-        }}};
+        }};
 
         result = tmp;
     }
 
     inline void BuildIdentityMatrix(Matrix4X4f& matrix)
     {
-        Matrix4X4f identity = {{{
+        Matrix4X4f identity = {{
             { 1.0f, 0.0f, 0.0f, 0.0f},
             { 0.0f, 1.0f, 0.0f, 0.0f},
             { 0.0f, 0.0f, 1.0f, 0.0f},
             { 0.0f, 0.0f, 0.0f, 1.0f}
-        }}};
+        }};
 
         matrix = identity;
 
@@ -668,12 +660,12 @@ namespace My {
 
     inline void BuildPerspectiveFovLHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
-        Matrix4X4f perspective = {{{
+        Matrix4X4f perspective = {{
             { 1.0f / (screenAspect * tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
             { 0.0f, 1.0f / tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
             { 0.0f, 0.0f, screenDepth / (screenDepth - screenNear), 1.0f },
             { 0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear), 0.0f }
-        }}};
+        }};
 
         matrix = perspective;
 
@@ -682,12 +674,12 @@ namespace My {
 
     inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
-        Matrix4X4f perspective = {{{
+        Matrix4X4f perspective = {{
             { 1.0f / (screenAspect * tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
             { 0.0f, 1.0f / tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
             { 0.0f, 0.0f, screenDepth / (screenNear - screenDepth), -1.0f },
             { 0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear), 0.0f }
-        }}};
+        }};
 
         matrix = perspective;
 
@@ -696,12 +688,12 @@ namespace My {
 
     inline void MatrixTranslation(Matrix4X4f& matrix, const float x, const float y, const float z)
     {
-        Matrix4X4f translation = {{{
+        Matrix4X4f translation = {{
             { 1.0f, 0.0f, 0.0f, 0.0f},
             { 0.0f, 1.0f, 0.0f, 0.0f},
             { 0.0f, 0.0f, 1.0f, 0.0f},
             {    x,    y,    z, 1.0f}
-        }}};
+        }};
 
         matrix = translation;
 
@@ -723,12 +715,12 @@ namespace My {
     {
         float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{{
+        Matrix4X4f rotation = {{
             {  1.0f, 0.0f, 0.0f, 0.0f },
             {  0.0f,    c,    s, 0.0f },
             {  0.0f,   -s,    c, 0.0f },
             {  0.0f, 0.0f, 0.0f, 1.0f },
-        }}};
+        }};
 
         matrix = rotation;
 
@@ -739,12 +731,12 @@ namespace My {
     {
         float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{{
+        Matrix4X4f rotation = {{
             {    c, 0.0f,   -s, 0.0f },
             { 0.0f, 1.0f, 0.0f, 0.0f },
             {    s, 0.0f,    c, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f },
-        }}};
+        }};
 
         matrix = rotation;
 
@@ -756,12 +748,12 @@ namespace My {
     {
         float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{{
+        Matrix4X4f rotation = {{
             {    c,    s, 0.0f, 0.0f },
             {   -s,    c, 0.0f, 0.0f },
             { 0.0f, 0.0f, 1.0f, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
-        }}};
+        }};
 
         matrix = rotation;
 
@@ -772,12 +764,12 @@ namespace My {
     {
         float c = cosf(angle), s = sinf(angle), one_minus_c = 1.0f - c;
 
-        Matrix4X4f rotation = {{{
+        Matrix4X4f rotation = {{
             {   c + axis[0] * axis[0] * one_minus_c,  axis[0] * axis[1] * one_minus_c + axis[2] * s, axis[0] * axis[2] * one_minus_c - axis[1] * s, 0.0f    },
             {   axis[0] * axis[1] * one_minus_c - axis[2] * s, c + axis[1] * axis[1] * one_minus_c,  axis[1] * axis[2] * one_minus_c + axis[0] * s, 0.0f    },
             {   axis[0] * axis[2] * one_minus_c + axis[1] * s, axis[1] * axis[2] * one_minus_c - axis[0] * s, c + axis[2] * axis[2] * one_minus_c, 0.0f },
             {   0.0f,  0.0f,  0.0f,  1.0f   }
-        }}};
+        }};
 
         matrix = rotation;
     }
@@ -785,24 +777,24 @@ namespace My {
     template<typename T>
     inline void MatrixRotationQuaternion(Matrix4X4f& matrix, Quaternion<T> q)
     {
-        Matrix4X4f rotation = {{{
+        Matrix4X4f rotation = {{
             {   1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2],  2.0f * q[0] * q[1] + 2.0f * q[3] * q[2],   2.0f * q[0] * q[2] - 2.0f * q[3] * q[1],    0.0f    },
             {   2.0f * q[0] * q[1] - 2.0f * q[3] * q[2],    1.0f - 2.0f * q[0] * q[0] - 2.0f * q[2] * q[2], 2.0f * q[1] * q[2] + 2.0f * q[3] * q[0],    0.0f    },
             {   2.0f * q[0] * q[2] + 2.0f * q[3] * q[1],    2.0f * q[1] * q[2] - 2.0f * q[1] * q[2] - 2.0f * q[3] * q[0], 1.0f - 2.0f * q[0] * q[0] - 2.0f * q[1] * q[1], 0.0f    },
             {   0.0f,   0.0f,   0.0f,   1.0f    }
-        }}};
+        }};
 
         matrix = rotation;
     }
 
     inline void MatrixScale(Matrix4X4f& matrix, const float x, const float y, const float z)
     {
-        Matrix4X4f scale = {{{
+        Matrix4X4f scale = {{
             {    x, 0.0f, 0.0f, 0.0f},
             { 0.0f,    y, 0.0f, 0.0f},
             { 0.0f, 0.0f,    z, 0.0f},
             { 0.0f, 0.0f, 0.0f, 1.0f},
-        }}};
+        }};
 
         matrix = scale;
 

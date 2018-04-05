@@ -164,36 +164,36 @@ void matrix_test()
     Matrix4X4f mvp = view * perspective;
     cout << "MVP: " << mvp;
 
-    Matrix3X3f invertable3x3 = {{{
+    Matrix3X3f invertable3x3 = {{
         { 1.0f,  1.0f,  0.0f},
         { 0.0f,  2.0f,  0.0f},
         { 0.0f,  0.0f,  1.0f},
-    }}};
+    }};
     cout << "Known Invertable Matrix: " << invertable3x3;
     assert(InverseMatrix3X3f(invertable3x3));
     cout << "Inverse of Matrix: " << invertable3x3;
 
-    Matrix4X4f invertable = {{{
+    Matrix4X4f invertable = {{
         { 1.0f,  1.0f,  0.0f,  0.0f},
         { 0.0f,  2.0f,  0.0f,  0.0f},
         { 0.0f,  0.0f,  1.0f,  0.0f},
         {13.0f, 14.0f, 15.0f,  1.0f}
-    }}};
+    }};
     cout << "Known Invertable Matrix: " << invertable;
     assert(InverseMatrix4X4f(invertable));
     cout << "Inverse of Matrix: " << invertable;
 
-    Matrix4X4f non_invertable = {{{
+    Matrix4X4f non_invertable = {{
         { 1.0f,  2.0f,  3.0f,  4.0f},
         { 5.0f,  6.0f,  7.0f,  8.0f},
         { 9.0f, 10.0f, 11.0f, 12.0f},
         {13.0f, 14.0f, 15.0f, 16.0f}
-    }}};
+    }};
     cout << "Known Sigular(Not Invertable) Matrix: " << non_invertable;
     assert(!InverseMatrix4X4f(non_invertable));
     cout << "InverseMatrix4X4f returns false." << endl;
 
-    Matrix8X8f pixel_block = {{{
+    Matrix8X8f pixel_block = {{
         {-76, -73, -67, -62, -58, -67, -64, -55},
         {-65, -69, -73, -38, -19, -43, -59, -56},
         {-66, -69, -60, -15,  16, -24, -62, -55},
@@ -202,7 +202,7 @@ void matrix_test()
         {-49, -63, -68, -58, -51, -60, -70, -53},
         {-43, -57, -64, -69, -73, -67, -63, -45},
         {-41, -49, -59, -60, -63, -52, -50, -34}
-    }}};
+    }};
     cout << "A 8X8 int pixel block: " << pixel_block;
     Matrix8X8f pixel_block_dct = DCT8X8(pixel_block);
     cout << "After DCTII: " << pixel_block_dct;
