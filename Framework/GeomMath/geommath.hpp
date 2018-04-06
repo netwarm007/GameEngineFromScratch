@@ -539,6 +539,33 @@ namespace My {
     }
 
     template <typename T, int ROWS, int COLS>
+    inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix)
+    {
+        bool result = true;
+        for (int i = 0; i < ROWS; i++)
+        {
+            if (Length(matrix[i]) > std::numeric_limits<T>::epsilon())
+            {
+                result = false;
+            }
+        }
+
+        return result;
+    }
+
+    template <typename T, int ROWS, int COLS>
+    inline bool operator==(const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
+    {
+        return AlmostZero(matrix1 - matrix2);
+    }
+
+    template <typename T, int ROWS, int COLS>
+    inline bool operator!=(const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
+    {
+        return !(matrix1 == matrix2);
+    }
+
+    template <typename T, int ROWS, int COLS>
     inline void Transpose(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1)
     {
         ispc::Transpose(matrix1, result, ROWS, COLS);

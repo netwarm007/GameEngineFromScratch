@@ -26,8 +26,7 @@ int main (int argc, char** argv)
 
     // generate start point matrix
     Vector3f translation_1 ({dice_t(), dice_t(), dice_t()});
-    //Vector3f scale_1 ({dice_s(), dice_s(), dice_s()});
-    Vector3f scale_1 (dice_s());
+    Vector3f scale_1 ({dice_s(), dice_s(), dice_s()});
     Vector3f rotation_1 ({dice_r(), dice_r(), dice_r()});
     Matrix4X4f matrix_transform_1;
     Matrix4X4fCompose(matrix_transform_1, rotation_1, scale_1, translation_1);
@@ -36,8 +35,7 @@ int main (int argc, char** argv)
 
     // generate end point matrix
     Vector3f translation_2 ({dice_t(), dice_t(), dice_t()});
-    //Vector3f scale_2 ({dice_s(), dice_s(), dice_s()});
-    Vector3f scale_2 (dice_s());
+    Vector3f scale_2 ({dice_s(), dice_s(), dice_s()});
     Vector3f rotation_2 ({dice_r(), dice_r(), dice_r()});
     Matrix4X4f matrix_transform_2;
     Matrix4X4fCompose(matrix_transform_2, rotation_2, scale_2, translation_2);
@@ -58,6 +56,7 @@ int main (int argc, char** argv)
     cout << "_________________" << endl;
     cout << "Start Rotation: " << rotation_1;
     cout << "End Rotation: " << rotation_2;
+    cout << "=================" << endl;
 
     Linear<Matrix4X4f, float> linear_introplator({matrix_transform_1, matrix_transform_2});
 
@@ -77,6 +76,7 @@ int main (int argc, char** argv)
         cout << "Rotation: " << rotation;
         cout << "Scalar: " <<  scalar;
         cout << "Translation: " << translation;
+        cout << "=================" << endl;
     }
 
     return 0;

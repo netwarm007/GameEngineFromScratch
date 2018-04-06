@@ -41,40 +41,22 @@ namespace My {
         Matrix<T, 3, 3>& U,
         Matrix<T, 3, 3>& P)
     {
-	U = in_matrix;
-	T detU = 1;
-	Matrix<T, 3, 3> U_inv = U;
-	if (!InverseMatrix3X3f(U_inv)) return;
-	Matrix<T, 3, 3> U_inv_trans;
-	Transpose(U_inv_trans, U_inv);
-	
-	do {
-		// now we calculate the inverse of U
-		Matrix<T, 3, 3> U_pre = U;
-		U = (U + U_inv_trans) * (T)0.5;
-		U_inv = U;
-		if (!InverseMatrix3X3f(U_inv)) return;
-		Transpose(U_inv_trans, U_inv);
+        U = in_matrix;
+        Matrix<T, 3, 3> U_inv;
+        Matrix<T, 3, 3> U_pre;
+        Matrix<T, 3, 3> D;
+        
+        do {
+            U_pre = U;
+            U_inv = U;
+            if (!InverseMatrix3X3f(U_inv)) return;
+            Matrix<T, 3, 3> U_inv_trans;
+            Transpose(U_inv_trans, U_inv);
+            U = (U + U_inv_trans) * (T)0.5;
+            D = U - U_pre;
+        } while(!AlmostZero(D));
 
-		auto D = U - U_pre;
-
-		// we QR decompose D for acceleration
-		Matrix<T, 3, 3> Q;
-		Matrix<T, 3, 3> R;
-		MatrixQRDecompose(D, Q, R);
-
-		// now, since Q is a pure rotation matrix (special orthogonal matrix), its det is 1,
-		// we can get the det(U) by det(R). And, R is a triangular matrix, so we can calculate
-		// its det by its diagonal entries
-		for (int i = 0; i < 3; i++)
-		{
-		    detU *= R[i][i];
-		}
-
-		std::cerr << detU << std::endl;
-	} while(abs(detU) > T(10E-6));
-
-	P = in_matrix * U_inv;
+        P = in_matrix * U_inv;
     }
 
     inline void Matrix4X4fCompose(Matrix4X4f& matrix, const Vector3f& rotation, const Vector3f& scalar, const Vector3f& translation)
@@ -102,20 +84,20 @@ namespace My {
             {matrix[2][0], matrix[2][1], matrix[2][2]}
         }};
 
-        Matrix3X3f Q, R;
-        MatrixQRDecompose(bases, Q, R);
+        Matrix3X3f U, P;
+        MatrixPolarDecompose(bases, U, P);
 
-        float scale_x = Length(R[0]);
-        float scale_y = Length(R[1]);
-        float scale_z = Length(R[2]);
+        float scale_x = Length(P[0]);
+        float scale_y = Length(P[1]);
+        float scale_z = Length(P[2]);
 
         // decompose the scale
         scalar.Set({scale_x, scale_y, scale_z});
 
         // decompose the rotation matrix
-        float theta_x = atan2(Q[1][2], Q[2][2]);
-        float theta_y = -asinf(Q[0][2]);
-        float theta_z = atan2(Q[0][1], Q[0][0]);
+        float theta_x = atan2(U[1][2], U[2][2]);
+        float theta_y = -asinf(U[0][2]);
+        float theta_z = atan2(U[0][1], U[0][0]);
         
         rotation.Set({theta_x, theta_y, theta_z});
     }

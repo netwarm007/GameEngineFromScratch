@@ -39,10 +39,16 @@ int main(int , char** )
     cout << A;
     cout << "U:" << endl;
     cout << U;
+    cout << "Lenth of base[0]: " << Length(U[0]) << endl;
+    cout << "Lenth of base[1]: " << Length(U[1]) << endl;
+    cout << "Lenth of base[2]: " << Length(U[2]) << endl;
+    Vector3f base2_dash;
+    CrossProduct(base2_dash, U[0], U[1]);
+    cout << "Cross Product of base[0] and base[1]: " << base2_dash;
     cout << "P:" << endl;
     cout << P;
 
-    Matrix3X3f A_dash = U * P;
+    Matrix3X3f A_dash = P * U;
     cout << "U * P: " << A_dash;
     cout << "Error: " << A_dash - A;
 
