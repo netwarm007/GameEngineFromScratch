@@ -45,7 +45,6 @@ namespace My {
 
         void AddControlPoints(const TVAL knot, const TVAL incoming_cp, const TVAL outgoing_cp) 
         {
-            assert(incoming_cp <= knot && knot <= outgoing_cp);
             m_IncomingControlPoints.insert({knot, incoming_cp});
             m_OutgoingControlPoints.insert({knot, outgoing_cp});
         }

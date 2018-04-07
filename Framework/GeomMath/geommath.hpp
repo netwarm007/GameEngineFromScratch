@@ -531,6 +531,12 @@ namespace My {
         return result;
     }
 
+    template <typename T, int ROWS, int COLS>
+    Matrix<T, ROWS, COLS> operator*(const Scalar scalar, const Matrix<T, ROWS, COLS>& matrix)
+    {
+        return matrix * scalar;
+    }
+
     template <typename T, int ROWS1, int COLS1, int ROWS2, int COLS2>
     void Shrink(Matrix<T, ROWS1, COLS1>& matrix1, const Matrix<T, ROWS2, COLS2>& matrix2)
     {
@@ -556,9 +562,12 @@ namespace My {
         bool result = true;
         for (int i = 0; i < ROWS; i++)
         {
-            if (Length(matrix[i]) > 3.0 * std::numeric_limits<T>::epsilon())
+            for (int j = 0; j < COLS; j++)
             {
-                result = false;
+                if (abs(matrix[i][j]) > std::numeric_limits<T>::epsilon())
+                {
+                    result = false;
+                }
             }
         }
 
@@ -581,6 +590,19 @@ namespace My {
     inline void Transpose(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1)
     {
         ispc::Transpose(matrix1, result, ROWS, COLS);
+    }
+
+    template <typename T, int N>
+    inline T Trace(const Matrix<T, N, N>& matrix)
+    {
+        T result = (T)0;
+
+        for (int i = 0; i < N; i++)
+        {
+            result += matrix[i][i];
+        }
+
+        return result;
     }
 
     template <typename T, int ROWS, int COLS>

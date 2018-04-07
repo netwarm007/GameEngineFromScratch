@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/splash.ogex"
+                "Scene/LinearInterpolateTest.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -25,7 +25,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "Scene/splash.ogex"
+                "Scene/LinearInterpolateTest.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
