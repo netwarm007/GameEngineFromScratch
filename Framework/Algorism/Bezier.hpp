@@ -24,7 +24,7 @@ namespace My {
 
             auto count = knots.size();
 
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 auto knot = knots[i];
                 auto in_cp = incoming_cp[i];
@@ -36,7 +36,7 @@ namespace My {
         Bezier(const TVAL* knots, const TVAL* incoming_cp, const TVAL* outgoing_cp, const size_t count)
             : Bezier()
         {
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 Curve<TVAL, TPARAM>::m_Knots.push_back(knots[i]);
                 AddControlPoints(knots[i], incoming_cp[i], outgoing_cp[i]);
@@ -145,7 +145,7 @@ namespace My {
 
             auto count = knots.size();
 
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 auto knot = knots[i];
                 auto in_cp = incoming_cp[i];
@@ -157,7 +157,7 @@ namespace My {
         Bezier(const Quaternion<T>* knots, const Quaternion<T>* incoming_cp, const Quaternion<T>* outgoing_cp, const size_t count)
             : Bezier()
         {
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 Curve<Quaternion<T>, T>::m_Knots.push_back(knots[i]);
                 AddControlPoints(knots[i], incoming_cp[i], outgoing_cp[i]);
@@ -206,7 +206,7 @@ namespace My {
 
             auto count = knots.size();
 
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 auto knot = knots[i];
                 auto in_cp = incoming_cp[i];
@@ -218,7 +218,7 @@ namespace My {
         Bezier(const Matrix4X4f* knots, const Matrix4X4f* incoming_cp, const Matrix4X4f* outgoing_cp, const size_t count)
             : Bezier()
         {
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 Curve<Matrix4X4f, float>::m_Knots.push_back(knots[i]);
                 AddControlPoints(knots[i], incoming_cp[i], outgoing_cp[i]);

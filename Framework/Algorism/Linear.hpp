@@ -18,7 +18,7 @@ namespace My {
         Linear(const TVAL* knots, const size_t count)
             : Linear()
         {
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 Curve<TVAL, TPARAM>::m_Knots.push_back(knots[i]);
             }
@@ -91,7 +91,7 @@ namespace My {
         Linear(const Quaternion<T>* knots, const size_t count)
             : Linear()
         {
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 Curve<Quaternion<T>, T>::m_Knots.push_back(knots[i]);
             }
@@ -128,7 +128,7 @@ namespace My {
         Linear(const Matrix4X4f* knots, const size_t count)
             : Linear()
         {
-            for (auto i = 0; i < count; i++)
+            for (size_t i = 0; i < count; i++)
             {
                 Curve<Matrix4X4f, float>::m_Knots.push_back(knots[i]);
             }

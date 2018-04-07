@@ -19,7 +19,7 @@
 #include "Transpose.h"
 #include "AddByElement.h"
 #include "SubByElement.h"
-#include "MatrixExchangeYandZ.h"
+#include "MatrixUtil.h"
 #include "InverseMatrix4X4f.h"
 #include "DCT.h"
 #include "Absolute.h"
@@ -422,6 +422,18 @@ namespace My {
             std::memcpy(data, rhs, sizeof(Matrix));
             return *this;
         }
+
+        bool isOrthogonal() const
+        {
+            Matrix trans;
+            Transpose(trans, *this);
+            Matrix I;
+            BuildIdentityMatrix(I);
+            if(*this * trans == I)
+                return true;
+            else
+            	return false;
+        }
     };
 
     typedef Matrix<float, 3, 3> Matrix3X3f;
@@ -544,7 +556,7 @@ namespace My {
         bool result = true;
         for (int i = 0; i < ROWS; i++)
         {
-            if (Length(matrix[i]) > std::numeric_limits<T>::epsilon())
+            if (Length(matrix[i]) > 3.0 * std::numeric_limits<T>::epsilon())
             {
                 result = false;
             }
@@ -670,18 +682,10 @@ namespace My {
         result = tmp;
     }
 
-    inline void BuildIdentityMatrix(Matrix4X4f& matrix)
+    template<typename T, int N>
+    inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix)
     {
-        Matrix4X4f identity = {{
-            { 1.0f, 0.0f, 0.0f, 0.0f},
-            { 0.0f, 1.0f, 0.0f, 0.0f},
-            { 0.0f, 0.0f, 1.0f, 0.0f},
-            { 0.0f, 0.0f, 0.0f, 1.0f}
-        }};
-
-        matrix = identity;
-
-        return;
+	ispc::BuildIdentityMatrix(matrix, N);
     }
 
 
