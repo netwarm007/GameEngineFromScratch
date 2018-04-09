@@ -28,12 +28,9 @@
 [submodule "libcxxabi"]
 	path = External/src/libcxxabi
 	url = http://llvm.org/git/libcxxabi
-<<<<<<< HEAD
-[submodule "External/src/libcrc"]
+[submodule "libcrc"]
 	path = External/src/libcrc
 	url = https://github.com/lammertb/libcrc.git
-=======
->>>>>>> import hidapi
 [submodule "hidapi"]
 	path = External/src/hidapi
 	url = git://github.com/signal11/hidapi.git
