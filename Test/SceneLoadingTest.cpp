@@ -39,12 +39,28 @@ int main(int argc, char** argv)
     }
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
+    cout << "Dump of Geometries" << endl;
+    cout << "---------------------------" << endl;
+    for (auto _it : scene.GeometryNodes)
+    {
+        auto pGeometryNode = _it.second.lock();
+        cout << *pGeometryNode << endl;
+        if (pGeometryNode) {
+            cout << *pGeometryNode << endl;
+            weak_ptr<SceneObjectGeometry> pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            auto pObj = pGeometry.lock();
+            if (pObj)
+                cout << *pObj << endl;
+        }
+    }
+
     cout << "Dump of Cameras" << endl;
     cout << "---------------------------" << endl;
     for (auto _it : scene.CameraNodes)
     {
         auto pCameraNode = _it.second.lock();
         if (pCameraNode) {
+            cout << *pCameraNode << endl;
             weak_ptr<SceneObjectCamera> pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
             auto pObj = pCamera.lock();
             if (pObj)
@@ -58,6 +74,7 @@ int main(int argc, char** argv)
     {
         auto pLightNode = _it.second.lock();
         if (pLightNode) {
+            cout << *pLightNode << endl;
             weak_ptr<SceneObjectLight> pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
             auto pObj = pLight.lock();
             if (pObj)
@@ -65,19 +82,6 @@ int main(int argc, char** argv)
         }
     }
 
-    cout << "Dump of Geometries" << endl;
-    cout << "---------------------------" << endl;
-    for (auto _it : scene.GeometryNodes)
-    {
-        auto pGeometryNode = _it.second.lock();
-        if (pGeometryNode) {
-            cout << *pGeometryNode << endl;
-            weak_ptr<SceneObjectGeometry> pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
-            auto pObj = pGeometry.lock();
-            if (pObj)
-                cout << *pObj << endl;
-        }
-    }
 
     cout << "Dump of Materials" << endl;
     cout << "---------------------------" << endl;
@@ -86,6 +90,15 @@ int main(int argc, char** argv)
         auto pMaterial = _it.second;
         if (pMaterial)
             cout << *pMaterial << endl;
+    }
+
+    cout << "Dump of Bone Nodes" << endl;
+    cout << "---------------------------" << endl;
+    for (auto _it : scene.BoneNodes)
+    {
+        auto pBone = _it.second.lock();
+        if (pBone)
+            cout << *pBone << endl;
     }
 
     g_pSceneManager->Finalize();

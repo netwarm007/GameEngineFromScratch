@@ -55,6 +55,8 @@ add_test(NAME TEST_NumericalMethods COMMAND NumericalMethodsTest)
 
 add_executable(BezierCubic1DTest BezierCubic1DTest.cpp)
 add_test(NAME TEST_BezierCubic1D COMMAND BezierCubic1DTest)
+target_include_directories(BezierCubic1DTest PUBLIC GeomMath)
+target_link_libraries(BezierCubic1DTest GeomMath)
 
 add_executable(QuickhullTest QuickhullTest.cpp)
 target_link_libraries(QuickhullTest Algorism Geometries GeomMath)
@@ -67,3 +69,14 @@ add_test(NAME TEST_Gjk COMMAND GjkTest)
 add_executable(ChronoTest ChronoTest.cpp)
 add_test(NAME TEST_Chrono COMMAND ChronoTest)
 
+add_executable(LinearInterpolateTest LinearInterpolateTest.cpp)
+target_link_libraries(LinearInterpolateTest Algorism GeomMath)
+add_test(NAME TEST_LinearInterpolate COMMAND LinearInterpolateTest)
+
+add_executable(QRDecomposeTest QRDecomposeTest.cpp)
+target_link_libraries(QRDecomposeTest Algorism GeomMath)
+add_test(NAME TEST_QRDecompose COMMAND QRDecomposeTest)
+
+add_executable(PolarDecomposeTest PolarDecomposeTest.cpp)
+target_link_libraries(PolarDecomposeTest Algorism GeomMath)
+add_test(NAME TEST_PolarDecompose COMMAND PolarDecomposeTest)

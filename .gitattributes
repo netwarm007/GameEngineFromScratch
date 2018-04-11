@@ -51,3 +51,4 @@ External/FreeBSD/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/FreeBSD/bin/ filter=lfs diff=lfs merge=lfs -text
 External/Android/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/Freebsd/bin/ispc filter=lfs diff=lfs merge=lfs -text
+Asset/Scene/PlunderbussPete.ogex filter=lfs diff=lfs merge=lfs -text

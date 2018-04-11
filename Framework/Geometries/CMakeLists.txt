@@ -1,2 +1,3 @@
 add_library(Geometries Box.cpp Geometry.cpp Sphere.cpp Plane.cpp Polyhedron.cpp)
-add_dependencies(Geometries GeomMath)
+target_include_directories(Geometries PUBLIC GeomMath)
+target_link_libraries(Geometries PUBLIC GeomMath)

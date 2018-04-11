@@ -42,7 +42,9 @@
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"
             ],
-            "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "compileCommands": "${workspaceRoot}/build/compile_commands.json",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         },
         {
             "name": "Linux",

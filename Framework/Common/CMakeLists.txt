@@ -11,6 +11,9 @@ MemoryManager.cpp
 Scene.cpp
 SceneManager.cpp
 SceneObject.cpp
+SceneObjectAnimation.cpp
+SceneObjectMesh.cpp
+SceneObjectTrack.cpp
 main.cpp
 )
 target_link_libraries(Common 

@@ -10,3 +10,13 @@ export void MatrixExchangeYandZ(uniform float data[], const uniform int rows, co
     }
 }
 
+export void BuildIdentityMatrix(uniform float data[], const uniform int n)
+{
+	foreach(i = 0 ... n, j = 0 ... n) {
+		if (i == j)
+			data[i * n + j] = 1;
+		else
+			data[i * n + j] = 0;
+	}
+}
+
