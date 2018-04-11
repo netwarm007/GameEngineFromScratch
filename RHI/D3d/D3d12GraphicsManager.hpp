@@ -57,6 +57,7 @@ namespace My {
         IDXGISwapChain3*                m_pSwapChain = nullptr;             // the pointer to the swap chain interface
         ID3D12Resource*                 m_pRenderTargets[kFrameCount];      // the pointer to rendering buffer. [descriptor]
         ID3D12Resource*                 m_pDepthStencilBuffer;              // the pointer to the depth stencil buffer
+        ID3D12Resource*                 m_pMsaaRenderTarget;              // the pointer to the depth stencil buffer
         ID3D12CommandAllocator*         m_pCommandAllocator = nullptr;      // the pointer to command buffer allocator
         ID3D12CommandQueue*             m_pCommandQueue = nullptr;          // the pointer to command queue
         ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
@@ -67,6 +68,7 @@ namespace My {
         ID3D12PipelineState*            m_pPipelineState = nullptr;         // an object maintains the state of all currently set shaders
                                                                             // and certain fixed function state objects
                                                                             // such as the input assembler, tesselator, rasterizer and output manager
+        ID3D12PipelineState*            m_pPipelineStateResolve = nullptr;
         ID3D12GraphicsCommandList*      m_pCommandList = nullptr;           // a list to store GPU commands, which will be submitted to GPU to execute when done
 
         uint32_t                        m_nRtvDescriptorSize;

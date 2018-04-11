@@ -271,7 +271,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
 
     // Describe and create a render target view (RTV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-    rtvHeapDesc.NumDescriptors = kFrameCount;
+    rtvHeapDesc.NumDescriptors = kFrameCount + 1; // +1 for MSAA Resolver
     rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_pRtvHeap)))) {
@@ -322,7 +322,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
 
 HRESULT D3d12GraphicsManager::CreateRenderTarget() 
 {
-    HRESULT hr;
+    HRESULT hr = S_OK;
 
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
 
@@ -330,11 +330,55 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
     for (uint32_t i = 0; i < kFrameCount; i++)
     {
         if (FAILED(hr = m_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i])))) {
-            break;
+            return hr;
         }
         m_pDev->CreateRenderTargetView(m_pRenderTargets[i], nullptr, rtvHandle);
         rtvHandle.ptr += m_nRtvDescriptorSize;
     }
+
+    // Create intermediate MSAA RT
+    D3D12_RENDER_TARGET_VIEW_DESC renderTargetDesc;
+    renderTargetDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    renderTargetDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
+
+    D3D12_CLEAR_VALUE optimizedClearValue = {};
+    optimizedClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    optimizedClearValue.Color[0] = 0.0f;
+    optimizedClearValue.Color[1] = 0.1f;
+    optimizedClearValue.Color[2] = 0.2f;
+    optimizedClearValue.Color[3] = 1.0f;
+
+    D3D12_HEAP_PROPERTIES prop = {};
+    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    prop.CreationNodeMask = 1;
+    prop.VisibleNodeMask = 1;
+
+    D3D12_RESOURCE_DESC textureDesc = {};
+    textureDesc.MipLevels = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.Width = g_pApp->GetConfiguration().screenWidth;
+    textureDesc.Height = g_pApp->GetConfiguration().screenHeight;
+    textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+    textureDesc.DepthOrArraySize = 1;
+    textureDesc.SampleDesc.Count = 4;
+    textureDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+    textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+    if (FAILED(hr = m_pDev->CreateCommittedResource(
+        &prop,
+        D3D12_HEAP_FLAG_NONE,
+        &textureDesc,
+        D3D12_RESOURCE_STATE_RENDER_TARGET,
+        &optimizedClearValue,
+        IID_PPV_ARGS(&m_pMsaaRenderTarget)
+    )))
+    {
+        return hr;
+    }
+
+    m_pDev->CreateRenderTargetView(m_pMsaaRenderTarget, &renderTargetDesc, rtvHandle);
 
     return hr;
 }
@@ -346,7 +390,7 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil()
     // Create the depth stencil view.
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
     depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
     depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
     D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
@@ -369,10 +413,10 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil()
     resourceDesc.Width = width;
     resourceDesc.Height = height;
     resourceDesc.DepthOrArraySize = 1;
-    resourceDesc.MipLevels = 0;
+    resourceDesc.MipLevels = 1;
     resourceDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    resourceDesc.SampleDesc.Count = 1;
-    resourceDesc.SampleDesc.Quality = 0;
+    resourceDesc.SampleDesc.Count = 4;
+    resourceDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -1032,7 +1076,8 @@ bool D3d12GraphicsManager::InitializeShaders() {
     psod.NumRenderTargets = 1;
     psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-    psod.SampleDesc.Count = 1;
+    psod.SampleDesc.Count = 4; // 4X MSAA
+    psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
 
     if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineState))))
     {
@@ -1212,6 +1257,7 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pCommandQueue);
     SafeRelease(&m_pCommandAllocator);
 	SafeRelease(&m_pDepthStencilBuffer);
+    SafeRelease(&m_pMsaaRenderTarget);
     for (uint32_t i = 0; i < kFrameCount; i++) {
         SafeRelease(&m_pRenderTargets[i]);
     }
@@ -1264,7 +1310,9 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     m_pCommandList->ResourceBarrier(1, &barrier);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-	rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
+	// rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
+    // bind the MSAA buffer
+	rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + kFrameCount * m_nRtvDescriptorSize;
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
 	dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
 	m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
