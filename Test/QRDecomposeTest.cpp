@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <iostream>
+#include <functional>
 #include <random>
 #include "MatrixComposeDecompose.hpp"
 
@@ -13,9 +14,9 @@ int main(int , char** )
     uniform_real_distribution<float> distribution_r(-1.0f * PI, 1.0f * PI);
     uniform_real_distribution<float> distribution_s(0.1f, 100.0f);
     uniform_real_distribution<float> distribution_t(-1000.0f, 1000.0f);
-    auto dice_r = std::bind(distribution_r, generator);
-    auto dice_s = std::bind(distribution_s, generator);
-    auto dice_t = std::bind(distribution_t, generator);
+    auto dice_r = bind(distribution_r, generator);
+    auto dice_s = bind(distribution_s, generator);
+    auto dice_t = bind(distribution_t, generator);
 
     Vector3f translation ({dice_t(), dice_t(), dice_t()});
     Vector3f scale ({dice_s(), dice_s(), dice_s()});
