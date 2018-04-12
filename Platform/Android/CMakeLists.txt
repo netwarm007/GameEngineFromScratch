@@ -19,7 +19,7 @@ target_link_libraries(PlatformInterface
         android
         native_app_glue
         EGL
-        GLESv1_CM
+        GLESv3
         log)
 target_include_directories(PlatformInterface PUBLIC GeomMath)
 target_link_libraries(PlatformInterface GeomMath)
