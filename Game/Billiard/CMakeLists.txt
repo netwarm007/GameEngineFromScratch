@@ -1,4 +1,9 @@
 IF(ANDROID)
+# Export ANativeActivity_onCreate(),
+# Refer to: https://github.com/android-ndk/ndk/issues/381.
+set(CMAKE_SHARED_LINKER_FLAGS
+    "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
+
 add_library(BilliardGame SHARED 
     BilliardGameLogic.cpp BilliardGameConfig.cpp)
 ELSEIF(APPLE)
