@@ -13,7 +13,7 @@ int BilliardGameLogic::Initialize()
 
     cout << "[BilliardGameLogic] Biiliard Game Logic Initialize" << endl;
     cout << "[BilliardGameLogic] Start Loading Game Scene" << endl;
-    result = g_pSceneManager->LoadScene("Scene/Billiard.ogex");
+    result = g_pSceneManager->LoadScene("Scene/billiard.ogex");
 
     return result;
 }
