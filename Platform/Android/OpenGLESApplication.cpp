@@ -106,6 +106,7 @@ void OpenGLESApplication::Finalize()
 
 void OpenGLESApplication::Tick()
 {
+    BaseApplication::Tick();
     eglSwapBuffers(m_Display, m_Surface);
 }
 
