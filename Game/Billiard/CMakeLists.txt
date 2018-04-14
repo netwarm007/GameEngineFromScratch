@@ -30,18 +30,13 @@ ELSE(WIN32)
                         )
 ENDIF(WIN32)
 
-IF(ANDROID)
-    add_custom_command(TARGET BilliardGame POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_CURRENT_SOURCE_DIR}/Asset/Shaders/OpenGLES/*.glsl"
-            "${CMAKE_CURRENT_SOURCE_DIR}/Asset/Shaders")
-ELSE(ANDROID)
+IF(NOT ANDROID)
     add_custom_command(TARGET BilliardGame POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory 
             $<TARGET_FILE_DIR:BilliardGame>/Asset
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/Asset"
             $<TARGET_FILE_DIR:BilliardGame>/Asset)
-ENDIF(ANDROID)
+ENDIF(NOT ANDROID)
 
 

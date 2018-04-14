@@ -9,11 +9,11 @@
 using namespace My;
 using namespace std;
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/basic_vs.glsl";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/basic_ps.glsl";
 #ifdef DEBUG
-const char DEBUG_VS_SHADER_SOURCE_FILE[] = "Shaders/debug_vs.glsl";
-const char DEBUG_PS_SHADER_SOURCE_FILE[] = "Shaders/debug_ps.glsl";
+const char DEBUG_VS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/debug_vs.glsl";
+const char DEBUG_PS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/debug_ps.glsl";
 #endif
 
 namespace My {
