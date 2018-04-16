@@ -6,6 +6,7 @@ android {
     sourceSets {
         main {
             assets.srcDirs = ['../Asset']
+            jniLibs.srcDirs = ['libs']
         }
     }
 
@@ -19,7 +20,8 @@ android {
             }
         }
         ndk{
-            abiFilters "armeabi-v7a"
+            abiFilters = []
+            abiFilters.addAll(ABI_FILTERS.split(';').collect{it as String})
         }
     }
     buildTypes {
@@ -33,6 +35,11 @@ android {
         cmake {
             path '../../../CMakeLists.txt'
         }
+    }
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
     }
 }
 
