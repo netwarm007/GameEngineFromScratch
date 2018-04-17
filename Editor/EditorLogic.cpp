@@ -1,7 +1,6 @@
 #include "EditorLogic.hpp"
 #include "IApplication.hpp"
 #include "SceneManager.hpp"
-#include "AnimationManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -24,20 +23,16 @@ int EditorLogic::Initialize()
         result = g_pSceneManager->LoadScene("Scene/splash.ogex");
     }
 
-    g_pAnimationManager->Initialize();
-
     return result;
 }
 
 void EditorLogic::Finalize()
 { 
     cout << "[EditorLogic] Finalize" << endl;
-    g_pAnimationManager->Finalize();
 }
 
 void EditorLogic::Tick()
 {
-    g_pAnimationManager->Tick();
 }
 
 #ifdef DEBUG

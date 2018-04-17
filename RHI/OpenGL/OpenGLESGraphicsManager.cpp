@@ -9,11 +9,11 @@
 using namespace My;
 using namespace std;
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.glsl";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.glsl";
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/basic_vs.glsl";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/basic_ps.glsl";
 #ifdef DEBUG
-const char DEBUG_VS_SHADER_SOURCE_FILE[] = "Shaders/debug_vs.glsl";
-const char DEBUG_PS_SHADER_SOURCE_FILE[] = "Shaders/debug_ps.glsl";
+const char DEBUG_VS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/debug_vs.glsl";
+const char DEBUG_PS_SHADER_SOURCE_FILE[] = "Shaders/OpenGLES/debug_ps.glsl";
 #endif
 
 namespace My {
@@ -109,6 +109,12 @@ int OpenGLESGraphicsManager::Initialize()
         return result;
     }
 
+    auto opengl_info = {GL_VENDOR, GL_RENDERER, GL_VERSION, GL_EXTENSIONS};
+    for (auto name : opengl_info) {
+        auto info = glGetString(name);
+        printf("OpenGL Info: %s", info);
+    }
+
 	// Set the depth buffer to be entirely cleared to 1.0 values.
 	glClearDepthf(1.0f);
 
@@ -121,6 +127,9 @@ int OpenGLESGraphicsManager::Initialize()
 	// Enable back face culling.
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
+    auto config = g_pApp->GetConfiguration();
+    glViewport(0, 0, config.screenWidth, config.screenHeight);
 
     return result;
 }

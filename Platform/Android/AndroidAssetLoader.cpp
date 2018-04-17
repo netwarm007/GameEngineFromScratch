@@ -23,6 +23,18 @@ AndroidAssetLoader::AssetFilePtr AndroidAssetLoader::OpenFile(const char* name, 
     return (AssetFilePtr)fp;
 }
 
+void AndroidAssetLoader::CloseFile(AssetFilePtr& fp)
+{
+    LOGI("Close Asset: %p", fp);
+    AAsset* _fp = (AAsset*)fp;
+
+    if(m_pPlatformAssetManager)
+    	AAsset_close(_fp);
+    else {
+    	LOGE("m_pPlatfornAssetManager is null!");
+    }
+}
+
 Buffer AndroidAssetLoader::SyncOpenAndReadText(const char* assetPath)
 {
     AAsset* fp = (AAsset*)OpenFile(assetPath, MY_OPEN_TEXT);
