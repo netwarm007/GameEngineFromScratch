@@ -7,16 +7,11 @@ int OpenGLESApplication::Initialize()
 {
     // initialize OpenGL ES and EGL
 
-    /*
-     * Here specify the attributes of the desired configuration.
-     * Below, we select an EGLConfig with at least 8 bits per color
-     * component compatible with on-screen windows
-     */
     const EGLint attribs[] = {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-            EGL_BLUE_SIZE, 8,
-            EGL_GREEN_SIZE, 8,
-            EGL_RED_SIZE, 8,
+            EGL_BLUE_SIZE, static_cast<EGLint>(m_Config.blueBits),
+            EGL_GREEN_SIZE, static_cast<EGLint>(m_Config.greenBits),
+            EGL_RED_SIZE, static_cast<EGLint>(m_Config.redBits),
             EGL_NONE
     };
     EGLint w, h, format;
@@ -47,7 +42,11 @@ int OpenGLESApplication::Initialize()
             eglGetConfigAttrib(display, cfg, EGL_GREEN_SIZE, &g) &&
             eglGetConfigAttrib(display, cfg, EGL_BLUE_SIZE, &b)  &&
             eglGetConfigAttrib(display, cfg, EGL_DEPTH_SIZE, &d) &&
-            r == 8 && g == 8 && b == 8 && d == 0 ) {
+            r == static_cast<EGLint>(m_Config.redBits) && 
+            g == static_cast<EGLint>(m_Config.greenBits) && 
+            b == static_cast<EGLint>(m_Config.blueBits) && 
+            d == static_cast<EGLint>(m_Config.depthBits) ) 
+        {
 
             config = supportedConfigs[i];
             break;
@@ -74,11 +73,16 @@ int OpenGLESApplication::Initialize()
     eglQuerySurface(display, surface, EGL_WIDTH, &w);
     eglQuerySurface(display, surface, EGL_HEIGHT, &h);
 
+    cerr << "Screen Width: " << w;
+    cerr << "Screen Height: " << h;
+
     m_Display = display;
     m_Context = context;
     m_Surface = surface;
     m_Width = w;
     m_Height = h;
+    m_Config.screenWidth = w;
+    m_Config.screenHeight = h;
     m_State.angle = 0;
 
     return AndroidApplication::Initialize();
@@ -106,7 +110,7 @@ void OpenGLESApplication::Finalize()
 
 void OpenGLESApplication::Tick()
 {
-    BaseApplication::Tick();
+    AndroidApplication::Tick();
     eglSwapBuffers(m_Display, m_Surface);
 }
 
