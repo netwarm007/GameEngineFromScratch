@@ -6,7 +6,6 @@ android {
     sourceSets {
         main {
             assets.srcDirs = ['../Asset']
-            jniLibs.srcDirs = ['libs']
         }
     }
 

@@ -23,6 +23,10 @@ void SceneManager::Finalize()
 
 void SceneManager::Tick()
 {
+    if (m_bDirtyFlag)
+    {
+        m_bDirtyFlag = !(m_bRenderingQueued && m_bPhysicalSimulationQueued && m_bAnimationQueued);
+    }
 }
 
 int SceneManager::LoadScene(const char* scene_file_name)
@@ -83,21 +87,16 @@ bool SceneManager::IsSceneChanged()
 void SceneManager::NotifySceneIsRenderingQueued()
 {
     m_bRenderingQueued = true;
-
-    if (m_bPhysicalSimulationQueued)
-    {
-        m_bDirtyFlag = false;
-    }
 }
 
 void SceneManager::NotifySceneIsPhysicalSimulationQueued()
 {
     m_bPhysicalSimulationQueued = true;
+}
 
-    if (m_bRenderingQueued)
-    {
-        m_bDirtyFlag = false;
-    }
+void SceneManager::NotifySceneIsAnimationQueued()
+{
+    m_bAnimationQueued = true;
 }
 
 weak_ptr<BaseSceneNode> SceneManager::GetRootNode()
