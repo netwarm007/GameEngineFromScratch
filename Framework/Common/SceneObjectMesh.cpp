@@ -8,14 +8,14 @@ BoundingBox SceneObjectMesh::GetBoundingBox() const
     Vector3f bbmin (numeric_limits<float>::max());
     Vector3f bbmax (numeric_limits<float>::lowest());
     auto count = m_VertexArray.size();
-    for (auto n = 0; n < count; n++)
+    for (decltype(count) n = 0; n < count; n++)
     {
         if (m_VertexArray[n].GetAttributeName() == "position")
         {
             auto data_type = m_VertexArray[n].GetDataType();
             auto vertices_count = m_VertexArray[n].GetVertexCount();	
             auto data = m_VertexArray[n].GetData();
-            for (auto i = 0; i < vertices_count; i++)
+            for (decltype(vertices_count) i = 0; i < vertices_count; i++)
             {
                 switch(data_type) {
                     case VertexDataType::kVertexDataTypeFloat3:
@@ -59,14 +59,14 @@ ConvexHull SceneObjectMesh::GetConvexHull() const
     ConvexHull hull;
 
     auto count = m_VertexArray.size();
-    for (auto n = 0; n < count; n++)
+    for (decltype(count) n = 0; n < count; n++)
     {
         if (m_VertexArray[n].GetAttributeName() == "position")
         {
             auto data_type = m_VertexArray[n].GetDataType();
             auto vertices_count = m_VertexArray[n].GetVertexCount();	
             auto data = m_VertexArray[n].GetData();
-            for (auto i = 0; i < vertices_count; i++)
+            for (decltype(vertices_count) i = 0; i < vertices_count; i++)
             {
                 switch(data_type) {
                     case VertexDataType::kVertexDataTypeFloat3:

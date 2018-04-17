@@ -766,32 +766,28 @@ namespace My {
 
     inline void MatrixRotationX(Matrix4X4f& matrix, const float angle)
     {
-        float c = cosf(angle), s = sinf(angle);
+        const float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{
+        matrix = {{
             {  1.0f, 0.0f, 0.0f, 0.0f },
             {  0.0f,    c,    s, 0.0f },
             {  0.0f,   -s,    c, 0.0f },
             {  0.0f, 0.0f, 0.0f, 1.0f },
         }};
 
-        matrix = rotation;
-
         return;
     }
 
     inline void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
-        float c = cosf(angle), s = sinf(angle);
+        const float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{
+        matrix = {{
             {    c, 0.0f,   -s, 0.0f },
             { 0.0f, 1.0f, 0.0f, 0.0f },
             {    s, 0.0f,    c, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f },
         }};
-
-        matrix = rotation;
 
         return;
     }
@@ -799,16 +795,14 @@ namespace My {
 
     inline void MatrixRotationZ(Matrix4X4f& matrix, const float angle)
     {
-        float c = cosf(angle), s = sinf(angle);
+        const float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{
+        matrix = {{
             {    c,    s, 0.0f, 0.0f },
             {   -s,    c, 0.0f, 0.0f },
             { 0.0f, 0.0f, 1.0f, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
         }};
-
-        matrix = rotation;
 
         return;
     }
