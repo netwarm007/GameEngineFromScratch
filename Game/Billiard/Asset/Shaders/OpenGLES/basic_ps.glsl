@@ -6,8 +6,8 @@ precision highp float;
 // CONSTANTS       //
 /////////////////////
 // per frame
-uniform vec3   lightPosition;
-uniform vec4   lightColor;
+uniform vec3 lightPosition;
+uniform vec4 lightColor;
 uniform mat4 worldMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
