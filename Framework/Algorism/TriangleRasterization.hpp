@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cassert>
+#include <algorithm>
 #include "geommath.hpp"
 
 using namespace std;
@@ -113,6 +114,44 @@ namespace My {
             result.reserve(result1.size() + result2.size());
             result.insert(result.end(), result1.begin(), result1.end());
             result.insert(result.end(), result2.begin(), result2.end());
+        }
+
+        return result;
+    }
+
+    Point2DList BaryCentricTriangleInterpolation(const Point2D& v1, const Point2D& v2, const Point2D& v3)
+    {
+        Point2DList result;
+        
+        auto minX = min({v1[0], v2[0], v3[0]});
+        auto maxX = max({v1[0], v2[0], v3[0]});
+        auto minY = min({v1[1], v2[1], v3[1]});
+        auto maxY = max({v1[1], v2[1], v3[1]});
+
+        Vector2f edge_1_2 = v2 - v1;
+        Vector2f edge_1_3 = v3 - v1;
+
+        for (int32_t col = (int32_t)round(minY); col <= (int32_t)round(maxY); col++)
+        {
+            for (int32_t row = (int32_t)round(minX); row <= (int32_t)round(maxX); row++)
+            {
+                Vector2f p = {(float)row, (float)col};
+                p = p - v1;
+
+                float area1, area2;
+                CrossProduct(area1, p, edge_1_2);
+                CrossProduct(area2, edge_1_3, edge_1_2);
+                auto s = area1 / area2;
+
+                CrossProduct(area1, edge_1_3, p);
+                auto t = area1 / area2;
+
+                if (s >= 0.0f && t >= 0.0f && s + t <= 1.0f)
+                {
+                    // the point is inside the triangle
+                    result.push_back(make_shared<Point2D>(p + v1));
+                }
+            }
         }
 
         return result;

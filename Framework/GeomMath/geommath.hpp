@@ -205,8 +205,14 @@ namespace My {
         return result;
     }
 
-    template <typename T, int N>
-    inline void CrossProduct(Vector<T, N>& result, const Vector<T, N>& vec1, const Vector<T, N>& vec2)
+    template <typename T>
+    inline void CrossProduct(T& result, const Vector<T, 2>& vec1, const Vector<T, 2>& vec2)
+    {
+        result = vec1[0] * vec2[1] - vec1[1] * vec2[0];
+    }
+
+    template <typename T>
+    inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1, const Vector<T, 3>& vec2)
     {
         ispc::CrossProduct(vec1, vec2, result);
     }

@@ -73,7 +73,11 @@ int main(int argc, char** argv)
 
     points = StandardTriangleInterpolation(v1, v2, v3);
 
-    visualize(points, "General Triangle");
+    visualize(points, "General Triangle Standard Rasterization");
+
+    points = BaryCentricTriangleInterpolation(v1, v2, v3);
+
+    visualize(points, "General Triangle Barycentric Rasterization");
 
     return 0;
 }
