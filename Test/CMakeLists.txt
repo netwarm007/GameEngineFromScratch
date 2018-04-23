@@ -80,3 +80,7 @@ add_test(NAME TEST_QRDecompose COMMAND QRDecomposeTest)
 add_executable(PolarDecomposeTest PolarDecomposeTest.cpp)
 target_link_libraries(PolarDecomposeTest Algorism GeomMath)
 add_test(NAME TEST_PolarDecompose COMMAND PolarDecomposeTest)
+
+add_executable(RasterizationTest RasterizationTest.cpp)
+target_link_libraries(RasterizationTest Algorism GeomMath)
+add_test(NAME TEST_Rasterization COMMAND RasterizationTest)
