@@ -883,6 +883,9 @@ namespace My {
         return result;
     }
 
+    typedef Vector<float, 2> Point2D;
+    typedef std::shared_ptr<Point2D> Point2DPtr;
+    typedef std::vector<Point2DPtr> Point2DList;
     typedef Vector<float, 3> Point;
     typedef std::shared_ptr<Point> PointPtr;
     typedef std::unordered_set<PointPtr> PointSet;
