@@ -6,7 +6,7 @@ precision highp float;
 // CONSTANTS       //
 /////////////////////
 // per frame
-uniform vec3 lightPosition;
+uniform vec4 lightPosition;
 uniform vec4 lightColor;
 uniform mat4 worldMatrix;
 uniform mat4 viewMatrix;
@@ -44,7 +44,7 @@ void main(void)
     // vertex normal
     vec3 N = normalize(normal.xyz);
 
-    vec3 L = normalize((viewMatrix * worldMatrix * vec4(lightPosition, 1.0f)).xyz - v.xyz);
+    vec3 L = normalize((viewMatrix * worldMatrix * lightPosition).xyz - v.xyz);
     vec3 R = normalize(2.0f * clamp(dot(L,N), 0.0f, 1.0f) * N - L);
     vec3 V = normalize(v.xyz);
     /*

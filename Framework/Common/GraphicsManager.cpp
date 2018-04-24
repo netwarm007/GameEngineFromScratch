@@ -124,8 +124,8 @@ void GraphicsManager::CalculateLights()
     auto& scene = g_pSceneManager->GetSceneForRendering();
     auto pLightNode = scene.GetFirstLightNode();
     if (pLightNode) {
-        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f };
-        TransformCoord(m_DrawFrameContext.m_lightPosition, *pLightNode->GetCalculatedTransform());
+        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
+        Transform(m_DrawFrameContext.m_lightPosition, *pLightNode->GetCalculatedTransform());
 
         auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
         if (pLight) {
@@ -134,7 +134,7 @@ void GraphicsManager::CalculateLights()
     }
     else {
         // use default build-in light 
-        m_DrawFrameContext.m_lightPosition = { -1.0f, -5.0f, 0.0f};
+        m_DrawFrameContext.m_lightPosition = { -1.0f, -5.0f, 0.0f, 1.0f};
         m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
     }
 }

@@ -190,7 +190,7 @@ bool OpenGLESGraphicsManager::SetPerFrameShaderParameters(GLuint shader)
     {
             return false;
     }
-    glUniform3fv(location, 1, m_DrawFrameContext.m_lightPosition);
+    glUniform4fv(location, 1, m_DrawFrameContext.m_lightPosition);
 
     location = glGetUniformLocation(shader, "lightColor");
     if(location == -1)
