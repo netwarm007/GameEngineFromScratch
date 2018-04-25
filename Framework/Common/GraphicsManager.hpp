@@ -60,6 +60,12 @@ namespace My {
             Matrix4X4f  m_projectionMatrix;
             Vector4f    m_lightPosition;
             Vector4f    m_lightColor;
+            Vector3f    m_lightDirection;
+            float       m_lightIntensity;
+            AttenCurveType m_lightDistAttenCurveType;
+            float       m_lightDistAttenCurveParams[5];
+            AttenCurveType m_lightAngleAttenCurveType;
+            float       m_lightAngleAttenCurveParams[5];
             Vector3f    m_ambientColor;
         };
 

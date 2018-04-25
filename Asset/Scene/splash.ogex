@@ -5,9 +5,27 @@ Metric (key = "up") {string {"z"}}
 
 GeometryNode $node1
 {
-	Name {string {"Text"}}
+	Name {string {"Plane"}}
 	ObjectRef {ref {$geometry1}}
 	MaterialRef (index = 0) {ref {$material1}}
+
+	Transform
+	{
+		float[16]
+		{
+			{7.906316757202148, 0.0, 0.0, 0.0,
+			 0.0, 7.906316757202148, 0.0, 0.0,
+			 0.0, 0.0, 7.906316757202148, 0.0,
+			 0.0, 0.0, -0.48713287711143494, 1.0}
+		}
+	}
+}
+
+GeometryNode $node2
+{
+	Name {string {"Text"}}
+	ObjectRef {ref {$geometry2}}
+	MaterialRef (index = 0) {ref {$material2}}
 
 	Rotation %zrot (kind = "z")
 	{
@@ -57,7 +75,7 @@ GeometryNode $node1
 	}
 }
 
-LightNode $node2
+LightNode $node3
 {
 	Name {string {"Lamp"}}
 	ObjectRef {ref {$light1}}
@@ -66,15 +84,15 @@ LightNode $node2
 	{
 		float[16]
 		{
-			{-0.29086464643478394, 0.9551711678504944, -0.05518905818462372, 0.0,
-			 -0.7711008191108704, -0.1998833566904068, 0.6045247316360474, 0.0,
-			 0.5663931965827942, 0.21839119493961334, 0.7946722507476807, 0.0,
+			{-0.23948398232460022, 0.970900297164917, -7.450580596923828e-09, 0.0,
+			 -0.7912331223487854, -0.1951669603586197, 0.5795344114303589, 0.0,
+			 0.5626701712608337, 0.13878922164440155, 0.814947783946991, 0.0,
 			 4.076245307922363, 1.0054539442062378, 5.903861999511719, 1.0}
 		}
 	}
 }
 
-CameraNode $node3
+CameraNode $node4
 {
 	Name {string {"Camera"}}
 	ObjectRef {ref {$camera1}}
@@ -91,7 +109,37 @@ CameraNode $node3
 	}
 }
 
-GeometryObject $geometry1		// Text
+GeometryObject $geometry1		// Plane
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3]		// 4
+			{
+				{-1.0, -1.0, 0.0}, {1.0, -1.0, 0.0}, {1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}
+			}
+		}
+
+		VertexArray (attrib = "normal")
+		{
+			float[3]		// 4
+			{
+				{0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}
+			}
+		}
+
+		IndexArray
+		{
+			unsigned_int32[3]		// 2
+			{
+				{0, 1, 2}, {0, 2, 3}
+			}
+		}
+	}
+}
+
+GeometryObject $geometry2		// Text
 {
 	Mesh (primitive = "triangles")
 	{
@@ -2891,13 +2939,20 @@ GeometryObject $geometry1		// Text
 	}
 }
 
-LightObject $light1 (type = "point")		// Lamp
+LightObject $light1 (type = "spot")		// Lamp
 {
 	Color (attrib = "light") {float[3] {{1.0, 1.0, 1.0}}}
+	Param (attrib = "intensity") {float {10.0}}
 
 	Atten (curve = "inverse_square")
 	{
-		Param (attrib = "scale") {float {5.47722400800463}}
+		Param (attrib = "scale") {float {3.8366631406165213}}
+	}
+
+	Atten (kind = "angle", curve = "linear")
+	{
+		Param (attrib = "begin") {float {0.1154888369371676}}
+		Param (attrib = "end") {float {0.5427974462509155}}
 	}
 }
 
@@ -2909,6 +2964,15 @@ CameraObject $camera1		// Camera
 }
 
 Material $material1
+{
+	Name {string {"Material.002"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.20815077138171745, 0.2744338553314485, 0.640000066757203}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+}
+
+Material $material2
 {
 	Name {string {"Material.001"}}
 

@@ -208,6 +208,48 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters(GLuint shader)
     }
     glUniform4fv(location, 1, m_DrawFrameContext.m_lightColor);
 
+    location = glGetUniformLocation(shader, "lightIntensity");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1f(location, m_DrawFrameContext.m_lightIntensity);
+
+    location = glGetUniformLocation(shader, "lightDirection");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform3fv(location, 1, m_DrawFrameContext.m_lightDirection);
+
+    location = glGetUniformLocation(shader, "lightDistAttenCurveType");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1i(location, (GLint)m_DrawFrameContext.m_lightDistAttenCurveType);
+
+    location = glGetUniformLocation(shader, "lightDistAttenCurveParams");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1fv(location, 5, m_DrawFrameContext.m_lightDistAttenCurveParams);
+
+    location = glGetUniformLocation(shader, "lightAngleAttenCurveType");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1i(location, (GLint)m_DrawFrameContext.m_lightAngleAttenCurveType);
+
+    location = glGetUniformLocation(shader, "lightAngleAttenCurveParams");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1fv(location, 5, m_DrawFrameContext.m_lightAngleAttenCurveParams);
+
     location = glGetUniformLocation(shader, "ambientColor");
     if(location == -1)
     {
