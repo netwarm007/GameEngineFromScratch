@@ -90,7 +90,7 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
             float kl = atten_params[2];
             float kc = atten_params[3];
             atten = clamp(scale / 
-                (dist + kc), 
+                (kl * dist + kc * scale) + offset, 
                 0.0f, 1.0f);
             break;
         }
@@ -102,7 +102,7 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
             float kl = atten_params[3];
             float kc = atten_params[4];
             atten = clamp(pow(scale, 2.0f) / 
-                (kq * pow(dist, 2.0f) + kl * dist + kc), 
+                (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
                 0.0f, 1.0f);
             break;
         }

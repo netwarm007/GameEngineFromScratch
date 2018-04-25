@@ -560,18 +560,12 @@ namespace My {
                                         if (atten->GetAttenKind() == "angle")
                                         {
                                             auto _light = dynamic_pointer_cast<SceneObjectSpotLight>(light);
-                                            auto begin_angle = atten->GetBeginParam();
-                                            auto end_angle = atten->GetEndParam();
-                                            _light->SetConeAngle(begin_angle, end_angle);
                                             _light->SetAngleAttenuation(curve);
                                         }
                                         else if (atten->GetAttenKind() == "cos_angle")
                                         {
                                             // TODO: mark the angle is in cos value instead of rad
                                             auto _light = dynamic_pointer_cast<SceneObjectSpotLight>(light);
-                                            auto begin_angle = atten->GetBeginParam();
-                                            auto end_angle = atten->GetEndParam();
-                                            _light->SetConeAngle(begin_angle, end_angle);
                                             _light->SetAngleAttenuation(curve);
                                         }
                                         else

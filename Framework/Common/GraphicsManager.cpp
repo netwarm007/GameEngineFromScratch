@@ -140,8 +140,6 @@ void GraphicsManager::CalculateLights()
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
             {
                 auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
-                auto begin_angle = plight->GetConeBeginAngle();
-                auto end_angle = plight->GetConeEndAngle();
                 const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
                 m_DrawFrameContext.m_lightAngleAttenCurveType = angle_atten_curve.type;
                 memcpy(m_DrawFrameContext.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));

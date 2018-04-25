@@ -96,26 +96,8 @@ namespace My {
             AttenCurve  m_LightAngleAttenuation;
 
         public:
-            SceneObjectSpotLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightSpot), 
-                            m_fConeBeginAngle(0.0f),
-                            m_fConeEndAngle(PI / 4.0f)
+            SceneObjectSpotLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightSpot)
                             {};
-
-            void SetConeAngle(float begin_angle, float end_angle)
-            {
-                m_fConeBeginAngle = begin_angle;
-                m_fConeEndAngle = end_angle;
-            }
-
-            float GetConeBeginAngle(void)
-            {
-                return m_fConeBeginAngle;
-            }
-
-            float GetConeEndAngle(void)
-            {
-                return m_fConeEndAngle;
-            }
 
             void SetAngleAttenuation(AttenCurve curve)
             {
