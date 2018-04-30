@@ -83,7 +83,7 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
             float begin_atten = atten_params[0];
             float end_atten = atten_params[1];
             float tmp = linear_interpolate(dist, begin_atten, end_atten);
-            atten = 3.0f * pow(tmp, 2.0f) + 2.0f * pow(tmp, 3.0f);
+            atten = 3.0f * pow(tmp, 2.0f) - 2.0f * pow(tmp, 3.0f);
             break;
         }
         case 2: // inverse
