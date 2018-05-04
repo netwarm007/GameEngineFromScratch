@@ -2,18 +2,24 @@
 
 precision highp float;
 
+
 /////////////////////
 // CONSTANTS       //
 /////////////////////
 // per frame
-uniform vec4 lightPosition;
-uniform vec4 lightColor;
-uniform vec3 lightDirection;
-uniform float lightIntensity;
-uniform int  lightDistAttenCurveType;
-uniform float lightDistAttenCurveParams[5];
-uniform int  lightAngleAttenCurveType;
-uniform float lightAngleAttenCurveParams[5];
+#define MAX_LIGHTS 10
+uniform int numLights;
+uniform struct Light {
+    vec4 lightPosition;
+    vec4 lightColor;
+    vec3 lightDirection;
+    float lightIntensity;
+    int  lightDistAttenCurveType;
+    float lightDistAttenCurveParams[5];
+    int  lightAngleAttenCurveType;
+    float lightAngleAttenCurveParams[5];
+} allLights[MAX_LIGHTS];
+
 uniform mat4 worldMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -111,29 +117,40 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
     return atten;
 }
 
-void main(void)
-{
-    // vertex normal
+vec3 apply_light(Light light) {
     vec3 N = normalize(normal.xyz);
-
-    vec3 L = (viewMatrix * worldMatrix * lightPosition).xyz - v.xyz;
+    vec3 L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
     float lightToSurfDist = length(L);
     L = normalize(L);
-    vec3 light_dir = normalize((viewMatrix * worldMatrix * vec4(lightDirection, 0.0f)).xyz);
+    vec3 light_dir = normalize((viewMatrix * worldMatrix * vec4(light.lightDirection, 0.0f)).xyz);
     float lightToSurfAngle = acos(dot(L, light_dir));
 
     // angle attenuation
-    float atten = apply_atten_curve(lightToSurfAngle, lightAngleAttenCurveType, lightAngleAttenCurveParams);
+    float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, light.lightAngleAttenCurveParams);
 
     // distance attenuation
-    atten *= apply_atten_curve(lightToSurfDist, lightDistAttenCurveType, lightDistAttenCurveParams);
+    atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
 
-    vec3 R = normalize(2.0f * clamp(dot(L,N), 0.0f, 1.0f) * N - L);
+    vec3 R = normalize(2.0f * clamp(dot(L, N), 0.0f, 1.0f) *  N - L);
     vec3 V = normalize(v.xyz);
 
+    vec3 linearColor = vec3(0);
+
     if (usingDiffuseMap)
-        outputColor = vec4(ambientColor.rgb + lightIntensity * atten * lightColor.rgb * (texture(diffuseMap, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)), 1.0f); 
+        linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
     else
-        outputColor = vec4(ambientColor.rgb + lightIntensity * atten * lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R,V), 0.0f, 1.0f), specularPower)), 1.0f); 
+        linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R,V), 0.0f, 1.0f), specularPower)); 
+
+    return linearColor;
 }
 
+void main(void)
+{
+    vec3 linearColor = vec3(0);
+    for (int i = 0; i < numLights; i++)
+    {
+        linearColor += apply_light(allLights[i]); 
+    }
+
+    outputColor = vec4(linearColor, 1.0f);
+}
