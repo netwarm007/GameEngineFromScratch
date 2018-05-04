@@ -2983,7 +2983,7 @@ LightObject $light3 (type = "spot", shadow = false)		// Lamp
 		Param (attrib = "scale") {float {3.9749193675182246}}
 	}
 
-	Atten (kind = "angle", curve = "linear")
+	Atten (kind = "angle", curve = "smooth")
 	{
 		Param (attrib = "begin") {float {0.334917597999862}}
 		Param (attrib = "end") {float {0.5427974462509155}}
@@ -3000,7 +3000,7 @@ LightObject $light2 (type = "spot", shadow = false)		// Lamp.001
 		Param (attrib = "scale") {float {3.9749193675182246}}
 	}
 
-	Atten (kind = "angle", curve = "linear")
+	Atten (kind = "angle", curve = "smooth")
 	{
 		Param (attrib = "begin") {float {0.334917597999862}}
 		Param (attrib = "end") {float {0.5427974462509155}}
