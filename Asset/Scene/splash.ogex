@@ -3,7 +3,24 @@ Metric (key = "angle") {float {1.0}}
 Metric (key = "time") {float {1.0}}
 Metric (key = "up") {string {"z"}}
 
-GeometryNode $node1
+LightNode $node1
+{
+	Name {string {"Point"}}
+	ObjectRef {ref {$light1}}
+
+	Transform
+	{
+		float[16]
+		{
+			{1.0, 0.0, 0.0, 0.0,
+			 0.0, 1.0, 0.0, 0.0,
+			 0.0, 0.0, 1.0, 0.0,
+			 7.717626571655273, -3.347249746322632, 2.886619806289673, 1.0}
+		}
+	}
+}
+
+GeometryNode $node2
 {
 	Name {string {"Plane"}}
 	ObjectRef {ref {$geometry1}}
@@ -21,7 +38,7 @@ GeometryNode $node1
 	}
 }
 
-GeometryNode $node2
+GeometryNode $node3
 {
 	Name {string {"Text"}}
 	ObjectRef {ref {$geometry2}}
@@ -75,24 +92,41 @@ GeometryNode $node2
 	}
 }
 
-LightNode $node3
+LightNode $node4
 {
-	Name {string {"Lamp"}}
-	ObjectRef {ref {$light1}}
+	Name {string {"Lamp.001"}}
+	ObjectRef {ref {$light2}}
 
 	Transform
 	{
 		float[16]
 		{
-			{-0.9735262393951416, 0.2285757064819336, 7.450580596923828e-09, 0.0,
-			 -0.20121276378631592, -0.8569847941398621, 0.4744373857975006, 0.0,
-			 0.10844486206769943, 0.4618772268295288, 0.8802892565727234, 0.0,
-			 1.1801289319992065, 5.026284217834473, 9.579566955566406, 1.0}
+			{-0.4225228726863861, -0.9063522815704346, 0.0, 0.0,
+			 0.803947389125824, -0.37478378415107727, 0.46174225211143494, 0.0,
+			 -0.4185011088848114, 0.19509664177894592, 0.8870140910148621, 0.0,
+			 -4.648451805114746, 2.167012929916382, 9.852404594421387, 1.0}
 		}
 	}
 }
 
-CameraNode $node4
+LightNode $node5
+{
+	Name {string {"Lamp"}}
+	ObjectRef {ref {$light3}}
+
+	Transform
+	{
+		float[16]
+		{
+			{-0.7451029419898987, 0.6669495701789856, 0.0, 0.0,
+			 -0.5453128814697266, -0.6092128157615662, 0.5757549405097961, 0.0,
+			 0.38399946689605713, 0.42899665236473083, 0.8176223039627075, 0.0,
+			 4.499080657958984, 5.026284217834473, 9.579566955566406, 1.0}
+		}
+	}
+}
+
+CameraNode $node6
 {
 	Name {string {"Camera"}}
 	ObjectRef {ref {$camera1}}
@@ -2939,9 +2973,9 @@ GeometryObject $geometry2		// Text
 	}
 }
 
-LightObject $light1 (type = "spot")		// Lamp
+LightObject $light3 (type = "spot", shadow = false)		// Lamp
 {
-	Color (attrib = "light") {float[3] {{1.0, 1.0, 1.0}}}
+	Color (attrib = "light") {float[3] {{1.0, 0.0010070281568914652, 0.00051426503341645}}}
 	Param (attrib = "intensity") {float {10.0}}
 
 	Atten (curve = "inverse_square")
@@ -2949,10 +2983,38 @@ LightObject $light1 (type = "spot")		// Lamp
 		Param (attrib = "scale") {float {3.9749193675182246}}
 	}
 
-	Atten (kind = "angle", curve = "smooth")
+	Atten (kind = "angle", curve = "linear")
 	{
 		Param (attrib = "begin") {float {0.334917597999862}}
 		Param (attrib = "end") {float {0.5427974462509155}}
+	}
+}
+
+LightObject $light2 (type = "spot", shadow = false)		// Lamp.001
+{
+	Color (attrib = "light") {float[3] {{0.01141956727951765, 1.0, 0.026550518348813057}}}
+	Param (attrib = "intensity") {float {10.0}}
+
+	Atten (curve = "inverse_square")
+	{
+		Param (attrib = "scale") {float {3.9749193675182246}}
+	}
+
+	Atten (kind = "angle", curve = "linear")
+	{
+		Param (attrib = "begin") {float {0.334917597999862}}
+		Param (attrib = "end") {float {0.5427974462509155}}
+	}
+}
+
+LightObject $light1 (type = "point", shadow = false)		// Point
+{
+	Color (attrib = "light") {float[3] {{0.006716880481690168, 0.008378240279853344, 1.0}}}
+	Param (attrib = "intensity") {float {5.0}}
+
+	Atten (curve = "inverse_square")
+	{
+		Param (attrib = "scale") {float {5.061620376839159}}
 	}
 }
 
@@ -2967,7 +3029,7 @@ Material $material1
 {
 	Name {string {"Material.002"}}
 
-	Color (attrib = "diffuse") {float[3] {{0.20815077138171745, 0.2744338553314485, 0.640000066757203}}}
+	Color (attrib = "diffuse") {float[3] {{0.640000066757203, 0.640000066757203, 0.640000066757203}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
 	Param (attrib = "specular_power") {float {50}}
 }

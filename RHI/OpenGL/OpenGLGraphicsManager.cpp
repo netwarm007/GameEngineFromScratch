@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include "OpenGLGraphicsManager.hpp"
 #include "AssetLoader.hpp"
 #include "IApplication.hpp"
@@ -193,69 +194,114 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters(GLuint shader)
     }
     glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_projectionMatrix);
 
-    // Set lighting parameters for PS shader
-    location = glGetUniformLocation(shader, "lightPosition");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform4fv(location, 1, m_DrawFrameContext.m_lightPosition);
-
-    location = glGetUniformLocation(shader, "lightColor");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform4fv(location, 1, m_DrawFrameContext.m_lightColor);
-
-    location = glGetUniformLocation(shader, "lightIntensity");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform1f(location, m_DrawFrameContext.m_lightIntensity);
-
-    location = glGetUniformLocation(shader, "lightDirection");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform3fv(location, 1, m_DrawFrameContext.m_lightDirection);
-
-    location = glGetUniformLocation(shader, "lightDistAttenCurveType");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform1i(location, (GLint)m_DrawFrameContext.m_lightDistAttenCurveType);
-
-    location = glGetUniformLocation(shader, "lightDistAttenCurveParams");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform1fv(location, 5, m_DrawFrameContext.m_lightDistAttenCurveParams);
-
-    location = glGetUniformLocation(shader, "lightAngleAttenCurveType");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform1i(location, (GLint)m_DrawFrameContext.m_lightAngleAttenCurveType);
-
-    location = glGetUniformLocation(shader, "lightAngleAttenCurveParams");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform1fv(location, 5, m_DrawFrameContext.m_lightAngleAttenCurveParams);
-
     location = glGetUniformLocation(shader, "ambientColor");
     if(location == -1)
     {
             return false;
     }
     glUniform4fv(location, 1, m_DrawFrameContext.m_ambientColor);
+
+    location = glGetUniformLocation(shader, "numLights");
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform1i(location, m_DrawFrameContext.m_lights.size());
+
+    // Set lighting parameters for PS shader
+    for (size_t i = 0; i < m_DrawFrameContext.m_lights.size(); i++)
+    {
+        ostringstream ss;
+        string uniformName;
+
+        ss << "allLights[" << i << "]." << "lightPosition" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform4fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightPosition);
+
+        ss.clear();
+        ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightColor" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform4fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightColor);
+
+        ss.clear();
+        ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightIntensity" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform1f(location, m_DrawFrameContext.m_lights[i].m_lightIntensity);
+
+        ss.clear();
+        ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightDirection" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform3fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightDirection);
+
+        ss.clear();
+        ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightDistAttenCurveType" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform1i(location, (GLint)m_DrawFrameContext.m_lights[i].m_lightDistAttenCurveType);
+
+        ss.clear();
+        ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightDistAttenCurveParams" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform1fv(location, 5, m_DrawFrameContext.m_lights[i].m_lightDistAttenCurveParams);
+
+        ss.clear();
+        ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightAngleAttenCurveType" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform1i(location, (GLint)m_DrawFrameContext.m_lights[i].m_lightAngleAttenCurveType);
+
+        ss.clear();
+        ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightAngleAttenCurveParams" << ends;
+        uniformName = ss.str();
+        location = glGetUniformLocation(shader, uniformName.c_str());
+        if(location == -1)
+        {
+                return false;
+        }
+        glUniform1fv(location, 5, m_DrawFrameContext.m_lights[i].m_lightAngleAttenCurveParams);
+
+    }
+
     return true;
 }
 
@@ -538,10 +584,13 @@ void OpenGLGraphicsManager::ClearBuffers()
 
 void OpenGLGraphicsManager::RenderBuffers()
 {
+    bool result;
+
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_shaderProgram);
 
-    SetPerFrameShaderParameters(m_shaderProgram);
+    result = SetPerFrameShaderParameters(m_shaderProgram);
+    assert(result);
 
     for (auto dbc : m_DrawBatchContext)
     {
@@ -564,7 +613,9 @@ void OpenGLGraphicsManager::RenderBuffers()
             trans = *dbc.node->GetCalculatedTransform();
         }
 
-        SetPerBatchShaderParameters(m_shaderProgram, "modelMatrix", trans);
+        result = SetPerBatchShaderParameters(m_shaderProgram, "modelMatrix", trans);
+        assert(result);
+
         glBindVertexArray(dbc.vao);
 
         /* well, we have different material for each index buffer so we can not draw them together
@@ -577,33 +628,47 @@ void OpenGLGraphicsManager::RenderBuffers()
         delete[] pIndicies;
         */
 
-        SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", false);
-        SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", false);
+        result = SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", false);
+        assert(result);
+
+#if 0
+        result = SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", false);
+        assert(result);
+#endif
 
         if (dbc.material) {
             Color color = dbc.material->GetBaseColor();
             if (color.ValueMap) {
-                SetPerBatchShaderParameters(m_shaderProgram, "diffuseMap", m_TextureIndex[color.ValueMap->GetName()]);
+                result = SetPerBatchShaderParameters(m_shaderProgram, "diffuseMap", m_TextureIndex[color.ValueMap->GetName()]);
+                assert(result);
                 // set this to tell shader to use texture
-                SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", true);
+                result = SetPerBatchShaderParameters(m_shaderProgram, "usingDiffuseMap", true);
+                assert(result);
             }
             else
             {
-                SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
+                result = SetPerBatchShaderParameters(m_shaderProgram, "diffuseColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
+                assert(result);
             }
 
+#if 0
             Normal normal = dbc.material->GetNormal();
             if (normal.ValueMap) {
-                SetPerBatchShaderParameters(m_shaderProgram, "normalMap", m_TextureIndex[normal.ValueMap->GetName()]);
+                result = SetPerBatchShaderParameters(m_shaderProgram, "normalMap", m_TextureIndex[normal.ValueMap->GetName()]);
+                assert(result);
                 // set this to tell shader to use texture
-                SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", true);
+                result = SetPerBatchShaderParameters(m_shaderProgram, "usingNormalMap", true);
+                assert(result);
             }
+#endif
 
             color = dbc.material->GetSpecularColor();
-            SetPerBatchShaderParameters(m_shaderProgram, "specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
+            result = SetPerBatchShaderParameters(m_shaderProgram, "specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
+            assert(result);
 
             Parameter param = dbc.material->GetSpecularPower();
-            SetPerBatchShaderParameters(m_shaderProgram, "specularPower", param.Value);
+            result = SetPerBatchShaderParameters(m_shaderProgram, "specularPower", param.Value);
+            assert(result);
         }
 
         glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);

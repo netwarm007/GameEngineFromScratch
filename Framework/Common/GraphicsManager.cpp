@@ -120,48 +120,40 @@ void GraphicsManager::CalculateCameraMatrix()
 void GraphicsManager::CalculateLights()
 {
     m_DrawFrameContext.m_ambientColor = { 0.01f, 0.01f, 0.01f };
+    m_DrawFrameContext.m_lights.clear();
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pLightNode = scene.GetFirstLightNode();
-    if (pLightNode) {
+    for (auto LightNode : scene.LightNodes) {
+        Light light;
+        auto pLightNode = LightNode.second.lock();
+        if (!pLightNode) continue;
         auto trans_ptr = pLightNode->GetCalculatedTransform();
-        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
-        Transform(m_DrawFrameContext.m_lightPosition, *trans_ptr);
-        m_DrawFrameContext.m_lightDirection = { 0.0f, 0.0f, -1.0f };
-        TransformCoord(m_DrawFrameContext.m_lightDirection, *trans_ptr);
+        light.m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
+        Transform(light.m_lightPosition, *trans_ptr);
+        light.m_lightDirection = { 0.0f, 0.0f, -1.0f };
+        TransformCoord(light.m_lightDirection, *trans_ptr);
 
         auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
         if (pLight) {
-            m_DrawFrameContext.m_lightColor = pLight->GetColor().Value;
-            m_DrawFrameContext.m_lightIntensity = pLight->GetIntensity();
+            light.m_lightColor = pLight->GetColor().Value;
+            light.m_lightIntensity = pLight->GetIntensity();
             const AttenCurve& atten_curve = pLight->GetDistanceAttenuation();
-            m_DrawFrameContext.m_lightDistAttenCurveType = atten_curve.type; 
-            memcpy(m_DrawFrameContext.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
+            light.m_lightDistAttenCurveType = atten_curve.type; 
+            memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
             {
                 auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
                 const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
-                m_DrawFrameContext.m_lightAngleAttenCurveType = angle_atten_curve.type;
-                memcpy(m_DrawFrameContext.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
+                light.m_lightAngleAttenCurveType = angle_atten_curve.type;
+                memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
             }
         }
         else
         {
             assert(0);
         }
-    }
-    else {
-        // use default build-in light (omni)
-        m_DrawFrameContext.m_lightPosition = { -1.0f, -5.0f, 0.0f, 1.0f};
-        m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-        m_DrawFrameContext.m_lightDirection = { 0.0f, 0.0f, -1.0f };
-        m_DrawFrameContext.m_lightIntensity = 1.0f;
-        m_DrawFrameContext.m_lightDistAttenCurveType = AttenCurveType::kLinear;
-        m_DrawFrameContext.m_lightDistAttenCurveParams[0] = 0.0f;
-        m_DrawFrameContext.m_lightDistAttenCurveParams[1] = 1.0f;
-        m_DrawFrameContext.m_lightAngleAttenCurveType = AttenCurveType::kLinear;
-        m_DrawFrameContext.m_lightAngleAttenCurveParams[0] = PI;
-        m_DrawFrameContext.m_lightAngleAttenCurveParams[1] = PI;
+
+        m_DrawFrameContext.m_lights.push_back(light);
     }
 }
 
