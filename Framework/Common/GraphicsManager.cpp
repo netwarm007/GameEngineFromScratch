@@ -140,18 +140,18 @@ void GraphicsManager::CalculateLights()
             const AttenCurve& atten_curve = pLight->GetDistanceAttenuation();
             light.m_lightDistAttenCurveType = atten_curve.type; 
             memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
+
+            if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
+            {
+                light.m_lightPosition[3] = 0.0f;
+            }
+
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
             {
                 auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
                 const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
                 light.m_lightAngleAttenCurveType = angle_atten_curve.type;
                 memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
-            }
-            else
-            {
-                light.m_lightAngleAttenCurveType = AttenCurveType::kLinear;
-                light.m_lightAngleAttenCurveParams[0] = PI;
-                light.m_lightAngleAttenCurveParams[1] = PI;
             }
         }
         else
