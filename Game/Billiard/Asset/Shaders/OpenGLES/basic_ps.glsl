@@ -132,7 +132,7 @@ vec3 apply_light(Light light) {
     atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
 
     vec3 R = normalize(2.0f * clamp(dot(L, N), 0.0f, 1.0f) *  N - L);
-    vec3 V = normalize(v.xyz);
+    vec3 V = normalize(-v.xyz);
 
     vec3 linearColor = vec3(0);
 

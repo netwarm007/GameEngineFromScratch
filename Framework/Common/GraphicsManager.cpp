@@ -147,6 +147,12 @@ void GraphicsManager::CalculateLights()
                 light.m_lightAngleAttenCurveType = angle_atten_curve.type;
                 memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
             }
+            else
+            {
+                light.m_lightAngleAttenCurveType = AttenCurveType::kLinear;
+                light.m_lightAngleAttenCurveParams[0] = PI;
+                light.m_lightAngleAttenCurveParams[1] = PI;
+            }
         }
         else
         {

@@ -133,9 +133,9 @@ vec3 apply_light(Light light) {
     atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
 
     vec3 R = normalize(2.0f * clamp(dot(L, N), 0.0f, 1.0f) *  N - L);
-    vec3 V = normalize(v.xyz);
+    vec3 V = normalize(-v.xyz);
 
-    vec3 linearColor = vec3(0);
+    vec3 linearColor;
 
     if (usingDiffuseMap)
         linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
@@ -147,7 +147,7 @@ vec3 apply_light(Light light) {
 
 void main(void)
 {
-    vec3 linearColor = vec3(0);
+    vec3 linearColor = vec3(0.0f);
     for (int i = 0; i < numLights; i++)
     {
         linearColor += apply_light(allLights[i]); 
