@@ -151,9 +151,13 @@ vec3 apply_light(Light light) {
     vec3 linearColor;
 
     if (usingDiffuseMap)
+    {
         linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+    }
     else
+    {
         linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+    }
 
     return linearColor;
 }
@@ -166,6 +170,7 @@ void main(void)
         linearColor += apply_light(allLights[i]); 
     }
 
-    outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
+    // gama correction
+    outputColor = vec4(clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
 }
 
