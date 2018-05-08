@@ -45,6 +45,8 @@ namespace My {
         HRESULT WaitForPreviousFrame();
         HRESULT PopulateCommandList();
 
+        HRESULT CreateInternalVertexBuffer();
+
     private:
         static const uint32_t           kFrameCount  = 2;
         static const uint32_t           kMaxSceneObjectCount  = 65535;
@@ -57,10 +59,12 @@ namespace My {
         IDXGISwapChain3*                m_pSwapChain = nullptr;             // the pointer to the swap chain interface
         ID3D12Resource*                 m_pRenderTargets[kFrameCount];      // the pointer to rendering buffer. [descriptor]
         ID3D12Resource*                 m_pDepthStencilBuffer;              // the pointer to the depth stencil buffer
-        ID3D12Resource*                 m_pMsaaRenderTarget;              // the pointer to the depth stencil buffer
+        ID3D12Resource*                 m_pMsaaRenderTarget;                // the pointer to the depth stencil buffer
         ID3D12CommandAllocator*         m_pCommandAllocator = nullptr;      // the pointer to command buffer allocator
+        ID3D12CommandAllocator*         m_pCommandAllocatorResolve = nullptr;      // the pointer to command buffer allocator
         ID3D12CommandQueue*             m_pCommandQueue = nullptr;          // the pointer to command queue
         ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
+        ID3D12RootSignature*            m_pRootSignatureResolve = nullptr;  // a graphics root signature defines what resources are bound to the pipeline
         ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
 		ID3D12DescriptorHeap*           m_pCbvHeap = nullptr;               // an array of descriptors of GPU objects
@@ -70,6 +74,7 @@ namespace My {
                                                                             // such as the input assembler, tesselator, rasterizer and output manager
         ID3D12PipelineState*            m_pPipelineStateResolve = nullptr;
         ID3D12GraphicsCommandList*      m_pCommandList = nullptr;           // a list to store GPU commands, which will be submitted to GPU to execute when done
+        ID3D12GraphicsCommandList*      m_pCommandListResolve = nullptr;    // a list to store GPU commands, which will be submitted to GPU to execute when done
 
         uint32_t                        m_nRtvDescriptorSize;
         uint32_t                        m_nCbvSrvDescriptorSize;
@@ -79,6 +84,7 @@ namespace My {
         std::map<std::string, size_t>  m_TextureIndex;
         std::vector<D3D12_VERTEX_BUFFER_VIEW>       m_VertexBufferView;                 // a view of the vertex buffer
         std::vector<D3D12_INDEX_BUFFER_VIEW>        m_IndexBufferView;                  // a view of the vertex buffer
+        D3D12_VERTEX_BUFFER_VIEW                    m_VertexBufferViewResolve;
 
         struct PerBatchConstants
         {

@@ -317,6 +317,10 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
         return hr;
     }
 
+    if(FAILED(hr = m_pDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocatorResolve)))) {
+        return hr;
+    }
+
     return hr;
 }
 
@@ -378,6 +382,19 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
         return hr;
     }
 
+    // Describe and create a SRV for the texture.
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+    srvDesc.Texture2D.MipLevels = 1;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
+    size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
+    srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
+    m_pDev->CreateShaderResourceView(m_pMsaaRenderTarget, &srvDesc, srvHandle);
+    m_TextureIndex["MSAA"] = texture_id;
+
     m_pDev->CreateRenderTargetView(m_pMsaaRenderTarget, &renderTargetDesc, rtvHandle);
 
     return hr;
@@ -432,6 +449,97 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil()
     }
 
     m_pDev->CreateDepthStencilView(m_pDepthStencilBuffer, &depthStencilDesc, m_pDsvHeap->GetCPUDescriptorHandleForHeapStart());
+
+    return hr;
+}
+
+HRESULT D3d12GraphicsManager::CreateInternalVertexBuffer()
+{
+    HRESULT hr;
+
+	ID3D12Resource* pVertexBufferUploadHeap;
+
+    float fullScreenQuad[] = {
+        0.0f, 0.0f, 0.0f,       0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,       0.0f, 1.0f,
+        1.0f, 0.0f, 0.0f,       1.0f, 0.0f,
+        1.0f, 1.0f, 0.0f,       1.0f, 1.0f
+    };
+
+    // create vertex GPU heap 
+    D3D12_HEAP_PROPERTIES prop = {};
+    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    prop.CreationNodeMask = 1;
+    prop.VisibleNodeMask = 1;
+
+    auto size = sizeof(float) * (3 + 2) * 4;
+    D3D12_RESOURCE_DESC resourceDesc = {};
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resourceDesc.Alignment = 0;
+    resourceDesc.Width = size;
+    resourceDesc.Height = 1;
+    resourceDesc.DepthOrArraySize = 1;
+    resourceDesc.MipLevels = 1;
+    resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.SampleDesc.Quality = 0;
+    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+    ID3D12Resource* pVertexBuffer;
+
+	if (FAILED(hr = m_pDev->CreateCommittedResource(
+		&prop,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&pVertexBuffer)
+	)))
+	{
+		return hr;
+	}
+
+    prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    prop.CreationNodeMask = 1;
+    prop.VisibleNodeMask = 1;
+
+	if (FAILED(hr = m_pDev->CreateCommittedResource(
+		&prop,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&pVertexBufferUploadHeap)
+	)))
+	{
+		return hr;
+	}
+
+	D3D12_SUBRESOURCE_DATA vertexData = {};
+	vertexData.pData = fullScreenQuad;
+
+	UpdateSubresources<1>(m_pCommandList, pVertexBuffer, pVertexBufferUploadHeap, 0, 0, 1, &vertexData);
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = pVertexBuffer;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	m_pCommandList->ResourceBarrier(1, &barrier);
+
+	// initialize the vertex buffer view
+	m_VertexBufferViewResolve.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
+	m_VertexBufferViewResolve.StrideInBytes = (UINT)(sizeof(float) * 5);
+	m_VertexBufferViewResolve.SizeInBytes = (UINT)size;
+
+    m_Buffers.push_back(pVertexBuffer);
+    m_Buffers.push_back(pVertexBufferUploadHeap);
 
     return hr;
 }
@@ -508,7 +616,7 @@ HRESULT D3d12GraphicsManager::CreateVertexBuffer(const SceneObjectVertexArray& v
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	m_pCommandList->ResourceBarrier(1, &barrier);
 
-	// initialize the index buffer view
+	// initialize the vertex buffer view
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 	vertexBufferView.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
 	vertexBufferView.StrideInBytes = (UINT)(v_property_array.GetDataSize() / v_property_array.GetVertexCount());
@@ -959,44 +1067,92 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
         featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
     }
 
-    D3D12_DESCRIPTOR_RANGE1 ranges[3] = {
-        { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC },
-        { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0 },
-        { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0,D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
-    };
-
-    D3D12_ROOT_PARAMETER1 rootParameters[3] = {
-        { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0] }, D3D12_SHADER_VISIBILITY_ALL },
-        { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[1] }, D3D12_SHADER_VISIBILITY_PIXEL },
-        { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[2] }, D3D12_SHADER_VISIBILITY_PIXEL }
-    };
-
-    // Allow input layout and deny uneccessary access to certain pipeline stages.
-    D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-        D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-        D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-        D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-
-    D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {
-            _countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags
+    // root signature for base pass
+    {
+        D3D12_DESCRIPTOR_RANGE1 ranges[3] = {
+            { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC },
+            { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0 },
+            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0,D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
         };
 
-    D3D12_VERSIONED_ROOT_SIGNATURE_DESC versionedRootSignatureDesc = {
-        D3D_ROOT_SIGNATURE_VERSION_1_1,
-    };
+        D3D12_ROOT_PARAMETER1 rootParameters[3] = {
+            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0] }, D3D12_SHADER_VISIBILITY_ALL },
+            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[1] }, D3D12_SHADER_VISIBILITY_PIXEL },
+            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[2] }, D3D12_SHADER_VISIBILITY_PIXEL }
+        };
 
-    versionedRootSignatureDesc.Desc_1_1 = rootSignatureDesc;
+        // Allow input layout and deny uneccessary access to certain pipeline stages.
+        D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
-    ID3DBlob* signature = nullptr;
-    ID3DBlob* error = nullptr;
-    if (SUCCEEDED(hr = D3D12SerializeVersionedRootSignature(&versionedRootSignatureDesc, &signature, &error)))
-    {
-        hr = m_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature));
+        D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {
+                _countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags
+            };
+
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC versionedRootSignatureDesc = {
+            D3D_ROOT_SIGNATURE_VERSION_1_1,
+        };
+
+        versionedRootSignatureDesc.Desc_1_1 = rootSignatureDesc;
+
+        ID3DBlob* signature = nullptr;
+        ID3DBlob* error = nullptr;
+        if (SUCCEEDED(hr = D3D12SerializeVersionedRootSignature(&versionedRootSignatureDesc, &signature, &error)))
+        {
+            hr = m_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature));
+        }
+
+        SafeRelease(&signature);
+        SafeRelease(&error);
     }
 
-    SafeRelease(&signature);
-    SafeRelease(&error);
+    // root signature for resolve pass
+    {
+        D3D12_DESCRIPTOR_RANGE1 ranges[1] = {
+            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0,D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
+        };
+
+        D3D12_ROOT_PARAMETER1 rootParameters[2];
+        rootParameters[0] = 
+            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0] }, D3D12_SHADER_VISIBILITY_PIXEL };
+        rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        rootParameters[1].Constants = { 0, 0, 2 }; 
+        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+        // Allow input layout and deny uneccessary access to certain pipeline stages.
+        D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+            D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
+
+        D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {
+                _countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags
+            };
+
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC versionedRootSignatureDesc = {
+            D3D_ROOT_SIGNATURE_VERSION_1_1,
+        };
+
+        versionedRootSignatureDesc.Desc_1_1 = rootSignatureDesc;
+
+        ID3DBlob* signature = nullptr;
+        ID3DBlob* error = nullptr;
+        if (SUCCEEDED(hr = D3D12SerializeVersionedRootSignature(&versionedRootSignatureDesc, &signature, &error)))
+        {
+            hr = m_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignatureResolve));
+            if (FAILED(hr))
+            {
+                printf_s("failed to create root signature for reolve phase: %x", hr);
+            }
+        }
+
+        SafeRelease(&signature);
+        SafeRelease(&error);
+    }
 
     return hr;
 }
@@ -1005,104 +1161,207 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
 // this is the function that loads and prepares the shaders
 bool D3d12GraphicsManager::InitializeShaders() {
     HRESULT hr = S_OK;
-    const char* vsFilename = "Shaders/basic_vs.cso"; 
-    const char* fsFilename = "Shaders/basic_ps.cso";
 
-    // load the shaders
-    Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
-    Buffer pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(fsFilename);
-
-    D3D12_SHADER_BYTECODE vertexShaderByteCode;
-    vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
-    vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
-
-    D3D12_SHADER_BYTECODE pixelShaderByteCode;
-    pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
-    pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
-
-    // create the input layout object
-    D3D12_INPUT_ELEMENT_DESC ied[] =
+    // basic pass
     {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-    };
+        const char* vsFilename = "Shaders/basic_vs.cso"; 
+        const char* fsFilename = "Shaders/basic_ps.cso";
 
-    D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                                  TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF };
-    const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend = { FALSE, FALSE,
-        D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-        D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-        D3D12_LOGIC_OP_NOOP,
-        D3D12_COLOR_WRITE_ENABLE_ALL
-    };
+        // load the shaders
+        Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
+        Buffer pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(fsFilename);
 
-    D3D12_BLEND_DESC bld = { FALSE, FALSE,
-                                             {
-                                               defaultRenderTargetBlend,
-                                               defaultRenderTargetBlend,
-                                               defaultRenderTargetBlend,
-                                               defaultRenderTargetBlend,
-                                               defaultRenderTargetBlend,
-                                               defaultRenderTargetBlend,
-                                               defaultRenderTargetBlend,
-                                             }
-                                    };
+        D3D12_SHADER_BYTECODE vertexShaderByteCode;
+        vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
+        vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
 
-    const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, 
-		D3D12_STENCIL_OP_KEEP, 
-		D3D12_STENCIL_OP_KEEP, 
-		D3D12_COMPARISON_FUNC_ALWAYS };
+        D3D12_SHADER_BYTECODE pixelShaderByteCode;
+        pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
+        pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
 
-    D3D12_DEPTH_STENCIL_DESC dsd = { TRUE, 
-		D3D12_DEPTH_WRITE_MASK_ALL, 
-		D3D12_COMPARISON_FUNC_LESS, 
-		FALSE, 
-		D3D12_DEFAULT_STENCIL_READ_MASK, 
-		D3D12_DEFAULT_STENCIL_WRITE_MASK, 
-        defaultStencilOp, defaultStencilOp };
+        // create the input layout object
+        D3D12_INPUT_ELEMENT_DESC ied[] =
+        {
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        };
 
-    // describe and create the graphics pipeline state object (PSO)
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psod = {};
-    psod.pRootSignature = m_pRootSignature;
-    psod.VS             = vertexShaderByteCode;
-    psod.PS             = pixelShaderByteCode;
-    psod.BlendState     = bld;
-    psod.SampleMask     = UINT_MAX;
-    psod.RasterizerState= rsd;
-    psod.DepthStencilState = dsd;
-    psod.InputLayout    = { ied, _countof(ied) };
-    psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    psod.NumRenderTargets = 1;
-    psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
-	psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-    psod.SampleDesc.Count = 4; // 4X MSAA
-    psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+        D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
+                                    D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+                                    TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF };
 
-    if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineState))))
-    {
-        return false;
-    }
+        const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend = { FALSE, FALSE,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_LOGIC_OP_NOOP,
+            D3D12_COLOR_WRITE_ENABLE_ALL
+        };
 
-    if (!m_pCommandList)
-    {
-        if (FAILED(hr = m_pDev->CreateCommandList(0, 
-                    D3D12_COMMAND_LIST_TYPE_DIRECT, 
-                    m_pCommandAllocator, 
-                    m_pPipelineState, 
-                    IID_PPV_ARGS(&m_pCommandList))))
+        D3D12_BLEND_DESC bld = { FALSE, FALSE,
+                                                {
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                }
+                                        };
+
+        const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, 
+            D3D12_STENCIL_OP_KEEP, 
+            D3D12_STENCIL_OP_KEEP, 
+            D3D12_COMPARISON_FUNC_ALWAYS };
+
+        D3D12_DEPTH_STENCIL_DESC dsd = { TRUE, 
+            D3D12_DEPTH_WRITE_MASK_ALL, 
+            D3D12_COMPARISON_FUNC_LESS, 
+            FALSE, 
+            D3D12_DEFAULT_STENCIL_READ_MASK, 
+            D3D12_DEFAULT_STENCIL_WRITE_MASK, 
+            defaultStencilOp, defaultStencilOp };
+
+        // describe and create the graphics pipeline state object (PSO)
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC psod = {};
+        psod.pRootSignature = m_pRootSignature;
+        psod.VS             = vertexShaderByteCode;
+        psod.PS             = pixelShaderByteCode;
+        psod.BlendState     = bld;
+        psod.SampleMask     = UINT_MAX;
+        psod.RasterizerState= rsd;
+        psod.DepthStencilState = dsd;
+        psod.InputLayout    = { ied, _countof(ied) };
+        psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        psod.NumRenderTargets = 1;
+        psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
+        psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+        psod.SampleDesc.Count = 4; // 4X MSAA
+        psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+
+        if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineState))))
         {
             return false;
         }
+
+        if (!m_pCommandList)
+        {
+            if (FAILED(hr = m_pDev->CreateCommandList(0, 
+                        D3D12_COMMAND_LIST_TYPE_DIRECT, 
+                        m_pCommandAllocator, 
+                        m_pPipelineState, 
+                        IID_PPV_ARGS(&m_pCommandList))))
+            {
+                return false;
+            }
+        }
     }
 
-    return true;
+    // resolve pass
+    {
+        const char* vsFilename = "Shaders/msaa_resolver_vs.cso"; 
+        const char* fsFilename = "Shaders/msaa_resolver_ps.cso";
+
+        // load the shaders
+        Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
+        Buffer pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(fsFilename);
+
+        D3D12_SHADER_BYTECODE vertexShaderByteCode;
+        vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
+        vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
+
+        D3D12_SHADER_BYTECODE pixelShaderByteCode;
+        pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
+        pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+
+        // create the input layout object
+        D3D12_INPUT_ELEMENT_DESC ied[] =
+        {
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        };
+
+        D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
+                                    D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+                                    TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF };
+
+        const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend = { FALSE, FALSE,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_LOGIC_OP_NOOP,
+            D3D12_COLOR_WRITE_ENABLE_ALL
+        };
+
+        D3D12_BLEND_DESC bld = { FALSE, FALSE,
+                                                {
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                }
+                                        };
+
+        const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, 
+            D3D12_STENCIL_OP_KEEP, 
+            D3D12_STENCIL_OP_KEEP, 
+            D3D12_COMPARISON_FUNC_ALWAYS };
+
+        D3D12_DEPTH_STENCIL_DESC dsd = { TRUE, 
+            D3D12_DEPTH_WRITE_MASK_ALL, 
+            D3D12_COMPARISON_FUNC_LESS, 
+            FALSE, 
+            D3D12_DEFAULT_STENCIL_READ_MASK, 
+            D3D12_DEFAULT_STENCIL_WRITE_MASK, 
+            defaultStencilOp, defaultStencilOp };
+
+        // describe and create the graphics pipeline state object (PSO)
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC psod = {};
+        psod.pRootSignature = m_pRootSignature;
+        psod.VS             = vertexShaderByteCode;
+        psod.PS             = pixelShaderByteCode;
+        psod.BlendState     = bld;
+        psod.SampleMask     = UINT_MAX;
+        psod.RasterizerState= rsd;
+        psod.DepthStencilState = dsd;
+        psod.InputLayout    = { ied, _countof(ied) };
+        psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        psod.NumRenderTargets = 1;
+        psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
+        psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+        psod.SampleDesc.Count = 1;   // no MSAA
+        psod.SampleDesc.Quality = 0; // no MSAA
+
+        if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineStateResolve))))
+        {
+            return false;
+        }
+
+        if (!m_pCommandListResolve)
+        {
+            if (FAILED(hr = m_pDev->CreateCommandList(0, 
+                        D3D12_COMMAND_LIST_TYPE_DIRECT, 
+                        m_pCommandAllocatorResolve, 
+                        m_pPipelineStateResolve, 
+                        IID_PPV_ARGS(&m_pCommandListResolve))))
+            {
+                return false;
+            }
+        }
+    }
+
+    return hr;
 }
 
 void D3d12GraphicsManager::ClearShaders()
 {
     SafeRelease(&m_pCommandList);
+    SafeRelease(&m_pCommandListResolve);
     SafeRelease(&m_pPipelineState);
+    SafeRelease(&m_pPipelineStateResolve);
 }
 
 void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
@@ -1254,8 +1513,10 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pCbvHeap);
     SafeRelease(&m_pSamplerHeap);
     SafeRelease(&m_pRootSignature);
+    SafeRelease(&m_pRootSignatureResolve);
     SafeRelease(&m_pCommandQueue);
     SafeRelease(&m_pCommandAllocator);
+    SafeRelease(&m_pCommandAllocatorResolve);
 	SafeRelease(&m_pDepthStencilBuffer);
     SafeRelease(&m_pMsaaRenderTarget);
     for (uint32_t i = 0; i < kFrameCount; i++) {
@@ -1291,97 +1552,171 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 		return hr;
 	}
 
-	// however, when ExecuteCommandList() is called on a particular command 
-	// list, that command list can then be reset at any time and must be before 
-	// re-recording.
-	if (FAILED(hr = m_pCommandList->Reset(m_pCommandAllocator, m_pPipelineState)))
+    // base pass
+    {
+        // however, when ExecuteCommandList() is called on a particular command 
+        // list, that command list can then be reset at any time and must be before 
+        // re-recording.
+        if (FAILED(hr = m_pCommandList->Reset(m_pCommandAllocator, m_pPipelineState)))
+        {
+            return hr;
+        }
+
+        // Indicate that the back buffer will be used as a render target.
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pMsaaRenderTarget;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+        // rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
+        // bind the MSAA buffer
+        rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + kFrameCount * m_nRtvDescriptorSize;
+        D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+        dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
+        m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+        // clear the back buffer to a deep blue
+        const FLOAT clearColor[] = { 0.0f, 0.1f, 0.2f, 1.0f };
+        m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+        m_pCommandList->ClearDepthStencilView(m_pDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+        // Set necessary state.
+        m_pCommandList->SetGraphicsRootSignature(m_pRootSignature);
+
+        ID3D12DescriptorHeap* ppHeaps[] = { m_pCbvHeap, m_pSamplerHeap };
+        m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+        // Sampler
+        m_pCommandList->SetGraphicsRootDescriptorTable(1, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
+
+        m_pCommandList->RSSetViewports(1, &m_ViewPort);
+        m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
+        m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        // do 3D rendering on the back buffer here
+        int32_t i = 0;
+        size_t vertex_buffer_view_offset = 0;
+        for (auto dbc : m_DrawBatchContext)
+        {
+            // CBV Per Batch
+            D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle;
+            uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * (2 * kMaxSceneObjectCount); // 2 descriptors for each draw call
+            cbvSrvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr 
+                                    + (nFrameResourceDescriptorOffset + i * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
+            m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
+
+            // select which vertex buffer(s) to use
+            for (uint32_t j = 0; j < dbc.property_count; j++)
+            {
+                m_pCommandList->IASetVertexBuffers(j, 1, &m_VertexBufferView[vertex_buffer_view_offset++]);
+            }
+            // select which index buffer to use
+            m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[i]);
+
+            // Texture
+            if(dbc.material)
+            {
+                if(auto texture = dbc.material->GetBaseColor().ValueMap)
+                {
+                    auto texture_index = m_TextureIndex[texture->GetName()];
+                    D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
+                    srvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
+                    m_pCommandList->SetGraphicsRootDescriptorTable(2, srvHandle);
+                }
+            }
+
+            // draw the vertex buffer to the back buffer
+            m_pCommandList->DrawIndexedInstanced(dbc.index_count, 1, 0, 0, 0);
+            i++;
+        }
+
+        memset(&barrier, 0x00, sizeof(barrier));
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pMsaaRenderTarget;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+
+        hr = m_pCommandList->Close();
+    }
+
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+	// command list allocators can only be reset when the associated 
+	// command lists have finished execution on the GPU; apps should use 
+	// fences to determine GPU execution progress.
+	if (FAILED(hr = m_pCommandAllocatorResolve->Reset()))
 	{
 		return hr;
 	}
 
-    // Indicate that the back buffer will be used as a render target.
-	D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_pCommandList->ResourceBarrier(1, &barrier);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-	// rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
-    // bind the MSAA buffer
-	rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + kFrameCount * m_nRtvDescriptorSize;
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
-	dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
-	m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-	// clear the back buffer to a deep blue
-	const FLOAT clearColor[] = { 0.0f, 0.1f, 0.2f, 1.0f };
-	m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	m_pCommandList->ClearDepthStencilView(m_pDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-    // Set necessary state.
-    m_pCommandList->SetGraphicsRootSignature(m_pRootSignature);
-
-    ID3D12DescriptorHeap* ppHeaps[] = { m_pCbvHeap, m_pSamplerHeap };
-    m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-	// Sampler
-    m_pCommandList->SetGraphicsRootDescriptorTable(1, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
-
-    m_pCommandList->RSSetViewports(1, &m_ViewPort);
-    m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
-    m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // do 3D rendering on the back buffer here
-	int32_t i = 0;
-    size_t vertex_buffer_view_offset = 0;
-    for (auto dbc : m_DrawBatchContext)
+    // MSAA resolve pass
     {
-        // CBV Per Batch
-        D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle;
-        uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * (2 * kMaxSceneObjectCount); // 2 descriptors for each draw call
-        cbvSrvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr 
-                                + (nFrameResourceDescriptorOffset + i * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
-        m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
-
-		// select which vertex buffer(s) to use
-        for (uint32_t j = 0; j < dbc.property_count; j++)
+        // however, when ExecuteCommandList() is called on a particular command 
+        // list, that command list can then be reset at any time and must be before 
+        // re-recording.
+        if (FAILED(hr = m_pCommandListResolve->Reset(m_pCommandAllocatorResolve, m_pPipelineStateResolve)))
         {
-            m_pCommandList->IASetVertexBuffers(j, 1, &m_VertexBufferView[vertex_buffer_view_offset++]);
+            return hr;
         }
-		// select which index buffer to use
-		m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[i]);
 
-		// Texture
-		if(dbc.material)
-		{
-			if(auto texture = dbc.material->GetBaseColor().ValueMap)
-			{
-				auto texture_index = m_TextureIndex[texture->GetName()];
-				D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
-				srvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
-				m_pCommandList->SetGraphicsRootDescriptorTable(2, srvHandle);
-			}
-		}
+        // Indicate that the back buffer will be used as a render target.
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandListResolve->ResourceBarrier(1, &barrier);
 
-        // draw the vertex buffer to the back buffer
-        m_pCommandList->DrawIndexedInstanced(dbc.index_count, 1, 0, 0, 0);
-		i++;
+        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+        rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
+        m_pCommandListResolve->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+        // do not need to be cleared
+
+        // Set necessary state.
+        m_pCommandListResolve->SetGraphicsRootSignature(m_pRootSignatureResolve);
+
+        m_pCommandListResolve->RSSetViewports(1, &m_ViewPort);
+        m_pCommandListResolve->RSSetScissorRects(1, &m_ScissorRect);
+        m_pCommandListResolve->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        // Set CBV
+        m_pCommandListResolve->SetGraphicsRoot32BitConstants(0, g_pApp->GetConfiguration().screenWidth, nullptr, 0);
+        m_pCommandListResolve->SetGraphicsRoot32BitConstants(0, g_pApp->GetConfiguration().screenHeight, nullptr, 0);
+
+        // Set SRV
+        auto texture_index = m_TextureIndex["MSAA"];
+        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
+        auto temp_ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
+        m_pCommandListResolve->SetGraphicsRootShaderResourceView(1, temp_ptr);
+
+        m_pCommandListResolve->IASetVertexBuffers(0, 1, &m_VertexBufferViewResolve);
+        m_pCommandListResolve->DrawInstanced(4, 1, 0, 0);
+
+        memset(&barrier, 0x00, sizeof(barrier));
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandListResolve->ResourceBarrier(1, &barrier);
+
+        hr = m_pCommandListResolve->Close();
     }
-
-    memset(&barrier, 0x00, sizeof(barrier));
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_pCommandList->ResourceBarrier(1, &barrier);
-
-    hr = m_pCommandList->Close();
 
     return hr;
 }
