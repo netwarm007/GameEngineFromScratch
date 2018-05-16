@@ -44,6 +44,7 @@ namespace My {
         HRESULT CreateRootSignature();
         HRESULT WaitForPreviousFrame();
         HRESULT PopulateCommandList();
+        HRESULT PopulateMsaaCommandList();
 
         HRESULT CreateInternalVertexBuffer();
 
@@ -61,7 +62,6 @@ namespace My {
         ID3D12Resource*                 m_pDepthStencilBuffer;              // the pointer to the depth stencil buffer
         ID3D12Resource*                 m_pMsaaRenderTarget;                // the pointer to the depth stencil buffer
         ID3D12CommandAllocator*         m_pCommandAllocator = nullptr;      // the pointer to command buffer allocator
-        ID3D12CommandAllocator*         m_pCommandAllocatorResolve = nullptr;      // the pointer to command buffer allocator
         ID3D12CommandQueue*             m_pCommandQueue = nullptr;          // the pointer to command queue
         ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
         ID3D12RootSignature*            m_pRootSignatureResolve = nullptr;  // a graphics root signature defines what resources are bound to the pipeline
@@ -74,7 +74,6 @@ namespace My {
                                                                             // such as the input assembler, tesselator, rasterizer and output manager
         ID3D12PipelineState*            m_pPipelineStateResolve = nullptr;
         ID3D12GraphicsCommandList*      m_pCommandList = nullptr;           // a list to store GPU commands, which will be submitted to GPU to execute when done
-        ID3D12GraphicsCommandList*      m_pCommandListResolve = nullptr;    // a list to store GPU commands, which will be submitted to GPU to execute when done
 
         uint32_t                        m_nRtvDescriptorSize;
         uint32_t                        m_nCbvSrvDescriptorSize;

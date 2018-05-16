@@ -317,10 +317,6 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
         return hr;
     }
 
-    if(FAILED(hr = m_pDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocatorResolve)))) {
-        return hr;
-    }
-
     return hr;
 }
 
@@ -460,10 +456,10 @@ HRESULT D3d12GraphicsManager::CreateInternalVertexBuffer()
 	ID3D12Resource* pVertexBufferUploadHeap;
 
     float fullScreenQuad[] = {
-        0.0f, 0.0f, 0.0f,       0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,       0.0f, 1.0f,
-        1.0f, 0.0f, 0.0f,       1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,       1.0f, 1.0f
+        -1.0f, 1.0f, 0.0f,       0.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f,       0.0f, 1.0f,
+        1.0f, 1.0f, 0.0f,       1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f,       1.0f, 1.0f
     };
 
     // create vertex GPU heap 
@@ -535,8 +531,8 @@ HRESULT D3d12GraphicsManager::CreateInternalVertexBuffer()
 
 	// initialize the vertex buffer view
 	m_VertexBufferViewResolve.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
-	m_VertexBufferViewResolve.StrideInBytes = (UINT)(sizeof(float) * 5);
-	m_VertexBufferViewResolve.SizeInBytes = (UINT)size;
+	m_VertexBufferViewResolve.StrideInBytes = 20;
+	m_VertexBufferViewResolve.SizeInBytes = size;
 
     m_Buffers.push_back(pVertexBuffer);
     m_Buffers.push_back(pVertexBufferUploadHeap);
@@ -1245,17 +1241,6 @@ bool D3d12GraphicsManager::InitializeShaders() {
             return false;
         }
 
-        if (!m_pCommandList)
-        {
-            if (FAILED(hr = m_pDev->CreateCommandList(0, 
-                        D3D12_COMMAND_LIST_TYPE_DIRECT, 
-                        m_pCommandAllocator, 
-                        m_pPipelineState, 
-                        IID_PPV_ARGS(&m_pCommandList))))
-            {
-                return false;
-            }
-        }
     }
 
     // resolve pass
@@ -1279,7 +1264,7 @@ bool D3d12GraphicsManager::InitializeShaders() {
         D3D12_INPUT_ELEMENT_DESC ied[] =
         {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         };
 
         D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
@@ -1320,7 +1305,7 @@ bool D3d12GraphicsManager::InitializeShaders() {
 
         // describe and create the graphics pipeline state object (PSO)
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psod = {};
-        psod.pRootSignature = m_pRootSignature;
+        psod.pRootSignature = m_pRootSignatureResolve;
         psod.VS             = vertexShaderByteCode;
         psod.PS             = pixelShaderByteCode;
         psod.BlendState     = bld;
@@ -1331,25 +1316,13 @@ bool D3d12GraphicsManager::InitializeShaders() {
         psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psod.NumRenderTargets = 1;
         psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
-        psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+        psod.DSVFormat = DXGI_FORMAT_UNKNOWN;
         psod.SampleDesc.Count = 1;   // no MSAA
         psod.SampleDesc.Quality = 0; // no MSAA
 
         if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineStateResolve))))
         {
             return false;
-        }
-
-        if (!m_pCommandListResolve)
-        {
-            if (FAILED(hr = m_pDev->CreateCommandList(0, 
-                        D3D12_COMMAND_LIST_TYPE_DIRECT, 
-                        m_pCommandAllocatorResolve, 
-                        m_pPipelineStateResolve, 
-                        IID_PPV_ARGS(&m_pCommandListResolve))))
-            {
-                return false;
-            }
         }
     }
 
@@ -1359,7 +1332,6 @@ bool D3d12GraphicsManager::InitializeShaders() {
 void D3d12GraphicsManager::ClearShaders()
 {
     SafeRelease(&m_pCommandList);
-    SafeRelease(&m_pCommandListResolve);
     SafeRelease(&m_pPipelineState);
     SafeRelease(&m_pPipelineStateResolve);
 }
@@ -1367,6 +1339,19 @@ void D3d12GraphicsManager::ClearShaders()
 void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 {
     HRESULT hr;
+
+	if (!m_pCommandList)
+	{
+		if (FAILED(hr = m_pDev->CreateCommandList(0, 
+					D3D12_COMMAND_LIST_TYPE_DIRECT, 
+					m_pCommandAllocator, 
+					m_pPipelineState, 
+					IID_PPV_ARGS(&m_pCommandList))))
+		{
+			return;
+		}
+	}
+
     cout << "Creating Constant Buffer ...";
 	if (FAILED(hr = CreateConstantBuffer())) {
 		return;
@@ -1392,6 +1377,7 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 		}
 	}
 
+    cout << "Creating Vertex Buffer ...";
 	int32_t n = 0;
     for (auto _it : scene.GeometryNodes)
     {
@@ -1443,6 +1429,11 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 			n++;
         }
     }
+    cout << "Done!" << endl;
+
+    cout << "Creating Internal Vertex Buffer ...";
+	CreateInternalVertexBuffer();
+    cout << "Done!" << endl;
 
     if (SUCCEEDED(hr = m_pCommandList->Close()))
     {
@@ -1516,7 +1507,6 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pRootSignatureResolve);
     SafeRelease(&m_pCommandQueue);
     SafeRelease(&m_pCommandAllocator);
-    SafeRelease(&m_pCommandAllocatorResolve);
 	SafeRelease(&m_pDepthStencilBuffer);
     SafeRelease(&m_pMsaaRenderTarget);
     for (uint32_t i = 0; i < kFrameCount; i++) {
@@ -1562,12 +1552,12 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
             return hr;
         }
 
-        // Indicate that the back buffer will be used as a render target.
+        // Indicate that the back buffer will be used as a resolve source.
         D3D12_RESOURCE_BARRIER barrier = {};
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = m_pMsaaRenderTarget;
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
@@ -1615,6 +1605,10 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
             {
                 m_pCommandList->IASetVertexBuffers(j, 1, &m_VertexBufferView[vertex_buffer_view_offset++]);
             }
+
+			// set primitive topology
+			m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
             // select which index buffer to use
             m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[i]);
 
@@ -1635,12 +1629,11 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
             i++;
         }
 
-        memset(&barrier, 0x00, sizeof(barrier));
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = m_pMsaaRenderTarget;
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
 
@@ -1651,74 +1644,75 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     {
         return hr;
     }
+}
 
-	// command list allocators can only be reset when the associated 
-	// command lists have finished execution on the GPU; apps should use 
-	// fences to determine GPU execution progress.
-	if (FAILED(hr = m_pCommandAllocatorResolve->Reset()))
+HRESULT D3d12GraphicsManager::PopulateMsaaCommandList()
+{
+	HRESULT hr;
+
+    // MSAA resolve pass
+
+	// when ExecuteCommandList() is called on a particular command 
+	// list, that command list can then be reset at any time and must be before 
+	// re-recording.
+	if (FAILED(hr = m_pCommandList->Reset(m_pCommandAllocator, m_pPipelineStateResolve)))
 	{
 		return hr;
 	}
 
-    // MSAA resolve pass
-    {
-        // however, when ExecuteCommandList() is called on a particular command 
-        // list, that command list can then be reset at any time and must be before 
-        // re-recording.
-        if (FAILED(hr = m_pCommandListResolve->Reset(m_pCommandAllocatorResolve, m_pPipelineStateResolve)))
-        {
-            return hr;
-        }
+	// Indicate that the back buffer will be used as a render target.
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	m_pCommandList->ResourceBarrier(1, &barrier);
 
-        // Indicate that the back buffer will be used as a render target.
-        D3D12_RESOURCE_BARRIER barrier = {};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_DEST;
-        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        m_pCommandListResolve->ResourceBarrier(1, &barrier);
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+	rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
+	m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
-        D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-        rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
-        m_pCommandListResolve->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	// do not need to be cleared
 
-        // do not need to be cleared
+	// Set necessary state.
+	m_pCommandList->SetGraphicsRootSignature(m_pRootSignatureResolve);
 
-        // Set necessary state.
-        m_pCommandListResolve->SetGraphicsRootSignature(m_pRootSignatureResolve);
+	ID3D12DescriptorHeap* ppHeaps[] = { m_pCbvHeap };
+	m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-        m_pCommandListResolve->RSSetViewports(1, &m_ViewPort);
-        m_pCommandListResolve->RSSetScissorRects(1, &m_ScissorRect);
-        m_pCommandListResolve->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pCommandList->RSSetViewports(1, &m_ViewPort);
+	m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
+	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        // Set CBV
-        m_pCommandListResolve->SetGraphicsRoot32BitConstants(0, g_pApp->GetConfiguration().screenWidth, nullptr, 0);
-        m_pCommandListResolve->SetGraphicsRoot32BitConstants(0, g_pApp->GetConfiguration().screenHeight, nullptr, 0);
+	// Set CBV
+	m_pCommandList->SetGraphicsRoot32BitConstants(1, 1, &g_pApp->GetConfiguration().screenWidth, 0);
+	m_pCommandList->SetGraphicsRoot32BitConstants(1, 1, &g_pApp->GetConfiguration().screenHeight, 1);
 
-        // Set SRV
-        auto texture_index = m_TextureIndex["MSAA"];
-        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
-        auto temp_ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
-        m_pCommandListResolve->SetGraphicsRootShaderResourceView(1, temp_ptr);
+	// Set SRV
+	auto texture_index = m_TextureIndex["MSAA"];
+	D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
+	srvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
+	m_pCommandList->SetGraphicsRootDescriptorTable(0, srvHandle);
 
-        m_pCommandListResolve->IASetVertexBuffers(0, 1, &m_VertexBufferViewResolve);
-        m_pCommandListResolve->DrawInstanced(4, 1, 0, 0);
+	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferViewResolve);
+	m_pCommandList->DrawInstanced(4, 1, 0, 0);
 
-        memset(&barrier, 0x00, sizeof(barrier));
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_DEST;
-        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
-        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        m_pCommandListResolve->ResourceBarrier(1, &barrier);
+	memset(&barrier, 0x00, sizeof(barrier));
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	m_pCommandList->ResourceBarrier(1, &barrier);
 
-        hr = m_pCommandListResolve->Close();
-    }
+	hr = m_pCommandList->Close();
 
     return hr;
+
 }
 
 void D3d12GraphicsManager::UpdateConstants()
@@ -1739,8 +1733,13 @@ void D3d12GraphicsManager::RenderBuffers()
     HRESULT hr;
 
     // execute the command list
-    ID3D12CommandList *ppCommandLists[] = { m_pCommandList };
+	ID3D12CommandList *ppCommandLists[] = { m_pCommandList };
     m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	if (SUCCEEDED(PopulateMsaaCommandList()))
+	{
+		m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	}
 
     // swap the back buffer and the front buffer
     hr = m_pSwapChain->Present(1, 0);

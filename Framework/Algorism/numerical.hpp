@@ -21,7 +21,7 @@ namespace My {
                 TVAL fx = f(x);
                 TVAL fx1 = fprime(x);
                 x1 = x - (fx / fx1);
-            } while (abs(x1 - x) >= static_cast<TPARAM>(10E-6));
+            } while (abs(x1 - x) >= 10E-6);
 
             return x1;
         }
