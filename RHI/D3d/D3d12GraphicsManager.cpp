@@ -1637,6 +1637,47 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
 
+        // resolve pass
+        m_pCommandList->SetPipelineState(m_pPipelineStateResolve);
+
+        // Indicate that the back buffer will be used as a render target.
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+
+        rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
+        m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+        // Set necessary state.
+        m_pCommandList->SetGraphicsRootSignature(m_pRootSignatureResolve);
+
+        // Set CBV
+        m_pCommandList->SetGraphicsRoot32BitConstants(1, 1, &g_pApp->GetConfiguration().screenWidth, 0);
+        m_pCommandList->SetGraphicsRoot32BitConstants(1, 1, &g_pApp->GetConfiguration().screenHeight, 1);
+
+        // Set SRV
+        auto texture_index = m_TextureIndex["MSAA"];
+        D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
+        srvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
+        m_pCommandList->SetGraphicsRootDescriptorTable(0, srvHandle);
+
+        m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+        m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferViewResolve);
+        m_pCommandList->DrawInstanced(4, 1, 0, 0);
+
+        memset(&barrier, 0x00, sizeof(barrier));
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+
         hr = m_pCommandList->Close();
     }
 
@@ -1644,75 +1685,6 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
     {
         return hr;
     }
-}
-
-HRESULT D3d12GraphicsManager::PopulateMsaaCommandList()
-{
-	HRESULT hr;
-
-    // MSAA resolve pass
-
-	// when ExecuteCommandList() is called on a particular command 
-	// list, that command list can then be reset at any time and must be before 
-	// re-recording.
-	if (FAILED(hr = m_pCommandList->Reset(m_pCommandAllocator, m_pPipelineStateResolve)))
-	{
-		return hr;
-	}
-
-	// Indicate that the back buffer will be used as a render target.
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	m_pCommandList->ResourceBarrier(1, &barrier);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-	rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
-	m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
-	// do not need to be cleared
-
-	// Set necessary state.
-	m_pCommandList->SetGraphicsRootSignature(m_pRootSignatureResolve);
-
-	ID3D12DescriptorHeap* ppHeaps[] = { m_pCbvHeap };
-	m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-	m_pCommandList->RSSetViewports(1, &m_ViewPort);
-	m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
-	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Set CBV
-	m_pCommandList->SetGraphicsRoot32BitConstants(1, 1, &g_pApp->GetConfiguration().screenWidth, 0);
-	m_pCommandList->SetGraphicsRoot32BitConstants(1, 1, &g_pApp->GetConfiguration().screenHeight, 1);
-
-	// Set SRV
-	auto texture_index = m_TextureIndex["MSAA"];
-	D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
-	srvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
-	m_pCommandList->SetGraphicsRootDescriptorTable(0, srvHandle);
-
-	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferViewResolve);
-	m_pCommandList->DrawInstanced(4, 1, 0, 0);
-
-	memset(&barrier, 0x00, sizeof(barrier));
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	m_pCommandList->ResourceBarrier(1, &barrier);
-
-	hr = m_pCommandList->Close();
-
-    return hr;
-
 }
 
 void D3d12GraphicsManager::UpdateConstants()
@@ -1735,11 +1707,6 @@ void D3d12GraphicsManager::RenderBuffers()
     // execute the command list
 	ID3D12CommandList *ppCommandLists[] = { m_pCommandList };
     m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-	if (SUCCEEDED(PopulateMsaaCommandList()))
-	{
-		m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	}
 
     // swap the back buffer and the front buffer
     hr = m_pSwapChain->Present(1, 0);

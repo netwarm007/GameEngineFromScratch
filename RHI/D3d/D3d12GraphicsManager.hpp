@@ -44,7 +44,6 @@ namespace My {
         HRESULT CreateRootSignature();
         HRESULT WaitForPreviousFrame();
         HRESULT PopulateCommandList();
-        HRESULT PopulateMsaaCommandList();
 
         HRESULT CreateInternalVertexBuffer();
 
