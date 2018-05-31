@@ -1637,7 +1637,10 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
 
-        // resolve pass
+#if 1
+        m_pCommandList->ResolveSubresource(m_pRenderTargets[m_nFrameIndex], 0, m_pMsaaRenderTarget, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+#else
+        // MSAA resolve pass
         m_pCommandList->SetPipelineState(m_pPipelineStateResolve);
 
         // Indicate that the back buffer will be used as a render target.
@@ -1677,6 +1680,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
+#endif
 
         hr = m_pCommandList->Close();
     }
