@@ -383,7 +383,7 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
-    srvDesc.Texture2D.MipLevels = 1;
+    srvDesc.Texture2D.MipLevels = 4;
     srvDesc.Texture2D.MostDetailedMip = 0;
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
     size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
@@ -1629,6 +1629,42 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
             i++;
         }
 
+#if 0
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pMsaaRenderTarget;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+
+        m_pCommandList->ResolveSubresource(m_pRenderTargets[m_nFrameIndex], 0, m_pMsaaRenderTarget, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pMsaaRenderTarget;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_DEST;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        m_pCommandList->ResourceBarrier(1, &barrier);
+#else
+        // MSAA resolve pass
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = m_pMsaaRenderTarget;
@@ -1637,10 +1673,6 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
 
-#if 1
-        m_pCommandList->ResolveSubresource(m_pRenderTargets[m_nFrameIndex], 0, m_pMsaaRenderTarget, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
-#else
-        // MSAA resolve pass
         m_pCommandList->SetPipelineState(m_pPipelineStateResolve);
 
         // Indicate that the back buffer will be used as a render target.
@@ -1672,7 +1704,6 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferViewResolve);
         m_pCommandList->DrawInstanced(4, 1, 0, 0);
 
-        memset(&barrier, 0x00, sizeof(barrier));
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];

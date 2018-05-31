@@ -37,6 +37,7 @@
         "*.inc": "cpp",
         "dynarray": "cpp",
         "regex": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "functional": "cpp"
     }
 }
