@@ -13,6 +13,7 @@ namespace My {
         void Tick();
 
         void AddAnimationClip(std::shared_ptr<SceneObjectAnimationClip> clip);
+        void ClearAnimationClips();
 
     private:
         std::chrono::steady_clock m_Clock;

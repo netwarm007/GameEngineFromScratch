@@ -205,8 +205,14 @@ namespace My {
         return result;
     }
 
-    template <typename T, int N>
-    inline void CrossProduct(Vector<T, N>& result, const Vector<T, N>& vec1, const Vector<T, N>& vec2)
+    template <typename T>
+    inline void CrossProduct(T& result, const Vector<T, 2>& vec1, const Vector<T, 2>& vec2)
+    {
+        result = vec1[0] * vec2[1] - vec1[1] * vec2[0];
+    }
+
+    template <typename T>
+    inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1, const Vector<T, 3>& vec2)
     {
         ispc::CrossProduct(vec1, vec2, result);
     }
@@ -766,32 +772,28 @@ namespace My {
 
     inline void MatrixRotationX(Matrix4X4f& matrix, const float angle)
     {
-        float c = cosf(angle), s = sinf(angle);
+        const float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{
+        matrix = {{
             {  1.0f, 0.0f, 0.0f, 0.0f },
             {  0.0f,    c,    s, 0.0f },
             {  0.0f,   -s,    c, 0.0f },
             {  0.0f, 0.0f, 0.0f, 1.0f },
         }};
 
-        matrix = rotation;
-
         return;
     }
 
     inline void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
-        float c = cosf(angle), s = sinf(angle);
+        const float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{
+        matrix = {{
             {    c, 0.0f,   -s, 0.0f },
             { 0.0f, 1.0f, 0.0f, 0.0f },
             {    s, 0.0f,    c, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f },
         }};
-
-        matrix = rotation;
 
         return;
     }
@@ -799,16 +801,14 @@ namespace My {
 
     inline void MatrixRotationZ(Matrix4X4f& matrix, const float angle)
     {
-        float c = cosf(angle), s = sinf(angle);
+        const float c = cosf(angle), s = sinf(angle);
 
-        Matrix4X4f rotation = {{
+        matrix = {{
             {    c,    s, 0.0f, 0.0f },
             {   -s,    c, 0.0f, 0.0f },
             { 0.0f, 0.0f, 1.0f, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
         }};
-
-        matrix = rotation;
 
         return;
     }
@@ -889,6 +889,9 @@ namespace My {
         return result;
     }
 
+    typedef Vector<float, 2> Point2D;
+    typedef std::shared_ptr<Point2D> Point2DPtr;
+    typedef std::vector<Point2DPtr> Point2DList;
     typedef Vector<float, 3> Point;
     typedef std::shared_ptr<Point> PointPtr;
     typedef std::unordered_set<PointPtr> PointSet;

@@ -19,6 +19,7 @@ namespace My {
         bool IsSceneChanged();
         void NotifySceneIsRenderingQueued();
         void NotifySceneIsPhysicalSimulationQueued();
+        void NotifySceneIsAnimationQueued();
 
         const Scene& GetSceneForRendering();
         const Scene& GetSceneForPhysicalSimulation();
@@ -36,6 +37,7 @@ namespace My {
         std::shared_ptr<Scene>  m_pScene;
         bool m_bRenderingQueued = false;
         bool m_bPhysicalSimulationQueued = false;
+        bool m_bAnimationQueued = false;
         bool m_bDirtyFlag = false;
     };
 

@@ -27,11 +27,19 @@ int AnimationManager::Initialize()
 
 void AnimationManager::Finalize()
 {
-    
+    ClearAnimationClips();
 }
 
 void AnimationManager::Tick()
 {
+    if (g_pSceneManager->IsSceneChanged())
+    {
+        cerr << "[AnimationManager] Detected Scene Change, reinitialize animations ..." << endl;
+        Finalize();
+        Initialize();
+        g_pSceneManager->NotifySceneIsAnimationQueued();
+    }
+
     if (!m_bTimeLineStarted)
     {
         m_TimeLineStartPoint = m_Clock.now();
@@ -49,4 +57,9 @@ void AnimationManager::Tick()
 void AnimationManager::AddAnimationClip(std::shared_ptr<SceneObjectAnimationClip> clip)
 {
     m_AnimationClips.push_back(clip);
+}
+
+void AnimationManager::ClearAnimationClips()
+{
+    m_AnimationClips.clear();
 }

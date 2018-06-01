@@ -168,6 +168,13 @@ jobs:
                    adb shell chmod +x /data/local/tmp/SceneLoadingTest
                    adb shell "cd /data/local/tmp && ./SceneLoadingTest"
           working_directory: Game/Billiard
+      - run:
+          name: Run Bullet Test
+          command: |
+                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/BulletTest /data/local/tmp/
+                   adb shell chmod +x /data/local/tmp/BulletTest
+                   adb shell "cd /data/local/tmp && ./BulletTest"
+          working_directory: Game/Billiard
       - store_artifacts:
           path: Game/Billiard/app/build/reports
           destination: reports

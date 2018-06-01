@@ -8,11 +8,7 @@
 
 typedef int32_t four_char_enum;
 
-#if __cplusplus >= 201103L && !defined(__ORBIS__)
 #define ENUM(e) enum class e : four_char_enum 
-#else
-#define ENUM(e) enum e : four_char_enum
-#endif
 
 #ifndef HAVE_MAKE_UNIQUE 
 namespace std {

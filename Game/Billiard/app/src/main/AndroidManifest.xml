@@ -16,6 +16,7 @@
     <!-- Our activity is the built-in NativeActivity framework class.
          This will take care of integrating with our NDK code. -->
     <activity android:name="android.app.NativeActivity"
+              android:screenOrientation="landscape"
               android:label="@string/app_name"
               android:configChanges="orientation|keyboardHidden">
       <!-- Tell NativeActivity the name of our .so -->
