@@ -39,4 +39,6 @@ int OpenGLESGraphicsManager::Initialize()
     return result;
 }
 
+#define OPENGL_ES
 #include "OpenGLGraphicsManagerCommonBase.cpp"
+#undef OPENGL_ES
