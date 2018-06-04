@@ -1,6 +1,6 @@
 #include "OpenGLESApplication.hpp"
 #include "AndroidAssetLoader.hpp"
-#include "OpenGL/OpenGLESGraphicsManager.hpp"
+#include "OpenGL/OpenGLESConfig.hpp"
 
 namespace My {
     extern GfxConfiguration config;

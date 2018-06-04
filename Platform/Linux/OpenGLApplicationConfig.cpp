@@ -1,5 +1,5 @@
 #include "OpenGLApplication.hpp"
-#include "OpenGL/OpenGLGraphicsManager.hpp"
+#include "OpenGL/OpenGLConfig.hpp"
 
 namespace My {
     extern GfxConfiguration config;

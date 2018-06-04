@@ -1,6 +1,6 @@
 #include <tchar.h>
 #include "OpenGLApplication.hpp"
-#include "OpenGL/OpenGLGraphicsManager.hpp"
+#include "OpenGL/OpenGLConfig.hpp"
 
 namespace My {
     extern GfxConfiguration config;
@@ -15,4 +15,3 @@ namespace My {
     DebugManager*    g_pDebugManager    = static_cast<DebugManager*>(new DebugManager);
 #endif
 }
-
