@@ -3,7 +3,6 @@
 #include "SceneManager.hpp"
 #include "cbuffer.h"
 #include "IApplication.hpp"
-#include "SceneManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -21,7 +20,6 @@ void GraphicsManager::Finalize()
     ClearDebugBuffers();
 #endif
     ClearBuffers();
-    ClearShaders();
 }
 
 void GraphicsManager::Tick()
@@ -30,9 +28,7 @@ void GraphicsManager::Tick()
     {
         cout << "[GraphicsManager] Detected Scene Change, reinitialize buffers ..." << endl;
         ClearBuffers();
-        ClearShaders();
         const Scene& scene = g_pSceneManager->GetSceneForRendering();
-        InitializeShaders();
         InitializeBuffers(scene);
         g_pSceneManager->NotifySceneIsRenderingQueued();
     }
@@ -69,17 +65,6 @@ void GraphicsManager::InitConstants()
 {
     // Initialize the world/model matrix to the identity matrix.
     BuildIdentityMatrix(m_DrawFrameContext.m_worldMatrix);
-}
-
-bool GraphicsManager::InitializeShaders()
-{
-    cout << "[GraphicsManager] GraphicsManager::InitializeShader()" << endl;
-    return true;
-}
-
-void GraphicsManager::ClearShaders()
-{
-    cout << "[GraphicsManager] GraphicsManager::ClearShaders()" << endl;
 }
 
 void GraphicsManager::CalculateCameraMatrix()

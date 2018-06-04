@@ -4,7 +4,7 @@
 #include "SceneManager.hpp"
 
 namespace My {
-    class IPhysicsManager : implements IRuntimeModule
+    Interface IPhysicsManager : implements IRuntimeModule
     {
     public:
         virtual int Initialize() = 0;

@@ -4,6 +4,7 @@ Allocator.cpp
 AssetLoader.cpp
 BaseApplication.cpp
 DebugManager.cpp
+ForwardRenderPass.cpp
 GraphicsManager.cpp
 InputManager.cpp
 Image.cpp
