@@ -11,12 +11,21 @@ jobs:
              apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
              apt install -y git-lfs
+      - restore_cache:
+          keys:
+            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+            - source-{{ arch }}-{{ .Branch }}-
+            - source-{{ arch }}
       - checkout
       - run: 
           name: Git LFS Checkout
           command: |
              git lfs fetch
              git lfs checkout
+      - save_cache:
+          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
       - run:
           name: Build
           command: |
@@ -33,12 +42,21 @@ jobs:
     macos:
       xcode: "9.2.0"
     steps:
+      - restore_cache:
+          keys:
+            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+            - source-{{ arch }}-{{ .Branch }}-
+            - source-{{ arch }}
       - checkout
       - run: 
           name: Git LFS Checkout
           command: |
              git lfs fetch
              git lfs checkout
+      - save_cache:
+          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
       - run: 
           name: Install Dependencies via MacPorts
           command: |
@@ -68,17 +86,26 @@ jobs:
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
-      - run: 
+      - run:
           name: Install Git LFS
           command: |
-             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-             sudo apt install -y git-lfs
+            curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+            sudo apt install -y git-lfs
+      - restore_cache:
+          keys:
+            - source-android-{{ .Branch }}-{{ .Revision }}
+            - source-android-{{ .Branch }}-
+            - source-android
       - checkout
       - run: 
-          name: Git Lfs Checkout
+          name: Git LFS Checkout
           command: |
              git lfs fetch
              git lfs checkout
+      - save_cache:
+          key: source-android-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
       - restore_cache:
           key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
       - run:
