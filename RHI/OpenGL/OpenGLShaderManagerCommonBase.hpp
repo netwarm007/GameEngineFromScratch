@@ -1,5 +1,4 @@
 #pragma once
-#include "glad/glad.h"
 #include "IShaderManager.hpp"
 
 namespace My {
