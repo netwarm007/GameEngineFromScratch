@@ -1,6 +1,7 @@
 IF(ANDROID)
 add_library(OpenGLRHI
         OpenGLESGraphicsManager.cpp
+        OpenGLESShaderManager.cpp
 )
 ELSE(ANDROID)
 add_library(OpenGLRHI

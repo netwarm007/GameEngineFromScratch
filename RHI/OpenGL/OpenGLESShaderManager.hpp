@@ -2,7 +2,7 @@
 #include "OpenGLShaderManagerCommonBase.hpp"
 
 namespace My {
-    class OpenGLShaderManager : public OpenGLShaderManagerCommonBase
+    class OpenGLESShaderManager : public OpenGLShaderManagerCommonBase
     {
     };
 }
