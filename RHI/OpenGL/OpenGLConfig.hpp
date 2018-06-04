@@ -1,3 +1,4 @@
+#pragma once
 #include "OpenGL/OpenGLGraphicsManager.hpp"
 #include "OpenGL/OpenGLShaderManager.hpp"
 
