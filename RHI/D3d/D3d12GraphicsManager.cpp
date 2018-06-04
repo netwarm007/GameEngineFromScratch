@@ -5,6 +5,7 @@
 #include "SceneManager.hpp"
 #include "AssetLoader.hpp"
 #include "IPhysicsManager.hpp"
+#include "D3dShaderManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -1165,8 +1166,8 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
 }
 
 
-// this is the function that loads and prepares the shaders
-bool D3d12GraphicsManager::InitializeShaders() {
+// this is the function that loads and prepares the pso 
+HRESULT D3d12GraphicsManager::InitializePSO() {
     HRESULT hr = S_OK;
 
     // basic pass
