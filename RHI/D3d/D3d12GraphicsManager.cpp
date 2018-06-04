@@ -1054,6 +1054,18 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     }
     cout << "Done!" << endl;
 
+    cout << "Creating PSO ...";
+    if (FAILED(hr = InitializePSO())) {
+        return hr;
+    }
+    cout << "Done!" << endl;
+
+    cout << "Creating Command List ...";
+    if (FAILED(hr = CreateCommandList())) {
+        return hr;
+    }
+    cout << "Done!" << endl;
+
     return hr;
 }
 
