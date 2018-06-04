@@ -286,6 +286,7 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                     case VertexDataType::kVertexDataTypeFloat4:
                         glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, 0);
                         break;
+#ifndef OPENGL_ES
                     case VertexDataType::kVertexDataTypeDouble1:
                         glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, 0);
                         break;
@@ -298,6 +299,7 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                     case VertexDataType::kVertexDataTypeDouble4:
                         glVertexAttribPointer(i, 4, GL_DOUBLE, false, 0, 0);
                         break;
+#endif
                     default:
                         assert(0);
                 }
