@@ -41,4 +41,3 @@ void main(void)
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
 }
-
