@@ -378,19 +378,6 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
         return hr;
     }
 
-    // Describe and create a SRV for the texture.
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
-    srvDesc.Texture2D.MipLevels = 4;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-    size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
-    srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
-    m_pDev->CreateShaderResourceView(m_pMsaaRenderTarget, &srvDesc, srvHandle);
-    m_TextureIndex["MSAA"] = texture_id;
-
     m_pDev->CreateRenderTargetView(m_pMsaaRenderTarget, &renderTargetDesc, rtvHandle);
 
     return hr;
@@ -836,6 +823,17 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		m_Buffers.push_back(pTextureUploadHeap);
 		m_Textures.push_back(pTextureBuffer);
 	}
+
+    // Describe and create a SRV for the texture.
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
+    size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
+    srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
+    m_pDev->CreateShaderResourceView(m_pMsaaRenderTarget, &srvDesc, srvHandle);
+    m_TextureIndex["MSAA"] = texture_id;
 
     return hr;
 }
@@ -1751,7 +1749,9 @@ void D3d12GraphicsManager::RenderBuffers()
 
 bool D3d12GraphicsManager::SetPerFrameShaderParameters()
 {
-    memcpy(m_pCbvDataBegin + m_nFrameIndex * kSizeConstantBufferPerFrame, &m_DrawFrameContext, sizeof(m_DrawFrameContext));
+    memcpy(m_pCbvDataBegin + m_nFrameIndex * kSizeConstantBufferPerFrame, 
+        &m_DrawFrameContext, 
+        sizeof(m_DrawFrameContext) - sizeof(m_DrawFrameContext.m_lights));
     return true;
 }
 
