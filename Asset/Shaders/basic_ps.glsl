@@ -126,7 +126,7 @@ vec3 apply_light(Light light) {
     vec3 L;
     vec3 light_dir = normalize((viewMatrix * worldMatrix * vec4(light.lightDirection, 0.0f)).xyz);
 
-    if (v.w == 0.0f)
+    if (light.lightPosition.w == 0.0f)
     {
         L = -light_dir;
     }

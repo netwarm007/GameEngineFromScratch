@@ -48,16 +48,17 @@ namespace My {
         HRESULT CreateInternalVertexBuffer();
 
     private:
-        static const uint32_t           kFrameCount  = 2;
-        static const uint32_t           kMaxSceneObjectCount  = 65535;
-        static const uint32_t           kMaxTextureCount  = 2048;
-		static const uint32_t		    kTextureDescStartIndex = kFrameCount * kMaxSceneObjectCount * 2;
+        static const uint32_t           m_kFrameCount  = 2;
+        uint32_t           m_kMaxTextureCount  = 2048;
+        uint32_t           m_kMaxObjectCount = 2048;
+        uint32_t           m_kMaxLightCount = 10;
+		uint32_t		   m_kTextureDescStartIndex;
 
         ID3D12Device*                   m_pDev       = nullptr;             // the pointer to our Direct3D device interface
         D3D12_VIEWPORT                  m_ViewPort;                         // viewport structure
         D3D12_RECT                      m_ScissorRect;                      // scissor rect structure
         IDXGISwapChain3*                m_pSwapChain = nullptr;             // the pointer to the swap chain interface
-        ID3D12Resource*                 m_pRenderTargets[kFrameCount];      // the pointer to rendering buffer. [descriptor]
+        ID3D12Resource*                 m_pRenderTargets[m_kFrameCount];      // the pointer to rendering buffer. [descriptor]
         ID3D12Resource*                 m_pDepthStencilBuffer;              // the pointer to the depth stencil buffer
         ID3D12Resource*                 m_pMsaaRenderTarget;                // the pointer to the MSAA rendering target
         ID3D12CommandAllocator*         m_pCommandAllocator = nullptr;      // the pointer to command buffer allocator
@@ -104,9 +105,9 @@ namespace My {
         std::vector<DrawBatchContext> m_DrawBatchContext;
 
         uint8_t*                        m_pCbvDataBegin = nullptr;
-		static const size_t				kSizePerFrameConstantBuffer = (sizeof(DrawFrameContext) + 255) & 256; // CB size is required to be 256-byte aligned.
-		static const size_t				kSizePerBatchConstantBuffer = (sizeof(DrawBatchContext) + 255) & 256; // CB size is required to be 256-byte aligned.
-		static const size_t				kSizeConstantBufferPerFrame = kSizePerFrameConstantBuffer + kSizePerBatchConstantBuffer * kMaxSceneObjectCount;
+		size_t				            m_kSizePerFrameConstantBuffer;
+		size_t				            m_kSizePerBatchConstantBuffer;
+		size_t				            m_kSizeConstantBufferPerFrame;
 
         // Synchronization objects
         uint32_t                        m_nFrameIndex;
