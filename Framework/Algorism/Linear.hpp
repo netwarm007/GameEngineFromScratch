@@ -107,7 +107,7 @@ namespace My {
 
         Quaternion<T> Interpolate(T s, const size_t index) const final
         {
-            Quaternion<T> result;
+            Quaternion<T> result = 0;
             assert(0);
 
             return result;

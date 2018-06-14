@@ -254,7 +254,7 @@ bool OpenGLGraphicsManager::SetPerFrameShaderParameters(GLuint shader)
         {
                 return false;
         }
-        glUniform3fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightDirection);
+        glUniform4fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightDirection);
 
         ss.clear();
         ss.seekp(0);

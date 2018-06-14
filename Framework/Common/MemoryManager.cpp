@@ -1,9 +1,6 @@
 #include "MemoryManager.hpp"
+#include "portable.hpp"
 #include <cstdlib>
-
-#ifndef ALIGN
-#define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
-#endif
 
 using namespace My;
 

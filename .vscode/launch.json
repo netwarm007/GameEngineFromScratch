@@ -4,14 +4,13 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
             "name": "(Mac OS)(OpenGL) Launch Editor",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/lightmap_test.ogex"
+                "Scene/splash.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -25,10 +24,22 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "Scene/lightmap_test.ogex"
+                "Scene/splash.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) Launch Game",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Game/Billiard",
             "environment": [],
             "externalConsole": false
         }

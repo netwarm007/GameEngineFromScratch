@@ -1,6 +1,8 @@
 #ifndef __STDCBUFFER_H__
 #define __STDCBUFFER_H__
 
+#define MAX_LIGHTS 10
+
 struct a2v
 {
 	float3 Position		: POSITION;
@@ -8,14 +10,32 @@ struct a2v
 	float2 TextureUV	: TEXCOORD;
 };
 
+struct Light{
+	float4		m_lightPosition;
+	float4		m_lightColor;
+	float4		m_lightDirection;
+	float       m_lightIntensity;
+	uint		m_lightDistAttenCurveType;
+	float       m_lightDistAttenCurveParams_0;
+	float       m_lightDistAttenCurveParams_1;
+	float       m_lightDistAttenCurveParams_2;
+	float       m_lightDistAttenCurveParams_3;
+	float       m_lightDistAttenCurveParams_4;
+	uint		m_lightAngleAttenCurveType;
+	float       m_lightAngleAttenCurveParams_0;
+	float       m_lightAngleAttenCurveParams_1;
+	float       m_lightAngleAttenCurveParams_2;
+	float       m_lightAngleAttenCurveParams_3;
+	float       m_lightAngleAttenCurveParams_4;
+};
+
 cbuffer PerFrameConstants : register(b0)
 {
     float4x4 m_worldMatrix;
 	float4x4 m_viewMatrix;
 	float4x4 m_projectionMatrix;
-	float4   m_lightPosition;
-	float4   m_lightColor;
     float3 ambientColor;
+	Light m_lights[MAX_LIGHTS];
 };
 
 cbuffer PerBatchConstants : register(b1)
@@ -27,5 +47,7 @@ cbuffer PerBatchConstants : register(b1)
 	bool usingDiffuseMap;
 	bool usingNormalMap;
 };
+
+uint numLights : register(b2);
 
 #endif // !__STDCBUFFER_H__

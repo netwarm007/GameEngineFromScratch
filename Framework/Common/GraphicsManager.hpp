@@ -57,10 +57,10 @@ namespace My {
 #endif
 
     protected:
-        struct Light{
+        struct Light {
             Vector4f    m_lightPosition;
             Vector4f    m_lightColor;
-            Vector3f    m_lightDirection;
+            Vector4f    m_lightDirection;
             float       m_lightIntensity;
             AttenCurveType m_lightDistAttenCurveType;
             float       m_lightDistAttenCurveParams[5];

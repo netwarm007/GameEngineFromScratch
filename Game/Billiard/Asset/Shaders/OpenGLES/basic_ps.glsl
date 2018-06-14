@@ -12,7 +12,7 @@ uniform int numLights;
 uniform struct Light {
     vec4 lightPosition;
     vec4 lightColor;
-    vec3 lightDirection;
+    vec4 lightDirection;
     float lightIntensity;
     int  lightDistAttenCurveType;
     float lightDistAttenCurveParams[5];
@@ -122,7 +122,7 @@ vec3 apply_light(Light light) {
     vec3 L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
     float lightToSurfDist = length(L);
     L = normalize(L);
-    vec3 light_dir = normalize((viewMatrix * worldMatrix * vec4(light.lightDirection, 0.0f)).xyz);
+    vec3 light_dir = normalize((viewMatrix * worldMatrix * light.lightDirection).xyz);
     float lightToSurfAngle = acos(dot(L, light_dir));
 
     // angle attenuation
