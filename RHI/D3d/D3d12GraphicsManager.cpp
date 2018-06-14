@@ -370,7 +370,7 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
         &prop,
         D3D12_HEAP_FLAG_NONE,
         &textureDesc,
-        D3D12_RESOURCE_STATE_RENDER_TARGET,
+        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
         &optimizedClearValue,
         IID_PPV_ARGS(&m_pMsaaRenderTarget)
     )))
@@ -694,6 +694,22 @@ HRESULT D3d12GraphicsManager::CreateIndexBuffer(const SceneObjectIndexArray& ind
     return hr;
 }
 
+HRESULT D3d12GraphicsManager::CreateTextureBuffer()
+{
+    // Describe and create a SRV for the texture.
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
+    size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
+    srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (m_kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
+    m_pDev->CreateShaderResourceView(m_pMsaaRenderTarget, &srvDesc, srvHandle);
+    m_TextureIndex["MSAA"] = texture_id;
+
+    return S_OK;
+}
+
 HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 {
     HRESULT hr = S_OK;
@@ -808,7 +824,6 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		m_pCommandList->ResourceBarrier(1, &barrier);
 
 		// Describe and create a SRV for the texture.
-        m_kTextureDescStartIndex = m_kFrameCount * m_kMaxObjectCount * 2;
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -824,17 +839,6 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		m_Buffers.push_back(pTextureUploadHeap);
 		m_Textures.push_back(pTextureBuffer);
 	}
-
-    // Describe and create a SRV for the texture.
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
-    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-    size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
-    srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (m_kTextureDescStartIndex + texture_id) * m_nCbvSrvDescriptorSize;
-    m_pDev->CreateShaderResourceView(m_pMsaaRenderTarget, &srvDesc, srvHandle);
-    m_TextureIndex["MSAA"] = texture_id;
 
     return hr;
 }
@@ -1425,6 +1429,11 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 	}
     cout << "Done!" << endl;
 
+    cout << "Creating Texture Buffer ...";
+    if (FAILED(hr = CreateTextureBuffer())) {
+        return;
+    }
+
 	for (auto _it : scene.Materials)
 	{
 		auto material = _it.second;
@@ -1547,7 +1556,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 		return hr;
 	}
 
-    // base pass
+    // base pass + MSAA
     {
         // however, when ExecuteCommandList() is called on a particular command 
         // list, that command list can then be reset at any time and must be before 
@@ -1660,7 +1669,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = m_pMsaaRenderTarget;
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
 

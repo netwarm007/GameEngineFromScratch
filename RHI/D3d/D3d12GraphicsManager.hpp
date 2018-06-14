@@ -37,6 +37,7 @@ namespace My {
         HRESULT CreateDepthStencil();
         HRESULT CreateGraphicsResources();
         HRESULT CreateSamplerBuffer();
+        HRESULT CreateTextureBuffer();
         HRESULT CreateTextureBuffer(SceneObjectTexture& texture);
         HRESULT CreateConstantBuffer();
         HRESULT CreateIndexBuffer(const SceneObjectIndexArray& index_array);
@@ -49,10 +50,10 @@ namespace My {
 
     private:
         static const uint32_t           m_kFrameCount  = 2;
-        uint32_t           m_kMaxTextureCount  = 2048;
-        uint32_t           m_kMaxObjectCount = 2048;
-        uint32_t           m_kMaxLightCount = 10;
-		uint32_t		   m_kTextureDescStartIndex;
+        static const uint32_t           m_kMaxTextureCount  = 2048;
+        static const uint32_t           m_kMaxObjectCount = 2048;
+        static const uint32_t           m_kMaxLightCount = 10;
+		static const uint32_t		    m_kTextureDescStartIndex = m_kFrameCount * m_kMaxObjectCount * 2;
 
         ID3D12Device*                   m_pDev       = nullptr;             // the pointer to our Direct3D device interface
         D3D12_VIEWPORT                  m_ViewPort;                         // viewport structure

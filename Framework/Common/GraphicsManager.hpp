@@ -57,10 +57,10 @@ namespace My {
 #endif
 
     protected:
-        struct Light{
+        struct alignas(4) Light{
             Vector4f    m_lightPosition;
             Vector4f    m_lightColor;
-            Vector3f    m_lightDirection;
+            Vector4f    m_lightDirection;
             float       m_lightIntensity;
             AttenCurveType m_lightDistAttenCurveType;
             float       m_lightDistAttenCurveParams[5];
@@ -68,7 +68,7 @@ namespace My {
             float       m_lightAngleAttenCurveParams[5];
         };
 
-        struct DrawFrameContext {
+        struct alignas(4) DrawFrameContext {
             Matrix4X4f  m_worldMatrix;
             Matrix4X4f  m_viewMatrix;
             Matrix4X4f  m_projectionMatrix;

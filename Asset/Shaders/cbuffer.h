@@ -16,9 +16,17 @@ struct Light{
 	float4		m_lightDirection;
 	float       m_lightIntensity;
 	uint		m_lightDistAttenCurveType;
-	float       m_lightDistAttenCurveParams[5];
+	float       m_lightDistAttenCurveParams_0;
+	float       m_lightDistAttenCurveParams_1;
+	float       m_lightDistAttenCurveParams_2;
+	float       m_lightDistAttenCurveParams_3;
+	float       m_lightDistAttenCurveParams_4;
 	uint		m_lightAngleAttenCurveType;
-	float       m_lightAngleAttenCurveParams[5];
+	float       m_lightAngleAttenCurveParams_0;
+	float       m_lightAngleAttenCurveParams_1;
+	float       m_lightAngleAttenCurveParams_2;
+	float       m_lightAngleAttenCurveParams_3;
+	float       m_lightAngleAttenCurveParams_4;
 };
 
 cbuffer PerFrameConstants : register(b0)

@@ -92,7 +92,7 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
 float3 apply_light(v2p input, Light light) {
     float3 N = normalize(input.vNorm);
     float3 L;
-    float3 light_dir = normalize(mul(m_viewMatrix, mul(m_worldMatrix, light.m_lightDirection))).xyz;
+    float3 light_dir = normalize(mul(m_viewMatrix, mul(m_worldMatrix, light.m_lightDirection)).xyz);
 
     if (light.m_lightPosition.w == 0.0f)
     {
@@ -108,10 +108,21 @@ float3 apply_light(v2p input, Light light) {
     float lightToSurfAngle = acos(dot(L, light_dir));
 
     // angle attenuation
-    float atten = apply_atten_curve(lightToSurfAngle, light.m_lightAngleAttenCurveType, light.m_lightAngleAttenCurveParams);
+    float atten_params[5];
+    atten_params[0] = light.m_lightAngleAttenCurveParams_0;
+    atten_params[1] = light.m_lightAngleAttenCurveParams_1;
+    atten_params[2] = light.m_lightAngleAttenCurveParams_2;
+    atten_params[3] = light.m_lightAngleAttenCurveParams_3;
+    atten_params[4] = light.m_lightAngleAttenCurveParams_4;
+    float atten = apply_atten_curve(lightToSurfAngle, light.m_lightAngleAttenCurveType, atten_params);
 
     // distance attenuation
-    atten *= apply_atten_curve(lightToSurfDist, light.m_lightDistAttenCurveType, light.m_lightDistAttenCurveParams);
+    atten_params[0] = light.m_lightDistAttenCurveParams_0;
+    atten_params[1] = light.m_lightDistAttenCurveParams_1;
+    atten_params[2] = light.m_lightDistAttenCurveParams_2;
+    atten_params[3] = light.m_lightDistAttenCurveParams_3;
+    atten_params[4] = light.m_lightDistAttenCurveParams_4;
+    atten *= apply_atten_curve(lightToSurfDist, light.m_lightDistAttenCurveType, atten_params);
 
     float3 R = normalize(2.0f * clamp(dot(L, N), 0.0f, 1.0f) *  N - L);
     float3 V = normalize(-input.vPosInView.xyz);
@@ -120,11 +131,11 @@ float3 apply_light(v2p input, Light light) {
 
     if (usingDiffuseMap)
     {
-        linearColor = ambientColor.rgb + /* light.m_lightIntensity * */ atten * light.m_lightColor.rgb * (colorMap.Sample(samp0, input.TextureUV).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (colorMap.Sample(samp0, input.TextureUV).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
     }
     else
     {
-        linearColor = ambientColor.rgb + /* light.m_lightIntensity * */ atten * light.m_lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
     }
 
     return linearColor;
@@ -141,29 +152,3 @@ float4 PSMain(v2p input) : SV_TARGET
     // gama correction
     return float4(clamp(pow(linearColor, 1.0f/2.2f), 0.0f, 1.0f), 1.0f);
 }
-
-float4 PSMain2(v2p input) : SV_TARGET
-{
-	float3 lightRgb = m_lights[0].m_lightColor.rgb;
-
-	const float3 vN = normalize(input.vNorm);
-	const float3 vL = normalize(mul(m_viewMatrix, mul(m_worldMatrix, m_lights[0].m_lightPosition)).xyz - input.vPosInView.xyz);
-    const float3 vR = normalize(2 * clamp(dot(vL, vN), 0.0f, 1.0f) * vN - vL);
-	const float3 vV = normalize(-input.vPosInView.xyz);
-
-	float3 vLightInts; 
-	if (usingDiffuseMap)
-	{
-		vLightInts = ambientColor 
-								+ lightRgb * (colorMap.Sample(samp0, input.TextureUV).rgb * clamp(dot(vN, vL), 0.0f, 1.0f) 
-								+ specularColor.rgb * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower));
-	}
-	else{
-		vLightInts = ambientColor 
-								+ lightRgb * (diffuseColor.rgb * clamp(dot(vN, vL), 0.0f, 1.0f) 
-								+ specularColor.rgb * pow(clamp(dot(vR,vV), 0.0f, 1.0f), specularPower));
-	}
-
-	return float4(vLightInts, 1.0f);
-}
-
