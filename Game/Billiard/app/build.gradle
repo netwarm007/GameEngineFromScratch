@@ -1,0 +1,49 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion = 27
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['../Asset']
+        }
+    }
+
+    defaultConfig {
+        applicationId = 'com.chenwenli.game_engine_from_scratch'
+        minSdkVersion 18
+        targetSdkVersion  27
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=gnustl_static'
+            }
+        }
+        ndk{
+            abiFilters = []
+            abiFilters.addAll(ABI_FILTERS.split(';').collect{it as String})
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                    'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path '../../../CMakeLists.txt'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+}

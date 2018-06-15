@@ -2,12 +2,13 @@ IF(ANDROID)
 add_library(OpenGLRHI
         OpenGLESGraphicsManager.cpp
 )
-ELSE()
+ELSE(ANDROID)
 add_library(OpenGLRHI
         OpenGLGraphicsManager.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad.c
 )
 target_include_directories(OpenGLRHI PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 ENDIF(ANDROID)
-add_dependencies(OpenGLRHI GeomMath)
+target_include_directories(OpenGLRHI PUBLIC GeomMath)
+target_link_libraries(OpenGLRHI GeomMath Common)
 

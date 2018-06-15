@@ -2,32 +2,30 @@
 add_library(native_app_glue STATIC
     ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
 
-# Export ANativeActivity_onCreate(),
-# Refer to: https://github.com/android-ndk/ndk/issues/381.
-set(CMAKE_SHARED_LINKER_FLAGS
-    "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
-
-add_library(MyGameEngine SHARED 
+add_library(PlatformInterface STATIC
         AndroidApplication.cpp 
-        AndroidApplicationConfig.cpp
         AndroidAssetLoader.cpp
-        OpenGLESApplication.cpp)
-
-target_include_directories(MyGameEngine PRIVATE
+        OpenGLESApplication.cpp
+        )
+target_include_directories(PlatformInterface PRIVATE
     ${ANDROID_NDK}/sources/android/native_app_glue)
 
-__add_xg_platform_dependencies(MyGameEngine)
-
-target_link_libraries(MyGameEngine 
-        OpenGLRHI
-        Common 
-        ${XG_LIBRARY} 
-        ${OPENGEX_LIBRARY} 
-        ${OPENDDL_LIBRARY} 
-        ${ZLIB_LIBRARY}
+target_link_libraries(PlatformInterface
         android
         native_app_glue
         EGL
-        GLESv1_CM
+        GLESv3
         log)
+target_include_directories(PlatformInterface PUBLIC GeomMath)
+target_link_libraries(PlatformInterface GeomMath)
 
+add_library(MyGameEngine 
+        AndroidApplicationConfig.cpp
+)
+target_link_libraries(MyGameEngine
+        OpenGLRHI
+        PlatformInterface
+        Common 
+)
+target_include_directories(MyGameEngine PRIVATE
+    ${ANDROID_NDK}/sources/android/native_app_glue)

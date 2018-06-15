@@ -4,24 +4,29 @@
 #include "MemoryManager.hpp"
 #include "AssetLoader.hpp"
 #include "SceneManager.hpp"
+#include "InputManager.hpp"
+#include "IPhysicsManager.hpp"
+#include "IGameLogic.hpp"
+#include "DebugManager.hpp"
+#include "AnimationManager.hpp"
 
 namespace My {
     class BaseApplication : implements IApplication
     {
     public:
         BaseApplication(GfxConfiguration& cfg);
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize();
+        void Finalize();
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick();
 
-        virtual void SetCommandLineParameters(int argc, char** argv);
+        void SetCommandLineParameters(int argc, char** argv);
+        int  GetCommandLineArgumentsCount() const;
+        const char* GetCommandLineArgument(int index) const;
 
-        virtual bool IsQuit();
+        bool IsQuit() const;
 
-        inline GfxConfiguration& GetConfiguration() { return m_Config; };
-
-        virtual void OnDraw() {};
+        inline const GfxConfiguration& GetConfiguration() const { return m_Config; };
 
     protected:
         // Flag if need quit the main loop of the application

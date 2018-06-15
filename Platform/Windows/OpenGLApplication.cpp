@@ -1,22 +1,9 @@
 #include <stdio.h>
 #include <tchar.h>
 #include "OpenGLApplication.hpp"
-#include "OpenGL/OpenGLGraphicsManager.hpp"
-#include "MemoryManager.hpp"
-#include "AssetLoader.hpp"
-#include "SceneManager.hpp"
 #include "glad/glad_wgl.h"
 
 using namespace My;
-
-namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, _T("Game Engine From Scratch (Win32 + OpenGL)"));
-	IApplication* g_pApp                = static_cast<IApplication*>(new OpenGLApplication(config));
-    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
-    MemoryManager*   g_pMemoryManager   = static_cast<MemoryManager*>(new MemoryManager);
-    AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
-    SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);
-}
 
 static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -124,13 +111,13 @@ int OpenGLApplication::Initialize()
 			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
 			WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
 			WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
-			WGL_COLOR_BITS_ARB,     colorBits,
-			WGL_RED_BITS_ARB,		m_Config.redBits,
-			WGL_GREEN_BITS_ARB,		m_Config.greenBits,
-			WGL_BLUE_BITS_ARB,		m_Config.blueBits,
-			WGL_ALPHA_BITS_ARB,		m_Config.alphaBits,
-			WGL_DEPTH_BITS_ARB,     m_Config.depthBits,
-			WGL_STENCIL_BITS_ARB,   m_Config.stencilBits,
+			WGL_COLOR_BITS_ARB,     (int)colorBits,
+			WGL_RED_BITS_ARB,		(int)m_Config.redBits,
+			WGL_GREEN_BITS_ARB,		(int)m_Config.greenBits,
+			WGL_BLUE_BITS_ARB,		(int)m_Config.blueBits,
+			WGL_ALPHA_BITS_ARB,		(int)m_Config.alphaBits,
+			WGL_DEPTH_BITS_ARB,     (int)m_Config.depthBits,
+			WGL_STENCIL_BITS_ARB,   (int)m_Config.stencilBits,
 			WGL_SAMPLE_BUFFERS_ARB, 1,  // 4x MSAA
 			WGL_SAMPLES_ARB,        4,  // 4x MSAA
 			0
@@ -225,8 +212,6 @@ void OpenGLApplication::Finalize()
 void OpenGLApplication::Tick()
 {
     WindowsApplication::Tick();
-    g_pGraphicsManager->Clear();
-    g_pGraphicsManager->Draw();
     
     // Present the back buffer to the screen since rendering is complete.
     SwapBuffers(m_hDC);

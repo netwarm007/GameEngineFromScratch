@@ -1,0 +1,16 @@
+version: 0.0.{build}
+image: Visual Studio 2017
+build_script:
+- cmd: >-
+    build_crossguid
+
+    build_opengex
+
+    build_zlib
+
+    build_bullet
+
+    build
+
+test_script:
+- cmd: cmake --build build --target RUN_TESTS

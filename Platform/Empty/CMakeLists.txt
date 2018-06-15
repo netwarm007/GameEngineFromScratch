@@ -1,3 +1,10 @@
-add_executable(Empty EmptyApplication.cpp)
-target_link_libraries(Empty Common ${XG_LIBRARY} ${OPENGEX_LIBRARY} ${OPENDDL_LIBRARY} ${ZLIB_LIBRARY})
-__add_xg_platform_dependencies(Empty)
+add_library(PlatformInterface 
+                EmptyApplication.cpp
+)
+target_include_directories(PlatformInterface PUBLIC GeomMath)
+target_link_libraries(PlatformInterface GeomMath)
+add_library(MyGameEngine EmptyApplicationConfig.cpp)
+target_link_libraries(MyGameEngine 
+            Common 
+            PlatformInterface
+)

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 git submodule update --init External/src/zlib
 mkdir -p External/build/zlib
 cd External/build/zlib

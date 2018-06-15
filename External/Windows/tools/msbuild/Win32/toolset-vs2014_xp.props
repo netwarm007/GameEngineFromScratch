@@ -6,7 +6,7 @@
     <LLVMInstallDir>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\LLVM\LLVM)</LLVMInstallDir>
     <LLVMInstallDir Condition="'$(LLVMInstallDir)' == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\LLVM\LLVM)</LLVMInstallDir>
     <ExecutablePath>$(LLVMInstallDir)\msbuild-bin;$(ExecutablePath)</ExecutablePath>
-    <LibraryPath>$(LLVMInstallDir)\lib\clang\6.0\lib\windows;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LLVMInstallDir)\lib\clang\7.0\lib\windows;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
 
   <ItemDefinitionGroup>

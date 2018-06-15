@@ -41,8 +41,11 @@ build*/
 *.swp
 **/Debug
 **/Release
+**/bin
 **/lib
 **/lib64
+**/libexec
+**/share
 **/.gradle
 .DS_Store
 
@@ -50,3 +53,8 @@ config.h
 
 shader-error.txt
 **/.externalNativeBuild
+External/Windows/share/man/man3/zlib.3
+External/Windows/share/pkgconfig/zlib.pc
+External/*/include
+
+*.baiduyun.uploading.cfg

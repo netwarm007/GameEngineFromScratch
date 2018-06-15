@@ -1,0 +1,34 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build External Dependencies",
+            "type": "shell",
+            "command": "./build_crossguid.sh && ./build_opengex.sh && ./build_zlib.sh && ./build_bullet.sh",
+            "windows": {
+                "command": "build_crossguid.bat && build_opengex.bat && build_zlib.bat && build_bullet.bat"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "Build Billiard Game",
+            "type": "shell",
+            "command": "./build-ninja.sh",
+            "windows": {
+                "command": "build.bat"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
