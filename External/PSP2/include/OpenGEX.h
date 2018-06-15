@@ -169,6 +169,7 @@ namespace OGEX
 
             Structure *GetFirstCoreSubnode(void) const;
             Structure *GetLastCoreSubnode(void) const;
+            Structure *GetFirstExtensionSubnode(void) const;
 
             bool ValidateSubstructure(const DataDescription *dataDescription, const Structure *structure) const;
     };
@@ -330,6 +331,7 @@ namespace OGEX
         private:
 
             String      translationKind;
+            const float* translationArray;     
 
         public:
 
@@ -339,6 +341,11 @@ namespace OGEX
             const String& GetTranslationKind(void) const
             {
                 return (translationKind);
+            }
+
+            const float* GetTranslation(void) const
+            {
+                return (translationArray);
             }
 
             bool ValidateProperty(const DataDescription *dataDescription, const String& identifier, DataType *type, void **value);
@@ -352,6 +359,7 @@ namespace OGEX
         private:
 
             String      rotationKind;
+            const float* rotationArray;     
 
         public:
 
@@ -361,6 +369,11 @@ namespace OGEX
             const String& GetRotationKind(void) const
             {
                 return (rotationKind);
+            }
+
+            const float* GetRotation(void) const
+            {
+                return (rotationArray);
             }
 
             bool ValidateProperty(const DataDescription *dataDescription, const String& identifier, DataType *type, void **value);
@@ -374,6 +387,7 @@ namespace OGEX
         private:
 
             String      scaleKind;
+            const float* scaleArray;     
 
         public:
 
@@ -383,6 +397,11 @@ namespace OGEX
             const String& GetScaleKind(void) const
             {
                 return (scaleKind);
+            }
+
+            const float* GetScale(void) const
+            {
+                return (scaleArray);
             }
 
             bool ValidateProperty(const DataDescription *dataDescription, const String& identifier, DataType *type, void **value);
