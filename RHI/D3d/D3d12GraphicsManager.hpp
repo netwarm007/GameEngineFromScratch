@@ -112,7 +112,6 @@ namespace My {
 		size_t				            m_kSizeConstantBufferPerFrame;
 
         // Synchronization objects
-        uint32_t                        m_nFrameIndex;
         HANDLE                          m_hFenceEvent;
         ID3D12Fence*                    m_pFence = nullptr;
         uint32_t                        m_nFenceValue;

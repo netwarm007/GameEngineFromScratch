@@ -4,6 +4,10 @@
 using namespace My;
 using namespace std;
 
+#define OPENGL_ES
+#include "OpenGLGraphicsManagerCommonBase.cpp"
+#undef OPENGL_ES
+
 int OpenGLESGraphicsManager::Initialize()
 {
     int result;
@@ -38,7 +42,3 @@ int OpenGLESGraphicsManager::Initialize()
 
     return result;
 }
-
-#define OPENGL_ES
-#include "OpenGLGraphicsManagerCommonBase.cpp"
-#undef OPENGL_ES
