@@ -1,11 +1,11 @@
 #pragma once
-#include "DrawPass.hpp"
+#include "IDrawPass.hpp"
 
 namespace My {
-    class ForwardRenderPass : implements DrawPass
+    class ForwardRenderPass : implements IDrawPass
     {
     public:
         ~ForwardRenderPass() = default;
-        void Draw();
+        void Draw(const Frame& frame) final;
     };
 }

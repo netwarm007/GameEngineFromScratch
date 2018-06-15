@@ -6,6 +6,8 @@ using namespace std;
 
 extern struct gladGLversionStruct GLVersion;
 
+#include "OpenGLGraphicsManagerCommonBase.cpp"
+
 int OpenGLGraphicsManager::Initialize()
 {
     int result;
@@ -47,5 +49,3 @@ int OpenGLGraphicsManager::Initialize()
 
     return result;
 }
-
-#include "OpenGLGraphicsManagerCommonBase.cpp"

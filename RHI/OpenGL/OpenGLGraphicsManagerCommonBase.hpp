@@ -13,6 +13,7 @@
 namespace My {
     class OpenGLGraphicsManagerCommonBase : public GraphicsManager
     {
+    public:
         // overrides
         int Initialize() = 0;
         void Finalize() final;
@@ -20,6 +21,10 @@ namespace My {
         void Clear() final;
 
         void Draw() final;
+
+        void UseShaderProgram(void* shaderProgram);
+        void SetPerFrameConstants(const DrawFrameContext& context);
+        void DrawBatch(const DrawBatchContext& context);
 
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;
@@ -37,26 +42,26 @@ namespace My {
 
         void InitializeBuffers(const Scene& scene) final;
         void ClearBuffers() final;
-        void RenderBuffers() final;
 
     protected:
         void DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
 
-        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Matrix4X4f& param);
-        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param);
-        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const float param);
-        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const int param);
-        bool SetPerBatchShaderParameters(GLuint shader, const char* paramName, const bool param);
-        bool SetPerFrameShaderParameters(GLuint shader);
+        bool SetShaderParameter(const char* paramName, const Matrix4X4f& param);
+        bool SetShaderParameter(const char* paramName, const Vector4f& param);
+        bool SetShaderParameter(const char* paramName, const Vector3f& param);
+        bool SetShaderParameter(const char* paramName, const float param);
+        bool SetShaderParameter(const char* paramName, const int param);
+        bool SetShaderParameter(const char* paramName, const bool param);
+        bool SetPerFrameShaderParameters(const DrawFrameContext& context);
 
     private:
-        struct DrawBatchContext {
+        GLuint m_CurrentShader;
+
+        struct OpenGLDrawBatchContext : public DrawBatchContext {
             GLuint  vao;
             GLenum  mode;
             GLenum  type;
             GLsizei count;
-            std::shared_ptr<SceneGeometryNode> node;
-            std::shared_ptr<SceneObjectMaterial> material;
         };
 
 #ifdef DEBUG
@@ -68,8 +73,6 @@ namespace My {
             Matrix4X4f trans;
         };
 #endif
-
-        std::vector<DrawBatchContext> m_DrawBatchContext;
 
         std::vector<GLuint> m_Buffers;
         std::vector<GLuint> m_Textures;
