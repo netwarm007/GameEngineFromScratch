@@ -3,6 +3,7 @@
 #include "SceneManager.hpp"
 #include "cbuffer.h"
 #include "IApplication.hpp"
+#include "ForwardRenderPass.hpp"
 
 using namespace My;
 using namespace std;
@@ -10,7 +11,9 @@ using namespace std;
 int GraphicsManager::Initialize()
 {
     int result = 0;
+    m_Frames.resize(kFrameCount);
 	InitConstants();
+    m_pBasePass = make_shared<ForwardRenderPass>();
     return result;
 }
 
@@ -55,7 +58,11 @@ void GraphicsManager::Draw()
 {
     UpdateConstants();
 
-    RenderBuffers();
+    if (m_pBasePass)
+    {
+        m_pBasePass->Draw(m_Frames[m_nFrameIndex]);
+    }
+
 #ifdef DEBUG
     RenderDebugBuffers();
 #endif
@@ -64,22 +71,23 @@ void GraphicsManager::Draw()
 void GraphicsManager::InitConstants()
 {
     // Initialize the world/model matrix to the identity matrix.
-    BuildIdentityMatrix(m_DrawFrameContext.m_worldMatrix);
+    BuildIdentityMatrix(m_Frames[m_nFrameIndex].frameContext.m_worldMatrix);
 }
 
 void GraphicsManager::CalculateCameraMatrix()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
     auto pCameraNode = scene.GetFirstCameraNode();
+    DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
     if (pCameraNode) {
         auto transform = *pCameraNode->GetCalculatedTransform();
         InverseMatrix4X4f(transform);
-        m_DrawFrameContext.m_viewMatrix = transform;
+        frameContext.m_viewMatrix = transform;
     }
     else {
         // use default build-in camera
         Vector3f position = { 0.0f, -5.0f, 0.0f }, lookAt = { 0.0f, 0.0f, 0.0f }, up = { 0.0f, 0.0f, 1.0f };
-        BuildViewMatrix(m_DrawFrameContext.m_viewMatrix, position, lookAt, up);
+        BuildViewMatrix(frameContext.m_viewMatrix, position, lookAt, up);
     }
 
     float fieldOfView = PI / 2.0f;
@@ -99,13 +107,14 @@ void GraphicsManager::CalculateCameraMatrix()
     float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
 
     // Build the perspective projection matrix.
-    BuildPerspectiveFovRHMatrix(m_DrawFrameContext.m_projectionMatrix, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+    BuildPerspectiveFovRHMatrix(frameContext.m_projectionMatrix, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
 }
 
 void GraphicsManager::CalculateLights()
 {
-    m_DrawFrameContext.m_ambientColor = { 0.01f, 0.01f, 0.01f };
-    m_DrawFrameContext.m_lights.clear();
+    DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
+    frameContext.m_ambientColor = { 0.01f, 0.01f, 0.01f };
+    frameContext.m_lights.clear();
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
     for (auto LightNode : scene.LightNodes) {
@@ -142,66 +151,61 @@ void GraphicsManager::CalculateLights()
             assert(0);
         }
 
-        m_DrawFrameContext.m_lights.push_back(light);
+        frameContext.m_lights.push_back(light);
     }
 }
 
 void GraphicsManager::InitializeBuffers(const Scene& scene)
 {
-    cout << "[GraphicsManager] GraphicsManager::InitializeBuffers()" << endl;
+    cout << "[GraphicsManager] InitializeBuffers()" << endl;
 }
 
 void GraphicsManager::ClearBuffers()
 {
-    cout << "[GraphicsManager] GraphicsManager::ClearBuffers()" << endl;
-}
-
-void GraphicsManager::RenderBuffers()
-{
-    cout << "[GraphicsManager] GraphicsManager::RenderBuffers()" << endl;
+    cout << "[GraphicsManager] ClearBuffers()" << endl;
 }
 
 #ifdef DEBUG
 void GraphicsManager::RenderDebugBuffers()
 {
-    cout << "[GraphicsManager] GraphicsManager::RenderDebugBuffers()" << endl;
+    cout << "[GraphicsManager] RenderDebugBuffers()" << endl;
 }
 
 void GraphicsManager::DrawPoint(const Point& point, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawPoint(" << point << ","
+    cout << "[GraphicsManager] DrawPoint(" << point << ","
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawPointSet(const PointSet& point_set, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawPointSet(" << point_set.size() << ","
+    cout << "[GraphicsManager] DrawPointSet(" << point_set.size() << ","
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawPointSet(" << point_set.size() << ","
+    cout << "[GraphicsManager] DrawPointSet(" << point_set.size() << ","
         << trans << "," 
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawLine(const Point& from, const Point& to, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawLine(" << from << ","
+    cout << "[GraphicsManager] DrawLine(" << from << ","
         << to << "," 
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawLine(const PointList& vertices, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawLine(" << vertices.size() << ","
+    cout << "[GraphicsManager] DrawLine(" << vertices.size() << ","
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawLine(" << vertices.size() << ","
+    cout << "[GraphicsManager] DrawLine(" << vertices.size() << ","
         << trans << "," 
         << color << ")" << endl;
 }
@@ -221,19 +225,19 @@ void GraphicsManager::DrawEdgeList(const EdgeList& edges, const Vector3f& color)
 
 void GraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawTriangle(" << vertices.size() << ","
+    cout << "[GraphicsManager] DrawTriangle(" << vertices.size() << ","
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawTriangle(" << vertices.size() << ","
+    cout << "[GraphicsManager] DrawTriangle(" << vertices.size() << ","
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
 {
-    cout << "[GraphicsManager] GraphicsManager::DrawTriangleStrip(" << vertices.size() << ","
+    cout << "[GraphicsManager] DrawTriangleStrip(" << vertices.size() << ","
         << color << ")" << endl;
 }
 
@@ -335,7 +339,26 @@ void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, cons
 
 void GraphicsManager::ClearDebugBuffers()
 {
-    cout << "[GraphicsManager] GraphicsManager::ClearDebugBuffers(void)" << endl;
+    cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 #endif
 
+void GraphicsManager::SetBasePass(shared_ptr<IDrawPass> pBasePass)
+{
+    m_pBasePass = pBasePass;
+}
+
+void GraphicsManager::UseShaderProgram(void* shaderProgram)
+{
+    cout << "[GraphicsManager] UseShaderProgram(" << shaderProgram << ")" << endl;
+}
+
+void GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
+{
+    cout << "[GraphicsManager] SetPerFrameConstants(" << &context << ")" << endl;
+}
+
+void GraphicsManager::DrawBatch(const DrawBatchContext& context)
+{
+    cout << "[GraphicsManager] DrawBatch(" << &context << ")" << endl;
+}

@@ -1,6 +1,6 @@
-// this is a common code snip file
-// should be used by include into source code
-// do not compile it seperately
+// This is a common code snippet
+// should be included in other source
+// other than compile it independently
 
 void OpenGLGraphicsManagerCommonBase::Clear()
 {
@@ -24,150 +24,109 @@ void OpenGLGraphicsManagerCommonBase::Draw()
     glFlush();
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(GLuint shader)
+bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFrameContext& context)
 {
+    bool result;
     unsigned int location;
 
     // Set the world matrix in the vertex shader.
-    location = glGetUniformLocation(shader, "worldMatrix");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_worldMatrix);
+    result = SetShaderParameter("worldMatrix", context.m_worldMatrix);
+    if (!result) return result;
 
     // Set the view matrix in the vertex shader.
-    location = glGetUniformLocation(shader, "viewMatrix");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_viewMatrix);
+    result = SetShaderParameter("viewMatrix", context.m_viewMatrix);
+    if (!result) return result;
 
     // Set the projection matrix in the vertex shader.
-    location = glGetUniformLocation(shader, "projectionMatrix");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniformMatrix4fv(location, 1, false, m_DrawFrameContext.m_projectionMatrix);
+    result = SetShaderParameter("projectionMatrix", context.m_projectionMatrix);
+    if (!result) return result;
 
-    location = glGetUniformLocation(shader, "ambientColor");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform4fv(location, 1, m_DrawFrameContext.m_ambientColor);
+    // Set the ambient color
+    result = SetShaderParameter("ambientColor", context.m_ambientColor);
+    if (!result) return result;
 
-    location = glGetUniformLocation(shader, "numLights");
-    if(location == -1)
-    {
-            return false;
-    }
-    glUniform1i(location, m_DrawFrameContext.m_lights.size());
+    // Set number of lights
+    result = SetShaderParameter("numLights", (int32_t)context.m_lights.size());
+    if (!result) return result;
 
     // Set lighting parameters for PS shader
-    for (size_t i = 0; i < m_DrawFrameContext.m_lights.size(); i++)
+    for (size_t i = 0; i < context.m_lights.size(); i++)
     {
         ostringstream ss;
         string uniformName;
 
         ss << "allLights[" << i << "]." << "lightPosition" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform4fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightPosition);
+        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightPosition);
+        if (!result) return result;
 
         ss.clear();
         ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightColor" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform4fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightColor);
+        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightColor);
+        if (!result) return result;
 
         ss.clear();
         ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightIntensity" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform1f(location, m_DrawFrameContext.m_lights[i].m_lightIntensity);
+        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightIntensity);
+        if (!result) return result;
 
         ss.clear();
         ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightDirection" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform3fv(location, 1, m_DrawFrameContext.m_lights[i].m_lightDirection);
+        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightDirection);
+        if (!result) return result;
 
         ss.clear();
         ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightDistAttenCurveType" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform1i(location, (GLint)m_DrawFrameContext.m_lights[i].m_lightDistAttenCurveType);
+        result = SetShaderParameter(uniformName.c_str(), (int32_t)context.m_lights[i].m_lightDistAttenCurveType);
+        if (!result) return result;
 
         ss.clear();
         ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightDistAttenCurveParams" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
+        location = glGetUniformLocation(m_CurrentShader, uniformName.c_str());
         if(location == -1)
         {
                 return false;
         }
-        glUniform1fv(location, 5, m_DrawFrameContext.m_lights[i].m_lightDistAttenCurveParams);
+        glUniform1fv(location, 5, context.m_lights[i].m_lightDistAttenCurveParams);
 
         ss.clear();
         ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightAngleAttenCurveType" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform1i(location, (GLint)m_DrawFrameContext.m_lights[i].m_lightAngleAttenCurveType);
+        result = SetShaderParameter(uniformName.c_str(), (int32_t)context.m_lights[i].m_lightAngleAttenCurveType);
+        if (!result) return result;
 
         ss.clear();
         ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightAngleAttenCurveParams" << ends;
         uniformName = ss.str();
-        location = glGetUniformLocation(shader, uniformName.c_str());
+        location = glGetUniformLocation(m_CurrentShader, uniformName.c_str());
         if(location == -1)
         {
                 return false;
         }
-        glUniform1fv(location, 5, m_DrawFrameContext.m_lights[i].m_lightAngleAttenCurveParams);
+        glUniform1fv(location, 5, context.m_lights[i].m_lightAngleAttenCurveParams);
 
     }
 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Matrix4X4f& param)
+bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Matrix4X4f& param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(shader, paramName);
+    location = glGetUniformLocation(m_CurrentShader, paramName);
     if(location == -1)
     {
             return false;
@@ -177,11 +136,11 @@ bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader,
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const Vector3f& param)
+bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Vector3f& param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(shader, paramName);
+    location = glGetUniformLocation(m_CurrentShader, paramName);
     if(location == -1)
     {
             return false;
@@ -191,11 +150,25 @@ bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader,
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const float param)
+bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Vector4f& param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(shader, paramName);
+    location = glGetUniformLocation(m_CurrentShader, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform4fv(location, 1, param);
+
+    return true;
+}
+
+bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const float param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_CurrentShader, paramName);
     if(location == -1)
     {
             return false;
@@ -205,11 +178,11 @@ bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader,
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const int param)
+bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const int param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(shader, paramName);
+    location = glGetUniformLocation(m_CurrentShader, paramName);
     if(location == -1)
     {
             return false;
@@ -219,11 +192,11 @@ bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader,
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetPerBatchShaderParameters(GLuint shader, const char* paramName, const bool param)
+bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const bool param)
 {
     unsigned int location;
 
-    location = glGetUniformLocation(shader, paramName);
+    location = glGetUniformLocation(m_CurrentShader, paramName);
     if(location == -1)
     {
             return false;
@@ -406,14 +379,14 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                     }
                 }
 
-                DrawBatchContext& dbc = *(new DrawBatchContext);
-                dbc.vao     = vao;
-                dbc.mode    = mode;
-                dbc.type    = type;
-                dbc.count   = indexCount;
-                dbc.node    = pGeometryNode;
-                dbc.material = material;
-                m_DrawBatchContext.push_back(std::move(dbc));
+                auto dbc = make_shared<OpenGLDrawBatchContext>();
+                dbc->vao     = vao;
+                dbc->mode    = mode;
+                dbc->type    = type;
+                dbc->count   = indexCount;
+                dbc->node    = pGeometryNode;
+                dbc->material = material;
+                m_Frames[m_nFrameIndex].batchContexts.push_back(dbc);
             }
         }
     }
@@ -423,11 +396,16 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
 
 void OpenGLGraphicsManagerCommonBase::ClearBuffers()
 {
-    for (auto dbc : m_DrawBatchContext) {
-        glDeleteVertexArrays(1, &dbc.vao);
-    }
+    for (int i = 0; i < kFrameCount; i++)
+    {
+        auto& batchContexts = m_Frames[i].batchContexts;
 
-    m_DrawBatchContext.clear();
+        for (auto dbc : batchContexts) {
+            glDeleteVertexArrays(1, &dynamic_pointer_cast<OpenGLDrawBatchContext>(dbc)->vao);
+        }
+
+        batchContexts.clear();
+    }
 
     for (auto buf : m_Buffers) {
         glDeleteBuffers(1, &buf);
@@ -442,101 +420,85 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
 
 }
 
-void OpenGLGraphicsManagerCommonBase::RenderBuffers()
+void OpenGLGraphicsManagerCommonBase::UseShaderProgram(void* shaderProgram)
 {
-    bool result;
-
-    GLuint shaderProgram = *reinterpret_cast<GLuint*>(g_pShaderManager->GetDefaultShaderProgram());
+    m_CurrentShader = *reinterpret_cast<GLuint*>(shaderProgram);
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    glUseProgram(shaderProgram);
+    glUseProgram(m_CurrentShader);
+}
 
-    result = SetPerFrameShaderParameters(shaderProgram);
+void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
+{
+    bool result = SetPerFrameShaderParameters(context);
     assert(result);
+}
 
-    for (auto dbc : m_DrawBatchContext)
-    {
-        Matrix4X4f trans;
-        if (void* rigidBody = dbc.node->RigidBody()) {
-            // the geometry has rigid body bounded, we blend the simlation result here.
-            Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
+void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
+{
+    const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(context);
+    Matrix4X4f trans;
+    if (void* rigidBody = dbc.node->RigidBody()) {
+        // the geometry has rigid body bounded, we blend the simlation result here.
+        Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
 
-            BuildIdentityMatrix(trans);
+        BuildIdentityMatrix(trans);
 
-            // apply the rotation part of the simlation result
-            memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
-            memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
-            memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
+        // apply the rotation part of the simlation result
+        memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
+        memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
+        memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
 
-            // replace the translation part of the matrix with simlation result directly
-            memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
+        // replace the translation part of the matrix with simlation result directly
+        memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
 
-        } else {
-            trans = *dbc.node->GetCalculatedTransform();
-        }
-
-        result = SetPerBatchShaderParameters(shaderProgram, "modelMatrix", trans);
-        assert(result);
-
-        glBindVertexArray(dbc.vao);
-
-        /* well, we have different material for each index buffer so we can not draw them together
-        * in future we should group indicies according to its material and draw them together
-        auto indexBufferCount = dbc.counts.size();
-        const GLvoid ** pIndicies = new const GLvoid*[indexBufferCount];
-        memset(pIndicies, 0x00, sizeof(GLvoid*) * indexBufferCount);
-        // Render the vertex buffer using the index buffer.
-        glMultiDrawElements(dbc.mode, dbc.counts.data(), dbc.type, pIndicies, indexBufferCount);
-        delete[] pIndicies;
-        */
-
-        result = SetPerBatchShaderParameters(shaderProgram, "usingDiffuseMap", false);
-        assert(result);
-
-#if 0
-        result = SetPerBatchShaderParameters(shaderProgram, "usingNormalMap", false);
-        assert(result);
-#endif
-
-        if (dbc.material) {
-            Color color = dbc.material->GetBaseColor();
-            if (color.ValueMap) {
-                result = SetPerBatchShaderParameters(shaderProgram, "diffuseMap", m_TextureIndex[color.ValueMap->GetName()]);
-                assert(result);
-                // set this to tell shader to use texture
-                result = SetPerBatchShaderParameters(shaderProgram, "usingDiffuseMap", true);
-                assert(result);
-            }
-            else
-            {
-                result = SetPerBatchShaderParameters(shaderProgram, "diffuseColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
-                assert(result);
-            }
-
-#if 0
-            Normal normal = dbc.material->GetNormal();
-            if (normal.ValueMap) {
-                result = SetPerBatchShaderParameters(shaderProgram, "normalMap", m_TextureIndex[normal.ValueMap->GetName()]);
-                assert(result);
-                // set this to tell shader to use texture
-                result = SetPerBatchShaderParameters(shaderProgram, "usingNormalMap", true);
-                assert(result);
-            }
-#endif
-
-            color = dbc.material->GetSpecularColor();
-            result = SetPerBatchShaderParameters(shaderProgram, "specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
-            assert(result);
-
-            Parameter param = dbc.material->GetSpecularPower();
-            result = SetPerBatchShaderParameters(shaderProgram, "specularPower", param.Value);
-            assert(result);
-        }
-
-        glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+    } else {
+        trans = *dbc.node->GetCalculatedTransform();
     }
 
-    return;
+    bool result = SetShaderParameter("modelMatrix", trans);
+    assert(result);
+
+    glBindVertexArray(dbc.vao);
+
+    /* well, we have different material for each index buffer so we can not draw them together
+    * in future we should group indicies according to its material and draw them together
+    auto indexBufferCount = dbc.counts.size();
+    const GLvoid ** pIndicies = new const GLvoid*[indexBufferCount];
+    memset(pIndicies, 0x00, sizeof(GLvoid*) * indexBufferCount);
+    // Render the vertex buffer using the index buffer.
+    glMultiDrawElements(dbc.mode, dbc.counts.data(), dbc.type, pIndicies, indexBufferCount);
+    delete[] pIndicies;
+    */
+
+    result = SetShaderParameter("usingDiffuseMap", false);
+    assert(result);
+
+    if (dbc.material) {
+        Color color = dbc.material->GetBaseColor();
+        if (color.ValueMap) {
+            result = SetShaderParameter("diffuseMap", m_TextureIndex[color.ValueMap->GetName()]);
+            assert(result);
+            // set this to tell shader to use texture
+            result = SetShaderParameter("usingDiffuseMap", true);
+            assert(result);
+        }
+        else
+        {
+            result = SetShaderParameter("diffuseColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
+            assert(result);
+        }
+
+        color = dbc.material->GetSpecularColor();
+        result = SetShaderParameter("specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
+        assert(result);
+
+        Parameter param = dbc.material->GetSpecularPower();
+        result = SetShaderParameter("specularPower", param.Value);
+        assert(result);
+    }
+
+    glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
 }
 
 #ifdef DEBUG
@@ -803,14 +765,14 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     GLuint debugShaderProgram = *reinterpret_cast<GLuint*>(g_pShaderManager->GetDebugShaderProgram());
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    glUseProgram(debugShaderProgram);
+    UseShaderProgram(&debugShaderProgram);
 
-    SetPerFrameShaderParameters(debugShaderProgram);
+    SetPerFrameShaderParameters(m_Frames[m_nFrameIndex].frameContext);
 
     for (auto dbc : m_DebugDrawBatchContext)
     {
-        SetPerBatchShaderParameters(debugShaderProgram, "FrontColor", dbc.color);
-        SetPerBatchShaderParameters(debugShaderProgram, "modelMatrix", dbc.trans);
+        SetShaderParameter("FrontColor", dbc.color);
+        SetShaderParameter("modelMatrix", dbc.trans);
 
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);
