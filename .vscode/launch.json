@@ -19,6 +19,19 @@
             "MIMode": "lldb"
         },
         {
+            "name": "(Mac OS)(OpenGL) Launch Game",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Game/Billiard",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
             "name": "(Windows) Launch Editor",
             "type": "cppvsdbg",
             "request": "launch",
