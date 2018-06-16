@@ -32,10 +32,8 @@ uniform vec3 specularColor;
 uniform float specularPower;
 
 uniform bool usingDiffuseMap;
-uniform bool usingNormalMap;
 
 uniform sampler2D diffuseMap;
-uniform sampler2D normalMap;
 
 /////////////////////
 // INPUT VARIABLES //

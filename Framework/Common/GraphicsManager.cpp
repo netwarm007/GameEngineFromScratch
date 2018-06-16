@@ -128,9 +128,7 @@ void GraphicsManager::CalculateLights()
         auto pLightNode = LightNode.second.lock();
         if (!pLightNode) continue;
         auto trans_ptr = pLightNode->GetCalculatedTransform();
-        light.m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
         Transform(light.m_lightPosition, *trans_ptr);
-        light.m_lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };
         Transform(light.m_lightDirection, *trans_ptr);
 
         auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
