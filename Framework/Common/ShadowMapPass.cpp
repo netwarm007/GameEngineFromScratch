@@ -1,21 +1,22 @@
-#include "ForwardRenderPass.hpp"
+#include "ShadowMapPass.hpp"
 #include "GraphicsManager.hpp"
 #include "IShaderManager.hpp"
 
-using namespace My;
 using namespace std;
+using namespace My;
 
-void ForwardRenderPass::Draw(const Frame& frame)
+void ShadowMapPass::Draw(const Frame& frame)
 {
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram();
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-    g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
-
-    for (auto dbc : frame.batchContexts)
+    for (auto light : frame.frameContext.m_lights)
     {
-        g_pGraphicsManager->DrawBatch(*dbc);
+        if (light.m_bCastShadow)
+        {
+            // generate shadow map here
+        }
     }
 }

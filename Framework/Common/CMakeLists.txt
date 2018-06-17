@@ -15,6 +15,7 @@ SceneObject.cpp
 SceneObjectAnimation.cpp
 SceneObjectMesh.cpp
 SceneObjectTrack.cpp
+ShadowMapPass.cpp
 main.cpp
 )
 target_link_libraries(Common 
