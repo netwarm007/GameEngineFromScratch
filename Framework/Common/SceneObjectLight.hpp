@@ -35,28 +35,28 @@ namespace My {
             std::string m_strTexture;
 
         public:
-			void SetIfCastShadow(bool shadow) { m_bCastShadows = shadow; };
+			void SetIfCastShadow(bool shadow) { m_bCastShadows = shadow; }
 
             void SetColor(std::string& attrib, Vector4f& color) 
             { 
                 if(attrib == "light") {
                     m_LightColor = Color(color); 
                 }
-            };
+            }
 
             void SetParam(std::string& attrib, float param) 
             { 
                 if(attrib == "intensity") {
                     m_fIntensity = param; 
                 }
-            };
+            }
 
             void SetTexture(std::string& attrib, std::string& textureName) 
             { 
                 if(attrib == "projection") {
                     m_strTexture = textureName;
                 }
-            };
+            }
 
             void SetDistanceAttenuation(AttenCurve curve)
             {
@@ -68,14 +68,15 @@ namespace My {
                 return m_LightDistanceAttenuation;
             }
 
-            const Color& GetColor() { return m_LightColor; };
-            float GetIntensity() { return m_fIntensity; };
+            const Color& GetColor() { return m_LightColor; }
+            float GetIntensity() { return m_fIntensity; }
+            bool GetIfCastShadow() { return m_bCastShadows; }
 
         protected:
             // can only be used as base class of delivered lighting objects
             SceneObjectLight(const SceneObjectType type) : BaseSceneObject(type), 
                 m_LightColor(Vector4f(1.0f)), m_fIntensity(1.0f), 
-                m_bCastShadows(false) {};
+                m_bCastShadows(false) {}
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectLight& obj);
     };

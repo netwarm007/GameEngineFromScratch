@@ -24,8 +24,6 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
-        virtual void SetBasePass(std::shared_ptr<IDrawPass> pBasePass);
-
         virtual void UseShaderProgram(void* shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
         virtual void DrawBatch(const DrawBatchContext& context);
@@ -69,7 +67,7 @@ namespace My {
         uint32_t                        m_nFrameIndex = 0;
 
         std::vector<Frame>  m_Frames;
-        std::shared_ptr<IDrawPass> m_pBasePass;
+        std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
     };
 
     extern GraphicsManager* g_pGraphicsManager;

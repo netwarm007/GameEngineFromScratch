@@ -3,7 +3,9 @@
 #include "SceneManager.hpp"
 #include "cbuffer.h"
 #include "IApplication.hpp"
+#include "IPhysicsManager.hpp"
 #include "ForwardRenderPass.hpp"
+#include "ShadowMapPass.hpp"
 
 using namespace My;
 using namespace std;
@@ -13,7 +15,8 @@ int GraphicsManager::Initialize()
     int result = 0;
     m_Frames.resize(kFrameCount);
 	InitConstants();
-    m_pBasePass = make_shared<ForwardRenderPass>();
+    m_DrawPasses.push_back(make_shared<ShadowMapPass>());
+    m_DrawPasses.push_back(make_shared<ForwardRenderPass>());
     return result;
 }
 
@@ -44,6 +47,33 @@ void GraphicsManager::Tick()
 
 void GraphicsManager::UpdateConstants()
 {
+    // update scene object position
+    auto& frame = m_Frames[m_nFrameIndex];
+
+    for (auto dbc : frame.batchContexts)
+    {
+        if (void* rigidBody = dbc->node->RigidBody()) {
+            Matrix4X4f trans;
+
+            // the geometry has rigid body bounded, we blend the simlation result here.
+            Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
+
+            BuildIdentityMatrix(trans);
+
+            // apply the rotation part of the simlation result
+            memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
+            memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
+            memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
+
+            // replace the translation part of the matrix with simlation result directly
+            memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
+
+            dbc->trans = trans;
+        } else {
+            dbc->trans = *dbc->node->GetCalculatedTransform();
+        }
+    }
+
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
     CalculateLights();
@@ -56,11 +86,11 @@ void GraphicsManager::Clear()
 
 void GraphicsManager::Draw()
 {
-    UpdateConstants();
+    auto& frame = m_Frames[m_nFrameIndex];
 
-    if (m_pBasePass)
+    for (auto pDrawPass : m_DrawPasses)
     {
-        m_pBasePass->Draw(m_Frames[m_nFrameIndex]);
+        pDrawPass->Draw(frame);
     }
 
 #ifdef DEBUG
@@ -129,6 +159,7 @@ void GraphicsManager::CalculateLights()
         if (pLight) {
             light.m_lightColor = pLight->GetColor().Value;
             light.m_lightIntensity = pLight->GetIntensity();
+            light.m_bCastShadow = pLight->GetIfCastShadow();
             const AttenCurve& atten_curve = pLight->GetDistanceAttenuation();
             light.m_lightDistAttenCurveType = atten_curve.type; 
             memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
@@ -342,11 +373,6 @@ void GraphicsManager::ClearDebugBuffers()
     cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 #endif
-
-void GraphicsManager::SetBasePass(shared_ptr<IDrawPass> pBasePass)
-{
-    m_pBasePass = pBasePass;
-}
 
 void GraphicsManager::UseShaderProgram(void* shaderProgram)
 {
