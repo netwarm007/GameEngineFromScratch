@@ -149,6 +149,5 @@ float4 PSMain(v2p input) : SV_TARGET
         linearColor += apply_light(input, m_lights[i]); 
     }
 
-    // gama correction
     return float4(linearColor, 1.0f);
 }
