@@ -16,6 +16,7 @@ StackAllocator.cpp
 SceneObjectAnimation.cpp
 SceneObjectMesh.cpp
 SceneObjectTrack.cpp
+ShadowMapPass.cpp
 main.cpp
 )
 

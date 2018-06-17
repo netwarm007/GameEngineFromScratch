@@ -437,39 +437,11 @@ void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContex
 void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
 {
     const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(context);
-    Matrix4X4f trans;
-    if (void* rigidBody = dbc.node->RigidBody()) {
-        // the geometry has rigid body bounded, we blend the simlation result here.
-        Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
 
-        BuildIdentityMatrix(trans);
-
-        // apply the rotation part of the simlation result
-        memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
-        memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
-        memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
-
-        // replace the translation part of the matrix with simlation result directly
-        memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
-
-    } else {
-        trans = *dbc.node->GetCalculatedTransform();
-    }
-
-    bool result = SetShaderParameter("modelMatrix", trans);
+    bool result = SetShaderParameter("modelMatrix", dbc.trans);
     assert(result);
 
     glBindVertexArray(dbc.vao);
-
-    /* well, we have different material for each index buffer so we can not draw them together
-    * in future we should group indicies according to its material and draw them together
-    auto indexBufferCount = dbc.counts.size();
-    const GLvoid ** pIndicies = new const GLvoid*[indexBufferCount];
-    memset(pIndicies, 0x00, sizeof(GLvoid*) * indexBufferCount);
-    // Render the vertex buffer using the index buffer.
-    glMultiDrawElements(dbc.mode, dbc.counts.data(), dbc.type, pIndicies, indexBufferCount);
-    delete[] pIndicies;
-    */
 
     result = SetShaderParameter("usingDiffuseMap", false);
     assert(result);

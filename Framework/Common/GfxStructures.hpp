@@ -13,6 +13,7 @@ namespace My {
         float       m_lightDistAttenCurveParams[5];
         AttenCurveType m_lightAngleAttenCurveType;
         float       m_lightAngleAttenCurveParams[5];
+        bool        m_bCastShadow;
 
         Light()
         {
@@ -22,6 +23,7 @@ namespace My {
             m_lightIntensity = 0.5f;
             m_lightDistAttenCurveType = AttenCurveType::kNone;
             m_lightAngleAttenCurveType = AttenCurveType::kNone;
+            m_bCastShadow = false;
         }
     };
 
