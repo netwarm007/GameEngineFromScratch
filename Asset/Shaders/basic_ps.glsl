@@ -168,6 +168,6 @@ void main(void)
         linearColor += apply_light(allLights[i]); 
     }
 
-    outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
+    outputColor = vec4(linearColor, 1.0f);
 }
 
