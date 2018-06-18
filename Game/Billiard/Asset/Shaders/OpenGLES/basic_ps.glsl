@@ -120,10 +120,20 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
 vec3 apply_light(Light light) {
     vec3 N = normalize(normal.xyz);
     vec3 L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
+    vec3 light_dir = normalize((viewMatrix * worldMatrix * light.lightDirection).xyz);
+
+    if (light.lightPosition.w == 0.0f)
+    {
+        L = -light_dir;
+    }
+    else
+    {
+        L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
+    }
+
     float lightToSurfDist = length(L);
     L = normalize(L);
-    vec3 light_dir = normalize((viewMatrix * worldMatrix * light.lightDirection).xyz);
-    float lightToSurfAngle = acos(dot(L, light_dir));
+    float lightToSurfAngle = acos(dot(L, -light_dir));
 
     // angle attenuation
     float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, light.lightAngleAttenCurveParams);
@@ -152,5 +162,5 @@ void main(void)
         linearColor += apply_light(allLights[i]); 
     }
 
-    outputColor = vec4(clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
+    outputColor = vec4(linearColor, 1.0f);
 }

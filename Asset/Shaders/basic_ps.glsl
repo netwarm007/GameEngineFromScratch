@@ -135,7 +135,7 @@ vec3 apply_light(Light light) {
 
     float lightToSurfDist = length(L);
     L = normalize(L);
-    float lightToSurfAngle = acos(dot(L, light_dir));
+    float lightToSurfAngle = acos(dot(L, -light_dir));
 
     // angle attenuation
     float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, light.lightAngleAttenCurveParams);
@@ -168,7 +168,6 @@ void main(void)
         linearColor += apply_light(allLights[i]); 
     }
 
-    // gama correction
-    outputColor = vec4(clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
+    outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
 }
 
