@@ -7,7 +7,7 @@ using namespace std;
 
 void ForwardRenderPass::Draw(const Frame& frame)
 {
-    auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram();
+    auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Forward);
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     g_pGraphicsManager->UseShaderProgram(shaderProgram);

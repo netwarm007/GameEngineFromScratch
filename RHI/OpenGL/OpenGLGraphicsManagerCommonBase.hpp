@@ -22,7 +22,7 @@ namespace My {
 
         void Draw() final;
 
-        void UseShaderProgram(void* shaderProgram);
+        void UseShaderProgram(const intptr_t shaderProgram);
         void SetPerFrameConstants(const DrawFrameContext& context);
         void DrawBatch(const DrawBatchContext& context);
 

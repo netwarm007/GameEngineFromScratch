@@ -420,9 +420,9 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
 
 }
 
-void OpenGLGraphicsManagerCommonBase::UseShaderProgram(void* shaderProgram)
+void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const intptr_t shaderProgram)
 {
-    m_CurrentShader = *reinterpret_cast<GLuint*>(shaderProgram);
+    m_CurrentShader = static_cast<GLuint>(shaderProgram);
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_CurrentShader);
@@ -734,10 +734,10 @@ void OpenGLGraphicsManagerCommonBase::ClearDebugBuffers()
 
 void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 {
-    GLuint debugShaderProgram = *reinterpret_cast<GLuint*>(g_pShaderManager->GetDebugShaderProgram());
+    auto debugShaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Debug);
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    UseShaderProgram(&debugShaderProgram);
+    UseShaderProgram(debugShaderProgram);
 
     SetPerFrameShaderParameters(m_Frames[m_nFrameIndex].frameContext);
 
