@@ -233,7 +233,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     m_DefaultShaders[DefaultShaderIndex::Debug] = shaderProgram;
 #endif
 
-    return true;
+    return result;
 }
 
 void OpenGLShaderManagerCommonBase::ClearShaders()
