@@ -38,6 +38,7 @@
         "dynarray": "cpp",
         "regex": "cpp",
         "stack": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "variant": "cpp"
     }
 }

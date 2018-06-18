@@ -150,119 +150,125 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 #endif
 
     // Create a vertex and fragment shader object.
-    m_vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    m_fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 #ifdef DEBUG
-    m_debugVertexShader = glCreateShader(GL_VERTEX_SHADER);
-    m_debugFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    auto debugVertexShader = glCreateShader(GL_VERTEX_SHADER);
+    auto debugFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 #endif
 
     // Copy the shader source code strings into the vertex and fragment shader objects.
     const char* _v_c_str =  vertexShaderBuffer.c_str();
-    glShaderSource(m_vertexShader, 1, &_v_c_str, NULL);
+    glShaderSource(vertexShader, 1, &_v_c_str, NULL);
     const char* _f_c_str =  fragmentShaderBuffer.c_str();
-    glShaderSource(m_fragmentShader, 1, &_f_c_str, NULL);
+    glShaderSource(fragmentShader, 1, &_f_c_str, NULL);
 #ifdef DEBUG
     const char* _v_c_str_debug = debugVertexShaderBuffer.c_str();
-    glShaderSource(m_debugVertexShader, 1, &_v_c_str_debug, NULL);
+    glShaderSource(debugVertexShader, 1, &_v_c_str_debug, NULL);
     const char* _f_c_str_debug = debugFragmentShaderBuffer.c_str();
-    glShaderSource(m_debugFragmentShader, 1, &_f_c_str_debug, NULL);
+    glShaderSource(debugFragmentShader, 1, &_f_c_str_debug, NULL);
 #endif
 
     // Compile the shaders.
-    glCompileShader(m_vertexShader);
-    glCompileShader(m_fragmentShader);
+    glCompileShader(vertexShader);
+    glCompileShader(fragmentShader);
 #ifdef DEBUG
-    glCompileShader(m_debugVertexShader);
-    glCompileShader(m_debugFragmentShader);
+    glCompileShader(debugVertexShader);
+    glCompileShader(debugFragmentShader);
 #endif
 
     // Check to see if the vertex shader compiled successfully.
-    glGetShaderiv(m_vertexShader, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
     if(status != 1)
     {
             // If it did not compile then write the syntax error message out to a text file for review.
-            OutputShaderErrorMessage(m_vertexShader, vsFilename);
+            OutputShaderErrorMessage(vertexShader, vsFilename);
             return false;
     }
 
     // Check to see if the fragment shader compiled successfully.
-    glGetShaderiv(m_fragmentShader, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
     if(status != 1)
     {
             // If it did not compile then write the syntax error message out to a text file for review.
-            OutputShaderErrorMessage(m_fragmentShader, fsFilename);
+            OutputShaderErrorMessage(fragmentShader, fsFilename);
             return false;
     }
 
 #ifdef DEBUG
     // Check to see if the fragment shader compiled successfully.
-    glGetShaderiv(m_debugVertexShader, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(debugVertexShader, GL_COMPILE_STATUS, &status);
     if(status != 1)
     {
             // If it did not compile then write the syntax error message out to a text file for review.
-            OutputShaderErrorMessage(m_debugVertexShader, debugVsFilename);
+            OutputShaderErrorMessage(debugVertexShader, debugVsFilename);
             return false;
     }
 
     // Check to see if the fragment shader compiled successfully.
-    glGetShaderiv(m_debugFragmentShader, GL_COMPILE_STATUS, &status);
+    glGetShaderiv(debugFragmentShader, GL_COMPILE_STATUS, &status);
     if(status != 1)
     {
             // If it did not compile then write the syntax error message out to a text file for review.
-            OutputShaderErrorMessage(m_debugFragmentShader, debugFsFilename);
+            OutputShaderErrorMessage(debugFragmentShader, debugFsFilename);
             return false;
     }
 #endif
 
     // Create a shader program object.
-    m_shaderProgram = glCreateProgram();
+    auto shaderProgram = glCreateProgram();
 #ifdef DEBUG
-    m_debugShaderProgram = glCreateProgram();
+    auto debugShaderProgram = glCreateProgram();
 #endif
 
     // Attach the vertex and fragment shader to the program object.
-    glAttachShader(m_shaderProgram, m_vertexShader);
-    glAttachShader(m_shaderProgram, m_fragmentShader);
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
 #ifdef DEBUG
-    glAttachShader(m_debugShaderProgram, m_debugVertexShader);
-    glAttachShader(m_debugShaderProgram, m_debugFragmentShader);
+    glAttachShader(debugShaderProgram, debugVertexShader);
+    glAttachShader(debugShaderProgram, debugFragmentShader);
 #endif
 
     // Bind the shader input variables.
-    glBindAttribLocation(m_shaderProgram, 0, "inputPosition");
-    glBindAttribLocation(m_shaderProgram, 1, "inputNormal");
-    glBindAttribLocation(m_shaderProgram, 2, "inputUV");
+    glBindAttribLocation(shaderProgram, 0, "inputPosition");
+    glBindAttribLocation(shaderProgram, 1, "inputNormal");
+    glBindAttribLocation(shaderProgram, 2, "inputUV");
 
     // Link the shader program.
-    glLinkProgram(m_shaderProgram);
+    glLinkProgram(shaderProgram);
 
 #ifdef DEBUG
     // Bind the shader input variables.
-    glBindAttribLocation(m_debugShaderProgram, 0, "inputPosition");
+    glBindAttribLocation(debugShaderProgram, 0, "inputPosition");
 
     // Link the shader program.
-    glLinkProgram(m_debugShaderProgram);
+    glLinkProgram(debugShaderProgram);
 #endif
 
     // Check the status of the link.
-    glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &status);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &status);
     if(status != 1)
     {
             // If it did not link then write the syntax error message out to a text file for review.
-            OutputLinkerErrorMessage(m_shaderProgram);
+            OutputLinkerErrorMessage(shaderProgram);
             return false;
     }
 
 #ifdef DEBUG
     // Check the status of the link.
-    glGetProgramiv(m_debugShaderProgram, GL_LINK_STATUS, &status);
+    glGetProgramiv(debugShaderProgram, GL_LINK_STATUS, &status);
     if(status != 1)
     {
             // If it did not link then write the syntax error message out to a text file for review.
-            OutputLinkerErrorMessage(m_debugShaderProgram);
+            OutputLinkerErrorMessage(debugShaderProgram);
             return false;
     }
+#endif
+
+    m_DefaultShaders[DefaultShaderIndex::Forward] = shaderProgram;
+
+#ifdef DEBUG
+    m_DefaultShaders[DefaultShaderIndex::Debug] = debugShaderProgram;
 #endif
 
     return true;
@@ -270,36 +276,5 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
 void OpenGLShaderManagerCommonBase::ClearShaders()
 {
-    if (m_shaderProgram) {
-        if (m_vertexShader)
-        {
-            // Detach the vertex shaders from the program.
-            glDetachShader(m_shaderProgram, m_vertexShader);
-            // Delete the vertex shaders.
-            glDeleteShader(m_vertexShader);
-        }
 
-        if (m_fragmentShader)
-        {
-            // Detach the fragment shaders from the program.
-            glDetachShader(m_shaderProgram, m_fragmentShader);
-            // Delete the fragment shaders.
-            glDeleteShader(m_fragmentShader);
-        }
-
-        // Delete the shader program.
-        glDeleteProgram(m_shaderProgram);
-    }
 }
-
-void* OpenGLShaderManagerCommonBase::GetDefaultShaderProgram()
-{
-    return static_cast<void*>(&m_shaderProgram);
-}
-
-#ifdef DEBUG
-void* OpenGLShaderManagerCommonBase::GetDebugShaderProgram()
-{
-    return static_cast<void*>(&m_debugShaderProgram);
-}
-#endif

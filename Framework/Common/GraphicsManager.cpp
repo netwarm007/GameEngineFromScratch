@@ -374,7 +374,7 @@ void GraphicsManager::ClearDebugBuffers()
 }
 #endif
 
-void GraphicsManager::UseShaderProgram(void* shaderProgram)
+void GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)
 {
     cout << "[GraphicsManager] UseShaderProgram(" << shaderProgram << ")" << endl;
 }
