@@ -1,8 +1,8 @@
 #pragma once
-#include "IShaderManager.hpp"
+#include "ShaderManager.hpp"
 
 namespace My {
-    class OpenGLShaderManagerCommonBase : implements IShaderManager
+    class OpenGLShaderManagerCommonBase : public ShaderManager
     {
     public:
         OpenGLShaderManagerCommonBase() = default;
@@ -15,21 +15,5 @@ namespace My {
 
         virtual bool InitializeShaders() final;
         virtual void ClearShaders() final;
-
-        virtual void* GetDefaultShaderProgram() final;
-
-#ifdef DEBUG
-        virtual void* GetDebugShaderProgram() final;
-#endif
-
-    private:
-        GLuint m_vertexShader;
-        GLuint m_fragmentShader;
-        GLuint m_shaderProgram;
-#ifdef DEBUG
-        GLuint m_debugVertexShader;
-        GLuint m_debugFragmentShader;
-        GLuint m_debugShaderProgram;
-#endif
     };
 }

@@ -24,7 +24,7 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
-        virtual void UseShaderProgram(void* shaderProgram);
+        virtual void UseShaderProgram(const intptr_t shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
         virtual void DrawBatch(const DrawBatchContext& context);
 

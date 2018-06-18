@@ -1,7 +1,17 @@
 #pragma once
 #include "IRuntimeModule.hpp"
+#include "portable.hpp"
+#include <memory>
 
 namespace My {
+    ENUM(DefaultShaderIndex)
+    {
+        ShadowMap = "SHMP"_i32,
+        Forward   = "FRWD"_i32,
+        Differed  = "DIFR"_i32,
+        Debug     = "DEBG"_i32
+    };
+
     Interface IShaderManager : implements IRuntimeModule
     {
     public:
@@ -10,11 +20,7 @@ namespace My {
         virtual bool InitializeShaders() = 0;
         virtual void ClearShaders() = 0;
 
-        virtual void* GetDefaultShaderProgram() = 0;
-
-#ifdef DEBUG
-        virtual void* GetDebugShaderProgram() = 0;
-#endif
+        virtual intptr_t GetDefaultShaderProgram(DefaultShaderIndex index) = 0;
     };
 
     extern IShaderManager* g_pShaderManager;

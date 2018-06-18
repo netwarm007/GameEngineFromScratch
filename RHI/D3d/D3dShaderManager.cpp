@@ -37,14 +37,33 @@ bool D3dShaderManager::InitializeShaders()
 #endif
 
     // load the shaders
+    // forward rendering shader
     Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
     Buffer pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(fsFilename);
 
-    m_shaderProgram.vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
-    m_shaderProgram.vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
+    D3dShaderProgram& shaderProgram = *(new D3dShaderProgram);
+    shaderProgram.vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
+    shaderProgram.vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
 
-    m_shaderProgram.pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
-    m_shaderProgram.pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+    shaderProgram.pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
+    shaderProgram.pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+
+    m_DefaultShaders[DefaultShaderIndex::Forward] = reinterpret_cast<intptr_t>(&shaderProgram);
+
+#ifdef DEBUG
+    // debug shader
+    D3dShaderProgram& shaderProgram = *(new D3dShaderProgram);
+    vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(debugVsFilename);
+    pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(debugFsFilename);
+
+    shaderProgram.vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
+    shaderProgram.vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
+
+    shaderProgram.pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
+    shaderProgram.pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+
+    m_DefaultShaders[DefaultShaderIndex::Debug] = reinterpret_cast<intptr_t>(&shaderProgram);
+#endif
 
     return hr == S_OK;
 }
@@ -52,15 +71,3 @@ bool D3dShaderManager::InitializeShaders()
 void D3dShaderManager::ClearShaders()
 {
 }
-
-void* D3dShaderManager::GetDefaultShaderProgram()
-{
-    return static_cast<void*>(&m_shaderProgram);
-}
-
-#ifdef DEBUG
-void* D3dShaderManager::GetDebugShaderProgram()
-{
-    return static_cast<void*>(&m_debugShaderProgram);
-}
-#endif
