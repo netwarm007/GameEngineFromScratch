@@ -27,6 +27,10 @@ namespace My {
         virtual void UseShaderProgram(const intptr_t shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
         virtual void DrawBatch(const DrawBatchContext& context);
+        virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
+
+        virtual intptr_t GenerateShadowMap(const Light& light);
+        virtual void FinishShadowMap(const Light& light);
 
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
@@ -55,6 +59,7 @@ namespace My {
         virtual void CalculateCameraMatrix();
         virtual void CalculateLights();
         virtual void UpdateConstants();
+
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif

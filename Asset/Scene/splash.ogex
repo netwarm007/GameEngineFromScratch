@@ -3007,7 +3007,7 @@ LightObject $light2 (type = "spot", shadow = false)		// Lamp.001
 	}
 }
 
-LightObject $light1 (type = "point", shadow = false)		// Point
+LightObject $light1 (type = "point", shadow = true)		// Point
 {
 	Color (attrib = "light") {float[3] {{0.006716880481690168, 0.008378240279853344, 1.0}}}
 	Param (attrib = "intensity") {float {5.0}}

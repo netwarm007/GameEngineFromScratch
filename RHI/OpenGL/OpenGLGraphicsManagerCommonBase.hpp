@@ -22,9 +22,13 @@ namespace My {
 
         void Draw() final;
 
-        void UseShaderProgram(const intptr_t shaderProgram);
-        void SetPerFrameConstants(const DrawFrameContext& context);
-        void DrawBatch(const DrawBatchContext& context);
+        void UseShaderProgram(const intptr_t shaderProgram) final;
+        void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void DrawBatch(const DrawBatchContext& context) final;
+        void DrawBatchDepthOnly(const DrawBatchContext& context) final;
+
+        virtual intptr_t GenerateShadowMap(const Light& light) final;
+        virtual void FinishShadowMap(const Light& light) final;
 
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;

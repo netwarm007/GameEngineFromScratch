@@ -5,7 +5,7 @@
 using namespace std;
 using namespace My;
 
-void ShadowMapPass::Draw(const Frame& frame)
+void ShadowMapPass::Draw(Frame& frame)
 {
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::ShadowMap);
 
@@ -17,6 +17,15 @@ void ShadowMapPass::Draw(const Frame& frame)
         if (light.m_bCastShadow)
         {
             // generate shadow map here
+            intptr_t shadowMap = g_pGraphicsManager->GenerateShadowMap(light);
+            frame.shadowMaps[light.m_lightGuid] = shadowMap;
+
+            for (auto dbc : frame.batchContexts)
+            {
+                g_pGraphicsManager->DrawBatchDepthOnly(*dbc);
+            }
+
+            g_pGraphicsManager->FinishShadowMap(light);
         }
     }
 }
