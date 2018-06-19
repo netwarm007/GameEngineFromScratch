@@ -405,7 +405,12 @@ intptr_t GraphicsManager::GenerateShadowMap(const Light& light)
     return 0;
 }
 
-void GraphicsManager::FinishShadowMap(const Light& light)
+void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowmap)
 {
-    cout << "[GraphicsManager] FinishShadowMap(" << light.m_lightGuid << ")" << endl;
+    cout << "[GraphicsManager] BeginShadowMap(" << light.m_lightGuid << ", " << shadowmap << ")" << endl;
+}
+
+void GraphicsManager::EndShadowMap(const intptr_t shadowmap)
+{
+    cout << "[GraphicsManager] EndShadowMap(" << shadowmap << ")" << endl;
 }
