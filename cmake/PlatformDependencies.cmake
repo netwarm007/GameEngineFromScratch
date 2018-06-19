@@ -8,9 +8,9 @@ elseif(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
 elseif(ANDROID)
     target_compile_definitions(${target} PRIVATE GUID_ANDROID)
-elseif(CMAKE_SYSTEM_NAME MATCHES Orbis)
+elseif(ORBIS)
     # nothing here
-elseif(CMAKE_SYSTEM_NAME MATCHES PSP2)
+elseif(PSP2)
     # nothing here
 else()
     find_package(Libuuid REQUIRED)

@@ -8,7 +8,11 @@
 #include "config.h"
 #include "ImageParser.hpp"
 #include "portable.hpp"
+#ifndef Z_SOLO
+#define Z_SOLO
 #include "zlib.h"
+#undef Z_SOLO
+#endif
 
 namespace My {
 #pragma pack(push, 1)
