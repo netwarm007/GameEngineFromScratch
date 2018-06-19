@@ -28,7 +28,8 @@ namespace My {
         void DrawBatchDepthOnly(const DrawBatchContext& context) final;
 
         virtual intptr_t GenerateShadowMap(const Light& light) final;
-        virtual void FinishShadowMap(const Light& light) final;
+        virtual void BeginShadowMap(const Light& light, const intptr_t shadowmap) final;
+        virtual void EndShadowMap(const intptr_t shadowmap) final;
 
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;
@@ -59,6 +60,7 @@ namespace My {
         bool SetPerFrameShaderParameters(const DrawFrameContext& context);
 
     private:
+        GLuint m_ShadowMapFramebufferName;
         GLuint m_CurrentShader;
 
         struct OpenGLDrawBatchContext : public DrawBatchContext {
