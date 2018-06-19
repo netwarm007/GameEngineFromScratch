@@ -1,10 +1,12 @@
 #pragma once
+#include <unordered_map>
 #include <vector>
 #include "geommath.hpp"
 #include "Scene.hpp"
 
 namespace My {
     struct Light{
+        Guid        m_lightGuid;
         Vector4f    m_lightPosition;
         Vector4f    m_lightColor;
         Vector4f    m_lightDirection;
@@ -46,5 +48,6 @@ namespace My {
     struct Frame {
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
+        std::unordered_map<xg::Guid, intptr_t> shadowMaps;
     };
 }

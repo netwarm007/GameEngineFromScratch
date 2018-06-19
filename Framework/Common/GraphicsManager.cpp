@@ -148,7 +148,7 @@ void GraphicsManager::CalculateLights()
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
     for (auto LightNode : scene.LightNodes) {
-        Light light;
+        Light& light = *(new Light());
         auto pLightNode = LightNode.second.lock();
         if (!pLightNode) continue;
         auto trans_ptr = pLightNode->GetCalculatedTransform();
@@ -157,6 +157,7 @@ void GraphicsManager::CalculateLights()
 
         auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
         if (pLight) {
+            light.m_lightGuid = pLight->GetGuid();
             light.m_lightColor = pLight->GetColor().Value;
             light.m_lightIntensity = pLight->GetIntensity();
             light.m_bCastShadow = pLight->GetIfCastShadow();
@@ -186,7 +187,7 @@ void GraphicsManager::CalculateLights()
             assert(0);
         }
 
-        frameContext.m_lights.push_back(light);
+        frameContext.m_lights.push_back(std::move(light));
     }
 }
 
@@ -391,4 +392,20 @@ void GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 void GraphicsManager::DrawBatch(const DrawBatchContext& context)
 {
     cout << "[GraphicsManager] DrawBatch(" << &context << ")" << endl;
+}
+
+void GraphicsManager::DrawBatchDepthOnly(const DrawBatchContext& context)
+{
+    cout << "[GraphicsManager] DrawBatchDepthOnly(" << &context << ")" << endl;
+}
+
+intptr_t GraphicsManager::GenerateShadowMap(const Light& light)
+{
+    cout << "[GraphicsManager] GenerateShadowMap(" << light.m_lightGuid << ")" << endl;
+    return 0;
+}
+
+void GraphicsManager::FinishShadowMap(const Light& light)
+{
+    cout << "[GraphicsManager] FinishShadowMap(" << light.m_lightGuid << ")" << endl;
 }
