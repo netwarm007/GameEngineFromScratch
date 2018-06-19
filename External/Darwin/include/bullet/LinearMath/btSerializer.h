@@ -20,9 +20,9 @@ subject to the following restrictions:
 #include "btHashMap.h"
 
 #if !defined( __CELLOS_LV2__) && !defined(__MWERKS__)
-#include <memory.h>
+#include <memory>
 #endif
-#include <string.h>
+#include <string>
 
 
 

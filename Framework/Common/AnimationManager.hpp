@@ -17,7 +17,7 @@ namespace My {
 
     private:
         std::chrono::steady_clock m_Clock;
-        std::chrono::time_point<std::chrono::steady_clock> m_TimeLineStartPoint;
+        std::chrono::steady_clock::time_point m_TimeLineStartPoint;
         std::chrono::duration<float> m_TimeLineValue;
         std::list<std::shared_ptr<SceneObjectAnimationClip>> m_AnimationClips;
         bool m_bTimeLineStarted = false;

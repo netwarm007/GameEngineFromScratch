@@ -93,9 +93,9 @@ subject to the following restrictions:
 
 #if DBVT_USE_MEMMOVE
 #if !defined( __CELLOS_LV2__) && !defined(__MWERKS__)
-#include <memory.h>
+#include <memory>
 #endif
-#include <string.h>
+#include <string>
 #endif
 
 #ifndef DBVT_USE_TEMPLATE

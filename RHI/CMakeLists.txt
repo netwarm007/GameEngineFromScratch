@@ -1,7 +1,7 @@
 # Empty
-IF(${CMAKE_SYSTEM_NAME} MATCHES Orbis)
+IF(PSP2)
+ELSEIF(ORBIS)
     add_subdirectory(Orbis)
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES PSP2)
 ELSE()
     add_subdirectory(Empty)
     add_subdirectory(OpenGL)

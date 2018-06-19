@@ -1,6 +1,7 @@
 #include "AssetLoader.hpp"
 
 using namespace My;
+using namespace std;
 
 int AssetLoader::Initialize()
 {

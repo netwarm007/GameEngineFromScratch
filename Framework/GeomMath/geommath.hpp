@@ -363,7 +363,7 @@ namespace My {
     {
         T result;
         DotProduct(result, vec, vec);
-        return static_cast<T>(sqrt(result));
+        return static_cast<T>(std::sqrt(result));
     }
 
     template <typename T, int N>
@@ -395,7 +395,7 @@ namespace My {
     {
         T length;
         DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), N);
-        length = sqrt(length);
+        length = std::sqrt(length);
         ispc::Normalize(N, a, length);
     }
 
@@ -638,13 +638,13 @@ namespace My {
         float cYaw, cPitch, cRoll, sYaw, sPitch, sRoll;
 
         // Get the cosine and sin of the yaw, pitch, and roll.
-        cYaw = cosf(yaw);
-        cPitch = cosf(pitch);
-        cRoll = cosf(roll);
+        cYaw = std::cosf(yaw);
+        cPitch = std::cosf(pitch);
+        cRoll = std::cosf(roll);
 
-        sYaw = sinf(yaw);
-        sPitch = sinf(pitch);
-        sRoll = sinf(roll);
+        sYaw = std::sinf(yaw);
+        sPitch = std::sinf(pitch);
+        sRoll = std::sinf(roll);
 
         // Calculate the yaw, pitch, roll rotation matrix.
         matrix = {{
@@ -720,8 +720,8 @@ namespace My {
     inline void BuildPerspectiveFovLHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
         Matrix4X4f perspective = {{
-            { 1.0f / (screenAspect * tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
-            { 0.0f, 1.0f / tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
+            { 1.0f / (screenAspect * std::tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f / std::tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
             { 0.0f, 0.0f, screenDepth / (screenDepth - screenNear), 1.0f },
             { 0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear), 0.0f }
         }};
@@ -734,8 +734,8 @@ namespace My {
     inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
         Matrix4X4f perspective = {{
-            { 1.0f / (screenAspect * tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
-            { 0.0f, 1.0f / tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
+            { 1.0f / (screenAspect * std::tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f / std::tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
             { 0.0f, 0.0f, screenDepth / (screenNear - screenDepth), -1.0f },
             { 0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear), 0.0f }
         }};
@@ -772,7 +772,7 @@ namespace My {
 
     inline void MatrixRotationX(Matrix4X4f& matrix, const float angle)
     {
-        const float c = cosf(angle), s = sinf(angle);
+        const float c = std::cosf(angle), s = std::sinf(angle);
 
         matrix = {{
             {  1.0f, 0.0f, 0.0f, 0.0f },
@@ -786,7 +786,7 @@ namespace My {
 
     inline void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
-        const float c = cosf(angle), s = sinf(angle);
+        const float c = std::cosf(angle), s = std::sinf(angle);
 
         matrix = {{
             {    c, 0.0f,   -s, 0.0f },
@@ -801,7 +801,7 @@ namespace My {
 
     inline void MatrixRotationZ(Matrix4X4f& matrix, const float angle)
     {
-        const float c = cosf(angle), s = sinf(angle);
+        const float c = std::cosf(angle), s = std::sinf(angle);
 
         matrix = {{
             {    c,    s, 0.0f, 0.0f },
@@ -815,7 +815,7 @@ namespace My {
 
     inline void MatrixRotationAxis(Matrix4X4f& matrix, const Vector3f& axis, const float angle)
     {
-        float c = cosf(angle), s = sinf(angle), one_minus_c = 1.0f - c;
+        float c = std::cosf(angle), s = std::sinf(angle), one_minus_c = 1.0f - c;
 
         Matrix4X4f rotation = {{
             {   c + axis[0] * axis[0] * one_minus_c,  axis[0] * axis[1] * one_minus_c + axis[2] * s, axis[0] * axis[2] * one_minus_c - axis[1] * s, 0.0f    },
