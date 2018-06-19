@@ -488,11 +488,6 @@ void OpenGLGraphicsManagerCommonBase::DrawBatchDepthOnly(const DrawBatchContext&
 
 intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMap(const Light& light)
 {
-    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
-    GLuint FramebufferName;
-    glGenFramebuffers(1, &FramebufferName);
-    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint depthTexture;
     glGenTextures(1, &depthTexture);
@@ -503,9 +498,20 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMap(const Light& light)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
+    // register the shadow map
+    return static_cast<intptr_t>(depthTexture);
+}
 
-    glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const intptr_t shadowmap)
+{
+    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+    glGenFramebuffers(1, &m_ShadowMapFramebufferName);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint)shadowmap, 0);
+
+    glDrawBuffers(0, nullptr); // No color buffer is drawn to.
 
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -521,14 +527,13 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMap(const Light& light)
     Vector3f up = { 0.0f, 0.0f, 1.0f };
     BuildViewMatrix(depthMVP, position, lookAt, up);
     SetShaderParameter("depthMVP", depthMVP);
-
-    // register the shadow map
-    return static_cast<intptr_t>(depthTexture);
 }
 
-void OpenGLGraphicsManagerCommonBase::FinishShadowMap(const Light& light)
+void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glDeleteFramebuffers(1, &m_ShadowMapFramebufferName);
 }
 
 #ifdef DEBUG

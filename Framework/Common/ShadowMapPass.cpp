@@ -16,16 +16,27 @@ void ShadowMapPass::Draw(Frame& frame)
     {
         if (light.m_bCastShadow)
         {
-            // generate shadow map here
-            intptr_t shadowMap = g_pGraphicsManager->GenerateShadowMap(light);
-            frame.shadowMaps[light.m_lightGuid] = shadowMap;
+            intptr_t shadowMap;
+
+            if (frame.shadowMaps.find(light.m_lightGuid) == frame.shadowMaps.end())
+            {
+                // generate shadow map here
+                shadowMap = g_pGraphicsManager->GenerateShadowMap(light);
+                frame.shadowMaps[light.m_lightGuid] = shadowMap;
+            }
+            else
+            {
+                shadowMap = frame.shadowMaps[light.m_lightGuid];
+            }
+
+            g_pGraphicsManager->BeginShadowMap(light, shadowMap);
 
             for (auto dbc : frame.batchContexts)
             {
                 g_pGraphicsManager->DrawBatchDepthOnly(*dbc);
             }
 
-            g_pGraphicsManager->FinishShadowMap(light);
+            g_pGraphicsManager->EndShadowMap(shadowMap);
         }
     }
 }

@@ -30,7 +30,8 @@ namespace My {
         virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
 
         virtual intptr_t GenerateShadowMap(const Light& light);
-        virtual void FinishShadowMap(const Light& light);
+        virtual void BeginShadowMap(const Light& light, const intptr_t shadowmap);
+        virtual void EndShadowMap(const intptr_t shadowmap);
 
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
