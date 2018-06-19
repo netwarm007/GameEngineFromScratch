@@ -89,7 +89,7 @@ namespace My {
 
         void Set(const T* pval)
         {
-            memcpy(data, pval, sizeof(T) * N);
+            std::memcpy(data, pval, sizeof(T) * N);
         }
 
         void Set(std::initializer_list<const T> list)
@@ -115,7 +115,7 @@ namespace My {
 
         Vector& operator=(const Vector& v) 
         { 
-            memcpy(this, &v, sizeof(v));
+            std::memcpy(this, &v, sizeof(v));
             return *this;
         };
     };
@@ -638,13 +638,13 @@ namespace My {
         float cYaw, cPitch, cRoll, sYaw, sPitch, sRoll;
 
         // Get the cosine and sin of the yaw, pitch, and roll.
-        cYaw = std::cosf(yaw);
-        cPitch = std::cosf(pitch);
-        cRoll = std::cosf(roll);
+        cYaw = std::cos(yaw);
+        cPitch = std::cos(pitch);
+        cRoll = std::cos(roll);
 
-        sYaw = std::sinf(yaw);
-        sPitch = std::sinf(pitch);
-        sRoll = std::sinf(roll);
+        sYaw = std::sin(yaw);
+        sPitch = std::sin(pitch);
+        sRoll = std::sin(roll);
 
         // Calculate the yaw, pitch, roll rotation matrix.
         matrix = {{
@@ -661,7 +661,7 @@ namespace My {
     {
 		Vector4f tmp ({vector[0], vector[1], vector[2], 1.0f});
         ispc::Transform(tmp, matrix);
-        memcpy(&vector, &tmp, sizeof(vector));
+        std::memcpy(&vector, &tmp, sizeof(vector));
     }
 
     inline void Transform(Vector4f& vector, const Matrix4X4f& matrix)
@@ -720,8 +720,8 @@ namespace My {
     inline void BuildPerspectiveFovLHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
         Matrix4X4f perspective = {{
-            { 1.0f / (screenAspect * std::tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
-            { 0.0f, 1.0f / std::tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
+            { 1.0f / (screenAspect * std::tan(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f / std::tan(fieldOfView * 0.5f), 0.0f, 0.0f },
             { 0.0f, 0.0f, screenDepth / (screenDepth - screenNear), 1.0f },
             { 0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear), 0.0f }
         }};
@@ -734,8 +734,8 @@ namespace My {
     inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
         Matrix4X4f perspective = {{
-            { 1.0f / (screenAspect * std::tanf(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
-            { 0.0f, 1.0f / std::tanf(fieldOfView * 0.5f), 0.0f, 0.0f },
+            { 1.0f / (screenAspect * std::tan(fieldOfView * 0.5f)), 0.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f / std::tan(fieldOfView * 0.5f), 0.0f, 0.0f },
             { 0.0f, 0.0f, screenDepth / (screenNear - screenDepth), -1.0f },
             { 0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear), 0.0f }
         }};
@@ -772,7 +772,7 @@ namespace My {
 
     inline void MatrixRotationX(Matrix4X4f& matrix, const float angle)
     {
-        const float c = std::cosf(angle), s = std::sinf(angle);
+        const float c = std::cos(angle), s = std::sin(angle);
 
         matrix = {{
             {  1.0f, 0.0f, 0.0f, 0.0f },
@@ -786,7 +786,7 @@ namespace My {
 
     inline void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
-        const float c = std::cosf(angle), s = std::sinf(angle);
+        const float c = std::cos(angle), s = std::sin(angle);
 
         matrix = {{
             {    c, 0.0f,   -s, 0.0f },
@@ -801,7 +801,7 @@ namespace My {
 
     inline void MatrixRotationZ(Matrix4X4f& matrix, const float angle)
     {
-        const float c = std::cosf(angle), s = std::sinf(angle);
+        const float c = std::cos(angle), s = std::sin(angle);
 
         matrix = {{
             {    c,    s, 0.0f, 0.0f },
@@ -815,7 +815,7 @@ namespace My {
 
     inline void MatrixRotationAxis(Matrix4X4f& matrix, const Vector3f& axis, const float angle)
     {
-        float c = std::cosf(angle), s = std::sinf(angle), one_minus_c = 1.0f - c;
+        float c = std::cos(angle), s = std::sin(angle), one_minus_c = 1.0f - c;
 
         Matrix4X4f rotation = {{
             {   c + axis[0] * axis[0] * one_minus_c,  axis[0] * axis[1] * one_minus_c + axis[2] * s, axis[0] * axis[2] * one_minus_c - axis[1] * s, 0.0f    },

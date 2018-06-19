@@ -96,7 +96,7 @@ namespace My {
 
         // decompose the rotation matrix
         float theta_x = std::atan2(U[1][2], U[2][2]);
-        float theta_y = -std::asinf(U[0][2]);
+        float theta_y = -std::asin(U[0][2]);
         float theta_z = std::atan2(U[0][1], U[0][0]);
         
         rotation.Set({theta_x, theta_y, theta_z});
