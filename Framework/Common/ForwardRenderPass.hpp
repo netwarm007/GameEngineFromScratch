@@ -6,6 +6,6 @@ namespace My {
     {
     public:
         ~ForwardRenderPass() = default;
-        void Draw(const Frame& frame) final;
+        void Draw(Frame& frame) final;
     };
 }

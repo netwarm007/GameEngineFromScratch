@@ -92,8 +92,6 @@ namespace My {
     class SceneObjectSpotLight : public SceneObjectLight
     {
         protected:
-            float   m_fConeBeginAngle;
-            float   m_fConeEndAngle;
             AttenCurve  m_LightAngleAttenuation;
 
         public:

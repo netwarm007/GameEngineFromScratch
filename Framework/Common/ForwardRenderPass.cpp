@@ -5,7 +5,7 @@
 using namespace My;
 using namespace std;
 
-void ForwardRenderPass::Draw(const Frame& frame)
+void ForwardRenderPass::Draw(Frame& frame)
 {
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Forward);
 

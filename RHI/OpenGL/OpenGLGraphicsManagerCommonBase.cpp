@@ -55,6 +55,8 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         ostringstream ss;
         string uniformName;
 
+        ss.clear();
+        ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightPosition" << ends;
         uniformName = ss.str();
         result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightPosition);
@@ -116,7 +118,6 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
                 return false;
         }
         glUniform1fv(location, 5, context.m_lights[i].m_lightAngleAttenCurveParams);
-
     }
 
     return true;
@@ -471,6 +472,63 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
     }
 
     glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawBatchDepthOnly(const DrawBatchContext& context)
+{
+    const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(context);
+
+    bool result = SetShaderParameter("modelMatrix", dbc.trans);
+    assert(result);
+
+    glBindVertexArray(dbc.vao);
+
+    glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+}
+
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMap(const Light& light)
+{
+    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+    GLuint FramebufferName;
+    glGenFramebuffers(1, &FramebufferName);
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+    // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
+    GLuint depthTexture;
+    glGenTextures(1, &depthTexture);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
+
+    glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+
+    // Always check that our framebuffer is ok
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        assert(0);
+
+    // now set per frame constant
+    Matrix4X4f depthMVP;
+    Vector3f position;
+    memcpy(&position, &light.m_lightPosition, sizeof position); 
+    Vector4f tmp = light.m_lightPosition + light.m_lightDirection;
+    Vector3f lookAt; 
+    memcpy(&lookAt, &tmp, sizeof lookAt);
+    Vector3f up = { 0.0f, 0.0f, 1.0f };
+    BuildViewMatrix(depthMVP, position, lookAt, up);
+    SetShaderParameter("depthMVP", depthMVP);
+
+    // register the shadow map
+    return static_cast<intptr_t>(depthTexture);
+}
+
+void OpenGLGraphicsManagerCommonBase::FinishShadowMap(const Light& light)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 #ifdef DEBUG

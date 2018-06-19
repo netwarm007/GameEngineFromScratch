@@ -10,6 +10,6 @@ namespace My {
         IDrawPass() = default;
         virtual ~IDrawPass() {};
 
-        virtual void Draw(const Frame& frame) = 0;
+        virtual void Draw(Frame& frame) = 0;
     };
 }

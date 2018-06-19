@@ -199,8 +199,6 @@ namespace My {
 	{
 		out << static_cast<const SceneObjectLight&>(obj) << endl;
 		out << "Light Type: Spot" << endl;
-		out << "Cone Begin Angle: " << obj.m_fConeBeginAngle << endl;
-		out << "Cone End Angle: " << obj.m_fConeEndAngle << endl;
 
 		return out;
 	}
