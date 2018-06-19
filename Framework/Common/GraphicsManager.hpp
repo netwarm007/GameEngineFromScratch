@@ -60,6 +60,7 @@ namespace My {
         virtual void CalculateCameraMatrix();
         virtual void CalculateLights();
         virtual void UpdateConstants();
+
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif
