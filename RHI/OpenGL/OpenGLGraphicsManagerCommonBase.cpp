@@ -509,7 +509,11 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
+#ifdef OPENGL_ES
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, (GLuint)shadowmap, 0);
+#else
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint)shadowmap, 0);
+#endif
 
     glDrawBuffers(0, nullptr); // No color buffer is drawn to.
 
