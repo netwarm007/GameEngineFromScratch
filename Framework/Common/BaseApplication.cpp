@@ -28,11 +28,6 @@ int BaseApplication::Initialize()
 		return ret;
 	}
 
-#ifdef __psp2__
-    g_pAssetLoader->AddSearchPath("host0:");
-    g_pAssetLoader->AddSearchPath("app0:");
-#endif
-
 	if ((ret = g_pSceneManager->Initialize()) != 0) {
         cerr << "Failed. err = " << ret;
 		return ret;
