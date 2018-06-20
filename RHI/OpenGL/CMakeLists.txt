@@ -9,5 +9,6 @@ add_library(OpenGLRHI
 )
 target_include_directories(OpenGLRHI PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 ENDIF(ANDROID)
-add_dependencies(OpenGLRHI GeomMath)
+target_include_directories(OpenGLRHI PUBLIC GeomMath)
+target_link_libraries(OpenGLRHI GeomMath Common)
 

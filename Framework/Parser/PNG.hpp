@@ -8,7 +8,11 @@
 #include "config.h"
 #include "ImageParser.hpp"
 #include "portable.hpp"
+#ifndef Z_SOLO
+#define Z_SOLO
 #include "zlib.h"
+#undef Z_SOLO
+#endif
 
 namespace My {
 #pragma pack(push, 1)
@@ -52,7 +56,7 @@ namespace My {
     };
 
     struct PNG_PLTE_HEADER : PNG_CHUNK_HEADER {
-        Vector3Type<uint8_t>* pEntries;
+        Vector<uint8_t, 3>* pEntries;
     };
 #pragma pack(pop)
 
@@ -91,7 +95,7 @@ namespace My {
         uint8_t  m_CompressionMethod;
         uint8_t  m_FilterMethod;
         uint8_t  m_InterlaceMethod;
-        size_t   m_ScanLineSize;
+        int32_t  m_ScanLineSize;
         uint8_t  m_BytesPerPixel;
 
     public:

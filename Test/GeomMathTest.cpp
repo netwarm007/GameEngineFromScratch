@@ -1,6 +1,7 @@
 #include <iostream>
 #include <assert.h>
 #include "geommath.hpp"
+#include "MatrixComposeDecompose.hpp"
 
 using namespace std;
 using namespace My;
@@ -27,7 +28,7 @@ void vector_test()
     float d;
     DotProduct(d, a, b);
     cout << "Dot Product of vec 1 and vec 2: ";
-    cout << d << std::endl;
+    cout << d << endl;
 
     MulByElement(c, a, b);
     cout << "Element Product of vec 1 and vec 2: ";
@@ -86,6 +87,19 @@ void matrix_test()
     Matrix4X4f transform = m1 * ry * rz * translate;
     cout << transform;
 
+    Vector3f rotation, scalar, translation;
+    Matrix4X4fDecompose(transform, rotation, scalar, translation);
+    cout << "Decompose of Transform Matrix: " << endl;
+    cout << "Rotation: " << rotation;
+    cout << "Scalar: " << scalar;
+    cout << "Translation: " << translation;
+    cout << endl;
+
+    Matrix4X4f recomposed_transform;
+    Matrix4X4fCompose(recomposed_transform, rotation, scalar, translation);
+    cout << "Re-composed Transform Matrix: " << endl;
+    cout << recomposed_transform;
+
     Vector3f v = { 1.0f, 0.0f, 0.0f };
 
     Vector3f v1 = v;
@@ -94,7 +108,7 @@ void matrix_test()
     cout << ry;
     TransformCoord(v1, ry);
     cout << "Now the vector becomes: " << v1;
-    cout << std::endl;
+    cout << endl;
 
     v1 = v;
     cout << "Vector : " << v1;
@@ -102,7 +116,7 @@ void matrix_test()
     cout << rz;
     TransformCoord(v1, rz);
     cout << "Now the vector becomes: " << v1;
-    cout << std::endl;
+    cout << endl;
 
     v1 = v;
     cout << "Vector : " << v1;
@@ -110,7 +124,26 @@ void matrix_test()
     cout << translate;
     TransformCoord(v1, translate);
     cout << "Now the vector becomes: " << v1;
-    cout << std::endl;
+    cout << endl;
+
+    v1 = v;
+    cout << "Vector : " << v1;
+    cout << "Transform by Transform Matrix:";
+    cout << transform;
+    TransformCoord(v1, transform);
+    cout << "Now the vector becomes: " << v1;
+    cout << endl;
+
+    Vector3f v2 = v;
+    cout << "Vector : " << v2;
+    cout << "Transform by Re-Composed Transform Matrix:";
+    cout << recomposed_transform;
+    TransformCoord(v2, recomposed_transform);
+    cout << "Now the vector becomes: " << v2;
+    cout << "Error between vector transformed by origin and recomposed transform:" << endl;
+    cout << v1 - v2;
+    cout << endl;
+    assert(Length(v1 - v2) < 10E-6f);
 
     Vector3f position = { 0, 0, -5 }, lookAt = { 0, 0, 0 }, up = { 0, 1, 0 };
     Matrix4X4f view;
@@ -131,27 +164,36 @@ void matrix_test()
     Matrix4X4f mvp = view * perspective;
     cout << "MVP: " << mvp;
 
-    Matrix4X4f invertable = {{{
-        { 1.0f,  0.0f,  0.0f,  0.0f},
-        { 0.0f,  1.0f,  0.0f,  0.0f},
+    Matrix3X3f invertable3x3 = {{
+        { 1.0f,  1.0f,  0.0f},
+        { 0.0f,  2.0f,  0.0f},
+        { 0.0f,  0.0f,  1.0f},
+    }};
+    cout << "Known Invertable Matrix: " << invertable3x3;
+    assert(InverseMatrix3X3f(invertable3x3));
+    cout << "Inverse of Matrix: " << invertable3x3;
+
+    Matrix4X4f invertable = {{
+        { 1.0f,  1.0f,  0.0f,  0.0f},
+        { 0.0f,  2.0f,  0.0f,  0.0f},
         { 0.0f,  0.0f,  1.0f,  0.0f},
         {13.0f, 14.0f, 15.0f,  1.0f}
-    }}};
+    }};
     cout << "Known Invertable Matrix: " << invertable;
     assert(InverseMatrix4X4f(invertable));
     cout << "Inverse of Matrix: " << invertable;
 
-    Matrix4X4f non_invertable = {{{
+    Matrix4X4f non_invertable = {{
         { 1.0f,  2.0f,  3.0f,  4.0f},
         { 5.0f,  6.0f,  7.0f,  8.0f},
         { 9.0f, 10.0f, 11.0f, 12.0f},
         {13.0f, 14.0f, 15.0f, 16.0f}
-    }}};
-    cout << "Known Sigular(Not Ivertable) Matrix: " << non_invertable;
+    }};
+    cout << "Known Sigular(Not Invertable) Matrix: " << non_invertable;
     assert(!InverseMatrix4X4f(non_invertable));
     cout << "InverseMatrix4X4f returns false." << endl;
 
-    Matrix8X8f pixel_block = {{{
+    Matrix8X8f pixel_block = {{
         {-76, -73, -67, -62, -58, -67, -64, -55},
         {-65, -69, -73, -38, -19, -43, -59, -56},
         {-66, -69, -60, -15,  16, -24, -62, -55},
@@ -160,7 +202,7 @@ void matrix_test()
         {-49, -63, -68, -58, -51, -60, -70, -53},
         {-43, -57, -64, -69, -73, -67, -63, -45},
         {-41, -49, -59, -60, -63, -52, -50, -34}
-    }}};
+    }};
     cout << "A 8X8 int pixel block: " << pixel_block;
     Matrix8X8f pixel_block_dct = DCT8X8(pixel_block);
     cout << "After DCTII: " << pixel_block_dct;
@@ -174,7 +216,7 @@ void matrix_test()
 
 int main()
 {
-    cout << std::fixed;
+    cout << fixed;
 
     vector_test();
     matrix_test();

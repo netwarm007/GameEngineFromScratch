@@ -21,7 +21,9 @@
                 "${workspaceRoot}/Physics",
                 "${workspaceRoot}/External/Darwin/include",
                 "${workspaceRoot}/External/Darwin/include/bullet",
-                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad"
+                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad",
+                "${workspaceRoot}/Framework/Ability",
+                "${workspaceRoot}/Framework/Ability"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -40,7 +42,9 @@
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"
             ],
-            "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "compileCommands": "${workspaceRoot}/build/compile_commands.json",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         },
         {
             "name": "Linux",
@@ -61,6 +65,8 @@
                 "databaseFilename": ""
             },
             "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         },
         {
             "name": "Win32",
@@ -86,7 +92,8 @@
                 "${workspaceRoot}/RHI/D2d",
                 "${workspaceRoot}/External/Windows/include",
                 "${workspaceRoot}/External/Windows/include/bullet",
-                "${workspaceRoot}/External/src/glad/include"
+                "${workspaceRoot}/External/src/glad/include",
+                "${workspaceRoot}/Framework/Ability"
             ],
             "defines": [
                 "_DEBUG",
@@ -147,7 +154,9 @@
                 "databaseFilename": ""
             },
             "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         }
     ],
-    "version": 3
+    "version": 4
 }

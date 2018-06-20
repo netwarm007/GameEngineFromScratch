@@ -356,10 +356,10 @@ namespace My {
                         pBuf = reinterpret_cast<uint8_t*>(img.data)
                             + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * (img.bitcount >> 3));
                         rgb = ConvertYCbCr2RGB(ycbcr);
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->r = (uint8_t)rgb.r;
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->g = (uint8_t)rgb.g;
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->b = (uint8_t)rgb.b;
-                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->a = 255;
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->data[0] = (uint8_t)rgb[0];
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->data[1] = (uint8_t)rgb[1];
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->data[2] = (uint8_t)rgb[2];
+                        reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->data[3] = 255;
                     }
                 }
 

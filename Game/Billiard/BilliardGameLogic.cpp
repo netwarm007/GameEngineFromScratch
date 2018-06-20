@@ -13,7 +13,7 @@ int BilliardGameLogic::Initialize()
 
     cout << "[BilliardGameLogic] Biiliard Game Logic Initialize" << endl;
     cout << "[BilliardGameLogic] Start Loading Game Scene" << endl;
-    result = g_pSceneManager->LoadScene("Scene/Billiard.ogex");
+    result = g_pSceneManager->LoadScene("Scene/billiard.ogex");
 
     return result;
 }
@@ -36,7 +36,7 @@ void BilliardGameLogic::OnLeftKey()
         auto rigidBody = node->RigidBody();
         if (rigidBody)
         {
-            g_pPhysicsManager->ApplyCentralForce(rigidBody, Vector3f(-100.0f, 0.0f, 0.0f));
+            g_pPhysicsManager->ApplyCentralForce(rigidBody, Vector3f({-100.0f, 0.0f, 0.0f}));
         }
     }
 }

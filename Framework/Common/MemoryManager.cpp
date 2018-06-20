@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include "MemoryManager.hpp"
+#include "portable.hpp"
 
 using namespace My;
 using namespace std;

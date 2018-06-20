@@ -8,9 +8,9 @@ namespace My {
         Box() = delete; 
         Box(Vector3f halfExtents) : Geometry(GeometryType::kBox), m_vHalfExtents(halfExtents) {}
 
-        virtual void GetAabb(const Matrix4X4f& trans, 
+        void GetAabb(const Matrix4X4f& trans, 
                                 Vector3f& aabbMin, 
-                                Vector3f& aabbMax) const;
+                                Vector3f& aabbMax) const final;
 
         Vector3f GetDimension() const { return m_vHalfExtents * 2.0f; }
         Vector3f GetDimensionWithMargin() const { return m_vHalfExtents * 2.0f + m_fMargin; }

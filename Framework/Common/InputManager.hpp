@@ -25,7 +25,7 @@ namespace My {
             // mouse handling
             void LeftMouseButtonDown();
             void LeftMouseButtonUp();
-            void LeftMouseDrag(float deltaX, float deltaY);
+            void LeftMouseDrag(int deltaX, int deltaY);
 
         protected:
             bool m_bUpKeyPressed    = false;

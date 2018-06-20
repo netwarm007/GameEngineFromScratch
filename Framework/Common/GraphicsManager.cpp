@@ -119,23 +119,45 @@ void GraphicsManager::CalculateCameraMatrix()
 
 void GraphicsManager::CalculateLights()
 {
-    m_DrawFrameContext.m_ambientColor = {0.01f, 0.01f, 0.01f};
+    m_DrawFrameContext.m_ambientColor = { 0.01f, 0.01f, 0.01f };
+    m_DrawFrameContext.m_lights.clear();
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pLightNode = scene.GetFirstLightNode();
-    if (pLightNode) {
-        m_DrawFrameContext.m_lightPosition = { 0.0f, 0.0f, 0.0f };
-        TransformCoord(m_DrawFrameContext.m_lightPosition, *pLightNode->GetCalculatedTransform());
+    for (auto LightNode : scene.LightNodes) {
+        Light light;
+        auto pLightNode = LightNode.second.lock();
+        if (!pLightNode) continue;
+        auto trans_ptr = pLightNode->GetCalculatedTransform();
+        Transform(light.m_lightPosition, *trans_ptr);
+        Transform(light.m_lightDirection, *trans_ptr);
 
         auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
         if (pLight) {
-            m_DrawFrameContext.m_lightColor = pLight->GetColor().Value;
+            light.m_lightColor = pLight->GetColor().Value;
+            light.m_lightIntensity = pLight->GetIntensity();
+            const AttenCurve& atten_curve = pLight->GetDistanceAttenuation();
+            light.m_lightDistAttenCurveType = atten_curve.type; 
+            memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
+
+            if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
+            {
+                light.m_lightPosition[3] = 0.0f;
+            }
+
+            if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
+            {
+                auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
+                const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
+                light.m_lightAngleAttenCurveType = angle_atten_curve.type;
+                memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
+            }
         }
-    }
-    else {
-        // use default build-in light 
-        m_DrawFrameContext.m_lightPosition = { -1.0f, -5.0f, 0.0f};
-        m_DrawFrameContext.m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        else
+        {
+            assert(0);
+        }
+
+        m_DrawFrameContext.m_lights.push_back(light);
     }
 }
 
@@ -295,12 +317,12 @@ void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, cons
     for (int i = 0; i < 8; i++)
         points[i] = make_shared<Point>(bbMin);
     *points[0] = *points[2] = *points[3] = *points[7] = bbMax;
-    points[0]->x = bbMin.x;
-    points[2]->y = bbMin.y;
-    points[7]->z = bbMin.z;
-    points[1]->z = bbMax.z;
-    points[4]->y = bbMax.y;
-    points[6]->x = bbMax.x;
+    points[0]->data[0] = bbMin[0];
+    points[2]->data[1] = bbMin[1];
+    points[7]->data[2] = bbMin[2];
+    points[1]->data[2] = bbMax[2];
+    points[4]->data[1] = bbMax[1];
+    points[6]->data[0] = bbMax[0];
 
     // edges
     EdgeList edges;

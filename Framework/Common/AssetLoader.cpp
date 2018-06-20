@@ -1,6 +1,7 @@
 #include "AssetLoader.hpp"
 
 using namespace My;
+using namespace std;
 
 int AssetLoader::Initialize()
 {
@@ -60,7 +61,11 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
 {
     FILE *fp = nullptr;
     // loop N times up the hierarchy, testing at each level
+#ifdef __psp2__
+    std::string upPath = "app0:/";
+#else
     std::string upPath;
+#endif
     std::string fullPath;
     for (int32_t i = 0; i < 10; i++) {
         std::vector<std::string>::iterator src = m_strSearchPath.begin();

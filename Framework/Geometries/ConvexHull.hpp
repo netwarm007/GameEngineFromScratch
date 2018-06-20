@@ -15,7 +15,7 @@ namespace My {
     public:
         void AddPoint(const Point& new_point) { m_PointSet.insert(std::make_shared<Point>(new_point)); m_bFullyBuild = false; }
         void AddPoint(const Vector3& new_point) 
-            { m_PointSet.insert(std::make_shared<Point>((float)new_point.x, (float)new_point.y, (float)new_point.z)); m_bFullyBuild = false; }
+            { m_PointSet.insert(std::make_shared<Point>(Point({(float)new_point[0], (float)new_point[1], (float)new_point[2]}))); m_bFullyBuild = false; }
         void AddPoint(const PointPtr& new_point) { m_PointSet.insert(new_point); m_bFullyBuild = false; }
         void AddPoint(PointPtr&& new_point) { m_PointSet.insert(std::move(new_point)); m_bFullyBuild = false; }
         void AddPointSet(const PointSet& point_set) { m_PointSet.insert(point_set.begin(), point_set.end()); m_bFullyBuild = false; }

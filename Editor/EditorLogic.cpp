@@ -33,7 +33,6 @@ void EditorLogic::Finalize()
 
 void EditorLogic::Tick()
 {
-
 }
 
 #ifdef DEBUG

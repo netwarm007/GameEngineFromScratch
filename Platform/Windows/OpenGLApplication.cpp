@@ -111,13 +111,13 @@ int OpenGLApplication::Initialize()
 			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
 			WGL_DOUBLE_BUFFER_ARB,  GL_TRUE,
 			WGL_PIXEL_TYPE_ARB,     WGL_TYPE_RGBA_ARB,
-			WGL_COLOR_BITS_ARB,     colorBits,
-			WGL_RED_BITS_ARB,		m_Config.redBits,
-			WGL_GREEN_BITS_ARB,		m_Config.greenBits,
-			WGL_BLUE_BITS_ARB,		m_Config.blueBits,
-			WGL_ALPHA_BITS_ARB,		m_Config.alphaBits,
-			WGL_DEPTH_BITS_ARB,     m_Config.depthBits,
-			WGL_STENCIL_BITS_ARB,   m_Config.stencilBits,
+			WGL_COLOR_BITS_ARB,     (int)colorBits,
+			WGL_RED_BITS_ARB,		(int)m_Config.redBits,
+			WGL_GREEN_BITS_ARB,		(int)m_Config.greenBits,
+			WGL_BLUE_BITS_ARB,		(int)m_Config.blueBits,
+			WGL_ALPHA_BITS_ARB,		(int)m_Config.alphaBits,
+			WGL_DEPTH_BITS_ARB,     (int)m_Config.depthBits,
+			WGL_STENCIL_BITS_ARB,   (int)m_Config.stencilBits,
 			WGL_SAMPLE_BUFFERS_ARB, 1,  // 4x MSAA
 			WGL_SAMPLES_ARB,        4,  // 4x MSAA
 			0

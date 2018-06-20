@@ -26,6 +26,18 @@
         "utility": "cpp",
         "vector": "cpp",
         "random": "cpp",
-        "memory": "cpp"
+        "memory": "cpp",
+        "complex": "cpp",
+        "valarray": "cpp",
+        "__bit_reference": "cpp",
+        "__string": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "unordered_set": "cpp",
+        "*.inc": "cpp",
+        "dynarray": "cpp",
+        "regex": "cpp",
+        "stack": "cpp",
+        "functional": "cpp"
     }
 }

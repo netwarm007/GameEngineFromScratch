@@ -7,6 +7,7 @@ namespace My {
         public:
             using AssetLoader::AssetLoader;
             AssetFilePtr OpenFile(const char* name, AssetOpenMode mode);
+            void CloseFile(AssetFilePtr& fp);
             void SetPlatformAssetManager(AAssetManager* assetManager);
             Buffer SyncOpenAndReadText(const char* assetPath);
             Buffer SyncOpenAndReadBinary(const char* assetPath);

@@ -28,3 +28,9 @@
 [submodule "libcxxabi"]
 	path = External/src/libcxxabi
 	url = http://llvm.org/git/libcxxabi
+[submodule "External/src/libcrc"]
+	path = External/src/libcrc
+	url = https://github.com/lammertb/libcrc.git
+[submodule "glslangValidator"]
+	path = External/src/glslangValidator
+	url = https://github.com/KhronosGroup/glslang
