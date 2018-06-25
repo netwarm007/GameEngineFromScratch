@@ -1472,8 +1472,6 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
         WaitForPreviousFrame();
     }
 
-    hr = PopulateCommandList();
-
     return;
 }
 
