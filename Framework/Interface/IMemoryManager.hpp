@@ -5,8 +5,6 @@ namespace My {
     Interface IMemoryManager : implements IRuntimeModule
     {
     public:
-        virtual ~IMemoryManager() = 0;
-
         virtual int Initialize() = 0;
         virtual void Finalize() = 0;
         virtual void Tick() = 0;

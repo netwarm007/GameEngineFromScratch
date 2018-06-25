@@ -47,7 +47,7 @@ target_link_libraries(AnimationTest Common)
 add_test(NAME TEST_Animation COMMAND AnimationTest)
 
 add_executable(BulletTest BulletTest.cpp)
-target_link_libraries(BulletTest ${BULLET_DYNAMICS_LIBRARY} ${BULLET_COLLISION_LIBRARY} ${BULLET_LINEARMATH_LIBRARY})
+target_link_libraries(BulletTest BulletPhysics)
 add_test(NAME TEST_Bullet COMMAND BulletTest)
 
 add_executable(NumericalMethodsTest NumericalMethodsTest.cpp)

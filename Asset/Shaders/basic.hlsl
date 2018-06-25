@@ -105,7 +105,7 @@ float3 apply_light(v2p input, Light light) {
 
     float lightToSurfDist = length(L);
     L = normalize(L);
-    float lightToSurfAngle = acos(dot(L, light_dir));
+    float lightToSurfAngle = acos(dot(L, -light_dir));
 
     // angle attenuation
     float atten_params[5];
@@ -124,7 +124,7 @@ float3 apply_light(v2p input, Light light) {
     atten_params[4] = light.m_lightDistAttenCurveParams_4;
     atten *= apply_atten_curve(lightToSurfDist, light.m_lightDistAttenCurveType, atten_params);
 
-    float3 R = normalize(2.0f * clamp(dot(L, N), 0.0f, 1.0f) *  N - L);
+    float3 R = normalize(2.0f * dot(L, N) *  N - L);
     float3 V = normalize(-input.vPosInView.xyz);
 
     float3 linearColor;
@@ -150,5 +150,5 @@ float4 PSMain(v2p input) : SV_TARGET
     }
 
     // gama correction
-    return float4(clamp(pow(linearColor, 1.0f/2.2f), 0.0f, 1.0f), 1.0f);
+    return float4(linearColor, 1.0f);
 }

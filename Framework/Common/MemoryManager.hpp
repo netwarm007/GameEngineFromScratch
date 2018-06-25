@@ -1,10 +1,19 @@
 #pragma once
 #include <map>
 #include <new>
+#include <ostream>
 #include "IMemoryManager.hpp"
 #include "portable.hpp"
 
 namespace My {
+    ENUM(MemoryType)
+    {
+        CPU = "CPU"_i32,
+        GPU = "GPU"_i32
+    };
+
+    std::ostream& operator<< (std::ostream& out, MemoryType type);
+
     class MemoryManager : implements IMemoryManager
     {
     public:
@@ -18,12 +27,6 @@ namespace My {
         void  FreePage(void* p);
 
     protected:
-        ENUM(MemoryType)
-        {
-            CPU = "CPU"_i32,
-            GPU = "GPU"_i32
-        };
-
         struct MemoryAllocationInfo 
         {
             size_t PageSize;

@@ -11,7 +11,7 @@ using namespace My;
 using namespace std;
 
 namespace My {
-    MemoryManager*  g_pMemoryManager = new MemoryManager();
+    IMemoryManager*  g_pMemoryManager = new MemoryManager();
     AssetLoader*    g_pAssetLoader   = new AssetLoader();
     SceneManager*   g_pSceneManager  = new SceneManager();
     AnimationManager* g_pAnimationManager = new AnimationManager();

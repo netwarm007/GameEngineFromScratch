@@ -1,6 +1,5 @@
 add_library(Common
 AnimationManager.cpp
-Allocator.cpp
 AssetLoader.cpp
 BaseApplication.cpp
 BlockAllocator.cpp
@@ -18,6 +17,7 @@ SceneObjectMesh.cpp
 SceneObjectTrack.cpp
 main.cpp
 )
+
 target_link_libraries(Common 
         Algorism
         Geometries

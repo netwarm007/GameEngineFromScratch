@@ -2,10 +2,24 @@
 #include <cstdlib>
 #include <iostream>
 #include "MemoryManager.hpp"
-#include "portable.hpp"
 
 using namespace My;
 using namespace std;
+
+namespace My {
+    std::ostream& operator<< (std::ostream& out, MemoryType type)
+    {
+        int32_t n = static_cast<int32_t>(type);
+        n = endian_net_unsigned_int<int32_t>(n);
+        char* c = reinterpret_cast<char*>(&n);
+         
+        for (size_t i = 0; i < sizeof(int32_t); i++) {
+            out << *c++;
+        }
+
+        return out;
+    }
+}
 
 int MemoryManager::Initialize()
 {
@@ -27,8 +41,8 @@ void MemoryManager::Tick()
         for (auto info : m_mapMemoryAllocationInfo)
         {
             cerr << info.first << '\t';
-            out << info.second.PageMemoryType;
-            out << info.second.PageSize;
+            cerr << info.second.PageMemoryType;
+            cerr << info.second.PageSize;
         }
     }
 #endif

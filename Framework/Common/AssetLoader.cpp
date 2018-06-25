@@ -63,6 +63,8 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
     // loop N times up the hierarchy, testing at each level
 #ifdef __psp2__
     std::string upPath = "app0:/";
+#elseif __ORBIS__
+    std::string upPath = "/app0/";
 #else
     std::string upPath;
 #endif

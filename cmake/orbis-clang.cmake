@@ -13,6 +13,7 @@ SET(CMAKE_CXX_COMPILER ${ORBIS_TOOLCHAIN_DIR}orbis-clang.exe)
 SET(CMAKE_AR ${ORBIS_TOOLCHAIN_DIR}orbis-ar.exe CACHE INTERNAL "the AR tool used by ispc")
 SET(CMAKE_LINKER ${ORBIS_TOOLCHAIN_DIR}orbis-ld.exe CACHE INTERNAL "the linker program used to generate shared libraries")
 SET(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>" CACHE INTERNAL "the linker command line")
+SET(CMAKE_EXECUTABLE_SUFFIX_CXX ".elf" CACHE STRING "" FORCE)
 
 SET(CMAKE_CXX_FLAGS "-frtti" CACHE INTERNAL "addtional cxx compile flags")
 

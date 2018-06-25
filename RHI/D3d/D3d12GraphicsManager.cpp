@@ -789,7 +789,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
             // DXGI does not have 24bit formats so we have to extend it to 32bit
             uint32_t new_pitch = image.pitch / 3 * 4;
             size_t data_size = new_pitch * image.Height;
-            void* data = g_pMemoryManager->Allocate(data_size);
+            void* data = new uint8_t[data_size];
             uint8_t* buf = reinterpret_cast<uint8_t*>(data);
             uint8_t* src = reinterpret_cast<uint8_t*>(image.data);
             for (uint32_t row = 0; row < image.Height; row++) {
