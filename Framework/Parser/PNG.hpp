@@ -8,11 +8,7 @@
 #include "config.h"
 #include "ImageParser.hpp"
 #include "portable.hpp"
-#ifndef Z_SOLO
-#define Z_SOLO
 #include "zlib.h"
-#undef Z_SOLO
-#endif
 
 namespace My {
 #pragma pack(push, 1)
@@ -253,6 +249,7 @@ namespace My {
                                 if (ret != Z_OK)
                                 {
                                     std::cout << "[Error] Failed to init zlib" << std::endl;
+                                    zerr(ret);
                                     break;
                                 }
 
