@@ -1772,10 +1772,11 @@ bool D3d12GraphicsManager::SetPerFrameShaderParameters()
         &m_DrawFrameContext, 
         offset); 
 
-    pHead += offset;
+    pHead += ALIGN(offset, 16); // 16 bytes alignment
+
     for (auto light : m_DrawFrameContext.m_lights)
     {
-        size_t size = ALIGN(sizeof(Light), 4); // 4 bytes alignment
+        size_t size = ALIGN(sizeof(Light), 16); // 16 bytes alignment
         memcpy(pHead, &light, size);
         pHead += size;
     }
