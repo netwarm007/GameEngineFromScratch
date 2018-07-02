@@ -9,7 +9,8 @@ namespace My {
         ShadowMap = "SHMP"_i32,
         Forward   = "FRWD"_i32,
         Differed  = "DIFR"_i32,
-        Debug     = "DEBG"_i32
+        Debug     = "DEBG"_i32,
+        Copy      = "BTBL"_i32
     };
 
     Interface IShaderManager : implements IRuntimeModule

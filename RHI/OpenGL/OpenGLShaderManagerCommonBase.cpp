@@ -218,6 +218,19 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::ShadowMap] = shaderProgram;
 
+    // Texture copy shader
+    properties = {  
+                    {0, "inputPosition"}
+                 };
+
+    result = LoadShaderFromFile(VS_PASSTHROUGH_SOURCE_FILE, PS_SIMPLE_TEXTURE_SOURCE_FILE, properties, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::Copy] = shaderProgram;
+
 #ifdef DEBUG
     // Debug Shader
     properties = {  
