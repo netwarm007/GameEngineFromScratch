@@ -17,6 +17,7 @@ SceneObjectAnimation.cpp
 SceneObjectMesh.cpp
 SceneObjectTrack.cpp
 ShadowMapPass.cpp
+HUDPass.cpp
 main.cpp
 )
 
