@@ -5,7 +5,6 @@
 namespace My {
     extern GfxConfiguration config;
     IApplication*    g_pApp             = static_cast<IApplication*>(new OpenGLESApplication(config));
-    GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLESGraphicsManager());
     IMemoryManager*   g_pMemoryManager   = static_cast<IMemoryManager*>(new MemoryManager());
     AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AndroidAssetLoader());
     SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager());
