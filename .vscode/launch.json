@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/splash.ogex"
+                "Scene/area_light.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -24,7 +24,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "Scene/splash.ogex"
+                "Scene/area_light.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -36,8 +36,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
-            "args": [
-            ],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/Game/Billiard",
             "environment": [],

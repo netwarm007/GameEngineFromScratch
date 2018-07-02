@@ -168,6 +168,10 @@ void main(void)
         linearColor += apply_light(allLights[i]); 
     }
 
-    outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
+    // no-gamma correction
+    // outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
+
+    // gamma correction
+    outputColor = vec4(clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
 }
 
