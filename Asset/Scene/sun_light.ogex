@@ -5,7 +5,7 @@ Metric (key = "up") {string {"z"}}
 
 LightNode $node1
 {
-	Name {string {"Point"}}
+	Name {string {"Sun"}}
 	ObjectRef {ref {$light1}}
 
 	Transform

@@ -492,6 +492,14 @@ namespace My {
                         {
                             light = std::make_shared<SceneObjectSpotLight>();
                         }
+                        else if (!strncmp(_type_str, "area", 4))
+                        {
+                            light = std::make_shared<SceneObjectAreaLight>();
+                        }
+                        else
+                        {
+                            assert(0);
+                        }
 
                         light->SetIfCastShadow(_bshadow);
 

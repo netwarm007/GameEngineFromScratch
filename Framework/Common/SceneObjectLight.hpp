@@ -1,17 +1,8 @@
 #pragma once
 #include <functional>
 #include "BaseSceneObject.hpp"
-#include "SceneObjectTypeDef.hpp"
 
 namespace My {
-    ENUM(AttenCurveType) {
-        kNone = 0,
-        kLinear = 1,
-        kSmooth = 2,
-        kInverse = 3,
-        kInverseSquare = 4
-    };
-
     struct AttenCurve {
         AttenCurveType type;
         union AttenCurveParams {
@@ -91,8 +82,6 @@ namespace My {
     class SceneObjectSpotLight : public SceneObjectLight
     {
         protected:
-            float   m_fConeBeginAngle;
-            float   m_fConeEndAngle;
             AttenCurve  m_LightAngleAttenuation;
 
         public:
@@ -120,4 +109,11 @@ namespace My {
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectInfiniteLight& obj);
     };
 
+    class SceneObjectAreaLight : public SceneObjectLight
+    {
+        public:
+            SceneObjectAreaLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightArea) {}
+
+        friend std::ostream& operator<<(std::ostream& out, const SceneObjectAreaLight& obj);
+    };
 }
