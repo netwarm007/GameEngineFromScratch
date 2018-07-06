@@ -113,6 +113,14 @@ LightObject $light1 (type = "area", shadow = false)		// Point
 	{
 		Param (attrib = "scale") {float {5.0}}
 	}
+
+    Extension (applic = "MyGameEngine", type = "area_light")
+    {
+        float[2] // dimension
+        {
+            {1.0, 1.0}
+        } 
+    }
 }
 
 GeometryObject $geometry1		// Sphere

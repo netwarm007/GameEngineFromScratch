@@ -124,6 +124,11 @@ namespace My {
                 return m_LightDimension;
             }
 
+            void SetDimension(const Vector2f& dimension)
+            {
+                m_LightDimension = dimension;
+            }
+
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectAreaLight& obj);
     };
 }
