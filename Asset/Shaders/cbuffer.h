@@ -14,6 +14,7 @@ struct Light{
 	float4		m_lightPosition;
 	float4		m_lightColor;
 	float4		m_lightDirection;
+	float2	    m_lightSize;
 	float       m_lightIntensity;
 	uint		m_lightDistAttenCurveType;
 	float       m_lightDistAttenCurveParams_0;

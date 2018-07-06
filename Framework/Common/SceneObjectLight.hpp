@@ -111,8 +111,18 @@ namespace My {
 
     class SceneObjectAreaLight : public SceneObjectLight
     {
+        protected:
+            Vector2f m_LightDimension;
+
         public:
-            SceneObjectAreaLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightArea) {}
+            SceneObjectAreaLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightArea),
+                m_LightDimension({1.0f, 1.0f})
+            {}
+
+            const Vector2f& GetDimension() const
+            {
+                return m_LightDimension;
+            }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectAreaLight& obj);
     };

@@ -59,6 +59,7 @@ namespace My {
             Vector4f    m_lightPosition;
             Vector4f    m_lightColor;
             Vector4f    m_lightDirection;
+            Vector2f    m_lightSize;
             float       m_lightIntensity;
             AttenCurveType m_lightDistAttenCurveType;
             float       m_lightDistAttenCurveParams[5];
@@ -68,6 +69,7 @@ namespace My {
             Light()
             {
                 m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
+                m_lightSize = { 0.0f, 0.0f };
                 m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
                 m_lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };
                 m_lightIntensity = 0.5f;

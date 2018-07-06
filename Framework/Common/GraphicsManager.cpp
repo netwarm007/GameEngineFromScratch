@@ -143,13 +143,17 @@ void GraphicsManager::CalculateLights()
             {
                 light.m_lightPosition[3] = 0.0f;
             }
-
-            if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
+            else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
             {
                 auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
                 const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
                 light.m_lightAngleAttenCurveType = angle_atten_curve.type;
                 memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
+            }
+            else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightArea)
+            {
+                auto plight = dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
+                light.m_lightSize = plight->GetDimension();
             }
         }
         else
