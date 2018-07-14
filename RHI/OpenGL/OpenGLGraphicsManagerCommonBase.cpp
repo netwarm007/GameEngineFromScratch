@@ -85,6 +85,13 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 
         ss.clear();
         ss.seekp(0);
+        ss << "allLights[" << i << "]." << "lightSize" << ends;
+        uniformName = ss.str();
+        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightSize);
+        if (!result) return result;
+
+        ss.clear();
+        ss.seekp(0);
         ss << "allLights[" << i << "]." << "lightDistAttenCurveType" << ends;
         uniformName = ss.str();
         result = SetShaderParameter(uniformName.c_str(), (int32_t)context.m_lights[i].m_lightDistAttenCurveType);
@@ -133,6 +140,20 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
             return false;
     }
     glUniformMatrix4fv(location, 1, false, param);
+
+    return true;
+}
+
+bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Vector2f& param)
+{
+    unsigned int location;
+
+    location = glGetUniformLocation(m_CurrentShader, paramName);
+    if(location == -1)
+    {
+            return false;
+    }
+    glUniform2fv(location, 1, param);
 
     return true;
 }

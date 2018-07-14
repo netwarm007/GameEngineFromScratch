@@ -54,6 +54,7 @@ namespace My {
         bool SetShaderParameter(const char* paramName, const Matrix4X4f& param);
         bool SetShaderParameter(const char* paramName, const Vector4f& param);
         bool SetShaderParameter(const char* paramName, const Vector3f& param);
+        bool SetShaderParameter(const char* paramName, const Vector2f& param);
         bool SetShaderParameter(const char* paramName, const float param);
         bool SetShaderParameter(const char* paramName, const int param);
         bool SetShaderParameter(const char* paramName, const bool param);
