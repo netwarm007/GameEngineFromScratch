@@ -1,45 +1,39 @@
 #pragma once
+#include <map>
 #include <new>
-#include "IRuntimeModule.hpp"
-#include "Allocator.hpp"
+#include <ostream>
+#include "IMemoryManager.hpp"
+#include "portable.hpp"
 
 namespace My {
-    class MemoryManager : implements IRuntimeModule
+    ENUM(MemoryType)
     {
-    public:
-        template<class T, typename... Arguments>
-        T* New(Arguments... parameters)
-        {
-            return new (Allocate(sizeof(T))) T(parameters...);
-        }
-
-        template<class T>
-        void Delete(T* p)
-        {
-            p->~T();
-            Free(p, sizeof(T));
-        }
-
-    public:
-        virtual ~MemoryManager() {}
-
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
-
-        void* Allocate(size_t size);
-        void* Allocate(size_t size, size_t alignment);
-        void  Free(void* p, size_t size);
-    private:
-        static size_t*        m_pBlockSizeLookup;
-        static Allocator*     m_pAllocators;
-        static bool           m_bInitialized;
-        
-    private:
-        static Allocator* LookUpAllocator(size_t size);
-
+        CPU = "CPU"_i32,
+        GPU = "GPU"_i32
     };
 
-    extern MemoryManager*   g_pMemoryManager;
+    std::ostream& operator<< (std::ostream& out, MemoryType type);
+
+    class MemoryManager : implements IMemoryManager
+    {
+    public:
+        ~MemoryManager() {}
+
+        int Initialize();
+        void Finalize();
+        void Tick();
+
+        void* AllocatePage(size_t size);
+        void  FreePage(void* p);
+
+    protected:
+        struct MemoryAllocationInfo 
+        {
+            size_t PageSize;
+            MemoryType PageMemoryType;
+        };
+
+        std::map<void*, MemoryAllocationInfo> m_mapMemoryAllocationInfo;
+    };
 }
 

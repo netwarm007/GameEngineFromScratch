@@ -52,7 +52,7 @@ namespace My {
     };
 
     struct PNG_PLTE_HEADER : PNG_CHUNK_HEADER {
-        Vector3Type<uint8_t>* pEntries;
+        Vector<uint8_t, 3>* pEntries;
     };
 #pragma pack(pop)
 
@@ -91,7 +91,7 @@ namespace My {
         uint8_t  m_CompressionMethod;
         uint8_t  m_FilterMethod;
         uint8_t  m_InterlaceMethod;
-        size_t   m_ScanLineSize;
+        int32_t  m_ScanLineSize;
         uint8_t  m_BytesPerPixel;
 
     public:
@@ -174,7 +174,7 @@ namespace My {
                                     img.bitcount = 32; 
                                 img.pitch = (img.Width * (img.bitcount >> 3) + 3) & ~3u; // for GPU address alignment
                                 img.data_size = img.pitch * img.Height;
-                                img.data = g_pMemoryManager->Allocate(img.data_size);
+                                img.data = new uint8_t[img.data_size];
 
                                 std::cout << "Width: " << m_Width << std::endl;
                                 std::cout << "Height: " << m_Height << std::endl;
@@ -189,13 +189,13 @@ namespace My {
                             {
                                 std::cout << "PLTE (Palette)" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
+#if DUMP_DETAILS
                                 const PNG_PLTE_HEADER* pPLTEHeader = reinterpret_cast<const PNG_PLTE_HEADER*>(pData);
                                 for (auto i = 0; i < chunk_data_size / sizeof(*pPLTEHeader->pEntries); i++)
                                 {
-#if DUMP_DETAILS
                                     std::cout << "Entry " << i << ": " << pPLTEHeader->pEntries[i] << std::endl;
-#endif
                                 }
+#endif
                             }
                             break;
                         case PNG_CHUNK_TYPE::IDAT:
@@ -249,6 +249,7 @@ namespace My {
                                 if (ret != Z_OK)
                                 {
                                     std::cout << "[Error] Failed to init zlib" << std::endl;
+                                    zerr(ret);
                                     break;
                                 }
 

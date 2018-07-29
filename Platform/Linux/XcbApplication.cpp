@@ -124,7 +124,7 @@ void XcbApplication::Tick()
                     g_pInputManager->DownArrowKeyDown();
                     break;
                 case 27:
-                    g_pInputManager->ResetKeyDown();
+                    g_pInputManager->AsciiKeyDown('r');
                     break;
                 }
                 break;
@@ -148,7 +148,7 @@ void XcbApplication::Tick()
                     g_pInputManager->DownArrowKeyUp();
                     break;
                 case 27:
-                    g_pInputManager->ResetKeyUp();
+                    g_pInputManager->AsciiKeyUp('r');
                     break;
                 }
             }
@@ -160,8 +160,6 @@ void XcbApplication::Tick()
     } else {
         if(xcb_connection_has_error(m_pConn)) {
             m_bQuit = true;
-        } else {
-	        OnDraw();
         }
     }
 }

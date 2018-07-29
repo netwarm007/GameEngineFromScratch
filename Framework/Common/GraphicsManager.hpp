@@ -1,7 +1,14 @@
 #pragma once
+#include <vector>
+#include <memory>
+#include "GfxStructures.hpp"
+#include "IRuntimeModule.hpp"
+#include "IShaderManager.hpp"
 #include "geommath.hpp"
 #include "Image.hpp"
-#include "IRuntimeModule.hpp"
+#include "Scene.hpp"
+#include "Polyhedron.hpp"
+#include "IDrawPass.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
@@ -17,30 +24,58 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
+        virtual void UseShaderProgram(const intptr_t shaderProgram);
+        virtual void SetPerFrameConstants(const DrawFrameContext& context);
+        virtual void DrawBatch(const DrawBatchContext& context);
+        virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
+
+        virtual intptr_t GenerateShadowMap(const Light& light);
+        virtual void BeginShadowMap(const Light& light, const intptr_t shadowmap);
+        virtual void EndShadowMap(const intptr_t shadowmap);
+
+#ifdef DEBUG
+        virtual void DrawPoint(const Point& point, const Vector3f& color);
+        virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
+        virtual void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color);
+        virtual void DrawLine(const Point& from, const Point& to, const Vector3f &color);
+        virtual void DrawLine(const PointList& vertices, const Vector3f &color);
+        virtual void DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
+        virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
+        virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
+        virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
+        virtual void DrawOverlay(const intptr_t shadowmap, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void ClearDebugBuffers();
+
+        void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
+        void DrawPolygon(const Face& face, const Vector3f& color);
+        void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
+        void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
+#endif
+
     protected:
-        bool SetPerFrameShaderParameters();
-        bool SetPerBatchShaderParameters(const char* paramName, const Matrix4X4f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const Vector3f& param);
-        bool SetPerBatchShaderParameters(const char* paramName, const float param);
-        bool SetPerBatchShaderParameters(const char* paramName, const int param);
+        virtual void InitializeBuffers(const Scene& scene);
+        virtual void ClearBuffers();
 
-        void InitConstants();
-        bool InitializeShader(const char* vsFilename, const char* fsFilename);
-        void InitializeBuffers();
-        void CalculateCameraMatrix();
-        void CalculateLights();
-        void RenderBuffers();
+        virtual void InitConstants();
+        virtual void CalculateCameraMatrix();
+        virtual void CalculateLights();
+        virtual void UpdateConstants();
+
+#ifdef DEBUG
+        virtual void RenderDebugBuffers();
+#endif
 
     protected:
-        struct DrawFrameContext {
-            Matrix4X4f  m_worldMatrix;
-            Matrix4X4f  m_viewMatrix;
-            Matrix4X4f  m_projectionMatrix;
-            Vector3f    m_lightPosition;
-            Vector4f    m_lightColor;
-        };
+        static const uint32_t           kFrameCount  = 2;
+        static const uint32_t           kMaxSceneObjectCount  = 65535;
+        static const uint32_t           kMaxTextureCount  = 2048;
 
-        DrawFrameContext    m_DrawFrameContext;
+        uint32_t                        m_nFrameIndex = 0;
+
+        std::vector<Frame>  m_Frames;
+        std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
     };
 
     extern GraphicsManager* g_pGraphicsManager;

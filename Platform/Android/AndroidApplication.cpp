@@ -14,8 +14,9 @@ AndroidApplication::AndroidApplication(GfxConfiguration& cfg)
 
 int AndroidApplication::Initialize()
 {
+    int result = 0;
     dynamic_cast<AndroidAssetLoader*>(g_pAssetLoader)->SetPlatformAssetManager(m_pApp->activity->assetManager);
-    int result = BaseApplication::Initialize();
+    result = BaseApplication::Initialize();
     if (result)
         LOGE("AndroidApplication Initialize Failed!");
 
@@ -62,16 +63,13 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             // The window is being shown, get it ready.
             if (engine->m_pApp->window != NULL) {
                 auto err = engine->Initialize();
-                if (!err) {
-                    engine->OnDraw();
-                } else {
+                if (err) {
                     LOGF("Engine Initialize Failed. error code = %d", err);
                 }
             }
             break;
         case APP_CMD_TERM_WINDOW:
             // The window is being hidden or closed, clean it up.
-            engine->Finalize();
             break;
         case APP_CMD_GAINED_FOCUS:
             // When our app gains focus, we start monitoring the accelerometer.
@@ -83,6 +81,7 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
                                                engine->m_pAccelerometerSensor,
                                                (1000L/60)*1000);
             }
+            engine->m_bAnimating = true;
             break;
         case APP_CMD_LOST_FOCUS:
             // When our app loses focus, we stop monitoring the accelerometer.
@@ -93,7 +92,6 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             }
             // Also stop animating.
             engine->m_bAnimating = false;
-            engine->OnDraw();
             break;
     }
 }
@@ -251,17 +249,7 @@ void android_main(struct android_app* state) {
         }
 
         if (engine->m_bAnimating) {
-            // Done with events; draw next animation frame.
-            engine->m_State.angle += .01f;
-            if (engine->m_State.angle > 1) {
-                engine->m_State.angle = 0;
-            }
-
             engine->Tick();
-
-            // Drawing is throttled to the screen update rate, so there
-            // is no need to do timing here.
-            engine->OnDraw();
         }
     }
 }

@@ -1,24 +1,10 @@
 #pragma once
-#include <unordered_map>
-#include <vector>
-#include <map>
-#include <string>
-#include <memory>
-#include "GraphicsManager.hpp"
-#include <GLES/gl.h>
-#include "geommath.hpp"
-#include "SceneObject.hpp"
+#include  <GLES3/gl32.h>
+#include "OpenGLGraphicsManagerCommonBase.hpp"
 
 namespace My {
-    class OpenGLESGraphicsManager : public GraphicsManager
+    class OpenGLESGraphicsManager : public OpenGLGraphicsManagerCommonBase
     {
-    public:
-        virtual int Initialize();
-        virtual void Finalize();
-
-        virtual void Clear();
-
-        virtual void Draw();
+        int Initialize();
     };
 }
-

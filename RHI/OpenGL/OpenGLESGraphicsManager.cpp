@@ -1,12 +1,22 @@
-#include <cstdio>
+#include <iostream>
 #include "OpenGLESGraphicsManager.hpp"
 
 using namespace My;
 using namespace std;
 
+#define OPENGL_ES
+#include "OpenGLGraphicsManagerCommonBase.cpp"
+#undef OPENGL_ES
+
 int OpenGLESGraphicsManager::Initialize()
 {
-    int result = 0;
+    int result;
+
+    result = GraphicsManager::Initialize();
+
+    if (result) {
+        return result;
+    }
 
     auto opengl_info = {GL_VENDOR, GL_RENDERER, GL_VERSION, GL_EXTENSIONS};
     for (auto name : opengl_info) {
@@ -14,26 +24,21 @@ int OpenGLESGraphicsManager::Initialize()
         printf("OpenGL Info: %s", info);
     }
 
-    glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
-    glEnable(GL_CULL_FACE);
-    glShadeModel(GL_SMOOTH);
-    glDisable(GL_DEPTH_TEST);
+	// Set the depth buffer to be entirely cleared to 1.0 values.
+	glClearDepthf(1.0f);
+
+	// Enable depth testing.
+	glEnable(GL_DEPTH_TEST);
+
+	// Set the polygon winding to front facing for the right handed system.
+	glFrontFace(GL_CCW);
+
+	// Enable back face culling.
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+    auto config = g_pApp->GetConfiguration();
+    glViewport(0, 0, config.screenWidth, config.screenHeight);
 
     return result;
 }
-
-void OpenGLESGraphicsManager::Finalize()
-{
-}
-
-void OpenGLESGraphicsManager::Clear()
-{
-    glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-}
-
-void OpenGLESGraphicsManager::Draw()
-{
-    glFlush();
-}
-

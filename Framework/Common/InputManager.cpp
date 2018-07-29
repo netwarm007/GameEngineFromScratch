@@ -2,7 +2,8 @@
 #include "InputManager.hpp"
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
-#include "GameLogic.hpp"
+#include "IGameLogic.hpp"
+#include "DebugManager.hpp"
 #include "geommath.hpp"
 
 using namespace My;
@@ -109,18 +110,63 @@ void InputManager::RightArrowKeyUp()
     m_bRightKeyPressed = false;
 }
 
-void InputManager::ResetKeyDown()
+void InputManager::AsciiKeyDown(char keycode)
 {
 #ifdef DEBUG
-    cerr << "[InputManager] Reset Key Down!" << endl;
+    cerr << "[InputManager] ASCII Key Down! (" << keycode << ")" << endl;
 #endif
-    g_pSceneManager->ResetScene();
+    switch (keycode)
+    {
+        case 'd':
+#ifdef DEBUG
+            g_pDebugManager->ToggleDebugInfo();
+#endif
+            break;
+        case 'r':
+            g_pSceneManager->ResetScene();
+            break;
+        case 'u':
+            g_pGameLogic->OnButton1Down();
+            break;
+        default:
+            cerr << "[InputManager] unhandled key." << endl;
+    }
 }
 
-void InputManager::ResetKeyUp()
+void InputManager::AsciiKeyUp(char keycode)
 {
 #ifdef DEBUG
-    cerr << "[InputManager] Reset Key Up!" << endl;
+    cerr << "[InputManager] ASCII Key Up! (" << keycode << ")" << endl;
 #endif
+    switch (keycode)
+    {
+        case 'd':
+            break;
+        case 'r':
+            break;
+        case 'u':
+            g_pGameLogic->OnButton1Up();
+            break;
+        default:
+            cerr << "[InputManager] unhandled key." << endl;
+    }
 }
 
+void InputManager::LeftMouseButtonDown()
+{
+    cerr << "[InputManager] Left Mouse Button Down!" << endl;
+}
+
+void InputManager::LeftMouseButtonUp()
+{
+    cerr << "[InputManager] Left Mouse Button Up!" << endl;
+}
+
+void InputManager::LeftMouseDrag(int deltaX, int deltaY)
+{
+    cerr << "[InputManager] Left Mouse Dragged! (" 
+        << deltaX << ","
+        << deltaY << ")"
+        << endl;
+    g_pGameLogic->OnAnalogStick(0, (float)deltaX, (float)deltaY);
+}

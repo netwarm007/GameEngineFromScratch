@@ -72,7 +72,7 @@ namespace My {
             img.pitch = (img.Width * (img.bitcount >> 3) + 3) & ~3u; // for GPU address alignment
 
             img.data_size = img.pitch * img.Height;
-            img.data = g_pMemoryManager->Allocate(img.data_size);
+            img.data = new uint8_t[img.data_size];
 
             uint8_t* pOut = (uint8_t*)img.data;
             for (decltype(img.Height) i = 0; i < img.Height; i++)

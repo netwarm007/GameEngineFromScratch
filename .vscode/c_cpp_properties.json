@@ -10,16 +10,20 @@
                 "${workspaceRoot}",
                 "${workspaceRoot}/Framework/Interface",
                 "${workspaceRoot}/Framework/Common",
-                "${workspaceRoot}/Platform/Darwin",
                 "${workspaceRoot}/Framework/GeomMath",
                 "${workspaceRoot}/Framework/GeomMath/include",
-                "${workspaceRoot}/External/Darwin/include",
                 "${workspaceRoot}/Framework/Parser",
-                "${workspaceRoot}/External/Darwin/include/bullet",
-                "${workspaceRoot}/RHI",
-                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad",
                 "${workspaceRoot}/Framework/Geometries",
-                "${workspaceRoot}/Framework/Geometries"
+                "${workspaceRoot}/Framework/Geometries",
+                "${workspaceRoot}/Framework/Algorism",
+                "${workspaceRoot}/Platform/Darwin",
+                "${workspaceRoot}/RHI",
+                "${workspaceRoot}/Physics",
+                "${workspaceRoot}/External/Darwin/include",
+                "${workspaceRoot}/External/Darwin/include/bullet",
+                "${workspaceRoot}/External/src/bullet/examples/ThirdPartyLibs/glad",
+                "${workspaceRoot}/Framework/Ability",
+                "${workspaceRoot}/Framework/Ability"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -38,7 +42,9 @@
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"
             ],
-            "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "compileCommands": "${workspaceRoot}/build/compile_commands.json",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         },
         {
             "name": "Linux",
@@ -57,14 +63,37 @@
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
-            }
+            },
+            "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         },
         {
             "name": "Win32",
             "includePath": [
                 "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/ucrt",
+                "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.6.1/include/um",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/shared",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/um",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/winrt",
                 "${workspaceRoot}",
-                "${workspaceRoot}/RHI"
+                "${workspaceRoot}/Framework/Interface",
+                "${workspaceRoot}/Framework/Common",
+                "${workspaceRoot}/Framework/Geometries",
+                "${workspaceRoot}/Framework/GeomMath",
+                "${workspaceRoot}/Framework/GeomMath/include",
+                "${workspaceRoot}/Framework/Parser",
+                "${workspaceRoot}/Framework/Algorism",
+                "${workspaceRoot}/Platform/Windows",
+                "${workspaceRoot}/RHI",
+                "${workspaceRoot}/RHI/OpenGL",
+                "${workspaceRoot}/RHI/D3d",
+                "${workspaceRoot}/RHI/D2d",
+                "${workspaceRoot}/External/Windows/include",
+                "${workspaceRoot}/External/Windows/include/bullet",
+                "${workspaceRoot}/External/src/glad/include",
+                "${workspaceRoot}/Framework/Ability"
             ],
             "defines": [
                 "_DEBUG",
@@ -78,8 +107,56 @@
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
-            }
+            },
+            "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+        },
+        {
+            "name": "Orbis",
+            "includePath": [
+                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/ucrt",
+                "C:/Program Files (x86)/Windows Kits/NETFXSDK/4.6.1/include/um",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/shared",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/um",
+                "C:/Program Files (x86)/Windows Kits/10/include/10.0.16299.0/winrt",
+                "C:/Program Files (x86)/SCE/ORBIS SDKs/5.500/target/include",
+                "C:/Program Files (x86)/SCE/ORBIS SDKs/5.500/target/include_common",
+                "${workspaceRoot}",
+                "${workspaceRoot}/Framework/Interface",
+                "${workspaceRoot}/Framework/Common",
+                "${workspaceRoot}/Framework/Geometries",
+                "${workspaceRoot}/Framework/GeomMath",
+                "${workspaceRoot}/Framework/GeomMath/include",
+                "${workspaceRoot}/Framework/Parser",
+                "${workspaceRoot}/Framework/Algorism",
+                "${workspaceRoot}/Platform/Windows",
+                "${workspaceRoot}/RHI",
+                "${workspaceRoot}/RHI/OpenGL",
+                "${workspaceRoot}/RHI/D3d",
+                "${workspaceRoot}/RHI/D2d",
+                "${workspaceRoot}/External/Windows/include",
+                "${workspaceRoot}/External/Windows/include/bullet",
+                "${workspaceRoot}/External/src/glad/include",
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE"
+            ],
+            "intelliSenseMode": "msvc-x64",
+            "browse": {
+                "path": [
+                    "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
+                    "C:/Program Files (x86)/SCE/ORBIS SDKs/5.500/target/include",
+                    "C:/Program Files (x86)/SCE/ORBIS SDKs/5.500/target/include_common",
+                    "${workspaceRoot}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "cStandard": "c11",
+            "cppStandard": "c++17"
         }
     ],
-    "version": 3
+    "version": 4
 }

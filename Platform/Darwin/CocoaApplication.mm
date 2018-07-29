@@ -4,6 +4,8 @@
 #import <AppDelegate.h>
 #import <WindowDelegate.h>
 
+#import <Carbon/Carbon.h>
+
 using namespace My;
 
 void CocoaApplication::CreateWindow()
@@ -93,6 +95,19 @@ void CocoaApplication::Tick()
                         break;
                     }
                 }
+            } else {
+                switch ([event keyCode])
+                {
+                    case kVK_ANSI_D: // d key
+                        g_pInputManager->AsciiKeyUp('d');
+                        break;
+                    case kVK_ANSI_R: // r key
+                        g_pInputManager->AsciiKeyUp('r');
+                        break;
+                    case kVK_ANSI_U: // u key
+                        g_pInputManager->AsciiKeyUp('u');
+                        break;
+                }
             }
             break;
         case NSEventTypeKeyDown:
@@ -125,8 +140,15 @@ void CocoaApplication::Tick()
             } else {
                 switch ([event keyCode])
                 {
-                    case 0x0F: // r key
-                        g_pInputManager->ResetKeyDown();
+                    case kVK_ANSI_D: // d key
+                        g_pInputManager->AsciiKeyDown('d');
+                        break;
+                    case kVK_ANSI_R: // r key
+                        g_pInputManager->AsciiKeyDown('r');
+                        break;
+                    case kVK_ANSI_U: // u key
+                        g_pInputManager->AsciiKeyDown('u');
+                        break;
                 }
             }
             break;

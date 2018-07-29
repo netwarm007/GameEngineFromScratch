@@ -1,10 +1,10 @@
 #import "GLView.h"
-#import <OpenGL/gl.h>
+#include <OpenGL/gl.h>
 
-#import "GraphicsManager.hpp"
-namespace My {
-    extern GraphicsManager* g_pGraphicsManager;
-}
+#include "GraphicsManager.hpp"
+#include "InputManager.hpp"
+
+using namespace My;
 
 @implementation GLView
 
@@ -13,8 +13,8 @@ namespace My {
 
     [_openGLContext makeCurrentContext];
 
-    My::g_pGraphicsManager->Clear();
-    My::g_pGraphicsManager->Draw();
+    g_pGraphicsManager->Clear();
+    g_pGraphicsManager->Draw();
 
     [_openGLContext flushBuffer];
 }
@@ -65,5 +65,29 @@ namespace My {
     [super dealloc];
 }
 
-@end
+- (void)mouseDown:(NSEvent *)theEvent {
+    if ([theEvent type] == NSEventTypeLeftMouseDown)
+    {
+        g_pInputManager->LeftMouseButtonDown();
+    }
+}
 
+- (void)mouseUp:(NSEvent *)theEvent {
+    if ([theEvent type] == NSEventTypeLeftMouseUp)
+    {
+        g_pInputManager->LeftMouseButtonUp();
+    }
+}
+
+- (void)mouseDragged:(NSEvent *)theEvent {
+    if ([theEvent type] == NSEventTypeLeftMouseDragged)
+    {
+        g_pInputManager->LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+    }
+}
+
+- (void)scrollWheel:(NSEvent *)theEvent {
+        g_pInputManager->LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+}
+
+@end

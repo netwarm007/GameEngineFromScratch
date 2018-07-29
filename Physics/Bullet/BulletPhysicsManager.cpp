@@ -39,8 +39,9 @@ void BulletPhysicsManager::Tick()
 {
     if (g_pSceneManager->IsSceneChanged())
     {
-        g_pPhysicsManager->ClearRigidBodies();
-        g_pPhysicsManager->CreateRigidBodies();
+        ClearRigidBodies();
+        CreateRigidBodies();
+        g_pSceneManager->NotifySceneIsPhysicalSimulationQueued();
     }
 
     m_btDynamicsWorld->stepSimulation(1.0f / 60.0f, 10);
@@ -63,6 +64,9 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
                 btTransform startTransform;
                 startTransform.setIdentity();
                 startTransform.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+                startTransform.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                            trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                            trans->data[0][2], trans->data[1][2], trans->data[2][2]));
                 btDefaultMotionState* motionState = 
                     new btDefaultMotionState(
                                 startTransform
@@ -85,6 +89,9 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
                 btTransform startTransform;
                 startTransform.setIdentity();
                 startTransform.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+                startTransform.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                            trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                            trans->data[0][2], trans->data[1][2], trans->data[2][2]));
                 btDefaultMotionState* motionState = 
                     new btDefaultMotionState(
                                 startTransform
@@ -105,6 +112,9 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
                 btTransform startTransform;
                 startTransform.setIdentity();
                 startTransform.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+                startTransform.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                            trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                            trans->data[0][2], trans->data[1][2], trans->data[2][2]));
                 btDefaultMotionState* motionState = 
                     new btDefaultMotionState(
                                 startTransform
@@ -123,6 +133,20 @@ void BulletPhysicsManager::CreateRigidBody(SceneGeometryNode& node, const SceneO
     node.LinkRigidBody(rigidBody);
 }
 
+void BulletPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node)
+{
+    const auto trans = node.GetCalculatedTransform();
+    auto rigidBody = node.RigidBody();
+    auto motionState = reinterpret_cast<btRigidBody*>(rigidBody)->getMotionState();
+    btTransform _trans;
+    _trans.setIdentity();
+    _trans.setOrigin(btVector3(trans->data[3][0], trans->data[3][1], trans->data[3][2]));
+    _trans.setBasis(btMatrix3x3(trans->data[0][0], trans->data[1][0], trans->data[2][0],
+                                trans->data[0][1], trans->data[1][1], trans->data[2][1],
+                                trans->data[0][2], trans->data[1][2], trans->data[2][2]));
+    motionState->setWorldTransform(_trans);
+}
+
 void BulletPhysicsManager::DeleteRigidBody(SceneGeometryNode& node)
 {
     btRigidBody* rigidBody = reinterpret_cast<btRigidBody*>(node.UnlinkRigidBody());
@@ -137,16 +161,19 @@ void BulletPhysicsManager::DeleteRigidBody(SceneGeometryNode& node)
 
 int BulletPhysicsManager::CreateRigidBodies()
 {
-    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second;
-        auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
-        assert(pGeometry);
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode)
+        {
+            auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            assert(pGeometry);
 
-        CreateRigidBody(*pGeometryNode, *pGeometry);
+            CreateRigidBody(*pGeometryNode, *pGeometry);
+        }
     }
 
     return 0;
@@ -154,13 +181,14 @@ int BulletPhysicsManager::CreateRigidBodies()
 
 void BulletPhysicsManager::ClearRigidBodies()
 {
-    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second;
-        DeleteRigidBody(*pGeometryNode);
+        auto pGeometryNode = _it.second.lock();
+        if (pGeometryNode)
+            DeleteRigidBody(*pGeometryNode);
     }
 
     for (auto shape : m_btCollisionShapes)
@@ -179,18 +207,18 @@ Matrix4X4f BulletPhysicsManager::GetRigidBodyTransform(void* rigidBody)
     auto basis  = trans.getBasis();
     auto origin = trans.getOrigin();
     BuildIdentityMatrix(result);
-    result.data[0][0] = basis[0][0];
-    result.data[1][0] = basis[0][1];
-    result.data[2][0] = basis[0][2];
-    result.data[0][1] = basis[1][0];
-    result.data[1][1] = basis[1][1];
-    result.data[2][1] = basis[1][2];
-    result.data[0][2] = basis[2][0];
-    result.data[1][2] = basis[2][1];
-    result.data[2][2] = basis[2][2];
-    result.data[3][0] = origin.getX();
-    result.data[3][1] = origin.getY();
-    result.data[3][2] = origin.getZ();
+    result.data[0][0] = static_cast<float>(basis[0][0]);
+    result.data[1][0] = static_cast<float>(basis[0][1]);
+    result.data[2][0] = static_cast<float>(basis[0][2]);
+    result.data[0][1] = static_cast<float>(basis[1][0]);
+    result.data[1][1] = static_cast<float>(basis[1][1]);
+    result.data[2][1] = static_cast<float>(basis[1][2]);
+    result.data[0][2] = static_cast<float>(basis[2][0]);
+    result.data[1][2] = static_cast<float>(basis[2][1]);
+    result.data[2][2] = static_cast<float>(basis[2][2]);
+    result.data[3][0] = static_cast<float>(origin.getX());
+    result.data[3][1] = static_cast<float>(origin.getY());
+    result.data[3][2] = static_cast<float>(origin.getZ());
 
     return result;
 }
@@ -198,7 +226,7 @@ Matrix4X4f BulletPhysicsManager::GetRigidBodyTransform(void* rigidBody)
 void BulletPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
 {
     btRigidBody* _rigidBody = reinterpret_cast<btRigidBody*>(rigidBody);
-    btVector3 _force(force.x, force.y, force.z);
+    btVector3 _force(force[0], force[1], force[2]);
     _rigidBody->activate(true);
     _rigidBody->applyCentralForce(_force);
 }

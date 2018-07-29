@@ -1,13 +1,13 @@
 #pragma once
-#include "GameLogic.hpp"
+#include "IGameLogic.hpp"
 
 namespace My {
-    class BilliardGameLogic : public GameLogic
+    class BilliardGameLogic : implements IGameLogic
     {
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
+        int Initialize();
+        void Finalize();
+        void Tick();
 
-        virtual void OnLeftKey();
+        void OnLeftKey();
     };
 }

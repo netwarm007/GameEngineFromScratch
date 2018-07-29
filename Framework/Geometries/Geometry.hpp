@@ -1,15 +1,17 @@
 #pragma once
+#include <limits>
 #include "aabb.hpp"
 #include "portable.hpp"
 
 namespace My {
     ENUM(GeometryType) {
         kBox,
-        kSphere,
-        kCylinder,
-        kCone,
-        kPlane,
         kCapsule,
+        kCone,
+        kCylinder,
+        kPlane,
+        kPolyhydron,
+        kSphere,
         kTriangle
     };
 
@@ -44,6 +46,6 @@ namespace My {
 
         protected:
             GeometryType m_kGeometryType;
-            float    m_fMargin;
+            float    m_fMargin = std::numeric_limits<float>::epsilon();
     };
 }

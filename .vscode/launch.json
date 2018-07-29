@@ -5,11 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS)(Open GL) Launch Billiard Game",
+            "name": "(Mac OS)(OpenGL) Launch Editor",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
-            "args": ["Scene/billiard.ogex"],
+            "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
+            "args": [
+                "Scene/splash.ogex"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -17,13 +19,39 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows)(Open GL) Launch Billiard Game",
+            "name": "(Mac OS)(OpenGL) Launch Game",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Game/Billiard",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(Windows) Launch Editor",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
+            "args": [
+                "Scene/splash.ogex"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) Launch Game",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
-            "args": ["Scene/billiard.ogex"],
+            "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/Game/Billiard",
             "environment": [],
             "externalConsole": false
         }

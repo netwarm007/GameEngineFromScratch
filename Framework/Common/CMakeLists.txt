@@ -1,8 +1,10 @@
 add_library(Common
-Allocator.cpp
+AnimationManager.cpp
 AssetLoader.cpp
 BaseApplication.cpp
-GameLogic.cpp
+BlockAllocator.cpp
+DebugManager.cpp
+ForwardRenderPass.cpp
 GraphicsManager.cpp
 InputManager.cpp
 Image.cpp
@@ -10,9 +12,18 @@ MemoryManager.cpp
 Scene.cpp
 SceneManager.cpp
 SceneObject.cpp
+StackAllocator.cpp
+SceneObjectAnimation.cpp
+SceneObjectMesh.cpp
+SceneObjectTrack.cpp
+ShadowMapPass.cpp
+HUDPass.cpp
 main.cpp
 )
+
 target_link_libraries(Common 
+        Algorism
+        Geometries
         GeomMath
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 

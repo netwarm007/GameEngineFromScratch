@@ -9,6 +9,7 @@ namespace My {
             virtual void Finalize();
             virtual void Tick();
 
+            // keyboard handling
             void UpArrowKeyDown();
             void UpArrowKeyUp();
             void DownArrowKeyDown();
@@ -18,8 +19,13 @@ namespace My {
             void RightArrowKeyDown();
             void RightArrowKeyUp();
 
-            void ResetKeyDown();
-            void ResetKeyUp();
+            void AsciiKeyDown(char keycode);
+            void AsciiKeyUp(char keycode);
+
+            // mouse handling
+            void LeftMouseButtonDown();
+            void LeftMouseButtonUp();
+            void LeftMouseDrag(int deltaX, int deltaY);
 
         protected:
             bool m_bUpKeyPressed    = false;

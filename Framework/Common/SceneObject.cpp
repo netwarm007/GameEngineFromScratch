@@ -1,7 +1,10 @@
 #include "SceneObject.hpp"
+#include "quickhull.hpp"
+
+using namespace std;
 
 namespace My {
-    std::ostream& operator<<(std::ostream& out, SceneObjectType type)
+    ostream& operator<<(ostream& out, SceneObjectType type)
     {
         int32_t n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
@@ -14,7 +17,7 @@ namespace My {
         return out;
     }
 
-    std::ostream& operator<<(std::ostream& out, IndexDataType type)
+    ostream& operator<<(ostream& out, IndexDataType type)
     {
         int32_t n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
@@ -27,7 +30,7 @@ namespace My {
         return out;
     }
 
-    std::ostream& operator<<(std::ostream& out, VertexDataType type)
+    ostream& operator<<(ostream& out, VertexDataType type)
     {
         int32_t n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
@@ -40,7 +43,7 @@ namespace My {
         return out;
     }
 
-    std::ostream& operator<<(std::ostream& out, PrimitiveType type)
+    ostream& operator<<(ostream& out, PrimitiveType type)
     {
         int32_t n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
@@ -53,22 +56,35 @@ namespace My {
         return out;
     }
   
-	std::ostream& operator<<(std::ostream& out, const BaseSceneObject& obj)
+    ostream& operator<<(ostream& out, CurveType type)
+    {
+        int32_t n = static_cast<int32_t>(type);
+        n = endian_net_unsigned_int<int32_t>(n);
+        char* c = reinterpret_cast<char*>(&n);
+         
+        for (size_t i = 0; i < sizeof(int32_t); i++) {
+            out << *c++;
+        }
+
+        return out;
+    }
+
+	ostream& operator<<(ostream& out, const BaseSceneObject& obj)
 	{
-		out << "SceneObject" << std::endl;
-		out << "-----------" << std::endl;
-		out << "GUID: " << obj.m_Guid << std::endl;
-		out << "Type: " << obj.m_Type << std::endl;
+		out << "SceneObject" << endl;
+		out << "-----------" << endl;
+		out << "GUID: " << obj.m_Guid << endl;
+		out << "Type: " << obj.m_Type << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectVertexArray& obj)
+	ostream& operator<<(ostream& out, const SceneObjectVertexArray& obj)
 	{
-		out << "Attribute: " << obj.m_strAttribute << std::endl;
-		out << "Morph Target Index: 0x" << obj.m_nMorphTargetIndex << std::endl;
-		out << "Data Type: " << obj.m_DataType << std::endl;
-		out << "Data Size: 0x" << obj.m_szData << std::endl;
+		out << "Attribute: " << obj.m_strAttribute << endl;
+		out << "Morph Target Index: 0x" << obj.m_nMorphTargetIndex << endl;
+		out << "Data Type: " << obj.m_DataType << endl;
+		out << "Data Size: 0x" << obj.m_szData << endl;
 		out << "Data: ";
 		for(size_t i = 0; i < obj.m_szData; i++)
 		{
@@ -78,12 +94,12 @@ namespace My {
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectIndexArray& obj)
+	ostream& operator<<(ostream& out, const SceneObjectIndexArray& obj)
 	{
-		out << "Material Index: 0x" << obj.m_nMaterialIndex << std::endl;
-		out << "Restart Index: 0x" << obj.m_szRestartIndex << std::endl;
-		out << "Data Type: " << obj.m_DataType << std::endl;
-		out << "Data Size: 0x" << obj.m_szData << std::endl;
+		out << "Material Index: 0x" << obj.m_nMaterialIndex << endl;
+		out << "Restart Index: 0x" << obj.m_szRestartIndex << endl;
+		out << "Data Type: " << obj.m_DataType << endl;
+		out << "Data Size: 0x" << obj.m_szData << endl;
 		out << "Data: ";
 		for(size_t i = 0; i < obj.m_szData; i++)
 		{
@@ -110,133 +126,159 @@ namespace My {
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectMesh& obj)
+	ostream& operator<<(ostream& out, const SceneObjectMesh& obj)
 	{
-		out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-		out << "Primitive Type: " << obj.m_PrimitiveType << std::endl;
-		out << "This mesh contains 0x" << obj.m_VertexArray.size() << " vertex properties." << std::endl;
+		out << static_cast<const BaseSceneObject&>(obj) << endl;
+		out << "Primitive Type: " << obj.m_PrimitiveType << endl;
+		out << "This mesh contains 0x" << obj.m_VertexArray.size() << " vertex properties." << endl;
 		for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
-			out << obj.m_VertexArray[i] << std::endl;
+			out << obj.m_VertexArray[i] << endl;
 		}
-		out << "This mesh contains 0x" << obj.m_IndexArray.size() << " index arrays." << std::endl;
+		out << "This mesh contains 0x" << obj.m_IndexArray.size() << " index arrays." << endl;
 		for (size_t i = 0; i < obj.m_IndexArray.size(); i++) {
-			out << obj.m_IndexArray[i] << std::endl;
+			out << obj.m_IndexArray[i] << endl;
 		}
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj)
+	ostream& operator<<(ostream& out, const SceneObjectTexture& obj)
 	{
-		out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-		out << "Coord Index: " << obj.m_nTexCoordIndex << std::endl;
-		out << "Name: " << obj.m_Name << std::endl;
+		out << static_cast<const BaseSceneObject&>(obj) << endl;
+		out << "Coord Index: " << obj.m_nTexCoordIndex << endl;
+		out << "Name: " << obj.m_Name << endl;
 		if (obj.m_pImage)
-			out << "Image: " << *obj.m_pImage << std::endl;
+			out << "Image: " << *obj.m_pImage << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj)
+	ostream& operator<<(ostream& out, const SceneObjectMaterial& obj)
 	{
-		out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-		out << "Name: " << obj.m_Name << std::endl;
-		out << "Albedo: " << obj.m_BaseColor << std::endl;
-		out << "Metallic: " << obj.m_Metallic << std::endl;
-		out << "Roughness: " << obj.m_Roughness << std::endl;
-		out << "Normal: " << obj.m_Normal << std::endl;
-		out << "Specular: " << obj.m_Specular << std::endl;
-		out << "Ambient Occlusion:: " << obj.m_AmbientOcclusion << std::endl;
+		out << static_cast<const BaseSceneObject&>(obj) << endl;
+		out << "Name: " << obj.m_Name << endl;
+		out << "Albedo: " << obj.m_BaseColor << endl;
+		out << "Metallic: " << obj.m_Metallic << endl;
+		out << "Roughness: " << obj.m_Roughness << endl;
+		out << "Normal: " << obj.m_Normal << endl;
+		out << "Specular: " << obj.m_Specular << endl;
+		out << "Ambient Occlusion:: " << obj.m_AmbientOcclusion << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj)
+	ostream& operator<<(ostream& out, const SceneObjectGeometry& obj)
 	{
 		auto count = obj.m_Mesh.size();
 		for(decltype(count) i = 0; i < count; i++) {
-			out << "Mesh: " << *obj.m_Mesh[i] << std::endl;
+			out << "Mesh: " << *obj.m_Mesh[i] << endl;
 		}
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectLight& obj)
+	ostream& operator<<(ostream& out, const SceneObjectLight& obj)
 	{
-		out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-		out << "Color: " << obj.m_LightColor << std::endl;
-		out << "Intensity: " << obj.m_fIntensity << std::endl;
-		out << "Cast Shadows: " << obj.m_bCastShadows << std::endl;
+		out << static_cast<const BaseSceneObject&>(obj) << endl;
+		out << "Color: " << obj.m_LightColor << endl;
+		out << "Intensity: " << obj.m_fIntensity << endl;
+		out << "Cast Shadows: " << obj.m_bCastShadows << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectOmniLight& obj)
+	ostream& operator<<(ostream& out, const SceneObjectOmniLight& obj)
 	{
-		out << static_cast<const SceneObjectLight&>(obj) << std::endl;
-		out << "Light Type: Omni" << std::endl;
+		out << static_cast<const SceneObjectLight&>(obj) << endl;
+		out << "Light Type: Omni" << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectSpotLight& obj)
+	ostream& operator<<(ostream& out, const SceneObjectSpotLight& obj)
 	{
-		out << static_cast<const SceneObjectLight&>(obj) << std::endl;
-		out << "Light Type: Spot" << std::endl;
-		out << "Cone Angle: " << obj.m_fConeAngle << std::endl;
-		out << "Penumbra Angle: " << obj.m_fPenumbraAngle << std::endl;
+		out << static_cast<const SceneObjectLight&>(obj) << endl;
+		out << "Light Type: Spot" << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectInfiniteLight& obj)
+	ostream& operator<<(ostream& out, const SceneObjectInfiniteLight& obj)
 	{
-		out << static_cast<const SceneObjectLight&>(obj) << std::endl;
-		out << "Light Type: Infinite" << std::endl;
+		out << static_cast<const SceneObjectLight&>(obj) << endl;
+		out << "Light Type: Infinite" << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj)
+	ostream& operator<<(ostream& out, const SceneObjectAreaLight& obj)
 	{
-		out << static_cast<const BaseSceneObject&>(obj) << std::endl;
-		out << "Aspect: " << obj.m_fAspect << std::endl;
-		out << "Near Clip Distance: " << obj.m_fNearClipDistance << std::endl;
-		out << "Far Clip Distance: " << obj.m_fFarClipDistance << std::endl;
+		out << static_cast<const SceneObjectLight&>(obj) << endl;
+		out << "Light Type: Area" << endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectOrthogonalCamera& obj)
+	ostream& operator<<(ostream& out, const SceneObjectCamera& obj)
 	{
-		out << static_cast<const SceneObjectCamera&>(obj) << std::endl;
-		out << "Camera Type: Orthogonal" << std::endl;
+		out << static_cast<const BaseSceneObject&>(obj) << endl;
+		out << "Aspect: " << obj.m_fAspect << endl;
+		out << "Near Clip Distance: " << obj.m_fNearClipDistance << endl;
+		out << "Far Clip Distance: " << obj.m_fFarClipDistance << endl;
+
+		return out;
+	}
+
+	ostream& operator<<(ostream& out, const SceneObjectOrthogonalCamera& obj)
+	{
+		out << static_cast<const SceneObjectCamera&>(obj) << endl;
+		out << "Camera Type: Orthogonal" << endl;
 
 		return out;
 	}
 
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj)
+	ostream& operator<<(ostream& out, const SceneObjectPerspectiveCamera& obj)
 	{
-		out << static_cast<const SceneObjectCamera&>(obj) << std::endl;
-		out << "Camera Type: Perspective" << std::endl;
-		out << "FOV: " << obj.m_fFov<< std::endl;
+		out << static_cast<const SceneObjectCamera&>(obj) << endl;
+		out << "Camera Type: Perspective" << endl;
+		out << "FOV: " << obj.m_fFov<< endl;
 
 		return out;
 	}
 
-	std::ostream& operator<<(std::ostream& out, const SceneObjectTransform& obj)
+	ostream& operator<<(ostream& out, const SceneObjectTransform& obj)
 	{
-		out << "Transform Matrix: " << obj.m_matrix << std::endl;
-		out << "Is Object Local: " << obj.m_bSceneObjectOnly << std::endl;
+		out << "Transform Matrix: " << obj.m_matrix << endl;
+		out << "Is Object Local: " << obj.m_bSceneObjectOnly << endl;
 
 		return out;
 	}
 
+    ostream& operator<<(ostream& out, const SceneObjectTrack& obj)
+	{
+		out << "Animation Track: " << endl;
+		out << "Time: " << obj.m_Time->GetCurveType() << endl;
+		out << "Value: " << obj.m_Value->GetCurveType() << endl;
+		out << "Transform: " << *obj.m_pTransform << endl;
+
+		return out;
+	}
+
+    ostream& operator<<(ostream& out, const SceneObjectAnimationClip& obj)
+	{
+		out << "Animation Clip: " << obj.m_nIndex << endl;
+		out << "Num of Track(s): " << obj.m_Tracks.size() << endl;
+		for (auto track : obj.m_Tracks)
+		{
+			out << *track;
+		}
+
+		return out;
+	}
 
     float DefaultAttenFunc(float intensity, float distance)
     {
         return intensity / pow(1 + distance, 2.0f);
     }
-
 }

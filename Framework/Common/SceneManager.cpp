@@ -23,6 +23,10 @@ void SceneManager::Finalize()
 
 void SceneManager::Tick()
 {
+    if (m_bDirtyFlag)
+    {
+        m_bDirtyFlag = !(m_bRenderingQueued && m_bPhysicalSimulationQueued && m_bAnimationQueued);
+    }
 }
 
 int SceneManager::LoadScene(const char* scene_file_name)
@@ -31,6 +35,8 @@ int SceneManager::LoadScene(const char* scene_file_name)
     if(LoadOgexScene(scene_file_name)) {
         m_pScene->LoadResource();
         m_bDirtyFlag = true;
+        m_bRenderingQueued = false;
+        m_bPhysicalSimulationQueued = false;
         return 0;
     }
     else {
@@ -63,6 +69,13 @@ bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name)
 
 const Scene& SceneManager::GetSceneForRendering()
 {
+    // TODO: we should perform CPU scene crop at here
+    return *m_pScene;
+}
+
+const Scene& SceneManager::GetSceneForPhysicalSimulation()
+{
+    // TODO: we should perform CPU scene crop at here
     return *m_pScene;
 }
 
@@ -73,7 +86,22 @@ bool SceneManager::IsSceneChanged()
 
 void SceneManager::NotifySceneIsRenderingQueued()
 {
-    m_bDirtyFlag = false;
+    m_bRenderingQueued = true;
+}
+
+void SceneManager::NotifySceneIsPhysicalSimulationQueued()
+{
+    m_bPhysicalSimulationQueued = true;
+}
+
+void SceneManager::NotifySceneIsAnimationQueued()
+{
+    m_bAnimationQueued = true;
+}
+
+weak_ptr<BaseSceneNode> SceneManager::GetRootNode()
+{
+    return m_pScene->SceneGraph;
 }
 
 weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(string name)

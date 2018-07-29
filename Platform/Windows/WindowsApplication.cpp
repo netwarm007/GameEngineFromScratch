@@ -51,7 +51,9 @@ int WindowsApplication::Initialize()
 
     CreateMainWindow();
 
-	// first call base class initialization
+    m_hDc = GetDC(m_hWnd);
+
+	// call base class initialization
     result = BaseApplication::Initialize();
 
     if (result != 0)
@@ -62,6 +64,8 @@ int WindowsApplication::Initialize()
 
 void WindowsApplication::Finalize()
 {
+	ReleaseDC(m_hWnd, m_hDc);
+
     BaseApplication::Finalize();
 }
 
@@ -107,9 +111,9 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
     // sort through and find what code to run for the message given
     switch(message)
     {
-        case WM_PAINT:
+        case WM_CHAR:
             {
-                g_pApp->OnDraw();
+                g_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
             }
             break;
         case WM_KEYUP:
@@ -128,9 +132,7 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
                     case VK_DOWN:
                         g_pInputManager->DownArrowKeyUp();
                         break;
-		    case 0x52: // R Key
-			g_pInputManager->ResetKeyUp();
-			break;
+               
                     default:
                         break;
                 }
@@ -152,15 +154,33 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
                     case VK_DOWN:
                         g_pInputManager->DownArrowKeyDown();
                         break;
-		    case 0x52: // R Key
-			g_pInputManager->ResetKeyDown();
-			break;
+ 
                     default:
                         break;
                 }
             } 
             break;
-
+        case WM_LBUTTONDOWN:
+            {
+                g_pInputManager->LeftMouseButtonDown();
+                pThis->m_bInDrag = true;
+                pThis->m_iPreviousX = GET_X_LPARAM(lParam);
+                pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
+            }
+            break;
+        case WM_LBUTTONUP:
+            {
+                g_pInputManager->LeftMouseButtonUp();
+                pThis->m_bInDrag = false;
+            }
+            break;
+        case WM_MOUSEMOVE:
+            if (pThis->m_bInDrag) {
+                int pos_x = GET_X_LPARAM(lParam);
+                int pos_y = GET_Y_LPARAM(lParam);
+                g_pInputManager->LeftMouseDrag(pos_x - pThis->m_iPreviousX, pos_y - pThis->m_iPreviousY);
+            }
+            break;
             // this message is read when the window is closed
         case WM_DESTROY:
             {
