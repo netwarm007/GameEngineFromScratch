@@ -6,6 +6,7 @@
 #include "IPhysicsManager.hpp"
 #include "ForwardRenderPass.hpp"
 #include "ShadowMapPass.hpp"
+#include "HUDPass.hpp"
 
 using namespace My;
 using namespace std;
@@ -17,6 +18,7 @@ int GraphicsManager::Initialize()
 	InitConstants();
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardRenderPass>());
+    m_DrawPasses.push_back(make_shared<HUDPass>());
     return result;
 }
 
@@ -117,10 +119,10 @@ void GraphicsManager::CalculateCameraMatrix()
     else {
         // use default build-in camera
         Vector3f position = { 0.0f, -5.0f, 0.0f }, lookAt = { 0.0f, 0.0f, 0.0f }, up = { 0.0f, 0.0f, 1.0f };
-        BuildViewMatrix(frameContext.m_viewMatrix, position, lookAt, up);
+        BuildViewRHMatrix(frameContext.m_viewMatrix, position, lookAt, up);
     }
 
-    float fieldOfView = PI / 2.0f;
+    float fieldOfView = PI / 3.0f;
     float nearClipDistance = 1.0f;
     float farClipDistance = 100.0f;
 
@@ -377,6 +379,12 @@ void GraphicsManager::ClearDebugBuffers()
 {
     cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
+
+void GraphicsManager::DrawOverlay(const intptr_t shadowmap, float vp_left, float vp_top, float vp_width, float vp_height)
+{
+
+}
+
 #endif
 
 void GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)

@@ -43,13 +43,15 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
+        virtual void DrawOverlay(const intptr_t shadowmap, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void ClearDebugBuffers();
+
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
         void DrawPolygon(const Face& face, const Vector3f& color);
         void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
         void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
-        virtual void ClearDebugBuffers();
 #endif
 
     protected:

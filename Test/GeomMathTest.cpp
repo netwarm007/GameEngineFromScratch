@@ -147,7 +147,7 @@ void matrix_test()
 
     Vector3f position = { 0, 0, -5 }, lookAt = { 0, 0, 0 }, up = { 0, 1, 0 };
     Matrix4X4f view;
-    BuildViewMatrix(view, position, lookAt, up);
+    BuildViewRHMatrix(view, position, lookAt, up);
     cout << "View Matrix with position(" << position << ") lookAt(" << lookAt << ") up(" << up << "):";
     cout << view;
 

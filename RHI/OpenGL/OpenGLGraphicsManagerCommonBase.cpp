@@ -512,12 +512,6 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMap(const Light& light)
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint depthTexture;
     glGenTextures(1, &depthTexture);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     // register the shadow map
     return static_cast<intptr_t>(depthTexture);
@@ -525,33 +519,66 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMap(const Light& light)
 
 void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const intptr_t shadowmap)
 {
+    const int32_t kShadowMapWidth = 1024;
+    const int32_t kShadowMapHeight = 1024;
+
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     glGenFramebuffers(1, &m_ShadowMapFramebufferName);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
-#ifdef OPENGL_ES
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, (GLuint)shadowmap, 0);
-#else
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint)shadowmap, 0);
-#endif
+    GLuint depthTexture = (GLuint) shadowmap;
+    glActiveTexture(GL_TEXTURE0 + depthTexture);
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, kShadowMapWidth, kShadowMapHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-    glDrawBuffers(0, nullptr); // No color buffer is drawn to.
+#ifdef OPENGL_ES
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+#else
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture, 0);
+#endif
 
     // Always check that our framebuffer is ok
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         assert(0);
 
+    glDrawBuffers(0, nullptr); // No color buffer is drawn to.
+    glDepthMask(GL_TRUE);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, kShadowMapWidth, kShadowMapHeight);
+
+#if 1
     // now set per frame constant
-    Matrix4X4f depthMVP;
+    Matrix4X4f view;
+    Matrix4X4f projection;
     Vector3f position;
     memcpy(&position, &light.m_lightPosition, sizeof position); 
     Vector4f tmp = light.m_lightPosition + light.m_lightDirection;
     Vector3f lookAt; 
     memcpy(&lookAt, &tmp, sizeof lookAt);
     Vector3f up = { 0.0f, 0.0f, 1.0f };
-    BuildViewMatrix(depthMVP, position, lookAt, up);
-    SetShaderParameter("depthMVP", depthMVP);
+    BuildViewRHMatrix(view, position, lookAt, up);
+
+    float fieldOfView = PI / 3.0f;
+    float nearClipDistance = 1.0f;
+    float farClipDistance = 100.0f;
+    float screenAspect = 1.0f;
+
+    // Build the perspective projection matrix.
+    BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+
+    Matrix4X4f depthVP = view * projection;
+#else
+    DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
+
+    Matrix4X4f depthVP = frameContext.m_viewMatrix * frameContext.m_projectionMatrix;
+#endif
+
+    SetShaderParameter("depthVP", depthVP);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap)
@@ -559,6 +586,9 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glDeleteFramebuffers(1, &m_ShadowMapFramebufferName);
+
+    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 }
 
 #ifdef DEBUG
@@ -837,6 +867,62 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);
     }
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawOverlay(const intptr_t shadowmap, float vp_left, float vp_top, float vp_width, float vp_height)
+{
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLint texture_id = (GLuint) shadowmap;
+
+    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+    auto result = SetShaderParameter("depthSampler", texture_id);
+    assert(result);
+
+    GLfloat vertices[] = {
+        vp_left, vp_top, 0.0f,
+        vp_left, vp_top - vp_height, 0.0f,
+        vp_left + vp_width, vp_top, 0.0f,
+        vp_left + vp_width, vp_top - vp_height, 0.0f
+    };
+
+    GLfloat uv[] = {
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f
+    };
+
+    GLuint buffer_id[2];
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(2, buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    // Bind the vertex buffer and load the vertex (uv) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uv), uv, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0x00, 4);
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(2, buffer_id);
 }
 
 #endif

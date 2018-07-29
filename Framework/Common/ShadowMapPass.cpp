@@ -20,15 +20,17 @@ void ShadowMapPass::Draw(Frame& frame)
 
             if (frame.shadowMaps.find(light.m_lightGuid) == frame.shadowMaps.end())
             {
-                // generate shadow map here
+                // generate new shadow map
                 shadowMap = g_pGraphicsManager->GenerateShadowMap(light);
                 frame.shadowMaps[light.m_lightGuid] = shadowMap;
             }
             else
             {
+                // reuse existing shadow map
                 shadowMap = frame.shadowMaps[light.m_lightGuid];
             }
 
+            // update shadow map
             g_pGraphicsManager->BeginShadowMap(light, shadowMap);
 
             for (auto dbc : frame.batchContexts)

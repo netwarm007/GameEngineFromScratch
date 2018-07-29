@@ -2,14 +2,14 @@
 // Filename: basic.vs
 ////////////////////////////////////////////////////////////////////////////////
 
-#version 150
+#version 330 core
 
 /////////////////////
 // INPUT VARIABLES //
 /////////////////////
-in vec3 inputPosition;
-in vec3 inputNormal;
-in vec2 inputUV;
+layout(location = 0) in vec3 inputPosition;
+layout(location = 1) in vec3 inputNormal;
+layout(location = 2) in vec2 inputUV;
 
 //////////////////////
 // OUTPUT VARIABLES //
