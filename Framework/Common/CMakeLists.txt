@@ -4,6 +4,7 @@ AssetLoader.cpp
 BaseApplication.cpp
 BlockAllocator.cpp
 DebugManager.cpp
+ForwardRenderPass.cpp
 GraphicsManager.cpp
 InputManager.cpp
 Image.cpp
@@ -15,6 +16,8 @@ StackAllocator.cpp
 SceneObjectAnimation.cpp
 SceneObjectMesh.cpp
 SceneObjectTrack.cpp
+ShadowMapPass.cpp
+HUDPass.cpp
 main.cpp
 )
 

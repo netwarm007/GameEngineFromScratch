@@ -1,14 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: basic.ps 
 ////////////////////////////////////////////////////////////////////////////////
-#version 150
+#version 330 core
 
 
 /////////////////////
 // CONSTANTS       //
 /////////////////////
 // per frame
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 55
 uniform int numLights;
 uniform struct Light {
     vec4 lightPosition;
@@ -209,8 +209,9 @@ vec3 apply_areaLight(Light light)
     vec3 linearColor = vec3(0.0f);
 
     float pnDotL = dot(pnormal, -L);
+    float nDotL = dot(N, L);
 
-    if (pnDotL > 0.0f && isAbovePlane(v.xyz, ppos, pnormal)) //looking at the plane
+    if (nDotL > 0.0f && isAbovePlane(v.xyz, ppos, pnormal)) //looking at the plane
     {
         //shoot a ray to calculate specular:
         vec3 V = normalize(-v.xyz);
@@ -226,11 +227,11 @@ vec3 apply_areaLight(Light light)
 
         if (usingDiffuseMap)
         {
-            linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * dot(N, L) * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
         }
         else
         {
-            linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * dot(N, L) * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
         }
     }
 

@@ -677,12 +677,45 @@ namespace My {
         ispc::MatrixExchangeYandZ(matrix, ROWS, COLS);
     }
 
-    inline void BuildViewMatrix(Matrix4X4f& result, const Vector3f position, const Vector3f lookAt, const Vector3f up)
+    inline void BuildViewLHMatrix(Matrix4X4f& result, const Vector3f position, const Vector3f lookAt, const Vector3f up)
     {
         Vector3f zAxis, xAxis, yAxis;
         float result1, result2, result3;
 
         zAxis = lookAt - position;
+        Normalize(zAxis);
+
+        CrossProduct(xAxis, up, zAxis);
+        Normalize(xAxis);
+
+        CrossProduct(yAxis, zAxis, xAxis);
+
+        DotProduct(result1, xAxis, position);
+        result1 = -result1;
+
+        DotProduct(result2, yAxis, position);
+        result2 = -result2;
+
+        DotProduct(result3, zAxis, position);
+        result3 = -result3;
+
+        // Set the computed values in the view matrix.
+        Matrix4X4f tmp = {{
+            { xAxis[0], yAxis[0], zAxis[0], 0.0f },
+            { xAxis[1], yAxis[1], zAxis[1], 0.0f },
+            { xAxis[2], yAxis[2], zAxis[2], 0.0f },
+            { result1, result2, result3, 1.0f }
+        }};
+
+        result = tmp;
+    }
+
+    inline void BuildViewRHMatrix(Matrix4X4f& result, const Vector3f position, const Vector3f lookAt, const Vector3f up)
+    {
+        Vector3f zAxis, xAxis, yAxis;
+        float result1, result2, result3;
+
+        zAxis = position - lookAt;
         Normalize(zAxis);
 
         CrossProduct(xAxis, up, zAxis);

@@ -18,7 +18,7 @@ namespace My {
         void DrawAxis();
         void DrawGrid();
 
-        bool m_bDrawDebugInfo = true;
+        bool m_bDrawDebugInfo = false;
     };
 
     extern DebugManager* g_pDebugManager;

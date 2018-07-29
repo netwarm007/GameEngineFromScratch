@@ -195,8 +195,9 @@ float3 apply_areaLight(v2p input, Light light)
     float3 linearColor = 0.0f;
 
     float pnDotL = dot(pnormal, -L);
+    float nDotL = dot(N, L);
 
-    if (pnDotL > 0.0f && isAbovePlane(input.vPosInView.xyz, ppos, pnormal)) //looking at the plane
+    if (nDotL > 0.0f && isAbovePlane(input.vPosInView.xyz, ppos, pnormal)) //looking at the plane
     {
         //shoot a ray to calculate specular:
         float3 V = normalize(-input.vPosInView.xyz);
@@ -212,11 +213,11 @@ float3 apply_areaLight(v2p input, Light light)
 
         if (usingDiffuseMap)
         {
-            linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (colorMap.Sample(samp0, input.TextureUV).rgb * dot(N, L) * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (colorMap.Sample(samp0, input.TextureUV).rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
         }
         else
         {
-            linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (diffuseColor.rgb * dot(N, L) * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (diffuseColor.rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
         }
     }
 

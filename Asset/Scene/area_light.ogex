@@ -127,7 +127,7 @@ LightNode $node5
 	}
 }
 
-LightObject $light1 (type = "area", shadow = false)		// Point
+LightObject $light1 (type = "area", shadow = false)		// Area
 {
 	Color (attrib = "light") {float[3] {{1.0, 1.0, 1.0}}}
 

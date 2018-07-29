@@ -163,6 +163,14 @@ GeometryObject $geometry1		// Plane
 			}
 		}
 
+		VertexArray (attrib = "texcoord")
+		{
+			float[2]		// 4
+			{
+				{0.00010003960051108152, 9.998001041822135e-05}, {0.9999000430107117, 9.998001041822135e-05}, {0.9999000430107117, 0.9999000430107117}, {9.998001041822135e-05, 0.9999000430107117}
+			}
+		}
+
 		IndexArray
 		{
 			unsigned_int32[3]		// 2
@@ -2973,7 +2981,18 @@ GeometryObject $geometry2		// Text
 	}
 }
 
-LightObject $light3 (type = "spot", shadow = false)		// Lamp
+LightObject $light1 (type = "point", shadow = false)		// Point
+{
+	Color (attrib = "light") {float[3] {{0.006716880481690168, 0.008378240279853344, 1.0}}}
+	Param (attrib = "intensity") {float {5.0}}
+
+	Atten (curve = "inverse_square")
+	{
+		Param (attrib = "scale") {float {5.061620376839159}}
+	}
+}
+
+LightObject $light3 (type = "spot")		// Lamp
 {
 	Color (attrib = "light") {float[3] {{1.0, 0.0010070281568914652, 0.00051426503341645}}}
 	Param (attrib = "intensity") {float {10.0}}
@@ -2983,14 +3002,14 @@ LightObject $light3 (type = "spot", shadow = false)		// Lamp
 		Param (attrib = "scale") {float {3.9749193675182246}}
 	}
 
-	Atten (kind = "angle", curve = "smooth")
+	Atten (kind = "angle", curve = "linear")
 	{
 		Param (attrib = "begin") {float {0.334917597999862}}
 		Param (attrib = "end") {float {0.5427974462509155}}
 	}
 }
 
-LightObject $light2 (type = "spot", shadow = false)		// Lamp.001
+LightObject $light2 (type = "spot")		// Lamp.001
 {
 	Color (attrib = "light") {float[3] {{0.01141956727951765, 1.0, 0.026550518348813057}}}
 	Param (attrib = "intensity") {float {10.0}}
@@ -3000,21 +3019,10 @@ LightObject $light2 (type = "spot", shadow = false)		// Lamp.001
 		Param (attrib = "scale") {float {3.9749193675182246}}
 	}
 
-	Atten (kind = "angle", curve = "smooth")
+	Atten (kind = "angle", curve = "linear")
 	{
 		Param (attrib = "begin") {float {0.334917597999862}}
 		Param (attrib = "end") {float {0.5427974462509155}}
-	}
-}
-
-LightObject $light1 (type = "point", shadow = false)		// Point
-{
-	Color (attrib = "light") {float[3] {{0.006716880481690168, 0.008378240279853344, 1.0}}}
-	Param (attrib = "intensity") {float {5.0}}
-
-	Atten (curve = "inverse_square")
-	{
-		Param (attrib = "scale") {float {5.061620376839159}}
 	}
 }
 
@@ -3032,6 +3040,11 @@ Material $material1
 	Color (attrib = "diffuse") {float[3] {{0.640000066757203, 0.640000066757203, 0.640000066757203}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
 	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/ground01.png"}
+	}
 }
 
 Material $material2

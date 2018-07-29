@@ -32,9 +32,10 @@ namespace My {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
         }
 
-        Scene(const std::string& scene_name) : 
+        Scene(const std::string& scene_name) :
             SceneGraph(new BaseSceneNode(scene_name))
         {
+            m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
         }
 
         ~Scene() = default;
