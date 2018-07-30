@@ -1622,7 +1622,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
 
         // Set num of lights
         auto& DrawFrameContext = m_Frames[m_nFrameIndex].frameContext;
-        m_pCommandList->SetGraphicsRoot32BitConstant(3, DrawFrameContext.m_lights.size(), 0);
+        m_pCommandList->SetGraphicsRoot32BitConstant(3, static_cast<UINT>(DrawFrameContext.m_lights.size()), 0);
 
         // do 3D rendering on the back buffer here
         int32_t i = 0;

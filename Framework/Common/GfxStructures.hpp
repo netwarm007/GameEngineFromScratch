@@ -1,5 +1,4 @@
 #pragma once
-#include <unordered_map>
 #include <vector>
 #include "geommath.hpp"
 #include "Scene.hpp"
@@ -16,7 +15,8 @@ namespace My {
         float       m_lightDistAttenCurveParams[5];
         AttenCurveType m_lightAngleAttenCurveType;
         float       m_lightAngleAttenCurveParams[5];
-        bool        m_bCastShadow;
+        bool        m_lightCastShadow;
+        int32_t     m_lightShadowMapIndex;
 
         Light()
         {
@@ -27,7 +27,7 @@ namespace My {
             m_lightIntensity = 0.5f;
             m_lightDistAttenCurveType = AttenCurveType::kNone;
             m_lightAngleAttenCurveType = AttenCurveType::kNone;
-            m_bCastShadow = false;
+            m_lightShadowMapIndex = -1;
         }
     };
 
@@ -50,6 +50,13 @@ namespace My {
     struct Frame {
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
-        std::unordered_map<xg::Guid, intptr_t> shadowMaps;
+        intptr_t shadowMap;
+        uint32_t shadowMapCount;
+
+        Frame ()
+        {
+            shadowMap = -1;
+            shadowMapCount = 0;
+        }
     };
 }

@@ -162,7 +162,7 @@ void GraphicsManager::CalculateLights()
             light.m_lightGuid = pLight->GetGuid();
             light.m_lightColor = pLight->GetColor().Value;
             light.m_lightIntensity = pLight->GetIntensity();
-            light.m_bCastShadow = pLight->GetIfCastShadow();
+            light.m_lightCastShadow = pLight->GetIfCastShadow();
             const AttenCurve& atten_curve = pLight->GetDistanceAttenuation();
             light.m_lightDistAttenCurveType = atten_curve.type; 
             memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
@@ -380,9 +380,15 @@ void GraphicsManager::ClearDebugBuffers()
     cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 
-void GraphicsManager::DrawOverlay(const intptr_t shadowmap, float vp_left, float vp_top, float vp_width, float vp_height)
+void GraphicsManager::DrawOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
 {
-
+    cout << "[GraphicsManager] DrayOverlay(" << shadowmap << ", "
+        << layer_index << ", "
+        << vp_left << ", "
+        << vp_top << ", "
+        << vp_width << ", "
+        << vp_height << ", "
+        << ")" << endl;
 }
 
 #endif
@@ -407,18 +413,29 @@ void GraphicsManager::DrawBatchDepthOnly(const DrawBatchContext& context)
     cout << "[GraphicsManager] DrawBatchDepthOnly(" << &context << ")" << endl;
 }
 
-intptr_t GraphicsManager::GenerateShadowMap(const Light& light)
+intptr_t GraphicsManager::GenerateShadowMapArray(uint32_t count)
 {
-    cout << "[GraphicsManager] GenerateShadowMap(" << light.m_lightGuid << ")" << endl;
+    cout << "[GraphicsManager] GenerateShadowMap(" << count << ")" << endl;
     return 0;
 }
 
-void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowmap)
+void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowmap, uint32_t layer_index)
 {
-    cout << "[GraphicsManager] BeginShadowMap(" << light.m_lightGuid << ", " << shadowmap << ")" << endl;
+    cout << "[GraphicsManager] BeginShadowMap(" << light.m_lightGuid << ", " << shadowmap << ", " << layer_index << ")" << endl;
 }
 
-void GraphicsManager::EndShadowMap(const intptr_t shadowmap)
+void GraphicsManager::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)
 {
-    cout << "[GraphicsManager] EndShadowMap(" << shadowmap << ")" << endl;
+    cout << "[GraphicsManager] EndShadowMap(" << shadowmap << ", " << layer_index << ")" << endl;
+}
+
+void GraphicsManager::SetShadowMap(const intptr_t shadowmap)
+{
+    cout << "[GraphicsManager] SetShadowMap(" << shadowmap << ")" << endl;
+}
+
+void GraphicsManager::DestroyShadowMap(intptr_t& shadowmap)
+{
+    cout << "[GraphicsManager] DestroyShadowMap(" << shadowmap << ")" << endl;
+    shadowmap = -1;
 }

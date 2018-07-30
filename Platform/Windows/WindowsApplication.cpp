@@ -26,6 +26,9 @@ void WindowsApplication::CreateMainWindow()
     // register the window class
     RegisterClassEx(&wc);
 
+    int height_adjust = (GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXPADDEDBORDER));
+    int width_adjust = (GetSystemMetrics(SM_CXFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER));
+
     // create the window and use the result as the handle
     m_hWnd = CreateWindowEx(0,
                           _T("GameEngineFromScratch"),      // name of the window class
@@ -33,8 +36,8 @@ void WindowsApplication::CreateMainWindow()
                           WS_OVERLAPPEDWINDOW,              // window style
                           CW_USEDEFAULT,                    // x-position of the window
                           CW_USEDEFAULT,                    // y-position of the window
-                          m_Config.screenWidth,             // width of the window
-                          m_Config.screenHeight,            // height of the window
+                          m_Config.screenWidth + width_adjust,              // width of the window
+                          m_Config.screenHeight + height_adjust,            // height of the window
                           NULL,                             // we have no parent window, NULL
                           NULL,                             // we aren't using menus, NULL
                           hInstance,                        // application handle

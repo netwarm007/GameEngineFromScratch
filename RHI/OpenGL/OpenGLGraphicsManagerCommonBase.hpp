@@ -27,9 +27,11 @@ namespace My {
         void DrawBatch(const DrawBatchContext& context) final;
         void DrawBatchDepthOnly(const DrawBatchContext& context) final;
 
-        intptr_t GenerateShadowMap(const Light& light) final;
-        void BeginShadowMap(const Light& light, const intptr_t shadowmap) final;
-        void EndShadowMap(const intptr_t shadowmap) final;
+        intptr_t GenerateShadowMapArray(uint32_t count) final;
+        void BeginShadowMap(const Light& light, const intptr_t shadowmap, uint32_t layer_index) final;
+        void EndShadowMap(const intptr_t shadowmap, uint32_t layer_index) final;
+        void SetShadowMap(const intptr_t shadowmap) final;
+        void DestroyShadowMap(intptr_t& shadowmap) final;
 
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;
@@ -42,7 +44,7 @@ namespace My {
         void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color) final;
         void DrawTriangleStrip(const PointList& vertices, const Vector3f& color) final;
         void ClearDebugBuffers() final;
-        void DrawOverlay(const intptr_t shadowmap, float vp_left, float vp_top, float vp_width, float vp_height) final;
+        void DrawOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) final;
         void RenderDebugBuffers();
 #endif
 

@@ -20,6 +20,7 @@ uniform struct Light {
     float lightDistAttenCurveParams[5];
     int  lightAngleAttenCurveType;
     float lightAngleAttenCurveParams[5];
+    int  lightShadowMapIndex;
 } allLights[MAX_LIGHTS];
 
 uniform mat4 worldMatrix;
@@ -35,6 +36,7 @@ uniform float specularPower;
 uniform bool usingDiffuseMap;
 
 uniform sampler2D diffuseMap;
+uniform sampler2DArray shadowMap;
 
 /////////////////////
 // INPUT VARIABLES //
