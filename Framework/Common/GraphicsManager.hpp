@@ -29,9 +29,11 @@ namespace My {
         virtual void DrawBatch(const DrawBatchContext& context);
         virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
 
-        virtual intptr_t GenerateShadowMap(const Light& light);
-        virtual void BeginShadowMap(const Light& light, const intptr_t shadowmap);
-        virtual void EndShadowMap(const intptr_t shadowmap);
+        virtual intptr_t GenerateShadowMapArray(uint32_t count);
+        virtual void BeginShadowMap(const Light& light, const intptr_t shadowmap, uint32_t layer_index);
+        virtual void EndShadowMap(const intptr_t shadowmap, uint32_t layer_index);
+        virtual void SetShadowMap(const intptr_t shadowmap);
+        virtual void DestroyShadowMap(intptr_t& shadowmap);
 
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
@@ -43,7 +45,7 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
-        virtual void DrawOverlay(const intptr_t shadowmap, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void DrawOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height);
         virtual void ClearDebugBuffers();
 
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);

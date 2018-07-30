@@ -12,33 +12,40 @@ void ShadowMapPass::Draw(Frame& frame)
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-    for (auto light : frame.frameContext.m_lights)
+    if (frame.shadowMap != -1)
+        g_pGraphicsManager->DestroyShadowMap(frame.shadowMap);
+
+    frame.shadowMapCount = 0;
+
+    // count shadow map
+    vector<decltype(frame.frameContext.m_lights)::iterator> lights_cast_shadow;
+
+    for (auto it = frame.frameContext.m_lights.begin(); it != frame.frameContext.m_lights.end(); it++)
     {
-        if (light.m_bCastShadow)
+        if (it->m_lightCastShadow)
         {
-            intptr_t shadowMap;
-
-            if (frame.shadowMaps.find(light.m_lightGuid) == frame.shadowMaps.end())
-            {
-                // generate new shadow map
-                shadowMap = g_pGraphicsManager->GenerateShadowMap(light);
-                frame.shadowMaps[light.m_lightGuid] = shadowMap;
-            }
-            else
-            {
-                // reuse existing shadow map
-                shadowMap = frame.shadowMaps[light.m_lightGuid];
-            }
-
-            // update shadow map
-            g_pGraphicsManager->BeginShadowMap(light, shadowMap);
-
-            for (auto dbc : frame.batchContexts)
-            {
-                g_pGraphicsManager->DrawBatchDepthOnly(*dbc);
-            }
-
-            g_pGraphicsManager->EndShadowMap(shadowMap);
+            frame.shadowMapCount++;
+            lights_cast_shadow.push_back(it);
         }
+    }
+
+    // generate shadow map array
+    frame.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(frame.shadowMapCount);
+
+    uint32_t shadowmap_index = 0;
+
+    for (auto it : lights_cast_shadow)
+    {
+        // update shadow map
+        g_pGraphicsManager->BeginShadowMap(*it, frame.shadowMap, shadowmap_index);
+
+        for (auto dbc : frame.batchContexts)
+        {
+            g_pGraphicsManager->DrawBatchDepthOnly(*dbc);
+        }
+
+        g_pGraphicsManager->EndShadowMap(frame.shadowMap, shadowmap_index);
+
+        it->m_lightShadowMapIndex = shadowmap_index++;
     }
 }
