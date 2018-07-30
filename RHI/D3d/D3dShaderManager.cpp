@@ -52,7 +52,7 @@ bool D3dShaderManager::InitializeShaders()
 
 #ifdef DEBUG
     // debug shader
-    D3dShaderProgram& shaderProgram = *(new D3dShaderProgram);
+    shaderProgram = *(new D3dShaderProgram);
     vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(debugVsFilename);
     pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(debugFsFilename);
 
