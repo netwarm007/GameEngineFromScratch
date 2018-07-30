@@ -1,6 +1,8 @@
 // This is a common code snippet
 // should be included in other source
 // other than compile it independently
+#include <sstream>
+using namespace std;
 
 void OpenGLGraphicsManagerCommonBase::Clear()
 {
@@ -52,74 +54,46 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     // Set lighting parameters for PS shader
     for (size_t i = 0; i < context.m_lights.size(); i++)
     {
-        ostringstream ss;
-        string uniformName;
+        char uniformName[256];
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightPosition" << ends;
-        uniformName = ss.str();
-        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightPosition);
+        sprintf(uniformName, "allLights[%d].lightPosition", i);
+        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightPosition);
         if (!result) return result;
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightColor" << ends;
-        uniformName = ss.str();
-        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightColor);
+        sprintf(uniformName, "allLights[%d].lightColor", i);
+        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightColor);
         if (!result) return result;
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightIntensity" << ends;
-        uniformName = ss.str();
-        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightIntensity);
+        sprintf(uniformName, "allLights[%d].lightIntensity", i);
+        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightIntensity);
         if (!result) return result;
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightDirection" << ends;
-        uniformName = ss.str();
-        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightDirection);
+        sprintf(uniformName, "allLights[%d].lightDirection", i);
+        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightDirection);
         if (!result) return result;
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightSize" << ends;
-        uniformName = ss.str();
-        result = SetShaderParameter(uniformName.c_str(), context.m_lights[i].m_lightSize);
+        sprintf(uniformName, "allLights[%d].lightSize", i);
+        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightSize);
         if (!result) return result;
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightDistAttenCurveType" << ends;
-        uniformName = ss.str();
-        result = SetShaderParameter(uniformName.c_str(), (int32_t)context.m_lights[i].m_lightDistAttenCurveType);
+        sprintf(uniformName, "allLights[%d].lightDistAttenCurveType", i);
+        result = SetShaderParameter(uniformName, (int32_t)context.m_lights[i].m_lightDistAttenCurveType);
         if (!result) return result;
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightDistAttenCurveParams" << ends;
-        uniformName = ss.str();
-        location = glGetUniformLocation(m_CurrentShader, uniformName.c_str());
+        sprintf(uniformName, "allLights[%d].lightDistAttenCurveParams", i);
+        location = glGetUniformLocation(m_CurrentShader, uniformName);
         if(location == -1)
         {
                 return false;
         }
         glUniform1fv(location, 5, context.m_lights[i].m_lightDistAttenCurveParams);
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightAngleAttenCurveType" << ends;
-        uniformName = ss.str();
-        result = SetShaderParameter(uniformName.c_str(), (int32_t)context.m_lights[i].m_lightAngleAttenCurveType);
+        sprintf(uniformName, "allLights[%d].lightAngleAttenCurveType", i);
+        result = SetShaderParameter(uniformName, (int32_t)context.m_lights[i].m_lightAngleAttenCurveType);
         if (!result) return result;
 
-        ss.clear();
-        ss.seekp(0);
-        ss << "allLights[" << i << "]." << "lightAngleAttenCurveParams" << ends;
-        uniformName = ss.str();
-        location = glGetUniformLocation(m_CurrentShader, uniformName.c_str());
+        sprintf(uniformName, "allLights[%d].lightAngleAttenCurveParams", i);
+        location = glGetUniformLocation(m_CurrentShader, uniformName);
         if(location == -1)
         {
                 return false;
