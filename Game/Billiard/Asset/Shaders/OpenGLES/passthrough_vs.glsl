@@ -1,5 +1,3 @@
-#version 300 es
-
 // Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec3 inputPosition;
 layout(location = 1) in vec2 inputUV;

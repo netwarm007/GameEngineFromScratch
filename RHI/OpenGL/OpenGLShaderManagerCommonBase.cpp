@@ -90,23 +90,35 @@ namespace My {
 
     static bool LoadShaderFromFile(const char* vsFilename, const char* fsFilename, map<int, const char*> properties, GLuint& shaderProgram)
     {
+        std::string commonShaderBuffer;
         std::string vertexShaderBuffer;
         std::string fragmentShaderBuffer;
         int status;
+
+        // Load the common shader source file into a text buffer.
+        commonShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/cbuffer.glsl");
+        if(commonShaderBuffer.empty())
+        {
+            return false;
+        }
 
         // Load the vertex shader source file into a text buffer.
         vertexShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString(vsFilename);
         if(vertexShaderBuffer.empty())
         {
-                return false;
+            return false;
         }
+
+        vertexShaderBuffer = commonShaderBuffer + vertexShaderBuffer;
 
         // Load the fragment shader source file into a text buffer.
         fragmentShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString(fsFilename);
         if(fragmentShaderBuffer.empty())
         {
-                return false;
+            return false;
         }
+
+        fragmentShaderBuffer = commonShaderBuffer + fragmentShaderBuffer;
 
         // Create a vertex and fragment shader object.
         auto vertexShader = glCreateShader(GL_VERTEX_SHADER);

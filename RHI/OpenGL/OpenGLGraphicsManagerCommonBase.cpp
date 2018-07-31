@@ -28,78 +28,98 @@ void OpenGLGraphicsManagerCommonBase::Draw()
 
 bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFrameContext& context)
 {
-    bool result;
     unsigned int location;
 
-    // Set the world matrix in the vertex shader.
-    result = SetShaderParameter("worldMatrix", context.m_worldMatrix);
-    if (!result) return result;
+    GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DrawFrameConstants");
 
-    // Set the view matrix in the vertex shader.
-    result = SetShaderParameter("viewMatrix", context.m_viewMatrix);
-    if (!result) return result;
+    GLint blockSize;
 
-    // Set the projection matrix in the vertex shader.
-    result = SetShaderParameter("projectionMatrix", context.m_projectionMatrix);
-    if (!result) return result;
+    glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
-    // Set the ambient color
-    result = SetShaderParameter("ambientColor", context.m_ambientColor);
-    if (!result) return result;
+    GLubyte* blockBuffer = new (GLubyte[blockSize]);
 
-    // Set number of lights
-    result = SetShaderParameter("numLights", (int32_t)context.m_lights.size());
-    if (!result) return result;
+    {
+        // Query for the offsets of each block variable
+        const GLchar *names[] = { "worldMatrix", "viewMatrix",
+                                "projectionMatrix", "ambientColor",
+                                "numLights" };
+
+        GLuint indices[5];
+        glGetUniformIndices(m_CurrentShader, 5, names, indices);
+
+        GLint offset[5];
+        glGetActiveUniformsiv(m_CurrentShader, 5, indices, GL_UNIFORM_OFFSET, offset);
+
+        // Set the world matrix in the vertex shader.
+        memcpy(blockBuffer + offset[0], &context.m_worldMatrix, sizeof Matrix4X4f);
+
+        // Set the view matrix in the vertex shader.
+        memcpy(blockBuffer + offset[1], &context.m_viewMatrix, sizeof Matrix4X4f);
+
+        // Set the projection matrix in the vertex shader.
+        memcpy(blockBuffer + offset[2], &context.m_projectionMatrix, sizeof Matrix4X4f);
+
+        // Set the ambient color
+        memcpy(blockBuffer + offset[3], &context.m_ambientColor, sizeof Vector3f);
+
+        // Set number of lights
+        GLint numLights = (GLint) context.m_lights.size();
+        memcpy(blockBuffer + offset[4], &numLights, sizeof GLint);
+    }
 
     // Set lighting parameters for PS shader
     for (size_t i = 0; i < context.m_lights.size(); i++)
     {
-        char uniformName[256];
+        char uniformNames[16][256];
 
-        sprintf(uniformName, "allLights[%zd].lightPosition", i);
-        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightPosition);
-        if (!result) return result;
+        sprintf(uniformNames[0x0], "allLights[%zd].lightPosition", i);
+        sprintf(uniformNames[0x1], "allLights[%zd].lightColor", i);
+        sprintf(uniformNames[0x2], "allLights[%zd].lightIntensity", i);
+        sprintf(uniformNames[0x3], "allLights[%zd].lightDirection", i);
+        sprintf(uniformNames[0x4], "allLights[%zd].lightSize", i);
+        sprintf(uniformNames[0x5], "allLights[%zd].lightDistAttenCurveType", i);
+        sprintf(uniformNames[0x6], "allLights[%zd].lightDistAttenCurveParams", i);
+        sprintf(uniformNames[0x7], "allLights[%zd].lightAngleAttenCurveType", i);
+        sprintf(uniformNames[0x8], "allLights[%zd].lightAngleAttenCurveParams", i);
+        sprintf(uniformNames[0x9], "allLights[%zd].lightShadowMapIndex", i);
+        sprintf(uniformNames[0xA], "allLights[%zd].lightVP", i);
 
-        sprintf(uniformName, "allLights[%zd].lightColor", i);
-        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightColor);
-        if (!result) return result;
+        const char* names[16] = {
+            uniformNames[0x0], uniformNames[0x1], uniformNames[0x2], uniformNames[0x3],
+            uniformNames[0x4], uniformNames[0x5], uniformNames[0x6], uniformNames[0x7],
+            uniformNames[0x8], uniformNames[0x9], uniformNames[0xA], uniformNames[0xB],
+            uniformNames[0xC], uniformNames[0xD], uniformNames[0xE], uniformNames[0xF]
+        };
 
-        sprintf(uniformName, "allLights[%zd].lightIntensity", i);
-        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightIntensity);
-        if (!result) return result;
+        GLuint indices[0xB];
+        glGetUniformIndices(m_CurrentShader, 0xB, names, indices);
 
-        sprintf(uniformName, "allLights[%zd].lightDirection", i);
-        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightDirection);
-        if (!result) return result;
+        GLint offset[0xB];
+        glGetActiveUniformsiv(m_CurrentShader, 0xB, indices, GL_UNIFORM_OFFSET, offset);
 
-        sprintf(uniformName, "allLights[%zd].lightSize", i);
-        result = SetShaderParameter(uniformName, context.m_lights[i].m_lightSize);
-        if (!result) return result;
-
-        sprintf(uniformName, "allLights[%zd].lightDistAttenCurveType", i);
-        result = SetShaderParameter(uniformName, (int32_t)context.m_lights[i].m_lightDistAttenCurveType);
-        if (!result) return result;
-
-        sprintf(uniformName, "allLights[%zd].lightDistAttenCurveParams", i);
-        location = glGetUniformLocation(m_CurrentShader, uniformName);
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform1fv(location, 5, context.m_lights[i].m_lightDistAttenCurveParams);
-
-        sprintf(uniformName, "allLights[%zd].lightAngleAttenCurveType", i);
-        result = SetShaderParameter(uniformName, (int32_t)context.m_lights[i].m_lightAngleAttenCurveType);
-        if (!result) return result;
-
-        sprintf(uniformName, "allLights[%zd].lightAngleAttenCurveParams", i);
-        location = glGetUniformLocation(m_CurrentShader, uniformName);
-        if(location == -1)
-        {
-                return false;
-        }
-        glUniform1fv(location, 5, context.m_lights[i].m_lightAngleAttenCurveParams);
+        memcpy(blockBuffer + offset[0x0], &context.m_lights[i].m_lightPosition, sizeof Vector4f);
+        memcpy(blockBuffer + offset[0x1], &context.m_lights[i].m_lightColor, sizeof Vector4f);
+        memcpy(blockBuffer + offset[0x2], &context.m_lights[i].m_lightIntensity, sizeof Vector4f);
+        memcpy(blockBuffer + offset[0x3], &context.m_lights[i].m_lightDirection, sizeof Vector4f);
+        memcpy(blockBuffer + offset[0x4], &context.m_lights[i].m_lightSize, sizeof Vector2f);
+        memcpy(blockBuffer + offset[0x5], &context.m_lights[i].m_lightDistAttenCurveType, sizeof int32_t);
+        memcpy(blockBuffer + offset[0x6], &context.m_lights[i].m_lightDistAttenCurveParams[0], sizeof(float) * 5);
+        memcpy(blockBuffer + offset[0x7], &context.m_lights[i].m_lightAngleAttenCurveType, sizeof int32_t);
+        memcpy(blockBuffer + offset[0x8], &context.m_lights[i].m_lightAngleAttenCurveParams[0], sizeof(float)* 5);
+        memcpy(blockBuffer + offset[0x9], &context.m_lights[i].m_lightShadowMapIndex, sizeof int32_t);
+        memcpy(blockBuffer + offset[0xA], &context.m_lights[i].m_lightVP, sizeof Matrix4X4f);
     }
+
+    GLuint uboHandle;
+    glGenBuffers(1, &uboHandle);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboHandle);
+    glBufferData(GL_UNIFORM_BUFFER, blockSize, blockBuffer, GL_DYNAMIC_DRAW);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, blockIndex, uboHandle);
+
+    m_Buffers.push_back(uboHandle);
+
+    delete blockBuffer;
 
     return true;
 }
@@ -524,28 +544,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     glClear(GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, kShadowMapWidth, kShadowMapHeight);
 
-    // now set per frame constant
-    Matrix4X4f view;
-    Matrix4X4f projection;
-    Vector3f position;
-    memcpy(&position, &light.m_lightPosition, sizeof position); 
-    Vector4f tmp = light.m_lightPosition + light.m_lightDirection;
-    Vector3f lookAt; 
-    memcpy(&lookAt, &tmp, sizeof lookAt);
-    Vector3f up = { 0.0f, 0.0f, 1.0f };
-    BuildViewRHMatrix(view, position, lookAt, up);
-
-    float fieldOfView = PI / 3.0f;
-    float nearClipDistance = 1.0f;
-    float farClipDistance = 100.0f;
-    float screenAspect = 1.0f;
-
-    // Build the perspective projection matrix.
-    BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
-
-    Matrix4X4f depthVP = view * projection;
-
-    SetShaderParameter("depthVP", depthVP);
+    SetShaderParameter("depthVP", light.m_lightVP);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)

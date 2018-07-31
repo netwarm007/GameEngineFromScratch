@@ -17,6 +17,7 @@ namespace My {
         float       m_lightAngleAttenCurveParams[5];
         bool        m_lightCastShadow;
         int32_t     m_lightShadowMapIndex;
+        Matrix4X4f  m_lightVP;
 
         Light()
         {

@@ -1,5 +1,3 @@
-#version 300 es
-
 /////////////////////
 // INPUT VARIABLES //
 /////////////////////
@@ -13,17 +11,6 @@ in vec2 inputUV;
 out vec4 normal;
 out vec4 v;
 out vec2 uv;
-
-///////////////////////
-// UNIFORM VARIABLES //
-///////////////////////
-// update per draw call
-uniform mat4 modelMatrix;
-
-// update per frame
-uniform mat4 worldMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 projectionMatrix;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader

@@ -183,6 +183,26 @@ void GraphicsManager::CalculateLights()
                 auto plight = dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
                 light.m_lightSize = plight->GetDimension();
             }
+
+            Matrix4X4f view;
+            Matrix4X4f projection;
+            Vector3f position;
+            memcpy(&position, &light.m_lightPosition, sizeof position); 
+            Vector4f tmp = light.m_lightPosition + light.m_lightDirection;
+            Vector3f lookAt; 
+            memcpy(&lookAt, &tmp, sizeof lookAt);
+            Vector3f up = { 0.0f, 0.0f, 1.0f };
+            BuildViewRHMatrix(view, position, lookAt, up);
+
+            float fieldOfView = PI / 3.0f;
+            float nearClipDistance = 1.0f;
+            float farClipDistance = 100.0f;
+            float screenAspect = 1.0f;
+
+            // Build the perspective projection matrix.
+            BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+
+            light.m_lightVP = view * projection;
         }
         else
         {
