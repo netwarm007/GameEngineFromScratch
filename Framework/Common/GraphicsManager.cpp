@@ -167,25 +167,9 @@ void GraphicsManager::CalculateLights()
             light.m_lightDistAttenCurveType = atten_curve.type; 
             memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
 
-            if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
-            {
-                light.m_lightPosition[3] = 0.0f;
-            }
-            else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
-            {
-                auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
-                const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
-                light.m_lightAngleAttenCurveType = angle_atten_curve.type;
-                memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
-            }
-            else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightArea)
-            {
-                auto plight = dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
-                light.m_lightSize = plight->GetDimension();
-            }
-
             Matrix4X4f view;
             Matrix4X4f projection;
+            BuildIdentityMatrix(projection);
             Vector3f position;
             memcpy(&position, &light.m_lightPosition, sizeof position); 
             Vector4f tmp = light.m_lightPosition + light.m_lightDirection;
@@ -199,13 +183,30 @@ void GraphicsManager::CalculateLights()
             }
             BuildViewRHMatrix(view, position, lookAt, up);
 
-            float fieldOfView = PI / 3.0f;
-            float nearClipDistance = 1.0f;
-            float farClipDistance = 100.0f;
-            float screenAspect = 1.0f;
+            if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
+            {
+                light.m_lightPosition[3] = 0.0f;
+            }
+            else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
+            {
+                auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
+                const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
+                light.m_lightAngleAttenCurveType = angle_atten_curve.type;
+                memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
 
-            // Build the perspective projection matrix.
-            BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+                float fieldOfView = light.m_lightAngleAttenCurveParams[1] * 2.0f;
+                float nearClipDistance = 1.0f;
+                float farClipDistance = 100.0f;
+                float screenAspect = 1.0f;
+
+                // Build the perspective projection matrix.
+                BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+            }
+            else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightArea)
+            {
+                auto plight = dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
+                light.m_lightSize = plight->GetDimension();
+            }
 
             light.m_lightVP = view * projection;
         }
