@@ -505,8 +505,6 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(uint32_t count)
 {
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint shadowMap;
-    const int32_t kShadowMapWidth = 1024;
-    const int32_t kShadowMapHeight = 1024;
 
     glGenTextures(1, &shadowMap);
     glActiveTexture(GL_TEXTURE0 + shadowMap);
@@ -524,9 +522,6 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(uint32_t count)
 
 void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const intptr_t shadowmap, uint32_t layer_index)
 {
-    const int32_t kShadowMapWidth = 1024;
-    const int32_t kShadowMapHeight = 1024;
-
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     glGenFramebuffers(1, &m_ShadowMapFramebufferName);
 

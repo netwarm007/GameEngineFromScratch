@@ -76,6 +76,9 @@ namespace My {
 
         uint32_t                        m_nFrameIndex = 0;
 
+        const int32_t kShadowMapWidth = 512;
+        const int32_t kShadowMapHeight = 512;
+
         std::vector<Frame>  m_Frames;
         std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
     };

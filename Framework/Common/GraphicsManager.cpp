@@ -192,6 +192,11 @@ void GraphicsManager::CalculateLights()
             Vector3f lookAt; 
             memcpy(&lookAt, &tmp, sizeof lookAt);
             Vector3f up = { 0.0f, 0.0f, 1.0f };
+            if (abs(light.m_lightDirection[0]) <= 0.01f
+                && abs(light.m_lightDirection[1]) <= 0.01f)
+            {
+                up = { 0.0f, 1.0f, 0.0f};
+            }
             BuildViewRHMatrix(view, position, lookAt, up);
 
             float fieldOfView = PI / 3.0f;
