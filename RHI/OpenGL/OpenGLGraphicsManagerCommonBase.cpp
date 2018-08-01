@@ -36,7 +36,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 
     glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
-    GLubyte* blockBuffer = new (GLubyte[blockSize]);
+    GLubyte* blockBuffer = new GLubyte[blockSize];
 
     {
         // Query for the offsets of each block variable
@@ -51,20 +51,20 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         glGetActiveUniformsiv(m_CurrentShader, 5, indices, GL_UNIFORM_OFFSET, offset);
 
         // Set the world matrix in the vertex shader.
-        memcpy(blockBuffer + offset[0], &context.m_worldMatrix, sizeof Matrix4X4f);
+        memcpy(blockBuffer + offset[0], &context.m_worldMatrix, sizeof(Matrix4X4f));
 
         // Set the view matrix in the vertex shader.
-        memcpy(blockBuffer + offset[1], &context.m_viewMatrix, sizeof Matrix4X4f);
+        memcpy(blockBuffer + offset[1], &context.m_viewMatrix, sizeof(Matrix4X4f));
 
         // Set the projection matrix in the vertex shader.
-        memcpy(blockBuffer + offset[2], &context.m_projectionMatrix, sizeof Matrix4X4f);
+        memcpy(blockBuffer + offset[2], &context.m_projectionMatrix, sizeof(Matrix4X4f));
 
         // Set the ambient color
-        memcpy(blockBuffer + offset[3], &context.m_ambientColor, sizeof Vector3f);
+        memcpy(blockBuffer + offset[3], &context.m_ambientColor, sizeof(Vector3f));
 
         // Set number of lights
         GLint numLights = (GLint) context.m_lights.size();
-        memcpy(blockBuffer + offset[4], &numLights, sizeof GLint);
+        memcpy(blockBuffer + offset[4], &numLights, sizeof(GLint));
     }
 
     // Set lighting parameters for PS shader
@@ -97,17 +97,17 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         GLint offset[0xB];
         glGetActiveUniformsiv(m_CurrentShader, 0xB, indices, GL_UNIFORM_OFFSET, offset);
 
-        memcpy(blockBuffer + offset[0x0], &context.m_lights[i].m_lightPosition, sizeof Vector4f);
-        memcpy(blockBuffer + offset[0x1], &context.m_lights[i].m_lightColor, sizeof Vector4f);
-        memcpy(blockBuffer + offset[0x2], &context.m_lights[i].m_lightIntensity, sizeof Vector4f);
-        memcpy(blockBuffer + offset[0x3], &context.m_lights[i].m_lightDirection, sizeof Vector4f);
-        memcpy(blockBuffer + offset[0x4], &context.m_lights[i].m_lightSize, sizeof Vector2f);
-        memcpy(blockBuffer + offset[0x5], &context.m_lights[i].m_lightDistAttenCurveType, sizeof int32_t);
+        memcpy(blockBuffer + offset[0x0], &context.m_lights[i].m_lightPosition, sizeof(Vector4f));
+        memcpy(blockBuffer + offset[0x1], &context.m_lights[i].m_lightColor, sizeof(Vector4f));
+        memcpy(blockBuffer + offset[0x2], &context.m_lights[i].m_lightIntensity, sizeof(Vector4f));
+        memcpy(blockBuffer + offset[0x3], &context.m_lights[i].m_lightDirection, sizeof(Vector4f));
+        memcpy(blockBuffer + offset[0x4], &context.m_lights[i].m_lightSize, sizeof(Vector2f));
+        memcpy(blockBuffer + offset[0x5], &context.m_lights[i].m_lightDistAttenCurveType, sizeof(int32_t));
         memcpy(blockBuffer + offset[0x6], &context.m_lights[i].m_lightDistAttenCurveParams[0], sizeof(float) * 5);
-        memcpy(blockBuffer + offset[0x7], &context.m_lights[i].m_lightAngleAttenCurveType, sizeof int32_t);
+        memcpy(blockBuffer + offset[0x7], &context.m_lights[i].m_lightAngleAttenCurveType, sizeof(int32_t));
         memcpy(blockBuffer + offset[0x8], &context.m_lights[i].m_lightAngleAttenCurveParams[0], sizeof(float)* 5);
-        memcpy(blockBuffer + offset[0x9], &context.m_lights[i].m_lightShadowMapIndex, sizeof int32_t);
-        memcpy(blockBuffer + offset[0xA], &context.m_lights[i].m_lightVP, sizeof Matrix4X4f);
+        memcpy(blockBuffer + offset[0x9], &context.m_lights[i].m_lightShadowMapIndex, sizeof(int32_t));
+        memcpy(blockBuffer + offset[0xA], &context.m_lights[i].m_lightVP, sizeof(Matrix4X4f));
     }
 
     GLuint uboHandle;
@@ -119,7 +119,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 
     m_Buffers.push_back(uboHandle);
 
-    delete blockBuffer;
+    delete[] blockBuffer;
 
     return true;
 }
