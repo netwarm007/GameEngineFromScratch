@@ -13,6 +13,7 @@ void ForwardRenderPass::Draw(Frame& frame)
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
     g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
+    g_pGraphicsManager->SetShadowMap(frame.shadowMap);
 
     for (auto dbc : frame.batchContexts)
     {

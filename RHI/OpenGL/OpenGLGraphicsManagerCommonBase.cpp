@@ -559,7 +559,12 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMap(const intptr_t shadowmap)
 {
-
+    GLint texture_id = (GLint) shadowmap;
+    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+    // bind shadow map
+    bool result = SetShaderParameter("shadowMap", texture_id);
+    assert(result);
 }
 
 void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(intptr_t& shadowmap)

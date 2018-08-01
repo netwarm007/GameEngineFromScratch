@@ -7,6 +7,7 @@
 /////////////////////
 in vec4 normal;
 in vec4 v; 
+in vec4 v_world;
 in vec2 uv;
 
 //////////////////////
@@ -115,7 +116,30 @@ vec3 apply_light(Light light) {
         L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
     }
 
+    vec4 v_light_space = light.lightVP * v_world;
+    v_light_space /= v_light_space.w;
+
+    mat4 depth_bias;
+    depth_bias[0] = vec4(0.5f, 0.0f, 0.0f, 0.0f);
+    depth_bias[1] = vec4(0.0f, 0.5f, 0.0f, 0.0f);
+    depth_bias[2] = vec4(0.0f, 0.0f, 0.5f, 0.0f);
+    depth_bias[3] = vec4(0.5f, 0.5f, 0.5f, 1.0f);
+
+    v_light_space = depth_bias * v_light_space;
+
+    // shadow test
+    if (light.lightShadowMapIndex != -1) // the light cast shadow
+    {
+        float near_occ = texture(shadowMap, vec3(v_light_space.xy, light.lightShadowMapIndex)).r;
+        if (v_light_space.z > near_occ)
+        {
+            // we are in the shadow
+            return vec3(0.0f);
+        }
+    }
+
     float lightToSurfDist = length(L);
+
     L = normalize(L);
     float lightToSurfAngle = acos(dot(L, -light_dir));
 
@@ -132,11 +156,11 @@ vec3 apply_light(Light light) {
 
     if (usingDiffuseMap)
     {
-        linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
     }
     else
     {
-        linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
     }
 
     return linearColor;
@@ -193,11 +217,11 @@ vec3 apply_areaLight(Light light)
 
         if (usingDiffuseMap)
         {
-            linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
         }
         else
         {
-            linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
         }
     }
 
@@ -223,6 +247,6 @@ void main(void)
     // outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
 
     // gamma correction
-    outputColor = vec4(clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
+    outputColor = vec4(ambientColor.rgb + clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
 }
 
