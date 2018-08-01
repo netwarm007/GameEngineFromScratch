@@ -562,6 +562,8 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMap(const intptr_t shadowmap)
     GLint texture_id = (GLint) shadowmap;
     glActiveTexture(GL_TEXTURE0 + texture_id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     // bind shadow map
     bool result = SetShaderParameter("shadowMap", texture_id);
     assert(result);
