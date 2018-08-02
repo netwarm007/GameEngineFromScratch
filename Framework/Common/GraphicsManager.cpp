@@ -145,7 +145,7 @@ void GraphicsManager::CalculateCameraMatrix()
 void GraphicsManager::CalculateLights()
 {
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
-    frameContext.m_ambientColor = { 0.01f, 0.01f, 0.01f };
+    frameContext.m_ambientColor = { 0.05f, 0.05f, 0.05f };
     frameContext.m_lights.clear();
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
@@ -183,9 +183,14 @@ void GraphicsManager::CalculateLights()
             }
             BuildViewRHMatrix(view, position, lookAt, up);
 
+            float nearClipDistance = 1.0f;
+            float farClipDistance = 100.0f;
+
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
             {
                 light.m_lightPosition[3] = 0.0f;
+
+                BuildOrthographicMatrix(projection, -15.0f, 15.0f, 15.0f, -15.0f, nearClipDistance, farClipDistance);
             }
             else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
             {
@@ -195,8 +200,6 @@ void GraphicsManager::CalculateLights()
                 memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
 
                 float fieldOfView = light.m_lightAngleAttenCurveParams[1] * 2.0f;
-                float nearClipDistance = 1.0f;
-                float farClipDistance = 100.0f;
                 float screenAspect = 1.0f;
 
                 // Build the perspective projection matrix.

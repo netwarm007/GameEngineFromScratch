@@ -746,9 +746,24 @@ namespace My {
     template<typename T, int N>
     inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix)
     {
-	ispc::BuildIdentityMatrix(matrix, N);
+	    ispc::BuildIdentityMatrix(matrix, N);
     }
 
+    inline void BuildOrthographicMatrix(Matrix4X4f& matrix, const float left, const float right, const float top, const float bottom, const float near_plane, const float far_plane)
+    {
+        const float width = right - left;
+        const float height = top - bottom;
+        const float depth = far_plane - near_plane;
+
+        matrix = {{
+            { 2.0f / width, 0.0f, 0.0f, 0.0f },
+            { 0.0f, 2.0f / height, 0.0f, 0.0f },
+            { 0.0f, 0.0f, - 2.0f / depth, 0.0f },
+            { - (right + left) / width, - (top + bottom) / height, - (far_plane + near_plane) / depth, 1.0f }
+        }};
+
+        return;
+    }
 
     inline void BuildPerspectiveFovLHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {

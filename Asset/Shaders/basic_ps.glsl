@@ -134,7 +134,7 @@ float shadow_test(const Light light, const float cosTheta) {
             if (v_light_space.z - near_occ > bias)
             {
                 // we are in the shadow
-                visibility -= 0.2f;
+                visibility -= 0.25f;
             }
         }
     }
@@ -178,13 +178,20 @@ vec3 apply_light(const Light light) {
 
     vec3 linearColor;
 
+    vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
     if (usingDiffuseMap)
     {
-        linearColor = light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * cosTheta + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = texture(diffuseMap, uv).rgb * cosTheta; 
+        if (visibility > 0.2f)
+            linearColor += specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower); 
+        linearColor *= admit_light;
     }
     else
     {
-        linearColor = light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * cosTheta + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = diffuseColor.rgb * cosTheta;
+        if (visibility > 0.2f)
+            linearColor += specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower); 
+        linearColor *= admit_light;
     }
 
     return linearColor * visibility;
@@ -239,13 +246,19 @@ vec3 apply_areaLight(const Light light)
         vec2 nearestSpec2D = vec2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
         float specFactor = 1.0f - clamp(length(nearestSpec2D - dirSpec2D), 0.0f, 1.0f);
 
+        vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
+
         if (usingDiffuseMap)
         {
-            linearColor = light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = texture(diffuseMap, uv).rgb * nDotL * pnDotL; 
+            linearColor += specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle; 
+            linearColor *= admit_light;
         }
         else
         {
-            linearColor = light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = diffuseColor.rgb * nDotL * pnDotL; 
+            linearColor += specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle; 
+            linearColor *= admit_light;
         }
     }
 
@@ -268,7 +281,7 @@ void main(void)
     }
 
     // no-gamma correction
-    // outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
+    // outputColor = vec4(ambientColor.rgb + clamp(linearColor, 0.0f, 1.0f), 1.0f);
 
     // gamma correction
     outputColor = vec4(ambientColor.rgb + clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
