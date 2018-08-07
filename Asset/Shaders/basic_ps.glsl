@@ -134,7 +134,7 @@ float shadow_test(const Light light, const float cosTheta) {
             if (v_light_space.z - near_occ > bias)
             {
                 // we are in the shadow
-                visibility -= 0.25f;
+                visibility -= 0.20f;
             }
         }
     }
