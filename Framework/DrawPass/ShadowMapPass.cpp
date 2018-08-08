@@ -29,8 +29,8 @@ void ShadowMapPass::Draw(Frame& frame)
         }
     }
 
-    const uint32_t kShadowMapWidth = 512;
-    const uint32_t kShadowMapHeight = 512;
+    const uint32_t kShadowMapWidth = 2048;
+    const uint32_t kShadowMapHeight = 2048;
 
     // generate shadow map array
     frame.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(kShadowMapWidth, kShadowMapHeight, frame.shadowMapCount);

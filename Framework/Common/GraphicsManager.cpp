@@ -197,14 +197,14 @@ void GraphicsManager::CalculateLights()
                 Vector3f lookAt; 
                 memcpy(&lookAt, &target, sizeof lookAt);
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
-                if (abs(light.m_lightDirection[0]) <= 0.1f
-                    && abs(light.m_lightDirection[1]) <= 0.1f)
+                if (abs(light.m_lightDirection[0]) <= 0.2f
+                    && abs(light.m_lightDirection[1]) <= 0.2f)
                 {
                     up = { 0.1f, 0.1f, 1.0f};
                 }
                 BuildViewRHMatrix(view, position, lookAt, up);
 
-                float sm_half_dist = min(farClipDistance / 4.0f, 500.0f);
+                float sm_half_dist = min(farClipDistance * 0.25f, 800.0f);
 
                 BuildOrthographicMatrix(projection, 
                     - sm_half_dist, sm_half_dist, 
