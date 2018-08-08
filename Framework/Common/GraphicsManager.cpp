@@ -176,12 +176,15 @@ void GraphicsManager::CalculateLights()
 
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
             {
-                Vector4f target = { 0.0f, 0.0f, - nearClipDistance, 1.0f };
+                Vector4f target = { 0.0f, 0.0f, 0.0f, 1.0f };
+
                 auto pCameraNode = scene.GetFirstCameraNode();
                 if (pCameraNode) {
                     auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
                     nearClipDistance = pCamera->GetNearClipDistance();
                     farClipDistance = pCamera->GetFarClipDistance();
+
+                    target[2] = - (0.75f * nearClipDistance + 0.25f * farClipDistance);
 
                     // calculate the camera target position
                     auto trans_ptr = pCameraNode->GetCalculatedTransform();
@@ -194,10 +197,10 @@ void GraphicsManager::CalculateLights()
                 Vector3f lookAt; 
                 memcpy(&lookAt, &target, sizeof lookAt);
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
-                if (abs(light.m_lightDirection[0]) <= 0.01f
-                    && abs(light.m_lightDirection[1]) <= 0.01f)
+                if (abs(light.m_lightDirection[0]) <= 0.1f
+                    && abs(light.m_lightDirection[1]) <= 0.1f)
                 {
-                    up = { 0.0f, 1.0f, 0.0f};
+                    up = { 0.1f, 0.1f, 1.0f};
                 }
                 BuildViewRHMatrix(view, position, lookAt, up);
 
@@ -477,18 +480,26 @@ void GraphicsManager::DrawBatchDepthOnly(const DrawBatchContext& context)
     cout << "[GraphicsManager] DrawBatchDepthOnly(" << &context << ")" << endl;
 }
 
-intptr_t GraphicsManager::GenerateShadowMapArray(uint32_t count)
+intptr_t GraphicsManager::GenerateShadowMap(const uint32_t width, const uint32_t height)
 {
-    cout << "[GraphicsManager] GenerateShadowMap(" << count << ")" << endl;
+    cout << "[GraphicsManager] GenerateShadowMap(" << width << ", " << height << ")" << endl;
     return 0;
 }
 
-void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowmap, uint32_t layer_index)
+intptr_t GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
-    cout << "[GraphicsManager] BeginShadowMap(" << light.m_lightGuid << ", " << shadowmap << ", " << layer_index << ")" << endl;
+    cout << "[GraphicsManager] GenerateShadowMapArray(" << width << " ," << height << ", " 
+        << count << ")" << endl;
+    return 0;
 }
 
-void GraphicsManager::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)
+void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index)
+{
+    cout << "[GraphicsManager] BeginShadowMap(" << light.m_lightGuid << ", " << shadowmap << ", " 
+        << width << ", " << height << ", " << layer_index << ")" << endl;
+}
+
+void GraphicsManager::EndShadowMap(const intptr_t shadowmap, const uint32_t layer_index)
 {
     cout << "[GraphicsManager] EndShadowMap(" << shadowmap << ", " << layer_index << ")" << endl;
 }
@@ -496,6 +507,11 @@ void GraphicsManager::EndShadowMap(const intptr_t shadowmap, uint32_t layer_inde
 void GraphicsManager::SetShadowMap(const intptr_t shadowmap)
 {
     cout << "[GraphicsManager] SetShadowMap(" << shadowmap << ")" << endl;
+}
+
+void GraphicsManager::SetGlobalShadowMap(const intptr_t shadowmap)
+{
+    cout << "[GraphicsManager] SetGlobalShadowMap(" << shadowmap << ")" << endl;
 }
 
 void GraphicsManager::DestroyShadowMap(intptr_t& shadowmap)

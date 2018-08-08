@@ -29,15 +29,18 @@ void ShadowMapPass::Draw(Frame& frame)
         }
     }
 
+    const uint32_t kShadowMapWidth = 512;
+    const uint32_t kShadowMapHeight = 512;
+
     // generate shadow map array
-    frame.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(frame.shadowMapCount);
+    frame.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(kShadowMapWidth, kShadowMapHeight, frame.shadowMapCount);
 
     uint32_t shadowmap_index = 0;
 
     for (auto it : lights_cast_shadow)
     {
         // update shadow map
-        g_pGraphicsManager->BeginShadowMap(*it, frame.shadowMap, shadowmap_index);
+        g_pGraphicsManager->BeginShadowMap(*it, frame.shadowMap, kShadowMapWidth, kShadowMapHeight, shadowmap_index);
 
         for (auto dbc : frame.batchContexts)
         {

@@ -27,10 +27,12 @@ namespace My {
         void DrawBatch(const DrawBatchContext& context) final;
         void DrawBatchDepthOnly(const DrawBatchContext& context) final;
 
-        intptr_t GenerateShadowMapArray(uint32_t count) final;
-        void BeginShadowMap(const Light& light, const intptr_t shadowmap, uint32_t layer_index) final;
-        void EndShadowMap(const intptr_t shadowmap, uint32_t layer_index) final;
+        intptr_t GenerateShadowMap(const uint32_t width, const uint32_t height) final;
+        intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
+        void BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) final;
+        void EndShadowMap(const intptr_t shadowmap, const uint32_t layer_index) final;
         void SetShadowMap(const intptr_t shadowmap) final;
+        void SetGlobalShadowMap(const intptr_t shadowmap) final;
         void DestroyShadowMap(intptr_t& shadowmap) final;
 
 #ifdef DEBUG

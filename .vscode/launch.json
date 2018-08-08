@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/city.ogex"
+                "Scene/sun_light.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -37,7 +37,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "Scene/city.ogex"
+                "Scene/sun_light.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
