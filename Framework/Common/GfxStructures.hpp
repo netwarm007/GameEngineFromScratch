@@ -4,8 +4,16 @@
 #include "Scene.hpp"
 
 namespace My {
+    ENUM(LightType) {
+        Point = 0,
+        Spot = 1,
+        Infinity = 2,
+        Area = 3
+    };
+
     struct Light{
         Guid        m_lightGuid;
+        LightType   m_lightType;
         Vector4f    m_lightPosition;
         Vector4f    m_lightColor;
         Vector4f    m_lightDirection;
@@ -21,6 +29,7 @@ namespace My {
 
         Light()
         {
+            m_lightType = LightType::Point;
             m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
             m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
             m_lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };
@@ -51,13 +60,21 @@ namespace My {
     struct Frame {
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
+        intptr_t globalShadowMap;
         intptr_t shadowMap;
+        intptr_t cubeShadowMap;
+        uint32_t globalShadowMapCount;
         uint32_t shadowMapCount;
+        uint32_t cubeShadowMapCount;
 
         Frame ()
         {
+            globalShadowMap = -1;
             shadowMap = -1;
+            cubeShadowMap = -1;
+            globalShadowMapCount = 0;
             shadowMapCount = 0;
+            cubeShadowMapCount = 0;
         }
     };
 }

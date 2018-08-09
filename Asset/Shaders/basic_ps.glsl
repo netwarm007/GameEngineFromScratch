@@ -114,10 +114,10 @@ float shadow_test(const Light light, const float cosTheta) {
     );
 
     const vec2 poissonDisk[4] = vec2[](
-        vec2( -0.94201624, -0.39906216 ),
-        vec2( 0.94558609, -0.76890725 ),
-        vec2( -0.094184101, -0.92938870 ),
-        vec2( 0.34495938, 0.29387760 )
+        vec2( -0.94201624f, -0.39906216f ),
+        vec2( 0.94558609f, -0.76890725f ),
+        vec2( -0.094184101f, -0.92938870f ),
+        vec2( 0.34495938f, 0.29387760f )
     );
 
     v_light_space = depth_bias * v_light_space;
@@ -127,10 +127,26 @@ float shadow_test(const Light light, const float cosTheta) {
     if (light.lightShadowMapIndex != -1) // the light cast shadow
     {
         float bias = 5e-4 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
-        bias = clamp(bias, 0, 0.01);
+        bias = clamp(bias, 0f, 0.01f);
         for (int i = 0; i < 4; i++)
         {
-            float near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+            float near_occ;
+            switch (light.lightType)
+            {
+                case 0: // point
+                    near_occ = texture(cubeShadowMap, vec4(v_light_space.xyz, light.lightShadowMapIndex)).r;
+                    break;
+                case 1: // spot
+                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+                    break;
+                case 2: // infinity
+                    near_occ = texture(globalShadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+                    break;
+                case 3: // area
+                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+                    break;
+            }
+
             if (v_light_space.z - near_occ > bias)
             {
                 // we are in the shadow
@@ -270,7 +286,7 @@ void main(void)
     vec3 linearColor = vec3(0.0f);
     for (int i = 0; i < numLights; i++)
     {
-        if (allLights[i].lightSize.x > 0.0f || allLights[i].lightSize.y > 0.0f)
+        if (allLights[i].lightType == 3) // area light
         {
             linearColor += apply_areaLight(allLights[i]); 
         }

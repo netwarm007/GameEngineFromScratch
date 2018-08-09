@@ -29,12 +29,11 @@ namespace My {
         virtual void DrawBatch(const DrawBatchContext& context);
         virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
 
-        virtual intptr_t GenerateShadowMap(const uint32_t width, const uint32_t height);
+        virtual intptr_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
         virtual intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
         virtual void BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index);
         virtual void EndShadowMap(const intptr_t shadowmap, const uint32_t layer_index);
-        virtual void SetShadowMap(const intptr_t shadowmap);
-        virtual void SetGlobalShadowMap(const intptr_t shadowmap);
+        virtual void SetShadowMaps(const Frame& frame);
         virtual void DestroyShadowMap(intptr_t& shadowmap);
 
 #ifdef DEBUG

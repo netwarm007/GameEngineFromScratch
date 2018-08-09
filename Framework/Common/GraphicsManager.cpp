@@ -176,6 +176,8 @@ void GraphicsManager::CalculateLights()
 
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
             {
+                light.m_lightType = LightType::Infinity;
+
                 Vector4f target = { 0.0f, 0.0f, 0.0f, 1.0f };
 
                 auto pCameraNode = scene.GetFirstCameraNode();
@@ -231,6 +233,8 @@ void GraphicsManager::CalculateLights()
 
                 if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
                 {
+                    light.m_lightType = LightType::Spot;
+
                     auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
                     const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
                     light.m_lightAngleAttenCurveType = angle_atten_curve.type;
@@ -244,6 +248,8 @@ void GraphicsManager::CalculateLights()
                 }
                 else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightArea)
                 {
+                    light.m_lightType = LightType::Area;
+
                     auto plight = dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
                     light.m_lightSize = plight->GetDimension();
                 }
@@ -480,9 +486,10 @@ void GraphicsManager::DrawBatchDepthOnly(const DrawBatchContext& context)
     cout << "[GraphicsManager] DrawBatchDepthOnly(" << &context << ")" << endl;
 }
 
-intptr_t GraphicsManager::GenerateShadowMap(const uint32_t width, const uint32_t height)
+intptr_t GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
-    cout << "[GraphicsManager] GenerateShadowMap(" << width << ", " << height << ")" << endl;
+    cout << "[GraphicsManager] GenerateCubeShadowMapArray(" << width << ", " << height << ","
+        << count << ")" << endl;
     return 0;
 }
 
@@ -504,14 +511,9 @@ void GraphicsManager::EndShadowMap(const intptr_t shadowmap, const uint32_t laye
     cout << "[GraphicsManager] EndShadowMap(" << shadowmap << ", " << layer_index << ")" << endl;
 }
 
-void GraphicsManager::SetShadowMap(const intptr_t shadowmap)
+void GraphicsManager::SetShadowMaps(const Frame& frame)
 {
-    cout << "[GraphicsManager] SetShadowMap(" << shadowmap << ")" << endl;
-}
-
-void GraphicsManager::SetGlobalShadowMap(const intptr_t shadowmap)
-{
-    cout << "[GraphicsManager] SetGlobalShadowMap(" << shadowmap << ")" << endl;
+    cout << "[GraphicsManager] SetShadowMap(" << &frame << ")" << endl;
 }
 
 void GraphicsManager::DestroyShadowMap(intptr_t& shadowmap)

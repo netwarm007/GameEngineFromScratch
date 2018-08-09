@@ -93,6 +93,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         sprintf(uniformNames[0x8], "allLights[%zd].lightAngleAttenCurveParams", i);
         sprintf(uniformNames[0x9], "allLights[%zd].lightShadowMapIndex", i);
         sprintf(uniformNames[0xA], "allLights[%zd].lightVP", i);
+        sprintf(uniformNames[0xB], "allLights[%zd].lightType", i);
 
         const char* names[16] = {
             uniformNames[0x0], uniformNames[0x1], uniformNames[0x2], uniformNames[0x3],
@@ -101,11 +102,11 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
             uniformNames[0xC], uniformNames[0xD], uniformNames[0xE], uniformNames[0xF]
         };
 
-        GLuint indices[0xB];
-        glGetUniformIndices(m_CurrentShader, 0xB, names, indices);
+        GLuint indices[0xC];
+        glGetUniformIndices(m_CurrentShader, 0xC, names, indices);
 
-        GLint offset[0xB];
-        glGetActiveUniformsiv(m_CurrentShader, 0xB, indices, GL_UNIFORM_OFFSET, offset);
+        GLint offset[0xC];
+        glGetActiveUniformsiv(m_CurrentShader, 0xC, indices, GL_UNIFORM_OFFSET, offset);
 
         memcpy(blockBuffer + offset[0x0], &context.m_lights[i].m_lightPosition, sizeof(Vector4f));
         memcpy(blockBuffer + offset[0x1], &context.m_lights[i].m_lightColor, sizeof(Vector4f));
@@ -118,6 +119,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         memcpy(blockBuffer + offset[0x8], &context.m_lights[i].m_lightAngleAttenCurveParams[0], sizeof(float)* 5);
         memcpy(blockBuffer + offset[0x9], &context.m_lights[i].m_lightShadowMapIndex, sizeof(int32_t));
         memcpy(blockBuffer + offset[0xA], &context.m_lights[i].m_lightVP, sizeof(Matrix4X4f));
+        memcpy(blockBuffer + offset[0xB], &context.m_lights[i].m_lightType, sizeof(LightType));
     }
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
@@ -509,25 +511,27 @@ void OpenGLGraphicsManagerCommonBase::DrawBatchDepthOnly(const DrawBatchContext&
     glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
 }
 
-intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMap(const uint32_t width, const uint32_t height)
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint shadowMap;
 
     glGenTextures(1, &shadowMap);
     glActiveTexture(GL_TEXTURE0 + shadowMap);
-    glBindTexture(GL_TEXTURE_2D, shadowMap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, shadowMap);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count * 6);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT24, width, height, count * 6, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
     // register the shadow map
     return static_cast<intptr_t>(shadowMap);
 }
 
-intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t width, const uint32_t height, uint32_t count)
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint shadowMap;
@@ -535,11 +539,11 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t 
     glGenTextures(1, &shadowMap);
     glActiveTexture(GL_TEXTURE0 + shadowMap);
     glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMap);
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT24, width, height, count, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
     // register the shadow map
@@ -578,35 +582,40 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 }
 
-void OpenGLGraphicsManagerCommonBase::SetShadowMap(const intptr_t shadowmap)
+void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
-    GLint texture_id = (GLint) shadowmap;
+    GLint texture_id = (GLint) frame.shadowMap;
     glActiveTexture(GL_TEXTURE0 + texture_id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    const float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
     // bind shadow map
     bool result = SetShaderParameter("shadowMap", texture_id);
     assert(result);
-}
 
-void OpenGLGraphicsManagerCommonBase::SetGlobalShadowMap(const intptr_t shadowmap)
-{
-    GLint texture_id = (GLint) shadowmap;
+    texture_id = (GLint) frame.globalShadowMap;
     glActiveTexture(GL_TEXTURE0 + texture_id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
-    // bind shadow map
-    bool result = SetShaderParameter("globalShadowMap", texture_id);
+    // bind global shadow map
+    result = SetShaderParameter("globalShadowMap", texture_id);
+    assert(result);
+
+    texture_id = (GLint) frame.cubeShadowMap;
+    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // bind cube shadow map
+    result = SetShaderParameter("cubeShadowMap", texture_id);
     assert(result);
 }
 

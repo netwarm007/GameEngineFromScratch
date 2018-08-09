@@ -15,12 +15,21 @@ void HUDPass::Draw(Frame& frame)
 #ifdef DEBUG
     // Draw Shadow Maps
     float top = 0.95f;
-    float left = 0.60f;
+    float left = 0.70f;
 
     for (uint32_t i = 0; i < frame.shadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawOverlay(frame.shadowMap, i, left, top, 0.35f, 0.35f);
-        top -= 0.45f;
+        g_pGraphicsManager->DrawOverlay(frame.shadowMap, i, left, top, 0.25f, 0.25f);
+        top -= 0.30f;
+    }
+
+    top = 0.95f;
+    left = 0.40f;
+
+    for (uint32_t i = 0; i < frame.globalShadowMapCount; i++)
+    {
+        g_pGraphicsManager->DrawOverlay(frame.globalShadowMap, i, left, top, 0.25f, 0.25f);
+        top -= 0.30f;
     }
 #endif
 }
