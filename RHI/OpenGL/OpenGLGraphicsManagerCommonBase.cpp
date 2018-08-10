@@ -904,7 +904,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
 {
     GLint texture_id = (GLuint) shadowmap;
 
@@ -957,6 +957,158 @@ void OpenGLGraphicsManagerCommonBase::DrawOverlay(const intptr_t shadowmap, uint
     glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0x00, 4);
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(2, buffer_id);
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+{
+    GLint texture_id = (GLuint) cubemap;
+
+    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
+    auto result = SetShaderParameter("depthSampler", texture_id);
+    assert(result);
+    result = SetShaderParameter("layer_index", (float) layer_index);
+    assert(result);
+
+    const float cell_height = vp_height * 0.5f;
+    const float cell_width = vp_width * (1.0f / 3.0f);
+    GLfloat vertices[] = {
+        // face 1
+        vp_left, vp_top, 0.0f,
+        vp_left, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top, 0.0f,
+
+        vp_left + cell_width, vp_top, 0.0f,
+        vp_left, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+
+        // face 2
+        vp_left + cell_width, vp_top, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top, 0.0f,
+
+        vp_left + cell_width * 2.0f, vp_top, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+
+        // face 3
+        vp_left + cell_width * 2.0f, vp_top, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top, 0.0f,
+
+        vp_left + cell_width * 3.0f, vp_top, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top - cell_height, 0.0f,
+
+        // face 4
+        vp_left, vp_top - cell_height, 0.0f,
+        vp_left, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width, vp_top - cell_height * 2.0f, 0.0f,
+
+        // face 5
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height * 2.0f, 0.0f,
+
+        // face 6
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top - cell_height, 0.0f,
+
+        vp_left + cell_width * 3.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top - cell_height * 2.0f, 0.0f,
+    };
+
+    GLfloat uvw[] = {
+         // back
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        
+        // left
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+
+        // front
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        // right
+         1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+
+        // top
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+
+        // bottom
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f
+    };
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id[2];
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(2, buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    // Bind the vertex buffer and load the vertex (uvw) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uvw), uvw, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+
+    glDrawArrays(GL_TRIANGLES, 0x00, 36);
 
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(2, buffer_id);

@@ -253,6 +253,18 @@ void GraphicsManager::CalculateLights()
                     auto plight = dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
                     light.m_lightSize = plight->GetDimension();
                 }
+                else // omni light
+                {
+                    light.m_lightType = LightType::Omni;
+
+                    auto plight = dynamic_pointer_cast<SceneObjectOmniLight>(pLight);
+
+                    float fieldOfView = PI / 2.0f; // 90 degree for each cube map face
+                    float screenAspect = 1.0f;
+
+                    // Build the perspective projection matrix.
+                    BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+                }
             } 
 
             light.m_lightVP = view * projection;
@@ -453,9 +465,22 @@ void GraphicsManager::ClearDebugBuffers()
     cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 
-void GraphicsManager::DrawOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void GraphicsManager::DrawTextureOverlay(const intptr_t shadowmap, uint32_t layer_index, 
+    float vp_left, float vp_top, float vp_width, float vp_height)
 {
     cout << "[GraphicsManager] DrayOverlay(" << shadowmap << ", "
+        << layer_index << ", "
+        << vp_left << ", "
+        << vp_top << ", "
+        << vp_width << ", "
+        << vp_height << ", "
+        << ")" << endl;
+}
+
+void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, 
+    float vp_left, float vp_top, float vp_width, float vp_height)
+{
+    cout << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "

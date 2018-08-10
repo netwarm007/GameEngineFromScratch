@@ -5,7 +5,7 @@
 
 namespace My {
     ENUM(LightType) {
-        Point = 0,
+        Omni = 0,
         Spot = 1,
         Infinity = 2,
         Area = 3
@@ -29,7 +29,7 @@ namespace My {
 
         Light()
         {
-            m_lightType = LightType::Point;
+            m_lightType = LightType::Omni;
             m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
             m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
             m_lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };

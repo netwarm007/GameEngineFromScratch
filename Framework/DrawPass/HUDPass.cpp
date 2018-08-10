@@ -17,18 +17,26 @@ void HUDPass::Draw(Frame& frame)
     float top = 0.95f;
     float left = 0.70f;
 
-    for (uint32_t i = 0; i < frame.shadowMapCount; i++)
+    for (uint32_t i = 0; i < frame.globalShadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawOverlay(frame.shadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawTextureOverlay(frame.globalShadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
 
-    top = 0.95f;
-    left = 0.40f;
-
-    for (uint32_t i = 0; i < frame.globalShadowMapCount; i++)
+    for (uint32_t i = 0; i < frame.shadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawOverlay(frame.globalShadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawTextureOverlay(frame.shadowMap, i, left, top, 0.25f, 0.25f);
+        top -= 0.30f;
+    }
+
+    shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::CopyCube);
+
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    g_pGraphicsManager->UseShaderProgram(shaderProgram);
+
+    for (uint32_t i = 0; i < frame.cubeShadowMapCount; i++)
+    {
+        g_pGraphicsManager->DrawCubeMapOverlay(frame.cubeShadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
 #endif

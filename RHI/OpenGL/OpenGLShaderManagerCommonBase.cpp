@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <map>
 #include "AssetLoader.hpp"
 
 using namespace My;
@@ -88,7 +87,7 @@ namespace My {
         cerr << "Error compiling linker.  Check linker-error.txt for message." << endl;
     }
 
-    static bool LoadShaderFromFile(const char* vsFilename, const char* fsFilename, map<int, const char*> properties, GLuint& shaderProgram)
+    static bool LoadShaderFromFile(const char* vsFilename, const char* fsFilename, GLuint& shaderProgram)
     {
         std::string commonShaderBuffer;
         std::string vertexShaderBuffer;
@@ -159,14 +158,10 @@ namespace My {
         glAttachShader(shaderProgram, vertexShader);
         glAttachShader(shaderProgram, fragmentShader);
 
-        // Bind the shader input variables.
-        for (auto property : properties)
-        {
-            glBindAttribLocation(shaderProgram, property.first, property.second);
-        }
-
         // Link the shader program.
         glLinkProgram(shaderProgram);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
 
         // Check the status of the link.
         glGetProgramiv(shaderProgram, GL_LINK_STATUS, &status);
@@ -198,18 +193,11 @@ void OpenGLShaderManagerCommonBase::Tick()
 
 bool OpenGLShaderManagerCommonBase::InitializeShaders()
 {
-    map<int, const char*> properties;
     GLuint shaderProgram;
     bool result;
 
     // Forward Shader
-    properties = {  
-                    {0, "inputPosition"},
-                    {1, "inputNormal"},
-                    {2, "inputUV"}
-                 };
-
-    result = LoadShaderFromFile(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE, properties, shaderProgram);
+    result = LoadShaderFromFile(VS_SHADER_SOURCE_FILE, PS_SHADER_SOURCE_FILE, shaderProgram);
     if (!result)
     {
         return result;
@@ -218,11 +206,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     m_DefaultShaders[DefaultShaderIndex::Forward] = shaderProgram;
 
     // Shadow Map Shader
-    properties = {  
-                    {0, "inputPosition"}
-                 };
-
-    result = LoadShaderFromFile(VS_SHADOWMAP_SOURCE_FILE, PS_SHADOWMAP_SOURCE_FILE, properties, shaderProgram);
+    result = LoadShaderFromFile(VS_SHADOWMAP_SOURCE_FILE, PS_SHADOWMAP_SOURCE_FILE, shaderProgram);
     if (!result)
     {
         return result;
@@ -231,11 +215,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     m_DefaultShaders[DefaultShaderIndex::ShadowMap] = shaderProgram;
 
     // Texture copy shader
-    properties = {  
-                    {0, "inputPosition"}
-                 };
-
-    result = LoadShaderFromFile(VS_PASSTHROUGH_SOURCE_FILE, PS_SIMPLE_TEXTURE_SOURCE_FILE, properties, shaderProgram);
+    result = LoadShaderFromFile(VS_PASSTHROUGH_SOURCE_FILE, PS_SIMPLE_TEXTURE_SOURCE_FILE, shaderProgram);
     if (!result)
     {
         return result;
@@ -243,13 +223,18 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Copy] = shaderProgram;
 
+    // CubeMap copy shader
+    result = LoadShaderFromFile(VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE, PS_SIMPLE_CUBEMAP_SOURCE_FILE, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+
 #ifdef DEBUG
     // Debug Shader
-    properties = {  
-                    {0, "inputPosition"}
-                 };
-
-    result = LoadShaderFromFile(DEBUG_VS_SHADER_SOURCE_FILE, DEBUG_PS_SHADER_SOURCE_FILE, properties, shaderProgram);
+    result = LoadShaderFromFile(DEBUG_VS_SHADER_SOURCE_FILE, DEBUG_PS_SHADER_SOURCE_FILE, shaderProgram);
     if (!result)
     {
         return result;
@@ -263,5 +248,8 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
 void OpenGLShaderManagerCommonBase::ClearShaders()
 {
-
+    for (auto item : m_DefaultShaders)
+    {
+        glDeleteProgram((GLuint) item.second);
+    }
 }

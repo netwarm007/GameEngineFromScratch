@@ -10,7 +10,8 @@ namespace My {
         Forward   = "FRWD"_i32,
         Differed  = "DIFR"_i32,
         Debug     = "DEBG"_i32,
-        Copy      = "BTBL"_i32
+        Copy      = "COPY"_i32,
+        CopyCube  = "COPC"_i32
     };
 
     Interface IShaderManager : implements IRuntimeModule

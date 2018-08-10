@@ -8,5 +8,7 @@
 #define DEBUG_PS_SHADER_SOURCE_FILE "Shaders/debug_ps.glsl"
 #define VS_PASSTHROUGH_SOURCE_FILE "Shaders/passthrough_vs.glsl"
 #define PS_SIMPLE_TEXTURE_SOURCE_FILE "Shaders/depthtexture_ps.glsl"
+#define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE "Shaders/passthrough_cube_vs.glsl"
+#define PS_SIMPLE_CUBEMAP_SOURCE_FILE "Shaders/depthcubemap_ps.glsl"
 
 #include "OpenGLShaderManagerCommonBase.cpp"

@@ -40,7 +40,7 @@ void ShadowMapPass::Draw(Frame& frame)
         {
             switch (it->m_lightType)
             {
-                case LightType::Point:
+                case LightType::Omni:
                     frame.cubeShadowMapCount++;
                     break;
                 case LightType::Spot:
@@ -74,7 +74,7 @@ void ShadowMapPass::Draw(Frame& frame)
     frame.globalShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.globalShadowMapCount);
 
     // generate cube shadow map array
-    frame.cubeShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.cubeShadowMapCount);
+    frame.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.cubeShadowMapCount);
 
     uint32_t shadowmap_index = 0;
     uint32_t global_shadowmap_index = 0;
@@ -86,7 +86,7 @@ void ShadowMapPass::Draw(Frame& frame)
 
         switch (it->m_lightType)
         {
-            case LightType::Point:
+            case LightType::Omni:
                 shadowmap = frame.cubeShadowMap;
                 g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
                     kCubeShadowMapWidth, kCubeShadowMapHeight, cube_shadowmap_index);
