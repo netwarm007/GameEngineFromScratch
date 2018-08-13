@@ -28,15 +28,20 @@ void OpenGLGraphicsManagerCommonBase::Draw()
 
 bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFrameContext& context)
 {
-    unsigned int location;
-
     GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DrawFrameConstants");
 
-    GLint blockSize;
+    if (!m_UboBuffer)
+    {
+        glGenBuffers(1, &m_UboBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_UboBuffer);
 
-    glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+        GLint blockSize;
+        glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
-    GLubyte* blockBuffer = new GLubyte[blockSize];
+        glBufferData(GL_UNIFORM_BUFFER, blockSize, nullptr, GL_DYNAMIC_DRAW);
+    }
+
+    GLubyte* blockBuffer = static_cast<GLubyte*>(glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY));
 
     {
         // Query for the offsets of each block variable
@@ -110,16 +115,9 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         memcpy(blockBuffer + offset[0xA], &context.m_lights[i].m_lightVP, sizeof(Matrix4X4f));
     }
 
-    GLuint uboHandle;
-    glGenBuffers(1, &uboHandle);
-    glBindBuffer(GL_UNIFORM_BUFFER, uboHandle);
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, blockBuffer, GL_DYNAMIC_DRAW);
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, blockIndex, uboHandle);
-
-    m_Buffers.push_back(uboHandle);
-
-    delete[] blockBuffer;
+    glBindBufferBase(GL_UNIFORM_BUFFER, blockIndex, m_UboBuffer);
 
     return true;
 }
@@ -427,6 +425,11 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
         glDeleteBuffers(1, &buf);
     }
 
+    if (m_UboBuffer)
+    {
+        glDeleteBuffers(1, &m_UboBuffer);
+    }
+    
     for (auto texture : m_Textures) {
         glDeleteTextures(1, &texture);
     }
