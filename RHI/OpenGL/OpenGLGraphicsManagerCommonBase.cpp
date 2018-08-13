@@ -30,18 +30,23 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 {
     GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DrawFrameConstants");
 
+    GLint blockSize;
+
     if (!m_UboBuffer)
     {
         glGenBuffers(1, &m_UboBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, m_UboBuffer);
 
-        GLint blockSize;
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
         glBufferData(GL_UNIFORM_BUFFER, blockSize, nullptr, GL_DYNAMIC_DRAW);
     }
+    else
+    {
+        glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+    }
 
-    GLubyte* blockBuffer = static_cast<GLubyte*>(glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY));
+    GLubyte* blockBuffer = static_cast<GLubyte*>(glMapBufferRange(GL_UNIFORM_BUFFER, 0, blockSize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT));
 
     {
         // Query for the offsets of each block variable
