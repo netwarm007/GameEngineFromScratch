@@ -7,12 +7,6 @@ using namespace My;
 
 void ShadowMapPass::Draw(Frame& frame)
 {
-    auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::ShadowMap);
-
-    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    g_pGraphicsManager->UseShaderProgram(shaderProgram);
-    g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
-
     if (frame.globalShadowMap != -1)
     {
         g_pGraphicsManager->DestroyShadowMap(frame.globalShadowMap);
@@ -74,7 +68,7 @@ void ShadowMapPass::Draw(Frame& frame)
     frame.globalShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.globalShadowMapCount);
 
     // generate cube shadow map array
-    frame.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.cubeShadowMapCount);
+    frame.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kCubeShadowMapWidth, kCubeShadowMapHeight, frame.cubeShadowMapCount);
 
     uint32_t shadowmap_index = 0;
     uint32_t global_shadowmap_index = 0;
@@ -83,36 +77,48 @@ void ShadowMapPass::Draw(Frame& frame)
     for (auto it : lights_cast_shadow)
     {
         intptr_t shadowmap;
+        DefaultShaderIndex shader_index = DefaultShaderIndex::ShadowMap;
+        int32_t width, height;
 
         switch (it->m_lightType)
         {
             case LightType::Omni:
+                shader_index = DefaultShaderIndex::OmniShadowMap;
                 shadowmap = frame.cubeShadowMap;
-                g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
-                    kCubeShadowMapWidth, kCubeShadowMapHeight, cube_shadowmap_index);
+                width = kCubeShadowMapWidth;
+                height = kCubeShadowMapHeight;
                 it->m_lightShadowMapIndex = cube_shadowmap_index++;
                 break;
             case LightType::Spot:
                 shadowmap = frame.shadowMap;
-                g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
-                    kShadowMapWidth, kShadowMapHeight, shadowmap_index);
+                width = kShadowMapWidth;
+                height = kShadowMapHeight;
                 it->m_lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Area:
                 shadowmap = frame.shadowMap;
-                g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
-                    kShadowMapWidth, kShadowMapHeight, shadowmap_index);
+                width = kShadowMapWidth;
+                height = kShadowMapHeight;
                 it->m_lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Infinity:
                 shadowmap = frame.globalShadowMap;
-                g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
-                    kGlobalShadowMapWidth, kGlobalShadowMapHeight, global_shadowmap_index);
+                width = kGlobalShadowMapWidth;
+                height = kGlobalShadowMapHeight;
                 it->m_lightShadowMapIndex = global_shadowmap_index++;
                 break;
             default:
                 assert(0);
         }
+
+        auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(shader_index);
+
+        // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+        g_pGraphicsManager->UseShaderProgram(shaderProgram);
+        g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
+
+        g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
+            width, height, it->m_lightShadowMapIndex);
 
         for (auto dbc : frame.batchContexts)
         {
@@ -121,4 +127,8 @@ void ShadowMapPass::Draw(Frame& frame)
 
         g_pGraphicsManager->EndShadowMap(shadowmap, it->m_lightShadowMapIndex);
     }
+
+    assert(shadowmap_index == frame.shadowMapCount);
+    assert(global_shadowmap_index == frame.globalShadowMapCount);
+    assert(cube_shadowmap_index == frame.cubeShadowMapCount);
 }

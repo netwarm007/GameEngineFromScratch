@@ -102,8 +102,6 @@ void GraphicsManager::Draw()
 
 void GraphicsManager::InitConstants()
 {
-    // Initialize the world/model matrix to the identity matrix.
-    BuildIdentityMatrix(m_Frames[m_nFrameIndex].frameContext.m_worldMatrix);
 }
 
 void GraphicsManager::CalculateCameraMatrix()
@@ -166,6 +164,7 @@ void GraphicsManager::CalculateLights()
             const AttenCurve& atten_curve = pLight->GetDistanceAttenuation();
             light.m_lightDistAttenCurveType = atten_curve.type; 
             memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
+            light.m_lightAngleAttenCurveType = AttenCurveType::kNone;
 
             Matrix4X4f view;
             Matrix4X4f projection;
@@ -257,7 +256,7 @@ void GraphicsManager::CalculateLights()
                 {
                     light.m_lightType = LightType::Omni;
 
-                    auto plight = dynamic_pointer_cast<SceneObjectOmniLight>(pLight);
+                    //auto plight = dynamic_pointer_cast<SceneObjectOmniLight>(pLight);
 
                     float fieldOfView = PI / 2.0f; // 90 degree for each cube map face
                     float screenAspect = 1.0f;

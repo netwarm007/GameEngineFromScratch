@@ -4,10 +4,10 @@
 v2p VSMain(a2v input) {
     v2p output;
 
-	float4 temp = mul(m_viewMatrix, mul(m_worldMatrix, mul(objectMatrix, float4(input.Position.xyz, 1.0f))));
+	float4 temp = mul(m_viewMatrix, mul(objectMatrix, float4(input.Position.xyz, 1.0f)));
 	output.vPosInView = temp;
 	output.Position = mul(m_projectionMatrix, temp);
-	float3 vN = mul(m_viewMatrix, mul(m_worldMatrix, mul(objectMatrix, float4(input.Normal, 0.0f)))).xyz;
+	float3 vN = mul(m_viewMatrix, mul(objectMatrix, float4(input.Normal, 0.0f))).xyz;
 
 	output.vNorm = vN;
 
@@ -107,7 +107,7 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
 float3 apply_light(v2p input, Light light) {
     float3 N = normalize(input.vNorm);
     float3 L;
-    float3 light_dir = normalize(mul(m_viewMatrix, mul(m_worldMatrix, light.m_lightDirection)).xyz);
+    float3 light_dir = normalize(mul(m_viewMatrix, light.m_lightDirection).xyz);
 
     if (light.m_lightPosition.w == 0.0f)
     {
@@ -115,7 +115,7 @@ float3 apply_light(v2p input, Light light) {
     }
     else
     {
-		L = mul(m_viewMatrix, mul(m_worldMatrix, light.m_lightPosition)).xyz - input.vPosInView.xyz;
+		L = mul(m_viewMatrix, light.m_lightPosition).xyz - input.vPosInView.xyz;
     }
 
     float lightToSurfDist = length(L);
@@ -159,9 +159,9 @@ float3 apply_light(v2p input, Light light) {
 float3 apply_areaLight(v2p input, Light light)
 {
     float3 N = normalize(input.vNorm);
-    float3 right = normalize(mul(m_viewMatrix, mul(m_worldMatrix, float4(1.0f, 0.0f, 0.0f, 0.0f))).xyz);
-    float3 pnormal = normalize(mul(m_viewMatrix, mul(m_worldMatrix, light.m_lightDirection)).xyz);
-    float3 ppos = mul(m_viewMatrix, mul(m_worldMatrix, light.m_lightPosition)).xyz;
+    float3 right = normalize(mul(m_viewMatrix, float4(1.0f, 0.0f, 0.0f, 0.0f)).xyz);
+    float3 pnormal = normalize(mul(m_viewMatrix, light.m_lightDirection).xyz);
+    float3 ppos = mul(m_viewMatrix, light.m_lightPosition).xyz;
     float3 up = normalize(cross(pnormal, right));
     right = normalize(cross(up, pnormal));
 

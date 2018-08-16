@@ -22,13 +22,12 @@ out vec2 uv;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-    mat4 transformMatrix = worldMatrix * modelMatrix;
 	// Calculate the position of the vertex against the world, view, and projection matrices.
-	v_world = transformMatrix * vec4(inputPosition, 1.0f);
+	v_world = modelMatrix * vec4(inputPosition, 1.0f);
 	v = viewMatrix * v_world;
 	gl_Position = projectionMatrix * v;
 
-    normal = transformMatrix * vec4(inputNormal, 0.0f);
+    normal = modelMatrix * vec4(inputNormal, 0.0f);
     normal = viewMatrix * normal;
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;

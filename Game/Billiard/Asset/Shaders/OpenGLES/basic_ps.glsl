@@ -98,8 +98,8 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
 
 vec3 apply_light(Light light) {
     vec3 N = normalize(normal.xyz);
-    vec3 L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
-    vec3 light_dir = normalize((viewMatrix * worldMatrix * light.lightDirection).xyz);
+    vec3 L = (viewMatrix * light.lightPosition).xyz - v.xyz;
+    vec3 light_dir = normalize((viewMatrix * light.lightDirection).xyz);
 
     if (light.lightPosition.w == 0.0f)
     {
@@ -107,7 +107,7 @@ vec3 apply_light(Light light) {
     }
     else
     {
-        L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
+        L = (viewMatrix * light.lightPosition).xyz - v.xyz;
     }
 
     float lightToSurfDist = length(L);
@@ -140,9 +140,9 @@ vec3 apply_light(Light light) {
 vec3 apply_areaLight(Light light)
 {
     vec3 N = normalize(normal.xyz);
-    vec3 right = normalize((viewMatrix * worldMatrix * vec4(1.0f, 0.0f, 0.0f, 0.0f)).xyz);
-    vec3 pnormal = normalize((viewMatrix * worldMatrix * light.lightDirection).xyz);
-    vec3 ppos = (viewMatrix * worldMatrix * light.lightPosition).xyz;
+    vec3 right = normalize((viewMatrix * vec4(1.0f, 0.0f, 0.0f, 0.0f)).xyz);
+    vec3 pnormal = normalize((viewMatrix * light.lightDirection).xyz);
+    vec3 ppos = (viewMatrix * light.lightPosition).xyz;
     vec3 up = normalize(cross(pnormal, right));
     right = normalize(cross(up, pnormal));
 

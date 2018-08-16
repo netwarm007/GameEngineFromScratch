@@ -10,7 +10,6 @@ void main(void)
 {
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	vec4 v = modelMatrix * vec4(inputPosition, 1.0f);
-	v = worldMatrix * v;
 	v = viewMatrix * v;
 	gl_Position = projectionMatrix * v;
 }

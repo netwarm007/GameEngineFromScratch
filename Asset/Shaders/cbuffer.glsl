@@ -22,7 +22,6 @@ struct Light {
 };
 
 uniform DrawFrameConstants {
-    mat4 worldMatrix;
     mat4 viewMatrix;
     mat4 projectionMatrix;
     vec3 ambientColor;
