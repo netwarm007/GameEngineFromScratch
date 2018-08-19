@@ -43,6 +43,8 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     }
     else
     {
+        glBindBuffer(GL_UNIFORM_BUFFER, m_UboBuffer);
+
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
     }
 
