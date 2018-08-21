@@ -80,7 +80,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     // Set lighting parameters for PS shader
     for (size_t i = 0; i < context.m_lights.size(); i++)
     {
-        char uniformNames[16][256];
+        char uniformNames[11][256];
 
         sprintf(uniformNames[0x0], "allLights[%zd].lightPosition", i);
         sprintf(uniformNames[0x1], "allLights[%zd].lightColor", i);
@@ -88,28 +88,27 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         sprintf(uniformNames[0x3], "allLights[%zd].lightDirection", i);
         sprintf(uniformNames[0x4], "allLights[%zd].lightSize", i);
         sprintf(uniformNames[0x5], "allLights[%zd].lightDistAttenCurveType", i);
-        sprintf(uniformNames[0x6], "allLights[%zd].lightDistAttenCurveParams", i);
+        sprintf(uniformNames[0x6], "allLights[%zd].lightDistAttenCurveParams_0", i);
         sprintf(uniformNames[0x7], "allLights[%zd].lightAngleAttenCurveType", i);
-        sprintf(uniformNames[0x8], "allLights[%zd].lightAngleAttenCurveParams", i);
+        sprintf(uniformNames[0x8], "allLights[%zd].lightAngleAttenCurveParams_0", i);
         sprintf(uniformNames[0x9], "allLights[%zd].lightShadowMapIndex", i);
         sprintf(uniformNames[0xA], "allLights[%zd].lightVP", i);
 
-        const char* names[16] = {
+        const char* names[11] = {
             uniformNames[0x0], uniformNames[0x1], uniformNames[0x2], uniformNames[0x3],
             uniformNames[0x4], uniformNames[0x5], uniformNames[0x6], uniformNames[0x7],
-            uniformNames[0x8], uniformNames[0x9], uniformNames[0xA], uniformNames[0xB],
-            uniformNames[0xC], uniformNames[0xD], uniformNames[0xE], uniformNames[0xF]
+            uniformNames[0x8], uniformNames[0x9], uniformNames[0xA]
         };
 
-        GLuint indices[0xB];
-        glGetUniformIndices(m_CurrentShader, 0xB, names, indices);
+        GLuint indices[11];
+        glGetUniformIndices(m_CurrentShader, 11, names, indices);
 
-        GLint offset[0xB];
-        glGetActiveUniformsiv(m_CurrentShader, 0xB, indices, GL_UNIFORM_OFFSET, offset);
+        GLint offset[11];
+        glGetActiveUniformsiv(m_CurrentShader, 11, indices, GL_UNIFORM_OFFSET, offset);
 
         memcpy(blockBuffer + offset[0x0], &context.m_lights[i].m_lightPosition, sizeof(Vector4f));
         memcpy(blockBuffer + offset[0x1], &context.m_lights[i].m_lightColor, sizeof(Vector4f));
-        memcpy(blockBuffer + offset[0x2], &context.m_lights[i].m_lightIntensity, sizeof(Vector4f));
+        memcpy(blockBuffer + offset[0x2], &context.m_lights[i].m_lightIntensity, sizeof(float));
         memcpy(blockBuffer + offset[0x3], &context.m_lights[i].m_lightDirection, sizeof(Vector4f));
         memcpy(blockBuffer + offset[0x4], &context.m_lights[i].m_lightSize, sizeof(Vector2f));
         memcpy(blockBuffer + offset[0x5], &context.m_lights[i].m_lightDistAttenCurveType, sizeof(int32_t));
