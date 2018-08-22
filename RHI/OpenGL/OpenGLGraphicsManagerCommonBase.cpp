@@ -30,6 +30,13 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 {
     GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DrawFrameConstants");
 
+    if (blockIndex == GL_INVALID_INDEX)
+    {
+        // the shader does not use "DrawFrameConstants"
+        // simply returns true here
+        return true;
+    }
+
     GLint blockSize;
 
     if (!m_UboBuffer)
