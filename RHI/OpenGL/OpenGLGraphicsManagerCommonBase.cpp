@@ -30,6 +30,13 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 {
     GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DrawFrameConstants");
 
+    if (blockIndex == GL_INVALID_INDEX)
+    {
+        // the shader does not use "DrawFrameConstants"
+        // simply returns true here
+        return true;
+    }
+
     GLint blockSize;
 
     if (!m_UboBuffer)
@@ -43,6 +50,8 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     }
     else
     {
+        glBindBuffer(GL_UNIFORM_BUFFER, m_UboBuffer);
+
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
     }
 
