@@ -46,6 +46,23 @@ namespace My {
         Matrix4X4f  m_projectionMatrix;
         Vector3f    m_ambientColor;
         std::vector<Light> m_lights;
+        intptr_t globalShadowMap;
+        intptr_t shadowMap;
+        intptr_t cubeShadowMap;
+        uint32_t globalShadowMapCount;
+        uint32_t shadowMapCount;
+        uint32_t cubeShadowMapCount;
+        intptr_t skybox;
+
+        DrawFrameContext ()
+        {
+            globalShadowMap = -1;
+            shadowMap = -1;
+            cubeShadowMap = -1;
+            globalShadowMapCount = 0;
+            shadowMapCount = 0;
+            cubeShadowMapCount = 0;
+        }
     };
 
     struct DrawBatchContext {
@@ -59,21 +76,5 @@ namespace My {
     struct Frame {
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
-        intptr_t globalShadowMap;
-        intptr_t shadowMap;
-        intptr_t cubeShadowMap;
-        uint32_t globalShadowMapCount;
-        uint32_t shadowMapCount;
-        uint32_t cubeShadowMapCount;
-
-        Frame ()
-        {
-            globalShadowMap = -1;
-            shadowMap = -1;
-            cubeShadowMap = -1;
-            globalShadowMapCount = 0;
-            shadowMapCount = 0;
-            cubeShadowMapCount = 0;
-        }
     };
 }

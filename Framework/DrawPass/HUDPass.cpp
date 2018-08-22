@@ -17,15 +17,15 @@ void HUDPass::Draw(Frame& frame)
     float top = 0.95f;
     float left = 0.70f;
 
-    for (uint32_t i = 0; i < frame.globalShadowMapCount; i++)
+    for (uint32_t i = 0; i < frame.frameContext.globalShadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawTextureOverlay(frame.globalShadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawTextureOverlay(frame.frameContext.globalShadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
 
-    for (uint32_t i = 0; i < frame.shadowMapCount; i++)
+    for (uint32_t i = 0; i < frame.frameContext.shadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawTextureOverlay(frame.shadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawTextureOverlay(frame.frameContext.shadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
 
@@ -34,10 +34,19 @@ void HUDPass::Draw(Frame& frame)
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-    for (uint32_t i = 0; i < frame.cubeShadowMapCount; i++)
+    for (uint32_t i = 0; i < frame.frameContext.cubeShadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawCubeMapOverlay(frame.cubeShadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.cubeShadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
+
+    shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::CopyCube2);
+
+    // Set the color shader as the current shader program and set the matrices that it will use for rendering.
+    g_pGraphicsManager->UseShaderProgram(shaderProgram);
+
+    // SkyBox
+    g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.skybox, left, top, 0.25f, 0.25f);
+
 #endif
 }

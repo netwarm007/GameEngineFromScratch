@@ -37,6 +37,8 @@ layout(std140) uniform DrawFrameConstants {
     Light allLights[MAX_LIGHTS];
 };
 
+// samplers
+uniform sampler2D diffuseMap;
 uniform sampler2DArray shadowMap;
 uniform sampler2DArray globalShadowMap;
 uniform samplerCubeArray cubeShadowMap;
@@ -50,4 +52,3 @@ uniform float specularPower;
 
 uniform bool usingDiffuseMap;
 
-uniform sampler2D diffuseMap;

@@ -7,6 +7,7 @@
 #include "ForwardRenderPass.hpp"
 #include "ShadowMapPass.hpp"
 #include "HUDPass.hpp"
+#include "SkyBoxPass.hpp"
 
 using namespace My;
 using namespace std;
@@ -18,6 +19,7 @@ int GraphicsManager::Initialize()
 	InitConstants();
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardRenderPass>());
+    m_DrawPasses.push_back(make_shared<SkyBoxPass>());
     m_DrawPasses.push_back(make_shared<HUDPass>());
     return result;
 }
@@ -287,6 +289,11 @@ void GraphicsManager::ClearBuffers()
     cout << "[GraphicsManager] ClearBuffers()" << endl;
 }
 
+void GraphicsManager::DrawSkyBox(const DrawFrameContext& context)
+{
+    cout << "[GraphicsManager] DrawSkyBox(" << &context << ")" << endl;
+}
+
 #ifdef DEBUG
 void GraphicsManager::RenderDebugBuffers()
 {
@@ -469,6 +476,17 @@ void GraphicsManager::DrawTextureOverlay(const intptr_t shadowmap, uint32_t laye
 {
     cout << "[GraphicsManager] DrayOverlay(" << shadowmap << ", "
         << layer_index << ", "
+        << vp_left << ", "
+        << vp_top << ", "
+        << vp_width << ", "
+        << vp_height << ", "
+        << ")" << endl;
+}
+
+void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, 
+    float vp_left, float vp_top, float vp_width, float vp_height)
+{
+    cout << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "

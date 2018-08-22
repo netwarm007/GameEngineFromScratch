@@ -7,22 +7,22 @@ using namespace My;
 
 void ShadowMapPass::Draw(Frame& frame)
 {
-    if (frame.globalShadowMap != -1)
+    if (frame.frameContext.globalShadowMap != -1)
     {
-        g_pGraphicsManager->DestroyShadowMap(frame.globalShadowMap);
-        frame.globalShadowMapCount = 0;
+        g_pGraphicsManager->DestroyShadowMap(frame.frameContext.globalShadowMap);
+        frame.frameContext.globalShadowMapCount = 0;
     }
 
-    if (frame.shadowMap != -1)
+    if (frame.frameContext.shadowMap != -1)
     {
-        g_pGraphicsManager->DestroyShadowMap(frame.shadowMap);
-        frame.shadowMapCount = 0;
+        g_pGraphicsManager->DestroyShadowMap(frame.frameContext.shadowMap);
+        frame.frameContext.shadowMapCount = 0;
     }
 
-    if (frame.cubeShadowMap != -1)
+    if (frame.frameContext.cubeShadowMap != -1)
     {
-        g_pGraphicsManager->DestroyShadowMap(frame.cubeShadowMap);
-        frame.cubeShadowMapCount = 0;
+        g_pGraphicsManager->DestroyShadowMap(frame.frameContext.cubeShadowMap);
+        frame.frameContext.cubeShadowMapCount = 0;
     }
 
     // count shadow map
@@ -35,16 +35,16 @@ void ShadowMapPass::Draw(Frame& frame)
             switch (it->m_lightType)
             {
                 case LightType::Omni:
-                    frame.cubeShadowMapCount++;
+                    frame.frameContext.cubeShadowMapCount++;
                     break;
                 case LightType::Spot:
-                    frame.shadowMapCount++;
+                    frame.frameContext.shadowMapCount++;
                     break;
                 case LightType::Area:
-                    frame.shadowMapCount++;
+                    frame.frameContext.shadowMapCount++;
                     break;
                 case LightType::Infinity:
-                    frame.globalShadowMapCount++;
+                    frame.frameContext.globalShadowMapCount++;
                     break;
                 default:
                     assert(0);
@@ -62,13 +62,13 @@ void ShadowMapPass::Draw(Frame& frame)
     const uint32_t kGlobalShadowMapHeight = 2048; // shadow map for sun light
 
     // generate shadow map array
-    frame.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(kShadowMapWidth, kShadowMapHeight, frame.shadowMapCount);
+    frame.frameContext.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(kShadowMapWidth, kShadowMapHeight, frame.frameContext.shadowMapCount);
 
     // generate global shadow map array
-    frame.globalShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.globalShadowMapCount);
+    frame.frameContext.globalShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.frameContext.globalShadowMapCount);
 
     // generate cube shadow map array
-    frame.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kCubeShadowMapWidth, kCubeShadowMapHeight, frame.cubeShadowMapCount);
+    frame.frameContext.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kCubeShadowMapWidth, kCubeShadowMapHeight, frame.frameContext.cubeShadowMapCount);
 
     uint32_t shadowmap_index = 0;
     uint32_t global_shadowmap_index = 0;
@@ -84,25 +84,25 @@ void ShadowMapPass::Draw(Frame& frame)
         {
             case LightType::Omni:
                 shader_index = DefaultShaderIndex::OmniShadowMap;
-                shadowmap = frame.cubeShadowMap;
+                shadowmap = frame.frameContext.cubeShadowMap;
                 width = kCubeShadowMapWidth;
                 height = kCubeShadowMapHeight;
                 it->m_lightShadowMapIndex = cube_shadowmap_index++;
                 break;
             case LightType::Spot:
-                shadowmap = frame.shadowMap;
+                shadowmap = frame.frameContext.shadowMap;
                 width = kShadowMapWidth;
                 height = kShadowMapHeight;
                 it->m_lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Area:
-                shadowmap = frame.shadowMap;
+                shadowmap = frame.frameContext.shadowMap;
                 width = kShadowMapWidth;
                 height = kShadowMapHeight;
                 it->m_lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Infinity:
-                shadowmap = frame.globalShadowMap;
+                shadowmap = frame.frameContext.globalShadowMap;
                 width = kGlobalShadowMapWidth;
                 height = kGlobalShadowMapHeight;
                 it->m_lightShadowMapIndex = global_shadowmap_index++;
@@ -115,7 +115,6 @@ void ShadowMapPass::Draw(Frame& frame)
 
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         g_pGraphicsManager->UseShaderProgram(shaderProgram);
-        g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
 
         g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
             width, height, it->m_lightShadowMapIndex);
@@ -128,7 +127,7 @@ void ShadowMapPass::Draw(Frame& frame)
         g_pGraphicsManager->EndShadowMap(shadowmap, it->m_lightShadowMapIndex);
     }
 
-    assert(shadowmap_index == frame.shadowMapCount);
-    assert(global_shadowmap_index == frame.globalShadowMapCount);
-    assert(cube_shadowmap_index == frame.cubeShadowMapCount);
+    assert(shadowmap_index == frame.frameContext.shadowMapCount);
+    assert(global_shadowmap_index == frame.frameContext.globalShadowMapCount);
+    assert(cube_shadowmap_index == frame.frameContext.cubeShadowMapCount);
 }

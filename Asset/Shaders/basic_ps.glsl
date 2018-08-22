@@ -137,7 +137,7 @@ float shadow_test(const Light light, const float cosTheta) {
                 if (length(v_light_space) - near_occ * 10.f > bias)
                 {
                     // we are in the shadow
-                    visibility -= 0.22f;
+                    visibility -= 0.88f;
                 }
                 break;
             case 1: // spot
@@ -235,7 +235,7 @@ vec3 apply_light(const Light light) {
 
     vec3 linearColor;
 
-    vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
+    vec3 admit_light = light.lightIntensity * atten * normalize(light.lightColor.rgb);
     if (usingDiffuseMap)
     {
         linearColor = texture(diffuseMap, uv).rgb * cosTheta; 
@@ -309,7 +309,7 @@ vec3 apply_areaLight(const Light light)
         vec2 nearestSpec2D = vec2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
         float specFactor = 1.0f - clamp(length(nearestSpec2D - dirSpec2D), 0.0f, 1.0f);
 
-        vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
+        vec3 admit_light = light.lightIntensity * atten * normalize(light.lightColor.rgb);
 
         if (usingDiffuseMap)
         {

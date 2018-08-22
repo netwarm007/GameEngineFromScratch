@@ -12,6 +12,9 @@
 #define VS_PASSTHROUGH_SOURCE_FILE "Shaders/OpenGLES/passthrough_vs.glsl"
 #define PS_SIMPLE_TEXTURE_SOURCE_FILE "Shaders/OpenGLES/depthtexture_ps.glsl"
 #define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE "Shaders/OpenGLES/passthrough_cube_vs.glsl"
-#define PS_SIMPLE_CUBEMAP_SOURCE_FILE "Shaders/OpenGLES/depthcubemap_ps.glsl"
+#define PS_SIMPLE_DEPTH_CUBEMAP_SOURCE_FILE "Shaders/OpenGLES/depthcubemap_ps.glsl"
+#define PS_SIMPLE_CUBEMAP_SOURCE_FILE "Shaders/OpenGLES/cubemap_ps.glsl"
+#define VS_SKYBOX_SOURCE_FILE "Shaders/OpenGLES/skybox_vs.glsl"
+#define PS_SKYBOX_SOURCE_FILE "Shaders/OpenGLES/skybox_ps.glsl"
 
 #include "OpenGLShaderManagerCommonBase.cpp"

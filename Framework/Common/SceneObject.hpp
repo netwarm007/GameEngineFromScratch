@@ -10,3 +10,4 @@
 #include "SceneObjectTransform.hpp"
 #include "SceneObjectTrack.hpp"
 #include "SceneObjectAnimation.hpp"
+#include "SceneObjectSkyBox.hpp"

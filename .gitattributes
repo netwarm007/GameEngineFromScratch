@@ -54,3 +54,4 @@ External/Freebsd/bin/ispc filter=lfs diff=lfs merge=lfs -text
 Asset/Scene/PlunderbussPete.ogex filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin/llc filter=lfs diff=lfs merge=lfs -text
 Asset/Scene/city.ogex filter=lfs diff=lfs merge=lfs -text
+Asset/Textures filter=lfs diff=lfs merge=lfs -text

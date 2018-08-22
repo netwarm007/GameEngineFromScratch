@@ -36,6 +36,8 @@ namespace My {
         virtual void SetShadowMaps(const Frame& frame);
         virtual void DestroyShadowMap(intptr_t& shadowmap);
 
+        virtual void DrawSkyBox(const DrawFrameContext& context);
+
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
         virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
@@ -47,6 +49,7 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
         virtual void DrawTextureOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height);
         virtual void DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height);
         virtual void ClearDebugBuffers();
 

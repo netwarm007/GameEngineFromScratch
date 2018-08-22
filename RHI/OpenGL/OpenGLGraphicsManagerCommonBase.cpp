@@ -43,6 +43,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     }
     else
     {
+        glBindBuffer(GL_UNIFORM_BUFFER, m_UboBuffer);
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
     }
 
@@ -402,28 +403,33 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                         if (it == m_TextureIndex.end()) {
                             GLuint texture_id;
                             glGenTextures(1, &texture_id);
-                            glActiveTexture(GL_TEXTURE0 + texture_id);
+                            glActiveTexture(GL_TEXTURE0);
                             glBindTexture(GL_TEXTURE_2D, texture_id);
+                            GLenum format;
                             if(texture.bitcount == 24)
                             {
-                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.Width, texture.Height, 
-                                    0, GL_RGB, GL_UNSIGNED_BYTE, texture.data);
+                                format = GL_RGB;
                             }
                             else
                             {
-                                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.Width, texture.Height, 
-                                    0, GL_RGBA, GL_UNSIGNED_BYTE, texture.data);
+                                format = GL_RGBA;
                             }
+                            glTexImage2D(GL_TEXTURE_2D, 0, format, texture.Width, texture.Height, 
+                                0, format, GL_UNSIGNED_BYTE, texture.data);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+                            glBindTexture(GL_TEXTURE_2D, 0);
 
                             m_TextureIndex[color.ValueMap->GetName()] = texture_id;
                             m_Textures.push_back(texture_id);
                         }
                     }
                 }
+
+                glBindVertexArray(0);
 
                 auto dbc = make_shared<OpenGLDrawBatchContext>();
                 dbc->vao     = vao;
@@ -436,6 +442,98 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
             }
         }
     }
+
+    // SkyBox
+    float skyboxVertices[] = {
+         1.0f,  1.0f,  1.0f,  // 0
+        -1.0f,  1.0f,  1.0f,  // 1
+         1.0f, -1.0f,  1.0f,  // 2
+         1.0f,  1.0f, -1.0f,  // 3
+        -1.0f,  1.0f, -1.0f,  // 4
+         1.0f, -1.0f, -1.0f,  // 5
+        -1.0f, -1.0f,  1.0f,  // 6
+        -1.0f, -1.0f, -1.0f   // 7
+    };
+
+    uint8_t skyboxIndices[] = {
+        4, 7, 5,
+        5, 3, 4,
+
+        6, 7, 4,
+        4, 1, 6,
+
+        5, 2, 0,
+        0, 3, 5,
+
+        6, 1, 0,
+        0, 2, 6,
+
+        4, 3, 0,
+        0, 1, 4,
+
+        7, 6, 5,
+        5, 6, 2
+    };
+
+    // load texture
+    GLuint cubemapTexture;
+    glGenTextures(1, &cubemapTexture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        assert(scene.SkyBox);
+        auto& texture = scene.SkyBox->GetTexture(i);
+        auto& image = texture.GetTextureImage();
+        GLenum format;
+        if(image.bitcount == 24)
+        {
+            format = GL_RGB;
+        }
+        else
+        {
+            format = GL_RGBA;
+        }
+
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, image.Width, image.Height, 
+            0, format, GL_UNSIGNED_BYTE, image.data);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    m_Textures.push_back(cubemapTexture);
+    m_Frames[m_nFrameIndex].frameContext.skybox = cubemapTexture;
+
+    // skybox VAO
+    GLuint skyboxVAO, skyboxVBO[2];
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(2, skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    // vertex buffer
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+    // index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxVBO[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+    
+    m_Buffers.push_back(skyboxVBO[0]);
+    m_Buffers.push_back(skyboxVBO[1]);
+
+    m_SkyBoxDrawBatchContext.vao     = skyboxVAO;
+    m_SkyBoxDrawBatchContext.mode    = GL_TRIANGLES;
+    m_SkyBoxDrawBatchContext.type    = GL_UNSIGNED_BYTE;
+    m_SkyBoxDrawBatchContext.count   = sizeof(skyboxIndices) / sizeof(skyboxIndices[0]);
 
     return;
 }
@@ -451,6 +549,11 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
         }
 
         batchContexts.clear();
+    }
+
+    if (m_SkyBoxDrawBatchContext.vao)
+    {
+        glDeleteVertexArrays(1, &m_SkyBoxDrawBatchContext.vao);
     }
 
     for (auto buf : m_Buffers) {
@@ -492,16 +595,18 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
     bool result = SetShaderParameter("modelMatrix", dbc.trans);
     assert(result);
 
-    glBindVertexArray(dbc.vao);
-
     result = SetShaderParameter("usingDiffuseMap", false);
     assert(result);
 
     if (dbc.material) {
         Color color = dbc.material->GetBaseColor();
         if (color.ValueMap) {
-            result = SetShaderParameter("diffuseMap", m_TextureIndex[color.ValueMap->GetName()]);
+            result = SetShaderParameter("diffuseMap", 0);
             assert(result);
+
+            GLuint texture_id = m_TextureIndex[color.ValueMap->GetName()];
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
             // set this to tell shader to use texture
             result = SetShaderParameter("usingDiffuseMap", true);
             assert(result);
@@ -521,7 +626,11 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
         assert(result);
     }
 
+    glBindVertexArray(dbc.vao);
+
     glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+
+    glBindVertexArray(0);
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawBatchDepthOnly(const DrawBatchContext& context)
@@ -534,6 +643,8 @@ void OpenGLGraphicsManagerCommonBase::DrawBatchDepthOnly(const DrawBatchContext&
     glBindVertexArray(dbc.vao);
 
     glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+
+    glBindVertexArray(0);
 }
 
 intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
@@ -670,7 +781,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
-    GLint texture_id = (GLint) frame.shadowMap;
+    GLint texture_id = (GLint) frame.frameContext.shadowMap;
     glActiveTexture(GL_TEXTURE0 + texture_id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -683,7 +794,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     bool result = SetShaderParameter("shadowMap", texture_id);
     assert(result);
 
-    texture_id = (GLint) frame.globalShadowMap;
+    texture_id = (GLint) frame.frameContext.globalShadowMap;
     glActiveTexture(GL_TEXTURE0 + texture_id);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -695,7 +806,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     result = SetShaderParameter("globalShadowMap", texture_id);
     assert(result);
 
-    texture_id = (GLint) frame.cubeShadowMap;
+    texture_id = (GLint) frame.frameContext.cubeShadowMap;
     glActiveTexture(GL_TEXTURE0 + texture_id);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -710,6 +821,23 @@ void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(intptr_t& shadowmap)
     GLuint id = (GLuint) shadowmap;
     glDeleteTextures(1, &id);
     shadowmap = -1;
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawSkyBox(const DrawFrameContext& context)
+{
+    GLuint cubemapTexture = (GLuint) context.skybox;
+    bool result = SetShaderParameter("skybox", 0);
+    assert(result);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+    glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
+
+    glDrawElements(m_SkyBoxDrawBatchContext.mode, m_SkyBoxDrawBatchContext.count, m_SkyBoxDrawBatchContext.type, 0x00);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS); // set depth function back to default
 }
 
 #ifdef DEBUG
@@ -1048,16 +1176,14 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t shadowma
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height)
 {
     GLint texture_id = (GLuint) cubemap;
 
     glActiveTexture(GL_TEXTURE0 + texture_id);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
     auto result = SetShaderParameter("depthSampler", texture_id);
-    //assert(result);
-    result = SetShaderParameter("layer_index", (float) layer_index);
-    //assert(result);
+    assert(result);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);
@@ -1117,7 +1243,159 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
         vp_left + cell_width * 3.0f, vp_top - cell_height * 2.0f, 0.0f,
     };
 
-    GLfloat uvw[] = {
+    const GLfloat uvw[] = {
+         // back
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        
+        // left
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+
+        // front
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        // right
+         1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+
+        // top
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+
+        // bottom
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f
+    };
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id[2];
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(2, buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    // Bind the vertex buffer and load the vertex (uvw) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uvw), uvw, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+
+    glDrawArrays(GL_TRIANGLES, 0x00, 36);
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(2, buffer_id);
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+{
+    GLint texture_id = (GLuint) cubemap;
+
+    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
+    auto result = SetShaderParameter("depthSampler", texture_id);
+    assert(result);
+    result = SetShaderParameter("layer_index", (float) layer_index);
+    assert(result);
+
+    const float cell_height = vp_height * 0.5f;
+    const float cell_width = vp_width * (1.0f / 3.0f);
+    GLfloat vertices[] = {
+        // face 1
+        vp_left, vp_top, 0.0f,
+        vp_left, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top, 0.0f,
+
+        vp_left + cell_width, vp_top, 0.0f,
+        vp_left, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+
+        // face 2
+        vp_left + cell_width, vp_top, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top, 0.0f,
+
+        vp_left + cell_width * 2.0f, vp_top, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+
+        // face 3
+        vp_left + cell_width * 2.0f, vp_top, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top, 0.0f,
+
+        vp_left + cell_width * 3.0f, vp_top, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top - cell_height, 0.0f,
+
+        // face 4
+        vp_left, vp_top - cell_height, 0.0f,
+        vp_left, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width, vp_top - cell_height * 2.0f, 0.0f,
+
+        // face 5
+        vp_left + cell_width, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height * 2.0f, 0.0f,
+
+        // face 6
+        vp_left + cell_width * 2.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top - cell_height, 0.0f,
+
+        vp_left + cell_width * 3.0f, vp_top - cell_height, 0.0f,
+        vp_left + cell_width * 2.0f, vp_top - cell_height * 2.0f, 0.0f,
+        vp_left + cell_width * 3.0f, vp_top - cell_height * 2.0f, 0.0f,
+    };
+
+    const GLfloat uvw[] = {
          // back
          1.0f,  1.0f,  1.0f,
          1.0f,  1.0f, -1.0f,

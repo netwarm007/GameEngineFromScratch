@@ -247,6 +247,20 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Copy] = shaderProgram;
 
+    // Depth CubeMap overlay shader
+    list = {
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_SIMPLE_DEPTH_CUBEMAP_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+
     // CubeMap overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
@@ -259,7 +273,22 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::CopyCube2] = shaderProgram;
+
+    // SkyBox shader
+    list = {
+        {GL_VERTEX_SHADER, VS_SKYBOX_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_SKYBOX_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::SkyBox] = shaderProgram;
+
 
 #ifdef DEBUG
     // Debug Shader

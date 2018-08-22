@@ -12,7 +12,9 @@ namespace My {
         Differed  = "DIFR"_i32,
         Debug     = "DEBG"_i32,
         Copy      = "COPY"_i32,
-        CopyCube  = "COPC"_i32
+        CopyCube  = "COPC"_i32,
+        CopyCube2 = "COP2"_i32,
+        SkyBox    = "SKYB"_i32
     };
 
     Interface IShaderManager : implements IRuntimeModule
