@@ -125,7 +125,7 @@ float shadow_test(const Light light, const float cosTheta) {
     if (light.lightShadowMapIndex != -1) // the light cast shadow
     {
         float bias = 5e-4 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
-        bias = clamp(bias, 0f, 0.01f);
+        bias = clamp(bias, 0.0f, 0.01f);
         float near_occ;
         switch (light.lightType)
         {
