@@ -777,7 +777,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
         }
     }
 
-    glDisable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)
@@ -789,7 +789,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
     const GfxConfiguration& conf = g_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 
-    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 }
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
