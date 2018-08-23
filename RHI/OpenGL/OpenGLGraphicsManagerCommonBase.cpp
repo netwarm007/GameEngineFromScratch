@@ -633,6 +633,8 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
         assert(result);
     }
 
+    glEnable(GL_CULL_FACE);
+
     glBindVertexArray(dbc.vao);
 
     glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
@@ -774,6 +776,8 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
             SetShaderParameter("depthVP", light.m_lightVP);
         }
     }
+
+    glDisable(GL_CULL_FACE);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)
@@ -784,6 +788,8 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
 
     const GfxConfiguration& conf = g_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
+
+    glEnable(GL_CULL_FACE);
 }
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
