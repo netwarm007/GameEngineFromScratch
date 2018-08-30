@@ -19,89 +19,6 @@ out vec4 outputColor;
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
 
-vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
-{
-    return point - dot(point - center_of_plane, normal_of_plane) * normal_of_plane;
-}
-
-bool isAbovePlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
-{
-    return dot(point - center_of_plane, normal_of_plane) > 0.0f;
-}
-
-vec3 linePlaneIntersect(vec3 line_start, vec3 line_dir, vec3 center_of_plane, vec3 normal_of_plane)
-{
-    return line_start + line_dir * (dot(center_of_plane - line_start, normal_of_plane) / dot(line_dir, normal_of_plane));
-}
-
-float linear_interpolate(float t, float begin, float end)
-{
-    if (t < begin)
-    {
-        return 1.0f;
-    }
-    else if (t > end)
-    {
-        return 0.0f;
-    }
-    else
-    {
-        return (end - t) / (end - begin);
-    }
-}
-
-float apply_atten_curve(float dist, int atten_type, float atten_params[5])
-{
-    float atten = 1.0f;
-
-    switch(atten_type)
-    {
-        case 1: // linear
-        {
-            float begin_atten = atten_params[0];
-            float end_atten = atten_params[1];
-            atten = linear_interpolate(dist, begin_atten, end_atten);
-            break;
-        }
-        case 2: // smooth
-        {
-            float begin_atten = atten_params[0];
-            float end_atten = atten_params[1];
-            float tmp = linear_interpolate(dist, begin_atten, end_atten);
-            atten = 3.0f * pow(tmp, 2.0f) - 2.0f * pow(tmp, 3.0f);
-            break;
-        }
-        case 3: // inverse
-        {
-            float scale = atten_params[0];
-            float offset = atten_params[1];
-            float kl = atten_params[2];
-            float kc = atten_params[3];
-            atten = clamp(scale / 
-                (kl * dist + kc * scale) + offset, 
-                0.0f, 1.0f);
-            break;
-        }
-        case 4: // inverse square
-        {
-            float scale = atten_params[0];
-            float offset = atten_params[1];
-            float kq = atten_params[2];
-            float kl = atten_params[3];
-            float kc = atten_params[4];
-            atten = clamp(pow(scale, 2.0f) / 
-                (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
-                0.0f, 1.0f);
-            break;
-        }
-        case 0:
-        default:
-            break; // no attenuation
-    }
-
-    return atten;
-}
-
 float shadow_test(const Light light, const float cosTheta) {
     vec4 v_light_space = light.lightVP * v_world;
     v_light_space /= v_light_space.w;
@@ -326,23 +243,6 @@ vec3 apply_areaLight(const Light light)
     }
 
     return linearColor;
-}
-
-vec3 reinhard_tone_mapping(vec3 color)
-{
-    return color / (color + vec3(1.0f));
-}
-
-vec3 exposure_tone_mapping(vec3 color)
-{
-    const float exposure = 1.0f;
-    return vec3(1.0f) - exp(-color * exposure);
-}
-
-vec3 gamma_correction(vec3 color)
-{
-    const float gamma = 2.2f;
-    return pow(color, vec3(1.0f / gamma));
 }
 
 void main(void)

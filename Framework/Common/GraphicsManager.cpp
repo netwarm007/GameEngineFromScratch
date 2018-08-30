@@ -145,7 +145,7 @@ void GraphicsManager::CalculateCameraMatrix()
 void GraphicsManager::CalculateLights()
 {
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
-    frameContext.m_ambientColor = { 0.05f, 0.05f, 0.05f };
+    frameContext.m_ambientColor = { 0.01f, 0.01f, 0.01f };
     frameContext.m_lights.clear();
 
     auto& scene = g_pSceneManager->GetSceneForRendering();

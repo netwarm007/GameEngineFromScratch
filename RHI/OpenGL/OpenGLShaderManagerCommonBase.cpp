@@ -89,12 +89,19 @@ namespace My {
 
     static bool LoadShaderFromFile(const char* filename, const GLenum shaderType, GLuint& shader)
     {
+        std::string cbufferShaderBuffer;
         std::string commonShaderBuffer;
         std::string shaderBuffer;
         int status;
 
         // Load the common shader source file into a text buffer.
-        commonShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/cbuffer.glsl");
+        cbufferShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/cbuffer.glsl");
+        if(cbufferShaderBuffer.empty())
+        {
+            return false;
+        }
+
+        commonShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/common.glsl");
         if(commonShaderBuffer.empty())
         {
             return false;
@@ -107,13 +114,13 @@ namespace My {
             return false;
         }
 
-        shaderBuffer = commonShaderBuffer + shaderBuffer;
+        shaderBuffer = cbufferShaderBuffer + commonShaderBuffer + shaderBuffer;
 
         // Create a shader object.
         shader = glCreateShader(shaderType);
 
         // Copy the shader source code strings into the shader objects.
-        const char* pStr =  shaderBuffer.c_str();
+        const char* pStr = shaderBuffer.c_str();
         glShaderSource(shader, 1, &pStr, NULL);
 
         // Compile the shaders.
