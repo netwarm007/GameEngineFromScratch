@@ -488,9 +488,10 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
+    assert(scene.SkyBox);
+
     for (uint32_t i = 0; i < 6; i++)
     {
-        assert(scene.SkyBox);
         auto& texture = scene.SkyBox->GetTexture(i);
         auto& image = texture.GetTextureImage();
         GLenum format;
@@ -506,11 +507,13 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, image.Width, image.Height, 
             0, format, GL_UNSIGNED_BYTE, image.data);
     }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  // this is the default and will disable the mip map
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 

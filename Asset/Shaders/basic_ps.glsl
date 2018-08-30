@@ -235,7 +235,7 @@ vec3 apply_light(const Light light) {
 
     vec3 linearColor;
 
-    vec3 admit_light = light.lightIntensity * atten * normalize(light.lightColor.rgb);
+    vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
     if (usingDiffuseMap)
     {
         linearColor = texture(diffuseMap, uv).rgb * cosTheta; 
@@ -309,7 +309,7 @@ vec3 apply_areaLight(const Light light)
         vec2 nearestSpec2D = vec2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
         float specFactor = 1.0f - clamp(length(nearestSpec2D - dirSpec2D), 0.0f, 1.0f);
 
-        vec3 admit_light = light.lightIntensity * atten * normalize(light.lightColor.rgb);
+        vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
 
         if (usingDiffuseMap)
         {
@@ -328,6 +328,23 @@ vec3 apply_areaLight(const Light light)
     return linearColor;
 }
 
+vec3 reinhard_tone_mapping(vec3 color)
+{
+    return color / (color + vec3(1.0f));
+}
+
+vec3 exposure_tone_mapping(vec3 color)
+{
+    const float exposure = 1.0f;
+    return vec3(1.0f) - exp(-color * exposure);
+}
+
+vec3 gamma_correction(vec3 color)
+{
+    const float gamma = 2.2f;
+    return pow(color, vec3(1.0f / gamma));
+}
+
 void main(void)
 {
     vec3 linearColor = vec3(0.0f);
@@ -343,10 +360,14 @@ void main(void)
         }
     }
 
-    // no-gamma correction
-    // outputColor = vec4(ambientColor.rgb + clamp(linearColor, 0.0f, 1.0f), 1.0f);
+    // add ambient color
+    linearColor += ambientColor.rgb;
+
+    // tone mapping
+    //linearColor = reinhard_tone_mapping(linearColor);
+    linearColor = exposure_tone_mapping(linearColor);
 
     // gamma correction
-    outputColor = vec4(ambientColor.rgb + clamp(pow(linearColor, vec3(1.0f/2.2f)), 0.0f, 1.0f), 1.0f);
+    outputColor = vec4(gamma_correction(linearColor), 1.0f);
 }
 

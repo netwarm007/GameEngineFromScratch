@@ -6,5 +6,5 @@ in vec3 UVW;
 uniform samplerCube skybox;
 
 void main(){
-    Color = texture(skybox, UVW);
+    Color = textureLod(skybox, UVW, 2);
 }
