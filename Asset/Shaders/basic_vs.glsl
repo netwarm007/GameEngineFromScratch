@@ -13,6 +13,7 @@ layout(location = 2) in vec2 inputUV;
 // OUTPUT VARIABLES //
 //////////////////////
 out vec4 normal;
+out vec4 normal_world;
 out vec4 v;
 out vec4 v_world;
 out vec2 uv;
@@ -27,8 +28,8 @@ void main(void)
 	v = viewMatrix * v_world;
 	gl_Position = projectionMatrix * v;
 
-    normal = modelMatrix * vec4(inputNormal, 0.0f);
-    normal = viewMatrix * normal;
+    normal_world = modelMatrix * vec4(inputNormal, 0.0f);
+    normal = viewMatrix * normal_world;
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
 }

@@ -6,6 +6,7 @@
 // INPUT VARIABLES //
 /////////////////////
 in vec4 normal;
+in vec4 normal_world;
 in vec4 v; 
 in vec4 v_world;
 in vec2 uv;
@@ -261,7 +262,8 @@ void main(void)
     }
 
     // add ambient color
-    linearColor += ambientColor.rgb;
+    // linearColor += ambientColor.rgb;
+    linearColor += textureLod(skybox, normal_world.xyz, 8).rgb * vec3(0.20f);
 
     // tone mapping
     //linearColor = reinhard_tone_mapping(linearColor);

@@ -13,6 +13,7 @@ void ForwardRenderPass::Draw(Frame& frame)
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
     g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
     g_pGraphicsManager->SetShadowMaps(frame);
+    g_pGraphicsManager->SetSkyBox(frame.frameContext);
 
     for (auto dbc : frame.batchContexts)
     {

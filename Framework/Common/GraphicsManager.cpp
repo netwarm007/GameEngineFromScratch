@@ -289,9 +289,14 @@ void GraphicsManager::ClearBuffers()
     cout << "[GraphicsManager] ClearBuffers()" << endl;
 }
 
-void GraphicsManager::DrawSkyBox(const DrawFrameContext& context)
+void GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 {
-    cout << "[GraphicsManager] DrawSkyBox(" << &context << ")" << endl;
+    cout << "[GraphicsManager] SetSkyBox(" << &context << ")" << endl;
+}
+
+void GraphicsManager::DrawSkyBox()
+{
+    cout << "[GraphicsManager] DrawSkyBox()" << endl;
 }
 
 #ifdef DEBUG

@@ -34,7 +34,8 @@ namespace My {
         void SetShadowMaps(const Frame& frame) final;
         void DestroyShadowMap(intptr_t& shadowmap) final;
 
-        void DrawSkyBox(const DrawFrameContext& context) final;
+        void SetSkyBox(const DrawFrameContext& context) final;
+        void DrawSkyBox() final;
 
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;
@@ -94,7 +95,7 @@ namespace My {
 
         std::vector<GLuint> m_Buffers;
         std::vector<GLuint> m_Textures;
-        std::map<std::string, GLint> m_TextureIndex;
+        std::map<std::string, GLuint> m_TextureIndex;
 
 #ifdef DEBUG
         std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;

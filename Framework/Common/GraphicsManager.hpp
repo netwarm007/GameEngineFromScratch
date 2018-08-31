@@ -36,7 +36,8 @@ namespace My {
         virtual void SetShadowMaps(const Frame& frame);
         virtual void DestroyShadowMap(intptr_t& shadowmap);
 
-        virtual void DrawSkyBox(const DrawFrameContext& context);
+        virtual void SetSkyBox(const DrawFrameContext& context);
+        virtual void DrawSkyBox();
 
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);

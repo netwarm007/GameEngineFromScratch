@@ -410,7 +410,6 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                         if (it == m_TextureIndex.end()) {
                             GLuint texture_id;
                             glGenTextures(1, &texture_id);
-                            glActiveTexture(GL_TEXTURE0);
                             glBindTexture(GL_TEXTURE_2D, texture_id);
                             GLenum format;
                             if(texture.bitcount == 24)
@@ -485,7 +484,6 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
     // load texture
     GLuint cubemapTexture;
     glGenTextures(1, &cubemapTexture);
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
     assert(scene.SkyBox);
@@ -514,8 +512,6 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     m_Textures.push_back(cubemapTexture);
     m_Frames[m_nFrameIndex].frameContext.skybox = cubemapTexture;
@@ -665,7 +661,6 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint3
     GLuint shadowMap;
 
     glGenTextures(1, &shadowMap);
-    glActiveTexture(GL_TEXTURE0 + shadowMap);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, shadowMap);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -685,7 +680,6 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t 
     GLuint shadowMap;
 
     glGenTextures(1, &shadowMap);
-    glActiveTexture(GL_TEXTURE0 + shadowMap);
     glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMap);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -797,8 +791,8 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
-    GLint texture_id = (GLint) frame.frameContext.shadowMap;
-    glActiveTexture(GL_TEXTURE0 + texture_id);
+    GLuint texture_id = (GLuint) frame.frameContext.shadowMap;
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -806,30 +800,21 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     const float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
-    // bind shadow map
-    bool result = SetShaderParameter("shadowMap", texture_id);
-    assert(result);
 
-    texture_id = (GLint) frame.frameContext.globalShadowMap;
-    glActiveTexture(GL_TEXTURE0 + texture_id);
+    texture_id = (GLuint) frame.frameContext.globalShadowMap;
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
-    // bind global shadow map
-    result = SetShaderParameter("globalShadowMap", texture_id);
-    assert(result);
 
-    texture_id = (GLint) frame.frameContext.cubeShadowMap;
-    glActiveTexture(GL_TEXTURE0 + texture_id);
+    texture_id = (GLuint) frame.frameContext.cubeShadowMap;
+    glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    // bind cube shadow map
-    result = SetShaderParameter("cubeShadowMap", texture_id);
-    assert(result);
 }
 
 void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(intptr_t& shadowmap)
@@ -839,15 +824,16 @@ void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(intptr_t& shadowmap)
     shadowmap = -1;
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawSkyBox(const DrawFrameContext& context)
+void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
 {
+    // skybox
     GLuint cubemapTexture = (GLuint) context.skybox;
-    bool result = SetShaderParameter("skybox", 0);
-    assert(result);
-
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+}
 
+void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
+{
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
@@ -1136,13 +1122,11 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 
 void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    GLint texture_id = (GLuint) shadowmap;
+    GLuint texture_id = (GLuint) shadowmap;
 
-    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-    auto result = SetShaderParameter("depthSampler", texture_id);
-    assert(result);
-    result = SetShaderParameter("layer_index", (float) layer_index);
+    bool result = SetShaderParameter("layer_index", (float) layer_index);
     assert(result);
 
     GLfloat vertices[] = {
@@ -1194,12 +1178,10 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t shadowma
 
 void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    GLint texture_id = (GLuint) cubemap;
+    GLuint texture_id = (GLuint) cubemap;
 
-    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
-    auto result = SetShaderParameter("depthSampler", texture_id);
-    assert(result);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);
@@ -1344,13 +1326,11 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
 
 void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    GLint texture_id = (GLuint) cubemap;
+    GLuint texture_id = (GLuint) cubemap;
 
-    glActiveTexture(GL_TEXTURE0 + texture_id);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    auto result = SetShaderParameter("depthSampler", texture_id);
-    assert(result);
-    result = SetShaderParameter("layer_index", (float) layer_index);
+    bool result = SetShaderParameter("layer_index", (float) layer_index);
     assert(result);
 
     const float cell_height = vp_height * 0.5f;

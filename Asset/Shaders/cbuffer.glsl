@@ -1,4 +1,4 @@
-#version 400 core
+#version 420 core
 
 /////////////////////
 // CONSTANTS       //
@@ -38,10 +38,11 @@ layout(std140) uniform DrawFrameConstants {
 };
 
 // samplers
-uniform sampler2D diffuseMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform samplerCubeArray cubeShadowMap;
+layout(binding = 0) uniform sampler2D diffuseMap;
+layout(binding = 1) uniform sampler2DArray shadowMap;
+layout(binding = 2) uniform sampler2DArray globalShadowMap;
+layout(binding = 3) uniform samplerCubeArray cubeShadowMap;
+layout(binding = 4) uniform samplerCube skybox;
 
 // per drawcall
 uniform mat4 modelMatrix;

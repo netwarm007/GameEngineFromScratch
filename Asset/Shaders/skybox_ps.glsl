@@ -3,8 +3,6 @@ layout(location = 0) out vec4 outputColor;
 
 in vec3 UVW;
 
-uniform samplerCube skybox;
-
 void main(){
     outputColor = textureLod(skybox, UVW, 2);
 
