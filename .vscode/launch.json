@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/mermaid.ogex"
+                "Scene/rotate_cubes.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -37,7 +37,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "Scene/mermaid.ogex"
+                "Scene/rotate_cubes.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
