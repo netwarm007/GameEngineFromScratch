@@ -701,15 +701,21 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     if (light.m_lightType == LightType::Omni)
     {
+        GLuint texture_view;
+        glGenTextures(1, &texture_view);
+        glTextureView(texture_view, GL_TEXTURE_CUBE_MAP_ARRAY, (GLuint) shadowmap, GL_DEPTH_COMPONENT24, 0, 1, layer_index * 6,  6);
+
         // we bind the whole cubemap array to FBO
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture_view, 0);
+
+        // record it to destroy
+        m_Textures.push_back(texture_view);
     }
     else
     {
         // we only bind the single layer to FBO
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0, layer_index);
     }
-
 
     // Always check that our framebuffer is ok
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -762,7 +768,6 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
             }
 
             SetShaderParameter("shadowMatrices", shadowMatrices, 6);
-            SetShaderParameter("layer_index", layer_index);
             SetShaderParameter("lightPos", pos);
             SetShaderParameter("far_plane", farClipDistance);
 
