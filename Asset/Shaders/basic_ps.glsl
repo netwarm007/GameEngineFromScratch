@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: basic.ps 
+// Filename: basic_ps.glsl
 ////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////
@@ -19,92 +19,6 @@ out vec4 outputColor;
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
-
-float shadow_test(const Light light, const float cosTheta) {
-    vec4 v_light_space = light.lightVP * v_world;
-    v_light_space /= v_light_space.w;
-
-    const mat4 depth_bias = mat4 (
-        vec4(0.5f, 0.0f, 0.0f, 0.0f),
-        vec4(0.0f, 0.5f, 0.0f, 0.0f),
-        vec4(0.0f, 0.0f, 0.5f, 0.0f),
-        vec4(0.5f, 0.5f, 0.5f, 1.0f)
-    );
-
-    const vec2 poissonDisk[4] = vec2[](
-        vec2( -0.94201624f, -0.39906216f ),
-        vec2( 0.94558609f, -0.76890725f ),
-        vec2( -0.094184101f, -0.92938870f ),
-        vec2( 0.34495938f, 0.29387760f )
-    );
-
-    // shadow test
-    float visibility = 1.0f;
-    if (light.lightShadowMapIndex != -1) // the light cast shadow
-    {
-        float bias = 5e-4 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
-        bias = clamp(bias, 0.0f, 0.01f);
-        float near_occ;
-        switch (light.lightType)
-        {
-            case 0: // point
-                // recalculate the v_light_space because we do not need to taking account of rotation
-                v_light_space = v_world - light.lightPosition;
-                near_occ = texture(cubeShadowMap, vec4(v_light_space.xyz, light.lightShadowMapIndex)).r;
-
-                if (length(v_light_space) - near_occ * 10.f > bias)
-                {
-                    // we are in the shadow
-                    visibility -= 0.88f;
-                }
-                break;
-            case 1: // spot
-                // adjust from [-1, 1] to [0, 1]
-                v_light_space = depth_bias * v_light_space;
-                for (int i = 0; i < 4; i++)
-                {
-                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
-
-                    if (v_light_space.z - near_occ > bias)
-                    {
-                        // we are in the shadow
-                        visibility -= 0.22f;
-                    }
-                }
-                break;
-            case 2: // infinity
-                // adjust from [-1, 1] to [0, 1]
-                v_light_space = depth_bias * v_light_space;
-                for (int i = 0; i < 4; i++)
-                {
-                    near_occ = texture(globalShadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
-
-                    if (v_light_space.z - near_occ > bias)
-                    {
-                        // we are in the shadow
-                        visibility -= 0.22f;
-                    }
-                }
-                break;
-            case 3: // area
-                // adjust from [-1, 1] to [0, 1]
-                v_light_space = depth_bias * v_light_space;
-                for (int i = 0; i < 4; i++)
-                {
-                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
-
-                    if (v_light_space.z - near_occ > bias)
-                    {
-                        // we are in the shadow
-                        visibility -= 0.22f;
-                    }
-                }
-                break;
-        }
-    }
-
-    return visibility;
-}
 
 vec3 apply_light(const Light light) {
     vec3 N = normalize(normal.xyz);
@@ -127,7 +41,7 @@ vec3 apply_light(const Light light) {
     float cosTheta = clamp(dot(N, L), 0.0f, 1.0f);
 
     // shadow test
-    float visibility = shadow_test(light, cosTheta);
+    float visibility = shadow_test(v_world, light, cosTheta);
 
     float lightToSurfAngle = acos(dot(L, -light_dir));
 

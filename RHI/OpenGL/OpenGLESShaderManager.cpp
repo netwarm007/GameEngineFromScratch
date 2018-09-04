@@ -1,7 +1,7 @@
 #include "OpenGLESShaderManager.hpp"
 
-#define VS_SHADER_SOURCE_FILE "Shaders/OpenGLES/basic_vs.glsl"
-#define PS_SHADER_SOURCE_FILE "Shaders/OpenGLES/basic_ps.glsl"
+#define VS_BASIC_SOURCE_FILE "Shaders/OpenGLES/basic_vs.glsl"
+#define PS_BASIC_SOURCE_FILE "Shaders/OpenGLES/basic_ps.glsl"
 #define VS_SHADOWMAP_SOURCE_FILE "Shaders/OpenGLES/shadowmap_vs.glsl"
 #define PS_SHADOWMAP_SOURCE_FILE "Shaders/OpenGLES/shadowmap_ps.glsl"
 #define VS_OMNI_SHADOWMAP_SOURCE_FILE "Shaders/OpenGLES/shadowmap_omni_vs.glsl"
@@ -16,5 +16,6 @@
 #define PS_SIMPLE_CUBEMAP_SOURCE_FILE "Shaders/OpenGLES/cubemap_ps.glsl"
 #define VS_SKYBOX_SOURCE_FILE "Shaders/OpenGLES/skybox_vs.glsl"
 #define PS_SKYBOX_SOURCE_FILE "Shaders/OpenGLES/skybox_ps.glsl"
+#define PS_PBR_SOURCE_FILE "Shaders/OpenGLES/pbr_ps.glsl"
 
 #include "OpenGLShaderManagerCommonBase.cpp"

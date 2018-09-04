@@ -60,13 +60,13 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         // Query for the offsets of each block variable
         const GLchar *names[] = { "viewMatrix",
                                 "projectionMatrix", "ambientColor",
-                                "numLights" };
+                                "camPos", "numLights" };
 
-        GLuint indices[4];
-        glGetUniformIndices(m_CurrentShader, 4, names, indices);
+        GLuint indices[5];
+        glGetUniformIndices(m_CurrentShader, 5, names, indices);
 
-        GLint offset[4];
-        glGetActiveUniformsiv(m_CurrentShader, 4, indices, GL_UNIFORM_OFFSET, offset);
+        GLint offset[5];
+        glGetActiveUniformsiv(m_CurrentShader, 5, indices, GL_UNIFORM_OFFSET, offset);
 
         // Set the view matrix in the vertex shader.
         memcpy(blockBuffer + offset[0], &context.m_viewMatrix, sizeof(Matrix4X4f));
@@ -77,9 +77,12 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         // Set the ambient color
         memcpy(blockBuffer + offset[2], &context.m_ambientColor, sizeof(Vector3f));
 
+        // Set the camPos
+        memcpy(blockBuffer + offset[3], &context.m_camPos, sizeof(Vector3f));
+
         // Set number of lights
         GLint numLights = (GLint) context.m_lights.size();
-        memcpy(blockBuffer + offset[3], &numLights, sizeof(GLint));
+        memcpy(blockBuffer + offset[4], &numLights, sizeof(GLint));
     }
 
     // Set lighting parameters for PS shader
@@ -602,34 +605,37 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
     assert(result);
 
     result = SetShaderParameter("usingDiffuseMap", false);
-    assert(result);
 
     if (dbc.material) {
         Color color = dbc.material->GetBaseColor();
         if (color.ValueMap) {
             result = SetShaderParameter("diffuseMap", 0);
-            assert(result);
 
             GLuint texture_id = m_TextureIndex[color.ValueMap->GetName()];
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture_id);
             // set this to tell shader to use texture
             result = SetShaderParameter("usingDiffuseMap", true);
-            assert(result);
         }
         else
         {
             result = SetShaderParameter("diffuseColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
-            assert(result);
         }
 
         color = dbc.material->GetSpecularColor();
         result = SetShaderParameter("specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
-        assert(result);
 
         Parameter param = dbc.material->GetSpecularPower();
         result = SetShaderParameter("specularPower", param.Value);
-        assert(result);
+
+        param = dbc.material->GetMetallic();
+        result = SetShaderParameter("metallic", param.Value);
+
+        param = dbc.material->GetRoughness();
+        result = SetShaderParameter("roughness", param.Value);
+
+        param = dbc.material->GetAO();
+        result = SetShaderParameter("ao", param.Value);
     }
 
     glEnable(GL_CULL_FACE);

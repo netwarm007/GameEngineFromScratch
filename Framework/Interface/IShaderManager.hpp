@@ -8,8 +8,8 @@ namespace My {
     {
         ShadowMap = "SHMP"_i32,
         OmniShadowMap = "OSHM"_i32,
-        Forward   = "FRWD"_i32,
-        Differed  = "DIFR"_i32,
+        Basic     = "BSIC"_i32,
+        Pbr       = " PBR"_i32,
         Debug     = "DEBG"_i32,
         Copy      = "COPY"_i32,
         CopyCube  = "COPC"_i32,

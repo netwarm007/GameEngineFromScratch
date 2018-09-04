@@ -33,6 +33,7 @@ layout(std140) uniform DrawFrameConstants {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     vec3 ambientColor;
+    vec3 camPos;
     int numLights;
     Light allLights[MAX_LIGHTS];
 };
@@ -50,6 +51,9 @@ uniform mat4 modelMatrix;
 uniform vec3 diffuseColor;
 uniform vec3 specularColor;
 uniform float specularPower;
+uniform float metallic;
+uniform float roughness;
+uniform float ao;
 
 uniform bool usingDiffuseMap;
 

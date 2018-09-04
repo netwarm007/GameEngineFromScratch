@@ -1,3 +1,5 @@
+#define PI 3.14159265359
+
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
 {
     return point - dot(point - center_of_plane, normal_of_plane) * normal_of_plane;
@@ -81,6 +83,92 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
     return atten;
 }
 
+float shadow_test(const vec4 v, const Light light, const float cosTheta) {
+    vec4 v_light_space = light.lightVP * v;
+    v_light_space /= v_light_space.w;
+
+    const mat4 depth_bias = mat4 (
+        vec4(0.5f, 0.0f, 0.0f, 0.0f),
+        vec4(0.0f, 0.5f, 0.0f, 0.0f),
+        vec4(0.0f, 0.0f, 0.5f, 0.0f),
+        vec4(0.5f, 0.5f, 0.5f, 1.0f)
+    );
+
+    const vec2 poissonDisk[4] = vec2[](
+        vec2( -0.94201624f, -0.39906216f ),
+        vec2( 0.94558609f, -0.76890725f ),
+        vec2( -0.094184101f, -0.92938870f ),
+        vec2( 0.34495938f, 0.29387760f )
+    );
+
+    // shadow test
+    float visibility = 1.0f;
+    if (light.lightShadowMapIndex != -1) // the light cast shadow
+    {
+        float bias = 5e-4 * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
+        bias = clamp(bias, 0.0f, 0.01f);
+        float near_occ;
+        switch (light.lightType)
+        {
+            case 0: // point
+                // recalculate the v_light_space because we do not need to taking account of rotation
+                v_light_space = v - light.lightPosition;
+                near_occ = texture(cubeShadowMap, vec4(v_light_space.xyz, light.lightShadowMapIndex)).r;
+
+                if (length(v_light_space) - near_occ * 10.f > bias)
+                {
+                    // we are in the shadow
+                    visibility -= 0.88f;
+                }
+                break;
+            case 1: // spot
+                // adjust from [-1, 1] to [0, 1]
+                v_light_space = depth_bias * v_light_space;
+                for (int i = 0; i < 4; i++)
+                {
+                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+
+                    if (v_light_space.z - near_occ > bias)
+                    {
+                        // we are in the shadow
+                        visibility -= 0.22f;
+                    }
+                }
+                break;
+            case 2: // infinity
+                // adjust from [-1, 1] to [0, 1]
+                v_light_space = depth_bias * v_light_space;
+                for (int i = 0; i < 4; i++)
+                {
+                    near_occ = texture(globalShadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+
+                    if (v_light_space.z - near_occ > bias)
+                    {
+                        // we are in the shadow
+                        visibility -= 0.22f;
+                    }
+                }
+                break;
+            case 3: // area
+                // adjust from [-1, 1] to [0, 1]
+                v_light_space = depth_bias * v_light_space;
+                for (int i = 0; i < 4; i++)
+                {
+                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+
+                    if (v_light_space.z - near_occ > bias)
+                    {
+                        // we are in the shadow
+                        visibility -= 0.22f;
+                    }
+                }
+                break;
+        }
+    }
+
+    return visibility;
+}
+
 vec3 reinhard_tone_mapping(vec3 color)
 {
     return color / (color + vec3(1.0f));
@@ -102,4 +190,44 @@ vec3 inverse_gamma_correction(vec3 color)
 {
     const float gamma = 2.2f;
     return pow(color, vec3(gamma));
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a      = roughness*roughness;
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+	
+    float num   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+	
+    return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2  = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1  = GeometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
 }

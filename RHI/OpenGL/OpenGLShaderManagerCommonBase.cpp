@@ -197,10 +197,10 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     GLuint shaderProgram;
     bool result;
 
-    // Forward Shader
+    // Basic Shader
     ShaderSourceList list = {
-        {GL_VERTEX_SHADER, VS_SHADER_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_SHADER_SOURCE_FILE}
+        {GL_VERTEX_SHADER, VS_BASIC_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_BASIC_SOURCE_FILE}
     };
 
     result = LoadShaderProgram(list, shaderProgram);
@@ -209,7 +209,21 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::Forward] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::Basic] = shaderProgram;
+
+    // PBR Shader
+    list = {
+        {GL_VERTEX_SHADER, VS_BASIC_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_PBR_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::Pbr] = shaderProgram;
 
     // Shadow Map Shader
     list = {

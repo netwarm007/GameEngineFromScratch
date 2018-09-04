@@ -45,6 +45,7 @@ namespace My {
         Matrix4X4f  m_viewMatrix;
         Matrix4X4f  m_projectionMatrix;
         Vector3f    m_ambientColor;
+        Vector3f    m_camPos;
         std::vector<Light> m_lights;
         intptr_t globalShadowMap;
         intptr_t shadowMap;
