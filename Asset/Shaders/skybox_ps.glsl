@@ -4,7 +4,7 @@ layout(location = 0) out vec4 outputColor;
 in vec3 UVW;
 
 void main(){
-    outputColor = textureLod(skybox, UVW, 2);
+    outputColor = texture(skybox, UVW);
 
     // inverse gamma correction
     outputColor.rgb = inverse_gamma_correction(outputColor.rgb);
