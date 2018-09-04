@@ -702,17 +702,21 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
+    GLuint tmp_texture_view;
     if (light.m_lightType == LightType::Omni)
     {
-        // we bind the whole cubemap array to FBO
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0);
+        // because we only want to clear one cube map in the cube map array
+        // we need generate a temporary texture view and bind that to framebuffer
+        glGenTextures(1, &tmp_texture_view);
+        glTextureView(tmp_texture_view, GL_TEXTURE_CUBE_MAP, (GLuint) shadowmap, GL_DEPTH_COMPONENT24, 0, 1, layer_index * 6,  6);
+        // we bind the cubemap to FBO
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tmp_texture_view, 0);
     }
     else
     {
         // we only bind the single layer to FBO
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0, layer_index);
     }
-
 
     // Always check that our framebuffer is ok
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -725,6 +729,22 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     glDepthMask(GL_TRUE);
     glClear(GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, width, height);
+
+    if (light.m_lightType == LightType::Omni)
+    {
+        // now we bind the whole cubemap array to FBO
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0);
+
+        // Always check that our framebuffer is ok
+        auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if(status != GL_FRAMEBUFFER_COMPLETE)
+        {
+            assert(0);
+        }
+
+        // delete the temporary texture view
+        glDeleteTextures(1, &tmp_texture_view);
+    }
 
     switch (light.m_lightType)
     {
@@ -765,8 +785,8 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
             }
 
             SetShaderParameter("shadowMatrices", shadowMatrices, 6);
-            SetShaderParameter("layer_index", layer_index);
             SetShaderParameter("lightPos", pos);
+            SetShaderParameter("layer_index", static_cast<int>(layer_index));
             SetShaderParameter("far_plane", farClipDistance);
 
             break;
