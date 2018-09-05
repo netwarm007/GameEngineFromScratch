@@ -25,6 +25,7 @@ void main()
     vec3 V = normalize(camPos - v_world.xyz);
 
     vec3 albedo;
+    float meta = metallic;
     if (usingDiffuseMap)
     {
         albedo = texture(diffuseMap, uv).rgb; 
@@ -34,8 +35,13 @@ void main()
         albedo = diffuseColor;
     }
 
+    if (usingMetallicMap)
+    {
+        meta = texture(metallicMap, uv).r; 
+    }
+
     vec3 F0 = vec3(0.04); 
-    F0 = mix(F0, albedo, metallic);
+    F0 = mix(F0, albedo, meta);
 	           
     // reflectance equation
     vec3 Lo = vec3(0.0);
@@ -75,13 +81,19 @@ void main()
         vec3 radiance = light.lightIntensity * atten * light.lightColor.rgb;
         
         // cook-torrance brdf
-        float NDF = DistributionGGX(N, H, roughness);        
-        float G   = GeometrySmith(N, V, L, roughness);      
+        float rough = roughness;
+        if (usingRoughnessMap)
+        {
+            rough = texture(roughnessMap, uv).r; 
+        }
+
+        float NDF = DistributionGGX(N, H, rough);        
+        float G   = GeometrySmith(N, V, L, rough);      
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
         
         vec3 kS = F;
         vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;	  
+        kD *= 1.0 - meta;	  
         
         vec3 numerator    = NDF * G * F;
         float denominator = 4.0 * max(dot(N, V), 0.0) * NdotL;
@@ -91,7 +103,12 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * visibility; 
     }   
   
-    vec3 ambient = ambientColor * albedo * ao;
+    float ambientOcc = ao;
+    if (usingAoMap)
+    {
+        ambientOcc = texture(aoMap, uv).r;
+    }
+    vec3 ambient = ambientColor * albedo * ambientOcc;
     vec3 linearColor = ambient + Lo;
 	
     // tone mapping

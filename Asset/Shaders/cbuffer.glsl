@@ -44,6 +44,10 @@ layout(binding = 1) uniform sampler2DArray shadowMap;
 layout(binding = 2) uniform sampler2DArray globalShadowMap;
 layout(binding = 3) uniform samplerCubeArray cubeShadowMap;
 layout(binding = 4) uniform samplerCube skybox;
+layout(binding = 5) uniform sampler2D normalMap;
+layout(binding = 6) uniform sampler2D metallicMap;
+layout(binding = 7) uniform sampler2D roughnessMap;
+layout(binding = 8) uniform sampler2D aoMap;
 
 // per drawcall
 uniform mat4 modelMatrix;
@@ -56,4 +60,8 @@ uniform float roughness;
 uniform float ao;
 
 uniform bool usingDiffuseMap;
+uniform bool usingNormalMap;
+uniform bool usingMetallicMap;
+uniform bool usingRoughnessMap;
+uniform bool usingAoMap;
 

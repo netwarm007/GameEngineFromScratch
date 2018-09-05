@@ -2,6 +2,7 @@
 // should be included in other source
 // other than compile it independently
 #include <sstream>
+#include <functional>
 using namespace std;
 
 void OpenGLGraphicsManagerCommonBase::Clear()
@@ -406,34 +407,99 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                 std::string material_key = pGeometryNode->GetMaterialRef(material_index);
                 auto material = scene.GetMaterial(material_key);
                 if (material) {
+                    function<void(const string, const Image&)> upload_texture = [this](const string texture_key, const Image& texture) {
+                        GLuint texture_id;
+                        glGenTextures(1, &texture_id);
+                        glBindTexture(GL_TEXTURE_2D, texture_id);
+                        GLenum format, internal_format;
+                        if(texture.bitcount == 8)
+                        {
+                            format = GL_RED;
+                            internal_format = GL_R8;
+                        }
+                        else if(texture.bitcount == 16)
+                        {
+                            format = GL_RED;
+                            internal_format = GL_R16;
+                        }
+                        else if(texture.bitcount == 24)
+                        {
+                            format = GL_RGB;
+                            internal_format = GL_RGB;
+                        }
+                        else
+                        {
+                            format = GL_RGBA;
+                            internal_format = GL_RGBA;
+                        }
+                        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
+                            0, format, GL_UNSIGNED_BYTE, texture.data);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+                        glBindTexture(GL_TEXTURE_2D, 0);
+
+                        m_TextureIndex[texture_key] = texture_id;
+                        m_Textures.push_back(texture_id);
+                    };
+
+                    Image texture;
+                    string texture_key;
+
+                    // base color / albedo
                     auto color = material->GetBaseColor();
                     if (color.ValueMap) {
-                        Image texture = color.ValueMap->GetTextureImage();
-                        auto it = m_TextureIndex.find(material_key);
+                        texture_key = color.ValueMap->GetName();
+                        auto it = m_TextureIndex.find(texture_key);
                         if (it == m_TextureIndex.end()) {
-                            GLuint texture_id;
-                            glGenTextures(1, &texture_id);
-                            glBindTexture(GL_TEXTURE_2D, texture_id);
-                            GLenum format;
-                            if(texture.bitcount == 24)
-                            {
-                                format = GL_RGB;
-                            }
-                            else
-                            {
-                                format = GL_RGBA;
-                            }
-                            glTexImage2D(GL_TEXTURE_2D, 0, format, texture.Width, texture.Height, 
-                                0, format, GL_UNSIGNED_BYTE, texture.data);
-                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                            texture = color.ValueMap->GetTextureImage();
+                            upload_texture(texture_key, texture);
+                        }
+                    }
 
-                            glBindTexture(GL_TEXTURE_2D, 0);
+                    // normal
+                    auto normal = material->GetNormal();
+                    if (normal.ValueMap) {
+                        texture_key = normal.ValueMap->GetName();
+                        auto it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.end()) {
+                            texture = color.ValueMap->GetTextureImage();
+                            upload_texture(texture_key, texture);
+                        }
+                    }
 
-                            m_TextureIndex[color.ValueMap->GetName()] = texture_id;
-                            m_Textures.push_back(texture_id);
+                    // metallic 
+                    auto metallic = material->GetMetallic();
+                    if (metallic.ValueMap) {
+                        texture_key = metallic.ValueMap->GetName();
+                        auto it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.end()) {
+                            texture = metallic.ValueMap->GetTextureImage();
+                            upload_texture(texture_key, texture);
+                        }
+                    }
+
+                    // roughness 
+                    auto roughness = material->GetRoughness();
+                    if (roughness.ValueMap) {
+                        texture_key = roughness.ValueMap->GetName();
+                        auto it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.end()) {
+                            texture = roughness.ValueMap->GetTextureImage();
+                            upload_texture(texture_key, texture);
+                        }
+                    }
+
+                    // ao
+                    auto ao = material->GetAO();
+                    if (ao.ValueMap) {
+                        texture_key = ao.ValueMap->GetName();
+                        auto it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.end()) {
+                            texture = ao.ValueMap->GetTextureImage();
+                            upload_texture(texture_key, texture);
                         }
                     }
                 }
@@ -608,8 +674,9 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
 
     if (dbc.material) {
         Color color = dbc.material->GetBaseColor();
-        if (color.ValueMap) {
-            result = SetShaderParameter("diffuseMap", 0);
+        if (color.ValueMap) 
+        {
+            //result = SetShaderParameter("diffuseMap", 0);
 
             GLuint texture_id = m_TextureIndex[color.ValueMap->GetName()];
             glActiveTexture(GL_TEXTURE0);
@@ -622,20 +689,75 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
             result = SetShaderParameter("diffuseColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
         }
 
+        Normal normal = dbc.material->GetNormal();
+        if (normal.ValueMap)
+        {
+            //result = SetShaderParameter("normalMap", 5);
+
+            GLuint texture_id = m_TextureIndex[normal.ValueMap->GetName()];
+            glActiveTexture(GL_TEXTURE5);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            // set this to tell shader to use texture
+            result = SetShaderParameter("usingNormalMap", true);
+        }
+
         color = dbc.material->GetSpecularColor();
         result = SetShaderParameter("specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
 
         Parameter param = dbc.material->GetSpecularPower();
         result = SetShaderParameter("specularPower", param.Value);
 
+        // PBR
         param = dbc.material->GetMetallic();
-        result = SetShaderParameter("metallic", param.Value);
+        if (param.ValueMap)
+        {
+            //result = SetShaderParameter("metallicMap", 6);
+
+            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            glActiveTexture(GL_TEXTURE6);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            // set this to tell shader to use texture
+            result = SetShaderParameter("usingMetallicMap", true);
+        }
+        else
+        {
+            result = SetShaderParameter("metallic", param.Value);
+            result = SetShaderParameter("usingMetallicMap", false);
+        }
 
         param = dbc.material->GetRoughness();
-        result = SetShaderParameter("roughness", param.Value);
+        if (param.ValueMap)
+        {
+            //result = SetShaderParameter("roughnessMap", 7);
+
+            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            glActiveTexture(GL_TEXTURE7);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            // set this to tell shader to use texture
+            result = SetShaderParameter("usingRoughnessMap", true);
+        }
+        else
+        {
+            result = SetShaderParameter("roughness", param.Value);
+            result = SetShaderParameter("usingRoughnessMap", false);
+        }
 
         param = dbc.material->GetAO();
-        result = SetShaderParameter("ao", param.Value);
+        if (param.ValueMap)
+        {
+            //result = SetShaderParameter("aoMap", 8);
+
+            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            glActiveTexture(GL_TEXTURE8);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            // set this to tell shader to use texture
+            result = SetShaderParameter("usingAoMap", true);
+        }
+        else
+        {
+            result = SetShaderParameter("ao", param.Value);
+            result = SetShaderParameter("usingAoMap", false);
+        }
     }
 
     glEnable(GL_CULL_FACE);

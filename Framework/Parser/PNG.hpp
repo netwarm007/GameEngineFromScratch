@@ -143,8 +143,6 @@ namespace My {
                                 {
                                     case 0:  // grayscale
                                         m_BytesPerPixel = (m_BitDepth + 7) >> 3;
-                                        std::cout << "Color Type 0 is not supported yet: " << m_ColorType << std::endl;
-                                        assert(0);
                                         break;
                                     case 2:  // rgb true color
                                         m_BytesPerPixel = (m_BitDepth * 3) >> 3;
@@ -172,10 +170,7 @@ namespace My {
 
                                 img.Width = m_Width;
                                 img.Height = m_Height;
-                                if (m_ColorType == 2)
-                                    img.bitcount = 24;
-                                else
-                                    img.bitcount = 32; 
+                                img.bitcount = m_BytesPerPixel * 8;
                                 img.pitch = (img.Width * (img.bitcount >> 3) + 3) & ~3u; // for GPU address alignment
                                 img.data_size = img.pitch * img.Height;
                                 img.data = new uint8_t[img.data_size];
