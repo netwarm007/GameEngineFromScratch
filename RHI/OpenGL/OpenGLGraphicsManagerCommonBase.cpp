@@ -688,7 +688,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
         Color color = dbc.material->GetBaseColor();
         if (color.ValueMap) 
         {
-            //result = SetShaderParameter("diffuseMap", 0);
+            result = SetShaderParameter("diffuseMap", 0);
 
             GLuint texture_id = m_TextureIndex[color.ValueMap->GetName()];
             glActiveTexture(GL_TEXTURE0);
@@ -707,6 +707,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
             //result = SetShaderParameter("normalMap", 5);
 
             GLuint texture_id = m_TextureIndex[normal.ValueMap->GetName()];
+            SetShaderParameter("normalMap", 5);
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, texture_id);
             // set this to tell shader to use texture
@@ -723,9 +724,8 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
         param = dbc.material->GetMetallic();
         if (param.ValueMap)
         {
-            //result = SetShaderParameter("metallicMap", 6);
-
             GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            SetShaderParameter("metallicMap", 6);
             glActiveTexture(GL_TEXTURE6);
             glBindTexture(GL_TEXTURE_2D, texture_id);
             // set this to tell shader to use texture
@@ -740,9 +740,8 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
         param = dbc.material->GetRoughness();
         if (param.ValueMap)
         {
-            //result = SetShaderParameter("roughnessMap", 7);
-
             GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            SetShaderParameter("roughnessMap", 7);
             glActiveTexture(GL_TEXTURE7);
             glBindTexture(GL_TEXTURE_2D, texture_id);
             // set this to tell shader to use texture
@@ -757,9 +756,8 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
         param = dbc.material->GetAO();
         if (param.ValueMap)
         {
-            //result = SetShaderParameter("aoMap", 8);
-
             GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            SetShaderParameter("aoMap", 8);
             glActiveTexture(GL_TEXTURE8);
             glBindTexture(GL_TEXTURE_2D, texture_id);
             // set this to tell shader to use texture
@@ -808,7 +806,6 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint3
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count * 6);
-    //glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, width, height, count * 6, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
     // register the shadow map
     return static_cast<intptr_t>(shadowMap);
@@ -826,7 +823,6 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count);
-    //glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT24, width, height, count, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
     // register the shadow map
     return static_cast<intptr_t>(shadowMap);
@@ -842,12 +838,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     GLuint tmp_texture_view;
     if (light.m_lightType == LightType::Omni)
     {
-        // because we only want to clear one cube map in the cube map array
-        // we need generate a temporary texture view and bind that to framebuffer
-        glGenTextures(1, &tmp_texture_view);
-        glTextureView(tmp_texture_view, GL_TEXTURE_CUBE_MAP, (GLuint) shadowmap, GL_DEPTH_COMPONENT24, 0, 1, layer_index * 6,  6);
-        // we bind the cubemap to FBO
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tmp_texture_view, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0);
     }
     else
     {
@@ -864,24 +855,13 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glDrawBuffers(0, nullptr); // No color buffer is drawn to.
     glDepthMask(GL_TRUE);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, width, height);
-
-    if (light.m_lightType == LightType::Omni)
+    // make sure omni light shadowmap arrays get cleared only
+    // once, because glClear will clear all cubemaps in the array
+    if (light.m_lightType != LightType::Omni || layer_index == 0)
     {
-        // now we bind the whole cubemap array to FBO
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0);
-
-        // Always check that our framebuffer is ok
-        auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if(status != GL_FRAMEBUFFER_COMPLETE)
-        {
-            assert(0);
-        }
-
-        // delete the temporary texture view
-        glDeleteTextures(1, &tmp_texture_view);
+        glClear(GL_DEPTH_BUFFER_BIT);
     }
+    glViewport(0, 0, width, height);
 
     switch (light.m_lightType)
     {
@@ -952,6 +932,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
     GLuint texture_id = (GLuint) frame.frameContext.shadowMap;
+    SetShaderParameter("shadowMap", 1);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -962,6 +943,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
 
     texture_id = (GLuint) frame.frameContext.globalShadowMap;
+    SetShaderParameter("globalShadowMap", 2);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -971,6 +953,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
 
     texture_id = (GLuint) frame.frameContext.cubeShadowMap;
+    SetShaderParameter("cubeShadowMap", 3);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -988,6 +971,7 @@ void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
 {
     // skybox
     GLuint cubemapTexture = (GLuint) context.skybox;
+    SetShaderParameter("skybox", 4);
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 }
