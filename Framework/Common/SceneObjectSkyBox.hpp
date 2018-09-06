@@ -20,10 +20,12 @@ namespace My {
             std::sprintf(filename, fmt, prefix, "negx", ext_name);
             m_Textures[1].SetName(filename);
 
-            std::sprintf(filename, fmt, prefix, "posy", ext_name);
+            // we need exchange front and back when using cubemap
+            // as skybox
+            std::sprintf(filename, fmt, prefix, "negy", ext_name);
             m_Textures[2].SetName(filename);
 
-            std::sprintf(filename, fmt, prefix, "negy", ext_name);
+            std::sprintf(filename, fmt, prefix, "posy", ext_name);
             m_Textures[3].SetName(filename);
 
             std::sprintf(filename, fmt, prefix, "posz", ext_name);
