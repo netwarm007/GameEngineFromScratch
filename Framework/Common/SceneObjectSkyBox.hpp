@@ -20,6 +20,8 @@ namespace My {
             std::sprintf(filename, fmt, prefix, "lf", ext_name);
             m_Textures[1].SetName(filename);
 
+            // we need exchange front and back when using cubemap
+            // as skybox
             std::sprintf(filename, fmt, prefix, "bk", ext_name);
             m_Textures[2].SetName(filename);
 
@@ -35,8 +37,8 @@ namespace My {
 
         inline SceneObjectTexture& GetRightTexture() { return m_Textures[0]; }
         inline SceneObjectTexture& GetLeftTexture()  { return m_Textures[1]; }
-        inline SceneObjectTexture& GetBackTexture()  { return m_Textures[2]; }
-        inline SceneObjectTexture& GetFrontTexture() { return m_Textures[3]; }
+        inline SceneObjectTexture& GetFrontTexture() { return m_Textures[2]; }
+        inline SceneObjectTexture& GetBackTexture()  { return m_Textures[3]; }
         inline SceneObjectTexture& GetTopTexture()   { return m_Textures[4]; }
         inline SceneObjectTexture& GetBottomTexture() { return m_Textures[5]; }
         inline SceneObjectTexture& GetTexture(uint32_t index) 
