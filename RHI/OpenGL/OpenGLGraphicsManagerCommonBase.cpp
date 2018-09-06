@@ -561,17 +561,29 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
     {
         auto& texture = scene.SkyBox->GetTexture(i);
         auto& image = texture.GetTextureImage();
-        GLenum format;
-        if(image.bitcount == 24)
+        GLenum format, internal_format;
+        if(image.bitcount == 8)
+        {
+            format = GL_RED;
+            internal_format = GL_R8;
+        }
+        else if(image.bitcount == 16)
+        {
+            format = GL_RED;
+            internal_format = GL_R16;
+        }
+        else if(image.bitcount == 24)
         {
             format = GL_RGB;
+            internal_format = GL_RGB;
         }
         else
         {
             format = GL_RGBA;
+            internal_format = GL_RGBA;
         }
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, image.Width, image.Height, 
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, image.Width, image.Height, 
             0, format, GL_UNSIGNED_BYTE, image.data);
     }
     //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  // this is the default and will disable the mip map

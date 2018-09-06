@@ -68,7 +68,7 @@ namespace My {
             // nothing to skip
 
             // reading the pixel data
-            img.bitcount = 32;
+            img.bitcount = (alpha_depth?32:24);
             img.pitch = (img.Width * (img.bitcount >> 3) + 3) & ~3u; // for GPU address alignment
 
             img.data_size = img.pitch * img.Height;
@@ -83,16 +83,17 @@ namespace My {
                     {
                         case 15:
                             {
+                                assert(alpha_depth == 0);
                                 uint16_t color = *(uint16_t*)pData;
                                 pData += 2;
-                                *(pOut + img.pitch * i + j * 4) = ((color & 0x7C00) >> 10);    // R
-                                *(pOut + img.pitch * i + j * 4 + 1) = ((color & 0x03E0) >> 5); // G
-                                *(pOut + img.pitch * i + j * 4 + 2) = (color & 0x001F);        // B
-                                *(pOut + img.pitch * i + j * 4 + 3) = 0xFF;                    // A
+                                *(pOut + img.pitch * i + j * 3) = ((color & 0x7C00) >> 10);    // R
+                                *(pOut + img.pitch * i + j * 3 + 1) = ((color & 0x03E0) >> 5); // G
+                                *(pOut + img.pitch * i + j * 3 + 2) = (color & 0x001F);        // B
                             }
                             break;
                         case 16:
                             {
+                                assert(alpha_depth == 1);
                                 uint16_t color = *(uint16_t*)pData;
                                 pData += 2;
                                 *(pOut + img.pitch * i + j * 4) = ((color & 0x7C00) >> 10);    // R
@@ -103,24 +104,19 @@ namespace My {
                             break;
                         case 24:
                             {
-                                *(pOut + img.pitch * i + j * 4) = *pData;    // R
-                                pData++;
-                                *(pOut + img.pitch * i + j * 4 + 1) = *pData; // G
-                                pData++;
-                                *(pOut + img.pitch * i + j * 4 + 2) = *pData; // B
-                                pData++;
-                                *(pOut + img.pitch * i + j * 4 + 3) = 0xFF;   // A
+                                assert(alpha_depth == 0);
+                                *(pOut + img.pitch * i + j * 3 + 2) = *pData++; // B
+                                *(pOut + img.pitch * i + j * 3 + 1) = *pData++; // G
+                                *(pOut + img.pitch * i + j * 3 ) = *pData++;    // R
                             }
                             break;
                         case 32:
                             {
-                                *(pOut + img.pitch * i + j * 4) = *pData;    // R
-                                pData++;
-                                *(pOut + img.pitch * i + j * 4 + 1) = *pData; // G
-                                pData++;
-                                *(pOut + img.pitch * i + j * 4 + 2) = *pData; // B
-                                pData++;
-                                *(pOut + img.pitch * i + j * 4 + 3) = *pData; // A
+                                assert(alpha_depth == 8);
+                                *(pOut + img.pitch * i + j * 4 + 3) = *pData++; // A
+                                *(pOut + img.pitch * i + j * 4 + 2) = *pData++; // B
+                                *(pOut + img.pitch * i + j * 4 + 1) = *pData++; // G
+                                *(pOut + img.pitch * i + j * 4 ) = *pData++;    // R
                                 pData++;
                             }
                             break;
