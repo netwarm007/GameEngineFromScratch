@@ -103,12 +103,21 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * visibility; 
     }   
   
-    float ambientOcc = ao;
-    if (usingAoMap)
+    vec3 ambient = ambientColor.rgb;
     {
-        ambientOcc = texture(aoMap, uv).r;
+        float ambientOcc = ao;
+        if (usingAoMap)
+        {
+            ambientOcc = texture(aoMap, uv).r;
+        }
+
+        vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+        vec3 kD = 1.0 - kS;
+        vec3 irradiance = texture(skybox, N).rgb;
+        vec3 diffuse = irradiance * albedo;
+        ambient = (kD * diffuse) * ambientOcc;
     }
-    vec3 ambient = ambientColor * albedo * ambientOcc;
+
     vec3 linearColor = ambient + Lo;
 	
     // tone mapping
