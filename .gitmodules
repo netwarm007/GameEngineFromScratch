@@ -34,3 +34,6 @@
 [submodule "glslangValidator"]
 	path = External/src/glslangValidator
 	url = https://github.com/KhronosGroup/glslang
+[submodule "cmft"]
+	path = External/src/cmft
+	url = git://github.com/dariomanesku/cmft.git
