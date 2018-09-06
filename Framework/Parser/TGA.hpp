@@ -117,7 +117,6 @@ namespace My {
                                 *(pOut + img.pitch * i + j * 4 + 2) = *pData++; // B
                                 *(pOut + img.pitch * i + j * 4 + 1) = *pData++; // G
                                 *(pOut + img.pitch * i + j * 4 ) = *pData++;    // R
-                                pData++;
                             }
                             break;
                         default:
