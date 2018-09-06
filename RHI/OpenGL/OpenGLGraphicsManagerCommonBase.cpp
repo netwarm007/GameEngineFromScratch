@@ -411,29 +411,37 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                         GLuint texture_id;
                         glGenTextures(1, &texture_id);
                         glBindTexture(GL_TEXTURE_2D, texture_id);
-                        GLenum format, internal_format;
+                        GLenum format, internal_format, type;
                         if(texture.bitcount == 8)
                         {
                             format = GL_RED;
                             internal_format = GL_R8;
+                            type = GL_UNSIGNED_BYTE;
                         }
                         else if(texture.bitcount == 16)
                         {
                             format = GL_RED;
+#ifndef OPENGL_ES
                             internal_format = GL_R16;
+#else
+                            internal_format = GL_RED;
+#endif
+                            type = GL_UNSIGNED_SHORT;
                         }
                         else if(texture.bitcount == 24)
                         {
                             format = GL_RGB;
                             internal_format = GL_RGB;
+                            type = GL_UNSIGNED_BYTE;
                         }
                         else
                         {
                             format = GL_RGBA;
                             internal_format = GL_RGBA;
+                            type = GL_UNSIGNED_BYTE;
                         }
                         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
-                            0, format, GL_UNSIGNED_BYTE, texture.data);
+                            0, format, type, texture.data);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -561,30 +569,38 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
     {
         auto& texture = scene.SkyBox->GetTexture(i);
         auto& image = texture.GetTextureImage();
-        GLenum format, internal_format;
+        GLenum format, internal_format, type;
         if(image.bitcount == 8)
         {
             format = GL_RED;
             internal_format = GL_R8;
+            type = GL_UNSIGNED_BYTE;
         }
         else if(image.bitcount == 16)
         {
             format = GL_RED;
+#ifndef OPENGL_ES
             internal_format = GL_R16;
+#else
+            internal_format = GL_RED;
+#endif
+            type = GL_UNSIGNED_SHORT;
         }
         else if(image.bitcount == 24)
         {
             format = GL_RGB;
             internal_format = GL_RGB;
+            type = GL_UNSIGNED_BYTE;
         }
         else
         {
             format = GL_RGBA;
             internal_format = GL_RGBA;
+            type = GL_UNSIGNED_BYTE;
         }
 
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, image.Width, image.Height, 
-            0, format, GL_UNSIGNED_BYTE, image.data);
+            0, format, type, image.data);
     }
     //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  // this is the default and will disable the mip map
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -914,7 +930,8 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
         }
     }
 
-    glCullFace(GL_FRONT);
+    //glCullFace(GL_FRONT);
+    glDisable(GL_CULL_FACE);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)
