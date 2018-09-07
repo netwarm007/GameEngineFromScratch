@@ -69,7 +69,7 @@ float apply_atten_curve(float dist, mat4 atten_params)
             float offset = atten_params[0][2];
             float kq = atten_params[0][3];
             float kl = atten_params[1][0];
-            float kc = atten_params[1][2];
+            float kc = atten_params[1][1];
             atten = clamp(pow(scale, 2.0f) / 
                 (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
                 0.0f, 1.0f);
