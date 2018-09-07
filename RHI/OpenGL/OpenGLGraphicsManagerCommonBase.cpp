@@ -89,7 +89,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     // Set lighting parameters for PS shader
     for (size_t i = 0; i < context.m_lights.size(); i++)
     {
-        const int32_t num_of_properties = 0xC;
+        const int32_t num_of_properties = 0xA;
         char uniformNames[num_of_properties][256];
 
         sprintf(uniformNames[0x0], "allLights[%zd].lightPosition", i);
@@ -97,18 +97,16 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         sprintf(uniformNames[0x2], "allLights[%zd].lightIntensity", i);
         sprintf(uniformNames[0x3], "allLights[%zd].lightDirection", i);
         sprintf(uniformNames[0x4], "allLights[%zd].lightSize", i);
-        sprintf(uniformNames[0x5], "allLights[%zd].lightDistAttenCurveType", i);
-        sprintf(uniformNames[0x6], "allLights[%zd].lightDistAttenCurveParams_0", i);
-        sprintf(uniformNames[0x7], "allLights[%zd].lightAngleAttenCurveType", i);
-        sprintf(uniformNames[0x8], "allLights[%zd].lightAngleAttenCurveParams_0", i);
-        sprintf(uniformNames[0x9], "allLights[%zd].lightShadowMapIndex", i);
-        sprintf(uniformNames[0xA], "allLights[%zd].lightVP", i);
-        sprintf(uniformNames[0xB], "allLights[%zd].lightType", i);
+        sprintf(uniformNames[0x5], "allLights[%zd].lightDistAttenCurveParams", i);
+        sprintf(uniformNames[0x6], "allLights[%zd].lightAngleAttenCurveParams", i);
+        sprintf(uniformNames[0x7], "allLights[%zd].lightShadowMapIndex", i);
+        sprintf(uniformNames[0x8], "allLights[%zd].lightVP", i);
+        sprintf(uniformNames[0x9], "allLights[%zd].lightType", i);
 
         const char* names[num_of_properties] = {
             uniformNames[0x0], uniformNames[0x1], uniformNames[0x2], uniformNames[0x3],
             uniformNames[0x4], uniformNames[0x5], uniformNames[0x6], uniformNames[0x7],
-            uniformNames[0x8], uniformNames[0x9], uniformNames[0xA], uniformNames[0xB]
+            uniformNames[0x8], uniformNames[0x9]
         };
 
         GLuint indices[num_of_properties];
@@ -123,12 +121,12 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
         memcpy(blockBuffer + offset[0x3], &context.m_lights[i].m_lightDirection, sizeof(Vector4f));
         memcpy(blockBuffer + offset[0x4], &context.m_lights[i].m_lightSize, sizeof(Vector2f));
         memcpy(blockBuffer + offset[0x5], &context.m_lights[i].m_lightDistAttenCurveType, sizeof(int32_t));
-        memcpy(blockBuffer + offset[0x6], &context.m_lights[i].m_lightDistAttenCurveParams[0], sizeof(float) * 5);
-        memcpy(blockBuffer + offset[0x7], &context.m_lights[i].m_lightAngleAttenCurveType, sizeof(int32_t));
-        memcpy(blockBuffer + offset[0x8], &context.m_lights[i].m_lightAngleAttenCurveParams[0], sizeof(float)* 5);
-        memcpy(blockBuffer + offset[0x9], &context.m_lights[i].m_lightShadowMapIndex, sizeof(int32_t));
-        memcpy(blockBuffer + offset[0xA], &context.m_lights[i].m_lightVP, sizeof(Matrix4X4f));
-        memcpy(blockBuffer + offset[0xB], &context.m_lights[i].m_lightType, sizeof(LightType));
+        memcpy(blockBuffer + offset[0x5] + sizeof(int32_t), &context.m_lights[i].m_lightDistAttenCurveParams[0], sizeof(float) * 5);
+        memcpy(blockBuffer + offset[0x6], &context.m_lights[i].m_lightAngleAttenCurveType, sizeof(int32_t));
+        memcpy(blockBuffer + offset[0x6] + sizeof(int32_t), &context.m_lights[i].m_lightAngleAttenCurveParams[0], sizeof(float)* 5);
+        memcpy(blockBuffer + offset[0x7], &context.m_lights[i].m_lightShadowMapIndex, sizeof(int32_t));
+        memcpy(blockBuffer + offset[0x8], &context.m_lights[i].m_lightVP, sizeof(Matrix4X4f));
+        memcpy(blockBuffer + offset[0x9], &context.m_lights[i].m_lightType, sizeof(LightType));
     }
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);

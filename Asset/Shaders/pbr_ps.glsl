@@ -62,21 +62,10 @@ void main()
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
 
         // angle attenuation
-        float atten_params[5];
-        atten_params[0] = light.lightAngleAttenCurveParams_0;
-        atten_params[1] = light.lightAngleAttenCurveParams_1;
-        atten_params[2] = light.lightAngleAttenCurveParams_2;
-        atten_params[3] = light.lightAngleAttenCurveParams_3;
-        atten_params[4] = light.lightAngleAttenCurveParams_4;
-        float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, atten_params);
+        float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveParams);
 
         // distance attenuation
-        atten_params[0] = light.lightDistAttenCurveParams_0;
-        atten_params[1] = light.lightDistAttenCurveParams_1;
-        atten_params[2] = light.lightDistAttenCurveParams_2;
-        atten_params[3] = light.lightDistAttenCurveParams_3;
-        atten_params[4] = light.lightDistAttenCurveParams_4;
-        atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, atten_params);
+        atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
 
         vec3 radiance = light.lightIntensity * atten * light.lightColor.rgb;
         
