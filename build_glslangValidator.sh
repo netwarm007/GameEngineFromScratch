@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-git submodule update External/src/glslangValidator
+git submodule update --init External/src/glslangValidator
 mkdir -p External/build/glslangValidator
 cd External/build/glslangValidator
 rm -rf *

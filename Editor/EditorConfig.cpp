@@ -3,7 +3,7 @@
 #include "My/MyPhysicsManager.hpp"
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 1, 1920, 1080, "GameEngineFromScratch Editor");
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 1, 960, 540, "GameEngineFromScratch Editor");
     IGameLogic*       g_pGameLogic       = static_cast<IGameLogic*>(new EditorLogic);
     IPhysicsManager*  g_pPhysicsManager  = static_cast<IPhysicsManager*>(new MyPhysicsManager);
 }
