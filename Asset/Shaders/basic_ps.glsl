@@ -50,33 +50,33 @@ float linear_interpolate(float t, float begin, float end)
     }
 }
 
-float apply_atten_curve(float dist, int atten_type, float atten_params[5])
+float apply_atten_curve(float dist, mat4 atten_params)
 {
     float atten = 1.0f;
 
-    switch(atten_type)
+    switch(int(atten_params[0][0]))
     {
         case 1: // linear
         {
-            float begin_atten = atten_params[0];
-            float end_atten = atten_params[1];
+            float begin_atten = atten_params[0][1];
+            float end_atten = atten_params[0][2];
             atten = linear_interpolate(dist, begin_atten, end_atten);
             break;
         }
         case 2: // smooth
         {
-            float begin_atten = atten_params[0];
-            float end_atten = atten_params[1];
+            float begin_atten = atten_params[0][1];
+            float end_atten = atten_params[0][2];
             float tmp = linear_interpolate(dist, begin_atten, end_atten);
             atten = 3.0f * pow(tmp, 2.0f) - 2.0f * pow(tmp, 3.0f);
             break;
         }
         case 3: // inverse
         {
-            float scale = atten_params[0];
-            float offset = atten_params[1];
-            float kl = atten_params[2];
-            float kc = atten_params[3];
+            float scale = atten_params[0][1];
+            float offset = atten_params[0][2];
+            float kl = atten_params[0][3];
+            float kc = atten_params[1][0];
             atten = clamp(scale / 
                 (kl * dist + kc * scale) + offset, 
                 0.0f, 1.0f);
@@ -84,11 +84,11 @@ float apply_atten_curve(float dist, int atten_type, float atten_params[5])
         }
         case 4: // inverse square
         {
-            float scale = atten_params[0];
-            float offset = atten_params[1];
-            float kq = atten_params[2];
-            float kl = atten_params[3];
-            float kc = atten_params[4];
+            float scale = atten_params[0][1];
+            float offset = atten_params[0][2];
+            float kq = atten_params[0][3];
+            float kl = atten_params[1][0];
+            float kc = atten_params[1][2];
             atten = clamp(pow(scale, 2.0f) / 
                 (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
                 0.0f, 1.0f);
@@ -214,21 +214,10 @@ vec3 apply_light(const Light light) {
     float lightToSurfAngle = acos(dot(L, -light_dir));
 
     // angle attenuation
-    float atten_params[5];
-    atten_params[0] = light.lightAngleAttenCurveParams_0;
-    atten_params[1] = light.lightAngleAttenCurveParams_1;
-    atten_params[2] = light.lightAngleAttenCurveParams_2;
-    atten_params[3] = light.lightAngleAttenCurveParams_3;
-    atten_params[4] = light.lightAngleAttenCurveParams_4;
-    float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, atten_params);
+    float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveParams);
 
     // distance attenuation
-    atten_params[0] = light.lightDistAttenCurveParams_0;
-    atten_params[1] = light.lightDistAttenCurveParams_1;
-    atten_params[2] = light.lightDistAttenCurveParams_2;
-    atten_params[3] = light.lightDistAttenCurveParams_3;
-    atten_params[4] = light.lightDistAttenCurveParams_4;
-    atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, atten_params);
+    atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
 
     vec3 R = normalize(2.0f * dot(L, N) *  N - L);
     vec3 V = normalize(-v.xyz);
@@ -282,13 +271,7 @@ vec3 apply_areaLight(const Light light)
     L = normalize(L);
 
     // distance attenuation
-    float atten_params[5];
-    atten_params[0] = light.lightDistAttenCurveParams_0;
-    atten_params[1] = light.lightDistAttenCurveParams_1;
-    atten_params[2] = light.lightDistAttenCurveParams_2;
-    atten_params[3] = light.lightDistAttenCurveParams_3;
-    atten_params[4] = light.lightDistAttenCurveParams_4;
-    float atten = apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, atten_params);
+    float atten = apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
 
     vec3 linearColor = vec3(0.0f);
 
