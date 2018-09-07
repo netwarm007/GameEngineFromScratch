@@ -490,18 +490,19 @@ void GraphicsManager::DrawTextureOverlay(const intptr_t shadowmap, uint32_t laye
 }
 
 void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, 
-    float vp_left, float vp_top, float vp_width, float vp_height)
+    float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     cout << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "
         << vp_height << ", "
+        << level << ", "
         << ")" << endl;
 }
 
 void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, 
-    float vp_left, float vp_top, float vp_width, float vp_height)
+    float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     cout << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
         << layer_index << ", "
@@ -509,6 +510,7 @@ void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_
         << vp_top << ", "
         << vp_width << ", "
         << vp_height << ", "
+        << level << ", "
         << ")" << endl;
 }
 

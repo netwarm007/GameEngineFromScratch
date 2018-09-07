@@ -46,7 +46,11 @@ void HUDPass::Draw(Frame& frame)
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
     // SkyBox
-    g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.skybox, left, top, 0.25f, 0.25f);
+    g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.skybox, left, top, 0.25f, 0.25f, 0.0f);
+    top -= 0.30f;
+
+    // SkyBox Irradiance
+    g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.skybox, left, top, 0.25f, 0.25f, 1.0f);
 
 #endif
 }

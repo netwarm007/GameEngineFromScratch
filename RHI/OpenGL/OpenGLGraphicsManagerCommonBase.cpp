@@ -565,7 +565,7 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
 
     assert(scene.SkyBox);
 
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < 12; i++)
     {
         auto& texture = scene.SkyBox->GetTexture(i);
         auto& image = texture.GetTextureImage();
@@ -599,16 +599,20 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
             type = GL_UNSIGNED_BYTE;
         }
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internal_format, image.Width, image.Height, 
+        GLenum target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i % 6;
+        GLint level = i / 6;
+        glTexImage2D(target, level, internal_format, image.Width, image.Height, 
             0, format, type, image.data);
     }
-    //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  // this is the default and will disable the mip map
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 1);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
     m_Textures.push_back(cubemapTexture);
     m_Frames[m_nFrameIndex].frameContext.skybox = cubemapTexture;
@@ -851,7 +855,6 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
-    GLuint tmp_texture_view;
     if (light.m_lightType == LightType::Omni)
     {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0);
@@ -1337,12 +1340,15 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t shadowma
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     GLuint texture_id = (GLuint) cubemap;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
+
+    bool result = SetShaderParameter("level", level);
+    assert(result);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);
@@ -1485,7 +1491,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     GLuint texture_id = (GLuint) cubemap;
 
@@ -1493,6 +1499,8 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     bool result = SetShaderParameter("layer_index", (float) layer_index);
     assert(result);
+
+    result = SetShaderParameter("level", level);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);
