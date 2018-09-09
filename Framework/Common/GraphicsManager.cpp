@@ -113,9 +113,9 @@ void GraphicsManager::CalculateCameraMatrix()
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
     if (pCameraNode) {
         auto transform = *pCameraNode->GetCalculatedTransform();
+        frameContext.m_camPos = Vector3f({transform[3][0], transform[3][1], transform[3][2]});
         InverseMatrix4X4f(transform);
         frameContext.m_viewMatrix = transform;
-        frameContext.m_camPos = Vector3f({-transform[3][0], -transform[3][1], -transform[3][2]});
     }
     else {
         // use default build-in camera
