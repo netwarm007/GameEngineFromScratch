@@ -40,11 +40,11 @@ void main()
         meta = texture(metallicMap, uv).r; 
     }
 
-    vec3 F0 = vec3(0.04); 
+    vec3 F0 = vec3(0.04f); 
     F0 = mix(F0, albedo, meta);
 	           
     // reflectance equation
-    vec3 Lo = vec3(0.0);
+    vec3 Lo = vec3(0.0f);
     for (int i = 0; i < numLights; i++)
     {
         Light light = allLights[i];
@@ -78,15 +78,15 @@ void main()
 
         float NDF = DistributionGGX(N, H, rough);        
         float G   = GeometrySmith(N, V, L, rough);      
-        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);       
+        vec3 F    = fresnelSchlick(max(dot(H, V), 0.0f), F0);       
         
         vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - meta;	  
+        vec3 kD = vec3(1.0f) - kS;
+        kD *= 1.0f - meta;	  
         
         vec3 numerator    = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.0) * NdotL;
-        vec3 specular     = numerator / max(denominator, 0.001);  
+        float denominator = 4.0f * max(dot(N, V), 0.0f) * NdotL;
+        vec3 specular     = numerator / max(denominator, 0.001f);  
             
         // add to outgoing radiance Lo
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * visibility; 
@@ -100,9 +100,10 @@ void main()
             ambientOcc = texture(aoMap, uv).r;
         }
 
-        vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-        vec3 kD = 1.0 - kS;
-        vec3 irradiance = textureLod(skybox, N, 1).rgb;
+        vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
+        vec3 kD = 1.0f - kS;
+        kD *= 1.0f - meta;	  
+        vec3 irradiance = textureLod(skybox, N, 1.0f).rgb;
         vec3 diffuse = irradiance * albedo;
         ambient = (kD * diffuse) * ambientOcc;
     }
@@ -115,5 +116,5 @@ void main()
     // gamma correction
     linearColor = gamma_correction(linearColor);
 
-    outputColor = vec4(linearColor, 1.0);
+    outputColor = vec4(linearColor, 1.0f);
 }
