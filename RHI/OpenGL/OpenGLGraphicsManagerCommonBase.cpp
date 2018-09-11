@@ -262,6 +262,38 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
+static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& internal_format, GLenum& type)
+{
+    if(img.bitcount == 8)
+    {
+        format = GL_RED;
+        internal_format = GL_R8;
+        type = GL_UNSIGNED_BYTE;
+    }
+    else if(img.bitcount == 16)
+    {
+        format = GL_RED;
+#ifndef OPENGL_ES
+        internal_format = GL_R16;
+#else
+        internal_format = GL_RED;
+#endif
+        type = GL_UNSIGNED_SHORT;
+    }
+    else if(img.bitcount == 24)
+    {
+        format = GL_RGB;
+        internal_format = GL_RGB8;
+        type = GL_UNSIGNED_BYTE;
+    }
+    else
+    {
+        format = GL_RGBA;
+        internal_format = GL_RGBA8;
+        type = GL_UNSIGNED_BYTE;
+    }
+}
+
 void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
 {
     // Geometries
@@ -410,34 +442,7 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                         glGenTextures(1, &texture_id);
                         glBindTexture(GL_TEXTURE_2D, texture_id);
                         GLenum format, internal_format, type;
-                        if(texture.bitcount == 8)
-                        {
-                            format = GL_RED;
-                            internal_format = GL_R8;
-                            type = GL_UNSIGNED_BYTE;
-                        }
-                        else if(texture.bitcount == 16)
-                        {
-                            format = GL_RED;
-#ifndef OPENGL_ES
-                            internal_format = GL_R16;
-#else
-                            internal_format = GL_RED;
-#endif
-                            type = GL_UNSIGNED_SHORT;
-                        }
-                        else if(texture.bitcount == 24)
-                        {
-                            format = GL_RGB;
-                            internal_format = GL_RGB;
-                            type = GL_UNSIGNED_BYTE;
-                        }
-                        else
-                        {
-                            format = GL_RGBA;
-                            internal_format = GL_RGBA;
-                            type = GL_UNSIGNED_BYTE;
-                        }
+                        getOpenGLTextureFormat(texture, format, internal_format, type);
                         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
                             0, format, type, texture.data);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -556,61 +561,55 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
         5, 6, 2
     };
 
-    // load texture
+    // load skybox, irradiance map and radiance map
     GLuint cubemapTexture;
     glGenTextures(1, &cubemapTexture);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, cubemapTexture);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAX_LEVEL, 8);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     assert(scene.SkyBox);
 
+    // skybox, irradiance map
     for (uint32_t i = 0; i < 12; i++)
     {
         auto& texture = scene.SkyBox->GetTexture(i);
         auto& image = texture.GetTextureImage();
         GLenum format, internal_format, type;
-        if(image.bitcount == 8)
+        getOpenGLTextureFormat(image, format, internal_format, type);
+
+        if (i == 0) // do this only once
         {
-            format = GL_RED;
-            internal_format = GL_R8;
-            type = GL_UNSIGNED_BYTE;
-        }
-        else if(image.bitcount == 16)
-        {
-            format = GL_RED;
-#ifndef OPENGL_ES
-            internal_format = GL_R16;
-#else
-            internal_format = GL_RED;
-#endif
-            type = GL_UNSIGNED_SHORT;
-        }
-        else if(image.bitcount == 24)
-        {
-            format = GL_RGB;
-            internal_format = GL_RGB;
-            type = GL_UNSIGNED_BYTE;
-        }
-        else
-        {
-            format = GL_RGBA;
-            internal_format = GL_RGBA;
-            type = GL_UNSIGNED_BYTE;
+            const uint32_t faces = 6;
+            const uint32_t indexies = 2;
+            constexpr GLsizei depth = faces * indexies;
+            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 9, internal_format, image.Width, image.Height, depth);
         }
 
-        GLenum target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i % 6;
         GLint level = i / 6;
-        glTexImage2D(target, level, internal_format, image.Width, image.Height, 
-            0, format, type, image.data);
+        GLint zoffset = i % 6;
+        glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
+            format, type, image.data);
     }
 
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, 1);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    // radiance map
+    for (uint32_t i = 12; i < 66; i++)
+    {
+        auto& texture = scene.SkyBox->GetTexture(i);
+        auto& image = texture.GetTextureImage();
+        GLenum format, internal_format, type;
+        getOpenGLTextureFormat(image, format, internal_format, type);
+
+        GLint level = (i - 12) / 6;
+        GLint zoffset = (i % 6) + 6;
+        glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
+            format, type, image.data);
+    }
 
     m_Textures.push_back(cubemapTexture);
     m_Frames[m_nFrameIndex].frameContext.skybox = cubemapTexture;
@@ -931,8 +930,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
         }
     }
 
-    //glCullFace(GL_FRONT);
-    glDisable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)
@@ -991,7 +989,7 @@ void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
     GLuint cubemapTexture = (GLuint) context.skybox;
     SetShaderParameter("skybox", 4);
     glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, cubemapTexture);
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
@@ -1282,7 +1280,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
 {
     GLuint texture_id = (GLuint) shadowmap;
 
@@ -1489,7 +1487,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     GLuint texture_id = (GLuint) cubemap;
 

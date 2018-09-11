@@ -19,13 +19,13 @@ void HUDPass::Draw(Frame& frame)
 
     for (uint32_t i = 0; i < frame.frameContext.globalShadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawTextureOverlay(frame.frameContext.globalShadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawTextureArrayOverlay(frame.frameContext.globalShadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
 
     for (uint32_t i = 0; i < frame.frameContext.shadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawTextureOverlay(frame.frameContext.shadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawTextureArrayOverlay(frame.frameContext.shadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
 
@@ -36,7 +36,7 @@ void HUDPass::Draw(Frame& frame)
 
     for (uint32_t i = 0; i < frame.frameContext.cubeShadowMapCount; i++)
     {
-        g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.cubeShadowMap, i, left, top, 0.25f, 0.25f);
+        g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.cubeShadowMap, i, left, top, 0.25f, 0.25f);
         top -= 0.30f;
     }
 
@@ -46,11 +46,15 @@ void HUDPass::Draw(Frame& frame)
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
     // SkyBox
-    g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.skybox, left, top, 0.25f, 0.25f, 0.0f);
+    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.skybox, 0u, left, top, 0.25f, 0.25f, 0.0f);
     top -= 0.30f;
 
     // SkyBox Irradiance
-    g_pGraphicsManager->DrawCubeMapOverlay(frame.frameContext.skybox, left, top, 0.25f, 0.25f, 1.0f);
+    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.skybox, 0u, left, top, 0.25f, 0.25f, 1.0f);
+    top -= 0.30f;
+
+    // SkyBox Radiance
+    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.skybox, 1u, left, top, 0.25f, 0.25f, 0.0f);
 
 #endif
 }

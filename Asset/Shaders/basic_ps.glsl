@@ -160,7 +160,7 @@ void main(void)
 
     // add ambient color
     // linearColor += ambientColor.rgb;
-    linearColor += textureLod(skybox, normal_world.xyz, 8).rgb * vec3(0.20f);
+    linearColor += textureLod(skybox, vec4(normal_world.xyz, 0), 8).rgb * vec3(0.20f);
 
     // tone mapping
     //linearColor = reinhard_tone_mapping(linearColor);
