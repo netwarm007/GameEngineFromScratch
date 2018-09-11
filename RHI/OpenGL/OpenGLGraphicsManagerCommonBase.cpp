@@ -787,6 +787,13 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
             result = SetShaderParameter("ao", param.Value);
             result = SetShaderParameter("usingAoMap", false);
         }
+
+        {
+            GLuint texture_id = m_TextureIndex["BRDF_LUT"];
+            SetShaderParameter("brdfLUT", 9);
+            glActiveTexture(GL_TEXTURE9);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+        }
     }
 
     glEnable(GL_CULL_FACE);

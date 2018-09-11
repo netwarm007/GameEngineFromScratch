@@ -38,6 +38,7 @@ uniform sampler2D normalMap;
 uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
 uniform sampler2D aoMap;
+uniform sampler2D brdfLUT;
 
 // per drawcall
 uniform mat4 modelMatrix;

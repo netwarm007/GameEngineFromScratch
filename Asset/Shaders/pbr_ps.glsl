@@ -40,6 +40,12 @@ void main()
         meta = texture(metallicMap, uv).r; 
     }
 
+    float rough = roughness;
+    if (usingRoughnessMap)
+    {
+        rough = texture(roughnessMap, uv).r; 
+    }
+
     vec3 F0 = vec3(0.04f); 
     F0 = mix(F0, albedo, meta);
 	           
@@ -70,12 +76,6 @@ void main()
         vec3 radiance = light.lightIntensity * atten * light.lightColor.rgb;
         
         // cook-torrance brdf
-        float rough = roughness;
-        if (usingRoughnessMap)
-        {
-            rough = texture(roughnessMap, uv).r; 
-        }
-
         float NDF = DistributionGGX(N, H, rough);        
         float G   = GeometrySmith(N, V, L, rough);      
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0f), F0);       
@@ -94,18 +94,30 @@ void main()
   
     vec3 ambient = ambientColor.rgb;
     {
+        // ambient diffuse
         float ambientOcc = ao;
         if (usingAoMap)
         {
             ambientOcc = texture(aoMap, uv).r;
         }
 
-        vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
+        vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
         vec3 kD = 1.0f - kS;
         kD *= 1.0f - meta;	  
-        vec3 irradiance = textureLod(skybox, vec4(N, 0), 1.0f).rgb;
+        vec3 irradiance = textureLod(skybox, vec4(N, 0.0f), 1.0f).rgb;
         vec3 diffuse = irradiance * albedo;
-        ambient = (kD * diffuse) * ambientOcc;
+
+        // ambient reflect
+        vec3 R = reflect(-V, N);   
+
+        const float MAX_REFLECTION_LOD = 8.0f;
+        vec3 prefilteredColor = textureLod(skybox, vec4(R, 1.0f), rough * MAX_REFLECTION_LOD).rgb;    
+
+        vec3 F        = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
+        vec2 envBRDF  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), rough)).rg;
+        vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+
+        ambient = (kD * diffuse + specular) * ambientOcc;
     }
 
     vec3 linearColor = ambient + Lo;
