@@ -1,8 +1,9 @@
 @echo off
-git submodule update --init External\src\glslangValidator
-mkdir External\build\glslangValidator
-cd External\build\glslangValidator
+git submodule update --init External\src\glslang
+mkdir External\build\glslang
+pushd External\build\glslang
 rm -rf *
-cmake -G "NMake Makefiles" -DCMAKE_INSTALL_PREFIX=../../Windows/ -DCMAKE_INSTALL_RPATH=../../Windows/ -DCMAKE_BUILD_TYPE=RELEASE ../../src/glslangValidator
+cmake -DCMAKE_INSTALL_PREFIX=../../Windows/ -DCMAKE_INSTALL_RPATH=../../Windows/ -DCMAKE_BUILD_TYPE=RELEASE ../../src/glslang
 cmake --build . --config release --target install
+popd
 echo "Completed build of glslangValidator"

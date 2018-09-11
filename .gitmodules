@@ -31,9 +31,15 @@
 [submodule "External/src/libcrc"]
 	path = External/src/libcrc
 	url = https://github.com/lammertb/libcrc.git
-[submodule "glslangValidator"]
-	path = External/src/glslangValidator
-	url = https://github.com/KhronosGroup/glslang
 [submodule "cmft"]
 	path = External/src/cmft
 	url = git://github.com/dariomanesku/cmft.git
+[submodule "SPIRV-Cross"]
+	path = External/src/spirv-cross
+	url = https://github.com/GameTechDev/SPIRV-Cross.git
+[submodule "glslang"]
+	path = External/src/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "spirv-cross"]
+	path = External/src/spirv-cross
+	url = https://github.com/GameTechDev/SPIRV-Cross.git
