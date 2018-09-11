@@ -1,5 +1,8 @@
 #version 430 
 
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(rg16f, binding = 0) uniform image2D img_output;
+
 #define PI 3.14159265359
 
 float RadicalInverse_VdC(uint bits) 
@@ -99,13 +102,10 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
     return vec2(A, B);
 }
 
-layout(local_size_x = 1, local_size_y = 1) in;
-layout(rg16f, binding = 0) uniform image2D img_output;
-
 void main() 
 {
     vec4 pixel;
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    pixel.rg = IntegrateBRDF(pixel_coords.x, pixel_coords.y);
+    pixel.rg = IntegrateBRDF(float(pixel_coords.x) / gl_NumWorkGroups.x, float(pixel_coords.y) / gl_NumWorkGroups.y);
     imageStore(img_output, pixel_coords, pixel);
 }
