@@ -1024,6 +1024,8 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTexture(const char* id,
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
 {
     glDispatchCompute((GLuint)width, (GLuint)height, (GLuint)depth);
+    // make sure writing to image has finished before read
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 intptr_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)
