@@ -57,9 +57,10 @@ void HUDPass::Draw(Frame& frame)
     g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.skybox, 1u, left, top, 0.25f, 0.25f, 0.0f);
     top -= 0.30f;
 
-    shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Copy);
-
     // BRDF LUT
+    shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Copy);
+    g_pGraphicsManager->UseShaderProgram(shaderProgram);
+
     auto brdf_lut = g_pGraphicsManager->GetTexture("BRDF_LUT");
     g_pGraphicsManager->DrawTextureOverlay(brdf_lut, left, top, 0.25f, 0.25f);
 
