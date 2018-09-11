@@ -103,7 +103,7 @@ void main()
         vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, roughness);
         vec3 kD = 1.0f - kS;
         kD *= 1.0f - meta;	  
-        vec3 irradiance = textureLod(skybox, N, 1.0f).rgb;
+        vec3 irradiance = textureLod(skybox, vec4(N, 0), 1.0f).rgb;
         vec3 diffuse = irradiance * albedo;
         ambient = (kD * diffuse) * ambientOcc;
     }

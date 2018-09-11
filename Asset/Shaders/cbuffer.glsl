@@ -33,7 +33,7 @@ uniform sampler2D diffuseMap;
 uniform sampler2DArray shadowMap;
 uniform sampler2DArray globalShadowMap;
 uniform samplerCubeArray cubeShadowMap;
-uniform samplerCube skybox;
+uniform samplerCubeArray skybox;
 uniform sampler2D normalMap;
 uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;

@@ -477,7 +477,7 @@ void GraphicsManager::ClearDebugBuffers()
     cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 
-void GraphicsManager::DrawTextureOverlay(const intptr_t shadowmap, uint32_t layer_index, 
+void GraphicsManager::DrawTextureArrayOverlay(const intptr_t shadowmap, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
     cout << "[GraphicsManager] DrayOverlay(" << shadowmap << ", "
@@ -501,7 +501,7 @@ void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap,
         << ")" << endl;
 }
 
-void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, uint32_t layer_index, 
+void GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     cout << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "

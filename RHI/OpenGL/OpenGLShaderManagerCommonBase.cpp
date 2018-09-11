@@ -257,7 +257,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     // Texture overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_SIMPLE_TEXTURE_SOURCE_FILE}
+        {GL_FRAGMENT_SHADER, PS_TEXTURE_ARRAY_SOURCE_FILE}
     };
 
     result = LoadShaderProgram(list, shaderProgram);
@@ -271,7 +271,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     // Depth CubeMap overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_SIMPLE_DEPTH_CUBEMAP_SOURCE_FILE}
+        {GL_FRAGMENT_SHADER, PS_DEPTH_CUBEMAP_ARRAY_SOURCE_FILE}
     };
 
     result = LoadShaderProgram(list, shaderProgram);
@@ -285,7 +285,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     // CubeMap overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_SIMPLE_CUBEMAP_SOURCE_FILE}
+        {GL_FRAGMENT_SHADER, PS_CUBEMAP_ARRAY_SOURCE_FILE}
     };
 
     result = LoadShaderProgram(list, shaderProgram);
