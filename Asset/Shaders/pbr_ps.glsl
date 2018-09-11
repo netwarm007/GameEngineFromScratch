@@ -23,9 +23,9 @@ void main()
 {		
     vec3 N = normalize(normal_world.xyz);
     vec3 V = normalize(camPos - v_world.xyz);
+    vec3 R = reflect(-V, N);   
 
     vec3 albedo;
-    float meta = metallic;
     if (usingDiffuseMap)
     {
         albedo = texture(diffuseMap, uv).rgb; 
@@ -35,6 +35,7 @@ void main()
         albedo = diffuseColor;
     }
 
+    float meta = metallic;
     if (usingMetallicMap)
     {
         meta = texture(metallicMap, uv).r; 
@@ -101,20 +102,18 @@ void main()
             ambientOcc = texture(aoMap, uv).r;
         }
 
-        vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
+        vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
+        vec3 kS = F;
         vec3 kD = 1.0f - kS;
         kD *= 1.0f - meta;	  
+
         vec3 irradiance = textureLod(skybox, vec4(N, 0.0f), 1.0f).rgb;
         vec3 diffuse = irradiance * albedo;
 
         // ambient reflect
-        vec3 R = reflect(-V, N);   
-
         const float MAX_REFLECTION_LOD = 8.0f;
         vec3 prefilteredColor = textureLod(skybox, vec4(R, 1.0f), rough * MAX_REFLECTION_LOD).rgb;    
-
-        vec3 F        = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
-        vec2 envBRDF  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), rough)).rg;
+        vec2 envBRDF  = texture(brdfLUT, vec2(max(dot(N, V), 0.0f), rough)).rg;
         vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 
         ambient = (kD * diffuse + specular) * ambientOcc;
