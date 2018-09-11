@@ -42,5 +42,6 @@
         "xiosbase": "cpp",
         "xlocale": "cpp",
         "variant": "cpp"
-    }
+    },
+    "git.ignoreLimitWarning": true
 }

@@ -9,6 +9,7 @@
 #include "Scene.hpp"
 #include "Polyhedron.hpp"
 #include "IDrawPass.hpp"
+#include "IDispatchPass.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
@@ -39,6 +40,11 @@ namespace My {
         virtual void SetSkyBox(const DrawFrameContext& context);
         virtual void DrawSkyBox();
 
+        virtual intptr_t GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height);
+        virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth);
+
+        virtual intptr_t GetTexture(const char* id);
+
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
         virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
@@ -49,7 +55,8 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
-        virtual void DrawTextureArrayOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void DrawTextureOverlay(const intptr_t texture, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height);
         virtual void DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f);
         virtual void DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f);
         virtual void ClearDebugBuffers();
@@ -83,6 +90,7 @@ namespace My {
         uint32_t                        m_nFrameIndex = 0;
 
         std::vector<Frame>  m_Frames;
+        std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
         std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
     };
 

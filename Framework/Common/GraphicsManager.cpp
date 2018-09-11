@@ -8,6 +8,7 @@
 #include "ShadowMapPass.hpp"
 #include "HUDPass.hpp"
 #include "SkyBoxPass.hpp"
+#include "BRDFIntegrator.hpp"
 
 using namespace My;
 using namespace std;
@@ -16,6 +17,8 @@ int GraphicsManager::Initialize()
 {
     int result = 0;
     m_Frames.resize(kFrameCount);
+    m_InitPasses.push_back(make_shared<BRDFIntegrator>());
+
 	InitConstants();
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardRenderPass>());
@@ -282,7 +285,10 @@ void GraphicsManager::CalculateLights()
 
 void GraphicsManager::InitializeBuffers(const Scene& scene)
 {
-    cout << "[GraphicsManager] InitializeBuffers()" << endl;
+    for (auto pPass : m_InitPasses)
+    {
+        pPass->Dispatch();
+    }
 }
 
 void GraphicsManager::ClearBuffers()
@@ -477,10 +483,21 @@ void GraphicsManager::ClearDebugBuffers()
     cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 
-void GraphicsManager::DrawTextureArrayOverlay(const intptr_t shadowmap, uint32_t layer_index, 
+void GraphicsManager::DrawTextureOverlay(const intptr_t texture, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    cout << "[GraphicsManager] DrayOverlay(" << shadowmap << ", "
+    cout << "[GraphicsManager] DrayOverlay(" << texture << ", "
+        << vp_left << ", "
+        << vp_top << ", "
+        << vp_width << ", "
+        << vp_height << ", "
+        << ")" << endl;
+}
+
+void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, 
+    float vp_left, float vp_top, float vp_width, float vp_height)
+{
+    cout << "[GraphicsManager] DrayOverlay(" << texture << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "
@@ -570,4 +587,21 @@ void GraphicsManager::DestroyShadowMap(intptr_t& shadowmap)
 {
     cout << "[GraphicsManager] DestroyShadowMap(" << shadowmap << ")" << endl;
     shadowmap = -1;
+}
+
+intptr_t GraphicsManager::GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height)
+{
+    cout << "[GraphicsManager] GenerateAndBindTexture(" << id << ", " << width << ", " << height << ")" << endl;
+    return static_cast<intptr_t>(0);
+}
+
+void GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
+{
+    cout << "[GraphicsManager] Dispatch(" << width << ", " << height << ", " << depth << ")" << endl;
+}
+
+intptr_t GraphicsManager::GetTexture(const char* id)
+{
+    cout << "[GraphicsManager] GetTexture(" << id << ")" << endl;
+    return static_cast<intptr_t>(0);
 }

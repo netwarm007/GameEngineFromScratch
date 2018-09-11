@@ -87,24 +87,27 @@ namespace My {
         cerr << "Error compiling linker.  Check linker-error.txt for message." << endl;
     }
 
-    static bool LoadShaderFromFile(const char* filename, const GLenum shaderType, GLuint& shader)
+    static bool LoadShaderFromFile(const char* filename, const GLenum shaderType, const bool prependCommonHead, GLuint& shader)
     {
         std::string cbufferShaderBuffer;
         std::string commonShaderBuffer;
         std::string shaderBuffer;
         int status;
 
-        // Load the common shader source file into a text buffer.
-        cbufferShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/cbuffer.glsl");
-        if(cbufferShaderBuffer.empty())
+        if (prependCommonHead)
         {
-            return false;
-        }
+            // Load the common shader source file into a text buffer.
+            cbufferShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/cbuffer.glsl");
+            if(cbufferShaderBuffer.empty())
+            {
+                return false;
+            }
 
-        commonShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/common.glsl");
-        if(commonShaderBuffer.empty())
-        {
-            return false;
+            commonShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/common.glsl");
+            if(commonShaderBuffer.empty())
+            {
+                return false;
+            }
         }
 
         // Load the shader source file into a text buffer.
@@ -140,7 +143,7 @@ namespace My {
 
     typedef vector<pair<GLenum, string>> ShaderSourceList;
 
-    static bool LoadShaderProgram(const ShaderSourceList& source, GLuint& shaderProgram)
+    static bool LoadShaderProgram(const ShaderSourceList& source, GLuint& shaderProgram, const bool prependCommonHeader = true)
     {
         int status;
 
@@ -150,7 +153,7 @@ namespace My {
         for (auto it = source.cbegin(); it != source.cend(); it++)
         {
             GLuint shader;
-            status = LoadShaderFromFile(it->second.c_str(), it->first, shader);
+            status = LoadShaderFromFile(it->second.c_str(), it->first, prependCommonHeader, shader);
             if (!status)
             {
                 return false;
@@ -254,10 +257,10 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::OmniShadowMap] = shaderProgram;
 
-    // Texture overlay shader
+    // Depth Texture overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_TEXTURE_ARRAY_SOURCE_FILE}
+        {GL_FRAGMENT_SHADER, PS_DEPTH_TEXTURE_ARRAY_SOURCE_FILE}
     };
 
     result = LoadShaderProgram(list, shaderProgram);
@@ -266,7 +269,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::Copy] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::DepthCopy] = shaderProgram;
 
     // Depth CubeMap overlay shader
     list = {
@@ -280,7 +283,21 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::DepthCopyCube] = shaderProgram;
+
+    // Texture overlay shader
+    list = {
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_TEXTURE_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::Copy] = shaderProgram;
 
     // CubeMap overlay shader
     list = {
@@ -294,7 +311,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::CopyCube2] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
 
     // SkyBox shader
     list = {
@@ -326,6 +343,22 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Debug] = shaderProgram;
 #endif
+
+    /////////////////
+    // CS Shaders
+
+    // BRDF
+    list = {
+        {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram, false);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
 
     return result;
 }

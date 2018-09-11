@@ -37,6 +37,11 @@ namespace My {
         void SetSkyBox(const DrawFrameContext& context) final;
         void DrawSkyBox() final;
 
+        intptr_t GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height) final;
+        void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
+
+        intptr_t GetTexture(const char* id) final;
+
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;
         void DrawPointSet(const PointSet& point_set, const Vector3f& color) final;
@@ -48,7 +53,8 @@ namespace My {
         void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color) final;
         void DrawTriangleStrip(const PointList& vertices, const Vector3f& color) final;
         void ClearDebugBuffers() final;
-        void DrawTextureArrayOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) final;
+        void DrawTextureOverlay(const intptr_t texture, float vp_left, float vp_top, float vp_width, float vp_height) final;
+        void DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) final;
         void DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
         void DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
         void RenderDebugBuffers();

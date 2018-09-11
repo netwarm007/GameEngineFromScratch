@@ -1002,6 +1002,40 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
     glDepthFunc(GL_LESS); // set depth function back to default
 }
 
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height)
+{
+    GLuint tex_output;
+    glGenTextures(1, &tex_output);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, tex_output);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, NULL);
+    glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
+    m_TextureIndex[id] = tex_output;
+    m_Textures.push_back(tex_output);
+    return static_cast<intptr_t>(tex_output);
+}
+
+void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
+{
+    glDispatchCompute((GLuint)width, (GLuint)height, (GLuint)depth);
+}
+
+intptr_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)
+{
+    assert(id);
+    auto it = m_TextureIndex.find(id);
+    if (it != m_TextureIndex.end())
+    {
+        return static_cast<intptr_t>(it->second);
+    }
+
+    return 0;
+}
+
 #ifdef DEBUG
 
 void OpenGLGraphicsManagerCommonBase::DrawPoint(const Point &point, const Vector3f& color)
@@ -1280,9 +1314,63 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const intptr_t shadowmap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t texture, float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    GLuint texture_id = (GLuint) shadowmap;
+    GLuint texture_id = (GLuint) texture;
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    GLfloat vertices[] = {
+        vp_left, vp_top, 0.0f,
+        vp_left, vp_top - vp_height, 0.0f,
+        vp_left + vp_width, vp_top, 0.0f,
+        vp_left + vp_width, vp_top - vp_height, 0.0f
+    };
+
+    GLfloat uv[] = {
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f
+    };
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id[2];
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(2, buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    // Bind the vertex buffer and load the vertex (uv) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uv), uv, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0x00, 4);
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(2, buffer_id);
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+{
+    GLuint texture_id = (GLuint) texture;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
