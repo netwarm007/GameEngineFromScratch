@@ -296,6 +296,8 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
 
 void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
 {
+    GraphicsManager::InitializeBuffers(scene);
+
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {

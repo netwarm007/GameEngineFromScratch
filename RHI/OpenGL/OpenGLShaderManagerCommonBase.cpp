@@ -287,7 +287,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     // Texture overlay shader
     list = {
-        {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
         {GL_FRAGMENT_SHADER, PS_TEXTURE_SOURCE_FILE}
     };
 

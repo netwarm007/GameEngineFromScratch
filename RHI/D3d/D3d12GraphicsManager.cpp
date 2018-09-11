@@ -1367,6 +1367,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
 
 void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 {
+    GraphicsManager::InitializeBuffers(scene);
+
     HRESULT hr;
 
 	if (!m_pCommandList)
