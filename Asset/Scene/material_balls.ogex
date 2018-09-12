@@ -1039,7 +1039,7 @@ Material $material2
 
 	Texture (attrib = "diffuse")
 	{
-		string {"Textures/gold-scuffed_basecolor.png"}
+		string {"Textures/gold-scuffed_basecolor-boosted.png"}
 	}
 
 	Texture (attrib = "normal")
