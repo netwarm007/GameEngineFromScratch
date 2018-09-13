@@ -27,29 +27,25 @@ namespace My {
 
     static void GetHardwareAdapter(IDXGIFactory4* pFactory, IDXGIAdapter1** ppAdapter)
     {
-        IDXGIAdapter1* pAdapter = nullptr;
-        *ppAdapter = nullptr;
+		*ppAdapter = nullptr;
+		for (UINT adapterIndex = 0; ; ++adapterIndex)
+		{
+			IDXGIAdapter1* pAdapter = nullptr;
+			if (DXGI_ERROR_NOT_FOUND == pFactory->EnumAdapters1(adapterIndex, &pAdapter))
+			{
+				// No more adapters to enumerate.
+				break;
+			}
 
-        for (UINT adapterIndex = 0; DXGI_ERROR_NOT_FOUND != pFactory->EnumAdapters1(adapterIndex, &pAdapter); adapterIndex++)
-        {
-           DXGI_ADAPTER_DESC1 desc;
-           pAdapter->GetDesc1(&desc);
-
-           if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-           {
-               // Don't select the Basic Render Driver adapter.
-               continue;
-           }
-
-           // Check to see if the adapter supports Direct3D 12, but don't create the
-           // actual device yet.
-           if (SUCCEEDED(D3D12CreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr)))
-           {
-               break;
-           }
-        }
-
-        *ppAdapter = pAdapter;
+			// Check to see if the adapter supports Direct3D 12, but don't create the
+			// actual device yet.
+			if (SUCCEEDED(D3D12CreateDevice(pAdapter, D3D_FEATURE_LEVEL_12_0, _uuidof(ID3D12Device), nullptr)))
+			{
+				*ppAdapter = pAdapter;
+				return;
+			}
+			pAdapter->Release();
+		}
     }
 
 	//------------------------------------------------------------------------------------------------
@@ -959,8 +955,8 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     IDXGIAdapter1* pHardwareAdapter;
     GetHardwareAdapter(pFactory, &pHardwareAdapter);
 
-    if (FAILED(D3D12CreateDevice(pHardwareAdapter,
-        D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_pDev)))) {
+    if (FAILED(hr = D3D12CreateDevice(pHardwareAdapter,
+        D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&m_pDev)))) {
 
         IDXGIAdapter* pWarpAdapter;
         if (FAILED(hr = pFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)))) {
@@ -968,13 +964,40 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
             return hr;
         }
 
-        if(FAILED(hr = D3D12CreateDevice(pWarpAdapter, D3D_FEATURE_LEVEL_11_0,
+        if(FAILED(hr = D3D12CreateDevice(pWarpAdapter, D3D_FEATURE_LEVEL_12_0,
             IID_PPV_ARGS(&m_pDev)))) {
             SafeRelease(&pFactory);
             return hr;
         }
     }
 
+	static const D3D_FEATURE_LEVEL s_featureLevels[] =
+	{
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0
+	};
+
+	D3D12_FEATURE_DATA_FEATURE_LEVELS featLevels =
+	{
+		_countof(s_featureLevels), s_featureLevels, D3D_FEATURE_LEVEL_12_0
+	};
+
+	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_12_0;
+	hr = m_pDev->CheckFeatureSupport(D3D12_FEATURE_FEATURE_LEVELS,
+		&featLevels, sizeof(featLevels));
+	if (SUCCEEDED(hr))
+	{
+		featureLevel = featLevels.MaxSupportedFeatureLevel;
+		switch (featureLevel)
+		{
+		case D3D_FEATURE_LEVEL_12_0:
+			cerr << "Device Feature Level: 12.0" << endl;
+			break;
+		case D3D_FEATURE_LEVEL_12_1:
+			cerr << "Device Feature Level: 12.1" << endl;
+			break;
+		}
+	}
 
     HWND hWnd = reinterpret_cast<WindowsApplication*>(g_pApp)->GetMainWindow();
 
