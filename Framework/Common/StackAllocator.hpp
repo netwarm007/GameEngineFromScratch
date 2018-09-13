@@ -23,7 +23,7 @@ namespace My {
     protected:
         std::list<uint8_t*> m_pPages;
         std::list<std::shared_ptr<void>> m_pAllocatedPointers;
-        off_t m_StackTop;
+        int64_t m_StackTop;
         size_t m_MaxSize;
     };
 }

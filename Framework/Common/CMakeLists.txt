@@ -20,6 +20,8 @@ main.cpp
 
 target_link_libraries(Common 
         Algorism
+        DrawPass
+        DispatchPass
         Geometries
         GeomMath
         ${OPENGEX_LIBRARY} 

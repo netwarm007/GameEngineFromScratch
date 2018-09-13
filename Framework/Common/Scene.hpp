@@ -27,14 +27,21 @@ namespace My {
         
         std::unordered_map<std::string, std::weak_ptr<SceneGeometryNode>>         LUT_Name_GeometryNode;
 
+        std::shared_ptr<SceneObjectSkyBox> SkyBox;
+
     public:
         Scene() {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
+            SkyBox = std::make_shared<SceneObjectSkyBox>();
+            SkyBox->SetName("Textures/sor_sea/sea", "tga");
         }
 
-        Scene(const std::string& scene_name) : 
+        Scene(const std::string& scene_name) :
             SceneGraph(new BaseSceneNode(scene_name))
         {
+            m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
+            SkyBox = std::make_shared<SceneObjectSkyBox>();
+            SkyBox->SetName("Textures/sor_sea/sea", "tga");
         }
 
         ~Scene() = default;

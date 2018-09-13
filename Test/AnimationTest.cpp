@@ -62,8 +62,10 @@ int main(int argc, char** argv)
                 cout << *pNode->GetCalculatedTransform() << endl;
             }
         }
+#if 0
         const chrono::milliseconds one_frame_time(33);
         this_thread::sleep_for(one_frame_time);
+#endif
     }
 
     g_pAnimationManager->Finalize();

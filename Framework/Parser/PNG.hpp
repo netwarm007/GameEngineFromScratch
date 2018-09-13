@@ -118,14 +118,18 @@ namespace My {
                     PNG_CHUNK_TYPE type = static_cast<PNG_CHUNK_TYPE>(endian_net_unsigned_int(static_cast<uint32_t>(pChunkHeader->Type)));
                     uint32_t chunk_data_size = endian_net_unsigned_int(pChunkHeader->Length);
 
-                    std::cout << "============================" << std::endl;
+#if DUMP_DETAILS
+                    std::cout << "============================" << std::endl
+#endif
 
                     switch (type) 
                     {
                         case PNG_CHUNK_TYPE::IHDR:
                             {
+#if DUMP_DETAILS
                                 std::cout << "IHDR (Image Header)" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
+#endif
                                 const PNG_IHDR_HEADER* pIHDRHeader = reinterpret_cast<const PNG_IHDR_HEADER*>(pData);
                                 m_Width = endian_net_unsigned_int(pIHDRHeader->Width);
                                 m_Height = endian_net_unsigned_int(pIHDRHeader->Height);
@@ -139,8 +143,6 @@ namespace My {
                                 {
                                     case 0:  // grayscale
                                         m_BytesPerPixel = (m_BitDepth + 7) >> 3;
-                                        std::cout << "Color Type 0 is not supported yet: " << m_ColorType << std::endl;
-                                        assert(0);
                                         break;
                                     case 2:  // rgb true color
                                         m_BytesPerPixel = (m_BitDepth * 3) >> 3;
@@ -168,14 +170,12 @@ namespace My {
 
                                 img.Width = m_Width;
                                 img.Height = m_Height;
-                                if (m_ColorType == 2)
-                                    img.bitcount = 24;
-                                else
-                                    img.bitcount = 32; 
+                                img.bitcount = m_BytesPerPixel * 8;
                                 img.pitch = (img.Width * (img.bitcount >> 3) + 3) & ~3u; // for GPU address alignment
                                 img.data_size = img.pitch * img.Height;
                                 img.data = new uint8_t[img.data_size];
 
+#if DUMP_DETAILS
                                 std::cout << "Width: " << m_Width << std::endl;
                                 std::cout << "Height: " << m_Height << std::endl;
                                 std::cout << "Bit Depth: " << (int)m_BitDepth << std::endl;
@@ -183,13 +183,14 @@ namespace My {
                                 std::cout << "Compression Method: " << (int)m_CompressionMethod << std::endl;
                                 std::cout << "Filter Method: " << (int)m_FilterMethod << std::endl;
                                 std::cout << "Interlace Method: " << (int)m_InterlaceMethod << std::endl;
+#endif
                             }
                             break;
                         case PNG_CHUNK_TYPE::PLTE:
                             {
+#if DUMP_DETAILS
                                 std::cout << "PLTE (Palette)" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
-#if DUMP_DETAILS
                                 const PNG_PLTE_HEADER* pPLTEHeader = reinterpret_cast<const PNG_PLTE_HEADER*>(pData);
                                 for (auto i = 0; i < chunk_data_size / sizeof(*pPLTEHeader->pEntries); i++)
                                 {
@@ -200,10 +201,12 @@ namespace My {
                             break;
                         case PNG_CHUNK_TYPE::IDAT:
                             {
+#if DUMP_DETAILS
                                 std::cout << "IDAT (Image Data Start)" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
 
                                 std::cout << "Compressed Data Length: " << chunk_data_size << std::endl;
+#endif
 
                                 if (imageDataEnded) {
                                     std::cout << "PNG file looks corrupted. Found IDAT after IEND." << std::endl;
@@ -226,8 +229,10 @@ namespace My {
                             break;
                         case PNG_CHUNK_TYPE::IEND:
                             {
+#if DUMP_DETAILS
                                 std::cout << "IEND (Image Data End)" << std::endl;
                                 std::cout << "----------------------------" << std::endl;
+#endif
 
                                 size_t compressed_data_size = imageDataEndPos - imageDataStartPos;
 
@@ -363,7 +368,9 @@ namespace My {
                             break;
                         default:
                             {
+#if DUMP_DETAILS
                                 std::cout << "Ignor Unrecognized Chunk. Marker=" << type << std::endl;
+#endif
                             }
                             break;
                     }

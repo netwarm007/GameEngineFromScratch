@@ -1,45 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Filename: basic.ps 
+// Filename: basic_ps.glsl
 ////////////////////////////////////////////////////////////////////////////////
-#version 150
-
-
-/////////////////////
-// CONSTANTS       //
-/////////////////////
-// per frame
-#define MAX_LIGHTS 10
-uniform int numLights;
-uniform struct Light {
-    vec4 lightPosition;
-    vec4 lightColor;
-    vec4 lightDirection;
-    float lightIntensity;
-    int  lightDistAttenCurveType;
-    float lightDistAttenCurveParams[5];
-    int  lightAngleAttenCurveType;
-    float lightAngleAttenCurveParams[5];
-} allLights[MAX_LIGHTS];
-
-uniform mat4 worldMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 projectionMatrix;
-
-// per drawcall
-uniform vec3 ambientColor;
-uniform vec3 diffuseColor;
-uniform vec3 specularColor;
-uniform float specularPower;
-
-uniform bool usingDiffuseMap;
-
-uniform sampler2D diffuseMap;
 
 /////////////////////
 // INPUT VARIABLES //
 /////////////////////
 in vec4 normal;
+in vec4 normal_world;
 in vec4 v; 
+in vec4 v_world;
 in vec2 uv;
 
 //////////////////////
@@ -51,78 +20,10 @@ out vec4 outputColor;
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
 
-float linear_interpolate(float t, float begin, float end)
-{
-    if (t < begin)
-    {
-        return 1.0f;
-    }
-    else if (t > end)
-    {
-        return 0.0f;
-    }
-    else
-    {
-        return (end - t) / (end - begin);
-    }
-}
-
-float apply_atten_curve(float dist, int atten_type, float atten_params[5])
-{
-    float atten = 1.0f;
-
-    switch(atten_type)
-    {
-        case 1: // linear
-        {
-            float begin_atten = atten_params[0];
-            float end_atten = atten_params[1];
-            atten = linear_interpolate(dist, begin_atten, end_atten);
-            break;
-        }
-        case 2: // smooth
-        {
-            float begin_atten = atten_params[0];
-            float end_atten = atten_params[1];
-            float tmp = linear_interpolate(dist, begin_atten, end_atten);
-            atten = 3.0f * pow(tmp, 2.0f) - 2.0f * pow(tmp, 3.0f);
-            break;
-        }
-        case 3: // inverse
-        {
-            float scale = atten_params[0];
-            float offset = atten_params[1];
-            float kl = atten_params[2];
-            float kc = atten_params[3];
-            atten = clamp(scale / 
-                (kl * dist + kc * scale) + offset, 
-                0.0f, 1.0f);
-            break;
-        }
-        case 4: // inverse square
-        {
-            float scale = atten_params[0];
-            float offset = atten_params[1];
-            float kq = atten_params[2];
-            float kl = atten_params[3];
-            float kc = atten_params[4];
-            atten = clamp(pow(scale, 2.0f) / 
-                (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
-                0.0f, 1.0f);
-            break;
-        }
-        case 0:
-        default:
-            break; // no attenuation
-    }
-
-    return atten;
-}
-
-vec3 apply_light(Light light) {
+vec3 apply_light(const Light light) {
     vec3 N = normalize(normal.xyz);
     vec3 L;
-    vec3 light_dir = normalize((viewMatrix * worldMatrix * light.lightDirection).xyz);
+    vec3 light_dir = normalize((viewMatrix * light.lightDirection).xyz);
 
     if (light.lightPosition.w == 0.0f)
     {
@@ -130,31 +31,113 @@ vec3 apply_light(Light light) {
     }
     else
     {
-        L = (viewMatrix * worldMatrix * light.lightPosition).xyz - v.xyz;
+        L = (viewMatrix * light.lightPosition).xyz - v.xyz;
     }
 
     float lightToSurfDist = length(L);
+
     L = normalize(L);
+
+    float cosTheta = clamp(dot(N, L), 0.0f, 1.0f);
+
+    // shadow test
+    float visibility = shadow_test(v_world, light, cosTheta);
+
     float lightToSurfAngle = acos(dot(L, -light_dir));
 
     // angle attenuation
-    float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, light.lightAngleAttenCurveParams);
+    float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveParams);
 
     // distance attenuation
-    atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
+    atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
 
     vec3 R = normalize(2.0f * dot(L, N) *  N - L);
     vec3 V = normalize(-v.xyz);
 
     vec3 linearColor;
 
+    vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
     if (usingDiffuseMap)
     {
-        linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (texture(diffuseMap, uv).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = texture(diffuseMap, uv).rgb * cosTheta; 
+        if (visibility > 0.2f)
+            linearColor += specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower); 
+        linearColor *= admit_light;
     }
     else
     {
-        linearColor = ambientColor.rgb + light.lightIntensity * atten * light.lightColor.rgb * (diffuseColor.rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = diffuseColor.rgb * cosTheta;
+        if (visibility > 0.2f)
+            linearColor += specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower); 
+        linearColor *= admit_light;
+    }
+
+    return linearColor * visibility;
+}
+
+vec3 apply_areaLight(const Light light)
+{
+    vec3 N = normalize(normal.xyz);
+    vec3 right = normalize((viewMatrix * vec4(1.0f, 0.0f, 0.0f, 0.0f)).xyz);
+    vec3 pnormal = normalize((viewMatrix * light.lightDirection).xyz);
+    vec3 ppos = (viewMatrix * light.lightPosition).xyz;
+    vec3 up = normalize(cross(pnormal, right));
+    right = normalize(cross(up, pnormal));
+
+    //width and height of the area light:
+    float width = light.lightSize.x;
+    float height = light.lightSize.y;
+
+    //project onto plane and calculate direction from center to the projection.
+    vec3 projection = projectOnPlane(v.xyz, ppos, pnormal);// projection in plane
+    vec3 dir = projection - ppos;
+
+    //calculate distance from area:
+    vec2 diagonal = vec2(dot(dir,right), dot(dir,up));
+    vec2 nearest2D = vec2(clamp(diagonal.x, -width, width), clamp(diagonal.y, -height, height));
+    vec3 nearestPointInside = ppos + right * nearest2D.x + up * nearest2D.y;
+
+    vec3 L = nearestPointInside - v.xyz;
+
+    float lightToSurfDist = length(L);
+    L = normalize(L);
+
+    // distance attenuation
+    float atten = apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
+
+    vec3 linearColor = vec3(0.0f);
+
+    float pnDotL = dot(pnormal, -L);
+    float nDotL = dot(N, L);
+
+    if (nDotL > 0.0f && isAbovePlane(v.xyz, ppos, pnormal)) //looking at the plane
+    {
+        //shoot a ray to calculate specular:
+        vec3 V = normalize(-v.xyz);
+        vec3 R = normalize(2.0f * dot(V, N) *  N - V);
+        vec3 R2 = normalize(2.0f * dot(L, N) *  N - L);
+        vec3 E = linePlaneIntersect(v.xyz, R, ppos, pnormal);
+
+        float specAngle = clamp(dot(-R, pnormal), 0.0f, 1.0f);
+        vec3 dirSpec = E - ppos;
+        vec2 dirSpec2D = vec2(dot(dirSpec, right), dot(dirSpec, up));
+        vec2 nearestSpec2D = vec2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
+        float specFactor = 1.0f - clamp(length(nearestSpec2D - dirSpec2D), 0.0f, 1.0f);
+
+        vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
+
+        if (usingDiffuseMap)
+        {
+            linearColor = texture(diffuseMap, uv).rgb * nDotL * pnDotL; 
+            linearColor += specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle; 
+            linearColor *= admit_light;
+        }
+        else
+        {
+            linearColor = diffuseColor.rgb * nDotL * pnDotL; 
+            linearColor += specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle; 
+            linearColor *= admit_light;
+        }
     }
 
     return linearColor;
@@ -165,9 +148,25 @@ void main(void)
     vec3 linearColor = vec3(0.0f);
     for (int i = 0; i < numLights; i++)
     {
-        linearColor += apply_light(allLights[i]); 
+        if (allLights[i].lightType == 3) // area light
+        {
+            linearColor += apply_areaLight(allLights[i]); 
+        }
+        else
+        {
+            linearColor += apply_light(allLights[i]); 
+        }
     }
 
-    outputColor = vec4(clamp(linearColor, 0.0f, 1.0f), 1.0f);
+    // add ambient color
+    // linearColor += ambientColor.rgb;
+    linearColor += textureLod(skybox, vec4(normal_world.xyz, 0), 8).rgb * vec3(0.20f);
+
+    // tone mapping
+    //linearColor = reinhard_tone_mapping(linearColor);
+    linearColor = exposure_tone_mapping(linearColor);
+
+    // gamma correction
+    outputColor = vec4(gamma_correction(linearColor), 1.0f);
 }
 

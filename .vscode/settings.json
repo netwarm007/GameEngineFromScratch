@@ -38,6 +38,10 @@
         "dynarray": "cpp",
         "regex": "cpp",
         "stack": "cpp",
-        "functional": "cpp"
-    }
+        "functional": "cpp",
+        "xiosbase": "cpp",
+        "xlocale": "cpp",
+        "variant": "cpp"
+    },
+    "git.ignoreLimitWarning": true
 }

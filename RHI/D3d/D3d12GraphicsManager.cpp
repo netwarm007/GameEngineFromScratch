@@ -5,6 +5,7 @@
 #include "SceneManager.hpp"
 #include "AssetLoader.hpp"
 #include "IPhysicsManager.hpp"
+#include "D3dShaderManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -519,7 +520,7 @@ HRESULT D3d12GraphicsManager::CreateInternalVertexBuffer()
 	// initialize the vertex buffer view
 	m_VertexBufferViewResolve.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
 	m_VertexBufferViewResolve.StrideInBytes = 20;
-	m_VertexBufferViewResolve.SizeInBytes = size;
+	m_VertexBufferViewResolve.SizeInBytes = static_cast<UINT>(size);
 
     m_Buffers.push_back(pVertexBuffer);
     m_Buffers.push_back(pVertexBufferUploadHeap);
@@ -914,13 +915,13 @@ HRESULT D3d12GraphicsManager::CreateConstantBuffer()
             // Per frame constant buffer descriptor
             cbvDesc.BufferLocation = pConstantUploadBuffer->GetGPUVirtualAddress() 
                                         + i * m_kSizeConstantBufferPerFrame;
-            cbvDesc.SizeInBytes = m_kSizePerFrameConstantBuffer;
+            cbvDesc.SizeInBytes = static_cast<UINT>(m_kSizePerFrameConstantBuffer);
             m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
             cbvHandle.ptr += m_nCbvSrvDescriptorSize;
 
             // Per batch constant buffer descriptor
             cbvDesc.BufferLocation += m_kSizePerFrameConstantBuffer + j * m_kSizePerBatchConstantBuffer;
-            cbvDesc.SizeInBytes = m_kSizePerBatchConstantBuffer;
+            cbvDesc.SizeInBytes = static_cast<UINT>(m_kSizePerBatchConstantBuffer);
             m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
             cbvHandle.ptr += m_nCbvSrvDescriptorSize;
         }
@@ -1053,6 +1054,18 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     }
     cout << "Done!" << endl;
 
+    cout << "Creating PSO ...";
+    if (FAILED(hr = InitializePSO())) {
+        return hr;
+    }
+    cout << "Done!" << endl;
+
+    cout << "Creating Command List ...";
+    if (FAILED(hr = CreateCommandList())) {
+        return hr;
+    }
+    cout << "Done!" << endl;
+
     return hr;
 }
 
@@ -1165,8 +1178,8 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
 }
 
 
-// this is the function that loads and prepares the shaders
-bool D3d12GraphicsManager::InitializeShaders() {
+// this is the function that loads and prepares the pso 
+HRESULT D3d12GraphicsManager::InitializePSO() {
     HRESULT hr = S_OK;
 
     // basic pass
@@ -1340,28 +1353,27 @@ bool D3d12GraphicsManager::InitializeShaders() {
     return hr;
 }
 
-void D3d12GraphicsManager::ClearShaders()
+HRESULT D3d12GraphicsManager::CreateCommandList()
 {
-    SafeRelease(&m_pCommandList);
-    SafeRelease(&m_pPipelineState);
-    SafeRelease(&m_pPipelineStateResolve);
+    HRESULT hr = S_OK;
+
+	if (!m_pCommandList)
+	{
+		hr = m_pDev->CreateCommandList(0, 
+					D3D12_COMMAND_LIST_TYPE_DIRECT, 
+					m_pCommandAllocator, 
+					m_pPipelineState, 
+					IID_PPV_ARGS(&m_pCommandList));
+	}
+
+    return hr;
 }
 
 void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 {
-    HRESULT hr;
+    GraphicsManager::InitializeBuffers(scene);
 
-	if (!m_pCommandList)
-	{
-		if (FAILED(hr = m_pDev->CreateCommandList(0, 
-					D3D12_COMMAND_LIST_TYPE_DIRECT, 
-					m_pCommandAllocator, 
-					m_pPipelineState, 
-					IID_PPV_ARGS(&m_pCommandList))))
-		{
-			return;
-		}
-	}
+    HRESULT hr;
 
     cout << "Creating Vertex Buffer ...";
     for (auto _it : scene.GeometryNodes)
@@ -1601,7 +1613,8 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         // Set num of lights
-        m_pCommandList->SetGraphicsRoot32BitConstant(3, m_DrawFrameContext.m_lights.size(), 0);
+        auto& DrawFrameContext = m_Frames[m_nFrameIndex].frameContext;
+        m_pCommandList->SetGraphicsRoot32BitConstant(3, static_cast<UINT>(DrawFrameContext.m_lights.size()), 0);
 
         // do 3D rendering on the back buffer here
         int32_t i = 0;
@@ -1764,15 +1777,16 @@ void D3d12GraphicsManager::RenderBuffers()
 bool D3d12GraphicsManager::SetPerFrameShaderParameters()
 {
     uint8_t* pHead = m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame;
-    size_t offset = (uint8_t *)&m_DrawFrameContext.m_lights - (uint8_t *)&m_DrawFrameContext;
+    auto& DrawFrameContext = m_Frames[m_nFrameIndex].frameContext;
+    size_t offset = (uint8_t *)&DrawFrameContext.m_lights - (uint8_t *)&DrawFrameContext;
 
     memcpy(pHead, 
-        &m_DrawFrameContext, 
+        &DrawFrameContext, 
         offset); 
 
     pHead += ALIGN(offset, 16); // 16 bytes alignment
 
-    for (auto light : m_DrawFrameContext.m_lights)
+    for (auto light : DrawFrameContext.m_lights)
     {
         size_t size = ALIGN(sizeof(Light), 16); // 16 bytes alignment
         memcpy(pHead, &light, size);

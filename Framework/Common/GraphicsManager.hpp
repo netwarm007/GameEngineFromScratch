@@ -1,10 +1,15 @@
 #pragma once
+#include <vector>
+#include <memory>
+#include "GfxStructures.hpp"
 #include "IRuntimeModule.hpp"
+#include "IShaderManager.hpp"
 #include "geommath.hpp"
 #include "Image.hpp"
 #include "Scene.hpp"
 #include "Polyhedron.hpp"
-#include <vector>
+#include "IDrawPass.hpp"
+#include "IDispatchPass.hpp"
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
@@ -20,6 +25,26 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
+        virtual void UseShaderProgram(const intptr_t shaderProgram);
+        virtual void SetPerFrameConstants(const DrawFrameContext& context);
+        virtual void DrawBatch(const DrawBatchContext& context);
+        virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
+
+        virtual intptr_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
+        virtual intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
+        virtual void BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index);
+        virtual void EndShadowMap(const intptr_t shadowmap, const uint32_t layer_index);
+        virtual void SetShadowMaps(const Frame& frame);
+        virtual void DestroyShadowMap(intptr_t& shadowmap);
+
+        virtual void SetSkyBox(const DrawFrameContext& context);
+        virtual void DrawSkyBox();
+
+        virtual intptr_t GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height);
+        virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth);
+
+        virtual intptr_t GetTexture(const char* id);
+
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
         virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
@@ -30,18 +55,21 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
+        virtual void DrawTextureOverlay(const intptr_t texture, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height);
+        virtual void DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f);
+        virtual void DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f);
+        virtual void ClearDebugBuffers();
+
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
         void DrawPolygon(const Face& face, const Vector3f& color);
         void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
         void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
-        virtual void ClearDebugBuffers();
 #endif
 
     protected:
-        virtual bool InitializeShaders();
-        virtual void ClearShaders();
         virtual void InitializeBuffers(const Scene& scene);
         virtual void ClearBuffers();
 
@@ -49,42 +77,21 @@ namespace My {
         virtual void CalculateCameraMatrix();
         virtual void CalculateLights();
         virtual void UpdateConstants();
-        virtual void RenderBuffers();
+
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif
 
     protected:
-        struct Light {
-            Vector4f    m_lightPosition;
-            Vector4f    m_lightColor;
-            Vector4f    m_lightDirection;
-            float       m_lightIntensity;
-            AttenCurveType m_lightDistAttenCurveType;
-            float       m_lightDistAttenCurveParams[5];
-            AttenCurveType m_lightAngleAttenCurveType;
-            float       m_lightAngleAttenCurveParams[5];
+        static const uint32_t           kFrameCount  = 2;
+        static const uint32_t           kMaxSceneObjectCount  = 65535;
+        static const uint32_t           kMaxTextureCount  = 2048;
 
-            Light()
-            {
-                m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
-                m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-                m_lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };
-                m_lightIntensity = 0.5f;
-                m_lightDistAttenCurveType = AttenCurveType::kNone;
-                m_lightAngleAttenCurveType = AttenCurveType::kNone;
-            }
-        };
+        uint32_t                        m_nFrameIndex = 0;
 
-        struct DrawFrameContext {
-            Matrix4X4f  m_worldMatrix;
-            Matrix4X4f  m_viewMatrix;
-            Matrix4X4f  m_projectionMatrix;
-            Vector3f    m_ambientColor;
-            std::vector<Light> m_lights;
-        };
-
-        DrawFrameContext    m_DrawFrameContext;
+        std::vector<Frame>  m_Frames;
+        std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
+        std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
     };
 
     extern GraphicsManager* g_pGraphicsManager;

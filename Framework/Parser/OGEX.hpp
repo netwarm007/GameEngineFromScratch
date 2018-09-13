@@ -492,6 +492,14 @@ namespace My {
                         {
                             light = std::make_shared<SceneObjectSpotLight>();
                         }
+                        else if (!strncmp(_type_str, "area", 4))
+                        {
+                            light = std::make_shared<SceneObjectAreaLight>();
+                        }
+                        else
+                        {
+                            assert(0);
+                        }
 
                         light->SetIfCastShadow(_bshadow);
 
@@ -580,6 +588,29 @@ namespace My {
                             
                             _sub_structure = _sub_structure->Next();
                         }
+
+                        // extensions
+                        ODDL::Structure* extension = _structure.GetFirstExtensionSubnode();
+                        while (extension) {
+                            const OGEX::ExtensionStructure* _extension = dynamic_cast<const OGEX::ExtensionStructure*>(extension);
+                            auto _appid = _extension->GetApplicationString();
+                            if (_appid == "MyGameEngine") {
+                                auto _type = _extension->GetTypeString();
+                                if (_type == "area_light") {
+                                    const ODDL::Structure *sub_structure = _extension->GetFirstCoreSubnode();
+                                    const ODDL::DataStructure<ODDL::FloatDataType> *dataStructure1 = static_cast<const ODDL::DataStructure<ODDL::FloatDataType> *>(sub_structure);
+                                    auto elementCount = dataStructure1->GetDataElementCount();
+                                    assert(elementCount == 2);
+                                    auto width = dataStructure1->GetDataElement(0);
+                                    auto height = dataStructure1->GetDataElement(1);
+
+                                    auto _light = dynamic_pointer_cast<SceneObjectAreaLight>(light);
+                                    _light->SetDimension({width, height});
+                                }
+                            }
+                            extension = extension->Next();
+                        }
+
                         scene.Lights[_key] = light;
                     }
                     return;

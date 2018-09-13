@@ -1,7 +1,7 @@
 #ifndef __STDCBUFFER_H__
 #define __STDCBUFFER_H__
 
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 55
 
 struct a2v
 {
@@ -14,6 +14,7 @@ struct Light{
 	float4		m_lightPosition;
 	float4		m_lightColor;
 	float4		m_lightDirection;
+	float2	    m_lightSize;
 	float       m_lightIntensity;
 	uint		m_lightDistAttenCurveType;
 	float       m_lightDistAttenCurveParams_0;
@@ -31,7 +32,6 @@ struct Light{
 
 cbuffer PerFrameConstants : register(b0)
 {
-    float4x4 m_worldMatrix;
 	float4x4 m_viewMatrix;
 	float4x4 m_projectionMatrix;
     float3 ambientColor;
