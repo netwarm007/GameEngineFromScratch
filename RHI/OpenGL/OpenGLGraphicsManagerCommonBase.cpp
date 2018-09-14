@@ -127,7 +127,8 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, blockIndex, m_UboBuffer);
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_UboBuffer);
 
     return true;
 }
@@ -698,7 +699,6 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
-    GLuint tmp_texture_view;
     if (light.m_lightType == LightType::Omni)
     {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (GLuint) shadowmap, 0);
