@@ -130,7 +130,8 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, blockIndex, m_UboBuffer);
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_UboBuffer);
 
     return true;
 }
