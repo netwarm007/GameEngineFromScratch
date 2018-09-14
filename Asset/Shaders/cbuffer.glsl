@@ -10,7 +10,7 @@ struct Light {
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
-    vec2 lightSize;
+    vec4 lightSize;
     float lightIntensity;
     int  lightDistAttenCurveType;
     float lightDistAttenCurveParams_0;
