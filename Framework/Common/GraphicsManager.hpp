@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "GfxStructures.hpp"
+#include "FrameStructure.hpp"
 #include "IRuntimeModule.hpp"
 #include "IShaderManager.hpp"
 #include "geommath.hpp"

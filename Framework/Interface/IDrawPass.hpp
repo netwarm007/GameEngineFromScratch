@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include "Interface.hpp"
-#include "GfxStructures.hpp"
+#include "FrameStructure.hpp"
 
 namespace My {
     Interface IDrawPass

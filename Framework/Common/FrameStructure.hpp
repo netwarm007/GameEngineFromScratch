@@ -1,33 +1,9 @@
 #pragma once
 #include <vector>
-#include "geommath.hpp"
 #include "Scene.hpp"
+#include "Asset/Shaders/HLSL/cbuffer.h"
 
 namespace My {
-    typedef enum LightType {
-        Omni = 0,
-        Spot = 1,
-        Infinity = 2,
-        Area = 3
-    } LightType;
-
-    struct Light{
-        Guid        m_lightGuid;
-        LightType   m_lightType = LightType::Omni;
-        Vector4f    m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
-        Vector4f    m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-        Vector4f    m_lightDirection = { 0.0f, 0.0f -1.0f, 0.0f };
-        Vector4f    m_lightSize = { 0.0f, 0.0f };
-        float       m_lightIntensity = 1.0f;
-        AttenCurveType m_lightDistAttenCurveType = AttenCurveType::kNone;
-        float       m_lightDistAttenCurveParams[5];
-        AttenCurveType m_lightAngleAttenCurveType = AttenCurveType::kNone;
-        float       m_lightAngleAttenCurveParams[5];
-        bool        m_lightCastShadow;
-        int32_t     m_lightShadowMapIndex = -1;
-        Matrix4X4f  m_lightVP;
-    };
-
     struct DrawFrameContext {
         Matrix4X4f  m_viewMatrix;
         Matrix4X4f  m_projectionMatrix;

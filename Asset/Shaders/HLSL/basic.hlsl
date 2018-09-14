@@ -1,13 +1,20 @@
 #include "cbuffer.h"
 #include "vsoutput.hs"
 
+struct a2v
+{
+	float3 Position		: POSITION;
+	float3 Normal		: NORMAL;
+	float2 TextureUV	: TEXCOORD;
+};
+
 v2p VSMain(a2v input) {
     v2p output;
 
-	float4 temp = mul(m_viewMatrix, mul(objectMatrix, float4(input.Position.xyz, 1.0f)));
+	float4 temp = mul(m_viewMatrix, mul(modelMatrix, float4(input.Position.xyz, 1.0f)));
 	output.vPosInView = temp;
 	output.Position = mul(m_projectionMatrix, temp);
-	float3 vN = mul(m_viewMatrix, mul(objectMatrix, float4(input.Normal, 0.0f))).xyz;
+	float3 vN = mul(m_viewMatrix, mul(modelMatrix, float4(input.Normal, 0.0f))).xyz;
 
 	output.vNorm = vN;
 
@@ -16,10 +23,6 @@ v2p VSMain(a2v input) {
 
 	return output;
 }
-
-SamplerState samp0 : register(s0);
-Texture2D colorMap : register(t0);
-//Texture2D bumpGlossMap: register(t1);
 
 float3 projectOnPlane(float3 p, float3 center_of_plane, float3 normal_of_plane)
 {
@@ -52,7 +55,7 @@ float linear_interpolate(float t, float begin, float end)
     }
 }
 
-float apply_atten_curve(float dist, int atten_type, float atten_params[5])
+float apply_atten_curve(float dist, int atten_type, float atten_params[8])
 {
     float atten = 1.0f;
 
@@ -123,21 +126,10 @@ float3 apply_light(v2p input, Light light) {
     float lightToSurfAngle = acos(dot(L, -light_dir));
 
     // angle attenuation
-    float atten_params[5];
-    atten_params[0] = light.m_lightAngleAttenCurveParams_0;
-    atten_params[1] = light.m_lightAngleAttenCurveParams_1;
-    atten_params[2] = light.m_lightAngleAttenCurveParams_2;
-    atten_params[3] = light.m_lightAngleAttenCurveParams_3;
-    atten_params[4] = light.m_lightAngleAttenCurveParams_4;
-    float atten = apply_atten_curve(lightToSurfAngle, light.m_lightAngleAttenCurveType, atten_params);
+    float atten = apply_atten_curve(lightToSurfAngle, light.m_lightAngleAttenCurveType, light.m_lightAngleAttenCurveParams);
 
     // distance attenuation
-    atten_params[0] = light.m_lightDistAttenCurveParams_0;
-    atten_params[1] = light.m_lightDistAttenCurveParams_1;
-    atten_params[2] = light.m_lightDistAttenCurveParams_2;
-    atten_params[3] = light.m_lightDistAttenCurveParams_3;
-    atten_params[4] = light.m_lightDistAttenCurveParams_4;
-    atten *= apply_atten_curve(lightToSurfDist, light.m_lightDistAttenCurveType, atten_params);
+    atten *= apply_atten_curve(lightToSurfDist, light.m_lightDistAttenCurveType, light.m_lightDistAttenCurveParams);
 
     float3 R = normalize(2.0f * dot(L, N) *  N - L);
     float3 V = normalize(-input.vPosInView.xyz);
@@ -146,7 +138,7 @@ float3 apply_light(v2p input, Light light) {
 
     if (usingDiffuseMap)
     {
-        linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (colorMap.Sample(samp0, input.TextureUV).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
+        linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (diffuseMap.Sample(samp0, input.TextureUV).rgb * clamp(dot(N, L), 0.0f, 1.0f) + specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower)); 
     }
     else
     {
@@ -184,13 +176,7 @@ float3 apply_areaLight(v2p input, Light light)
     L = normalize(L);
 
     // distance attenuation
-    float atten_params[5];
-    atten_params[0] = light.m_lightDistAttenCurveParams_0;
-    atten_params[1] = light.m_lightDistAttenCurveParams_1;
-    atten_params[2] = light.m_lightDistAttenCurveParams_2;
-    atten_params[3] = light.m_lightDistAttenCurveParams_3;
-    atten_params[4] = light.m_lightDistAttenCurveParams_4;
-    float atten = apply_atten_curve(lightToSurfDist, light.m_lightDistAttenCurveType, atten_params);
+    float atten = apply_atten_curve(lightToSurfDist, light.m_lightDistAttenCurveType, light.m_lightDistAttenCurveParams);
 
     float3 linearColor = 0.0f;
 
@@ -213,7 +199,7 @@ float3 apply_areaLight(v2p input, Light light)
 
         if (usingDiffuseMap)
         {
-            linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (colorMap.Sample(samp0, input.TextureUV).rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
+            linearColor = ambientColor.rgb + light.m_lightIntensity * atten * light.m_lightColor.rgb * (diffuseMap.Sample(samp0, input.TextureUV).rgb * nDotL * pnDotL + specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle); 
         }
         else
         {
