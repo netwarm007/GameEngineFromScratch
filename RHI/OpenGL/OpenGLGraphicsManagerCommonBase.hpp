@@ -80,7 +80,8 @@ namespace My {
     private:
         GLuint m_ShadowMapFramebufferName;
         GLuint m_CurrentShader;
-        GLuint m_UboBuffer = 0;
+        GLuint m_uboDrawFrameConstant = 0;
+        GLuint m_uboDrawBatchConstant = 0;
 
         struct OpenGLDrawBatchContext : public DrawBatchContext {
             GLuint  vao;

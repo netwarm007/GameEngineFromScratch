@@ -5,16 +5,16 @@
 /////////////////////
 // INPUT VARIABLES //
 /////////////////////
-in vec4 normal;
-in vec4 normal_world;
-in vec4 v; 
-in vec4 v_world;
-in vec2 uv;
+layout(location = 0) in vec4 normal;
+layout(location = 1) in vec4 normal_world;
+layout(location = 2) in vec4 v; 
+layout(location = 3) in vec4 v_world;
+layout(location = 4) in vec2 uv;
 
 //////////////////////
 // OUTPUT VARIABLES //
 //////////////////////
-out vec4 outputColor;
+layout(location = 0) out vec4 outputColor;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
@@ -78,7 +78,7 @@ void main()
         
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, rough);        
-        float G   = GeometrySmith(N, V, L, rough);      
+        float G   = GeometrySmithDirect(N, V, L, rough);      
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0f), F0);       
         
         vec3 kS = F;

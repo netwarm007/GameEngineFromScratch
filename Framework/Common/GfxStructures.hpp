@@ -4,41 +4,28 @@
 #include "Scene.hpp"
 
 namespace My {
-    ENUM(LightType) {
+    typedef enum LightType {
         Omni = 0,
         Spot = 1,
         Infinity = 2,
         Area = 3
-    };
+    } LightType;
 
     struct Light{
         Guid        m_lightGuid;
-        LightType   m_lightType;
-        Vector4f    m_lightPosition;
-        Vector4f    m_lightColor;
-        Vector4f    m_lightDirection;
-        Vector2f    m_lightSize;
-        float       m_lightIntensity;
-        AttenCurveType m_lightDistAttenCurveType;
+        LightType   m_lightType = LightType::Omni;
+        Vector4f    m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
+        Vector4f    m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+        Vector4f    m_lightDirection = { 0.0f, 0.0f -1.0f, 0.0f };
+        Vector4f    m_lightSize = { 0.0f, 0.0f };
+        float       m_lightIntensity = 1.0f;
+        AttenCurveType m_lightDistAttenCurveType = AttenCurveType::kNone;
         float       m_lightDistAttenCurveParams[5];
-        AttenCurveType m_lightAngleAttenCurveType;
+        AttenCurveType m_lightAngleAttenCurveType = AttenCurveType::kNone;
         float       m_lightAngleAttenCurveParams[5];
         bool        m_lightCastShadow;
-        int32_t     m_lightShadowMapIndex;
+        int32_t     m_lightShadowMapIndex = -1;
         Matrix4X4f  m_lightVP;
-
-        Light()
-        {
-            m_lightType = LightType::Omni;
-            m_lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
-            m_lightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-            m_lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };
-            m_lightSize = { 0.0f, 0.0f };
-            m_lightIntensity = 0.5f;
-            m_lightDistAttenCurveType = AttenCurveType::kNone;
-            m_lightAngleAttenCurveType = AttenCurveType::kNone;
-            m_lightShadowMapIndex = -1;
-        }
     };
 
     struct DrawFrameContext {

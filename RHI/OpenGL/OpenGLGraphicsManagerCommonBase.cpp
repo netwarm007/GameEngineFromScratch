@@ -40,10 +40,10 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
 
     GLint blockSize;
 
-    if (!m_UboBuffer)
+    if (!m_uboDrawFrameConstant)
     {
-        glGenBuffers(1, &m_UboBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, m_UboBuffer);
+        glGenBuffers(1, &m_uboDrawFrameConstant);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant);
 
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
@@ -51,7 +51,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     }
     else
     {
-        glBindBuffer(GL_UNIFORM_BUFFER, m_UboBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant);
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
     }
 
@@ -132,7 +132,7 @@ bool OpenGLGraphicsManagerCommonBase::SetPerFrameShaderParameters(const DrawFram
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
     glUniformBlockBinding(m_CurrentShader, blockIndex, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_UboBuffer);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboDrawFrameConstant);
 
     return true;
 }
@@ -667,9 +667,9 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
         glDeleteBuffers(1, &buf);
     }
 
-    if (m_UboBuffer)
+    if (m_uboDrawFrameConstant)
     {
-        glDeleteBuffers(1, &m_UboBuffer);
+        glDeleteBuffers(1, &m_uboDrawFrameConstant);
     }
     
     for (auto texture : m_Textures) {
@@ -687,6 +687,30 @@ void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const intptr_t shaderProg
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_CurrentShader);
+
+    GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DrawFrameConstants");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        if (!m_uboDrawFrameConstant)
+        {
+            glGenBuffers(1, &m_uboDrawFrameConstant);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(DrawFrameContext), nullptr, GL_DYNAMIC_DRAW);
+    }
+
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DrawBatchConstants");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        if (!m_uboDrawBatchConstant)
+        {
+            glGenBuffers(1, &m_uboDrawBatchConstant);
+        }
+        glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(DrawBatchContext), nullptr, GL_DYNAMIC_DRAW);
+    }
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
@@ -724,7 +748,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
         Normal normal = dbc.material->GetNormal();
         if (normal.ValueMap)
         {
-            //result = SetShaderParameter("normalMap", 5);
+            result = SetShaderParameter("normalMap", 5);
 
             GLuint texture_id = m_TextureIndex[normal.ValueMap->GetName()];
             SetShaderParameter("normalMap", 5);
@@ -927,16 +951,16 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
                 shadowMatrices[i] = shadowMatrices[i] * projection;
             }
 
-            SetShaderParameter("shadowMatrices", shadowMatrices, 6);
-            SetShaderParameter("lightPos", pos);
-            SetShaderParameter("layer_index", static_cast<int>(layer_index));
-            SetShaderParameter("far_plane", farClipDistance);
+            SetShaderParameter("u_pushConstants.shadowMatrices", shadowMatrices, 6);
+            SetShaderParameter("u_pushConstants.lightPos", pos);
+            SetShaderParameter("u_pushConstants.layer_index", static_cast<int>(layer_index));
+            SetShaderParameter("u_pushConstants.far_plane", farClipDistance);
 
             break;
         }
         default:
         {
-            SetShaderParameter("depthVP", light.m_lightVP);
+            SetShaderParameter("u_pushConstants.depthVP", light.m_lightVP);
         }
     }
 
@@ -1318,8 +1342,8 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 
     for (auto dbc : m_DebugDrawBatchContext)
     {
-        SetShaderParameter("FrontColor", dbc.color);
-        SetShaderParameter("modelMatrix", dbc.trans);
+        SetShaderParameter("u_pushConstants.FrontColor", dbc.color);
+        SetShaderParameter("u_pushConstants.modelMatrix", dbc.trans);
 
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);
@@ -1386,7 +1410,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const intptr_t tex
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-    bool result = SetShaderParameter("layer_index", (float) layer_index);
+    bool result = SetShaderParameter("u_pushConstants.layer_index", (float) layer_index);
     assert(result);
 
     GLfloat vertices[] = {
@@ -1443,7 +1467,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
 
-    bool result = SetShaderParameter("level", level);
+    bool result = SetShaderParameter("u_pushConstants.level", level);
     assert(result);
 
     const float cell_height = vp_height * 0.5f;
@@ -1593,10 +1617,10 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const intptr_t cub
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    bool result = SetShaderParameter("layer_index", (float) layer_index);
+    bool result = SetShaderParameter("u_pushConstants.layer_index", (float) layer_index);
     assert(result);
 
-    result = SetShaderParameter("level", level);
+    result = SetShaderParameter("u_pushConstants.level", level);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);

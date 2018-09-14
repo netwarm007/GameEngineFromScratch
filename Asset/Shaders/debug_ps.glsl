@@ -2,17 +2,19 @@
 // CONSTANTS       //
 /////////////////////
 // per drawcall
-uniform vec3 FrontColor;
+layout(push_constant) uniform debugPushConstants {
+    vec3 FrontColor;
+} u_pushConstants;
 
 //////////////////////
 // OUTPUT VARIABLES //
 //////////////////////
-out vec4 outputColor;
+layout (location = 0) out vec4 outputColor;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-    outputColor = vec4(FrontColor, 1.0f);
+    outputColor = vec4(u_pushConstants.FrontColor, 1.0f);
 }

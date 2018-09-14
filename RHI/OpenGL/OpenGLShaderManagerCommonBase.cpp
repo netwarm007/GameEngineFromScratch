@@ -87,28 +87,12 @@ namespace My {
         cerr << "Error compiling linker.  Check linker-error.txt for message." << endl;
     }
 
-    static bool LoadShaderFromFile(const char* filename, const GLenum shaderType, const bool prependCommonHead, GLuint& shader)
+    static bool LoadShaderFromFile(const char* filename, const GLenum shaderType, GLuint& shader)
     {
         std::string cbufferShaderBuffer;
         std::string commonShaderBuffer;
         std::string shaderBuffer;
         int status;
-
-        if (prependCommonHead)
-        {
-            // Load the common shader source file into a text buffer.
-            cbufferShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/cbuffer.glsl");
-            if(cbufferShaderBuffer.empty())
-            {
-                return false;
-            }
-
-            commonShaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString("Shaders/common.glsl");
-            if(commonShaderBuffer.empty())
-            {
-                return false;
-            }
-        }
 
         // Load the shader source file into a text buffer.
         shaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString(filename);
@@ -143,7 +127,7 @@ namespace My {
 
     typedef vector<pair<GLenum, string>> ShaderSourceList;
 
-    static bool LoadShaderProgram(const ShaderSourceList& source, GLuint& shaderProgram, const bool prependCommonHeader = true)
+    static bool LoadShaderProgram(const ShaderSourceList& source, GLuint& shaderProgram)
     {
         int status;
 
@@ -153,7 +137,7 @@ namespace My {
         for (auto it = source.cbegin(); it != source.cend(); it++)
         {
             GLuint shader;
-            status = LoadShaderFromFile(it->second.c_str(), it->first, prependCommonHeader, shader);
+            status = LoadShaderFromFile(it->second.c_str(), it->first, shader);
             if (!status)
             {
                 return false;
@@ -352,7 +336,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
     };
 
-    result = LoadShaderProgram(list, shaderProgram, false);
+    result = LoadShaderProgram(list, shaderProgram);
     if (!result)
     {
         return result;

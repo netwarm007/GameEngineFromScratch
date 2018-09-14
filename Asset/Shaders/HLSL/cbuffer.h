@@ -1,7 +1,7 @@
 #ifndef __STDCBUFFER_H__
 #define __STDCBUFFER_H__
 
-#define MAX_LIGHTS 55
+#define MAX_LIGHTS 100
 
 struct a2v
 {

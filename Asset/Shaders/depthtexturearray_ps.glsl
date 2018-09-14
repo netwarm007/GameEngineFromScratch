@@ -1,10 +1,13 @@
-in vec2 UV;
+layout(location = 0) in vec2 UV;
 
-out vec3 color;
+layout(location = 0) out vec3 color;
 
-uniform sampler2DArray depthSampler;
-uniform float layer_index;
+layout(push_constant) uniform debugPushConstants {
+    float layer_index;
+} u_pushConstants;
+
+layout(binding = 0) uniform sampler2DArray depthSampler;
 
 void main(){
-    color = texture(depthSampler, vec3(UV, layer_index)).rrr;
+    color = texture(depthSampler, vec3(UV, u_pushConstants.layer_index)).rrr;
 }
