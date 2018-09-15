@@ -61,12 +61,12 @@ constant float2 _323[4] = {float2(-0.94201624393463134765625, -0.399062156677246
 
 constant float _100 = {};
 
-struct main0_out
+struct pbr_ps_main_out
 {
     float4 outputColor [[color(0)]];
 };
 
-struct main0_in
+struct pbr_ps_main_in
 {
     float4 normal_world [[user(locn1)]];
     float4 v_world [[user(locn3)]];
@@ -286,9 +286,9 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _580 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]])
+fragment pbr_ps_main_out pbr_ps_main(pbr_ps_main_in in [[stage_in]], constant PerFrameConstants& _580 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]])
 {
-    main0_out out = {};
+    pbr_ps_main_out out = {};
     float3 N = normalize(in.normal_world.xyz);
     float3 V = normalize(_580.camPos.xyz - in.v_world.xyz);
     float3 R = reflect(-V, N);

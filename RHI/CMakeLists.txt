@@ -8,4 +8,8 @@ ELSE()
         add_subdirectory(D2d)
         add_subdirectory(D3d)
     ENDIF(${WIN32})
+    IF(${APPLE})
+        # Darwin specific code
+        add_subdirectory(Metal)
+    ENDIF(${APPLE})
 ENDIF()

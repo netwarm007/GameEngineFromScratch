@@ -17,6 +17,13 @@ namespace My {
         COMPUTE_SHADER = "COMP"_i32
     };
 
+    enum BufferIndex : unsigned long
+    {
+        BufferIndexMeshPositions,
+        BufferIndexMeshGenerics,
+        BufferIndexUniforms
+    };
+
     class GraphicsManager : implements IRuntimeModule
     {
     public:
@@ -85,8 +92,8 @@ namespace My {
 #endif
 
     protected:
-        virtual void InitializeBuffers(const Scene& scene);
-        virtual void ClearBuffers();
+        virtual void BeginScene(const Scene& scene);
+        virtual void EndScene();
 
         virtual void InitConstants();
         virtual void CalculateCameraMatrix();

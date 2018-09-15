@@ -69,10 +69,10 @@ namespace My {
         void RenderDebugBuffers();
 #endif
 
-        void InitializeBuffers(const Scene& scene) final;
-        void ClearBuffers() final;
-
     protected:
+        void BeginScene(const Scene& scene) final;
+        void EndScene() final;
+
         void DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
 
         bool SetShaderParameter(const char* paramName, const Matrix4X4f& param);

@@ -36,7 +36,7 @@ struct PerFrameConstants
     Light allLights[100];
 };
 
-struct main0_out
+struct basic_vs_main_out
 {
     float4 normal [[user(locn0)]];
     float4 normal_world [[user(locn1)]];
@@ -46,16 +46,16 @@ struct main0_out
     float4 gl_Position [[position]];
 };
 
-struct main0_in
+struct basic_vs_main_in
 {
     float3 inputPosition [[attribute(0)]];
     float3 inputNormal [[attribute(1)]];
     float2 inputUV [[attribute(2)]];
 };
 
-vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _42 [[buffer(0)]], constant PerBatchConstants& _13 [[buffer(1)]])
+vertex basic_vs_main_out basic_vs_main(basic_vs_main_in in [[stage_in]], constant PerFrameConstants& _42 [[buffer(0)]], constant PerBatchConstants& _13 [[buffer(1)]])
 {
-    main0_out out = {};
+    basic_vs_main_out out = {};
     out.v_world = _13.modelMatrix * float4(in.inputPosition, 1.0);
     out.v = _42.viewMatrix * out.v_world;
     out.gl_Position = _42.projectionMatrix * out.v;

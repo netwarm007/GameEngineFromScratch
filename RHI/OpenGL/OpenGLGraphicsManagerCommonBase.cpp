@@ -222,9 +222,9 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
+void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
 {
-    GraphicsManager::InitializeBuffers(scene);
+    GraphicsManager::BeginScene(scene);
 
     // Geometries
     for (auto _it : scene.GeometryNodes)
@@ -608,7 +608,7 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
     return;
 }
 
-void OpenGLGraphicsManagerCommonBase::ClearBuffers()
+void OpenGLGraphicsManagerCommonBase::EndScene()
 {
     for (int i = 0; i < kFrameCount; i++)
     {

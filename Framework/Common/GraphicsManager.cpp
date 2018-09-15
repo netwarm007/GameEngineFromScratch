@@ -31,7 +31,7 @@ void GraphicsManager::Finalize()
 #ifdef DEBUG
     ClearDebugBuffers();
 #endif
-    ClearBuffers();
+    EndScene();
 }
 
 void GraphicsManager::Tick()
@@ -39,9 +39,9 @@ void GraphicsManager::Tick()
     if (g_pSceneManager->IsSceneChanged())
     {
         cerr << "[GraphicsManager] Detected Scene Change, reinitialize buffers ..." << endl;
-        ClearBuffers();
+        EndScene();
         const Scene& scene = g_pSceneManager->GetSceneForRendering();
-        InitializeBuffers(scene);
+        BeginScene(scene);
         g_pSceneManager->NotifySceneIsRenderingQueued();
     }
 
@@ -284,7 +284,7 @@ void GraphicsManager::CalculateLights()
     }
 }
 
-void GraphicsManager::InitializeBuffers(const Scene& scene)
+void GraphicsManager::BeginScene(const Scene& scene)
 {
     for (auto pPass : m_InitPasses)
     {
@@ -292,9 +292,9 @@ void GraphicsManager::InitializeBuffers(const Scene& scene)
     }
 }
 
-void GraphicsManager::ClearBuffers()
+void GraphicsManager::EndScene()
 {
-    cerr << "[GraphicsManager] ClearBuffers()" << endl;
+    cerr << "[GraphicsManager] EndScene()" << endl;
 }
 
 void GraphicsManager::SetSkyBox(const DrawFrameContext& context)

@@ -87,12 +87,12 @@ constant float2 _354[4] = {float2(-0.94201624393463134765625, -0.399062156677246
 
 constant float _131 = {};
 
-struct main0_out
+struct basic_ps_main_out
 {
     float4 outputColor [[color(0)]];
 };
 
-struct main0_in
+struct basic_ps_main_in
 {
     float4 normal [[user(locn0)]];
     float4 normal_world [[user(locn1)]];
@@ -391,9 +391,9 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& v_500 [[buffer(0)]], constant constants_t& u_pushConstants [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]])
+fragment basic_ps_main_out basic_ps_main(basic_ps_main_in in [[stage_in]], constant PerFrameConstants& v_500 [[buffer(0)]], constant constants_t& u_pushConstants [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]])
 {
-    main0_out out = {};
+    basic_ps_main_out out = {};
     float3 linearColor = float3(0.0);
     for (int i = 0; i < v_500.numLights; i++)
     {
