@@ -20,5 +20,6 @@
 #define PS_SKYBOX_SOURCE_FILE "Shaders/skybox_ps.glsl"
 #define PS_PBR_SOURCE_FILE "Shaders/pbr_ps.glsl"
 #define CS_PBR_BRDF_SOURCE_FILE "Shaders/integrateBRDF.comp"
+#define PS_PBR_BRDF_SOURCE_FILE "Shaders/integrateBRDF_ps.glsl"
 
 #include "OpenGLShaderManagerCommonBase.cpp"

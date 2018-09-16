@@ -1012,7 +1012,69 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
     glDepthFunc(GL_LESS); // set depth function back to default
 }
 
-intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height)
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
+{
+    // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
+    GLuint texture;
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG16F, width, height);
+
+    m_TextureIndex[id] = texture;
+    m_Textures.push_back(texture);
+
+    // register the shadow map
+    return static_cast<intptr_t>(texture);
+}
+
+void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height)
+{
+    GLuint framebuffer;
+    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+    glGenFramebuffers(1, &framebuffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, (GLuint) texture, 0);
+
+    // Always check that our framebuffer is ok
+    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(status != GL_FRAMEBUFFER_COMPLETE)
+    {
+        assert(0);
+    }
+
+    context = (intptr_t) framebuffer;
+
+    GLenum buf[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, buf);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glViewport(0, 0, width, height);
+}
+
+void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(intptr_t& context)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    GLuint framebuffer = (GLuint) context;
+    glDeleteFramebuffers(1, &framebuffer);
+    context = 0;
+
+    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    glViewport(0, 0, conf.screenWidth, conf.screenHeight);
+
+    glEnable(GL_DEPTH_TEST);
+    glCullFace(GL_BACK);
+}
+
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height)
 {
     GLuint tex_output;
     glGenTextures(1, &tex_output);
@@ -1023,7 +1085,10 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTexture(const char* id,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, NULL);
-    glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
+    if(GLAD_GL_ARB_compute_shader)
+    {
+        glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
+    }
     m_TextureIndex[id] = tex_output;
     m_Textures.push_back(tex_output);
     return static_cast<intptr_t>(tex_output);
@@ -1031,9 +1096,12 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTexture(const char* id,
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
 {
-    glDispatchCompute((GLuint)width, (GLuint)height, (GLuint)depth);
-    // make sure writing to image has finished before read
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    if(GLAD_GL_ARB_compute_shader)
+    {
+        glDispatchCompute((GLuint)width, (GLuint)height, (GLuint)depth);
+        // make sure writing to image has finished before read
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    }
 }
 
 intptr_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)
@@ -1740,3 +1808,58 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const intptr_t cub
 }
 
 #endif
+
+void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad()
+{
+    GLfloat vertices[] = {
+        -1.0f,  1.0f, 0.0f,
+        -1.0f, -1.0f, 0.0f,
+         1.0f,  1.0f, 0.0f,
+         1.0f, -1.0f, 0.0f
+    };
+
+    GLfloat uv[] = {
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f
+    };
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind the vertex array object to store all the buffers and vertex attributes we create here.
+    glBindVertexArray(vao);
+
+    GLuint buffer_id[2];
+
+    // Generate an ID for the vertex buffer.
+    glGenBuffers(2, buffer_id);
+
+    // Bind the vertex buffer and load the vertex (position) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    // Bind the vertex buffer and load the vertex (uv) data into the vertex buffer.
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(uv), uv, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+
+    glDrawArrays(GL_TRIANGLE_STRIP, 0x00, 4);
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(2, buffer_id);
+}
+
+bool OpenGLGraphicsManagerCommonBase::CheckCapability(RHICapability cap)
+{
+    return GLAD_GL_ARB_compute_shader;
+}
+
