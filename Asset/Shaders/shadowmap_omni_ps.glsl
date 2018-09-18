@@ -3,8 +3,6 @@ layout(location = 0) in vec4 FragPos;
 layout(push_constant) uniform constants_t {
     vec3 lightPos;
     float far_plane;
-    mat4 shadowMatrices[6];
-    float layer_index;
 } u_pushConstants;
 
 void main()

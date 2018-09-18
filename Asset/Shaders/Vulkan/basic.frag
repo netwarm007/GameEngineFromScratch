@@ -7,43 +7,34 @@
 #define MAX_LIGHTS 100
 
 struct Light {
-    int  lightType;
-    vec4 lightPosition;
-    vec4 lightColor;
-    vec4 lightDirection;
-    vec4 lightSize;
-    float lightIntensity;
-    mat4 lightDistAttenCurveParams;
-    mat4 lightAngleAttenCurveParams;
-    mat4 lightVP;
-    int  lightShadowMapIndex;
+    int     lightType;
+    float   lightIntensity;
+    bool    lightCastShadow;
+    int     lightShadowMapIndex;
+    int     lightAngleAttenCurveType;
+    int     lightDistAttenCurveType;
+    vec2    lightSize;
+    ivec4   lightGUID;
+    vec4    lightPosition;
+    vec4    lightColor;
+    vec4    lightDirection;
+    vec4    lightDistAttenCurveParams[2];
+    vec4    lightAngleAttenCurveParams[2];
+    mat4    lightVP;
+    vec4    padding[2];
 };
 
-layout(std140,binding=0) uniform DrawFrameConstants {
+layout(std140,binding=0) uniform PerFrameConstants {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    vec3 ambientColor;
-    vec3 camPos;
+    vec4 camPos;
     int numLights;
     Light allLights[MAX_LIGHTS];
 };
 
 // per drawcall
-layout(std140,binding=1) uniform DrawBatchConstants {
+layout(std140,binding=1) uniform PerBatchConstants {
     mat4 modelMatrix;
-
-    vec3 diffuseColor;
-    vec3 specularColor;
-    float specularPower;
-    float metallic;
-    float roughness;
-    float ao;
-
-    bool usingDiffuseMap;
-    bool usingNormalMap;
-    bool usingMetallicMap;
-    bool usingRoughnessMap;
-    bool usingAoMap;
 };
 
 // samplers
@@ -90,33 +81,33 @@ float linear_interpolate(float t, float begin, float end)
     }
 }
 
-float apply_atten_curve(float dist, mat4 atten_params)
+float apply_atten_curve(float dist, int atten_curve_type, vec4 atten_params[2])
 {
     float atten = 1.0f;
 
-    switch(int(atten_params[0][0]))
+    switch(atten_curve_type)
     {
         case 1: // linear
         {
-            float begin_atten = atten_params[0][1];
-            float end_atten = atten_params[0][2];
+            float begin_atten = atten_params[0].x;
+            float end_atten = atten_params[0].y;
             atten = linear_interpolate(dist, begin_atten, end_atten);
             break;
         }
         case 2: // smooth
         {
-            float begin_atten = atten_params[0][1];
-            float end_atten = atten_params[0][2];
+            float begin_atten = atten_params[0].x;
+            float end_atten = atten_params[0].y;
             float tmp = linear_interpolate(dist, begin_atten, end_atten);
             atten = 3.0f * pow(tmp, 2.0f) - 2.0f * pow(tmp, 3.0f);
             break;
         }
         case 3: // inverse
         {
-            float scale = atten_params[0][1];
-            float offset = atten_params[0][2];
-            float kl = atten_params[0][3];
-            float kc = atten_params[1][0];
+            float scale = atten_params[0].x;
+            float offset = atten_params[0].y;
+            float kl = atten_params[0].z;
+            float kc = atten_params[0].w;
             atten = clamp(scale / 
                 (kl * dist + kc * scale) + offset, 
                 0.0f, 1.0f);
@@ -124,11 +115,11 @@ float apply_atten_curve(float dist, mat4 atten_params)
         }
         case 4: // inverse square
         {
-            float scale = atten_params[0][1];
-            float offset = atten_params[0][2];
-            float kq = atten_params[0][3];
-            float kl = atten_params[1][0];
-            float kc = atten_params[1][1];
+            float scale = atten_params[0].x;
+            float offset = atten_params[0].y;
+            float kq = atten_params[0].z;
+            float kl = atten_params[0].w;
+            float kc = atten_params[1].x;
             atten = clamp(pow(scale, 2.0f) / 
                 (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
                 0.0f, 1.0f);
@@ -372,6 +363,15 @@ layout(location = 4) in vec2 uv;
 //////////////////////
 layout(location = 0) out vec4 outputColor;
 
+//////////////////////
+// CONSTANTS        //
+//////////////////////
+layout(push_constant) uniform constants_t {
+    vec4 ambientColor;
+    vec4 specularColor;
+    float specularPower;
+} u_pushConstants;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -402,10 +402,10 @@ vec3 apply_light(const Light light) {
     float lightToSurfAngle = acos(dot(L, -light_dir));
 
     // angle attenuation
-    float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveParams);
+    float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, light.lightAngleAttenCurveParams);
 
     // distance attenuation
-    atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
+    atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
 
     vec3 R = normalize(2.0f * dot(L, N) *  N - L);
     vec3 V = normalize(-v.xyz);
@@ -413,20 +413,10 @@ vec3 apply_light(const Light light) {
     vec3 linearColor;
 
     vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
-    if (usingDiffuseMap)
-    {
-        linearColor = texture(diffuseMap, uv).rgb * cosTheta; 
-        if (visibility > 0.2f)
-            linearColor += specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower); 
-        linearColor *= admit_light;
-    }
-    else
-    {
-        linearColor = diffuseColor.rgb * cosTheta;
-        if (visibility > 0.2f)
-            linearColor += specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), specularPower); 
-        linearColor *= admit_light;
-    }
+    linearColor = texture(diffuseMap, uv).rgb * cosTheta; 
+    if (visibility > 0.2f)
+        linearColor += u_pushConstants.specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), u_pushConstants.specularPower); 
+    linearColor *= admit_light;
 
     return linearColor * visibility;
 }
@@ -459,7 +449,7 @@ vec3 apply_areaLight(const Light light)
     L = normalize(L);
 
     // distance attenuation
-    float atten = apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
+    float atten = apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
 
     vec3 linearColor = vec3(0.0f);
 
@@ -482,18 +472,9 @@ vec3 apply_areaLight(const Light light)
 
         vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
 
-        if (usingDiffuseMap)
-        {
-            linearColor = texture(diffuseMap, uv).rgb * nDotL * pnDotL; 
-            linearColor += specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle; 
-            linearColor *= admit_light;
-        }
-        else
-        {
-            linearColor = diffuseColor.rgb * nDotL * pnDotL; 
-            linearColor += specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), specularPower) * specFactor * specAngle; 
-            linearColor *= admit_light;
-        }
+        linearColor = texture(diffuseMap, uv).rgb * nDotL * pnDotL; 
+        linearColor += u_pushConstants.specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), u_pushConstants.specularPower) * specFactor * specAngle; 
+        linearColor *= admit_light;
     }
 
     return linearColor;

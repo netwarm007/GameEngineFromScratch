@@ -5,42 +5,54 @@ precision highp int;
 struct Light
 {
     int lightType;
+    highp float lightIntensity;
+    bool lightCastShadow;
+    int lightShadowMapIndex;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
+    highp vec2 lightSize;
+    ivec4 lightGUID;
     highp vec4 lightPosition;
     highp vec4 lightColor;
     highp vec4 lightDirection;
-    highp vec4 lightSize;
-    highp float lightIntensity;
-    highp mat4 lightDistAttenCurveParams;
-    highp mat4 lightAngleAttenCurveParams;
+    highp vec4 lightDistAttenCurveParams[2];
+    highp vec4 lightAngleAttenCurveParams[2];
     highp mat4 lightVP;
-    int lightShadowMapIndex;
+    highp vec4 padding[2];
 };
 
-layout(binding = 0, std140) uniform DrawFrameConstants
+struct Light_1
+{
+    int lightType;
+    highp float lightIntensity;
+    uint lightCastShadow;
+    int lightShadowMapIndex;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
+    highp vec2 lightSize;
+    ivec4 lightGUID;
+    highp vec4 lightPosition;
+    highp vec4 lightColor;
+    highp vec4 lightDirection;
+    highp vec4 lightDistAttenCurveParams[2];
+    highp vec4 lightAngleAttenCurveParams[2];
+    highp mat4 lightVP;
+    highp vec4 padding[2];
+};
+
+layout(binding = 0, std140) uniform PerFrameConstants
 {
     highp mat4 viewMatrix;
     highp mat4 projectionMatrix;
-    highp vec3 ambientColor;
-    highp vec3 camPos;
+    highp vec4 camPos;
     int numLights;
-    Light allLights[100];
-} _575;
+    Light_1 allLights[100];
+} _580;
 
-layout(binding = 1, std140) uniform DrawBatchConstants
+layout(binding = 1, std140) uniform PerBatchConstants
 {
     highp mat4 modelMatrix;
-    highp vec3 diffuseColor;
-    highp vec3 specularColor;
-    highp float specularPower;
-    highp float metallic;
-    highp float roughness;
-    highp float ao;
-    uint usingDiffuseMap;
-    uint usingNormalMap;
-    uint usingMetallicMap;
-    uint usingRoughnessMap;
-    uint usingAoMap;
-} _592;
+} _940;
 
 layout(binding = 3) uniform highp samplerCubeArray cubeShadowMap;
 layout(binding = 1) uniform highp sampler2DArray shadowMap;
@@ -60,7 +72,7 @@ layout(location = 0) out highp vec4 outputColor;
 layout(location = 0) in highp vec4 normal;
 layout(location = 2) in highp vec4 v;
 
-float _93;
+float _100;
 
 highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
 {
@@ -150,15 +162,15 @@ highp float linear_interpolate(highp float t, highp float begin, highp float end
     }
 }
 
-highp float apply_atten_curve(highp float dist, highp mat4 atten_params)
+highp float apply_atten_curve(highp float dist, int atten_curve_type, highp vec4 atten_params[2])
 {
     highp float atten = 1.0;
-    switch (int(atten_params[0].x))
+    switch (atten_curve_type)
     {
         case 1:
         {
-            highp float begin_atten = atten_params[0].y;
-            highp float end_atten = atten_params[0].z;
+            highp float begin_atten = atten_params[0].x;
+            highp float end_atten = atten_params[0].y;
             highp float param = dist;
             highp float param_1 = begin_atten;
             highp float param_2 = end_atten;
@@ -167,8 +179,8 @@ highp float apply_atten_curve(highp float dist, highp mat4 atten_params)
         }
         case 2:
         {
-            highp float begin_atten_1 = atten_params[0].y;
-            highp float end_atten_1 = atten_params[0].z;
+            highp float begin_atten_1 = atten_params[0].x;
+            highp float end_atten_1 = atten_params[0].y;
             highp float param_3 = dist;
             highp float param_4 = begin_atten_1;
             highp float param_5 = end_atten_1;
@@ -178,20 +190,20 @@ highp float apply_atten_curve(highp float dist, highp mat4 atten_params)
         }
         case 3:
         {
-            highp float scale = atten_params[0].y;
-            highp float offset = atten_params[0].z;
-            highp float kl = atten_params[0].w;
-            highp float kc = atten_params[1].x;
+            highp float scale = atten_params[0].x;
+            highp float offset = atten_params[0].y;
+            highp float kl = atten_params[0].z;
+            highp float kc = atten_params[0].w;
             atten = clamp((scale / ((kl * dist) + (kc * scale))) + offset, 0.0, 1.0);
             break;
         }
         case 4:
         {
-            highp float scale_1 = atten_params[0].y;
-            highp float offset_1 = atten_params[0].z;
-            highp float kq = atten_params[0].w;
-            highp float kl_1 = atten_params[1].x;
-            highp float kc_1 = atten_params[1].y;
+            highp float scale_1 = atten_params[0].x;
+            highp float offset_1 = atten_params[0].y;
+            highp float kq = atten_params[0].z;
+            highp float kl_1 = atten_params[0].w;
+            highp float kc_1 = atten_params[1].x;
             atten = clamp(pow(scale_1, 2.0) / ((((kq * pow(dist, 2.0)) + ((kl_1 * dist) * scale_1)) + (kc_1 * pow(scale_1, 2.0))) + offset_1), 0.0, 1.0);
             break;
         }
@@ -264,43 +276,35 @@ highp vec3 gamma_correction(highp vec3 color)
 void main()
 {
     highp vec3 N = normalize(normal_world.xyz);
-    highp vec3 V = normalize(_575.camPos - v_world.xyz);
+    highp vec3 V = normalize(_580.camPos.xyz - v_world.xyz);
     highp vec3 R = reflect(-V, N);
-    highp vec3 albedo;
-    if (_592.usingDiffuseMap != 0u)
-    {
-        albedo = texture(diffuseMap, uv).xyz;
-    }
-    else
-    {
-        albedo = _592.diffuseColor;
-    }
-    highp float meta = _592.metallic;
-    if (_592.usingMetallicMap != 0u)
-    {
-        meta = texture(metallicMap, uv).x;
-    }
-    highp float rough = _592.roughness;
-    if (_592.usingRoughnessMap != 0u)
-    {
-        rough = texture(roughnessMap, uv).x;
-    }
+    highp vec3 albedo = texture(diffuseMap, uv).xyz;
+    highp float meta = texture(metallicMap, uv).x;
+    highp float rough = texture(roughnessMap, uv).x;
     highp vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     highp vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _575.numLights; i++)
+    for (int i = 0; i < _580.numLights; i++)
     {
         Light light;
-        light.lightType = _575.allLights[i].lightType;
-        light.lightPosition = _575.allLights[i].lightPosition;
-        light.lightColor = _575.allLights[i].lightColor;
-        light.lightDirection = _575.allLights[i].lightDirection;
-        light.lightSize = _575.allLights[i].lightSize;
-        light.lightIntensity = _575.allLights[i].lightIntensity;
-        light.lightDistAttenCurveParams = _575.allLights[i].lightDistAttenCurveParams;
-        light.lightAngleAttenCurveParams = _575.allLights[i].lightAngleAttenCurveParams;
-        light.lightVP = _575.allLights[i].lightVP;
-        light.lightShadowMapIndex = _575.allLights[i].lightShadowMapIndex;
+        light.lightType = _580.allLights[i].lightType;
+        light.lightIntensity = _580.allLights[i].lightIntensity;
+        light.lightCastShadow = _580.allLights[i].lightCastShadow != 0u;
+        light.lightShadowMapIndex = _580.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _580.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _580.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _580.allLights[i].lightSize;
+        light.lightGUID = _580.allLights[i].lightGUID;
+        light.lightPosition = _580.allLights[i].lightPosition;
+        light.lightColor = _580.allLights[i].lightColor;
+        light.lightDirection = _580.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _580.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _580.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _580.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _580.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _580.allLights[i].lightVP;
+        light.padding[0] = _580.allLights[i].padding[0];
+        light.padding[1] = _580.allLights[i].padding[1];
         highp vec3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         highp vec3 H = normalize(V + L);
         highp float NdotL = max(dot(N, L), 0.0);
@@ -308,24 +312,26 @@ void main()
         highp float lightToSurfDist = length(L);
         highp float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
         highp float param = lightToSurfAngle;
-        highp mat4 param_1 = light.lightAngleAttenCurveParams;
-        highp float atten = apply_atten_curve(param, param_1);
-        highp float param_2 = lightToSurfDist;
-        highp mat4 param_3 = light.lightDistAttenCurveParams;
-        atten *= apply_atten_curve(param_2, param_3);
+        int param_1 = light.lightAngleAttenCurveType;
+        highp vec4 param_2[2] = light.lightAngleAttenCurveParams;
+        highp float atten = apply_atten_curve(param, param_1, param_2);
+        highp float param_3 = lightToSurfDist;
+        int param_4 = light.lightDistAttenCurveType;
+        highp vec4 param_5[2] = light.lightDistAttenCurveParams;
+        atten *= apply_atten_curve(param_3, param_4, param_5);
         highp vec3 radiance = light.lightColor.xyz * (light.lightIntensity * atten);
-        highp vec3 param_4 = N;
-        highp vec3 param_5 = H;
-        highp float param_6 = rough;
-        highp float NDF = DistributionGGX(param_4, param_5, param_6);
-        highp vec3 param_7 = N;
-        highp vec3 param_8 = V;
-        highp vec3 param_9 = L;
-        highp float param_10 = rough;
-        highp float G = GeometrySmithDirect(param_7, param_8, param_9, param_10);
-        highp float param_11 = max(dot(H, V), 0.0);
-        highp vec3 param_12 = F0;
-        highp vec3 F = fresnelSchlick(param_11, param_12);
+        highp vec3 param_6 = N;
+        highp vec3 param_7 = H;
+        highp float param_8 = rough;
+        highp float NDF = DistributionGGX(param_6, param_7, param_8);
+        highp vec3 param_9 = N;
+        highp vec3 param_10 = V;
+        highp vec3 param_11 = L;
+        highp float param_12 = rough;
+        highp float G = GeometrySmithDirect(param_9, param_10, param_11, param_12);
+        highp float param_13 = max(dot(H, V), 0.0);
+        highp vec3 param_14 = F0;
+        highp vec3 F = fresnelSchlick(param_13, param_14);
         highp vec3 kS = F;
         highp vec3 kD = vec3(1.0) - kS;
         kD *= (1.0 - meta);
@@ -334,16 +340,11 @@ void main()
         highp vec3 specular = numerator / vec3(max(denominator, 0.001000000047497451305389404296875));
         Lo += ((((((kD * albedo) / vec3(3.1415927410125732421875)) + specular) * radiance) * NdotL) * visibility);
     }
-    highp vec3 ambient = _575.ambientColor;
-    highp float ambientOcc = _592.ao;
-    if (_592.usingAoMap != 0u)
-    {
-        ambientOcc = texture(aoMap, uv).x;
-    }
-    highp float param_13 = max(dot(N, V), 0.0);
-    highp vec3 param_14 = F0;
-    highp float param_15 = rough;
-    highp vec3 F_1 = fresnelSchlickRoughness(param_13, param_14, param_15);
+    highp float ambientOcc = texture(aoMap, uv).x;
+    highp float param_15 = max(dot(N, V), 0.0);
+    highp vec3 param_16 = F0;
+    highp float param_17 = rough;
+    highp vec3 F_1 = fresnelSchlickRoughness(param_15, param_16, param_17);
     highp vec3 kS_1 = F_1;
     highp vec3 kD_1 = vec3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
@@ -352,12 +353,12 @@ void main()
     highp vec3 prefilteredColor = textureLod(skybox, vec4(R, 1.0), rough * 8.0).xyz;
     highp vec2 envBRDF = texture(brdfLUT, vec2(max(dot(N, V), 0.0), rough)).xy;
     highp vec3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + vec3(envBRDF.y));
-    ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
+    highp vec3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     highp vec3 linearColor = ambient + Lo;
-    highp vec3 param_16 = linearColor;
-    linearColor = reinhard_tone_mapping(param_16);
-    highp vec3 param_17 = linearColor;
-    linearColor = gamma_correction(param_17);
+    highp vec3 param_18 = linearColor;
+    linearColor = reinhard_tone_mapping(param_18);
+    highp vec3 param_19 = linearColor;
+    linearColor = gamma_correction(param_19);
     outputColor = vec4(linearColor, 1.0);
 }
 

@@ -1,12 +1,13 @@
 layout (triangles) in;
 layout (triangle_strip, max_vertices=18) out;
 
-layout(push_constant) uniform constants_t {
-    vec3 lightPos;
-    float far_plane;
-    mat4 shadowMatrices[6];
+layout(push_constant) uniform constant_t {
     float layer_index;
 } u_pushConstants;
+
+layout(std140,binding=2) uniform ShadowMatrices {
+    mat4 shadowMatrices[6];
+};
 
 layout(location = 0) out vec4 FragPos; // FragPos from GS (output per emitvertex)
 
@@ -18,7 +19,7 @@ void main()
         for(int i = 0; i < 3; ++i) // for each triangle's vertices
         {
             FragPos = gl_in[i].gl_Position;
-            gl_Position = u_pushConstants.shadowMatrices[face] * FragPos;
+            gl_Position = shadowMatrices[face] * FragPos;
             EmitVertex();
         }    
         EndPrimitive();

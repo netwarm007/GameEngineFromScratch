@@ -1,7 +1,6 @@
 #include <iostream>
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
-#include "cbuffer.h"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
 #include "ForwardRenderPass.hpp"
@@ -245,7 +244,7 @@ void GraphicsManager::CalculateLights()
                     light.m_lightAngleAttenCurveType = angle_atten_curve.type;
                     memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
 
-                    float fieldOfView = light.m_lightAngleAttenCurveParams[1] * 2.0f;
+                    float fieldOfView = light.m_lightAngleAttenCurveParams[0][1] * 2.0f;
                     float screenAspect = 1.0f;
 
                     // Build the perspective projection matrix.

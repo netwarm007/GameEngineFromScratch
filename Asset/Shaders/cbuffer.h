@@ -35,47 +35,36 @@
 #endif
 
 struct Light{
-	Guid        m_lightGuid;                    // 16 bytes
 	LightType   m_lightType;                    // 4 bytes
+	float       m_lightIntensity;               // 4 bytes
+	bool		m_lightCastShadow;				// 4 bytes
+	int         m_lightShadowMapIndex;			// 4 bytes
+	AttenCurveType m_lightAngleAttenCurveType;  // 4 bytes
+	AttenCurveType m_lightDistAttenCurveType; 	// 4 bytes
+	Vector2f    m_lightSize;               		// 8 bytes
+	Guid        m_lightGuid;                    // 16 bytes
 	Vector4f    m_lightPosition;   				// 16 bytes
 	Vector4f    m_lightColor;   				// 16 bytes
 	Vector4f    m_lightDirection;   			// 16 bytes
-	Vector2f    m_lightSize;               		// 8 bytes
-	float       m_lightIntensity;               // 4 bytes
-	AttenCurveType m_lightDistAttenCurveType; 	// 4 bytes
-	float       m_lightDistAttenCurveParams[8]; // 32 bytes
-	AttenCurveType m_lightAngleAttenCurveType;  // 4 bytes
-	float       m_lightAngleAttenCurveParams[8];// 32 bytes
-	int 		m_lightCastShadow;				// 4 bytes
-	int         m_lightShadowMapIndex;			// 4 bytes
-	Matrix4X4f  m_lightVP;						// 64 byptes
-};
+	Vector4f    m_lightDistAttenCurveParams[2]; // 32 bytes
+	Vector4f    m_lightAngleAttenCurveParams[2];// 32 bytes
+	Matrix4X4f  m_lightVP;						// 64 bytes
+	Vector4f    padding[2];						// 32 bytes
+};												// totle 265 bytes
 
 unistruct PerFrameConstants REGISTER(b0)
 {
-	Matrix4X4f 	m_viewMatrix;
-	Matrix4X4f 	m_projectionMatrix;
-    Vector4f   	ambientColor;
-    Vector4f   	camPos;
-	uint32_t  	numLights;
-	Light m_lights[MAX_LIGHTS];
+	Matrix4X4f 	m_viewMatrix;					// 64 bytes
+	Matrix4X4f 	m_projectionMatrix;				// 64 bytes
+    Vector4f   	camPos;							// 16 bytes
+	uint32_t  	numLights;						// 4 bytes
+	float	    padding[3];						// 12 bytes
+	Light m_lights[MAX_LIGHTS];   				// alignment = 64 bytes
 };
 
 unistruct PerBatchConstants REGISTER(b1)
 {
-	Matrix4X4f modelMatrix;
-    Vector4f diffuseColor;
-    Vector4f specularColor;
-	float specularPower;
-	float metallic;
-	float roughness;
-	float ao;
-
-	bool usingDiffuseMap;
-	bool usingNormalMap;
-	bool usingMetallicMap;
-	bool usingRoughnessMap;
-	bool usingAoMap;
+	Matrix4X4f modelMatrix;						// 64 bytes
 };
 
 #ifndef __cplusplus

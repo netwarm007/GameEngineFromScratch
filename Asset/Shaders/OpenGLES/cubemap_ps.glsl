@@ -5,42 +5,35 @@ precision highp int;
 struct Light
 {
     int lightType;
+    highp float lightIntensity;
+    uint lightCastShadow;
+    int lightShadowMapIndex;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
+    highp vec2 lightSize;
+    ivec4 lightGUID;
     highp vec4 lightPosition;
     highp vec4 lightColor;
     highp vec4 lightDirection;
-    highp vec4 lightSize;
-    highp float lightIntensity;
-    highp mat4 lightDistAttenCurveParams;
-    highp mat4 lightAngleAttenCurveParams;
+    highp vec4 lightDistAttenCurveParams[2];
+    highp vec4 lightAngleAttenCurveParams[2];
     highp mat4 lightVP;
-    int lightShadowMapIndex;
+    highp vec4 padding[2];
 };
 
-layout(binding = 0, std140) uniform DrawFrameConstants
+layout(binding = 0, std140) uniform PerFrameConstants
 {
     highp mat4 viewMatrix;
     highp mat4 projectionMatrix;
-    highp vec3 ambientColor;
-    highp vec3 camPos;
+    highp vec4 camPos;
     int numLights;
     Light allLights[100];
-} _36;
+} _42;
 
-layout(binding = 1, std140) uniform DrawBatchConstants
+layout(binding = 1, std140) uniform PerBatchConstants
 {
     highp mat4 modelMatrix;
-    highp vec3 diffuseColor;
-    highp vec3 specularColor;
-    highp float specularPower;
-    highp float metallic;
-    highp float roughness;
-    highp float ao;
-    uint usingDiffuseMap;
-    uint usingNormalMap;
-    uint usingMetallicMap;
-    uint usingRoughnessMap;
-    uint usingAoMap;
-} _39;
+} _45;
 
 struct debugPushConstants
 {

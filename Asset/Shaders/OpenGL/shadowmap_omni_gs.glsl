@@ -8,52 +8,47 @@ layout(max_vertices = 18, triangle_strip) out;
 struct Light
 {
     int lightType;
+    float lightIntensity;
+    uint lightCastShadow;
+    int lightShadowMapIndex;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
+    vec2 lightSize;
+    ivec4 lightGUID;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
-    vec4 lightSize;
-    float lightIntensity;
-    mat4 lightDistAttenCurveParams;
-    mat4 lightAngleAttenCurveParams;
+    vec4 lightDistAttenCurveParams[2];
+    vec4 lightAngleAttenCurveParams[2];
     mat4 lightVP;
-    int lightShadowMapIndex;
+    vec4 padding[2];
 };
 
-layout(binding = 0, std140) uniform DrawFrameConstants
+layout(binding = 2, std140) uniform ShadowMatrices
+{
+    mat4 shadowMatrices[6];
+} _64;
+
+layout(binding = 0, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    vec3 ambientColor;
-    vec3 camPos;
+    vec4 camPos;
     int numLights;
     Light allLights[100];
-} _81;
+} _88;
 
-layout(binding = 1, std140) uniform DrawBatchConstants
+layout(binding = 1, std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
-    vec3 diffuseColor;
-    vec3 specularColor;
-    float specularPower;
-    float metallic;
-    float roughness;
-    float ao;
-    uint usingDiffuseMap;
-    uint usingNormalMap;
-    uint usingMetallicMap;
-    uint usingRoughnessMap;
-    uint usingAoMap;
-} _84;
+} _91;
 
-struct constants_t
+struct constant_t
 {
-    vec3 lightPos;
-    float far_plane;
-    mat4 shadowMatrices[6];
     float layer_index;
 };
 
-uniform constants_t u_pushConstants;
+uniform constant_t u_pushConstants;
 
 layout(binding = 0) uniform sampler2D diffuseMap;
 layout(binding = 1) uniform sampler2DArray shadowMap;
@@ -76,7 +71,7 @@ void main()
         for (int i = 0; i < 3; i++)
         {
             FragPos = gl_in[i].gl_Position;
-            gl_Position = u_pushConstants.shadowMatrices[face] * FragPos;
+            gl_Position = _64.shadowMatrices[face] * FragPos;
             EmitVertex();
         }
         EndPrimitive();

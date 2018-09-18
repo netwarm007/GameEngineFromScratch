@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include "Scene.hpp"
-#include "Asset/Shaders/HLSL/cbuffer.h"
+#include "Asset/Shaders/cbuffer.h"
 
 namespace My {
     struct DrawFrameContext {

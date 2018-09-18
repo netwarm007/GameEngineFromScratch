@@ -22,30 +22,14 @@ layout(location = 0) out vec4 outputColor;
 void main()
 {		
     vec3 N = normalize(normal_world.xyz);
-    vec3 V = normalize(camPos - v_world.xyz);
+    vec3 V = normalize(camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);   
 
-    vec3 albedo;
-    if (usingDiffuseMap)
-    {
-        albedo = texture(diffuseMap, uv).rgb; 
-    }
-    else
-    {
-        albedo = diffuseColor;
-    }
+    vec3 albedo = texture(diffuseMap, uv).rgb; 
 
-    float meta = metallic;
-    if (usingMetallicMap)
-    {
-        meta = texture(metallicMap, uv).r; 
-    }
+    float meta = texture(metallicMap, uv).r; 
 
-    float rough = roughness;
-    if (usingRoughnessMap)
-    {
-        rough = texture(roughnessMap, uv).r; 
-    }
+    float rough = texture(roughnessMap, uv).r; 
 
     vec3 F0 = vec3(0.04f); 
     F0 = mix(F0, albedo, meta);
@@ -69,10 +53,10 @@ void main()
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
 
         // angle attenuation
-        float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveParams);
+        float atten = apply_atten_curve(lightToSurfAngle, light.lightAngleAttenCurveType, light.lightAngleAttenCurveParams);
 
         // distance attenuation
-        atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveParams);
+        atten *= apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
 
         vec3 radiance = light.lightIntensity * atten * light.lightColor.rgb;
         
@@ -93,14 +77,10 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * visibility; 
     }   
   
-    vec3 ambient = ambientColor.rgb;
+    vec3 ambient;
     {
         // ambient diffuse
-        float ambientOcc = ao;
-        if (usingAoMap)
-        {
-            ambientOcc = texture(aoMap, uv).r;
-        }
+        float ambientOcc = texture(aoMap, uv).r;
 
         vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
         vec3 kS = F;

@@ -7,43 +7,34 @@
 #define MAX_LIGHTS 100
 
 struct Light {
-    int  lightType;
-    vec4 lightPosition;
-    vec4 lightColor;
-    vec4 lightDirection;
-    vec4 lightSize;
-    float lightIntensity;
-    mat4 lightDistAttenCurveParams;
-    mat4 lightAngleAttenCurveParams;
-    mat4 lightVP;
-    int  lightShadowMapIndex;
+    int     lightType;
+    float   lightIntensity;
+    bool    lightCastShadow;
+    int     lightShadowMapIndex;
+    int     lightAngleAttenCurveType;
+    int     lightDistAttenCurveType;
+    vec2    lightSize;
+    ivec4   lightGUID;
+    vec4    lightPosition;
+    vec4    lightColor;
+    vec4    lightDirection;
+    vec4    lightDistAttenCurveParams[2];
+    vec4    lightAngleAttenCurveParams[2];
+    mat4    lightVP;
+    vec4    padding[2];
 };
 
-layout(std140,binding=0) uniform DrawFrameConstants {
+layout(std140,binding=0) uniform PerFrameConstants {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    vec3 ambientColor;
-    vec3 camPos;
+    vec4 camPos;
     int numLights;
     Light allLights[MAX_LIGHTS];
 };
 
 // per drawcall
-layout(std140,binding=1) uniform DrawBatchConstants {
+layout(std140,binding=1) uniform PerBatchConstants {
     mat4 modelMatrix;
-
-    vec3 diffuseColor;
-    vec3 specularColor;
-    float specularPower;
-    float metallic;
-    float roughness;
-    float ao;
-
-    bool usingDiffuseMap;
-    bool usingNormalMap;
-    bool usingMetallicMap;
-    bool usingRoughnessMap;
-    bool usingAoMap;
 };
 
 // samplers
@@ -90,33 +81,33 @@ float linear_interpolate(float t, float begin, float end)
     }
 }
 
-float apply_atten_curve(float dist, mat4 atten_params)
+float apply_atten_curve(float dist, int atten_curve_type, vec4 atten_params[2])
 {
     float atten = 1.0f;
 
-    switch(int(atten_params[0][0]))
+    switch(atten_curve_type)
     {
         case 1: // linear
         {
-            float begin_atten = atten_params[0][1];
-            float end_atten = atten_params[0][2];
+            float begin_atten = atten_params[0].x;
+            float end_atten = atten_params[0].y;
             atten = linear_interpolate(dist, begin_atten, end_atten);
             break;
         }
         case 2: // smooth
         {
-            float begin_atten = atten_params[0][1];
-            float end_atten = atten_params[0][2];
+            float begin_atten = atten_params[0].x;
+            float end_atten = atten_params[0].y;
             float tmp = linear_interpolate(dist, begin_atten, end_atten);
             atten = 3.0f * pow(tmp, 2.0f) - 2.0f * pow(tmp, 3.0f);
             break;
         }
         case 3: // inverse
         {
-            float scale = atten_params[0][1];
-            float offset = atten_params[0][2];
-            float kl = atten_params[0][3];
-            float kc = atten_params[1][0];
+            float scale = atten_params[0].x;
+            float offset = atten_params[0].y;
+            float kl = atten_params[0].z;
+            float kc = atten_params[0].w;
             atten = clamp(scale / 
                 (kl * dist + kc * scale) + offset, 
                 0.0f, 1.0f);
@@ -124,11 +115,11 @@ float apply_atten_curve(float dist, mat4 atten_params)
         }
         case 4: // inverse square
         {
-            float scale = atten_params[0][1];
-            float offset = atten_params[0][2];
-            float kq = atten_params[0][3];
-            float kl = atten_params[1][0];
-            float kc = atten_params[1][1];
+            float scale = atten_params[0].x;
+            float offset = atten_params[0].y;
+            float kq = atten_params[0].z;
+            float kl = atten_params[0].w;
+            float kc = atten_params[1].x;
             atten = clamp(pow(scale, 2.0f) / 
                 (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
                 0.0f, 1.0f);

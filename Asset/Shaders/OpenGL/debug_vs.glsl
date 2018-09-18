@@ -6,42 +6,35 @@
 struct Light
 {
     int lightType;
+    float lightIntensity;
+    uint lightCastShadow;
+    int lightShadowMapIndex;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
+    vec2 lightSize;
+    ivec4 lightGUID;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
-    vec4 lightSize;
-    float lightIntensity;
-    mat4 lightDistAttenCurveParams;
-    mat4 lightAngleAttenCurveParams;
+    vec4 lightDistAttenCurveParams[2];
+    vec4 lightAngleAttenCurveParams[2];
     mat4 lightVP;
-    int lightShadowMapIndex;
+    vec4 padding[2];
 };
 
-layout(binding = 1, std140) uniform DrawBatchConstants
+layout(binding = 1, std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
-    vec3 diffuseColor;
-    vec3 specularColor;
-    float specularPower;
-    float metallic;
-    float roughness;
-    float ao;
-    uint usingDiffuseMap;
-    uint usingNormalMap;
-    uint usingMetallicMap;
-    uint usingRoughnessMap;
-    uint usingAoMap;
-} _25;
+} _24;
 
-layout(binding = 0, std140) uniform DrawFrameConstants
+layout(binding = 0, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    vec3 ambientColor;
-    vec3 camPos;
+    vec4 camPos;
     int numLights;
     Light allLights[100];
-} _44;
+} _50;
 
 layout(binding = 0) uniform sampler2D diffuseMap;
 layout(binding = 1) uniform sampler2DArray shadowMap;
@@ -59,8 +52,8 @@ layout(location = 0) in vec3 inputPosition;
 void main()
 {
     gl_PointSize = 5.0;
-    vec4 v = _25.modelMatrix * vec4(inputPosition, 1.0);
-    v = _44.viewMatrix * v;
-    gl_Position = _44.projectionMatrix * v;
+    vec4 v = _24.modelMatrix * vec4(inputPosition, 1.0);
+    v = _50.viewMatrix * v;
+    gl_Position = _50.projectionMatrix * v;
 }
 
