@@ -36,7 +36,7 @@
 	url = git://github.com/dariomanesku/cmft.git
 [submodule "SPIRV-Cross"]
 	path = External/src/spirv-cross
-	url = https://github.com/GameTechDev/SPIRV-Cross.git
+	url = https://github.com/netwarm007/SPIRV-Cross.git
 [submodule "glslang"]
 	path = External/src/glslang
 	url = https://github.com/KhronosGroup/glslang.git
