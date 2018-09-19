@@ -27,6 +27,8 @@ namespace My {
 
         virtual void UseShaderProgram(const intptr_t shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
+        virtual void SetPerBatchConstants(const DrawBatchContext& context);
+
         virtual void DrawBatch(const DrawBatchContext& context);
         virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
 

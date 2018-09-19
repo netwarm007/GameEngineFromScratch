@@ -7,26 +7,7 @@ struct Light
 {
     int lightType;
     float lightIntensity;
-    bool lightCastShadow;
-    int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
-    vec2 lightSize;
-    ivec4 lightGUID;
-    vec4 lightPosition;
-    vec4 lightColor;
-    vec4 lightDirection;
-    vec4 lightDistAttenCurveParams[2];
-    vec4 lightAngleAttenCurveParams[2];
-    mat4 lightVP;
-    vec4 padding[2];
-};
-
-struct Light_1
-{
-    int lightType;
-    float lightIntensity;
-    uint lightCastShadow;
+    int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
@@ -47,13 +28,13 @@ layout(binding = 0, std140) uniform PerFrameConstants
     mat4 projectionMatrix;
     vec4 camPos;
     int numLights;
-    Light_1 allLights[100];
+    Light allLights[100];
 } _500;
 
 layout(binding = 1, std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
-} _1038;
+} _1035;
 
 struct constants_t
 {
@@ -367,7 +348,7 @@ void main()
             Light arg;
             arg.lightType = _500.allLights[i].lightType;
             arg.lightIntensity = _500.allLights[i].lightIntensity;
-            arg.lightCastShadow = _500.allLights[i].lightCastShadow != 0u;
+            arg.lightCastShadow = _500.allLights[i].lightCastShadow;
             arg.lightShadowMapIndex = _500.allLights[i].lightShadowMapIndex;
             arg.lightAngleAttenCurveType = _500.allLights[i].lightAngleAttenCurveType;
             arg.lightDistAttenCurveType = _500.allLights[i].lightDistAttenCurveType;
@@ -390,7 +371,7 @@ void main()
             Light arg_1;
             arg_1.lightType = _500.allLights[i].lightType;
             arg_1.lightIntensity = _500.allLights[i].lightIntensity;
-            arg_1.lightCastShadow = _500.allLights[i].lightCastShadow != 0u;
+            arg_1.lightCastShadow = _500.allLights[i].lightCastShadow;
             arg_1.lightShadowMapIndex = _500.allLights[i].lightShadowMapIndex;
             arg_1.lightAngleAttenCurveType = _500.allLights[i].lightAngleAttenCurveType;
             arg_1.lightDistAttenCurveType = _500.allLights[i].lightDistAttenCurveType;

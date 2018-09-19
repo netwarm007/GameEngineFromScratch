@@ -6,7 +6,7 @@ struct Light
 {
     int lightType;
     highp float lightIntensity;
-    uint lightCastShadow;
+    int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;

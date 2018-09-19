@@ -9,7 +9,7 @@
 struct Light {
     int     lightType;
     float   lightIntensity;
-    bool    lightCastShadow;
+    int     lightCastShadow;
     int     lightShadowMapIndex;
     int     lightAngleAttenCurveType;
     int     lightDistAttenCurveType;

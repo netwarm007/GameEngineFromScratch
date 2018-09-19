@@ -24,6 +24,7 @@ namespace My {
 
         void UseShaderProgram(const intptr_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void SetPerBatchConstants(const DrawBatchContext& context) final;
         void DrawBatch(const DrawBatchContext& context) final;
         void DrawBatchDepthOnly(const DrawBatchContext& context) final;
 
@@ -75,13 +76,13 @@ namespace My {
         bool SetShaderParameter(const char* paramName, const int32_t param);
         bool SetShaderParameter(const char* paramName, const uint32_t param);
         bool SetShaderParameter(const char* paramName, const bool param);
-        bool SetPerFrameShaderParameters(const DrawFrameContext& context);
 
     private:
         GLuint m_ShadowMapFramebufferName;
         GLuint m_CurrentShader;
         GLuint m_uboDrawFrameConstant = 0;
         GLuint m_uboDrawBatchConstant = 0;
+        GLuint m_uboShadowMatricesConstant = 0;
 
         struct OpenGLDrawBatchContext : public DrawBatchContext {
             GLuint  vao;

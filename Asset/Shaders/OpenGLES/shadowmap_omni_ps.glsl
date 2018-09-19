@@ -6,7 +6,7 @@ struct Light
 {
     int lightType;
     highp float lightIntensity;
-    uint lightCastShadow;
+    int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
@@ -35,13 +35,13 @@ layout(binding = 1, std140) uniform PerBatchConstants
     highp mat4 modelMatrix;
 } _50;
 
-struct constants_t
+struct ps_constant_t
 {
     highp vec3 lightPos;
     highp float far_plane;
 };
 
-uniform constants_t u_pushConstants;
+uniform ps_constant_t u_lightParams;
 
 layout(binding = 0) uniform highp sampler2D diffuseMap;
 layout(binding = 1) uniform highp sampler2DArray shadowMap;
@@ -58,8 +58,8 @@ layout(location = 0) in highp vec4 FragPos;
 
 void main()
 {
-    highp float lightDistance = length(FragPos.xyz - u_pushConstants.lightPos);
-    lightDistance /= u_pushConstants.far_plane;
+    highp float lightDistance = length(FragPos.xyz - u_lightParams.lightPos);
+    lightDistance /= u_lightParams.far_plane;
     gl_FragDepth = lightDistance;
 }
 

@@ -6,26 +6,7 @@ struct Light
 {
     int lightType;
     highp float lightIntensity;
-    bool lightCastShadow;
-    int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
-    highp vec2 lightSize;
-    ivec4 lightGUID;
-    highp vec4 lightPosition;
-    highp vec4 lightColor;
-    highp vec4 lightDirection;
-    highp vec4 lightDistAttenCurveParams[2];
-    highp vec4 lightAngleAttenCurveParams[2];
-    highp mat4 lightVP;
-    highp vec4 padding[2];
-};
-
-struct Light_1
-{
-    int lightType;
-    highp float lightIntensity;
-    uint lightCastShadow;
+    int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
@@ -46,13 +27,13 @@ layout(binding = 0, std140) uniform PerFrameConstants
     highp mat4 projectionMatrix;
     highp vec4 camPos;
     int numLights;
-    Light_1 allLights[100];
+    Light allLights[100];
 } _580;
 
 layout(binding = 1, std140) uniform PerBatchConstants
 {
     highp mat4 modelMatrix;
-} _940;
+} _938;
 
 layout(binding = 3) uniform highp samplerCubeArray cubeShadowMap;
 layout(binding = 1) uniform highp sampler2DArray shadowMap;
@@ -289,7 +270,7 @@ void main()
         Light light;
         light.lightType = _580.allLights[i].lightType;
         light.lightIntensity = _580.allLights[i].lightIntensity;
-        light.lightCastShadow = _580.allLights[i].lightCastShadow != 0u;
+        light.lightCastShadow = _580.allLights[i].lightCastShadow;
         light.lightShadowMapIndex = _580.allLights[i].lightShadowMapIndex;
         light.lightAngleAttenCurveType = _580.allLights[i].lightAngleAttenCurveType;
         light.lightDistAttenCurveType = _580.allLights[i].lightDistAttenCurveType;

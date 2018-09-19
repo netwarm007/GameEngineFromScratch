@@ -7,7 +7,7 @@ struct Light
 {
     int lightType;
     float lightIntensity;
-    uint lightCastShadow;
+    int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
@@ -41,12 +41,12 @@ layout(binding = 1, std140) uniform PerBatchConstants
     mat4 modelMatrix;
 } _91;
 
-struct constant_t
+struct gs_constant_t
 {
     float layer_index;
 };
 
-uniform constant_t u_pushConstants;
+uniform gs_constant_t u_gsPushConstants;
 
 layout(binding = 0) uniform highp sampler2D diffuseMap;
 layout(binding = 1) uniform highp sampler2DArray shadowMap;
@@ -65,7 +65,7 @@ void main()
 {
     for (int face = 0; face < 6; face++)
     {
-        gl_Layer = (int(u_pushConstants.layer_index) * 6) + face;
+        gl_Layer = (int(u_gsPushConstants.layer_index) * 6) + face;
         for (int i = 0; i < 3; i++)
         {
             FragPos = gl_in[i].gl_Position;
