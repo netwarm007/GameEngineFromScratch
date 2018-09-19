@@ -1,10 +1,8 @@
-#include <string.h>
-#include "CocoaApplication.h"
-
 #import <AppDelegate.h>
 #import <WindowDelegate.h>
-
 #import <Carbon/Carbon.h>
+#include <string.h>
+#include "CocoaApplication.h"
 
 using namespace My;
 

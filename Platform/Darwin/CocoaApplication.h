@@ -1,7 +1,7 @@
-#include "BaseApplication.hpp"
 #ifdef __OBJC__
 #include <Cocoa/Cocoa.h>
 #endif
+#include "BaseApplication.hpp"
 
 namespace My {
     class CocoaApplication : public BaseApplication
