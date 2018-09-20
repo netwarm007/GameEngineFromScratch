@@ -45,6 +45,18 @@
             "externalConsole": false
         },
         {
+            "name": "(Windows) Launch Test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Test/Debug/DdsParserTest.exe",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
             "name": "(Windows) Launch Game",
             "type": "cppvsdbg",
             "request": "launch",
