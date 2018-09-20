@@ -1,7 +1,4 @@
 #version 400
-#ifdef GL_ARB_shading_language_420pack
-#extension GL_ARB_shading_language_420pack : require
-#endif
 
 struct Light
 {
@@ -22,7 +19,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(binding = 0, std140) uniform PerFrameConstants
+layout(std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
@@ -31,21 +28,21 @@ layout(binding = 0, std140) uniform PerFrameConstants
     Light allLights[100];
 } _580;
 
-layout(binding = 1, std140) uniform PerBatchConstants
+layout(std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
 } _938;
 
-layout(binding = 3) uniform samplerCubeArray cubeShadowMap;
-layout(binding = 1) uniform sampler2DArray shadowMap;
-layout(binding = 2) uniform sampler2DArray globalShadowMap;
-layout(binding = 0) uniform sampler2D diffuseMap;
-layout(binding = 6) uniform sampler2D metallicMap;
-layout(binding = 7) uniform sampler2D roughnessMap;
-layout(binding = 8) uniform sampler2D aoMap;
-layout(binding = 4) uniform samplerCubeArray skybox;
-layout(binding = 9) uniform sampler2D brdfLUT;
-layout(binding = 5) uniform sampler2D normalMap;
+uniform samplerCubeArray cubeShadowMap;
+uniform sampler2DArray shadowMap;
+uniform sampler2DArray globalShadowMap;
+uniform sampler2D diffuseMap;
+uniform sampler2D metallicMap;
+uniform sampler2D roughnessMap;
+uniform sampler2D aoMap;
+uniform samplerCubeArray skybox;
+uniform sampler2D brdfLUT;
+uniform sampler2D normalMap;
 
 in vec4 normal_world;
 in vec4 v_world;
