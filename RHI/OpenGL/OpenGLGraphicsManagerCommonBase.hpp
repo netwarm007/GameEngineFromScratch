@@ -22,6 +22,8 @@ namespace My {
 
         void Draw() final;
 
+        bool CheckCapability(RHICapability cap) final;
+
         void UseShaderProgram(const intptr_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
         void SetPerBatchConstants(const DrawBatchContext& context) final;
@@ -38,10 +40,16 @@ namespace My {
         void SetSkyBox(const DrawFrameContext& context) final;
         void DrawSkyBox() final;
 
-        intptr_t GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height) final;
+        intptr_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;
+        void BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height) final;
+        void EndRenderToTexture(intptr_t& context) final;
+
+        intptr_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
         intptr_t GetTexture(const char* id) final;
+
+        void DrawFullScreenQuad() final;
 
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;

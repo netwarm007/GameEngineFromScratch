@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "AssetLoader.hpp"
+#include "GraphicsManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -328,12 +329,10 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     m_DefaultShaders[DefaultShaderIndex::Debug] = shaderProgram;
 #endif
 
-    /////////////////
-    // CS Shaders
-
-    // BRDF
+    // BRDF PS
     list = {
-        {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_PBR_BRDF_SOURCE_FILE}
     };
 
     result = LoadShaderProgram(list, shaderProgram);
@@ -342,7 +341,26 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::PbrBrdfPs] = shaderProgram;
+
+    /////////////////
+    // CS Shaders
+
+    if(g_pGraphicsManager->CheckCapability(RHICapability::COMPUTE_SHADER))
+    {
+        // BRDF
+        list = {
+            {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
+        };
+
+        result = LoadShaderProgram(list, shaderProgram);
+        if (!result)
+        {
+            return result;
+        }
+
+        m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
+    }
 
     return result;
 }

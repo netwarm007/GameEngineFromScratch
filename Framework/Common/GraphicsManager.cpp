@@ -38,7 +38,7 @@ void GraphicsManager::Tick()
 {
     if (g_pSceneManager->IsSceneChanged())
     {
-        cout << "[GraphicsManager] Detected Scene Change, reinitialize buffers ..." << endl;
+        cerr << "[GraphicsManager] Detected Scene Change, reinitialize buffers ..." << endl;
         ClearBuffers();
         const Scene& scene = g_pSceneManager->GetSceneForRendering();
         InitializeBuffers(scene);
@@ -294,61 +294,61 @@ void GraphicsManager::InitializeBuffers(const Scene& scene)
 
 void GraphicsManager::ClearBuffers()
 {
-    cout << "[GraphicsManager] ClearBuffers()" << endl;
+    cerr << "[GraphicsManager] ClearBuffers()" << endl;
 }
 
 void GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 {
-    cout << "[GraphicsManager] SetSkyBox(" << &context << ")" << endl;
+    cerr << "[GraphicsManager] SetSkyBox(" << &context << ")" << endl;
 }
 
 void GraphicsManager::DrawSkyBox()
 {
-    cout << "[GraphicsManager] DrawSkyBox()" << endl;
+    cerr << "[GraphicsManager] DrawSkyBox()" << endl;
 }
 
 #ifdef DEBUG
 void GraphicsManager::RenderDebugBuffers()
 {
-    cout << "[GraphicsManager] RenderDebugBuffers()" << endl;
+    cerr << "[GraphicsManager] RenderDebugBuffers()" << endl;
 }
 
 void GraphicsManager::DrawPoint(const Point& point, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawPoint(" << point << ","
+    cerr << "[GraphicsManager] DrawPoint(" << point << ", "
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawPointSet(const PointSet& point_set, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawPointSet(" << point_set.size() << ","
+    cerr << "[GraphicsManager] DrawPointSet(" << point_set.size() << ", "
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawPointSet(" << point_set.size() << ","
+    cerr << "[GraphicsManager] DrawPointSet(" << point_set.size() << ", "
         << trans << "," 
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawLine(const Point& from, const Point& to, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawLine(" << from << ","
-        << to << "," 
+    cerr << "[GraphicsManager] DrawLine(" << from << ", "
+        << to << ", " 
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawLine(const PointList& vertices, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawLine(" << vertices.size() << ","
+    cerr << "[GraphicsManager] DrawLine(" << vertices.size() << ", "
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawLine(" << vertices.size() << ","
-        << trans << "," 
+    cerr << "[GraphicsManager] DrawLine(" << vertices.size() << ", "
+        << trans << ", " 
         << color << ")" << endl;
 }
 
@@ -367,19 +367,19 @@ void GraphicsManager::DrawEdgeList(const EdgeList& edges, const Vector3f& color)
 
 void GraphicsManager::DrawTriangle(const PointList& vertices, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawTriangle(" << vertices.size() << ","
+    cerr << "[GraphicsManager] DrawTriangle(" << vertices.size() << ", "
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawTriangle(" << vertices.size() << ","
+    cerr << "[GraphicsManager] DrawTriangle(" << vertices.size() << ", "
         << color << ")" << endl;
 }
 
 void GraphicsManager::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
 {
-    cout << "[GraphicsManager] DrawTriangleStrip(" << vertices.size() << ","
+    cerr << "[GraphicsManager] DrawTriangleStrip(" << vertices.size() << ", "
         << color << ")" << endl;
 }
 
@@ -481,13 +481,13 @@ void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, cons
 
 void GraphicsManager::ClearDebugBuffers()
 {
-    cout << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
+    cerr << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 
 void GraphicsManager::DrawTextureOverlay(const intptr_t texture, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    cout << "[GraphicsManager] DrayOverlay(" << texture << ", "
+    cerr << "[GraphicsManager] DrayOverlay(" << texture << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "
@@ -498,7 +498,7 @@ void GraphicsManager::DrawTextureOverlay(const intptr_t texture,
 void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    cout << "[GraphicsManager] DrayOverlay(" << texture << ", "
+    cerr << "[GraphicsManager] DrayOverlay(" << texture << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "
@@ -510,7 +510,7 @@ void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t l
 void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
-    cout << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
+    cerr << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "
@@ -522,7 +522,7 @@ void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap,
 void GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
-    cout << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
+    cerr << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "
@@ -536,12 +536,12 @@ void GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t l
 
 void GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)
 {
-    cout << "[GraphicsManager] UseShaderProgram(" << shaderProgram << ")" << endl;
+    cerr << "[GraphicsManager] UseShaderProgram(" << shaderProgram << ")" << endl;
 }
 
 void GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 {
-    cout << "[GraphicsManager] SetPerFrameConstants(" << &context << ")" << endl;
+    cerr << "[GraphicsManager] SetPerFrameConstants(" << &context << ")" << endl;
 }
 
 void GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
@@ -551,24 +551,24 @@ void GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
 
 void GraphicsManager::DrawBatch(const DrawBatchContext& context)
 {
-    cout << "[GraphicsManager] DrawBatch(" << &context << ")" << endl;
+    cerr << "[GraphicsManager] DrawBatch(" << &context << ")" << endl;
 }
 
 void GraphicsManager::DrawBatchDepthOnly(const DrawBatchContext& context)
 {
-    cout << "[GraphicsManager] DrawBatchDepthOnly(" << &context << ")" << endl;
+    cerr << "[GraphicsManager] DrawBatchDepthOnly(" << &context << ")" << endl;
 }
 
 intptr_t GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
-    cout << "[GraphicsManager] GenerateCubeShadowMapArray(" << width << ", " << height << ","
+    cerr << "[GraphicsManager] GenerateCubeShadowMapArray(" << width << ", " << height << ","
         << count << ")" << endl;
     return 0;
 }
 
 intptr_t GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
-    cout << "[GraphicsManager] GenerateShadowMapArray(" << width << " ," << height << ", " 
+    cerr << "[GraphicsManager] GenerateShadowMapArray(" << width << " ," << height << ", " 
         << count << ")" << endl;
     return 0;
 }
@@ -581,33 +581,60 @@ void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowma
 
 void GraphicsManager::EndShadowMap(const intptr_t shadowmap, const uint32_t layer_index)
 {
-    cout << "[GraphicsManager] EndShadowMap(" << shadowmap << ", " << layer_index << ")" << endl;
+    cerr << "[GraphicsManager] EndShadowMap(" << shadowmap << ", " << layer_index << ")" << endl;
 }
 
 void GraphicsManager::SetShadowMaps(const Frame& frame)
 {
-    cout << "[GraphicsManager] SetShadowMap(" << &frame << ")" << endl;
+    cerr << "[GraphicsManager] SetShadowMap(" << &frame << ")" << endl;
 }
 
 void GraphicsManager::DestroyShadowMap(intptr_t& shadowmap)
 {
-    cout << "[GraphicsManager] DestroyShadowMap(" << shadowmap << ")" << endl;
+    cerr << "[GraphicsManager] DestroyShadowMap(" << shadowmap << ")" << endl;
     shadowmap = -1;
 }
 
-intptr_t GraphicsManager::GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height)
+intptr_t GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height)
 {
-    cout << "[GraphicsManager] GenerateAndBindTexture(" << id << ", " << width << ", " << height << ")" << endl;
+    cerr << "[GraphicsManager] GenerateAndBindTextureForWrite(" << id << ", " << width << ", " << height << ")" << endl;
     return static_cast<intptr_t>(0);
 }
 
 void GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
 {
-    cout << "[GraphicsManager] Dispatch(" << width << ", " << height << ", " << depth << ")" << endl;
+    cerr << "[GraphicsManager] Dispatch(" << width << ", " << height << ", " << depth << ")" << endl;
 }
 
 intptr_t GraphicsManager::GetTexture(const char* id)
 {
-    cout << "[GraphicsManager] GetTexture(" << id << ")" << endl;
+    cerr << "[GraphicsManager] GetTexture(" << id << ")" << endl;
     return static_cast<intptr_t>(0);
+}
+
+intptr_t GraphicsManager::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
+{
+    cerr << "[GraphicsManager] GenerateTexture(" << id << ", " << width << ", " << height << ")" << endl;
+    return static_cast<intptr_t>(0);
+}
+
+void GraphicsManager::BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height)
+{
+    cerr << "[GraphicsManager] BeginRenderToTexture(" << context << ", " << texture << ", " << width << ", " << height << ")" << endl;
+    context = 0;
+}
+
+void GraphicsManager::EndRenderToTexture(intptr_t& context)
+{
+    cerr << "[GraphicsManager] EndRenderToTexture(" << context << ")" << endl;
+}
+
+void GraphicsManager::DrawFullScreenQuad()
+{
+    cerr << "[GraphicsManager] DrawFullScreenQuad()" << endl;
+}
+
+bool GraphicsManager::CheckCapability(RHICapability cap)
+{
+    return false;
 }

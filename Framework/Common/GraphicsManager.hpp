@@ -12,6 +12,11 @@
 #include "IDispatchPass.hpp"
 
 namespace My {
+    ENUM(RHICapability)
+    {
+        COMPUTE_SHADER = "COMP"_i32
+    };
+
     class GraphicsManager : implements IRuntimeModule
     {
     public:
@@ -24,6 +29,8 @@ namespace My {
 
         virtual void Clear();
         virtual void Draw();
+
+        virtual bool CheckCapability(RHICapability cap);
 
         virtual void UseShaderProgram(const intptr_t shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
@@ -42,10 +49,16 @@ namespace My {
         virtual void SetSkyBox(const DrawFrameContext& context);
         virtual void DrawSkyBox();
 
-        virtual intptr_t GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height);
+        virtual intptr_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height);
+        virtual void BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height);
+        virtual void EndRenderToTexture(intptr_t& context);
+
+        virtual intptr_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height);
         virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth);
 
         virtual intptr_t GetTexture(const char* id);
+
+        virtual void DrawFullScreenQuad();
 
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);
