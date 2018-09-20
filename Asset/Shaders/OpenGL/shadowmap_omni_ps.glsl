@@ -19,20 +19,6 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerFrameConstants
-{
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    vec4 camPos;
-    int numLights;
-    Light allLights[100];
-} _47;
-
-layout(std140) uniform PerBatchConstants
-{
-    mat4 modelMatrix;
-} _50;
-
 struct ps_constant_t
 {
     vec3 lightPos;
@@ -40,17 +26,6 @@ struct ps_constant_t
 };
 
 uniform ps_constant_t u_lightParams;
-
-uniform sampler2D diffuseMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform samplerCubeArray cubeShadowMap;
-uniform samplerCubeArray skybox;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform sampler2D brdfLUT;
 
 in vec4 FragPos;
 

@@ -19,37 +19,12 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerFrameConstants
-{
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    vec4 camPos;
-    int numLights;
-    Light allLights[100];
-} _37;
-
-layout(std140) uniform PerBatchConstants
-{
-    mat4 modelMatrix;
-} _40;
-
 struct debugPushConstants
 {
     vec3 FrontColor;
 };
 
 uniform debugPushConstants u_pushConstants;
-
-uniform sampler2D diffuseMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform samplerCubeArray cubeShadowMap;
-uniform samplerCubeArray skybox;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform sampler2D brdfLUT;
 
 layout(location = 0) out vec4 outputColor;
 

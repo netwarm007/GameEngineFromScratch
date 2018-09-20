@@ -28,11 +28,6 @@ layout(std140) uniform PerFrameConstants
     Light allLights[100];
 } _500;
 
-layout(std140) uniform PerBatchConstants
-{
-    mat4 modelMatrix;
-} _1035;
-
 struct constants_t
 {
     vec4 ambientColor;
@@ -47,11 +42,6 @@ uniform sampler2DArray shadowMap;
 uniform sampler2DArray globalShadowMap;
 uniform sampler2D diffuseMap;
 uniform samplerCubeArray skybox;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform sampler2D brdfLUT;
 
 in vec4 normal;
 in vec4 v;

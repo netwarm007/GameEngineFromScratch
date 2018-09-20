@@ -26,37 +26,12 @@ layout(std140) uniform ShadowMatrices
     mat4 shadowMatrices[6];
 } _64;
 
-layout(std140) uniform PerFrameConstants
-{
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    vec4 camPos;
-    int numLights;
-    Light allLights[100];
-} _88;
-
-layout(std140) uniform PerBatchConstants
-{
-    mat4 modelMatrix;
-} _91;
-
 struct gs_constant_t
 {
     float layer_index;
 };
 
 uniform gs_constant_t u_gsPushConstants;
-
-uniform sampler2D diffuseMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform samplerCubeArray cubeShadowMap;
-uniform samplerCubeArray skybox;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform sampler2D brdfLUT;
 
 out vec4 FragPos;
 

@@ -21,20 +21,6 @@ struct Light
     highp vec4 padding[2];
 };
 
-layout(binding = 0, std140) uniform PerFrameConstants
-{
-    highp mat4 viewMatrix;
-    highp mat4 projectionMatrix;
-    highp vec4 camPos;
-    int numLights;
-    Light allLights[100];
-} _45;
-
-layout(binding = 1, std140) uniform PerBatchConstants
-{
-    highp mat4 modelMatrix;
-} _48;
-
 struct debugPushConstants
 {
     highp float layer_index;
@@ -43,16 +29,6 @@ struct debugPushConstants
 uniform debugPushConstants u_pushConstants;
 
 layout(binding = 0) uniform highp sampler2DArray depthSampler;
-layout(binding = 0) uniform highp sampler2D diffuseMap;
-layout(binding = 1) uniform highp sampler2DArray shadowMap;
-layout(binding = 2) uniform highp sampler2DArray globalShadowMap;
-layout(binding = 3) uniform highp samplerCubeArray cubeShadowMap;
-layout(binding = 4) uniform highp samplerCubeArray skybox;
-layout(binding = 5) uniform highp sampler2D normalMap;
-layout(binding = 6) uniform highp sampler2D metallicMap;
-layout(binding = 7) uniform highp sampler2D roughnessMap;
-layout(binding = 8) uniform highp sampler2D aoMap;
-layout(binding = 9) uniform highp sampler2D brdfLUT;
 
 layout(location = 0) out highp vec3 color;
 layout(location = 0) in highp vec2 UV;

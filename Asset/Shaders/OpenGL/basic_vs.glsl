@@ -33,17 +33,6 @@ layout(std140) uniform PerFrameConstants
     Light allLights[100];
 } _42;
 
-uniform sampler2D diffuseMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform samplerCubeArray cubeShadowMap;
-uniform samplerCubeArray skybox;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform sampler2D brdfLUT;
-
 out vec4 v_world;
 layout(location = 0) in vec3 inputPosition;
 out vec4 v;
