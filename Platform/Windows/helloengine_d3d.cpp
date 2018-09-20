@@ -169,8 +169,6 @@ HRESULT CreateGraphicsResources(HWND hWnd)
                                                     D3D_FEATURE_LEVEL_9_1};
         D3D_FEATURE_LEVEL FeatureLevelSupported;
 
-        HRESULT hr = S_OK;
-
         // create a device, device context and swap chain using the information in the scd struct
         hr = D3D11CreateDeviceAndSwapChain(NULL,
                                       D3D_DRIVER_TYPE_HARDWARE,
