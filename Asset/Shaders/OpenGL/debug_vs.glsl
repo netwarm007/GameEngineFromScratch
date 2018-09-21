@@ -19,11 +19,6 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerBatchConstants
-{
-    mat4 modelMatrix;
-} _24;
-
 layout(std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
@@ -31,15 +26,15 @@ layout(std140) uniform PerFrameConstants
     vec4 camPos;
     int numLights;
     Light allLights[100];
-} _50;
+} _42;
 
 layout(location = 0) in vec3 inputPosition;
 
 void main()
 {
     gl_PointSize = 5.0;
-    vec4 v = _24.modelMatrix * vec4(inputPosition, 1.0);
-    v = _50.viewMatrix * v;
-    gl_Position = _50.projectionMatrix * v;
+    vec4 v = vec4(inputPosition, 1.0);
+    v = _42.viewMatrix * v;
+    gl_Position = _42.projectionMatrix * v;
 }
 

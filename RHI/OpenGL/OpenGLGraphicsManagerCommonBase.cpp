@@ -1427,7 +1427,6 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     for (auto dbc : m_DebugDrawBatchContext)
     {
         SetShaderParameter("u_pushConstants.FrontColor", dbc.color);
-        SetShaderParameter("u_pushConstants.modelMatrix", dbc.trans);
 
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);

@@ -100,10 +100,7 @@ namespace My {
         };
 
 #ifdef DEBUG
-        struct DebugDrawBatchContext {
-            GLuint  vao;
-            GLenum  mode;
-            GLsizei count;
+        struct DebugDrawBatchContext : public OpenGLDrawBatchContext {
             Vector3f color;
             Matrix4X4f trans;
         };
