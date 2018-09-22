@@ -1,7 +1,7 @@
 struct Light
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
@@ -274,8 +274,8 @@ void frag_main()
     for (int i = 0; i < _580_numLights; i++)
     {
         Light light;
-        light.lightType = _580_allLights[i].lightType;
         light.lightIntensity = _580_allLights[i].lightIntensity;
+        light.lightType = _580_allLights[i].lightType;
         light.lightCastShadow = _580_allLights[i].lightCastShadow;
         light.lightShadowMapIndex = _580_allLights[i].lightShadowMapIndex;
         light.lightAngleAttenCurveType = _580_allLights[i].lightAngleAttenCurveType;

@@ -11,8 +11,8 @@ struct ps_constant_t
 
 struct Light
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;

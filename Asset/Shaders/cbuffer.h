@@ -35,8 +35,8 @@
 #endif
 
 struct Light{
-	LightType   lightType;                    	// 4 bytes
 	float       lightIntensity;               	// 4 bytes
+	LightType   lightType;                    	// 4 bytes
 	int			lightCastShadow;				// 4 bytes
 	int         lightShadowMapIndex;			// 4 bytes
 	AttenCurveType lightAngleAttenCurveType;  	// 4 bytes

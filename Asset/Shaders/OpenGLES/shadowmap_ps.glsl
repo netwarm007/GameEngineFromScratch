@@ -4,8 +4,8 @@ precision highp int;
 
 struct Light
 {
-    int lightType;
     highp float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;

@@ -5,8 +5,8 @@ using namespace metal;
 
 struct Light
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;

@@ -5,8 +5,8 @@ layout(max_vertices = 18, triangle_strip) out;
 
 struct Light
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;

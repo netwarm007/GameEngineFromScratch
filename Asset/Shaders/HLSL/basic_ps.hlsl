@@ -1,7 +1,7 @@
 struct Light
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
@@ -348,8 +348,8 @@ void frag_main()
         if (_500_allLights[i].lightType == 3)
         {
             Light arg;
-            arg.lightType = _500_allLights[i].lightType;
             arg.lightIntensity = _500_allLights[i].lightIntensity;
+            arg.lightType = _500_allLights[i].lightType;
             arg.lightCastShadow = _500_allLights[i].lightCastShadow;
             arg.lightShadowMapIndex = _500_allLights[i].lightShadowMapIndex;
             arg.lightAngleAttenCurveType = _500_allLights[i].lightAngleAttenCurveType;
@@ -371,8 +371,8 @@ void frag_main()
         else
         {
             Light arg_1;
-            arg_1.lightType = _500_allLights[i].lightType;
             arg_1.lightIntensity = _500_allLights[i].lightIntensity;
+            arg_1.lightType = _500_allLights[i].lightType;
             arg_1.lightCastShadow = _500_allLights[i].lightCastShadow;
             arg_1.lightShadowMapIndex = _500_allLights[i].lightShadowMapIndex;
             arg_1.lightAngleAttenCurveType = _500_allLights[i].lightAngleAttenCurveType;

@@ -7,8 +7,8 @@ using namespace metal;
 
 struct Light
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
@@ -26,8 +26,8 @@ struct Light
 
 struct Light_1
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
@@ -61,8 +61,8 @@ struct constants_t
 
 struct Light_2
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
@@ -400,8 +400,8 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& v
         if (v_500.allLights[i].lightType == 3)
         {
             Light arg;
-            arg.lightType = v_500.allLights[i].lightType;
             arg.lightIntensity = v_500.allLights[i].lightIntensity;
+            arg.lightType = v_500.allLights[i].lightType;
             arg.lightCastShadow = v_500.allLights[i].lightCastShadow;
             arg.lightShadowMapIndex = v_500.allLights[i].lightShadowMapIndex;
             arg.lightAngleAttenCurveType = v_500.allLights[i].lightAngleAttenCurveType;
@@ -423,8 +423,8 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& v
         else
         {
             Light arg_1;
-            arg_1.lightType = v_500.allLights[i].lightType;
             arg_1.lightIntensity = v_500.allLights[i].lightIntensity;
+            arg_1.lightType = v_500.allLights[i].lightType;
             arg_1.lightCastShadow = v_500.allLights[i].lightCastShadow;
             arg_1.lightShadowMapIndex = v_500.allLights[i].lightShadowMapIndex;
             arg_1.lightAngleAttenCurveType = v_500.allLights[i].lightAngleAttenCurveType;

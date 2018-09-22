@@ -4,8 +4,8 @@ precision highp int;
 
 struct Light
 {
-    int lightType;
     highp float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
@@ -260,8 +260,8 @@ void main()
     for (int i = 0; i < _580.numLights; i++)
     {
         Light light;
-        light.lightType = _580.allLights[i].lightType;
         light.lightIntensity = _580.allLights[i].lightIntensity;
+        light.lightType = _580.allLights[i].lightType;
         light.lightCastShadow = _580.allLights[i].lightCastShadow;
         light.lightShadowMapIndex = _580.allLights[i].lightShadowMapIndex;
         light.lightAngleAttenCurveType = _580.allLights[i].lightAngleAttenCurveType;
