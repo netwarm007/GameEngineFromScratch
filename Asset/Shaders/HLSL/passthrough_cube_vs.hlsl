@@ -17,17 +17,26 @@ struct Light
     float4 padding[2];
 };
 
-uniform float4 gl_HalfPixel;
-uniform sampler2D diffuseMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform samplerCUBEArray cubeShadowMap;
-uniform samplerCUBEArray skybox;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform sampler2D brdfLUT;
+Texture2D<float4> diffuseMap : register(t0, space0);
+SamplerState _diffuseMap_sampler : register(s0, space0);
+Texture2DArray<float4> shadowMap : register(t1, space0);
+SamplerState _shadowMap_sampler : register(s1, space0);
+Texture2DArray<float4> globalShadowMap : register(t2, space0);
+SamplerState _globalShadowMap_sampler : register(s2, space0);
+TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
+SamplerState _cubeShadowMap_sampler : register(s3, space0);
+TextureCubeArray<float4> skybox : register(t4, space0);
+SamplerState _skybox_sampler : register(s4, space0);
+Texture2D<float4> normalMap : register(t5, space0);
+SamplerState _normalMap_sampler : register(s5, space0);
+Texture2D<float4> metallicMap : register(t6, space0);
+SamplerState _metallicMap_sampler : register(s6, space0);
+Texture2D<float4> roughnessMap : register(t7, space0);
+SamplerState _roughnessMap_sampler : register(s7, space0);
+Texture2D<float4> aoMap : register(t8, space0);
+SamplerState _aoMap_sampler : register(s8, space0);
+Texture2D<float4> brdfLUT : register(t9, space0);
+SamplerState _brdfLUT_sampler : register(s9, space0);
 
 static float4 gl_Position;
 static float3 inputPosition;
@@ -43,15 +52,13 @@ struct SPIRV_Cross_Input
 struct SPIRV_Cross_Output
 {
     float3 UVW : TEXCOORD0;
-    float4 gl_Position : POSITION;
+    float4 gl_Position : SV_Position;
 };
 
 void vert_main()
 {
     gl_Position = float4(inputPosition, 1.0f);
     UVW = inputUVW;
-    gl_Position.x = gl_Position.x - gl_HalfPixel.x * gl_Position.w;
-    gl_Position.y = gl_Position.y + gl_HalfPixel.y * gl_Position.w;
 }
 
 SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)

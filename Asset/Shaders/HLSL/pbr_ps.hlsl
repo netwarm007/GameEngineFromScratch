@@ -19,7 +19,7 @@ struct Light
 
 static const float2 _323[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
 
-cbuffer _580 : register(b0)
+cbuffer _580 : register(b0, space0)
 {
     row_major float4x4 _580_viewMatrix : packoffset(c0);
     row_major float4x4 _580_projectionMatrix : packoffset(c4);
@@ -27,16 +27,26 @@ cbuffer _580 : register(b0)
     int _580_numLights : packoffset(c9);
     Light _580_allLights[100] : packoffset(c10);
 };
-uniform samplerCUBEArray cubeShadowMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform sampler2D diffuseMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform samplerCUBEArray skybox;
-uniform sampler2D brdfLUT;
-uniform sampler2D normalMap;
+TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
+SamplerState _cubeShadowMap_sampler : register(s3, space0);
+Texture2DArray<float4> shadowMap : register(t1, space0);
+SamplerState _shadowMap_sampler : register(s1, space0);
+Texture2DArray<float4> globalShadowMap : register(t2, space0);
+SamplerState _globalShadowMap_sampler : register(s2, space0);
+Texture2D<float4> diffuseMap : register(t0, space0);
+SamplerState _diffuseMap_sampler : register(s0, space0);
+Texture2D<float4> metallicMap : register(t6, space0);
+SamplerState _metallicMap_sampler : register(s6, space0);
+Texture2D<float4> roughnessMap : register(t7, space0);
+SamplerState _roughnessMap_sampler : register(s7, space0);
+Texture2D<float4> aoMap : register(t8, space0);
+SamplerState _aoMap_sampler : register(s8, space0);
+TextureCubeArray<float4> skybox : register(t4, space0);
+SamplerState _skybox_sampler : register(s4, space0);
+Texture2D<float4> brdfLUT : register(t9, space0);
+SamplerState _brdfLUT_sampler : register(s9, space0);
+Texture2D<float4> normalMap : register(t5, space0);
+SamplerState _normalMap_sampler : register(s5, space0);
 
 static float4 normal_world;
 static float4 v_world;
@@ -56,7 +66,7 @@ struct SPIRV_Cross_Input
 
 struct SPIRV_Cross_Output
 {
-    float4 outputColor : COLOR0;
+    float4 outputColor : SV_Target0;
 };
 
 float _100;
@@ -76,7 +86,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
             case 0:
             {
                 float3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = texCUBE(cubeShadowMap, float4(L, float(light.lightShadowMapIndex))).x;
+                near_occ = cubeShadowMap.Sample(_cubeShadowMap_sampler, float4(L, float(light.lightShadowMapIndex))).x;
                 if ((length(L) - (near_occ * 10.0f)) > bias)
                 {
                     visibility -= 0.87999999523162841796875f;
@@ -89,7 +99,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 for (int i = 0; i < 4; i++)
                 {
                     float2 indexable[4] = _323;
-                    near_occ = tex2D(shadowMap, float3(v_light_space.xy + (indexable[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875f;
@@ -103,7 +113,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 for (int i_1 = 0; i_1 < 4; i_1++)
                 {
                     float2 indexable_1[4] = _323;
-                    near_occ = tex2D(globalShadowMap, float3(v_light_space.xy + (indexable_1[i_1] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = globalShadowMap.Sample(_globalShadowMap_sampler, float3(v_light_space.xy + (indexable_1[i_1] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875f;
@@ -117,7 +127,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 for (int i_2 = 0; i_2 < 4; i_2++)
                 {
                     float2 indexable_2[4] = _323;
-                    near_occ = tex2D(shadowMap, float3(v_light_space.xy + (indexable_2[i_2] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable_2[i_2] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875f;
@@ -265,9 +275,9 @@ void frag_main()
     float3 N = normalize(normal_world.xyz);
     float3 V = normalize(_580_camPos.xyz - v_world.xyz);
     float3 R = reflect(-V, N);
-    float3 albedo = tex2D(diffuseMap, uv).xyz;
-    float meta = tex2D(metallicMap, uv).x;
-    float rough = tex2D(roughnessMap, uv).x;
+    float3 albedo = diffuseMap.Sample(_diffuseMap_sampler, uv).xyz;
+    float meta = metallicMap.Sample(_metallicMap_sampler, uv).x;
+    float rough = roughnessMap.Sample(_roughnessMap_sampler, uv).x;
     float3 F0 = 0.039999999105930328369140625f.xxx;
     F0 = lerp(F0, albedo, meta.xxx);
     float3 Lo = 0.0f.xxx;
@@ -327,7 +337,7 @@ void frag_main()
         float3 specular = numerator / max(denominator, 0.001000000047497451305389404296875f).xxx;
         Lo += ((((((kD * albedo) / 3.1415927410125732421875f.xxx) + specular) * radiance) * NdotL) * visibility);
     }
-    float ambientOcc = tex2D(aoMap, uv).x;
+    float ambientOcc = aoMap.Sample(_aoMap_sampler, uv).x;
     float param_15 = max(dot(N, V), 0.0f);
     float3 param_16 = F0;
     float param_17 = rough;
@@ -335,10 +345,10 @@ void frag_main()
     float3 kS_1 = F_1;
     float3 kD_1 = 1.0f.xxx - kS_1;
     kD_1 *= (1.0f - meta);
-    float3 irradiance = texCUBElod(skybox, float4(float4(N, 0.0f), 1.0f)).xyz;
+    float3 irradiance = skybox.SampleLevel(_skybox_sampler, float4(N, 0.0f), 1.0f).xyz;
     float3 diffuse = irradiance * albedo;
-    float3 prefilteredColor = texCUBElod(skybox, float4(float4(R, 1.0f), rough * 8.0f)).xyz;
-    float2 envBRDF = tex2D(brdfLUT, float2(max(dot(N, V), 0.0f), rough)).xy;
+    float3 prefilteredColor = skybox.SampleLevel(_skybox_sampler, float4(R, 1.0f), rough * 8.0f).xyz;
+    float2 envBRDF = brdfLUT.Sample(_brdfLUT_sampler, float2(max(dot(N, V), 0.0f), rough)).xy;
     float3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + envBRDF.y.xxx);
     float3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     float3 linearColor = ambient + Lo;

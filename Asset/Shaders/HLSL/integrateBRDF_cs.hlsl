@@ -17,6 +17,7 @@ struct Light
     float4 padding[2];
 };
 
+RWTexture2D<float2> img_output : register(u0, space0);
 Texture2D<float4> diffuseMap : register(t0, space0);
 SamplerState _diffuseMap_sampler : register(s0, space0);
 Texture2DArray<float4> shadowMap : register(t1, space0);
@@ -38,17 +39,10 @@ SamplerState _aoMap_sampler : register(s8, space0);
 Texture2D<float4> brdfLUT : register(t9, space0);
 SamplerState _brdfLUT_sampler : register(s9, space0);
 
-static float2 UV;
-static float2 FragColor;
-
+static uint3 gl_GlobalInvocationID;
 struct SPIRV_Cross_Input
 {
-    float2 UV : TEXCOORD0;
-};
-
-struct SPIRV_Cross_Output
-{
-    float2 FragColor : SV_Target0;
+    uint3 gl_GlobalInvocationID : SV_DispatchThreadID;
 };
 
 float RadicalInverse_VdC(inout uint bits)
@@ -148,19 +142,20 @@ float2 IntegrateBRDF(float NdotV, float roughness)
     return float2(A, B);
 }
 
-void frag_main()
+void comp_main()
 {
-    float param = UV.x;
-    float param_1 = UV.y;
-    float2 integratedBRDF = IntegrateBRDF(param, param_1);
-    FragColor = integratedBRDF;
+    int2 pixel_coords = int2(gl_GlobalInvocationID.xy);
+    float param = float(pixel_coords.x) / float(SPIRV_Cross_NumWorkgroups_count.x);
+    float param_1 = float(pixel_coords.y) / float(SPIRV_Cross_NumWorkgroups_count.y);
+    float2 _385 = IntegrateBRDF(param, param_1);
+    float4 pixel;
+    pixel = float4(_385.x, _385.y, pixel.z, pixel.w);
+    img_output[pixel_coords] = pixel.xy;
 }
 
-SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
+[numthreads(1, 1, 1)]
+void main(SPIRV_Cross_Input stage_input)
 {
-    UV = stage_input.UV;
-    frag_main();
-    SPIRV_Cross_Output stage_output;
-    stage_output.FragColor = FragColor;
-    return stage_output;
+    gl_GlobalInvocationID = stage_input.gl_GlobalInvocationID;
+    comp_main();
 }

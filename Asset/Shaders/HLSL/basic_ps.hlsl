@@ -19,7 +19,7 @@ struct Light
 
 static const float2 _354[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
 
-cbuffer _500 : register(b0)
+cbuffer _500 : register(b0, space0)
 {
     row_major float4x4 _500_viewMatrix : packoffset(c0);
     row_major float4x4 _500_projectionMatrix : packoffset(c4);
@@ -33,16 +33,26 @@ cbuffer u_pushConstants
     float4 u_pushConstants_specularColor : packoffset(c1);
     float u_pushConstants_specularPower : packoffset(c2);
 };
-uniform samplerCUBEArray cubeShadowMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform sampler2D diffuseMap;
-uniform samplerCUBEArray skybox;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
-uniform sampler2D brdfLUT;
+TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
+SamplerState _cubeShadowMap_sampler : register(s3, space0);
+Texture2DArray<float4> shadowMap : register(t1, space0);
+SamplerState _shadowMap_sampler : register(s1, space0);
+Texture2DArray<float4> globalShadowMap : register(t2, space0);
+SamplerState _globalShadowMap_sampler : register(s2, space0);
+Texture2D<float4> diffuseMap : register(t0, space0);
+SamplerState _diffuseMap_sampler : register(s0, space0);
+TextureCubeArray<float4> skybox : register(t4, space0);
+SamplerState _skybox_sampler : register(s4, space0);
+Texture2D<float4> normalMap : register(t5, space0);
+SamplerState _normalMap_sampler : register(s5, space0);
+Texture2D<float4> metallicMap : register(t6, space0);
+SamplerState _metallicMap_sampler : register(s6, space0);
+Texture2D<float4> roughnessMap : register(t7, space0);
+SamplerState _roughnessMap_sampler : register(s7, space0);
+Texture2D<float4> aoMap : register(t8, space0);
+SamplerState _aoMap_sampler : register(s8, space0);
+Texture2D<float4> brdfLUT : register(t9, space0);
+SamplerState _brdfLUT_sampler : register(s9, space0);
 
 static float4 normal;
 static float4 v;
@@ -62,7 +72,7 @@ struct SPIRV_Cross_Input
 
 struct SPIRV_Cross_Output
 {
-    float4 outputColor : COLOR0;
+    float4 outputColor : SV_Target0;
 };
 
 float _131;
@@ -216,7 +226,7 @@ float3 apply_areaLight(Light light)
         float2 nearestSpec2D = float2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
         float specFactor = 1.0f - clamp(length(nearestSpec2D - dirSpec2D), 0.0f, 1.0f);
         float3 admit_light = light.lightColor.xyz * (light.lightIntensity * atten);
-        linearColor = (tex2D(diffuseMap, uv).xyz * nDotL) * pnDotL;
+        linearColor = (diffuseMap.Sample(_diffuseMap_sampler, uv).xyz * nDotL) * pnDotL;
         linearColor += (((u_pushConstants_specularColor.xyz * pow(clamp(dot(R2, V), 0.0f, 1.0f), u_pushConstants_specularPower)) * specFactor) * specAngle);
         linearColor *= admit_light;
     }
@@ -238,7 +248,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
             case 0:
             {
                 float3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = texCUBE(cubeShadowMap, float4(L, float(light.lightShadowMapIndex))).x;
+                near_occ = cubeShadowMap.Sample(_cubeShadowMap_sampler, float4(L, float(light.lightShadowMapIndex))).x;
                 if ((length(L) - (near_occ * 10.0f)) > bias)
                 {
                     visibility -= 0.87999999523162841796875f;
@@ -251,7 +261,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 for (int i = 0; i < 4; i++)
                 {
                     float2 indexable[4] = _354;
-                    near_occ = tex2D(shadowMap, float3(v_light_space.xy + (indexable[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875f;
@@ -265,7 +275,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 for (int i_1 = 0; i_1 < 4; i_1++)
                 {
                     float2 indexable_1[4] = _354;
-                    near_occ = tex2D(globalShadowMap, float3(v_light_space.xy + (indexable_1[i_1] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = globalShadowMap.Sample(_globalShadowMap_sampler, float3(v_light_space.xy + (indexable_1[i_1] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875f;
@@ -279,7 +289,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 for (int i_2 = 0; i_2 < 4; i_2++)
                 {
                     float2 indexable_2[4] = _354;
-                    near_occ = tex2D(shadowMap, float3(v_light_space.xy + (indexable_2[i_2] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable_2[i_2] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875f;
@@ -321,7 +331,7 @@ float3 apply_light(Light light)
     float3 R = normalize((N * (2.0f * dot(L, N))) - L);
     float3 V = normalize(-v.xyz);
     float3 admit_light = light.lightColor.xyz * (light.lightIntensity * atten);
-    float3 linearColor = tex2D(diffuseMap, uv).xyz * cosTheta;
+    float3 linearColor = diffuseMap.Sample(_diffuseMap_sampler, uv).xyz * cosTheta;
     if (visibility > 0.20000000298023223876953125f)
     {
         linearColor += (u_pushConstants_specularColor.xyz * pow(clamp(dot(R, V), 0.0f, 1.0f), u_pushConstants_specularPower));
@@ -392,7 +402,7 @@ void frag_main()
             linearColor += apply_light(arg_1);
         }
     }
-    linearColor += (texCUBElod(skybox, float4(float4(normal_world.xyz, 0.0f), 8.0f)).xyz * 0.20000000298023223876953125f.xxx);
+    linearColor += (skybox.SampleLevel(_skybox_sampler, float4(normal_world.xyz, 0.0f), 8.0f).xyz * 0.20000000298023223876953125f.xxx);
     float3 param = linearColor;
     linearColor = exposure_tone_mapping(param);
     float3 param_1 = linearColor;

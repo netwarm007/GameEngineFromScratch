@@ -18,7 +18,7 @@ External\Windows\bin\SPIRV-Cross.exe --version 400 --remove-unused-variables --n
 echo "SPIR-V --> Embeded GLSL"
 External\Windows\bin\SPIRV-Cross.exe --version 310 --es --remove-unused-variables --output Asset\Shaders\OpenGLES\%1_%2.glsl Asset\Shaders\Vulkan\%1_%2.spv
 echo "SPIR-V --> HLSL"
-External\Windows\bin\SPIRV-Cross --hlsl --remove-unused-variables --output Asset\Shaders\HLSL\%1_%2.hlsl Asset\Shaders\Vulkan\%1_%2.spv
+External\Windows\bin\SPIRV-Cross --hlsl --shader-model 52 --remove-unused-variables --output Asset\Shaders\HLSL\%1_%2.hlsl Asset\Shaders\Vulkan\%1_%2.spv
 echo "SPIR-V --> Metal"
 External\Windows\bin\SPIRV-Cross --msl --msl-version 020101 --remove-unused-variables --output Asset\Shaders\Metal\%1_%2.metal Asset\Shaders\Vulkan\%1_%2.spv
 if "%2"=="cs" (
