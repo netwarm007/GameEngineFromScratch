@@ -33,7 +33,7 @@
 	url = https://github.com/lammertb/libcrc.git
 [submodule "cmft"]
 	path = External/src/cmft
-	url = git://github.com/dariomanesku/cmft.git
+	url = git://github.com/netwarm007/cmft.git
 [submodule "SPIRV-Cross"]
 	path = External/src/spirv-cross
 	url = https://github.com/GameTechDev/SPIRV-Cross.git
