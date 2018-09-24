@@ -26,6 +26,10 @@ add_executable(DdsParserTest DdsParserTest.cpp)
 target_link_libraries(DdsParserTest Common)
 add_test(NAME TEST_DdsParser COMMAND DdsParserTest)
 
+add_executable(HdrParserTest HdrParserTest.cpp)
+target_link_libraries(HdrParserTest Common)
+add_test(NAME TEST_HdrParser COMMAND HdrParserTest)
+
 IF(WIN32)
 add_custom_command(TARGET PngParserTest POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

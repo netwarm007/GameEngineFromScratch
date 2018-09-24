@@ -6,6 +6,7 @@
 #include "BMP.hpp"
 #include "TGA.hpp"
 #include "DDS.hpp"
+#include "HDR.hpp"
 #include "AssetLoader.hpp"
 
 namespace My {
@@ -59,6 +60,11 @@ namespace My {
                     {
                         DdsParser dds_parser;
                         m_pImage = std::make_shared<Image>(dds_parser.Parse(buf));
+                    }
+                    else if (ext == ".hdr")
+                    {
+                        HdrParser hdr_parser;
+                        m_pImage = std::make_shared<Image>(hdr_parser.Parse(buf));
                     }
                 }
             }
