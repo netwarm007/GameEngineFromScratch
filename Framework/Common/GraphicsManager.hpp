@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "GfxStructures.hpp"
+#include "FrameStructure.hpp"
 #include "IRuntimeModule.hpp"
 #include "IShaderManager.hpp"
 #include "geommath.hpp"
@@ -34,6 +34,8 @@ namespace My {
 
         virtual void UseShaderProgram(const intptr_t shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
+        virtual void SetPerBatchConstants(const DrawBatchContext& context);
+
         virtual void DrawBatch(const DrawBatchContext& context);
         virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
 

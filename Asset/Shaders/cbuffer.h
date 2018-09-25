@@ -1,53 +1,88 @@
 #ifndef __STDCBUFFER_H__
 #define __STDCBUFFER_H__
 
-#define MAX_LIGHTS 55
+#define MAX_LIGHTS 100
 
-struct a2v
-{
-	float3 Position		: POSITION;
-	float3 Normal		: NORMAL;
-	float2 TextureUV	: TEXCOORD;
-};
+#ifdef __cplusplus
+	#include "geommath.hpp"
+	#include "Guid.hpp"
+	#include "SceneObjectLight.hpp"
+	using namespace My;
+	#define SEMANTIC(a) 
+	#define REGISTER(x)
+	#define unistruct struct
+
+	enum LightType {
+		Omni     = 0,
+		Spot     = 1,
+		Infinity = 2,
+		Area     = 3
+	};
+#else
+	#define SEMANTIC(a) : a 
+	#define REGISTER(x) : register(x)
+	#define unistruct cbuffer
+	#define uint32_t uint
+	#define Guid uint4 
+	#define Vector2f float2
+	#define Vector3f float3
+	#define Vector4f float4
+	#define Matrix2X2f float2x2
+	#define Matrix3X3f float3x3
+	#define Matrix4X4f float4x4
+	#define LightType uint
+	#define AttenCurveType uint
+#endif
 
 struct Light{
-	float4		m_lightPosition;
-	float4		m_lightColor;
-	float4		m_lightDirection;
-	float2	    m_lightSize;
-	float       m_lightIntensity;
-	uint		m_lightDistAttenCurveType;
-	float       m_lightDistAttenCurveParams_0;
-	float       m_lightDistAttenCurveParams_1;
-	float       m_lightDistAttenCurveParams_2;
-	float       m_lightDistAttenCurveParams_3;
-	float       m_lightDistAttenCurveParams_4;
-	uint		m_lightAngleAttenCurveType;
-	float       m_lightAngleAttenCurveParams_0;
-	float       m_lightAngleAttenCurveParams_1;
-	float       m_lightAngleAttenCurveParams_2;
-	float       m_lightAngleAttenCurveParams_3;
-	float       m_lightAngleAttenCurveParams_4;
-};
+	float       lightIntensity;               	// 4 bytes
+	LightType   lightType;                    	// 4 bytes
+	int			lightCastShadow;				// 4 bytes
+	int         lightShadowMapIndex;			// 4 bytes
+	AttenCurveType lightAngleAttenCurveType;  	// 4 bytes
+	AttenCurveType lightDistAttenCurveType; 	// 4 bytes
+	Vector2f    lightSize;               		// 8 bytes
+	Guid        lightGuid;                    	// 16 bytes
+	Vector4f    lightPosition;   				// 16 bytes
+	Vector4f    lightColor;   					// 16 bytes
+	Vector4f    lightDirection;   				// 16 bytes
+	Vector4f    lightDistAttenCurveParams[2]; 	// 32 bytes
+	Vector4f    lightAngleAttenCurveParams[2];	// 32 bytes
+	Matrix4X4f  lightVP;						// 64 bytes
+	Vector4f    padding[2];						// 32 bytes
+};												// totle 265 bytes
 
-cbuffer PerFrameConstants : register(b0)
+unistruct PerFrameConstants REGISTER(b0)
 {
-	float4x4 m_viewMatrix;
-	float4x4 m_projectionMatrix;
-    float3 ambientColor;
-	Light m_lights[MAX_LIGHTS];
+	Matrix4X4f 	viewMatrix;						// 64 bytes
+	Matrix4X4f 	projectionMatrix;				// 64 bytes
+    Vector4f   	camPos;							// 16 bytes
+	uint32_t  	numLights;						// 4 bytes
+	float	    padding[3];						// 12 bytes
+	Light 		lights[MAX_LIGHTS];   			// alignment = 64 bytes
 };
 
-cbuffer PerBatchConstants : register(b1)
+unistruct PerBatchConstants REGISTER(b1)
 {
-	float4x4 objectMatrix;
-    float4 diffuseColor;
-    float4 specularColor;
-    float specularPower;
-	bool usingDiffuseMap;
-	bool usingNormalMap;
+	Matrix4X4f modelMatrix;						// 64 bytes
 };
 
-uint numLights : register(b2);
+#ifndef __cplusplus
+// samplers
+SamplerState samp0 : register(s0);
+
+// textures
+Texture2D diffuseMap : register(t0);
+Texture2D normalMap  : register(t1);
+Texture2D metalicMap : register(t2);
+Texture2D roughnessMap : register(t3);
+Texture2D aoMap      : register(t4);
+Texture2D brdfLUT    : register(t5);
+
+Texture2DArray shadowMap  		: register(t6);
+Texture2DArray globalShadowMap 	: register(t7);
+TextureCubeArray cubeShadowMap 	: register(t8);
+TextureCubeArray skybox     	: register(t9);
+#endif
 
 #endif // !__STDCBUFFER_H__

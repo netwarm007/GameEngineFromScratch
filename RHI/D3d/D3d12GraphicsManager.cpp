@@ -1103,15 +1103,11 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
             { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0,D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
         };
 
-        D3D12_ROOT_PARAMETER1 rootParameters[4] = {
+        D3D12_ROOT_PARAMETER1 rootParameters[3] = {
             { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0] }, D3D12_SHADER_VISIBILITY_ALL },
             { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[1] }, D3D12_SHADER_VISIBILITY_PIXEL },
             { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[2] }, D3D12_SHADER_VISIBILITY_PIXEL }
         };
-
-        rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        rootParameters[3].Constants = { 2, 0, 1 }; 
-        rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
         // Allow input layout and deny uneccessary access to certain pipeline stages.
         D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =

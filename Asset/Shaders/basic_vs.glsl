@@ -12,11 +12,11 @@ layout(location = 2) in vec2 inputUV;
 //////////////////////
 // OUTPUT VARIABLES //
 //////////////////////
-out vec4 normal;
-out vec4 normal_world;
-out vec4 v;
-out vec4 v_world;
-out vec2 uv;
+layout(location = 0) out vec4 normal;
+layout(location = 1) out vec4 normal_world;
+layout(location = 2) out vec4 v;
+layout(location = 3) out vec4 v_world;
+layout(location = 4) out vec2 uv;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader

@@ -1,7 +1,6 @@
 #include <iostream>
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
-#include "cbuffer.h"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
 #include "ForwardRenderPass.hpp"
@@ -158,19 +157,21 @@ void GraphicsManager::CalculateLights()
         auto pLightNode = LightNode.second.lock();
         if (!pLightNode) continue;
         auto trans_ptr = pLightNode->GetCalculatedTransform();
-        Transform(light.m_lightPosition, *trans_ptr);
-        Transform(light.m_lightDirection, *trans_ptr);
+        light.lightPosition = { 0.0f, 0.0f, 0.0f, 1.0f };
+        light.lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };
+        Transform(light.lightPosition, *trans_ptr);
+        Transform(light.lightDirection, *trans_ptr);
 
         auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
         if (pLight) {
-            light.m_lightGuid = pLight->GetGuid();
-            light.m_lightColor = pLight->GetColor().Value;
-            light.m_lightIntensity = pLight->GetIntensity();
-            light.m_lightCastShadow = pLight->GetIfCastShadow();
+            light.lightGuid = pLight->GetGuid();
+            light.lightColor = pLight->GetColor().Value;
+            light.lightIntensity = pLight->GetIntensity();
+            light.lightCastShadow = pLight->GetIfCastShadow();
             const AttenCurve& atten_curve = pLight->GetDistanceAttenuation();
-            light.m_lightDistAttenCurveType = atten_curve.type; 
-            memcpy(light.m_lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
-            light.m_lightAngleAttenCurveType = AttenCurveType::kNone;
+            light.lightDistAttenCurveType = atten_curve.type; 
+            memcpy(light.lightDistAttenCurveParams, &atten_curve.u, sizeof(atten_curve.u));
+            light.lightAngleAttenCurveType = AttenCurveType::kNone;
 
             Matrix4X4f view;
             Matrix4X4f projection;
@@ -181,7 +182,7 @@ void GraphicsManager::CalculateLights()
 
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
             {
-                light.m_lightType = LightType::Infinity;
+                light.lightType = LightType::Infinity;
 
                 Vector4f target = { 0.0f, 0.0f, 0.0f, 1.0f };
 
@@ -198,14 +199,14 @@ void GraphicsManager::CalculateLights()
                     Transform(target, *trans_ptr);
                 }
 
-                light.m_lightPosition = target - light.m_lightDirection * farClipDistance;
+                light.lightPosition = target - light.lightDirection * farClipDistance;
                 Vector3f position;
-                memcpy(&position, &light.m_lightPosition, sizeof position); 
+                memcpy(&position, &light.lightPosition, sizeof position); 
                 Vector3f lookAt; 
                 memcpy(&lookAt, &target, sizeof lookAt);
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
-                if (abs(light.m_lightDirection[0]) <= 0.2f
-                    && abs(light.m_lightDirection[1]) <= 0.2f)
+                if (abs(light.lightDirection[0]) <= 0.2f
+                    && abs(light.lightDirection[1]) <= 0.2f)
                 {
                     up = { 0.1f, 0.1f, 1.0f};
                 }
@@ -219,18 +220,18 @@ void GraphicsManager::CalculateLights()
                     nearClipDistance, farClipDistance + sm_half_dist);
 
                 // notify shader about the infinity light by setting 4th field to 0
-                light.m_lightPosition[3] = 0.0f;
+                light.lightPosition[3] = 0.0f;
             }
             else 
             {
                 Vector3f position;
-                memcpy(&position, &light.m_lightPosition, sizeof position); 
-                Vector4f tmp = light.m_lightPosition + light.m_lightDirection;
+                memcpy(&position, &light.lightPosition, sizeof position); 
+                Vector4f tmp = light.lightPosition + light.lightDirection;
                 Vector3f lookAt; 
                 memcpy(&lookAt, &tmp, sizeof lookAt);
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
-                if (abs(light.m_lightDirection[0]) <= 0.1f
-                    && abs(light.m_lightDirection[1]) <= 0.1f)
+                if (abs(light.lightDirection[0]) <= 0.1f
+                    && abs(light.lightDirection[1]) <= 0.1f)
                 {
                     up = { 0.0f, 0.707f, 0.707f};
                 }
@@ -238,14 +239,14 @@ void GraphicsManager::CalculateLights()
 
                 if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightSpot)
                 {
-                    light.m_lightType = LightType::Spot;
+                    light.lightType = LightType::Spot;
 
                     auto plight = dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
                     const AttenCurve& angle_atten_curve = plight->GetAngleAttenuation();
-                    light.m_lightAngleAttenCurveType = angle_atten_curve.type;
-                    memcpy(light.m_lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
+                    light.lightAngleAttenCurveType = angle_atten_curve.type;
+                    memcpy(light.lightAngleAttenCurveParams, &angle_atten_curve.u, sizeof(angle_atten_curve.u));
 
-                    float fieldOfView = light.m_lightAngleAttenCurveParams[1] * 2.0f;
+                    float fieldOfView = light.lightAngleAttenCurveParams[0][1] * 2.0f;
                     float screenAspect = 1.0f;
 
                     // Build the perspective projection matrix.
@@ -253,14 +254,14 @@ void GraphicsManager::CalculateLights()
                 }
                 else if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightArea)
                 {
-                    light.m_lightType = LightType::Area;
+                    light.lightType = LightType::Area;
 
                     auto plight = dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
-                    light.m_lightSize = plight->GetDimension();
+                    light.lightSize = plight->GetDimension();
                 }
                 else // omni light
                 {
-                    light.m_lightType = LightType::Omni;
+                    light.lightType = LightType::Omni;
 
                     //auto plight = dynamic_pointer_cast<SceneObjectOmniLight>(pLight);
 
@@ -272,7 +273,7 @@ void GraphicsManager::CalculateLights()
                 }
             } 
 
-            light.m_lightVP = view * projection;
+            light.lightVP = view * projection;
         }
         else
         {
@@ -543,6 +544,11 @@ void GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
     cerr << "[GraphicsManager] SetPerFrameConstants(" << &context << ")" << endl;
 }
 
+void GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
+{
+    cout << "[GraphicsManager] SetPerBatchConstants(" << &context << ")" << endl;
+}
+
 void GraphicsManager::DrawBatch(const DrawBatchContext& context)
 {
     cerr << "[GraphicsManager] DrawBatch(" << &context << ")" << endl;
@@ -569,7 +575,7 @@ intptr_t GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uin
 
 void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index)
 {
-    cerr << "[GraphicsManager] BeginShadowMap(" << light.m_lightGuid << ", " << shadowmap << ", " 
+    cout << "[GraphicsManager] BeginShadowMap(" << light.lightGuid << ", " << shadowmap << ", " 
         << width << ", " << height << ", " << layer_index << ")" << endl;
 }
 

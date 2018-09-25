@@ -23,6 +23,7 @@ namespace My {
         IEND = "IEND"_u32
     };
 
+#if DUMP_DETAILS
     static std::ostream& operator<<(std::ostream& out, PNG_CHUNK_TYPE type)
     {
         int32_t n = static_cast<int32_t>(type);
@@ -35,6 +36,7 @@ namespace My {
 
         return out;
     }
+#endif
 
     struct PNG_CHUNK_HEADER {
         uint32_t        Length;

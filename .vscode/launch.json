@@ -32,6 +32,19 @@
             "MIMode": "lldb"
         },
         {
+            "name": "(Mac OS) Launch Test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Test/HdrParserTest",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
             "name": "(Windows) Launch Editor",
             "type": "cppvsdbg",
             "request": "launch",
