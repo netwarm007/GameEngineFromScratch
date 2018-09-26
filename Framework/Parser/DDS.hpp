@@ -139,6 +139,11 @@ namespace My {
         D3D10_RESOURCE_DIMENSION_TEXTURE3D
     } MY_D3D10_RESOURCE_DIMENSION;
 
+    typedef enum MY_D3DFMT {
+        D3DFMT_A16B16G16R16F = 113,
+        D3DFMT_A32B32G32R32F = 116
+    } MY_D3DFMT;
+
     typedef struct {
         uint32_t        dwSize;
         uint32_t        dwFlags;
@@ -198,111 +203,117 @@ namespace My {
             img.mipmap_count = pHeader->dwMipMapCount;
             assert(pHeader->ddspf.dwSize == 32);
 
-            if (pHeader->ddspf.dwFlags & 0x1 /* DDPF_ALPHAPIXELS */)
-            {
-                std::cerr << "Alpha: YES" << std::endl;
-            }
-            else
-            {
-                std::cerr << "Alpha: NO" << std::endl;
-            }
-
             if (pHeader->ddspf.dwFlags & 0x4 /* DDPF_FOURCC */)
             {
-                std::cerr << "Compressed: ";
                 const uint32_t* pdwFourCC = &pHeader->ddspf.dwFourCC;
                 const char* pCC = reinterpret_cast<const char*>(pdwFourCC);
                 if (pCC[0] != 'D')
                 {
-                    MY_DXGI_FORMAT format = (MY_DXGI_FORMAT) *pdwFourCC;
+                    MY_D3DFMT format = (MY_D3DFMT) *pdwFourCC;
+                    img.bitcount = pHeader->ddspf.dwRGBBitCount;
+
+                    switch (format)
+                    {
+                        case MY_D3DFMT::D3DFMT_A16B16G16R16F:
+                            std::cerr << "D3DFMT_A16B16G16R16F" << std::endl;
+                            img.compressed = false;
+                            assert(img.bitcount == 64);
+                            break;
+                        case MY_D3DFMT::D3DFMT_A32B32G32R32F:
+                            std::cerr << "D3DFMT_A32B32G32R32F" << std::endl;
+                            img.compressed = false;
+                            assert(img.bitcount == 128);
+                            break;
+                        default:
+                            std::cerr << "format is not supported!" << std::endl;
+                            assert(0);
+                    }
                 }
                 else
                 {
+                    std::cerr << "Compressed: ";
                     std::cerr << pCC[0] << pCC[1] << pCC[2] << pCC[3] << std::endl;
 
                     img.compressed = true;
+                }
+            }
 
-                    if (*pdwFourCC == endian_net_unsigned_int("DXT1"_u32))
-                    {
-                        img.compress_format = "DXT1"_u32;
-                        img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 2;
-                        img.bitcount = 4;
-                    }
-                    else if (*pdwFourCC == endian_net_unsigned_int("DXT2"_u32))
-                    {
-                        img.compress_format = "DXT2"_u32;
-                        img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
-                        img.bitcount = 8;
-                    }
-                    else if (*pdwFourCC == endian_net_unsigned_int("DXT3"_u32))
-                    {
-                        img.compress_format = "DXT3"_u32;
-                        img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
-                        img.bitcount = 8;
-                    }
-                    else if (*pdwFourCC == endian_net_unsigned_int("DXT4"_u32))
-                    {
-                        img.compress_format = "DXT4"_u32;
-                        img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
-                        img.bitcount = 8;
-                    }
-                    else if (*pdwFourCC == endian_net_unsigned_int("DXT5"_u32))
-                    {
-                        img.compress_format = "DXT5"_u32;
-                        img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
-                        img.bitcount = 8;
-                    }
-                    else if (*pdwFourCC == endian_net_unsigned_int("DX10"_u32))
-                    {
-                        img.compress_format = "DX10"_u32;
-                        const DDS_HEADER_DXT10* pHeaderDXT10 = reinterpret_cast<const DDS_HEADER_DXT10*>(pData);
-                        pData += sizeof(DDS_HEADER_DXT10);
-                        std::cerr << "DXGI_FORMAT: " << pHeaderDXT10->dxgiFormat << std::endl;
-                    }
-                    
-                    img.data_size = img.pitch * (ALIGN(img.Height, 4) >> 2);
-                    
-                    img.mipmaps[0].Width = img.Width; 
-                    img.mipmaps[0].Height = img.Height; 
-                    img.mipmaps[0].offset = 0;
-                    img.mipmaps[0].data_size = img.data_size;
+            if (img.compressed)
+            {
+                const uint32_t* pdwFourCC = &pHeader->ddspf.dwFourCC;
+                if (*pdwFourCC == endian_net_unsigned_int("DXT1"_u32))
+                {
+                    img.compress_format = "DXT1"_u32;
+                    img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 2;
+                    img.bitcount = 4;
+                }
+                else if (*pdwFourCC == endian_net_unsigned_int("DXT2"_u32))
+                {
+                    img.compress_format = "DXT2"_u32;
+                    img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
+                    img.bitcount = 8;
+                }
+                else if (*pdwFourCC == endian_net_unsigned_int("DXT3"_u32))
+                {
+                    img.compress_format = "DXT3"_u32;
+                    img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
+                    img.bitcount = 8;
+                }
+                else if (*pdwFourCC == endian_net_unsigned_int("DXT4"_u32))
+                {
+                    img.compress_format = "DXT4"_u32;
+                    img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
+                    img.bitcount = 8;
+                }
+                else if (*pdwFourCC == endian_net_unsigned_int("DXT5"_u32))
+                {
+                    img.compress_format = "DXT5"_u32;
+                    img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
+                    img.bitcount = 8;
+                }
+                else if (*pdwFourCC == endian_net_unsigned_int("DX10"_u32))
+                {
+                    img.compress_format = "DX10"_u32;
+                    const DDS_HEADER_DXT10* pHeaderDXT10 = reinterpret_cast<const DDS_HEADER_DXT10*>(pData);
+                    pData += sizeof(DDS_HEADER_DXT10);
+                    std::cerr << "DXGI_FORMAT: " << pHeaderDXT10->dxgiFormat << std::endl;
+                }
+                
+                img.data_size = img.pitch * (ALIGN(img.Height, 4) >> 2);
+                
+                img.mipmaps[0].Width = img.Width; 
+                img.mipmaps[0].Height = img.Height; 
+                img.mipmaps[0].offset = 0;
+                img.mipmaps[0].data_size = img.data_size;
 
-                    if(img.mipmap_count > 0)
-                    {
-                        uint32_t width = img.Width >> 1;
-                        uint32_t height = img.Height >> 1;
+                if(img.mipmap_count > 0)
+                {
+                    uint32_t width = img.Width >> 1;
+                    uint32_t height = img.Height >> 1;
 
-                        for (decltype(img.mipmap_count) i = 1; i < img.mipmap_count; i++)
+                    for (decltype(img.mipmap_count) i = 1; i < img.mipmap_count; i++)
+                    {
+                        if (width > 0 && height > 0)
                         {
-                            if (width > 0 && height > 0)
-                            {
-                                auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) * img.bitcount * 2; //  img.bitcount / 8 * 16
-                                img.mipmaps[i].Width = width; 
-                                img.mipmaps[i].Height = height; 
-                                img.mipmaps[i].data_size = pitch * (ALIGN(height, 4) >> 2);
-                                img.mipmaps[i].offset = img.data_size;
-                                img.data_size += img.mipmaps[i].data_size;
+                            auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) * img.bitcount * 2; //  img.bitcount / 8 * 16
+                            img.mipmaps[i].Width = width; 
+                            img.mipmaps[i].Height = height; 
+                            img.mipmaps[i].data_size = pitch * (ALIGN(height, 4) >> 2);
+                            img.mipmaps[i].offset = img.data_size;
+                            img.data_size += img.mipmaps[i].data_size;
 
-                                width >>= 1; // /2
-                                height >>= 1; // /2
-                            }
-                            else
-                            {
-                                break;
-                            }
+                            width >>= 1; // /2
+                            height >>= 1; // /2
+                        }
+                        else
+                        {
+                            break;
                         }
                     }
                 }
             }
             else
             {
-                if (!(pHeader->ddspf.dwFlags & 0x40 /* DDPF_RGB */))
-                {
-                    std::cerr << "We only support RGB color space" << std::endl;
-                    assert(0);
-                }
-
-                img.bitcount = pHeader->ddspf.dwRGBBitCount;
                 img.pitch = ALIGN(img.Width * img.bitcount, 8) / 8;
                 img.data_size = img.pitch * img.Height;
                     
@@ -323,7 +334,7 @@ namespace My {
                             auto pitch = ALIGN(width * img.bitcount, 8) / 8;
                             img.mipmaps[i].Width = width; 
                             img.mipmaps[i].Height = height; 
-                            img.mipmaps[i].data_size = pitch * (ALIGN(height, 4) >> 2);
+                            img.mipmaps[i].data_size = pitch * height;
                             img.mipmaps[i].offset = img.data_size;
                             img.data_size += img.mipmaps[i].data_size;
 
@@ -342,6 +353,7 @@ namespace My {
             assert(img.data_size < buf.GetDataSize());
 
             img.data = new uint8_t[img.data_size];
+
             memcpy(img.data, pData, img.data_size);
 
             return img;

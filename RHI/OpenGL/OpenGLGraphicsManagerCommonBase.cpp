@@ -159,7 +159,22 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
     if(img.compressed)
     {
         format = GL_COMPRESSED_RGB;
-        internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+
+        switch (img.compress_format)
+        {
+            case "DXT1"_u32:
+                internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+                break;
+            case "DXT3"_u32:
+                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+                break;
+            case "DXT5"_u32:
+                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                break;
+            default:
+                assert(0);
+        }
+
         type = GL_UNSIGNED_BYTE;
     }
     else
@@ -185,6 +200,18 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
             format = GL_RGB;
             internal_format = GL_RGB8;
             type = GL_UNSIGNED_BYTE;
+        }
+        else if(img.bitcount == 64)
+        {
+            format = GL_RGBA;
+            internal_format = GL_RGBA16F;
+            type = GL_HALF_FLOAT;
+        }
+        else if(img.bitcount == 128)
+        {
+            format = GL_RGBA;
+            internal_format = GL_RGBA32F;
+            type = GL_FLOAT;
         }
         else
         {
