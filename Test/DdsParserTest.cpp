@@ -26,7 +26,7 @@ int main(int argc, const char** argv)
         if (argc >= 2) {
             buf = g_pAssetLoader->SyncOpenAndReadBinary(argv[1]);
         } else {
-            buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/icelogo-color.dds");
+            buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/hdr/PaperMill_posx.dds");
         }
 
         DdsParser dds_parser;

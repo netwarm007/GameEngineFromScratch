@@ -79,9 +79,9 @@ namespace My {
 
                 char axis1[2];
                 char axis2[2];
-                size_t dimension1;
-                size_t dimension2;
-                std::sscanf(pData, "%2c %zu %2c %zu", axis1, &dimension1, axis2, &dimension2);
+                uint32_t dimension1;
+                uint32_t dimension2;
+                std::sscanf(pData, "%2c %u %2c %u", axis1, &dimension1, axis2, &dimension2);
 
                 if (axis1[1] == 'Y')
                 {
@@ -149,6 +149,11 @@ namespace My {
                     pOutData++;
                 } 
             }
+
+            img.mipmaps[0].Width = img.Width; 
+            img.mipmaps[0].Height = img.Height; 
+            img.mipmaps[0].offset = 0;
+            img.mipmaps[0].data_size = img.data_size;
 
             return img;
         }

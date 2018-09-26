@@ -23,12 +23,10 @@ namespace My {
             std::sprintf(filename, fmt, prefix, "negx", ext_name);
             m_Textures[index++].SetName(filename);
 
-            // we need exchange front and back when using cubemap
-            // as skybox
-            std::sprintf(filename, fmt, prefix, "negy", ext_name);
+            std::sprintf(filename, fmt, prefix, "posy", ext_name);
             m_Textures[index++].SetName(filename);
 
-            std::sprintf(filename, fmt, prefix, "posy", ext_name);
+            std::sprintf(filename, fmt, prefix, "negy", ext_name);
             m_Textures[index++].SetName(filename);
 
             std::sprintf(filename, fmt, prefix, "posz", ext_name);
@@ -45,12 +43,10 @@ namespace My {
             std::sprintf(filename, fmt, prefix, "irradiance_negx", ext_name);
             m_Textures[index++].SetName(filename);
 
-            // we need exchange front and back when using cubemap
-            // as skybox
-            std::sprintf(filename, fmt, prefix, "irradiance_negy", ext_name);
+            std::sprintf(filename, fmt, prefix, "irradiance_posy", ext_name);
             m_Textures[index++].SetName(filename);
 
-            std::sprintf(filename, fmt, prefix, "irradiance_posy", ext_name);
+            std::sprintf(filename, fmt, prefix, "irradiance_negy", ext_name);
             m_Textures[index++].SetName(filename);
 
             std::sprintf(filename, fmt, prefix, "irradiance_posz", ext_name);
@@ -61,42 +57,32 @@ namespace My {
 
             //////////////////
             // Radiance Map
-            const char fmt_mips[] = "%s_%s_%u_%ux%u.%s";
-            uint32_t width = 512, height = 512;
-            for (uint32_t mips = 0; mips < 9; mips++)
-            {
-                std::sprintf(filename, fmt_mips, prefix, "radiance_preview_posx", mips, width, height, ext_name);
-                m_Textures[index++].SetName(filename);
+            std::sprintf(filename, fmt, prefix, "radiance_posx", ext_name);
+            m_Textures[index++].SetName(filename);
 
-                std::sprintf(filename, fmt_mips, prefix, "radiance_preview_negx", mips, width, height, ext_name);
-                m_Textures[index++].SetName(filename);
+            std::sprintf(filename, fmt, prefix, "radiance_negx", ext_name);
+            m_Textures[index++].SetName(filename);
 
-                // we need exchange front and back when using cubemap
-                // as skybox
-                std::sprintf(filename, fmt_mips, prefix, "radiance_preview_negy", mips, width, height, ext_name);
-                m_Textures[index++].SetName(filename);
+            std::sprintf(filename, fmt, prefix, "radiance_posy", ext_name);
+            m_Textures[index++].SetName(filename);
 
-                std::sprintf(filename, fmt_mips, prefix, "radiance_preview_posy", mips, width, height, ext_name);
-                m_Textures[index++].SetName(filename);
+            std::sprintf(filename, fmt, prefix, "radiance_negy", ext_name);
+            m_Textures[index++].SetName(filename);
 
-                std::sprintf(filename, fmt_mips, prefix, "radiance_preview_posz", mips, width, height, ext_name);
-                m_Textures[index++].SetName(filename);
+            std::sprintf(filename, fmt, prefix, "radiance_posz", ext_name);
+            m_Textures[index++].SetName(filename);
 
-                std::sprintf(filename, fmt_mips, prefix, "radiance_preview_negz", mips, width, height, ext_name);
-                m_Textures[index++].SetName(filename);
-
-                width = width >> 1;
-                height = height >> 1;
-            }
+            std::sprintf(filename, fmt, prefix, "radiance_negz", ext_name);
+            m_Textures[index++].SetName(filename);
         }
 
         inline SceneObjectTexture& GetTexture(uint32_t index) 
         { 
-            assert(index < 66);
+            assert(index < 18);
             return m_Textures[index]; 
         }
 
         private:
-            SceneObjectTexture m_Textures[66];
+            SceneObjectTexture m_Textures[18];
     };
 }

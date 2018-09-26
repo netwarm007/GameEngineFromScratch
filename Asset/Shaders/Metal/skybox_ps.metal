@@ -48,11 +48,6 @@ struct main0_in
     float3 UVW [[user(locn0)]];
 };
 
-float3 inverse_gamma_correction(thread const float3& color)
-{
-    return pow(color, float3(2.2000000476837158203125));
-}
-
 float3 exposure_tone_mapping(thread const float3& color)
 {
     return float3(1.0) - exp((-color) * 1.0);
@@ -68,14 +63,11 @@ fragment main0_out main0(main0_in in [[stage_in]], texturecube_array<float> skyb
     main0_out out = {};
     out.outputColor = skybox.sample(skyboxSmplr, float4(in.UVW, 0.0).xyz, uint(round(float4(in.UVW, 0.0).w)), level(0.0));
     float3 param = out.outputColor.xyz;
-    float3 _60 = inverse_gamma_correction(param);
-    out.outputColor = float4(_60.x, _60.y, _60.z, out.outputColor.w);
+    float3 _51 = exposure_tone_mapping(param);
+    out.outputColor = float4(_51.x, _51.y, _51.z, out.outputColor.w);
     float3 param_1 = out.outputColor.xyz;
-    float3 _66 = exposure_tone_mapping(param_1);
-    out.outputColor = float4(_66.x, _66.y, _66.z, out.outputColor.w);
-    float3 param_2 = out.outputColor.xyz;
-    float3 _72 = gamma_correction(param_2);
-    out.outputColor = float4(_72.x, _72.y, _72.z, out.outputColor.w);
+    float3 _57 = gamma_correction(param_1);
+    out.outputColor = float4(_57.x, _57.y, _57.z, out.outputColor.w);
     return out;
 }
 

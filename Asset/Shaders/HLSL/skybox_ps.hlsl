@@ -51,11 +51,6 @@ struct SPIRV_Cross_Output
     float4 outputColor : SV_Target0;
 };
 
-float3 inverse_gamma_correction(float3 color)
-{
-    return pow(color, 2.2000000476837158203125f.xxx);
-}
-
 float3 exposure_tone_mapping(float3 color)
 {
     return 1.0f.xxx - exp((-color) * 1.0f);
@@ -70,14 +65,11 @@ void frag_main()
 {
     outputColor = skybox.SampleLevel(_skybox_sampler, float4(UVW, 0.0f), 0.0f);
     float3 param = outputColor.xyz;
-    float3 _60 = inverse_gamma_correction(param);
-    outputColor = float4(_60.x, _60.y, _60.z, outputColor.w);
+    float3 _51 = exposure_tone_mapping(param);
+    outputColor = float4(_51.x, _51.y, _51.z, outputColor.w);
     float3 param_1 = outputColor.xyz;
-    float3 _66 = exposure_tone_mapping(param_1);
-    outputColor = float4(_66.x, _66.y, _66.z, outputColor.w);
-    float3 param_2 = outputColor.xyz;
-    float3 _72 = gamma_correction(param_2);
-    outputColor = float4(_72.x, _72.y, _72.z, outputColor.w);
+    float3 _57 = gamma_correction(param_1);
+    outputColor = float4(_57.x, _57.y, _57.z, outputColor.w);
 }
 
 SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)

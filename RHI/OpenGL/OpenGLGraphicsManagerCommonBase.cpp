@@ -2,6 +2,7 @@
 // should be included in other source
 // other than compile it independently
 #include <sstream>
+#include <algorithm>
 #include <functional>
 using namespace std;
 
@@ -155,33 +156,42 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
 
 static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& internal_format, GLenum& type)
 {
-    if(img.bitcount == 8)
+    if(img.compressed)
     {
-        format = GL_RED;
-        internal_format = GL_R8;
-        type = GL_UNSIGNED_BYTE;
-    }
-    else if(img.bitcount == 16)
-    {
-        format = GL_RED;
-#ifndef OPENGL_ES
-        internal_format = GL_R16;
-#else
-        internal_format = GL_RED;
-#endif
-        type = GL_UNSIGNED_SHORT;
-    }
-    else if(img.bitcount == 24)
-    {
-        format = GL_RGB;
-        internal_format = GL_RGB8;
+        format = GL_COMPRESSED_RGB;
+        internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
         type = GL_UNSIGNED_BYTE;
     }
     else
     {
-        format = GL_RGBA;
-        internal_format = GL_RGBA8;
-        type = GL_UNSIGNED_BYTE;
+        if(img.bitcount == 8)
+        {
+            format = GL_RED;
+            internal_format = GL_R8;
+            type = GL_UNSIGNED_BYTE;
+        }
+        else if(img.bitcount == 16)
+        {
+            format = GL_RED;
+    #ifndef OPENGL_ES
+            internal_format = GL_R16;
+    #else
+            internal_format = GL_RED;
+    #endif
+            type = GL_UNSIGNED_SHORT;
+        }
+        else if(img.bitcount == 24)
+        {
+            format = GL_RGB;
+            internal_format = GL_RGB8;
+            type = GL_UNSIGNED_BYTE;
+        }
+        else
+        {
+            format = GL_RGBA;
+            internal_format = GL_RGBA8;
+            type = GL_UNSIGNED_BYTE;
+        }
     }
 }
 
@@ -336,8 +346,16 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                         glBindTexture(GL_TEXTURE_2D, texture_id);
                         GLenum format, internal_format, type;
                         getOpenGLTextureFormat(texture, format, internal_format, type);
-                        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
-                            0, format, type, texture.data);
+                        if (texture.compressed)
+                        {
+                            glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
+                                0, static_cast<GLsizei>(texture.data_size), texture.data);
+                        }
+                        else
+                        {
+                            glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
+                                0, format, type, texture.data);
+                        }
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -456,12 +474,13 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
 
     // load skybox, irradiance map and radiance map
     GLuint cubemapTexture;
+    const uint32_t kMaxMipLevels = 10;
     glGenTextures(1, &cubemapTexture);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, cubemapTexture);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAX_LEVEL, 8);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAX_LEVEL, kMaxMipLevels);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -481,27 +500,54 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
             const uint32_t faces = 6;
             const uint32_t indexies = 2;
             constexpr GLsizei depth = faces * indexies;
-            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 9, internal_format, image.Width, image.Height, depth);
+            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, kMaxMipLevels, internal_format, image.Width, image.Height, depth);
         }
+
+        auto error = glGetError();
+        assert(error == GL_NO_ERROR);
 
         GLint level = i / 6;
         GLint zoffset = i % 6;
-        glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
-            format, type, image.data);
+        if (image.compressed)
+        {
+            glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
+                internal_format, static_cast<GLsizei>(image.mipmaps[0].data_size), image.data);
+        }
+        else
+        {
+            glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
+                format, type, image.data);
+        }
+
+        error = glGetError();
+        assert(error == GL_NO_ERROR);
     }
 
     // radiance map
-    for (uint32_t i = 12; i < 66; i++)
+    for (uint32_t i = 12; i < 18; i++)
     {
         auto& texture = scene.SkyBox->GetTexture(i);
         auto& image = texture.GetTextureImage();
         GLenum format, internal_format, type;
         getOpenGLTextureFormat(image, format, internal_format, type);
 
-        GLint level = (i - 12) / 6;
         GLint zoffset = (i % 6) + 6;
-        glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
-            format, type, image.data);
+        for (decltype(image.mipmap_count) level = 0; level < std::min(image.mipmap_count, kMaxMipLevels); level++)
+        {
+            if (image.compressed)
+            {
+                glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.mipmaps[level].Width, image.mipmaps[level].Height, 1,
+                    internal_format, static_cast<GLsizei>(image.mipmaps[level].data_size), image.data + image.mipmaps[level].offset);
+            }
+            else
+            {
+                glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.mipmaps[level].Width, image.mipmaps[level].Height, 1,
+                    format, type, image.data + image.mipmaps[level].offset);
+            }
+
+            auto error = glGetError();
+            assert(error == GL_NO_ERROR);
+        }
     }
 
     m_Textures.push_back(cubemapTexture);

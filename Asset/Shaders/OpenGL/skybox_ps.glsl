@@ -24,11 +24,6 @@ uniform samplerCubeArray skybox;
 layout(location = 0) out vec4 outputColor;
 in vec3 UVW;
 
-vec3 inverse_gamma_correction(vec3 color)
-{
-    return pow(color, vec3(2.2000000476837158203125));
-}
-
 vec3 exposure_tone_mapping(vec3 color)
 {
     return vec3(1.0) - exp((-color) * 1.0);
@@ -43,13 +38,10 @@ void main()
 {
     outputColor = textureLod(skybox, vec4(UVW, 0.0), 0.0);
     vec3 param = outputColor.xyz;
-    vec3 _60 = inverse_gamma_correction(param);
-    outputColor = vec4(_60.x, _60.y, _60.z, outputColor.w);
+    vec3 _51 = exposure_tone_mapping(param);
+    outputColor = vec4(_51.x, _51.y, _51.z, outputColor.w);
     vec3 param_1 = outputColor.xyz;
-    vec3 _66 = exposure_tone_mapping(param_1);
-    outputColor = vec4(_66.x, _66.y, _66.z, outputColor.w);
-    vec3 param_2 = outputColor.xyz;
-    vec3 _72 = gamma_correction(param_2);
-    outputColor = vec4(_72.x, _72.y, _72.z, outputColor.w);
+    vec3 _57 = gamma_correction(param_1);
+    outputColor = vec4(_57.x, _57.y, _57.z, outputColor.w);
 }
 
