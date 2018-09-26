@@ -64,7 +64,7 @@ jobs:
              sudo installer -package $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg -target /
              rm $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             sudo -E port -q install cmake xorg-libX11 xorg-libxcb mesa libGLU
+             sudo -E port -q install cmake
       - run:
           name: Build
           command: |
