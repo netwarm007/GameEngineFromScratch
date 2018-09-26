@@ -6,9 +6,11 @@
 #include <assert.h>
 #include "config.h"
 
-#ifndef ALIGN
-#define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
+#ifdef ALIGN
+#undef ALIGN
 #endif
+
+#define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
 
 typedef int32_t four_char_enum;
 

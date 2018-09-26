@@ -1,11 +1,13 @@
 #pragma once
 #include <algorithm>
-#include "ImageParser.hpp"
 
 #ifdef _WIN32
 #include <dxgiformat.h>
 #else
 #endif
+
+#include "ImageParser.hpp"
+#include "portable.hpp"
 
 namespace My {
     typedef enum MY_DXGI_FORMAT {
