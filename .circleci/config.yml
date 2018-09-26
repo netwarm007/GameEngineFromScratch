@@ -40,7 +40,7 @@ jobs:
              cmake --build ./build --target test
   build_macos:
     macos:
-      xcode: "9.2.0"
+      xcode: "10.0.0"
     steps:
       - restore_cache:
           keys:
@@ -60,9 +60,9 @@ jobs:
       - run: 
           name: Install Dependencies via MacPorts
           command: |
-             curl -L -o $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg https://github.com/macports/macports-base/releases/download/v2.4.2/MacPorts-2.4.2-10.12-Sierra.pkg
-             sudo installer -package $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg -target /
-             rm $(pwd)/MacPorts-2.4.2-10.12-Sierra.pkg
+             curl -L -o $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg https://github.com/macports/macports-base/releases/download/v2.5.3/MacPorts-2.5.3-10.13-HighSierra.pkg
+             sudo installer -package $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg -target /
+             rm $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              sudo -E port -q install cmake xorg-libX11 xorg-libxcb mesa libGLU
       - run:
