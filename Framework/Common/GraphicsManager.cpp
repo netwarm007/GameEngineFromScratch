@@ -487,7 +487,7 @@ void GraphicsManager::ClearDebugBuffers()
 void GraphicsManager::DrawTextureOverlay(const intptr_t texture, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    cerr << "[GraphicsManager] DrayOverlay(" << texture << ", "
+    cerr << "[GraphicsManager] DrawOverlay(" << texture << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "
@@ -498,7 +498,7 @@ void GraphicsManager::DrawTextureOverlay(const intptr_t texture,
 void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    cerr << "[GraphicsManager] DrayOverlay(" << texture << ", "
+    cerr << "[GraphicsManager] DrawOverlay(" << texture << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "
@@ -510,7 +510,7 @@ void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t l
 void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
-    cerr << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
+    cerr << "[GraphicsManager] DrawCubeMapOverlay(" << cubemap << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "
@@ -522,7 +522,7 @@ void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap,
 void GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
-    cerr << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
+    cerr << "[GraphicsManager] DrawCubeMapOverlay(" << cubemap << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "
