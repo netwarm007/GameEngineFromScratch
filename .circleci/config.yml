@@ -21,7 +21,7 @@ jobs:
           name: Git LFS Checkout
           command: |
              git lfs fetch
-             git lfs checkout
+             git checkout
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -52,7 +52,7 @@ jobs:
           name: Git LFS Checkout
           command: |
              git lfs fetch
-             git lfs checkout
+             git checkout
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -101,7 +101,7 @@ jobs:
           name: Git LFS Checkout
           command: |
              git lfs fetch
-             git lfs checkout
+             git checkout
       - save_cache:
           key: source-android-{{ .Branch }}-{{ .Revision }}
           paths:
