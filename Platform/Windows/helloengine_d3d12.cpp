@@ -12,7 +12,6 @@
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
 #include <DirectXColors.h>
-#include "DirectXMath.h"
 
 #include <wrl/client.h>
 
