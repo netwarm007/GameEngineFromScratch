@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/material_balls.ogex"
+                "Scene/normal_map.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

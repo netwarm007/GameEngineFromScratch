@@ -17,12 +17,13 @@
 # 
 # =============================================================
 
+# Modified by Tim Chen on 2018/09/27 for exporting tangent and bitangent
 
 bl_info = {
 	"name": "OpenGEX format (.ogex)",
 	"description": "Terathon Software OpenGEX Exporter",
-	"author": "Eric Lengyel",
-	"version": (2, 0, 0, 0),
+	"author": "Eric Lengyel, Tim Chen",
+	"version": (2, 0, 0, 1),
 	"location": "File > Import-Export",
 	"wiki_url": "http://opengex.org/",
 	"category": "Import-Export"}
@@ -59,12 +60,14 @@ axisName = [B"x", B"y", B"z"]
 
 
 class ExportVertex:
-	__slots__ = ("hash", "vertexIndex", "faceIndex", "position", "normal", "color", "texcoord0", "texcoord1")
+	__slots__ = ("hash", "vertexIndex", "faceIndex", "position", "normal", "tangent", "bitangent", "color", "texcoord0", "texcoord1")
 
 	def __init__(self):
 		self.color = [1.0, 1.0, 1.0]
 		self.texcoord0 = [0.0, 0.0]
 		self.texcoord1 = [0.0, 0.0]
+		self.tangent = [1.0, 0.0, 0.0]
+		self.bitangent = [0.0, 1.0, 0.0]
 
 	def __eq__(self, v):
 		if (self.hash != v.hash):
@@ -72,6 +75,10 @@ class ExportVertex:
 		if (self.position != v.position):
 			return (False)
 		if (self.normal != v.normal):
+			return (False)
+		if (self.tangent != v.tangent):
+			return (False)
+		if (self.bitangent != v.bitangent):
 			return (False)
 		if (self.color != v.color):
 			return (False)
@@ -88,6 +95,12 @@ class ExportVertex:
 		h = h * 21737 + hash(self.normal[0])
 		h = h * 21737 + hash(self.normal[1])
 		h = h * 21737 + hash(self.normal[2])
+		h = h * 21737 + hash(self.tangent[0])
+		h = h * 21737 + hash(self.tangent[1])
+		h = h * 21737 + hash(self.tangent[2])
+		h = h * 21737 + hash(self.bitangent[0])
+		h = h * 21737 + hash(self.bitangent[1])
+		h = h * 21737 + hash(self.bitangent[2])
 		h = h * 21737 + hash(self.color[0])
 		h = h * 21737 + hash(self.color[1])
 		h = h * 21737 + hash(self.color[2])
@@ -701,6 +714,25 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 						vertexIndex += 1
 
 					faceIndex += 1
+
+			vertexIndex = 0
+
+			for face in mesh.tessfaces:
+				deltaPos1 = exportVertexArray[vertexIndex + 1].position - exportVertexArray[vertexIndex + 0].position
+				deltaPos2 = exportVertexArray[vertexIndex + 2].position - exportVertexArray[vertexIndex + 0].position
+
+				deltaUV1 = exportVertexArray[vertexIndex + 1].texcoord0 - exportVertexArray[vertexIndex + 0].texcoord0
+				deltaUV2 = exportVertexArray[vertexIndex + 2].texcoord0 - exportVertexArray[vertexIndex + 0].texcoord0
+
+				r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x)
+				tangent = (deltaPos1 * deltaUV2.y   - deltaPos2 * deltaUV1.y)*r
+				bitangent = (deltaPos2 * deltaUV1.x   - deltaPos1 * deltaUV2.x)*r
+
+				for i in range(0, 3):
+					exportVertexArray[vertexIndex + i].tangent = tangent
+					exportVertexArray[vertexIndex + i].bitangent = bitangent
+
+				vertexIndex += 3
 
 		for ev in exportVertexArray:
 			ev.Hash()
@@ -2217,6 +2249,36 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 		self.WriteInt(vertexCount)
 		self.IndentWrite(B"{\n", 0, True)
 		self.WriteVertexArray3D(unifiedVertexArray, "normal")
+		self.IndentWrite(B"}\n")
+
+		self.indentLevel -= 1
+		self.IndentWrite(B"}\n")
+
+		# Write the tangent array.
+
+		self.IndentWrite(B"VertexArray (attrib = \"tangent\")\n")
+		self.IndentWrite(B"{\n")
+		self.indentLevel += 1
+
+		self.IndentWrite(B"float[3]\t\t// ")
+		self.WriteInt(vertexCount)
+		self.IndentWrite(B"{\n", 0, True)
+		self.WriteVertexArray3D(unifiedVertexArray, "tangent")
+		self.IndentWrite(B"}\n")
+
+		self.indentLevel -= 1
+		self.IndentWrite(B"}\n")
+
+		# Write the bitangent array.
+
+		self.IndentWrite(B"VertexArray (attrib = \"bitangent\")\n")
+		self.IndentWrite(B"{\n")
+		self.indentLevel += 1
+
+		self.IndentWrite(B"float[3]\t\t// ")
+		self.WriteInt(vertexCount)
+		self.IndentWrite(B"{\n", 0, True)
+		self.WriteVertexArray3D(unifiedVertexArray, "bitangent")
 		self.IndentWrite(B"}\n")
 
 		self.indentLevel -= 1
