@@ -8643,22 +8643,30 @@ Material $material1
 	Color (attrib = "diffuse") {float[3] {{0.640000066757203, 0.640000066757203, 0.640000066757203}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
 	Param (attrib = "specular_power") {float {50}}
-	Param (attrib = "metallic") {float {0.0}}
-	Param (attrib = "roughness") {float {0.6}}
 
 	Texture (attrib = "diffuse")
 	{
-		string {"Textures/ground01.png"}
+		string {"Textures/redbricks2b-albedo.png"}
 	}
 
 	Texture (attrib = "normal")
 	{
-		string {"Textures/ground01-normal.png"}
+		string {"Textures/redbricks2b-normal.png"}
 	}
 
 	Texture (attrib = "ao")
 	{
-		string {"Textures/ground01-ao.png"}
+		string {"Textures/redbricks2b-ao.png"}
+	}
+
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/redbricks2b-metalness.png"}
+	}
+	
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/redbricks2b-rough.png"}
 	}
 }
 
