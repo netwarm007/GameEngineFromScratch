@@ -29,7 +29,7 @@ void main()
     vec3 V = normalize(camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);   
 
-    vec3 albedo = texture(diffuseMap, uv).rgb; 
+    vec3 albedo = inverse_gamma_correction(texture(diffuseMap, uv).rgb); 
 
     float meta = texture(metallicMap, uv).r; 
 

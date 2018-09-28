@@ -724,9 +724,15 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 				deltaUV1 = exportVertexArray[vertexIndex + 1].texcoord0 - exportVertexArray[vertexIndex + 0].texcoord0
 				deltaUV2 = exportVertexArray[vertexIndex + 2].texcoord0 - exportVertexArray[vertexIndex + 0].texcoord0
 
-				r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x)
-				tangent = (deltaPos1 * deltaUV2.y   - deltaPos2 * deltaUV1.y)*r
-				bitangent = (deltaPos2 * deltaUV1.x   - deltaPos1 * deltaUV2.x)*r
+				denominator = (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x)
+
+				if (denominator):
+					r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x)
+					tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y)*r
+					bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x)*r
+				else:
+					tangent = [1.0, 0.0, 0.0]
+					bitangent = [0.0, 1.0, 0.0]
 
 				for i in range(0, 3):
 					exportVertexArray[vertexIndex + i].tangent = tangent
