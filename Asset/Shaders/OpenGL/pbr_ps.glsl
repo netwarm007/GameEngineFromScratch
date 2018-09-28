@@ -26,7 +26,7 @@ layout(std140) uniform PerFrameConstants
     vec4 camPos;
     int numLights;
     Light allLights[100];
-} _580;
+} _589;
 
 uniform samplerCubeArray cubeShadowMap;
 uniform sampler2DArray shadowMap;
@@ -43,7 +43,12 @@ in vec4 v_world;
 in vec2 uv;
 layout(location = 0) out vec4 outputColor;
 
-float _100;
+float _103;
+
+vec3 inverse_gamma_correction(vec3 color)
+{
+    return pow(color, vec3(2.2000000476837158203125));
+}
 
 float shadow_test(vec4 p, Light light, float cosTheta)
 {
@@ -247,62 +252,63 @@ vec3 gamma_correction(vec3 color)
 void main()
 {
     vec3 N = normalize(normal_world.xyz);
-    vec3 V = normalize(_580.camPos.xyz - v_world.xyz);
+    vec3 V = normalize(_589.camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);
-    vec3 albedo = texture(diffuseMap, uv).xyz;
+    vec3 param = texture(diffuseMap, uv).xyz;
+    vec3 albedo = inverse_gamma_correction(param);
     float meta = texture(metallicMap, uv).x;
     float rough = texture(roughnessMap, uv).x;
     vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _580.numLights; i++)
+    for (int i = 0; i < _589.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _580.allLights[i].lightIntensity;
-        light.lightType = _580.allLights[i].lightType;
-        light.lightCastShadow = _580.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _580.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _580.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _580.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _580.allLights[i].lightSize;
-        light.lightGUID = _580.allLights[i].lightGUID;
-        light.lightPosition = _580.allLights[i].lightPosition;
-        light.lightColor = _580.allLights[i].lightColor;
-        light.lightDirection = _580.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _580.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _580.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _580.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _580.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _580.allLights[i].lightVP;
-        light.padding[0] = _580.allLights[i].padding[0];
-        light.padding[1] = _580.allLights[i].padding[1];
+        light.lightIntensity = _589.allLights[i].lightIntensity;
+        light.lightType = _589.allLights[i].lightType;
+        light.lightCastShadow = _589.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _589.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _589.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _589.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _589.allLights[i].lightSize;
+        light.lightGUID = _589.allLights[i].lightGUID;
+        light.lightPosition = _589.allLights[i].lightPosition;
+        light.lightColor = _589.allLights[i].lightColor;
+        light.lightDirection = _589.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _589.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _589.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _589.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _589.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _589.allLights[i].lightVP;
+        light.padding[0] = _589.allLights[i].padding[0];
+        light.padding[1] = _589.allLights[i].padding[1];
         vec3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         vec3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
         float visibility = shadow_test(v_world, light, NdotL);
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
-        float param = lightToSurfAngle;
-        int param_1 = light.lightAngleAttenCurveType;
-        vec4 param_2[2] = light.lightAngleAttenCurveParams;
-        float atten = apply_atten_curve(param, param_1, param_2);
-        float param_3 = lightToSurfDist;
-        int param_4 = light.lightDistAttenCurveType;
-        vec4 param_5[2] = light.lightDistAttenCurveParams;
-        atten *= apply_atten_curve(param_3, param_4, param_5);
+        float param_1 = lightToSurfAngle;
+        int param_2 = light.lightAngleAttenCurveType;
+        vec4 param_3[2] = light.lightAngleAttenCurveParams;
+        float atten = apply_atten_curve(param_1, param_2, param_3);
+        float param_4 = lightToSurfDist;
+        int param_5 = light.lightDistAttenCurveType;
+        vec4 param_6[2] = light.lightDistAttenCurveParams;
+        atten *= apply_atten_curve(param_4, param_5, param_6);
         vec3 radiance = light.lightColor.xyz * (light.lightIntensity * atten);
-        vec3 param_6 = N;
-        vec3 param_7 = H;
-        float param_8 = rough;
-        float NDF = DistributionGGX(param_6, param_7, param_8);
-        vec3 param_9 = N;
-        vec3 param_10 = V;
-        vec3 param_11 = L;
-        float param_12 = rough;
-        float G = GeometrySmithDirect(param_9, param_10, param_11, param_12);
-        float param_13 = max(dot(H, V), 0.0);
-        vec3 param_14 = F0;
-        vec3 F = fresnelSchlick(param_13, param_14);
+        vec3 param_7 = N;
+        vec3 param_8 = H;
+        float param_9 = rough;
+        float NDF = DistributionGGX(param_7, param_8, param_9);
+        vec3 param_10 = N;
+        vec3 param_11 = V;
+        vec3 param_12 = L;
+        float param_13 = rough;
+        float G = GeometrySmithDirect(param_10, param_11, param_12, param_13);
+        float param_14 = max(dot(H, V), 0.0);
+        vec3 param_15 = F0;
+        vec3 F = fresnelSchlick(param_14, param_15);
         vec3 kS = F;
         vec3 kD = vec3(1.0) - kS;
         kD *= (1.0 - meta);
@@ -312,10 +318,10 @@ void main()
         Lo += ((((((kD * albedo) / vec3(3.1415927410125732421875)) + specular) * radiance) * NdotL) * visibility);
     }
     float ambientOcc = texture(aoMap, uv).x;
-    float param_15 = max(dot(N, V), 0.0);
-    vec3 param_16 = F0;
-    float param_17 = rough;
-    vec3 F_1 = fresnelSchlickRoughness(param_15, param_16, param_17);
+    float param_16 = max(dot(N, V), 0.0);
+    vec3 param_17 = F0;
+    float param_18 = rough;
+    vec3 F_1 = fresnelSchlickRoughness(param_16, param_17, param_18);
     vec3 kS_1 = F_1;
     vec3 kD_1 = vec3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
@@ -326,10 +332,10 @@ void main()
     vec3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + vec3(envBRDF.y));
     vec3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     vec3 linearColor = ambient + Lo;
-    vec3 param_18 = linearColor;
-    linearColor = reinhard_tone_mapping(param_18);
     vec3 param_19 = linearColor;
-    linearColor = gamma_correction(param_19);
+    linearColor = reinhard_tone_mapping(param_19);
+    vec3 param_20 = linearColor;
+    linearColor = gamma_correction(param_20);
     outputColor = vec4(linearColor, 1.0);
 }
 

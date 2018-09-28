@@ -17,15 +17,15 @@ struct Light
     float4 padding[2];
 };
 
-static const float2 _323[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
+static const float2 _326[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
 
-cbuffer _580 : register(b0, space0)
+cbuffer _589 : register(b0, space0)
 {
-    row_major float4x4 _580_viewMatrix : packoffset(c0);
-    row_major float4x4 _580_projectionMatrix : packoffset(c4);
-    float4 _580_camPos : packoffset(c8);
-    int _580_numLights : packoffset(c9);
-    Light _580_allLights[100] : packoffset(c10);
+    row_major float4x4 _589_viewMatrix : packoffset(c0);
+    row_major float4x4 _589_projectionMatrix : packoffset(c4);
+    float4 _589_camPos : packoffset(c8);
+    int _589_numLights : packoffset(c9);
+    Light _589_allLights[100] : packoffset(c10);
 };
 TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
 SamplerState _cubeShadowMap_sampler : register(s3, space0);
@@ -69,7 +69,12 @@ struct SPIRV_Cross_Output
     float4 outputColor : SV_Target0;
 };
 
-float _100;
+float _103;
+
+float3 inverse_gamma_correction(float3 color)
+{
+    return pow(color, 2.2000000476837158203125f.xxx);
+}
 
 float shadow_test(float4 p, Light light, float cosTheta)
 {
@@ -98,7 +103,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 v_light_space = mul(v_light_space, float4x4(float4(0.5f, 0.0f, 0.0f, 0.0f), float4(0.0f, 0.5f, 0.0f, 0.0f), float4(0.0f, 0.0f, 0.5f, 0.0f), float4(0.5f, 0.5f, 0.5f, 1.0f)));
                 for (int i = 0; i < 4; i++)
                 {
-                    float2 indexable[4] = _323;
+                    float2 indexable[4] = _326;
                     near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
@@ -112,7 +117,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 v_light_space = mul(v_light_space, float4x4(float4(0.5f, 0.0f, 0.0f, 0.0f), float4(0.0f, 0.5f, 0.0f, 0.0f), float4(0.0f, 0.0f, 0.5f, 0.0f), float4(0.5f, 0.5f, 0.5f, 1.0f)));
                 for (int i_1 = 0; i_1 < 4; i_1++)
                 {
-                    float2 indexable_1[4] = _323;
+                    float2 indexable_1[4] = _326;
                     near_occ = globalShadowMap.Sample(_globalShadowMap_sampler, float3(v_light_space.xy + (indexable_1[i_1] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
@@ -126,7 +131,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 v_light_space = mul(v_light_space, float4x4(float4(0.5f, 0.0f, 0.0f, 0.0f), float4(0.0f, 0.5f, 0.0f, 0.0f), float4(0.0f, 0.0f, 0.5f, 0.0f), float4(0.5f, 0.5f, 0.5f, 1.0f)));
                 for (int i_2 = 0; i_2 < 4; i_2++)
                 {
-                    float2 indexable_2[4] = _323;
+                    float2 indexable_2[4] = _326;
                     near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable_2[i_2] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
@@ -273,62 +278,63 @@ float3 gamma_correction(float3 color)
 void frag_main()
 {
     float3 N = normalize(normal_world.xyz);
-    float3 V = normalize(_580_camPos.xyz - v_world.xyz);
+    float3 V = normalize(_589_camPos.xyz - v_world.xyz);
     float3 R = reflect(-V, N);
-    float3 albedo = diffuseMap.Sample(_diffuseMap_sampler, uv).xyz;
+    float3 param = diffuseMap.Sample(_diffuseMap_sampler, uv).xyz;
+    float3 albedo = inverse_gamma_correction(param);
     float meta = metallicMap.Sample(_metallicMap_sampler, uv).x;
     float rough = roughnessMap.Sample(_roughnessMap_sampler, uv).x;
     float3 F0 = 0.039999999105930328369140625f.xxx;
     F0 = lerp(F0, albedo, meta.xxx);
     float3 Lo = 0.0f.xxx;
-    for (int i = 0; i < _580_numLights; i++)
+    for (int i = 0; i < _589_numLights; i++)
     {
         Light light;
-        light.lightIntensity = _580_allLights[i].lightIntensity;
-        light.lightType = _580_allLights[i].lightType;
-        light.lightCastShadow = _580_allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _580_allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _580_allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _580_allLights[i].lightDistAttenCurveType;
-        light.lightSize = _580_allLights[i].lightSize;
-        light.lightGUID = _580_allLights[i].lightGUID;
-        light.lightPosition = _580_allLights[i].lightPosition;
-        light.lightColor = _580_allLights[i].lightColor;
-        light.lightDirection = _580_allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _580_allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _580_allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _580_allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _580_allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _580_allLights[i].lightVP;
-        light.padding[0] = _580_allLights[i].padding[0];
-        light.padding[1] = _580_allLights[i].padding[1];
+        light.lightIntensity = _589_allLights[i].lightIntensity;
+        light.lightType = _589_allLights[i].lightType;
+        light.lightCastShadow = _589_allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _589_allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _589_allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _589_allLights[i].lightDistAttenCurveType;
+        light.lightSize = _589_allLights[i].lightSize;
+        light.lightGUID = _589_allLights[i].lightGUID;
+        light.lightPosition = _589_allLights[i].lightPosition;
+        light.lightColor = _589_allLights[i].lightColor;
+        light.lightDirection = _589_allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _589_allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _589_allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _589_allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _589_allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _589_allLights[i].lightVP;
+        light.padding[0] = _589_allLights[i].padding[0];
+        light.padding[1] = _589_allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0f);
         float visibility = shadow_test(v_world, light, NdotL);
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
-        float param = lightToSurfAngle;
-        int param_1 = light.lightAngleAttenCurveType;
-        float4 param_2[2] = light.lightAngleAttenCurveParams;
-        float atten = apply_atten_curve(param, param_1, param_2);
-        float param_3 = lightToSurfDist;
-        int param_4 = light.lightDistAttenCurveType;
-        float4 param_5[2] = light.lightDistAttenCurveParams;
-        atten *= apply_atten_curve(param_3, param_4, param_5);
+        float param_1 = lightToSurfAngle;
+        int param_2 = light.lightAngleAttenCurveType;
+        float4 param_3[2] = light.lightAngleAttenCurveParams;
+        float atten = apply_atten_curve(param_1, param_2, param_3);
+        float param_4 = lightToSurfDist;
+        int param_5 = light.lightDistAttenCurveType;
+        float4 param_6[2] = light.lightDistAttenCurveParams;
+        atten *= apply_atten_curve(param_4, param_5, param_6);
         float3 radiance = light.lightColor.xyz * (light.lightIntensity * atten);
-        float3 param_6 = N;
-        float3 param_7 = H;
-        float param_8 = rough;
-        float NDF = DistributionGGX(param_6, param_7, param_8);
-        float3 param_9 = N;
-        float3 param_10 = V;
-        float3 param_11 = L;
-        float param_12 = rough;
-        float G = GeometrySmithDirect(param_9, param_10, param_11, param_12);
-        float param_13 = max(dot(H, V), 0.0f);
-        float3 param_14 = F0;
-        float3 F = fresnelSchlick(param_13, param_14);
+        float3 param_7 = N;
+        float3 param_8 = H;
+        float param_9 = rough;
+        float NDF = DistributionGGX(param_7, param_8, param_9);
+        float3 param_10 = N;
+        float3 param_11 = V;
+        float3 param_12 = L;
+        float param_13 = rough;
+        float G = GeometrySmithDirect(param_10, param_11, param_12, param_13);
+        float param_14 = max(dot(H, V), 0.0f);
+        float3 param_15 = F0;
+        float3 F = fresnelSchlick(param_14, param_15);
         float3 kS = F;
         float3 kD = 1.0f.xxx - kS;
         kD *= (1.0f - meta);
@@ -338,10 +344,10 @@ void frag_main()
         Lo += ((((((kD * albedo) / 3.1415927410125732421875f.xxx) + specular) * radiance) * NdotL) * visibility);
     }
     float ambientOcc = aoMap.Sample(_aoMap_sampler, uv).x;
-    float param_15 = max(dot(N, V), 0.0f);
-    float3 param_16 = F0;
-    float param_17 = rough;
-    float3 F_1 = fresnelSchlickRoughness(param_15, param_16, param_17);
+    float param_16 = max(dot(N, V), 0.0f);
+    float3 param_17 = F0;
+    float param_18 = rough;
+    float3 F_1 = fresnelSchlickRoughness(param_16, param_17, param_18);
     float3 kS_1 = F_1;
     float3 kD_1 = 1.0f.xxx - kS_1;
     kD_1 *= (1.0f - meta);
@@ -352,10 +358,10 @@ void frag_main()
     float3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + envBRDF.y.xxx);
     float3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     float3 linearColor = ambient + Lo;
-    float3 param_18 = linearColor;
-    linearColor = reinhard_tone_mapping(param_18);
     float3 param_19 = linearColor;
-    linearColor = gamma_correction(param_19);
+    linearColor = reinhard_tone_mapping(param_19);
+    float3 param_20 = linearColor;
+    linearColor = gamma_correction(param_20);
     outputColor = float4(linearColor, 1.0f);
 }
 
