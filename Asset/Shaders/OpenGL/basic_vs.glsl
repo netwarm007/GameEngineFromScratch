@@ -39,6 +39,9 @@ out vec4 v;
 out vec4 normal_world;
 layout(location = 1) in vec3 inputNormal;
 out vec4 normal;
+layout(location = 3) in vec3 inputTangent;
+layout(location = 4) in vec3 inputBiTangent;
+out mat3 TBN;
 out vec2 uv;
 layout(location = 2) in vec2 inputUV;
 
@@ -47,8 +50,11 @@ void main()
     v_world = _13.modelMatrix * vec4(inputPosition, 1.0);
     v = _42.viewMatrix * v_world;
     gl_Position = _42.projectionMatrix * v;
-    normal_world = _13.modelMatrix * vec4(inputNormal, 0.0);
-    normal = _42.viewMatrix * normal_world;
+    normal_world = normalize(_13.modelMatrix * vec4(inputNormal, 0.0));
+    normal = normalize(_42.viewMatrix * normal_world);
+    vec3 tangent = normalize(vec3((_13.modelMatrix * vec4(inputTangent, 0.0)).xyz));
+    vec3 bitangent = normalize(vec3((_13.modelMatrix * vec4(inputBiTangent, 0.0)).xyz));
+    TBN = mat3(vec3(tangent), vec3(bitangent), vec3(normal_world.xyz));
     uv.x = inputUV.x;
     uv.y = 1.0 - inputUV.y;
 }

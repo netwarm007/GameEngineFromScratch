@@ -19,13 +19,13 @@ struct Light
 
 static const float2 _323[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
 
-cbuffer _580 : register(b0, space0)
+cbuffer _598 : register(b0, space0)
 {
-    row_major float4x4 _580_viewMatrix : packoffset(c0);
-    row_major float4x4 _580_projectionMatrix : packoffset(c4);
-    float4 _580_camPos : packoffset(c8);
-    int _580_numLights : packoffset(c9);
-    Light _580_allLights[100] : packoffset(c10);
+    row_major float4x4 _598_viewMatrix : packoffset(c0);
+    row_major float4x4 _598_projectionMatrix : packoffset(c4);
+    float4 _598_camPos : packoffset(c8);
+    int _598_numLights : packoffset(c9);
+    Light _598_allLights[100] : packoffset(c10);
 };
 TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
 SamplerState _cubeShadowMap_sampler : register(s3, space0);
@@ -33,6 +33,8 @@ Texture2DArray<float4> shadowMap : register(t1, space0);
 SamplerState _shadowMap_sampler : register(s1, space0);
 Texture2DArray<float4> globalShadowMap : register(t2, space0);
 SamplerState _globalShadowMap_sampler : register(s2, space0);
+Texture2D<float4> normalMap : register(t5, space0);
+SamplerState _normalMap_sampler : register(s5, space0);
 Texture2D<float4> diffuseMap : register(t0, space0);
 SamplerState _diffuseMap_sampler : register(s0, space0);
 Texture2D<float4> metallicMap : register(t6, space0);
@@ -45,14 +47,13 @@ TextureCubeArray<float4> skybox : register(t4, space0);
 SamplerState _skybox_sampler : register(s4, space0);
 Texture2D<float4> brdfLUT : register(t9, space0);
 SamplerState _brdfLUT_sampler : register(s9, space0);
-Texture2D<float4> normalMap : register(t5, space0);
-SamplerState _normalMap_sampler : register(s5, space0);
 
-static float4 normal_world;
-static float4 v_world;
 static float2 uv;
+static float3x3 TBN;
+static float4 v_world;
 static float4 outputColor;
 static float4 normal;
+static float4 normal_world;
 static float4 v;
 
 struct SPIRV_Cross_Input
@@ -62,6 +63,7 @@ struct SPIRV_Cross_Input
     float4 v : TEXCOORD2;
     float4 v_world : TEXCOORD3;
     float2 uv : TEXCOORD4;
+    float3x3 TBN : TEXCOORD5;
 };
 
 struct SPIRV_Cross_Output
@@ -272,8 +274,10 @@ float3 gamma_correction(float3 color)
 
 void frag_main()
 {
-    float3 N = normalize(normal_world.xyz);
-    float3 V = normalize(_580_camPos.xyz - v_world.xyz);
+    float3 tangent_normal = normalMap.Sample(_normalMap_sampler, uv).xyz;
+    tangent_normal = normalize((tangent_normal * 2.0f) - 1.0f.xxx);
+    float3 N = normalize(mul(tangent_normal, TBN));
+    float3 V = normalize(_598_camPos.xyz - v_world.xyz);
     float3 R = reflect(-V, N);
     float3 albedo = diffuseMap.Sample(_diffuseMap_sampler, uv).xyz;
     float meta = metallicMap.Sample(_metallicMap_sampler, uv).x;
@@ -281,27 +285,27 @@ void frag_main()
     float3 F0 = 0.039999999105930328369140625f.xxx;
     F0 = lerp(F0, albedo, meta.xxx);
     float3 Lo = 0.0f.xxx;
-    for (int i = 0; i < _580_numLights; i++)
+    for (int i = 0; i < _598_numLights; i++)
     {
         Light light;
-        light.lightIntensity = _580_allLights[i].lightIntensity;
-        light.lightType = _580_allLights[i].lightType;
-        light.lightCastShadow = _580_allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _580_allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _580_allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _580_allLights[i].lightDistAttenCurveType;
-        light.lightSize = _580_allLights[i].lightSize;
-        light.lightGUID = _580_allLights[i].lightGUID;
-        light.lightPosition = _580_allLights[i].lightPosition;
-        light.lightColor = _580_allLights[i].lightColor;
-        light.lightDirection = _580_allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _580_allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _580_allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _580_allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _580_allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _580_allLights[i].lightVP;
-        light.padding[0] = _580_allLights[i].padding[0];
-        light.padding[1] = _580_allLights[i].padding[1];
+        light.lightIntensity = _598_allLights[i].lightIntensity;
+        light.lightType = _598_allLights[i].lightType;
+        light.lightCastShadow = _598_allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _598_allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _598_allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _598_allLights[i].lightDistAttenCurveType;
+        light.lightSize = _598_allLights[i].lightSize;
+        light.lightGUID = _598_allLights[i].lightGUID;
+        light.lightPosition = _598_allLights[i].lightPosition;
+        light.lightColor = _598_allLights[i].lightColor;
+        light.lightDirection = _598_allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _598_allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _598_allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _598_allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _598_allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _598_allLights[i].lightVP;
+        light.padding[0] = _598_allLights[i].padding[0];
+        light.padding[1] = _598_allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0f);
@@ -347,7 +351,7 @@ void frag_main()
     kD_1 *= (1.0f - meta);
     float3 irradiance = skybox.SampleLevel(_skybox_sampler, float4(N, 0.0f), 1.0f).xyz;
     float3 diffuse = irradiance * albedo;
-    float3 prefilteredColor = skybox.SampleLevel(_skybox_sampler, float4(R, 1.0f), rough * 8.0f).xyz;
+    float3 prefilteredColor = skybox.SampleLevel(_skybox_sampler, float4(R, 1.0f), rough * 9.0f).xyz;
     float2 envBRDF = brdfLUT.Sample(_brdfLUT_sampler, float2(max(dot(N, V), 0.0f), rough)).xy;
     float3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + envBRDF.y.xxx);
     float3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
@@ -361,10 +365,11 @@ void frag_main()
 
 SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
 {
-    normal_world = stage_input.normal_world;
-    v_world = stage_input.v_world;
     uv = stage_input.uv;
+    TBN = stage_input.TBN;
+    v_world = stage_input.v_world;
     normal = stage_input.normal;
+    normal_world = stage_input.normal_world;
     v = stage_input.v;
     frag_main();
     SPIRV_Cross_Output stage_output;

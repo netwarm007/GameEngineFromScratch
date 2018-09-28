@@ -68,9 +68,11 @@ struct main0_out
 
 struct main0_in
 {
-    float4 normal_world [[user(locn1)]];
     float4 v_world [[user(locn3)]];
     float2 uv [[user(locn4)]];
+    float3 TBN_0 [[user(locn5)]];
+    float3 TBN_1 [[user(locn6)]];
+    float3 TBN_2 [[user(locn7)]];
 };
 
 // Implementation of an array copy function to cover GLSL's ability to copy an array via assignment.
@@ -286,11 +288,17 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _580 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]])
+fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _598 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]])
 {
     main0_out out = {};
-    float3 N = normalize(in.normal_world.xyz);
-    float3 V = normalize(_580.camPos.xyz - in.v_world.xyz);
+    float3x3 TBN = {};
+    TBN[0] = in.TBN_0;
+    TBN[1] = in.TBN_1;
+    TBN[2] = in.TBN_2;
+    float3 tangent_normal = normalMap.sample(normalMapSmplr, in.uv).xyz;
+    tangent_normal = normalize((tangent_normal * 2.0) - float3(1.0));
+    float3 N = normalize(TBN * tangent_normal);
+    float3 V = normalize(_598.camPos.xyz - in.v_world.xyz);
     float3 R = reflect(-V, N);
     float3 albedo = diffuseMap.sample(diffuseMapSmplr, in.uv).xyz;
     float meta = metallicMap.sample(metallicMapSmplr, in.uv).x;
@@ -298,27 +306,27 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
     float3 F0 = float3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, float3(meta));
     float3 Lo = float3(0.0);
-    for (int i = 0; i < _580.numLights; i++)
+    for (int i = 0; i < _598.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _580.allLights[i].lightIntensity;
-        light.lightType = _580.allLights[i].lightType;
-        light.lightCastShadow = _580.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _580.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _580.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _580.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _580.allLights[i].lightSize;
-        light.lightGUID = _580.allLights[i].lightGUID;
-        light.lightPosition = _580.allLights[i].lightPosition;
-        light.lightColor = _580.allLights[i].lightColor;
-        light.lightDirection = _580.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _580.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _580.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _580.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _580.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _580.allLights[i].lightVP;
-        light.padding[0] = _580.allLights[i].padding[0];
-        light.padding[1] = _580.allLights[i].padding[1];
+        light.lightIntensity = _598.allLights[i].lightIntensity;
+        light.lightType = _598.allLights[i].lightType;
+        light.lightCastShadow = _598.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _598.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _598.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _598.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _598.allLights[i].lightSize;
+        light.lightGUID = _598.allLights[i].lightGUID;
+        light.lightPosition = _598.allLights[i].lightPosition;
+        light.lightColor = _598.allLights[i].lightColor;
+        light.lightDirection = _598.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _598.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _598.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _598.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _598.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _598.allLights[i].lightVP;
+        light.padding[0] = _598.allLights[i].padding[0];
+        light.padding[1] = _598.allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - in.v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
@@ -366,7 +374,7 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
     kD_1 *= (1.0 - meta);
     float3 irradiance = skybox.sample(skyboxSmplr, float4(N, 0.0).xyz, uint(round(float4(N, 0.0).w)), level(1.0)).xyz;
     float3 diffuse = irradiance * albedo;
-    float3 prefilteredColor = skybox.sample(skyboxSmplr, float4(R, 1.0).xyz, uint(round(float4(R, 1.0).w)), level(rough * 8.0)).xyz;
+    float3 prefilteredColor = skybox.sample(skyboxSmplr, float4(R, 1.0).xyz, uint(round(float4(R, 1.0).w)), level(rough * 9.0)).xyz;
     float2 envBRDF = brdfLUT.sample(brdfLUTSmplr, float2(max(dot(N, V), 0.0), rough)).xy;
     float3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + float3(envBRDF.y));
     float3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;

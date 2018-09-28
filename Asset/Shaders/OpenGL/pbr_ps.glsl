@@ -26,11 +26,12 @@ layout(std140) uniform PerFrameConstants
     vec4 camPos;
     int numLights;
     Light allLights[100];
-} _580;
+} _598;
 
 uniform samplerCubeArray cubeShadowMap;
 uniform sampler2DArray shadowMap;
 uniform sampler2DArray globalShadowMap;
+uniform sampler2D normalMap;
 uniform sampler2D diffuseMap;
 uniform sampler2D metallicMap;
 uniform sampler2D roughnessMap;
@@ -38,9 +39,9 @@ uniform sampler2D aoMap;
 uniform samplerCubeArray skybox;
 uniform sampler2D brdfLUT;
 
-in vec4 normal_world;
-in vec4 v_world;
 in vec2 uv;
+in mat3 TBN;
+in vec4 v_world;
 layout(location = 0) out vec4 outputColor;
 
 float _100;
@@ -246,8 +247,10 @@ vec3 gamma_correction(vec3 color)
 
 void main()
 {
-    vec3 N = normalize(normal_world.xyz);
-    vec3 V = normalize(_580.camPos.xyz - v_world.xyz);
+    vec3 tangent_normal = texture(normalMap, uv).xyz;
+    tangent_normal = normalize((tangent_normal * 2.0) - vec3(1.0));
+    vec3 N = normalize(TBN * tangent_normal);
+    vec3 V = normalize(_598.camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);
     vec3 albedo = texture(diffuseMap, uv).xyz;
     float meta = texture(metallicMap, uv).x;
@@ -255,27 +258,27 @@ void main()
     vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _580.numLights; i++)
+    for (int i = 0; i < _598.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _580.allLights[i].lightIntensity;
-        light.lightType = _580.allLights[i].lightType;
-        light.lightCastShadow = _580.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _580.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _580.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _580.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _580.allLights[i].lightSize;
-        light.lightGUID = _580.allLights[i].lightGUID;
-        light.lightPosition = _580.allLights[i].lightPosition;
-        light.lightColor = _580.allLights[i].lightColor;
-        light.lightDirection = _580.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _580.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _580.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _580.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _580.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _580.allLights[i].lightVP;
-        light.padding[0] = _580.allLights[i].padding[0];
-        light.padding[1] = _580.allLights[i].padding[1];
+        light.lightIntensity = _598.allLights[i].lightIntensity;
+        light.lightType = _598.allLights[i].lightType;
+        light.lightCastShadow = _598.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _598.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _598.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _598.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _598.allLights[i].lightSize;
+        light.lightGUID = _598.allLights[i].lightGUID;
+        light.lightPosition = _598.allLights[i].lightPosition;
+        light.lightColor = _598.allLights[i].lightColor;
+        light.lightDirection = _598.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _598.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _598.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _598.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _598.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _598.allLights[i].lightVP;
+        light.padding[0] = _598.allLights[i].padding[0];
+        light.padding[1] = _598.allLights[i].padding[1];
         vec3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         vec3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
@@ -321,7 +324,7 @@ void main()
     kD_1 *= (1.0 - meta);
     vec3 irradiance = textureLod(skybox, vec4(N, 0.0), 1.0).xyz;
     vec3 diffuse = irradiance * albedo;
-    vec3 prefilteredColor = textureLod(skybox, vec4(R, 1.0), rough * 8.0).xyz;
+    vec3 prefilteredColor = textureLod(skybox, vec4(R, 1.0), rough * 9.0).xyz;
     vec2 envBRDF = texture(brdfLUT, vec2(max(dot(N, V), 0.0), rough)).xy;
     vec3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + vec3(envBRDF.y));
     vec3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;

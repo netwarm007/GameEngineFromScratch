@@ -57,6 +57,9 @@ static float4 v;
 static float4 normal_world;
 static float3 inputNormal;
 static float4 normal;
+static float3 inputTangent;
+static float3 inputBiTangent;
+static float3x3 TBN;
 static float2 uv;
 static float2 inputUV;
 
@@ -65,6 +68,8 @@ struct SPIRV_Cross_Input
     float3 inputPosition : TEXCOORD0;
     float3 inputNormal : TEXCOORD1;
     float2 inputUV : TEXCOORD2;
+    float3 inputTangent : TEXCOORD3;
+    float3 inputBiTangent : TEXCOORD4;
 };
 
 struct SPIRV_Cross_Output
@@ -74,6 +79,7 @@ struct SPIRV_Cross_Output
     float4 v : TEXCOORD2;
     float4 v_world : TEXCOORD3;
     float2 uv : TEXCOORD4;
+    float3x3 TBN : TEXCOORD5;
     float4 gl_Position : SV_Position;
 };
 
@@ -82,8 +88,11 @@ void vert_main()
     v_world = mul(float4(inputPosition, 1.0f), _13_modelMatrix);
     v = mul(v_world, _42_viewMatrix);
     gl_Position = mul(v, _42_projectionMatrix);
-    normal_world = mul(float4(inputNormal, 0.0f), _13_modelMatrix);
-    normal = mul(normal_world, _42_viewMatrix);
+    normal_world = normalize(mul(float4(inputNormal, 0.0f), _13_modelMatrix));
+    normal = normalize(mul(normal_world, _42_viewMatrix));
+    float3 tangent = normalize(float3(mul(float4(inputTangent, 0.0f), _13_modelMatrix).xyz));
+    float3 bitangent = normalize(float3(mul(float4(inputBiTangent, 0.0f), _13_modelMatrix).xyz));
+    TBN = float3x3(float3(tangent), float3(bitangent), float3(normal_world.xyz));
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
 }
@@ -92,6 +101,8 @@ SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
 {
     inputPosition = stage_input.inputPosition;
     inputNormal = stage_input.inputNormal;
+    inputTangent = stage_input.inputTangent;
+    inputBiTangent = stage_input.inputBiTangent;
     inputUV = stage_input.inputUV;
     vert_main();
     SPIRV_Cross_Output stage_output;
@@ -100,6 +111,7 @@ SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
     stage_output.v = v;
     stage_output.normal_world = normal_world;
     stage_output.normal = normal;
+    stage_output.TBN = TBN;
     stage_output.uv = uv;
     return stage_output;
 }

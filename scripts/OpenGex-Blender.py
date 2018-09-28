@@ -2254,6 +2254,37 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 		self.indentLevel -= 1
 		self.IndentWrite(B"}\n")
 
+		# Write the texcoord arrays.
+
+		texcoordCount = len(exportMesh.tessface_uv_textures)
+		if (texcoordCount > 0):
+			self.IndentWrite(B"VertexArray (attrib = \"texcoord\")\n", 0, True)
+			self.IndentWrite(B"{\n")
+			self.indentLevel += 1
+
+			self.IndentWrite(B"float[2]\t\t// ")
+			self.WriteInt(vertexCount)
+			self.IndentWrite(B"{\n", 0, True)
+			self.WriteVertexArray2D(unifiedVertexArray, "texcoord0")
+			self.IndentWrite(B"}\n")
+
+			self.indentLevel -= 1
+			self.IndentWrite(B"}\n")
+
+			if (texcoordCount > 1):
+				self.IndentWrite(B"VertexArray (attrib = \"texcoord[1]\")\n", 0, True)
+				self.IndentWrite(B"{\n")
+				self.indentLevel += 1
+
+				self.IndentWrite(B"float[2]\t\t// ")
+				self.WriteInt(vertexCount)
+				self.IndentWrite(B"{\n", 0, True)
+				self.WriteVertexArray2D(unifiedVertexArray, "texcoord1")
+				self.IndentWrite(B"}\n")
+
+				self.indentLevel -= 1
+				self.IndentWrite(B"}\n")
+
 		# Write the tangent array.
 
 		self.IndentWrite(B"VertexArray (attrib = \"tangent\")\n")
@@ -2300,37 +2331,6 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 
 			self.indentLevel -= 1
 			self.IndentWrite(B"}\n")
-
-		# Write the texcoord arrays.
-
-		texcoordCount = len(exportMesh.tessface_uv_textures)
-		if (texcoordCount > 0):
-			self.IndentWrite(B"VertexArray (attrib = \"texcoord\")\n", 0, True)
-			self.IndentWrite(B"{\n")
-			self.indentLevel += 1
-
-			self.IndentWrite(B"float[2]\t\t// ")
-			self.WriteInt(vertexCount)
-			self.IndentWrite(B"{\n", 0, True)
-			self.WriteVertexArray2D(unifiedVertexArray, "texcoord0")
-			self.IndentWrite(B"}\n")
-
-			self.indentLevel -= 1
-			self.IndentWrite(B"}\n")
-
-			if (texcoordCount > 1):
-				self.IndentWrite(B"VertexArray (attrib = \"texcoord[1]\")\n", 0, True)
-				self.IndentWrite(B"{\n")
-				self.indentLevel += 1
-
-				self.IndentWrite(B"float[2]\t\t// ")
-				self.WriteInt(vertexCount)
-				self.IndentWrite(B"{\n", 0, True)
-				self.WriteVertexArray2D(unifiedVertexArray, "texcoord1")
-				self.IndentWrite(B"}\n")
-
-				self.indentLevel -= 1
-				self.IndentWrite(B"}\n")
 
 		# If there are multiple morph targets, export them here.
 

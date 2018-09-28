@@ -414,7 +414,7 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                         texture_key = normal.ValueMap->GetName();
                         auto it = m_TextureIndex.find(texture_key);
                         if (it == m_TextureIndex.end()) {
-                            texture = color.ValueMap->GetTextureImage();
+                            texture = normal.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }

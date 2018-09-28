@@ -357,6 +357,7 @@ layout(location = 1) in vec4 normal_world;
 layout(location = 2) in vec4 v; 
 layout(location = 3) in vec4 v_world;
 layout(location = 4) in vec2 uv;
+layout(location = 5) in mat3 TBN;
 
 //////////////////////
 // OUTPUT VARIABLES //
@@ -368,7 +369,10 @@ layout(location = 0) out vec4 outputColor;
 ////////////////////////////////////////////////////////////////////////////////
 void main()
 {		
-    vec3 N = normalize(normal_world.xyz);
+    vec3 tangent_normal = texture(normalMap, uv).rgb;
+    tangent_normal = normalize(tangent_normal * 2.0 - 1.0);   
+    vec3 N = normalize(TBN * tangent_normal); 
+
     vec3 V = normalize(camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);   
 
@@ -438,7 +442,7 @@ void main()
         vec3 diffuse = irradiance * albedo;
 
         // ambient reflect
-        const float MAX_REFLECTION_LOD = 8.0f;
+        const float MAX_REFLECTION_LOD = 9.0f;
         vec3 prefilteredColor = textureLod(skybox, vec4(R, 1.0f), rough * MAX_REFLECTION_LOD).rgb;    
         vec2 envBRDF  = texture(brdfLUT, vec2(max(dot(N, V), 0.0f), rough)).rg;
         vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);

@@ -355,6 +355,8 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 layout(location = 0) in vec3 inputPosition;
 layout(location = 1) in vec3 inputNormal;
 layout(location = 2) in vec2 inputUV;
+layout(location = 3) in vec3 inputTangent;
+layout(location = 4) in vec3 inputBiTangent;
 
 //////////////////////
 // OUTPUT VARIABLES //
@@ -364,6 +366,7 @@ layout(location = 1) out vec4 normal_world;
 layout(location = 2) out vec4 v;
 layout(location = 3) out vec4 v_world;
 layout(location = 4) out vec2 uv;
+layout(location = 5) out mat3 TBN;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
@@ -375,8 +378,13 @@ void main(void)
 	v = viewMatrix * v_world;
 	gl_Position = projectionMatrix * v;
 
-    normal_world = modelMatrix * vec4(inputNormal, 0.0f);
-    normal = viewMatrix * normal_world;
+    normal_world = normalize(modelMatrix * vec4(inputNormal, 0.0f));
+    normal = normalize(viewMatrix * normal_world);
+    vec3 tangent = normalize(vec3(modelMatrix * vec4(inputTangent, 0.0)));
+    vec3 bitangent = normalize(vec3(modelMatrix * vec4(inputBiTangent, 0.0)));
+
+    TBN = mat3(tangent, bitangent, normal_world.xyz);
+
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
 }
