@@ -718,27 +718,40 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 			vertexIndex = 0
 
 			for face in mesh.tessfaces:
-				deltaPos1 = exportVertexArray[vertexIndex + 1].position - exportVertexArray[vertexIndex + 0].position
-				deltaPos2 = exportVertexArray[vertexIndex + 2].position - exportVertexArray[vertexIndex + 0].position
+				deltaPos1 = exportVertexArray[vertexIndex + 1].position - exportVertexArray[vertexIndex].position
+				deltaPos2 = exportVertexArray[vertexIndex + 2].position - exportVertexArray[vertexIndex].position
 
-				deltaUV1 = exportVertexArray[vertexIndex + 1].texcoord0 - exportVertexArray[vertexIndex + 0].texcoord0
-				deltaUV2 = exportVertexArray[vertexIndex + 2].texcoord0 - exportVertexArray[vertexIndex + 0].texcoord0
+				deltaUV1 = exportVertexArray[vertexIndex + 1].texcoord0 - exportVertexArray[vertexIndex].texcoord0
+				deltaUV2 = exportVertexArray[vertexIndex + 2].texcoord0 - exportVertexArray[vertexIndex].texcoord0
 
-				denominator = (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x)
+				if (deltaUV1 != deltaUV2):
+					r = 1.0 / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0])
+					tangent = (deltaPos1 * deltaUV2[1] - deltaPos2 * deltaUV1[1]) * r
+					bitangent = (deltaPos2 * deltaUV1[0] - deltaPos1 * deltaUV2[0]) * r
 
-				if (denominator):
-					r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x)
-					tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y)*r
-					bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x)*r
+					for i in range(0, 3):
+						exportVertexArray[vertexIndex + i].tangent = tangent
+						exportVertexArray[vertexIndex + i].bitangent = bitangent
+
+				if (len(face.vertices) == 4):
+					deltaPos1 = exportVertexArray[vertexIndex + 4].position - exportVertexArray[vertexIndex + 3].position
+					deltaPos2 = exportVertexArray[vertexIndex + 5].position - exportVertexArray[vertexIndex + 3].position
+
+					deltaUV1 = exportVertexArray[vertexIndex + 4].texcoord0 - exportVertexArray[vertexIndex + 3].texcoord0
+					deltaUV2 = exportVertexArray[vertexIndex + 5].texcoord0 - exportVertexArray[vertexIndex + 3].texcoord0
+
+					if (deltaUV1 != deltaUV2):
+						r = 1.0 / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0])
+						tangent = (deltaPos1 * deltaUV2[1] - deltaPos2 * deltaUV1[1]) * r
+						bitangent = (deltaPos2 * deltaUV1[0] - deltaPos1 * deltaUV2[0]) * r
+
+					for i in range(3, 6):
+						exportVertexArray[vertexIndex + i].tangent = tangent
+						exportVertexArray[vertexIndex + i].bitangent = bitangent
+
+					vertexIndex += 6
 				else:
-					tangent = [1.0, 0.0, 0.0]
-					bitangent = [0.0, 1.0, 0.0]
-
-				for i in range(0, 3):
-					exportVertexArray[vertexIndex + i].tangent = tangent
-					exportVertexArray[vertexIndex + i].bitangent = bitangent
-
-				vertexIndex += 3
+					vertexIndex += 3
 
 		for ev in exportVertexArray:
 			ev.Hash()

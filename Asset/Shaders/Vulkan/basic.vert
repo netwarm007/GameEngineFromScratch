@@ -380,8 +380,12 @@ void main(void)
 
     normal_world = normalize(modelMatrix * vec4(inputNormal, 0.0f));
     normal = normalize(viewMatrix * normal_world);
-    vec3 tangent = normalize(vec3(modelMatrix * vec4(inputTangent, 0.0)));
-    vec3 bitangent = normalize(vec3(modelMatrix * vec4(inputBiTangent, 0.0)));
+    vec3 tangent = normalize(vec3(modelMatrix * vec4(inputTangent, 0.0f)));
+    //vec3 bitangent = normalize(vec3(modelMatrix * vec4(inputBiTangent, 0.0f)));
+    // re-orthogonalize T with respect to N
+    tangent = normalize(tangent - dot(tangent, normal_world.xyz) * normal_world.xyz);
+    // then retrieve perpendicular vector B with the cross product of T and N
+    vec3 bitangent = cross(normal_world.xyz, tangent);
 
     TBN = mat3(tangent, bitangent, normal_world.xyz);
 

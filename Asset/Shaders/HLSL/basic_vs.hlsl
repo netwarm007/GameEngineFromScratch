@@ -58,10 +58,10 @@ static float4 normal_world;
 static float3 inputNormal;
 static float4 normal;
 static float3 inputTangent;
-static float3 inputBiTangent;
 static float3x3 TBN;
 static float2 uv;
 static float2 inputUV;
+static float3 inputBiTangent;
 
 struct SPIRV_Cross_Input
 {
@@ -91,7 +91,8 @@ void vert_main()
     normal_world = normalize(mul(float4(inputNormal, 0.0f), _13_modelMatrix));
     normal = normalize(mul(normal_world, _42_viewMatrix));
     float3 tangent = normalize(float3(mul(float4(inputTangent, 0.0f), _13_modelMatrix).xyz));
-    float3 bitangent = normalize(float3(mul(float4(inputBiTangent, 0.0f), _13_modelMatrix).xyz));
+    tangent = normalize(tangent - (normal_world.xyz * dot(tangent, normal_world.xyz)));
+    float3 bitangent = cross(normal_world.xyz, tangent);
     TBN = float3x3(float3(tangent), float3(bitangent), float3(normal_world.xyz));
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
@@ -102,8 +103,8 @@ SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
     inputPosition = stage_input.inputPosition;
     inputNormal = stage_input.inputNormal;
     inputTangent = stage_input.inputTangent;
-    inputBiTangent = stage_input.inputBiTangent;
     inputUV = stage_input.inputUV;
+    inputBiTangent = stage_input.inputBiTangent;
     vert_main();
     SPIRV_Cross_Output stage_output;
     stage_output.gl_Position = gl_Position;

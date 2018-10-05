@@ -23,7 +23,7 @@ layout(location = 0) out vec4 outputColor;
 void main()
 {		
     vec3 tangent_normal = texture(normalMap, uv).rgb;
-    tangent_normal = normalize(tangent_normal * 2.0 - 1.0);   
+    tangent_normal = normalize(tangent_normal * 2.0f - 1.0f);   
     vec3 N = normalize(TBN * tangent_normal); 
 
     vec3 V = normalize(camPos.xyz - v_world.xyz);

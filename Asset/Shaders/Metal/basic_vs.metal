@@ -55,7 +55,6 @@ struct main0_in
     float3 inputNormal [[attribute(1)]];
     float2 inputUV [[attribute(2)]];
     float3 inputTangent [[attribute(3)]];
-    float3 inputBiTangent [[attribute(4)]];
 };
 
 vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _42 [[buffer(0)]], constant PerBatchConstants& _13 [[buffer(1)]])
@@ -68,7 +67,8 @@ vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _42
     out.normal_world = normalize(_13.modelMatrix * float4(in.inputNormal, 0.0));
     out.normal = normalize(_42.viewMatrix * out.normal_world);
     float3 tangent = normalize(float3((_13.modelMatrix * float4(in.inputTangent, 0.0)).xyz));
-    float3 bitangent = normalize(float3((_13.modelMatrix * float4(in.inputBiTangent, 0.0)).xyz));
+    tangent = normalize(tangent - (out.normal_world.xyz * dot(tangent, out.normal_world.xyz)));
+    float3 bitangent = cross(out.normal_world.xyz, tangent);
     TBN = float3x3(float3(tangent), float3(bitangent), float3(out.normal_world.xyz));
     out.uv.x = in.inputUV.x;
     out.uv.y = 1.0 - in.inputUV.y;
