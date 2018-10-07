@@ -293,7 +293,7 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _607 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]])
+fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _606 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]])
 {
     main0_out out = {};
     float3x3 TBN = {};
@@ -301,9 +301,9 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
     TBN[1] = in.TBN_1;
     TBN[2] = in.TBN_2;
     float3 tangent_normal = normalMap.sample(normalMapSmplr, in.uv).xyz;
-    tangent_normal = normalize((tangent_normal * 2.0) - float3(1.0));
+    tangent_normal = (tangent_normal * 2.0) - float3(1.0);
     float3 N = normalize(TBN * tangent_normal);
-    float3 V = normalize(_607.camPos.xyz - in.v_world.xyz);
+    float3 V = normalize(_606.camPos.xyz - in.v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param = diffuseMap.sample(diffuseMapSmplr, in.uv).xyz;
     float3 albedo = inverse_gamma_correction(param);
@@ -312,27 +312,27 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
     float3 F0 = float3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, float3(meta));
     float3 Lo = float3(0.0);
-    for (int i = 0; i < _607.numLights; i++)
+    for (int i = 0; i < _606.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _607.allLights[i].lightIntensity;
-        light.lightType = _607.allLights[i].lightType;
-        light.lightCastShadow = _607.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _607.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _607.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _607.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _607.allLights[i].lightSize;
-        light.lightGUID = _607.allLights[i].lightGUID;
-        light.lightPosition = _607.allLights[i].lightPosition;
-        light.lightColor = _607.allLights[i].lightColor;
-        light.lightDirection = _607.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _607.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _607.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _607.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _607.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _607.allLights[i].lightVP;
-        light.padding[0] = _607.allLights[i].padding[0];
-        light.padding[1] = _607.allLights[i].padding[1];
+        light.lightIntensity = _606.allLights[i].lightIntensity;
+        light.lightType = _606.allLights[i].lightType;
+        light.lightCastShadow = _606.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _606.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _606.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _606.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _606.allLights[i].lightSize;
+        light.lightGUID = _606.allLights[i].lightGUID;
+        light.lightPosition = _606.allLights[i].lightPosition;
+        light.lightColor = _606.allLights[i].lightColor;
+        light.lightDirection = _606.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _606.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _606.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _606.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _606.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _606.allLights[i].lightVP;
+        light.padding[0] = _606.allLights[i].padding[0];
+        light.padding[1] = _606.allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - in.v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);

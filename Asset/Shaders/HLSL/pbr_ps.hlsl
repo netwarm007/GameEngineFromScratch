@@ -19,13 +19,13 @@ struct Light
 
 static const float2 _326[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
 
-cbuffer _607 : register(b0, space0)
+cbuffer _606 : register(b0, space0)
 {
-    row_major float4x4 _607_viewMatrix : packoffset(c0);
-    row_major float4x4 _607_projectionMatrix : packoffset(c4);
-    float4 _607_camPos : packoffset(c8);
-    int _607_numLights : packoffset(c9);
-    Light _607_allLights[100] : packoffset(c10);
+    row_major float4x4 _606_viewMatrix : packoffset(c0);
+    row_major float4x4 _606_projectionMatrix : packoffset(c4);
+    float4 _606_camPos : packoffset(c8);
+    int _606_numLights : packoffset(c9);
+    Light _606_allLights[100] : packoffset(c10);
 };
 TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
 SamplerState _cubeShadowMap_sampler : register(s3, space0);
@@ -280,9 +280,9 @@ float3 gamma_correction(float3 color)
 void frag_main()
 {
     float3 tangent_normal = normalMap.Sample(_normalMap_sampler, uv).xyz;
-    tangent_normal = normalize((tangent_normal * 2.0f) - 1.0f.xxx);
+    tangent_normal = (tangent_normal * 2.0f) - 1.0f.xxx;
     float3 N = normalize(mul(tangent_normal, TBN));
-    float3 V = normalize(_607_camPos.xyz - v_world.xyz);
+    float3 V = normalize(_606_camPos.xyz - v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param = diffuseMap.Sample(_diffuseMap_sampler, uv).xyz;
     float3 albedo = inverse_gamma_correction(param);
@@ -291,27 +291,27 @@ void frag_main()
     float3 F0 = 0.039999999105930328369140625f.xxx;
     F0 = lerp(F0, albedo, meta.xxx);
     float3 Lo = 0.0f.xxx;
-    for (int i = 0; i < _607_numLights; i++)
+    for (int i = 0; i < _606_numLights; i++)
     {
         Light light;
-        light.lightIntensity = _607_allLights[i].lightIntensity;
-        light.lightType = _607_allLights[i].lightType;
-        light.lightCastShadow = _607_allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _607_allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _607_allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _607_allLights[i].lightDistAttenCurveType;
-        light.lightSize = _607_allLights[i].lightSize;
-        light.lightGUID = _607_allLights[i].lightGUID;
-        light.lightPosition = _607_allLights[i].lightPosition;
-        light.lightColor = _607_allLights[i].lightColor;
-        light.lightDirection = _607_allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _607_allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _607_allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _607_allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _607_allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _607_allLights[i].lightVP;
-        light.padding[0] = _607_allLights[i].padding[0];
-        light.padding[1] = _607_allLights[i].padding[1];
+        light.lightIntensity = _606_allLights[i].lightIntensity;
+        light.lightType = _606_allLights[i].lightType;
+        light.lightCastShadow = _606_allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _606_allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _606_allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _606_allLights[i].lightDistAttenCurveType;
+        light.lightSize = _606_allLights[i].lightSize;
+        light.lightGUID = _606_allLights[i].lightGUID;
+        light.lightPosition = _606_allLights[i].lightPosition;
+        light.lightColor = _606_allLights[i].lightColor;
+        light.lightDirection = _606_allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _606_allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _606_allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _606_allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _606_allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _606_allLights[i].lightVP;
+        light.padding[0] = _606_allLights[i].padding[0];
+        light.padding[1] = _606_allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0f);

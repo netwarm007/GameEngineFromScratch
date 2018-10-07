@@ -789,7 +789,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, texture_id);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 1, 1, 
-                0, GL_RGB, GL_FLOAT, normal.Value);
+                0, GL_RGB, GL_FLOAT, (normal.Value + 1.0f) * 0.5f);
         }
 
         color = dbc.material->GetSpecularColor();
