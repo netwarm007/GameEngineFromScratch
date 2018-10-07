@@ -33,7 +33,7 @@ namespace My {
         Scene() {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
             SkyBox = std::make_shared<SceneObjectSkyBox>();
-            SkyBox->SetName("Textures/hdr/PaperMill", "dds");
+            SkyBox->SetName("Textures/hdr/spruit_sunrise", "dds");
         }
 
         Scene(const std::string& scene_name) :
@@ -41,7 +41,7 @@ namespace My {
         {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
             SkyBox = std::make_shared<SceneObjectSkyBox>();
-            SkyBox->SetName("Textures/hdr/PaperMill", "dds");
+            SkyBox->SetName("Textures/hdr/spruit_sunrise", "dds");
         }
 
         ~Scene() = default;

@@ -5833,7 +5833,7 @@ Material $material1
 	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
 	Param (attrib = "specular_power") {float {50}}
-	Param (attrib = "roughness") {float {0.15}}
+	Param (attrib = "roughness") {float {0.0}}
 
 	Texture (attrib = "diffuse")
 	{
