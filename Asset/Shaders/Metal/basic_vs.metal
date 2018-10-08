@@ -46,6 +46,8 @@ struct main0_out
     float3 TBN_0 [[user(locn5)]];
     float3 TBN_1 [[user(locn6)]];
     float3 TBN_2 [[user(locn7)]];
+    float3 v_tangent [[user(locn8)]];
+    float3 camPos_tangent [[user(locn9)]];
     float4 gl_Position [[position]];
 };
 
@@ -70,6 +72,8 @@ vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _42
     tangent = normalize(tangent - (out.normal_world.xyz * dot(tangent, out.normal_world.xyz)));
     float3 bitangent = cross(out.normal_world.xyz, tangent);
     TBN = float3x3(float3(tangent), float3(bitangent), float3(out.normal_world.xyz));
+    out.v_tangent = TBN * out.v_world.xyz;
+    out.camPos_tangent = TBN * _42.camPos.xyz;
     out.uv.x = in.inputUV.x;
     out.uv.y = 1.0 - in.inputUV.y;
     out.TBN_0 = TBN[0];

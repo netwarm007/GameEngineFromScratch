@@ -48,6 +48,7 @@ layout(binding = 6) uniform sampler2D metallicMap;
 layout(binding = 7) uniform sampler2D roughnessMap;
 layout(binding = 8) uniform sampler2D aoMap;
 layout(binding = 9) uniform sampler2D brdfLUT;
+layout(binding = 10) uniform sampler2D heightMap;
 #define PI 3.14159265359
 
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
@@ -345,6 +346,14 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sampleVec);
 }
+
+vec2 ParallaxMapping(vec2 uv, vec3 viewDir)
+{ 
+    const float height_scale = 1.0f;
+    float height = texture(heightMap, uv).r;    
+    vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
+    return uv - p;    
+} 
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: basic.vs
 ////////////////////////////////////////////////////////////////////////////////
@@ -367,6 +376,8 @@ layout(location = 2) out vec4 v;
 layout(location = 3) out vec4 v_world;
 layout(location = 4) out vec2 uv;
 layout(location = 5) out mat3 TBN;
+layout(location = 8) out vec3 v_tangent;
+layout(location = 9) out vec3 camPos_tangent;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
@@ -380,6 +391,7 @@ void main(void)
 
     normal_world = normalize(modelMatrix * vec4(inputNormal, 0.0f));
     normal = normalize(viewMatrix * normal_world);
+
     vec3 tangent = normalize(vec3(modelMatrix * vec4(inputTangent, 0.0f)));
     //vec3 bitangent = normalize(vec3(modelMatrix * vec4(inputBiTangent, 0.0f)));
     // re-orthogonalize T with respect to N
@@ -388,6 +400,9 @@ void main(void)
     vec3 bitangent = cross(normal_world.xyz, tangent);
 
     TBN = mat3(tangent, bitangent, normal_world.xyz);
+
+    v_tangent = TBN * v_world.xyz;
+    camPos_tangent = TBN * camPos.xyz;
 
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;

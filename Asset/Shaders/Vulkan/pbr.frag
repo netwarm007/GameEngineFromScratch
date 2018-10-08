@@ -48,6 +48,7 @@ layout(binding = 6) uniform sampler2D metallicMap;
 layout(binding = 7) uniform sampler2D roughnessMap;
 layout(binding = 8) uniform sampler2D aoMap;
 layout(binding = 9) uniform sampler2D brdfLUT;
+layout(binding = 10) uniform sampler2D heightMap;
 #define PI 3.14159265359
 
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
@@ -345,6 +346,37 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sampleVec);
 }
+
+vec2 ParallaxMapping(vec2 uv, vec3 viewDir)
+{ 
+    const float height_scale = 0.1f;
+
+    // number of depth layers
+    const float numLayers = 10;
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy * height_scale; 
+    vec2 deltaTexCoords = P / numLayers;
+
+    // get initial values
+    vec2  currentTexCoords     = uv;
+    float currentDepthMapValue = texture(heightMap, currentTexCoords).r;
+    
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = texture(heightMap, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+
+    return currentTexCoords;
+} 
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: pbr_ps.glsl
 ////////////////////////////////////////////////////////////////////////////////
@@ -358,6 +390,8 @@ layout(location = 2) in vec4 v;
 layout(location = 3) in vec4 v_world;
 layout(location = 4) in vec2 uv;
 layout(location = 5) in mat3 TBN;
+layout(location = 8) in vec3 v_tangent;
+layout(location = 9) in vec3 camPos_tangent;
 
 //////////////////////
 // OUTPUT VARIABLES //
@@ -369,18 +403,22 @@ layout(location = 0) out vec4 outputColor;
 ////////////////////////////////////////////////////////////////////////////////
 void main()
 {		
-    vec3 tangent_normal = texture(normalMap, uv).rgb;
+    // offset texture coordinates with Parallax Mapping
+    vec3 viewDir   = normalize(camPos_tangent - v_tangent);
+    vec2 texCoords = ParallaxMapping(uv, viewDir);
+
+    vec3 tangent_normal = texture(normalMap, texCoords).rgb;
     tangent_normal = tangent_normal * 2.0f - 1.0f;   
     vec3 N = normalize(TBN * tangent_normal); 
 
     vec3 V = normalize(camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);   
 
-    vec3 albedo = inverse_gamma_correction(texture(diffuseMap, uv).rgb); 
+    vec3 albedo = inverse_gamma_correction(texture(diffuseMap, texCoords).rgb); 
 
-    float meta = texture(metallicMap, uv).r; 
+    float meta = texture(metallicMap, texCoords).r; 
 
-    float rough = texture(roughnessMap, uv).r; 
+    float rough = texture(roughnessMap, texCoords).r; 
 
     vec3 F0 = vec3(0.04f); 
     F0 = mix(F0, albedo, meta);
@@ -431,7 +469,7 @@ void main()
     vec3 ambient;
     {
         // ambient diffuse
-        float ambientOcc = texture(aoMap, uv).r;
+        float ambientOcc = texture(aoMap, texCoords).r;
 
         vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
         vec3 kS = F;

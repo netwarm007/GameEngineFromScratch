@@ -388,6 +388,25 @@ namespace My {
             img.mipmaps[0].offset = 0;
             img.mipmaps[0].data_size = img.data_size;
 
+            // now swap the endian
+            if (img.bitcount > 32)
+            {
+                if (img.bitcount <= 64)
+                {
+                    for (uint16_t* p = reinterpret_cast<uint16_t*>(img.data); p < reinterpret_cast<uint16_t*>(img.data + img.data_size); p++)
+                    {
+                        *p = endian_net_unsigned_int(*p);
+                    }
+                }
+                else
+                {
+                    for (uint32_t* p = reinterpret_cast<uint32_t*>(img.data); p < reinterpret_cast<uint32_t*>(img.data + img.data_size); p++)
+                    {
+                        *p = endian_net_unsigned_int(*p);
+                    }
+                }
+            }
+
             return img;
         }
     };

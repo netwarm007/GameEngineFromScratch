@@ -57,9 +57,9 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-constant float2 _326[4] = {float2(-0.94201624393463134765625, -0.39906215667724609375), float2(0.94558608531951904296875, -0.768907248973846435546875), float2(-0.094184100627899169921875, -0.929388701915740966796875), float2(0.34495937824249267578125, 0.29387760162353515625)};
+constant float2 _332[4] = {float2(-0.94201624393463134765625, -0.39906215667724609375), float2(0.94558608531951904296875, -0.768907248973846435546875), float2(-0.094184100627899169921875, -0.929388701915740966796875), float2(0.34495937824249267578125, 0.29387760162353515625)};
 
-constant float _103 = {};
+constant float _109 = {};
 
 struct main0_out
 {
@@ -73,6 +73,8 @@ struct main0_in
     float3 TBN_0 [[user(locn5)]];
     float3 TBN_1 [[user(locn6)]];
     float3 TBN_2 [[user(locn7)]];
+    float3 v_tangent [[user(locn8)]];
+    float3 camPos_tangent [[user(locn9)]];
 };
 
 // Implementation of an array copy function to cover GLSL's ability to copy an array via assignment.
@@ -87,6 +89,23 @@ template<typename T, uint N>
 void spvArrayCopyConstant(thread T (&dst)[N], constant T (&src)[N])
 {
     for (uint i = 0; i < N; dst[i] = src[i], i++);
+}
+
+float2 ParallaxMapping(thread const float2& uv, thread const float3& viewDir, thread texture2d<float> heightMap, thread const sampler heightMapSmplr)
+{
+    float layerDepth = 0.100000001490116119384765625;
+    float currentLayerDepth = 0.0;
+    float2 P = viewDir.xy * 0.100000001490116119384765625;
+    float2 deltaTexCoords = P / float2(10.0);
+    float2 currentTexCoords = uv;
+    float currentDepthMapValue = heightMap.sample(heightMapSmplr, currentTexCoords).x;
+    while (currentLayerDepth < currentDepthMapValue)
+    {
+        currentTexCoords -= deltaTexCoords;
+        currentDepthMapValue = heightMap.sample(heightMapSmplr, currentTexCoords).x;
+        currentLayerDepth += layerDepth;
+    }
+    return currentTexCoords;
 }
 
 float3 inverse_gamma_correction(thread const float3& color)
@@ -293,75 +312,79 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _606 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]])
+fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _665 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], texture2d<float> heightMap [[texture(10)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]], sampler heightMapSmplr [[sampler(10)]])
 {
     main0_out out = {};
     float3x3 TBN = {};
     TBN[0] = in.TBN_0;
     TBN[1] = in.TBN_1;
     TBN[2] = in.TBN_2;
-    float3 tangent_normal = normalMap.sample(normalMapSmplr, in.uv).xyz;
+    float3 viewDir = normalize(in.camPos_tangent - in.v_tangent);
+    float2 param = in.uv;
+    float3 param_1 = viewDir;
+    float2 texCoords = ParallaxMapping(param, param_1, heightMap, heightMapSmplr);
+    float3 tangent_normal = normalMap.sample(normalMapSmplr, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - float3(1.0);
     float3 N = normalize(TBN * tangent_normal);
-    float3 V = normalize(_606.camPos.xyz - in.v_world.xyz);
+    float3 V = normalize(_665.camPos.xyz - in.v_world.xyz);
     float3 R = reflect(-V, N);
-    float3 param = diffuseMap.sample(diffuseMapSmplr, in.uv).xyz;
-    float3 albedo = inverse_gamma_correction(param);
-    float meta = metallicMap.sample(metallicMapSmplr, in.uv).x;
-    float rough = roughnessMap.sample(roughnessMapSmplr, in.uv).x;
+    float3 param_2 = diffuseMap.sample(diffuseMapSmplr, texCoords).xyz;
+    float3 albedo = inverse_gamma_correction(param_2);
+    float meta = metallicMap.sample(metallicMapSmplr, texCoords).x;
+    float rough = roughnessMap.sample(roughnessMapSmplr, texCoords).x;
     float3 F0 = float3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, float3(meta));
     float3 Lo = float3(0.0);
-    for (int i = 0; i < _606.numLights; i++)
+    for (int i = 0; i < _665.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _606.allLights[i].lightIntensity;
-        light.lightType = _606.allLights[i].lightType;
-        light.lightCastShadow = _606.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _606.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _606.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _606.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _606.allLights[i].lightSize;
-        light.lightGUID = _606.allLights[i].lightGUID;
-        light.lightPosition = _606.allLights[i].lightPosition;
-        light.lightColor = _606.allLights[i].lightColor;
-        light.lightDirection = _606.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _606.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _606.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _606.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _606.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _606.allLights[i].lightVP;
-        light.padding[0] = _606.allLights[i].padding[0];
-        light.padding[1] = _606.allLights[i].padding[1];
+        light.lightIntensity = _665.allLights[i].lightIntensity;
+        light.lightType = _665.allLights[i].lightType;
+        light.lightCastShadow = _665.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _665.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _665.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _665.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _665.allLights[i].lightSize;
+        light.lightGUID = _665.allLights[i].lightGUID;
+        light.lightPosition = _665.allLights[i].lightPosition;
+        light.lightColor = _665.allLights[i].lightColor;
+        light.lightDirection = _665.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _665.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _665.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _665.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _665.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _665.allLights[i].lightVP;
+        light.padding[0] = _665.allLights[i].padding[0];
+        light.padding[1] = _665.allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - in.v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
         float visibility = shadow_test(in.v_world, light, NdotL, cubeShadowMap, cubeShadowMapSmplr, shadowMap, shadowMapSmplr, globalShadowMap, globalShadowMapSmplr);
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
-        float param_1 = lightToSurfAngle;
-        int param_2 = light.lightAngleAttenCurveType;
-        float4 param_3[2];
-        spvArrayCopy(param_3, light.lightAngleAttenCurveParams);
-        float atten = apply_atten_curve(param_1, param_2, param_3);
-        float param_4 = lightToSurfDist;
-        int param_5 = light.lightDistAttenCurveType;
-        float4 param_6[2];
-        spvArrayCopy(param_6, light.lightDistAttenCurveParams);
-        atten *= apply_atten_curve(param_4, param_5, param_6);
+        float param_3 = lightToSurfAngle;
+        int param_4 = light.lightAngleAttenCurveType;
+        float4 param_5[2];
+        spvArrayCopy(param_5, light.lightAngleAttenCurveParams);
+        float atten = apply_atten_curve(param_3, param_4, param_5);
+        float param_6 = lightToSurfDist;
+        int param_7 = light.lightDistAttenCurveType;
+        float4 param_8[2];
+        spvArrayCopy(param_8, light.lightDistAttenCurveParams);
+        atten *= apply_atten_curve(param_6, param_7, param_8);
         float3 radiance = light.lightColor.xyz * (light.lightIntensity * atten);
-        float3 param_7 = N;
-        float3 param_8 = H;
-        float param_9 = rough;
-        float NDF = DistributionGGX(param_7, param_8, param_9);
-        float3 param_10 = N;
-        float3 param_11 = V;
-        float3 param_12 = L;
-        float param_13 = rough;
-        float G = GeometrySmithDirect(param_10, param_11, param_12, param_13);
-        float param_14 = max(dot(H, V), 0.0);
-        float3 param_15 = F0;
-        float3 F = fresnelSchlick(param_14, param_15);
+        float3 param_9 = N;
+        float3 param_10 = H;
+        float param_11 = rough;
+        float NDF = DistributionGGX(param_9, param_10, param_11);
+        float3 param_12 = N;
+        float3 param_13 = V;
+        float3 param_14 = L;
+        float param_15 = rough;
+        float G = GeometrySmithDirect(param_12, param_13, param_14, param_15);
+        float param_16 = max(dot(H, V), 0.0);
+        float3 param_17 = F0;
+        float3 F = fresnelSchlick(param_16, param_17);
         float3 kS = F;
         float3 kD = float3(1.0) - kS;
         kD *= (1.0 - meta);
@@ -370,11 +393,11 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
         float3 specular = numerator / float3(max(denominator, 0.001000000047497451305389404296875));
         Lo += ((((((kD * albedo) / float3(3.1415927410125732421875)) + specular) * radiance) * NdotL) * visibility);
     }
-    float ambientOcc = aoMap.sample(aoMapSmplr, in.uv).x;
-    float param_16 = max(dot(N, V), 0.0);
-    float3 param_17 = F0;
-    float param_18 = rough;
-    float3 F_1 = fresnelSchlickRoughness(param_16, param_17, param_18);
+    float ambientOcc = aoMap.sample(aoMapSmplr, texCoords).x;
+    float param_18 = max(dot(N, V), 0.0);
+    float3 param_19 = F0;
+    float param_20 = rough;
+    float3 F_1 = fresnelSchlickRoughness(param_18, param_19, param_20);
     float3 kS_1 = F_1;
     float3 kD_1 = float3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
@@ -385,10 +408,10 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
     float3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + float3(envBRDF.y));
     float3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     float3 linearColor = ambient + Lo;
-    float3 param_19 = linearColor;
-    linearColor = reinhard_tone_mapping(param_19);
-    float3 param_20 = linearColor;
-    linearColor = gamma_correction(param_20);
+    float3 param_21 = linearColor;
+    linearColor = reinhard_tone_mapping(param_21);
+    float3 param_22 = linearColor;
+    linearColor = gamma_correction(param_22);
     out.outputColor = float4(linearColor, 1.0);
     return out;
 }

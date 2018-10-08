@@ -49,6 +49,8 @@ Texture2D<float4> aoMap : register(t8, space0);
 SamplerState _aoMap_sampler : register(s8, space0);
 Texture2D<float4> brdfLUT : register(t9, space0);
 SamplerState _brdfLUT_sampler : register(s9, space0);
+Texture2D<float4> heightMap : register(t10, space0);
+SamplerState _heightMap_sampler : register(s10, space0);
 
 static float4 gl_Position;
 static float4 v_world;
@@ -59,6 +61,8 @@ static float3 inputNormal;
 static float4 normal;
 static float3 inputTangent;
 static float3x3 TBN;
+static float3 v_tangent;
+static float3 camPos_tangent;
 static float2 uv;
 static float2 inputUV;
 static float3 inputBiTangent;
@@ -80,6 +84,8 @@ struct SPIRV_Cross_Output
     float4 v_world : TEXCOORD3;
     float2 uv : TEXCOORD4;
     float3x3 TBN : TEXCOORD5;
+    float3 v_tangent : TEXCOORD8;
+    float3 camPos_tangent : TEXCOORD9;
     float4 gl_Position : SV_Position;
 };
 
@@ -94,6 +100,8 @@ void vert_main()
     tangent = normalize(tangent - (normal_world.xyz * dot(tangent, normal_world.xyz)));
     float3 bitangent = cross(normal_world.xyz, tangent);
     TBN = float3x3(float3(tangent), float3(bitangent), float3(normal_world.xyz));
+    v_tangent = mul(v_world.xyz, TBN);
+    camPos_tangent = mul(_42_camPos.xyz, TBN);
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
 }
@@ -113,6 +121,8 @@ SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
     stage_output.normal_world = normal_world;
     stage_output.normal = normal;
     stage_output.TBN = TBN;
+    stage_output.v_tangent = v_tangent;
+    stage_output.camPos_tangent = camPos_tangent;
     stage_output.uv = uv;
     return stage_output;
 }

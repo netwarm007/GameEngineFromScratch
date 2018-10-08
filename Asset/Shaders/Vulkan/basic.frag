@@ -48,6 +48,7 @@ layout(binding = 6) uniform sampler2D metallicMap;
 layout(binding = 7) uniform sampler2D roughnessMap;
 layout(binding = 8) uniform sampler2D aoMap;
 layout(binding = 9) uniform sampler2D brdfLUT;
+layout(binding = 10) uniform sampler2D heightMap;
 #define PI 3.14159265359
 
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
@@ -345,6 +346,14 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sampleVec);
 }
+
+vec2 ParallaxMapping(vec2 uv, vec3 viewDir)
+{ 
+    const float height_scale = 1.0f;
+    float height = texture(heightMap, uv).r;    
+    vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
+    return uv - p;    
+} 
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: basic_ps.glsl
 ////////////////////////////////////////////////////////////////////////////////

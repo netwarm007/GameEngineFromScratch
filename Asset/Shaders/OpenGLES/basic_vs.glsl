@@ -41,6 +41,8 @@ layout(location = 1) in vec3 inputNormal;
 layout(location = 0) out vec4 normal;
 layout(location = 3) in vec3 inputTangent;
 layout(location = 5) out mat3 TBN;
+layout(location = 8) out vec3 v_tangent;
+layout(location = 9) out vec3 camPos_tangent;
 layout(location = 4) out vec2 uv;
 layout(location = 2) in vec2 inputUV;
 
@@ -55,6 +57,8 @@ void main()
     tangent = normalize(tangent - (normal_world.xyz * dot(tangent, normal_world.xyz)));
     vec3 bitangent = cross(normal_world.xyz, tangent);
     TBN = mat3(vec3(tangent), vec3(bitangent), vec3(normal_world.xyz));
+    v_tangent = TBN * v_world.xyz;
+    camPos_tangent = TBN * _42.camPos.xyz;
     uv.x = inputUV.x;
     uv.y = 1.0 - inputUV.y;
 }

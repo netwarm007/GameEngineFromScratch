@@ -295,3 +295,34 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sampleVec);
 }
+
+vec2 ParallaxMapping(vec2 uv, vec3 viewDir)
+{ 
+    const float height_scale = 0.1f;
+
+    // number of depth layers
+    const float numLayers = 10;
+    // calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    vec2 P = viewDir.xy * height_scale; 
+    vec2 deltaTexCoords = P / numLayers;
+
+    // get initial values
+    vec2  currentTexCoords     = uv;
+    float currentDepthMapValue = texture(heightMap, currentTexCoords).r;
+    
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = texture(heightMap, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+
+    return currentTexCoords;
+} 

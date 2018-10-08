@@ -204,14 +204,30 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
         else if(img.bitcount == 64)
         {
             format = GL_RGBA;
-            internal_format = GL_RGBA16F;
-            type = GL_HALF_FLOAT;
+            if (img.is_float)
+            {
+                internal_format = GL_RGBA16F;
+                type = GL_HALF_FLOAT;
+            }
+            else
+            {
+                internal_format = GL_RGBA16;
+                type = GL_UNSIGNED_SHORT;
+            }
         }
         else if(img.bitcount == 128)
         {
             format = GL_RGBA;
-            internal_format = GL_RGBA32F;
-            type = GL_FLOAT;
+            if (img.is_float)
+            {
+                internal_format = GL_RGBA32F;
+                type = GL_FLOAT;
+            }
+            else
+            {
+                internal_format = GL_RGBA;
+                type = GL_UNSIGNED_INT;
+            }
         }
         else
         {
@@ -449,6 +465,17 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                         auto it = m_TextureIndex.find(texture_key);
                         if (it == m_TextureIndex.end()) {
                             texture = ao.ValueMap->GetTextureImage();
+                            upload_texture(texture_key, texture);
+                        }
+                    }
+
+                    // height map 
+                    auto heightmap = material->GetHeight();
+                    if (heightmap.ValueMap) {
+                        texture_key = heightmap.ValueMap->GetName();
+                        auto it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.end()) {
+                            texture = heightmap.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
@@ -887,6 +914,34 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
             glActiveTexture(GL_TEXTURE9);
             glBindTexture(GL_TEXTURE_2D, texture_id);
         }
+
+        param = dbc.material->GetHeight();
+        SetShaderParameter("heightMap", 10);
+        if (param.ValueMap)
+        {
+            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            glActiveTexture(GL_TEXTURE10);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+        }
+        else
+        {
+            if (m_TextureIndex.find("1x1_HeightMap") == m_TextureIndex.end())
+            {
+                // generate a 1x1 texture
+                glGenTextures(1, &texture_id);
+                m_TextureIndex["1x1_HieghtMap"] = texture_id;
+                m_Textures.push_back(texture_id);
+            }
+            else
+            {
+                texture_id = m_TextureIndex["1x1_HeightMap"];
+            }
+            glActiveTexture(GL_TEXTURE10);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 
+                0, GL_RED, GL_FLOAT, &param.Value);
+        }
+
     }
 }
 

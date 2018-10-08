@@ -20,6 +20,8 @@ layout(location = 2) out vec4 v;
 layout(location = 3) out vec4 v_world;
 layout(location = 4) out vec2 uv;
 layout(location = 5) out mat3 TBN;
+layout(location = 8) out vec3 v_tangent;
+layout(location = 9) out vec3 camPos_tangent;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
@@ -33,6 +35,7 @@ void main(void)
 
     normal_world = normalize(modelMatrix * vec4(inputNormal, 0.0f));
     normal = normalize(viewMatrix * normal_world);
+
     vec3 tangent = normalize(vec3(modelMatrix * vec4(inputTangent, 0.0f)));
     //vec3 bitangent = normalize(vec3(modelMatrix * vec4(inputBiTangent, 0.0f)));
     // re-orthogonalize T with respect to N
@@ -41,6 +44,9 @@ void main(void)
     vec3 bitangent = cross(normal_world.xyz, tangent);
 
     TBN = mat3(tangent, bitangent, normal_world.xyz);
+
+    v_tangent = TBN * v_world.xyz;
+    camPos_tangent = TBN * camPos.xyz;
 
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
