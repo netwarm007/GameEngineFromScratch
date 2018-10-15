@@ -100,8 +100,9 @@ void vert_main()
     tangent = normalize(tangent - (normal_world.xyz * dot(tangent, normal_world.xyz)));
     float3 bitangent = cross(normal_world.xyz, tangent);
     TBN = float3x3(float3(tangent), float3(bitangent), float3(normal_world.xyz));
-    v_tangent = mul(v_world.xyz, TBN);
-    camPos_tangent = mul(_42_camPos.xyz, TBN);
+    float3x3 TBN_trans = transpose(TBN);
+    v_tangent = mul(v_world.xyz, TBN_trans);
+    camPos_tangent = mul(_42_camPos.xyz, TBN_trans);
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;
 }

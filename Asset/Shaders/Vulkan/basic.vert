@@ -349,10 +349,47 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 
 vec2 ParallaxMapping(vec2 uv, vec3 viewDir)
 { 
-    const float height_scale = 1.0f;
-    float height = texture(heightMap, uv).r;    
-    vec2 p = viewDir.xy / viewDir.z * (height * height_scale);
-    return uv - p;    
+    const float height_scale = 0.10f;
+
+    // number of depth layers
+    const float minLayers = 8.0;
+    const float maxLayers = 32.0;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+    // calculate the size of each layer
+    const float layerDepth = 1.0f / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0f;
+
+    // get initial values
+    vec2  currentTexCoords     = uv;
+    float currentDepthMapValue = 1.0f - texture(heightMap, currentTexCoords).r;
+
+    // the amount to shift the texture coordinates per layer (from vector P)
+    const vec2 P = viewDir.xy * height_scale; 
+    const vec2 deltaTexCoords = P / numLayers;
+    
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = 1.0f - texture(heightMap, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = 1.0f - texture(heightMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+    
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0f - weight);
+
+    return finalTexCoords;  
 } 
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: basic.vs
@@ -393,16 +430,19 @@ void main(void)
     normal = normalize(viewMatrix * normal_world);
 
     vec3 tangent = normalize(vec3(modelMatrix * vec4(inputTangent, 0.0f)));
-    //vec3 bitangent = normalize(vec3(modelMatrix * vec4(inputBiTangent, 0.0f)));
+#if 0
+    vec3 bitangent = normalize(vec3(modelMatrix * vec4(inputBiTangent, 0.0f)));
+#endif
     // re-orthogonalize T with respect to N
     tangent = normalize(tangent - dot(tangent, normal_world.xyz) * normal_world.xyz);
     // then retrieve perpendicular vector B with the cross product of T and N
     vec3 bitangent = cross(normal_world.xyz, tangent);
 
     TBN = mat3(tangent, bitangent, normal_world.xyz);
+    mat3 TBN_trans = transpose(TBN);
 
-    v_tangent = TBN * v_world.xyz;
-    camPos_tangent = TBN * camPos.xyz;
+    v_tangent = TBN_trans * v_world.xyz;
+    camPos_tangent = TBN_trans * camPos.xyz;
 
     uv.x = inputUV.x;
     uv.y = 1.0f - inputUV.y;

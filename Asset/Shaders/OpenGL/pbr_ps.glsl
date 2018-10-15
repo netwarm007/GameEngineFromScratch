@@ -26,7 +26,7 @@ layout(std140) uniform PerFrameConstants
     vec4 camPos;
     int numLights;
     Light allLights[100];
-} _665;
+} _710;
 
 uniform samplerCubeArray cubeShadowMap;
 uniform sampler2DArray shadowMap;
@@ -49,21 +49,27 @@ layout(location = 0) out vec4 outputColor;
 
 float _109;
 
-vec2 ParallaxMapping(vec2 uv_1, vec3 viewDir)
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 {
-    float layerDepth = 0.100000001490116119384765625;
+    float numLayers = mix(32.0, 8.0, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+    float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
+    vec2 currentTexCoords = texCoords;
+    float currentDepthMapValue = 1.0 - texture(heightMap, currentTexCoords).x;
     vec2 P = viewDir.xy * 0.100000001490116119384765625;
-    vec2 deltaTexCoords = P / vec2(10.0);
-    vec2 currentTexCoords = uv_1;
-    float currentDepthMapValue = texture(heightMap, currentTexCoords).x;
+    vec2 deltaTexCoords = P / vec2(numLayers);
     while (currentLayerDepth < currentDepthMapValue)
     {
         currentTexCoords -= deltaTexCoords;
-        currentDepthMapValue = texture(heightMap, currentTexCoords).x;
+        currentDepthMapValue = 1.0 - texture(heightMap, currentTexCoords).x;
         currentLayerDepth += layerDepth;
     }
-    return currentTexCoords;
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+    float afterDepth = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = ((1.0 - texture(heightMap, prevTexCoords).x) - currentLayerDepth) + layerDepth;
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = (prevTexCoords * weight) + (currentTexCoords * (1.0 - weight));
+    return finalTexCoords;
 }
 
 vec3 inverse_gamma_correction(vec3 color)
@@ -279,7 +285,7 @@ void main()
     vec3 tangent_normal = texture(normalMap, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     vec3 N = normalize(TBN * tangent_normal);
-    vec3 V = normalize(_665.camPos.xyz - v_world.xyz);
+    vec3 V = normalize(_710.camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);
     vec3 param_2 = texture(diffuseMap, texCoords).xyz;
     vec3 albedo = inverse_gamma_correction(param_2);
@@ -288,27 +294,27 @@ void main()
     vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _665.numLights; i++)
+    for (int i = 0; i < _710.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _665.allLights[i].lightIntensity;
-        light.lightType = _665.allLights[i].lightType;
-        light.lightCastShadow = _665.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _665.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _665.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _665.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _665.allLights[i].lightSize;
-        light.lightGUID = _665.allLights[i].lightGUID;
-        light.lightPosition = _665.allLights[i].lightPosition;
-        light.lightColor = _665.allLights[i].lightColor;
-        light.lightDirection = _665.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _665.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _665.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _665.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _665.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _665.allLights[i].lightVP;
-        light.padding[0] = _665.allLights[i].padding[0];
-        light.padding[1] = _665.allLights[i].padding[1];
+        light.lightIntensity = _710.allLights[i].lightIntensity;
+        light.lightType = _710.allLights[i].lightType;
+        light.lightCastShadow = _710.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _710.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _710.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _710.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _710.allLights[i].lightSize;
+        light.lightGUID = _710.allLights[i].lightGUID;
+        light.lightPosition = _710.allLights[i].lightPosition;
+        light.lightColor = _710.allLights[i].lightColor;
+        light.lightDirection = _710.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _710.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _710.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _710.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _710.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _710.allLights[i].lightVP;
+        light.padding[0] = _710.allLights[i].padding[0];
+        light.padding[1] = _710.allLights[i].padding[1];
         vec3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         vec3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);

@@ -19,13 +19,13 @@ struct Light
 
 static const float2 _332[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
 
-cbuffer _665 : register(b0, space0)
+cbuffer _710 : register(b0, space0)
 {
-    row_major float4x4 _665_viewMatrix : packoffset(c0);
-    row_major float4x4 _665_projectionMatrix : packoffset(c4);
-    float4 _665_camPos : packoffset(c8);
-    int _665_numLights : packoffset(c9);
-    Light _665_allLights[100] : packoffset(c10);
+    row_major float4x4 _710_viewMatrix : packoffset(c0);
+    row_major float4x4 _710_projectionMatrix : packoffset(c4);
+    float4 _710_camPos : packoffset(c8);
+    int _710_numLights : packoffset(c9);
+    Light _710_allLights[100] : packoffset(c10);
 };
 TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
 SamplerState _cubeShadowMap_sampler : register(s3, space0);
@@ -79,21 +79,27 @@ struct SPIRV_Cross_Output
 
 float _109;
 
-float2 ParallaxMapping(float2 uv_1, float3 viewDir)
+float2 ParallaxMapping(float2 texCoords, float3 viewDir)
 {
-    float layerDepth = 0.100000001490116119384765625f;
+    float numLayers = lerp(32.0f, 8.0f, abs(dot(float3(0.0f, 0.0f, 1.0f), viewDir)));
+    float layerDepth = 1.0f / numLayers;
     float currentLayerDepth = 0.0f;
+    float2 currentTexCoords = texCoords;
+    float currentDepthMapValue = 1.0f - heightMap.Sample(_heightMap_sampler, currentTexCoords).x;
     float2 P = viewDir.xy * 0.100000001490116119384765625f;
-    float2 deltaTexCoords = P / 10.0f.xx;
-    float2 currentTexCoords = uv_1;
-    float currentDepthMapValue = heightMap.Sample(_heightMap_sampler, currentTexCoords).x;
+    float2 deltaTexCoords = P / numLayers.xx;
     while (currentLayerDepth < currentDepthMapValue)
     {
         currentTexCoords -= deltaTexCoords;
-        currentDepthMapValue = heightMap.Sample(_heightMap_sampler, currentTexCoords).x;
+        currentDepthMapValue = 1.0f - heightMap.Sample(_heightMap_sampler, currentTexCoords).x;
         currentLayerDepth += layerDepth;
     }
-    return currentTexCoords;
+    float2 prevTexCoords = currentTexCoords + deltaTexCoords;
+    float afterDepth = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = ((1.0f - heightMap.Sample(_heightMap_sampler, prevTexCoords).x) - currentLayerDepth) + layerDepth;
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    float2 finalTexCoords = (prevTexCoords * weight) + (currentTexCoords * (1.0f - weight));
+    return finalTexCoords;
 }
 
 float3 inverse_gamma_correction(float3 color)
@@ -309,7 +315,7 @@ void frag_main()
     float3 tangent_normal = normalMap.Sample(_normalMap_sampler, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0f) - 1.0f.xxx;
     float3 N = normalize(mul(tangent_normal, TBN));
-    float3 V = normalize(_665_camPos.xyz - v_world.xyz);
+    float3 V = normalize(_710_camPos.xyz - v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param_2 = diffuseMap.Sample(_diffuseMap_sampler, texCoords).xyz;
     float3 albedo = inverse_gamma_correction(param_2);
@@ -318,27 +324,27 @@ void frag_main()
     float3 F0 = 0.039999999105930328369140625f.xxx;
     F0 = lerp(F0, albedo, meta.xxx);
     float3 Lo = 0.0f.xxx;
-    for (int i = 0; i < _665_numLights; i++)
+    for (int i = 0; i < _710_numLights; i++)
     {
         Light light;
-        light.lightIntensity = _665_allLights[i].lightIntensity;
-        light.lightType = _665_allLights[i].lightType;
-        light.lightCastShadow = _665_allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _665_allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _665_allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _665_allLights[i].lightDistAttenCurveType;
-        light.lightSize = _665_allLights[i].lightSize;
-        light.lightGUID = _665_allLights[i].lightGUID;
-        light.lightPosition = _665_allLights[i].lightPosition;
-        light.lightColor = _665_allLights[i].lightColor;
-        light.lightDirection = _665_allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _665_allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _665_allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _665_allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _665_allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _665_allLights[i].lightVP;
-        light.padding[0] = _665_allLights[i].padding[0];
-        light.padding[1] = _665_allLights[i].padding[1];
+        light.lightIntensity = _710_allLights[i].lightIntensity;
+        light.lightType = _710_allLights[i].lightType;
+        light.lightCastShadow = _710_allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _710_allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _710_allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _710_allLights[i].lightDistAttenCurveType;
+        light.lightSize = _710_allLights[i].lightSize;
+        light.lightGUID = _710_allLights[i].lightGUID;
+        light.lightPosition = _710_allLights[i].lightPosition;
+        light.lightColor = _710_allLights[i].lightColor;
+        light.lightDirection = _710_allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _710_allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _710_allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _710_allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _710_allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _710_allLights[i].lightVP;
+        light.padding[0] = _710_allLights[i].padding[0];
+        light.padding[1] = _710_allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0f);

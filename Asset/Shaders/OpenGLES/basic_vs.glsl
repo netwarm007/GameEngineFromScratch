@@ -57,8 +57,9 @@ void main()
     tangent = normalize(tangent - (normal_world.xyz * dot(tangent, normal_world.xyz)));
     vec3 bitangent = cross(normal_world.xyz, tangent);
     TBN = mat3(vec3(tangent), vec3(bitangent), vec3(normal_world.xyz));
-    v_tangent = TBN * v_world.xyz;
-    camPos_tangent = TBN * _42.camPos.xyz;
+    mat3 TBN_trans = transpose(TBN);
+    v_tangent = TBN_trans * v_world.xyz;
+    camPos_tangent = TBN_trans * _42.camPos.xyz;
     uv.x = inputUV.x;
     uv.y = 1.0 - inputUV.y;
 }

@@ -72,8 +72,9 @@ vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _42
     tangent = normalize(tangent - (out.normal_world.xyz * dot(tangent, out.normal_world.xyz)));
     float3 bitangent = cross(out.normal_world.xyz, tangent);
     TBN = float3x3(float3(tangent), float3(bitangent), float3(out.normal_world.xyz));
-    out.v_tangent = TBN * out.v_world.xyz;
-    out.camPos_tangent = TBN * _42.camPos.xyz;
+    float3x3 TBN_trans = transpose(TBN);
+    out.v_tangent = TBN_trans * out.v_world.xyz;
+    out.camPos_tangent = TBN_trans * _42.camPos.xyz;
     out.uv.x = in.inputUV.x;
     out.uv.y = 1.0 - in.inputUV.y;
     out.TBN_0 = TBN[0];

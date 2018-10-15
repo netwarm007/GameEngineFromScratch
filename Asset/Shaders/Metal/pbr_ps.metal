@@ -91,21 +91,27 @@ void spvArrayCopyConstant(thread T (&dst)[N], constant T (&src)[N])
     for (uint i = 0; i < N; dst[i] = src[i], i++);
 }
 
-float2 ParallaxMapping(thread const float2& uv, thread const float3& viewDir, thread texture2d<float> heightMap, thread const sampler heightMapSmplr)
+float2 ParallaxMapping(thread const float2& texCoords, thread const float3& viewDir, thread texture2d<float> heightMap, thread const sampler heightMapSmplr)
 {
-    float layerDepth = 0.100000001490116119384765625;
+    float numLayers = mix(32.0, 8.0, abs(dot(float3(0.0, 0.0, 1.0), viewDir)));
+    float layerDepth = 1.0 / numLayers;
     float currentLayerDepth = 0.0;
+    float2 currentTexCoords = texCoords;
+    float currentDepthMapValue = 1.0 - heightMap.sample(heightMapSmplr, currentTexCoords).x;
     float2 P = viewDir.xy * 0.100000001490116119384765625;
-    float2 deltaTexCoords = P / float2(10.0);
-    float2 currentTexCoords = uv;
-    float currentDepthMapValue = heightMap.sample(heightMapSmplr, currentTexCoords).x;
+    float2 deltaTexCoords = P / float2(numLayers);
     while (currentLayerDepth < currentDepthMapValue)
     {
         currentTexCoords -= deltaTexCoords;
-        currentDepthMapValue = heightMap.sample(heightMapSmplr, currentTexCoords).x;
+        currentDepthMapValue = 1.0 - heightMap.sample(heightMapSmplr, currentTexCoords).x;
         currentLayerDepth += layerDepth;
     }
-    return currentTexCoords;
+    float2 prevTexCoords = currentTexCoords + deltaTexCoords;
+    float afterDepth = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = ((1.0 - heightMap.sample(heightMapSmplr, prevTexCoords).x) - currentLayerDepth) + layerDepth;
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    float2 finalTexCoords = (prevTexCoords * weight) + (currentTexCoords * (1.0 - weight));
+    return finalTexCoords;
 }
 
 float3 inverse_gamma_correction(thread const float3& color)
@@ -312,7 +318,7 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _665 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], texture2d<float> heightMap [[texture(10)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]], sampler heightMapSmplr [[sampler(10)]])
+fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _710 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], texture2d<float> heightMap [[texture(10)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]], sampler heightMapSmplr [[sampler(10)]])
 {
     main0_out out = {};
     float3x3 TBN = {};
@@ -326,7 +332,7 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
     float3 tangent_normal = normalMap.sample(normalMapSmplr, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - float3(1.0);
     float3 N = normalize(TBN * tangent_normal);
-    float3 V = normalize(_665.camPos.xyz - in.v_world.xyz);
+    float3 V = normalize(_710.camPos.xyz - in.v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param_2 = diffuseMap.sample(diffuseMapSmplr, texCoords).xyz;
     float3 albedo = inverse_gamma_correction(param_2);
@@ -335,27 +341,27 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _
     float3 F0 = float3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, float3(meta));
     float3 Lo = float3(0.0);
-    for (int i = 0; i < _665.numLights; i++)
+    for (int i = 0; i < _710.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _665.allLights[i].lightIntensity;
-        light.lightType = _665.allLights[i].lightType;
-        light.lightCastShadow = _665.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _665.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _665.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _665.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _665.allLights[i].lightSize;
-        light.lightGUID = _665.allLights[i].lightGUID;
-        light.lightPosition = _665.allLights[i].lightPosition;
-        light.lightColor = _665.allLights[i].lightColor;
-        light.lightDirection = _665.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _665.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _665.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _665.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _665.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _665.allLights[i].lightVP;
-        light.padding[0] = _665.allLights[i].padding[0];
-        light.padding[1] = _665.allLights[i].padding[1];
+        light.lightIntensity = _710.allLights[i].lightIntensity;
+        light.lightType = _710.allLights[i].lightType;
+        light.lightCastShadow = _710.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _710.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _710.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _710.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _710.allLights[i].lightSize;
+        light.lightGUID = _710.allLights[i].lightGUID;
+        light.lightPosition = _710.allLights[i].lightPosition;
+        light.lightColor = _710.allLights[i].lightColor;
+        light.lightDirection = _710.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _710.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _710.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _710.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _710.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _710.allLights[i].lightVP;
+        light.padding[0] = _710.allLights[i].padding[0];
+        light.padding[1] = _710.allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - in.v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
