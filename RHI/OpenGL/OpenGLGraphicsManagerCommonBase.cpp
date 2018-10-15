@@ -399,6 +399,10 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
                             glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
                                 0, format, type, texture.data);
                         }
+
+                        GLfloat max_TexAni;
+                        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_TexAni);
+                        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, max_TexAni);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
