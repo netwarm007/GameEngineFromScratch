@@ -398,9 +398,6 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 /////////////////////
 // INPUT VARIABLES //
 /////////////////////
-layout(location = 0) in vec4 normal;
-layout(location = 1) in vec4 normal_world;
-layout(location = 2) in vec4 v; 
 layout(location = 3) in vec4 v_world;
 layout(location = 4) in vec2 uv;
 layout(location = 5) in mat3 TBN;
@@ -420,6 +417,7 @@ void main()
     // offset texture coordinates with Parallax Mapping
     vec3 viewDir   = normalize(camPos_tangent - v_tangent);
     vec2 texCoords = ParallaxMapping(uv, viewDir);
+    //vec2 texCoords = uv;
 
     vec3 tangent_normal = texture(normalMap, texCoords).rgb;
     tangent_normal = tangent_normal * 2.0f - 1.0f;   

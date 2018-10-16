@@ -6,6 +6,7 @@
 #include "ForwardRenderPass.hpp"
 #include "ShadowMapPass.hpp"
 #include "HUDPass.hpp"
+#include "TerrainPass.hpp"
 #include "SkyBoxPass.hpp"
 #include "BRDFIntegrator.hpp"
 
@@ -21,6 +22,7 @@ int GraphicsManager::Initialize()
 	InitConstants();
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardRenderPass>());
+    m_DrawPasses.push_back(make_shared<TerrainPass>());
     m_DrawPasses.push_back(make_shared<SkyBoxPass>());
     m_DrawPasses.push_back(make_shared<HUDPass>());
     return result;
@@ -297,6 +299,7 @@ void GraphicsManager::ClearBuffers()
     cerr << "[GraphicsManager] ClearBuffers()" << endl;
 }
 
+// skybox
 void GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 {
     cerr << "[GraphicsManager] SetSkyBox(" << &context << ")" << endl;
@@ -305,6 +308,17 @@ void GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 void GraphicsManager::DrawSkyBox()
 {
     cerr << "[GraphicsManager] DrawSkyBox()" << endl;
+}
+
+// terrain
+void GraphicsManager::SetTerrain(const DrawFrameContext& context)
+{
+    cerr << "[GraphicsManager] SetTerrain(" << &context << ")" << endl;
+}
+
+void GraphicsManager::DrawTerrain()
+{
+    cerr << "[GraphicsManager] DrawTerrain()" << endl;
 }
 
 #ifdef DEBUG

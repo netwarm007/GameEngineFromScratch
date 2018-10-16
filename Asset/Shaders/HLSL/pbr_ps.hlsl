@@ -56,15 +56,9 @@ static float2 uv;
 static float3x3 TBN;
 static float4 v_world;
 static float4 outputColor;
-static float4 normal;
-static float4 normal_world;
-static float4 v;
 
 struct SPIRV_Cross_Input
 {
-    float4 normal : TEXCOORD0;
-    float4 normal_world : TEXCOORD1;
-    float4 v : TEXCOORD2;
     float4 v_world : TEXCOORD3;
     float2 uv : TEXCOORD4;
     float3x3 TBN : TEXCOORD5;
@@ -409,9 +403,6 @@ SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
     uv = stage_input.uv;
     TBN = stage_input.TBN;
     v_world = stage_input.v_world;
-    normal = stage_input.normal;
-    normal_world = stage_input.normal_world;
-    v = stage_input.v;
     frag_main();
     SPIRV_Cross_Output stage_output;
     stage_output.outputColor = outputColor;

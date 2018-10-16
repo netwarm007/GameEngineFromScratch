@@ -347,7 +347,7 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     return normalize(sampleVec);
 }
 
-vec2 ParallaxMapping(vec2 uv, vec3 viewDir)
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 { 
     const float height_scale = 0.10f;
 
@@ -361,7 +361,7 @@ vec2 ParallaxMapping(vec2 uv, vec3 viewDir)
     float currentLayerDepth = 0.0f;
 
     // get initial values
-    vec2  currentTexCoords     = uv;
+    vec2  currentTexCoords     = texCoords;
     float currentDepthMapValue = 1.0f - texture(heightMap, currentTexCoords).r;
 
     // the amount to shift the texture coordinates per layer (from vector P)
