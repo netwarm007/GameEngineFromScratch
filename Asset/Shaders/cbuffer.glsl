@@ -49,3 +49,5 @@ layout(binding = 7) uniform sampler2D roughnessMap;
 layout(binding = 8) uniform sampler2D aoMap;
 layout(binding = 9) uniform sampler2D brdfLUT;
 layout(binding = 10) uniform sampler2D heightMap;
+layout(binding = 11) uniform sampler2D terrainHeightMap;
+

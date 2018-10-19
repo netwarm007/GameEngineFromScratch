@@ -14,6 +14,12 @@ case $2 in
     cs)
         ext=comp
         ;;
+    tesc)
+        ext=tesc
+        ;;
+    tese)
+        ext=tese
+        ;;
 esac
 InputFile=Asset/Shaders/$1_$2.glsl
 if [ -e $InputFile ]; then 

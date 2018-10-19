@@ -1,7 +1,7 @@
 #pragma once
 #include "geommath.hpp"
 #include "IRuntimeModule.hpp"
-#include "SceneParser.hpp"
+#include "ISceneParser.hpp"
 
 namespace My {
     class SceneManager : implements IRuntimeModule

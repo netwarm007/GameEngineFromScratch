@@ -69,7 +69,7 @@ namespace My {
                 }
             }
 
-            const Image& GetTextureImage() 
+            const Image& GetTextureImage()
             { 
                 if (!m_pImage)
                 {

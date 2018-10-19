@@ -1,3 +1,56 @@
+#version 450
+
+/////////////////////
+// CONSTANTS       //
+/////////////////////
+// per frame
+#define MAX_LIGHTS 100
+
+struct Light {
+    float   lightIntensity;
+    int     lightType;
+    int     lightCastShadow;
+    int     lightShadowMapIndex;
+    int     lightAngleAttenCurveType;
+    int     lightDistAttenCurveType;
+    vec2    lightSize;
+    ivec4   lightGUID;
+    vec4    lightPosition;
+    vec4    lightColor;
+    vec4    lightDirection;
+    vec4    lightDistAttenCurveParams[2];
+    vec4    lightAngleAttenCurveParams[2];
+    mat4    lightVP;
+    vec4    padding[2];
+};
+
+layout(std140,binding=0) uniform PerFrameConstants {
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    vec4 camPos;
+    int numLights;
+    Light allLights[MAX_LIGHTS];
+};
+
+// per drawcall
+layout(std140,binding=1) uniform PerBatchConstants {
+    mat4 modelMatrix;
+};
+
+// samplers
+layout(binding = 0) uniform sampler2D diffuseMap;
+layout(binding = 1) uniform sampler2DArray shadowMap;
+layout(binding = 2) uniform sampler2DArray globalShadowMap;
+layout(binding = 3) uniform samplerCubeArray cubeShadowMap;
+layout(binding = 4) uniform samplerCubeArray skybox;
+layout(binding = 5) uniform sampler2D normalMap;
+layout(binding = 6) uniform sampler2D metallicMap;
+layout(binding = 7) uniform sampler2D roughnessMap;
+layout(binding = 8) uniform sampler2D aoMap;
+layout(binding = 9) uniform sampler2D brdfLUT;
+layout(binding = 10) uniform sampler2D heightMap;
+layout(binding = 11) uniform sampler2D terrainHeightMap;
+
 #define PI 3.14159265359
 
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
@@ -365,3 +418,36 @@ float level(vec2 v0, vec2 v1){
      return clamp(distance(v0, v1)/2.0f, 1, 64);
 }
 
+layout(quads, fractional_odd_spacing, ccw) in;
+
+//////////////////////
+// OUTPUT VARIABLES //
+//////////////////////
+layout(location = 1) out vec4 normal_world;
+layout(location = 3) out vec4 v_world;
+layout(location = 4) out vec2 uv;
+layout(location = 5) out mat3 TBN;
+layout(location = 8) out vec3 v_tangent;
+layout(location = 9) out vec3 camPos_tangent;
+
+void main(){
+    float u = gl_TessCoord.x;
+    float v = gl_TessCoord.y;
+
+    vec4 a = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, u);
+    vec4 b = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, u);
+    v_world = mix(a, b, v);
+    normal_world = vec4(0.0f, 0.0f, 1.0f, 0.0f);
+    uv = gl_TessCoord.xy;
+    float height = texture(terrainHeightMap, uv).r;
+    gl_Position = projectionMatrix * viewMatrix * vec4(v_world.xy, height, 1.0);
+
+    vec3 tangent = vec3(1.0f, 0.0f, 0.0f);
+    vec3 bitangent = vec3(0.0f, 1.0f, 0.0f);
+
+    TBN = mat3(tangent, bitangent, normal_world.xyz);
+    mat3 TBN_trans = transpose(TBN);
+
+    v_tangent = TBN_trans * v_world.xyz;
+    camPos_tangent = TBN_trans * camPos.xyz;
+}

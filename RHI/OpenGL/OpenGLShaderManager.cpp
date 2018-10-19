@@ -22,5 +22,8 @@
 #define CS_PBR_BRDF_SOURCE_FILE "Shaders/OpenGL/integrateBRDF_cs.glsl"
 #define PS_PBR_BRDF_SOURCE_FILE "Shaders/OpenGL/integrateBRDF_ps.glsl"
 #define VS_TERRAIN_SOURCE_FILE "Shaders/OpenGL/terrain_vs.glsl"
+#define PS_TERRAIN_SOURCE_FILE "Shaders/OpenGL/terrain_ps.glsl"
+#define TESC_TERRAIN_SOURCE_FILE "Shaders/OpenGL/terrain_tesc.glsl"
+#define TESE_TERRAIN_SOURCE_FILE "Shaders/OpenGL/terrain_tese.glsl"
 
 #include "OpenGLShaderManagerCommonBase.cpp"

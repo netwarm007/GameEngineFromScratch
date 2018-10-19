@@ -49,6 +49,8 @@ layout(binding = 7) uniform sampler2D roughnessMap;
 layout(binding = 8) uniform sampler2D aoMap;
 layout(binding = 9) uniform sampler2D brdfLUT;
 layout(binding = 10) uniform sampler2D heightMap;
+layout(binding = 11) uniform sampler2D terrainHeightMap;
+
 #define PI 3.14159265359
 
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
@@ -391,54 +393,45 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 
     return finalTexCoords;  
 } 
-layout(binding = 11) uniform sampler2D terrainHeightMap;
+
+vec4 project(vec4 vertex){
+    vec4 result = projectionMatrix * viewMatrix /* modelMatrix */ * vertex;
+    result /= result.w;
+    return result;
+}
+
+vec2 screen_space(vec4 vertex){
+    return (clamp(vertex.xy, -1.3, 1.3) + 1) * (vec2(960, 540) * 0.5);
+}
+
+bool offscreen(vec4 vertex){
+    if(vertex.z < -0.5){
+        return true;
+    }   
+    return any(
+        lessThan(vertex.xy, vec2(-1.7))) ||
+        any(greaterThan(vertex.xy, vec2(1.7))
+    );  
+}
+
+float level(vec2 v0, vec2 v1){
+     return clamp(distance(v0, v1)/2.0f, 1, 64);
+}
 
 /////////////////////
 // INPUT VARIABLES //
 /////////////////////
 layout(location = 0) in vec3 inputPosition;
-layout(location = 1) in vec2 inputUV;
-
-//////////////////////
-// OUTPUT VARIABLES //
-//////////////////////
-layout(location = 0) out vec4 normal;
-layout(location = 1) out vec4 normal_world;
-layout(location = 2) out vec4 v;
-layout(location = 3) out vec4 v_world;
-layout(location = 4) out vec2 uv;
-layout(location = 5) out mat3 TBN;
-layout(location = 8) out vec3 v_tangent;
-layout(location = 9) out vec3 camPos_tangent;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-	// Calculate the position of the vertex against the world, view, and projection matrices.
-	v_world = vec4(inputPosition, 1.0f);
-	v = viewMatrix * v_world;
-	gl_Position = projectionMatrix * v;
-
-    normal_world = vec4(0.0f, 0.0f, 1.0f, 0.0f);
-    normal = normalize(viewMatrix * normal_world);
-
-    vec3 tangent = vec3(1.0f, 0.0f, 0.0f);
-    vec3 bitangent = vec3(0.0f, 1.0f, 0.0f);
-
-    // re-orthogonalize T with respect to N
-    tangent = normalize(tangent - dot(tangent, normal_world.xyz) * normal_world.xyz);
-    // then retrieve perpendicular vector B with the cross product of T and N
-    bitangent = cross(normal_world.xyz, tangent);
-
-    TBN = mat3(tangent, bitangent, normal_world.xyz);
-    mat3 TBN_trans = transpose(TBN);
-
-    v_tangent = TBN_trans * v_world.xyz;
-    camPos_tangent = TBN_trans * camPos.xyz;
-
-    uv.x = inputUV.x;
-    uv.y = 1.0f - inputUV.y;
+    float height = texture(terrainHeightMap, inputPosition.xy).r;
+    vec4 displaced = vec4(
+        inputPosition.xy,
+        height, 1.0);
+    gl_Position = displaced;
 }
 

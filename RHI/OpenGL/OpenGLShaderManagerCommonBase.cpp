@@ -315,7 +315,9 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     // Terrain shader
     list = {
         {GL_VERTEX_SHADER, VS_TERRAIN_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_PBR_SOURCE_FILE}
+        {GL_TESS_CONTROL_SHADER, TESC_TERRAIN_SOURCE_FILE},
+        {GL_TESS_EVALUATION_SHADER, TESE_TERRAIN_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_TERRAIN_SOURCE_FILE}
     };
 
     result = LoadShaderProgram(list, shaderProgram);
