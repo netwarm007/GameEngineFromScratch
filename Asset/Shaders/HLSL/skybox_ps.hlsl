@@ -37,6 +37,10 @@ Texture2D<float4> aoMap : register(t8, space0);
 SamplerState _aoMap_sampler : register(s8, space0);
 Texture2D<float4> brdfLUT : register(t9, space0);
 SamplerState _brdfLUT_sampler : register(s9, space0);
+Texture2D<float4> heightMap : register(t10, space0);
+SamplerState _heightMap_sampler : register(s10, space0);
+Texture2D<float4> terrainHeightMap : register(t11, space0);
+SamplerState _terrainHeightMap_sampler : register(s11, space0);
 
 static float4 outputColor;
 static float3 UVW;

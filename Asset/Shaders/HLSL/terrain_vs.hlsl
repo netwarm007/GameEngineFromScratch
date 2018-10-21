@@ -17,6 +17,10 @@ struct Light
     float4 padding[2];
 };
 
+cbuffer _50 : register(b1, space0)
+{
+    row_major float4x4 _50_modelMatrix : packoffset(c0);
+};
 Texture2D<float4> terrainHeightMap : register(t11, space0);
 SamplerState _terrainHeightMap_sampler : register(s11, space0);
 Texture2D<float4> diffuseMap : register(t0, space0);
@@ -57,9 +61,9 @@ struct SPIRV_Cross_Output
 
 void vert_main()
 {
-    float height = terrainHeightMap.SampleLevel(_terrainHeightMap_sampler, inputPosition.xy, 0.0f).x;
+    float height = terrainHeightMap.SampleLevel(_terrainHeightMap_sampler, inputPosition.xy / 10800.0f.xx, 0.0f).x * 10.0f;
     float4 displaced = float4(inputPosition.xy, height, 1.0f);
-    gl_Position = displaced;
+    gl_Position = mul(displaced, _50_modelMatrix);
 }
 
 SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)

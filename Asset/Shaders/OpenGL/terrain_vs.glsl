@@ -19,14 +19,19 @@ struct Light
     vec4 padding[2];
 };
 
+layout(std140) uniform PerBatchConstants
+{
+    mat4 modelMatrix;
+} _50;
+
 uniform sampler2D terrainHeightMap;
 
 layout(location = 0) in vec3 inputPosition;
 
 void main()
 {
-    float height = textureLod(terrainHeightMap, inputPosition.xy, 0.0).x;
+    float height = textureLod(terrainHeightMap, inputPosition.xy / vec2(10800.0), 0.0).x * 10.0;
     vec4 displaced = vec4(inputPosition.xy, height, 1.0);
-    gl_Position = displaced;
+    gl_Position = _50.modelMatrix * displaced;
 }
 

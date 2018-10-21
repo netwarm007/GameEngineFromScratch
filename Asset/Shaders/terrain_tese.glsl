@@ -19,7 +19,7 @@ void main(){
     v_world = mix(a, b, v);
     normal_world = vec4(0.0f, 0.0f, 1.0f, 0.0f);
     uv = gl_TessCoord.xy;
-    float height = texture(terrainHeightMap, uv).r;
+    float height = texture(terrainHeightMap, v_world.xy / 10800.0f).r * 10.0f;
     gl_Position = projectionMatrix * viewMatrix * vec4(v_world.xy, height, 1.0);
 
     vec3 tangent = vec3(1.0f, 0.0f, 0.0f);

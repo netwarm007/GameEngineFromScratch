@@ -27,7 +27,7 @@ layout(std140) uniform PerFrameConstants
     vec4 camPos;
     int numLights;
     Light allLights[100];
-} _90;
+} _96;
 
 uniform sampler2D terrainHeightMap;
 
@@ -47,13 +47,13 @@ void main()
     v_world = mix(a, b, vec4(v));
     normal_world = vec4(0.0, 0.0, 1.0, 0.0);
     uv = gl_TessCoord.xy;
-    float height = textureLod(terrainHeightMap, uv, 0.0).x;
-    gl_Position = (_90.projectionMatrix * _90.viewMatrix) * vec4(v_world.xy, height, 1.0);
+    float height = textureLod(terrainHeightMap, v_world.xy / vec2(10800.0), 0.0).x * 10.0;
+    gl_Position = (_96.projectionMatrix * _96.viewMatrix) * vec4(v_world.xy, height, 1.0);
     vec3 tangent = vec3(1.0, 0.0, 0.0);
     vec3 bitangent = vec3(0.0, 1.0, 0.0);
     TBN = mat3(vec3(tangent), vec3(bitangent), vec3(normal_world.xyz));
     mat3 TBN_trans = transpose(TBN);
     v_tangent = TBN_trans * v_world.xyz;
-    camPos_tangent = TBN_trans * _90.camPos.xyz;
+    camPos_tangent = TBN_trans * _96.camPos.xyz;
 }
 

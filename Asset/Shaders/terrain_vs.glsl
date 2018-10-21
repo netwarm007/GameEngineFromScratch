@@ -8,10 +8,10 @@ layout(location = 0) in vec3 inputPosition;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-    float height = texture(terrainHeightMap, inputPosition.xy).r;
+    float height = texture(terrainHeightMap, inputPosition.xy / 10800.0f).r * 10.0f;
     vec4 displaced = vec4(
         inputPosition.xy,
         height, 1.0);
-    gl_Position = displaced;
+    gl_Position = modelMatrix * displaced;
 }
 

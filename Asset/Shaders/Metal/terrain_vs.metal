@@ -3,6 +3,11 @@
 
 using namespace metal;
 
+struct PerBatchConstants
+{
+    float4x4 modelMatrix;
+};
+
 struct Light
 {
     float lightIntensity;
@@ -31,11 +36,6 @@ struct PerFrameConstants
     Light allLights[100];
 };
 
-struct PerBatchConstants
-{
-    float4x4 modelMatrix;
-};
-
 struct main0_out
 {
     float4 gl_Position [[position]];
@@ -46,12 +46,12 @@ struct main0_in
     float3 inputPosition [[attribute(0)]];
 };
 
-vertex main0_out main0(main0_in in [[stage_in]], texture2d<float> terrainHeightMap [[texture(11)]], sampler terrainHeightMapSmplr [[sampler(11)]])
+vertex main0_out main0(main0_in in [[stage_in]], constant PerBatchConstants& _50 [[buffer(1)]], texture2d<float> terrainHeightMap [[texture(11)]], sampler terrainHeightMapSmplr [[sampler(11)]])
 {
     main0_out out = {};
-    float height = terrainHeightMap.sample(terrainHeightMapSmplr, in.inputPosition.xy, level(0.0)).x;
+    float height = terrainHeightMap.sample(terrainHeightMapSmplr, (in.inputPosition.xy / float2(10800.0)), level(0.0)).x * 10.0;
     float4 displaced = float4(in.inputPosition.xy, height, 1.0);
-    out.gl_Position = displaced;
+    out.gl_Position = _50.modelMatrix * displaced;
     return out;
 }
 

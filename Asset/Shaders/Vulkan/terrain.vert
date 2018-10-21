@@ -395,27 +395,26 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 } 
 
 vec4 project(vec4 vertex){
-    vec4 result = projectionMatrix * viewMatrix /* modelMatrix */ * vertex;
+    vec4 result = projectionMatrix * viewMatrix * vertex;
     result /= result.w;
     return result;
 }
 
 vec2 screen_space(vec4 vertex){
-    return (clamp(vertex.xy, -1.3, 1.3) + 1) * (vec2(960, 540) * 0.5);
+    return (clamp(vertex.xy, -1.7, 1.7) + 1) * (vec2(960, 540) * 0.5);
 }
 
 bool offscreen(vec4 vertex){
     if(vertex.z < -0.5){
         return true;
     }   
-    return any(
-        lessThan(vertex.xy, vec2(-1.7))) ||
-        any(greaterThan(vertex.xy, vec2(1.7))
-    );  
+    return 
+        any(lessThan(vertex.xy, vec2(-1.7))) ||
+        any(greaterThan(vertex.xy, vec2(1.7)));  
 }
 
 float level(vec2 v0, vec2 v1){
-     return clamp(distance(v0, v1)/2.0f, 1, 64);
+     return clamp(distance(v0, v1) / 1.0f, 1, 64);
 }
 
 /////////////////////
@@ -428,10 +427,10 @@ layout(location = 0) in vec3 inputPosition;
 ////////////////////////////////////////////////////////////////////////////////
 void main(void)
 {
-    float height = texture(terrainHeightMap, inputPosition.xy).r;
+    float height = texture(terrainHeightMap, inputPosition.xy / 10800.0f).r * 10.0f;
     vec4 displaced = vec4(
         inputPosition.xy,
         height, 1.0);
-    gl_Position = displaced;
+    gl_Position = modelMatrix * displaced;
 }
 

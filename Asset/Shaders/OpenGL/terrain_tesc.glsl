@@ -42,27 +42,27 @@ bool offscreen(vec4 vertex)
     {
         return true;
     }
-    bool _94 = any(lessThan(vertex.xy, vec2(-1.7000000476837158203125)));
-    bool _104;
-    if (!_94)
+    bool _93 = any(lessThan(vertex.xy, vec2(-1.7000000476837158203125)));
+    bool _102;
+    if (!_93)
     {
-        _104 = any(greaterThan(vertex.xy, vec2(1.7000000476837158203125)));
+        _102 = any(greaterThan(vertex.xy, vec2(1.7000000476837158203125)));
     }
     else
     {
-        _104 = _94;
+        _102 = _93;
     }
-    return _104;
+    return _102;
 }
 
 vec2 screen_space(vec4 vertex)
 {
-    return (clamp(vertex.xy, vec2(-1.2999999523162841796875), vec2(1.2999999523162841796875)) + vec2(1.0)) * vec2(480.0, 270.0);
+    return (clamp(vertex.xy, vec2(-1.7000000476837158203125), vec2(1.7000000476837158203125)) + vec2(1.0)) * vec2(480.0, 270.0);
 }
 
 float level(vec2 v0, vec2 v1)
 {
-    return clamp(distance(v0, v1) / 2.0, 1.0, 64.0);
+    return clamp(distance(v0, v1) / 1.0, 1.0, 64.0);
 }
 
 void main()

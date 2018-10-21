@@ -49,6 +49,8 @@ layout(binding = 7) uniform sampler2D roughnessMap;
 layout(binding = 8) uniform sampler2D aoMap;
 layout(binding = 9) uniform sampler2D brdfLUT;
 layout(binding = 10) uniform sampler2D heightMap;
+layout(binding = 11) uniform sampler2D terrainHeightMap;
+
 #define PI 3.14159265359
 
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
@@ -391,6 +393,30 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 
     return finalTexCoords;  
 } 
+
+vec4 project(vec4 vertex){
+    vec4 result = projectionMatrix * viewMatrix * vertex;
+    result /= result.w;
+    return result;
+}
+
+vec2 screen_space(vec4 vertex){
+    return (clamp(vertex.xy, -1.7, 1.7) + 1) * (vec2(960, 540) * 0.5);
+}
+
+bool offscreen(vec4 vertex){
+    if(vertex.z < -0.5){
+        return true;
+    }   
+    return 
+        any(lessThan(vertex.xy, vec2(-1.7))) ||
+        any(greaterThan(vertex.xy, vec2(1.7)));  
+}
+
+float level(vec2 v0, vec2 v1){
+     return clamp(distance(v0, v1) / 1.0f, 1, 64);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Filename: pbr_ps.glsl
 ////////////////////////////////////////////////////////////////////////////////

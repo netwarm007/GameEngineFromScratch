@@ -49,6 +49,8 @@ TextureCubeArray<float4> skybox : register(t4, space0);
 SamplerState _skybox_sampler : register(s4, space0);
 Texture2D<float4> brdfLUT : register(t9, space0);
 SamplerState _brdfLUT_sampler : register(s9, space0);
+Texture2D<float4> terrainHeightMap : register(t11, space0);
+SamplerState _terrainHeightMap_sampler : register(s11, space0);
 
 static float3 camPos_tangent;
 static float3 v_tangent;
