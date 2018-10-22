@@ -2,7 +2,6 @@
 IF(PSP2)
 ELSE()
     add_subdirectory(Empty)
-    add_subdirectory(OpenGL)
     IF(${WIN32})
         # Windows specific code
         add_subdirectory(D2d)
@@ -11,5 +10,7 @@ ELSE()
     IF(${APPLE})
         # Darwin specific code
         add_subdirectory(Metal)
+    ELSE(${APPLE})
+        add_subdirectory(OpenGL)
     ENDIF(${APPLE})
 ENDIF()

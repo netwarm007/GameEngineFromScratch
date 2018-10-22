@@ -24,10 +24,17 @@ IF(WIN32)
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
             $<TARGET_FILE_DIR:BilliardGame>)
 ELSE(WIN32)
-    target_link_libraries(BilliardGame 
-                            BulletPhysics
-                            MyGameEngineOpenGL
-                        )
+    IF(APPLE)
+        target_link_libraries(BilliardGame 
+                                BulletPhysics
+                                MyGameEngineMetal
+                            )
+    ELSE(APPLE)
+        target_link_libraries(BilliardGame 
+                                BulletPhysics
+                                MyGameEngineOpenGL
+                            )
+    ENDIF(APPLE)
 ENDIF(WIN32)
 
 IF(NOT ANDROID)
