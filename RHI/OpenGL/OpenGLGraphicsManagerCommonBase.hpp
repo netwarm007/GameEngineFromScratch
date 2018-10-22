@@ -37,8 +37,13 @@ namespace My {
         void SetShadowMaps(const Frame& frame) final;
         void DestroyShadowMap(intptr_t& shadowmap) final;
 
+        // skybox
         void SetSkyBox(const DrawFrameContext& context) final;
         void DrawSkyBox() final;
+
+        // terrain
+        void SetTerrain(const DrawFrameContext& context) final;
+        void DrawTerrain() final;
 
         intptr_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;
         void BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height) final;
@@ -73,17 +78,21 @@ namespace My {
         void BeginScene(const Scene& scene) final;
         void EndScene() final;
 
-        void DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
+        void initializeGeometries(const Scene& scene);
+        void initializeSkyBox(const Scene& scene);
+        void initializeTerrain(const Scene& scene);
 
-        bool SetShaderParameter(const char* paramName, const Matrix4X4f& param);
-        bool SetShaderParameter(const char* paramName, const Matrix4X4f* param, const int32_t count);
-        bool SetShaderParameter(const char* paramName, const Vector4f& param);
-        bool SetShaderParameter(const char* paramName, const Vector3f& param);
-        bool SetShaderParameter(const char* paramName, const Vector2f& param);
-        bool SetShaderParameter(const char* paramName, const float param);
-        bool SetShaderParameter(const char* paramName, const int32_t param);
-        bool SetShaderParameter(const char* paramName, const uint32_t param);
-        bool SetShaderParameter(const char* paramName, const bool param);
+        void drawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
+
+        bool setShaderParameter(const char* paramName, const Matrix4X4f& param);
+        bool setShaderParameter(const char* paramName, const Matrix4X4f* param, const int32_t count);
+        bool setShaderParameter(const char* paramName, const Vector4f& param);
+        bool setShaderParameter(const char* paramName, const Vector3f& param);
+        bool setShaderParameter(const char* paramName, const Vector2f& param);
+        bool setShaderParameter(const char* paramName, const float param);
+        bool setShaderParameter(const char* paramName, const int32_t param);
+        bool setShaderParameter(const char* paramName, const uint32_t param);
+        bool setShaderParameter(const char* paramName, const bool param);
 
     private:
         GLuint m_ShadowMapFramebufferName;
@@ -116,5 +125,6 @@ namespace My {
 #endif
 
         OpenGLDrawBatchContext m_SkyBoxDrawBatchContext;
+        OpenGLDrawBatchContext m_TerrainDrawBatchContext;
     };
 }

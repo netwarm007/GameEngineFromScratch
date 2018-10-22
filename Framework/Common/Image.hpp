@@ -14,6 +14,7 @@ namespace My {
         uint32_t pitch;
         size_t  data_size;
         bool    compressed;
+        bool    is_float;
         uint32_t compress_format;
         uint32_t mipmap_count;
         struct Mipmap {
@@ -30,6 +31,7 @@ namespace My {
             pitch(0),
             data_size(0),
             compressed(false),
+            is_float(false),
             mipmap_count(1)
         {
             std::memset(mipmaps, 0x00, sizeof(mipmaps));

@@ -219,11 +219,13 @@ namespace My {
                         case MY_D3DFMT::D3DFMT_A16B16G16R16F:
                             std::cerr << "D3DFMT_A16B16G16R16F" << std::endl;
                             img.compressed = false;
+                            img.is_float = true;
                             assert(img.bitcount == 64);
                             break;
                         case MY_D3DFMT::D3DFMT_A32B32G32R32F:
                             std::cerr << "D3DFMT_A32B32G32R32F" << std::endl;
                             img.compressed = false;
+                            img.is_float = true;
                             assert(img.bitcount == 128);
                             break;
                         default:

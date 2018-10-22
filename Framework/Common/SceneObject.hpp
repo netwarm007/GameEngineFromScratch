@@ -11,3 +11,4 @@
 #include "SceneObjectTrack.hpp"
 #include "SceneObjectAnimation.hpp"
 #include "SceneObjectSkyBox.hpp"
+#include "SceneObjectTerrain.hpp"

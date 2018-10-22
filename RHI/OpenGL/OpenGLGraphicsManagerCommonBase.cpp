@@ -28,7 +28,7 @@ void OpenGLGraphicsManagerCommonBase::Draw()
     glFlush();
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Matrix4X4f& param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const Matrix4X4f& param)
 {
     unsigned int location;
 
@@ -42,7 +42,7 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Matrix4X4f* param, const int32_t count)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const Matrix4X4f* param, const int32_t count)
 {
     bool result = true;
     char uniformName[256];
@@ -50,13 +50,13 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     for (int32_t i = 0; i < count; i++)
     {
         sprintf(uniformName, "%s[%d]", paramName, i);
-        result &= SetShaderParameter(uniformName, *(param + i));
+        result &= setShaderParameter(uniformName, *(param + i));
     }
 
     return result;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Vector2f& param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const Vector2f& param)
 {
     unsigned int location;
 
@@ -70,7 +70,7 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Vector3f& param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const Vector3f& param)
 {
     unsigned int location;
 
@@ -84,7 +84,7 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const Vector4f& param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const Vector4f& param)
 {
     unsigned int location;
 
@@ -98,7 +98,7 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const float param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const float param)
 {
     unsigned int location;
 
@@ -112,7 +112,7 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const int32_t param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const int32_t param)
 {
     unsigned int location;
 
@@ -126,7 +126,7 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const uint32_t param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const uint32_t param)
 {
     unsigned int location;
 
@@ -140,7 +140,7 @@ bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, 
     return true;
 }
 
-bool OpenGLGraphicsManagerCommonBase::SetShaderParameter(const char* paramName, const bool param)
+bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, const bool param)
 {
     unsigned int location;
 
@@ -204,14 +204,30 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
         else if(img.bitcount == 64)
         {
             format = GL_RGBA;
-            internal_format = GL_RGBA16F;
-            type = GL_HALF_FLOAT;
+            if (img.is_float)
+            {
+                internal_format = GL_RGBA16F;
+                type = GL_HALF_FLOAT;
+            }
+            else
+            {
+                internal_format = GL_RGBA16;
+                type = GL_UNSIGNED_SHORT;
+            }
         }
         else if(img.bitcount == 128)
         {
             format = GL_RGBA;
-            internal_format = GL_RGBA32F;
-            type = GL_FLOAT;
+            if (img.is_float)
+            {
+                internal_format = GL_RGBA32F;
+                type = GL_FLOAT;
+            }
+            else
+            {
+                internal_format = GL_RGBA;
+                type = GL_UNSIGNED_INT;
+            }
         }
         else
         {
@@ -222,10 +238,8 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
+void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 {
-    GraphicsManager::BeginScene(scene);
-
     // Geometries
     for (auto _it : scene.GeometryNodes)
     {
@@ -383,10 +397,12 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
                             glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
                                 0, format, type, texture.data);
                         }
+
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                        glGenerateMipmap(GL_TEXTURE_2D);
 
                         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -414,7 +430,7 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
                         texture_key = normal.ValueMap->GetName();
                         auto it = m_TextureIndex.find(texture_key);
                         if (it == m_TextureIndex.end()) {
-                            texture = color.ValueMap->GetTextureImage();
+                            texture = normal.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
@@ -451,6 +467,17 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
                             upload_texture(texture_key, texture);
                         }
                     }
+
+                    // height map 
+                    auto heightmap = material->GetHeight();
+                    if (heightmap.ValueMap) {
+                        texture_key = heightmap.ValueMap->GetName();
+                        auto it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.end()) {
+                            texture = heightmap.ValueMap->GetTextureImage();
+                            upload_texture(texture_key, texture);
+                        }
+                    }
                 }
 
                 glBindVertexArray(0);
@@ -467,8 +494,11 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
         }
     }
 
-    // SkyBox
-    float skyboxVertices[] = {
+}
+
+void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
+{
+    static const float skyboxVertices[] = {
          1.0f,  1.0f,  1.0f,  // 0
         -1.0f,  1.0f,  1.0f,  // 1
          1.0f, -1.0f,  1.0f,  // 2
@@ -479,7 +509,7 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
         -1.0f, -1.0f, -1.0f   // 7
     };
 
-    uint8_t skyboxIndices[] = {
+    static const uint8_t skyboxIndices[] = {
         4, 7, 5,
         5, 3, 4,
 
@@ -587,13 +617,13 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
     glBindVertexArray(skyboxVAO);
     // vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
     // index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxVBO[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), &skyboxIndices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), skyboxIndices, GL_STATIC_DRAW);
 
     glBindVertexArray(0);
     
@@ -604,6 +634,87 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
     m_SkyBoxDrawBatchContext.mode    = GL_TRIANGLES;
     m_SkyBoxDrawBatchContext.type    = GL_UNSIGNED_BYTE;
     m_SkyBoxDrawBatchContext.count   = sizeof(skyboxIndices) / sizeof(skyboxIndices[0]);
+}
+
+void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
+{
+    // skybox VAO
+    GLuint terrainVAO, terrainVBO[2];
+    glGenVertexArrays(1, &terrainVAO);
+    glGenBuffers(2, terrainVBO);
+    glBindVertexArray(terrainVAO);
+
+    static const float half_patch_size = 25.0f;
+    static const float _vertices[] = {
+        -half_patch_size,  half_patch_size, 0.0f,
+        -half_patch_size, -half_patch_size, 0.0f,
+         half_patch_size, -half_patch_size, 0.0f,
+         half_patch_size,  half_patch_size, 0.0f
+    };
+
+    static const uint8_t _index[] = {
+        0, 1, 2, 3
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(_vertices), _vertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrainVBO[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(_index), _index, GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+
+    auto error = glGetError();
+    assert(error == GL_NO_ERROR);
+    
+    m_Buffers.push_back(terrainVBO[0]);
+    m_Buffers.push_back(terrainVBO[1]);
+
+    m_TerrainDrawBatchContext.vao     = terrainVAO;
+    m_TerrainDrawBatchContext.mode    = GL_PATCHES;
+    m_TerrainDrawBatchContext.type    = GL_UNSIGNED_BYTE;
+    m_TerrainDrawBatchContext.count   = sizeof(_index) / sizeof(_index[0]);
+
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    auto & texture = scene.Terrain->GetTexture(0);
+    const auto & image = texture.GetTextureImage();
+
+    GLenum format, internal_format, type;
+    getOpenGLTextureFormat(image, format, internal_format, type);
+    if (image.compressed)
+    {
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.Width, image.Height, 
+            0, static_cast<GLsizei>(image.data_size), image.data);
+    }
+    else
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.Width, image.Height, 
+            0, format, type, image.data);
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    m_TextureIndex["terrain"] = texture_id;
+    m_Textures.push_back(texture_id);
+}
+
+void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
+{
+    GraphicsManager::BeginScene(scene);
+
+    initializeGeometries(scene);
+    initializeTerrain(scene);
+    initializeSkyBox(scene);
 
     return;
 }
@@ -619,6 +730,11 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
         }
 
         batchContexts.clear();
+    }
+
+    if (m_TerrainDrawBatchContext.vao)
+    {
+        glDeleteVertexArrays(1, &m_TerrainDrawBatchContext.vao);
     }
 
     if (m_SkyBoxDrawBatchContext.vao)
@@ -652,6 +768,7 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
     m_Buffers.clear();
     m_Textures.clear();
 
+    GraphicsManager::EndScene();
 }
 
 void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const intptr_t shaderProgram)
@@ -735,7 +852,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
 
     if (dbc.material) {
         Color color = dbc.material->GetBaseColor();
-        SetShaderParameter("diffuseMap", 0);
+        setShaderParameter("diffuseMap", 0);
         GLuint texture_id;
 
         if (color.ValueMap) 
@@ -765,7 +882,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
         }
 
         Normal normal = dbc.material->GetNormal();
-        SetShaderParameter("normalMap", 5);
+        setShaderParameter("normalMap", 5);
 
         if (normal.ValueMap)
         {
@@ -789,18 +906,18 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
             glActiveTexture(GL_TEXTURE5);
             glBindTexture(GL_TEXTURE_2D, texture_id);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 1, 1, 
-                0, GL_RGB, GL_FLOAT, normal.Value);
+                0, GL_RGB, GL_FLOAT, (normal.Value + 1.0f) * 0.5f);
         }
 
         color = dbc.material->GetSpecularColor();
-        SetShaderParameter("u_pushConstants.specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
+        setShaderParameter("u_pushConstants.specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
 
         Parameter param = dbc.material->GetSpecularPower();
-        SetShaderParameter("u_pushConstants.specularPower", param.Value);
+        setShaderParameter("u_pushConstants.specularPower", param.Value);
 
         // PBR
         param = dbc.material->GetMetallic();
-        SetShaderParameter("metallicMap", 6);
+        setShaderParameter("metallicMap", 6);
         if (param.ValueMap)
         {
             GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
@@ -827,7 +944,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
         }
 
         param = dbc.material->GetRoughness();
-        SetShaderParameter("roughnessMap", 7);
+        setShaderParameter("roughnessMap", 7);
         if (param.ValueMap)
         {
             GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
@@ -854,7 +971,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
         }
 
         param = dbc.material->GetAO();
-        SetShaderParameter("aoMap", 8);
+        setShaderParameter("aoMap", 8);
         if (param.ValueMap)
         {
             GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
@@ -882,10 +999,38 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
 
         {
             GLuint texture_id = m_TextureIndex["BRDF_LUT"];
-            SetShaderParameter("brdfLUT", 9);
+            setShaderParameter("brdfLUT", 9);
             glActiveTexture(GL_TEXTURE9);
             glBindTexture(GL_TEXTURE_2D, texture_id);
         }
+
+        param = dbc.material->GetHeight();
+        setShaderParameter("heightMap", 10);
+        if (param.ValueMap)
+        {
+            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
+            glActiveTexture(GL_TEXTURE10);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+        }
+        else
+        {
+            if (m_TextureIndex.find("1x1_HeightMap") == m_TextureIndex.end())
+            {
+                // generate a 1x1 texture
+                glGenTextures(1, &texture_id);
+                m_TextureIndex["1x1_HieghtMap"] = texture_id;
+                m_Textures.push_back(texture_id);
+            }
+            else
+            {
+                texture_id = m_TextureIndex["1x1_HeightMap"];
+            }
+            glActiveTexture(GL_TEXTURE10);
+            glBindTexture(GL_TEXTURE_2D, texture_id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 
+                0, GL_RED, GL_FLOAT, &param.Value);
+        }
+
     }
 }
 
@@ -987,7 +1132,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
         case LightType::Omni:
         {
             Matrix4X4f shadowMatrices[6];
-            const Vector3f direction[6] = {
+            static const Vector3f direction[6] = {
                 { 1.0f, 0.0f, 0.0f },
                 {-1.0f, 0.0f, 0.0f },
                 { 0.0f, 1.0f, 0.0f },
@@ -995,7 +1140,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
                 { 0.0f, 0.0f, 1.0f },
                 { 0.0f, 0.0f,-1.0f }
             };
-            const Vector3f up[6] = {
+            static const Vector3f up[6] = {
                 { 0.0f,-1.0f, 0.0f },
                 { 0.0f,-1.0f, 0.0f },
                 { 0.0f, 0.0f, 1.0f },
@@ -1041,15 +1186,15 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
             glUniformBlockBinding(m_CurrentShader, blockIndex, 2);
             glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_uboShadowMatricesConstant);
 
-            SetShaderParameter("u_gsPushConstants.layer_index", static_cast<int>(layer_index));
-            SetShaderParameter("u_lightParams.lightPos", pos);
-            SetShaderParameter("u_lightParams.far_plane", farClipDistance);
+            setShaderParameter("u_gsPushConstants.layer_index", static_cast<int>(layer_index));
+            setShaderParameter("u_lightParams.lightPos", pos);
+            setShaderParameter("u_lightParams.far_plane", farClipDistance);
 
             break;
         }
         default:
         {
-            SetShaderParameter("u_pushConstants.depthVP", light.lightVP);
+            setShaderParameter("u_pushConstants.depthVP", light.lightVP);
         }
     }
 
@@ -1071,7 +1216,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
     GLuint texture_id = (GLuint) frame.frameContext.shadowMap;
-    SetShaderParameter("shadowMap", 1);
+    setShaderParameter("shadowMap", 1);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1082,7 +1227,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
 
     texture_id = (GLuint) frame.frameContext.globalShadowMap;
-    SetShaderParameter("globalShadowMap", 2);
+    setShaderParameter("globalShadowMap", 2);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1092,7 +1237,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
 
     texture_id = (GLuint) frame.frameContext.cubeShadowMap;
-    SetShaderParameter("cubeShadowMap", 3);
+    setShaderParameter("cubeShadowMap", 3);
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1106,11 +1251,11 @@ void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(intptr_t& shadowmap)
     shadowmap = -1;
 }
 
+// skybox
 void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
 {
-    // skybox
     GLuint cubemapTexture = (GLuint) context.skybox;
-    SetShaderParameter("skybox", 4);
+    setShaderParameter("skybox", 4);
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, cubemapTexture);
 }
@@ -1123,6 +1268,27 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
     glDrawElements(m_SkyBoxDrawBatchContext.mode, m_SkyBoxDrawBatchContext.count, m_SkyBoxDrawBatchContext.type, 0x00);
     glBindVertexArray(0);
     glDepthFunc(GL_LESS); // set depth function back to default
+}
+
+// terrain 
+void OpenGLGraphicsManagerCommonBase::SetTerrain(const DrawFrameContext& context)
+{
+    auto texture_id = m_TextureIndex["terrain"];
+    setShaderParameter("terrainHeightMap", 11);
+    glActiveTexture(GL_TEXTURE11);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawTerrain()
+{
+    glBindVertexArray(m_TerrainDrawBatchContext.vao);
+
+    glPatchParameteri(GL_PATCH_VERTICES, 4);
+
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glDrawElements(m_TerrainDrawBatchContext.mode, m_TerrainDrawBatchContext.count, m_TerrainDrawBatchContext.type, 0x00);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBindVertexArray(0);
 }
 
 intptr_t OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
@@ -1264,7 +1430,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPoint(const Point &point, const Vector
     m_DebugDrawBatchContext.push_back(std::move(dbc));
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color)
+void OpenGLGraphicsManagerCommonBase::drawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color)
 {
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -1315,7 +1481,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, co
         buffer[i++] = *point_ptr;
     }
 
-    DrawPoints(buffer, count, trans, color);
+    drawPoints(buffer, count, trans, color);
 
     delete[] buffer;
 }
@@ -1499,7 +1665,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 
     for (auto dbc : m_DebugDrawBatchContext)
     {
-        SetShaderParameter("u_pushConstants.FrontColor", dbc.color);
+        setShaderParameter("u_pushConstants.FrontColor", dbc.color);
 
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);
@@ -1566,7 +1732,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const intptr_t tex
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-    bool result = SetShaderParameter("u_pushConstants.layer_index", (float) layer_index);
+    bool result = setShaderParameter("u_pushConstants.layer_index", (float) layer_index);
     assert(result);
 
     GLfloat vertices[] = {
@@ -1623,7 +1789,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
 
-    bool result = SetShaderParameter("u_pushConstants.level", level);
+    bool result = setShaderParameter("u_pushConstants.level", level);
     assert(result);
 
     const float cell_height = vp_height * 0.5f;
@@ -1773,10 +1939,10 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const intptr_t cub
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    bool result = SetShaderParameter("u_pushConstants.layer_index", (float) layer_index);
+    bool result = setShaderParameter("u_pushConstants.layer_index", (float) layer_index);
     assert(result);
 
-    result = SetShaderParameter("u_pushConstants.level", level);
+    result = setShaderParameter("u_pushConstants.level", level);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);

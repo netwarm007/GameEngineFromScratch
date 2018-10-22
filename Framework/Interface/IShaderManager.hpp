@@ -17,7 +17,8 @@ namespace My {
         DepthCopyCube  = "DCPC"_i32,
         Copy      =  "COPY"_i32,
         CopyCube  =  "COPC"_i32,
-        SkyBox    = "SKYB"_i32
+        SkyBox    = "SKYB"_i32,
+        Terrain   = "TERN"_i32
     };
 
     Interface IShaderManager : implements IRuntimeModule

@@ -312,6 +312,21 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::SkyBox] = shaderProgram;
 
+    // Terrain shader
+    list = {
+        {GL_VERTEX_SHADER, VS_TERRAIN_SOURCE_FILE},
+        {GL_TESS_CONTROL_SHADER, TESC_TERRAIN_SOURCE_FILE},
+        {GL_TESS_EVALUATION_SHADER, TESE_TERRAIN_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_TERRAIN_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::Terrain] = shaderProgram;
 
 #ifdef DEBUG
     // Debug Shader

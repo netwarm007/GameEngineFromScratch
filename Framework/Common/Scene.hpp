@@ -29,11 +29,15 @@ namespace My {
 
         std::shared_ptr<SceneObjectSkyBox> SkyBox;
 
+        std::shared_ptr<SceneObjectTerrain> Terrain;
+
     public:
         Scene() {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
             SkyBox = std::make_shared<SceneObjectSkyBox>();
-            SkyBox->SetName("Textures/hdr/PaperMill", "dds");
+            SkyBox->SetName("Textures/hdr/spruit_sunrise", "dds");
+            Terrain = std::make_shared<SceneObjectTerrain>();
+            Terrain->SetName("Textures/terrain/area_1", "png");
         }
 
         Scene(const std::string& scene_name) :
@@ -41,7 +45,9 @@ namespace My {
         {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
             SkyBox = std::make_shared<SceneObjectSkyBox>();
-            SkyBox->SetName("Textures/hdr/PaperMill", "dds");
+            SkyBox->SetName("Textures/hdr/spruit_sunrise", "dds");
+            Terrain = std::make_shared<SceneObjectTerrain>();
+            Terrain->SetName("Textures/terrain/area_1", "png");
         }
 
         ~Scene() = default;

@@ -53,8 +53,13 @@ namespace My {
         virtual void SetShadowMaps(const Frame& frame);
         virtual void DestroyShadowMap(intptr_t& shadowmap);
 
+        // skybox
         virtual void SetSkyBox(const DrawFrameContext& context);
         virtual void DrawSkyBox();
+
+        // terrain
+        virtual void SetTerrain(const DrawFrameContext& context);
+        virtual void DrawTerrain();
 
         virtual intptr_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height);
         virtual void BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height);

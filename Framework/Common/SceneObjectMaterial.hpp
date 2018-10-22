@@ -20,6 +20,7 @@ namespace My {
             Color       m_Opacity;
             Color       m_Transparency;
             Color       m_Emission;
+            Parameter   m_Height;
 
         public:
             SceneObjectMaterial(void) 
@@ -34,24 +35,26 @@ namespace My {
                 m_AmbientOcclusion(1.0f), 
                 m_Opacity(1.0f), 
                 m_Transparency(0.0f), 
-                m_Emission(0.0f) {};
+                m_Emission(0.0f),
+                m_Height(0.0f) {}
             SceneObjectMaterial(const char* name) : SceneObjectMaterial()
-                { m_Name = name; };
+                { m_Name = name; }
             SceneObjectMaterial(const std::string& name) : SceneObjectMaterial()
-                { m_Name = name; };
+                { m_Name = name; }
             SceneObjectMaterial(std::string&& name) : SceneObjectMaterial()
-                { m_Name = std::move(name); };
+                { m_Name = std::move(name); }
 
-            const std::string& GetName() const { return m_Name; };
-            const Color& GetBaseColor() const { return m_BaseColor; };
-            const Color& GetSpecularColor() const { return m_Specular; };
-            const Parameter& GetSpecularPower() const { return m_SpecularPower; };
-            const Parameter& GetMetallic() const { return m_Metallic; };
-            const Parameter& GetRoughness() const { return m_Roughness; };
-            const Parameter& GetAO() const { return m_AmbientOcclusion; };
-            const Normal& GetNormal() const { return m_Normal; };
-            void SetName(const std::string& name) { m_Name = name; };
-            void SetName(std::string&& name) { m_Name = std::move(name); };
+            const std::string& GetName() const { return m_Name; }
+            const Color& GetBaseColor() const { return m_BaseColor; }
+            const Color& GetSpecularColor() const { return m_Specular; }
+            const Parameter& GetSpecularPower() const { return m_SpecularPower; }
+            const Parameter& GetMetallic() const { return m_Metallic; }
+            const Parameter& GetRoughness() const { return m_Roughness; }
+            const Parameter& GetAO() const { return m_AmbientOcclusion; }
+            const Parameter& GetHeight() const { return m_Height; }
+            const Normal& GetNormal() const { return m_Normal; }
+            void SetName(const std::string& name) { m_Name = name; }
+            void SetName(std::string&& name) { m_Name = std::move(name); }
             void SetColor(const std::string& attrib, const Vector4f& color) 
             { 
                 if(attrib == "diffuse") {
@@ -73,7 +76,7 @@ namespace My {
                 else if(attrib == "transparency") {
                     m_Transparency = Color(color); 
                 }
-            };
+            }
 
             void SetParam(const std::string& attrib, const float param) 
             { 
@@ -92,7 +95,11 @@ namespace My {
                 else if(attrib == "ao") {
                     m_AmbientOcclusion = Parameter(param); 
                 }
-            };
+
+                else if(attrib == "height") {
+                    m_Height = Parameter(param); 
+                }
+            }
 
             void SetTexture(const std::string& attrib, const std::string& textureName) 
             { 
@@ -135,7 +142,11 @@ namespace My {
                 else if(attrib == "ao") {
                     m_AmbientOcclusion = std::make_shared<SceneObjectTexture>(textureName); 
                 }
-            };
+
+                else if(attrib == "height") {
+                    m_Height = std::make_shared<SceneObjectTexture>(textureName); 
+                }
+            }
 
             void SetTexture(const std::string& attrib, const std::shared_ptr<SceneObjectTexture>& texture) 
             { 
@@ -178,14 +189,18 @@ namespace My {
                 else if(attrib == "ao") {
                     m_AmbientOcclusion = texture;
                 }
-            };
+
+                else if(attrib == "height") {
+                    m_Height = texture;
+                }
+            }
 
             void LoadTextures()
             {
                 if (m_BaseColor.ValueMap) {
                     m_BaseColor.ValueMap->LoadTexture();
                 }
-            };
+            }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj);
     };

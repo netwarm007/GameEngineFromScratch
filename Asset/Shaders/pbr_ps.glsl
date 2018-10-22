@@ -5,11 +5,11 @@
 /////////////////////
 // INPUT VARIABLES //
 /////////////////////
-layout(location = 0) in vec4 normal;
-layout(location = 1) in vec4 normal_world;
-layout(location = 2) in vec4 v; 
 layout(location = 3) in vec4 v_world;
 layout(location = 4) in vec2 uv;
+layout(location = 5) in mat3 TBN;
+layout(location = 8) in vec3 v_tangent;
+layout(location = 9) in vec3 camPos_tangent;
 
 //////////////////////
 // OUTPUT VARIABLES //
@@ -21,15 +21,23 @@ layout(location = 0) out vec4 outputColor;
 ////////////////////////////////////////////////////////////////////////////////
 void main()
 {		
-    vec3 N = normalize(normal_world.xyz);
+    // offset texture coordinates with Parallax Mapping
+    vec3 viewDir   = normalize(camPos_tangent - v_tangent);
+    vec2 texCoords = ParallaxMapping(uv, viewDir);
+    //vec2 texCoords = uv;
+
+    vec3 tangent_normal = texture(normalMap, texCoords).rgb;
+    tangent_normal = tangent_normal * 2.0f - 1.0f;   
+    vec3 N = normalize(TBN * tangent_normal); 
+
     vec3 V = normalize(camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);   
 
-    vec3 albedo = texture(diffuseMap, uv).rgb; 
+    vec3 albedo = inverse_gamma_correction(texture(diffuseMap, texCoords).rgb); 
 
-    float meta = texture(metallicMap, uv).r; 
+    float meta = texture(metallicMap, texCoords).r; 
 
-    float rough = texture(roughnessMap, uv).r; 
+    float rough = texture(roughnessMap, texCoords).r; 
 
     vec3 F0 = vec3(0.04f); 
     F0 = mix(F0, albedo, meta);
@@ -80,7 +88,7 @@ void main()
     vec3 ambient;
     {
         // ambient diffuse
-        float ambientOcc = texture(aoMap, uv).r;
+        float ambientOcc = texture(aoMap, texCoords).r;
 
         vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
         vec3 kS = F;
@@ -91,7 +99,7 @@ void main()
         vec3 diffuse = irradiance * albedo;
 
         // ambient reflect
-        const float MAX_REFLECTION_LOD = 8.0f;
+        const float MAX_REFLECTION_LOD = 9.0f;
         vec3 prefilteredColor = textureLod(skybox, vec4(R, 1.0f), rough * MAX_REFLECTION_LOD).rgb;    
         vec2 envBRDF  = texture(brdfLUT, vec2(max(dot(N, V), 0.0f), rough)).rg;
         vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
