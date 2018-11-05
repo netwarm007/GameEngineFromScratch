@@ -8,6 +8,7 @@ layout(location = 8) in vec3 v_tangent;
 layout(location = 9) in vec3 camPos_tangent;
 
 void main(){
+    /*
     vec3 Lo = vec3(0.0f);
 
     for (int i = 0; i < numLights; i++)
@@ -42,4 +43,6 @@ void main(){
     }
 
     outputColor = vec4(Lo, 1.0f);
+    */
+    outputColor = vec4(1.0f);
 }
