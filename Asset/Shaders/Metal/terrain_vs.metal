@@ -36,19 +36,19 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct terrain_vs_main_out
 {
     float4 gl_Position [[position]];
 };
 
-struct main0_in
+struct terrain_vs_main_in
 {
     float3 inputPosition [[attribute(0)]];
 };
 
-vertex main0_out main0(main0_in in [[stage_in]], texture2d<float> terrainHeightMap [[texture(11)]], sampler terrainHeightMapSmplr [[sampler(11)]])
+vertex terrain_vs_main_out terrain_vs_main(terrain_vs_main_in in [[stage_in]], texture2d<float> terrainHeightMap [[texture(11)]], sampler terrainHeightMapSmplr [[sampler(11)]])
 {
-    main0_out out = {};
+    terrain_vs_main_out out = {};
     float height = terrainHeightMap.sample(terrainHeightMapSmplr, in.inputPosition.xy, level(0.0)).x;
     float4 displaced = float4(in.inputPosition.xy, height, 1.0);
     out.gl_Position = displaced;

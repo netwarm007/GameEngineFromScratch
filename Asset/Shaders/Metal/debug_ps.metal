@@ -41,14 +41,14 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct debug_ps_main_out
 {
     float4 outputColor [[color(0)]];
 };
 
-fragment main0_out main0(constant debugPushConstants& u_pushConstants [[buffer(0)]])
+fragment debug_ps_main_out debug_ps_main(constant debugPushConstants& u_pushConstants [[buffer(0)]])
 {
-    main0_out out = {};
+    debug_ps_main_out out = {};
     out.outputColor = float4(u_pushConstants.FrontColor, 1.0);
     return out;
 }

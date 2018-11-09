@@ -3,10 +3,14 @@
 
 using namespace metal;
 
-struct debugPushConstants
+struct gs_constant_t
 {
-    float level;
     float layer_index;
+};
+
+struct ShadowMatrices
+{
+    float4x4 shadowMatrices[6];
 };
 
 struct Light
@@ -42,20 +46,27 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct depthcubemaparray_ps_main_out
+struct shadowmap_omni_gs_main_out
 {
-    float3 color [[color(0)]];
+    float4 FragPos;
+    int gl_Layer;
+    float4 gl_Position;
 };
 
-struct depthcubemaparray_ps_main_in
+unknown shadowmap_omni_gs_main_out shadowmap_omni_gs_main(constant gs_constant_t& u_gsPushConstants [[buffer(0)]], constant ShadowMatrices& _64 [[buffer(2)]], float4 gl_in [[position]])
 {
-    float3 UVW [[user(locn0)]];
-};
-
-fragment depthcubemaparray_ps_main_out depthcubemaparray_ps_main(depthcubemaparray_ps_main_in in [[stage_in]], constant debugPushConstants& u_pushConstants [[buffer(0)]], texturecube_array<float> depthSampler [[texture(0)]], sampler depthSamplerSmplr [[sampler(0)]])
-{
-    depthcubemaparray_ps_main_out out = {};
-    out.color = depthSampler.sample(depthSamplerSmplr, float4(in.UVW, u_pushConstants.layer_index).xyz, uint(round(float4(in.UVW, u_pushConstants.layer_index).w)), level(u_pushConstants.level)).xxx;
+    shadowmap_omni_gs_main_out out = {};
+    for (int face = 0; face < 6; face++)
+    {
+        out.gl_Layer = (int(u_gsPushConstants.layer_index) * 6) + face;
+        for (int i = 0; i < 3; i++)
+        {
+            out.FragPos = gl_in[i].out.gl_Position;
+            out.gl_Position = _64.shadowMatrices[face] * out.FragPos;
+            EmitVertex();
+        }
+        EndPrimitive();
+    }
     return out;
 }
 

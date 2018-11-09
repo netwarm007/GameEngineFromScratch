@@ -59,12 +59,12 @@ struct PerBatchConstants
 
 constant float _52 = {};
 
-struct main0_out
+struct terrain_ps_main_out
 {
     float4 outputColor [[color(0)]];
 };
 
-struct main0_in
+struct terrain_ps_main_in
 {
     float4 normal_world [[user(locn1)]];
     float4 v_world [[user(locn3)]];
@@ -160,9 +160,9 @@ float apply_atten_curve(thread const float& dist, thread const int& atten_curve_
     return atten;
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _193 [[buffer(0)]])
+fragment terrain_ps_main_out terrain_ps_main(terrain_ps_main_in in [[stage_in]], constant PerFrameConstants& _193 [[buffer(0)]])
 {
-    main0_out out = {};
+    terrain_ps_main_out out = {};
     float3 Lo = float3(0.0);
     for (int i = 0; i < _193.numLights; i++)
     {

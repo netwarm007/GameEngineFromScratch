@@ -36,21 +36,21 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct passthrough_cube_vs_main_out
 {
     float3 UVW [[user(locn0)]];
     float4 gl_Position [[position]];
 };
 
-struct main0_in
+struct passthrough_cube_vs_main_in
 {
     float3 inputPosition [[attribute(0)]];
     float3 inputUVW [[attribute(1)]];
 };
 
-vertex main0_out main0(main0_in in [[stage_in]])
+vertex passthrough_cube_vs_main_out passthrough_cube_vs_main(passthrough_cube_vs_main_in in [[stage_in]])
 {
-    main0_out out = {};
+    passthrough_cube_vs_main_out out = {};
     out.gl_Position = float4(in.inputPosition, 1.0);
     out.UVW = in.inputUVW;
     return out;

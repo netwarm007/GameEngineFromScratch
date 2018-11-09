@@ -38,12 +38,12 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct integrateBRDF_ps_main_out
 {
     float2 FragColor [[color(0)]];
 };
 
-struct main0_in
+struct integrateBRDF_ps_main_in
 {
     float2 UV [[user(locn0)]];
 };
@@ -145,9 +145,9 @@ float2 IntegrateBRDF(thread const float& NdotV, thread const float& roughness)
     return float2(A, B);
 }
 
-fragment main0_out main0(main0_in in [[stage_in]])
+fragment integrateBRDF_ps_main_out integrateBRDF_ps_main(integrateBRDF_ps_main_in in [[stage_in]])
 {
-    main0_out out = {};
+    integrateBRDF_ps_main_out out = {};
     float param = in.UV.x;
     float param_1 = in.UV.y;
     float2 integratedBRDF = IntegrateBRDF(param, param_1);

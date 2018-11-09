@@ -36,14 +36,14 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct shadowmap_ps_main_out
 {
     float4 Color [[color(0)]];
 };
 
-fragment main0_out main0()
+fragment shadowmap_ps_main_out shadowmap_ps_main()
 {
-    main0_out out = {};
+    shadowmap_ps_main_out out = {};
     out.Color = float4(0.0);
     return out;
 }

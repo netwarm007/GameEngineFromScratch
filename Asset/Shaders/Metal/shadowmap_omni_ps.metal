@@ -42,19 +42,19 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct shadowmap_omni_ps_main_out
 {
     float gl_FragDepth [[depth(any)]];
 };
 
-struct main0_in
+struct shadowmap_omni_ps_main_in
 {
     float4 FragPos [[user(locn0)]];
 };
 
-fragment main0_out main0(main0_in in [[stage_in]], constant ps_constant_t& u_lightParams [[buffer(0)]])
+fragment shadowmap_omni_ps_main_out shadowmap_omni_ps_main(shadowmap_omni_ps_main_in in [[stage_in]], constant ps_constant_t& u_lightParams [[buffer(0)]])
 {
-    main0_out out = {};
+    shadowmap_omni_ps_main_out out = {};
     float lightDistance = length(in.FragPos.xyz - float3(u_lightParams.lightPos));
     lightDistance /= u_lightParams.far_plane;
     out.gl_FragDepth = lightDistance;

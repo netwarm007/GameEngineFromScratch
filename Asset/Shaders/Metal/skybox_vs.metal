@@ -36,20 +36,20 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct skybox_vs_main_out
 {
     float3 UVW [[user(locn0)]];
     float4 gl_Position [[position]];
 };
 
-struct main0_in
+struct skybox_vs_main_in
 {
     float3 inputPosition [[attribute(0)]];
 };
 
-vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _30 [[buffer(0)]])
+vertex skybox_vs_main_out skybox_vs_main(skybox_vs_main_in in [[stage_in]], constant PerFrameConstants& _30 [[buffer(0)]])
 {
-    main0_out out = {};
+    skybox_vs_main_out out = {};
     out.UVW = in.inputPosition;
     float4x4 matrix = _30.viewMatrix;
     matrix[3].x = 0.0;

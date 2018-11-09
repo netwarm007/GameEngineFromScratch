@@ -133,18 +133,26 @@ static SPIRV_INLINE const uniform float float_cast(const uniform float& a) { ret
 static SPIRV_INLINE uniform float float_cast(uniform float& a) { return (uniform float) a; }
 static SPIRV_INLINE const uniform float float_cast(const uniform int& a) { return (const uniform float) a; }
 static SPIRV_INLINE uniform float float_cast(uniform int& a) { return (uniform float) a; }
+static SPIRV_INLINE const uniform float float_cast(const uniform bool& a) { return (const uniform float) a; }
+static SPIRV_INLINE uniform float float_cast(uniform bool& a) { return (uniform float) a; }
 static SPIRV_INLINE const varying float float_cast(const varying float& a) { return (const varying float) a; }
 static SPIRV_INLINE varying float float_cast(varying float& a) { return (varying float) a; }
 static SPIRV_INLINE const varying float float_cast(const varying int& a) { return (const varying float) a; }
 static SPIRV_INLINE varying float float_cast(varying int& a) { return (varying float) a; }
+static SPIRV_INLINE const varying float float_cast(const varying bool& a) { return (const varying float) a; }
+static SPIRV_INLINE varying float float_cast(varying bool& a) { return (varying float) a; }
 static SPIRV_INLINE const uniform int int_cast(const uniform float& a) { return (const uniform int) a; }
 static SPIRV_INLINE uniform int int_cast(uniform float& a) { return (uniform int) a; }
 static SPIRV_INLINE const uniform int int_cast(const uniform int& a) { return (const uniform int) a; }
 static SPIRV_INLINE uniform int int_cast(uniform int& a) { return (uniform int) a; }
+static SPIRV_INLINE const uniform int int_cast(const uniform bool& a) { return (const uniform int) a; }
+static SPIRV_INLINE uniform int int_cast(uniform bool& a) { return (uniform int) a; }
 static SPIRV_INLINE const varying int int_cast(const varying float& a) { return (const varying int) a; }
 static SPIRV_INLINE varying int int_cast(varying float& a) { return (varying int) a; }
 static SPIRV_INLINE const varying int int_cast(const varying int& a) { return (const varying int) a; }
 static SPIRV_INLINE varying int int_cast(varying int& a) { return (varying int) a; }
+static SPIRV_INLINE const varying int int_cast(const varying bool& a) { return (const varying int) a; }
+static SPIRV_INLINE varying int int_cast(varying bool& a) { return (varying int) a; }
 
 //////////////////////////////
 // Default Constructors

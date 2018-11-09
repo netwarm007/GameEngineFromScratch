@@ -41,19 +41,19 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct cubemap_ps_main_out
 {
     float3 color [[color(0)]];
 };
 
-struct main0_in
+struct cubemap_ps_main_in
 {
     float3 UVW [[user(locn0)]];
 };
 
-fragment main0_out main0(main0_in in [[stage_in]], constant debugPushConstants& u_pushConstants [[buffer(0)]], texturecube<float> depthSampler [[texture(0)]], sampler depthSamplerSmplr [[sampler(0)]])
+fragment cubemap_ps_main_out cubemap_ps_main(cubemap_ps_main_in in [[stage_in]], constant debugPushConstants& u_pushConstants [[buffer(0)]], texturecube<float> depthSampler [[texture(0)]], sampler depthSamplerSmplr [[sampler(0)]])
 {
-    main0_out out = {};
+    cubemap_ps_main_out out = {};
     out.color = depthSampler.sample(depthSamplerSmplr, in.UVW, level(u_pushConstants.level)).xyz;
     return out;
 }

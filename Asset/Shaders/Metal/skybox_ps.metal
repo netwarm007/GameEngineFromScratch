@@ -38,12 +38,12 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-struct main0_out
+struct skybox_ps_main_out
 {
     float4 outputColor [[color(0)]];
 };
 
-struct main0_in
+struct skybox_ps_main_in
 {
     float3 UVW [[user(locn0)]];
 };
@@ -58,9 +58,9 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], texturecube_array<float> skybox [[texture(4)]], sampler skyboxSmplr [[sampler(4)]])
+fragment skybox_ps_main_out skybox_ps_main(skybox_ps_main_in in [[stage_in]], texturecube_array<float> skybox [[texture(4)]], sampler skyboxSmplr [[sampler(4)]])
 {
-    main0_out out = {};
+    skybox_ps_main_out out = {};
     out.outputColor = skybox.sample(skyboxSmplr, float4(in.UVW, 0.0).xyz, uint(round(float4(in.UVW, 0.0).w)), level(0.0));
     float3 param = out.outputColor.xyz;
     float3 _51 = exposure_tone_mapping(param);

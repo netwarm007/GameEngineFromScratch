@@ -48,6 +48,9 @@ layout(binding = 6) uniform sampler2D metallicMap;
 layout(binding = 7) uniform sampler2D roughnessMap;
 layout(binding = 8) uniform sampler2D aoMap;
 layout(binding = 9) uniform sampler2D brdfLUT;
+layout(binding = 10) uniform sampler2D heightMap;
+layout(binding = 11) uniform sampler2D terrainHeightMap;
+
 #define PI 3.14159265359
 
 vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
@@ -345,6 +348,76 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sampleVec);
 }
+
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+{ 
+    const float height_scale = 0.10f;
+
+    // number of depth layers
+    const float minLayers = 8.0;
+    const float maxLayers = 32.0;
+    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+    // calculate the size of each layer
+    const float layerDepth = 1.0f / numLayers;
+    // depth of current layer
+    float currentLayerDepth = 0.0f;
+
+    // get initial values
+    vec2  currentTexCoords     = texCoords;
+    float currentDepthMapValue = 1.0f - texture(heightMap, currentTexCoords).r;
+
+    // the amount to shift the texture coordinates per layer (from vector P)
+    const vec2 P = viewDir.xy * height_scale; 
+    const vec2 deltaTexCoords = P / numLayers;
+    
+    while(currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = 1.0f - texture(heightMap, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+
+    // get texture coordinates before collision (reverse operations)
+    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+
+    // get depth after and before collision for linear interpolation
+    float afterDepth  = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = 1.0f - texture(heightMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+    
+    // interpolation of texture coordinates
+    float weight = afterDepth / (afterDepth - beforeDepth);
+    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0f - weight);
+
+    return finalTexCoords;  
+} 
+
+vec4 project(vec4 vertex){
+    vec4 result = projectionMatrix * viewMatrix /* modelMatrix */ * vertex;
+    result /= result.w;
+    return result;
+}
+
+vec2 screen_space(vec4 vertex){
+    return (clamp(vertex.xy, -1.3, 1.3) + 1) * (vec2(960, 540) * 0.5);
+}
+
+bool offscreen(vec4 vertex){
+    if(vertex.z < -0.5){
+        return true;
+    }   
+    return any(
+        lessThan(vertex.xy, vec2(-1.7))) ||
+        any(greaterThan(vertex.xy, vec2(1.7))
+    );  
+}
+
+float level(vec2 v0, vec2 v1){
+     return clamp(distance(v0, v1)/2.0f, 1, 64);
+}
+
 // Ouput data
 layout(location = 0) out vec4 Color;
 

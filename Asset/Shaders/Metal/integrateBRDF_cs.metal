@@ -135,7 +135,7 @@ float2 IntegrateBRDF(thread const float& NdotV, thread const float& roughness)
     return float2(A, B);
 }
 
-kernel void main0(texture2d<float, access::write> img_output [[texture(0)]], uint3 gl_GlobalInvocationID [[thread_position_in_grid]], uint3 gl_NumWorkGroups [[threadgroups_per_grid]])
+kernel void integrateBRDF_cs_main(texture2d<float, access::write> img_output [[texture(0)]], uint3 gl_GlobalInvocationID [[thread_position_in_grid]], uint3 gl_NumWorkGroups [[threadgroups_per_grid]])
 {
     int2 pixel_coords = int2(gl_GlobalInvocationID.xy);
     float param = float(pixel_coords.x) / float(gl_NumWorkGroups.x);

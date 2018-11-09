@@ -41,19 +41,19 @@ struct PerFrameConstants
     Light allLights[100];
 };
 
-struct main0_out
+struct shadowmap_vs_main_out
 {
     float4 gl_Position [[position]];
 };
 
-struct main0_in
+struct shadowmap_vs_main_in
 {
     float3 inputPosition [[attribute(0)]];
 };
 
-vertex main0_out main0(main0_in in [[stage_in]], constant constants_t& u_pushConstants [[buffer(0)]], constant PerBatchConstants& _25 [[buffer(1)]])
+vertex shadowmap_vs_main_out shadowmap_vs_main(shadowmap_vs_main_in in [[stage_in]], constant constants_t& u_pushConstants [[buffer(0)]], constant PerBatchConstants& _25 [[buffer(1)]])
 {
-    main0_out out = {};
+    shadowmap_vs_main_out out = {};
     out.gl_Position = (u_pushConstants.depthVP * _25.modelMatrix) * float4(in.inputPosition, 1.0);
     return out;
 }
