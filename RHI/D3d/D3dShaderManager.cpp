@@ -4,11 +4,11 @@
 using namespace My;
 using namespace std;
 
-const char VS_SHADER_SOURCE_FILE[] = "Shaders/basic_vs.cso";
-const char PS_SHADER_SOURCE_FILE[] = "Shaders/basic_ps.cso";
+const char VS_SHADER_SOURCE_FILE[] = "Shaders/HLSL/basic_vs.cso";
+const char PS_SHADER_SOURCE_FILE[] = "Shaders/HLSL/basic_ps.cso";
 #ifdef DEBUG
-const char DEBUG_VS_SHADER_SOURCE_FILE[] = "Shaders/debug_vs.cso";
-const char DEBUG_PS_SHADER_SOURCE_FILE[] = "Shaders/debug_ps.cso";
+const char DEBUG_VS_SHADER_SOURCE_FILE[] = "Shaders/HLSL/debug_vs.cso";
+const char DEBUG_PS_SHADER_SOURCE_FILE[] = "Shaders/HLSL/debug_ps.cso";
 #endif
 
 int D3dShaderManager::Initialize()

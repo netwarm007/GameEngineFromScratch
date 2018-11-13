@@ -1203,8 +1203,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
 
     // basic pass
     {
-        const char* vsFilename = "Shaders/basic_vs.cso"; 
-        const char* fsFilename = "Shaders/basic_ps.cso";
+        const char* vsFilename = "Shaders/HLSL/basic_vs.cso"; 
+        const char* fsFilename = "Shaders/HLSL/basic_ps.cso";
 
         // load the shaders
         Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
@@ -1288,8 +1288,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
 
     // resolve pass
     {
-        const char* vsFilename = "Shaders/msaa_resolver_vs.cso"; 
-        const char* fsFilename = "Shaders/msaa_resolver_ps.cso";
+        const char* vsFilename = "Shaders/HLSL/msaa_resolver_vs.cso"; 
+        const char* fsFilename = "Shaders/HLSL/msaa_resolver_ps.cso";
 
         // load the shaders
         Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
