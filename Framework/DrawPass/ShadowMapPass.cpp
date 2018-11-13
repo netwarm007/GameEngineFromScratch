@@ -62,13 +62,22 @@ void ShadowMapPass::Draw(Frame& frame)
     const uint32_t kGlobalShadowMapHeight = 2048; // shadow map for sun light
 
     // generate shadow map array
-    frame.frameContext.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(kShadowMapWidth, kShadowMapHeight, frame.frameContext.shadowMapCount);
+    if (frame.frameContext.shadowMapCount)
+    {
+        frame.frameContext.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(kShadowMapWidth, kShadowMapHeight, frame.frameContext.shadowMapCount);
+    }
 
     // generate global shadow map array
-    frame.frameContext.globalShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.frameContext.globalShadowMapCount);
+    if (frame.frameContext.globalShadowMapCount)
+    {
+        frame.frameContext.globalShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.frameContext.globalShadowMapCount);
+    }
 
     // generate cube shadow map array
-    frame.frameContext.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kCubeShadowMapWidth, kCubeShadowMapHeight, frame.frameContext.cubeShadowMapCount);
+    if (frame.frameContext.cubeShadowMapCount)
+    {
+        frame.frameContext.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kCubeShadowMapWidth, kCubeShadowMapHeight, frame.frameContext.cubeShadowMapCount);
+    }
 
     uint32_t shadowmap_index = 0;
     uint32_t global_shadowmap_index = 0;
