@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "GfxStructures.hpp"
+#include "FrameStructure.hpp"
 #include "IRuntimeModule.hpp"
 #include "IShaderManager.hpp"
 #include "geommath.hpp"
@@ -12,6 +12,11 @@
 #include "IDispatchPass.hpp"
 
 namespace My {
+    ENUM(RHICapability)
+    {
+        COMPUTE_SHADER = "COMP"_i32
+    };
+
     class GraphicsManager : implements IRuntimeModule
     {
     public:
@@ -25,8 +30,12 @@ namespace My {
         virtual void Clear();
         virtual void Draw();
 
+        virtual bool CheckCapability(RHICapability cap);
+
         virtual void UseShaderProgram(const intptr_t shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
+        virtual void SetPerBatchConstants(const DrawBatchContext& context);
+
         virtual void DrawBatch(const DrawBatchContext& context);
         virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
 
@@ -37,13 +46,24 @@ namespace My {
         virtual void SetShadowMaps(const Frame& frame);
         virtual void DestroyShadowMap(intptr_t& shadowmap);
 
+        // skybox
         virtual void SetSkyBox(const DrawFrameContext& context);
         virtual void DrawSkyBox();
 
-        virtual intptr_t GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height);
+        // terrain
+        virtual void SetTerrain(const DrawFrameContext& context);
+        virtual void DrawTerrain();
+
+        virtual intptr_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height);
+        virtual void BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height);
+        virtual void EndRenderToTexture(intptr_t& context);
+
+        virtual intptr_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height);
         virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth);
 
         virtual intptr_t GetTexture(const char* id);
+
+        virtual void DrawFullScreenQuad();
 
 #ifdef DEBUG
         virtual void DrawPoint(const Point& point, const Vector3f& color);

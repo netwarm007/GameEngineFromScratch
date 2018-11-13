@@ -1,7 +1,7 @@
 #include <unordered_map>
 #include "OpenGEX.h"
 #include "portable.hpp"
-#include "SceneParser.hpp"
+#include "ISceneParser.hpp"
 #include "SceneNode.hpp"
 #include "SceneObject.hpp"
 #include "Curve.hpp"
@@ -9,7 +9,7 @@
 #include "Linear.hpp"
 
 namespace My {
-    class OgexParser : implements SceneParser
+    class OgexParser : implements ISceneParser
     {
     private:
         void ConvertOddlStructureToSceneNode(const ODDL::Structure& structure, std::shared_ptr<BaseSceneNode>& base_node, Scene& scene)

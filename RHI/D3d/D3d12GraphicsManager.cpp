@@ -335,11 +335,11 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
 
     // Create intermediate MSAA RT
     D3D12_RENDER_TARGET_VIEW_DESC renderTargetDesc;
-    renderTargetDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    renderTargetDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
     renderTargetDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
 
     D3D12_CLEAR_VALUE optimizedClearValue = {};
-    optimizedClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    optimizedClearValue.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
     optimizedClearValue.Color[0] = 0.0f;
     optimizedClearValue.Color[1] = 0.1f;
     optimizedClearValue.Color[2] = 0.2f;
@@ -354,7 +354,7 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
 
     D3D12_RESOURCE_DESC textureDesc = {};
     textureDesc.MipLevels = 1;
-    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
     textureDesc.Width = g_pApp->GetConfiguration().screenWidth;
     textureDesc.Height = g_pApp->GetConfiguration().screenHeight;
     textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -386,12 +386,12 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil()
 
     // Create the depth stencil view.
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.Format = ::DXGI_FORMAT_D32_FLOAT;
     depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
     depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
     D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    depthOptimizedClearValue.Format = ::DXGI_FORMAT_D32_FLOAT;
     depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
     depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
@@ -411,7 +411,7 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil()
     resourceDesc.Height = height;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
-    resourceDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    resourceDesc.Format = ::DXGI_FORMAT_D32_FLOAT;
     resourceDesc.SampleDesc.Count = 4;
     resourceDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -462,7 +462,7 @@ HRESULT D3d12GraphicsManager::CreateInternalVertexBuffer()
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
-    resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
     resourceDesc.SampleDesc.Count = 1;
     resourceDesc.SampleDesc.Quality = 0;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
@@ -545,7 +545,7 @@ HRESULT D3d12GraphicsManager::CreateVertexBuffer(const SceneObjectVertexArray& v
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
-    resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
     resourceDesc.SampleDesc.Count = 1;
     resourceDesc.SampleDesc.Quality = 0;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
@@ -631,7 +631,7 @@ HRESULT D3d12GraphicsManager::CreateIndexBuffer(const SceneObjectIndexArray& ind
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
-    resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
     resourceDesc.SampleDesc.Count = 1;
     resourceDesc.SampleDesc.Quality = 0;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
@@ -681,7 +681,7 @@ HRESULT D3d12GraphicsManager::CreateIndexBuffer(const SceneObjectIndexArray& ind
 	// initialize the index buffer view
 	D3D12_INDEX_BUFFER_VIEW indexBufferView;
 	indexBufferView.BufferLocation = pIndexBuffer->GetGPUVirtualAddress();
-	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
+	indexBufferView.Format = ::DXGI_FORMAT_R32_UINT;
 	indexBufferView.SizeInBytes = (UINT)index_array.GetDataSize();
 	m_IndexBufferView.push_back(indexBufferView);
 
@@ -696,7 +696,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer()
     // Describe and create a SRV for the texture.
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
     size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
@@ -725,7 +725,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 
 		D3D12_RESOURCE_DESC textureDesc = {};
 		textureDesc.MipLevels = 1;
-		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
 		textureDesc.Width = image.Width;
 		textureDesc.Height = image.Height;
 		textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
@@ -760,7 +760,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		resourceDesc.Height = 1;
 		resourceDesc.DepthOrArraySize = 1;
 		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
 		resourceDesc.SampleDesc.Count = 1;
 		resourceDesc.SampleDesc.Quality = 0;
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
@@ -786,12 +786,12 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
             // DXGI does not have 24bit formats so we have to extend it to 32bit
             uint32_t new_pitch = image.pitch / 3 * 4;
             size_t data_size = new_pitch * image.Height;
-            void* data = new uint8_t[data_size];
-            uint8_t* buf = reinterpret_cast<uint8_t*>(data);
-            uint8_t* src = reinterpret_cast<uint8_t*>(image.data);
+            uint8_t* data = new uint8_t[data_size];
+            uint8_t* buf;
+            uint8_t* src;
             for (uint32_t row = 0; row < image.Height; row++) {
-                buf = reinterpret_cast<uint8_t*>(data) + row * new_pitch;
-                src = reinterpret_cast<uint8_t*>(image.data) + row * image.pitch;
+                buf = data + row * new_pitch;
+                src = image.data + row * image.pitch;
                 for (uint32_t col = 0; col < image.Width; col++) {
                     *(uint32_t*)buf = *(uint32_t*)src;
                     buf[3] = 0;  // set alpha to 0
@@ -823,7 +823,7 @@ HRESULT D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		// Describe and create a SRV for the texture.
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = -1;
         srvDesc.Texture2D.MostDetailedMip = 0;
@@ -879,7 +879,7 @@ HRESULT D3d12GraphicsManager::CreateConstantBuffer()
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
-    resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
     resourceDesc.SampleDesc.Count = 1;
     resourceDesc.SampleDesc.Quality = 0;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
@@ -1020,7 +1020,7 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     // fill the swap chain description struct
     scd.Width  = g_pApp->GetConfiguration().screenWidth;
     scd.Height = g_pApp->GetConfiguration().screenHeight;
-    scd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;              // use 32-bit color
+    scd.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;              // use 32-bit color
     scd.Stereo = FALSE;
     scd.SampleDesc.Count = 1;                               // multi-samples can not be used when in SwapEffect sets to
                                                             // DXGI_SWAP_EFFECT_FLOP_DISCARD
@@ -1114,15 +1114,11 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
             { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0,D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
         };
 
-        D3D12_ROOT_PARAMETER1 rootParameters[4] = {
+        D3D12_ROOT_PARAMETER1 rootParameters[3] = {
             { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0] }, D3D12_SHADER_VISIBILITY_ALL },
             { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[1] }, D3D12_SHADER_VISIBILITY_PIXEL },
             { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[2] }, D3D12_SHADER_VISIBILITY_PIXEL }
         };
-
-        rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        rootParameters[3].Constants = { 2, 0, 1 }; 
-        rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
         // Allow input layout and deny uneccessary access to certain pipeline stages.
         D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
@@ -1225,9 +1221,9 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
         // create the input layout object
         D3D12_INPUT_ELEMENT_DESC ied[] =
         {
-            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"NORMAL", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         };
 
         D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
@@ -1278,8 +1274,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
         psod.InputLayout    = { ied, _countof(ied) };
         psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psod.NumRenderTargets = 1;
-        psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
-        psod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+        psod.RTVFormats[0]  = ::DXGI_FORMAT_R8G8B8A8_UNORM;
+        psod.DSVFormat = ::DXGI_FORMAT_D32_FLOAT;
         psod.SampleDesc.Count = 4; // 4X MSAA
         psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
 
@@ -1310,8 +1306,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
         // create the input layout object
         D3D12_INPUT_ELEMENT_DESC ied[] =
         {
-            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         };
 
         D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
@@ -1362,8 +1358,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
         psod.InputLayout    = { ied, _countof(ied) };
         psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psod.NumRenderTargets = 1;
-        psod.RTVFormats[0]  = DXGI_FORMAT_R8G8B8A8_UNORM;
-        psod.DSVFormat = DXGI_FORMAT_UNKNOWN;
+        psod.RTVFormats[0]  = ::DXGI_FORMAT_R8G8B8A8_UNORM;
+        psod.DSVFormat = ::DXGI_FORMAT_UNKNOWN;
         psod.SampleDesc.Count = 1;   // no MSAA
         psod.SampleDesc.Quality = 0; // no MSAA
 
@@ -1697,7 +1693,7 @@ HRESULT D3d12GraphicsManager::PopulateCommandList()
         barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         m_pCommandList->ResourceBarrier(1, &barrier);
 
-        m_pCommandList->ResolveSubresource(m_pRenderTargets[m_nFrameIndex], 0, m_pMsaaRenderTarget, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+        m_pCommandList->ResolveSubresource(m_pRenderTargets[m_nFrameIndex], 0, m_pMsaaRenderTarget, 0, ::DXGI_FORMAT_R8G8B8A8_UNORM);
 
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;

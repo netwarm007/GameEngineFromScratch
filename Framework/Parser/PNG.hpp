@@ -23,6 +23,7 @@ namespace My {
         IEND = "IEND"_u32
     };
 
+#if DUMP_DETAILS
     static std::ostream& operator<<(std::ostream& out, PNG_CHUNK_TYPE type)
     {
         int32_t n = static_cast<int32_t>(type);
@@ -35,6 +36,7 @@ namespace My {
 
         return out;
     }
+#endif
 
     struct PNG_CHUNK_HEADER {
         uint32_t        Length;
@@ -379,6 +381,30 @@ namespace My {
             }
             else {
                 std::cout << "File is not a PNG file!" << std::endl;
+            }
+
+            img.mipmaps[0].Width = img.Width; 
+            img.mipmaps[0].Height = img.Height; 
+            img.mipmaps[0].offset = 0;
+            img.mipmaps[0].data_size = img.data_size;
+
+            // now swap the endian
+            if (img.bitcount > 32)
+            {
+                if (img.bitcount <= 64)
+                {
+                    for (uint16_t* p = reinterpret_cast<uint16_t*>(img.data); p < reinterpret_cast<uint16_t*>(img.data + img.data_size); p++)
+                    {
+                        *p = endian_net_unsigned_int(*p);
+                    }
+                }
+                else
+                {
+                    for (uint32_t* p = reinterpret_cast<uint32_t*>(img.data); p < reinterpret_cast<uint32_t*>(img.data + img.data_size); p++)
+                    {
+                        *p = endian_net_unsigned_int(*p);
+                    }
+                }
             }
 
             return img;

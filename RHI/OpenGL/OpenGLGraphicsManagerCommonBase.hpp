@@ -22,8 +22,11 @@ namespace My {
 
         void Draw() final;
 
+        bool CheckCapability(RHICapability cap) final;
+
         void UseShaderProgram(const intptr_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void SetPerBatchConstants(const DrawBatchContext& context) final;
         void DrawBatch(const DrawBatchContext& context) final;
         void DrawBatchDepthOnly(const DrawBatchContext& context) final;
 
@@ -34,13 +37,24 @@ namespace My {
         void SetShadowMaps(const Frame& frame) final;
         void DestroyShadowMap(intptr_t& shadowmap) final;
 
+        // skybox
         void SetSkyBox(const DrawFrameContext& context) final;
         void DrawSkyBox() final;
 
-        intptr_t GenerateAndBindTexture(const char* id, const uint32_t width, const uint32_t height) final;
+        // terrain
+        void SetTerrain(const DrawFrameContext& context) final;
+        void DrawTerrain() final;
+
+        intptr_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;
+        void BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height) final;
+        void EndRenderToTexture(intptr_t& context) final;
+
+        intptr_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
         intptr_t GetTexture(const char* id) final;
+
+        void DrawFullScreenQuad() final;
 
 #ifdef DEBUG
         void DrawPoint(const Point& point, const Vector3f& color) final;
@@ -64,23 +78,28 @@ namespace My {
         void ClearBuffers() final;
 
     protected:
-        void DrawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
+        void initializeGeometries(const Scene& scene);
+        void initializeSkyBox(const Scene& scene);
+        void initializeTerrain(const Scene& scene);
 
-        bool SetShaderParameter(const char* paramName, const Matrix4X4f& param);
-        bool SetShaderParameter(const char* paramName, const Matrix4X4f* param, const int32_t count);
-        bool SetShaderParameter(const char* paramName, const Vector4f& param);
-        bool SetShaderParameter(const char* paramName, const Vector3f& param);
-        bool SetShaderParameter(const char* paramName, const Vector2f& param);
-        bool SetShaderParameter(const char* paramName, const float param);
-        bool SetShaderParameter(const char* paramName, const int32_t param);
-        bool SetShaderParameter(const char* paramName, const uint32_t param);
-        bool SetShaderParameter(const char* paramName, const bool param);
-        bool SetPerFrameShaderParameters(const DrawFrameContext& context);
+        void drawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
+
+        bool setShaderParameter(const char* paramName, const Matrix4X4f& param);
+        bool setShaderParameter(const char* paramName, const Matrix4X4f* param, const int32_t count);
+        bool setShaderParameter(const char* paramName, const Vector4f& param);
+        bool setShaderParameter(const char* paramName, const Vector3f& param);
+        bool setShaderParameter(const char* paramName, const Vector2f& param);
+        bool setShaderParameter(const char* paramName, const float param);
+        bool setShaderParameter(const char* paramName, const int32_t param);
+        bool setShaderParameter(const char* paramName, const uint32_t param);
+        bool setShaderParameter(const char* paramName, const bool param);
 
     private:
         GLuint m_ShadowMapFramebufferName;
         GLuint m_CurrentShader;
-        GLuint m_UboBuffer = 0;
+        GLuint m_uboDrawFrameConstant = 0;
+        GLuint m_uboDrawBatchConstant = 0;
+        GLuint m_uboShadowMatricesConstant = 0;
 
         struct OpenGLDrawBatchContext : public DrawBatchContext {
             GLuint  vao;
@@ -90,10 +109,7 @@ namespace My {
         };
 
 #ifdef DEBUG
-        struct DebugDrawBatchContext {
-            GLuint  vao;
-            GLenum  mode;
-            GLsizei count;
+        struct DebugDrawBatchContext : public OpenGLDrawBatchContext {
             Vector3f color;
             Matrix4X4f trans;
         };
@@ -109,5 +125,6 @@ namespace My {
 #endif
 
         OpenGLDrawBatchContext m_SkyBoxDrawBatchContext;
+        OpenGLDrawBatchContext m_TerrainDrawBatchContext;
     };
 }

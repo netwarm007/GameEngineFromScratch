@@ -22,6 +22,14 @@ add_executable(PngParserTest PngParserTest.cpp)
 target_link_libraries(PngParserTest Common)
 add_test(NAME TEST_PngParser COMMAND PngParserTest)
 
+add_executable(DdsParserTest DdsParserTest.cpp)
+target_link_libraries(DdsParserTest Common)
+add_test(NAME TEST_DdsParser COMMAND DdsParserTest)
+
+add_executable(HdrParserTest HdrParserTest.cpp)
+target_link_libraries(HdrParserTest Common)
+add_test(NAME TEST_HdrParser COMMAND HdrParserTest)
+
 IF(WIN32)
 add_custom_command(TARGET PngParserTest POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -42,9 +50,8 @@ add_executable(SceneLoadingTest SceneLoadingTest.cpp)
 target_link_libraries(SceneLoadingTest Common)
 add_test(NAME TEST_SceneLoading COMMAND SceneLoadingTest)
 
-# temporary remove to avoid build error on circle / appveyor
-#add_executable(AnimationTest AnimationTest.cpp)
-#target_link_libraries(AnimationTest Common)
+add_executable(AnimationTest AnimationTest.cpp)
+target_link_libraries(AnimationTest Common)
 #add_test(NAME TEST_Animation COMMAND AnimationTest)
 
 add_executable(BulletTest BulletTest.cpp)
@@ -84,4 +91,4 @@ add_test(NAME TEST_PolarDecompose COMMAND PolarDecomposeTest)
 
 add_executable(RasterizationTest RasterizationTest.cpp)
 target_link_libraries(RasterizationTest Algorism GeomMath)
-add_test(NAME TEST_Rasterization COMMAND RasterizationTest)
+#add_test(NAME TEST_Rasterization COMMAND RasterizationTest)
