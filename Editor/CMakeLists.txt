@@ -11,10 +11,16 @@ IF(APPLE)
         list(APPEND AIRS ${SHADER}.air)
     endforeach(SHADER)
 
-    add_custom_command(OUTPUT Editor.metallib
-            COMMAND xcrun -sdk macosx metallib ${AIRS} -o Editor.metallib
-            COMMENT "Compile ${SHADER}.air --> Editor.metallib"
+    add_custom_command(OUTPUT Editor.metalar
+            COMMAND xcrun -sdk macosx metal-ar rcv Editor.metalar ${AIRS}
+            COMMENT "Archive ${AIRS} --> Editor.metalar"
             DEPENDS ${AIRS}
+        )
+
+    add_custom_command(OUTPUT Editor.metallib
+            COMMAND xcrun -sdk macosx metallib Editor.metalar -o Editor.metallib
+            COMMENT "Compile Editor.metalar --> Editor.metallib"
+            DEPENDS Editor.metalar
         )
 
     add_custom_target(EditorShaderLibrary
