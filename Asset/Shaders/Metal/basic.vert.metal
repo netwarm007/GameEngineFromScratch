@@ -59,7 +59,7 @@ struct basic_vert_main_in
     float3 inputTangent [[attribute(3)]];
 };
 
-vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& _42 [[buffer(0)]], constant PerBatchConstants& _13 [[buffer(1)]])
+vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& _42 [[buffer(1)]], constant PerBatchConstants& _13 [[buffer(2)]])
 {
     basic_vert_main_out out = {};
     float3x3 TBN = {};

@@ -20,7 +20,7 @@ struct Light {
     vec4    padding[2];
 };
 
-layout(std140,binding=0) uniform PerFrameConstants {
+layout(std140,binding=1) uniform PerFrameConstants {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     vec4 camPos;
@@ -29,7 +29,7 @@ layout(std140,binding=0) uniform PerFrameConstants {
 };
 
 // per drawcall
-layout(std140,binding=1) uniform PerBatchConstants {
+layout(std140,binding=2) uniform PerBatchConstants {
     mat4 modelMatrix;
 };
 

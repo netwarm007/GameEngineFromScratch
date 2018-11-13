@@ -17,16 +17,24 @@ struct Light
     float4 padding[2];
 };
 
-static const float2 _769[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
+static const float2 _332[4] = { float2(-0.94201624393463134765625f, -0.39906215667724609375f), float2(0.94558608531951904296875f, -0.768907248973846435546875f), float2(-0.094184100627899169921875f, -0.929388701915740966796875f), float2(0.34495937824249267578125f, 0.29387760162353515625f) };
 
-cbuffer _132 : register(b0, space0)
+cbuffer _710 : register(b0, space0)
 {
-    row_major float4x4 _132_viewMatrix : packoffset(c0);
-    row_major float4x4 _132_projectionMatrix : packoffset(c4);
-    float4 _132_camPos : packoffset(c8);
-    int _132_numLights : packoffset(c9);
-    Light _132_allLights[100] : packoffset(c10);
+    row_major float4x4 _710_viewMatrix : packoffset(c0);
+    row_major float4x4 _710_projectionMatrix : packoffset(c4);
+    float4 _710_camPos : packoffset(c8);
+    int _710_numLights : packoffset(c9);
+    Light _710_allLights[100] : packoffset(c10);
 };
+TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
+SamplerState _cubeShadowMap_sampler : register(s3, space0);
+Texture2DArray<float4> shadowMap : register(t1, space0);
+SamplerState _shadowMap_sampler : register(s1, space0);
+Texture2DArray<float4> globalShadowMap : register(t2, space0);
+SamplerState _globalShadowMap_sampler : register(s2, space0);
+Texture2D<float4> heightMap : register(t10, space0);
+SamplerState _heightMap_sampler : register(s10, space0);
 Texture2D<float4> normalMap : register(t5, space0);
 SamplerState _normalMap_sampler : register(s5, space0);
 Texture2D<float4> diffuseMap : register(t0, space0);
@@ -41,14 +49,6 @@ TextureCubeArray<float4> skybox : register(t4, space0);
 SamplerState _skybox_sampler : register(s4, space0);
 Texture2D<float4> brdfLUT : register(t9, space0);
 SamplerState _brdfLUT_sampler : register(s9, space0);
-TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
-SamplerState _cubeShadowMap_sampler : register(s3, space0);
-Texture2DArray<float4> shadowMap : register(t1, space0);
-SamplerState _shadowMap_sampler : register(s1, space0);
-Texture2DArray<float4> globalShadowMap : register(t2, space0);
-SamplerState _globalShadowMap_sampler : register(s2, space0);
-Texture2D<float4> heightMap : register(t10, space0);
-SamplerState _heightMap_sampler : register(s10, space0);
 Texture2D<float4> terrainHeightMap : register(t11, space0);
 SamplerState _terrainHeightMap_sampler : register(s11, space0);
 
@@ -73,7 +73,7 @@ struct SPIRV_Cross_Output
     float4 outputColor : SV_Target0;
 };
 
-float _559;
+float _109;
 
 float2 ParallaxMapping(float2 texCoords, float3 viewDir)
 {
@@ -130,7 +130,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 v_light_space = mul(v_light_space, float4x4(float4(0.5f, 0.0f, 0.0f, 0.0f), float4(0.0f, 0.5f, 0.0f, 0.0f), float4(0.0f, 0.0f, 0.5f, 0.0f), float4(0.5f, 0.5f, 0.5f, 1.0f)));
                 for (int i = 0; i < 4; i++)
                 {
-                    float2 indexable[4] = _769;
+                    float2 indexable[4] = _332;
                     near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
@@ -144,7 +144,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 v_light_space = mul(v_light_space, float4x4(float4(0.5f, 0.0f, 0.0f, 0.0f), float4(0.0f, 0.5f, 0.0f, 0.0f), float4(0.0f, 0.0f, 0.5f, 0.0f), float4(0.5f, 0.5f, 0.5f, 1.0f)));
                 for (int i_1 = 0; i_1 < 4; i_1++)
                 {
-                    float2 indexable_1[4] = _769;
+                    float2 indexable_1[4] = _332;
                     near_occ = globalShadowMap.Sample(_globalShadowMap_sampler, float3(v_light_space.xy + (indexable_1[i_1] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
@@ -158,7 +158,7 @@ float shadow_test(float4 p, Light light, float cosTheta)
                 v_light_space = mul(v_light_space, float4x4(float4(0.5f, 0.0f, 0.0f, 0.0f), float4(0.0f, 0.5f, 0.0f, 0.0f), float4(0.0f, 0.0f, 0.5f, 0.0f), float4(0.5f, 0.5f, 0.5f, 1.0f)));
                 for (int i_2 = 0; i_2 < 4; i_2++)
                 {
-                    float2 indexable_2[4] = _769;
+                    float2 indexable_2[4] = _332;
                     near_occ = shadowMap.Sample(_shadowMap_sampler, float3(v_light_space.xy + (indexable_2[i_2] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
@@ -311,7 +311,7 @@ void frag_main()
     float3 tangent_normal = normalMap.Sample(_normalMap_sampler, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0f) - 1.0f.xxx;
     float3 N = normalize(mul(tangent_normal, TBN));
-    float3 V = normalize(_132_camPos.xyz - v_world.xyz);
+    float3 V = normalize(_710_camPos.xyz - v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param_2 = diffuseMap.Sample(_diffuseMap_sampler, texCoords).xyz;
     float3 albedo = inverse_gamma_correction(param_2);
@@ -320,47 +320,31 @@ void frag_main()
     float3 F0 = 0.039999999105930328369140625f.xxx;
     F0 = lerp(F0, albedo, meta.xxx);
     float3 Lo = 0.0f.xxx;
-    for (int i = 0; i < _132_numLights; i++)
+    for (int i = 0; i < _710_numLights; i++)
     {
         Light light;
-        light.lightIntensity = _132_allLights[i].lightIntensity;
-        light.lightType = _132_allLights[i].lightType;
-        light.lightCastShadow = _132_allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _132_allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _132_allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _132_allLights[i].lightDistAttenCurveType;
-        light.lightSize = _132_allLights[i].lightSize;
-        light.lightGUID = _132_allLights[i].lightGUID;
-        light.lightPosition = _132_allLights[i].lightPosition;
-        light.lightColor = _132_allLights[i].lightColor;
-        light.lightDirection = _132_allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _132_allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _132_allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _132_allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _132_allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _132_allLights[i].lightVP;
-        light.padding[0] = _132_allLights[i].padding[0];
-        light.padding[1] = _132_allLights[i].padding[1];
+        light.lightIntensity = _710_allLights[i].lightIntensity;
+        light.lightType = _710_allLights[i].lightType;
+        light.lightCastShadow = _710_allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _710_allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _710_allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _710_allLights[i].lightDistAttenCurveType;
+        light.lightSize = _710_allLights[i].lightSize;
+        light.lightGUID = _710_allLights[i].lightGUID;
+        light.lightPosition = _710_allLights[i].lightPosition;
+        light.lightColor = _710_allLights[i].lightColor;
+        light.lightDirection = _710_allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _710_allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _710_allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _710_allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _710_allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _710_allLights[i].lightVP;
+        light.padding[0] = _710_allLights[i].padding[0];
+        light.padding[1] = _710_allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0f);
-        Light arg;
-        arg.lightIntensity = light.lightIntensity;
-        arg.lightType = light.lightType;
-        arg.lightCastShadow = light.lightCastShadow;
-        arg.lightShadowMapIndex = light.lightShadowMapIndex;
-        arg.lightAngleAttenCurveType = light.lightAngleAttenCurveType;
-        arg.lightDistAttenCurveType = light.lightDistAttenCurveType;
-        arg.lightSize = light.lightSize;
-        arg.lightGUID = light.lightGUID;
-        arg.lightPosition = light.lightPosition;
-        arg.lightColor = light.lightColor;
-        arg.lightDirection = light.lightDirection;
-        arg.lightDistAttenCurveParams = light.lightDistAttenCurveParams;
-        arg.lightAngleAttenCurveParams = light.lightAngleAttenCurveParams;
-        arg.lightVP = light.lightVP;
-        arg.padding = light.padding;
-        float visibility = shadow_test(v_world, arg, NdotL);
+        float visibility = shadow_test(v_world, light, NdotL);
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
         float param_3 = lightToSurfAngle;

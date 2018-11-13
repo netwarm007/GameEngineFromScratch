@@ -26,8 +26,12 @@ layout(std140) uniform PerFrameConstants
     vec4 camPos;
     int numLights;
     Light allLights[100];
-} _132;
+} _710;
 
+uniform samplerCubeArray cubeShadowMap;
+uniform sampler2DArray shadowMap;
+uniform sampler2DArray globalShadowMap;
+uniform sampler2D heightMap;
 uniform sampler2D normalMap;
 uniform sampler2D diffuseMap;
 uniform sampler2D metallicMap;
@@ -35,10 +39,6 @@ uniform sampler2D roughnessMap;
 uniform sampler2D aoMap;
 uniform samplerCubeArray skybox;
 uniform sampler2D brdfLUT;
-uniform samplerCubeArray cubeShadowMap;
-uniform sampler2DArray shadowMap;
-uniform sampler2DArray globalShadowMap;
-uniform sampler2D heightMap;
 
 in vec3 camPos_tangent;
 in vec3 v_tangent;
@@ -47,7 +47,7 @@ in mat3 TBN;
 in vec4 v_world;
 layout(location = 0) out vec4 outputColor;
 
-float _559;
+float _109;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 {
@@ -285,7 +285,7 @@ void main()
     vec3 tangent_normal = texture(normalMap, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     vec3 N = normalize(TBN * tangent_normal);
-    vec3 V = normalize(_132.camPos.xyz - v_world.xyz);
+    vec3 V = normalize(_710.camPos.xyz - v_world.xyz);
     vec3 R = reflect(-V, N);
     vec3 param_2 = texture(diffuseMap, texCoords).xyz;
     vec3 albedo = inverse_gamma_correction(param_2);
@@ -294,47 +294,31 @@ void main()
     vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _132.numLights; i++)
+    for (int i = 0; i < _710.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _132.allLights[i].lightIntensity;
-        light.lightType = _132.allLights[i].lightType;
-        light.lightCastShadow = _132.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _132.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _132.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _132.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _132.allLights[i].lightSize;
-        light.lightGUID = _132.allLights[i].lightGUID;
-        light.lightPosition = _132.allLights[i].lightPosition;
-        light.lightColor = _132.allLights[i].lightColor;
-        light.lightDirection = _132.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _132.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _132.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _132.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _132.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _132.allLights[i].lightVP;
-        light.padding[0] = _132.allLights[i].padding[0];
-        light.padding[1] = _132.allLights[i].padding[1];
+        light.lightIntensity = _710.allLights[i].lightIntensity;
+        light.lightType = _710.allLights[i].lightType;
+        light.lightCastShadow = _710.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _710.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _710.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _710.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _710.allLights[i].lightSize;
+        light.lightGUID = _710.allLights[i].lightGUID;
+        light.lightPosition = _710.allLights[i].lightPosition;
+        light.lightColor = _710.allLights[i].lightColor;
+        light.lightDirection = _710.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _710.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _710.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _710.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _710.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _710.allLights[i].lightVP;
+        light.padding[0] = _710.allLights[i].padding[0];
+        light.padding[1] = _710.allLights[i].padding[1];
         vec3 L = normalize(light.lightPosition.xyz - v_world.xyz);
         vec3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
-        Light arg;
-        arg.lightIntensity = light.lightIntensity;
-        arg.lightType = light.lightType;
-        arg.lightCastShadow = light.lightCastShadow;
-        arg.lightShadowMapIndex = light.lightShadowMapIndex;
-        arg.lightAngleAttenCurveType = light.lightAngleAttenCurveType;
-        arg.lightDistAttenCurveType = light.lightDistAttenCurveType;
-        arg.lightSize = light.lightSize;
-        arg.lightGUID = light.lightGUID;
-        arg.lightPosition = light.lightPosition;
-        arg.lightColor = light.lightColor;
-        arg.lightDirection = light.lightDirection;
-        arg.lightDistAttenCurveParams = light.lightDistAttenCurveParams;
-        arg.lightAngleAttenCurveParams = light.lightAngleAttenCurveParams;
-        arg.lightVP = light.lightVP;
-        arg.padding = light.padding;
-        float visibility = shadow_test(v_world, arg, NdotL);
+        float visibility = shadow_test(v_world, light, NdotL);
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
         float param_3 = lightToSurfAngle;

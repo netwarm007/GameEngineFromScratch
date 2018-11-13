@@ -19,12 +19,12 @@ struct Light
     vec4 padding[2];
 };
 
-layout(binding = 1, std140) uniform PerBatchConstants
+layout(binding = 2, std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
 } _13;
 
-layout(binding = 0, std140) uniform PerFrameConstants
+layout(binding = 1, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;

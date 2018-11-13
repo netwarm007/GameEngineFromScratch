@@ -52,33 +52,14 @@ struct PerFrameConstants
     Light_1 allLights[100];
 };
 
-struct Light_2
-{
-    float lightIntensity;
-    int lightType;
-    int lightCastShadow;
-    int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
-    float2 lightSize;
-    int4 lightGUID;
-    float4 lightPosition;
-    float4 lightColor;
-    float4 lightDirection;
-    float4 lightDistAttenCurveParams[2];
-    float4 lightAngleAttenCurveParams[2];
-    float4x4 lightVP;
-    float4 padding[2];
-};
-
 struct PerBatchConstants
 {
     float4x4 modelMatrix;
 };
 
-constant float2 _769[4] = {float2(-0.94201624393463134765625, -0.39906215667724609375), float2(0.94558608531951904296875, -0.768907248973846435546875), float2(-0.094184100627899169921875, -0.929388701915740966796875), float2(0.34495937824249267578125, 0.29387760162353515625)};
+constant float2 _332[4] = {float2(-0.94201624393463134765625, -0.39906215667724609375), float2(0.94558608531951904296875, -0.768907248973846435546875), float2(-0.094184100627899169921875, -0.929388701915740966796875), float2(0.34495937824249267578125, 0.29387760162353515625)};
 
-constant float _559 = {};
+constant float _109 = {};
 
 struct pbr_frag_main_out
 {
@@ -337,7 +318,7 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], constant PerFrameConstants& _132 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], texture2d<float> heightMap [[texture(10)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]], sampler heightMapSmplr [[sampler(10)]])
+fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], constant PerFrameConstants& _710 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], texture2d<float> normalMap [[texture(5)]], texture2d<float> metallicMap [[texture(6)]], texture2d<float> roughnessMap [[texture(7)]], texture2d<float> aoMap [[texture(8)]], texture2d<float> brdfLUT [[texture(9)]], texture2d<float> heightMap [[texture(10)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]], sampler normalMapSmplr [[sampler(5)]], sampler metallicMapSmplr [[sampler(6)]], sampler roughnessMapSmplr [[sampler(7)]], sampler aoMapSmplr [[sampler(8)]], sampler brdfLUTSmplr [[sampler(9)]], sampler heightMapSmplr [[sampler(10)]])
 {
     pbr_frag_main_out out = {};
     float3x3 TBN = {};
@@ -351,7 +332,7 @@ fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], const
     float3 tangent_normal = normalMap.sample(normalMapSmplr, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - float3(1.0);
     float3 N = normalize(TBN * tangent_normal);
-    float3 V = normalize(_132.camPos.xyz - in.v_world.xyz);
+    float3 V = normalize(_710.camPos.xyz - in.v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param_2 = diffuseMap.sample(diffuseMapSmplr, texCoords).xyz;
     float3 albedo = inverse_gamma_correction(param_2);
@@ -360,47 +341,31 @@ fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], const
     float3 F0 = float3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, float3(meta));
     float3 Lo = float3(0.0);
-    for (int i = 0; i < _132.numLights; i++)
+    for (int i = 0; i < _710.numLights; i++)
     {
-        Light_2 light;
-        light.lightIntensity = _132.allLights[i].lightIntensity;
-        light.lightType = _132.allLights[i].lightType;
-        light.lightCastShadow = _132.allLights[i].lightCastShadow;
-        light.lightShadowMapIndex = _132.allLights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _132.allLights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _132.allLights[i].lightDistAttenCurveType;
-        light.lightSize = _132.allLights[i].lightSize;
-        light.lightGUID = _132.allLights[i].lightGUID;
-        light.lightPosition = _132.allLights[i].lightPosition;
-        light.lightColor = _132.allLights[i].lightColor;
-        light.lightDirection = _132.allLights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _132.allLights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _132.allLights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _132.allLights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _132.allLights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _132.allLights[i].lightVP;
-        light.padding[0] = _132.allLights[i].padding[0];
-        light.padding[1] = _132.allLights[i].padding[1];
+        Light light;
+        light.lightIntensity = _710.allLights[i].lightIntensity;
+        light.lightType = _710.allLights[i].lightType;
+        light.lightCastShadow = _710.allLights[i].lightCastShadow;
+        light.lightShadowMapIndex = _710.allLights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _710.allLights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _710.allLights[i].lightDistAttenCurveType;
+        light.lightSize = _710.allLights[i].lightSize;
+        light.lightGUID = _710.allLights[i].lightGUID;
+        light.lightPosition = _710.allLights[i].lightPosition;
+        light.lightColor = _710.allLights[i].lightColor;
+        light.lightDirection = _710.allLights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _710.allLights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _710.allLights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _710.allLights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _710.allLights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _710.allLights[i].lightVP;
+        light.padding[0] = _710.allLights[i].padding[0];
+        light.padding[1] = _710.allLights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - in.v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
-        Light arg;
-        arg.lightIntensity = light.lightIntensity;
-        arg.lightType = light.lightType;
-        arg.lightCastShadow = light.lightCastShadow;
-        arg.lightShadowMapIndex = light.lightShadowMapIndex;
-        arg.lightAngleAttenCurveType = light.lightAngleAttenCurveType;
-        arg.lightDistAttenCurveType = light.lightDistAttenCurveType;
-        arg.lightSize = light.lightSize;
-        arg.lightGUID = light.lightGUID;
-        arg.lightPosition = light.lightPosition;
-        arg.lightColor = light.lightColor;
-        arg.lightDirection = light.lightDirection;
-        spvArrayCopy(arg.lightDistAttenCurveParams, light.lightDistAttenCurveParams);
-        spvArrayCopy(arg.lightAngleAttenCurveParams, light.lightAngleAttenCurveParams);
-        arg.lightVP = light.lightVP;
-        spvArrayCopy(arg.padding, light.padding);
-        float visibility = shadow_test(in.v_world, arg, NdotL, cubeShadowMap, cubeShadowMapSmplr, shadowMap, shadowMapSmplr, globalShadowMap, globalShadowMapSmplr);
+        float visibility = shadow_test(in.v_world, light, NdotL, cubeShadowMap, cubeShadowMapSmplr, shadowMap, shadowMapSmplr, globalShadowMap, globalShadowMapSmplr);
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
         float param_3 = lightToSurfAngle;

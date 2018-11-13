@@ -1,5 +1,5 @@
 IF(APPLE)
-    set(SHADER_SOURCES basic_vs basic_ps pbr_ps
+    set(SHADER_SOURCES basic.vert basic.frag
             )
 
     foreach(SHADER IN LISTS SHADER_SOURCES)

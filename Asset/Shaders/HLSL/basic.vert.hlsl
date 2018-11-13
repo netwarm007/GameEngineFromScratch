@@ -17,11 +17,11 @@ struct Light
     float4 padding[2];
 };
 
-cbuffer _13 : register(b1, space0)
+cbuffer _13 : register(b2, space0)
 {
     row_major float4x4 _13_modelMatrix : packoffset(c0);
 };
-cbuffer _42 : register(b0, space0)
+cbuffer _42 : register(b1, space0)
 {
     row_major float4x4 _42_viewMatrix : packoffset(c0);
     row_major float4x4 _42_projectionMatrix : packoffset(c4);

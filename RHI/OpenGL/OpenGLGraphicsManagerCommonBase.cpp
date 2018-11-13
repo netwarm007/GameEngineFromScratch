@@ -644,12 +644,12 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
     glGenBuffers(2, terrainVBO);
     glBindVertexArray(terrainVAO);
 
-    static const float half_patch_size = 25.0f;
+    static const float patch_size = 32.0f;
     static const float _vertices[] = {
-        -half_patch_size,  half_patch_size, 0.0f,
-        -half_patch_size, -half_patch_size, 0.0f,
-         half_patch_size, -half_patch_size, 0.0f,
-         half_patch_size,  half_patch_size, 0.0f
+        0.0f,  patch_size, 0.0f,
+        0.0f, 0.0f, 0.0f,
+        patch_size, 0.0f, 0.0f,
+        patch_size, patch_size, 0.0f
     };
 
     static const uint8_t _index[] = {
@@ -1285,9 +1285,23 @@ void OpenGLGraphicsManagerCommonBase::DrawTerrain()
 
     glPatchParameteri(GL_PATCH_VERTICES, 4);
 
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glDrawElements(m_TerrainDrawBatchContext.mode, m_TerrainDrawBatchContext.count, m_TerrainDrawBatchContext.type, 0x00);
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    const float patch_size = 32.0f;
+    const int32_t patch_num_row = 10;
+    const int32_t patch_num_col = 10;
+
+    for (int32_t i = -patch_num_row / 2; i < patch_num_row / 2; i++)
+    {
+        for (int32_t j = -patch_num_col / 2; j < patch_num_col / 2; j++)
+        {
+            MatrixTranslation(m_TerrainDrawBatchContext.trans, patch_size * i, patch_size * j, 0.0f);
+            SetPerBatchConstants(m_TerrainDrawBatchContext);
+            glDrawElements(m_TerrainDrawBatchContext.mode, m_TerrainDrawBatchContext.count, m_TerrainDrawBatchContext.type, 0x00);
+        }
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBindVertexArray(0);
 }
 

@@ -106,8 +106,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
     _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshGenerics].stepRate = 1;
     _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshGenerics].stepFunction = MTLVertexStepFunctionPerVertex;
 
-    id<MTLFunction> fragmentFunction = [myLibrary newFunctionWithName:@"basic_vs_main"];
-    id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:@"pbr_ps_main"];
+    id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:@"basic_vert_main"];
+    id<MTLFunction> fragmentFunction = [myLibrary newFunctionWithName:@"basic_frag_main"];
 
     // Create a reusable pipeline state
     MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
