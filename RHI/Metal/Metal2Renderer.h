@@ -5,7 +5,7 @@
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
                                       device:(nonnull id <MTLDevice>)device;
 
-- (void)drawFrameNumber:(NSUInteger)frameNumber toView:(nonnull MTKView *)view;
+- (void)drawFrameNumber:(NSUInteger)frameNumber;
 
 - (void)updateDrawableSize:(CGSize)size;
 

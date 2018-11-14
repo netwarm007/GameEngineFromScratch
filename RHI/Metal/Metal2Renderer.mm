@@ -6,7 +6,7 @@
 #import "Metal2GraphicsManager.h"
 
 // The max number of command buffers in flight
-static const NSUInteger GEFSMaxBuffersInFlight = 3;
+static const NSUInteger GEFSMaxBuffersInFlight = 2;
 
 @implementation Metal2Renderer
 {
@@ -26,7 +26,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
 
     // Vertex descriptor specifying how vertices will by laid out for input into our render
     // pipeline and how ModelIO should layout vertices
-    MTLVertexDescriptor *_mtlVertexDescriptor;
+    MTLVertexDescriptor* _mtlVertexDescriptor;
+
+    MTKView* _mtkView;
 }
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device.  We'll also use this
@@ -36,9 +38,10 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
     self = [super init];
     if(self)
     {
+        _mtkView = mtkView;
         _device = device;
         _inFlightSemaphore = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
-        [self loadMetal:mtkView];
+        [self loadMetal];
         [self loadAssets];
     }
 
@@ -46,7 +49,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
 }
 
 /// Create our metal render state objects including our shaders and render state pipeline objects
-- (void) loadMetal:(nonnull MTKView *)mtkView
+- (void) loadMetal
 {
 
     NSError *error = Nil;
@@ -112,13 +115,13 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
     // Create a reusable pipeline state
     MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
     pipelineStateDescriptor.label = @"MyPipeline";
-    pipelineStateDescriptor.sampleCount = mtkView.sampleCount;
+    pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
     pipelineStateDescriptor.vertexFunction = vertexFunction;
     pipelineStateDescriptor.fragmentFunction = fragmentFunction;
     pipelineStateDescriptor.vertexDescriptor = _mtlVertexDescriptor;
-    pipelineStateDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat;
-    pipelineStateDescriptor.depthAttachmentPixelFormat = mtkView.depthStencilPixelFormat;
-    pipelineStateDescriptor.stencilAttachmentPixelFormat = mtkView.depthStencilPixelFormat;
+    pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
+    pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
+    pipelineStateDescriptor.stencilAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
 
     _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
     if (!_pipelineState)
@@ -252,7 +255,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
 }
 
 // Called whenever the view needs to render
-- (void)drawFrameNumber:(NSUInteger)frameNumber toView:(nonnull MTKView *)view
+- (void)drawFrameNumber:(NSUInteger)frameNumber
 {
     // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the Metal
     // pipeline (App, Metal, Drivers, GPU, etc)
@@ -265,12 +268,15 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
     commandBuffer.label = @"MyCommand";
 
     // Obtain a renderPassDescriptor generated from the view's drawable textures
-    MTLRenderPassDescriptor *renderPassDescriptor = view.currentRenderPassDescriptor;
+    MTLRenderPassDescriptor *renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
 
     // If we've gotten a renderPassDescriptor we can render to the drawable, otherwise we'll skip
     // any rendering this frame because we have no drawable to draw to
     if(renderPassDescriptor != nil)
     {
+        // Clear the screen
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.1f, 0.2f, 0.3f, 1.0f);
+
         // Create a render command encoder so we can render into something
         id<MTLRenderCommandEncoder> renderEncoder =
             [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
@@ -329,7 +335,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 3;
 
         [renderEncoder endEncoding];
 
-        [commandBuffer presentDrawable:view.currentDrawable];
+        [commandBuffer presentDrawable:_mtkView.currentDrawable];
     }
 
     // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully

@@ -26,6 +26,7 @@ void Metal2GraphicsManager::Clear()
 void Metal2GraphicsManager::Draw()
 {
     GraphicsManager::Draw();
+    [m_pRenderer drawFrameNumber:0];
 }
 
 bool Metal2GraphicsManager::CheckCapability(RHICapability cap)
