@@ -87,6 +87,16 @@ void GraphicsManager::UpdateConstants()
     CalculateLights();
 }
 
+void GraphicsManager::BeginScene()
+{
+    cerr << "[GraphicsManager] BeginScene()" << endl;
+}
+
+void GraphicsManager::EndScene()
+{
+    cerr << "[GraphicsManager] EndScene()" << endl;
+}
+
 void GraphicsManager::Clear()
 {
 

@@ -26,15 +26,14 @@ layout(binding = 0, std140) uniform PerFrameConstants
     vec4 camPos;
     int numLights;
     Light allLights[100];
-} _42;
+} _33;
 
 layout(location = 0) in vec3 inputPosition;
 
 void main()
 {
-    gl_PointSize = 5.0;
     vec4 v = vec4(inputPosition, 1.0);
-    v = _42.viewMatrix * v;
-    gl_Position = _42.projectionMatrix * v;
+    v = _33.viewMatrix * v;
+    gl_Position = _33.projectionMatrix * v;
 }
 

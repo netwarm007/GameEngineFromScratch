@@ -98,6 +98,9 @@ namespace My {
         virtual void CalculateLights();
         virtual void UpdateConstants();
 
+        virtual void BeginScene();
+        virtual void EndScene();
+
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif

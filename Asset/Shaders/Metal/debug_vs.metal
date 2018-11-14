@@ -5,8 +5,8 @@ using namespace metal;
 
 struct Light
 {
-    int lightType;
     float lightIntensity;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
     int lightAngleAttenCurveType;
@@ -39,7 +39,6 @@ struct PerBatchConstants
 struct main0_out
 {
     float4 gl_Position [[position]];
-    float gl_PointSize [[point_size]];
 };
 
 struct main0_in
@@ -47,13 +46,12 @@ struct main0_in
     float3 inputPosition [[attribute(0)]];
 };
 
-vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _42 [[buffer(0)]])
+vertex main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& _33 [[buffer(0)]])
 {
     main0_out out = {};
-    out.gl_PointSize = 5.0;
     float4 v = float4(in.inputPosition, 1.0);
-    v = _42.viewMatrix * v;
-    out.gl_Position = _42.projectionMatrix * v;
+    v = _33.viewMatrix * v;
+    out.gl_Position = _33.projectionMatrix * v;
     return out;
 }
 

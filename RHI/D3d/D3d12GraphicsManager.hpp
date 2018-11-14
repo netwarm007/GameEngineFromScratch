@@ -13,14 +13,23 @@ namespace My {
     class D3d12GraphicsManager : public GraphicsManager
     {
     public:
-       	virtual int Initialize();
-	    virtual void Finalize();
+       	int Initialize() final;
+	    void Finalize() final;
 
-        virtual void Clear();
+        void Clear() final;
 
-        virtual void Draw();
+        void Draw() final;
 
-    protected:
+        void UseShaderProgram(const intptr_t shaderProgram) final;
+        void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void SetPerBatchConstants(const DrawBatchContext& context) final;
+
+        void DrawBatch(const DrawBatchContext& context) final;
+
+    private:
+        void BeginScene() final;
+        void EndScene() final;
+
         bool SetPerFrameShaderParameters();
         bool SetPerBatchShaderParameters(int32_t index);
 
@@ -29,7 +38,6 @@ namespace My {
         void ClearBuffers();
         void RenderBuffers();
 
-    private:
         HRESULT CreateDescriptorHeaps();
         HRESULT CreateRenderTarget();
         HRESULT CreateDepthStencil();
@@ -42,10 +50,10 @@ namespace My {
         HRESULT CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
         HRESULT CreateRootSignature();
         HRESULT WaitForPreviousFrame();
-        HRESULT PopulateCommandList();
+        HRESULT ResetCommandList();
         HRESULT InitializePSO();
         HRESULT CreateCommandList();
-
+        HRESULT MsaaResolve();
 
         HRESULT CreateInternalVertexBuffer();
 
@@ -97,11 +105,9 @@ namespace My {
 	        bool usingNormalMap;
         };
 
-        struct DrawBatchContext {
+        struct D3dDrawBatchContext : public DrawBatchContext {
             uint32_t index_count;
             uint32_t property_count;
-            std::shared_ptr<SceneGeometryNode> node;
-            std::shared_ptr<SceneObjectMaterial> material;
         };
 
         std::vector<DrawBatchContext> m_DrawBatchContext;
@@ -115,5 +121,8 @@ namespace My {
         HANDLE                          m_hFenceEvent;
         ID3D12Fence*                    m_pFence = nullptr;
         uint32_t                        m_nFenceValue;
+
+        int32_t m_nBatchIndex = 0;
+        size_t vertex_buffer_view_offset = 0;
     };
 }
