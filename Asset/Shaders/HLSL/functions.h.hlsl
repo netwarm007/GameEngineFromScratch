@@ -1,16 +1,19 @@
-vec3 projectOnPlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
+#include "cbuffer.h"
+#include "const.h.hlsl"
+
+float3 projectOnPlane(float3 _point, float3 center_of_plane, float3 normal_of_plane)
 {
-    return point - dot(point - center_of_plane, normal_of_plane) * normal_of_plane;
+    return _point - (normal_of_plane * dot(_point - center_of_plane, normal_of_plane));
 }
 
-bool isAbovePlane(vec3 point, vec3 center_of_plane, vec3 normal_of_plane)
+bool isAbovePlane(float3 _point, float3 center_of_plane, float3 normal_of_plane)
 {
-    return dot(point - center_of_plane, normal_of_plane) > 0.0f;
+    return dot(_point - center_of_plane, normal_of_plane) > 0.0f;
 }
 
-vec3 linePlaneIntersect(vec3 line_start, vec3 line_dir, vec3 center_of_plane, vec3 normal_of_plane)
+float3 linePlaneIntersect(float3 line_start, float3 line_dir, float3 center_of_plane, float3 normal_of_plane)
 {
-    return line_start + line_dir * (dot(center_of_plane - line_start, normal_of_plane) / dot(line_dir, normal_of_plane));
+    return line_start + (line_dir * (dot(center_of_plane - line_start, normal_of_plane) / dot(line_dir, normal_of_plane)));
 }
 
 float linear_interpolate(float t, float begin, float end)
@@ -29,74 +32,79 @@ float linear_interpolate(float t, float begin, float end)
     }
 }
 
-float apply_atten_curve(float dist, int atten_curve_type, vec4 atten_params[2])
+float apply_atten_curve(float dist, int atten_curve_type, float4 atten_params[2])
 {
     float atten = 1.0f;
-
-    switch(atten_curve_type)
+    switch (atten_curve_type)
     {
-        case 1: // linear
+        case 1:
         {
             float begin_atten = atten_params[0].x;
             float end_atten = atten_params[0].y;
-            atten = linear_interpolate(dist, begin_atten, end_atten);
+            float param = dist;
+            float param_1 = begin_atten;
+            float param_2 = end_atten;
+            atten = linear_interpolate(param, param_1, param_2);
             break;
         }
-        case 2: // smooth
+        case 2:
         {
-            float begin_atten = atten_params[0].x;
-            float end_atten = atten_params[0].y;
-            float tmp = linear_interpolate(dist, begin_atten, end_atten);
-            atten = 3.0f * pow(tmp, 2.0f) - 2.0f * pow(tmp, 3.0f);
+            float begin_atten_1 = atten_params[0].x;
+            float end_atten_1 = atten_params[0].y;
+            float param_3 = dist;
+            float param_4 = begin_atten_1;
+            float param_5 = end_atten_1;
+            float tmp = linear_interpolate(param_3, param_4, param_5);
+            atten = (3.0f * pow(tmp, 2.0f)) - (2.0f * pow(tmp, 3.0f));
             break;
         }
-        case 3: // inverse
+        case 3:
         {
             float scale = atten_params[0].x;
             float offset = atten_params[0].y;
             float kl = atten_params[0].z;
             float kc = atten_params[0].w;
-            atten = clamp(scale / 
-                (kl * dist + kc * scale) + offset, 
-                0.0f, 1.0f);
+            atten = clamp((scale / ((kl * dist) + (kc * scale))) + offset, 0.0f, 1.0f);
             break;
         }
-        case 4: // inverse square
+        case 4:
         {
-            float scale = atten_params[0].x;
-            float offset = atten_params[0].y;
+            float scale_1 = atten_params[0].x;
+            float offset_1 = atten_params[0].y;
             float kq = atten_params[0].z;
-            float kl = atten_params[0].w;
-            float kc = atten_params[1].x;
-            atten = clamp(pow(scale, 2.0f) / 
-                (kq * pow(dist, 2.0f) + kl * dist * scale + kc * pow(scale, 2.0f) + offset), 
-                0.0f, 1.0f);
+            float kl_1 = atten_params[0].w;
+            float kc_1 = atten_params[1].x;
+            atten = clamp(pow(scale_1, 2.0f) / ((((kq * pow(dist, 2.0f)) + ((kl_1 * dist) * scale_1)) + (kc_1 * pow(scale_1, 2.0f))) + offset_1), 0.0f, 1.0f);
             break;
         }
         case 0:
+        {
+            break;
+        }
         default:
-            break; // no attenuation
+        {
+            break;
+        }
     }
-
     return atten;
 }
 
-float shadow_test(const vec4 p, const Light light, const float cosTheta) {
-    vec4 v_light_space = light.lightVP * p;
-    v_light_space /= v_light_space.w;
+float shadow_test(float4 p, Light light, float cosTheta) {
+    float4 v_light_space = mul(p, light.lightVP);
+    v_light_space /= v_light_space.w.xxxx;
 
-    const mat4 depth_bias = mat4 (
-        vec4(0.5f, 0.0f, 0.0f, 0.0f),
-        vec4(0.0f, 0.5f, 0.0f, 0.0f),
-        vec4(0.0f, 0.0f, 0.5f, 0.0f),
-        vec4(0.5f, 0.5f, 0.5f, 1.0f)
+    const float4x4 depth_bias = float4x4 (
+        float4(0.5f, 0.0f, 0.0f, 0.0f),
+        float4(0.0f, 0.5f, 0.0f, 0.0f),
+        float4(0.0f, 0.0f, 0.5f, 0.0f),
+        float4(0.5f, 0.5f, 0.5f, 1.0f)
     );
 
-    const vec2 poissonDisk[4] = vec2[](
-        vec2( -0.94201624f, -0.39906216f ),
-        vec2( 0.94558609f, -0.76890725f ),
-        vec2( -0.094184101f, -0.92938870f ),
-        vec2( 0.34495938f, 0.29387760f )
+    const float2x4 poissonDisk = float2x4 (
+        float2( -0.94201624f, -0.39906216f ),
+        float2( 0.94558609f, -0.76890725f ),
+        float2( -0.094184101f, -0.92938870f ),
+        float2( 0.34495938f, 0.29387760f )
     );
 
     // shadow test
@@ -110,8 +118,8 @@ float shadow_test(const vec4 p, const Light light, const float cosTheta) {
         {
             case 0: // point
                 // recalculate the v_light_space because we do not need to taking account of rotation
-                vec3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = texture(cubeShadowMap, vec4(L, light.lightShadowMapIndex)).r;
+                float3 L = p.xyz - light.lightPosition.xyz;
+                near_occ = cubeShadowMap.Sample(samp0, float4(L, float(light.lightShadowMapIndex))).x;
 
                 if (length(L) - near_occ * 10.0f > bias)
                 {
@@ -121,10 +129,10 @@ float shadow_test(const vec4 p, const Light light, const float cosTheta) {
                 break;
             case 1: // spot
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = depth_bias * v_light_space;
+                v_light_space = mul(depth_bias, v_light_space);
                 for (int i = 0; i < 4; i++)
                 {
-                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+                    near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
 
                     if (v_light_space.z - near_occ > bias)
                     {
@@ -135,10 +143,10 @@ float shadow_test(const vec4 p, const Light light, const float cosTheta) {
                 break;
             case 2: // infinity
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = depth_bias * v_light_space;
+                v_light_space = mul(depth_bias, v_light_space);
                 for (int i = 0; i < 4; i++)
                 {
-                    near_occ = texture(globalShadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+                    near_occ = globalShadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
 
                     if (v_light_space.z - near_occ > bias)
                     {
@@ -149,10 +157,10 @@ float shadow_test(const vec4 p, const Light light, const float cosTheta) {
                 break;
             case 3: // area
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = depth_bias * v_light_space;
+                v_light_space = mul(depth_bias, v_light_space);
                 for (int i = 0; i < 4; i++)
                 {
-                    near_occ = texture(shadowMap, vec3(v_light_space.xy + poissonDisk[i] / 700.0f, light.lightShadowMapIndex)).r;
+                    near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
 
                     if (v_light_space.z - near_occ > bias)
                     {
@@ -167,40 +175,40 @@ float shadow_test(const vec4 p, const Light light, const float cosTheta) {
     return visibility;
 }
 
-vec3 reinhard_tone_mapping(vec3 color)
+float3 reinhard_tone_mapping(float3 color)
 {
-    return color / (color + vec3(1.0f));
+    return color / (color + 1.0f.xxx);
 }
 
-vec3 exposure_tone_mapping(vec3 color)
+float3 exposure_tone_mapping(float3 color)
 {
     const float exposure = 1.0f;
-    return vec3(1.0f) - exp(-color * exposure);
+    return 1.0f.xxx - exp(-color * exposure);
 }
 
-vec3 gamma_correction(vec3 color)
+float3 gamma_correction(float3 color)
 {
     const float gamma = 2.2f;
-    return pow(color, vec3(1.0f / gamma));
+    return pow(color, (1.0f / gamma).xxx);
 }
 
-vec3 inverse_gamma_correction(vec3 color)
+float3 inverse_gamma_correction(float3 color)
 {
     const float gamma = 2.2f;
-    return pow(color, vec3(gamma));
+    return pow(color, gamma.xxx);
 }
 
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
+float3 fresnelSchlick(float cosTheta, float3 F0)
 {
-    return F0 + (1.0f - F0) * pow(1.0f - cosTheta, 5.0f);
+    return F0 + ((1.0f.xxx - F0) * pow(1.0f - cosTheta, 5.0f));
 }
 
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+float3 fresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
 {
-    return F0 + (max(vec3(1.0f - roughness), F0) - F0) * pow(1.0f - cosTheta, 5.0f);
+    return F0 + ((max((1.0f - roughness).xxx, F0) - F0) * pow(1.0f - cosTheta, 5.0f));
 }
 
-float DistributionGGX(vec3 N, vec3 H, float roughness)
+float DistributionGGX(float3 N, float3 H, float roughness)
 {
     float a      = roughness*roughness;
     float a2     = a*a;
@@ -225,7 +233,7 @@ float GeometrySchlickGGXDirect(float NdotV, float roughness)
     return num / denom;
 }
 
-float GeometrySmithDirect(vec3 N, vec3 V, vec3 L, float roughness)
+float GeometrySmithDirect(float3 N, float3 V, float3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0f);
     float NdotL = max(dot(N, L), 0.0f);
@@ -246,7 +254,7 @@ float GeometrySchlickGGXIndirect(float NdotV, float roughness)
     return nom / denom;
 }
 
-float GeometrySmithIndirect(vec3 N, vec3 V, vec3 L, float roughness)
+float GeometrySmithIndirect(float3 N, float3 V, float3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
@@ -266,12 +274,12 @@ float RadicalInverse_VdC(uint bits)
     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
 }
 
-vec2 Hammersley(uint i, uint N)
+float2 Hammersley(uint i, uint N)
 {
-    return vec2(float(i)/float(N), RadicalInverse_VdC(i));
+    return float2(float(i)/float(N), RadicalInverse_VdC(i));
 }  
 
-vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
+float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 {
     float a = roughness*roughness;
 	
@@ -280,86 +288,86 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     float sinTheta = sqrt(1.0 - cosTheta*cosTheta);
 	
     // from spherical coordinates to cartesian coordinates
-    vec3 H;
+    float3 H;
     H.x = cos(phi) * sinTheta;
     H.y = sin(phi) * sinTheta;
     H.z = cosTheta;
 	
     // from tangent-space vector to world-space sample vector
-    vec3 up        = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-    vec3 tangent   = normalize(cross(up, N));
-    vec3 bitangent = cross(N, tangent);
+    float3 up        = abs(N.z) < 0.999 ? float3(0.0, 0.0, 1.0) : float3(1.0, 0.0, 0.0);
+    float3 tangent   = normalize(cross(up, N));
+    float3 bitangent = cross(N, tangent);
 	
-    vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
+    float3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
     return normalize(sampleVec);
 }
 
-vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+float2 ParallaxMapping(float2 texCoords, float3 viewDir)
 { 
     const float height_scale = 0.10f;
 
     // number of depth layers
     const float minLayers = 8.0;
     const float maxLayers = 32.0;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+    float numLayers = linear_interpolate(abs(dot(float3(0.0, 0.0, 1.0), viewDir)), maxLayers, minLayers);
     // calculate the size of each layer
     const float layerDepth = 1.0f / numLayers;
     // depth of current layer
     float currentLayerDepth = 0.0f;
 
     // get initial values
-    vec2  currentTexCoords     = texCoords;
-    float currentDepthMapValue = 1.0f - texture(heightMap, currentTexCoords).r;
+    float2  currentTexCoords     = texCoords;
+    float currentDepthMapValue = 1.0f - heightMap.Sample(samp0, currentTexCoords).x;
 
     // the amount to shift the texture coordinates per layer (from vector P)
-    const vec2 P = viewDir.xy * height_scale; 
-    const vec2 deltaTexCoords = P / numLayers;
+    const float2 P = viewDir.xy * height_scale; 
+    const float2 deltaTexCoords = P / numLayers;
     
     while(currentLayerDepth < currentDepthMapValue)
     {
         // shift texture coordinates along direction of P
         currentTexCoords -= deltaTexCoords;
         // get depthmap value at current texture coordinates
-        currentDepthMapValue = 1.0f - texture(heightMap, currentTexCoords).r;  
+        currentDepthMapValue = 1.0f - heightMap.Sample(samp0, currentTexCoords).x;  
         // get depth of next layer
         currentLayerDepth += layerDepth;  
     }
 
     // get texture coordinates before collision (reverse operations)
-    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+    float2 prevTexCoords = currentTexCoords + deltaTexCoords;
 
     // get depth after and before collision for linear interpolation
     float afterDepth  = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = 1.0f - texture(heightMap, prevTexCoords).r - currentLayerDepth + layerDepth;
+    float beforeDepth = 1.0f - heightMap.Sample(samp0, prevTexCoords).x - currentLayerDepth + layerDepth;
     
     // interpolation of texture coordinates
     float weight = afterDepth / (afterDepth - beforeDepth);
-    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0f - weight);
+    float2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0f - weight);
 
     return finalTexCoords;  
 } 
 
-vec4 project(vec4 vertex){
-    vec4 result = projectionMatrix * viewMatrix /* modelMatrix */ * vertex;
-    result /= result.w;
+float4 project(float4 vertex){
+    float4 result = mul(mul(vertex, viewMatrix), projectionMatrix);
+    result /= result.w.xxxx;
     return result;
 }
 
-vec2 screen_space(vec4 vertex){
-    return (clamp(vertex.xy, -1.3, 1.3) + 1) * (vec2(960, 540) * 0.5);
+float2 screen_space(float4 vertex){
+    return (clamp(vertex.xy, -1.3, 1.3) + 1) * (float2(960, 540) * 0.5);
 }
 
-bool offscreen(vec4 vertex){
+bool offscreen(float4 vertex){
     if(vertex.z < -0.5){
         return true;
     }   
     return any(
-        lessThan(vertex.xy, vec2(-1.7))) ||
-        any(greaterThan(vertex.xy, vec2(1.7))
+        (vertex.xy < float2(-1.7)) ||
+        any(vertex.xy > float2(1.7))
     );  
 }
 
-float level(vec2 v0, vec2 v1){
+float level(float2 v0, float2 v1){
      return clamp(distance(v0, v1)/2.0f, 1, 64);
 }
 

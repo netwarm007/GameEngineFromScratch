@@ -46,10 +46,9 @@ struct debug_vert_main_in
     float3 inputPosition [[attribute(0)]];
 };
 
-vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], constant PerFrameConstants& _42 [[buffer(0)]])
+vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], constant PerFrameConstants& _33 [[buffer(1)]])
 {
     debug_vert_main_out out = {};
-    out.gl_PointSize = 5.0;
     float4 v = float4(in.inputPosition, 1.0);
     v = _33.viewMatrix * v;
     out.gl_Position = _33.projectionMatrix * v;

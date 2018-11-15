@@ -2,16 +2,29 @@
 precision mediump float;
 precision highp int;
 
+struct vert_output
+{
+    highp vec4 position;
+    highp vec4 normal;
+    highp vec4 normal_world;
+    highp vec4 v;
+    highp vec4 v_world;
+    highp vec2 uv;
+    highp mat3 TBN;
+    highp vec3 v_tangent;
+    highp vec3 camPos_tangent;
+};
+
 struct Light
 {
     highp float lightIntensity;
-    int lightType;
+    uint lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
+    uint lightAngleAttenCurveType;
+    uint lightDistAttenCurveType;
     highp vec2 lightSize;
-    ivec4 lightGUID;
+    uvec4 lightGuid;
     highp vec4 lightPosition;
     highp vec4 lightColor;
     highp vec4 lightDirection;
@@ -21,42 +34,37 @@ struct Light
     highp vec4 padding[2];
 };
 
-layout(binding = 1, std140) uniform PerFrameConstants
+layout(binding = 0, std140) uniform PerFrameConstants
 {
-    highp mat4 viewMatrix;
-    highp mat4 projectionMatrix;
+    layout(row_major) highp mat4 viewMatrix;
+    layout(row_major) highp mat4 projectionMatrix;
     highp vec4 camPos;
-    int numLights;
-    Light allLights[100];
-} _500;
+    uint numLights;
+    highp float padding[3];
+    Light lights[100];
+} _551;
 
-struct constants_t
+uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
+uniform highp samplerCubeArray SPIRV_Cross_CombinedcubeShadowMapsamp0;
+uniform highp sampler2DArray SPIRV_Cross_CombinedshadowMapsamp0;
+uniform highp sampler2DArray SPIRV_Cross_CombinedglobalShadowMapsamp0;
+uniform highp samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
+
+layout(location = 0) in highp vec4 input_normal;
+layout(location = 1) in highp vec4 input_normal_world;
+layout(location = 2) in highp vec4 input_v;
+layout(location = 3) in highp vec4 input_v_world;
+layout(location = 4) in highp vec2 input_uv;
+layout(location = 5) in highp mat3 input_TBN;
+layout(location = 8) in highp vec3 input_v_tangent;
+layout(location = 9) in highp vec3 input_camPos_tangent;
+layout(location = 0) out highp vec4 _entryPointOutput;
+
+float _142;
+
+highp vec3 projectOnPlane(highp vec3 _point, highp vec3 center_of_plane, highp vec3 normal_of_plane)
 {
-    highp vec4 ambientColor;
-    highp vec4 specularColor;
-    highp float specularPower;
-};
-
-uniform constants_t u_pushConstants;
-
-layout(binding = 3) uniform highp samplerCubeArray cubeShadowMap;
-layout(binding = 1) uniform highp sampler2DArray shadowMap;
-layout(binding = 2) uniform highp sampler2DArray globalShadowMap;
-layout(binding = 0) uniform highp sampler2D diffuseMap;
-layout(binding = 4) uniform highp samplerCubeArray skybox;
-
-layout(location = 0) in highp vec4 normal;
-layout(location = 2) in highp vec4 v;
-layout(location = 3) in highp vec4 v_world;
-layout(location = 4) in highp vec2 uv;
-layout(location = 1) in highp vec4 normal_world;
-layout(location = 0) out highp vec4 outputColor;
-
-float _131;
-
-highp vec3 projectOnPlane(highp vec3 point, highp vec3 center_of_plane, highp vec3 normal_of_plane)
-{
-    return point - (normal_of_plane * dot(point - center_of_plane, normal_of_plane));
+    return _point - (normal_of_plane * dot(_point - center_of_plane, normal_of_plane));
 }
 
 highp float linear_interpolate(highp float t, highp float begin, highp float end)
@@ -90,17 +98,23 @@ highp float apply_atten_curve(highp float dist, int atten_curve_type, highp vec4
             highp float param = dist;
             highp float param_1 = begin_atten;
             highp float param_2 = end_atten;
-            atten = linear_interpolate(param, param_1, param_2);
+            highp float param_3 = param;
+            highp float param_4 = param_1;
+            highp float param_5 = param_2;
+            atten = linear_interpolate(param_3, param_4, param_5);
             break;
         }
         case 2:
         {
             highp float begin_atten_1 = atten_params[0].x;
             highp float end_atten_1 = atten_params[0].y;
-            highp float param_3 = dist;
-            highp float param_4 = begin_atten_1;
-            highp float param_5 = end_atten_1;
-            highp float tmp = linear_interpolate(param_3, param_4, param_5);
+            highp float param_3_1 = dist;
+            highp float param_4_1 = begin_atten_1;
+            highp float param_5_1 = end_atten_1;
+            highp float param_6 = param_3_1;
+            highp float param_7 = param_4_1;
+            highp float param_8 = param_5_1;
+            highp float tmp = linear_interpolate(param_6, param_7, param_8);
             atten = (3.0 * pow(tmp, 2.0)) - (2.0 * pow(tmp, 3.0));
             break;
         }
@@ -135,9 +149,9 @@ highp float apply_atten_curve(highp float dist, int atten_curve_type, highp vec4
     return atten;
 }
 
-bool isAbovePlane(highp vec3 point, highp vec3 center_of_plane, highp vec3 normal_of_plane)
+bool isAbovePlane(highp vec3 _point, highp vec3 center_of_plane, highp vec3 normal_of_plane)
 {
-    return dot(point - center_of_plane, normal_of_plane) > 0.0;
+    return dot(_point - center_of_plane, normal_of_plane) > 0.0;
 }
 
 highp vec3 linePlaneIntersect(highp vec3 line_start, highp vec3 line_dir, highp vec3 center_of_plane, highp vec3 normal_of_plane)
@@ -145,17 +159,17 @@ highp vec3 linePlaneIntersect(highp vec3 line_start, highp vec3 line_dir, highp 
     return line_start + (line_dir * (dot(center_of_plane - line_start, normal_of_plane) / dot(line_dir, normal_of_plane)));
 }
 
-highp vec3 apply_areaLight(Light light)
+highp vec3 apply_areaLight(Light light, vert_output _input)
 {
-    highp vec3 N = normalize(normal.xyz);
-    highp vec3 right = normalize((_500.viewMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
-    highp vec3 pnormal = normalize((_500.viewMatrix * light.lightDirection).xyz);
-    highp vec3 ppos = (_500.viewMatrix * light.lightPosition).xyz;
+    highp vec3 N = normalize(_input.normal.xyz);
+    highp vec3 right = normalize((_551.viewMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
+    highp vec3 pnormal = normalize((_551.viewMatrix * light.lightDirection).xyz);
+    highp vec3 ppos = (_551.viewMatrix * light.lightPosition).xyz;
     highp vec3 up = normalize(cross(pnormal, right));
     right = normalize(cross(up, pnormal));
     highp float width = light.lightSize.x;
     highp float height = light.lightSize.y;
-    highp vec3 param = v.xyz;
+    highp vec3 param = _input.v.xyz;
     highp vec3 param_1 = ppos;
     highp vec3 param_2 = pnormal;
     highp vec3 projection = projectOnPlane(param, param_1, param_2);
@@ -163,36 +177,25 @@ highp vec3 apply_areaLight(Light light)
     highp vec2 diagonal = vec2(dot(dir, right), dot(dir, up));
     highp vec2 nearest2D = vec2(clamp(diagonal.x, -width, width), clamp(diagonal.y, -height, height));
     highp vec3 nearestPointInside = (ppos + (right * nearest2D.x)) + (up * nearest2D.y);
-    highp vec3 L = nearestPointInside - v.xyz;
+    highp vec3 L = nearestPointInside - _input.v.xyz;
     highp float lightToSurfDist = length(L);
     L = normalize(L);
     highp float param_3 = lightToSurfDist;
-    int param_4 = light.lightDistAttenCurveType;
+    int param_4 = int(light.lightDistAttenCurveType);
     highp vec4 param_5[2] = light.lightDistAttenCurveParams;
     highp float atten = apply_atten_curve(param_3, param_4, param_5);
     highp vec3 linearColor = vec3(0.0);
     highp float pnDotL = dot(pnormal, -L);
     highp float nDotL = dot(N, L);
-    highp float _749 = nDotL;
-    bool _750 = _749 > 0.0;
-    bool _761;
-    if (_750)
+    highp vec3 param_6 = _input.v.xyz;
+    highp vec3 param_7 = ppos;
+    highp vec3 param_8 = pnormal;
+    if ((nDotL > 0.0) && isAbovePlane(param_6, param_7, param_8))
     {
-        highp vec3 param_6 = v.xyz;
-        highp vec3 param_7 = ppos;
-        highp vec3 param_8 = pnormal;
-        _761 = isAbovePlane(param_6, param_7, param_8);
-    }
-    else
-    {
-        _761 = _750;
-    }
-    if (_761)
-    {
-        highp vec3 V = normalize(-v.xyz);
+        highp vec3 V = normalize(-_input.v.xyz);
         highp vec3 R = normalize((N * (2.0 * dot(V, N))) - V);
         highp vec3 R2 = normalize((N * (2.0 * dot(L, N))) - L);
-        highp vec3 param_9 = v.xyz;
+        highp vec3 param_9 = _input.v.xyz;
         highp vec3 param_10 = R;
         highp vec3 param_11 = ppos;
         highp vec3 param_12 = pnormal;
@@ -203,8 +206,8 @@ highp vec3 apply_areaLight(Light light)
         highp vec2 nearestSpec2D = vec2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
         highp float specFactor = 1.0 - clamp(length(nearestSpec2D - dirSpec2D), 0.0, 1.0);
         highp vec3 admit_light = light.lightColor.xyz * (light.lightIntensity * atten);
-        linearColor = (texture(diffuseMap, uv).xyz * nDotL) * pnDotL;
-        linearColor += (((u_pushConstants.specularColor.xyz * pow(clamp(dot(R2, V), 0.0, 1.0), u_pushConstants.specularPower)) * specFactor) * specAngle);
+        linearColor = (texture(SPIRV_Cross_CombineddiffuseMapsamp0, _input.uv).xyz * nDotL) * pnDotL;
+        linearColor += (((vec3(0.800000011920928955078125) * pow(clamp(dot(R2, V), 0.0, 1.0), 50.0)) * specFactor) * specAngle);
         linearColor *= admit_light;
     }
     return linearColor;
@@ -225,7 +228,7 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             case 0:
             {
                 highp vec3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = texture(cubeShadowMap, vec4(L, float(light.lightShadowMapIndex))).x;
+                near_occ = texture(SPIRV_Cross_CombinedcubeShadowMapsamp0, vec4(L, float(light.lightShadowMapIndex))).x;
                 if ((length(L) - (near_occ * 10.0)) > bias)
                 {
                     visibility -= 0.87999999523162841796875;
@@ -234,11 +237,11 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             }
             case 1:
             {
-                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
+                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
                 for (int i = 0; i < 4; i++)
                 {
-                    highp vec2 indexable[4] = vec2[](vec2(-0.94201624393463134765625, -0.39906215667724609375), vec2(0.94558608531951904296875, -0.768907248973846435546875), vec2(-0.094184100627899169921875, -0.929388701915740966796875), vec2(0.34495937824249267578125, 0.29387760162353515625));
-                    near_occ = texture(shadowMap, vec3(v_light_space.xy + (indexable[i] / vec2(700.0)), float(light.lightShadowMapIndex))).x;
+                    highp mat2x4 indexable = mat2x4(vec4(-0.94201624393463134765625, -0.39906215667724609375, 0.94558608531951904296875, -0.768907248973846435546875), vec4(-0.094184100627899169921875, -0.929388701915740966796875, 0.34495937824249267578125, 0.29387760162353515625));
+                    near_occ = texture(SPIRV_Cross_CombinedshadowMapsamp0, vec3(v_light_space.xy + (vec2(indexable[i].xy) / vec2(700.0)), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875;
@@ -248,11 +251,11 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             }
             case 2:
             {
-                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
+                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
                 for (int i_1 = 0; i_1 < 4; i_1++)
                 {
-                    highp vec2 indexable_1[4] = vec2[](vec2(-0.94201624393463134765625, -0.39906215667724609375), vec2(0.94558608531951904296875, -0.768907248973846435546875), vec2(-0.094184100627899169921875, -0.929388701915740966796875), vec2(0.34495937824249267578125, 0.29387760162353515625));
-                    near_occ = texture(globalShadowMap, vec3(v_light_space.xy + (indexable_1[i_1] / vec2(700.0)), float(light.lightShadowMapIndex))).x;
+                    highp mat2x4 indexable_1 = mat2x4(vec4(-0.94201624393463134765625, -0.39906215667724609375, 0.94558608531951904296875, -0.768907248973846435546875), vec4(-0.094184100627899169921875, -0.929388701915740966796875, 0.34495937824249267578125, 0.29387760162353515625));
+                    near_occ = texture(SPIRV_Cross_CombinedglobalShadowMapsamp0, vec3(v_light_space.xy + (vec2(indexable_1[i_1].xy) / vec2(700.0)), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875;
@@ -262,11 +265,11 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             }
             case 3:
             {
-                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
+                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
                 for (int i_2 = 0; i_2 < 4; i_2++)
                 {
-                    highp vec2 indexable_2[4] = vec2[](vec2(-0.94201624393463134765625, -0.39906215667724609375), vec2(0.94558608531951904296875, -0.768907248973846435546875), vec2(-0.094184100627899169921875, -0.929388701915740966796875), vec2(0.34495937824249267578125, 0.29387760162353515625));
-                    near_occ = texture(shadowMap, vec3(v_light_space.xy + (indexable_2[i_2] / vec2(700.0)), float(light.lightShadowMapIndex))).x;
+                    highp mat2x4 indexable_2 = mat2x4(vec4(-0.94201624393463134765625, -0.39906215667724609375, 0.94558608531951904296875, -0.768907248973846435546875), vec4(-0.094184100627899169921875, -0.929388701915740966796875, 0.34495937824249267578125, 0.29387760162353515625));
+                    near_occ = texture(SPIRV_Cross_CombinedshadowMapsamp0, vec3(v_light_space.xy + (vec2(indexable_2[i_2].xy) / vec2(700.0)), float(light.lightShadowMapIndex))).x;
                     if ((v_light_space.z - near_occ) > bias)
                     {
                         visibility -= 0.2199999988079071044921875;
@@ -279,10 +282,10 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
     return visibility;
 }
 
-highp vec3 apply_light(Light light)
+highp vec3 apply_light(Light light, vert_output _input)
 {
-    highp vec3 N = normalize(normal.xyz);
-    highp vec3 light_dir = normalize((_500.viewMatrix * light.lightDirection).xyz);
+    highp vec3 N = normalize(_input.normal.xyz);
+    highp vec3 light_dir = normalize((_551.viewMatrix * light.lightDirection).xyz);
     highp vec3 L;
     if (light.lightPosition.w == 0.0)
     {
@@ -290,28 +293,31 @@ highp vec3 apply_light(Light light)
     }
     else
     {
-        L = (_500.viewMatrix * light.lightPosition).xyz - v.xyz;
+        L = (_551.viewMatrix * light.lightPosition).xyz - _input.v.xyz;
     }
     highp float lightToSurfDist = length(L);
     L = normalize(L);
     highp float cosTheta = clamp(dot(N, L), 0.0, 1.0);
-    highp float visibility = shadow_test(v_world, light, cosTheta);
+    highp vec4 param = _input.v_world;
+    Light param_1 = light;
+    highp float param_2 = cosTheta;
+    highp float visibility = shadow_test(param, param_1, param_2);
     highp float lightToSurfAngle = acos(dot(L, -light_dir));
-    highp float param = lightToSurfAngle;
-    int param_1 = light.lightAngleAttenCurveType;
-    highp vec4 param_2[2] = light.lightAngleAttenCurveParams;
-    highp float atten = apply_atten_curve(param, param_1, param_2);
-    highp float param_3 = lightToSurfDist;
-    int param_4 = light.lightDistAttenCurveType;
-    highp vec4 param_5[2] = light.lightDistAttenCurveParams;
-    atten *= apply_atten_curve(param_3, param_4, param_5);
+    highp float param_3 = lightToSurfAngle;
+    int param_4 = int(light.lightAngleAttenCurveType);
+    highp vec4 param_5[2] = light.lightAngleAttenCurveParams;
+    highp float atten = apply_atten_curve(param_3, param_4, param_5);
+    highp float param_6 = lightToSurfDist;
+    int param_7 = int(light.lightDistAttenCurveType);
+    highp vec4 param_8[2] = light.lightDistAttenCurveParams;
+    atten *= apply_atten_curve(param_6, param_7, param_8);
     highp vec3 R = normalize((N * (2.0 * dot(L, N))) - L);
-    highp vec3 V = normalize(-v.xyz);
+    highp vec3 V = normalize(-_input.v.xyz);
     highp vec3 admit_light = light.lightColor.xyz * (light.lightIntensity * atten);
-    highp vec3 linearColor = texture(diffuseMap, uv).xyz * cosTheta;
+    highp vec3 linearColor = texture(SPIRV_Cross_CombineddiffuseMapsamp0, _input.uv).xyz * cosTheta;
     if (visibility > 0.20000000298023223876953125)
     {
-        linearColor += (u_pushConstants.specularColor.xyz * pow(clamp(dot(R, V), 0.0, 1.0), u_pushConstants.specularPower));
+        linearColor += (vec3(0.800000011920928955078125) * pow(clamp(dot(R, V), 0.0, 1.0), 50.0));
     }
     linearColor *= admit_light;
     return linearColor * visibility;
@@ -327,62 +333,80 @@ highp vec3 gamma_correction(highp vec3 color)
     return pow(color, vec3(0.4545454680919647216796875));
 }
 
-void main()
+highp vec4 _basic_frag_main(vert_output _input)
 {
     highp vec3 linearColor = vec3(0.0);
-    for (int i = 0; i < _500.numLights; i++)
+    for (int i = 0; uint(i) < _551.numLights; i++)
     {
-        if (_500.allLights[i].lightType == 3)
+        if (_551.lights[i].lightType == 3u)
         {
             Light arg;
-            arg.lightIntensity = _500.allLights[i].lightIntensity;
-            arg.lightType = _500.allLights[i].lightType;
-            arg.lightCastShadow = _500.allLights[i].lightCastShadow;
-            arg.lightShadowMapIndex = _500.allLights[i].lightShadowMapIndex;
-            arg.lightAngleAttenCurveType = _500.allLights[i].lightAngleAttenCurveType;
-            arg.lightDistAttenCurveType = _500.allLights[i].lightDistAttenCurveType;
-            arg.lightSize = _500.allLights[i].lightSize;
-            arg.lightGUID = _500.allLights[i].lightGUID;
-            arg.lightPosition = _500.allLights[i].lightPosition;
-            arg.lightColor = _500.allLights[i].lightColor;
-            arg.lightDirection = _500.allLights[i].lightDirection;
-            arg.lightDistAttenCurveParams[0] = _500.allLights[i].lightDistAttenCurveParams[0];
-            arg.lightDistAttenCurveParams[1] = _500.allLights[i].lightDistAttenCurveParams[1];
-            arg.lightAngleAttenCurveParams[0] = _500.allLights[i].lightAngleAttenCurveParams[0];
-            arg.lightAngleAttenCurveParams[1] = _500.allLights[i].lightAngleAttenCurveParams[1];
-            arg.lightVP = _500.allLights[i].lightVP;
-            arg.padding[0] = _500.allLights[i].padding[0];
-            arg.padding[1] = _500.allLights[i].padding[1];
-            linearColor += apply_areaLight(arg);
+            arg.lightIntensity = _551.lights[i].lightIntensity;
+            arg.lightType = _551.lights[i].lightType;
+            arg.lightCastShadow = _551.lights[i].lightCastShadow;
+            arg.lightShadowMapIndex = _551.lights[i].lightShadowMapIndex;
+            arg.lightAngleAttenCurveType = _551.lights[i].lightAngleAttenCurveType;
+            arg.lightDistAttenCurveType = _551.lights[i].lightDistAttenCurveType;
+            arg.lightSize = _551.lights[i].lightSize;
+            arg.lightGuid = _551.lights[i].lightGuid;
+            arg.lightPosition = _551.lights[i].lightPosition;
+            arg.lightColor = _551.lights[i].lightColor;
+            arg.lightDirection = _551.lights[i].lightDirection;
+            arg.lightDistAttenCurveParams[0] = _551.lights[i].lightDistAttenCurveParams[0];
+            arg.lightDistAttenCurveParams[1] = _551.lights[i].lightDistAttenCurveParams[1];
+            arg.lightAngleAttenCurveParams[0] = _551.lights[i].lightAngleAttenCurveParams[0];
+            arg.lightAngleAttenCurveParams[1] = _551.lights[i].lightAngleAttenCurveParams[1];
+            arg.lightVP = _551.lights[i].lightVP;
+            arg.padding[0] = _551.lights[i].padding[0];
+            arg.padding[1] = _551.lights[i].padding[1];
+            vert_output param = _input;
+            linearColor += apply_areaLight(arg, param);
         }
         else
         {
             Light arg_1;
-            arg_1.lightIntensity = _500.allLights[i].lightIntensity;
-            arg_1.lightType = _500.allLights[i].lightType;
-            arg_1.lightCastShadow = _500.allLights[i].lightCastShadow;
-            arg_1.lightShadowMapIndex = _500.allLights[i].lightShadowMapIndex;
-            arg_1.lightAngleAttenCurveType = _500.allLights[i].lightAngleAttenCurveType;
-            arg_1.lightDistAttenCurveType = _500.allLights[i].lightDistAttenCurveType;
-            arg_1.lightSize = _500.allLights[i].lightSize;
-            arg_1.lightGUID = _500.allLights[i].lightGUID;
-            arg_1.lightPosition = _500.allLights[i].lightPosition;
-            arg_1.lightColor = _500.allLights[i].lightColor;
-            arg_1.lightDirection = _500.allLights[i].lightDirection;
-            arg_1.lightDistAttenCurveParams[0] = _500.allLights[i].lightDistAttenCurveParams[0];
-            arg_1.lightDistAttenCurveParams[1] = _500.allLights[i].lightDistAttenCurveParams[1];
-            arg_1.lightAngleAttenCurveParams[0] = _500.allLights[i].lightAngleAttenCurveParams[0];
-            arg_1.lightAngleAttenCurveParams[1] = _500.allLights[i].lightAngleAttenCurveParams[1];
-            arg_1.lightVP = _500.allLights[i].lightVP;
-            arg_1.padding[0] = _500.allLights[i].padding[0];
-            arg_1.padding[1] = _500.allLights[i].padding[1];
-            linearColor += apply_light(arg_1);
+            arg_1.lightIntensity = _551.lights[i].lightIntensity;
+            arg_1.lightType = _551.lights[i].lightType;
+            arg_1.lightCastShadow = _551.lights[i].lightCastShadow;
+            arg_1.lightShadowMapIndex = _551.lights[i].lightShadowMapIndex;
+            arg_1.lightAngleAttenCurveType = _551.lights[i].lightAngleAttenCurveType;
+            arg_1.lightDistAttenCurveType = _551.lights[i].lightDistAttenCurveType;
+            arg_1.lightSize = _551.lights[i].lightSize;
+            arg_1.lightGuid = _551.lights[i].lightGuid;
+            arg_1.lightPosition = _551.lights[i].lightPosition;
+            arg_1.lightColor = _551.lights[i].lightColor;
+            arg_1.lightDirection = _551.lights[i].lightDirection;
+            arg_1.lightDistAttenCurveParams[0] = _551.lights[i].lightDistAttenCurveParams[0];
+            arg_1.lightDistAttenCurveParams[1] = _551.lights[i].lightDistAttenCurveParams[1];
+            arg_1.lightAngleAttenCurveParams[0] = _551.lights[i].lightAngleAttenCurveParams[0];
+            arg_1.lightAngleAttenCurveParams[1] = _551.lights[i].lightAngleAttenCurveParams[1];
+            arg_1.lightVP = _551.lights[i].lightVP;
+            arg_1.padding[0] = _551.lights[i].padding[0];
+            arg_1.padding[1] = _551.lights[i].padding[1];
+            vert_output param_1 = _input;
+            linearColor += apply_light(arg_1, param_1);
         }
     }
-    linearColor += (textureLod(skybox, vec4(normal_world.xyz, 0.0), 8.0).xyz * vec3(0.20000000298023223876953125));
-    highp vec3 param = linearColor;
-    linearColor = exposure_tone_mapping(param);
-    highp vec3 param_1 = linearColor;
-    outputColor = vec4(gamma_correction(param_1), 1.0);
+    linearColor += (texture(SPIRV_Cross_Combinedskyboxsamp0, vec4(_input.normal_world.xyz, 0.0)).xyz * vec3(0.20000000298023223876953125));
+    highp vec3 param_2 = linearColor;
+    linearColor = exposure_tone_mapping(param_2);
+    highp vec3 param_3 = linearColor;
+    return vec4(gamma_correction(param_3), 1.0);
+}
+
+void main()
+{
+    vert_output _input;
+    _input.position = gl_FragCoord;
+    _input.normal = input_normal;
+    _input.normal_world = input_normal_world;
+    _input.v = input_v;
+    _input.v_world = input_v_world;
+    _input.uv = input_uv;
+    _input.TBN = input_TBN;
+    _input.v_tangent = input_v_tangent;
+    _input.camPos_tangent = input_camPos_tangent;
+    vert_output param = _input;
+    _entryPointOutput = _basic_frag_main(param);
 }
 

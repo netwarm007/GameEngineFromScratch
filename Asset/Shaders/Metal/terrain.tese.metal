@@ -49,7 +49,7 @@ struct terrain_tese_main_out
     float4 gl_Position;
 };
 
-unknown terrain_tese_main_out terrain_tese_main(constant PerFrameConstants& _90 [[buffer(0)]], texture2d<float> terrainHeightMap [[texture(11)]], sampler terrainHeightMapSmplr [[sampler(11)]], unsupported-built-in-type gl_TessCoord [[unsupported-built-in]], float4 gl_in [[position]])
+unknown terrain_tese_main_out terrain_tese_main(constant PerFrameConstants& _90 [[buffer(1)]], texture2d<float> terrainHeightMap [[texture(11)]], sampler terrainHeightMapSmplr [[sampler(11)]], unsupported-built-in-type gl_TessCoord [[unsupported-built-in]], float4 gl_in [[position]])
 {
     terrain_tese_main_out out = {};
     float3x3 TBN = {};

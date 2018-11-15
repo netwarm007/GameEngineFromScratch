@@ -81,7 +81,7 @@ float level(thread const float2& v0, thread const float2& v1)
     return clamp(distance(v0, v1) / 2.0, 1.0, 64.0);
 }
 
-unknown terrain_tesc_main_out terrain_tesc_main(constant PerFrameConstants& v_43 [[buffer(0)]], unsupported-built-in-type gl_InvocationID [[unsupported-built-in]], float4 gl_in [[position]])
+unknown terrain_tesc_main_out terrain_tesc_main(constant PerFrameConstants& v_43 [[buffer(1)]], unsupported-built-in-type gl_InvocationID [[unsupported-built-in]], float4 gl_in [[position]])
 {
     terrain_tesc_main_out out = {};
     gl_out[gl_InvocationID].out.gl_Position = gl_in[gl_InvocationID].out.gl_Position;

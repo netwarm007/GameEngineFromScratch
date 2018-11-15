@@ -11,6 +11,7 @@
 	#define SEMANTIC(a) 
 	#define REGISTER(x)
 	#define unistruct struct
+	#define SamplerState void
 
 	enum LightType {
 		Omni     = 0,
@@ -67,22 +68,31 @@ unistruct PerBatchConstants REGISTER(b1)
 	Matrix4X4f modelMatrix;						// 64 bytes
 };
 
+struct a2v
+{
+    Vector3f inputPosition    SEMANTIC(POSITION);
+    Vector3f inputNormal      SEMANTIC(NORMAL);
+    Vector3f inputUV          SEMANTIC(TEXCOORD);
+    Vector3f inputTangent     SEMANTIC(TANGENT);
+    Vector3f inputBiTangent   SEMANTIC(BITANGENT);
+};
+
 #ifndef __cplusplus
+Texture2D diffuseMap 			REGISTER(t0);
+Texture2D normalMap  			REGISTER(t1);
+Texture2D metalicMap 			REGISTER(t2);
+Texture2D roughnessMap 			REGISTER(t3);
+Texture2D aoMap      			REGISTER(t4);
+Texture2D heightMap				REGISTER(t5);
+Texture2D brdfLUT    			REGISTER(t6);
+Texture2DArray shadowMap  		REGISTER(t7);
+Texture2DArray globalShadowMap 	REGISTER(t8);
+TextureCubeArray cubeShadowMap 	REGISTER(t9);
+TextureCubeArray skybox     	REGISTER(t10);
+Texture2D terrainHeightMap		REGISTER(t11);
+
 // samplers
-SamplerState samp0 : register(s0);
-
-// textures
-Texture2D diffuseMap : register(t0);
-Texture2D normalMap  : register(t1);
-Texture2D metalicMap : register(t2);
-Texture2D roughnessMap : register(t3);
-Texture2D aoMap      : register(t4);
-Texture2D brdfLUT    : register(t5);
-
-Texture2DArray shadowMap  		: register(t6);
-Texture2DArray globalShadowMap 	: register(t7);
-TextureCubeArray cubeShadowMap 	: register(t8);
-TextureCubeArray skybox     	: register(t9);
+SamplerState samp0 REGISTER(s0);
 #endif
 
 #endif // !__STDCBUFFER_H__
