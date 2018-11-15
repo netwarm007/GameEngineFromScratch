@@ -100,14 +100,15 @@ namespace My {
         virtual void BeginScene(const Scene& scene);
         virtual void EndScene();
 
-        virtual void InitConstants();
-        virtual void CalculateCameraMatrix();
-        virtual void CalculateLights();
-        virtual void UpdateConstants();
-
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif
+
+    private:
+        void InitConstants();
+        void CalculateCameraMatrix();
+        void CalculateLights();
+        void UpdateConstants();
 
     protected:
         static const uint32_t           kFrameCount  = 2;

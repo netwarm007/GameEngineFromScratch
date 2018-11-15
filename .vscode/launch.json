@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/ground.ogex"
+                "Scene/splash.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -50,7 +50,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "Scene/ground.ogex"
+                "Scene/splash.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

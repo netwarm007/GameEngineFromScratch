@@ -39,7 +39,6 @@ struct PerBatchConstants
 struct debug_vert_main_out
 {
     float4 gl_Position [[position]];
-    float gl_PointSize [[point_size]];
 };
 
 struct debug_vert_main_in
@@ -52,8 +51,8 @@ vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], c
     debug_vert_main_out out = {};
     out.gl_PointSize = 5.0;
     float4 v = float4(in.inputPosition, 1.0);
-    v = _42.viewMatrix * v;
-    out.gl_Position = _42.projectionMatrix * v;
+    v = _33.viewMatrix * v;
+    out.gl_Position = _33.projectionMatrix * v;
     return out;
 }
 
