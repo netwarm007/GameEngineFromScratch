@@ -74,12 +74,12 @@ namespace My {
         void RenderDebugBuffers();
 #endif
 
-    protected:
-        void InitializeBuffers(const Scene& scene) final;
-        void ClearBuffers() final;
+    private:
+        void BeginScene(const Scene& scene) final;
+        void EndScene() final;
 
-        void BeginScene() final {};
-        void EndScene() final {};
+        void BeginFrame() final {};
+        void EndFrame() final {};
 
         void initializeGeometries(const Scene& scene);
         void initializeSkyBox(const Scene& scene);

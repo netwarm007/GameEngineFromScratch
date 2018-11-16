@@ -709,9 +709,9 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
     m_Textures.push_back(texture_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
+void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
 {
-    GraphicsManager::InitializeBuffers(scene);
+    GraphicsManager::BeginScene(scene);
 
     initializeGeometries(scene);
     initializeTerrain(scene);
@@ -720,7 +720,7 @@ void OpenGLGraphicsManagerCommonBase::InitializeBuffers(const Scene& scene)
     return;
 }
 
-void OpenGLGraphicsManagerCommonBase::ClearBuffers()
+void OpenGLGraphicsManagerCommonBase::EndScene()
 {
     for (int i = 0; i < kFrameCount; i++)
     {
@@ -769,6 +769,7 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
     m_Buffers.clear();
     m_Textures.clear();
 
+    GraphicsManager::EndScene();
 }
 
 void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const intptr_t shaderProgram)

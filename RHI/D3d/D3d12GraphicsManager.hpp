@@ -27,11 +27,12 @@ namespace My {
         void DrawBatch(const DrawBatchContext& context) final;
 
     private:
-        void BeginScene() final;
+        void BeginScene(const Scene& scene) final;
         void EndScene() final;
 
-        void InitializeBuffers(const Scene& scene);
-        void ClearBuffers();
+        void BeginFrame() final;
+        void EndFrame() final;
+
         void RenderBuffers();
 
         HRESULT CreateDescriptorHeaps();

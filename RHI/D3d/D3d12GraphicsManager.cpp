@@ -232,6 +232,42 @@ namespace My {
 	// ************************************************
 }
 
+int  D3d12GraphicsManager::Initialize()
+{
+    int result = GraphicsManager::Initialize();
+
+	if (!result)
+	{
+		const GfxConfiguration& config = g_pApp->GetConfiguration();
+		m_ViewPort = { 0.0f, 0.0f, static_cast<float>(config.screenWidth), static_cast<float>(config.screenHeight), 0.0f, 1.0f };
+		m_ScissorRect = { 0, 0, static_cast<LONG>(config.screenWidth), static_cast<LONG>(config.screenHeight) };
+		result = static_cast<int>(CreateGraphicsResources());
+	}
+
+    return result;
+}
+
+void D3d12GraphicsManager::Finalize()
+{
+    GraphicsManager::Finalize();
+
+    SafeRelease(&m_pRtvHeap);
+    SafeRelease(&m_pDsvHeap);
+    SafeRelease(&m_pCbvHeap);
+    SafeRelease(&m_pSamplerHeap);
+    SafeRelease(&m_pRootSignature);
+    SafeRelease(&m_pRootSignatureResolve);
+    SafeRelease(&m_pCommandQueue);
+    SafeRelease(&m_pCommandAllocator);
+	SafeRelease(&m_pDepthStencilBuffer);
+    SafeRelease(&m_pMsaaRenderTarget);
+    for (uint32_t i = 0; i < m_kFrameCount; i++) {
+        SafeRelease(&m_pRenderTargets[i]);
+    }
+    SafeRelease(&m_pSwapChain);
+    SafeRelease(&m_pDev);
+}
+
 HRESULT D3d12GraphicsManager::WaitForPreviousFrame() {
     // WAITING FOR THE FRAME TO COMPLETE BEFORE CONTINUING IS NOT BEST PRACTICE.
     // This is code implemented as such for simplicity. More advanced samples 
@@ -1120,7 +1156,7 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
         D3D12_DESCRIPTOR_RANGE1 ranges[3] = {
             { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC },
             { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0 },
-            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0,D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
+            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 12, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
         };
 
         D3D12_ROOT_PARAMETER1 rootParameters[3] = {
@@ -1212,8 +1248,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
 
     // basic pass
     {
-        const char* vsFilename = "Shaders/HLSL/basic_vs.cso"; 
-        const char* fsFilename = "Shaders/HLSL/basic_ps.cso";
+        const char* vsFilename = "Shaders/HLSL/basic.vert.cso"; 
+        const char* fsFilename = "Shaders/HLSL/basic.frag.cso";
 
         // load the shaders
         Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
@@ -1233,6 +1269,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
             {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
             {"NORMAL", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
             {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TANGENT", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"BITANGENT", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
         };
 
         D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
@@ -1297,8 +1335,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
 
     // resolve pass
     {
-        const char* vsFilename = "Shaders/HLSL/msaa_resolver_vs.cso"; 
-        const char* fsFilename = "Shaders/HLSL/msaa_resolver_ps.cso";
+        const char* vsFilename = "Shaders/HLSL/msaa_resolver.vert.cso"; 
+        const char* fsFilename = "Shaders/HLSL/msaa_resolver.frag.cso";
 
         // load the shaders
         Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
@@ -1397,9 +1435,9 @@ HRESULT D3d12GraphicsManager::CreateCommandList()
     return hr;
 }
 
-void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
+void D3d12GraphicsManager::BeginScene(const Scene& scene)
 {
-    GraphicsManager::InitializeBuffers(scene);
+    GraphicsManager::BeginScene(scene);
 
     HRESULT hr;
 
@@ -1468,7 +1506,7 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 	}
     cout << "Done!" << endl;
 
-    cout << "Creating Texture Buffer ...";
+    cout << "Creating MSAA Texture Buffer ...";
     if (FAILED(hr = CreateTextureBuffer())) {
         return;
     }
@@ -1477,8 +1515,43 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 	{
 		auto material = _it.second;
 		if (material) {
-			auto color = material->GetBaseColor();
-			if (auto texture = color.ValueMap) {
+			auto& color = material->GetBaseColor();
+			if (auto& texture = color.ValueMap) {
+				if (FAILED(hr = CreateTextureBuffer(*texture))) {
+					return;
+				}
+			}
+
+			auto& normal = material->GetNormal();
+			if (auto& texture = normal.ValueMap) {
+				if (FAILED(hr = CreateTextureBuffer(*texture))) {
+					return;
+				}
+			}
+
+			auto& metallic = material->GetMetallic();
+			if (auto& texture = metallic.ValueMap) {
+				if (FAILED(hr = CreateTextureBuffer(*texture))) {
+					return;
+				}
+			}
+
+			auto& roughness = material->GetRoughness();
+			if (auto& texture = roughness.ValueMap) {
+				if (FAILED(hr = CreateTextureBuffer(*texture))) {
+					return;
+				}
+			}
+
+			auto& ao = material->GetAO();
+			if (auto& texture = ao.ValueMap) {
+				if (FAILED(hr = CreateTextureBuffer(*texture))) {
+					return;
+				}
+			}
+
+			auto& height = material->GetHeight();
+			if (auto& texture = height.ValueMap) {
 				if (FAILED(hr = CreateTextureBuffer(*texture))) {
 					return;
 				}
@@ -1514,22 +1587,7 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
     return;
 }
 
-int  D3d12GraphicsManager::Initialize()
-{
-    int result = GraphicsManager::Initialize();
-
-	if (!result)
-	{
-		const GfxConfiguration& config = g_pApp->GetConfiguration();
-		m_ViewPort = { 0.0f, 0.0f, static_cast<float>(config.screenWidth), static_cast<float>(config.screenHeight), 0.0f, 1.0f };
-		m_ScissorRect = { 0, 0, static_cast<LONG>(config.screenWidth), static_cast<LONG>(config.screenHeight) };
-		result = static_cast<int>(CreateGraphicsResources());
-	}
-
-    return result;
-}
-
-void D3d12GraphicsManager::ClearBuffers()
+void D3d12GraphicsManager::EndScene()
 {
     SafeRelease(&m_pFence);
     for (auto& p : m_Buffers) {
@@ -1556,28 +1614,7 @@ void D3d12GraphicsManager::ClearBuffers()
     }
 }
 
-void D3d12GraphicsManager::Finalize()
-{
-    GraphicsManager::Finalize();
-
-    SafeRelease(&m_pRtvHeap);
-    SafeRelease(&m_pDsvHeap);
-    SafeRelease(&m_pCbvHeap);
-    SafeRelease(&m_pSamplerHeap);
-    SafeRelease(&m_pRootSignature);
-    SafeRelease(&m_pRootSignatureResolve);
-    SafeRelease(&m_pCommandQueue);
-    SafeRelease(&m_pCommandAllocator);
-	SafeRelease(&m_pDepthStencilBuffer);
-    SafeRelease(&m_pMsaaRenderTarget);
-    for (uint32_t i = 0; i < m_kFrameCount; i++) {
-        SafeRelease(&m_pRenderTargets[i]);
-    }
-    SafeRelease(&m_pSwapChain);
-    SafeRelease(&m_pDev);
-}
-
-void D3d12GraphicsManager::BeginScene()
+void D3d12GraphicsManager::BeginFrame()
 {
     ResetCommandList();
 
@@ -1607,7 +1644,7 @@ void D3d12GraphicsManager::BeginScene()
     vertex_buffer_view_offset = 0;
 }
 
-void D3d12GraphicsManager::EndScene()
+void D3d12GraphicsManager::EndFrame()
 {
     m_pCommandList->Close();
 }
@@ -1645,6 +1682,8 @@ void D3d12GraphicsManager::DrawBatch(const DrawBatchContext& context)
     cbvSrvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr 
                             + (nFrameResourceDescriptorOffset + dbc.batchIndex * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
     m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
+
+    m_pCommandList->SetPipelineState(m_pPipelineState);
 
     // select which vertex buffer(s) to use
     for (uint32_t j = 0; j < dbc.property_count; j++)

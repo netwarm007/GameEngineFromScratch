@@ -33,26 +33,26 @@ void GraphicsManager::Finalize()
 #ifdef DEBUG
     ClearDebugBuffers();
 #endif
-    ClearBuffers();
+    EndScene();
 }
 
 void GraphicsManager::Tick()
 {
     if (g_pSceneManager->IsSceneChanged())
     {
+        EndScene();
         cerr << "[GraphicsManager] Detected Scene Change, reinitialize buffers ..." << endl;
-        ClearBuffers();
         const Scene& scene = g_pSceneManager->GetSceneForRendering();
-        InitializeBuffers(scene);
+        BeginScene(scene);
         g_pSceneManager->NotifySceneIsRenderingQueued();
     }
 
     UpdateConstants();
 
-    BeginScene();
+    BeginFrame();
     Clear();
     Draw();
-    EndScene();
+    EndFrame();
 
     Present();
 }
@@ -89,16 +89,6 @@ void GraphicsManager::UpdateConstants()
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
     CalculateLights();
-}
-
-void GraphicsManager::BeginScene()
-{
-    cerr << "[GraphicsManager] BeginScene()" << endl;
-}
-
-void GraphicsManager::EndScene()
-{
-    cerr << "[GraphicsManager] EndScene()" << endl;
 }
 
 void GraphicsManager::Clear()
@@ -305,7 +295,7 @@ void GraphicsManager::CalculateLights()
     }
 }
 
-void GraphicsManager::InitializeBuffers(const Scene& scene)
+void GraphicsManager::BeginScene(const Scene& scene)
 {
     for (auto pPass : m_InitPasses)
     {
@@ -313,9 +303,19 @@ void GraphicsManager::InitializeBuffers(const Scene& scene)
     }
 }
 
-void GraphicsManager::ClearBuffers()
+void GraphicsManager::EndScene()
 {
-    cerr << "[GraphicsManager] ClearBuffers()" << endl;
+    cerr << "[GraphicsManager] EndScene()" << endl;
+}
+
+void GraphicsManager::BeginFrame()
+{
+    cerr << "[GraphicsManager] BeginFrame()" << endl;
+}
+
+void GraphicsManager::EndFrame()
+{
+    cerr << "[GraphicsManager] EndFrame()" << endl;
 }
 
 // skybox
@@ -520,7 +520,7 @@ void GraphicsManager::ClearDebugBuffers()
 void GraphicsManager::DrawTextureOverlay(const intptr_t texture, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    cerr << "[GraphicsManager] DrayOverlay(" << texture << ", "
+    cerr << "[GraphicsManager] DrawOverlay(" << texture << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "
@@ -531,7 +531,7 @@ void GraphicsManager::DrawTextureOverlay(const intptr_t texture,
 void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
-    cerr << "[GraphicsManager] DrayOverlay(" << texture << ", "
+    cerr << "[GraphicsManager] DrawOverlay(" << texture << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "
@@ -543,7 +543,7 @@ void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t l
 void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
-    cerr << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
+    cerr << "[GraphicsManager] DrawCubeMapOverlay(" << cubemap << ", "
         << vp_left << ", "
         << vp_top << ", "
         << vp_width << ", "
@@ -555,7 +555,7 @@ void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap,
 void GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
-    cerr << "[GraphicsManager] DrayCubeMapOverlay(" << cubemap << ", "
+    cerr << "[GraphicsManager] DrawCubeMapOverlay(" << cubemap << ", "
         << layer_index << ", "
         << vp_left << ", "
         << vp_top << ", "
