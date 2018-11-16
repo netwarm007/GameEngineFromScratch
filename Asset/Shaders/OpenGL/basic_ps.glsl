@@ -28,15 +28,6 @@ layout(std140) uniform PerFrameConstants
     Light allLights[100];
 } _500;
 
-struct constants_t
-{
-    vec4 ambientColor;
-    vec4 specularColor;
-    float specularPower;
-};
-
-uniform constants_t u_pushConstants;
-
 uniform samplerCubeArray cubeShadowMap;
 uniform sampler2DArray shadowMap;
 uniform sampler2DArray globalShadowMap;
@@ -171,21 +162,21 @@ vec3 apply_areaLight(Light light)
     vec3 linearColor = vec3(0.0);
     float pnDotL = dot(pnormal, -L);
     float nDotL = dot(N, L);
-    float _749 = nDotL;
-    bool _750 = _749 > 0.0;
-    bool _761;
-    if (_750)
+    float _741 = nDotL;
+    bool _742 = _741 > 0.0;
+    bool _753;
+    if (_742)
     {
         vec3 param_6 = v.xyz;
         vec3 param_7 = ppos;
         vec3 param_8 = pnormal;
-        _761 = isAbovePlane(param_6, param_7, param_8);
+        _753 = isAbovePlane(param_6, param_7, param_8);
     }
     else
     {
-        _761 = _750;
+        _753 = _742;
     }
-    if (_761)
+    if (_753)
     {
         vec3 V = normalize(-v.xyz);
         vec3 R = normalize((N * (2.0 * dot(V, N))) - V);
@@ -202,7 +193,7 @@ vec3 apply_areaLight(Light light)
         float specFactor = 1.0 - clamp(length(nearestSpec2D - dirSpec2D), 0.0, 1.0);
         vec3 admit_light = light.lightColor.xyz * (light.lightIntensity * atten);
         linearColor = (texture(diffuseMap, uv).xyz * nDotL) * pnDotL;
-        linearColor += (((u_pushConstants.specularColor.xyz * pow(clamp(dot(R2, V), 0.0, 1.0), u_pushConstants.specularPower)) * specFactor) * specAngle);
+        linearColor += (((vec3(0.800000011920928955078125) * pow(clamp(dot(R2, V), 0.0, 1.0), 50.0)) * specFactor) * specAngle);
         linearColor *= admit_light;
     }
     return linearColor;
@@ -309,7 +300,7 @@ vec3 apply_light(Light light)
     vec3 linearColor = texture(diffuseMap, uv).xyz * cosTheta;
     if (visibility > 0.20000000298023223876953125)
     {
-        linearColor += (u_pushConstants.specularColor.xyz * pow(clamp(dot(R, V), 0.0, 1.0), u_pushConstants.specularPower));
+        linearColor += (vec3(0.800000011920928955078125) * pow(clamp(dot(R, V), 0.0, 1.0), 50.0));
     }
     linearColor *= admit_light;
     return linearColor * visibility;

@@ -16,15 +16,6 @@ layout(location = 4) in vec2 uv;
 //////////////////////
 layout(location = 0) out vec4 outputColor;
 
-//////////////////////
-// CONSTANTS        //
-//////////////////////
-layout(push_constant) uniform constants_t {
-    vec4 ambientColor;
-    vec4 specularColor;
-    float specularPower;
-} u_pushConstants;
-
 ////////////////////////////////////////////////////////////////////////////////
 // Pixel Shader
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +59,7 @@ vec3 apply_light(const Light light) {
     vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
     linearColor = texture(diffuseMap, uv).rgb * cosTheta; 
     if (visibility > 0.2f)
-        linearColor += u_pushConstants.specularColor.rgb * pow(clamp(dot(R, V), 0.0f, 1.0f), u_pushConstants.specularPower); 
+        linearColor += vec3(0.8f) * pow(clamp(dot(R, V), 0.0f, 1.0f), 50); 
     linearColor *= admit_light;
 
     return linearColor * visibility;
@@ -126,7 +117,7 @@ vec3 apply_areaLight(const Light light)
         vec3 admit_light = light.lightIntensity * atten * light.lightColor.rgb;
 
         linearColor = texture(diffuseMap, uv).rgb * nDotL * pnDotL; 
-        linearColor += u_pushConstants.specularColor.rgb * pow(clamp(dot(R2, V), 0.0f, 1.0f), u_pushConstants.specularPower) * specFactor * specAngle; 
+        linearColor += vec3(0.8f) * pow(clamp(dot(R2, V), 0.0f, 1.0f), 50) * specFactor * specAngle; 
         linearColor *= admit_light;
     }
 
@@ -149,7 +140,6 @@ void main(void)
     }
 
     // add ambient color
-    // linearColor += ambientColor.rgb;
     linearColor += textureLod(skybox, vec4(normal_world.xyz, 0), 8).rgb * vec3(0.20f);
 
     // tone mapping

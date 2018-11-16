@@ -94,6 +94,8 @@ void WindowsApplication::Tick()
 // this is the main message handler for the program
 LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    LRESULT result = 0;
+
     WindowsApplication* pThis;
     if (message == WM_NCCREATE)
     {
@@ -191,10 +193,13 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
                 PostQuitMessage(0);
                 m_bQuit = true;
             }
+            break;
+        default:
+            // Handle any messages the switch statement didn't
+            result = DefWindowProc (hWnd, message, wParam, lParam);
     }
 
-    // Handle any messages the switch statement didn't
-    return DefWindowProc (hWnd, message, wParam, lParam);
+    return result;
 }
 
 

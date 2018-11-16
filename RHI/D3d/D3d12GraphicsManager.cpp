@@ -314,6 +314,8 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
         return hr;
     }
 
+    m_nSamplerDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
     return hr;
 }
 
@@ -340,9 +342,9 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
 
     D3D12_CLEAR_VALUE optimizedClearValue = {};
     optimizedClearValue.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
-    optimizedClearValue.Color[0] = 0.0f;
-    optimizedClearValue.Color[1] = 0.1f;
-    optimizedClearValue.Color[2] = 0.2f;
+    optimizedClearValue.Color[0] = 0.2f;
+    optimizedClearValue.Color[1] = 0.3f;
+    optimizedClearValue.Color[2] = 0.4f;
     optimizedClearValue.Color[3] = 1.0f;
 
     D3D12_HEAP_PROPERTIES prop = {};
@@ -853,7 +855,14 @@ HRESULT D3d12GraphicsManager::CreateSamplerBuffer()
     samplerDesc.MipLODBias = 0.0f;
     samplerDesc.MaxAnisotropy = 1;
     samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-    m_pDev->CreateSampler(&samplerDesc, m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart());
+
+    // create 12 samplers
+    for (int32_t i = 0; i < 12; i++)
+    {
+		D3D12_CPU_DESCRIPTOR_HANDLE samplerHandle;
+		samplerHandle.ptr = m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart().ptr + i * m_nSamplerDescriptorSize;
+        m_pDev->CreateSampler(&samplerDesc, m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart());
+    }
 
     return S_OK;
 }
@@ -1338,7 +1347,7 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
             D3D12_STENCIL_OP_KEEP, 
             D3D12_COMPARISON_FUNC_ALWAYS };
 
-        D3D12_DEPTH_STENCIL_DESC dsd = { TRUE, 
+        D3D12_DEPTH_STENCIL_DESC dsd = { FALSE, 
             D3D12_DEPTH_WRITE_MASK_ALL, 
             D3D12_COMPARISON_FUNC_LESS, 
             FALSE, 
@@ -1394,8 +1403,9 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
 
     HRESULT hr;
 
-    cout << "Creating Vertex Buffer ...";
-    for (auto _it : scene.GeometryNodes)
+    cout << "Creating Draw Batch Contexts ...";
+    uint32_t batch_index = 0;
+    for (auto& _it : scene.GeometryNodes)
     {
 	    auto pGeometryNode = _it.second.lock();
 
@@ -1421,26 +1431,24 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
                 CreateVertexBuffer(v_property_array);
             }
 
-			// TODO: Implement LOD switching
-            // auto indexGroupCount = pMesh->GetIndexGroupCount();
-
-            const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(0);
+            const SceneObjectIndexArray& index_array = pMesh->GetIndexArray(0);
             CreateIndexBuffer(index_array);
 
 			auto material_index = index_array.GetMaterialIndex();
 			auto material_key = pGeometryNode->GetMaterialRef(material_index);
 			auto material = scene.GetMaterial(material_key);
 
-			D3dDrawBatchContext dbc;
-			dbc.index_count = (UINT)index_array.GetIndexCount();
-            dbc.property_count = vertexPropertiesCount;
+            auto dbc = make_shared<D3dDrawBatchContext>();
+            dbc->batchIndex = batch_index++;
+			dbc->index_count = (UINT)index_array.GetIndexCount();
+            dbc->property_count = vertexPropertiesCount;
 			if (material) {
-                dbc.material = material;
+                dbc->material = material;
 			}
 
-            dbc.node = pGeometryNode;
+            dbc->node = pGeometryNode;
 
-            m_DrawBatchContext.push_back(dbc);
+            m_Frames[m_nFrameIndex].batchContexts.push_back(dbc);
         }
     }
     cout << "Done!" << endl;
@@ -1465,7 +1473,7 @@ void D3d12GraphicsManager::InitializeBuffers(const Scene& scene)
         return;
     }
 
-	for (auto _it : scene.Materials)
+	for (auto& _it : scene.Materials)
 	{
 		auto material = _it.second;
 		if (material) {
@@ -1524,18 +1532,28 @@ int  D3d12GraphicsManager::Initialize()
 void D3d12GraphicsManager::ClearBuffers()
 {
     SafeRelease(&m_pFence);
-    for (auto p : m_Buffers) {
+    for (auto& p : m_Buffers) {
         SafeRelease(&p);
     }
     m_Buffers.clear();
-    for (auto p : m_Textures) {
+    for (auto& p : m_Textures) {
         SafeRelease(&p);
     }
     m_Textures.clear();
     m_TextureIndex.clear();
     m_VertexBufferView.clear();
     m_IndexBufferView.clear();
-    m_DrawBatchContext.clear();
+
+    for (int i = 0; i < kFrameCount; i++)
+    {
+        auto& batchContexts = m_Frames[i].batchContexts;
+
+        for (auto dbc : batchContexts) {
+            // nothing to do here
+        }
+
+        batchContexts.clear();
+    }
 }
 
 void D3d12GraphicsManager::Finalize()
@@ -1586,7 +1604,6 @@ void D3d12GraphicsManager::BeginScene()
     m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
     m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    m_nBatchIndex = 0;
     vertex_buffer_view_offset = 0;
 }
 
@@ -1597,8 +1614,6 @@ void D3d12GraphicsManager::EndScene()
 
 void D3d12GraphicsManager::Clear()
 {
-    BeginScene();
-
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
     // rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
     // bind the MSAA buffer
@@ -1608,7 +1623,7 @@ void D3d12GraphicsManager::Clear()
     m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
     // clear the back buffer to a deep blue
-    const FLOAT clearColor[] = { 0.0f, 0.1f, 0.2f, 1.0f };
+    const FLOAT clearColor[] = { 0.2f, 0.3f, 0.4f, 1.0f };
     m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_pCommandList->ClearDepthStencilView(m_pDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
@@ -1618,12 +1633,6 @@ void D3d12GraphicsManager::Draw()
     GraphicsManager::Draw();
 
     MsaaResolve();
-
-    EndScene();
-
-    RenderBuffers();
-
-    WaitForPreviousFrame();
 }
 
 void D3d12GraphicsManager::DrawBatch(const DrawBatchContext& context)
@@ -1634,7 +1643,7 @@ void D3d12GraphicsManager::DrawBatch(const DrawBatchContext& context)
     D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle;
     uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * (2 * m_kMaxObjectCount); // 2 descriptors for each draw call
     cbvSrvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr 
-                            + (nFrameResourceDescriptorOffset + m_nBatchIndex * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
+                            + (nFrameResourceDescriptorOffset + dbc.batchIndex * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
     m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
 
     // select which vertex buffer(s) to use
@@ -1647,7 +1656,7 @@ void D3d12GraphicsManager::DrawBatch(const DrawBatchContext& context)
     m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // select which index buffer to use
-    m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[m_nBatchIndex]);
+    m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[dbc.batchIndex]);
 
     // Texture
     if(dbc.material)
@@ -1672,12 +1681,53 @@ void D3d12GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)
 
 void D3d12GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 {
+    uint8_t* pHead = m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame;
+    size_t offset = (uint8_t *)&context.m_lights - (uint8_t *)&context;
 
+    memcpy(pHead, 
+        &context, 
+        offset); 
+
+    pHead += ALIGN(offset, 16); // 16 bytes alignment
+
+    for (auto& light : context.m_lights)
+    {
+        size_t size = ALIGN(sizeof(Light), 16); // 16 bytes alignment
+        memcpy(pHead, &light, size);
+        pHead += size;
+    }
 }
 
 void D3d12GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
 {
+    PerBatchConstants pbc;
+    memset(&pbc, 0x00, sizeof(pbc));
 
+    Matrix4X4f trans;
+    if (void* rigidBody = context.node->RigidBody()) {
+        // the geometry has rigid body bounded, we blend the simlation result here.
+        Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
+
+        BuildIdentityMatrix(trans);
+
+        // apply the rotation part of the simlation result
+        memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
+        memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
+        memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
+
+        // replace the translation part of the matrix with simlation result directly
+        memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
+
+    } else {
+        trans = *context.node->GetCalculatedTransform();
+    }
+
+    pbc.modelMatrix = trans;
+
+    memcpy(m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame              // offset by frame index
+                + m_kSizePerFrameConstantBuffer                                         // offset by per frame buffer 
+                + context.batchIndex * m_kSizePerBatchConstantBuffer,                                // offset by object index 
+		&pbc, sizeof(pbc));
 }
 
 HRESULT D3d12GraphicsManager::ResetCommandList()
@@ -1789,20 +1839,7 @@ HRESULT D3d12GraphicsManager::MsaaResolve()
     return S_OK;
 }
 
-void D3d12GraphicsManager::UpdateConstants()
-{
-    GraphicsManager::UpdateConstants();
-
-	// CBV Per Frame
-    SetPerFrameShaderParameters();
-	int32_t i = 0;
-    for (auto dbc : m_DrawBatchContext)
-    {
-	    SetPerBatchShaderParameters(i++);
-    }
-}
-
-void D3d12GraphicsManager::RenderBuffers()
+void D3d12GraphicsManager::Present()
 {
     HRESULT hr;
 
@@ -1813,81 +1850,7 @@ void D3d12GraphicsManager::RenderBuffers()
     // swap the back buffer and the front buffer
     hr = m_pSwapChain->Present(1, 0);
 
+    WaitForPreviousFrame();
+
     (void)hr;
 }
-
-bool D3d12GraphicsManager::SetPerFrameShaderParameters()
-{
-    uint8_t* pHead = m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame;
-    auto& DrawFrameContext = m_Frames[m_nFrameIndex].frameContext;
-    size_t offset = (uint8_t *)&DrawFrameContext.m_lights - (uint8_t *)&DrawFrameContext;
-
-    memcpy(pHead, 
-        &DrawFrameContext, 
-        offset); 
-
-    pHead += ALIGN(offset, 16); // 16 bytes alignment
-
-    for (auto light : DrawFrameContext.m_lights)
-    {
-        size_t size = ALIGN(sizeof(Light), 16); // 16 bytes alignment
-        memcpy(pHead, &light, size);
-        pHead += size;
-    }
-
-    return true;
-}
-
-bool D3d12GraphicsManager::SetPerBatchShaderParameters(int32_t index)
-{
-    PerBatchConstants pbc;
-    memset(&pbc, 0x00, sizeof(pbc));
-
-    Matrix4X4f trans;
-    if (void* rigidBody = m_DrawBatchContext[index].node->RigidBody()) {
-        // the geometry has rigid body bounded, we blend the simlation result here.
-        Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
-
-        BuildIdentityMatrix(trans);
-
-        // apply the rotation part of the simlation result
-        memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
-        memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
-        memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
-
-        // replace the translation part of the matrix with simlation result directly
-        memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
-
-    } else {
-        trans = *m_DrawBatchContext[index].node->GetCalculatedTransform();
-    }
-
-    pbc.objectMatrix = trans;
-
-    if (m_DrawBatchContext[index].material) {
-        Color color = m_DrawBatchContext[index].material->GetBaseColor();
-        if (color.ValueMap) {
-            pbc.usingDiffuseMap = true;
-        } else {
-            pbc.diffuseColor = color.Value;
-            pbc.usingDiffuseMap = false;
-        }
-
-        color = m_DrawBatchContext[index].material->GetSpecularColor();
-        if (color.ValueMap) {
-            pbc.specularColor = Vector4f(-1.0f);
-        } else {
-            pbc.specularColor = color.Value;
-        }
-
-        Parameter param = m_DrawBatchContext[index].material->GetSpecularPower();
-        pbc.specularPower = param.Value;
-    }
-
-    memcpy(m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame              // offset by frame index
-                + m_kSizePerFrameConstantBuffer                                         // offset by per frame buffer 
-                + index * m_kSizePerBatchConstantBuffer,                                // offset by object index 
-		&pbc, sizeof(pbc));
-    return true;
-}
-

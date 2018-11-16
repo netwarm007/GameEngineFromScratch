@@ -17,8 +17,8 @@ namespace My {
 	    void Finalize() final;
 
         void Clear() final;
-
         void Draw() final;
+        void Present() final;
 
         void UseShaderProgram(const intptr_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
@@ -30,10 +30,6 @@ namespace My {
         void BeginScene() final;
         void EndScene() final;
 
-        bool SetPerFrameShaderParameters();
-        bool SetPerBatchShaderParameters(int32_t index);
-
-        void UpdateConstants();
         void InitializeBuffers(const Scene& scene);
         void ClearBuffers();
         void RenderBuffers();
@@ -87,6 +83,7 @@ namespace My {
 
         uint32_t                        m_nRtvDescriptorSize;
         uint32_t                        m_nCbvSrvDescriptorSize;
+        uint32_t                        m_nSamplerDescriptorSize;
 
         std::vector<ID3D12Resource*>    m_Buffers;                          // the pointer to the vertex buffer
         std::vector<ID3D12Resource*>    m_Textures;                          // the pointer to the vertex buffer
@@ -95,22 +92,10 @@ namespace My {
         std::vector<D3D12_INDEX_BUFFER_VIEW>        m_IndexBufferView;                  // a view of the vertex buffer
         D3D12_VERTEX_BUFFER_VIEW                    m_VertexBufferViewResolve;
 
-        struct PerBatchConstants
-        {
-            Matrix4X4f objectMatrix;
-            Vector4f   diffuseColor;
-            Vector4f   specularColor;
-            float specularPower;
-	        bool usingDiffuseMap;
-	        bool usingNormalMap;
-        };
-
         struct D3dDrawBatchContext : public DrawBatchContext {
             uint32_t index_count;
             uint32_t property_count;
         };
-
-        std::vector<DrawBatchContext> m_DrawBatchContext;
 
         uint8_t*                        m_pCbvDataBegin = nullptr;
 		size_t				            m_kSizePerFrameConstantBuffer;
@@ -122,7 +107,6 @@ namespace My {
         ID3D12Fence*                    m_pFence = nullptr;
         uint32_t                        m_nFenceValue;
 
-        int32_t m_nBatchIndex = 0;
         size_t vertex_buffer_view_offset = 0;
     };
 }

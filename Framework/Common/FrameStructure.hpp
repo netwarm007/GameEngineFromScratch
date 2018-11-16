@@ -30,6 +30,7 @@ namespace My {
     };
 
     struct DrawBatchContext {
+        uint32_t batchIndex;
         std::shared_ptr<SceneGeometryNode> node;
         std::shared_ptr<SceneObjectMaterial> material;
         Matrix4X4f trans;

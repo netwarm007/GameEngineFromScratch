@@ -52,13 +52,6 @@ struct PerFrameConstants
     Light_1 allLights[100];
 };
 
-struct constants_t
-{
-    float4 ambientColor;
-    float4 specularColor;
-    float specularPower;
-};
-
 struct Light_2
 {
     float lightIntensity;
@@ -206,7 +199,7 @@ float3 linePlaneIntersect(thread const float3& line_start, thread const float3& 
     return line_start + (line_dir * (dot(center_of_plane - line_start, normal_of_plane) / dot(line_dir, normal_of_plane)));
 }
 
-float3 apply_areaLight(thread const Light& light, thread float4& normal, constant PerFrameConstants& v_500, thread float4& v, thread texture2d<float> diffuseMap, thread const sampler diffuseMapSmplr, thread float2& uv, constant constants_t& u_pushConstants)
+float3 apply_areaLight(thread const Light& light, thread float4& normal, constant PerFrameConstants& v_500, thread float4& v, thread texture2d<float> diffuseMap, thread const sampler diffuseMapSmplr, thread float2& uv)
 {
     float3 N = normalize(normal.xyz);
     float3 right = normalize((v_500.viewMatrix * float4(1.0, 0.0, 0.0, 0.0)).xyz);
@@ -235,21 +228,21 @@ float3 apply_areaLight(thread const Light& light, thread float4& normal, constan
     float3 linearColor = float3(0.0);
     float pnDotL = dot(pnormal, -L);
     float nDotL = dot(N, L);
-    float _749 = nDotL;
-    bool _750 = _749 > 0.0;
-    bool _761;
-    if (_750)
+    float _741 = nDotL;
+    bool _742 = _741 > 0.0;
+    bool _753;
+    if (_742)
     {
         float3 param_6 = v.xyz;
         float3 param_7 = ppos;
         float3 param_8 = pnormal;
-        _761 = isAbovePlane(param_6, param_7, param_8);
+        _753 = isAbovePlane(param_6, param_7, param_8);
     }
     else
     {
-        _761 = _750;
+        _753 = _742;
     }
-    if (_761)
+    if (_753)
     {
         float3 V = normalize(-v.xyz);
         float3 R = normalize((N * (2.0 * dot(V, N))) - V);
@@ -266,7 +259,7 @@ float3 apply_areaLight(thread const Light& light, thread float4& normal, constan
         float specFactor = 1.0 - clamp(length(nearestSpec2D - dirSpec2D), 0.0, 1.0);
         float3 admit_light = light.lightColor.xyz * (light.lightIntensity * atten);
         linearColor = (diffuseMap.sample(diffuseMapSmplr, uv).xyz * nDotL) * pnDotL;
-        linearColor += (((u_pushConstants.specularColor.xyz * pow(clamp(dot(R2, V), 0.0, 1.0), u_pushConstants.specularPower)) * specFactor) * specAngle);
+        linearColor += (((float3(0.800000011920928955078125) * pow(clamp(dot(R2, V), 0.0, 1.0), 50.0)) * specFactor) * specAngle);
         linearColor *= admit_light;
     }
     return linearColor;
@@ -341,7 +334,7 @@ float shadow_test(thread const float4& p, thread const Light& light, thread cons
     return visibility;
 }
 
-float3 apply_light(thread const Light& light, thread texturecube_array<float> cubeShadowMap, thread const sampler cubeShadowMapSmplr, thread texture2d_array<float> shadowMap, thread const sampler shadowMapSmplr, thread texture2d_array<float> globalShadowMap, thread const sampler globalShadowMapSmplr, thread float4& normal, constant PerFrameConstants& v_500, thread float4& v, thread float4& v_world, thread texture2d<float> diffuseMap, thread const sampler diffuseMapSmplr, thread float2& uv, constant constants_t& u_pushConstants)
+float3 apply_light(thread const Light& light, thread texturecube_array<float> cubeShadowMap, thread const sampler cubeShadowMapSmplr, thread texture2d_array<float> shadowMap, thread const sampler shadowMapSmplr, thread texture2d_array<float> globalShadowMap, thread const sampler globalShadowMapSmplr, thread float4& normal, constant PerFrameConstants& v_500, thread float4& v, thread float4& v_world, thread texture2d<float> diffuseMap, thread const sampler diffuseMapSmplr, thread float2& uv)
 {
     float3 N = normalize(normal.xyz);
     float3 light_dir = normalize((v_500.viewMatrix * light.lightDirection).xyz);
@@ -375,7 +368,7 @@ float3 apply_light(thread const Light& light, thread texturecube_array<float> cu
     float3 linearColor = diffuseMap.sample(diffuseMapSmplr, uv).xyz * cosTheta;
     if (visibility > 0.20000000298023223876953125)
     {
-        linearColor += (u_pushConstants.specularColor.xyz * pow(clamp(dot(R, V), 0.0, 1.0), u_pushConstants.specularPower));
+        linearColor += (float3(0.800000011920928955078125) * pow(clamp(dot(R, V), 0.0, 1.0), 50.0));
     }
     linearColor *= admit_light;
     return linearColor * visibility;
@@ -391,7 +384,7 @@ float3 gamma_correction(thread const float3& color)
     return pow(color, float3(0.4545454680919647216796875));
 }
 
-fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& v_500 [[buffer(0)]], constant constants_t& u_pushConstants [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]])
+fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& v_500 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(1)]], texture2d_array<float> globalShadowMap [[texture(2)]], texturecube_array<float> cubeShadowMap [[texture(3)]], texturecube_array<float> skybox [[texture(4)]], sampler diffuseMapSmplr [[sampler(0)]], sampler shadowMapSmplr [[sampler(1)]], sampler globalShadowMapSmplr [[sampler(2)]], sampler cubeShadowMapSmplr [[sampler(3)]], sampler skyboxSmplr [[sampler(4)]])
 {
     main0_out out = {};
     float3 linearColor = float3(0.0);
@@ -418,7 +411,7 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& v
             arg.lightVP = v_500.allLights[i].lightVP;
             arg.padding[0] = v_500.allLights[i].padding[0];
             arg.padding[1] = v_500.allLights[i].padding[1];
-            linearColor += apply_areaLight(arg, in.normal, v_500, in.v, diffuseMap, diffuseMapSmplr, in.uv, u_pushConstants);
+            linearColor += apply_areaLight(arg, in.normal, v_500, in.v, diffuseMap, diffuseMapSmplr, in.uv);
         }
         else
         {
@@ -441,7 +434,7 @@ fragment main0_out main0(main0_in in [[stage_in]], constant PerFrameConstants& v
             arg_1.lightVP = v_500.allLights[i].lightVP;
             arg_1.padding[0] = v_500.allLights[i].padding[0];
             arg_1.padding[1] = v_500.allLights[i].padding[1];
-            linearColor += apply_light(arg_1, cubeShadowMap, cubeShadowMapSmplr, shadowMap, shadowMapSmplr, globalShadowMap, globalShadowMapSmplr, in.normal, v_500, in.v, in.v_world, diffuseMap, diffuseMapSmplr, in.uv, u_pushConstants);
+            linearColor += apply_light(arg_1, cubeShadowMap, cubeShadowMapSmplr, shadowMap, shadowMapSmplr, globalShadowMap, globalShadowMapSmplr, in.normal, v_500, in.v, in.v_world, diffuseMap, diffuseMapSmplr, in.uv);
         }
     }
     linearColor += (skybox.sample(skyboxSmplr, float4(in.normal_world.xyz, 0.0).xyz, uint(round(float4(in.normal_world.xyz, 0.0).w)), level(8.0)).xyz * float3(0.20000000298023223876953125));

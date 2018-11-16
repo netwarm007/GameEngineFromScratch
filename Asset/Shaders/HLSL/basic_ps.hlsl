@@ -27,12 +27,6 @@ cbuffer _500 : register(b0, space0)
     int _500_numLights : packoffset(c9);
     Light _500_allLights[100] : packoffset(c10);
 };
-cbuffer u_pushConstants
-{
-    float4 u_pushConstants_ambientColor : packoffset(c0);
-    float4 u_pushConstants_specularColor : packoffset(c1);
-    float u_pushConstants_specularPower : packoffset(c2);
-};
 TextureCubeArray<float4> cubeShadowMap : register(t3, space0);
 SamplerState _cubeShadowMap_sampler : register(s3, space0);
 Texture2DArray<float4> shadowMap : register(t1, space0);
@@ -200,21 +194,21 @@ float3 apply_areaLight(Light light)
     float3 linearColor = 0.0f.xxx;
     float pnDotL = dot(pnormal, -L);
     float nDotL = dot(N, L);
-    float _749 = nDotL;
-    bool _750 = _749 > 0.0f;
-    bool _761;
-    if (_750)
+    float _741 = nDotL;
+    bool _742 = _741 > 0.0f;
+    bool _753;
+    if (_742)
     {
         float3 param_6 = v.xyz;
         float3 param_7 = ppos;
         float3 param_8 = pnormal;
-        _761 = isAbovePlane(param_6, param_7, param_8);
+        _753 = isAbovePlane(param_6, param_7, param_8);
     }
     else
     {
-        _761 = _750;
+        _753 = _742;
     }
-    if (_761)
+    if (_753)
     {
         float3 V = normalize(-v.xyz);
         float3 R = normalize((N * (2.0f * dot(V, N))) - V);
@@ -231,7 +225,7 @@ float3 apply_areaLight(Light light)
         float specFactor = 1.0f - clamp(length(nearestSpec2D - dirSpec2D), 0.0f, 1.0f);
         float3 admit_light = light.lightColor.xyz * (light.lightIntensity * atten);
         linearColor = (diffuseMap.Sample(_diffuseMap_sampler, uv).xyz * nDotL) * pnDotL;
-        linearColor += (((u_pushConstants_specularColor.xyz * pow(clamp(dot(R2, V), 0.0f, 1.0f), u_pushConstants_specularPower)) * specFactor) * specAngle);
+        linearColor += (((0.800000011920928955078125f.xxx * pow(clamp(dot(R2, V), 0.0f, 1.0f), 50.0f)) * specFactor) * specAngle);
         linearColor *= admit_light;
     }
     return linearColor;
@@ -338,7 +332,7 @@ float3 apply_light(Light light)
     float3 linearColor = diffuseMap.Sample(_diffuseMap_sampler, uv).xyz * cosTheta;
     if (visibility > 0.20000000298023223876953125f)
     {
-        linearColor += (u_pushConstants_specularColor.xyz * pow(clamp(dot(R, V), 0.0f, 1.0f), u_pushConstants_specularPower));
+        linearColor += (0.800000011920928955078125f.xxx * pow(clamp(dot(R, V), 0.0f, 1.0f), 50.0f));
     }
     linearColor *= admit_light;
     return linearColor * visibility;

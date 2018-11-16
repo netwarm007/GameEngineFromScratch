@@ -49,8 +49,12 @@ void GraphicsManager::Tick()
 
     UpdateConstants();
 
+    BeginScene();
     Clear();
     Draw();
+    EndScene();
+
+    Present();
 }
 
 void GraphicsManager::UpdateConstants()
@@ -106,7 +110,7 @@ void GraphicsManager::Draw()
 {
     auto& frame = m_Frames[m_nFrameIndex];
 
-    for (auto pDrawPass : m_DrawPasses)
+    for (auto& pDrawPass : m_DrawPasses)
     {
         pDrawPass->Draw(frame);
     }
@@ -114,6 +118,11 @@ void GraphicsManager::Draw()
 #ifdef DEBUG
     RenderDebugBuffers();
 #endif
+}
+
+void GraphicsManager::Present()
+{
+    cerr << "[GraphicsManager] Present()" << endl;
 }
 
 void GraphicsManager::InitConstants()

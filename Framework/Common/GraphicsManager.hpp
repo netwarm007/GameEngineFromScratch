@@ -29,6 +29,7 @@ namespace My {
 
         virtual void Clear();
         virtual void Draw();
+        virtual void Present();
 
         virtual bool CheckCapability(RHICapability cap);
 
@@ -93,13 +94,14 @@ namespace My {
         virtual void InitializeBuffers(const Scene& scene);
         virtual void ClearBuffers();
 
-        virtual void InitConstants();
-        virtual void CalculateCameraMatrix();
-        virtual void CalculateLights();
-        virtual void UpdateConstants();
-
         virtual void BeginScene();
         virtual void EndScene();
+
+    private:
+        void InitConstants();
+        void CalculateCameraMatrix();
+        void CalculateLights();
+        void UpdateConstants();
 
 #ifdef DEBUG
         virtual void RenderDebugBuffers();

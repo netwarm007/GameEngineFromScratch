@@ -19,8 +19,8 @@ namespace My {
         void Finalize() final;
 
         void Clear() final;
-
         void Draw() final;
+        void Present() final;
 
         bool CheckCapability(RHICapability cap) final;
 
@@ -74,10 +74,13 @@ namespace My {
         void RenderDebugBuffers();
 #endif
 
+    protected:
         void InitializeBuffers(const Scene& scene) final;
         void ClearBuffers() final;
 
-    protected:
+        void BeginScene() final {};
+        void EndScene() final {};
+
         void initializeGeometries(const Scene& scene);
         void initializeSkyBox(const Scene& scene);
         void initializeTerrain(const Scene& scene);

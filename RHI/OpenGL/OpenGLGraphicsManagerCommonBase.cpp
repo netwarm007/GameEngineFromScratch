@@ -8,8 +8,6 @@ using namespace std;
 
 void OpenGLGraphicsManagerCommonBase::Clear()
 {
-    GraphicsManager::Clear();
-
     // Set the color to clear the screen to.
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
@@ -24,7 +22,10 @@ void OpenGLGraphicsManagerCommonBase::Finalize()
 void OpenGLGraphicsManagerCommonBase::Draw()
 {
     GraphicsManager::Draw();
+}
 
+void OpenGLGraphicsManagerCommonBase::Present()
+{
     glFlush();
 }
 
@@ -241,7 +242,7 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
 void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 {
     // Geometries
-    for (auto _it : scene.GeometryNodes)
+    for (auto& _it : scene.GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode && pGeometryNode->Visible()) 
@@ -725,7 +726,7 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
     {
         auto& batchContexts = m_Frames[i].batchContexts;
 
-        for (auto dbc : batchContexts) {
+        for (auto& dbc : batchContexts) {
             glDeleteVertexArrays(1, &dynamic_pointer_cast<OpenGLDrawBatchContext>(dbc)->vao);
         }
 
@@ -742,7 +743,7 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
         glDeleteVertexArrays(1, &m_SkyBoxDrawBatchContext.vao);
     }
 
-    for (auto buf : m_Buffers) {
+    for (auto& buf : m_Buffers) {
         glDeleteBuffers(1, &buf);
     }
 
@@ -761,7 +762,7 @@ void OpenGLGraphicsManagerCommonBase::ClearBuffers()
         glDeleteBuffers(1, &m_uboShadowMatricesConstant);
     }
     
-    for (auto texture : m_Textures) {
+    for (auto& texture : m_Textures) {
         glDeleteTextures(1, &texture);
     }
 
@@ -1654,13 +1655,13 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangleStrip(const PointList& vertice
 
 void OpenGLGraphicsManagerCommonBase::ClearDebugBuffers()
 {
-    for (auto dbc : m_DebugDrawBatchContext) {
+    for (auto& dbc : m_DebugDrawBatchContext) {
         glDeleteVertexArrays(1, &dbc.vao);
     }
 
     m_DebugDrawBatchContext.clear();
 
-    for (auto buf : m_DebugBuffers) {
+    for (auto& buf : m_DebugBuffers) {
         glDeleteBuffers(1, &buf);
     }
 
@@ -1676,7 +1677,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 
     SetPerFrameConstants(m_Frames[m_nFrameIndex].frameContext);
 
-    for (auto dbc : m_DebugDrawBatchContext)
+    for (auto& dbc : m_DebugDrawBatchContext)
     {
         setShaderParameter("u_pushConstants.FrontColor", dbc.color);
 
