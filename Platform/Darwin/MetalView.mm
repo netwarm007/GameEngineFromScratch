@@ -41,8 +41,9 @@ using namespace My;
 {
     self.device = MTLCreateSystemDefaultDevice();
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    self.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     self.framebufferOnly = YES;
-    self.sampleCount = 1;
+    self.sampleCount = 4;
     
     self.paused = YES;
     self.enableSetNeedsDisplay = YES;

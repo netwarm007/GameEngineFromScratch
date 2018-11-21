@@ -15,16 +15,26 @@ namespace My {
 
         void Clear() final;
         void Draw() final;
+        void Present() final;
     
+        void UseShaderProgram(const intptr_t shaderProgram) final;
+        void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void SetPerBatchConstants(const DrawBatchContext& context) final;
+
+        void DrawBatch(const DrawBatchContext& context) final;
+
         bool CheckCapability(RHICapability cap) final;
     
 #ifdef __OBJC__
         void SetRenderer(Metal2Renderer* renderer) { m_pRenderer = renderer; }
 #endif
 
-    protected:
+    private:
         void BeginScene(const Scene& scene) final;
         void EndScene() final;
+
+        void BeginFrame() final;
+        void EndFrame() final;
 
     private:
 #ifdef __OBJC__

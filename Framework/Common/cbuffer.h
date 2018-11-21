@@ -3,7 +3,9 @@
 
 #define MAX_LIGHTS 100
 
+
 #ifdef __cplusplus
+	#include "portable.hpp"
 	#include "geommath.hpp"
 	#include "Guid.hpp"
 	#include "SceneObjectLight.hpp"
@@ -53,7 +55,7 @@ struct Light{
 	Vector4f    padding[2];						// 32 bytes
 };												// totle 265 bytes
 
-unistruct PerFrameConstants REGISTER(b0)
+unistruct PerFrameConstants REGISTER(b10)
 {
 	Matrix4X4f 	viewMatrix;						// 64 bytes
 	Matrix4X4f 	projectionMatrix;				// 64 bytes
@@ -63,16 +65,21 @@ unistruct PerFrameConstants REGISTER(b0)
 	Light 		lights[MAX_LIGHTS];   			// alignment = 64 bytes
 };
 
-unistruct PerBatchConstants REGISTER(b1)
+unistruct PerBatchConstants REGISTER(b11)
 {
 	Matrix4X4f modelMatrix;						// 64 bytes
 };
 
+#ifdef __cplusplus
+const size_t kSizePerFrameConstantBuffer = ALIGN(sizeof(PerFrameConstants) + sizeof(Light) * MAX_LIGHTS, 256); // CB size is required to be 256-byte aligned.
+const size_t kSizePerBatchConstantBuffer = ALIGN(sizeof(PerBatchConstants), 256); // CB size is required to be 256-byte aligned.
+#endif
+
 struct a2v
 {
     Vector3f inputPosition    SEMANTIC(POSITION);
+    Vector2f inputUV          SEMANTIC(TEXCOORD);
     Vector3f inputNormal      SEMANTIC(NORMAL);
-    Vector3f inputUV          SEMANTIC(TEXCOORD);
     Vector3f inputTangent     SEMANTIC(TANGENT);
     Vector3f inputBiTangent   SEMANTIC(BITANGENT);
 };

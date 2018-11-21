@@ -8,8 +8,8 @@ using namespace metal;
 struct a2v
 {
     float3 inputPosition;
+    float2 inputUV;
     float3 inputNormal;
-    float3 inputUV;
     float3 inputTangent;
     float3 inputBiTangent;
 };
@@ -80,8 +80,8 @@ struct basic_vert_main_out
 struct basic_vert_main_in
 {
     float3 a_inputPosition [[attribute(0)]];
-    float3 a_inputNormal [[attribute(1)]];
-    float3 a_inputUV [[attribute(2)]];
+    float2 a_inputUV [[attribute(1)]];
+    float3 a_inputNormal [[attribute(2)]];
     float3 a_inputTangent [[attribute(3)]];
     float3 a_inputBiTangent [[attribute(4)]];
 };
@@ -106,14 +106,14 @@ vert_output _basic_vert_main(thread const a2v& a, constant PerBatchConstants& v_
     return o;
 }
 
-vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& v_55 [[buffer(0)]], constant PerBatchConstants& v_25 [[buffer(1)]])
+vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& v_55 [[buffer(10)]], constant PerBatchConstants& v_25 [[buffer(11)]])
 {
     basic_vert_main_out out = {};
     float3x3 _entryPointOutput_TBN = {};
     a2v a;
     a.inputPosition = in.a_inputPosition;
-    a.inputNormal = in.a_inputNormal;
     a.inputUV = in.a_inputUV;
+    a.inputNormal = in.a_inputNormal;
     a.inputTangent = in.a_inputTangent;
     a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
