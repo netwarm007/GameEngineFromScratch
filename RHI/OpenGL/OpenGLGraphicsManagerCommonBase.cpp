@@ -242,18 +242,18 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
 void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 {
     // Geometries
-    for (auto& _it : scene.GeometryNodes)
+    for (const auto& _it : scene.GeometryNodes)
     {
-        auto pGeometryNode = _it.second.lock();
+        const auto& pGeometryNode = _it.second.lock();
         if (pGeometryNode && pGeometryNode->Visible()) 
         {
-            auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            const auto& pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);
-            auto pMesh = pGeometry->GetMesh().lock();
+            const auto& pMesh = pGeometry->GetMesh().lock();
             if (!pMesh) continue;
 
             // Set the number of vertex properties.
-            auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
+            const auto vertexPropertiesCount = pMesh->GetVertexPropertiesCount();
 
             // Allocate an OpenGL vertex array object.
             GLuint vao;
@@ -267,8 +267,8 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
             for (uint32_t i = 0; i < vertexPropertiesCount; i++)
             {
                 const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
-                auto v_property_array_data_size = v_property_array.GetDataSize();
-                auto v_property_array_data = v_property_array.GetData();
+                const auto v_property_array_data_size = v_property_array.GetDataSize();
+                const auto v_property_array_data = v_property_array.GetData();
 
                 // Generate an ID for the vertex buffer.
                 glGenBuffers(1, &buffer_id);
@@ -313,7 +313,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                 m_Buffers.push_back(buffer_id);
             }
 
-            auto indexGroupCount = pMesh->GetIndexGroupCount();
+            const auto indexGroupCount = pMesh->GetIndexGroupCount();
 
             GLenum  mode;
             switch(pMesh->GetPrimitiveType())
@@ -341,14 +341,14 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                     continue;
             }
 
-            for (decltype(indexGroupCount) i = 0; i < indexGroupCount; i++)
+            for (uint32_t i = 0; i < indexGroupCount; i++)
             {
                 // Generate an ID for the index buffer.
                 glGenBuffers(1, &buffer_id);
 
                 const SceneObjectIndexArray& index_array      = pMesh->GetIndexArray(i);
-                auto index_array_size = index_array.GetDataSize();
-                auto index_array_data = index_array.GetData();
+                const auto index_array_size = index_array.GetDataSize();
+                const auto index_array_data = index_array.GetData();
 
                 // Bind the index buffer and load the index data into it.
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer_id);
@@ -378,25 +378,25 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 
                 m_Buffers.push_back(buffer_id);
 
-                size_t material_index = index_array.GetMaterialIndex();
-                std::string material_key = pGeometryNode->GetMaterialRef(material_index);
-                auto material = scene.GetMaterial(material_key);
+                const auto material_index = index_array.GetMaterialIndex();
+                const auto& material_key = pGeometryNode->GetMaterialRef(material_index);
+                const auto material = scene.GetMaterial(material_key);
                 if (material) {
-                    function<void(const string, const Image&)> upload_texture = [this](const string texture_key, const Image& texture) {
+                    function<void(const string, const shared_ptr<Image>&)> upload_texture = [this](const string texture_key, const shared_ptr<Image>& texture) {
                         GLuint texture_id;
                         glGenTextures(1, &texture_id);
                         glBindTexture(GL_TEXTURE_2D, texture_id);
                         GLenum format, internal_format, type;
-                        getOpenGLTextureFormat(texture, format, internal_format, type);
-                        if (texture.compressed)
+                        getOpenGLTextureFormat(*texture, format, internal_format, type);
+                        if (texture->compressed)
                         {
-                            glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
-                                0, static_cast<GLsizei>(texture.data_size), texture.data);
+                            glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->Width, texture->Height, 
+                                0, static_cast<GLsizei>(texture->data_size), texture->data);
                         }
                         else
                         {
-                            glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.Width, texture.Height, 
-                                0, format, type, texture.data);
+                            glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->Width, texture->Height, 
+                                0, format, type, texture->data);
                         }
 
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -411,71 +411,68 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                         m_Textures.push_back(texture_id);
                     };
 
-                    Image texture;
-                    string texture_key;
-
                     // base color / albedo
-                    auto color = material->GetBaseColor();
+                    const auto& color = material->GetBaseColor();
                     if (color.ValueMap) {
-                        texture_key = color.ValueMap->GetName();
-                        auto it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.end()) {
-                            texture = color.ValueMap->GetTextureImage();
+                        const auto& texture_key = color.ValueMap->GetName();
+                        const auto& it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.cend()) {
+                            const auto& texture = color.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
 
                     // normal
-                    auto normal = material->GetNormal();
+                    const auto& normal = material->GetNormal();
                     if (normal.ValueMap) {
-                        texture_key = normal.ValueMap->GetName();
-                        auto it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.end()) {
-                            texture = normal.ValueMap->GetTextureImage();
+                        const auto& texture_key = normal.ValueMap->GetName();
+                        const auto& it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.cend()) {
+                            const auto& texture = normal.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
 
                     // metallic 
-                    auto metallic = material->GetMetallic();
+                    const auto& metallic = material->GetMetallic();
                     if (metallic.ValueMap) {
-                        texture_key = metallic.ValueMap->GetName();
-                        auto it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.end()) {
-                            texture = metallic.ValueMap->GetTextureImage();
+                        const auto& texture_key = metallic.ValueMap->GetName();
+                        const auto& it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.cend()) {
+                            const auto& texture = metallic.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
 
                     // roughness 
-                    auto roughness = material->GetRoughness();
+                    const auto& roughness = material->GetRoughness();
                     if (roughness.ValueMap) {
-                        texture_key = roughness.ValueMap->GetName();
-                        auto it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.end()) {
-                            texture = roughness.ValueMap->GetTextureImage();
+                        const auto& texture_key = roughness.ValueMap->GetName();
+                        const auto& it = m_TextureIndex.find(texture_key);
+                        if (it == m_TextureIndex.cend()) {
+                            const auto& texture = roughness.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
 
                     // ao
-                    auto ao = material->GetAO();
+                    const auto& ao = material->GetAO();
                     if (ao.ValueMap) {
-                        texture_key = ao.ValueMap->GetName();
-                        auto it = m_TextureIndex.find(texture_key);
+                        const auto& texture_key = ao.ValueMap->GetName();
+                        const auto& it = m_TextureIndex.find(texture_key);
                         if (it == m_TextureIndex.end()) {
-                            texture = ao.ValueMap->GetTextureImage();
+                            const auto& texture = ao.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
 
                     // height map 
-                    auto heightmap = material->GetHeight();
+                    const auto& heightmap = material->GetHeight();
                     if (heightmap.ValueMap) {
-                        texture_key = heightmap.ValueMap->GetName();
-                        auto it = m_TextureIndex.find(texture_key);
+                        const auto& texture_key = heightmap.ValueMap->GetName();
+                        const auto& it = m_TextureIndex.find(texture_key);
                         if (it == m_TextureIndex.end()) {
-                            texture = heightmap.ValueMap->GetTextureImage();
+                            const auto& texture = heightmap.ValueMap->GetTextureImage();
                             upload_texture(texture_key, texture);
                         }
                     }
@@ -549,16 +546,16 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
     for (uint32_t i = 0; i < 12; i++)
     {
         auto& texture = scene.SkyBox->GetTexture(i);
-        auto& image = texture.GetTextureImage();
+        const auto& pImage = texture.GetTextureImage();
         GLenum format, internal_format, type;
-        getOpenGLTextureFormat(image, format, internal_format, type);
+        getOpenGLTextureFormat(*pImage, format, internal_format, type);
 
         if (i == 0) // do this only once
         {
             const uint32_t faces = 6;
             const uint32_t indexies = 2;
             constexpr GLsizei depth = faces * indexies;
-            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, kMaxMipLevels, internal_format, image.Width, image.Height, depth);
+            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, kMaxMipLevels, internal_format, pImage->Width, pImage->Height, depth);
         }
 
         auto error = glGetError();
@@ -566,15 +563,15 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
 
         GLint level = i / 6;
         GLint zoffset = i % 6;
-        if (image.compressed)
+        if (pImage->compressed)
         {
-            glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
-                internal_format, static_cast<GLsizei>(image.mipmaps[0].data_size), image.data);
+            glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->Width, pImage->Height, 1,
+                internal_format, static_cast<GLsizei>(pImage->mipmaps[0].data_size), pImage->data);
         }
         else
         {
-            glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.Width, image.Height, 1,
-                format, type, image.data);
+            glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->Width, pImage->Height, 1,
+                format, type, pImage->data);
         }
 
         error = glGetError();
@@ -585,22 +582,22 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
     for (uint32_t i = 12; i < 18; i++)
     {
         auto& texture = scene.SkyBox->GetTexture(i);
-        auto& image = texture.GetTextureImage();
+        const auto& pImage = texture.GetTextureImage();
         GLenum format, internal_format, type;
-        getOpenGLTextureFormat(image, format, internal_format, type);
+        getOpenGLTextureFormat(*pImage, format, internal_format, type);
 
         GLint zoffset = (i % 6) + 6;
-        for (decltype(image.mipmap_count) level = 0; level < std::min(image.mipmap_count, kMaxMipLevels); level++)
+        for (decltype(pImage->mipmap_count) level = 0; level < std::min(pImage->mipmap_count, kMaxMipLevels); level++)
         {
-            if (image.compressed)
+            if (pImage->compressed)
             {
-                glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.mipmaps[level].Width, image.mipmaps[level].Height, 1,
-                    internal_format, static_cast<GLsizei>(image.mipmaps[level].data_size), image.data + image.mipmaps[level].offset);
+                glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->mipmaps[level].Width, pImage->mipmaps[level].Height, 1,
+                    internal_format, static_cast<GLsizei>(pImage->mipmaps[level].data_size), pImage->data + pImage->mipmaps[level].offset);
             }
             else
             {
-                glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, image.mipmaps[level].Width, image.mipmaps[level].Height, 1,
-                    format, type, image.data + image.mipmaps[level].offset);
+                glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->mipmaps[level].Width, pImage->mipmaps[level].Height, 1,
+                    format, type, pImage->data + pImage->mipmaps[level].offset);
             }
 
             auto error = glGetError();
@@ -682,20 +679,20 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
-    auto & texture = scene.Terrain->GetTexture(0);
-    const auto & image = texture.GetTextureImage();
+    auto& texture = scene.Terrain->GetTexture(0);
+    const auto& pImage = texture.GetTextureImage();
 
     GLenum format, internal_format, type;
-    getOpenGLTextureFormat(image, format, internal_format, type);
-    if (image.compressed)
+    getOpenGLTextureFormat(*pImage, format, internal_format, type);
+    if (pImage->compressed)
     {
-        glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.Width, image.Height, 
-            0, static_cast<GLsizei>(image.data_size), image.data);
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, pImage->Width, pImage->Height, 
+            0, static_cast<GLsizei>(pImage->data_size), pImage->data);
     }
     else
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, image.Width, image.Height, 
-            0, format, type, image.data);
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pImage->Width, pImage->Height, 
+            0, format, type, pImage->data);
     }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -1274,7 +1271,7 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
 // terrain 
 void OpenGLGraphicsManagerCommonBase::SetTerrain(const DrawFrameContext& context)
 {
-    auto texture_id = m_TextureIndex["terrain"];
+    const auto texture_id = m_TextureIndex["terrain"];
     setShaderParameter("terrainHeightMap", 11);
     glActiveTexture(GL_TEXTURE11);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -1401,8 +1398,8 @@ void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint3
 intptr_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)
 {
     assert(id);
-    auto it = m_TextureIndex.find(id);
-    if (it != m_TextureIndex.end())
+    const auto& it = m_TextureIndex.find(id);
+    if (it != m_TextureIndex.cend())
     {
         return static_cast<intptr_t>(it->second);
     }
@@ -1488,10 +1485,10 @@ void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, co
 
 void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
 {
-    auto count = point_set.size();
+    const auto count = point_set.size();
     Point* buffer = new Point[count];
     int i = 0;
-    for(auto point_ptr : point_set)
+    for(const auto& point_ptr : point_set)
     {
         buffer[i++] = *point_ptr;
     }
@@ -1503,7 +1500,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, co
 
 void OpenGLGraphicsManagerCommonBase::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
-    auto count = vertices.size();
+    const auto count = vertices.size();
     GLfloat* _vertices = new GLfloat[3 * count];
 
     for (auto i = 0; i < count; i++)
@@ -1573,7 +1570,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangle(const PointList& vertices, co
 
 void OpenGLGraphicsManagerCommonBase::DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
-    auto count = vertices.size();
+    const auto count = vertices.size();
     assert(count >= 3);
 
     GLuint vao;
@@ -1615,7 +1612,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangle(const PointList& vertices, co
 
 void OpenGLGraphicsManagerCommonBase::DrawTriangleStrip(const PointList& vertices, const Vector3f& color)
 {
-    auto count = vertices.size();
+    const auto count = vertices.size();
     assert(count >= 3);
 
     GLuint vao;
@@ -1671,14 +1668,14 @@ void OpenGLGraphicsManagerCommonBase::ClearDebugBuffers()
 
 void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 {
-    auto debugShaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Debug);
+    const auto debugShaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Debug);
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     UseShaderProgram(debugShaderProgram);
 
     SetPerFrameConstants(m_Frames[m_nFrameIndex].frameContext);
 
-    for (auto& dbc : m_DebugDrawBatchContext)
+    for (const auto& dbc : m_DebugDrawBatchContext)
     {
         setShaderParameter("u_pushConstants.FrontColor", dbc.color);
 

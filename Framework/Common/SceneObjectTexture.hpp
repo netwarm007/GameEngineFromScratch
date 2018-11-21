@@ -69,14 +69,14 @@ namespace My {
                 }
             }
 
-            const Image& GetTextureImage()
+            std::shared_ptr<Image> GetTextureImage()
             { 
                 if (!m_pImage)
                 {
                     LoadTexture();
                 }
 
-                return *m_pImage; 
+                return m_pImage; 
             };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectTexture& obj);
