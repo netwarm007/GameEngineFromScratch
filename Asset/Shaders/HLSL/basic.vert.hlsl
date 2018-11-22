@@ -7,7 +7,7 @@ vert_output basic_vert_main(a2v a)
 
     o.v_world = mul(float4(a.inputPosition, 1.0f), modelMatrix);
     o.v = mul(o.v_world, viewMatrix);
-    o.position = mul(o.v, projectionMatrix);
+    o.pos = mul(o.v, projectionMatrix);
     o.normal_world = normalize(mul(float4(a.inputNormal, 0.0f), modelMatrix));
     o.normal = normalize(mul(o.normal_world, viewMatrix));
     float3 tangent = normalize(float3(mul(float4(a.inputTangent, 0.0f), modelMatrix).xyz));

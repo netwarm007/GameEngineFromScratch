@@ -11,7 +11,7 @@ struct a2v
 
 struct vert_output
 {
-    vec4 position;
+    vec4 pos;
     vec4 normal;
     vec4 normal_world;
     vec4 v;
@@ -43,13 +43,13 @@ struct Light
 
 layout(std140) uniform PerBatchConstants
 {
-    layout(row_major) mat4 modelMatrix;
+    mat4 modelMatrix;
 } _25;
 
 layout(std140) uniform PerFrameConstants
 {
-    layout(row_major) mat4 viewMatrix;
-    layout(row_major) mat4 projectionMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
     vec4 camPos;
     uint numLights;
     float padding[3];
@@ -75,7 +75,7 @@ vert_output _basic_vert_main(a2v a)
     vert_output o;
     o.v_world = _25.modelMatrix * vec4(a.inputPosition, 1.0);
     o.v = _55.viewMatrix * o.v_world;
-    o.position = _55.projectionMatrix * o.v;
+    o.pos = _55.projectionMatrix * o.v;
     o.normal_world = normalize(_25.modelMatrix * vec4(a.inputNormal, 0.0));
     o.normal = normalize(_55.viewMatrix * o.normal_world);
     vec3 tangent = normalize((_25.modelMatrix * vec4(a.inputTangent, 0.0)).xyz);
@@ -100,7 +100,7 @@ void main()
     a.inputBiTangent = a_inputBiTangent;
     a2v param = a;
     vert_output flattenTemp = _basic_vert_main(param);
-    gl_Position = flattenTemp.position;
+    gl_Position = flattenTemp.pos;
     _entryPointOutput_normal = flattenTemp.normal;
     _entryPointOutput_normal_world = flattenTemp.normal_world;
     _entryPointOutput_v = flattenTemp.v;

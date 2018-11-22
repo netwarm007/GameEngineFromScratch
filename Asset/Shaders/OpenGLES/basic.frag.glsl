@@ -4,7 +4,7 @@ precision highp int;
 
 struct vert_output
 {
-    highp vec4 position;
+    highp vec4 pos;
     highp vec4 normal;
     highp vec4 normal_world;
     highp vec4 v;
@@ -36,8 +36,8 @@ struct Light
 
 layout(binding = 10, std140) uniform PerFrameConstants
 {
-    layout(row_major) highp mat4 viewMatrix;
-    layout(row_major) highp mat4 projectionMatrix;
+    highp mat4 viewMatrix;
+    highp mat4 projectionMatrix;
     highp vec4 camPos;
     uint numLights;
     highp float padding[3];
@@ -401,7 +401,7 @@ highp vec4 _basic_frag_main(vert_output _input)
 void main()
 {
     vert_output _input;
-    _input.position = gl_FragCoord;
+    _input.pos = gl_FragCoord;
     _input.normal = input_normal;
     _input.normal_world = input_normal_world;
     _input.v = input_v;

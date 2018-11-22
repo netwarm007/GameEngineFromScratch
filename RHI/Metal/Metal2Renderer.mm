@@ -161,6 +161,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     if (!_pipelineState)
     {
         NSLog(@"Failed to created pipeline state, error %@", error);
+        assert(0);
     }
 
     MTLDepthStencilDescriptor *depthStateDesc = [MTLDepthStencilDescriptor new];
@@ -241,6 +242,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [renderEncoder pushDebugGroup:@"DrawMesh"];
 
+        [renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [renderEncoder setCullMode:MTLCullModeBack];
         [renderEncoder setRenderPipelineState:_pipelineState];
         [renderEncoder setDepthStencilState:_depthState];
@@ -282,7 +284,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
         // Draw our mesh
         [renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                   indexCount:dbc.index_count
-                                   indexType:MTLIndexTypeUInt16
+                                   indexType:MTLIndexTypeUInt32
                                  indexBuffer:_indexBuffers[dbc.index_offset]
                            indexBufferOffset:0];
 

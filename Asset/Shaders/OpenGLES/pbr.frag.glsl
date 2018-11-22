@@ -34,7 +34,7 @@ struct Light
     highp vec4 padding[2];
 };
 
-layout(binding = 0, std140) uniform PerFrameConstants
+layout(binding = 10, std140) uniform PerFrameConstants
 {
     layout(row_major) highp mat4 viewMatrix;
     layout(row_major) highp mat4 projectionMatrix;

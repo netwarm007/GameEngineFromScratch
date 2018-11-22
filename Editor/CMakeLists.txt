@@ -12,6 +12,7 @@ IF(APPLE)
         add_custom_command(OUTPUT ${SHADER}.air
             COMMAND xcrun -sdk macosx metal -gline-tables-only -MO -c ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
             COMMENT "Compile ${SHADER}.metal --> ${SHADER}.air"
+            DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal
             )
 
         list(APPEND AIRS ${SHADER}.air)

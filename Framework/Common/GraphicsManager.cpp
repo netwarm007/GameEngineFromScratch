@@ -55,6 +55,8 @@ void GraphicsManager::Tick()
     EndFrame();
 
     Present();
+
+    m_nFrameIndex = (m_nFrameIndex + 1) % m_kFrameCount;
 }
 
 void GraphicsManager::UpdateConstants()

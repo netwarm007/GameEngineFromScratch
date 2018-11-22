@@ -16,7 +16,7 @@ struct a2v
 
 struct vert_output
 {
-    float4 position;
+    float4 pos;
     float4 normal;
     float4 normal_world;
     float4 v;
@@ -89,12 +89,12 @@ struct basic_vert_main_in
 vert_output _basic_vert_main(thread const a2v& a, constant PerBatchConstants& v_25, constant PerFrameConstants& v_55)
 {
     vert_output o;
-    o.v_world = float4(a.inputPosition, 1.0) * v_25.modelMatrix;
-    o.v = o.v_world * v_55.viewMatrix;
-    o.position = o.v * v_55.projectionMatrix;
-    o.normal_world = normalize(float4(a.inputNormal, 0.0) * v_25.modelMatrix);
-    o.normal = normalize(o.normal_world * v_55.viewMatrix);
-    float3 tangent = normalize((float4(a.inputTangent, 0.0) * v_25.modelMatrix).xyz);
+    o.v_world = v_25.modelMatrix * float4(a.inputPosition, 1.0);
+    o.v = v_55.viewMatrix * o.v_world;
+    o.pos = v_55.projectionMatrix * o.v;
+    o.normal_world = normalize(v_25.modelMatrix * float4(a.inputNormal, 0.0));
+    o.normal = normalize(v_55.viewMatrix * o.normal_world);
+    float3 tangent = normalize((v_25.modelMatrix * float4(a.inputTangent, 0.0)).xyz);
     tangent = normalize(tangent - (o.normal_world.xyz * dot(tangent, o.normal_world.xyz)));
     float3 bitangent = cross(o.normal_world.xyz, tangent);
     o.TBN = float3x3(float3(tangent), float3(bitangent), float3(o.normal_world.xyz));
@@ -118,7 +118,7 @@ vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], c
     a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
     vert_output flattenTemp = _basic_vert_main(param, v_25, v_55);
-    out.gl_Position = flattenTemp.position;
+    out.gl_Position = flattenTemp.pos;
     out._entryPointOutput_normal = flattenTemp.normal;
     out._entryPointOutput_normal_world = flattenTemp.normal_world;
     out._entryPointOutput_v = flattenTemp.v;

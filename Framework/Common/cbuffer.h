@@ -30,9 +30,9 @@
 	#define Vector2f float2
 	#define Vector3f float3
 	#define Vector4f float4
-	#define Matrix2X2f float2x2
-	#define Matrix3X3f float3x3
-	#define Matrix4X4f float4x4
+	#define Matrix2X2f row_major float2x2
+	#define Matrix3X3f row_major float3x3
+	#define Matrix4X4f row_major float4x4
 	#define LightType uint
 	#define AttenCurveType uint
 #endif
