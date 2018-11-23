@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include "GraphicsManager.hpp"
 #include "SceneManager.hpp"
 #include "IApplication.hpp"
@@ -16,7 +17,7 @@ using namespace std;
 int GraphicsManager::Initialize()
 {
     int result = 0;
-    m_Frames.resize(m_kFrameCount);
+    m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
 
 	InitConstants();
@@ -56,7 +57,7 @@ void GraphicsManager::Tick()
 
     Present();
 
-    m_nFrameIndex = (m_nFrameIndex + 1) % m_kFrameCount;
+    m_nFrameIndex = (m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount;
 }
 
 void GraphicsManager::UpdateConstants()

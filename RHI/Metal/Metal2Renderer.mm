@@ -5,10 +5,12 @@
 #import "MetalShaderManager.h"
 #import "Metal2GraphicsManager.h"
 
+#include "IApplication.hpp"
+
 using namespace My;
 
 // The max number of command buffers in flight
-static const NSUInteger GEFSMaxBuffersInFlight = 2;
+static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightFrameCount;
 
 @implementation Metal2Renderer
 {
@@ -21,14 +23,13 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     id<MTLTexture> _baseColorMap;
     id<MTLTexture> _normalMap;
     id<MTLTexture> _specularMap;
-    id<MTLBuffer> _perFrameUniformBuffers[GEFSMaxBuffersInFlight];
-    id<MTLBuffer> _perBatchUniformBuffers[GEFSMaxBuffersInFlight];
+    id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     id<MTLSamplerState> _sampler0;
 
     // The index in uniform buffers in _dynamicUniformBuffers to use for the current frame
-    uint8_t _uniformBufferIndex;
+    uint32_t _currentBufferIndex;
 
     // Vertex descriptor specifying how vertices will by laid out for input into our render
     // pipeline and how ModelIO should layout vertices
@@ -44,7 +45,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     self = [super init];
     if(self)
     {
-        _uniformBufferIndex = 0;
+        _currentBufferIndex = 0;
         _mtkView = mtkView;
         _device = device;
         _inFlightSemaphore = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
@@ -72,15 +73,10 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     {
         // Create and allocate our uniform buffer object.  Indicate shared storage so that both the
         //  CPU can access the buffer
-        _perFrameUniformBuffers[i] = [_device newBufferWithLength:kSizePerFrameConstantBuffer
+        _uniformBuffers[i] = [_device newBufferWithLength:kSizePerBatchConstantBuffer + kSizePerFrameConstantBuffer * GfxConfiguration::kMaxSceneObjectCount
                                                      options:MTLResourceStorageModeShared];
 
-        _perFrameUniformBuffers[i].label = [NSString stringWithFormat:@"PerFrameUniformBuffer%lu", i];
-
-        _perBatchUniformBuffers[i] = [_device newBufferWithLength:kSizePerBatchConstantBuffer
-                                                     options:MTLResourceStorageModeShared];
-
-        _perBatchUniformBuffers[i].label = [NSString stringWithFormat:@"PerBatchUniformBuffer%lu", i];
+        _uniformBuffers[i].label = [NSString stringWithFormat:@"uniformBuffer%lu", i];
     }
 
     _mtlVertexDescriptor = [MTLVertexDescriptor new];
@@ -203,14 +199,26 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
 #endif
 }
 
+- (void)beginFrame
+{
+}
+
+- (void)endFrame
+{
+    _currentBufferIndex = (_currentBufferIndex + 1) % GEFSMaxBuffersInFlight;
+}
+
 - (void)setPerFrameConstants:(const DrawFrameContext&)context
 {
-    std::memcpy(_perFrameUniformBuffers[_uniformBufferIndex].contents, &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
+    std::memcpy(_uniformBuffers[_currentBufferIndex].contents, 
+            &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
 }
 
 - (void)setPerBatchConstants:(const DrawBatchContext&)context
 {
-    std::memcpy(_perBatchUniformBuffers[_uniformBufferIndex].contents, &static_cast<const PerBatchConstants&>(context), sizeof(PerBatchConstants));
+    std::memcpy(reinterpret_cast<uint8_t*>(_uniformBuffers[_currentBufferIndex].contents) 
+            + kSizePerFrameConstantBuffer + context.batchIndex * kSizePerBatchConstantBuffer
+            , &static_cast<const PerBatchConstants&>(context), sizeof(PerBatchConstants));
 }
 
 // Called whenever the view needs to render
@@ -222,7 +230,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
 
     // Create a new command buffer for each render pass to the current drawable
     id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
-    commandBuffer.label = @"MyCommand";
+    commandBuffer.label = @"myCommand";
 
     // Obtain a renderPassDescriptor generated from the view's drawable textures
     MTLRenderPassDescriptor *renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
@@ -231,7 +239,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     // any rendering this frame because we have no drawable to draw to
     if(renderPassDescriptor != nil)
     {
-        // Clear the screen
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
 
         // Create a render command encoder so we can render into something
@@ -247,15 +254,15 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
         [renderEncoder setRenderPipelineState:_pipelineState];
         [renderEncoder setDepthStencilState:_depthState];
 
-        [renderEncoder setVertexBuffer:_perFrameUniformBuffers[_uniformBufferIndex]
+        [renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
                                   offset:0
                                  atIndex:10];
 
-        [renderEncoder setVertexBuffer:_perBatchUniformBuffers[_uniformBufferIndex]
-                                  offset:0
+        [renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+                                  offset:kSizePerFrameConstantBuffer + dbc.batchIndex * kSizePerBatchConstantBuffer
                                  atIndex:11];
 
-        [renderEncoder setFragmentBuffer:_perFrameUniformBuffers[_uniformBufferIndex]
+        [renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
                                   offset:0
                                  atIndex:10];
 

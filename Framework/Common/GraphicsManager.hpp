@@ -108,13 +108,6 @@ namespace My {
         void UpdateConstants();
 
     protected:
-        static const uint32_t           m_kFrameCount  = 2;
-        static const uint32_t           m_kMaxSceneObjectCount  = 2048;
-        static const uint32_t           m_kMaxTextureCount  = 2048;
-		static const uint32_t		    m_kTextureDescStartIndex = m_kFrameCount * 2;
-
-        static const size_t m_kSizeConstantBufferPerFrame = kSizePerFrameConstantBuffer + kSizePerBatchConstantBuffer * m_kMaxSceneObjectCount;
-
         uint32_t                        m_nFrameIndex = 0;
 
         std::vector<Frame>  m_Frames;

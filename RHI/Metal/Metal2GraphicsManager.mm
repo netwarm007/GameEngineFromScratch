@@ -104,12 +104,12 @@ void Metal2GraphicsManager::EndScene()
 
 void Metal2GraphicsManager::BeginFrame()
 {
-
+    [m_pRenderer beginFrame];
 }
 
 void Metal2GraphicsManager::EndFrame()
 {
-
+    [m_pRenderer endFrame];
 }
 
 void Metal2GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)

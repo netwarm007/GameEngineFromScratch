@@ -27,6 +27,10 @@ namespace My {
 
 - (void)createIndexBuffer:(const My::SceneObjectIndexArray&)index_array;
 
+- (void)beginFrame;
+
+- (void)endFrame;
+
 @property (nonnull, readonly, nonatomic) id<MTLDevice> device;
 
 @end
