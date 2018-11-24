@@ -51,7 +51,6 @@ void GraphicsManager::Tick()
     UpdateConstants();
 
     BeginFrame();
-    Clear();
     Draw();
     EndFrame();
 
@@ -92,11 +91,6 @@ void GraphicsManager::UpdateConstants()
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
     CalculateLights();
-}
-
-void GraphicsManager::Clear()
-{
-
 }
 
 void GraphicsManager::Draw()

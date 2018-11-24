@@ -13,7 +13,6 @@ namespace My {
        	int Initialize() final;
 	    void Finalize() final;
 
-        void Clear() final;
         void Draw() final;
         void Present() final;
     

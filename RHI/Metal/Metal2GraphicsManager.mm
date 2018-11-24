@@ -19,11 +19,6 @@ void Metal2GraphicsManager::Finalize()
     GraphicsManager::Finalize();
 }
 
-void Metal2GraphicsManager::Clear()
-{
-
-}
-
 void Metal2GraphicsManager::Draw()
 {
     GraphicsManager::Draw();
@@ -89,7 +84,10 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
 
             dbc->node = pGeometryNode;
 
-            m_Frames[m_nFrameIndex].batchContexts.push_back(dbc);
+            for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+            {
+                m_Frames[i].batchContexts.push_back(dbc);
+            }
 
             v_property_offset += vertexPropertiesCount;
         }

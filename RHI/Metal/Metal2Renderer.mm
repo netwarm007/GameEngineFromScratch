@@ -16,6 +16,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 {
     dispatch_semaphore_t _inFlightSemaphore;
     id<MTLCommandQueue> _commandQueue;
+    id<MTLCommandBuffer> _commandBuffer;
+    MTLRenderPassDescriptor* _renderPassDescriptor;
+    id<MTLRenderCommandEncoder> _renderEncoder;
 
     // Metal objects
     id<MTLRenderPipelineState> _pipelineState;
@@ -201,10 +204,56 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 - (void)beginFrame
 {
+    // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the Metal
+    // pipeline (App, Metal, Drivers, GPU, etc)
+    dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
+
+    // Create a new command buffer for each render pass to the current drawable
+    _commandBuffer = [_commandQueue commandBuffer];
+    _commandBuffer.label = @"myCommand";
+
+    // Obtain a renderPassDescriptor generated from the view's drawable textures
+    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+
+    if(_renderPassDescriptor != nil)
+    {
+        _renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
+
+        _renderEncoder =
+            [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+        _renderEncoder.label = @"MyRenderEncoder";
+
+        [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+        [_renderEncoder setCullMode:MTLCullModeBack];
+        [_renderEncoder setRenderPipelineState:_pipelineState];
+        [_renderEncoder setDepthStencilState:_depthState];
+    }
+    else
+    {
+        assert(0);
+    }
 }
 
 - (void)endFrame
 {
+    if(_renderPassDescriptor != nil)
+    {
+        [_renderEncoder endEncoding];
+    }
+
+    [_commandBuffer presentDrawable:_mtkView.currentDrawable];
+
+    // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
+    // finished processing the commands we're encoding this frame.
+    __block dispatch_semaphore_t block_sema = _inFlightSemaphore;
+    [_commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer)
+     {
+         dispatch_semaphore_signal(block_sema);
+     }];
+
+    // Finalize rendering here & push the command buffer to the GPU
+    [_commandBuffer commit];
+
     _currentBufferIndex = (_currentBufferIndex + 1) % GEFSMaxBuffersInFlight;
 }
 
@@ -224,45 +273,22 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 // Called whenever the view needs to render
 - (void)drawBatch:(const MtlDrawBatchContext&)dbc
 {
-    // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the Metal
-    // pipeline (App, Metal, Drivers, GPU, etc)
-    dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
-
-    // Create a new command buffer for each render pass to the current drawable
-    id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
-    commandBuffer.label = @"myCommand";
-
-    // Obtain a renderPassDescriptor generated from the view's drawable textures
-    MTLRenderPassDescriptor *renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
-
     // If we've gotten a renderPassDescriptor we can render to the drawable, otherwise we'll skip
     // any rendering this frame because we have no drawable to draw to
-    if(renderPassDescriptor != nil)
+    if(_renderPassDescriptor != nil)
     {
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
-
-        // Create a render command encoder so we can render into something
-        id<MTLRenderCommandEncoder> renderEncoder =
-            [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-        renderEncoder.label = @"MyRenderEncoder";
-
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
-        [renderEncoder pushDebugGroup:@"DrawMesh"];
+        [_renderEncoder pushDebugGroup:@"DrawMesh"];
 
-        [renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
-        [renderEncoder setCullMode:MTLCullModeBack];
-        [renderEncoder setRenderPipelineState:_pipelineState];
-        [renderEncoder setDepthStencilState:_depthState];
-
-        [renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
                                   offset:0
                                  atIndex:10];
 
-        [renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
                                   offset:kSizePerFrameConstantBuffer + dbc.batchIndex * kSizePerBatchConstantBuffer
                                  atIndex:11];
 
-        [renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
+        [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
                                   offset:0
                                  atIndex:10];
 
@@ -270,48 +296,33 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)
         {
             id<MTLBuffer> vertexBuffer = _vertexBuffers[bufferIndex];
-            [renderEncoder setVertexBuffer:vertexBuffer
+            [_renderEncoder setVertexBuffer:vertexBuffer
                                     offset:0
                                    atIndex:bufferIndex];
         }
 
-        [renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+        [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 #if 0
         // Set any textures read/sampled from our render pipeline
-        [renderEncoder setFragmentTexture:_baseColorMap
+        [_renderEncoder setFragmentTexture:_baseColorMap
                                   atIndex:TextureIndex::TextureIndexBaseColor];
 
-        [renderEncoder setFragmentTexture:_normalMap
+        [_renderEncoder setFragmentTexture:_normalMap
                                   atIndex:TextureIndex::TextureIndexNormal];
 
-        [renderEncoder setFragmentTexture:_specularMap
+        [_renderEncoder setFragmentTexture:_specularMap
                                   atIndex:TextureIndex::TextureIndexSpecular];
 
 #endif
         // Draw our mesh
-        [renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+        [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                   indexCount:dbc.index_count
                                    indexType:MTLIndexTypeUInt32
                                  indexBuffer:_indexBuffers[dbc.index_offset]
                            indexBufferOffset:0];
 
-        [renderEncoder popDebugGroup];
-
-        [renderEncoder endEncoding];
-
-        [commandBuffer presentDrawable:_mtkView.currentDrawable];
+        [_renderEncoder popDebugGroup];
     }
-
-    // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
-    // finished processing the commands we're encoding this frame.
-    __block dispatch_semaphore_t block_sema = _inFlightSemaphore;
-    [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer)
-     {
-         dispatch_semaphore_signal(block_sema);
-     }];
-
-    // Finalize rendering here & push the command buffer to the GPU
-    [commandBuffer commit];
 }
 
 @end

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include "GfxConfiguration.h"
 #include "FrameStructure.hpp"
 #include "IRuntimeModule.hpp"
 #include "IShaderManager.hpp"
@@ -27,7 +28,6 @@ namespace My {
 
         virtual void Tick();
 
-        virtual void Clear();
         virtual void Draw();
         virtual void Present();
 
