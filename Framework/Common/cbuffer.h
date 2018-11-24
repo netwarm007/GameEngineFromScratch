@@ -15,6 +15,7 @@
 	#define unistruct struct
 	#define SamplerState void
 
+namespace My {
 	enum LightType {
 		Omni     = 0,
 		Spot     = 1,
@@ -84,7 +85,31 @@ struct a2v
     Vector3f inputBiTangent   SEMANTIC(BITANGENT);
 };
 
-#ifndef __cplusplus
+#ifdef __cplusplus
+struct material_textures
+{
+	int32_t diffuseMap;
+	int32_t normalMap;
+	int32_t metalicMap;
+	int32_t roughnessMap;
+	int32_t aoMap;
+	int32_t heightMap;
+};
+
+struct global_textures
+{
+	int32_t brdfLUT;
+};
+
+struct frame_textures
+{
+	int32_t shadowMap;
+	int32_t globalShadowMap;
+	int32_t cubeShadowMap;
+	int32_t skybox;
+	int32_t terrainHeightMap;
+};
+#else
 Texture2D diffuseMap 			REGISTER(t0);
 Texture2D normalMap  			REGISTER(t1);
 Texture2D metalicMap 			REGISTER(t2);
@@ -102,4 +127,7 @@ Texture2D terrainHeightMap		REGISTER(t11);
 SamplerState samp0 REGISTER(s0);
 #endif
 
+#ifdef __cplusplus
+} // namespace My
+#endif
 #endif // !__STDCBUFFER_H__

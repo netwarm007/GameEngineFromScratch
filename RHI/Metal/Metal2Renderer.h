@@ -27,6 +27,8 @@ namespace My {
 
 - (void)createIndexBuffer:(const My::SceneObjectIndexArray&)index_array;
 
+- (uint32_t)createTexture:(const My::Image&)image;
+
 - (void)beginFrame;
 
 - (void)endFrame;

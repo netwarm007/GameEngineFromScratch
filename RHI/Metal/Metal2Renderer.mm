@@ -23,12 +23,10 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Metal objects
     id<MTLRenderPipelineState> _pipelineState;
     id<MTLDepthStencilState> _depthState;
-    id<MTLTexture> _baseColorMap;
-    id<MTLTexture> _normalMap;
-    id<MTLTexture> _specularMap;
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
+    std::vector<id<MTLTexture>>  _textures;
     id<MTLSamplerState> _sampler0;
 
     // The index in uniform buffers in _dynamicUniformBuffers to use for the current frame
@@ -190,6 +188,80 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     _indexBuffers.push_back(indexBuffer);
 }
 
+static MTLPixelFormat getMtlPixelFormat(const Image& img)
+{
+    MTLPixelFormat format;
+
+    if (img.compressed)
+    {
+        switch (img.compress_format)
+        {
+            case "DXT1"_u32:
+                format = MTLPixelFormatBC1_RGBA;
+                break;
+            case "DXT3"_u32:
+                format = MTLPixelFormatBC3_RGBA;
+                break;
+            case "DXT5"_u32:
+                format = MTLPixelFormatBC5_RGUnorm;
+                break;
+            default:
+                assert(0);
+        }
+    }
+    else
+    {
+        switch (img.bitcount)
+        {
+        case 8:
+            format = MTLPixelFormatR8Unorm;
+            break;
+        case 16:
+            format = MTLPixelFormatRG8Unorm;
+            break;
+        case 32:
+            format = MTLPixelFormatRGBA8Unorm;
+            break;
+        case 64:
+            format = MTLPixelFormatRGBA16Float;
+            break;
+        default:
+            assert(0);
+        }
+    }
+
+    return format;
+}
+
+- (uint32_t)createTexture:(const Image&)image
+{
+    id<MTLTexture> texture;
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+
+    textureDesc.pixelFormat = getMtlPixelFormat(image);
+    textureDesc.width = image.Width;
+    textureDesc.height = image.Height;
+
+    // create the texture obj
+    texture = [_device newTextureWithDescriptor:textureDesc];
+
+    // now upload the data
+    MTLRegion region = {
+        { 0, 0, 0 },                   // MTLOrigin
+        {image.Width, image.Height, 1} // MTLSize
+    };
+
+    [texture replaceRegion:region
+                mipmapLevel:0
+                withBytes:image.data
+                bytesPerRow:image.pitch];
+
+    uint32_t index = _textures.size();
+    _textures.push_back(texture);
+
+    return index;
+}
+
 /// Called whenever view changes orientation or layout is changed
 - (void)updateDrawableSize:(CGSize)size
 {
@@ -223,7 +295,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
             [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
         _renderEncoder.label = @"MyRenderEncoder";
 
-        [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [_renderEncoder setCullMode:MTLCullModeBack];
         [_renderEncoder setRenderPipelineState:_pipelineState];
         [_renderEncoder setDepthStencilState:_depthState];
@@ -302,18 +373,46 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         }
 
         [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
 #if 0
         // Set any textures read/sampled from our render pipeline
-        [_renderEncoder setFragmentTexture:_baseColorMap
-                                  atIndex:TextureIndex::TextureIndexBaseColor];
+        [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap]
+                                  atIndex:0];
 
         [_renderEncoder setFragmentTexture:_normalMap
-                                  atIndex:TextureIndex::TextureIndexNormal];
+                                  atIndex:1];
 
-        [_renderEncoder setFragmentTexture:_specularMap
-                                  atIndex:TextureIndex::TextureIndexSpecular];
+        [_renderEncoder setFragmentTexture:_metalicMap
+                                  atIndex:2];
 
+        [_renderEncoder setFragmentTexture:_roughnessMap
+                                  atIndex:3];
+
+        [_renderEncoder setFragmentTexture:_aoMap
+                                  atIndex:4];
+
+        [_renderEncoder setFragmentTexture:_heightMap
+                                  atIndex:5];
+
+        [_renderEncoder setFragmentTexture:_brdfLUT
+                                  atIndex:6];
+
+        [_renderEncoder setFragmentTexture:_shadowMap
+                                  atIndex:7];
+
+        [_renderEncoder setFragmentTexture:_globalShadowMap
+                                  atIndex:8];
+
+        [_renderEncoder setFragmentTexture:_cubeShadowMap
+                                  atIndex:9];
+
+        [_renderEncoder setFragmentTexture:_skybox
+                                  atIndex:10];
+
+        [_renderEncoder setFragmentTexture:_terrainHeightMap
+                                  atIndex:11];
 #endif
+
         // Draw our mesh
         [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                   indexCount:dbc.index_count

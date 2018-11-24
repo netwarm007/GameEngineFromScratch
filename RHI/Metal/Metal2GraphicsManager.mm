@@ -79,7 +79,21 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
             dbc->property_count = vertexPropertiesCount;
 
 			if (material) {
-                dbc->material = material;
+                if (auto& texture = material->GetBaseColor().ValueMap)
+                {
+                    int32_t texture_id;
+                    const auto& it = m_TextureIndex.find(texture->GetName());
+                    if (it == m_TextureIndex.cend()) {
+                        const Image& image = *texture->GetTextureImage();
+                        texture_id = [m_pRenderer createTexture:image];
+                        m_TextureIndex[texture->GetName()] = texture_id;
+                    }
+                    else
+                    {
+                        texture_id = it->second;
+                    }
+                    dbc->material.diffuseMap = texture_id;
+                }
 			}
 
             dbc->node = pGeometryNode;

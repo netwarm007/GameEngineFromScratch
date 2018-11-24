@@ -82,7 +82,6 @@ namespace My {
 
         std::vector<ID3D12Resource*>    m_Buffers;                          // the pointer to the GPU buffer other than texture
         std::vector<ID3D12Resource*>    m_Textures;                         // the pointer to the Texture buffer
-        std::map<std::string, uint32_t>   m_TextureIndex;                   // the LUT of texture name -> index
         std::vector<D3D12_VERTEX_BUFFER_VIEW>       m_VertexBufferView;     // vertex buffer descriptors
         std::vector<D3D12_INDEX_BUFFER_VIEW>        m_IndexBufferView;      // index buffer descriptors
         std::vector<D3D12_CONSTANT_BUFFER_VIEW_DESC> m_ConstantBufferView;  // constant buffer descriptors

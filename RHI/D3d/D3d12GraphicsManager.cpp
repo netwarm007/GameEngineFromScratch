@@ -679,18 +679,8 @@ static DXGI_FORMAT getDxgiFormat(const Image& img)
         case 16:
             format = ::DXGI_FORMAT_R8G8_UNORM;
             break;
-        case 24:
-            // DXGI do not support 24-bit format
-            // simply return 32-bit format
-            // and we will convert the data
-            // later
-            format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
-            break;
         case 32:
             format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
-            break;
-        case 48:
-            format = ::DXGI_FORMAT_R16G16B16A16_FLOAT;
             break;
         case 64:
             format = ::DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -779,56 +769,6 @@ uint32_t D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 		// Copy data to the intermediate upload heap and then schedule a copy 
 		// from the upload heap to the Texture2D.
 		D3D12_SUBRESOURCE_DATA textureData = {};
-		if (pImage->bitcount == 24)
-		{
-            // DXGI does not have 24bit formats so we have to extend it to 32bit
-            uint32_t new_pitch = pImage->pitch / 3 * 4;
-            size_t data_size = new_pitch * pImage->Height;
-            uint8_t* data = new uint8_t[data_size];
-            uint8_t* buf;
-            uint8_t* src;
-            for (uint32_t row = 0; row < pImage->Height; row++) {
-                buf = data + row * new_pitch;
-                src = pImage->data + row * pImage->pitch;
-                for (uint32_t col = 0; col < pImage->Width; col++) {
-                    *(uint32_t*)buf = *(uint32_t*)src;
-                    buf[3] = 0;  // set alpha to 0
-                    buf += 4;
-                    src += 3;
-                }
-            }
-            // we do not need to free the old data because the old data is still referenced by the
-            // SceneObject
-            // g_pMemoryManager->Free(image.data, image.data_size);
-            pImage->data = data;
-            pImage->data_size = data_size;
-            pImage->pitch = new_pitch;
-		}
-		else if (pImage->bitcount == 48)
-		{
-            // DXGI does not have 24bit formats so we have to extend it to 32bit
-            uint32_t new_pitch = pImage->pitch / 3 * 4;
-            size_t data_size = new_pitch * pImage->Height;
-            uint8_t* data = new uint8_t[data_size];
-            uint8_t* buf;
-            uint8_t* src;
-            for (uint32_t row = 0; row < pImage->Height; row++) {
-                buf = data + row * new_pitch;
-                src = pImage->data + row * pImage->pitch;
-                for (uint32_t col = 0; col < pImage->Width; col++) {
-                    memcpy(buf, src, 48);
-                    memset(buf+48, 0x00, 16); // set alpha to 0
-                    buf += 8;
-                    src += 6;
-                }
-            }
-            // we do not need to free the old data because the old data is still referenced by the
-            // SceneObject
-            // g_pMemoryManager->Free(image.data, image.data_size);
-            pImage->data = data;
-            pImage->data_size = data_size;
-            pImage->pitch = new_pitch;
-		}
     	textureData.pData = pImage->data;
 		textureData.RowPitch = pImage->pitch;
 		textureData.SlicePitch = pImage->pitch * pImage->Height;
