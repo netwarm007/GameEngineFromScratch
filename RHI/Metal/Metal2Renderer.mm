@@ -295,6 +295,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
         _renderEncoder.label = @"MyRenderEncoder";
 
+        [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [_renderEncoder setCullMode:MTLCullModeBack];
         [_renderEncoder setRenderPipelineState:_pipelineState];
         [_renderEncoder setDepthStencilState:_depthState];
@@ -366,7 +367,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         // Set mesh's vertex buffers
         for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)
         {
-            id<MTLBuffer> vertexBuffer = _vertexBuffers[bufferIndex];
+            id<MTLBuffer> vertexBuffer = _vertexBuffers[dbc.property_offset + bufferIndex];
             [_renderEncoder setVertexBuffer:vertexBuffer
                                     offset:0
                                    atIndex:bufferIndex];
@@ -374,10 +375,13 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
         [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
-#if 0
         // Set any textures read/sampled from our render pipeline
-        [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap]
-                                  atIndex:0];
+        if (dbc.material.diffuseMap >= 0)
+        {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap]
+                                    atIndex:0];
+        }
+#if 0
 
         [_renderEncoder setFragmentTexture:_normalMap
                                   atIndex:1];
@@ -414,9 +418,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 #endif
 
         // Draw our mesh
-        [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+        [_renderEncoder drawIndexedPrimitives:dbc.index_mode
                                   indexCount:dbc.index_count
-                                   indexType:MTLIndexTypeUInt32
+                                   indexType:dbc.index_type
                                  indexBuffer:_indexBuffers[dbc.index_offset]
                            indexBufferOffset:0];
 

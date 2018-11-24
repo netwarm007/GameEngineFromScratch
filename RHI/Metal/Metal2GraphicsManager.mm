@@ -38,12 +38,12 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
 {
     cout << "Creating Draw Batch Contexts ...";
     uint32_t batch_index = 0;
+    uint32_t v_property_offset = 0;
+    uint32_t index_offset = 0;
     for (auto& _it : scene.GeometryNodes)
     {
 	    auto pGeometryNode = _it.second.lock();
 
-        uint32_t v_property_offset = 0;
-        uint32_t index_offset = 0;
         if (pGeometryNode && pGeometryNode->Visible())
         {
             auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
@@ -67,6 +67,50 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
             const SceneObjectIndexArray& index_array = pMesh->GetIndexArray(0);
             [m_pRenderer createIndexBuffer:index_array];
 
+            MTLPrimitiveType mode;
+            switch(pMesh->GetPrimitiveType())
+            {
+                case PrimitiveType::kPrimitiveTypePointList:
+                    mode = MTLPrimitiveTypePoint;
+                    break;
+                case PrimitiveType::kPrimitiveTypeLineList:
+                    mode = MTLPrimitiveTypeLine;
+                    break;
+                case PrimitiveType::kPrimitiveTypeLineStrip:
+                    mode = MTLPrimitiveTypeLineStrip;
+                    break;
+                case PrimitiveType::kPrimitiveTypeTriList:
+                    mode = MTLPrimitiveTypeTriangle;
+                    break;
+                case PrimitiveType::kPrimitiveTypeTriStrip:
+                    mode = MTLPrimitiveTypeTriangleStrip;
+                    break;
+                default:
+                    // ignore
+                    continue;
+            }
+
+            MTLIndexType type;
+            switch(index_array.GetIndexType())
+            {
+                case IndexDataType::kIndexDataTypeInt8:
+                    // not supported
+                    assert(0);
+                    break;
+                case IndexDataType::kIndexDataTypeInt16:
+                    type = MTLIndexTypeUInt16;
+                    break;
+                case IndexDataType::kIndexDataTypeInt32:
+                    type = MTLIndexTypeUInt32;
+                    break;
+                default:
+                    // not supported by OpenGL
+                    cerr << "Error: Unsupported Index Type " << index_array << endl;
+                    cerr << "Mesh: " << *pMesh << endl;
+                    cerr << "Geometry: " << *pGeometry << endl;
+                    continue;
+            }
+
 			auto material_index = index_array.GetMaterialIndex();
 			auto material_key = pGeometryNode->GetMaterialRef(material_index);
 			auto material = scene.GetMaterial(material_key);
@@ -75,6 +119,8 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
             dbc->batchIndex = batch_index++;
             dbc->index_offset = index_offset++;
 			dbc->index_count = (uint32_t)index_array.GetIndexCount();
+            dbc->index_mode = mode;
+            dbc->index_type = type;
             dbc->property_offset = v_property_offset;
             dbc->property_count = vertexPropertiesCount;
 
@@ -82,16 +128,9 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
                 if (auto& texture = material->GetBaseColor().ValueMap)
                 {
                     int32_t texture_id;
-                    const auto& it = m_TextureIndex.find(texture->GetName());
-                    if (it == m_TextureIndex.cend()) {
-                        const Image& image = *texture->GetTextureImage();
-                        texture_id = [m_pRenderer createTexture:image];
-                        m_TextureIndex[texture->GetName()] = texture_id;
-                    }
-                    else
-                    {
-                        texture_id = it->second;
-                    }
+                    const Image& image = *texture->GetTextureImage();
+                    texture_id = [m_pRenderer createTexture:image];
+
                     dbc->material.diffuseMap = texture_id;
                 }
 			}

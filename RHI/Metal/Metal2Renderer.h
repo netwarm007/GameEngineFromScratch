@@ -5,6 +5,8 @@ namespace My {
     struct MtlDrawBatchContext : public DrawBatchContext {
         uint32_t index_count;
         uint32_t index_offset;
+        MTLPrimitiveType index_mode;
+        MTLIndexType index_type;
         uint32_t property_count;
         uint32_t property_offset;
     };

@@ -113,8 +113,6 @@ namespace My {
         std::vector<Frame>  m_Frames;
         std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
         std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
-
-        std::unordered_map<std::string, uint32_t> m_TextureIndex;
     };
 
     extern GraphicsManager* g_pGraphicsManager;

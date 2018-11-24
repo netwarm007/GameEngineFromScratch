@@ -54,7 +54,7 @@ struct Light{
 	Vector4f    lightAngleAttenCurveParams[2];	// 32 bytes
 	Matrix4X4f  lightVP;						// 64 bytes
 	Vector4f    padding[2];						// 32 bytes
-};												// totle 265 bytes
+};												// totle 256 bytes
 
 unistruct PerFrameConstants REGISTER(b10)
 {
@@ -88,12 +88,12 @@ struct a2v
 #ifdef __cplusplus
 struct material_textures
 {
-	int32_t diffuseMap;
-	int32_t normalMap;
-	int32_t metalicMap;
-	int32_t roughnessMap;
-	int32_t aoMap;
-	int32_t heightMap;
+	int32_t diffuseMap = -1;
+	int32_t normalMap = -1;
+	int32_t metalicMap = -1;
+	int32_t roughnessMap = -1;
+	int32_t aoMap = -1;
+	int32_t heightMap = -1;
 };
 
 struct global_textures
