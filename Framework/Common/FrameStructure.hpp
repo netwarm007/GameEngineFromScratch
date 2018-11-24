@@ -35,5 +35,6 @@ namespace My {
     struct Frame {
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
+        LightInfo lightInfo;
     };
 }

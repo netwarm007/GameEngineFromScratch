@@ -22,7 +22,8 @@ float3 apply_light(const Light light, vert_output input) {
     float cosTheta = clamp(dot(N, L), 0.0f, 1.0f);
 
     // shadow test
-    float visibility = shadow_test(input.v_world, light, cosTheta);
+    //float visibility = shadow_test(input.v_world, light, cosTheta);
+    float visibility = 1.0f;
 
     float lightToSurfAngle = acos(dot(L, -light_dir));
 
@@ -41,7 +42,7 @@ float3 apply_light(const Light light, vert_output input) {
     linearColor = diffuseMap.Sample(samp0, input.uv).rgb * cosTheta; 
     if (visibility > 0.2f)
     {
-        linearColor += 0.8f.xxx * pow(clamp(dot(R, V), 0.0f, 1.0f), 50.0f); 
+        linearColor += 0.8f * pow(clamp(dot(R, V), 0.0f, 1.0f), 50.0f); 
     }
     linearColor *= admit_light;
 
@@ -78,7 +79,7 @@ float3 apply_areaLight(const Light light, vert_output input)
     // distance attenuation
     float atten = apply_atten_curve(lightToSurfDist, light.lightDistAttenCurveType, light.lightDistAttenCurveParams);
 
-    float3 linearColor = 0.0f.xxx;
+    float3 linearColor = 0.0f;
 
     float pnDotL = dot(pnormal, -L);
     float nDotL = dot(N, L);
@@ -124,12 +125,12 @@ float4 basic_frag_main(vert_output input) : SV_Target
 
     // add ambient color
     // linearColor += ambientColor.rgb;
-    linearColor += skybox.Sample(samp0, float4(input.normal_world.xyz, 0)).rgb * 0.20f.xxx;
+    linearColor += skybox.SampleLevel(samp0, float4(input.normal_world.xyz, 0), 2.0).rgb * 0.20f.xxx;
 
     // tone mapping
     //linearColor = reinhard_tone_mapping(linearColor);
     linearColor = exposure_tone_mapping(linearColor);
 
     // gamma correction
-    return float4(gamma_correction(linearColor), 1.0f);
+    return float4(linearColor, 1.0f);
 }

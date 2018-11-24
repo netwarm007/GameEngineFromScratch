@@ -133,6 +133,42 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
 
                     dbc->material.diffuseMap = texture_id;
                 }
+
+                if (auto& texture = material->GetNormal().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.normalMap = texture_id;
+                }
+
+                if (auto& texture = material->GetMetallic().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.metallicMap = texture_id;
+                }
+
+                if (auto& texture = material->GetRoughness().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.roughnessMap = texture_id;
+                }
+
+                if (auto& texture = material->GetAO().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.aoMap = texture_id;
+                }
 			}
 
             dbc->node = pGeometryNode;
@@ -176,6 +212,11 @@ void Metal2GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context
 void Metal2GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
 {
     [m_pRenderer setPerBatchConstants:context];
+}
+
+void Metal2GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
+{
+    [m_pRenderer setLightInfo:lightInfo];
 }
 
 void Metal2GraphicsManager::DrawBatch(const DrawBatchContext& context)

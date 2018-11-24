@@ -3,8 +3,8 @@
 struct a2v
 {
     vec3 inputPosition;
-    vec2 inputUV;
     vec3 inputNormal;
+    vec2 inputUV;
     vec3 inputTangent;
     vec3 inputBiTangent;
 };
@@ -52,13 +52,11 @@ layout(std140) uniform PerFrameConstants
     mat4 projectionMatrix;
     vec4 camPos;
     uint numLights;
-    float padding[3];
-    Light lights[100];
-} _55;
+} _45;
 
 layout(location = 0) in vec3 a_inputPosition;
-layout(location = 1) in vec2 a_inputUV;
-layout(location = 2) in vec3 a_inputNormal;
+layout(location = 1) in vec3 a_inputNormal;
+layout(location = 2) in vec2 a_inputUV;
 layout(location = 3) in vec3 a_inputTangent;
 layout(location = 4) in vec3 a_inputBiTangent;
 out vec4 _entryPointOutput_normal;
@@ -74,17 +72,17 @@ vert_output _basic_vert_main(a2v a)
 {
     vert_output o;
     o.v_world = _25.modelMatrix * vec4(a.inputPosition, 1.0);
-    o.v = _55.viewMatrix * o.v_world;
-    o.pos = _55.projectionMatrix * o.v;
+    o.v = _45.viewMatrix * o.v_world;
+    o.pos = _45.projectionMatrix * o.v;
     o.normal_world = normalize(_25.modelMatrix * vec4(a.inputNormal, 0.0));
-    o.normal = normalize(_55.viewMatrix * o.normal_world);
+    o.normal = normalize(_45.viewMatrix * o.normal_world);
     vec3 tangent = normalize((_25.modelMatrix * vec4(a.inputTangent, 0.0)).xyz);
     tangent = normalize(tangent - (o.normal_world.xyz * dot(tangent, o.normal_world.xyz)));
     vec3 bitangent = cross(o.normal_world.xyz, tangent);
     o.TBN = mat3(vec3(tangent), vec3(bitangent), vec3(o.normal_world.xyz));
     mat3 TBN_trans = transpose(o.TBN);
     o.v_tangent = TBN_trans * o.v_world.xyz;
-    o.camPos_tangent = TBN_trans * _55.camPos.xyz;
+    o.camPos_tangent = TBN_trans * _45.camPos.xyz;
     o.uv.x = a.inputUV.x;
     o.uv.y = 1.0 - a.inputUV.y;
     return o;
@@ -94,8 +92,8 @@ void main()
 {
     a2v a;
     a.inputPosition = a_inputPosition;
-    a.inputUV = a_inputUV;
     a.inputNormal = a_inputNormal;
+    a.inputUV = a_inputUV;
     a.inputTangent = a_inputTangent;
     a.inputBiTangent = a_inputBiTangent;
     a2v param = a;

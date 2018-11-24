@@ -4,7 +4,7 @@ precision highp int;
 
 struct vert_output
 {
-    highp vec4 position;
+    highp vec4 pos;
     highp vec4 normal;
     highp vec4 normal_world;
     highp vec4 v;
@@ -36,18 +36,21 @@ struct Light
 
 layout(binding = 10, std140) uniform PerFrameConstants
 {
-    layout(row_major) highp mat4 viewMatrix;
-    layout(row_major) highp mat4 projectionMatrix;
+    highp mat4 viewMatrix;
+    highp mat4 projectionMatrix;
     highp vec4 camPos;
     uint numLights;
-    highp float padding[3];
+} _758;
+
+layout(binding = 12, std140) uniform LightInfo
+{
     Light lights[100];
-} _765;
+} _830;
 
 uniform highp sampler2D SPIRV_Cross_CombinedheightMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
-uniform highp sampler2D SPIRV_Cross_CombinedmetalicMapsamp0;
+uniform highp sampler2D SPIRV_Cross_CombinedmetallicMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedroughnessMapsamp0;
 uniform highp samplerCubeArray SPIRV_Cross_CombinedcubeShadowMapsamp0;
 uniform highp sampler2DArray SPIRV_Cross_CombinedshadowMapsamp0;
@@ -317,36 +320,36 @@ highp vec4 _pbr_frag_main(vert_output _input)
     highp vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     highp vec3 N = normalize(_input.TBN * tangent_normal);
-    highp vec3 V = normalize(_765.camPos.xyz - _input.v_world.xyz);
+    highp vec3 V = normalize(_758.camPos.xyz - _input.v_world.xyz);
     highp vec3 R = reflect(-V, N);
     highp vec3 param_2 = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     highp vec3 albedo = inverse_gamma_correction(param_2);
-    highp float meta = texture(SPIRV_Cross_CombinedmetalicMapsamp0, texCoords).x;
+    highp float meta = texture(SPIRV_Cross_CombinedmetallicMapsamp0, texCoords).x;
     highp float rough = texture(SPIRV_Cross_CombinedroughnessMapsamp0, texCoords).x;
     highp vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     highp vec3 Lo = vec3(0.0);
-    for (int i = 0; uint(i) < _765.numLights; i++)
+    for (int i = 0; uint(i) < _758.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _765.lights[i].lightIntensity;
-        light.lightType = _765.lights[i].lightType;
-        light.lightCastShadow = _765.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _765.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _765.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _765.lights[i].lightDistAttenCurveType;
-        light.lightSize = _765.lights[i].lightSize;
-        light.lightGuid = _765.lights[i].lightGuid;
-        light.lightPosition = _765.lights[i].lightPosition;
-        light.lightColor = _765.lights[i].lightColor;
-        light.lightDirection = _765.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _765.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _765.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _765.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _765.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _765.lights[i].lightVP;
-        light.padding[0] = _765.lights[i].padding[0];
-        light.padding[1] = _765.lights[i].padding[1];
+        light.lightIntensity = _830.lights[i].lightIntensity;
+        light.lightType = _830.lights[i].lightType;
+        light.lightCastShadow = _830.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _830.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _830.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _830.lights[i].lightDistAttenCurveType;
+        light.lightSize = _830.lights[i].lightSize;
+        light.lightGuid = _830.lights[i].lightGuid;
+        light.lightPosition = _830.lights[i].lightPosition;
+        light.lightColor = _830.lights[i].lightColor;
+        light.lightDirection = _830.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _830.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _830.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _830.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _830.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _830.lights[i].lightVP;
+        light.padding[0] = _830.lights[i].padding[0];
+        light.padding[1] = _830.lights[i].padding[1];
         highp vec3 L = normalize(light.lightPosition.xyz - _input.v_world.xyz);
         highp vec3 H = normalize(V + L);
         highp float NdotL = max(dot(N, L), 0.0);
@@ -410,7 +413,7 @@ highp vec4 _pbr_frag_main(vert_output _input)
 void main()
 {
     vert_output _input;
-    _input.position = gl_FragCoord;
+    _input.pos = gl_FragCoord;
     _input.normal = input_normal;
     _input.normal_world = input_normal_world;
     _input.v = input_v;

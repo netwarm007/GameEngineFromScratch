@@ -19,6 +19,7 @@ namespace My {
         void UseShaderProgram(const intptr_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
         void SetPerBatchConstants(const DrawBatchContext& context) final;
+        void SetLightInfo(const LightInfo& lightInfo) final;
 
         void DrawBatch(const DrawBatchContext& context) final;
 

@@ -99,7 +99,7 @@ namespace My {
                 }
                 else if (m_pImage->bitcount == 48)
                 {
-                    // DXGI does not have 24bit formats so we have to extend it to 32bit
+                    // DXGI does not have 48bit formats so we have to extend it to 64bit
                     uint32_t new_pitch = m_pImage->pitch / 3 * 4;
                     size_t data_size = new_pitch * m_pImage->Height;
                     uint8_t* data = new uint8_t[data_size];
@@ -109,8 +109,8 @@ namespace My {
                         buf = data + row * new_pitch;
                         src = m_pImage->data + row * m_pImage->pitch;
                         for (uint32_t col = 0; col < m_pImage->Width; col++) {
-                            memcpy(buf, src, 48);
-                            memset(buf+48, 0x00, 16); // set alpha to 0
+                            memcpy(buf, src, 6);
+                            memset(buf+6, 0x00, 2); // set alpha to 0
                             buf += 8;
                             src += 6;
                         }

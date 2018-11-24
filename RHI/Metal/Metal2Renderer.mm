@@ -24,6 +24,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLRenderPipelineState> _pipelineState;
     id<MTLDepthStencilState> _depthState;
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
+    id<MTLBuffer> _lightInfo[GEFSMaxBuffersInFlight];
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     std::vector<id<MTLTexture>>  _textures;
@@ -74,10 +75,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     {
         // Create and allocate our uniform buffer object.  Indicate shared storage so that both the
         //  CPU can access the buffer
-        _uniformBuffers[i] = [_device newBufferWithLength:kSizePerBatchConstantBuffer + kSizePerFrameConstantBuffer * GfxConfiguration::kMaxSceneObjectCount
+        _uniformBuffers[i] = [_device newBufferWithLength:kSizePerFrameConstantBuffer + kSizePerBatchConstantBuffer * GfxConfiguration::kMaxSceneObjectCount
                                                      options:MTLResourceStorageModeShared];
 
         _uniformBuffers[i].label = [NSString stringWithFormat:@"uniformBuffer%lu", i];
+        
+        _lightInfo[i] = [_device newBufferWithLength:kSizeLightInfo options:MTLResourceStorageModeShared];
+        
+        _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
     }
 
     _mtlVertexDescriptor = [MTLVertexDescriptor new];
@@ -85,55 +90,55 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Positions.
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = 0;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = VertexAttribute::VertexAttributePosition;
 
     // Texture coordinates.
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].format = MTLVertexFormatFloat2;
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].bufferIndex = 1;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].bufferIndex = VertexAttribute::VertexAttributeTexcoord;
 
     // Normals.
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].format = MTLVertexFormatFloat3;
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].bufferIndex = 2;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].bufferIndex = VertexAttribute::VertexAttributeNormal;
 
     // Tangents
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].format = MTLVertexFormatFloat3;
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].bufferIndex = 3;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].bufferIndex = VertexAttribute::VertexAttributeTangent;
 
     // Bitangents
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].format = MTLVertexFormatFloat3;
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].bufferIndex = 4;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].bufferIndex = VertexAttribute::VertexAttributeBitangent;
 
     // Position Buffer Layout
-    _mtlVertexDescriptor.layouts[0].stride = 12;
-    _mtlVertexDescriptor.layouts[0].stepRate = 1;
-    _mtlVertexDescriptor.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stride = 12;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepRate = 1;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepFunction = MTLVertexStepFunctionPerVertex;
 
     // UV Buffer Layout
-    _mtlVertexDescriptor.layouts[1].stride = 8;
-    _mtlVertexDescriptor.layouts[1].stepRate = 1;
-    _mtlVertexDescriptor.layouts[1].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stride = 8;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepRate = 1;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepFunction = MTLVertexStepFunctionPerVertex;
 
     // Normal Buffer Layout
-    _mtlVertexDescriptor.layouts[2].stride = 12;
-    _mtlVertexDescriptor.layouts[2].stepRate = 1;
-    _mtlVertexDescriptor.layouts[2].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stride = 12;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepRate = 1;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepFunction = MTLVertexStepFunctionPerVertex;
 
     // Tangent Buffer Layout
-    _mtlVertexDescriptor.layouts[3].stride = 12;
-    _mtlVertexDescriptor.layouts[3].stepRate = 1;
-    _mtlVertexDescriptor.layouts[3].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stride = 12;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stepRate = 1;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stepFunction = MTLVertexStepFunctionPerVertex;
 
     // Bitangent Buffer Layout
-    _mtlVertexDescriptor.layouts[4].stride = 12;
-    _mtlVertexDescriptor.layouts[4].stepRate = 1;
-    _mtlVertexDescriptor.layouts[4].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stride = 12;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stepRate = 1;
+    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stepFunction = MTLVertexStepFunctionPerVertex;
 
     MTLSamplerDescriptor* samplerDescriptor = [MTLSamplerDescriptor new];
-    samplerDescriptor.minFilter = MTLSamplerMinMagFilterNearest;
+    samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
     samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
@@ -342,6 +347,12 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             , &static_cast<const PerBatchConstants&>(context), sizeof(PerBatchConstants));
 }
 
+- (void)setLightInfo:(const LightInfo&)lightInfo
+{
+    std::memcpy(_lightInfo[_currentBufferIndex].contents,
+            &lightInfo, sizeof(LightInfo));
+}
+
 // Called whenever the view needs to render
 - (void)drawBatch:(const MtlDrawBatchContext&)dbc
 {
@@ -364,6 +375,10 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                   offset:0
                                  atIndex:10];
 
+        [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
+                                  offset:0
+                                 atIndex:12];
+
         // Set mesh's vertex buffers
         for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)
         {
@@ -381,20 +396,32 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap]
                                     atIndex:0];
         }
+
+        if (dbc.material.normalMap >= 0)
+        {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.normalMap]
+                                    atIndex:1];
+        }
+
+        if (dbc.material.metallicMap >= 0)
+        {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.metallicMap]
+                                    atIndex:2];
+        }
+
+        if (dbc.material.roughnessMap >= 0)
+        {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.roughnessMap]
+                                    atIndex:3];
+        }
+
+        if (dbc.material.aoMap >= 0)
+        {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.aoMap]
+                                    atIndex:4];
+        }
+
 #if 0
-
-        [_renderEncoder setFragmentTexture:_normalMap
-                                  atIndex:1];
-
-        [_renderEncoder setFragmentTexture:_metalicMap
-                                  atIndex:2];
-
-        [_renderEncoder setFragmentTexture:_roughnessMap
-                                  atIndex:3];
-
-        [_renderEncoder setFragmentTexture:_aoMap
-                                  atIndex:4];
-
         [_renderEncoder setFragmentTexture:_heightMap
                                   atIndex:5];
 

@@ -6,8 +6,8 @@ namespace My {
     enum VertexAttribute : unsigned long
     {
         VertexAttributePosition,
-        VertexAttributeTexcoord,
         VertexAttributeNormal,
+        VertexAttributeTexcoord,
         VertexAttributeTangent,
         VertexAttributeBitangent
     };

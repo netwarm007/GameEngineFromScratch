@@ -8,8 +8,8 @@ using namespace metal;
 struct a2v
 {
     float3 inputPosition;
-    float2 inputUV;
     float3 inputNormal;
+    float2 inputUV;
     float3 inputTangent;
     float3 inputBiTangent;
 };
@@ -32,6 +32,14 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
+struct PerFrameConstants
+{
+    float4x4 viewMatrix;
+    float4x4 projectionMatrix;
+    float4 camPos;
+    uint numLights;
+};
+
 struct Light
 {
     float lightIntensity;
@@ -51,15 +59,9 @@ struct Light
     float4 padding[2];
 };
 
-struct PerFrameConstants
+struct LightInfo
 {
-    float4x4 viewMatrix;
-    float4x4 projectionMatrix;
-    float4 camPos;
-    uint numLights;
-    char pad4[12];
-    float padding[3];
-    Light lights[100];
+    Light light;
 };
 
 struct basic_vert_main_out
@@ -80,44 +82,44 @@ struct basic_vert_main_out
 struct basic_vert_main_in
 {
     float3 a_inputPosition [[attribute(0)]];
-    float2 a_inputUV [[attribute(1)]];
-    float3 a_inputNormal [[attribute(2)]];
+    float3 a_inputNormal [[attribute(1)]];
+    float2 a_inputUV [[attribute(2)]];
     float3 a_inputTangent [[attribute(3)]];
     float3 a_inputBiTangent [[attribute(4)]];
 };
 
-vert_output _basic_vert_main(thread const a2v& a, constant PerBatchConstants& v_25, constant PerFrameConstants& v_55)
+vert_output _basic_vert_main(thread const a2v& a, constant PerBatchConstants& v_25, constant PerFrameConstants& v_45)
 {
     vert_output o;
     o.v_world = v_25.modelMatrix * float4(a.inputPosition, 1.0);
-    o.v = v_55.viewMatrix * o.v_world;
-    o.pos = v_55.projectionMatrix * o.v;
+    o.v = v_45.viewMatrix * o.v_world;
+    o.pos = v_45.projectionMatrix * o.v;
     o.normal_world = normalize(v_25.modelMatrix * float4(a.inputNormal, 0.0));
-    o.normal = normalize(v_55.viewMatrix * o.normal_world);
+    o.normal = normalize(v_45.viewMatrix * o.normal_world);
     float3 tangent = normalize((v_25.modelMatrix * float4(a.inputTangent, 0.0)).xyz);
     tangent = normalize(tangent - (o.normal_world.xyz * dot(tangent, o.normal_world.xyz)));
     float3 bitangent = cross(o.normal_world.xyz, tangent);
     o.TBN = float3x3(float3(tangent), float3(bitangent), float3(o.normal_world.xyz));
     float3x3 TBN_trans = transpose(o.TBN);
     o.v_tangent = TBN_trans * o.v_world.xyz;
-    o.camPos_tangent = TBN_trans * v_55.camPos.xyz;
+    o.camPos_tangent = TBN_trans * v_45.camPos.xyz;
     o.uv.x = a.inputUV.x;
     o.uv.y = 1.0 - a.inputUV.y;
     return o;
 }
 
-vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& v_55 [[buffer(10)]], constant PerBatchConstants& v_25 [[buffer(11)]])
+vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& v_45 [[buffer(10)]], constant PerBatchConstants& v_25 [[buffer(11)]])
 {
     basic_vert_main_out out = {};
     float3x3 _entryPointOutput_TBN = {};
     a2v a;
     a.inputPosition = in.a_inputPosition;
-    a.inputUV = in.a_inputUV;
     a.inputNormal = in.a_inputNormal;
+    a.inputUV = in.a_inputUV;
     a.inputTangent = in.a_inputTangent;
     a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
-    vert_output flattenTemp = _basic_vert_main(param, v_25, v_55);
+    vert_output flattenTemp = _basic_vert_main(param, v_25, v_45);
     out.gl_Position = flattenTemp.pos;
     out._entryPointOutput_normal = flattenTemp.normal;
     out._entryPointOutput_normal_world = flattenTemp.normal_world;

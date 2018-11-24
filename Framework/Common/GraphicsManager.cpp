@@ -156,12 +156,13 @@ void GraphicsManager::CalculateCameraMatrix()
 void GraphicsManager::CalculateLights()
 {
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
+    LightInfo& light_info = m_Frames[m_nFrameIndex].lightInfo;
  
     frameContext.numLights = 0;
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
     for (auto LightNode : scene.LightNodes) {
-        Light& light = frameContext.lights[frameContext.numLights++];
+        Light& light = light_info.lights[frameContext.numLights];
         auto pLightNode = LightNode.second.lock();
         if (!pLightNode) continue;
         auto trans_ptr = pLightNode->GetCalculatedTransform();
@@ -282,6 +283,7 @@ void GraphicsManager::CalculateLights()
             } 
 
             light.lightVP = view * projection;
+            frameContext.numLights++;
         }
         else
         {
@@ -575,6 +577,11 @@ void GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 void GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
 {
     cout << "[GraphicsManager] SetPerBatchConstants(" << &context << ")" << endl;
+}
+
+void GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
+{
+    cout << "[GraphicsManager] SetLightInfo(" << &lightInfo << ")" << endl;
 }
 
 void GraphicsManager::DrawBatch(const DrawBatchContext& context)

@@ -30,7 +30,7 @@ void ShadowMapPass::Draw(Frame& frame)
 
     for (int32_t i = 0; i < frame.frameContext.numLights; i++)
     {
-        auto& light = frame.frameContext.lights[i];
+        auto& light = frame.lightInfo.lights[i];
         
         if (light.lightCastShadow)
         {

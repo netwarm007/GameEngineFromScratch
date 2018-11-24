@@ -21,6 +21,8 @@ namespace My {
 
 - (void)setPerBatchConstants:(const DrawBatchContext&)context;
 
+- (void)setLightInfo:(const LightInfo&)lightInfo;
+
 - (void)drawBatch:(const My::MtlDrawBatchContext&)dbc;
 
 - (void)updateDrawableSize:(CGSize)size;

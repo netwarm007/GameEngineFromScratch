@@ -17,7 +17,7 @@ float4 pbr_frag_main(vert_output input) : SV_Target
 
     float3 albedo = inverse_gamma_correction(diffuseMap.Sample(samp0, texCoords).rgb); 
 
-    float meta = metalicMap.Sample(samp0, texCoords).r; 
+    float meta = metallicMap.Sample(samp0, texCoords).r; 
 
     float rough = roughnessMap.Sample(samp0, texCoords).r; 
 
