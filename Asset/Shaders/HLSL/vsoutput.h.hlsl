@@ -1,4 +1,14 @@
-struct vert_output
+struct basic_vert_output
+{
+    float4 pos              : SV_Position;
+    float4 normal           : TEXCOORD0;
+    float4 normal_world     : TEXCOORD1;
+    float4 v                : TEXCOORD2;
+    float4 v_world          : TEXCOORD3;
+    float2 uv               : TEXCOORD4;
+};
+
+struct pbr_vert_output
 {
     float4 pos              : SV_Position;
     float4 normal           : TEXCOORD0;
@@ -11,7 +21,7 @@ struct vert_output
     float3 camPos_tangent   : TEXCOORD9;
 };
 
-struct debug_vert_output
+struct pos_only_vert_output
 {
     float4 pos              : SV_Position;
 };

@@ -24,7 +24,7 @@ struct Light
     float4 padding[2];
 };
 
-struct vert_output
+struct basic_vert_output
 {
     float4 pos;
     float4 normal;
@@ -32,9 +32,6 @@ struct vert_output
     float4 v;
     float4 v_world;
     float2 uv;
-    float3x3 TBN;
-    float3 v_tangent;
-    float3 camPos_tangent;
 };
 
 struct PerFrameConstants
@@ -93,7 +90,7 @@ struct PerBatchConstants
     float4x4 modelMatrix;
 };
 
-constant float _131 = {};
+constant float _130 = {};
 
 struct basic_frag_main_out
 {
@@ -107,11 +104,6 @@ struct basic_frag_main_in
     float4 input_v [[user(locn2)]];
     float4 input_v_world [[user(locn3)]];
     float2 input_uv [[user(locn4)]];
-    float3 input_TBN_0 [[user(locn5)]];
-    float3 input_TBN_1 [[user(locn6)]];
-    float3 input_TBN_2 [[user(locn7)]];
-    float3 input_v_tangent [[user(locn8)]];
-    float3 input_camPos_tangent [[user(locn9)]];
 };
 
 // Implementation of an array copy function to cover GLSL's ability to copy an array via assignment.
@@ -225,12 +217,12 @@ float3 linePlaneIntersect(thread const float3& line_start, thread const float3& 
     return line_start + (line_dir * (dot(center_of_plane - line_start, normal_of_plane) / dot(line_dir, normal_of_plane)));
 }
 
-float3 apply_areaLight(thread const Light& light, thread const vert_output& _input, constant PerFrameConstants& v_281, thread texture2d<float> diffuseMap, thread sampler samp0)
+float3 apply_areaLight(thread const Light& light, thread const basic_vert_output& _input, constant PerFrameConstants& v_280, thread texture2d<float> diffuseMap, thread sampler samp0)
 {
     float3 N = normalize(_input.normal.xyz);
-    float3 right = normalize((v_281.viewMatrix * float4(1.0, 0.0, 0.0, 0.0)).xyz);
-    float3 pnormal = normalize((v_281.viewMatrix * light.lightDirection).xyz);
-    float3 ppos = (v_281.viewMatrix * light.lightPosition).xyz;
+    float3 right = normalize((v_280.viewMatrix * float4(1.0, 0.0, 0.0, 0.0)).xyz);
+    float3 pnormal = normalize((v_280.viewMatrix * light.lightDirection).xyz);
+    float3 ppos = (v_280.viewMatrix * light.lightPosition).xyz;
     float3 up = normalize(cross(pnormal, right));
     right = normalize(cross(up, pnormal));
     float width = light.lightSize.x;
@@ -280,10 +272,10 @@ float3 apply_areaLight(thread const Light& light, thread const vert_output& _inp
     return linearColor;
 }
 
-float3 apply_light(thread const Light& light, thread const vert_output& _input, constant PerFrameConstants& v_281, thread texture2d<float> diffuseMap, thread sampler samp0)
+float3 apply_light(thread const Light& light, thread const basic_vert_output& _input, constant PerFrameConstants& v_280, thread texture2d<float> diffuseMap, thread sampler samp0)
 {
     float3 N = normalize(_input.normal.xyz);
-    float3 light_dir = normalize((v_281.viewMatrix * light.lightDirection).xyz);
+    float3 light_dir = normalize((v_280.viewMatrix * light.lightDirection).xyz);
     float3 L;
     if (light.lightPosition.w == 0.0)
     {
@@ -291,7 +283,7 @@ float3 apply_light(thread const Light& light, thread const vert_output& _input, 
     }
     else
     {
-        L = (v_281.viewMatrix * light.lightPosition).xyz - _input.v.xyz;
+        L = (v_280.viewMatrix * light.lightPosition).xyz - _input.v.xyz;
     }
     float lightToSurfDist = length(L);
     L = normalize(L);
@@ -325,58 +317,58 @@ float3 exposure_tone_mapping(thread const float3& color)
     return float3(1.0) - exp((-color) * 1.0);
 }
 
-float4 _basic_frag_main(thread const vert_output& _input, constant PerFrameConstants& v_281, thread texture2d<float> diffuseMap, thread sampler samp0, constant LightInfo& v_682, thread texturecube_array<float> skybox)
+float4 _basic_frag_main(thread const basic_vert_output& _input, constant PerFrameConstants& v_280, thread texture2d<float> diffuseMap, thread sampler samp0, constant LightInfo& v_681, thread texturecube_array<float> skybox)
 {
     float3 linearColor = float3(0.0);
-    for (uint i = 0u; i < v_281.numLights; i++)
+    for (uint i = 0u; i < v_280.numLights; i++)
     {
-        if (v_682.lights[i].lightType == 3u)
+        if (v_681.lights[i].lightType == 3u)
         {
             Light arg;
-            arg.lightIntensity = v_682.lights[i].lightIntensity;
-            arg.lightType = v_682.lights[i].lightType;
-            arg.lightCastShadow = v_682.lights[i].lightCastShadow;
-            arg.lightShadowMapIndex = v_682.lights[i].lightShadowMapIndex;
-            arg.lightAngleAttenCurveType = v_682.lights[i].lightAngleAttenCurveType;
-            arg.lightDistAttenCurveType = v_682.lights[i].lightDistAttenCurveType;
-            arg.lightSize = v_682.lights[i].lightSize;
-            arg.lightGuid = v_682.lights[i].lightGuid;
-            arg.lightPosition = v_682.lights[i].lightPosition;
-            arg.lightColor = v_682.lights[i].lightColor;
-            arg.lightDirection = v_682.lights[i].lightDirection;
-            arg.lightDistAttenCurveParams[0] = v_682.lights[i].lightDistAttenCurveParams[0];
-            arg.lightDistAttenCurveParams[1] = v_682.lights[i].lightDistAttenCurveParams[1];
-            arg.lightAngleAttenCurveParams[0] = v_682.lights[i].lightAngleAttenCurveParams[0];
-            arg.lightAngleAttenCurveParams[1] = v_682.lights[i].lightAngleAttenCurveParams[1];
-            arg.lightVP = v_682.lights[i].lightVP;
-            arg.padding[0] = v_682.lights[i].padding[0];
-            arg.padding[1] = v_682.lights[i].padding[1];
-            vert_output param = _input;
-            linearColor += apply_areaLight(arg, param, v_281, diffuseMap, samp0);
+            arg.lightIntensity = v_681.lights[i].lightIntensity;
+            arg.lightType = v_681.lights[i].lightType;
+            arg.lightCastShadow = v_681.lights[i].lightCastShadow;
+            arg.lightShadowMapIndex = v_681.lights[i].lightShadowMapIndex;
+            arg.lightAngleAttenCurveType = v_681.lights[i].lightAngleAttenCurveType;
+            arg.lightDistAttenCurveType = v_681.lights[i].lightDistAttenCurveType;
+            arg.lightSize = v_681.lights[i].lightSize;
+            arg.lightGuid = v_681.lights[i].lightGuid;
+            arg.lightPosition = v_681.lights[i].lightPosition;
+            arg.lightColor = v_681.lights[i].lightColor;
+            arg.lightDirection = v_681.lights[i].lightDirection;
+            arg.lightDistAttenCurveParams[0] = v_681.lights[i].lightDistAttenCurveParams[0];
+            arg.lightDistAttenCurveParams[1] = v_681.lights[i].lightDistAttenCurveParams[1];
+            arg.lightAngleAttenCurveParams[0] = v_681.lights[i].lightAngleAttenCurveParams[0];
+            arg.lightAngleAttenCurveParams[1] = v_681.lights[i].lightAngleAttenCurveParams[1];
+            arg.lightVP = v_681.lights[i].lightVP;
+            arg.padding[0] = v_681.lights[i].padding[0];
+            arg.padding[1] = v_681.lights[i].padding[1];
+            basic_vert_output param = _input;
+            linearColor += apply_areaLight(arg, param, v_280, diffuseMap, samp0);
         }
         else
         {
             Light arg_1;
-            arg_1.lightIntensity = v_682.lights[i].lightIntensity;
-            arg_1.lightType = v_682.lights[i].lightType;
-            arg_1.lightCastShadow = v_682.lights[i].lightCastShadow;
-            arg_1.lightShadowMapIndex = v_682.lights[i].lightShadowMapIndex;
-            arg_1.lightAngleAttenCurveType = v_682.lights[i].lightAngleAttenCurveType;
-            arg_1.lightDistAttenCurveType = v_682.lights[i].lightDistAttenCurveType;
-            arg_1.lightSize = v_682.lights[i].lightSize;
-            arg_1.lightGuid = v_682.lights[i].lightGuid;
-            arg_1.lightPosition = v_682.lights[i].lightPosition;
-            arg_1.lightColor = v_682.lights[i].lightColor;
-            arg_1.lightDirection = v_682.lights[i].lightDirection;
-            arg_1.lightDistAttenCurveParams[0] = v_682.lights[i].lightDistAttenCurveParams[0];
-            arg_1.lightDistAttenCurveParams[1] = v_682.lights[i].lightDistAttenCurveParams[1];
-            arg_1.lightAngleAttenCurveParams[0] = v_682.lights[i].lightAngleAttenCurveParams[0];
-            arg_1.lightAngleAttenCurveParams[1] = v_682.lights[i].lightAngleAttenCurveParams[1];
-            arg_1.lightVP = v_682.lights[i].lightVP;
-            arg_1.padding[0] = v_682.lights[i].padding[0];
-            arg_1.padding[1] = v_682.lights[i].padding[1];
-            vert_output param_1 = _input;
-            linearColor += apply_light(arg_1, param_1, v_281, diffuseMap, samp0);
+            arg_1.lightIntensity = v_681.lights[i].lightIntensity;
+            arg_1.lightType = v_681.lights[i].lightType;
+            arg_1.lightCastShadow = v_681.lights[i].lightCastShadow;
+            arg_1.lightShadowMapIndex = v_681.lights[i].lightShadowMapIndex;
+            arg_1.lightAngleAttenCurveType = v_681.lights[i].lightAngleAttenCurveType;
+            arg_1.lightDistAttenCurveType = v_681.lights[i].lightDistAttenCurveType;
+            arg_1.lightSize = v_681.lights[i].lightSize;
+            arg_1.lightGuid = v_681.lights[i].lightGuid;
+            arg_1.lightPosition = v_681.lights[i].lightPosition;
+            arg_1.lightColor = v_681.lights[i].lightColor;
+            arg_1.lightDirection = v_681.lights[i].lightDirection;
+            arg_1.lightDistAttenCurveParams[0] = v_681.lights[i].lightDistAttenCurveParams[0];
+            arg_1.lightDistAttenCurveParams[1] = v_681.lights[i].lightDistAttenCurveParams[1];
+            arg_1.lightAngleAttenCurveParams[0] = v_681.lights[i].lightAngleAttenCurveParams[0];
+            arg_1.lightAngleAttenCurveParams[1] = v_681.lights[i].lightAngleAttenCurveParams[1];
+            arg_1.lightVP = v_681.lights[i].lightVP;
+            arg_1.padding[0] = v_681.lights[i].padding[0];
+            arg_1.padding[1] = v_681.lights[i].padding[1];
+            basic_vert_output param_1 = _input;
+            linearColor += apply_light(arg_1, param_1, v_280, diffuseMap, samp0);
         }
     }
     linearColor += (skybox.sample(samp0, float4(_input.normal_world.xyz, 0.0).xyz, uint(round(float4(_input.normal_world.xyz, 0.0).w)), level(2.0)).xyz * float3(0.20000000298023223876953125));
@@ -385,25 +377,18 @@ float4 _basic_frag_main(thread const vert_output& _input, constant PerFrameConst
     return float4(linearColor, 1.0);
 }
 
-fragment basic_frag_main_out basic_frag_main(basic_frag_main_in in [[stage_in]], constant PerFrameConstants& v_281 [[buffer(10)]], constant LightInfo& v_682 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
+fragment basic_frag_main_out basic_frag_main(basic_frag_main_in in [[stage_in]], constant PerFrameConstants& v_280 [[buffer(10)]], constant LightInfo& v_681 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     basic_frag_main_out out = {};
-    float3x3 input_TBN = {};
-    input_TBN[0] = in.input_TBN_0;
-    input_TBN[1] = in.input_TBN_1;
-    input_TBN[2] = in.input_TBN_2;
-    vert_output _input;
+    basic_vert_output _input;
     _input.pos = gl_FragCoord;
     _input.normal = in.input_normal;
     _input.normal_world = in.input_normal_world;
     _input.v = in.input_v;
     _input.v_world = in.input_v_world;
     _input.uv = in.input_uv;
-    _input.TBN = input_TBN;
-    _input.v_tangent = in.input_v_tangent;
-    _input.camPos_tangent = in.input_camPos_tangent;
-    vert_output param = _input;
-    out._entryPointOutput = _basic_frag_main(param, v_281, diffuseMap, samp0, v_682, skybox);
+    basic_vert_output param = _input;
+    out._entryPointOutput = _basic_frag_main(param, v_280, diffuseMap, samp0, v_681, skybox);
     return out;
 }
 

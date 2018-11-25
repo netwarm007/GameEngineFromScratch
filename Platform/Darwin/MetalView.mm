@@ -53,6 +53,10 @@ using namespace My;
     );
 }
 
+- (void)drawRect:(CGRect)drawRect {
+    g_pGraphicsManager->Tick();
+}
+
 - (void)mouseDown:(NSEvent *)theEvent {
     if ([theEvent type] == NSEventTypeLeftMouseDown)
     {

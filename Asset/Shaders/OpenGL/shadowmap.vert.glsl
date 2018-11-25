@@ -1,15 +1,29 @@
 #version 400
 
+struct a2v
+{
+    vec3 inputPosition;
+    vec3 inputNormal;
+    vec2 inputUV;
+    vec3 inputTangent;
+    vec3 inputBiTangent;
+};
+
+struct pos_only_vert_output
+{
+    vec4 pos;
+};
+
 struct Light
 {
     float lightIntensity;
-    int lightType;
+    uint lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
+    uint lightAngleAttenCurveType;
+    uint lightDistAttenCurveType;
     vec2 lightSize;
-    ivec4 lightGUID;
+    uvec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -22,19 +36,41 @@ struct Light
 layout(std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
-} _25;
+} _32;
 
-struct constants_t
+layout(std140) uniform PerFrameConstants
 {
-    mat4 depthVP;
-};
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    mat4 arbitraryMatrix;
+    vec4 camPos;
+    uint numLights;
+} _43;
 
-uniform constants_t u_pushConstants;
+layout(location = 0) in vec3 a_inputPosition;
+layout(location = 1) in vec3 a_inputNormal;
+layout(location = 2) in vec2 a_inputUV;
+layout(location = 3) in vec3 a_inputTangent;
+layout(location = 4) in vec3 a_inputBiTangent;
 
-layout(location = 0) in vec3 inputPosition;
+pos_only_vert_output _shadowmap_vert_main(a2v a)
+{
+    vec4 v = vec4(a.inputPosition, 1.0);
+    v = _32.modelMatrix * v;
+    pos_only_vert_output o;
+    o.pos = _43.arbitraryMatrix * v;
+    return o;
+}
 
 void main()
 {
-    gl_Position = (u_pushConstants.depthVP * _25.modelMatrix) * vec4(inputPosition, 1.0);
+    a2v a;
+    a.inputPosition = a_inputPosition;
+    a.inputNormal = a_inputNormal;
+    a.inputUV = a_inputUV;
+    a.inputTangent = a_inputTangent;
+    a.inputBiTangent = a_inputBiTangent;
+    a2v param = a;
+    gl_Position = _shadowmap_vert_main(param).pos;
 }
 

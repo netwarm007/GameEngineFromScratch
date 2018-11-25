@@ -1,6 +1,6 @@
 #version 400
 
-struct vert_output
+struct basic_vert_output
 {
     vec4 pos;
     vec4 normal;
@@ -8,9 +8,6 @@ struct vert_output
     vec4 v;
     vec4 v_world;
     vec2 uv;
-    mat3 TBN;
-    vec3 v_tangent;
-    vec3 camPos_tangent;
 };
 
 struct Light
@@ -38,12 +35,12 @@ layout(std140) uniform PerFrameConstants
     mat4 projectionMatrix;
     vec4 camPos;
     uint numLights;
-} _281;
+} _280;
 
 layout(std140) uniform LightInfo
 {
     Light lights[100];
-} _682;
+} _681;
 
 uniform sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
 uniform samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
@@ -53,12 +50,9 @@ in vec4 input_normal_world;
 in vec4 input_v;
 in vec4 input_v_world;
 in vec2 input_uv;
-in mat3 input_TBN;
-in vec3 input_v_tangent;
-in vec3 input_camPos_tangent;
 layout(location = 0) out vec4 _entryPointOutput;
 
-float _131;
+float _130;
 
 vec3 projectOnPlane(vec3 _point, vec3 center_of_plane, vec3 normal_of_plane)
 {
@@ -157,12 +151,12 @@ vec3 linePlaneIntersect(vec3 line_start, vec3 line_dir, vec3 center_of_plane, ve
     return line_start + (line_dir * (dot(center_of_plane - line_start, normal_of_plane) / dot(line_dir, normal_of_plane)));
 }
 
-vec3 apply_areaLight(Light light, vert_output _input)
+vec3 apply_areaLight(Light light, basic_vert_output _input)
 {
     vec3 N = normalize(_input.normal.xyz);
-    vec3 right = normalize((_281.viewMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
-    vec3 pnormal = normalize((_281.viewMatrix * light.lightDirection).xyz);
-    vec3 ppos = (_281.viewMatrix * light.lightPosition).xyz;
+    vec3 right = normalize((_280.viewMatrix * vec4(1.0, 0.0, 0.0, 0.0)).xyz);
+    vec3 pnormal = normalize((_280.viewMatrix * light.lightDirection).xyz);
+    vec3 ppos = (_280.viewMatrix * light.lightPosition).xyz;
     vec3 up = normalize(cross(pnormal, right));
     right = normalize(cross(up, pnormal));
     float width = light.lightSize.x;
@@ -211,10 +205,10 @@ vec3 apply_areaLight(Light light, vert_output _input)
     return linearColor;
 }
 
-vec3 apply_light(Light light, vert_output _input)
+vec3 apply_light(Light light, basic_vert_output _input)
 {
     vec3 N = normalize(_input.normal.xyz);
-    vec3 light_dir = normalize((_281.viewMatrix * light.lightDirection).xyz);
+    vec3 light_dir = normalize((_280.viewMatrix * light.lightDirection).xyz);
     vec3 L;
     if (light.lightPosition.w == 0.0)
     {
@@ -222,7 +216,7 @@ vec3 apply_light(Light light, vert_output _input)
     }
     else
     {
-        L = (_281.viewMatrix * light.lightPosition).xyz - _input.v.xyz;
+        L = (_280.viewMatrix * light.lightPosition).xyz - _input.v.xyz;
     }
     float lightToSurfDist = length(L);
     L = normalize(L);
@@ -254,57 +248,57 @@ vec3 exposure_tone_mapping(vec3 color)
     return vec3(1.0) - exp((-color) * 1.0);
 }
 
-vec4 _basic_frag_main(vert_output _input)
+vec4 _basic_frag_main(basic_vert_output _input)
 {
     vec3 linearColor = vec3(0.0);
-    for (uint i = 0u; i < _281.numLights; i++)
+    for (uint i = 0u; i < _280.numLights; i++)
     {
-        if (_682.lights[i].lightType == 3u)
+        if (_681.lights[i].lightType == 3u)
         {
             Light arg;
-            arg.lightIntensity = _682.lights[i].lightIntensity;
-            arg.lightType = _682.lights[i].lightType;
-            arg.lightCastShadow = _682.lights[i].lightCastShadow;
-            arg.lightShadowMapIndex = _682.lights[i].lightShadowMapIndex;
-            arg.lightAngleAttenCurveType = _682.lights[i].lightAngleAttenCurveType;
-            arg.lightDistAttenCurveType = _682.lights[i].lightDistAttenCurveType;
-            arg.lightSize = _682.lights[i].lightSize;
-            arg.lightGuid = _682.lights[i].lightGuid;
-            arg.lightPosition = _682.lights[i].lightPosition;
-            arg.lightColor = _682.lights[i].lightColor;
-            arg.lightDirection = _682.lights[i].lightDirection;
-            arg.lightDistAttenCurveParams[0] = _682.lights[i].lightDistAttenCurveParams[0];
-            arg.lightDistAttenCurveParams[1] = _682.lights[i].lightDistAttenCurveParams[1];
-            arg.lightAngleAttenCurveParams[0] = _682.lights[i].lightAngleAttenCurveParams[0];
-            arg.lightAngleAttenCurveParams[1] = _682.lights[i].lightAngleAttenCurveParams[1];
-            arg.lightVP = _682.lights[i].lightVP;
-            arg.padding[0] = _682.lights[i].padding[0];
-            arg.padding[1] = _682.lights[i].padding[1];
-            vert_output param = _input;
+            arg.lightIntensity = _681.lights[i].lightIntensity;
+            arg.lightType = _681.lights[i].lightType;
+            arg.lightCastShadow = _681.lights[i].lightCastShadow;
+            arg.lightShadowMapIndex = _681.lights[i].lightShadowMapIndex;
+            arg.lightAngleAttenCurveType = _681.lights[i].lightAngleAttenCurveType;
+            arg.lightDistAttenCurveType = _681.lights[i].lightDistAttenCurveType;
+            arg.lightSize = _681.lights[i].lightSize;
+            arg.lightGuid = _681.lights[i].lightGuid;
+            arg.lightPosition = _681.lights[i].lightPosition;
+            arg.lightColor = _681.lights[i].lightColor;
+            arg.lightDirection = _681.lights[i].lightDirection;
+            arg.lightDistAttenCurveParams[0] = _681.lights[i].lightDistAttenCurveParams[0];
+            arg.lightDistAttenCurveParams[1] = _681.lights[i].lightDistAttenCurveParams[1];
+            arg.lightAngleAttenCurveParams[0] = _681.lights[i].lightAngleAttenCurveParams[0];
+            arg.lightAngleAttenCurveParams[1] = _681.lights[i].lightAngleAttenCurveParams[1];
+            arg.lightVP = _681.lights[i].lightVP;
+            arg.padding[0] = _681.lights[i].padding[0];
+            arg.padding[1] = _681.lights[i].padding[1];
+            basic_vert_output param = _input;
             linearColor += apply_areaLight(arg, param);
         }
         else
         {
             Light arg_1;
-            arg_1.lightIntensity = _682.lights[i].lightIntensity;
-            arg_1.lightType = _682.lights[i].lightType;
-            arg_1.lightCastShadow = _682.lights[i].lightCastShadow;
-            arg_1.lightShadowMapIndex = _682.lights[i].lightShadowMapIndex;
-            arg_1.lightAngleAttenCurveType = _682.lights[i].lightAngleAttenCurveType;
-            arg_1.lightDistAttenCurveType = _682.lights[i].lightDistAttenCurveType;
-            arg_1.lightSize = _682.lights[i].lightSize;
-            arg_1.lightGuid = _682.lights[i].lightGuid;
-            arg_1.lightPosition = _682.lights[i].lightPosition;
-            arg_1.lightColor = _682.lights[i].lightColor;
-            arg_1.lightDirection = _682.lights[i].lightDirection;
-            arg_1.lightDistAttenCurveParams[0] = _682.lights[i].lightDistAttenCurveParams[0];
-            arg_1.lightDistAttenCurveParams[1] = _682.lights[i].lightDistAttenCurveParams[1];
-            arg_1.lightAngleAttenCurveParams[0] = _682.lights[i].lightAngleAttenCurveParams[0];
-            arg_1.lightAngleAttenCurveParams[1] = _682.lights[i].lightAngleAttenCurveParams[1];
-            arg_1.lightVP = _682.lights[i].lightVP;
-            arg_1.padding[0] = _682.lights[i].padding[0];
-            arg_1.padding[1] = _682.lights[i].padding[1];
-            vert_output param_1 = _input;
+            arg_1.lightIntensity = _681.lights[i].lightIntensity;
+            arg_1.lightType = _681.lights[i].lightType;
+            arg_1.lightCastShadow = _681.lights[i].lightCastShadow;
+            arg_1.lightShadowMapIndex = _681.lights[i].lightShadowMapIndex;
+            arg_1.lightAngleAttenCurveType = _681.lights[i].lightAngleAttenCurveType;
+            arg_1.lightDistAttenCurveType = _681.lights[i].lightDistAttenCurveType;
+            arg_1.lightSize = _681.lights[i].lightSize;
+            arg_1.lightGuid = _681.lights[i].lightGuid;
+            arg_1.lightPosition = _681.lights[i].lightPosition;
+            arg_1.lightColor = _681.lights[i].lightColor;
+            arg_1.lightDirection = _681.lights[i].lightDirection;
+            arg_1.lightDistAttenCurveParams[0] = _681.lights[i].lightDistAttenCurveParams[0];
+            arg_1.lightDistAttenCurveParams[1] = _681.lights[i].lightDistAttenCurveParams[1];
+            arg_1.lightAngleAttenCurveParams[0] = _681.lights[i].lightAngleAttenCurveParams[0];
+            arg_1.lightAngleAttenCurveParams[1] = _681.lights[i].lightAngleAttenCurveParams[1];
+            arg_1.lightVP = _681.lights[i].lightVP;
+            arg_1.padding[0] = _681.lights[i].padding[0];
+            arg_1.padding[1] = _681.lights[i].padding[1];
+            basic_vert_output param_1 = _input;
             linearColor += apply_light(arg_1, param_1);
         }
     }
@@ -316,17 +310,14 @@ vec4 _basic_frag_main(vert_output _input)
 
 void main()
 {
-    vert_output _input;
+    basic_vert_output _input;
     _input.pos = gl_FragCoord;
     _input.normal = input_normal;
     _input.normal_world = input_normal_world;
     _input.v = input_v;
     _input.v_world = input_v_world;
     _input.uv = input_uv;
-    _input.TBN = input_TBN;
-    _input.v_tangent = input_v_tangent;
-    _input.camPos_tangent = input_camPos_tangent;
-    vert_output param = _input;
+    basic_vert_output param = _input;
     _entryPointOutput = _basic_frag_main(param);
 }
 

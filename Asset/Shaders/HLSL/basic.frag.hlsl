@@ -1,7 +1,7 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
-float3 apply_light(const Light light, vert_output input) {
+float3 apply_light(const Light light, basic_vert_output input) {
     float3 N = normalize(input.normal.xyz);
     float3 L;
     float3 light_dir = normalize(mul(light.lightDirection, viewMatrix).xyz);
@@ -49,7 +49,7 @@ float3 apply_light(const Light light, vert_output input) {
     return linearColor * visibility;
 }
 
-float3 apply_areaLight(const Light light, vert_output input)
+float3 apply_areaLight(const Light light, basic_vert_output input)
 {
     float3 N = normalize(input.normal.xyz);
     float3 right = normalize(mul(float4(1.0f, 0.0f, 0.0f, 0.0f), viewMatrix).xyz);
@@ -108,7 +108,7 @@ float3 apply_areaLight(const Light light, vert_output input)
     return linearColor;
 }
 
-float4 basic_frag_main(vert_output input) : SV_Target
+float4 basic_frag_main(basic_vert_output input) : SV_Target
 {
     float3 linearColor = 0.0f.xxx;
     for (uint i = 0; i < numLights; i++)

@@ -102,7 +102,7 @@ void BaseApplication::Tick()
     g_pAnimationManager->Tick();
     g_pShaderManager->Tick();
     g_pGameLogic->Tick();
-    g_pGraphicsManager->Tick();
+    //g_pGraphicsManager->Tick();
 #ifdef DEBUG
     g_pDebugManager->Tick();
 #endif

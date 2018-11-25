@@ -1,12 +1,12 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
-float4 pbr_frag_main(vert_output input) : SV_Target
+float4 pbr_frag_main(pbr_vert_output input) : SV_Target
 {
     // offset texture coordinates with Parallax Mapping
     float3 viewDir   = normalize(input.camPos_tangent - input.v_tangent);
-    float2 texCoords = ParallaxMapping(input.uv, viewDir);
-    //float2 texCoords = uv;
+    //float2 texCoords = ParallaxMapping(input.uv, viewDir);
+    float2 texCoords = input.uv;
 
     float3 tangent_normal = normalMap.Sample(samp0, texCoords).rgb;
     tangent_normal = tangent_normal * 2.0f - 1.0f;   
@@ -37,7 +37,8 @@ float4 pbr_frag_main(vert_output input) : SV_Target
         float NdotL = max(dot(N, L), 0.0f);
 
         // shadow test
-        float visibility = shadow_test(input.v_world, light, NdotL);
+        //float visibility = shadow_test(input.v_world, light, NdotL);
+        float visibility = 1.0f;
 
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));
