@@ -92,7 +92,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
     }
 
-    _mtlPosOnlyVertexDescriptor = [MTLVertexDescriptor new];
+    _mtlPosOnlyVertexDescriptor = [[MTLVertexDescriptor alloc] init];
 
     // Positions.
     _mtlPosOnlyVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
@@ -105,7 +105,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     _mtlPosOnlyVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepFunction = MTLVertexStepFunctionPerVertex;
 
 
-    _mtlVertexDescriptor = [MTLVertexDescriptor new];
+    _mtlVertexDescriptor = [[MTLVertexDescriptor alloc] init];
 
     // Positions.
     _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
@@ -157,7 +157,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stepRate = 1;
     _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stepFunction = MTLVertexStepFunctionPerVertex;
 
-    MTLSamplerDescriptor* samplerDescriptor = [MTLSamplerDescriptor new];
+    MTLSamplerDescriptor* samplerDescriptor = [[MTLSamplerDescriptor alloc] init];
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
@@ -185,7 +185,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         assert(0);
     }
 
-    MTLDepthStencilDescriptor *depthStateDesc = [MTLDepthStencilDescriptor new];
+    MTLDepthStencilDescriptor *depthStateDesc = [[MTLDepthStencilDescriptor alloc] init];
     depthStateDesc.depthCompareFunction = MTLCompareFunctionLess;
     depthStateDesc.depthWriteEnabled = YES;
     _depthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
@@ -194,7 +194,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLFunction> skyboxVertexFunction = [myLibrary newFunctionWithName:@"skybox_vert_main"];
     id<MTLFunction> skyboxFragmentFunction = [myLibrary newFunctionWithName:@"skybox_frag_main"];
 
-    pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
+    pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
     pipelineStateDescriptor.label = @"Skybox Pipeline";
     pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
     pipelineStateDescriptor.vertexFunction = skyboxVertexFunction;
@@ -210,7 +210,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         assert(0);
     }
 
-    depthStateDesc = [MTLDepthStencilDescriptor new];
+    depthStateDesc = [[MTLDepthStencilDescriptor alloc] init];
     depthStateDesc.depthCompareFunction = MTLCompareFunctionLessEqual;
     depthStateDesc.depthWriteEnabled = NO;
     _skyboxDepthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];

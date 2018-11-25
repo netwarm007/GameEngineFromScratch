@@ -91,6 +91,9 @@ void GraphicsManager::UpdateConstants()
     // Generate the view matrix based on the camera's position.
     CalculateCameraMatrix();
     CalculateLights();
+
+    SetPerFrameConstants(frame.frameContext);
+    SetPerBatchConstants(frame.batchContexts);
 }
 
 void GraphicsManager::Draw()

@@ -127,12 +127,9 @@ void ShadowMapPass::Draw(Frame& frame)
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-        g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
-
         g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
             width, height, it->lightShadowMapIndex);
 
-        g_pGraphicsManager->SetPerBatchConstants(frame.batchContexts);
         g_pGraphicsManager->DrawBatch(frame.batchContexts);
 
         g_pGraphicsManager->EndShadowMap(shadowmap, it->lightShadowMapIndex);
