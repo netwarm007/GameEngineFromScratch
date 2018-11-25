@@ -64,9 +64,9 @@ void GraphicsManager::UpdateConstants()
     // update scene object position
     auto& frame = m_Frames[m_nFrameIndex];
 
-    for (auto dbc : frame.batchContexts)
+    for (auto& pDbc : frame.batchContexts)
     {
-        if (void* rigidBody = dbc->node->RigidBody()) {
+        if (void* rigidBody = pDbc->node->RigidBody()) {
             Matrix4X4f trans;
 
             // the geometry has rigid body bounded, we blend the simlation result here.
@@ -82,9 +82,9 @@ void GraphicsManager::UpdateConstants()
             // replace the translation part of the matrix with simlation result directly
             memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
 
-            dbc->modelMatrix = trans;
+            pDbc->modelMatrix = trans;
         } else {
-            dbc->modelMatrix = *dbc->node->GetCalculatedTransform();
+            pDbc->modelMatrix = *pDbc->node->GetCalculatedTransform();
         }
     }
 
@@ -574,9 +574,9 @@ void GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
     cerr << "[GraphicsManager] SetPerFrameConstants(" << &context << ")" << endl;
 }
 
-void GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
+void GraphicsManager::SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
-    cout << "[GraphicsManager] SetPerBatchConstants(" << &context << ")" << endl;
+    cout << "[GraphicsManager] SetPerBatchConstants(" << batches.size() << ")" << endl;
 }
 
 void GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
@@ -584,14 +584,9 @@ void GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
     cout << "[GraphicsManager] SetLightInfo(" << &lightInfo << ")" << endl;
 }
 
-void GraphicsManager::DrawBatch(const DrawBatchContext& context)
+void GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
-    cerr << "[GraphicsManager] DrawBatch(" << &context << ")" << endl;
-}
-
-void GraphicsManager::DrawBatchDepthOnly(const DrawBatchContext& context)
-{
-    cerr << "[GraphicsManager] DrawBatchDepthOnly(" << &context << ")" << endl;
+    cerr << "[GraphicsManager] DrawBatch(" << batches.size() << ")" << endl;
 }
 
 intptr_t GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)

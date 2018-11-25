@@ -340,11 +340,14 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
 }
 
-- (void)setPerBatchConstants:(const DrawBatchContext&)context
+- (void)setPerBatchConstants:(const std::vector<std::shared_ptr<DrawBatchContext>>&)batches
 {
-    std::memcpy(reinterpret_cast<uint8_t*>(_uniformBuffers[_currentBufferIndex].contents) 
-            + kSizePerFrameConstantBuffer + context.batchIndex * kSizePerBatchConstantBuffer
-            , &static_cast<const PerBatchConstants&>(context), sizeof(PerBatchConstants));
+    for (const auto& pDbc : batches)
+    {
+        std::memcpy(reinterpret_cast<uint8_t*>(_uniformBuffers[_currentBufferIndex].contents) 
+                + kSizePerFrameConstantBuffer + pDbc->batchIndex * kSizePerBatchConstantBuffer
+                , &static_cast<const PerBatchConstants&>(*pDbc), sizeof(PerBatchConstants));
+    }
 }
 
 - (void)setLightInfo:(const LightInfo&)lightInfo
@@ -354,7 +357,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 }
 
 // Called whenever the view needs to render
-- (void)drawBatch:(const MtlDrawBatchContext&)dbc
+- (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches
 {
     // If we've gotten a renderPassDescriptor we can render to the drawable, otherwise we'll skip
     // any rendering this frame because we have no drawable to draw to
@@ -367,10 +370,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                   offset:0
                                  atIndex:10];
 
-        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                  offset:kSizePerFrameConstantBuffer + dbc.batchIndex * kSizePerBatchConstantBuffer
-                                 atIndex:11];
-
         [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
                                   offset:0
                                  atIndex:10];
@@ -379,77 +378,86 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                   offset:0
                                  atIndex:12];
 
-        // Set mesh's vertex buffers
-        for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)
-        {
-            id<MTLBuffer> vertexBuffer = _vertexBuffers[dbc.property_offset + bufferIndex];
-            [_renderEncoder setVertexBuffer:vertexBuffer
-                                    offset:0
-                                   atIndex:bufferIndex];
-        }
-
         [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
-        // Set any textures read/sampled from our render pipeline
-        if (dbc.material.diffuseMap >= 0)
+        for (const auto& pDbc : batches)
         {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap]
-                                    atIndex:0];
+            const MtlDrawBatchContext& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
+
+            [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+                                    offset:kSizePerFrameConstantBuffer + dbc.batchIndex * kSizePerBatchConstantBuffer
+                                    atIndex:11];
+
+            // Set mesh's vertex buffers
+            for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)
+            {
+                id<MTLBuffer> vertexBuffer = _vertexBuffers[dbc.property_offset + bufferIndex];
+                [_renderEncoder setVertexBuffer:vertexBuffer
+                                        offset:0
+                                    atIndex:bufferIndex];
+            }
+
+            // Set any textures read/sampled from our render pipeline
+            if (dbc.material.diffuseMap >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap]
+                                        atIndex:0];
+            }
+
+            if (dbc.material.normalMap >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[dbc.material.normalMap]
+                                        atIndex:1];
+            }
+
+            if (dbc.material.metallicMap >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[dbc.material.metallicMap]
+                                        atIndex:2];
+            }
+
+            if (dbc.material.roughnessMap >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[dbc.material.roughnessMap]
+                                        atIndex:3];
+            }
+
+            if (dbc.material.aoMap >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[dbc.material.aoMap]
+                                        atIndex:4];
+            }
+
+    #if 0
+            [_renderEncoder setFragmentTexture:_heightMap
+                                    atIndex:5];
+
+            [_renderEncoder setFragmentTexture:_brdfLUT
+                                    atIndex:6];
+
+            [_renderEncoder setFragmentTexture:_shadowMap
+                                    atIndex:7];
+
+            [_renderEncoder setFragmentTexture:_globalShadowMap
+                                    atIndex:8];
+
+            [_renderEncoder setFragmentTexture:_cubeShadowMap
+                                    atIndex:9];
+
+            [_renderEncoder setFragmentTexture:_skybox
+                                    atIndex:10];
+
+            [_renderEncoder setFragmentTexture:_terrainHeightMap
+                                    atIndex:11];
+    #endif
+
+            // Draw our mesh
+            [_renderEncoder drawIndexedPrimitives:dbc.index_mode
+                                    indexCount:dbc.index_count
+                                    indexType:dbc.index_type
+                                    indexBuffer:_indexBuffers[dbc.index_offset]
+                            indexBufferOffset:0];
         }
-
-        if (dbc.material.normalMap >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.normalMap]
-                                    atIndex:1];
-        }
-
-        if (dbc.material.metallicMap >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.metallicMap]
-                                    atIndex:2];
-        }
-
-        if (dbc.material.roughnessMap >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.roughnessMap]
-                                    atIndex:3];
-        }
-
-        if (dbc.material.aoMap >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.aoMap]
-                                    atIndex:4];
-        }
-
-#if 0
-        [_renderEncoder setFragmentTexture:_heightMap
-                                  atIndex:5];
-
-        [_renderEncoder setFragmentTexture:_brdfLUT
-                                  atIndex:6];
-
-        [_renderEncoder setFragmentTexture:_shadowMap
-                                  atIndex:7];
-
-        [_renderEncoder setFragmentTexture:_globalShadowMap
-                                  atIndex:8];
-
-        [_renderEncoder setFragmentTexture:_cubeShadowMap
-                                  atIndex:9];
-
-        [_renderEncoder setFragmentTexture:_skybox
-                                  atIndex:10];
-
-        [_renderEncoder setFragmentTexture:_terrainHeightMap
-                                  atIndex:11];
-#endif
-
-        // Draw our mesh
-        [_renderEncoder drawIndexedPrimitives:dbc.index_mode
-                                  indexCount:dbc.index_count
-                                   indexType:dbc.index_type
-                                 indexBuffer:_indexBuffers[dbc.index_offset]
-                           indexBufferOffset:0];
 
         [_renderEncoder popDebugGroup];
     }

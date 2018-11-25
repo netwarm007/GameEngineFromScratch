@@ -19,11 +19,11 @@ namespace My {
 
 - (void)setPerFrameConstants:(const DrawFrameContext&)context;
 
-- (void)setPerBatchConstants:(const DrawBatchContext&)context;
+- (void)setPerBatchConstants:(const std::vector<std::shared_ptr<DrawBatchContext>>&)batches;
 
 - (void)setLightInfo:(const LightInfo&)lightInfo;
 
-- (void)drawBatch:(const My::MtlDrawBatchContext&)dbc;
+- (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches;
 
 - (void)updateDrawableSize:(CGSize)size;
 

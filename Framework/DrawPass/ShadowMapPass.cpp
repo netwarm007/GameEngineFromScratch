@@ -132,11 +132,8 @@ void ShadowMapPass::Draw(Frame& frame)
         g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
             width, height, it->lightShadowMapIndex);
 
-        for (auto iter = frame.batchContexts.cbegin(); iter != frame.batchContexts.cend(); iter++)
-        {
-            g_pGraphicsManager->SetPerBatchConstants(**iter);
-            g_pGraphicsManager->DrawBatchDepthOnly(**iter);
-        }
+        g_pGraphicsManager->SetPerBatchConstants(frame.batchContexts);
+        g_pGraphicsManager->DrawBatch(frame.batchContexts);
 
         g_pGraphicsManager->EndShadowMap(shadowmap, it->lightShadowMapIndex);
     }

@@ -18,10 +18,10 @@ namespace My {
     
         void UseShaderProgram(const intptr_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
-        void SetPerBatchConstants(const DrawBatchContext& context) final;
+        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
         void SetLightInfo(const LightInfo& lightInfo) final;
 
-        void DrawBatch(const DrawBatchContext& context) final;
+        void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         bool CheckCapability(RHICapability cap) final;
     

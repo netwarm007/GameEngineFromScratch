@@ -209,9 +209,9 @@ void Metal2GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context
     [m_pRenderer setPerFrameConstants:context];
 }
 
-void Metal2GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
+void Metal2GraphicsManager::SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) 
 {
-    [m_pRenderer setPerBatchConstants:context];
+    [m_pRenderer setPerBatchConstants:batches];
 }
 
 void Metal2GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
@@ -219,8 +219,7 @@ void Metal2GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
     [m_pRenderer setLightInfo:lightInfo];
 }
 
-void Metal2GraphicsManager::DrawBatch(const DrawBatchContext& context)
+void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
-    const MtlDrawBatchContext& dbc = dynamic_cast<const MtlDrawBatchContext&>(context);
-    [m_pRenderer drawBatch:dbc];
+    [m_pRenderer drawBatch:batches];
 }

@@ -15,10 +15,6 @@ void ForwardRenderPass::Draw(Frame& frame)
     g_pGraphicsManager->SetLightInfo(frame.lightInfo);
     g_pGraphicsManager->SetShadowMaps(frame);
     g_pGraphicsManager->SetSkyBox(frame.frameContext);
-
-    for (auto it = frame.batchContexts.cbegin(); it != frame.batchContexts.cend(); it++)
-    {
-        g_pGraphicsManager->SetPerBatchConstants(**it);
-        g_pGraphicsManager->DrawBatch(**it);
-    }
+    g_pGraphicsManager->SetPerBatchConstants(frame.batchContexts);
+    g_pGraphicsManager->DrawBatch(frame.batchContexts);
 }

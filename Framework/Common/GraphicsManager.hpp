@@ -35,11 +35,10 @@ namespace My {
 
         virtual void UseShaderProgram(const intptr_t shaderProgram);
         virtual void SetPerFrameConstants(const DrawFrameContext& context);
-        virtual void SetPerBatchConstants(const DrawBatchContext& context);
+        virtual void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
         virtual void SetLightInfo(const LightInfo& lightInfo);
 
-        virtual void DrawBatch(const DrawBatchContext& context);
-        virtual void DrawBatchDepthOnly(const DrawBatchContext& context);
+        virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
 
         virtual intptr_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
         virtual intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
@@ -97,7 +96,6 @@ namespace My {
 
         virtual void BeginFrame();
         virtual void EndFrame();
-
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif
