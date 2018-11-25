@@ -23,6 +23,10 @@ namespace My {
 
 - (void)setLightInfo:(const LightInfo&)lightInfo;
 
+- (void)setSkyBox:(const DrawFrameContext&)context;
+
+- (void)drawSkyBox;
+
 - (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches;
 
 - (void)updateDrawableSize:(CGSize)size;
@@ -32,6 +36,8 @@ namespace My {
 - (void)createIndexBuffer:(const My::SceneObjectIndexArray&)index_array;
 
 - (uint32_t)createTexture:(const My::Image&)image;
+
+- (uint32_t)createCubeTexture:(const std::vector<const std::shared_ptr<My::Image>>&)images;
 
 - (void)beginFrame;
 

@@ -22,7 +22,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     // Metal objects
     id<MTLRenderPipelineState> _pipelineState;
+    id<MTLRenderPipelineState> _skyboxPipelineState;
     id<MTLDepthStencilState> _depthState;
+    id<MTLDepthStencilState> _skyboxDepthState;
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     id<MTLBuffer> _lightInfo[GEFSMaxBuffersInFlight];
     std::vector<id<MTLBuffer>> _vertexBuffers;
@@ -36,8 +38,12 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Vertex descriptor specifying how vertices will by laid out for input into our render
     // pipeline and how ModelIO should layout vertices
     MTLVertexDescriptor* _mtlVertexDescriptor;
+    MTLVertexDescriptor* _mtlPosOnlyVertexDescriptor;
 
     MTKView* _mtkView;
+
+    // skybox texture id
+    int32_t _skyboxTexIndex;
 }
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device.  We'll also use this
@@ -51,6 +57,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         _mtkView = mtkView;
         _device = device;
         _inFlightSemaphore = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
+        _skyboxTexIndex = -1;
         [self loadMetal];
     }
 
@@ -84,6 +91,19 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         
         _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
     }
+
+    _mtlPosOnlyVertexDescriptor = [MTLVertexDescriptor new];
+
+    // Positions.
+    _mtlPosOnlyVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
+    _mtlPosOnlyVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].offset = 0;
+    _mtlPosOnlyVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = VertexAttribute::VertexAttributePosition;
+
+    // Position Buffer Layout
+    _mtlPosOnlyVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stride = 12;
+    _mtlPosOnlyVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepRate = 1;
+    _mtlPosOnlyVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepFunction = MTLVertexStepFunctionPerVertex;
+
 
     _mtlVertexDescriptor = [MTLVertexDescriptor new];
 
@@ -150,14 +170,13 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     // Create a reusable pipeline state
     MTLRenderPipelineDescriptor *pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
-    pipelineStateDescriptor.label = @"MyPipeline";
+    pipelineStateDescriptor.label = @"Basic Pipeline";
     pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
     pipelineStateDescriptor.vertexFunction = vertexFunction;
     pipelineStateDescriptor.fragmentFunction = fragmentFunction;
     pipelineStateDescriptor.vertexDescriptor = _mtlVertexDescriptor;
     pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
     pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
-    //pipelineStateDescriptor.stencilAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
 
     _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
     if (!_pipelineState)
@@ -170,6 +189,31 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     depthStateDesc.depthCompareFunction = MTLCompareFunctionLess;
     depthStateDesc.depthWriteEnabled = YES;
     _depthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
+
+    // Create skybox pipeline state
+    id<MTLFunction> skyboxVertexFunction = [myLibrary newFunctionWithName:@"skybox_vert_main"];
+    id<MTLFunction> skyboxFragmentFunction = [myLibrary newFunctionWithName:@"skybox_frag_main"];
+
+    pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
+    pipelineStateDescriptor.label = @"Skybox Pipeline";
+    pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
+    pipelineStateDescriptor.vertexFunction = skyboxVertexFunction;
+    pipelineStateDescriptor.fragmentFunction = skyboxFragmentFunction;
+    pipelineStateDescriptor.vertexDescriptor = _mtlPosOnlyVertexDescriptor;
+    pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
+    pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
+
+    _skyboxPipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
+    if (!_skyboxPipelineState)
+    {
+        NSLog(@"Failed to created skybox pipeline state, error %@", error);
+        assert(0);
+    }
+
+    depthStateDesc = [MTLDepthStencilDescriptor new];
+    depthStateDesc.depthCompareFunction = MTLCompareFunctionLessEqual;
+    depthStateDesc.depthWriteEnabled = NO;
+    _skyboxDepthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
 
     // Create the command queue
     _commandQueue = [_device newCommandQueue];
@@ -230,6 +274,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         case 64:
             format = MTLPixelFormatRGBA16Float;
             break;
+        case 128:
+            format = MTLPixelFormatRGBA32Float;
+            break;
         default:
             assert(0);
         }
@@ -260,6 +307,45 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 mipmapLevel:0
                 withBytes:image.data
                 bytesPerRow:image.pitch];
+
+    uint32_t index = _textures.size();
+    _textures.push_back(texture);
+
+    return index;
+}
+
+- (uint32_t)createCubeTexture:(const std::vector<const std::shared_ptr<My::Image>>&)images;
+{
+    id<MTLTexture> texture;
+
+    assert(images.size() == 12);
+
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+
+    textureDesc.textureType = MTLTextureTypeCubeArray;
+    textureDesc.arrayLength = 2;
+    textureDesc.pixelFormat = getMtlPixelFormat(*images[0]);
+    textureDesc.width = images[0]->Width;
+    textureDesc.height = images[0]->Height;
+
+    // create the texture obj
+    texture = [_device newTextureWithDescriptor:textureDesc];
+
+    // now upload the data
+    for (int32_t slice = 0; slice < 12; slice++)
+    {
+        MTLRegion region = {
+            { 0, 0, 0 },                   // MTLOrigin
+            {images[slice]->Width, images[slice]->Height, 1} // MTLSize
+        };
+
+        [texture replaceRegion:region
+                    mipmapLevel:0
+                    slice:slice
+                    withBytes:images[slice]->data
+                    bytesPerRow:images[slice]->pitch
+                    bytesPerImage:images[slice]->data_size];
+    }
 
     uint32_t index = _textures.size();
     _textures.push_back(texture);
@@ -299,24 +385,12 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         _renderEncoder =
             [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
         _renderEncoder.label = @"MyRenderEncoder";
-
-        [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
-        [_renderEncoder setCullMode:MTLCullModeBack];
-        [_renderEncoder setRenderPipelineState:_pipelineState];
-        [_renderEncoder setDepthStencilState:_depthState];
-    }
-    else
-    {
-        assert(0);
     }
 }
 
 - (void)endFrame
 {
-    if(_renderPassDescriptor != nil)
-    {
-        [_renderEncoder endEncoding];
-    }
+    [_renderEncoder endEncoding];
 
     [_commandBuffer presentDrawable:_mtkView.currentDrawable];
 
@@ -356,13 +430,94 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             &lightInfo, sizeof(LightInfo));
 }
 
+- (void)setSkyBox:(const DrawFrameContext&)context
+{
+    _skyboxTexIndex = context.skybox;
+}
+
+- (void)drawSkyBox
+{
+    if(_renderPassDescriptor != nil)
+    {
+        [_renderEncoder setRenderPipelineState:_skyboxPipelineState];
+        [_renderEncoder setDepthStencilState:_skyboxDepthState];
+
+        // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
+        [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
+
+        [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
+        if (_skyboxTexIndex >= 0)
+        {
+            [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
+                                    atIndex:10];
+        }
+
+        static const float skyboxVertices[] = {
+            1.0f,  1.0f,  1.0f,  // 0
+            -1.0f,  1.0f,  1.0f,  // 1
+            1.0f, -1.0f,  1.0f,  // 2
+            1.0f,  1.0f, -1.0f,  // 3
+            -1.0f,  1.0f, -1.0f,  // 4
+            1.0f, -1.0f, -1.0f,  // 5
+            -1.0f, -1.0f,  1.0f,  // 6
+            -1.0f, -1.0f, -1.0f   // 7
+        };
+
+        [_renderEncoder setVertexBytes:static_cast<const void*>(skyboxVertices)
+                                length:sizeof(skyboxVertices)
+                               atIndex:0];
+
+        static const uint16_t skyboxIndices[] = {
+            4, 7, 5,
+            5, 3, 4,
+
+            6, 7, 4,
+            4, 1, 6,
+
+            5, 2, 0,
+            0, 3, 5,
+
+            6, 1, 0,
+            0, 2, 6,
+
+            4, 3, 0,
+            0, 1, 4,
+
+            7, 6, 5,
+            5, 6, 2
+        };
+
+        id<MTLBuffer> indexBuffer;
+        indexBuffer = [_device newBufferWithBytes:skyboxIndices
+                                           length:sizeof(skyboxIndices) 
+                                           options:MTLResourceStorageModeShared];
+        
+        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+                                 offset:0
+                                atIndex:10];
+
+        // Draw skybox
+        [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                indexCount:sizeof(skyboxIndices)/sizeof(skyboxIndices[0])
+                                 indexType:MTLIndexTypeUInt16
+                               indexBuffer:indexBuffer
+                         indexBufferOffset:0];
+
+        [_renderEncoder popDebugGroup];
+    }
+}
+
 // Called whenever the view needs to render
 - (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches
 {
-    // If we've gotten a renderPassDescriptor we can render to the drawable, otherwise we'll skip
-    // any rendering this frame because we have no drawable to draw to
     if(_renderPassDescriptor != nil)
     {
+        [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+        [_renderEncoder setCullMode:MTLCullModeBack];
+        [_renderEncoder setRenderPipelineState:_pipelineState];
+        [_renderEncoder setDepthStencilState:_depthState];
+
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [_renderEncoder pushDebugGroup:@"DrawMesh"];
 
@@ -379,6 +534,12 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                  atIndex:12];
 
         [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
+        if (_skyboxTexIndex >= 0)
+        {
+            [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
+                                    atIndex:10];
+        }
 
         for (const auto& pDbc : batches)
         {

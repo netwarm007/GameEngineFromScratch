@@ -27,8 +27,8 @@ void BRDFIntegrator::Dispatch()
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-        intptr_t brdf_lut;
-        intptr_t brdf_context;
+        int32_t brdf_lut;
+        int32_t brdf_context;
         const uint32_t width = 512u;
         const uint32_t height = 512u;
         brdf_lut = g_pGraphicsManager->GenerateTexture("BRDF_LUT", width, height);

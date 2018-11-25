@@ -16,7 +16,7 @@ namespace My {
         void Draw() final;
         void Present() final;
     
-        void UseShaderProgram(const intptr_t shaderProgram) final;
+        void UseShaderProgram(const int32_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
         void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
         void SetLightInfo(const LightInfo& lightInfo) final;
@@ -25,6 +25,10 @@ namespace My {
 
         bool CheckCapability(RHICapability cap) final;
     
+        // skybox
+        void SetSkyBox(const DrawFrameContext& context) final;
+        void DrawSkyBox() final;
+
 #ifdef __OBJC__
         void SetRenderer(Metal2Renderer* renderer) { m_pRenderer = renderer; }
 #endif
@@ -35,6 +39,10 @@ namespace My {
 
         void BeginFrame() final;
         void EndFrame() final;
+
+        void initializeGeometries(const Scene& scene);
+        void initializeSkyBox(const Scene& scene);
+        void initializeTerrain(const Scene& scene);
 
     private:
 #ifdef __OBJC__

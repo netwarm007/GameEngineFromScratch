@@ -25,3 +25,9 @@ struct pos_only_vert_output
 {
     float4 pos              : SV_Position;
 };
+
+struct skybox_vert_output
+{
+    float4 pos              : SV_Position;
+    float3 uvw              : TEXCOORD0;
+};

@@ -4,7 +4,7 @@
 float4 pbr_frag_main(pbr_vert_output input) : SV_Target
 {
     // offset texture coordinates with Parallax Mapping
-    float3 viewDir   = normalize(input.camPos_tangent - input.v_tangent);
+    //float3 viewDir   = normalize(input.camPos_tangent - input.v_tangent);
     //float2 texCoords = ParallaxMapping(input.uv, viewDir);
     float2 texCoords = input.uv;
 

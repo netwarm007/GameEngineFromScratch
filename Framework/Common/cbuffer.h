@@ -89,6 +89,11 @@ struct a2v
     Vector3f inputBiTangent   SEMANTIC(BITANGENT);
 };
 
+struct a2v_pos_only
+{
+    Vector3f inputPosition    SEMANTIC(POSITION);
+};
+
 #ifdef __cplusplus
 struct material_textures
 {

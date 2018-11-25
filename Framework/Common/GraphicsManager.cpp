@@ -514,7 +514,7 @@ void GraphicsManager::ClearDebugBuffers()
     cerr << "[GraphicsManager] ClearDebugBuffers(void)" << endl;
 }
 
-void GraphicsManager::DrawTextureOverlay(const intptr_t texture, 
+void GraphicsManager::DrawTextureOverlay(const int32_t texture, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
     cerr << "[GraphicsManager] DrawOverlay(" << texture << ", "
@@ -525,7 +525,7 @@ void GraphicsManager::DrawTextureOverlay(const intptr_t texture,
         << ")" << endl;
 }
 
-void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, 
+void GraphicsManager::DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height)
 {
     cerr << "[GraphicsManager] DrawOverlay(" << texture << ", "
@@ -537,7 +537,7 @@ void GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, uint32_t l
         << ")" << endl;
 }
 
-void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap, 
+void GraphicsManager::DrawCubeMapOverlay(const int32_t cubemap, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     cerr << "[GraphicsManager] DrawCubeMapOverlay(" << cubemap << ", "
@@ -549,7 +549,7 @@ void GraphicsManager::DrawCubeMapOverlay(const intptr_t cubemap,
         << ")" << endl;
 }
 
-void GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, 
+void GraphicsManager::DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, 
     float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     cerr << "[GraphicsManager] DrawCubeMapOverlay(" << cubemap << ", "
@@ -564,7 +564,7 @@ void GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t l
 
 #endif
 
-void GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)
+void GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
 {
     cerr << "[GraphicsManager] UseShaderProgram(" << shaderProgram << ")" << endl;
 }
@@ -589,27 +589,27 @@ void GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchConte
     cerr << "[GraphicsManager] DrawBatch(" << batches.size() << ")" << endl;
 }
 
-intptr_t GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
+int32_t GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
     cerr << "[GraphicsManager] GenerateCubeShadowMapArray(" << width << ", " << height << ","
         << count << ")" << endl;
     return 0;
 }
 
-intptr_t GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
+int32_t GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
     cerr << "[GraphicsManager] GenerateShadowMapArray(" << width << " ," << height << ", " 
         << count << ")" << endl;
     return 0;
 }
 
-void GraphicsManager::BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index)
+void GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index)
 {
     cout << "[GraphicsManager] BeginShadowMap(" << light.lightGuid << ", " << shadowmap << ", " 
         << width << ", " << height << ", " << layer_index << ")" << endl;
 }
 
-void GraphicsManager::EndShadowMap(const intptr_t shadowmap, const uint32_t layer_index)
+void GraphicsManager::EndShadowMap(const int32_t shadowmap, const uint32_t layer_index)
 {
     cerr << "[GraphicsManager] EndShadowMap(" << shadowmap << ", " << layer_index << ")" << endl;
 }
@@ -619,16 +619,16 @@ void GraphicsManager::SetShadowMaps(const Frame& frame)
     cerr << "[GraphicsManager] SetShadowMap(" << &frame << ")" << endl;
 }
 
-void GraphicsManager::DestroyShadowMap(intptr_t& shadowmap)
+void GraphicsManager::DestroyShadowMap(int32_t& shadowmap)
 {
     cerr << "[GraphicsManager] DestroyShadowMap(" << shadowmap << ")" << endl;
     shadowmap = -1;
 }
 
-intptr_t GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height)
+int32_t GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height)
 {
     cerr << "[GraphicsManager] GenerateAndBindTextureForWrite(" << id << ", " << width << ", " << height << ")" << endl;
-    return static_cast<intptr_t>(0);
+    return static_cast<int32_t>(0);
 }
 
 void GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
@@ -636,25 +636,25 @@ void GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, cons
     cerr << "[GraphicsManager] Dispatch(" << width << ", " << height << ", " << depth << ")" << endl;
 }
 
-intptr_t GraphicsManager::GetTexture(const char* id)
+int32_t GraphicsManager::GetTexture(const char* id)
 {
     cerr << "[GraphicsManager] GetTexture(" << id << ")" << endl;
-    return static_cast<intptr_t>(0);
+    return static_cast<int32_t>(0);
 }
 
-intptr_t GraphicsManager::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
+int32_t GraphicsManager::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
 {
     cerr << "[GraphicsManager] GenerateTexture(" << id << ", " << width << ", " << height << ")" << endl;
-    return static_cast<intptr_t>(0);
+    return static_cast<int32_t>(0);
 }
 
-void GraphicsManager::BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height)
+void GraphicsManager::BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height)
 {
     cerr << "[GraphicsManager] BeginRenderToTexture(" << context << ", " << texture << ", " << width << ", " << height << ")" << endl;
     context = 0;
 }
 
-void GraphicsManager::EndRenderToTexture(intptr_t& context)
+void GraphicsManager::EndRenderToTexture(int32_t& context)
 {
     cerr << "[GraphicsManager] EndRenderToTexture(" << context << ")" << endl;
 }

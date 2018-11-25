@@ -34,12 +34,15 @@ bool Metal2GraphicsManager::CheckCapability(RHICapability cap)
     return true;
 }
 
-void Metal2GraphicsManager::BeginScene(const Scene& scene)
+void Metal2GraphicsManager::initializeGeometries(const Scene& scene)
 {
-    cout << "Creating Draw Batch Contexts ...";
+    cout << "Initialize Geometries ...";
     uint32_t batch_index = 0;
     uint32_t v_property_offset = 0;
     uint32_t index_offset = 0;
+
+    // load geometries (and materials)
+    // TODO: load materials async
     for (auto& _it : scene.GeometryNodes)
     {
 	    auto pGeometryNode = _it.second.lock();
@@ -124,6 +127,7 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
             dbc->property_offset = v_property_offset;
             dbc->property_count = vertexPropertiesCount;
 
+            // load material textures
 			if (material) {
                 if (auto& texture = material->GetBaseColor().ValueMap)
                 {
@@ -181,6 +185,40 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
             v_property_offset += vertexPropertiesCount;
         }
     }
+}
+
+void Metal2GraphicsManager::initializeSkyBox(const Scene& scene)
+{
+    if (scene.SkyBox)
+    {
+        std::vector<const std::shared_ptr<My::Image>> images;
+        for (uint32_t i = 0; i < 12; i++)
+        {
+            auto& texture = scene.SkyBox->GetTexture(i);
+            const auto& pImage = texture.GetTextureImage();
+            images.push_back(pImage);
+        }
+
+        int32_t tex_index = [m_pRenderer createCubeTexture:images];
+
+        for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+        {
+            m_Frames[i].frameContext.skybox = tex_index;
+        }
+    }
+}
+
+void Metal2GraphicsManager::initializeTerrain(const Scene& scene)
+{
+
+}
+
+void Metal2GraphicsManager::BeginScene(const Scene& scene)
+{
+    initializeGeometries(scene);
+    initializeSkyBox(scene);
+    initializeTerrain(scene);
+
     cout << "Done!" << endl;
 }
 
@@ -199,7 +237,7 @@ void Metal2GraphicsManager::EndFrame()
     [m_pRenderer endFrame];
 }
 
-void Metal2GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)
+void Metal2GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
 {
 
 }
@@ -222,4 +260,14 @@ void Metal2GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
 void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
     [m_pRenderer drawBatch:batches];
+}
+
+void Metal2GraphicsManager::SetSkyBox(const DrawFrameContext& context)
+{
+    [m_pRenderer setSkyBox:context];
+}
+
+void Metal2GraphicsManager::DrawSkyBox()
+{
+    [m_pRenderer drawSkyBox];
 }

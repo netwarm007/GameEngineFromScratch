@@ -5,13 +5,13 @@
 
 namespace My {
     struct DrawFrameContext : PerFrameConstants {
-        intptr_t globalShadowMap;
-        intptr_t shadowMap;
-        intptr_t cubeShadowMap;
-        uint32_t globalShadowMapCount;
-        uint32_t shadowMapCount;
-        uint32_t cubeShadowMapCount;
-        intptr_t skybox;
+        int32_t globalShadowMap;
+        int32_t shadowMap;
+        int32_t cubeShadowMap;
+        int32_t globalShadowMapCount;
+        int32_t shadowMapCount;
+        int32_t cubeShadowMapCount;
+        int32_t skybox;
 
         DrawFrameContext ()
         {
