@@ -26,13 +26,15 @@ void ShadowMapPass::Draw(Frame& frame)
     }
 
     // count shadow map
-    vector<decltype(frame.frameContext.m_lights)::iterator> lights_cast_shadow;
+    vector<Light*> lights_cast_shadow;
 
-    for (auto it = frame.frameContext.m_lights.begin(); it != frame.frameContext.m_lights.end(); it++)
+    for (int32_t i = 0; i < frame.frameContext.numLights; i++)
     {
-        if (it->lightCastShadow)
+        auto& light = frame.frameContext.lights[i];
+        
+        if (light.lightCastShadow)
         {
-            switch (it->lightType)
+            switch (light.lightType)
             {
                 case LightType::Omni:
                     frame.frameContext.cubeShadowMapCount++;
@@ -50,7 +52,7 @@ void ShadowMapPass::Draw(Frame& frame)
                     assert(0);
             }
 
-            lights_cast_shadow.push_back(it);
+            lights_cast_shadow.push_back(&light);
         }
     }
 

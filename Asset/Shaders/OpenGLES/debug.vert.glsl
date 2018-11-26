@@ -3,8 +3,8 @@
 struct a2v
 {
     vec3 inputPosition;
+    vec2 inputUV;
     vec3 inputNormal;
-    vec3 inputUV;
     vec3 inputTangent;
     vec3 inputBiTangent;
 };
@@ -44,8 +44,8 @@ layout(binding = 0, std140) uniform PerFrameConstants
 } _43;
 
 layout(location = 0) in vec3 a_inputPosition;
-layout(location = 1) in vec3 a_inputNormal;
-layout(location = 2) in vec3 a_inputUV;
+layout(location = 1) in vec2 a_inputUV;
+layout(location = 2) in vec3 a_inputNormal;
 layout(location = 3) in vec3 a_inputTangent;
 layout(location = 4) in vec3 a_inputBiTangent;
 
@@ -62,8 +62,8 @@ void main()
 {
     a2v a;
     a.inputPosition = a_inputPosition;
-    a.inputNormal = a_inputNormal;
     a.inputUV = a_inputUV;
+    a.inputNormal = a_inputNormal;
     a.inputTangent = a_inputTangent;
     a.inputBiTangent = a_inputBiTangent;
     a2v param = a;

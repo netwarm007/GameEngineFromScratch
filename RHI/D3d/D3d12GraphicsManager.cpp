@@ -876,10 +876,6 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
 {
     HRESULT hr;
 
-    m_kSizePerFrameConstantBuffer = ALIGN(sizeof(DrawFrameContext) + sizeof(Light) * m_kMaxLightCount, 256); // CB size is required to be 256-byte aligned.
-    m_kSizePerBatchConstantBuffer = ALIGN(sizeof(DrawBatchContext), 256); // CB size is required to be 256-byte aligned.
-    m_kSizeConstantBufferPerFrame = m_kSizePerFrameConstantBuffer + m_kSizePerBatchConstantBuffer;
-
     D3D12_HEAP_PROPERTIES prop = { D3D12_HEAP_TYPE_UPLOAD, 
         D3D12_CPU_PAGE_PROPERTY_UNKNOWN, 
         D3D12_MEMORY_POOL_UNKNOWN,
@@ -923,13 +919,13 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
         // Per frame constant buffer descriptor
         cbvDesc.BufferLocation = pConstantUploadBuffer->GetGPUVirtualAddress() 
                                     + i * m_kSizeConstantBufferPerFrame;
-        cbvDesc.SizeInBytes = static_cast<UINT>(m_kSizePerFrameConstantBuffer);
+        cbvDesc.SizeInBytes = static_cast<UINT>(kSizePerFrameConstantBuffer);
         m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
         cbvHandle.ptr += m_nCbvSrvDescriptorSize;
 
         // Per batch constant buffer descriptor
-        cbvDesc.BufferLocation += m_kSizePerFrameConstantBuffer;
-        cbvDesc.SizeInBytes = static_cast<UINT>(m_kSizePerBatchConstantBuffer);
+        cbvDesc.BufferLocation += kSizePerFrameConstantBuffer;
+        cbvDesc.SizeInBytes = static_cast<UINT>(kSizePerBatchConstantBuffer);
         m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
         cbvHandle.ptr += m_nCbvSrvDescriptorSize;
     }
@@ -951,8 +947,6 @@ void D3d12GraphicsManager::RegisterMsaaRtAsTexture()
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
     uint32_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
-    srvHandle.ptr = m_pCbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart().ptr + (m_kTextureDescOffset + texture_id) * m_nCbvSrvDescriptorSize;
-    m_pDev->CreateShaderResourceView(m_pMsaaRenderTarget, &srvDesc, srvHandle);
     m_TextureIndex["MSAA"] = texture_id;
 }
 
@@ -1563,7 +1557,7 @@ void D3d12GraphicsManager::EndScene()
     m_VertexBufferView.clear();
     m_IndexBufferView.clear();
 
-    for (int i = 0; i < kFrameCount; i++)
+    for (int i = 0; i < m_kFrameCount; i++)
     {
         auto& batchContexts = m_Frames[i].batchContexts;
 
@@ -1673,7 +1667,7 @@ void D3d12GraphicsManager::DrawBatch(const DrawBatchContext& context)
             srvDesc.Texture2D.MipLevels = -1;
             srvDesc.Texture2D.MostDetailedMip = 0;
             D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-            srvHandle.ptr = m_pCbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart().ptr + (m_kTextureDescOffset + m_kMaxTextureCount * m_nFrameIndex) * m_nCbvSrvDescriptorSize;
+            srvHandle.ptr = m_pCbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_kTextureDescStartIndex * m_nCbvSrvDescriptorSize;
             auto pTextureBuffer = m_Textures[texture_index];
             m_pDev->CreateShaderResourceView(pTextureBuffer, &srvDesc, srvHandle);
         }
@@ -1681,7 +1675,7 @@ void D3d12GraphicsManager::DrawBatch(const DrawBatchContext& context)
 
     D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
     srvHandle.ptr = m_pCbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart().ptr 
-        + (m_kTextureDescOffset + m_kMaxTextureCount * m_nFrameIndex) * m_nCbvSrvDescriptorSize;
+        + m_kTextureDescStartIndex * m_nCbvSrvDescriptorSize;
     m_pCommandList->SetGraphicsRootDescriptorTable(2, srvHandle);
 
     // draw the vertex buffer to the back buffer
@@ -1696,7 +1690,7 @@ void D3d12GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)
 void D3d12GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 {
     uint8_t* pHead = m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame;
-    size_t offset = (uint8_t *)&context.m_lights - (uint8_t *)&context;
+    size_t offset = (uint8_t *)&context.lights - (uint8_t *)&context;
 
     memcpy(pHead, 
         &context, 
@@ -1704,7 +1698,7 @@ void D3d12GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 
     pHead += ALIGN(offset, 16); // 16 bytes alignment
 
-    for (const auto& light : context.m_lights)
+    for (const auto& light : context.lights)
     {
         size_t size = ALIGN(sizeof(Light), 16); // 16 bytes alignment
         memcpy(pHead, &light, size);
@@ -1739,8 +1733,8 @@ void D3d12GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
     pbc.modelMatrix = trans;
 
     memcpy(m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame              // offset by frame index
-                + m_kSizePerFrameConstantBuffer                                         // offset by per frame buffer 
-                + context.batchIndex * m_kSizePerBatchConstantBuffer,                                // offset by object index 
+                + kSizePerFrameConstantBuffer                                         // offset by per frame buffer 
+                + context.batchIndex * kSizePerBatchConstantBuffer,                                // offset by object index 
 		&pbc, sizeof(pbc));
 }
 

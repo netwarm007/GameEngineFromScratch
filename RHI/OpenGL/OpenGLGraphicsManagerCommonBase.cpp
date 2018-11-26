@@ -719,7 +719,7 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
 
 void OpenGLGraphicsManagerCommonBase::EndScene()
 {
-    for (int i = 0; i < kFrameCount; i++)
+    for (int i = 0; i < m_kFrameCount; i++)
     {
         auto& batchContexts = m_Frames[i].batchContexts;
 
@@ -799,13 +799,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContex
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant);
 
-    PerFrameConstants constants;
-
-    constants.viewMatrix = context.m_viewMatrix;
-    constants.projectionMatrix = context.m_projectionMatrix;
-    constants.camPos = context.m_camPos;
-    constants.numLights = static_cast<uint32_t>(context.m_lights.size());
-    memcpy(constants.lights, context.m_lights.data(), sizeof(Light) * constants.numLights);
+    const PerFrameConstants& constants = static_cast<const PerFrameConstants&>(context);
 
     assert(blockSize == sizeof(constants));
     glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
@@ -836,9 +830,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawBatchConstant);
 
-    PerBatchConstants constants;
-
-    constants.modelMatrix = context.trans;
+    const PerBatchConstants& constants = static_cast<const PerBatchConstants&>(context);
 
     assert(blockSize == sizeof(constants));
     glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
@@ -1293,7 +1285,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTerrain()
     {
         for (int32_t j = -patch_num_col / 2; j < patch_num_col / 2; j++)
         {
-            MatrixTranslation(m_TerrainDrawBatchContext.trans, patch_size * i, patch_size * j, 0.0f);
+            MatrixTranslation(m_TerrainDrawBatchContext.modelMatrix, patch_size * i, patch_size * j, 0.0f);
             SetPerBatchConstants(m_TerrainDrawBatchContext);
             glDrawElements(m_TerrainDrawBatchContext.mode, m_TerrainDrawBatchContext.count, m_TerrainDrawBatchContext.type, 0x00);
         }

@@ -1,15 +1,10 @@
 #pragma once
 #include <vector>
 #include "Scene.hpp"
-#include "Asset/Shaders/HLSL/cbuffer.h"
+#include "cbuffer.h"
 
 namespace My {
-    struct DrawFrameContext {
-        Matrix4X4f  m_viewMatrix;
-        Matrix4X4f  m_projectionMatrix;
-        Vector3f    m_ambientColor;
-        Vector3f    m_camPos;
-        std::vector<Light> m_lights;
+    struct DrawFrameContext : PerFrameConstants {
         intptr_t globalShadowMap;
         intptr_t shadowMap;
         intptr_t cubeShadowMap;
@@ -29,11 +24,10 @@ namespace My {
         }
     };
 
-    struct DrawBatchContext {
+    struct DrawBatchContext : PerBatchConstants {
         uint32_t batchIndex;
         std::shared_ptr<SceneGeometryNode> node;
         std::shared_ptr<SceneObjectMaterial> material;
-        Matrix4X4f trans;
 
         virtual ~DrawBatchContext() = default;
     };

@@ -2,7 +2,7 @@
 
 struct vert_output
 {
-    vec4 position;
+    vec4 pos;
     vec4 normal;
     vec4 normal_world;
     vec4 v;
@@ -34,8 +34,8 @@ struct Light
 
 layout(std140) uniform PerFrameConstants
 {
-    layout(row_major) mat4 viewMatrix;
-    layout(row_major) mat4 projectionMatrix;
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
     vec4 camPos;
     uint numLights;
     float padding[3];
@@ -399,7 +399,7 @@ vec4 _basic_frag_main(vert_output _input)
 void main()
 {
     vert_output _input;
-    _input.position = gl_FragCoord;
+    _input.pos = gl_FragCoord;
     _input.normal = input_normal;
     _input.normal_world = input_normal_world;
     _input.v = input_v;

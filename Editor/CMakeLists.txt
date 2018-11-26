@@ -1,11 +1,18 @@
 IF(APPLE)
     set(SHADER_SOURCES basic.vert basic.frag
+                debug.vert debug.frag
+                pbr.frag
+                skybox.vert skybox.frag
+                integrateBRDF.comp integrateBRDF.frag
+                shadowmap.vert shadowmap.frag
+                shadowmap_omni.vert shadowmap_omni.frag
             )
 
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air
-            COMMAND xcrun -sdk macosx metal -c ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
+            COMMAND xcrun -sdk macosx metal -gline-tables-only -MO -c ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
             COMMENT "Compile ${SHADER}.metal --> ${SHADER}.air"
+            DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal
             )
 
         list(APPEND AIRS ${SHADER}.air)
@@ -18,7 +25,7 @@ IF(APPLE)
         )
 
     add_custom_command(OUTPUT Editor.metallib
-            COMMAND xcrun -sdk macosx metallib Editor.metalar -o Editor.metallib
+            COMMAND xcrun -sdk macosx metallib Editor.metalar -split-module-without-linking -o Editor.metallib
             COMMENT "Compile Editor.metalar --> Editor.metallib"
             DEPENDS Editor.metalar
         )

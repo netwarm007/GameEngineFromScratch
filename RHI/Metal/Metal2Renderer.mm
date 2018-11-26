@@ -5,6 +5,8 @@
 #import "MetalShaderManager.h"
 #import "Metal2GraphicsManager.h"
 
+using namespace My;
+
 // The max number of command buffers in flight
 static const NSUInteger GEFSMaxBuffersInFlight = 2;
 
@@ -19,7 +21,11 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     id<MTLTexture> _baseColorMap;
     id<MTLTexture> _normalMap;
     id<MTLTexture> _specularMap;
-    id<MTLBuffer> _dynamicUniformBuffers[GEFSMaxBuffersInFlight];
+    id<MTLBuffer> _perFrameUniformBuffers[GEFSMaxBuffersInFlight];
+    id<MTLBuffer> _perBatchUniformBuffers[GEFSMaxBuffersInFlight];
+    std::vector<id<MTLBuffer>> _vertexBuffers;
+    std::vector<id<MTLBuffer>> _indexBuffers;
+    id<MTLSamplerState> _sampler0;
 
     // The index in uniform buffers in _dynamicUniformBuffers to use for the current frame
     uint8_t _uniformBufferIndex;
@@ -38,11 +44,11 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     self = [super init];
     if(self)
     {
+        _uniformBufferIndex = 0;
         _mtkView = mtkView;
         _device = device;
         _inFlightSemaphore = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
         [self loadMetal];
-        [self loadAssets];
     }
 
     return self;
@@ -66,54 +72,82 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     {
         // Create and allocate our uniform buffer object.  Indicate shared storage so that both the
         //  CPU can access the buffer
-        _dynamicUniformBuffers[i] = [_device newBufferWithLength:sizeof(My::DrawFrameContext)
+        _perFrameUniformBuffers[i] = [_device newBufferWithLength:kSizePerFrameConstantBuffer
                                                      options:MTLResourceStorageModeShared];
 
-        _dynamicUniformBuffers[i].label = [NSString stringWithFormat:@"UniformBuffer%lu", i];
+        _perFrameUniformBuffers[i].label = [NSString stringWithFormat:@"PerFrameUniformBuffer%lu", i];
+
+        _perBatchUniformBuffers[i] = [_device newBufferWithLength:kSizePerBatchConstantBuffer
+                                                     options:MTLResourceStorageModeShared];
+
+        _perBatchUniformBuffers[i].label = [NSString stringWithFormat:@"PerBatchUniformBuffer%lu", i];
     }
 
-    _mtlVertexDescriptor = [[MTLVertexDescriptor alloc] init];
+    _mtlVertexDescriptor = [MTLVertexDescriptor new];
 
     // Positions.
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributePosition].offset = 0;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributePosition].bufferIndex = My::BufferIndex::BufferIndexMeshPositions;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].offset = 0;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = 0;
 
     // Texture coordinates.
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTexcoord].format = MTLVertexFormatFloat2;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTexcoord].offset = 0;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTexcoord].bufferIndex = My::BufferIndex::BufferIndexMeshGenerics;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].format = MTLVertexFormatFloat2;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].offset = 0;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].bufferIndex = 1;
 
     // Normals.
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeNormal].format = MTLVertexFormatHalf4;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeNormal].offset = 8;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeNormal].bufferIndex = My::BufferIndex::BufferIndexMeshGenerics;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].format = MTLVertexFormatFloat3;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].offset = 0;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].bufferIndex = 2;
 
     // Tangents
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTangent].format = MTLVertexFormatHalf4;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTangent].offset = 16;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTangent].bufferIndex = My::BufferIndex::BufferIndexMeshGenerics;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].format = MTLVertexFormatFloat3;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].offset = 0;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].bufferIndex = 3;
 
     // Bitangents
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeBitangent].format = MTLVertexFormatHalf4;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeBitangent].offset = 24;
-    _mtlVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeBitangent].bufferIndex = My::BufferIndex::BufferIndexMeshGenerics;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].format = MTLVertexFormatFloat3;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].offset = 0;
+    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].bufferIndex = 4;
 
     // Position Buffer Layout
-    _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshPositions].stride = 12;
-    _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshPositions].stepRate = 1;
-    _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshPositions].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlVertexDescriptor.layouts[0].stride = 12;
+    _mtlVertexDescriptor.layouts[0].stepRate = 1;
+    _mtlVertexDescriptor.layouts[0].stepFunction = MTLVertexStepFunctionPerVertex;
 
-    // Generic Attribute Buffer My::BufferIndex::Layout
-    _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshGenerics].stride = 32;
-    _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshGenerics].stepRate = 1;
-    _mtlVertexDescriptor.layouts[My::BufferIndex::BufferIndexMeshGenerics].stepFunction = MTLVertexStepFunctionPerVertex;
+    // UV Buffer Layout
+    _mtlVertexDescriptor.layouts[1].stride = 8;
+    _mtlVertexDescriptor.layouts[1].stepRate = 1;
+    _mtlVertexDescriptor.layouts[1].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // Normal Buffer Layout
+    _mtlVertexDescriptor.layouts[2].stride = 12;
+    _mtlVertexDescriptor.layouts[2].stepRate = 1;
+    _mtlVertexDescriptor.layouts[2].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // Tangent Buffer Layout
+    _mtlVertexDescriptor.layouts[3].stride = 12;
+    _mtlVertexDescriptor.layouts[3].stepRate = 1;
+    _mtlVertexDescriptor.layouts[3].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // Bitangent Buffer Layout
+    _mtlVertexDescriptor.layouts[4].stride = 12;
+    _mtlVertexDescriptor.layouts[4].stepRate = 1;
+    _mtlVertexDescriptor.layouts[4].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    MTLSamplerDescriptor* samplerDescriptor = [MTLSamplerDescriptor new];
+    samplerDescriptor.minFilter = MTLSamplerMinMagFilterNearest;
+    samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
+    samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
+
+    _sampler0 = [_device newSamplerStateWithDescriptor:samplerDescriptor];
 
     id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:@"basic_vert_main"];
     id<MTLFunction> fragmentFunction = [myLibrary newFunctionWithName:@"basic_frag_main"];
 
     // Create a reusable pipeline state
-    MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
+    MTLRenderPipelineDescriptor *pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
     pipelineStateDescriptor.label = @"MyPipeline";
     pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
     pipelineStateDescriptor.vertexFunction = vertexFunction;
@@ -121,15 +155,16 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     pipelineStateDescriptor.vertexDescriptor = _mtlVertexDescriptor;
     pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
     pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
-    pipelineStateDescriptor.stencilAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
+    //pipelineStateDescriptor.stencilAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
 
     _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
     if (!_pipelineState)
     {
         NSLog(@"Failed to created pipeline state, error %@", error);
+        assert(0);
     }
 
-    MTLDepthStencilDescriptor *depthStateDesc = [[MTLDepthStencilDescriptor alloc] init];
+    MTLDepthStencilDescriptor *depthStateDesc = [MTLDepthStencilDescriptor new];
     depthStateDesc.depthCompareFunction = MTLCompareFunctionLess;
     depthStateDesc.depthWriteEnabled = YES;
     _depthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
@@ -138,130 +173,52 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     _commandQueue = [_device newCommandQueue];
 }
 
-/// Create and load our assets into Metal objects including meshes and textures
-- (void) loadAssets
+- (void)createVertexBuffer:(const SceneObjectVertexArray&)v_property_array
 {
-    NSError *error;
-
-#if 0
-    // Create a ModelIO vertexDescriptor so that we format/layout our ModelIO mesh vertices to
-    // fit our Metal render pipeline's vertex descriptor layout
-    MDLVertexDescriptor *modelIOVertexDescriptor =
-        MTKModelIOVertexDescriptorFromMetal(_mtlVertexDescriptor);
-
-    // Indicate how each Metal vertex descriptor attribute maps to each ModelIO  attribute
-    modelIOVertexDescriptor.attributes[My::VertexAttribute::VertexAttributePosition].name  = MDLVertexAttributePosition;
-    modelIOVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTexcoord].name  = MDLVertexAttributeTextureCoordinate;
-    modelIOVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeNormal].name    = MDLVertexAttributeNormal;
-    modelIOVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeTangent].name   = MDLVertexAttributeTangent;
-    modelIOVertexDescriptor.attributes[My::VertexAttribute::VertexAttributeBitangent].name = MDLVertexAttributeBitangent;
-
-    // Create a MetalKit mesh buffer allocator so that ModelIO  will load mesh data directly into
-    // Metal buffers accessible by the GPU
-    MTKMeshBufferAllocator *metalAllocator =
-        [[MTKMeshBufferAllocator alloc] initWithDevice: _device];
-
-    // Use MetalKit's to load textures from our asset catalog (Assets.xcassets)
-    MTKTextureLoader *textureLoader = [[MTKTextureLoader alloc] initWithDevice:_device];
-
-    // Load our textures with shader read using private storage
-    NSDictionary *textureLoaderOptions =
-    @{
-      MTKTextureLoaderOptionTextureUsage       : @(MTLTextureUsageShaderRead),
-      MTKTextureLoaderOptionTextureStorageMode : @(MTLStorageModePrivate)
-      };
-
-    _baseColorMap = [textureLoader newTextureWithName:@"CanBaseColorMap"
-                                          scaleFactor:1.0
-                                               bundle:nil
-                                              options:textureLoaderOptions
-                                                error:&error];
-
-    if(!_baseColorMap || error)
-    {
-        NSLog(@"Error creating base color texture %@", error.localizedDescription);
-    }
-
-    _normalMap = [textureLoader newTextureWithName:@"CanNormalMap"
-                                       scaleFactor:1.0
-                                            bundle:nil
-                                           options:textureLoaderOptions
-                                             error:&error];
-    if(!_normalMap || error)
-    {
-        NSLog(@"Error creating normal map texture %@", error.localizedDescription);
-    }
-
-    _specularMap = [textureLoader newTextureWithName:@"CanSpecularMap"
-                                         scaleFactor:1.0
-                                              bundle:nil
-                                             options:textureLoaderOptions
-                                               error:&error];
-
-    if(!_specularMap || error)
-    {
-        NSLog(@"Error creating specular texture %@", error.localizedDescription);
-    }
-#endif
-
+    id<MTLBuffer> vertexBuffer;
+    auto dataSize = v_property_array.GetDataSize();
+	auto pData = v_property_array.GetData();
+    vertexBuffer = [_device newBufferWithBytes:pData length:dataSize options:MTLResourceStorageModeShared];
+    _vertexBuffers.push_back(vertexBuffer);
 }
 
-/// Update any per frame shading state (including updating dynamically changing Metal buffer)
-- (void) updateStateForFrameNumber:(NSUInteger)frameNumber
+- (void)createIndexBuffer:(const SceneObjectIndexArray&)index_array
 {
-    float rotation = frameNumber * .01;
-
-    _uniformBufferIndex = frameNumber % 3;
-
-    My::DrawFrameContext* uniforms = (My::DrawFrameContext*)_dynamicUniformBuffers[_uniformBufferIndex].contents;
-
-#if 0
-    vector_float3 ambientLightColor = {0.02, 0.02, 0.02};
-    uniforms->ambientLightColor = ambientLightColor;
-
-    vector_float3 directionalLightDirection = vector_normalize ((vector_float3){0.0,  0.0, 1.0});
-
-    uniforms->directionalLightInvDirection = -directionalLightDirection;
-
-    vector_float3 directionalLightColor = {.7, .7, .7};
-    uniforms->directionalLightColor = directionalLightColor;;
-
-    uniforms->materialShininess = 2;
-
-    const vector_float3   modelRotationAxis = {1, 0, 0};
-    const matrix_float4x4 modelRotationMatrix = matrix4x4_rotation(rotation, modelRotationAxis);
-    const matrix_float4x4 modelMatrix = modelRotationMatrix;
-
-    const vector_float3 cameraTranslation = {0.0, 0.0, -8.0};
-    const matrix_float4x4 viewMatrix = matrix4x4_translation(-cameraTranslation);
-    const matrix_float4x4 viewProjectionMatrix = matrix_multiply(_projectionMatrix, viewMatrix);
-
-    uniforms->modelMatrix = modelMatrix;
-    uniforms->modelViewProjectionMatrix = matrix_multiply(viewProjectionMatrix, modelMatrix);
-
-    uniforms->normalMatrix = matrix3x3_upper_left(modelMatrix);
-#endif
+    id<MTLBuffer> indexBuffer;
+    auto dataSize = index_array.GetDataSize();
+	auto pData = index_array.GetData();
+    indexBuffer = [_device newBufferWithBytes:pData length:dataSize options:MTLResourceStorageModeShared];
+    _indexBuffers.push_back(indexBuffer);
 }
 
 /// Called whenever view changes orientation or layout is changed
 - (void)updateDrawableSize:(CGSize)size
 {
+#if 0
     /// React to resize of our draw rect.  In particular update our perspective matrix
     // Update the aspect ratio and projection matrix since the view orientation or size has changed
     float aspect = size.width / (float)size.height;
-#if 0
+
     _projectionMatrix = matrix_perspective_left_hand(65.0f * (M_PI / 180.0f), aspect, 0.1f, 100.0);
 #endif
 }
 
+- (void)setPerFrameConstants:(const DrawFrameContext&)context
+{
+    std::memcpy(_perFrameUniformBuffers[_uniformBufferIndex].contents, &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
+}
+
+- (void)setPerBatchConstants:(const DrawBatchContext&)context
+{
+    std::memcpy(_perBatchUniformBuffers[_uniformBufferIndex].contents, &static_cast<const PerBatchConstants&>(context), sizeof(PerBatchConstants));
+}
+
 // Called whenever the view needs to render
-- (void)drawFrameNumber:(NSUInteger)frameNumber
+- (void)drawBatch:(const MtlDrawBatchContext&)dbc
 {
     // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the Metal
     // pipeline (App, Metal, Drivers, GPU, etc)
     dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
-
-    [self updateStateForFrameNumber:frameNumber];
 
     // Create a new command buffer for each render pass to the current drawable
     id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
@@ -275,7 +232,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
     if(renderPassDescriptor != nil)
     {
         // Clear the screen
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.1f, 0.2f, 0.3f, 1.0f);
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
 
         // Create a render command encoder so we can render into something
         id<MTLRenderCommandEncoder> renderEncoder =
@@ -285,51 +242,51 @@ static const NSUInteger GEFSMaxBuffersInFlight = 2;
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [renderEncoder pushDebugGroup:@"DrawMesh"];
 
+        [renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [renderEncoder setCullMode:MTLCullModeBack];
         [renderEncoder setRenderPipelineState:_pipelineState];
         [renderEncoder setDepthStencilState:_depthState];
 
-        [renderEncoder setVertexBuffer:_dynamicUniformBuffers[_uniformBufferIndex]
-                                offset:0
-                               atIndex:My::BufferIndex::BufferIndexUniforms];
-
-        [renderEncoder setFragmentBuffer:_dynamicUniformBuffers[_uniformBufferIndex]
+        [renderEncoder setVertexBuffer:_perFrameUniformBuffers[_uniformBufferIndex]
                                   offset:0
-                                 atIndex:My::BufferIndex::BufferIndexUniforms];
+                                 atIndex:10];
 
-#if 0
+        [renderEncoder setVertexBuffer:_perBatchUniformBuffers[_uniformBufferIndex]
+                                  offset:0
+                                 atIndex:11];
+
+        [renderEncoder setFragmentBuffer:_perFrameUniformBuffers[_uniformBufferIndex]
+                                  offset:0
+                                 atIndex:10];
+
         // Set mesh's vertex buffers
-        for (NSUInteger bufferIndex = 0; bufferIndex < _mesh.vertexBuffers.count; bufferIndex++)
+        for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)
         {
-            MTKMeshBuffer *vertexBuffer = _mesh.vertexBuffers[bufferIndex];
-            if((NSNull*)vertexBuffer != [NSNull null])
-            {
-                [renderEncoder setVertexBuffer:vertexBuffer.buffer
-                                        offset:vertexBuffer.offset
-                                       atIndex:bufferIndex];
-            }
+            id<MTLBuffer> vertexBuffer = _vertexBuffers[bufferIndex];
+            [renderEncoder setVertexBuffer:vertexBuffer
+                                    offset:0
+                                   atIndex:bufferIndex];
         }
 
+        [renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+#if 0
         // Set any textures read/sampled from our render pipeline
         [renderEncoder setFragmentTexture:_baseColorMap
-                                  atIndex:My::TextureIndex::TextureIndexBaseColor];
+                                  atIndex:TextureIndex::TextureIndexBaseColor];
 
         [renderEncoder setFragmentTexture:_normalMap
-                                  atIndex:My::TextureIndex::TextureIndexNormal];
+                                  atIndex:TextureIndex::TextureIndexNormal];
 
         [renderEncoder setFragmentTexture:_specularMap
-                                  atIndex:My::TextureIndex::TextureIndexSpecular];
+                                  atIndex:TextureIndex::TextureIndexSpecular];
 
-        // Draw each submesh of our mesh
-        for(MTKSubmesh *submesh in _mesh.submeshes)
-        {
-            [renderEncoder drawIndexedPrimitives:submesh.primitiveType
-                                      indexCount:submesh.indexCount
-                                       indexType:submesh.indexType
-                                     indexBuffer:submesh.indexBuffer.buffer
-                               indexBufferOffset:submesh.indexBuffer.offset];
-        }
 #endif
+        // Draw our mesh
+        [renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                  indexCount:dbc.index_count
+                                   indexType:MTLIndexTypeUInt32
+                                 indexBuffer:_indexBuffers[dbc.index_offset]
+                           indexBufferOffset:0];
 
         [renderEncoder popDebugGroup];
 

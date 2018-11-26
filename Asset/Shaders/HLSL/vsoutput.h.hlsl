@@ -1,6 +1,6 @@
 struct vert_output
 {
-    float4 position         : SV_Position;
+    float4 pos              : SV_Position;
     float4 normal           : TEXCOORD0;
     float4 normal_world     : TEXCOORD1;
     float4 v                : TEXCOORD2;
@@ -13,5 +13,5 @@ struct vert_output
 
 struct debug_vert_output
 {
-    float4 position         : SV_Position;
+    float4 pos              : SV_Position;
 };

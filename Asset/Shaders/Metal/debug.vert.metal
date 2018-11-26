@@ -8,8 +8,8 @@ using namespace metal;
 struct a2v
 {
     float3 inputPosition;
+    float2 inputUV;
     float3 inputNormal;
-    float3 inputUV;
     float3 inputTangent;
     float3 inputBiTangent;
 };
@@ -62,8 +62,8 @@ struct debug_vert_main_out
 struct debug_vert_main_in
 {
     float3 a_inputPosition [[attribute(0)]];
-    float3 a_inputNormal [[attribute(1)]];
-    float3 a_inputUV [[attribute(2)]];
+    float2 a_inputUV [[attribute(1)]];
+    float3 a_inputNormal [[attribute(2)]];
     float3 a_inputTangent [[attribute(3)]];
     float3 a_inputBiTangent [[attribute(4)]];
 };
@@ -82,8 +82,8 @@ vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], c
     debug_vert_main_out out = {};
     a2v a;
     a.inputPosition = in.a_inputPosition;
-    a.inputNormal = in.a_inputNormal;
     a.inputUV = in.a_inputUV;
+    a.inputNormal = in.a_inputNormal;
     a.inputTangent = in.a_inputTangent;
     a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;

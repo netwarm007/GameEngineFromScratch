@@ -16,7 +16,7 @@ using namespace std;
 int GraphicsManager::Initialize()
 {
     int result = 0;
-    m_Frames.resize(kFrameCount);
+    m_Frames.resize(m_kFrameCount);
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
 
 	InitConstants();
@@ -55,6 +55,8 @@ void GraphicsManager::Tick()
     EndFrame();
 
     Present();
+
+    m_nFrameIndex = (m_nFrameIndex + 1) % m_kFrameCount;
 }
 
 void GraphicsManager::UpdateConstants()
@@ -80,9 +82,9 @@ void GraphicsManager::UpdateConstants()
             // replace the translation part of the matrix with simlation result directly
             memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
 
-            dbc->trans = trans;
+            dbc->modelMatrix = trans;
         } else {
-            dbc->trans = *dbc->node->GetCalculatedTransform();
+            dbc->modelMatrix = *dbc->node->GetCalculatedTransform();
         }
     }
 
@@ -126,14 +128,14 @@ void GraphicsManager::CalculateCameraMatrix()
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
     if (pCameraNode) {
         auto transform = *pCameraNode->GetCalculatedTransform();
-        frameContext.m_camPos = Vector3f({transform[3][0], transform[3][1], transform[3][2]});
+        frameContext.camPos = Vector3f({transform[3][0], transform[3][1], transform[3][2]});
         InverseMatrix4X4f(transform);
-        frameContext.m_viewMatrix = transform;
+        frameContext.viewMatrix = transform;
     }
     else {
         // use default build-in camera
         Vector3f position = { 0.0f, -5.0f, 0.0f }, lookAt = { 0.0f, 0.0f, 0.0f }, up = { 0.0f, 0.0f, 1.0f };
-        BuildViewRHMatrix(frameContext.m_viewMatrix, position, lookAt, up);
+        BuildViewRHMatrix(frameContext.viewMatrix, position, lookAt, up);
     }
 
     float fieldOfView = PI / 3.0f;
@@ -153,18 +155,18 @@ void GraphicsManager::CalculateCameraMatrix()
     float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
 
     // Build the perspective projection matrix.
-    BuildPerspectiveFovRHMatrix(frameContext.m_projectionMatrix, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+    BuildPerspectiveFovRHMatrix(frameContext.projectionMatrix, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
 }
 
 void GraphicsManager::CalculateLights()
 {
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
-    frameContext.m_ambientColor = { 0.01f, 0.01f, 0.01f };
-    frameContext.m_lights.clear();
+ 
+    frameContext.numLights = 0;
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
     for (auto LightNode : scene.LightNodes) {
-        Light& light = *(new Light());
+        Light& light = frameContext.lights[frameContext.numLights++];
         auto pLightNode = LightNode.second.lock();
         if (!pLightNode) continue;
         auto trans_ptr = pLightNode->GetCalculatedTransform();
@@ -290,8 +292,6 @@ void GraphicsManager::CalculateLights()
         {
             assert(0);
         }
-
-        frameContext.m_lights.push_back(std::move(light));
     }
 }
 

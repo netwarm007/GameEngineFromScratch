@@ -33,8 +33,6 @@ namespace My {
         void BeginFrame() final;
         void EndFrame() final;
 
-        void RenderBuffers();
-
         HRESULT CreateDescriptorHeaps();
         HRESULT CreateRenderTarget();
         HRESULT CreateDepthStencil();
@@ -56,11 +54,6 @@ namespace My {
         HRESULT MsaaResolve();
 
     private:
-        static const uint32_t           m_kFrameCount  = 2;
-        static const uint32_t           m_kMaxTextureCount  = 2048;
-        static const uint32_t           m_kMaxLightCount = 100;
-        static const uint32_t           m_kTextureDescOffset = 2 * m_kFrameCount;
-
         ID3D12Device*                   m_pDev       = nullptr;             // the pointer to our Direct3D device interface
         D3D12_VIEWPORT                  m_ViewPort;                         // viewport structure
         D3D12_RECT                      m_ScissorRect;                      // scissor rect structure
@@ -101,9 +94,6 @@ namespace My {
         };
 
         uint8_t*                        m_pCbvDataBegin = nullptr;
-		size_t				            m_kSizePerFrameConstantBuffer;
-		size_t				            m_kSizePerBatchConstantBuffer;
-		size_t				            m_kSizeConstantBufferPerFrame;
 
         // Synchronization objects
         HANDLE                          m_hFenceEvent;

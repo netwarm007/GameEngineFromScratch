@@ -26,7 +26,7 @@ struct Light
 
 struct vert_output
 {
-    float4 position;
+    float4 pos;
     float4 normal;
     float4 normal_world;
     float4 v;
@@ -226,9 +226,9 @@ float3 linePlaneIntersect(thread const float3& line_start, thread const float3& 
 float3 apply_areaLight(thread const Light& light, thread const vert_output& _input, thread sampler samp0, constant PerFrameConstants& v_545, thread texture2d<float> diffuseMap)
 {
     float3 N = normalize(_input.normal.xyz);
-    float3 right = normalize((float4(1.0, 0.0, 0.0, 0.0) * v_545.viewMatrix).xyz);
-    float3 pnormal = normalize((light.lightDirection * v_545.viewMatrix).xyz);
-    float3 ppos = (light.lightPosition * v_545.viewMatrix).xyz;
+    float3 right = normalize((v_545.viewMatrix * float4(1.0, 0.0, 0.0, 0.0)).xyz);
+    float3 pnormal = normalize((v_545.viewMatrix * light.lightDirection).xyz);
+    float3 ppos = (v_545.viewMatrix * light.lightPosition).xyz;
     float3 up = normalize(cross(pnormal, right));
     right = normalize(cross(up, pnormal));
     float width = light.lightSize.x;
@@ -354,7 +354,7 @@ float shadow_test(thread const float4& p, thread const Light& light, thread cons
 float3 apply_light(thread const Light& light, thread const vert_output& _input, thread texturecube_array<float> cubeShadowMap, thread sampler samp0, thread texture2d_array<float> shadowMap, thread texture2d_array<float> globalShadowMap, constant PerFrameConstants& v_545, thread texture2d<float> diffuseMap)
 {
     float3 N = normalize(_input.normal.xyz);
-    float3 light_dir = normalize((light.lightDirection * v_545.viewMatrix).xyz);
+    float3 light_dir = normalize((v_545.viewMatrix * light.lightDirection).xyz);
     float3 L;
     if (light.lightPosition.w == 0.0)
     {
@@ -362,7 +362,7 @@ float3 apply_light(thread const Light& light, thread const vert_output& _input, 
     }
     else
     {
-        L = (light.lightPosition * v_545.viewMatrix).xyz - _input.v.xyz;
+        L = (v_545.viewMatrix * light.lightPosition).xyz - _input.v.xyz;
     }
     float lightToSurfDist = length(L);
     L = normalize(L);
@@ -465,7 +465,7 @@ float4 _basic_frag_main(thread const vert_output& _input, thread texturecube_arr
     return float4(gamma_correction(param_3), 1.0);
 }
 
-fragment basic_frag_main_out basic_frag_main(basic_frag_main_in in [[stage_in]], constant PerFrameConstants& v_545 [[buffer(0)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(7)]], texture2d_array<float> globalShadowMap [[texture(8)]], texturecube_array<float> cubeShadowMap [[texture(9)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
+fragment basic_frag_main_out basic_frag_main(basic_frag_main_in in [[stage_in]], constant PerFrameConstants& v_545 [[buffer(10)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> shadowMap [[texture(7)]], texture2d_array<float> globalShadowMap [[texture(8)]], texturecube_array<float> cubeShadowMap [[texture(9)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     basic_frag_main_out out = {};
     float3x3 input_TBN = {};
@@ -473,7 +473,7 @@ fragment basic_frag_main_out basic_frag_main(basic_frag_main_in in [[stage_in]],
     input_TBN[1] = in.input_TBN_1;
     input_TBN[2] = in.input_TBN_2;
     vert_output _input;
-    _input.position = gl_FragCoord;
+    _input.pos = gl_FragCoord;
     _input.normal = in.input_normal;
     _input.normal_world = in.input_normal_world;
     _input.v = in.input_v;
