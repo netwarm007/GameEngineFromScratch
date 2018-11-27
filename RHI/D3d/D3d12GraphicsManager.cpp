@@ -263,7 +263,7 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pCommandAllocator);
 	SafeRelease(&m_pDepthStencilBuffer);
     SafeRelease(&m_pMsaaRenderTarget);
-    for (uint32_t i = 0; i < m_kFrameCount; i++) {
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         SafeRelease(&m_pRenderTargets[i]);
     }
     SafeRelease(&m_pSwapChain);
@@ -306,7 +306,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
 
     // Describe and create a render target view (RTV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-    rtvHeapDesc.NumDescriptors = m_kFrameCount + 1; // +1 for MSAA Resolver
+    rtvHeapDesc.NumDescriptors = GfxConfiguration::kMaxInFlightFrameCount + 1; // +1 for MSAA Resolver
     rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_pRtvHeap)))) {
@@ -327,7 +327,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
     // Describe and create a Constant Buffer View (CBV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
     cbvHeapDesc.NumDescriptors =
-        m_kFrameCount * 2;                // 1 perFrame and 1 per DrawBatch per Frame
+        GfxConfiguration::kMaxInFlightFrameCount * 2;                // 1 perFrame and 1 per DrawBatch per Frame
     cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_pCbvHeap)))) {
@@ -338,7 +338,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
 
     // Describe and create a Shader Resource View (SRV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = m_kMaxTextureCount;           // m_kMaxTextureCount for the SRV(Texture).
+    srvHeapDesc.NumDescriptors = GfxConfiguration::kMaxTextureCount;           // GfxConfiguration::kMaxTextureCount for the SRV(Texture).
     srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_pSrvHeap)))) {
@@ -347,7 +347,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
 
     // Describe and create a sampler descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-    samplerHeapDesc.NumDescriptors = m_kMaxTextureCount; // this is the max D3d12 HW support currently
+    samplerHeapDesc.NumDescriptors = GfxConfiguration::kMaxTextureCount; // this is the max D3d12 HW support currently
     samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
     samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&m_pSamplerHeap)))) {
@@ -370,7 +370,7 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
 
     // Create a RTV for each frame.
-    for (uint32_t i = 0; i < m_kFrameCount; i++)
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
         if (FAILED(hr = m_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i])))) {
             return hr;
@@ -697,108 +697,92 @@ uint32_t D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 {
     HRESULT hr = S_OK;
 
-    const auto& it = m_TextureIndex.find(texture.GetName());
-	if (it == m_TextureIndex.cend()) {
-		const auto& pImage = texture.GetTextureImage();
+    const auto& pImage = texture.GetTextureImage();
 
-		// Describe and create a Texture2D.
-		D3D12_HEAP_PROPERTIES prop = {};
-		prop.Type = D3D12_HEAP_TYPE_DEFAULT;
-		prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-		prop.CreationNodeMask = 1;
-		prop.VisibleNodeMask = 1;
+    // Describe and create a Texture2D.
+    D3D12_HEAP_PROPERTIES prop = {};
+    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    prop.CreationNodeMask = 1;
+    prop.VisibleNodeMask = 1;
 
-        DXGI_FORMAT format = getDxgiFormat(*pImage);
+    DXGI_FORMAT format = getDxgiFormat(*pImage);
 
-		D3D12_RESOURCE_DESC textureDesc = {};
-		textureDesc.MipLevels = 1;
-		textureDesc.Format = format;
-		textureDesc.Width = pImage->Width;
-		textureDesc.Height = pImage->Height;
-		textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-		textureDesc.DepthOrArraySize = 1;
-		textureDesc.SampleDesc.Count = 1;
-		textureDesc.SampleDesc.Quality = 0;
-		textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    D3D12_RESOURCE_DESC textureDesc = {};
+    textureDesc.MipLevels = 1;
+    textureDesc.Format = format;
+    textureDesc.Width = pImage->Width;
+    textureDesc.Height = pImage->Height;
+    textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+    textureDesc.DepthOrArraySize = 1;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.SampleDesc.Quality = 0;
+    textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
-		ID3D12Resource* pTextureBuffer;
-		ID3D12Resource* pTextureUploadHeap;
+    ID3D12Resource* pTextureBuffer;
+    ID3D12Resource* pTextureUploadHeap;
 
-		if (FAILED(hr = m_pDev->CreateCommittedResource(
-			&prop,
-			D3D12_HEAP_FLAG_NONE,
-			&textureDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			nullptr,
-			IID_PPV_ARGS(&pTextureBuffer))))
-		{
-			return hr;
-		}
+    if (FAILED(hr = m_pDev->CreateCommittedResource(
+        &prop,
+        D3D12_HEAP_FLAG_NONE,
+        &textureDesc,
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&pTextureBuffer))))
+    {
+        return hr;
+    }
 
-		const UINT subresourceCount = textureDesc.DepthOrArraySize * textureDesc.MipLevels;
-		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(pTextureBuffer, 0, subresourceCount);
+    const UINT subresourceCount = textureDesc.DepthOrArraySize * textureDesc.MipLevels;
+    const UINT64 uploadBufferSize = GetRequiredIntermediateSize(pTextureBuffer, 0, subresourceCount);
 
-		prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+    prop.Type = D3D12_HEAP_TYPE_UPLOAD;
 
-		D3D12_RESOURCE_DESC resourceDesc = {};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		resourceDesc.Alignment = 0;
-		resourceDesc.Width = uploadBufferSize;
-		resourceDesc.Height = 1;
-		resourceDesc.DepthOrArraySize = 1;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
-		resourceDesc.SampleDesc.Count = 1;
-		resourceDesc.SampleDesc.Quality = 0;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+    D3D12_RESOURCE_DESC resourceDesc = {};
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resourceDesc.Alignment = 0;
+    resourceDesc.Width = uploadBufferSize;
+    resourceDesc.Height = 1;
+    resourceDesc.DepthOrArraySize = 1;
+    resourceDesc.MipLevels = 1;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
+    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.SampleDesc.Quality = 0;
+    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-		if (FAILED(hr = m_pDev->CreateCommittedResource(
-			&prop,
-			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&pTextureUploadHeap)
-		)))
-		{
-			return hr;
-		}
+    if (FAILED(hr = m_pDev->CreateCommittedResource(
+        &prop,
+        D3D12_HEAP_FLAG_NONE,
+        &resourceDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&pTextureUploadHeap)
+    )))
+    {
+        return hr;
+    }
 
-		// Copy data to the intermediate upload heap and then schedule a copy 
-		// from the upload heap to the Texture2D.
-		D3D12_SUBRESOURCE_DATA textureData = {};
-    	textureData.pData = pImage->data;
-		textureData.RowPitch = pImage->pitch;
-		textureData.SlicePitch = pImage->pitch * pImage->Height;
+    // Copy data to the intermediate upload heap and then schedule a copy 
+    // from the upload heap to the Texture2D.
+    D3D12_SUBRESOURCE_DATA textureData = {};
+    textureData.pData = pImage->data;
+    textureData.RowPitch = pImage->pitch;
+    textureData.SlicePitch = pImage->pitch * pImage->Height;
 
-		UpdateSubresources(m_pCommandList, pTextureBuffer, pTextureUploadHeap, 0, 0, subresourceCount, &textureData);
-		D3D12_RESOURCE_BARRIER barrier = {};
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = pTextureBuffer;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-		barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_GENERIC_READ;
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		m_pCommandList->ResourceBarrier(1, &barrier);
+    UpdateSubresources(m_pCommandList, pTextureBuffer, pTextureUploadHeap, 0, 0, subresourceCount, &textureData);
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = pTextureBuffer;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_GENERIC_READ;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    m_pCommandList->ResourceBarrier(1, &barrier);
 
-		// Describe and create a SRV for the texture.
-		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = format;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = -1;
-        srvDesc.Texture2D.MostDetailedMip = 0;
-		D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-		size_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
-		srvHandle.ptr = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart().ptr + texture_id * m_nCbvSrvDescriptorSize;
-		m_pDev->CreateShaderResourceView(pTextureBuffer, &srvDesc, srvHandle);
-		m_TextureIndex[texture.GetName()] = texture_id;
-
-		m_Buffers.push_back(pTextureUploadHeap);
-		m_Textures.push_back(pTextureBuffer);
-	}
+    m_Buffers.push_back(pTextureUploadHeap);
+    m_Textures.push_back(pTextureBuffer);
 
     return hr;
 }
@@ -832,9 +816,7 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
 {
     HRESULT hr;
 
-    m_kSizePerFrameConstantBuffer = ALIGN(sizeof(DrawFrameContext) + sizeof(Light) * m_kMaxLightCount, 256); // CB size is required to be 256-byte aligned.
-    m_kSizePerBatchConstantBuffer = ALIGN(sizeof(DrawBatchContext), 256); // CB size is required to be 256-byte aligned.
-    m_kSizeConstantBufferPerFrame = m_kSizePerFrameConstantBuffer + m_kSizePerBatchConstantBuffer;
+    const auto kSizeConstantBufferPerFrame = kSizePerBatchConstantBuffer * GfxConfiguration::kMaxSceneObjectCount;
 
     D3D12_HEAP_PROPERTIES prop = { D3D12_HEAP_TYPE_UPLOAD, 
         D3D12_CPU_PAGE_PROPERTY_UNKNOWN, 
@@ -845,7 +827,7 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = m_kSizeConstantBufferPerFrame * m_kFrameCount;
+    resourceDesc.Width = kSizeConstantBufferPerFrame;
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -867,49 +849,12 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
         return hr;
     }
 
-    // populate descriptor table
-    D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle;
-    cbvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr;
-    for (auto i = 0; i < m_kFrameCount; i++)
-    {
-        // Describe and create constant buffer descriptors.
-        // 1 per frame and 1 per batch descriptor per frame
-        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-
-        // Per frame constant buffer descriptor
-        cbvDesc.BufferLocation = pConstantUploadBuffer->GetGPUVirtualAddress() 
-                                    + i * m_kSizeConstantBufferPerFrame;
-        cbvDesc.SizeInBytes = static_cast<UINT>(m_kSizePerFrameConstantBuffer);
-        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
-        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
-
-        // Per batch constant buffer descriptor
-        cbvDesc.BufferLocation += m_kSizePerFrameConstantBuffer;
-        cbvDesc.SizeInBytes = static_cast<UINT>(m_kSizePerBatchConstantBuffer);
-        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
-        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
-    }
-
     D3D12_RANGE readRange = { 0, 0 };
     hr = pConstantUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_pCbvDataBegin));
 
     m_Buffers.push_back(pConstantUploadBuffer);
 
     return hr;
-}
-
-void D3d12GraphicsManager::RegisterMsaaRtAsTexture()
-{
-    // Describe and create a SRV for the texture.
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
-    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-    uint32_t texture_id = static_cast<uint32_t>(m_TextureIndex.size());
-    srvHandle.ptr = m_pCbvHeap->GetCPUDescriptorHandleForHeapStart().ptr + texture_id * m_nCbvSrvDescriptorSize;
-    m_pDev->CreateShaderResourceView(m_pMsaaRenderTarget, &srvDesc, srvHandle);
-    m_TextureIndex["MSAA"] = texture_id;
 }
 
 HRESULT D3d12GraphicsManager::CreateGraphicsResources()
@@ -1007,7 +952,7 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
                                                             // DXGI_SWAP_EFFECT_FLOP_DISCARD
     scd.SampleDesc.Quality = 0;                             // multi-samples can not be used when in SwapEffect sets to
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
-    scd.BufferCount = m_kFrameCount;                          // back buffer count
+    scd.BufferCount = GfxConfiguration::kMaxInFlightFrameCount;                          // back buffer count
     scd.Scaling     = DXGI_SCALING_STRETCH;
     scd.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD;        // DXGI_SWAP_EFFECT_FLIP_DISCARD only supported after Win10
                                                             // use DXGI_SWAP_EFFECT_DISCARD on platforms early than Win10
@@ -1068,6 +1013,14 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     if (FAILED(hr = CreateCommandList())) {
         return hr;
     }
+    cout << "Done!" << endl;
+
+    cout << "Creating Constant Buffer ...";
+	CreateConstantBuffer();
+    cout << "Done!" << endl;
+
+    cout << "Creating Sampler Buffer ...";
+	CreateSamplerBuffer();
     cout << "Done!" << endl;
 
     return hr;
@@ -1419,8 +1372,52 @@ void D3d12GraphicsManager::BeginScene(const Scene& scene)
             dbc->batchIndex = batch_index++;
 			dbc->index_count = (UINT)index_array.GetIndexCount();
             dbc->property_count = vertexPropertiesCount;
+            // load material textures
 			if (material) {
-                dbc->material = material;
+                if (auto& texture = material->GetBaseColor().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    //texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.diffuseMap = texture_id;
+                }
+
+                if (auto& texture = material->GetNormal().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    //texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.normalMap = texture_id;
+                }
+
+                if (auto& texture = material->GetMetallic().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    //texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.metallicMap = texture_id;
+                }
+
+                if (auto& texture = material->GetRoughness().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    //texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.roughnessMap = texture_id;
+                }
+
+                if (auto& texture = material->GetAO().ValueMap)
+                {
+                    int32_t texture_id;
+                    const Image& image = *texture->GetTextureImage();
+                    //texture_id = [m_pRenderer createTexture:image];
+
+                    dbc->material.aoMap = texture_id;
+                }
 			}
 
             dbc->node = pGeometryNode;
@@ -1428,54 +1425,6 @@ void D3d12GraphicsManager::BeginScene(const Scene& scene)
             m_Frames[m_nFrameIndex].batchContexts.push_back(dbc);
         }
     }
-    cout << "Done!" << endl;
-
-    cout << "Creating Constant Buffer ...";
-	CreateConstantBuffer();
-
-    cout << "Creating Sampler Buffer ...";
-	CreateSamplerBuffer();
-    cout << "Done!" << endl;
-
-    cout << "Alias MSAA RT as Texture ...";
-    RegisterMsaaRtAsTexture();
-
-	for (const auto& _it : scene.Materials)
-	{
-		const auto& material = _it.second;
-		if (material) {
-			const auto& color = material->GetBaseColor();
-			if (const auto& texture = color.ValueMap) {
-				CreateTextureBuffer(*texture);
-			}
-
-			const auto& normal = material->GetNormal();
-			if (const auto& texture = normal.ValueMap) {
-				CreateTextureBuffer(*texture);
-			}
-
-			const auto& metallic = material->GetMetallic();
-			if (const auto& texture = metallic.ValueMap) {
-				CreateTextureBuffer(*texture);
-			}
-
-			const auto& roughness = material->GetRoughness();
-			if (const auto& texture = roughness.ValueMap) {
-				CreateTextureBuffer(*texture);
-			}
-
-			const auto& ao = material->GetAO();
-			if (const auto& texture = ao.ValueMap) {
-				CreateTextureBuffer(*texture);
-			}
-
-			const auto& height = material->GetHeight();
-			if (const auto& texture = height.ValueMap) {
-				CreateTextureBuffer(*texture);
-			}
-		}
-	}
-
     cout << "Done!" << endl;
 
     if (SUCCEEDED(hr = m_pCommandList->Close()))
@@ -1515,11 +1464,10 @@ void D3d12GraphicsManager::EndScene()
         SafeRelease(&p);
     }
     m_Textures.clear();
-    m_TextureIndex.clear();
     m_VertexBufferView.clear();
     m_IndexBufferView.clear();
 
-    for (int i = 0; i < kFrameCount; i++)
+    for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
         auto& batchContexts = m_Frames[i].batchContexts;
 
@@ -1569,7 +1517,7 @@ void D3d12GraphicsManager::Clear()
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
     // rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
     // bind the MSAA buffer
-    rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_kFrameCount * m_nRtvDescriptorSize;
+    rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + GfxConfiguration::kMaxInFlightFrameCount * m_nRtvDescriptorSize;
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
     dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
     m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
@@ -1587,101 +1535,62 @@ void D3d12GraphicsManager::Draw()
     MsaaResolve();
 }
 
-void D3d12GraphicsManager::DrawBatch(const DrawBatchContext& context)
+void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
-    const D3dDrawBatchContext& dbc = dynamic_cast<const D3dDrawBatchContext&>(context);
-    // do 3D rendering on the back buffer here
-    // CBV Per Batch
-    D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle;
-    uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * 2; // 2 descriptors for each draw call
-    cbvSrvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr 
-                            + (nFrameResourceDescriptorOffset + dbc.batchIndex * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
-    m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
-
-    m_pCommandList->SetPipelineState(m_pPipelineState);
-
-    // select which vertex buffer(s) to use
-    for (uint32_t j = 0; j < dbc.property_count; j++)
+    for (const auto& pDbc : batches)
     {
-        m_pCommandList->IASetVertexBuffers(j, 1, &m_VertexBufferView[dbc.property_offset + j]);
-    }
+        const D3dDrawBatchContext& dbc = dynamic_cast<const D3dDrawBatchContext&>(*pDbc);
+        // do 3D rendering on the back buffer here
+        // CBV Per Batch
+        D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle;
+        uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * 2; // 2 descriptors for each draw call
+        cbvSrvHandle.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr 
+                                + (nFrameResourceDescriptorOffset + dbc.batchIndex * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
+        m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
 
-    // set primitive topology
-    m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_pCommandList->SetPipelineState(m_pPipelineState);
 
-    // select which index buffer to use
-    m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[dbc.index_offset]);
-
-    // Texture
-    if(dbc.material)
-    {
-        if(const auto& texture = dbc.material->GetBaseColor().ValueMap)
+        // select which vertex buffer(s) to use
+        for (uint32_t j = 0; j < dbc.property_count; j++)
         {
-            const auto texture_index = m_TextureIndex[texture->GetName()];
-            D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
-            srvHandle.ptr = m_pSrvHeap->GetGPUDescriptorHandleForHeapStart().ptr + texture_index * m_nCbvSrvDescriptorSize;
-            m_pCommandList->SetGraphicsRootDescriptorTable(2, srvHandle);
+            m_pCommandList->IASetVertexBuffers(j, 1, &m_VertexBufferView[dbc.property_offset + j]);
         }
-    }
 
-    // draw the vertex buffer to the back buffer
-    m_pCommandList->DrawIndexedInstanced(dbc.index_count, 1, 0, 0, 0);
+        // set primitive topology
+        m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        // select which index buffer to use
+        m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[dbc.index_offset]);
+
+        // Texture
+        if (dbc.material.diffuseMap >= 0)
+        {
+        }
+
+        // draw the vertex buffer to the back buffer
+        m_pCommandList->DrawIndexedInstanced(dbc.index_count, 1, 0, 0, 0);
+    }
 }
 
-void D3d12GraphicsManager::UseShaderProgram(const intptr_t shaderProgram)
+void D3d12GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
 {
 
 }
 
 void D3d12GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 {
-    uint8_t* pHead = m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame;
-    size_t offset = (uint8_t *)&context.m_lights - (uint8_t *)&context;
-
-    memcpy(pHead, 
-        &context, 
-        offset); 
-
-    pHead += ALIGN(offset, 16); // 16 bytes alignment
-
-    for (const auto& light : context.m_lights)
-    {
-        size_t size = ALIGN(sizeof(Light), 16); // 16 bytes alignment
-        memcpy(pHead, &light, size);
-        pHead += size;
-    }
+    memcpy(m_pCbvDataBegin[m_nFrameIndex]
+            , &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
 }
 
-void D3d12GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
+void D3d12GraphicsManager::SetPerBatchConstants(const std::vector<shared_ptr<DrawBatchContext>>& batches)
 {
-    PerBatchConstants pbc;
-    memset(&pbc, 0x00, sizeof(pbc));
-
-    Matrix4X4f trans;
-    if (void* rigidBody = context.node->RigidBody()) {
-        // the geometry has rigid body bounded, we blend the simlation result here.
-        Matrix4X4f simulated_result = g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
-
-        BuildIdentityMatrix(trans);
-
-        // apply the rotation part of the simlation result
-        memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
-        memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
-        memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
-
-        // replace the translation part of the matrix with simlation result directly
-        memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
-
-    } else {
-        trans = *context.node->GetCalculatedTransform();
+    for (const auto& pDbc : batches)
+    {
+        memcpy(m_pCbvDataBegin[m_nFrameIndex]
+                + kSizePerFrameConstantBuffer + pDbc->batchIndex * kSizePerBatchConstantBuffer
+                , &static_cast<const PerBatchConstants&>(*pDbc), sizeof(PerBatchConstants));
     }
-
-    pbc.modelMatrix = trans;
-
-    memcpy(m_pCbvDataBegin + m_nFrameIndex * m_kSizeConstantBufferPerFrame              // offset by frame index
-                + m_kSizePerFrameConstantBuffer                                         // offset by per frame buffer 
-                + context.batchIndex * m_kSizePerBatchConstantBuffer,                                // offset by object index 
-		&pbc, sizeof(pbc));
 }
 
 HRESULT D3d12GraphicsManager::ResetCommandList()

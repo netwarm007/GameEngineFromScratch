@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include "cbuffer.h"
 #include "GfxConfiguration.h"
 #include "FrameStructure.hpp"
 #include "IRuntimeModule.hpp"
@@ -107,7 +108,7 @@ namespace My {
         void UpdateConstants();
 
     protected:
-        uint32_t                        m_nFrameIndex = 0;
+        uint32_t m_nFrameIndex = 0;
 
         std::vector<Frame>  m_Frames;
         std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;

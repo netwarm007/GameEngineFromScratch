@@ -13,7 +13,7 @@ void BRDFIntegrator::Dispatch()
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-        intptr_t brdf_lut;
+        int32_t brdf_lut;
         const uint32_t width = 512u;
         const uint32_t height = 512u;
         const uint32_t depth = 1u;

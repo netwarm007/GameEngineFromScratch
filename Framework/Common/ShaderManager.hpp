@@ -28,12 +28,12 @@ namespace My {
         ShaderManager() = default;
         ~ShaderManager() = default;
 
-        virtual intptr_t GetDefaultShaderProgram(DefaultShaderIndex index) final
+        virtual int32_t GetDefaultShaderProgram(DefaultShaderIndex index) final
         {
             return m_DefaultShaders[index];
         }
 
     protected:
-        std::unordered_map<const DefaultShaderIndex, intptr_t> m_DefaultShaders;
+        std::unordered_map<const DefaultShaderIndex, int32_t> m_DefaultShaders;
     };
 }

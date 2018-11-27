@@ -28,7 +28,7 @@ void ShadowMapPass::Draw(Frame& frame)
     // count shadow map
     vector<Light*> lights_cast_shadow;
 
-    for (int32_t i = 0; i < frame.frameContext.numLights; i++)
+    for (uint32_t i = 0; i < frame.frameContext.numLights; i++)
     {
         auto& light = frame.lightInfo.lights[i];
         
@@ -87,7 +87,7 @@ void ShadowMapPass::Draw(Frame& frame)
 
     for (auto it : lights_cast_shadow)
     {
-        intptr_t shadowmap;
+        int32_t shadowmap;
         DefaultShaderIndex shader_index = DefaultShaderIndex::ShadowMap;
         int32_t width, height;
 

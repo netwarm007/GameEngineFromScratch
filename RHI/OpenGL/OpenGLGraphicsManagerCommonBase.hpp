@@ -18,24 +18,22 @@ namespace My {
         int Initialize() = 0;
         void Finalize() final;
 
-        void Clear() final;
         void Draw() final;
         void Present() final;
 
         bool CheckCapability(RHICapability cap) final;
 
-        void UseShaderProgram(const intptr_t shaderProgram) final;
+        void UseShaderProgram(const int32_t shaderProgram) final;
         void SetPerFrameConstants(const DrawFrameContext& context) final;
-        void SetPerBatchConstants(const DrawBatchContext& context) final;
-        void DrawBatch(const DrawBatchContext& context) final;
-        void DrawBatchDepthOnly(const DrawBatchContext& context) final;
+        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
+        void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
-        intptr_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
-        intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
-        void BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) final;
-        void EndShadowMap(const intptr_t shadowmap, const uint32_t layer_index) final;
+        int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
+        int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
+        void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) final;
+        void EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) final;
         void SetShadowMaps(const Frame& frame) final;
-        void DestroyShadowMap(intptr_t& shadowmap) final;
+        void DestroyShadowMap(int32_t& shadowmap) final;
 
         // skybox
         void SetSkyBox(const DrawFrameContext& context) final;
@@ -45,14 +43,12 @@ namespace My {
         void SetTerrain(const DrawFrameContext& context) final;
         void DrawTerrain() final;
 
-        intptr_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;
-        void BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height) final;
-        void EndRenderToTexture(intptr_t& context) final;
+        int32_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;
+        void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height) final;
+        void EndRenderToTexture(int32_t& context) final;
 
-        intptr_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
+        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
-
-        intptr_t GetTexture(const char* id) final;
 
         void DrawFullScreenQuad() final;
 
@@ -67,10 +63,10 @@ namespace My {
         void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color) final;
         void DrawTriangleStrip(const PointList& vertices, const Vector3f& color) final;
         void ClearDebugBuffers() final;
-        void DrawTextureOverlay(const intptr_t texture, float vp_left, float vp_top, float vp_width, float vp_height) final;
-        void DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) final;
-        void DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
-        void DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
+        void DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height) final;
+        void DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) final;
+        void DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
+        void DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
         void RenderDebugBuffers();
 #endif
 
@@ -120,7 +116,6 @@ namespace My {
 
         std::vector<GLuint> m_Buffers;
         std::vector<GLuint> m_Textures;
-        std::map<std::string, GLuint> m_TextureIndex;
 
 #ifdef DEBUG
         std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;
