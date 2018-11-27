@@ -20,19 +20,18 @@ namespace My {
         void Present() final;
 
         void UseShaderProgram(const int32_t shaderProgram) final;
-        void SetPerFrameConstants(const DrawFrameContext& context) final;
-        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
     private:
-        void Clear();
-
         void BeginScene(const Scene& scene) final;
         void EndScene() final;
 
         void BeginFrame() final;
         void EndFrame() final;
+
+        void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         HRESULT CreateDescriptorHeaps();
         HRESULT CreateRenderTarget();

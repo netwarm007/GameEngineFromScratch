@@ -17,9 +17,6 @@ namespace My {
         void Present() final;
     
         void UseShaderProgram(const int32_t shaderProgram) final;
-        void SetPerFrameConstants(const DrawFrameContext& context) final;
-        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
-        void SetLightInfo(const LightInfo& lightInfo) final;
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
@@ -43,6 +40,10 @@ namespace My {
         void initializeGeometries(const Scene& scene);
         void initializeSkyBox(const Scene& scene);
         void initializeTerrain(const Scene& scene);
+
+        void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
+        void SetLightInfo(const LightInfo& lightInfo) final;
 
     private:
 #ifdef __OBJC__

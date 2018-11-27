@@ -5,7 +5,7 @@ if [ -e $InputFile ]; then
     echo "HLSL --> SPIR-V"
     External/`uname -s`/bin/glslangValidator -H -IFramework/Common -o Asset/Shaders/Vulkan/$1.$2.spv -e $1_$2_main $InputFile  
     echo "SPIR-V --> Desktop GLSL"
-    External/`uname -s`/bin/SPIRV-Cross --version 400 --remove-unused-variables --no-420pack-extension --output Asset/Shaders/OpenGL/$1.$2.glsl Asset/Shaders/Vulkan/$1.$2.spv
+    External/`uname -s`/bin/SPIRV-Cross --version 420 --remove-unused-variables --output Asset/Shaders/OpenGL/$1.$2.glsl Asset/Shaders/Vulkan/$1.$2.spv
     echo "SPIR-V --> Embeded GLSL"
     External/`uname -s`/bin/SPIRV-Cross --version 310 --es --remove-unused-variables --output Asset/Shaders/OpenGLES/$1.$2.glsl Asset/Shaders/Vulkan/$1.$2.spv
     echo "SPIR-V --> Metal"

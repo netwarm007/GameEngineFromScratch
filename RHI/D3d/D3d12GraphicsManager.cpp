@@ -1505,15 +1505,7 @@ void D3d12GraphicsManager::BeginFrame()
     m_pCommandList->RSSetViewports(1, &m_ViewPort);
     m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
     m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-}
 
-void D3d12GraphicsManager::EndFrame()
-{
-    m_pCommandList->Close();
-}
-
-void D3d12GraphicsManager::Clear()
-{
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
     // rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
     // bind the MSAA buffer
@@ -1526,6 +1518,11 @@ void D3d12GraphicsManager::Clear()
     const FLOAT clearColor[] = { 0.2f, 0.3f, 0.4f, 1.0f };
     m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_pCommandList->ClearDepthStencilView(m_pDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+}
+
+void D3d12GraphicsManager::EndFrame()
+{
+    m_pCommandList->Close();
 }
 
 void D3d12GraphicsManager::Draw()

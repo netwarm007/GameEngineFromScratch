@@ -94,6 +94,7 @@ void GraphicsManager::UpdateConstants()
 
     SetPerFrameConstants(frame.frameContext);
     SetPerBatchConstants(frame.batchContexts);
+    SetLightInfo(frame.lightInfo);
 }
 
 void GraphicsManager::Draw()
@@ -104,10 +105,6 @@ void GraphicsManager::Draw()
     {
         pDrawPass->Draw(frame);
     }
-
-#ifdef DEBUG
-    RenderDebugBuffers();
-#endif
 }
 
 void GraphicsManager::Present()

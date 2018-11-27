@@ -35,9 +35,6 @@ namespace My {
         virtual bool CheckCapability(RHICapability cap);
 
         virtual void UseShaderProgram(const int32_t shaderProgram);
-        virtual void SetPerFrameConstants(const DrawFrameContext& context);
-        virtual void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
-        virtual void SetLightInfo(const LightInfo& lightInfo);
 
         virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
 
@@ -105,7 +102,12 @@ namespace My {
         void InitConstants();
         void CalculateCameraMatrix();
         void CalculateLights();
+
         void UpdateConstants();
+
+        virtual void SetLightInfo(const LightInfo& lightInfo);
+        virtual void SetPerFrameConstants(const DrawFrameContext& context);
+        virtual void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
 
     protected:
         uint32_t m_nFrameIndex = 0;

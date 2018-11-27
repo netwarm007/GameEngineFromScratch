@@ -112,11 +112,17 @@ struct global_textures
 
 struct frame_textures
 {
-	int32_t shadowMap;
-	int32_t globalShadowMap;
-	int32_t cubeShadowMap;
-	int32_t skybox;
-	int32_t terrainHeightMap;
+	int32_t shadowMap = -1;
+	int32_t shadowMapCount = 0;
+
+	int32_t globalShadowMap = -1;
+	int32_t globalShadowMapCount = 0;
+
+	int32_t cubeShadowMap = -1;
+	int32_t cubeShadowMapCount = 0;
+
+	int32_t skybox = -1;
+	int32_t terrainHeightMap = -1;
 };
 #else
 Texture2D diffuseMap 			REGISTER(t0);
