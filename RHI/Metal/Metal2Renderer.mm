@@ -22,6 +22,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     // Metal objects
     id<MTLRenderPipelineState> _pipelineState;
+    id<MTLRenderPipelineState> _pbrPipelineState;
     id<MTLRenderPipelineState> _skyboxPipelineState;
     id<MTLRenderPipelineState> _shadowMapPipelineState;
     id<MTLDepthStencilState> _depthState;
@@ -191,6 +192,25 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     depthStateDesc.depthWriteEnabled = YES;
     _depthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
 
+    // Create PBR pipeline state
+    vertexFunction = [myLibrary newFunctionWithName:@"pbr_vert_main"];
+    fragmentFunction = [myLibrary newFunctionWithName:@"pbr_frag_main"];
+
+    pipelineStateDescriptor.label = @"PBR Pipeline";
+    pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
+    pipelineStateDescriptor.vertexFunction = vertexFunction;
+    pipelineStateDescriptor.fragmentFunction = fragmentFunction;
+    pipelineStateDescriptor.vertexDescriptor = _mtlVertexDescriptor;
+    pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
+    pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
+
+    _pbrPipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
+    if (!_pbrPipelineState)
+    {
+        NSLog(@"Failed to created pipeline state, error %@", error);
+        assert(0);
+    }
+
     // Create shadowmap pipeline state
     id<MTLFunction> shadowMapVertexFunction = [myLibrary newFunctionWithName:@"shadowmap_vert_main"];
     id<MTLFunction> shadowMapFragmentFunction = [myLibrary newFunctionWithName:@"shadowmap_frag_main"];
@@ -292,10 +312,24 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             format = MTLPixelFormatRGBA8Unorm;
             break;
         case 64:
-            format = MTLPixelFormatRGBA16Float;
+            if (img.is_float)
+            {
+                format = MTLPixelFormatRGBA16Float;
+            }
+            else
+            {
+                format = MTLPixelFormatRGBA16Unorm;
+            }
             break;
         case 128:
-            format = MTLPixelFormatRGBA32Float;
+            if (img.is_float)
+            {
+                format = MTLPixelFormatRGBA32Float;
+            }
+            else
+            {
+                format = MTLPixelFormatRGBA32Uint;
+            }
             break;
         default:
             assert(0);
@@ -548,7 +582,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     {
         [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
         [_renderEncoder setCullMode:MTLCullModeBack];
-        [_renderEncoder setRenderPipelineState:_pipelineState];
+        [_renderEncoder setRenderPipelineState:_pbrPipelineState];
         [_renderEncoder setDepthStencilState:_depthState];
 
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
