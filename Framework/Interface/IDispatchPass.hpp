@@ -1,9 +1,8 @@
 #pragma once
-#include <iostream>
-#include "Interface.hpp"
+#include "IPass.hpp"
 
 namespace My {
-    Interface IDispatchPass
+    Interface IDispatchPass : public IPass
     {
     public:
         IDispatchPass() = default;

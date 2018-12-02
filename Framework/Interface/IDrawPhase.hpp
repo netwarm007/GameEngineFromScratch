@@ -1,13 +1,13 @@
 #pragma once
-#include "IPass.hpp"
+#include "IPhase.hpp"
 #include "FrameStructure.hpp"
 
 namespace My {
-    Interface IDrawPass : public IPass
+    Interface IDrawPhase : public IPhase
     {
     public:
-        IDrawPass() = default;
-        virtual ~IDrawPass() {};
+        IDrawPhase() = default;
+        virtual ~IDrawPhase() {};
 
         virtual void Draw(Frame& frame) = 0;
     };

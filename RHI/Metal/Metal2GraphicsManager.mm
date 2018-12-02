@@ -237,9 +237,19 @@ void Metal2GraphicsManager::EndFrame()
     [m_pRenderer endFrame];
 }
 
+void Metal2GraphicsManager::BeginPass()
+{
+    [m_pRenderer beginPass];
+}
+
+void Metal2GraphicsManager::EndPass()
+{
+    [m_pRenderer endPass];
+}
+
 void Metal2GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
 {
-
+    [m_pRenderer useShaderProgram:shaderProgram];
 }
 
 void Metal2GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
@@ -260,6 +270,36 @@ void Metal2GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
 void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
     [m_pRenderer drawBatch:batches];
+}
+
+int32_t Metal2GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) 
+{
+    return [m_pRenderer generateCubeShadowMapArray:width height:height count:count];
+}
+
+int32_t Metal2GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) 
+{
+    return [m_pRenderer generateShadowMapArray:width height:height count:count];
+}
+
+void Metal2GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) 
+{
+    [m_pRenderer beginShadowMap:light shadowmap:shadowmap width:width height:height layer_index:layer_index];
+}
+
+void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) 
+{
+    [m_pRenderer endShadowMap:shadowmap layer_index:layer_index];
+}
+
+void Metal2GraphicsManager::SetShadowMaps(const Frame& frame) 
+{
+    [m_pRenderer setShadowMaps:frame];
+}
+
+void Metal2GraphicsManager::DestroyShadowMap(int32_t& shadowmap) 
+{
+    [m_pRenderer destroyShadowMap:shadowmap];
 }
 
 void Metal2GraphicsManager::SetSkyBox(const DrawFrameContext& context)

@@ -23,6 +23,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Metal objects
     id<MTLRenderPipelineState> _pipelineState;
     id<MTLRenderPipelineState> _skyboxPipelineState;
+    id<MTLRenderPipelineState> _shadowMapPipelineState;
     id<MTLDepthStencilState> _depthState;
     id<MTLDepthStencilState> _skyboxDepthState;
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
@@ -165,11 +166,11 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     _sampler0 = [_device newSamplerStateWithDescriptor:samplerDescriptor];
 
+    // Create basic pipeline state
     id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:@"basic_vert_main"];
     id<MTLFunction> fragmentFunction = [myLibrary newFunctionWithName:@"basic_frag_main"];
 
-    // Create a reusable pipeline state
-    MTLRenderPipelineDescriptor *pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
+    MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
     pipelineStateDescriptor.label = @"Basic Pipeline";
     pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
     pipelineStateDescriptor.vertexFunction = vertexFunction;
@@ -189,6 +190,25 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     depthStateDesc.depthCompareFunction = MTLCompareFunctionLess;
     depthStateDesc.depthWriteEnabled = YES;
     _depthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
+
+    // Create shadowmap pipeline state
+    id<MTLFunction> shadowMapVertexFunction = [myLibrary newFunctionWithName:@"shadowmap_vert_main"];
+    id<MTLFunction> shadowMapFragmentFunction = [myLibrary newFunctionWithName:@"shadowmap_frag_main"];
+
+    pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
+    pipelineStateDescriptor.label = @"Shadow Map Pipeline";
+    pipelineStateDescriptor.sampleCount = 1;
+    pipelineStateDescriptor.vertexFunction = shadowMapVertexFunction;
+    pipelineStateDescriptor.fragmentFunction = Nil;
+    pipelineStateDescriptor.vertexDescriptor = _mtlPosOnlyVertexDescriptor;
+    pipelineStateDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
+
+    _shadowMapPipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
+    if (!_shadowMapPipelineState)
+    {
+        NSLog(@"Failed to created pipeline state, error %@", error);
+        assert(0);
+    }
 
     // Create skybox pipeline state
     id<MTLFunction> skyboxVertexFunction = [myLibrary newFunctionWithName:@"skybox_vert_main"];
@@ -381,17 +401,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     if(_renderPassDescriptor != nil)
     {
         _renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
-
-        _renderEncoder =
-            [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
-        _renderEncoder.label = @"MyRenderEncoder";
     }
 }
 
 - (void)endFrame
 {
-    [_renderEncoder endEncoding];
-
     [_commandBuffer presentDrawable:_mtkView.currentDrawable];
 
     // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
@@ -406,6 +420,25 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_commandBuffer commit];
 
     _currentBufferIndex = (_currentBufferIndex + 1) % GEFSMaxBuffersInFlight;
+}
+
+- (void)beginPass
+{
+    if(_renderPassDescriptor != nil)
+    {
+        _renderEncoder =
+            [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+        _renderEncoder.label = @"MyRenderEncoder";
+    }
+}
+
+- (void)endPass
+{
+    [_renderEncoder endEncoding];
+}
+
+- (void)useShaderProgram:(const int32_t)shaderProgram
+{
 }
 
 - (void)setPerFrameConstants:(const DrawFrameContext&)context
@@ -589,10 +622,13 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                         atIndex:4];
             }
 
-    #if 0
-            [_renderEncoder setFragmentTexture:_heightMap
-                                    atIndex:5];
+            if (dbc.material.heightMap >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[dbc.material.heightMap]
+                                        atIndex:5];
+            }
 
+    #if 0
             [_renderEncoder setFragmentTexture:_brdfLUT
                                     atIndex:6];
 
@@ -622,6 +658,79 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
         [_renderEncoder popDebugGroup];
     }
+}
+
+- (int32_t)generateShadowMapArray:(const uint32_t)width
+                           height:(const uint32_t)height
+                            count:(const uint32_t)count;
+{
+    id<MTLTexture> texture;
+
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+
+    textureDesc.textureType = MTLTextureType2DArray;
+    textureDesc.arrayLength = count;
+    textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
+    textureDesc.width = width;
+    textureDesc.height = height;
+    textureDesc.storageMode = MTLStorageModePrivate;
+
+    // create the texture obj
+    texture = [_device newTextureWithDescriptor:textureDesc];
+
+    uint32_t index = _textures.size();
+    _textures.push_back(texture);
+
+    return static_cast<int32_t>(index);
+}
+
+- (int32_t)generateCubeShadowMapArray:(const uint32_t)width 
+                               height:(const uint32_t)height
+                                count:(const uint32_t)count
+{
+    id<MTLTexture> texture;
+
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+
+    textureDesc.textureType = MTLTextureTypeCubeArray;
+    textureDesc.arrayLength = count;
+    textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
+    textureDesc.width = width;
+    textureDesc.height = height;
+    textureDesc.storageMode = MTLStorageModePrivate;
+
+    // create the texture obj
+    texture = [_device newTextureWithDescriptor:textureDesc];
+
+    uint32_t index = _textures.size();
+    _textures.push_back(texture);
+
+    return static_cast<int32_t>(index);
+}
+
+- (void)beginShadowMap:(const Light&)light
+             shadowmap:(const int32_t)shadowmap
+                 width:(const uint32_t)width
+                height:(const uint32_t)height
+           layer_index:(const uint32_t)layer_index;
+{
+
+}
+
+- (void)endShadowMap:(const int32_t)shadowmap
+         layer_index:(const uint32_t)layer_index;
+{
+
+}
+
+- (void)setShadowMaps:(const Frame&)frame;
+{
+
+}
+
+- (void)destroyShadowMap:(int32_t&)shadowmap;
+{
+    _textures[shadowmap] = Nil;
 }
 
 @end

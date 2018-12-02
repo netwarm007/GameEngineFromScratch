@@ -1,10 +1,10 @@
-#include "SkyBoxPass.hpp"
+#include "SkyBoxPhase.hpp"
 #include "GraphicsManager.hpp"
 #include "IShaderManager.hpp"
 
 using namespace My;
 
-void SkyBoxPass::Draw(Frame& frame)
+void SkyBoxPhase::Draw(Frame& frame)
 {
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::SkyBox);
 
