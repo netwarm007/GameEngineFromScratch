@@ -287,6 +287,7 @@ namespace My {
                 
                 img.mipmaps[0].Width = img.Width; 
                 img.mipmaps[0].Height = img.Height; 
+                img.mipmaps[0].pitch = img.pitch;
                 img.mipmaps[0].offset = 0;
                 img.mipmaps[0].data_size = img.data_size;
 
@@ -302,6 +303,7 @@ namespace My {
                             auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) * img.bitcount * 2; //  img.bitcount / 8 * 16
                             img.mipmaps[i].Width = width; 
                             img.mipmaps[i].Height = height; 
+                            img.mipmaps[i].pitch = pitch; 
                             img.mipmaps[i].data_size = pitch * (ALIGN(height, 4) >> 2);
                             img.mipmaps[i].offset = img.data_size;
                             img.data_size += img.mipmaps[i].data_size;
@@ -323,6 +325,7 @@ namespace My {
                     
                 img.mipmaps[0].Width = img.Width; 
                 img.mipmaps[0].Height = img.Height; 
+                img.mipmaps[0].pitch = img.pitch;
                 img.mipmaps[0].offset = 0;
                 img.mipmaps[0].data_size = img.data_size;
 
@@ -338,6 +341,7 @@ namespace My {
                             auto pitch = ALIGN(width * img.bitcount, 8) / 8;
                             img.mipmaps[i].Width = width; 
                             img.mipmaps[i].Height = height; 
+                            img.mipmaps[i].pitch = pitch; 
                             img.mipmaps[i].data_size = pitch * height;
                             img.mipmaps[i].offset = img.data_size;
                             img.data_size += img.mipmaps[i].data_size;

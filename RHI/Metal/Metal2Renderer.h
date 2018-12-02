@@ -37,7 +37,7 @@ namespace My {
 
 - (uint32_t)createTexture:(const My::Image&)image;
 
-- (uint32_t)createCubeTexture:(const std::vector<const std::shared_ptr<My::Image>>&)images;
+- (uint32_t)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
 
 - (void)beginFrame;
 

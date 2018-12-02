@@ -192,14 +192,14 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene)
     if (scene.SkyBox)
     {
         std::vector<const std::shared_ptr<My::Image>> images;
-        for (uint32_t i = 0; i < 12; i++)
+        for (uint32_t i = 0; i < 18; i++)
         {
             auto& texture = scene.SkyBox->GetTexture(i);
             const auto& pImage = texture.GetTextureImage();
             images.push_back(pImage);
         }
 
-        int32_t tex_index = [m_pRenderer createCubeTexture:images];
+        int32_t tex_index = [m_pRenderer createSkyBox:images];
 
         for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
         {

@@ -368,11 +368,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     return index;
 }
 
-- (uint32_t)createCubeTexture:(const std::vector<const std::shared_ptr<My::Image>>&)images;
+- (uint32_t)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
 {
     id<MTLTexture> texture;
 
-    assert(images.size() == 12);
+    assert(images.size() == 18); // 6 sky-cube + 6 irrandiance + 6 radiance
 
     MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
 
@@ -381,16 +381,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     textureDesc.pixelFormat = getMtlPixelFormat(*images[0]);
     textureDesc.width = images[0]->Width;
     textureDesc.height = images[0]->Height;
+    textureDesc.mipmapLevelCount = std::max(images[16]->mipmap_count, 2U);
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    // now upload the data
-    for (int32_t slice = 0; slice < 12; slice++)
+    // now upload the skybox 
+    for (int32_t slice = 0; slice < 6; slice++)
     {
+        assert(images[slice]->mipmap_count == 1);
         MTLRegion region = {
-            { 0, 0, 0 },                   // MTLOrigin
-            {images[slice]->Width, images[slice]->Height, 1} // MTLSize
+            { 0, 0, 0 },                            // MTLOrigin
+{images[slice]->Width, images[slice]->Height, 1}    // MTLSize
         };
 
         [texture replaceRegion:region
@@ -399,6 +401,42 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                     withBytes:images[slice]->data
                     bytesPerRow:images[slice]->pitch
                     bytesPerImage:images[slice]->data_size];
+    }
+
+    // now upload the irradiance map as 2nd mip of skybox
+    for (int32_t slice = 6; slice < 12; slice++)
+    {
+        assert(images[slice]->mipmap_count == 1);
+        MTLRegion region = {
+            { 0, 0, 0 },                                        // MTLOrigin
+            {images[slice]->Width, images[slice]->Height, 1}    // MTLSize
+        };
+
+        [texture replaceRegion:region
+                    mipmapLevel:1
+                    slice:slice - 6
+                    withBytes:images[slice]->data
+                    bytesPerRow:images[slice]->pitch
+                    bytesPerImage:images[slice]->data_size];
+    }
+
+    // now upload the radiance map 2nd cubemap
+    for (int32_t slice = 12; slice < 18; slice++)
+    {
+        for (int32_t mip = 0; mip < images[slice]->mipmap_count; mip++)
+        {
+            MTLRegion region = {
+                { 0, 0, 0 },                                                                // MTLOrigin
+                {images[slice]->mipmaps[mip].Width, images[slice]->mipmaps[mip].Height, 1}  // MTLSize
+            };
+
+            [texture replaceRegion:region
+                        mipmapLevel:mip
+                        slice:slice - 6
+                        withBytes:images[slice]->data + images[slice]->mipmaps[mip].offset
+                        bytesPerRow:images[slice]->mipmaps[mip].pitch
+                        bytesPerImage:images[slice]->mipmaps[mip].data_size];
+        }
     }
 
     uint32_t index = _textures.size();
