@@ -96,9 +96,9 @@ void GraphicsManager::Draw()
 
     for (auto& pDrawPass : m_DrawPasses)
     {
-        pDrawPass->BeginPass();
+        BeginPass();
         pDrawPass->Draw(frame);
-        pDrawPass->EndPass();
+        EndPass();
     }
 
 #ifdef DEBUG
@@ -295,9 +295,9 @@ void GraphicsManager::BeginScene(const Scene& scene)
 {
     for (auto pPass : m_InitPasses)
     {
-        pPass->BeginPass();
+        BeginCompute();
         pPass->Dispatch();
-        pPass->EndPass();
+        EndCompute();
     }
 }
 
@@ -324,6 +324,16 @@ void GraphicsManager::BeginPass()
 void GraphicsManager::EndPass()
 {
     cerr << "[GraphicsManager] EndPass()" << endl;
+}
+
+void GraphicsManager::BeginCompute()
+{
+    cerr << "[GraphicsManager] BeginCompute()" << endl;
+}
+
+void GraphicsManager::EndCompute()
+{
+    cerr << "[GraphicsManager] EndCompute()" << endl;
 }
 
 // skybox

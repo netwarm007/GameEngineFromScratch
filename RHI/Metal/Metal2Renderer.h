@@ -47,6 +47,10 @@ namespace My {
 
 - (void)endPass;
 
+- (void)beginCompute;
+
+- (void)endCompute;
+
 - (void)useShaderProgram:(const int32_t)shaderProgram;
 
 - (int32_t)generateCubeShadowMapArray:(const uint32_t)width 
@@ -69,6 +73,14 @@ namespace My {
 - (void)setShadowMaps:(const Frame&)frame;
 
 - (void)destroyShadowMap:(int32_t&)shadowmap;
+
+- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
+                                   height:(const uint32_t)height
+                                  atIndex:(const uint32_t)atIndex;
+
+- (void)dispatch:(const uint32_t)width
+          height:(const uint32_t)height
+           depth:(const uint32_t)depth;
 
 @property (nonnull, readonly, nonatomic) id<MTLDevice> device;
 

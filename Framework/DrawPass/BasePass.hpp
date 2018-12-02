@@ -9,8 +9,6 @@ namespace My {
     {
     public:
         ~BasePass() = default;
-        void BeginPass(void) override;
-        void EndPass(void) override;
 
         void Draw(Frame& frame) override;
 

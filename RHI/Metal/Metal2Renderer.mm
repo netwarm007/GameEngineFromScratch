@@ -17,14 +17,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     dispatch_semaphore_t _inFlightSemaphore;
     id<MTLCommandQueue> _commandQueue;
     id<MTLCommandBuffer> _commandBuffer;
+    id<MTLCommandBuffer> _computeCommandBuffer;
     MTLRenderPassDescriptor* _renderPassDescriptor;
     id<MTLRenderCommandEncoder> _renderEncoder;
+    id<MTLComputeCommandEncoder> _computeEncoder;
 
     // Metal objects
     id<MTLRenderPipelineState> _pipelineState;
     id<MTLRenderPipelineState> _pbrPipelineState;
     id<MTLRenderPipelineState> _skyboxPipelineState;
     id<MTLRenderPipelineState> _shadowMapPipelineState;
+    id<MTLComputePipelineState> _computePipelineState;
     id<MTLDepthStencilState> _depthState;
     id<MTLDepthStencilState> _skyboxDepthState;
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
@@ -46,6 +49,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     // skybox texture id
     int32_t _skyboxTexIndex;
+    int32_t _brdfLutIndex;
 }
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device.  We'll also use this
@@ -212,13 +216,12 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     }
 
     // Create shadowmap pipeline state
-    id<MTLFunction> shadowMapVertexFunction = [myLibrary newFunctionWithName:@"shadowmap_vert_main"];
-    id<MTLFunction> shadowMapFragmentFunction = [myLibrary newFunctionWithName:@"shadowmap_frag_main"];
+    vertexFunction = [myLibrary newFunctionWithName:@"shadowmap_vert_main"];
 
     pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
     pipelineStateDescriptor.label = @"Shadow Map Pipeline";
     pipelineStateDescriptor.sampleCount = 1;
-    pipelineStateDescriptor.vertexFunction = shadowMapVertexFunction;
+    pipelineStateDescriptor.vertexFunction = vertexFunction;
     pipelineStateDescriptor.fragmentFunction = Nil;
     pipelineStateDescriptor.vertexDescriptor = _mtlPosOnlyVertexDescriptor;
     pipelineStateDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
@@ -231,14 +234,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     }
 
     // Create skybox pipeline state
-    id<MTLFunction> skyboxVertexFunction = [myLibrary newFunctionWithName:@"skybox_vert_main"];
-    id<MTLFunction> skyboxFragmentFunction = [myLibrary newFunctionWithName:@"skybox_frag_main"];
+    vertexFunction = [myLibrary newFunctionWithName:@"skybox_vert_main"];
+    fragmentFunction = [myLibrary newFunctionWithName:@"skybox_frag_main"];
 
     pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
     pipelineStateDescriptor.label = @"Skybox Pipeline";
     pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
-    pipelineStateDescriptor.vertexFunction = skyboxVertexFunction;
-    pipelineStateDescriptor.fragmentFunction = skyboxFragmentFunction;
+    pipelineStateDescriptor.vertexFunction = vertexFunction;
+    pipelineStateDescriptor.fragmentFunction = fragmentFunction;
     pipelineStateDescriptor.vertexDescriptor = _mtlPosOnlyVertexDescriptor;
     pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
     pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
@@ -254,6 +257,16 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     depthStateDesc.depthCompareFunction = MTLCompareFunctionLessEqual;
     depthStateDesc.depthWriteEnabled = NO;
     _skyboxDepthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
+
+    // Create BRDF LUT pipeline state
+    id<MTLFunction> brdfKernelFunction = [myLibrary newFunctionWithName:@"integrateBRDF_comp_main"];
+
+    _computePipelineState = [_device newComputePipelineStateWithFunction:brdfKernelFunction error:&error];
+    if (!_computePipelineState)
+    {
+        NSLog(@"Failed to created BRDF compute pipeline state, error %@", error);
+        assert(0);
+    }
 
     // Create the command queue
     _commandQueue = [_device newCommandQueue];
@@ -509,6 +522,25 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_renderEncoder endEncoding];
 }
 
+- (void)beginCompute
+{
+    // Create a new command buffer for each render pass to the current drawable
+    _computeCommandBuffer = [_commandQueue commandBuffer];
+    _computeCommandBuffer.label = @"MyComputeCommand";
+
+    _computeEncoder = [_computeCommandBuffer computeCommandEncoder];
+    _computeEncoder.label = @"MyComputeEncoder";
+    [_computeEncoder setComputePipelineState:_computePipelineState];
+}
+
+- (void)endCompute
+{
+    [_computeEncoder endEncoding];
+
+    // Finalize rendering here & push the command buffer to the GPU
+    [_computeCommandBuffer commit];
+}
+
 - (void)useShaderProgram:(const int32_t)shaderProgram
 {
 }
@@ -646,6 +678,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                     atIndex:10];
         }
 
+        [_renderEncoder setFragmentTexture:_textures[_brdfLutIndex]
+                                 atIndex:6];
+
         for (const auto& pDbc : batches)
         {
             const MtlDrawBatchContext& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
@@ -734,7 +769,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
 - (int32_t)generateShadowMapArray:(const uint32_t)width
                            height:(const uint32_t)height
-                            count:(const uint32_t)count;
+                            count:(const uint32_t)count
 {
     id<MTLTexture> texture;
 
@@ -784,25 +819,67 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
              shadowmap:(const int32_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
-           layer_index:(const uint32_t)layer_index;
+           layer_index:(const uint32_t)layer_index
 {
 
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
-         layer_index:(const uint32_t)layer_index;
+         layer_index:(const uint32_t)layer_index
 {
 
 }
 
-- (void)setShadowMaps:(const Frame&)frame;
+- (void)setShadowMaps:(const Frame&)frame
 {
 
 }
 
-- (void)destroyShadowMap:(int32_t&)shadowmap;
+- (void)destroyShadowMap:(int32_t&)shadowmap
 {
     _textures[shadowmap] = Nil;
+}
+
+- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
+                                   height:(const uint32_t)height
+                                  atIndex:(const uint32_t)atIndex
+{
+    id<MTLTexture> texture;
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+
+    textureDesc.pixelFormat = MTLPixelFormatRG16Float;
+    textureDesc.width = width;
+    textureDesc.height = height;
+    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+
+    // create the texture obj
+    texture = [_device newTextureWithDescriptor:textureDesc];
+
+    _brdfLutIndex = _textures.size();
+    _textures.push_back(texture);
+
+    [_computeEncoder setTexture:texture
+                   atIndex:atIndex];
+
+    return _brdfLutIndex;
+}
+
+- (void)dispatch:(const uint32_t)width
+          height:(const uint32_t)height
+           depth:(const uint32_t)depth
+{
+    // Set the compute kernel's threadgroup size of 16x16
+    MTLSize threadgroupSize = MTLSizeMake(1, 1, 1);
+    MTLSize threadgroupCount;
+
+    // Calculate the number of rows and columns of threadgroups given the width of the input image
+    // Ensure that you cover the entire image (or more) so you process every pixel
+    threadgroupCount.width  = (width  + threadgroupSize.width -  1) / threadgroupSize.width;
+    threadgroupCount.height = (height + threadgroupSize.height - 1) / threadgroupSize.height;
+    threadgroupCount.depth = (depth + threadgroupSize.depth - 1) / threadgroupSize.depth;
+
+    [_computeEncoder dispatchThreadgroups:threadgroupCount
+                    threadsPerThreadgroup:threadgroupSize];
 }
 
 @end

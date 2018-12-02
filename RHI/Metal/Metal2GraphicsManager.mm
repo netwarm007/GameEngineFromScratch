@@ -215,6 +215,8 @@ void Metal2GraphicsManager::initializeTerrain(const Scene& scene)
 
 void Metal2GraphicsManager::BeginScene(const Scene& scene)
 {
+    GraphicsManager::BeginScene(scene);
+
     initializeGeometries(scene);
     initializeSkyBox(scene);
     initializeTerrain(scene);
@@ -224,7 +226,7 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
 
 void Metal2GraphicsManager::EndScene()
 {
-
+    GraphicsManager::EndScene();
 }
 
 void Metal2GraphicsManager::BeginFrame()
@@ -245,6 +247,16 @@ void Metal2GraphicsManager::BeginPass()
 void Metal2GraphicsManager::EndPass()
 {
     [m_pRenderer endPass];
+}
+
+void Metal2GraphicsManager::BeginCompute()
+{
+    [m_pRenderer beginCompute];
+}
+
+void Metal2GraphicsManager::EndCompute()
+{
+    [m_pRenderer endCompute];
 }
 
 void Metal2GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
@@ -310,4 +322,15 @@ void Metal2GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 void Metal2GraphicsManager::DrawSkyBox()
 {
     [m_pRenderer drawSkyBox];
+}
+
+int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, 
+                                        const uint32_t width, const uint32_t height)
+{
+    return [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:0];
+}
+
+void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
+{
+    [m_pRenderer dispatch:width height:height depth:depth];
 }

@@ -91,15 +91,19 @@ namespace My {
         void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
 #endif
 
-        virtual void BeginPass();
-        virtual void EndPass();
-
     protected:
         virtual void BeginScene(const Scene& scene);
         virtual void EndScene();
 
         virtual void BeginFrame();
         virtual void EndFrame();
+
+        virtual void BeginPass();
+        virtual void EndPass();
+
+        virtual void BeginCompute();
+        virtual void EndCompute();
+
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif

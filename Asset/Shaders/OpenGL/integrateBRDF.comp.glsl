@@ -6,13 +6,13 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 struct Light
 {
     float lightIntensity;
-    int lightType;
+    uint lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
+    uint lightAngleAttenCurveType;
+    uint lightDistAttenCurveType;
     vec2 lightSize;
-    ivec4 lightGUID;
+    uvec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -22,7 +22,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(rg16f) uniform writeonly image2D img_output;
+layout(rg32f) uniform writeonly image2D img_output;
 
 float RadicalInverse_VdC(inout uint bits)
 {
@@ -37,8 +37,8 @@ float RadicalInverse_VdC(inout uint bits)
 vec2 Hammersley(uint i, uint N)
 {
     uint param = i;
-    float _156 = RadicalInverse_VdC(param);
-    return vec2(float(i) / float(N), _156);
+    float _162 = RadicalInverse_VdC(param);
+    return vec2(float(i) / float(N), _162);
 }
 
 vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
@@ -51,8 +51,8 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
     H.x = cos(phi) * sinTheta;
     H.y = sin(phi) * sinTheta;
     H.z = cosTheta;
-    bvec3 _213 = bvec3(abs(N.z) < 0.999000012874603271484375);
-    vec3 up = vec3(_213.x ? vec3(0.0, 0.0, 1.0).x : vec3(1.0, 0.0, 0.0).x, _213.y ? vec3(0.0, 0.0, 1.0).y : vec3(1.0, 0.0, 0.0).y, _213.z ? vec3(0.0, 0.0, 1.0).z : vec3(1.0, 0.0, 0.0).z);
+    bvec3 _219 = bvec3(abs(N.z) < 0.999000012874603271484375);
+    vec3 up = vec3(_219.x ? vec3(0.0, 0.0, 1.0).x : vec3(1.0, 0.0, 0.0).x, _219.y ? vec3(0.0, 0.0, 1.0).y : vec3(1.0, 0.0, 0.0).y, _219.z ? vec3(0.0, 0.0, 1.0).z : vec3(1.0, 0.0, 0.0).z);
     vec3 tangent = normalize(cross(up, N));
     vec3 bitangent = cross(N, tangent);
     vec3 sampleVec = ((tangent * H.x) + (bitangent * H.y)) + (N * H.z);
@@ -121,14 +121,22 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
     return vec2(A, B);
 }
 
+void _integrateBRDF_comp_main(uvec3 DTid)
+{
+    ivec2 pixel_coords = ivec2(DTid.xy);
+    float param = float(pixel_coords.x) / 512.0;
+    float param_1 = float(pixel_coords.y) / 512.0;
+    vec2 _381 = IntegrateBRDF(param, param_1);
+    vec4 pixel;
+    pixel = vec4(_381.x, _381.y, pixel.z, pixel.w);
+    vec2 storeTemp = pixel.xy;
+    imageStore(img_output, pixel_coords, storeTemp.xyyy);
+}
+
 void main()
 {
-    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    float param = float(pixel_coords.x) / float(gl_NumWorkGroups.x);
-    float param_1 = float(pixel_coords.y) / float(gl_NumWorkGroups.y);
-    vec2 _385 = IntegrateBRDF(param, param_1);
-    vec4 pixel;
-    pixel = vec4(_385.x, _385.y, pixel.z, pixel.w);
-    imageStore(img_output, pixel_coords, pixel);
+    uvec3 DTid = gl_GlobalInvocationID;
+    uvec3 param = DTid;
+    _integrateBRDF_comp_main(param);
 }
 

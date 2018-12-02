@@ -1,9 +1,9 @@
 #pragma once
-#include "IPass.hpp"
+#include "Interface.hpp"
 #include "FrameStructure.hpp"
 
 namespace My {
-    Interface IDrawPass : public IPass
+    Interface IDrawPass
     {
     public:
         IDrawPass() = default;
