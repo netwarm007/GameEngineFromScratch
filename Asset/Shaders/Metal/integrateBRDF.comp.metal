@@ -147,7 +147,6 @@ void _integrateBRDF_comp_main(thread const uint3& DTid, thread texture2d<float, 
     float2 _381 = IntegrateBRDF(param, param_1);
     float4 pixel;
     pixel = float4(_381.x, _381.y, pixel.z, pixel.w);
- 
     img_output.write(pixel, uint2(pixel_coords));
 }
 
