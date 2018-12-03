@@ -1,8 +1,8 @@
 #pragma once
-#include "IDrawPass.hpp"
+#include "BasePass.hpp"
 
 namespace My {
-    class ShadowMapPass: implements IDrawPass
+    class ShadowMapPass: public BasePass
     {
     public:
         ~ShadowMapPass() = default;

@@ -21,6 +21,7 @@ main.cpp
 target_link_libraries(Common 
         Algorism
         DrawPass
+        DrawPhase
         DispatchPass
         Geometries
         GeomMath

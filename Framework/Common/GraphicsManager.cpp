@@ -4,11 +4,8 @@
 #include "SceneManager.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
-#include "ForwardRenderPass.hpp"
+#include "ForwardGeometryPass.hpp"
 #include "ShadowMapPass.hpp"
-#include "HUDPass.hpp"
-#include "TerrainPass.hpp"
-#include "SkyBoxPass.hpp"
 #include "BRDFIntegrator.hpp"
 
 using namespace My;
@@ -22,10 +19,7 @@ int GraphicsManager::Initialize()
 
 	InitConstants();
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
-    m_DrawPasses.push_back(make_shared<ForwardRenderPass>());
-    m_DrawPasses.push_back(make_shared<TerrainPass>());
-    m_DrawPasses.push_back(make_shared<SkyBoxPass>());
-    m_DrawPasses.push_back(make_shared<HUDPass>());
+    m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
     return result;
 }
 
@@ -103,7 +97,9 @@ void GraphicsManager::Draw()
 
     for (auto& pDrawPass : m_DrawPasses)
     {
+        BeginPass();
         pDrawPass->Draw(frame);
+        EndPass();
     }
 }
 
@@ -296,7 +292,9 @@ void GraphicsManager::BeginScene(const Scene& scene)
 {
     for (auto pPass : m_InitPasses)
     {
+        BeginCompute();
         pPass->Dispatch();
+        EndCompute();
     }
 }
 
@@ -313,6 +311,26 @@ void GraphicsManager::BeginFrame()
 void GraphicsManager::EndFrame()
 {
     cerr << "[GraphicsManager] EndFrame()" << endl;
+}
+
+void GraphicsManager::BeginPass()
+{
+    cerr << "[GraphicsManager] BeginPass()" << endl;
+}
+
+void GraphicsManager::EndPass()
+{
+    cerr << "[GraphicsManager] EndPass()" << endl;
+}
+
+void GraphicsManager::BeginCompute()
+{
+    cerr << "[GraphicsManager] BeginCompute()" << endl;
+}
+
+void GraphicsManager::EndCompute()
+{
+    cerr << "[GraphicsManager] EndCompute()" << endl;
 }
 
 // skybox

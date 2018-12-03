@@ -192,14 +192,14 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene)
     if (scene.SkyBox)
     {
         std::vector<const std::shared_ptr<My::Image>> images;
-        for (uint32_t i = 0; i < 12; i++)
+        for (uint32_t i = 0; i < 18; i++)
         {
             auto& texture = scene.SkyBox->GetTexture(i);
             const auto& pImage = texture.GetTextureImage();
             images.push_back(pImage);
         }
 
-        int32_t tex_index = [m_pRenderer createCubeTexture:images];
+        int32_t tex_index = [m_pRenderer createSkyBox:images];
 
         for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
         {
@@ -215,6 +215,8 @@ void Metal2GraphicsManager::initializeTerrain(const Scene& scene)
 
 void Metal2GraphicsManager::BeginScene(const Scene& scene)
 {
+    GraphicsManager::BeginScene(scene);
+
     initializeGeometries(scene);
     initializeSkyBox(scene);
     initializeTerrain(scene);
@@ -224,7 +226,7 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
 
 void Metal2GraphicsManager::EndScene()
 {
-
+    GraphicsManager::EndScene();
 }
 
 void Metal2GraphicsManager::BeginFrame()
@@ -237,9 +239,29 @@ void Metal2GraphicsManager::EndFrame()
     [m_pRenderer endFrame];
 }
 
+void Metal2GraphicsManager::BeginPass()
+{
+    [m_pRenderer beginPass];
+}
+
+void Metal2GraphicsManager::EndPass()
+{
+    [m_pRenderer endPass];
+}
+
+void Metal2GraphicsManager::BeginCompute()
+{
+    [m_pRenderer beginCompute];
+}
+
+void Metal2GraphicsManager::EndCompute()
+{
+    [m_pRenderer endCompute];
+}
+
 void Metal2GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
 {
-
+    [m_pRenderer useShaderProgram:shaderProgram];
 }
 
 void Metal2GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
@@ -262,6 +284,36 @@ void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatc
     [m_pRenderer drawBatch:batches];
 }
 
+int32_t Metal2GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) 
+{
+    return [m_pRenderer generateCubeShadowMapArray:width height:height count:count];
+}
+
+int32_t Metal2GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) 
+{
+    return [m_pRenderer generateShadowMapArray:width height:height count:count];
+}
+
+void Metal2GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) 
+{
+    [m_pRenderer beginShadowMap:light shadowmap:shadowmap width:width height:height layer_index:layer_index];
+}
+
+void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) 
+{
+    [m_pRenderer endShadowMap:shadowmap layer_index:layer_index];
+}
+
+void Metal2GraphicsManager::SetShadowMaps(const Frame& frame) 
+{
+    [m_pRenderer setShadowMaps:frame];
+}
+
+void Metal2GraphicsManager::DestroyShadowMap(int32_t& shadowmap) 
+{
+    [m_pRenderer destroyShadowMap:shadowmap];
+}
+
 void Metal2GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 {
     [m_pRenderer setSkyBox:context];
@@ -270,4 +322,15 @@ void Metal2GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 void Metal2GraphicsManager::DrawSkyBox()
 {
     [m_pRenderer drawSkyBox];
+}
+
+int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, 
+                                        const uint32_t width, const uint32_t height)
+{
+    return [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:0];
+}
+
+void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
+{
+    [m_pRenderer dispatch:width height:height depth:depth];
 }

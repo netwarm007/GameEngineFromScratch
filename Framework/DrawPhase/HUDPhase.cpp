@@ -1,11 +1,11 @@
-#include "HUDPass.hpp"
+#include "HUDPhase.hpp"
 #include "GraphicsManager.hpp"
 #include "IShaderManager.hpp"
 
 using namespace My;
 using namespace std;
 
-void HUDPass::Draw(Frame& frame)
+void HUDPhase::Draw(Frame& frame)
 {
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::DepthCopy);
 

@@ -94,6 +94,13 @@ namespace My {
 
         virtual void BeginFrame();
         virtual void EndFrame();
+
+        virtual void BeginPass();
+        virtual void EndPass();
+
+        virtual void BeginCompute();
+        virtual void EndCompute();
+
 #ifdef DEBUG
         virtual void RenderDebugBuffers();
 #endif

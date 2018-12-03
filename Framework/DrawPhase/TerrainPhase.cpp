@@ -1,10 +1,10 @@
-#include "TerrainPass.hpp"
+#include "TerrainPhase.hpp"
 #include "GraphicsManager.hpp"
 #include "IShaderManager.hpp"
 
 using namespace My;
 
-void TerrainPass::Draw(Frame& frame)
+void TerrainPhase::Draw(Frame& frame)
 {
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Terrain);
 

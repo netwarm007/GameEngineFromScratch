@@ -20,12 +20,23 @@ namespace My {
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
-        bool CheckCapability(RHICapability cap) final;
-    
+        int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
+        int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
+        void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) final;
+        void EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) final;
+        void SetShadowMaps(const Frame& frame) final;
+        void DestroyShadowMap(int32_t& shadowmap) final;
+
         // skybox
         void SetSkyBox(const DrawFrameContext& context) final;
         void DrawSkyBox() final;
 
+        // compute shader tasks
+        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
+        void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
+
+        bool CheckCapability(RHICapability cap) final;
+    
 #ifdef __OBJC__
         void SetRenderer(Metal2Renderer* renderer) { m_pRenderer = renderer; }
 #endif
@@ -36,6 +47,12 @@ namespace My {
 
         void BeginFrame() final;
         void EndFrame() final;
+
+        void BeginPass() final;
+        void EndPass() final;
+
+        void BeginCompute() final;
+        void EndCompute() final;
 
         void initializeGeometries(const Scene& scene);
         void initializeSkyBox(const Scene& scene);

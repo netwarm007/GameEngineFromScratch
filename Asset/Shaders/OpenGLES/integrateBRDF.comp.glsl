@@ -4,13 +4,13 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 struct Light
 {
     float lightIntensity;
-    int lightType;
+    uint lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
+    uint lightAngleAttenCurveType;
+    uint lightDistAttenCurveType;
     vec2 lightSize;
-    ivec4 lightGUID;
+    uvec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -20,7 +20,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(binding = 0, rg16f) uniform writeonly highp image2D img_output;
+layout(binding = 0, rg32f) uniform writeonly highp image2D img_output;
 
 float RadicalInverse_VdC(inout uint bits)
 {
@@ -35,8 +35,8 @@ float RadicalInverse_VdC(inout uint bits)
 vec2 Hammersley(uint i, uint N)
 {
     uint param = i;
-    float _156 = RadicalInverse_VdC(param);
-    return vec2(float(i) / float(N), _156);
+    float _162 = RadicalInverse_VdC(param);
+    return vec2(float(i) / float(N), _162);
 }
 
 vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
@@ -118,14 +118,22 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
     return vec2(A, B);
 }
 
+void _integrateBRDF_comp_main(uvec3 DTid)
+{
+    ivec2 pixel_coords = ivec2(DTid.xy);
+    float param = float(pixel_coords.x) / 512.0;
+    float param_1 = float(pixel_coords.y) / 512.0;
+    vec2 _381 = IntegrateBRDF(param, param_1);
+    vec4 pixel;
+    pixel = vec4(_381.x, _381.y, pixel.z, pixel.w);
+    vec2 storeTemp = pixel.xy;
+    imageStore(img_output, pixel_coords, storeTemp.xyyy);
+}
+
 void main()
 {
-    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    float param = float(pixel_coords.x) / float(gl_NumWorkGroups.x);
-    float param_1 = float(pixel_coords.y) / float(gl_NumWorkGroups.y);
-    vec2 _385 = IntegrateBRDF(param, param_1);
-    vec4 pixel;
-    pixel = vec4(_385.x, _385.y, pixel.z, pixel.w);
-    imageStore(img_output, pixel_coords, pixel);
+    uvec3 DTid = gl_GlobalInvocationID;
+    uvec3 param = DTid;
+    _integrateBRDF_comp_main(param);
 }
 

@@ -1,11 +1,11 @@
-#include "ForwardRenderPass.hpp"
+#include "ForwardRenderPhase.hpp"
 #include "GraphicsManager.hpp"
 #include "IShaderManager.hpp"
 
 using namespace My;
 using namespace std;
 
-void ForwardRenderPass::Draw(Frame& frame)
+void ForwardRenderPhase::Draw(Frame& frame)
 {
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Pbr);
 
