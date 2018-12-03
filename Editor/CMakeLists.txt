@@ -3,8 +3,8 @@ IF(APPLE)
                 debug.vert debug.frag
                 pbr.vert pbr.frag
                 skybox.vert skybox.frag
-                integrateBRDF.comp integrateBRDF.frag
                 shadowmap.vert shadowmap.frag
+                integrateBRDF.comp
             )
 
     foreach(SHADER IN LISTS SHADER_SOURCES)
