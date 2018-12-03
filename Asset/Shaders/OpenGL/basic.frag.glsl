@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 struct basic_vert_output
 {
@@ -29,7 +29,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerFrameConstants
+layout(binding = 10, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
@@ -37,7 +37,7 @@ layout(std140) uniform PerFrameConstants
     uint numLights;
 } _280;
 
-layout(std140) uniform LightInfo
+layout(binding = 12, std140) uniform LightInfo
 {
     Light lights[100];
 } _681;
@@ -45,11 +45,11 @@ layout(std140) uniform LightInfo
 uniform sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
 uniform samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
 
-in vec4 input_normal;
-in vec4 input_normal_world;
-in vec4 input_v;
-in vec4 input_v_world;
-in vec2 input_uv;
+layout(location = 0) in vec4 input_normal;
+layout(location = 1) in vec4 input_normal_world;
+layout(location = 2) in vec4 input_v;
+layout(location = 3) in vec4 input_v_world;
+layout(location = 4) in vec2 input_uv;
 layout(location = 0) out vec4 _entryPointOutput;
 
 float _130;

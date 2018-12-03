@@ -15,7 +15,7 @@ namespace My {
         virtual ~DrawBatchContext() = default;
     };
 
-    struct Frame {
+    struct Frame : global_textures {
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
         LightInfo lightInfo;

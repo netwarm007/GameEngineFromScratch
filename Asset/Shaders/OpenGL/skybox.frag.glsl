@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 struct skybox_vert_output
 {
@@ -27,7 +27,7 @@ struct Light
 
 uniform samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
 
-in vec3 input_uvw;
+layout(location = 0) in vec3 input_uvw;
 layout(location = 0) out vec4 _entryPointOutput;
 
 vec3 exposure_tone_mapping(vec3 color)

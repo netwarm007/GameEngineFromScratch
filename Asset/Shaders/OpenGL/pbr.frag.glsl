@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 struct pbr_vert_output
 {
@@ -32,18 +32,18 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerFrameConstants
+layout(binding = 10, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     vec4 camPos;
     uint numLights;
-} _411;
+} _402;
 
-layout(std140) uniform LightInfo
+layout(binding = 12, std140) uniform LightInfo
 {
     Light lights[100];
-} _489;
+} _480;
 
 uniform sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
@@ -53,14 +53,14 @@ uniform sampler2D SPIRV_Cross_CombinedaoMapsamp0;
 uniform samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
 uniform sampler2D SPIRV_Cross_CombinedbrdfLUTsamp0;
 
-in vec4 input_normal;
-in vec4 input_normal_world;
-in vec4 input_v;
-in vec4 input_v_world;
-in vec2 input_uv;
-in mat3 input_TBN;
-in vec3 input_v_tangent;
-in vec3 input_camPos_tangent;
+layout(location = 0) in vec4 input_normal;
+layout(location = 1) in vec4 input_normal_world;
+layout(location = 2) in vec4 input_v;
+layout(location = 3) in vec4 input_v_world;
+layout(location = 4) in vec2 input_uv;
+layout(location = 5) in mat3 input_TBN;
+layout(location = 8) in vec3 input_v_tangent;
+layout(location = 9) in vec3 input_camPos_tangent;
 layout(location = 0) out vec4 _entryPointOutput;
 
 float _101;
@@ -208,12 +208,11 @@ vec3 gamma_correction(vec3 color)
 
 vec4 _pbr_frag_main(pbr_vert_output _input)
 {
-    vec3 viewDir = normalize(_input.camPos_tangent - _input.v_tangent);
     vec2 texCoords = _input.uv;
     vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     vec3 N = normalize(_input.TBN * tangent_normal);
-    vec3 V = normalize(_411.camPos.xyz - _input.v_world.xyz);
+    vec3 V = normalize(_402.camPos.xyz - _input.v_world.xyz);
     vec3 R = reflect(-V, N);
     vec3 param = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     vec3 albedo = inverse_gamma_correction(param);
@@ -222,27 +221,27 @@ vec4 _pbr_frag_main(pbr_vert_output _input)
     vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     vec3 Lo = vec3(0.0);
-    for (int i = 0; uint(i) < _411.numLights; i++)
+    for (int i = 0; uint(i) < _402.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _489.lights[i].lightIntensity;
-        light.lightType = _489.lights[i].lightType;
-        light.lightCastShadow = _489.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _489.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _489.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _489.lights[i].lightDistAttenCurveType;
-        light.lightSize = _489.lights[i].lightSize;
-        light.lightGuid = _489.lights[i].lightGuid;
-        light.lightPosition = _489.lights[i].lightPosition;
-        light.lightColor = _489.lights[i].lightColor;
-        light.lightDirection = _489.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _489.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _489.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _489.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _489.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _489.lights[i].lightVP;
-        light.padding[0] = _489.lights[i].padding[0];
-        light.padding[1] = _489.lights[i].padding[1];
+        light.lightIntensity = _480.lights[i].lightIntensity;
+        light.lightType = _480.lights[i].lightType;
+        light.lightCastShadow = _480.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _480.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _480.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _480.lights[i].lightDistAttenCurveType;
+        light.lightSize = _480.lights[i].lightSize;
+        light.lightGuid = _480.lights[i].lightGuid;
+        light.lightPosition = _480.lights[i].lightPosition;
+        light.lightColor = _480.lights[i].lightColor;
+        light.lightDirection = _480.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _480.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _480.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _480.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _480.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _480.lights[i].lightVP;
+        light.padding[0] = _480.lights[i].padding[0];
+        light.padding[1] = _480.lights[i].padding[1];
         vec3 L = normalize(light.lightPosition.xyz - _input.v_world.xyz);
         vec3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);

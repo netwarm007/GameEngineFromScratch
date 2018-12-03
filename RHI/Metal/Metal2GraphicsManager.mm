@@ -29,11 +29,6 @@ void Metal2GraphicsManager::Present()
 
 }
 
-bool Metal2GraphicsManager::CheckCapability(RHICapability cap)
-{
-    return true;
-}
-
 void Metal2GraphicsManager::initializeGeometries(const Scene& scene)
 {
     cout << "Initialize Geometries ...";

@@ -590,6 +590,8 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
         m_Frames[i].frameContext.skybox = texture_id;
     }
 
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
+
     // skybox VAO
     GLuint skyboxVAO, skyboxVBO[2];
     glGenVertexArrays(1, &skyboxVAO);
@@ -844,9 +846,18 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
         return;
     }
 
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 0);
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboDrawFrameConstant[m_nFrameIndex]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
+
+    // Prepare & Bind light info
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 12);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 12, m_uboLightInfo[m_nFrameIndex]);
+    }
 
     // Prepare per batch constant buffer binding point
     blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
@@ -858,7 +869,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
         return;
     }
 
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 1);
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
 
     glEnable(GL_CULL_FACE);
 
@@ -867,7 +878,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
         const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
 
         // Bind per batch constant buffer
-        glBindBufferRange(GL_UNIFORM_BUFFER, 1, m_uboDrawBatchConstant[m_nFrameIndex], 
+        glBindBufferRange(GL_UNIFORM_BUFFER, 11, m_uboDrawBatchConstant[m_nFrameIndex], 
                         dbc.batchIndex * kSizePerBatchConstantBuffer, kSizePerBatchConstantBuffer);
 
         // Bind textures
@@ -929,6 +940,8 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint32
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count * 6);
 
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
+
     // register the shadow map
     return static_cast<int32_t>(shadowMap);
 }
@@ -945,6 +958,8 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t w
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count);
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
     // register the shadow map
     return static_cast<int32_t>(shadowMap);
@@ -1119,6 +1134,20 @@ void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
 
 void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
 {
+    // Prepare & Bind per frame constant buffer
+    GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
+
+    if (blockIndex == GL_INVALID_INDEX)
+    {
+        // the shader does not use "PerFrameConstants"
+        // simply return here
+        return;
+    }
+
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
+
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
@@ -1234,11 +1263,18 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
+
+    // Bind it as Write-only Texture
     if(GLAD_GL_ARB_compute_shader)
     {
-        glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
+        glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
     }
+
+    // Bind it as Read-only Texture
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, tex_output);
+
     m_Textures.push_back(tex_output);
     return static_cast<int32_t>(tex_output);
 }
@@ -1991,9 +2027,3 @@ void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad()
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(2, buffer_id);
 }
-
-bool OpenGLGraphicsManagerCommonBase::CheckCapability(RHICapability cap)
-{
-    return GLAD_GL_ARB_compute_shader;
-}
-

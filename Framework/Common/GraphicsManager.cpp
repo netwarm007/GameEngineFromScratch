@@ -681,8 +681,3 @@ void GraphicsManager::DrawFullScreenQuad()
 {
     cerr << "[GraphicsManager] DrawFullScreenQuad()" << endl;
 }
-
-bool GraphicsManager::CheckCapability(RHICapability cap)
-{
-    return false;
-}

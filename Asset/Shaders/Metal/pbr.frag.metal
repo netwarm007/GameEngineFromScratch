@@ -250,14 +250,13 @@ float3 gamma_correction(thread const float3& color)
     return pow(max(color, float3(0.0)), float3(0.4545454680919647216796875));
 }
 
-float4 _pbr_frag_main(thread const pbr_vert_output& _input, thread texture2d<float> normalMap, thread sampler samp0, constant PerFrameConstants& v_411, thread texture2d<float> diffuseMap, thread texture2d<float> metallicMap, thread texture2d<float> roughnessMap, constant LightInfo& v_489, thread texture2d<float> aoMap, thread texturecube_array<float> skybox, thread texture2d<float> brdfLUT)
+float4 _pbr_frag_main(thread const pbr_vert_output& _input, thread texture2d<float> normalMap, thread sampler samp0, constant PerFrameConstants& v_402, thread texture2d<float> diffuseMap, thread texture2d<float> metallicMap, thread texture2d<float> roughnessMap, constant LightInfo& v_480, thread texture2d<float> aoMap, thread texturecube_array<float> skybox, thread texture2d<float> brdfLUT)
 {
-    float3 viewDir = normalize(_input.camPos_tangent - _input.v_tangent);
     float2 texCoords = _input.uv;
     float3 tangent_normal = normalMap.sample(samp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - float3(1.0);
     float3 N = normalize(_input.TBN * tangent_normal);
-    float3 V = normalize(v_411.camPos.xyz - _input.v_world.xyz);
+    float3 V = normalize(v_402.camPos.xyz - _input.v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param = diffuseMap.sample(samp0, texCoords).xyz;
     float3 albedo = inverse_gamma_correction(param);
@@ -266,27 +265,27 @@ float4 _pbr_frag_main(thread const pbr_vert_output& _input, thread texture2d<flo
     float3 F0 = float3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, float3(meta));
     float3 Lo = float3(0.0);
-    for (int i = 0; uint(i) < v_411.numLights; i++)
+    for (int i = 0; uint(i) < v_402.numLights; i++)
     {
         Light light;
-        light.lightIntensity = v_489.lights[i].lightIntensity;
-        light.lightType = v_489.lights[i].lightType;
-        light.lightCastShadow = v_489.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = v_489.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = v_489.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = v_489.lights[i].lightDistAttenCurveType;
-        light.lightSize = v_489.lights[i].lightSize;
-        light.lightGuid = v_489.lights[i].lightGuid;
-        light.lightPosition = v_489.lights[i].lightPosition;
-        light.lightColor = v_489.lights[i].lightColor;
-        light.lightDirection = v_489.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = v_489.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = v_489.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = v_489.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = v_489.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = v_489.lights[i].lightVP;
-        light.padding[0] = v_489.lights[i].padding[0];
-        light.padding[1] = v_489.lights[i].padding[1];
+        light.lightIntensity = v_480.lights[i].lightIntensity;
+        light.lightType = v_480.lights[i].lightType;
+        light.lightCastShadow = v_480.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = v_480.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = v_480.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = v_480.lights[i].lightDistAttenCurveType;
+        light.lightSize = v_480.lights[i].lightSize;
+        light.lightGuid = v_480.lights[i].lightGuid;
+        light.lightPosition = v_480.lights[i].lightPosition;
+        light.lightColor = v_480.lights[i].lightColor;
+        light.lightDirection = v_480.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = v_480.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = v_480.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = v_480.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = v_480.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = v_480.lights[i].lightVP;
+        light.padding[0] = v_480.lights[i].padding[0];
+        light.padding[1] = v_480.lights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - _input.v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
@@ -346,7 +345,7 @@ float4 _pbr_frag_main(thread const pbr_vert_output& _input, thread texture2d<flo
     return float4(linearColor, 1.0);
 }
 
-fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], constant PerFrameConstants& v_411 [[buffer(10)]], constant LightInfo& v_489 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texture2d<float> normalMap [[texture(1)]], texture2d<float> metallicMap [[texture(2)]], texture2d<float> roughnessMap [[texture(3)]], texture2d<float> aoMap [[texture(4)]], texture2d<float> brdfLUT [[texture(6)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
+fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], constant PerFrameConstants& v_402 [[buffer(10)]], constant LightInfo& v_480 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texture2d<float> normalMap [[texture(1)]], texture2d<float> metallicMap [[texture(2)]], texture2d<float> roughnessMap [[texture(3)]], texture2d<float> aoMap [[texture(4)]], texture2d<float> brdfLUT [[texture(6)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     pbr_frag_main_out out = {};
     float3x3 input_TBN = {};
@@ -364,7 +363,7 @@ fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], const
     _input.v_tangent = in.input_v_tangent;
     _input.camPos_tangent = in.input_camPos_tangent;
     pbr_vert_output param = _input;
-    out._entryPointOutput = _pbr_frag_main(param, normalMap, samp0, v_411, diffuseMap, metallicMap, roughnessMap, v_489, aoMap, skybox, brdfLUT);
+    out._entryPointOutput = _pbr_frag_main(param, normalMap, samp0, v_402, diffuseMap, metallicMap, roughnessMap, v_480, aoMap, skybox, brdfLUT);
     return out;
 }
 

@@ -19,8 +19,6 @@ namespace My {
 
         void Present() final;
 
-        bool CheckCapability(RHICapability cap) final;
-
         void UseShaderProgram(const int32_t shaderProgram) final;
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 

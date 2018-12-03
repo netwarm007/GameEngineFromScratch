@@ -14,11 +14,6 @@
 #include "IDispatchPass.hpp"
 
 namespace My {
-    ENUM(RHICapability)
-    {
-        COMPUTE_SHADER = "COMP"_i32
-    };
-
     class GraphicsManager : implements IRuntimeModule
     {
     public:
@@ -31,8 +26,6 @@ namespace My {
 
         virtual void Draw();
         virtual void Present();
-
-        virtual bool CheckCapability(RHICapability cap);
 
         virtual void UseShaderProgram(const int32_t shaderProgram);
 

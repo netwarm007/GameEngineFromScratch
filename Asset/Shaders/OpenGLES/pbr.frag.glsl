@@ -40,12 +40,12 @@ layout(binding = 10, std140) uniform PerFrameConstants
     highp mat4 projectionMatrix;
     highp vec4 camPos;
     uint numLights;
-} _411;
+} _402;
 
 layout(binding = 12, std140) uniform LightInfo
 {
     Light lights[100];
-} _489;
+} _480;
 
 uniform highp sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
@@ -210,12 +210,11 @@ highp vec3 gamma_correction(highp vec3 color)
 
 highp vec4 _pbr_frag_main(pbr_vert_output _input)
 {
-    highp vec3 viewDir = normalize(_input.camPos_tangent - _input.v_tangent);
     highp vec2 texCoords = _input.uv;
     highp vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     highp vec3 N = normalize(_input.TBN * tangent_normal);
-    highp vec3 V = normalize(_411.camPos.xyz - _input.v_world.xyz);
+    highp vec3 V = normalize(_402.camPos.xyz - _input.v_world.xyz);
     highp vec3 R = reflect(-V, N);
     highp vec3 param = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     highp vec3 albedo = inverse_gamma_correction(param);
@@ -224,27 +223,27 @@ highp vec4 _pbr_frag_main(pbr_vert_output _input)
     highp vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     highp vec3 Lo = vec3(0.0);
-    for (int i = 0; uint(i) < _411.numLights; i++)
+    for (int i = 0; uint(i) < _402.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _489.lights[i].lightIntensity;
-        light.lightType = _489.lights[i].lightType;
-        light.lightCastShadow = _489.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _489.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _489.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _489.lights[i].lightDistAttenCurveType;
-        light.lightSize = _489.lights[i].lightSize;
-        light.lightGuid = _489.lights[i].lightGuid;
-        light.lightPosition = _489.lights[i].lightPosition;
-        light.lightColor = _489.lights[i].lightColor;
-        light.lightDirection = _489.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _489.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _489.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _489.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _489.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _489.lights[i].lightVP;
-        light.padding[0] = _489.lights[i].padding[0];
-        light.padding[1] = _489.lights[i].padding[1];
+        light.lightIntensity = _480.lights[i].lightIntensity;
+        light.lightType = _480.lights[i].lightType;
+        light.lightCastShadow = _480.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _480.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _480.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _480.lights[i].lightDistAttenCurveType;
+        light.lightSize = _480.lights[i].lightSize;
+        light.lightGuid = _480.lights[i].lightGuid;
+        light.lightPosition = _480.lights[i].lightPosition;
+        light.lightColor = _480.lights[i].lightColor;
+        light.lightDirection = _480.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _480.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _480.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _480.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _480.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _480.lights[i].lightVP;
+        light.padding[0] = _480.lights[i].padding[0];
+        light.padding[1] = _480.lights[i].padding[1];
         highp vec3 L = normalize(light.lightPosition.xyz - _input.v_world.xyz);
         highp vec3 H = normalize(V + L);
         highp float NdotL = max(dot(N, L), 0.0);

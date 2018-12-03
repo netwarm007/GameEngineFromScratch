@@ -35,8 +35,6 @@ namespace My {
         int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
-        bool CheckCapability(RHICapability cap) final;
-    
 #ifdef __OBJC__
         void SetRenderer(Metal2Renderer* renderer) { m_pRenderer = renderer; }
 #endif
