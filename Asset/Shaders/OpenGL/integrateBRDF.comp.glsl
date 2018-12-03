@@ -1,6 +1,5 @@
-#version 400
+#version 420
 #extension GL_ARB_compute_shader : require
-#extension GL_ARB_shader_image_load_store : require
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 struct Light
@@ -22,7 +21,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(rg32f) uniform writeonly image2D img_output;
+layout(binding = 0, rg32f) uniform writeonly image2D img_output;
 
 float RadicalInverse_VdC(inout uint bits)
 {

@@ -166,6 +166,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     MTLSamplerDescriptor* samplerDescriptor = [[MTLSamplerDescriptor alloc] init];
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
     samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
     samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
 
@@ -847,7 +848,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     id<MTLTexture> texture;
     MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
 
-    textureDesc.pixelFormat = MTLPixelFormatRG16Float;
+    textureDesc.pixelFormat = MTLPixelFormatRG32Float;
     textureDesc.width = width;
     textureDesc.height = height;
     textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
