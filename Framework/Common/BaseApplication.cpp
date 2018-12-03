@@ -99,7 +99,7 @@ void BaseApplication::Tick()
     g_pSceneManager->Tick();
     g_pInputManager->Tick();
     g_pPhysicsManager->Tick();
-    g_pAnimationManager->Tick();
+    //g_pAnimationManager->Tick();
     g_pShaderManager->Tick();
     g_pGameLogic->Tick();
     //g_pGraphicsManager->Tick();

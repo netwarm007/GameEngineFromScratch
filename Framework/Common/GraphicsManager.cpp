@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include "GraphicsManager.hpp"
+#include "AnimationManager.hpp"
 #include "SceneManager.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
@@ -41,6 +42,8 @@ void GraphicsManager::Tick()
         BeginScene(scene);
         g_pSceneManager->NotifySceneIsRenderingQueued();
     }
+
+    g_pAnimationManager->Tick();
 
     UpdateConstants();
 
