@@ -121,11 +121,11 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
 void _integrateBRDF_comp_main(uvec3 DTid)
 {
     ivec2 pixel_coords = ivec2(DTid.xy);
-    float param = float(pixel_coords.x) / 512.0;
-    float param_1 = float(pixel_coords.y) / 512.0;
-    vec2 _381 = IntegrateBRDF(param, param_1);
+    float param = float(pixel_coords.x + 1) / 512.0;
+    float param_1 = float(pixel_coords.y + 1) / 512.0;
+    vec2 _383 = IntegrateBRDF(param, param_1);
     vec4 pixel;
-    pixel = vec4(_381.x, _381.y, pixel.z, pixel.w);
+    pixel = vec4(_383.x, _383.y, pixel.z, pixel.w);
     vec2 storeTemp = pixel.xy;
     imageStore(img_output, pixel_coords, storeTemp.xyyy);
 }

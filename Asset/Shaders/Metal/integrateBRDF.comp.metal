@@ -142,11 +142,11 @@ float2 IntegrateBRDF(thread const float& NdotV, thread const float& roughness)
 void _integrateBRDF_comp_main(thread const uint3& DTid, thread texture2d<float, access::write> img_output)
 {
     int2 pixel_coords = int2(DTid.xy);
-    float param = float(pixel_coords.x) / 512.0;
-    float param_1 = float(pixel_coords.y) / 512.0;
-    float2 _381 = IntegrateBRDF(param, param_1);
+    float param = float(pixel_coords.x + 1) / 512.0;
+    float param_1 = float(pixel_coords.y + 1) / 512.0;
+    float2 _383 = IntegrateBRDF(param, param_1);
     float4 pixel;
-    pixel = float4(_381.x, _381.y, pixel.z, pixel.w);
+    pixel = float4(_383.x, _383.y, pixel.z, pixel.w);
     img_output.write(pixel, uint2(pixel_coords));
 }
 

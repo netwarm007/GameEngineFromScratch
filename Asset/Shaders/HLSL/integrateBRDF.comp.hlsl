@@ -45,6 +45,6 @@ void integrateBRDF_comp_main(uint3 DTid : SV_DISPATCHTHREADID)
 {
     float4 pixel;
     int2 pixel_coords = int2(DTid.xy);
-    pixel.rg = IntegrateBRDF(float(pixel_coords.x) / 512.0f, float(pixel_coords.y) / 512.0f);
+    pixel.rg = IntegrateBRDF(float(pixel_coords.x + 1) / 512.0f, float(pixel_coords.y + 1) / 512.0f);
     img_output[pixel_coords] = pixel.rg;
 }
