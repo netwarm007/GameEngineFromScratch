@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS)(OpenGL) Launch Editor",
+            "name": "(Mac OS) Launch Editor",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
@@ -19,7 +19,7 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Mac OS)(OpenGL) Launch Game",
+            "name": "(Mac OS) Launch Game",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",

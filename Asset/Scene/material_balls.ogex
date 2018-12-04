@@ -5927,4 +5927,9 @@ Material $material3
 	{
 		string {"Textures/rustediron2_roughness.png"}
 	}
+
+	Texture (attrib = "ao")
+	{
+		string {"Textures/default_ao.png"}
+	}
 }
