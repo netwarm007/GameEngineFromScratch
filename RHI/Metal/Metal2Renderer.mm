@@ -167,10 +167,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
+    samplerDescriptor.rAddressMode = MTLSamplerAddressModeRepeat;
     samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
     samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
 
     _sampler0 = [_device newSamplerStateWithDescriptor:samplerDescriptor];
+
+    samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
+    samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
+    samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
 
     // Create basic pipeline state
     id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:@"basic_vert_main"];
