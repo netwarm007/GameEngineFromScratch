@@ -22,13 +22,13 @@ struct pos_only_vert_output
 struct PerBatchConstants
 {
     float4x4 modelMatrix;
+    float4x4 arbitraryMatrix;
 };
 
 struct PerFrameConstants
 {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
-    float4x4 arbitraryMatrix;
     float4 camPos;
     uint numLights;
 };
@@ -71,16 +71,16 @@ struct shadowmap_vert_main_in
     float3 a_inputBiTangent [[attribute(4)]];
 };
 
-pos_only_vert_output _shadowmap_vert_main(thread const a2v& a, constant PerBatchConstants& v_32, constant PerFrameConstants& v_43)
+pos_only_vert_output _shadowmap_vert_main(thread const a2v& a, constant PerBatchConstants& v_32)
 {
     float4 v = float4(a.inputPosition, 1.0);
     v = v_32.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = v_43.arbitraryMatrix * v;
+    o.pos = v_32.arbitraryMatrix * v;
     return o;
 }
 
-vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerFrameConstants& v_43 [[buffer(10)]], constant PerBatchConstants& v_32 [[buffer(11)]])
+vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_32 [[buffer(11)]])
 {
     shadowmap_vert_main_out out = {};
     a2v a;
@@ -90,7 +90,7 @@ vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[s
     a.inputTangent = in.a_inputTangent;
     a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
-    out.gl_Position = _shadowmap_vert_main(param, v_32, v_43).pos;
+    out.gl_Position = _shadowmap_vert_main(param, v_32).pos;
     return out;
 }
 

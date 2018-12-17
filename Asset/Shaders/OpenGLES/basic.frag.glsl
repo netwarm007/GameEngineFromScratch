@@ -35,6 +35,7 @@ layout(binding = 10, std140) uniform PerFrameConstants
 {
     highp mat4 viewMatrix;
     highp mat4 projectionMatrix;
+    highp mat4 arbitraryMatrix;
     highp vec4 camPos;
     uint numLights;
 } _280;

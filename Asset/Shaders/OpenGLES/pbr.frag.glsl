@@ -38,6 +38,7 @@ layout(binding = 10, std140) uniform PerFrameConstants
 {
     highp mat4 viewMatrix;
     highp mat4 projectionMatrix;
+    highp mat4 arbitraryMatrix;
     highp vec4 camPos;
     uint numLights;
 } _402;
@@ -45,7 +46,7 @@ layout(binding = 10, std140) uniform PerFrameConstants
 layout(binding = 12, std140) uniform LightInfo
 {
     Light lights[100];
-} _480;
+} _479;
 
 uniform highp sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
@@ -226,24 +227,24 @@ highp vec4 _pbr_frag_main(pbr_vert_output _input)
     for (int i = 0; uint(i) < _402.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _480.lights[i].lightIntensity;
-        light.lightType = _480.lights[i].lightType;
-        light.lightCastShadow = _480.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _480.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _480.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _480.lights[i].lightDistAttenCurveType;
-        light.lightSize = _480.lights[i].lightSize;
-        light.lightGuid = _480.lights[i].lightGuid;
-        light.lightPosition = _480.lights[i].lightPosition;
-        light.lightColor = _480.lights[i].lightColor;
-        light.lightDirection = _480.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _480.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _480.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _480.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _480.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _480.lights[i].lightVP;
-        light.padding[0] = _480.lights[i].padding[0];
-        light.padding[1] = _480.lights[i].padding[1];
+        light.lightIntensity = _479.lights[i].lightIntensity;
+        light.lightType = _479.lights[i].lightType;
+        light.lightCastShadow = _479.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _479.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _479.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _479.lights[i].lightDistAttenCurveType;
+        light.lightSize = _479.lights[i].lightSize;
+        light.lightGuid = _479.lights[i].lightGuid;
+        light.lightPosition = _479.lights[i].lightPosition;
+        light.lightColor = _479.lights[i].lightColor;
+        light.lightDirection = _479.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _479.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _479.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _479.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _479.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _479.lights[i].lightVP;
+        light.padding[0] = _479.lights[i].padding[0];
+        light.padding[1] = _479.lights[i].padding[1];
         highp vec3 L = normalize(light.lightPosition.xyz - _input.v_world.xyz);
         highp vec3 H = normalize(V + L);
         highp float NdotL = max(dot(N, L), 0.0);

@@ -36,6 +36,7 @@ struct PerFrameConstants
 {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
+    float4x4 arbitraryMatrix;
     float4 camPos;
     uint numLights;
 };

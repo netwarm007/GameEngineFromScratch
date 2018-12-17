@@ -60,6 +60,7 @@ unistruct PerFrameConstants REGISTER(b10)
 {
 	Matrix4X4f 	viewMatrix;						// 64 bytes
 	Matrix4X4f 	projectionMatrix;				// 64 bytes
+	Matrix4X4f  arbitraryMatrix;				    // 64 bytes
     Vector4f   	camPos;							// 16 bytes
 	uint32_t  	numLights;						// 4 bytes
 };

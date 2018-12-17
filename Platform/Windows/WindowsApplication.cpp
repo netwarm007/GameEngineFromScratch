@@ -89,8 +89,6 @@ void WindowsApplication::Tick()
         // send the message to the WindowProc function
         DispatchMessage(&msg); 
     }
-
-    InvalidateRect(m_hWnd, NULL, FALSE);
 }
 
 // this is the main message handler for the program
@@ -118,11 +116,6 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message, WPARAM 
     // sort through and find what code to run for the message given
     switch(message)
     {
-        case WM_PAINT:
-            BeginPaint(hWnd, NULL);
-            g_pGraphicsManager->Tick();
-            EndPaint(hWnd, NULL);
-            break;
         case WM_CHAR:
             {
                 g_pInputManager->AsciiKeyDown(static_cast<char>(wParam));

@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 struct a2v
 {
@@ -33,19 +33,11 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerBatchConstants
+layout(binding = 11, std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
-} _32;
-
-layout(std140) uniform PerFrameConstants
-{
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
     mat4 arbitraryMatrix;
-    vec4 camPos;
-    uint numLights;
-} _43;
+} _32;
 
 layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
@@ -58,7 +50,7 @@ pos_only_vert_output _shadowmap_vert_main(a2v a)
     vec4 v = vec4(a.inputPosition, 1.0);
     v = _32.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = _43.arbitraryMatrix * v;
+    o.pos = _32.arbitraryMatrix * v;
     return o;
 }
 

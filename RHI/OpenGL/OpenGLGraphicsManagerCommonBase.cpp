@@ -882,40 +882,58 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
                         dbc.batchIndex * kSizePerBatchConstantBuffer, kSizePerBatchConstantBuffer);
 
         // Bind textures
-        if (dbc.material.diffuseMap >= 0) {
-            setShaderParameter("SPIRV_Cross_CombineddiffuseMapsamp0", 0);
-            glActiveTexture(GL_TEXTURE0);
+        setShaderParameter("SPIRV_Cross_CombineddiffuseMapsamp0", 0);
+        glActiveTexture(GL_TEXTURE0);
+        if (dbc.material.diffuseMap > 0) {
             glBindTexture(GL_TEXTURE_2D, dbc.material.diffuseMap);
         }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
-        if (dbc.material.normalMap >= 0) {
-            setShaderParameter("SPIRV_Cross_CombinednormalMapsamp0", 1);
-            glActiveTexture(GL_TEXTURE1);
+        setShaderParameter("SPIRV_Cross_CombinednormalMapsamp0", 1);
+        glActiveTexture(GL_TEXTURE1);
+        if (dbc.material.normalMap > 0) {
             glBindTexture(GL_TEXTURE_2D, dbc.material.normalMap);
         }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
-        if (dbc.material.metallicMap >= 0) {
-            setShaderParameter("SPIRV_Cross_CombinedmetallicMapsamp0", 2);
-            glActiveTexture(GL_TEXTURE2);
+        setShaderParameter("SPIRV_Cross_CombinedmetallicMapsamp0", 2);
+        glActiveTexture(GL_TEXTURE2);
+        if (dbc.material.metallicMap > 0) {
             glBindTexture(GL_TEXTURE_2D, dbc.material.metallicMap);
         }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
-        if (dbc.material.roughnessMap >= 0) {
-            setShaderParameter("SPIRV_Cross_CombinedroughnessMapsamp0", 3);
-            glActiveTexture(GL_TEXTURE3);
+        setShaderParameter("SPIRV_Cross_CombinedroughnessMapsamp0", 3);
+        glActiveTexture(GL_TEXTURE3);
+        if (dbc.material.roughnessMap > 0) {
             glBindTexture(GL_TEXTURE_2D, dbc.material.roughnessMap);
         }
-
-        if (dbc.material.aoMap >= 0) {
-            setShaderParameter("SPIRV_Cross_CombinedaoMapsamp0", 4);
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, dbc.material.aoMap);
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        if (dbc.material.heightMap >= 0) {
-            setShaderParameter("SPIRV_Cross_CombinedheightMapsamp0", 5);
-            glActiveTexture(GL_TEXTURE5);
+        setShaderParameter("SPIRV_Cross_CombinedaoMapsamp0", 4);
+        glActiveTexture(GL_TEXTURE4);
+        if (dbc.material.aoMap > 0) {
+            glBindTexture(GL_TEXTURE_2D, dbc.material.aoMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        setShaderParameter("SPIRV_Cross_CombinedheightMapsamp0", 5);
+        glActiveTexture(GL_TEXTURE5);
+        if (dbc.material.heightMap > 0) {
             glBindTexture(GL_TEXTURE_2D, dbc.material.heightMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
         glBindVertexArray(dbc.vao);
