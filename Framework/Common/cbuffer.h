@@ -15,6 +15,7 @@
 	#define unistruct struct
 	#define SamplerState void
 
+namespace My {
 	enum LightType {
 		Omni     = 0,
 		Spot     = 1,
@@ -53,16 +54,15 @@ struct Light{
 	Vector4f    lightAngleAttenCurveParams[2];	// 32 bytes
 	Matrix4X4f  lightVP;						// 64 bytes
 	Vector4f    padding[2];						// 32 bytes
-};												// totle 265 bytes
+};												// totle 256 bytes
 
 unistruct PerFrameConstants REGISTER(b10)
 {
 	Matrix4X4f 	viewMatrix;						// 64 bytes
 	Matrix4X4f 	projectionMatrix;				// 64 bytes
+	Matrix4X4f  arbitraryMatrix;				    // 64 bytes
     Vector4f   	camPos;							// 16 bytes
 	uint32_t  	numLights;						// 4 bytes
-	float	    padding[3];						// 12 bytes
-	Light 		lights[MAX_LIGHTS];   			// alignment = 64 bytes
 };
 
 unistruct PerBatchConstants REGISTER(b11)
@@ -70,24 +70,65 @@ unistruct PerBatchConstants REGISTER(b11)
 	Matrix4X4f modelMatrix;						// 64 bytes
 };
 
+unistruct LightInfo REGISTER(b12)
+{
+	struct Light lights[MAX_LIGHTS];
+};
+
 #ifdef __cplusplus
-const size_t kSizePerFrameConstantBuffer = ALIGN(sizeof(PerFrameConstants) + sizeof(Light) * MAX_LIGHTS, 256); // CB size is required to be 256-byte aligned.
+const size_t kSizePerFrameConstantBuffer = ALIGN(sizeof(PerFrameConstants), 256); // CB size is required to be 256-byte aligned.
 const size_t kSizePerBatchConstantBuffer = ALIGN(sizeof(PerBatchConstants), 256); // CB size is required to be 256-byte aligned.
+const size_t kSizeLightInfo = ALIGN(sizeof(LightInfo), 256); // CB size is required to be 256-byte aligned.
 #endif
 
 struct a2v
 {
     Vector3f inputPosition    SEMANTIC(POSITION);
-    Vector2f inputUV          SEMANTIC(TEXCOORD);
     Vector3f inputNormal      SEMANTIC(NORMAL);
+    Vector2f inputUV          SEMANTIC(TEXCOORD);
     Vector3f inputTangent     SEMANTIC(TANGENT);
     Vector3f inputBiTangent   SEMANTIC(BITANGENT);
 };
 
-#ifndef __cplusplus
+struct a2v_pos_only
+{
+    Vector3f inputPosition    SEMANTIC(POSITION);
+};
+
+#ifdef __cplusplus
+struct material_textures
+{
+	int32_t diffuseMap = -1;
+	int32_t normalMap = -1;
+	int32_t metallicMap = -1;
+	int32_t roughnessMap = -1;
+	int32_t aoMap = -1;
+	int32_t heightMap = -1;
+};
+
+struct global_textures
+{
+	int32_t brdfLUT;
+};
+
+struct frame_textures
+{
+	int32_t shadowMap = -1;
+	int32_t shadowMapCount = 0;
+
+	int32_t globalShadowMap = -1;
+	int32_t globalShadowMapCount = 0;
+
+	int32_t cubeShadowMap = -1;
+	int32_t cubeShadowMapCount = 0;
+
+	int32_t skybox = -1;
+	int32_t terrainHeightMap = -1;
+};
+#else
 Texture2D diffuseMap 			REGISTER(t0);
 Texture2D normalMap  			REGISTER(t1);
-Texture2D metalicMap 			REGISTER(t2);
+Texture2D metallicMap 			REGISTER(t2);
 Texture2D roughnessMap 			REGISTER(t3);
 Texture2D aoMap      			REGISTER(t4);
 Texture2D heightMap				REGISTER(t5);
@@ -102,4 +143,7 @@ Texture2D terrainHeightMap		REGISTER(t11);
 SamplerState samp0 REGISTER(s0);
 #endif
 
+#ifdef __cplusplus
+} // namespace My
+#endif
 #endif // !__STDCBUFFER_H__

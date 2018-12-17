@@ -1,28 +1,48 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
 
-struct constants_t
+struct a2v
 {
-    float4x4 depthVP;
+    float3 inputPosition;
+    float3 inputNormal;
+    float2 inputUV;
+    float3 inputTangent;
+    float3 inputBiTangent;
+};
+
+struct pos_only_vert_output
+{
+    float4 pos;
 };
 
 struct PerBatchConstants
 {
     float4x4 modelMatrix;
+    float4x4 arbitraryMatrix;
+};
+
+struct PerFrameConstants
+{
+    float4x4 viewMatrix;
+    float4x4 projectionMatrix;
+    float4 camPos;
+    uint numLights;
 };
 
 struct Light
 {
     float lightIntensity;
-    int lightType;
+    uint lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
+    uint lightAngleAttenCurveType;
+    uint lightDistAttenCurveType;
     float2 lightSize;
-    int4 lightGUID;
+    uint4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;
@@ -32,13 +52,9 @@ struct Light
     float4 padding[2];
 };
 
-struct PerFrameConstants
+struct LightInfo
 {
-    float4x4 viewMatrix;
-    float4x4 projectionMatrix;
-    float4 camPos;
-    int numLights;
-    Light allLights[100];
+    Light lights[100];
 };
 
 struct shadowmap_vert_main_out
@@ -48,13 +64,33 @@ struct shadowmap_vert_main_out
 
 struct shadowmap_vert_main_in
 {
-    float3 inputPosition [[attribute(0)]];
+    float3 a_inputPosition [[attribute(0)]];
+    float3 a_inputNormal [[attribute(1)]];
+    float2 a_inputUV [[attribute(2)]];
+    float3 a_inputTangent [[attribute(3)]];
+    float3 a_inputBiTangent [[attribute(4)]];
 };
 
-vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant constants_t& u_pushConstants [[buffer(0)]], constant PerBatchConstants& _25 [[buffer(1)]])
+pos_only_vert_output _shadowmap_vert_main(thread const a2v& a, constant PerBatchConstants& v_32)
+{
+    float4 v = float4(a.inputPosition, 1.0);
+    v = v_32.modelMatrix * v;
+    pos_only_vert_output o;
+    o.pos = v_32.arbitraryMatrix * v;
+    return o;
+}
+
+vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_32 [[buffer(11)]])
 {
     shadowmap_vert_main_out out = {};
-    out.gl_Position = (u_pushConstants.depthVP * _25.modelMatrix) * float4(in.inputPosition, 1.0);
+    a2v a;
+    a.inputPosition = in.a_inputPosition;
+    a.inputNormal = in.a_inputNormal;
+    a.inputUV = in.a_inputUV;
+    a.inputTangent = in.a_inputTangent;
+    a.inputBiTangent = in.a_inputBiTangent;
+    a2v param = a;
+    out.gl_Position = _shadowmap_vert_main(param, v_32).pos;
     return out;
 }
 

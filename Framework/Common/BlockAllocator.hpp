@@ -56,7 +56,6 @@ namespace My {
                 // the free block list
                 BlockHeader* m_pFreeList;
 
-                size_t      m_szDataSize;
                 size_t      m_szPageSize;
                 size_t      m_szAlignmentSize;
                 size_t      m_szBlockSize;

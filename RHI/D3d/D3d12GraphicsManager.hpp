@@ -16,15 +16,12 @@ namespace My {
        	int Initialize() final;
 	    void Finalize() final;
 
-        void Clear() final;
         void Draw() final;
         void Present() final;
 
-        void UseShaderProgram(const intptr_t shaderProgram) final;
-        void SetPerFrameConstants(const DrawFrameContext& context) final;
-        void SetPerBatchConstants(const DrawBatchContext& context) final;
+        void UseShaderProgram(const int32_t shaderProgram) final;
 
-        void DrawBatch(const DrawBatchContext& context) final;
+        void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
     private:
         void BeginScene(const Scene& scene) final;
@@ -32,6 +29,9 @@ namespace My {
 
         void BeginFrame() final;
         void EndFrame() final;
+
+        void SetPerFrameConstants(const DrawFrameContext& context) final;
+        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         HRESULT CreateDescriptorHeaps();
         HRESULT CreateRenderTarget();
@@ -43,8 +43,6 @@ namespace My {
         uint32_t CreateConstantBuffer();
         size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
         size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
-
-        void RegisterMsaaRtAsTexture();
 
         HRESULT CreateRootSignature();
         HRESULT WaitForPreviousFrame();
@@ -58,7 +56,7 @@ namespace My {
         D3D12_VIEWPORT                  m_ViewPort;                         // viewport structure
         D3D12_RECT                      m_ScissorRect;                      // scissor rect structure
         IDXGISwapChain3*                m_pSwapChain = nullptr;             // the pointer to the swap chain interface
-        ID3D12Resource*                 m_pRenderTargets[m_kFrameCount];    // the pointer to rendering buffer. [descriptor]
+        ID3D12Resource*                 m_pRenderTargets[GfxConfiguration::kMaxInFlightFrameCount];    // the pointer to rendering buffer. [descriptor]
         ID3D12Resource*                 m_pDepthStencilBuffer;              // the pointer to the depth stencil buffer
         ID3D12Resource*                 m_pMsaaRenderTarget;                // the pointer to the MSAA rendering target
         ID3D12CommandAllocator*         m_pCommandAllocator = nullptr;      // the pointer to command buffer allocator
@@ -81,7 +79,6 @@ namespace My {
 
         std::vector<ID3D12Resource*>    m_Buffers;                          // the pointer to the GPU buffer other than texture
         std::vector<ID3D12Resource*>    m_Textures;                         // the pointer to the Texture buffer
-        std::map<std::string, uint32_t>   m_TextureIndex;                   // the LUT of texture name -> index
         std::vector<D3D12_VERTEX_BUFFER_VIEW>       m_VertexBufferView;     // vertex buffer descriptors
         std::vector<D3D12_INDEX_BUFFER_VIEW>        m_IndexBufferView;      // index buffer descriptors
         std::vector<D3D12_CONSTANT_BUFFER_VIEW_DESC> m_ConstantBufferView;  // constant buffer descriptors
@@ -93,7 +90,7 @@ namespace My {
             size_t   property_offset;
         };
 
-        uint8_t*                        m_pCbvDataBegin = nullptr;
+        uint8_t*                        m_pCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
 
         // Synchronization objects
         HANDLE                          m_hFenceEvent;

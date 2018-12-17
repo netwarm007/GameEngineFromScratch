@@ -21,7 +21,8 @@ namespace My {
 			redBits(r), greenBits(g), blueBits(b), alphaBits(a),
 			depthBits(d), stencilBits(s), msaaSamples(msaa),
 			screenWidth(width), screenHeight(height), appName(app_name)
-		{}
+		{
+		}
 
 		uint32_t redBits; ///< red color channel depth in bits
 		uint32_t greenBits; ///< green color channel depth in bits
@@ -32,6 +33,9 @@ namespace My {
 		uint32_t msaaSamples; ///< MSAA samples
 		uint32_t screenWidth;
 		uint32_t screenHeight;
+        static const uint32_t kMaxInFlightFrameCount = 2;
+        static const uint32_t kMaxSceneObjectCount = 2048;
+        static const uint32_t kMaxTextureCount = 2048;
         const char* appName;
 
         friend std::ostream& operator<<(std::ostream& out, const GfxConfiguration& conf)

@@ -152,6 +152,7 @@ namespace My {
 
             img.mipmaps[0].Width = img.Width; 
             img.mipmaps[0].Height = img.Height; 
+            img.mipmaps[0].pitch = img.pitch;
             img.mipmaps[0].offset = 0;
             img.mipmaps[0].data_size = img.data_size;
 

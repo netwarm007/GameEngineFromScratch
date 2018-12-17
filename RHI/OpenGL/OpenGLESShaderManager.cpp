@@ -16,6 +16,7 @@
 #define PS_SIMPLE_CUBEMAP_SOURCE_FILE "Shaders/OpenGLES/cubemap.frag.glsl"
 #define VS_SKYBOX_SOURCE_FILE "Shaders/OpenGLES/skybox.vert.glsl"
 #define PS_SKYBOX_SOURCE_FILE "Shaders/OpenGLES/skybox.frag.glsl"
+#define VS_PBR_SOURCE_FILE "Shaders/OpenGL/pbr.vert.glsl"
 #define PS_PBR_SOURCE_FILE "Shaders/OpenGLES/pbr.frag.glsl"
 
 #include "OpenGLShaderManagerCommonBase.cpp"

@@ -20,6 +20,7 @@ namespace My {
         struct Mipmap {
             uint32_t Width;
             uint32_t Height;
+            uint32_t pitch;
             size_t offset;
             size_t data_size;
         } mipmaps[10];

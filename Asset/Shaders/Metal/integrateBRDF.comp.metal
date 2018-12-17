@@ -5,16 +5,30 @@
 
 using namespace metal;
 
+struct PerFrameConstants
+{
+    float4x4 viewMatrix;
+    float4x4 projectionMatrix;
+    float4x4 arbitraryMatrix;
+    float4 camPos;
+    uint numLights;
+};
+
+struct PerBatchConstants
+{
+    float4x4 modelMatrix;
+};
+
 struct Light
 {
     float lightIntensity;
-    int lightType;
+    uint lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
+    uint lightAngleAttenCurveType;
+    uint lightDistAttenCurveType;
     float2 lightSize;
-    int4 lightGUID;
+    uint4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;
@@ -24,18 +38,9 @@ struct Light
     float4 padding[2];
 };
 
-struct PerFrameConstants
+struct LightInfo
 {
-    float4x4 viewMatrix;
-    float4x4 projectionMatrix;
-    float4 camPos;
-    int numLights;
-    Light allLights[100];
-};
-
-struct PerBatchConstants
-{
-    float4x4 modelMatrix;
+    Light lights[100];
 };
 
 float RadicalInverse_VdC(thread uint& bits)
@@ -51,8 +56,8 @@ float RadicalInverse_VdC(thread uint& bits)
 float2 Hammersley(thread const uint& i, thread const uint& N)
 {
     uint param = i;
-    float _156 = RadicalInverse_VdC(param);
-    return float2(float(i) / float(N), _156);
+    float _162 = RadicalInverse_VdC(param);
+    return float2(float(i) / float(N), _162);
 }
 
 float3 ImportanceSampleGGX(thread const float2& Xi, thread const float3& N, thread const float& roughness)
@@ -65,8 +70,8 @@ float3 ImportanceSampleGGX(thread const float2& Xi, thread const float3& N, thre
     H.x = cos(phi) * sinTheta;
     H.y = sin(phi) * sinTheta;
     H.z = cosTheta;
-    bool3 _213 = bool3(abs(N.z) < 0.999000012874603271484375);
-    float3 up = float3(_213.x ? float3(0.0, 0.0, 1.0).x : float3(1.0, 0.0, 0.0).x, _213.y ? float3(0.0, 0.0, 1.0).y : float3(1.0, 0.0, 0.0).y, _213.z ? float3(0.0, 0.0, 1.0).z : float3(1.0, 0.0, 0.0).z);
+    bool3 _219 = bool3(abs(N.z) < 0.999000012874603271484375);
+    float3 up = float3(_219.x ? float3(0.0, 0.0, 1.0).x : float3(1.0, 0.0, 0.0).x, _219.y ? float3(0.0, 0.0, 1.0).y : float3(1.0, 0.0, 0.0).y, _219.z ? float3(0.0, 0.0, 1.0).z : float3(1.0, 0.0, 0.0).z);
     float3 tangent = normalize(cross(up, N));
     float3 bitangent = cross(N, tangent);
     float3 sampleVec = ((tangent * H.x) + (bitangent * H.y)) + (N * H.z);
@@ -135,14 +140,21 @@ float2 IntegrateBRDF(thread const float& NdotV, thread const float& roughness)
     return float2(A, B);
 }
 
-kernel void integrateBRDF_comp_main(texture2d<float, access::write> img_output [[texture(0)]], uint3 gl_GlobalInvocationID [[thread_position_in_grid]], uint3 gl_NumWorkGroups [[threadgroups_per_grid]])
+void _integrateBRDF_comp_main(thread const uint3& DTid, thread texture2d<float, access::write> img_output)
 {
-    int2 pixel_coords = int2(gl_GlobalInvocationID.xy);
-    float param = float(pixel_coords.x) / float(gl_NumWorkGroups.x);
-    float param_1 = float(pixel_coords.y) / float(gl_NumWorkGroups.y);
-    float2 _385 = IntegrateBRDF(param, param_1);
+    int2 pixel_coords = int2(DTid.xy);
+    float param = float(pixel_coords.x + 1) / 512.0;
+    float param_1 = float(pixel_coords.y + 1) / 512.0;
+    float2 _383 = IntegrateBRDF(param, param_1);
     float4 pixel;
-    pixel = float4(_385.x, _385.y, pixel.z, pixel.w);
+    pixel = float4(_383.x, _383.y, pixel.z, pixel.w);
     img_output.write(pixel, uint2(pixel_coords));
+}
+
+kernel void integrateBRDF_comp_main(texture2d<float, access::write> img_output [[texture(0)]], uint3 gl_GlobalInvocationID [[thread_position_in_grid]])
+{
+    uint3 DTid = gl_GlobalInvocationID;
+    uint3 param = DTid;
+    _integrateBRDF_comp_main(param, img_output);
 }
 

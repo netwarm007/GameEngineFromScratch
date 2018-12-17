@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include "Interface.hpp"
 #include "FrameStructure.hpp"
 

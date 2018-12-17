@@ -28,9 +28,9 @@ void ShadowMapPass::Draw(Frame& frame)
     // count shadow map
     vector<Light*> lights_cast_shadow;
 
-    for (int32_t i = 0; i < frame.frameContext.numLights; i++)
+    for (uint32_t i = 0; i < frame.frameContext.numLights; i++)
     {
-        auto& light = frame.frameContext.lights[i];
+        auto& light = frame.lightInfo.lights[i];
         
         if (light.lightCastShadow)
         {
@@ -87,7 +87,7 @@ void ShadowMapPass::Draw(Frame& frame)
 
     for (auto it : lights_cast_shadow)
     {
-        intptr_t shadowmap;
+        int32_t shadowmap;
         DefaultShaderIndex shader_index = DefaultShaderIndex::ShadowMap;
         int32_t width, height;
 
@@ -127,16 +127,10 @@ void ShadowMapPass::Draw(Frame& frame)
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-        g_pGraphicsManager->SetPerFrameConstants(frame.frameContext);
-
         g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
             width, height, it->lightShadowMapIndex);
 
-        for (auto iter = frame.batchContexts.cbegin(); iter != frame.batchContexts.cend(); iter++)
-        {
-            g_pGraphicsManager->SetPerBatchConstants(**iter);
-            g_pGraphicsManager->DrawBatchDepthOnly(**iter);
-        }
+        g_pGraphicsManager->DrawBatch(frame.batchContexts);
 
         g_pGraphicsManager->EndShadowMap(shadowmap, it->lightShadowMapIndex);
     }

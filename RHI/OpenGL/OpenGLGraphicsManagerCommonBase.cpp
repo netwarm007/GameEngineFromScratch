@@ -6,24 +6,6 @@
 #include <functional>
 using namespace std;
 
-void OpenGLGraphicsManagerCommonBase::Clear()
-{
-    // Set the color to clear the screen to.
-    glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-    // Clear the screen and depth buffer.
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void OpenGLGraphicsManagerCommonBase::Finalize()
-{
-    GraphicsManager::Finalize();
-}
-
-void OpenGLGraphicsManagerCommonBase::Draw()
-{
-    GraphicsManager::Draw();
-}
-
 void OpenGLGraphicsManagerCommonBase::Present()
 {
     glFlush();
@@ -241,6 +223,8 @@ static void getOpenGLTextureFormat(const Image& img, GLenum& format, GLenum& int
 
 void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 {
+    uint32_t batch_index = 0;
+
     // Geometries
     for (const auto& _it : scene.GeometryNodes)
     {
@@ -378,11 +362,13 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 
                 m_Buffers.push_back(buffer_id);
 
+                auto dbc = make_shared<OpenGLDrawBatchContext>();
+
                 const auto material_index = index_array.GetMaterialIndex();
                 const auto& material_key = pGeometryNode->GetMaterialRef(material_index);
                 const auto material = scene.GetMaterial(material_key);
                 if (material) {
-                    function<void(const string, const shared_ptr<Image>&)> upload_texture = [this](const string texture_key, const shared_ptr<Image>& texture) {
+                    function<GLuint(const string, const shared_ptr<Image>&)> upload_texture = [this](const string texture_key, const shared_ptr<Image>& texture) {
                         GLuint texture_id;
                         glGenTextures(1, &texture_id);
                         glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -407,87 +393,79 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 
                         glBindTexture(GL_TEXTURE_2D, 0);
 
-                        m_TextureIndex[texture_key] = texture_id;
                         m_Textures.push_back(texture_id);
+
+                        return texture_id;
                     };
 
                     // base color / albedo
                     const auto& color = material->GetBaseColor();
                     if (color.ValueMap) {
                         const auto& texture_key = color.ValueMap->GetName();
-                        const auto& it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.cend()) {
-                            const auto& texture = color.ValueMap->GetTextureImage();
-                            upload_texture(texture_key, texture);
-                        }
+                        const auto& texture = color.ValueMap->GetTextureImage();
+                        GLuint texture_id = upload_texture(texture_key, texture);
+                        dbc->material.diffuseMap = static_cast<int32_t>(texture_id);
                     }
 
                     // normal
                     const auto& normal = material->GetNormal();
                     if (normal.ValueMap) {
                         const auto& texture_key = normal.ValueMap->GetName();
-                        const auto& it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.cend()) {
-                            const auto& texture = normal.ValueMap->GetTextureImage();
-                            upload_texture(texture_key, texture);
-                        }
+                        const auto& texture = normal.ValueMap->GetTextureImage();
+                        GLuint texture_id = upload_texture(texture_key, texture);
+                        dbc->material.normalMap = static_cast<int32_t>(texture_id);
                     }
 
                     // metallic 
                     const auto& metallic = material->GetMetallic();
                     if (metallic.ValueMap) {
                         const auto& texture_key = metallic.ValueMap->GetName();
-                        const auto& it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.cend()) {
-                            const auto& texture = metallic.ValueMap->GetTextureImage();
-                            upload_texture(texture_key, texture);
-                        }
+                        const auto& texture = metallic.ValueMap->GetTextureImage();
+                        GLuint texture_id = upload_texture(texture_key, texture);
+                        dbc->material.metallicMap = static_cast<int32_t>(texture_id);
                     }
 
                     // roughness 
                     const auto& roughness = material->GetRoughness();
                     if (roughness.ValueMap) {
                         const auto& texture_key = roughness.ValueMap->GetName();
-                        const auto& it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.cend()) {
-                            const auto& texture = roughness.ValueMap->GetTextureImage();
-                            upload_texture(texture_key, texture);
-                        }
+                        const auto& texture = roughness.ValueMap->GetTextureImage();
+                        GLuint texture_id = upload_texture(texture_key, texture);
+                        dbc->material.roughnessMap = static_cast<int32_t>(texture_id);
                     }
 
                     // ao
                     const auto& ao = material->GetAO();
                     if (ao.ValueMap) {
                         const auto& texture_key = ao.ValueMap->GetName();
-                        const auto& it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.end()) {
-                            const auto& texture = ao.ValueMap->GetTextureImage();
-                            upload_texture(texture_key, texture);
-                        }
+                        const auto& texture = ao.ValueMap->GetTextureImage();
+                        GLuint texture_id = upload_texture(texture_key, texture);
+                        dbc->material.aoMap = static_cast<int32_t>(texture_id);
                     }
 
                     // height map 
                     const auto& heightmap = material->GetHeight();
                     if (heightmap.ValueMap) {
                         const auto& texture_key = heightmap.ValueMap->GetName();
-                        const auto& it = m_TextureIndex.find(texture_key);
-                        if (it == m_TextureIndex.end()) {
-                            const auto& texture = heightmap.ValueMap->GetTextureImage();
-                            upload_texture(texture_key, texture);
-                        }
+                        const auto& texture = heightmap.ValueMap->GetTextureImage();
+                        GLuint texture_id = upload_texture(texture_key, texture);
+                        dbc->material.heightMap = static_cast<int32_t>(texture_id);
                     }
                 }
 
                 glBindVertexArray(0);
 
-                auto dbc = make_shared<OpenGLDrawBatchContext>();
+                dbc->batchIndex = batch_index++;
                 dbc->vao     = vao;
                 dbc->mode    = mode;
                 dbc->type    = type;
                 dbc->count   = indexCount;
                 dbc->node    = pGeometryNode;
-                dbc->material = material;
-                m_Frames[m_nFrameIndex].batchContexts.push_back(dbc);
+
+                for (int32_t n = 0; n < GfxConfiguration::kMaxInFlightFrameCount; n++)
+                {
+                    m_Frames[n].batchContexts.push_back(dbc);
+                }
             }
         }
     }
@@ -528,10 +506,10 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
     };
 
     // load skybox, irradiance map and radiance map
-    GLuint cubemapTexture;
+    GLuint texture_id;
     const uint32_t kMaxMipLevels = 10;
-    glGenTextures(1, &cubemapTexture);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, cubemapTexture);
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
@@ -605,8 +583,14 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
         }
     }
 
-    m_Textures.push_back(cubemapTexture);
-    m_Frames[m_nFrameIndex].frameContext.skybox = cubemapTexture;
+    m_Textures.push_back(texture_id);
+
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        m_Frames[i].frameContext.skybox = texture_id;
+    }
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
 
     // skybox VAO
     GLuint skyboxVAO, skyboxVBO[2];
@@ -702,8 +686,12 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    m_TextureIndex["terrain"] = texture_id;
     m_Textures.push_back(texture_id);
+
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        m_Frames[i].frameContext.terrainHeightMap = texture_id;
+    }
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
@@ -719,7 +707,7 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
 
 void OpenGLGraphicsManagerCommonBase::EndScene()
 {
-    for (int i = 0; i < m_kFrameCount; i++)
+    for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
         auto& batchContexts = m_Frames[i].batchContexts;
 
@@ -728,6 +716,21 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
         }
 
         batchContexts.clear();
+
+        if (m_uboDrawFrameConstant[i])
+        {
+            glDeleteBuffers(1, &m_uboDrawFrameConstant[i]);
+        }
+        
+        if (m_uboDrawBatchConstant[i])
+        {
+            glDeleteBuffers(1, &m_uboDrawBatchConstant[i]);
+        }
+        
+        if (m_uboShadowMatricesConstant[i])
+        {
+            glDeleteBuffers(1, &m_uboShadowMatricesConstant[i]);
+        }
     }
 
     if (m_TerrainDrawBatchContext.vao)
@@ -744,21 +747,6 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
         glDeleteBuffers(1, &buf);
     }
 
-    if (m_uboDrawFrameConstant)
-    {
-        glDeleteBuffers(1, &m_uboDrawFrameConstant);
-    }
-    
-    if (m_uboDrawBatchConstant)
-    {
-        glDeleteBuffers(1, &m_uboDrawBatchConstant);
-    }
-    
-    if (m_uboShadowMatricesConstant)
-    {
-        glDeleteBuffers(1, &m_uboShadowMatricesConstant);
-    }
-    
     for (auto& texture : m_Textures) {
         glDeleteTextures(1, &texture);
     }
@@ -769,7 +757,20 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
     GraphicsManager::EndScene();
 }
 
-void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const intptr_t shaderProgram)
+void OpenGLGraphicsManagerCommonBase::BeginFrame()
+{
+    // Set the color to clear the screen to.
+    glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+    // Clear the screen and depth buffer.
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGLGraphicsManagerCommonBase::EndFrame()
+{
+
+}
+
+void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const int32_t shaderProgram)
 {
     m_CurrentShader = static_cast<GLuint>(shaderProgram);
 
@@ -779,6 +780,63 @@ void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const intptr_t shaderProg
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
 {
+    if (!m_uboDrawFrameConstant[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboDrawFrameConstant[m_nFrameIndex]);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant[m_nFrameIndex]);
+
+    PerFrameConstants constants = static_cast<PerFrameConstants>(context);
+
+    glBufferData(GL_UNIFORM_BUFFER, kSizePerFrameConstantBuffer, &constants, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+}
+
+void OpenGLGraphicsManagerCommonBase::SetLightInfo(const LightInfo& lightInfo)
+{
+    if (!m_uboLightInfo[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboLightInfo[m_nFrameIndex]);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboLightInfo[m_nFrameIndex]);
+
+    glBufferData(GL_UNIFORM_BUFFER, kSizeLightInfo, &lightInfo, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+}
+
+void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
+{
+    uint8_t* pBuff = new uint8_t[kSizePerBatchConstantBuffer * batches.size()];
+
+    if (!m_uboDrawBatchConstant[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboDrawBatchConstant[m_nFrameIndex]);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawBatchConstant[m_nFrameIndex]);
+
+    for (auto& pBatch : batches)
+    {
+        const PerBatchConstants& constants = static_cast<PerBatchConstants&>(*pBatch);
+        memcpy(pBuff + pBatch->batchIndex * kSizePerBatchConstantBuffer, &constants, kSizePerBatchConstantBuffer);
+    }
+
+    glBufferData(GL_UNIFORM_BUFFER, kSizePerBatchConstantBuffer * batches.size(), pBuff, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    delete pBuff;
+}
+
+void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
+{
+    // Prepare & Bind per frame constant buffer
     GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
 
     if (blockIndex == GL_INVALID_INDEX)
@@ -788,29 +846,21 @@ void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContex
         return;
     }
 
-    GLint blockSize;
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
 
-    glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
 
-    if (!m_uboDrawFrameConstant)
+    // Prepare & Bind light info
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
+
+    if (blockIndex != GL_INVALID_INDEX)
     {
-        glGenBuffers(1, &m_uboDrawFrameConstant);
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 12);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 12, m_uboLightInfo[m_nFrameIndex]);
     }
 
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant);
-
-    const PerFrameConstants& constants = static_cast<const PerFrameConstants&>(context);
-
-    assert(blockSize == sizeof(constants));
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
-
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uboDrawFrameConstant);
-}
-
-void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContext& context)
-{
-    GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
+    // Prepare per batch constant buffer binding point
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
 
     if (blockIndex == GL_INVALID_INDEX)
     {
@@ -819,236 +869,82 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
         return;
     }
 
-    GLint blockSize;
-
-    glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
-
-    if (!m_uboDrawBatchConstant)
-    {
-        glGenBuffers(1, &m_uboDrawBatchConstant);
-    }
-
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawBatchConstant);
-
-    const PerBatchConstants& constants = static_cast<const PerBatchConstants&>(context);
-
-    assert(blockSize == sizeof(constants));
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
-
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 1);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_uboDrawBatchConstant);
-
-    const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(context);
-
-    if (dbc.material) {
-        Color color = dbc.material->GetBaseColor();
-        setShaderParameter("diffuseMap", 0);
-        GLuint texture_id;
-
-        if (color.ValueMap) 
-        {
-            // bind the texture
-            texture_id = m_TextureIndex[color.ValueMap->GetName()];
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-        }
-        else
-        {
-            if (m_TextureIndex.find("1x1_Diffuse") == m_TextureIndex.end())
-            {
-                // generate a 1x1 texture
-                glGenTextures(1, &texture_id);
-                m_TextureIndex["1x1_Diffuse"] = texture_id;
-                m_Textures.push_back(texture_id);
-            }
-            else
-            {
-                texture_id = m_TextureIndex["1x1_Diffuse"];
-            }
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 1, 1, 
-                0, GL_RGB, GL_FLOAT, color.Value);
-        }
-
-        Normal normal = dbc.material->GetNormal();
-        setShaderParameter("normalMap", 5);
-
-        if (normal.ValueMap)
-        {
-            texture_id = m_TextureIndex[normal.ValueMap->GetName()];
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-        }
-        else
-        {
-            if (m_TextureIndex.find("1x1_Normal") == m_TextureIndex.end())
-            {
-                // generate a 1x1 texture
-                glGenTextures(1, &texture_id);
-                m_TextureIndex["1x1_Normal"] = texture_id;
-                m_Textures.push_back(texture_id);
-            }
-            else
-            {
-                texture_id = m_TextureIndex["1x1_Normal"];
-            }
-            glActiveTexture(GL_TEXTURE5);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 1, 1, 
-                0, GL_RGB, GL_FLOAT, (normal.Value + 1.0f) * 0.5f);
-        }
-
-        color = dbc.material->GetSpecularColor();
-        setShaderParameter("u_pushConstants.specularColor", Vector3f({color.Value[0], color.Value[1], color.Value[2]}));
-
-        Parameter param = dbc.material->GetSpecularPower();
-        setShaderParameter("u_pushConstants.specularPower", param.Value);
-
-        // PBR
-        param = dbc.material->GetMetallic();
-        setShaderParameter("metallicMap", 6);
-        if (param.ValueMap)
-        {
-            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
-            glActiveTexture(GL_TEXTURE6);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-        }
-        else
-        {
-            if (m_TextureIndex.find("1x1_Metallic") == m_TextureIndex.end())
-            {
-                // generate a 1x1 texture
-                glGenTextures(1, &texture_id);
-                m_TextureIndex["1x1_Metallic"] = texture_id;
-                m_Textures.push_back(texture_id);
-            }
-            else
-            {
-                texture_id = m_TextureIndex["1x1_Metallic"];
-            }
-            glActiveTexture(GL_TEXTURE6);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 
-                0, GL_RED, GL_FLOAT, &param.Value);
-        }
-
-        param = dbc.material->GetRoughness();
-        setShaderParameter("roughnessMap", 7);
-        if (param.ValueMap)
-        {
-            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
-            glActiveTexture(GL_TEXTURE7);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-        }
-        else
-        {
-            if (m_TextureIndex.find("1x1_Roughness") == m_TextureIndex.end())
-            {
-                // generate a 1x1 texture
-                glGenTextures(1, &texture_id);
-                m_TextureIndex["1x1_Roughness"] = texture_id;
-                m_Textures.push_back(texture_id);
-            }
-            else
-            {
-                texture_id = m_TextureIndex["1x1_Roughness"];
-            }
-            glActiveTexture(GL_TEXTURE7);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 
-                0, GL_RED, GL_FLOAT, &param.Value);
-        }
-
-        param = dbc.material->GetAO();
-        setShaderParameter("aoMap", 8);
-        if (param.ValueMap)
-        {
-            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
-            glActiveTexture(GL_TEXTURE8);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-        }
-        else
-        {
-            if (m_TextureIndex.find("1x1_AO") == m_TextureIndex.end())
-            {
-                // generate a 1x1 texture
-                glGenTextures(1, &texture_id);
-                m_TextureIndex["1x1_AO"] = texture_id;
-                m_Textures.push_back(texture_id);
-            }
-            else
-            {
-                texture_id = m_TextureIndex["1x1_AO"];
-            }
-            glActiveTexture(GL_TEXTURE8);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 
-                0, GL_RED, GL_FLOAT, &param.Value);
-        }
-
-        {
-            GLuint texture_id = m_TextureIndex["BRDF_LUT"];
-            setShaderParameter("brdfLUT", 9);
-            glActiveTexture(GL_TEXTURE9);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-        }
-
-        param = dbc.material->GetHeight();
-        setShaderParameter("heightMap", 10);
-        if (param.ValueMap)
-        {
-            GLuint texture_id = m_TextureIndex[param.ValueMap->GetName()];
-            glActiveTexture(GL_TEXTURE10);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-        }
-        else
-        {
-            if (m_TextureIndex.find("1x1_HeightMap") == m_TextureIndex.end())
-            {
-                // generate a 1x1 texture
-                glGenTextures(1, &texture_id);
-                m_TextureIndex["1x1_HieghtMap"] = texture_id;
-                m_Textures.push_back(texture_id);
-            }
-            else
-            {
-                texture_id = m_TextureIndex["1x1_HeightMap"];
-            }
-            glActiveTexture(GL_TEXTURE10);
-            glBindTexture(GL_TEXTURE_2D, texture_id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 1, 1, 
-                0, GL_RED, GL_FLOAT, &param.Value);
-        }
-
-    }
-}
-
-void OpenGLGraphicsManagerCommonBase::DrawBatch(const DrawBatchContext& context)
-{
-    const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(context);
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
 
     glEnable(GL_CULL_FACE);
 
-    glBindVertexArray(dbc.vao);
+    for (auto& pDbc : batches)
+    {
+        const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
 
-    glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+        // Bind per batch constant buffer
+        glBindBufferRange(GL_UNIFORM_BUFFER, 11, m_uboDrawBatchConstant[m_nFrameIndex], 
+                        dbc.batchIndex * kSizePerBatchConstantBuffer, kSizePerBatchConstantBuffer);
+
+        // Bind textures
+        setShaderParameter("SPIRV_Cross_CombineddiffuseMapsamp0", 0);
+        glActiveTexture(GL_TEXTURE0);
+        if (dbc.material.diffuseMap > 0) {
+            glBindTexture(GL_TEXTURE_2D, dbc.material.diffuseMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        setShaderParameter("SPIRV_Cross_CombinednormalMapsamp0", 1);
+        glActiveTexture(GL_TEXTURE1);
+        if (dbc.material.normalMap > 0) {
+            glBindTexture(GL_TEXTURE_2D, dbc.material.normalMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        setShaderParameter("SPIRV_Cross_CombinedmetallicMapsamp0", 2);
+        glActiveTexture(GL_TEXTURE2);
+        if (dbc.material.metallicMap > 0) {
+            glBindTexture(GL_TEXTURE_2D, dbc.material.metallicMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        setShaderParameter("SPIRV_Cross_CombinedroughnessMapsamp0", 3);
+        glActiveTexture(GL_TEXTURE3);
+        if (dbc.material.roughnessMap > 0) {
+            glBindTexture(GL_TEXTURE_2D, dbc.material.roughnessMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        setShaderParameter("SPIRV_Cross_CombinedaoMapsamp0", 4);
+        glActiveTexture(GL_TEXTURE4);
+        if (dbc.material.aoMap > 0) {
+            glBindTexture(GL_TEXTURE_2D, dbc.material.aoMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        setShaderParameter("SPIRV_Cross_CombinedheightMapsamp0", 5);
+        glActiveTexture(GL_TEXTURE5);
+        if (dbc.material.heightMap > 0) {
+            glBindTexture(GL_TEXTURE_2D, dbc.material.heightMap);
+        }
+        else {
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        glBindVertexArray(dbc.vao);
+
+        glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+    }
 
     glBindVertexArray(0);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawBatchDepthOnly(const DrawBatchContext& context)
-{
-    const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(context);
-
-    glBindVertexArray(dbc.vao);
-
-    glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
-
-    glBindVertexArray(0);
-}
-
-intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
+int32_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint shadowMap;
@@ -1062,11 +958,13 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(const uint3
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count * 6);
 
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
+
     // register the shadow map
-    return static_cast<intptr_t>(shadowMap);
+    return static_cast<int32_t>(shadowMap);
 }
 
-intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
+int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count)
 {
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint shadowMap;
@@ -1079,11 +977,13 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, width, height, count);
 
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
     // register the shadow map
-    return static_cast<intptr_t>(shadowMap);
+    return static_cast<int32_t>(shadowMap);
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const intptr_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index)
+void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index)
 {
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     glGenFramebuffers(1, &m_ShadowMapFramebufferName);
@@ -1163,18 +1063,18 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
             glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
-            if (!m_uboShadowMatricesConstant)
+            if (!m_uboShadowMatricesConstant[m_nFrameIndex])
             {
-                glGenBuffers(1, &m_uboShadowMatricesConstant);
+                glGenBuffers(1, &m_uboShadowMatricesConstant[m_nFrameIndex]);
             }
 
-            glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant);
+            glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant[m_nFrameIndex]);
 
             assert(blockSize == sizeof(shadowMatrices));
             glBufferData(GL_UNIFORM_BUFFER, blockSize, shadowMatrices, GL_DYNAMIC_DRAW);
 
             glUniformBlockBinding(m_CurrentShader, blockIndex, 2);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_uboShadowMatricesConstant);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_uboShadowMatricesConstant[m_nFrameIndex]);
 
             setShaderParameter("u_gsPushConstants.layer_index", static_cast<int>(layer_index));
             setShaderParameter("u_lightParams.lightPos", pos);
@@ -1191,7 +1091,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     glCullFace(GL_FRONT);
 }
 
-void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uint32_t layer_index)
+void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, uint32_t layer_index)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1206,8 +1106,8 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap, uin
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
     GLuint texture_id = (GLuint) frame.frameContext.shadowMap;
-    setShaderParameter("shadowMap", 1);
-    glActiveTexture(GL_TEXTURE1);
+    setShaderParameter("SPIRV_Cross_CombinedshadowMapsamp0", 7);
+    glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1217,8 +1117,8 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
 
     texture_id = (GLuint) frame.frameContext.globalShadowMap;
-    setShaderParameter("globalShadowMap", 2);
-    glActiveTexture(GL_TEXTURE2);
+    setShaderParameter("SPIRV_Cross_CombinedglobalShadowMapsamp0", 8);
+    glActiveTexture(GL_TEXTURE8);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -1227,14 +1127,14 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
 
     texture_id = (GLuint) frame.frameContext.cubeShadowMap;
-    setShaderParameter("cubeShadowMap", 3);
-    glActiveTexture(GL_TEXTURE3);
+    setShaderParameter("SPIRV_Cross_CombinedcubeShadowMapsamp0", 9);
+    glActiveTexture(GL_TEXTURE9);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
-void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(intptr_t& shadowmap)
+void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
 {
     GLuint id = (GLuint) shadowmap;
     glDeleteTextures(1, &id);
@@ -1244,14 +1144,28 @@ void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(intptr_t& shadowmap)
 // skybox
 void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
 {
-    GLuint cubemapTexture = (GLuint) context.skybox;
-    setShaderParameter("skybox", 4);
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, cubemapTexture);
+    GLuint texture_id = (GLuint) context.skybox;
+    setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
+    glActiveTexture(GL_TEXTURE10);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
 {
+    // Prepare & Bind per frame constant buffer
+    GLuint blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
+
+    if (blockIndex == GL_INVALID_INDEX)
+    {
+        // the shader does not use "PerFrameConstants"
+        // simply return here
+        return;
+    }
+
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
+
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
@@ -1263,14 +1177,15 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
 // terrain 
 void OpenGLGraphicsManagerCommonBase::SetTerrain(const DrawFrameContext& context)
 {
-    const auto texture_id = m_TextureIndex["terrain"];
-    setShaderParameter("terrainHeightMap", 11);
+    GLuint terrainHeightMap = (GLuint) context.terrainHeightMap;
+    setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
     glActiveTexture(GL_TEXTURE11);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, terrainHeightMap);
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawTerrain()
 {
+#if 0
     glBindVertexArray(m_TerrainDrawBatchContext.vao);
 
     glPatchParameteri(GL_PATCH_VERTICES, 4);
@@ -1286,16 +1201,16 @@ void OpenGLGraphicsManagerCommonBase::DrawTerrain()
         for (int32_t j = -patch_num_col / 2; j < patch_num_col / 2; j++)
         {
             MatrixTranslation(m_TerrainDrawBatchContext.modelMatrix, patch_size * i, patch_size * j, 0.0f);
-            SetPerBatchConstants(m_TerrainDrawBatchContext);
             glDrawElements(m_TerrainDrawBatchContext.mode, m_TerrainDrawBatchContext.count, m_TerrainDrawBatchContext.type, 0x00);
         }
     }
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBindVertexArray(0);
+#endif
 }
 
-intptr_t OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
+int32_t OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
 {
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
     GLuint texture;
@@ -1308,14 +1223,13 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id, const 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG16F, width, height);
 
-    m_TextureIndex[id] = texture;
     m_Textures.push_back(texture);
 
     // register the shadow map
-    return static_cast<intptr_t>(texture);
+    return static_cast<int32_t>(texture);
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(intptr_t& context, const intptr_t texture, const uint32_t width, const uint32_t height)
+void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height)
 {
     GLuint framebuffer;
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
@@ -1332,7 +1246,7 @@ void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(intptr_t& context, co
         assert(0);
     }
 
-    context = (intptr_t) framebuffer;
+    context = (int32_t) framebuffer;
 
     GLenum buf[] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, buf);
@@ -1342,7 +1256,7 @@ void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(intptr_t& context, co
     glViewport(0, 0, width, height);
 }
 
-void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(intptr_t& context)
+void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1357,7 +1271,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(intptr_t& context)
     glCullFace(GL_BACK);
 }
 
-intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height)
+int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height)
 {
     GLuint tex_output;
     glGenTextures(1, &tex_output);
@@ -1367,14 +1281,20 @@ intptr_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const c
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
+
+    // Bind it as Write-only Texture
     if(GLAD_GL_ARB_compute_shader)
     {
-        glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG16F);
+        glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
     }
-    m_TextureIndex[id] = tex_output;
+
+    // Bind it as Read-only Texture
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, tex_output);
+
     m_Textures.push_back(tex_output);
-    return static_cast<intptr_t>(tex_output);
+    return static_cast<int32_t>(tex_output);
 }
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
@@ -1385,18 +1305,6 @@ void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint3
         // make sure writing to image has finished before read
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
-}
-
-intptr_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)
-{
-    assert(id);
-    const auto& it = m_TextureIndex.find(id);
-    if (it != m_TextureIndex.cend())
-    {
-        return static_cast<intptr_t>(it->second);
-    }
-
-    return 0;
 }
 
 #ifdef DEBUG
@@ -1665,8 +1573,6 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     UseShaderProgram(debugShaderProgram);
 
-    SetPerFrameConstants(m_Frames[m_nFrameIndex].frameContext);
-
     for (const auto& dbc : m_DebugDrawBatchContext)
     {
         setShaderParameter("u_pushConstants.FrontColor", dbc.color);
@@ -1676,7 +1582,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t texture, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height)
 {
     GLuint texture_id = (GLuint) texture;
 
@@ -1730,7 +1636,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const intptr_t texture,
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const intptr_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
 {
     GLuint texture_id = (GLuint) texture;
 
@@ -1786,7 +1692,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const intptr_t tex
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     GLuint texture_id = (GLuint) cubemap;
 
@@ -1937,7 +1843,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const intptr_t cubemap,
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const intptr_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     GLuint texture_id = (GLuint) cubemap;
 
@@ -2139,9 +2045,3 @@ void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad()
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(2, buffer_id);
 }
-
-bool OpenGLGraphicsManagerCommonBase::CheckCapability(RHICapability cap)
-{
-    return GLAD_GL_ARB_compute_shader;
-}
-

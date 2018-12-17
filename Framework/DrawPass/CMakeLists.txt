@@ -1,9 +1,6 @@
 add_library(DrawPass 
-ForwardRenderPass.cpp
-HUDPass.cpp
+BasePass.cpp
 ShadowMapPass.cpp
-SkyBoxPass.cpp
-TerrainPass.cpp
 )
 target_include_directories(DrawPass PUBLIC GeomMath)
 target_link_libraries(DrawPass PUBLIC GeomMath)
