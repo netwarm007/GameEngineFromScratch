@@ -1,5 +1,5 @@
 @echo off
-'git submodule update --init External\src\cef
+git submodule update --init External\src\cef
 mkdir External\build\cef
 pushd External\build\cef
 rm -rf *
