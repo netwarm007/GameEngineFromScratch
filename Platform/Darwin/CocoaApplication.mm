@@ -58,7 +58,18 @@ void CocoaApplication::Finalize()
 
 void CocoaApplication::Tick()
 {
-    BaseApplication::Tick();
+    g_pMemoryManager->Tick();
+    g_pAssetLoader->Tick();
+    g_pSceneManager->Tick();
+    g_pInputManager->Tick();
+    g_pPhysicsManager->Tick();
+    g_pAnimationManager->Tick();
+    g_pShaderManager->Tick();
+    g_pGameLogic->Tick();
+#ifdef DEBUG
+    g_pDebugManager->Tick();
+#endif
+
     NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
     untilDate:nil
     inMode:NSDefaultRunLoopMode
