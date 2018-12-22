@@ -1,31 +1,27 @@
-#version 400
+#version 420
 
-struct Light
+struct simple_vert_output
 {
-    float lightIntensity;
-    int lightType;
-    int lightCastShadow;
-    int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
-    vec2 lightSize;
-    ivec4 lightGUID;
-    vec4 lightPosition;
-    vec4 lightColor;
-    vec4 lightDirection;
-    vec4 lightDistAttenCurveParams[2];
-    vec4 lightAngleAttenCurveParams[2];
-    mat4 lightVP;
-    vec4 padding[2];
+    vec4 pos;
+    vec2 uv;
 };
 
-uniform sampler2D tex;
+uniform sampler2D SPIRV_Cross_Combinedtexsamp0;
 
-layout(location = 0) out vec3 color;
-in vec2 UV;
+layout(location = 0) in vec2 input_uv;
+layout(location = 0) out vec4 _entryPointOutput;
+
+vec4 _texture_frag_main(simple_vert_output _input)
+{
+    return texture(SPIRV_Cross_Combinedtexsamp0, _input.uv);
+}
 
 void main()
 {
-    color = texture(tex, UV).xyz;
+    simple_vert_output _input;
+    _input.pos = gl_FragCoord;
+    _input.uv = input_uv;
+    simple_vert_output param = _input;
+    _entryPointOutput = _texture_frag_main(param);
 }
 

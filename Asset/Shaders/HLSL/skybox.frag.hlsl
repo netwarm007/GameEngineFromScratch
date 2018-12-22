@@ -2,7 +2,7 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
-float4 skybox_frag_main(skybox_vert_output input) : SV_TARGET
+float4 skybox_frag_main(cube_vert_output input) : SV_TARGET
 {
     float4 outputColor;
 

@@ -5,7 +5,7 @@ struct a2v_pos_only
     vec3 inputPosition;
 };
 
-struct skybox_vert_output
+struct cube_vert_output
 {
     vec4 pos;
     vec3 uvw;
@@ -42,9 +42,9 @@ layout(binding = 10, std140) uniform PerFrameConstants
 layout(location = 0) in vec3 a_inputPosition;
 layout(location = 0) out vec3 _entryPointOutput_uvw;
 
-skybox_vert_output _skybox_vert_main(a2v_pos_only a)
+cube_vert_output _skybox_vert_main(a2v_pos_only a)
 {
-    skybox_vert_output o;
+    cube_vert_output o;
     o.uvw = a.inputPosition;
     mat4 _matrix = _31.viewMatrix;
     _matrix[3].x = 0.0;
@@ -60,7 +60,7 @@ void main()
     a2v_pos_only a;
     a.inputPosition = a_inputPosition;
     a2v_pos_only param = a;
-    skybox_vert_output flattenTemp = _skybox_vert_main(param);
+    cube_vert_output flattenTemp = _skybox_vert_main(param);
     gl_Position = flattenTemp.pos;
     _entryPointOutput_uvw = flattenTemp.uvw;
 }

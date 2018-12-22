@@ -10,7 +10,7 @@ struct a2v_pos_only
     float3 inputPosition;
 };
 
-struct skybox_vert_output
+struct cube_vert_output
 {
     float4 pos;
     float3 uvw;
@@ -65,9 +65,9 @@ struct skybox_vert_main_in
     float3 a_inputPosition [[attribute(0)]];
 };
 
-skybox_vert_output _skybox_vert_main(thread const a2v_pos_only& a, constant PerFrameConstants& v_31)
+cube_vert_output _skybox_vert_main(thread const a2v_pos_only& a, constant PerFrameConstants& v_31)
 {
-    skybox_vert_output o;
+    cube_vert_output o;
     o.uvw = a.inputPosition;
     float4x4 _matrix = v_31.viewMatrix;
     _matrix[3].x = 0.0;
@@ -84,7 +84,7 @@ vertex skybox_vert_main_out skybox_vert_main(skybox_vert_main_in in [[stage_in]]
     a2v_pos_only a;
     a.inputPosition = in.a_inputPosition;
     a2v_pos_only param = a;
-    skybox_vert_output flattenTemp = _skybox_vert_main(param, v_31);
+    cube_vert_output flattenTemp = _skybox_vert_main(param, v_31);
     out.gl_Position = flattenTemp.pos;
     out._entryPointOutput_uvw = flattenTemp.uvw;
     return out;

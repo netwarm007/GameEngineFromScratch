@@ -16,10 +16,10 @@ struct pbr_vert_output
     vec4 normal_world;
     vec4 v;
     vec4 v_world;
-    vec2 uv;
-    mat3 TBN;
     vec3 v_tangent;
     vec3 camPos_tangent;
+    vec2 uv;
+    mat3 TBN;
 };
 
 struct Light
@@ -64,10 +64,10 @@ layout(location = 0) out vec4 _entryPointOutput_normal;
 layout(location = 1) out vec4 _entryPointOutput_normal_world;
 layout(location = 2) out vec4 _entryPointOutput_v;
 layout(location = 3) out vec4 _entryPointOutput_v_world;
-layout(location = 4) out vec2 _entryPointOutput_uv;
-layout(location = 5) out mat3 _entryPointOutput_TBN;
-layout(location = 8) out vec3 _entryPointOutput_v_tangent;
-layout(location = 9) out vec3 _entryPointOutput_camPos_tangent;
+layout(location = 4) out vec3 _entryPointOutput_v_tangent;
+layout(location = 5) out vec3 _entryPointOutput_camPos_tangent;
+layout(location = 6) out vec2 _entryPointOutput_uv;
+layout(location = 7) out mat3 _entryPointOutput_TBN;
 
 pbr_vert_output _pbr_vert_main(a2v a)
 {
@@ -104,9 +104,9 @@ void main()
     _entryPointOutput_normal_world = flattenTemp.normal_world;
     _entryPointOutput_v = flattenTemp.v;
     _entryPointOutput_v_world = flattenTemp.v_world;
-    _entryPointOutput_uv = flattenTemp.uv;
-    _entryPointOutput_TBN = flattenTemp.TBN;
     _entryPointOutput_v_tangent = flattenTemp.v_tangent;
     _entryPointOutput_camPos_tangent = flattenTemp.camPos_tangent;
+    _entryPointOutput_uv = flattenTemp.uv;
+    _entryPointOutput_TBN = flattenTemp.TBN;
 }
 

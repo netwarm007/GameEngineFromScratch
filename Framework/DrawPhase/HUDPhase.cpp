@@ -7,12 +7,12 @@ using namespace std;
 
 void HUDPhase::Draw(Frame& frame)
 {
+#if 0
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::DepthCopy);
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-#if 0
     // Draw Shadow Maps
     float top = 0.95f;
     float left = 0.70f;

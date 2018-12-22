@@ -12,10 +12,10 @@ struct pbr_vert_output
     float4 normal_world;
     float4 v;
     float4 v_world;
-    float2 uv;
-    float3x3 TBN;
     float3 v_tangent;
     float3 camPos_tangent;
+    float2 uv;
+    float3x3 TBN;
 };
 
 struct PerFrameConstants
@@ -88,12 +88,12 @@ struct pbr_frag_main_in
     float4 input_normal_world [[user(locn1)]];
     float4 input_v [[user(locn2)]];
     float4 input_v_world [[user(locn3)]];
-    float2 input_uv [[user(locn4)]];
-    float3 input_TBN_0 [[user(locn5)]];
-    float3 input_TBN_1 [[user(locn6)]];
-    float3 input_TBN_2 [[user(locn7)]];
-    float3 input_v_tangent [[user(locn8)]];
-    float3 input_camPos_tangent [[user(locn9)]];
+    float3 input_v_tangent [[user(locn4)]];
+    float3 input_camPos_tangent [[user(locn5)]];
+    float2 input_uv [[user(locn6)]];
+    float3 input_TBN_0 [[user(locn7)]];
+    float3 input_TBN_1 [[user(locn8)]];
+    float3 input_TBN_2 [[user(locn9)]];
 };
 
 // Implementation of an array copy function to cover GLSL's ability to copy an array via assignment.
@@ -359,10 +359,10 @@ fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], const
     _input.normal_world = in.input_normal_world;
     _input.v = in.input_v;
     _input.v_world = in.input_v_world;
-    _input.uv = in.input_uv;
-    _input.TBN = input_TBN;
     _input.v_tangent = in.input_v_tangent;
     _input.camPos_tangent = in.input_camPos_tangent;
+    _input.uv = in.input_uv;
+    _input.TBN = input_TBN;
     pbr_vert_output param = _input;
     out._entryPointOutput = _pbr_frag_main(param, normalMap, samp0, v_402, diffuseMap, metallicMap, roughnessMap, v_479, aoMap, skybox, brdfLUT);
     return out;

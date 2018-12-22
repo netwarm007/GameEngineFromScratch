@@ -5,7 +5,7 @@
 
 using namespace metal;
 
-struct skybox_vert_output
+struct cube_vert_output
 {
     float4 pos;
     float3 uvw;
@@ -69,7 +69,7 @@ float3 gamma_correction(thread const float3& color)
     return pow(max(color, float3(0.0)), float3(0.4545454680919647216796875));
 }
 
-float4 _skybox_frag_main(thread const skybox_vert_output& _input, thread texturecube_array<float> skybox, thread sampler samp0)
+float4 _skybox_frag_main(thread const cube_vert_output& _input, thread texturecube_array<float> skybox, thread sampler samp0)
 {
     float4 outputColor = skybox.sample(samp0, float4(_input.uvw, 0.0).xyz, uint(round(float4(_input.uvw, 0.0).w)), level(0.0));
     float3 param = outputColor.xyz;
@@ -84,10 +84,10 @@ float4 _skybox_frag_main(thread const skybox_vert_output& _input, thread texture
 fragment skybox_frag_main_out skybox_frag_main(skybox_frag_main_in in [[stage_in]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     skybox_frag_main_out out = {};
-    skybox_vert_output _input;
+    cube_vert_output _input;
     _input.pos = gl_FragCoord;
     _input.uvw = in.input_uvw;
-    skybox_vert_output param = _input;
+    cube_vert_output param = _input;
     out._entryPointOutput = _skybox_frag_main(param, skybox, samp0);
     return out;
 }

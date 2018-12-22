@@ -7,10 +7,10 @@ struct pbr_vert_output
     vec4 normal_world;
     vec4 v;
     vec4 v_world;
-    vec2 uv;
-    mat3 TBN;
     vec3 v_tangent;
     vec3 camPos_tangent;
+    vec2 uv;
+    mat3 TBN;
 };
 
 struct Light
@@ -58,10 +58,10 @@ layout(location = 0) in vec4 input_normal;
 layout(location = 1) in vec4 input_normal_world;
 layout(location = 2) in vec4 input_v;
 layout(location = 3) in vec4 input_v_world;
-layout(location = 4) in vec2 input_uv;
-layout(location = 5) in mat3 input_TBN;
-layout(location = 8) in vec3 input_v_tangent;
-layout(location = 9) in vec3 input_camPos_tangent;
+layout(location = 4) in vec3 input_v_tangent;
+layout(location = 5) in vec3 input_camPos_tangent;
+layout(location = 6) in vec2 input_uv;
+layout(location = 7) in mat3 input_TBN;
 layout(location = 0) out vec4 _entryPointOutput;
 
 float _101;
@@ -308,10 +308,10 @@ void main()
     _input.normal_world = input_normal_world;
     _input.v = input_v;
     _input.v_world = input_v_world;
-    _input.uv = input_uv;
-    _input.TBN = input_TBN;
     _input.v_tangent = input_v_tangent;
     _input.camPos_tangent = input_camPos_tangent;
+    _input.uv = input_uv;
+    _input.TBN = input_TBN;
     pbr_vert_output param = _input;
     _entryPointOutput = _pbr_frag_main(param);
 }

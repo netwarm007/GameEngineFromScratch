@@ -1,55 +1,39 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
 
-struct Light
+struct simple_vert_output
 {
-    float lightIntensity;
-    int lightType;
-    int lightCastShadow;
-    int lightShadowMapIndex;
-    int lightAngleAttenCurveType;
-    int lightDistAttenCurveType;
-    float2 lightSize;
-    int4 lightGUID;
-    float4 lightPosition;
-    float4 lightColor;
-    float4 lightDirection;
-    float4 lightDistAttenCurveParams[2];
-    float4 lightAngleAttenCurveParams[2];
-    float4x4 lightVP;
-    float4 padding[2];
-};
-
-struct PerFrameConstants
-{
-    float4x4 viewMatrix;
-    float4x4 projectionMatrix;
-    float4 camPos;
-    int numLights;
-    Light allLights[100];
-};
-
-struct PerBatchConstants
-{
-    float4x4 modelMatrix;
+    float4 pos;
+    float2 uv;
 };
 
 struct texture_frag_main_out
 {
-    float3 color [[color(0)]];
+    float4 _entryPointOutput [[color(0)]];
 };
 
 struct texture_frag_main_in
 {
-    float2 UV [[user(locn0)]];
+    float2 input_uv [[user(locn0)]];
 };
 
-fragment texture_frag_main_out texture_frag_main(texture_frag_main_in in [[stage_in]], texture2d<float> tex [[texture(0)]], sampler texSmplr [[sampler(0)]])
+float4 _texture_frag_main(thread const simple_vert_output& _input, thread texture2d<float> tex, thread sampler samp0)
+{
+    return tex.sample(samp0, _input.uv);
+}
+
+fragment texture_frag_main_out texture_frag_main(texture_frag_main_in in [[stage_in]], texture2d<float> tex [[texture(0)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     texture_frag_main_out out = {};
-    out.color = tex.sample(texSmplr, in.UV).xyz;
+    simple_vert_output _input;
+    _input.pos = gl_FragCoord;
+    _input.uv = in.input_uv;
+    simple_vert_output param = _input;
+    out._entryPointOutput = _texture_frag_main(param, tex, samp0);
     return out;
 }
 

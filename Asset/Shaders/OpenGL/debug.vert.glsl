@@ -1,4 +1,4 @@
-#version 400
+#version 420
 
 struct a2v
 {
@@ -33,7 +33,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerFrameConstants
+layout(binding = 10, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;

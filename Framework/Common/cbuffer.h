@@ -95,6 +95,12 @@ struct a2v_pos_only
     Vector3f inputPosition    SEMANTIC(POSITION);
 };
 
+struct a2v_cube
+{
+    Vector3f inputPosition    SEMANTIC(POSITION);
+    Vector3f inputUVW         SEMANTIC(TEXCOORD);
+};
+
 #ifdef __cplusplus
 struct material_textures
 {

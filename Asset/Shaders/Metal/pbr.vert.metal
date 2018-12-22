@@ -21,10 +21,10 @@ struct pbr_vert_output
     float4 normal_world;
     float4 v;
     float4 v_world;
-    float2 uv;
-    float3x3 TBN;
     float3 v_tangent;
     float3 camPos_tangent;
+    float2 uv;
+    float3x3 TBN;
 };
 
 struct PerBatchConstants
@@ -71,12 +71,12 @@ struct pbr_vert_main_out
     float4 _entryPointOutput_normal_world [[user(locn1)]];
     float4 _entryPointOutput_v [[user(locn2)]];
     float4 _entryPointOutput_v_world [[user(locn3)]];
-    float2 _entryPointOutput_uv [[user(locn4)]];
-    float3 _entryPointOutput_TBN_0 [[user(locn5)]];
-    float3 _entryPointOutput_TBN_1 [[user(locn6)]];
-    float3 _entryPointOutput_TBN_2 [[user(locn7)]];
-    float3 _entryPointOutput_v_tangent [[user(locn8)]];
-    float3 _entryPointOutput_camPos_tangent [[user(locn9)]];
+    float3 _entryPointOutput_v_tangent [[user(locn4)]];
+    float3 _entryPointOutput_camPos_tangent [[user(locn5)]];
+    float2 _entryPointOutput_uv [[user(locn6)]];
+    float3 _entryPointOutput_TBN_0 [[user(locn7)]];
+    float3 _entryPointOutput_TBN_1 [[user(locn8)]];
+    float3 _entryPointOutput_TBN_2 [[user(locn9)]];
     float4 gl_Position [[position]];
 };
 
@@ -126,10 +126,10 @@ vertex pbr_vert_main_out pbr_vert_main(pbr_vert_main_in in [[stage_in]], constan
     out._entryPointOutput_normal_world = flattenTemp.normal_world;
     out._entryPointOutput_v = flattenTemp.v;
     out._entryPointOutput_v_world = flattenTemp.v_world;
-    out._entryPointOutput_uv = flattenTemp.uv;
-    _entryPointOutput_TBN = flattenTemp.TBN;
     out._entryPointOutput_v_tangent = flattenTemp.v_tangent;
     out._entryPointOutput_camPos_tangent = flattenTemp.camPos_tangent;
+    out._entryPointOutput_uv = flattenTemp.uv;
+    _entryPointOutput_TBN = flattenTemp.TBN;
     out._entryPointOutput_TBN_0 = _entryPointOutput_TBN[0];
     out._entryPointOutput_TBN_1 = _entryPointOutput_TBN[1];
     out._entryPointOutput_TBN_2 = _entryPointOutput_TBN[2];

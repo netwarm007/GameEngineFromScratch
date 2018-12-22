@@ -2,7 +2,7 @@
 precision mediump float;
 precision highp int;
 
-struct skybox_vert_output
+struct cube_vert_output
 {
     highp vec4 pos;
     highp vec3 uvw;
@@ -42,7 +42,7 @@ highp vec3 gamma_correction(highp vec3 color)
     return pow(max(color, vec3(0.0)), vec3(0.4545454680919647216796875));
 }
 
-highp vec4 _skybox_frag_main(skybox_vert_output _input)
+highp vec4 _skybox_frag_main(cube_vert_output _input)
 {
     highp vec4 outputColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(_input.uvw, 0.0), 0.0);
     highp vec3 param = outputColor.xyz;
@@ -56,10 +56,10 @@ highp vec4 _skybox_frag_main(skybox_vert_output _input)
 
 void main()
 {
-    skybox_vert_output _input;
+    cube_vert_output _input;
     _input.pos = gl_FragCoord;
     _input.uvw = input_uvw;
-    skybox_vert_output param = _input;
+    cube_vert_output param = _input;
     _entryPointOutput = _skybox_frag_main(param);
 }
 
