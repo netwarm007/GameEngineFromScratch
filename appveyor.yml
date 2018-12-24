@@ -10,6 +10,8 @@ build_script:
 
     build_bullet
 
+    build_cef
+
     build
 
 test_script:

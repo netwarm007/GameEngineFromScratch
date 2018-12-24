@@ -72,7 +72,7 @@ IF(WIN32)
             ${OTHER_DEPENDENCIES}
             $<TARGET_FILE_DIR:Editor>
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${PROJECT_SOURCE_DIR}/External/src/cef/Resources"
+            "Resources"
             $<TARGET_FILE_DIR:Editor>)
 ELSE(WIN32)
   IF(APPLE)

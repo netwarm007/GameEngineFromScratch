@@ -9,9 +9,6 @@ if(${WIN32})
     list(APPEND PlatformInterfaceCefSources CefApplication.win.cpp simple_handler.win.cpp)
 endif(${WIN32})
 add_library(PlatformInterfaceCef ${PlatformInterfaceCefSources})
-target_include_directories(PlatformInterfaceCef PRIVATE 
-        "${PROJECT_SOURCE_DIR}/External/src/cef"
-        "${PROJECT_SOURCE_DIR}/External/src/cef/include")
 target_include_directories(PlatformInterfaceCef PUBLIC GeomMath)
 target_link_libraries(PlatformInterfaceCef
     GeomMath
@@ -24,6 +21,3 @@ target_link_libraries(MyGameEngineCef
             EmptyRHI
             PlatformInterfaceCef
 )
-target_include_directories(MyGameEngineCef PRIVATE 
-        "${PROJECT_SOURCE_DIR}/External/src/cef"
-        "${PROJECT_SOURCE_DIR}/External/src/cef/include")
