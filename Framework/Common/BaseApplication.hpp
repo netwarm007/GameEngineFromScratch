@@ -16,16 +16,18 @@ namespace My {
     {
     public:
         BaseApplication(GfxConfiguration& cfg);
-        int Initialize();
-        void Finalize();
+        int Initialize() override;
+        void Finalize() override;
         // One cycle of the main loop
-        void Tick();
+        void Tick() override;
 
-        void SetCommandLineParameters(int argc, char** argv);
-        int  GetCommandLineArgumentsCount() const;
-        const char* GetCommandLineArgument(int index) const;
+        void SetCommandLineParameters(int argc, char** argv) override;
+        int  GetCommandLineArgumentsCount() const override;
+        const char* GetCommandLineArgument(int index) const override;
 
-        bool IsQuit() const;
+        bool IsQuit() const override;
+
+        void RequestQuit() override { m_bQuit = true; }
 
         inline const GfxConfiguration& GetConfiguration() const { return m_Config; };
 

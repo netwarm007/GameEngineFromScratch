@@ -40,7 +40,9 @@ namespace My {
             // Allow the window to close if the browser says it's OK.
             CefRefPtr<CefBrowser> browser = browser_view_->GetBrowser();
             if (browser)
+            {
                 return browser->GetHost()->TryCloseBrowser();
+            }
             return true;
         }
 
@@ -84,7 +86,7 @@ void CefApplication::OnContextInitialized()
     url = command_line->GetSwitchValue("url");
     if (url.empty())
     {
-        url = "http://www.zhihu.com";
+        url = "https://zhuanlan.zhihu.com/c_119702958";
     }
 
     if (use_views) {

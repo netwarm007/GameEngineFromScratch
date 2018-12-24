@@ -98,7 +98,7 @@ int OpenGLApplication::Initialize()
 	DestroyWindow(TemphWnd);
 
 	// now initialize our application window
-    WindowsApplication::CreateMainWindow();
+    CreateMainWindow();
 
 	m_hDC  = GetDC(m_hWnd);
 

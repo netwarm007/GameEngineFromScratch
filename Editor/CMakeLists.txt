@@ -55,11 +55,24 @@ ENDIF(APPLE)
 IF(WIN32)
     target_link_libraries(Editor
                             MyPhysics
-                            MyGameEngineOpenGL
+                            MyGameEngineCef
                         )
+    set(OTHER_DEPENDENCIES
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/libcef.dll"
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/chrome_elf.dll"
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/libEGL.dll"
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/libGLESv2.dll"
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/natives_blob.bin"
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/snapshot_blob.bin"
+            "${PROJECT_SOURCE_DIR}/External/Windows/bin/v8_context_snapshot.bin"
+    )
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
+            ${OTHER_DEPENDENCIES}
+            $<TARGET_FILE_DIR:Editor>
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/External/src/cef/Resources"
             $<TARGET_FILE_DIR:Editor>)
 ELSE(WIN32)
   IF(APPLE)

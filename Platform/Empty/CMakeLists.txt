@@ -6,5 +6,6 @@ target_link_libraries(PlatformInterface GeomMath)
 add_library(MyGameEngine EmptyApplicationConfig.cpp)
 target_link_libraries(MyGameEngine 
             Common 
+            EmptyRHI
             PlatformInterface
 )

@@ -16,6 +16,9 @@
 #include "wrapper/cef_closure_task.h"
 #include "wrapper/cef_helpers.h"
 
+#include "GfxConfiguration.h"
+#include "IApplication.hpp"
+
 using namespace My;
 
 namespace My {
@@ -78,6 +81,8 @@ bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser)
     if (browser_list_.size() == 1) {
         // Set a flag to indicate that the window close should be allowed.
         is_closing_ = true;
+
+        g_pApp->RequestQuit();
     }
 
     // Allow the close. For windowed browsers this will result in the OS close

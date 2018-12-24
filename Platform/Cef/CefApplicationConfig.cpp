@@ -1,9 +1,9 @@
-#include "EmptyApplication.hpp"
+#include "CefApplication.hpp"
 #include "Empty/EmptyConfig.hpp"
 
 namespace My {
     extern GfxConfiguration config;
-	IApplication*    g_pApp             = static_cast<IApplication*>(new BaseApplication(config));
+	IApplication*    g_pApp             = static_cast<IApplication*>(new CefApplication(config));
     IMemoryManager*   g_pMemoryManager   = static_cast<IMemoryManager*>(new MemoryManager);
     AssetLoader*     g_pAssetLoader     = static_cast<AssetLoader*>(new AssetLoader);
     SceneManager*    g_pSceneManager    = static_cast<SceneManager*>(new SceneManager);

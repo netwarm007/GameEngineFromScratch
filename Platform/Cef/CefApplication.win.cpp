@@ -33,6 +33,8 @@ int CefApplication::Initialize()
     CefRefPtr<CefApplication> app(this);
 
     CefInitialize(main_args, settings, app.get(), sandbox_info);
+
+    return 0;
 }
 
 void CefApplication::Finalize()
