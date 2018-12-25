@@ -1,4 +1,7 @@
 IF(APPLE)
+    find_library(CEF_LIBRARY NAMES "Chromium Embedded Framework" PATHS ${MYGE_EXTERNAL_FRAMEWORK_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+    find_library(CEF_WRAPPER NAMES cef_dll_wrapper libcef_dll_wrapper PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+
     set(SHADER_SOURCES basic.vert basic.frag
                 debug.vert debug.frag
                 pbr.vert pbr.frag
@@ -33,10 +36,15 @@ IF(APPLE)
                     DEPENDS Editor.metallib
         )
 
+    # main app
     add_executable(Editor MACOSX_BUNDLE
         EditorLogic.cpp 
         EditorConfig.cpp
         Editor.metallib
+        )
+
+    set_target_properties(Editor PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/mac/Info.plist
         )
 
     add_dependencies(Editor EditorShaderLibrary)
@@ -47,16 +55,33 @@ IF(APPLE)
 
     set_target_properties(Editor PROPERTIES
         RESOURCE "${RESOURCE_FILES}"
+    )
+
+    # helper app
+    set(CEF_HELPER_OUTPUT_NAME "Editor Helper")
+    add_executable(EditorHelper MACOSX_BUNDLE
+        process_helper_mac.cpp
+    )
+
+    target_link_libraries(EditorHelper
+        ${CEF_WRAPPER}
+    )
+
+    set_target_properties(EditorHelper PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/mac/helper-Info.plist
+        OUTPUT_NAME ${CEF_HELPER_OUTPUT_NAME}
         )
 ELSE(APPLE)
-add_executable(Editor
-    EditorLogic.cpp EditorConfig.cpp)
+    add_executable(Editor
+        EditorLogic.cpp EditorConfig.cpp)
 ENDIF(APPLE)
+
+target_link_libraries(Editor
+                        MyPhysics
+                        MyGameEngineCef
+                    )
+
 IF(WIN32)
-    target_link_libraries(Editor
-                            MyPhysics
-                            MyGameEngineCef
-                        )
     set(OTHER_DEPENDENCIES
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/libcef.dll"
@@ -76,14 +101,34 @@ IF(WIN32)
             $<TARGET_FILE_DIR:Editor>)
 ELSE(WIN32)
   IF(APPLE)
-    target_link_libraries(Editor
-                            MyPhysics
-                            MyGameEngineMetal
-                        )
+    # Copy files into the main app bundle.
+    add_custom_command(
+        TARGET Editor
+        POST_BUILD
+        # Copy the CEF framework into the Frameworks directory.
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${PROJECT_SOURCE_DIR}/External/Darwin/framework
+                $<TARGET_FILE_DIR:Editor>/../Frameworks
+
+        # Copy the Helper app into the Frameworks directory.
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CEF_HELPER_OUTPUT_NAME}.app
+                $<TARGET_FILE_DIR:Editor>/../Frameworks/${CEF_HELPER_OUTPUT_NAME}.app
+
+        # Copy the resources
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${CMAKE_CURRENT_SOURCE_DIR}/mac/English.lproj/InfoPlist.strings
+                $<TARGET_FILE_DIR:Editor>/../Resources/English.lproj/
+        COMMAND /usr/bin/ibtool --output-format binary1 --compile 
+                $<TARGET_FILE_DIR:Editor>/../Resources/English.lproj/MainMenu.nib
+                ${CMAKE_CURRENT_SOURCE_DIR}/mac/English.lproj/MainMenu.xib
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${CMAKE_CURRENT_SOURCE_DIR}/mac/Editor.icns
+                $<TARGET_FILE_DIR:Editor>/../Resources/
+
+        VERBATIM
+    )
   ELSE(APPLE)
-    target_link_libraries(Editor
-                            MyPhysics
-                            MyGameEngineOpenGL
-                        )
+
   ENDIF(APPLE)
 ENDIF(WIN32)

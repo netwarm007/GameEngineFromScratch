@@ -9,19 +9,19 @@ namespace My {
         CefApplication(GfxConfiguration& config)
             : BaseApplication(config) {}
 
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize() override;
+        void Finalize() override;
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick() override;
 
         // CefApp methods:
-        virtual CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override
+        CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override
         {
             return this;
         }
 
         // CefBrowserProcessHandler methods:
-        virtual void OnContextInitialized() override;
+        void OnContextInitialized() override;
 
     private:
         // Include the default reference counting implementation.

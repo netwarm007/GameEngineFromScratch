@@ -86,7 +86,7 @@ void CefApplication::OnContextInitialized()
     url = command_line->GetSwitchValue("url");
     if (url.empty())
     {
-        url = "https://zhuanlan.zhihu.com/c_119702958";
+        url = "https://www.khronos.org/registry/webgl/sdk/demos/google/san-angeles/index.html";
     }
 
     if (use_views) {

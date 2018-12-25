@@ -48,18 +48,20 @@ void SimpleHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
 {
     CEF_REQUIRE_UI_THREAD();
 
+    std::string prefix (g_pApp->GetConfiguration().appName);
+
     if (use_views_) {
         // Set the title of the window using the Views framework.
         CefRefPtr<CefBrowserView> browser_view =
             CefBrowserView::GetForBrowser(browser);
         if (browser_view) {
-        CefRefPtr<CefWindow> window = browser_view->GetWindow();
-        if (window)
-            window->SetTitle(title);
+            CefRefPtr<CefWindow> window = browser_view->GetWindow();
+            if (window)
+                window->SetTitle(prefix + " [" + title.ToString() + "]");
         }
     } else {
         // Set the title of the window using platform APIs.
-        PlatformTitleChange(browser, title);
+        PlatformTitleChange(browser, prefix + " [" + title.ToString() + "]");
     }
 }
 
@@ -81,8 +83,6 @@ bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser)
     if (browser_list_.size() == 1) {
         // Set a flag to indicate that the window close should be allowed.
         is_closing_ = true;
-
-        g_pApp->RequestQuit();
     }
 
     // Allow the close. For windowed browsers this will result in the OS close
@@ -105,7 +105,7 @@ void SimpleHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser)
 
     if (browser_list_.empty()) {
         // All browser windows have closed. Quit the application message loop.
-        CefQuitMessageLoop();
+        g_pApp->RequestQuit();
     }
 }
 

@@ -29,7 +29,7 @@ namespace My {
 
         void RequestQuit() override { m_bQuit = true; }
 
-        inline const GfxConfiguration& GetConfiguration() const { return m_Config; };
+        inline const GfxConfiguration& GetConfiguration() const override { return m_Config; };
 
     protected:
         // Flag if need quit the main loop of the application
