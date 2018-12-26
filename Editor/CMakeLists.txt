@@ -125,6 +125,8 @@ ELSE(WIN32)
                 $<TARGET_FILE_DIR:Editor>/../Frameworks/${CEF_HELPER_OUTPUT_NAME}.app
 
         # Copy the resources
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                $<TARGET_FILE_DIR:Editor>/../Resources/English.lproj
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${CMAKE_CURRENT_SOURCE_DIR}/mac/English.lproj/InfoPlist.strings
                 $<TARGET_FILE_DIR:Editor>/../Resources/English.lproj/
