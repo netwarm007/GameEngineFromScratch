@@ -15,7 +15,8 @@ int CefApplication::Initialize()
     sandbox_info = scoped_sandbox.sandbox_info();
 #endif
 
-    CefMainArgs main_args(m_nArgC, m_ppArgV);
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+    CefMainArgs main_args(hInstance);
 
     int exit_code = CefExecuteProcess(main_args, NULL, sandbox_info);
     if (exit_code >= 0)

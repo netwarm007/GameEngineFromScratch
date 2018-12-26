@@ -72,8 +72,13 @@ IF(APPLE)
         OUTPUT_NAME ${CEF_HELPER_OUTPUT_NAME}
         )
 ELSE(APPLE)
-    add_executable(Editor
-        EditorLogic.cpp EditorConfig.cpp)
+    IF(WIN32)
+        add_executable(Editor
+            EditorLogic.cpp EditorConfig.cpp win/Editor.exe.manifest win/Editor.rc)
+    ELSE(WIN32)
+        add_executable(Editor
+            EditorLogic.cpp EditorConfig.cpp)
+    ENDIF(WIN32)
 ENDIF(APPLE)
 
 target_link_libraries(Editor
@@ -97,8 +102,12 @@ IF(WIN32)
             ${OTHER_DEPENDENCIES}
             $<TARGET_FILE_DIR:Editor>
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "Resources"
-            $<TARGET_FILE_DIR:Editor>)
+            ${CMAKE_CURRENT_SOURCE_DIR}/Resources
+            $<TARGET_FILE_DIR:Editor>
+        COMMAND "mt.exe" -nologo
+            -manifest ${CMAKE_CURRENT_SOURCE_DIR}/win/Editor.exe.manifest ${CMAKE_CURRENT_SOURCE_DIR}/win/compatibility.manifest
+            -outputresource:$<TARGET_FILE:Editor>\;\#1
+    )
 ELSE(WIN32)
   IF(APPLE)
     # Copy files into the main app bundle.
