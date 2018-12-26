@@ -86,7 +86,8 @@ void CefApplication::OnContextInitialized()
     url = command_line->GetSwitchValue("url");
     if (url.empty())
     {
-        url = "https://www.khronos.org/registry/webgl/sdk/demos/google/san-angeles/index.html";
+        //url = "https://www.khronos.org/registry/webgl/sdk/demos/google/san-angeles/index.html";
+        url = "https://makepad.github.io/makepad.html";
     }
 
     if (use_views) {
