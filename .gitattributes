@@ -55,3 +55,8 @@ Asset/Scene/PlunderbussPete.ogex filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin/llc filter=lfs diff=lfs merge=lfs -text
 Asset/Scene/city.ogex filter=lfs diff=lfs merge=lfs -text
 Asset/Textures filter=lfs diff=lfs merge=lfs -text
+External/Windows/lib filter=lfs diff=lfs merge=lfs -text
+External/Windows/bin filter=lfs diff=lfs merge=lfs -text
+*.bin filter=lfs diff=lfs merge=lfs -text
+*.dll filter=lfs diff=lfs merge=lfs -text
+External/Darwin/framework/Chromium[[:space:]]Embedded[[:space:]]Framework.framework/Chromium[[:space:]]Embedded[[:space:]]Framework filter=lfs diff=lfs merge=lfs -text

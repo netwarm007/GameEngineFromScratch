@@ -93,6 +93,7 @@
                 "${workspaceRoot}/External/Windows/include",
                 "${workspaceRoot}/External/Windows/include/bullet",
                 "${workspaceRoot}/External/src/glad/include",
+                "${workspaceRoot}/External/src/cef/include",
                 "${workspaceRoot}/Framework/Ability"
             ],
             "defines": [

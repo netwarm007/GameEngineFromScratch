@@ -45,5 +45,3 @@ target_link_libraries(MyGameEngineOpenGL
 )
 target_include_directories(MyGameEngineOpenGL PRIVATE 
         "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-
-
