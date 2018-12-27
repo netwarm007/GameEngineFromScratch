@@ -33,6 +33,7 @@ jobs:
              ./build_opengex.sh
              ./build_zlib.sh
              ./build_bullet.sh
+             ./build_cef.sh
              ./build.sh
       - run:
           name: Test
