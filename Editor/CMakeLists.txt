@@ -102,7 +102,7 @@ IF(WIN32)
             ${OTHER_DEPENDENCIES}
             $<TARGET_FILE_DIR:Editor>
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/Resources
+            ${CMAKE_CURRENT_SOURCE_DIR}/win/Resources
             $<TARGET_FILE_DIR:Editor>
         COMMAND "mt.exe" -nologo
             -manifest ${CMAKE_CURRENT_SOURCE_DIR}/win/Editor.exe.manifest ${CMAKE_CURRENT_SOURCE_DIR}/win/compatibility.manifest
@@ -140,6 +140,21 @@ ELSE(WIN32)
         VERBATIM
     )
   ELSE(APPLE)
-
+    set(OTHER_DEPENDENCIES
+            "${PROJECT_SOURCE_DIR}/External/Linux/lib/libcef.so"
+            "${PROJECT_SOURCE_DIR}/External/Linux/lib/libEGL.so"
+            "${PROJECT_SOURCE_DIR}/External/Linux/lib/libGLESv2.so"
+            "${PROJECT_SOURCE_DIR}/External/Linux/bin/natives_blob.bin"
+            "${PROJECT_SOURCE_DIR}/External/Linux/bin/snapshot_blob.bin"
+            "${PROJECT_SOURCE_DIR}/External/Linux/bin/v8_context_snapshot.bin"
+    )
+    add_custom_command(TARGET Editor POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${OTHER_DEPENDENCIES}
+            $<TARGET_FILE_DIR:Editor>
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/nix/Resources
+            $<TARGET_FILE_DIR:Editor>
+    )
   ENDIF(APPLE)
 ENDIF(WIN32)
