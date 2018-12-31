@@ -8,7 +8,7 @@ jobs:
           name: Install Dependencies
           command: |
              apt update 
-             apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
+             apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev libxss-dev
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
              apt install -y git-lfs
       - restore_cache:
