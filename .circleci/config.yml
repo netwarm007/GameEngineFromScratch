@@ -2,7 +2,7 @@ version: 2
 jobs:
   build_linux:
     docker:
-      - image: ubuntu:18.04
+      - image: ubuntu:16.04
     steps:
       - run: 
           name: Install Dependencies
