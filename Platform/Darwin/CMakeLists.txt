@@ -16,8 +16,6 @@ target_link_libraries(PlatformInterface
         ${MTK_LIBRARY}
         dl
     )
-target_include_directories(PlatformInterface PUBLIC GeomMath)
-target_link_libraries(PlatformInterface GeomMath)
 
 # MyGameEngineMetal
 add_library(MyGameEngineMetal

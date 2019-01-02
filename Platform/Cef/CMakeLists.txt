@@ -26,11 +26,9 @@ else(${APPLE})
 endif(${UNIX})
 endif(${APPLE})
 add_library(PlatformInterfaceCef ${PlatformInterfaceCefSources})
-target_include_directories(PlatformInterfaceCef PUBLIC GeomMath)
 
 if(${APPLE})
     target_link_libraries(PlatformInterfaceCef
-        GeomMath
         ${CEF_WRAPPER}
         ${CEF_LIBRARY}
         ${COCOA_LIBRARY}
@@ -38,13 +36,11 @@ if(${APPLE})
 else(${APPLE})
     if(${WIN32})
         target_link_libraries(PlatformInterfaceCef
-            GeomMath
             ${CEF_WRAPPER}
             ${CEF_LIBRARY}
         )
     else(${WIN32})
         target_link_libraries(PlatformInterfaceCef
-            GeomMath
             ${CEF_WRAPPER}
             ${CEF_LIBRARY}
             ${X11_LIBRARY}

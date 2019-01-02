@@ -10,9 +10,6 @@ target_link_libraries(PlatformInterface
                 dxgi
 )
 
-target_include_directories(PlatformInterface PUBLIC GeomMath)
-target_link_libraries(PlatformInterface GeomMath)
-
 add_library(MyGameEngineD3d12
                    D3d12ApplicationConfig.cpp
 )
@@ -32,8 +29,6 @@ target_link_libraries(PlatformInterfaceOpenGL
 )
 target_include_directories(PlatformInterfaceOpenGL PRIVATE 
         "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-target_include_directories(PlatformInterfaceOpenGL PUBLIC GeomMath)
-target_link_libraries(PlatformInterfaceOpenGL GeomMath)
 
 add_library(MyGameEngineOpenGL
                 OpenGLApplicationConfig.cpp

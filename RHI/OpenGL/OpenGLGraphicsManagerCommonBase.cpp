@@ -831,7 +831,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const std::vector<std
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    delete pBuff;
+    delete[] pBuff;
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)

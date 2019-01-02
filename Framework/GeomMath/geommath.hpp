@@ -12,19 +12,39 @@
 #include <set>
 #include <unordered_set>
 #include <vector>
-#include "CrossProduct.h"
-#include "MulByElement.h"
-#include "Normalize.h"
-#include "Transform.h"
-#include "Transpose.h"
-#include "AddByElement.h"
-#include "SubByElement.h"
-#include "MatrixUtil.h"
-#include "InverseMatrix4X4f.h"
-#include "DCT.h"
-#include "Absolute.h"
-#include "Pow.h"
-#include "DivByElement.h"
+
+#include "config.h"
+
+#ifdef USE_ISPC
+namespace ispc { /* namespace */
+    extern "C" {
+#else
+namespace Dummy { /* namespace */
+#endif
+        void CrossProduct(const float a[3], const float b[3], float result[3]);
+        void AddByElement(const float * a, const float * b, float * result, const size_t count);
+        void SubByElement(const float * a, const float * b, float * result, const size_t count);
+        void MulByElement(const float * a, const float * b, float * result, const size_t count);
+        void MulByElementi16(const int16_t * a, const int16_t * b, int16_t * result, const size_t count);
+        void MulByElementi32(const int32_t * a, const int32_t * b, int32_t * result, const size_t count);
+        void DivByElement(const float * a, const float * b, float * result, const size_t count);
+        void DivByElementi16(const int16_t * a, const int16_t * b, int16_t * result, const size_t count);
+        void DivByElementi32(const int32_t * a, const int32_t * b, int32_t * result, const size_t count);
+        void Normalize(const size_t count, float * v, float length);
+        void Transform(float vector[4], const float matrix[16]);
+        void Transpose(const float * a, float * r, const uint32_t row_count, const uint32_t column_count);
+        void BuildIdentityMatrix(float * data, const int32_t n);
+        void MatrixExchangeYandZ(float * data, const int32_t rows, const int32_t cols);
+        bool InverseMatrix3X3f(float matrix[9]);
+        bool InverseMatrix4X4f(float matrix[16]);
+        void DCT8X8(const float g[64], float G[64]);
+        void IDCT8X8(const float G[64], float g[64]);
+        void Absolute(float * result, const float * a, const size_t count);
+        void Pow(const float * v, const size_t count, const float exponent, float * result);
+#ifdef USE_ISPC
+    } /* end extern C */
+#endif
+} /* namespace */
 
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -160,7 +180,11 @@ namespace My {
     template <typename T, int N>
     void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1, const Vector<T, N>& vec2)
     {
+    #ifdef USE_ISPC
         ispc::AddByElement(vec1, vec2, result, N);
+    #else
+        Dummy::AddByElement(vec1, vec2, result, N);
+    #endif
     }
 
     template <typename T, int N>
@@ -184,7 +208,11 @@ namespace My {
     template <typename T, int N>
     void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1, const Vector<T, N>& vec2)
     {
+    #ifdef USE_ISPC
         ispc::SubByElement(vec1, vec2, result, N);
+    #else
+        Dummy::SubByElement(vec1, vec2, result, N);
+    #endif
     }
 
     template <typename T, int N>
@@ -214,7 +242,11 @@ namespace My {
     template <typename T>
     inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1, const Vector<T, 3>& vec2)
     {
+    #ifdef USE_ISPC
         ispc::CrossProduct(vec1, vec2, result);
+    #else
+        Dummy::CrossProduct(vec1, vec2, result);
+    #endif
     }
 
     template <typename T>
@@ -224,7 +256,12 @@ namespace My {
 
         result = static_cast<T>(0);
 
+    #ifdef USE_ISPC
         ispc::MulByElement(a, b, _result, count);
+    #else
+        Dummy::MulByElement(a, b, _result, count);
+    #endif
+
         for (size_t i = 0; i < count; i++) {
             result += _result[i];
         }
@@ -241,14 +278,22 @@ namespace My {
     template <typename T, int N>
     inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a, const Vector<T, N>& b)
     {
+    #ifdef USE_ISPC
         ispc::MulByElement(a, b, result, N);
+    #else
+        Dummy::MulByElement(a, b, result, N);
+    #endif
     }
 
     template <typename T, int N>
     inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a, const T scalar)
     {
         Vector<T, N> v(scalar);
+    #ifdef USE_ISPC
         ispc::MulByElement(a, v, result, N);
+    #else
+        Dummy::MulByElement(a, v, result, N);
+    #endif
     }
 
     template <typename T, int N>
@@ -281,14 +326,22 @@ namespace My {
     template <typename T, int N>
     inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a, const Vector<T, N>& b)
     {
+    #ifdef USE_ISPC
         ispc::DivByElement(a, b, result, N);
+    #else
+        Dummy::DivByElement(a, b, result, N);
+    #endif
     }
 
     template <typename T, int N>
     inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a, const T scalar)
     {
         Vector<T, N> v(scalar);
+    #ifdef USE_ISPC
         ispc::DivByElement(a, v, result, N);
+    #else
+        Dummy::DivByElement(a, v, result, N);
+    #endif
     }
 
     template <typename T, int N>
@@ -340,7 +393,11 @@ namespace My {
     Vector<T, N> pow(const Vector<T, N>& vec, const Scalar exponent)
     {
         Vector<T, N> result;
+    #ifdef USE_ISPC
         ispc::Pow(vec, N, exponent, result);
+    #else
+        Dummy::Pow(vec, N, exponent, result);
+    #endif
         return result;
     }
 
@@ -354,7 +411,11 @@ namespace My {
     Vector<T, N> abs(const Vector<T, N>& vec)
     {
         Vector<T, N> result;
+    #ifdef USE_ISPC
         ispc::Absolute(result, vec, N);
+    #else
+        Dummy::Absolute(result, vec, N);
+    #endif
         return result;
     }
 
@@ -396,7 +457,11 @@ namespace My {
         T length;
         DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), N);
         length = std::sqrt(length);
+    #ifdef USE_ISPC
         ispc::Normalize(N, a, length);
+    #else
+        Dummy::Normalize(N, a, length);
+    #endif
     }
 
     // Matrix
@@ -462,7 +527,11 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void MatrixAdd(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
+    #ifdef USE_ISPC
         ispc::AddByElement(matrix1, matrix2, result, ROWS * COLS);
+    #else
+        Dummy::AddByElement(matrix1, matrix2, result, ROWS * COLS);
+    #endif
     }
 
     template <typename T, int ROWS, int COLS>
@@ -477,19 +546,31 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void MatrixSub(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
+    #ifdef USE_ISPC
         ispc::SubByElement(matrix1, matrix2, result, ROWS * COLS);
+    #else
+        Dummy::SubByElement(matrix1, matrix2, result, ROWS * COLS);
+    #endif
     }
 
     template <typename T, int ROWS, int COLS>
     void MatrixMulByElement(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
+    #ifdef USE_ISPC
         ispc::MulByElement(matrix1, matrix2, result, ROWS * COLS);
+    #else
+        Dummy::MulByElement(matrix1, matrix2, result, ROWS * COLS);
+    #endif
     }
 
     template <int ROWS, int COLS>
     void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result, const Matrix<int32_t, ROWS, COLS>& matrix1, const Matrix<int32_t, ROWS, COLS>& matrix2)
     {
+    #ifdef USE_ISPC
         ispc::MulByElementi32(matrix1, matrix2, result, ROWS * COLS);
+    #else
+        Dummy::MulByElementi32(matrix1, matrix2, result, ROWS * COLS);
+    #endif
     }
 
     template <typename T, int ROWS, int COLS>
@@ -559,7 +640,11 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void Absolute(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix)
     {
+    #ifdef USE_ISPC
         ispc::Absolute(result, matrix, ROWS * COLS);
+    #else
+        Dummy::Absolute(result, matrix, ROWS * COLS);
+    #endif
     }
 
     template <typename T, int ROWS, int COLS>
@@ -595,7 +680,11 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     inline void Transpose(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1)
     {
+    #ifdef USE_ISPC
         ispc::Transpose(matrix1, result, ROWS, COLS);
+    #else
+        Dummy::Transpose(matrix1, result, ROWS, COLS);
+    #endif
     }
 
     template <typename T, int N>
@@ -660,13 +749,21 @@ namespace My {
     inline void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix)
     {
 		Vector4f tmp ({vector[0], vector[1], vector[2], 1.0f});
+    #ifdef USE_ISPC
         ispc::Transform(tmp, matrix);
+    #else
+        Dummy::Transform(tmp, matrix);
+    #endif
         std::memcpy(&vector, &tmp, sizeof(vector));
     }
 
     inline void Transform(Vector4f& vector, const Matrix4X4f& matrix)
     {
+    #ifdef USE_ISPC
         ispc::Transform(vector, matrix);
+    #else
+        Dummy::Transform(vector, matrix);
+    #endif
 
         return;
     }
@@ -674,7 +771,11 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     inline void ExchangeYandZ(Matrix<T,ROWS,COLS>& matrix)
     {
+    #ifdef USE_ISPC
         ispc::MatrixExchangeYandZ(matrix, ROWS, COLS);
+    #else
+        Dummy::MatrixExchangeYandZ(matrix, ROWS, COLS);
+    #endif
     }
 
     inline void BuildViewLHMatrix(Matrix4X4f& result, const Vector3f position, const Vector3f lookAt, const Vector3f up)
@@ -746,7 +847,11 @@ namespace My {
     template<typename T, int N>
     inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix)
     {
+    #ifdef USE_ISPC
 	    ispc::BuildIdentityMatrix(matrix, N);
+    #else
+	    Dummy::BuildIdentityMatrix(matrix, N);
+    #endif
     }
 
     inline void BuildOrthographicMatrix(Matrix4X4f& matrix, const float left, const float right, const float top, const float bottom, const float near_plane, const float far_plane)
@@ -915,25 +1020,41 @@ namespace My {
 
     inline bool InverseMatrix3X3f(Matrix3X3f& matrix)
     {
+    #ifdef USE_ISPC
         return ispc::InverseMatrix3X3f(matrix);
+    #else
+        return Dummy::InverseMatrix3X3f(matrix);
+    #endif
     }
 
     inline bool InverseMatrix4X4f(Matrix4X4f& matrix)
     {
+    #ifdef USE_ISPC
         return ispc::InverseMatrix4X4f(matrix);
+    #else
+        return Dummy::InverseMatrix4X4f(matrix);
+    #endif
     }
 
     inline Matrix8X8f DCT8X8(const Matrix8X8f& matrix)
     {
         Matrix8X8f result;
+    #ifdef USE_ISPC
         ispc::DCT8X8(matrix, result);
+    #else
+        Dummy::DCT8X8(matrix, result);
+    #endif
         return result;
     }
 
     inline Matrix8X8f IDCT8X8(const Matrix8X8f& matrix)
     {
         Matrix8X8f result;
+    #ifdef USE_ISPC
         ispc::IDCT8X8(matrix, result);
+    #else
+        Dummy::IDCT8X8(matrix, result);
+    #endif
         return result;
     }
 

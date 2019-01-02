@@ -6,7 +6,5 @@ export void Transform(uniform float vector[4], uniform const float matrix[16])
             + (vector[2] * matrix[index + 8]) 
             + (vector[3] * matrix[index + 12]);
     }
-
-    return;
 }
 

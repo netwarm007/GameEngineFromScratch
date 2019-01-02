@@ -29,7 +29,7 @@ int main(int , char** )
     g_pMemoryManager->Initialize();
     g_pAssetLoader->Initialize();
 
-    string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/Example.ogex");
+    string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/splash.ogex");
 
     OgexParser* ogex_parser = new OgexParser ();
     unique_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);

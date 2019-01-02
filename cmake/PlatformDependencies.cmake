@@ -12,6 +12,8 @@ elseif(ORBIS)
     # nothing here
 elseif(PSP2)
     # nothing here
+elseif(WA)
+    # nothing here
 else()
     find_package(Libuuid REQUIRED)
     if (NOT LIBUUID_FOUND)

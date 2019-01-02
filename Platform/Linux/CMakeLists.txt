@@ -22,8 +22,6 @@ target_link_libraries(PlatformInterface
         ${DL_LIBRARY}
 )
 target_include_directories(PlatformInterface PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-target_include_directories(PlatformInterface PUBLIC GeomMath)
-target_link_libraries(PlatformInterface GeomMath)
 
 add_library(MyGameEngineOpenGL
                 OpenGLApplicationConfig.cpp

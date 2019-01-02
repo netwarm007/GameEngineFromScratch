@@ -29,6 +29,11 @@ ELSE(WIN32)
                                 BulletPhysics
                                 MyGameEngineMetal
                             )
+    ELSEIF(WA)
+        target_link_libraries(BilliardGame 
+                                BulletPhysics
+                                MyGameEngine
+                            )
     ELSE(APPLE)
         target_link_libraries(BilliardGame 
                                 BulletPhysics

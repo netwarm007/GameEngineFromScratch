@@ -43,3 +43,6 @@
 [submodule "cef"]
 	path = External/src/cef
 	url = https://github.com/netwarm007/cef.git
+[submodule "emsdk"]
+	path = External/src/emsdk
+	url = https://github.com/netwarm007/emsdk.git
