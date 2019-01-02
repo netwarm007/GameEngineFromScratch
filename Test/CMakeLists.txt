@@ -33,6 +33,8 @@ target_link_libraries(BulletTest BulletPhysics)
 IF(WA)
 add_custom_target(PackageAsset ALL
     python $ENV{EMSCRIPTEN}/tools/file_packager.py ${CMAKE_CURRENT_BINARY_DIR}/Asset.data 
+        --lz4
+        --no-heap-copy
         --js-output=${CMAKE_CURRENT_BINARY_DIR}/Asset.preload.js 
         --preload Asset/Textures/eye.png 
                   Asset/Textures/hdr/PaperMill_posx.dds
