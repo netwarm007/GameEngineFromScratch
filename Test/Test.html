@@ -82,13 +82,13 @@
       #output {
         width: 80%;
         height: 80%;
+        display: block;
         margin: 0 auto;
         margin-top: 10px;
         border-left: 0px;
         border-right: 0px;
         padding-left: 0px;
         padding-right: 0px;
-        display: block;
         background-color: black;
         color: white;
         font-family: 'Lucida Console', Monaco, monospace;
@@ -97,6 +97,7 @@
     </style>
   </head>
   <body>
+    <h1>Game Engine From Scratch</h1>
     <div class="spinner" id='spinner'></div>
     <div class="emscripten" id="status">Downloading...</div>
 
@@ -105,7 +106,7 @@
     </div>
 
     
-    <textarea id="output" rows="25"></textarea>
+    <textarea id="output" rows="50"></textarea>
 
     <script type='text/javascript'>
       var statusElement = document.getElementById('status');
