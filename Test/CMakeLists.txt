@@ -2,7 +2,7 @@ set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                OgexParserTest JpegParserTest PngParserTest DdsParserTest HdrParserTest TgaParserTest
                SceneLoadingTest AnimationTest
                BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
-               RasterizationTest
+               #RasterizationTest SceneObjectTest
         )
 
 foreach(TEST_CASE IN LISTS TEST_CASES)
@@ -23,10 +23,6 @@ add_custom_target(CopyDll ALL
         "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
         ${CMAKE_CURRENT_BINARY_DIR})
 ENDIF(WIN32)
-
-#add_executable(SceneObjectTest SceneObjectTest.cpp)
-#target_link_libraries(SceneObjectTest Common ${XG_LIBRARY})
-#add_test(NAME TEST_SceneObject COMMAND SceneObjectTest)
 
 target_link_libraries(BulletTest BulletPhysics)
 

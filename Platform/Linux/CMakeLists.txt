@@ -27,8 +27,8 @@ add_library(MyGameEngineOpenGL
                 OpenGLApplicationConfig.cpp
     )
 target_link_libraries(MyGameEngineOpenGL
-                        Common 
                         OpenGLRHI 
+                        Common 
                         PlatformInterface
 )
 target_include_directories(MyGameEngineOpenGL PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
