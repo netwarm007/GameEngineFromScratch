@@ -1,12 +1,16 @@
 #include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <functional>
+
 #include "OpenGLGraphicsManager.hpp"
 
-using namespace My;
-using namespace std;
+#include "glad/glad.h"
 
 extern struct gladGLversionStruct GLVersion;
 
-#include "OpenGLGraphicsManagerCommonBase.cpp"
+using namespace My;
+using namespace std;
 
 int OpenGLGraphicsManager::Initialize()
 {

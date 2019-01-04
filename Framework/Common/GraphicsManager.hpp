@@ -2,7 +2,7 @@
 #include <vector>
 #include <memory>
 #include "cbuffer.h"
-#include "GfxConfiguration.h"
+#include "GfxConfiguration.hpp"
 #include "FrameStructure.hpp"
 #include "IRuntimeModule.hpp"
 #include "IShaderManager.hpp"
@@ -27,7 +27,7 @@ namespace My {
         virtual void Draw();
         virtual void Present();
 
-        virtual void UseShaderProgram(const int32_t shaderProgram);
+        virtual void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram);
 
         virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
 

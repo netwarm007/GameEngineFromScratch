@@ -8,7 +8,7 @@ namespace Dummy
         const double one_over_length = 1.0 / length;
         for(size_t index = 0; index < count; index++)
         {
-            v[index] *= one_over_length;
+            v[index] = static_cast<float>(v[index] * one_over_length);
         }
     }
 }

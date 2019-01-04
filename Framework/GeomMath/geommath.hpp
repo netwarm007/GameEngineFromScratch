@@ -402,13 +402,13 @@ namespace My {
     }
 
     template <typename T>
-    inline T abs(const T data)
+    inline T fabs(const T data)
     {
-        return std::abs(data);
+        return std::fabs(data);
     }
 
     template <typename T, int N>
-    Vector<T, N> abs(const Vector<T, N>& vec)
+    Vector<T, N> fabs(const Vector<T, N>& vec)
     {
         Vector<T, N> result;
     #ifdef USE_ISPC

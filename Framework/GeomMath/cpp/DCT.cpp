@@ -1,12 +1,12 @@
-#include <math.h>
+#include <cmath>
 
-#define PI 3.14159265354f
+const double PI = 3.14159265358979323846;
+const double PI_over_sixteen = PI / 16.0;
 const float one_over_four = 1.0f / 4.0f;
-const float PI_over_sixteen = PI / 16.0f;
 
 inline float normalizing_scale_factor(float a)
 {
-    return (a == 0)? 1.0f/sqrt(2.0f) : 1.0f;
+    return static_cast<float>((a == 0)? 1.0f/sqrt(2.0f) : 1.0f);
 }
 
 namespace Dummy
@@ -23,10 +23,10 @@ namespace Dummy
                 {
                     for (int y = 0; y < 8; y++)
                     {
-                        float scale_factor = one_over_four * normalizing_scale_factor(u)
-                                * normalizing_scale_factor(v);
-                        float normial = g[x*8+y] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
-                                * cos((2.0f * y + 1.0f) * v * PI_over_sixteen);
+                        float scale_factor = one_over_four * normalizing_scale_factor(static_cast<float>(u))
+                                * normalizing_scale_factor(static_cast<float>(v));
+                        float normial = static_cast<float>(g[x*8+y] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
+                                * cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
 
                         G[u*8+v] += scale_factor * normial;
                     }
@@ -47,10 +47,10 @@ namespace Dummy
                 {
                     for (int v = 0; v < 8; v++)
                     {
-                        float scale_factor = one_over_four * normalizing_scale_factor(u)
-                            * normalizing_scale_factor(v);
-                        float normial = G[u*8+v] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
-                            * cos((2.0f * y + 1.0f) * v * PI_over_sixteen);
+                        float scale_factor = one_over_four * normalizing_scale_factor(static_cast<float>(u))
+                            * normalizing_scale_factor(static_cast<float>(v));
+                        float normial = static_cast<float>(G[u*8+v] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
+                            * cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
 
                         g[x*8+y] += scale_factor * normial;
                     }

@@ -1,6 +1,7 @@
 #include "EditorLogic.hpp"
 #include "IApplication.hpp"
 #include "SceneManager.hpp"
+#include "geommath.hpp"
 
 using namespace My;
 using namespace std;

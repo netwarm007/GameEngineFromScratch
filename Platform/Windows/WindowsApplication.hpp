@@ -16,7 +16,7 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
-        HWND GetMainWindow() { return m_hWnd; };
+        void* GetMainWindowHandler() override { return m_hWnd; };
 
     protected:
         void CreateMainWindow();

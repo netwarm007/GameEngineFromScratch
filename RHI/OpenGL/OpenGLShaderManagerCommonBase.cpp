@@ -3,6 +3,8 @@
 #include "AssetLoader.hpp"
 #include "GraphicsManager.hpp"
 
+#include "glad/glad.h"
+
 using namespace My;
 using namespace std;
 

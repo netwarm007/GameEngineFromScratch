@@ -1,12 +1,14 @@
-#include <iostream>
 #include "OpenGLESGraphicsManager.hpp"
+
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+#include <functional>
+
+#include  <GLES3/gl32.h>
 
 using namespace My;
 using namespace std;
-
-#define OPENGL_ES
-#include "OpenGLGraphicsManagerCommonBase.cpp"
-#undef OPENGL_ES
 
 int OpenGLESGraphicsManager::Initialize()
 {

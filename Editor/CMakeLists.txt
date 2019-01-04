@@ -1,7 +1,4 @@
 IF(APPLE)
-    find_library(CEF_LIBRARY NAMES "Chromium Embedded Framework" PATHS ${MYGE_EXTERNAL_FRAMEWORK_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
-    find_library(CEF_WRAPPER NAMES cef_dll_wrapper libcef_dll_wrapper PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
-
     set(SHADER_SOURCES basic.vert basic.frag
                 debug.vert debug.frag
                 pbr.vert pbr.frag
@@ -64,7 +61,8 @@ IF(APPLE)
     )
 
     target_link_libraries(EditorHelper
-        ${CEF_WRAPPER}
+        CEF
+        PlatformInterface
     )
 
     set_target_properties(EditorHelper PROPERTIES
@@ -83,9 +81,13 @@ ENDIF(APPLE)
 
 target_link_libraries(Editor
                         MyPhysics
-                        MyGameEngineCef
+                        CEF
+                        Common
+                        MyPhysics
+                        PlatformInterface
                     )
 
+# copy dependencies
 IF(WIN32)
     set(OTHER_DEPENDENCIES
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"

@@ -19,7 +19,7 @@ namespace My {
         void Draw() final;
         void Present() final;
 
-        void UseShaderProgram(const int32_t shaderProgram) final;
+        void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 

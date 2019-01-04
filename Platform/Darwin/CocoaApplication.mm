@@ -6,6 +6,11 @@
 
 using namespace My;
 
+void* CocoaApplication::GetMainWindowHandler() override
+{
+    return m_pWindow;
+}
+
 void CocoaApplication::CreateWindow()
 {
     [NSApplication  sharedApplication];

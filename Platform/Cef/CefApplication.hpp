@@ -14,6 +14,8 @@ namespace My {
         // One cycle of the main loop
         void Tick() override;
 
+        void* GetMainWindowHandler() override { return this; };
+
         // CefApp methods:
         CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override
         {

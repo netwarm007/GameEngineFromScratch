@@ -582,7 +582,7 @@ void GraphicsManager::DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t la
 
 #endif
 
-void GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
+void GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
 {
     cerr << "[GraphicsManager] UseShaderProgram(" << shaderProgram << ")" << endl;
 }

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <objbase.h>
 #include "D3d12GraphicsManager.hpp"
-#include "WindowsApplication.hpp"
+#include "IApplication.hpp"
 #include "SceneManager.hpp"
 #include "AssetLoader.hpp"
 #include "IPhysicsManager.hpp"
@@ -925,7 +925,7 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
 		}
 	}
 
-    HWND hWnd = reinterpret_cast<WindowsApplication*>(g_pApp)->GetMainWindow();
+    HWND hWnd = reinterpret_cast<HWND>(g_pApp->GetMainWindowHandler());
 
     // Describe and create the command queue.
     D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -1569,7 +1569,7 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
     }
 }
 
-void D3d12GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
+void D3d12GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
 {
 
 }

@@ -24,12 +24,13 @@ namespace My {
     Interface IShaderManager : implements IRuntimeModule
     {
     public:
+        using ShaderHandler = intptr_t;
         virtual ~IShaderManager() = default;
 
         virtual bool InitializeShaders() = 0;
         virtual void ClearShaders() = 0;
 
-        virtual int32_t GetDefaultShaderProgram(DefaultShaderIndex index) = 0;
+        virtual ShaderHandler GetDefaultShaderProgram(DefaultShaderIndex index) = 0;
     };
 
     extern IShaderManager* g_pShaderManager;

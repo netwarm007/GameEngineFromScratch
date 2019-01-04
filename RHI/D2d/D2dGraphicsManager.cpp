@@ -1,6 +1,6 @@
 #include <objbase.h>
 #include "D2dGraphicsManager.hpp"
-#include "WindowsApplication.hpp"
+#include "IApplication.hpp"
 #include "utility.hpp"
 
 using namespace My;
@@ -14,7 +14,7 @@ HRESULT My::D2dGraphicsManager::CreateGraphicsResources()
 {
     HRESULT hr = S_OK;
 
-    HWND hWnd = reinterpret_cast<WindowsApplication*>(g_pApp)->GetMainWindow();
+    HWND hWnd = reinterpret_cast<HWND>(g_pApp->GetMainWindowHandler());
 
     if (m_pRenderTarget == nullptr)
     {

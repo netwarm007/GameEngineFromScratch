@@ -63,7 +63,7 @@ namespace Dummy
 
         for(int i = 0; i < 9; i++)
         {
-            matrix[i] = inv[i] * D;
+            matrix[i] = static_cast<float>(inv[i] * D);
         }
 
         return true;
@@ -93,7 +93,7 @@ namespace Dummy
 
         for(int i = 0; i < 16; i++)
         {
-            matrix[i] = inv[i] * D;
+            matrix[i] = static_cast<float>(inv[i] * D);
         }
 
         return true;

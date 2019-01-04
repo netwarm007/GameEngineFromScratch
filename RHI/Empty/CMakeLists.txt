@@ -1,4 +1,4 @@
 add_library(EmptyRHI
-EmptyGraphicsManager.cpp
-EmptyShaderManager.cpp
+    EmptyGraphicsManager.cpp
+    EmptyShaderManager.cpp
 )

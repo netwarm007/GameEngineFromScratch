@@ -16,7 +16,7 @@
 #include "wrapper/cef_closure_task.h"
 #include "wrapper/cef_helpers.h"
 
-#include "GfxConfiguration.h"
+#include "GfxConfiguration.hpp"
 #include "IApplication.hpp"
 
 using namespace My;

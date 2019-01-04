@@ -1,9 +1,5 @@
 #pragma once
-#include <unordered_map>
 #include <vector>
-#include <map>
-#include <string>
-#include <memory>
 #include "GraphicsManager.hpp"
 #include "geommath.hpp"
 #include "SceneManager.hpp"
@@ -19,7 +15,7 @@ namespace My {
 
         void Present() final;
 
-        void UseShaderProgram(const int32_t shaderProgram) final;
+        void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
@@ -92,18 +88,18 @@ namespace My {
         bool setShaderParameter(const char* paramName, const bool param);
 
     private:
-        GLuint m_ShadowMapFramebufferName;
-        GLuint m_CurrentShader;
-        GLuint m_uboDrawFrameConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
-        GLuint m_uboLightInfo[GfxConfiguration::kMaxInFlightFrameCount] = {0};
-        GLuint m_uboDrawBatchConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
-        GLuint m_uboShadowMatricesConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
+        uint32_t m_ShadowMapFramebufferName;
+        uint32_t m_CurrentShader;
+        uint32_t m_uboDrawFrameConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
+        uint32_t m_uboLightInfo[GfxConfiguration::kMaxInFlightFrameCount] = {0};
+        uint32_t m_uboDrawBatchConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
+        uint32_t m_uboShadowMatricesConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
 
         struct OpenGLDrawBatchContext : public DrawBatchContext {
-            GLuint  vao;
-            GLenum  mode;
-            GLenum  type;
-            GLsizei count;
+            uint32_t vao;
+            uint32_t mode;
+            uint32_t type;
+            int32_t count;
         };
 
 #ifdef DEBUG
@@ -113,12 +109,12 @@ namespace My {
         };
 #endif
 
-        std::vector<GLuint> m_Buffers;
-        std::vector<GLuint> m_Textures;
+        std::vector<uint32_t> m_Buffers;
+        std::vector<uint32_t> m_Textures;
 
 #ifdef DEBUG
         std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;
-        std::vector<GLuint> m_DebugBuffers;
+        std::vector<uint32_t> m_DebugBuffers;
 #endif
 
         OpenGLDrawBatchContext m_SkyBoxDrawBatchContext;
