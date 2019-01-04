@@ -121,10 +121,15 @@ ELSE(WIN32)
                 ${PROJECT_SOURCE_DIR}/External/Darwin/framework
                 $<TARGET_FILE_DIR:Editor>/../Frameworks
 
-        # Copy the Helper app into the Frameworks directory.
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        # Move the Helper app into the Frameworks directory and change the rpath.
+        COMMAND ${CMAKE_COMMAND} -E rename
                 ${CEF_HELPER_OUTPUT_NAME}.app
                 $<TARGET_FILE_DIR:Editor>/../Frameworks/${CEF_HELPER_OUTPUT_NAME}.app
+        
+        COMMAND install_name_tool -change 
+                "@executable_path/../Frameworks/Chromium Embedded Framework.framework/Chromium Embedded Framework" 
+                "@executable_path/../../../Chromium Embedded Framework.framework/Chromium Embedded Framework"
+                $<TARGET_FILE_DIR:Editor>/../Frameworks/${CEF_HELPER_OUTPUT_NAME}.app/Contents/MacOS/${CEF_HELPER_OUTPUT_NAME}
 
         # Copy the resources
         COMMAND ${CMAKE_COMMAND} -E make_directory
