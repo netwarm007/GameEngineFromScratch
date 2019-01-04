@@ -21,8 +21,8 @@ target_link_libraries(BilliardGame
 ELSE(APPLE)
 target_link_libraries(BilliardGame 
                         BulletPhysics
-                        Common
                         OpenGLRHI
+                        Common
                         PlatformInterface
                     )
 ENDIF(APPLE)
@@ -43,4 +43,4 @@ IF(NOT ANDROID)
             $<TARGET_FILE_DIR:BilliardGame>/Asset)
 ENDIF(NOT ANDROID)
 
-
+target_include_directories(BilliardGame PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")

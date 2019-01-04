@@ -2,6 +2,7 @@
 #include <climits>
 #include <cstring>
 #include <X11/Xlib-xcb.h>
+#include "glad/glad_glx.h"
 #include "OpenGLApplication.hpp"
 
 using namespace My;

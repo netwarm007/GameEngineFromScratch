@@ -80,10 +80,10 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 target_link_libraries(Editor
-                        MyPhysics
-                        CEF
                         Common
                         MyPhysics
+                        PlatformInterface
+                        CEF
                         PlatformInterface
                     )
 

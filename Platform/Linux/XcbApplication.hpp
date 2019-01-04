@@ -13,7 +13,7 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
-        void* GetMainWindowHandler() override { return m_Window; };
+        void* GetMainWindowHandler() override { return reinterpret_cast<void*>(m_Window); };
 
     protected:
         void CreateMainWindow();
