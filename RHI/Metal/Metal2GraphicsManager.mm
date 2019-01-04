@@ -254,7 +254,7 @@ void Metal2GraphicsManager::EndCompute()
     [m_pRenderer endCompute];
 }
 
-void Metal2GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
+void Metal2GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
 {
     [m_pRenderer useShaderProgram:shaderProgram];
 }

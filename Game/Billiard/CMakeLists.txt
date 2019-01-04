@@ -11,12 +11,22 @@ ELSE(ANDROID)
         BilliardGameLogic.cpp BilliardGameConfig.cpp)
 ENDIF(ANDROID)
 
+IF(APPLE)
+target_link_libraries(BilliardGame 
+                        BulletPhysics
+                        Common
+                        MetalRHI
+                        PlatformInterface
+                    )
+ELSE(APPLE)
 target_link_libraries(BilliardGame 
                         BulletPhysics
                         Common
                         OpenGLRHI
                         PlatformInterface
                     )
+ENDIF(APPLE)
+
 IF(WIN32)
     add_custom_command(TARGET BilliardGame POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

@@ -549,7 +549,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_computeCommandBuffer commit];
 }
 
-- (void)useShaderProgram:(const int32_t)shaderProgram
+- (void)useShaderProgram:(const IShaderManager::ShaderHandler)shaderProgram
 {
 }
 

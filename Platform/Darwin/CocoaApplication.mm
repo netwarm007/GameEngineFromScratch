@@ -6,7 +6,7 @@
 
 using namespace My;
 
-void* CocoaApplication::GetMainWindowHandler() override
+void* CocoaApplication::GetMainWindowHandler() 
 {
     return m_pWindow;
 }

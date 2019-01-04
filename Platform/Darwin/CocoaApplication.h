@@ -10,10 +10,10 @@ namespace My {
         CocoaApplication(GfxConfiguration& config)
             : BaseApplication(config) {};
 
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize() override;
+        void Finalize() override;
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick() override;
 
         void* GetMainWindowHandler() override;
 

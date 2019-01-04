@@ -1,7 +1,14 @@
 #include "portable.hpp"
 #include "GfxConfiguration.hpp"
+
+#ifdef OS_MACOS
+#include "CocoaMetalApplicationConfig.hpp"
+#include "RHI/Metal/MetalConfig.hpp"
+#else
 #include "OpenGLApplicationConfig.hpp"
 #include "RHI/OpenGL/OpenGLConfig.hpp"
+#endif
+
 
 #include "BilliardGameLogic.hpp"
 #include "Physics/Bullet/BulletPhysicsManager.hpp"

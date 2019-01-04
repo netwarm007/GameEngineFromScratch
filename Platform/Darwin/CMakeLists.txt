@@ -8,6 +8,8 @@ add_library(PlatformInterface
         AppDelegate.m
         WindowDelegate.m
         MetalView.mm
+        simple_handler.mac.mm
+        CefApplication.mm
     )
 target_link_libraries(PlatformInterface
         ${COCOA_LIBRARY} 

@@ -428,25 +428,25 @@ namespace My {
     }
 
     template <typename T, int N>
-    inline bool operator>=(Vector<T, N>&vec, Scalar scalar)
+    inline bool operator>=(Vector<T, N>&&vec, Scalar scalar)
     {
         return Length(vec) >= scalar;
     }
 
     template <typename T, int N>
-    inline bool operator>(Vector<T, N>&vec, Scalar scalar)
+    inline bool operator>(Vector<T, N>&&vec, Scalar scalar)
     {
         return Length(vec) > scalar;
     }
 
     template <typename T, int N>
-    inline bool operator<=(Vector<T, N>&vec, Scalar scalar)
+    inline bool operator<=(Vector<T, N>&&vec, Scalar scalar)
     {
         return Length(vec) <= scalar;
     }
 
     template <typename T, int N>
-    inline bool operator<(Vector<T, N>&vec, Scalar scalar)
+    inline bool operator<(Vector<T, N>&&vec, Scalar scalar)
     {
         return Length(vec) < scalar;
     }

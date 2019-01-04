@@ -51,7 +51,7 @@ namespace My {
 
 - (void)endCompute;
 
-- (void)useShaderProgram:(const int32_t)shaderProgram;
+- (void)useShaderProgram:(const IShaderManager::ShaderHandler)shaderProgram;
 
 - (int32_t)generateCubeShadowMapArray:(const uint32_t)width 
                                height:(const uint32_t)height
