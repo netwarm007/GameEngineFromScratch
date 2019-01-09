@@ -12,6 +12,8 @@ build_script:
 
     build_cef
 
+    build_sdl
+
     build
 
 test_script:

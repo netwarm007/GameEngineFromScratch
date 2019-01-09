@@ -7,7 +7,7 @@ namespace My {
         OpenGLApplication(GfxConfiguration& config)
             : SdlApplication(config) {};
 
-        virtual void Tick();
+        void Tick() override;
 
         void CreateMainWindow() override;
     };

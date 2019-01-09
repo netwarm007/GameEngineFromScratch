@@ -1,6 +1,6 @@
 #include "portable.hpp"
 #include "GfxConfiguration.hpp"
-#include "Platform/SDL/OpenGLApplication.hpp"
+#include "Platform/Sdl/OpenGLApplication.hpp"
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #include "Framework/Common/AssetLoader.hpp"
 #include "Framework/Common/MemoryManager.hpp"

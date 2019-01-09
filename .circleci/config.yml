@@ -33,6 +33,7 @@ jobs:
              ./build_opengex.sh
              ./build_bullet.sh
              ./build_cef.sh
+             ./build_sdl.sh
              ./build.sh
       - run:
           name: Test
@@ -74,6 +75,7 @@ jobs:
              ./build_zlib.sh
              ./build_bullet.sh
              ./build_cef.sh
+             ./build_sdl.sh
              ./build.sh
       - run:
           name: Test

@@ -1,3 +1,7 @@
+IF(APPLE)
+list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/SDL2.framework/Resources")
+ENDIF(APPLE)
+
 include(SDL2Config)
 
 add_library(Sdl

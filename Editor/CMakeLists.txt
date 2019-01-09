@@ -122,7 +122,7 @@ ELSE(WIN32)
                 $<TARGET_FILE_DIR:Editor>/../Frameworks
 
         # Move the Helper app into the Frameworks directory and change the rpath.
-        COMMAND ${CMAKE_COMMAND} -E rename
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CEF_HELPER_OUTPUT_NAME}.app
                 $<TARGET_FILE_DIR:Editor>/../Frameworks/${CEF_HELPER_OUTPUT_NAME}.app
         
