@@ -2049,3 +2049,9 @@ void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad()
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(2, buffer_id);
 }
+
+void OpenGLGraphicsManagerCommonBase::ResizeCanvas(int32_t width, int32_t height)
+{
+    //Reset View    
+    glViewport(0, 0, (GLint)width, (GLint)height);    
+}

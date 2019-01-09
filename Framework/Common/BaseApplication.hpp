@@ -26,8 +26,9 @@ namespace My {
         const char* GetCommandLineArgument(int index) const override;
 
         bool IsQuit() const override;
-
         void RequestQuit() override { m_bQuit = true; }
+
+        void CreateMainWindow() override;
 
         inline const GfxConfiguration& GetConfiguration() const override { return m_Config; };
 

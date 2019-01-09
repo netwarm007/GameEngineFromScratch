@@ -80,6 +80,7 @@ include_directories("${PROJECT_SOURCE_DIR}/Platform/${MYGE_TARGET_PLATFORM}")
 include_directories("${PROJECT_SOURCE_DIR}/Platform/Cef")
 
 set(MYGE_EXTERNAL_ROOT ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/)
+list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/cmake")
 include_directories("${MYGE_EXTERNAL_ROOT}")
 include_directories("${MYGE_EXTERNAL_ROOT}include")
 include_directories("${MYGE_EXTERNAL_ROOT}include/bullet")

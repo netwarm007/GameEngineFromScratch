@@ -1,7 +1,7 @@
 #include "portable.hpp"
 #include "GfxConfiguration.hpp"
-#include "Platform/Cef/CefApplication.hpp"
-#include "RHI/Empty/EmptyConfig.hpp"
+#include "Platform/SDL/OpenGLApplication.hpp"
+#include "RHI/OpenGL/OpenGLConfig.hpp"
 #include "Framework/Common/AssetLoader.hpp"
 #include "Framework/Common/MemoryManager.hpp"
 #include "Framework/Common/SceneManager.hpp"
@@ -14,7 +14,7 @@
 
 namespace My {
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, "Editor");
-	IApplication*    g_pApp             = static_cast<IApplication*>(new CefApplication(config));
+	IApplication*    g_pApp             = static_cast<IApplication*>(new OpenGLApplication(config));
     IGameLogic*       g_pGameLogic       = static_cast<IGameLogic*>(new EditorLogic);
     IPhysicsManager*  g_pPhysicsManager  = static_cast<IPhysicsManager*>(new MyPhysicsManager);
     IMemoryManager*   g_pMemoryManager   = static_cast<IMemoryManager*>(new MemoryManager);

@@ -11,7 +11,7 @@ void* CocoaApplication::GetMainWindowHandler()
     return m_pWindow;
 }
 
-void CocoaApplication::CreateWindow()
+void CocoaApplication::CreateMainWindow()
 {
     [NSApplication  sharedApplication];
 
@@ -42,17 +42,6 @@ void CocoaApplication::CreateWindow()
     [m_pWindow makeKeyAndOrderFront:nil];
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
-}
-
-int CocoaApplication::Initialize()
-{
-    int result = 0;
-
-    CreateWindow();
-
-    result = BaseApplication::Initialize();
-
-    return result;
 }
 
 void CocoaApplication::Finalize()

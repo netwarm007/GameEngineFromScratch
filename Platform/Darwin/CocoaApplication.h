@@ -10,15 +10,12 @@ namespace My {
         CocoaApplication(GfxConfiguration& config)
             : BaseApplication(config) {};
 
-        int Initialize() override;
         void Finalize() override;
         // One cycle of the main loop
         void Tick() override;
 
         void* GetMainWindowHandler() override;
-
-    protected:
-        void CreateWindow();
+        void CreateMainWindow() override;
 
     protected:
 #ifdef __OBJC__

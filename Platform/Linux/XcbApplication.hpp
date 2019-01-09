@@ -8,15 +8,13 @@ namespace My {
         XcbApplication(GfxConfiguration& config)
             : BaseApplication(config) {};
 
-        virtual int Initialize();
-        virtual void Finalize();
+        void Finalize() override;
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick() override;
 
         void* GetMainWindowHandler() override { return reinterpret_cast<void*>(m_Window); };
 
-    protected:
-        void CreateMainWindow();
+        void CreateMainWindow() override;
 
     protected:
         xcb_connection_t*    m_pConn   = nullptr;

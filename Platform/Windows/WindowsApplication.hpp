@@ -11,15 +11,12 @@ namespace My {
         WindowsApplication(GfxConfiguration& config)
             : BaseApplication(config) {};
 
-        virtual int Initialize();
         virtual void Finalize();
         // One cycle of the main loop
         virtual void Tick();
 
         void* GetMainWindowHandler() override { return m_hWnd; };
-
-    protected:
-        void CreateMainWindow();
+        void CreateMainWindow() override;
 
     private:
         // the WindowProc function prototype

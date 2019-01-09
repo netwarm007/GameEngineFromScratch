@@ -14,7 +14,7 @@ namespace My {
         // One cycle of the main loop
         virtual void Tick();
 
-        void* GetMainWindowHandler() override { return m_pApp; };
+        void* GetMainWindowHandler() override { return m_pApp; }
 
     public:
         /**

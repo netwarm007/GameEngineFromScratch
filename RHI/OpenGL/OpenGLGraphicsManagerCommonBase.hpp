@@ -15,6 +15,8 @@ namespace My {
 
         void Present() final;
 
+        void ResizeCanvas(int32_t width, int32_t height) final;
+
         void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
@@ -66,6 +68,12 @@ namespace My {
 
         void BeginFrame() final;
         void EndFrame() final;
+
+        void BeginPass() final {}
+        void EndPass() final {}
+
+        void BeginCompute() final {}
+        void EndCompute() final {}
 
         void initializeGeometries(const Scene& scene);
         void initializeSkyBox(const Scene& scene);

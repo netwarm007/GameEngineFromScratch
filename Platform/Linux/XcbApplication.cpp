@@ -72,22 +72,6 @@ void XcbApplication::CreateMainWindow()
     xcb_flush(m_pConn);
 }
 
-int XcbApplication::Initialize()
-{
-    int result;
-
-    CreateMainWindow();
-
-    // first call base class initialization
-    result = BaseApplication::Initialize();
-
-    if (result != 0)
-        exit(result);
-
-
-    return result;
-}
-
 void XcbApplication::Finalize()
 {
     xcb_disconnect(m_pConn);

@@ -53,6 +53,11 @@ void GraphicsManager::Tick()
     m_nFrameIndex = (m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount;
 }
 
+void GraphicsManager::ResizeCanvas(int32_t width, int32_t height)
+{
+    cerr << "[GraphicsManager] Resize Canvas to " << width << "x" << height << endl;
+}
+
 void GraphicsManager::UpdateConstants()
 {
     // update scene object position

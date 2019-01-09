@@ -27,6 +27,8 @@ namespace My {
         virtual void Draw();
         virtual void Present();
 
+        virtual void ResizeCanvas(int32_t width, int32_t height);
+
         virtual void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram);
 
         virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
