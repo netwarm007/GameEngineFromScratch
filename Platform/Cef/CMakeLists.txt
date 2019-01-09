@@ -9,6 +9,12 @@ find_library(CEF_WRAPPER NAMES cef_dll_wrapper libcef_dll_wrapper PATHS ${MYGE_E
 set(CefSources
                 simple_handler.cpp
                 CefApplication.cpp
+                simple_handler.win.cpp
+                CefApplication.win.cpp
+                simple_handler.nix.cpp
+                CefApplication.nix.cpp
+                simple_handler.mac.cpp
+                CefApplication.mac.cpp
 )
 
 add_library(CEF ${CefSources})

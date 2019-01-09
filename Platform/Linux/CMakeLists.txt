@@ -12,8 +12,6 @@ add_library(PlatformInterface
         XcbApplication.cpp 
         OpenGLApplication.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_glx.c
-        CefApplication.cpp
-        simple_handler.nix.cpp
 )
 target_link_libraries(PlatformInterface
         ${XCB_LIBRARY} 

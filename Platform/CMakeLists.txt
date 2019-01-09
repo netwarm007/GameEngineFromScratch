@@ -11,6 +11,9 @@ ELSEIF(UNIX)
         add_subdirectory(Android)
     ELSEIF(WA)
         add_subdirectory(Empty)
+    ELSEIF(BSD)
+        add_subdirectory(Linux)
+	# CEF not support BSD yet
     ELSE(APPLE)
         # Linux specific code
         add_subdirectory(Linux)

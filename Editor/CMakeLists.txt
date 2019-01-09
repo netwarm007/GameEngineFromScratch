@@ -80,9 +80,9 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 target_link_libraries(Editor
-                        Common
-                        OpenGLRHI
                         MyPhysics
+                        OpenGLRHI
+                        Common
                         Sdl
                     )
 
