@@ -5,7 +5,11 @@
 
 #include "OpenGLGraphicsManagerCommonBase.hpp"
 
+#if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
+#include  <GLES3/gl32.h>
+#else
 #include "glad/glad.h"
+#endif
 
 using namespace std;
 using namespace My;
@@ -141,90 +145,6 @@ bool OpenGLGraphicsManagerCommonBase::setShaderParameter(const char* paramName, 
     return true;
 }
 
-static void getOpenGLTextureFormat(const Image& img, uint32_t& format, uint32_t& internal_format, uint32_t& type)
-{
-    if(img.compressed)
-    {
-        format = GL_COMPRESSED_RGB;
-
-        switch (img.compress_format)
-        {
-            case "DXT1"_u32:
-                internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-                break;
-            case "DXT3"_u32:
-                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-                break;
-            case "DXT5"_u32:
-                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-                break;
-            default:
-                assert(0);
-        }
-
-        type = GL_UNSIGNED_BYTE;
-    }
-    else
-    {
-        if(img.bitcount == 8)
-        {
-            format = GL_RED;
-            internal_format = GL_R8;
-            type = GL_UNSIGNED_BYTE;
-        }
-        else if(img.bitcount == 16)
-        {
-            format = GL_RED;
-    #ifndef OPENGL_ES
-            internal_format = GL_R16;
-    #else
-            internal_format = GL_RED;
-    #endif
-            type = GL_UNSIGNED_SHORT;
-        }
-        else if(img.bitcount == 24)
-        {
-            format = GL_RGB;
-            internal_format = GL_RGB8;
-            type = GL_UNSIGNED_BYTE;
-        }
-        else if(img.bitcount == 64)
-        {
-            format = GL_RGBA;
-            if (img.is_float)
-            {
-                internal_format = GL_RGBA16F;
-                type = GL_HALF_FLOAT;
-            }
-            else
-            {
-                internal_format = GL_RGBA16;
-                type = GL_UNSIGNED_SHORT;
-            }
-        }
-        else if(img.bitcount == 128)
-        {
-            format = GL_RGBA;
-            if (img.is_float)
-            {
-                internal_format = GL_RGBA32F;
-                type = GL_FLOAT;
-            }
-            else
-            {
-                internal_format = GL_RGBA;
-                type = GL_UNSIGNED_INT;
-            }
-        }
-        else
-        {
-            format = GL_RGBA;
-            internal_format = GL_RGBA8;
-            type = GL_UNSIGNED_BYTE;
-        }
-    }
-}
-
 void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 {
     uint32_t batch_index = 0;
@@ -280,7 +200,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                     case VertexDataType::kVertexDataTypeFloat4:
                         glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, 0);
                         break;
-#ifndef OPENGL_ES
+#if !defined(OS_ANDROID) && !defined(OS_WEBASSEMBLY)
                     case VertexDataType::kVertexDataTypeDouble1:
                         glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, 0);
                         break;
@@ -994,6 +914,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
+#if !defined(OS_WEBASSEMBLY)
     if (light.lightType == LightType::Omni)
     {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (uint32_t) shadowmap, 0);
@@ -1003,6 +924,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
         // we only bind the single layer to FBO
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (uint32_t) shadowmap, 0, layer_index);
     }
+#endif
 
     // Always check that our framebuffer is ok
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -1241,7 +1163,9 @@ void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(int32_t& context, con
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
+#if !defined(OS_WEBASSEMBLY)
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, (uint32_t) texture, 0);
+#endif
 
     // Always check that our framebuffer is ok
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -1287,11 +1211,13 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
 
+#if !defined(OS_ANDROID) && !defined(OS_WEBASSEMBLY)
     // Bind it as Write-only Texture
     if(GLAD_GL_ARB_compute_shader)
     {
         glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
     }
+#endif
 
     // Bind it as Read-only Texture
     glActiveTexture(GL_TEXTURE6);
@@ -1303,12 +1229,14 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
 {
+#if !defined(OS_ANDROID) && !defined(OS_WEBASSEMBLY)
     if(GLAD_GL_ARB_compute_shader)
     {
         glDispatchCompute((uint32_t)width, (uint32_t)height, (uint32_t)depth);
         // make sure writing to image has finished before read
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
+#endif
 }
 
 #ifdef DEBUG

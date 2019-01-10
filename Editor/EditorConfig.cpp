@@ -1,7 +1,11 @@
 #include "portable.hpp"
 #include "GfxConfiguration.hpp"
 #include "Platform/Sdl/OpenGLApplication.hpp"
+#if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
+#include "RHI/OpenGL/OpenGLESConfig.hpp"
+#else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
+#endif
 #include "Framework/Common/AssetLoader.hpp"
 #include "Framework/Common/MemoryManager.hpp"
 #include "Framework/Common/SceneManager.hpp"

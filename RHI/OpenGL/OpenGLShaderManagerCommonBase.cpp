@@ -3,10 +3,34 @@
 #include "AssetLoader.hpp"
 #include "GraphicsManager.hpp"
 
-#include "glad/glad.h"
-
 using namespace My;
 using namespace std;
+
+#define VS_BASIC_SOURCE_FILE SHADER_ROOT "basic.vert.glsl"
+#define PS_BASIC_SOURCE_FILE SHADER_ROOT "basic.frag.glsl"
+#define VS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.vert.glsl"
+#define PS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.frag.glsl"
+#define VS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.vert.glsl"
+#define PS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.frag.glsl"
+#define GS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.geom.glsl"
+#define DEBUG_VS_SHADER_SOURCE_FILE SHADER_ROOT "debug.vert.glsl"
+#define DEBUG_PS_SHADER_SOURCE_FILE SHADER_ROOT "debug.frag.glsl"
+#define VS_PASSTHROUGH_SOURCE_FILE SHADER_ROOT "passthrough.vert.glsl"
+#define PS_TEXTURE_SOURCE_FILE SHADER_ROOT "texture.frag.glsl"
+#define PS_DEPTH_TEXTURE_ARRAY_SOURCE_FILE SHADER_ROOT "depthtexturearray.frag.glsl"
+#define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE SHADER_ROOT "passthrough_cube.vert.glsl"
+#define PS_CUBEMAP_ARRAY_SOURCE_FILE SHADER_ROOT "cubemaparray.frag.glsl"
+#define PS_DEPTH_CUBEMAP_ARRAY_SOURCE_FILE SHADER_ROOT "depthcubemaparray.frag.glsl"
+#define PS_SIMPLE_CUBEMAP_SOURCE_FILE SHADER_ROOT "cubemap.frag.glsl"
+#define VS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.vert.glsl"
+#define PS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.frag.glsl"
+#define VS_PBR_SOURCE_FILE SHADER_ROOT "pbr.vert.glsl"
+#define PS_PBR_SOURCE_FILE SHADER_ROOT "pbr.frag.glsl"
+#define CS_PBR_BRDF_SOURCE_FILE SHADER_ROOT "integrateBRDF.comp.glsl"
+#define VS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.vert.glsl"
+#define PS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.frag.glsl"
+#define TESC_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tesc.glsl"
+#define TESE_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tese.glsl"
 
 namespace My {
     extern AssetLoader* g_pAssetLoader;

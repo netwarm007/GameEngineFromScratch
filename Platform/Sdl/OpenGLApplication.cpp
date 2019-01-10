@@ -6,8 +6,8 @@ using namespace My;
 
 void OpenGLApplication::CreateMainWindow()
 {
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, m_Config.redBits);
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, m_Config.blueBits);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, m_Config.greenBits);
@@ -25,21 +25,6 @@ void OpenGLApplication::CreateMainWindow()
     }
 
 	SDL_GL_CreateContext(m_pWindow);
-
-    int major_ver, minor_ver;
-    int r, g, b, a, d, s;
-    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major_ver);
-    SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minor_ver);
-    SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &r);
-    SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &g);
-    SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &b);
-    SDL_GL_GetAttribute(SDL_GL_ALPHA_SIZE, &a);
-    SDL_GL_GetAttribute(SDL_GL_DEPTH_SIZE, &d);
-    SDL_GL_GetAttribute(SDL_GL_STENCIL_SIZE, &s);
-
-    printf("OpenGL Version: %d.%d\n", major_ver, minor_ver);
-    printf("Red size: %d, Green size: %d, Blue size: %d, Alpha size: %d\n", r, g, b, a);
-    printf("Depth size: %d, Stencil size: %d\n", d, s);
 
 	SDL_GL_SetSwapInterval(1);
 }

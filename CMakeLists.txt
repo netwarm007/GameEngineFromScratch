@@ -80,7 +80,7 @@ include_directories("${PROJECT_SOURCE_DIR}/Platform/${MYGE_TARGET_PLATFORM}")
 include_directories("${PROJECT_SOURCE_DIR}/Platform/Cef")
 
 set(MYGE_EXTERNAL_ROOT ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/)
-list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}cmake")
 include_directories("${MYGE_EXTERNAL_ROOT}")
 include_directories("${MYGE_EXTERNAL_ROOT}include")
 include_directories("${MYGE_EXTERNAL_ROOT}include/bullet")
@@ -125,9 +125,9 @@ add_subdirectory(Physics)
 add_subdirectory(RHI)
 add_subdirectory(Test)
 add_subdirectory(Game)
-IF(NOT ANDROID AND NOT WA)
+IF(NOT ANDROID)
 add_subdirectory(Editor)
-ENDIF(NOT ANDROID AND NOT WA)
+ENDIF(NOT ANDROID)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 
@@ -311,6 +311,7 @@ MESSAGE( STATUS "TARGET_ARCH: " ${TARGET_ARCH} )
 MESSAGE( STATUS "XG_LIBRARY: " ${XG_LIBRARY} )
 MESSAGE( STATUS "OPENDDL_LIBRARY: " ${OPENDDL_LIBRARY} )
 MESSAGE( STATUS "OPENGEX_LIBRARY: " ${OPENGEX_LIBRARY} )
+MESSAGE( STATUS "ZLIB_LIBRARY: " ${ZLIB_LIBRARY} )
 
 MESSAGE( STATUS "BULLET_COLLISION_LIBRARY: " ${BULLET_COLLISION_LIBRARY} )
 MESSAGE( STATUS "BULLET_DYNAMICS_LIBRARY: " ${BULLET_DYNAMICS_LIBRARY} )
