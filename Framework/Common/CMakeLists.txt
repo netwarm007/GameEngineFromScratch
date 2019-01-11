@@ -18,7 +18,7 @@ SceneObjectTrack.cpp
 main.cpp
 )
 
-target_link_libraries(Common 
+target_link_libraries(Common
         Algorism
         DrawPass
         DrawPhase
@@ -29,9 +29,6 @@ target_link_libraries(Common
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 
         ${ZLIB_LIBRARY}
-        ${BULLET_DYNAMICS_LIBRARY} 
-        ${BULLET_COLLISION_LIBRARY} 
-        ${BULLET_LINEARMATH_LIBRARY}
 )
 
 __add_xg_platform_dependencies(Common)
