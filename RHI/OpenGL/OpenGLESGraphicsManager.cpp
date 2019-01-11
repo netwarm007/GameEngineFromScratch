@@ -20,11 +20,13 @@ int OpenGLESGraphicsManager::Initialize()
         return result;
     }
 
+#if 0
     auto opengl_info = {GL_VENDOR, GL_RENDERER, GL_VERSION, GL_EXTENSIONS};
     for (auto name : opengl_info) {
         auto info = glGetString(name);
         printf("OpenGL Info: %s", info);
     }
+#endif
 
 	// Set the depth buffer to be entirely cleared to 1.0 values.
 	glClearDepthf(1.0f);

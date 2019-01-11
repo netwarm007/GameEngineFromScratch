@@ -64,6 +64,7 @@ namespace My {
         for(i=0; i<logSize; i++)
         {
                 fout << infoLog[i];
+                cerr << infoLog[i];
         }
 
         // Close the file.

@@ -172,11 +172,10 @@ add_custom_target(EditorAssets ALL
         --lz4
         --no-heap-copy
         --js-output=${CMAKE_CURRENT_BINARY_DIR}/Asset.preload.js 
-        --preload 
-                  Asset/Textures/hdr/PaperMill_posx.dds
+        --preload Asset/Textures/hdr/PaperMill_posx.dds
                   Asset/Textures/hdr/PaperMill_E_3k.hdr
                   Asset/Scene/splash.ogex
-                  Asset/Shaders
+                  Asset/Shaders/OpenGLES
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     VERBATIM
         )

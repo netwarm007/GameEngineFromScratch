@@ -1,4 +1,4 @@
-#version 310 es
+#version 300 es
 precision mediump float;
 precision highp int;
 
@@ -31,7 +31,7 @@ struct Light
     highp vec4 padding[2];
 };
 
-layout(binding = 10, std140) uniform PerFrameConstants
+layout(std140) uniform PerFrameConstants
 {
     highp mat4 viewMatrix;
     highp mat4 projectionMatrix;
@@ -40,7 +40,7 @@ layout(binding = 10, std140) uniform PerFrameConstants
     uint numLights;
 } _280;
 
-layout(binding = 12, std140) uniform LightInfo
+layout(std140) uniform LightInfo
 {
     Light lights[100];
 } _681;
@@ -48,11 +48,11 @@ layout(binding = 12, std140) uniform LightInfo
 uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
 uniform highp samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
 
-layout(location = 0) in highp vec4 input_normal;
-layout(location = 1) in highp vec4 input_normal_world;
-layout(location = 2) in highp vec4 input_v;
-layout(location = 3) in highp vec4 input_v_world;
-layout(location = 4) in highp vec2 input_uv;
+in highp vec4 input_normal;
+in highp vec4 input_normal_world;
+in highp vec4 input_v;
+in highp vec4 input_v_world;
+in highp vec2 input_uv;
 layout(location = 0) out highp vec4 _entryPointOutput;
 
 float _130;

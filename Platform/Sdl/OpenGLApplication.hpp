@@ -10,5 +10,8 @@ namespace My {
         void Tick() override;
 
         void CreateMainWindow() override;
+
+    private:
+        SDL_GLContext m_hContext;
     };
 }
