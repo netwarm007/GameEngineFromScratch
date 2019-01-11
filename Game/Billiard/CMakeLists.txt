@@ -12,19 +12,29 @@ ELSE(ANDROID)
 ENDIF(ANDROID)
 
 IF(APPLE)
-target_link_libraries(BilliardGame 
-                        BulletPhysics
-                        Common
-                        MetalRHI
-                        PlatformInterface
-                    )
+    target_link_libraries(BilliardGame 
+                            BulletPhysics
+                            Common
+                            MetalRHI
+                            PlatformInterface
+                        )
+ELSEIF(WA)
+    target_link_libraries(BilliardGame 
+                            BulletPhysics
+                            OpenGLRHI
+                            Common
+                            Sdl
+                        )
+    set_target_properties(BilliardGame
+            PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_SDL=2 -s USE_WEBGL2=1"
+            )
 ELSE(APPLE)
-target_link_libraries(BilliardGame 
-                        BulletPhysics
-                        OpenGLRHI
-                        Common
-                        PlatformInterface
-                    )
+    target_link_libraries(BilliardGame 
+                            BulletPhysics
+                            OpenGLRHI
+                            Common
+                            PlatformInterface
+                        )
 ENDIF(APPLE)
 
 IF(WIN32)

@@ -95,6 +95,8 @@ namespace My {
         bool setShaderParameter(const char* paramName, const uint32_t param);
         bool setShaderParameter(const char* paramName, const bool param);
 
+        virtual void getOpenGLTextureFormat(const Image& img, uint32_t& format, uint32_t& internal_format, uint32_t& type) = 0;
+
     private:
         uint32_t m_ShadowMapFramebufferName;
         uint32_t m_CurrentShader;

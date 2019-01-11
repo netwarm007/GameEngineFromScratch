@@ -165,3 +165,23 @@ ELSE(WIN32)
     )
   ENDIF(APPLE)
 ENDIF(WIN32)
+
+IF(WA)
+add_custom_target(EditorAssets ALL
+    python $ENV{EMSCRIPTEN}/tools/file_packager.py ${CMAKE_CURRENT_BINARY_DIR}/Asset.data 
+        --lz4
+        --no-heap-copy
+        --js-output=${CMAKE_CURRENT_BINARY_DIR}/Asset.preload.js 
+        --preload 
+                  Asset/Textures/hdr/PaperMill_posx.dds
+                  Asset/Textures/hdr/PaperMill_E_3k.hdr
+                  Asset/Scene/splash.ogex
+                  Asset/Shaders
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+    VERBATIM
+        )
+
+    set_target_properties(Editor
+            PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Editor.html"
+            )
+ENDIF(WA)

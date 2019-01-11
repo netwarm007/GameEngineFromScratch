@@ -1,9 +1,12 @@
 #include "portable.hpp"
 #include "GfxConfiguration.hpp"
 
-#ifdef OS_MACOS
+#if defined(OS_MACOS)
 #include "CocoaMetalApplicationConfig.hpp"
 #include "RHI/Metal/MetalConfig.hpp"
+#elif defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
+#include "OpenGLApplicationConfig.hpp"
+#include "RHI/OpenGL/OpenGLESConfig.hpp"
 #else
 #include "OpenGLApplicationConfig.hpp"
 #include "RHI/OpenGL/OpenGLConfig.hpp"
