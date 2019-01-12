@@ -177,7 +177,7 @@ add_custom_target(EditorAssets ALL
                   Asset/Textures/gold-scuffed_metallic.png
                   Asset/Textures/gold-scuffed_roughness.png
                   Asset/Textures/default_ao.png
-                  Asset/Textures/apple-metal-2-3d-api.jpg
+                  Asset/Textures/redbricks2b-albedo.png
                   Asset/Textures/redbricks2b-normal.png
                   Asset/Textures/redbricks2b-metalness.png
                   Asset/Textures/redbricks2b-rough.png

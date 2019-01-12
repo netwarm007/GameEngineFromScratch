@@ -5,7 +5,8 @@
 #include <algorithm>
 #include <functional>
 
-#include  <GLES3/gl32.h>
+#include <GLES3/gl32.h>
+#include <GLES2/gl2ext.h>
 
 using namespace My;
 using namespace std;
@@ -51,18 +52,19 @@ void OpenGLESGraphicsManager::getOpenGLTextureFormat(const Image& img, uint32_t&
 {
     if(img.compressed)
     {
-        format = GL_COMPRESSED_RGB8_ETC2;
-
         switch (img.compress_format)
         {
             case "DXT1"_u32:
-                //internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+                format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+                internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
                 break;
             case "DXT3"_u32:
-                //internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+                format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
                 break;
             case "DXT5"_u32:
-                //internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
                 break;
             default:
                 assert(0);

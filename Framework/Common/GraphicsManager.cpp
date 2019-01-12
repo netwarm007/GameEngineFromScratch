@@ -175,6 +175,7 @@ void GraphicsManager::CalculateLights()
         light.lightDirection = { 0.0f, 0.0f, -1.0f, 0.0f };
         Transform(light.lightPosition, *trans_ptr);
         Transform(light.lightDirection, *trans_ptr);
+        Normalize(light.lightDirection);
 
         auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
         if (pLight) {
