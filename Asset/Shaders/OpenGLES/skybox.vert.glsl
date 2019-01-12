@@ -1,4 +1,4 @@
-#version 310 es
+#version 300 es
 
 struct a2v_pos_only
 {
@@ -30,7 +30,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(binding = 10, std140) uniform PerFrameConstants
+layout(std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
@@ -40,7 +40,7 @@ layout(binding = 10, std140) uniform PerFrameConstants
 } _31;
 
 layout(location = 0) in vec3 a_inputPosition;
-layout(location = 0) out vec3 _entryPointOutput_uvw;
+out vec3 _entryPointOutput_uvw;
 
 cube_vert_output _skybox_vert_main(a2v_pos_only a)
 {

@@ -15,10 +15,14 @@ int GraphicsManager::Initialize()
 {
     int result = 0;
     m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
+#if !defined(OS_WEBASSEMBLY)
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
+#endif
 
 	InitConstants();
+#if !defined(OS_WEBASSEMBLY)
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
+#endif
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
     return result;
 }

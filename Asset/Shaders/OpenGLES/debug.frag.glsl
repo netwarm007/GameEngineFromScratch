@@ -1,4 +1,4 @@
-#version 310 es
+#version 300 es
 precision mediump float;
 precision highp int;
 
@@ -28,16 +28,16 @@ struct Light
 
 layout(location = 0) out highp vec4 _entryPointOutput;
 
-highp vec4 _debug_frag_main(pos_only_vert_output _input)
+highp vec4 _debug_frag_main(pos_only_vert_output _entryPointOutput_1)
 {
     return vec4(1.0);
 }
 
 void main()
 {
-    pos_only_vert_output _input;
-    _input.pos = gl_FragCoord;
-    pos_only_vert_output param = _input;
+    pos_only_vert_output _entryPointOutput_1;
+    _entryPointOutput_1.pos = gl_FragCoord;
+    pos_only_vert_output param = _entryPointOutput_1;
     _entryPointOutput = _debug_frag_main(param);
 }
 

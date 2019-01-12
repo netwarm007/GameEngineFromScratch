@@ -100,13 +100,6 @@
         canvas: (function() {
           var canvas = document.getElementById('canvas');
 
-          var gl = canvas.getContext( 'webgl2', { antialias: false } );
-          var isWebGL2 = !!gl;
-          if(!isWebGL2) {
-              document.getElementById('output').innerHTML = 'WebGL 2 is not available.  See <a href="https://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation">How to get a WebGL 2 implementation</a>';
-              return;
-          }
-
           // As a default initial behavior, pop up an alert when webgl context is lost. To make your
           // application robust, you may want to override this behavior before shipping!
           // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2

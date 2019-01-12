@@ -2,11 +2,11 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
-float4 skybox_frag_main(cube_vert_output input) : SV_TARGET
+float4 skybox_frag_main(cube_vert_output _entryPointOutput) : SV_TARGET
 {
     float4 outputColor;
 
-    outputColor = skybox.SampleLevel(samp0, float4(input.uvw, 0), 0);
+    outputColor = skybox.SampleLevel(samp0, float4(_entryPointOutput.uvw, 0), 0);
 
     // tone mapping
     //outputColor.rgb = reinhard_tone_mapping(outputColor.rgb);

@@ -69,6 +69,7 @@ namespace My {
 
         // Close the file.
         fout.close();
+        cerr << endl;
 
         // Pop a message up on the screen to notify the user to check the text file for compile errors.
         cerr << "Error compiling shader.  Check shader-error.txt for message." << shaderFilename << endl;
@@ -106,10 +107,12 @@ namespace My {
         for(i=0; i<logSize; i++)
         {
                 fout << infoLog[i];
+                cerr << infoLog[i];
         }
 
         // Close the file.
         fout.close();
+        cerr << endl;
 
         // Pop a message up on the screen to notify the user to check the text file for linker errors.
         cerr << "Error compiling linker.  Check linker-error.txt for message." << endl;
@@ -210,7 +213,7 @@ void OpenGLShaderManagerCommonBase::Tick()
 bool OpenGLShaderManagerCommonBase::InitializeShaders()
 {
     GLuint shaderProgram;
-    bool result;
+    bool result = true;
 
     // Basic Shader
     ShaderSourceList list = {
@@ -240,6 +243,21 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Pbr] = shaderProgram;
 
+    // SkyBox shader
+    list = {
+        {GL_VERTEX_SHADER, VS_SKYBOX_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_SKYBOX_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::SkyBox] = shaderProgram;
+
+#if !defined(OS_WEBASSEMBLY)
     // Shadow Map Shader
     list = {
         {GL_VERTEX_SHADER, VS_SHADOWMAP_SOURCE_FILE},
@@ -325,20 +343,6 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
 
-    // SkyBox shader
-    list = {
-        {GL_VERTEX_SHADER, VS_SKYBOX_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_SKYBOX_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
-    {
-        return result;
-    }
-
-    m_DefaultShaders[DefaultShaderIndex::SkyBox] = shaderProgram;
-
     // Terrain shader
     list = {
         {GL_VERTEX_SHADER, VS_TERRAIN_SOURCE_FILE},
@@ -354,6 +358,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     }
 
     m_DefaultShaders[DefaultShaderIndex::Terrain] = shaderProgram;
+#endif // !defined(OS_WEBASSEMBLY)
 
 #ifdef DEBUG
     // Debug Shader
@@ -369,8 +374,9 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     }
 
     m_DefaultShaders[DefaultShaderIndex::Debug] = shaderProgram;
-#endif
+#endif // DEBUG
 
+#if !defined(OS_WEBASSEMBLY)
     /////////////////
     // CS Shaders
 
@@ -386,6 +392,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     }
 
     m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
+#endif // !defined(OS_WEBASSEMBLY)
 
     return result;
 }

@@ -1,4 +1,4 @@
-#version 310 es
+#version 300 es
 
 struct a2v
 {
@@ -41,12 +41,12 @@ struct Light
     vec4 padding[2];
 };
 
-layout(binding = 11, std140) uniform PerBatchConstants
+layout(std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
 } _25;
 
-layout(binding = 10, std140) uniform PerFrameConstants
+layout(std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
@@ -60,14 +60,14 @@ layout(location = 1) in vec3 a_inputNormal;
 layout(location = 2) in vec2 a_inputUV;
 layout(location = 3) in vec3 a_inputTangent;
 layout(location = 4) in vec3 a_inputBiTangent;
-layout(location = 0) out vec4 _entryPointOutput_normal;
-layout(location = 1) out vec4 _entryPointOutput_normal_world;
-layout(location = 2) out vec4 _entryPointOutput_v;
-layout(location = 3) out vec4 _entryPointOutput_v_world;
-layout(location = 4) out vec3 _entryPointOutput_v_tangent;
-layout(location = 5) out vec3 _entryPointOutput_camPos_tangent;
-layout(location = 6) out vec2 _entryPointOutput_uv;
-layout(location = 7) out mat3 _entryPointOutput_TBN;
+out vec4 _entryPointOutput_normal;
+out vec4 _entryPointOutput_normal_world;
+out vec4 _entryPointOutput_v;
+out vec4 _entryPointOutput_v_world;
+out vec3 _entryPointOutput_v_tangent;
+out vec3 _entryPointOutput_camPos_tangent;
+out vec2 _entryPointOutput_uv;
+out mat3 _entryPointOutput_TBN;
 
 pbr_vert_output _pbr_vert_main(a2v a)
 {

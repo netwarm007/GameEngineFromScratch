@@ -1,7 +1,15 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
+#include "portable.hpp"
 #include "BaseApplication.hpp"
+#if defined(OS_WEBASSEMBLY)
+#include <functional>
+#include <emscripten.h>
+
+std::function<void()> loop;
+void main_loop() { loop(); }
+#endif // defined(OS_WEBASSEMBLY)
 
 using namespace My;
 using namespace std;
@@ -72,6 +80,26 @@ int main(int argc, char** argv) {
     }
 #endif
 
+#if defined(OS_WEBASSEMBLY)
+    loop = [&]
+    {
+		g_pApp->Tick();
+		g_pMemoryManager->Tick();
+		g_pAssetLoader->Tick();
+		g_pSceneManager->Tick();
+		g_pInputManager->Tick();
+		g_pPhysicsManager->Tick();
+		g_pAnimationManager->Tick();
+		g_pShaderManager->Tick();
+		g_pGameLogic->Tick();
+		g_pGraphicsManager->Tick();
+	#ifdef DEBUG
+		g_pDebugManager->Tick();
+	#endif
+    };
+
+    emscripten_set_main_loop(main_loop, 0, true);
+#else
 	while (!g_pApp->IsQuit()) {
 		g_pApp->Tick();
 		g_pMemoryManager->Tick();
@@ -87,7 +115,9 @@ int main(int argc, char** argv) {
 		g_pDebugManager->Tick();
 	#endif
 	}
+#endif
 
+#if !defined(OS_WEBASSEMBLY)
 	// Finalize Runtime Modules
 #ifdef DEBUG
     g_pDebugManager->Finalize();
@@ -104,6 +134,7 @@ int main(int argc, char** argv) {
 
 	// Finalize App
 	g_pApp->Finalize();
+#endif
 
 	return 0;
 }

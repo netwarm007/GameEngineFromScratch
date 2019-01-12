@@ -1,4 +1,4 @@
-#version 310 es
+#version 300 es
 precision mediump float;
 precision highp int;
 
@@ -34,7 +34,7 @@ struct Light
     highp vec4 padding[2];
 };
 
-layout(binding = 10, std140) uniform PerFrameConstants
+layout(std140) uniform PerFrameConstants
 {
     highp mat4 viewMatrix;
     highp mat4 projectionMatrix;
@@ -43,7 +43,7 @@ layout(binding = 10, std140) uniform PerFrameConstants
     uint numLights;
 } _402;
 
-layout(binding = 12, std140) uniform LightInfo
+layout(std140) uniform LightInfo
 {
     Light lights[100];
 } _479;
@@ -53,17 +53,17 @@ uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedmetallicMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedroughnessMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedaoMapsamp0;
-uniform highp samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
+uniform highp sampler2DArray SPIRV_Cross_Combinedskyboxsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedbrdfLUTsamp0;
 
-layout(location = 0) in highp vec4 input_normal;
-layout(location = 1) in highp vec4 input_normal_world;
-layout(location = 2) in highp vec4 input_v;
-layout(location = 3) in highp vec4 input_v_world;
-layout(location = 4) in highp vec3 input_v_tangent;
-layout(location = 5) in highp vec3 input_camPos_tangent;
-layout(location = 6) in highp vec2 input_uv;
-layout(location = 7) in highp mat3 input_TBN;
+in highp vec4 _entryPointOutput_normal;
+in highp vec4 _entryPointOutput_normal_world;
+in highp vec4 _entryPointOutput_v;
+in highp vec4 _entryPointOutput_v_world;
+in highp vec3 _entryPointOutput_v_tangent;
+in highp vec3 _entryPointOutput_camPos_tangent;
+in highp vec2 _entryPointOutput_uv;
+in highp mat3 _entryPointOutput_TBN;
 layout(location = 0) out highp vec4 _entryPointOutput;
 
 float _101;
@@ -209,13 +209,13 @@ highp vec3 gamma_correction(highp vec3 color)
     return pow(max(color, vec3(0.0)), vec3(0.4545454680919647216796875));
 }
 
-highp vec4 _pbr_frag_main(pbr_vert_output _input)
+highp vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
 {
-    highp vec2 texCoords = _input.uv;
+    highp vec2 texCoords = _entryPointOutput_1.uv;
     highp vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
-    highp vec3 N = normalize(_input.TBN * tangent_normal);
-    highp vec3 V = normalize(_402.camPos.xyz - _input.v_world.xyz);
+    highp vec3 N = normalize(_entryPointOutput_1.TBN * tangent_normal);
+    highp vec3 V = normalize(_402.camPos.xyz - _entryPointOutput_1.v_world.xyz);
     highp vec3 R = reflect(-V, N);
     highp vec3 param = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     highp vec3 albedo = inverse_gamma_correction(param);
@@ -245,7 +245,7 @@ highp vec4 _pbr_frag_main(pbr_vert_output _input)
         light.lightVP = _479.lights[i].lightVP;
         light.padding[0] = _479.lights[i].padding[0];
         light.padding[1] = _479.lights[i].padding[1];
-        highp vec3 L = normalize(light.lightPosition.xyz - _input.v_world.xyz);
+        highp vec3 L = normalize(light.lightPosition.xyz - _entryPointOutput_1.v_world.xyz);
         highp vec3 H = normalize(V + L);
         highp float NdotL = max(dot(N, L), 0.0);
         highp float visibility = 1.0;
@@ -288,9 +288,9 @@ highp vec4 _pbr_frag_main(pbr_vert_output _input)
     highp vec3 kS_1 = F_1;
     highp vec3 kD_1 = vec3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
-    highp vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(N, 0.0), 1.0).xyz;
+    highp vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec3(vec4(N, 0.0).xyz), 1.0).xyz;
     highp vec3 diffuse = irradiance * albedo;
-    highp vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(R, 1.0), rough * 9.0).xyz;
+    highp vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec3(vec4(R, 1.0).xyz), rough * 9.0).xyz;
     highp vec2 envBRDF = texture(SPIRV_Cross_CombinedbrdfLUTsamp0, vec2(max(dot(N, V), 0.0), rough)).xy;
     highp vec3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + vec3(envBRDF.y));
     highp vec3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
@@ -304,17 +304,17 @@ highp vec4 _pbr_frag_main(pbr_vert_output _input)
 
 void main()
 {
-    pbr_vert_output _input;
-    _input.pos = gl_FragCoord;
-    _input.normal = input_normal;
-    _input.normal_world = input_normal_world;
-    _input.v = input_v;
-    _input.v_world = input_v_world;
-    _input.v_tangent = input_v_tangent;
-    _input.camPos_tangent = input_camPos_tangent;
-    _input.uv = input_uv;
-    _input.TBN = input_TBN;
-    pbr_vert_output param = _input;
+    pbr_vert_output _entryPointOutput_1;
+    _entryPointOutput_1.pos = gl_FragCoord;
+    _entryPointOutput_1.normal = _entryPointOutput_normal;
+    _entryPointOutput_1.normal_world = _entryPointOutput_normal_world;
+    _entryPointOutput_1.v = _entryPointOutput_v;
+    _entryPointOutput_1.v_world = _entryPointOutput_v_world;
+    _entryPointOutput_1.v_tangent = _entryPointOutput_v_tangent;
+    _entryPointOutput_1.camPos_tangent = _entryPointOutput_camPos_tangent;
+    _entryPointOutput_1.uv = _entryPointOutput_uv;
+    _entryPointOutput_1.TBN = _entryPointOutput_TBN;
+    pbr_vert_output param = _entryPointOutput_1;
     _entryPointOutput = _pbr_frag_main(param);
 }
 

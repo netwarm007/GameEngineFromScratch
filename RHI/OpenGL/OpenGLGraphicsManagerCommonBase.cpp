@@ -460,9 +460,6 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
             glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, kMaxMipLevels, internal_format, pImage->Width, pImage->Height, depth);
         }
 
-        auto error = glGetError();
-        assert(error == GL_NO_ERROR);
-
         int32_t level = i / 6;
         int32_t zoffset = i % 6;
         if (pImage->compressed)
@@ -475,9 +472,6 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
             glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->Width, pImage->Height, 1,
                 format, type, pImage->data);
         }
-
-        error = glGetError();
-        assert(error == GL_NO_ERROR);
     }
 
     // radiance map
@@ -501,9 +495,6 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
                 glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->mipmaps[level].Width, pImage->mipmaps[level].Height, 1,
                     format, type, pImage->data + pImage->mipmaps[level].offset);
             }
-
-            auto error = glGetError();
-            assert(error == GL_NO_ERROR);
         }
     }
 
@@ -572,9 +563,6 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
 
     glBindVertexArray(0);
 
-    auto error = glGetError();
-    assert(error == GL_NO_ERROR);
-    
     m_Buffers.push_back(terrainVBO[0]);
     m_Buffers.push_back(terrainVBO[1]);
 

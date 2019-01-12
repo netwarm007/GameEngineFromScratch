@@ -3,9 +3,9 @@
 
 #define MAX_LIGHTS 100
 
+#include "config.h"
 
 #ifdef __cplusplus
-	#include "portable.hpp"
 	#include "geommath.hpp"
 	#include "Guid.hpp"
 	#include "SceneObjectLight.hpp"
@@ -141,8 +141,13 @@ Texture2D heightMap				REGISTER(t5);
 Texture2D brdfLUT    			REGISTER(t6);
 Texture2DArray shadowMap  		REGISTER(t7);
 Texture2DArray globalShadowMap 	REGISTER(t8);
+#if defined(OS_WEBASSEMBLY)
+Texture2DArray cubeShadowMap 	REGISTER(t9);
+Texture2DArray skybox     		REGISTER(t10);
+#else
 TextureCubeArray cubeShadowMap 	REGISTER(t9);
 TextureCubeArray skybox     	REGISTER(t10);
+#endif
 Texture2D terrainHeightMap		REGISTER(t11);
 
 // samplers

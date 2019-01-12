@@ -1,18 +1,18 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
-float4 pbr_frag_main(pbr_vert_output input) : SV_Target
+float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
 {
     // offset texture coordinates with Parallax Mapping
-    //float3 viewDir   = normalize(input.camPos_tangent - input.v_tangent);
-    //float2 texCoords = ParallaxMapping(input.uv, viewDir);
-    float2 texCoords = input.uv;
+    //float3 viewDir   = normalize(_entryPointOutput.camPos_tangent - input.v_tangent);
+    //float2 texCoords = ParallaxMapping(_entryPointOutput.uv, viewDir);
+    float2 texCoords = _entryPointOutput.uv;
 
     float3 tangent_normal = normalMap.Sample(samp0, texCoords).rgb;
     tangent_normal = tangent_normal * 2.0f - 1.0f;   
-    float3 N = normalize(mul(tangent_normal, input.TBN)); 
+    float3 N = normalize(mul(tangent_normal, _entryPointOutput.TBN)); 
 
-    float3 V = normalize(camPos.xyz - input.v_world.xyz);
+    float3 V = normalize(camPos.xyz - _entryPointOutput.v_world.xyz);
     float3 R = reflect(-V, N);   
 
     float3 albedo = inverse_gamma_correction(diffuseMap.Sample(samp0, texCoords).rgb); 
@@ -31,13 +31,13 @@ float4 pbr_frag_main(pbr_vert_output input) : SV_Target
         Light light = lights[i];
 
         // calculate per-light radiance
-        float3 L = normalize(light.lightPosition.xyz - input.v_world.xyz);
+        float3 L = normalize(light.lightPosition.xyz - _entryPointOutput.v_world.xyz);
         float3 H = normalize(V + L);
 
         float NdotL = max(dot(N, L), 0.0f);
 
         // shadow test
-        //float visibility = shadow_test(input.v_world, light, NdotL);
+        //float visibility = shadow_test(_entryPointOutput.v_world, light, NdotL);
         float visibility = 1.0f;
 
         float lightToSurfDist = length(L);

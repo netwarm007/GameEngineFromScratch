@@ -46,13 +46,13 @@ layout(std140) uniform LightInfo
 } _681;
 
 uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
-uniform highp samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
+uniform highp sampler2DArray SPIRV_Cross_Combinedskyboxsamp0;
 
-in highp vec4 input_normal;
-in highp vec4 input_normal_world;
-in highp vec4 input_v;
-in highp vec4 input_v_world;
-in highp vec2 input_uv;
+in highp vec4 _entryPointOutput_normal;
+in highp vec4 _entryPointOutput_normal_world;
+in highp vec4 _entryPointOutput_v;
+in highp vec4 _entryPointOutput_v_world;
+in highp vec2 _entryPointOutput_uv;
 layout(location = 0) out highp vec4 _entryPointOutput;
 
 float _130;
@@ -251,7 +251,7 @@ highp vec3 exposure_tone_mapping(highp vec3 color)
     return vec3(1.0) - exp((-color) * 1.0);
 }
 
-highp vec4 _basic_frag_main(basic_vert_output _input)
+highp vec4 _basic_frag_main(basic_vert_output _entryPointOutput_1)
 {
     highp vec3 linearColor = vec3(0.0);
     for (uint i = 0u; i < _280.numLights; i++)
@@ -277,7 +277,7 @@ highp vec4 _basic_frag_main(basic_vert_output _input)
             arg.lightVP = _681.lights[i].lightVP;
             arg.padding[0] = _681.lights[i].padding[0];
             arg.padding[1] = _681.lights[i].padding[1];
-            basic_vert_output param = _input;
+            basic_vert_output param = _entryPointOutput_1;
             linearColor += apply_areaLight(arg, param);
         }
         else
@@ -301,11 +301,11 @@ highp vec4 _basic_frag_main(basic_vert_output _input)
             arg_1.lightVP = _681.lights[i].lightVP;
             arg_1.padding[0] = _681.lights[i].padding[0];
             arg_1.padding[1] = _681.lights[i].padding[1];
-            basic_vert_output param_1 = _input;
+            basic_vert_output param_1 = _entryPointOutput_1;
             linearColor += apply_light(arg_1, param_1);
         }
     }
-    linearColor += (textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(_input.normal_world.xyz, 0.0), 2.0).xyz * vec3(0.20000000298023223876953125));
+    linearColor += (textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec3(vec4(_entryPointOutput_1.normal_world.xyz, 0.0).xyz), 2.0).xyz * vec3(0.20000000298023223876953125));
     highp vec3 param_2 = linearColor;
     linearColor = exposure_tone_mapping(param_2);
     return vec4(linearColor, 1.0);
@@ -313,14 +313,14 @@ highp vec4 _basic_frag_main(basic_vert_output _input)
 
 void main()
 {
-    basic_vert_output _input;
-    _input.pos = gl_FragCoord;
-    _input.normal = input_normal;
-    _input.normal_world = input_normal_world;
-    _input.v = input_v;
-    _input.v_world = input_v_world;
-    _input.uv = input_uv;
-    basic_vert_output param = _input;
+    basic_vert_output _entryPointOutput_1;
+    _entryPointOutput_1.pos = gl_FragCoord;
+    _entryPointOutput_1.normal = _entryPointOutput_normal;
+    _entryPointOutput_1.normal_world = _entryPointOutput_normal_world;
+    _entryPointOutput_1.v = _entryPointOutput_v;
+    _entryPointOutput_1.v_world = _entryPointOutput_v_world;
+    _entryPointOutput_1.uv = _entryPointOutput_uv;
+    basic_vert_output param = _entryPointOutput_1;
     _entryPointOutput = _basic_frag_main(param);
 }
 
