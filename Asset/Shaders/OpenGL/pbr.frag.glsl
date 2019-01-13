@@ -39,32 +39,32 @@ layout(binding = 10, std140) uniform PerFrameConstants
     mat4 arbitraryMatrix;
     vec4 camPos;
     uint numLights;
-} _402;
+} _596;
 
 layout(binding = 12, std140) uniform LightInfo
 {
     Light lights[100];
-} _479;
+} _671;
 
 uniform sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
 uniform sampler2D SPIRV_Cross_CombinedmetallicMapsamp0;
 uniform sampler2D SPIRV_Cross_CombinedroughnessMapsamp0;
 uniform sampler2D SPIRV_Cross_CombinedaoMapsamp0;
-uniform samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
+uniform sampler2DArray SPIRV_Cross_Combinedskyboxsamp0;
 uniform sampler2D SPIRV_Cross_CombinedbrdfLUTsamp0;
 
-layout(location = 0) in vec4 input_normal;
-layout(location = 1) in vec4 input_normal_world;
-layout(location = 2) in vec4 input_v;
-layout(location = 3) in vec4 input_v_world;
-layout(location = 4) in vec3 input_v_tangent;
-layout(location = 5) in vec3 input_camPos_tangent;
-layout(location = 6) in vec2 input_uv;
-layout(location = 7) in mat3 input_TBN;
+layout(location = 0) in vec4 _entryPointOutput_normal;
+layout(location = 1) in vec4 _entryPointOutput_normal_world;
+layout(location = 2) in vec4 _entryPointOutput_v;
+layout(location = 3) in vec4 _entryPointOutput_v_world;
+layout(location = 4) in vec3 _entryPointOutput_v_tangent;
+layout(location = 5) in vec3 _entryPointOutput_camPos_tangent;
+layout(location = 6) in vec2 _entryPointOutput_uv;
+layout(location = 7) in mat3 _entryPointOutput_TBN;
 layout(location = 0) out vec4 _entryPointOutput;
 
-float _101;
+float _104;
 
 vec3 inverse_gamma_correction(vec3 color)
 {
@@ -197,6 +197,66 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
     return F0 + ((max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0));
 }
 
+vec3 convert_xyz_to_cube_uv(vec3 d)
+{
+    vec3 d_abs = abs(d);
+    bvec3 isPositive;
+    isPositive.x = int(d.x > 0.0) != int(0u);
+    isPositive.y = int(d.y > 0.0) != int(0u);
+    isPositive.z = int(d.z > 0.0) != int(0u);
+    float maxAxis;
+    float uc;
+    float vc;
+    int index;
+    if ((isPositive.x && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
+    {
+        maxAxis = d_abs.x;
+        uc = -d.z;
+        vc = d.y;
+        index = 0;
+    }
+    if (((!isPositive.x) && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
+    {
+        maxAxis = d_abs.x;
+        uc = d.z;
+        vc = d.y;
+        index = 1;
+    }
+    if ((isPositive.y && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
+    {
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = -d.z;
+        index = 3;
+    }
+    if (((!isPositive.y) && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
+    {
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = d.z;
+        index = 2;
+    }
+    if ((isPositive.z && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
+    {
+        maxAxis = d_abs.z;
+        uc = d.x;
+        vc = d.y;
+        index = 4;
+    }
+    if (((!isPositive.z) && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
+    {
+        maxAxis = d_abs.z;
+        uc = -d.x;
+        vc = d.y;
+        index = 5;
+    }
+    vec3 o;
+    o.x = 0.5 * ((uc / maxAxis) + 1.0);
+    o.y = 0.5 * ((vc / maxAxis) + 1.0);
+    o.z = float(index);
+    return o;
+}
+
 vec3 reinhard_tone_mapping(vec3 color)
 {
     return color / (color + vec3(1.0));
@@ -207,13 +267,13 @@ vec3 gamma_correction(vec3 color)
     return pow(max(color, vec3(0.0)), vec3(0.4545454680919647216796875));
 }
 
-vec4 _pbr_frag_main(pbr_vert_output _input)
+vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
 {
-    vec2 texCoords = _input.uv;
+    vec2 texCoords = _entryPointOutput_1.uv;
     vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
-    vec3 N = normalize(_input.TBN * tangent_normal);
-    vec3 V = normalize(_402.camPos.xyz - _input.v_world.xyz);
+    vec3 N = normalize(_entryPointOutput_1.TBN * tangent_normal);
+    vec3 V = normalize(_596.camPos.xyz - _entryPointOutput_1.v_world.xyz);
     vec3 R = reflect(-V, N);
     vec3 param = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     vec3 albedo = inverse_gamma_correction(param);
@@ -222,28 +282,28 @@ vec4 _pbr_frag_main(pbr_vert_output _input)
     vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     vec3 Lo = vec3(0.0);
-    for (int i = 0; uint(i) < _402.numLights; i++)
+    for (int i = 0; uint(i) < _596.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _479.lights[i].lightIntensity;
-        light.lightType = _479.lights[i].lightType;
-        light.lightCastShadow = _479.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _479.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _479.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _479.lights[i].lightDistAttenCurveType;
-        light.lightSize = _479.lights[i].lightSize;
-        light.lightGuid = _479.lights[i].lightGuid;
-        light.lightPosition = _479.lights[i].lightPosition;
-        light.lightColor = _479.lights[i].lightColor;
-        light.lightDirection = _479.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _479.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _479.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _479.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _479.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _479.lights[i].lightVP;
-        light.padding[0] = _479.lights[i].padding[0];
-        light.padding[1] = _479.lights[i].padding[1];
-        vec3 L = normalize(light.lightPosition.xyz - _input.v_world.xyz);
+        light.lightIntensity = _671.lights[i].lightIntensity;
+        light.lightType = _671.lights[i].lightType;
+        light.lightCastShadow = _671.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _671.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _671.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _671.lights[i].lightDistAttenCurveType;
+        light.lightSize = _671.lights[i].lightSize;
+        light.lightGuid = _671.lights[i].lightGuid;
+        light.lightPosition = _671.lights[i].lightPosition;
+        light.lightColor = _671.lights[i].lightColor;
+        light.lightDirection = _671.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _671.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _671.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _671.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _671.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _671.lights[i].lightVP;
+        light.padding[0] = _671.lights[i].padding[0];
+        light.padding[1] = _671.lights[i].padding[1];
+        vec3 L = normalize(light.lightPosition.xyz - _entryPointOutput_1.v_world.xyz);
         vec3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
         float visibility = 1.0;
@@ -286,33 +346,37 @@ vec4 _pbr_frag_main(pbr_vert_output _input)
     vec3 kS_1 = F_1;
     vec3 kD_1 = vec3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
-    vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(N, 0.0), 1.0).xyz;
+    vec3 param_19 = N;
+    vec3 uvw = convert_xyz_to_cube_uv(param_19);
+    vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, N, 1.0).xyz;
     vec3 diffuse = irradiance * albedo;
-    vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(R, 1.0), rough * 9.0).xyz;
+    vec3 param_20 = R;
+    vec3 uvw_1 = convert_xyz_to_cube_uv(param_20);
+    vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, uvw_1, rough * 9.0).xyz;
     vec2 envBRDF = texture(SPIRV_Cross_CombinedbrdfLUTsamp0, vec2(max(dot(N, V), 0.0), rough)).xy;
     vec3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + vec3(envBRDF.y));
     vec3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     vec3 linearColor = ambient + Lo;
-    vec3 param_19 = linearColor;
-    linearColor = reinhard_tone_mapping(param_19);
-    vec3 param_20 = linearColor;
-    linearColor = gamma_correction(param_20);
+    vec3 param_21 = linearColor;
+    linearColor = reinhard_tone_mapping(param_21);
+    vec3 param_22 = linearColor;
+    linearColor = gamma_correction(param_22);
     return vec4(linearColor, 1.0);
 }
 
 void main()
 {
-    pbr_vert_output _input;
-    _input.pos = gl_FragCoord;
-    _input.normal = input_normal;
-    _input.normal_world = input_normal_world;
-    _input.v = input_v;
-    _input.v_world = input_v_world;
-    _input.v_tangent = input_v_tangent;
-    _input.camPos_tangent = input_camPos_tangent;
-    _input.uv = input_uv;
-    _input.TBN = input_TBN;
-    pbr_vert_output param = _input;
+    pbr_vert_output _entryPointOutput_1;
+    _entryPointOutput_1.pos = gl_FragCoord;
+    _entryPointOutput_1.normal = _entryPointOutput_normal;
+    _entryPointOutput_1.normal_world = _entryPointOutput_normal_world;
+    _entryPointOutput_1.v = _entryPointOutput_v;
+    _entryPointOutput_1.v_world = _entryPointOutput_v_world;
+    _entryPointOutput_1.v_tangent = _entryPointOutput_v_tangent;
+    _entryPointOutput_1.camPos_tangent = _entryPointOutput_camPos_tangent;
+    _entryPointOutput_1.uv = _entryPointOutput_uv;
+    _entryPointOutput_1.TBN = _entryPointOutput_TBN;
+    pbr_vert_output param = _entryPointOutput_1;
     _entryPointOutput = _pbr_frag_main(param);
 }
 

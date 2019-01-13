@@ -101,8 +101,36 @@ void SdlApplication::Tick()
 			break;
         case SDL_KEYDOWN:
 			break;
-        case SDL_MOUSEBUTTONDOWN:
+        case SDL_KEYUP:
+			{
+                g_pInputManager->AsciiKeyDown(static_cast<char>(e.key.keysym.sym));
+			}
 			break;
+        case SDL_MOUSEBUTTONDOWN:
+			{
+				if (e.button.button == SDL_BUTTON_LEFT)
+				{
+					g_pInputManager->LeftMouseButtonDown();
+					m_bInDrag = true;
+				}
+			}
+			break;
+        case SDL_MOUSEBUTTONUP:
+			{
+				if (e.button.button == SDL_BUTTON_LEFT)
+				{
+					g_pInputManager->LeftMouseButtonUp();
+					m_bInDrag = false;
+				}
+			}
+			break;
+		case SDL_MOUSEMOTION:
+			{
+				if (m_bInDrag) {
+					g_pInputManager->LeftMouseDrag(e.motion.xrel, e.motion.yrel);
+				}
+			}
+			break;			
 		case SDL_WINDOWEVENT:
 			if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
 				int tmpX, tmpY;

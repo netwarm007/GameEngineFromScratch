@@ -433,14 +433,20 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
     uint32_t texture_id;
     const uint32_t kMaxMipLevels = 10;
     glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAX_LEVEL, kMaxMipLevels);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    GLenum target;
+#if defined(OS_WEBASSEMBLY)
+    target = GL_TEXTURE_2D_ARRAY;
+#else
+    target = GL_TEXTURE_CUBE_MAP_ARRAY;
+#endif
+    glBindTexture(target, texture_id);
+    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, kMaxMipLevels);
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     assert(scene.SkyBox);
 
@@ -457,19 +463,19 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
             const uint32_t faces = 6;
             const uint32_t indexies = 2;
             constexpr int32_t depth = faces * indexies;
-            glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, kMaxMipLevels, internal_format, pImage->Width, pImage->Height, depth);
+            glTexStorage3D(target, kMaxMipLevels, internal_format, pImage->Width, pImage->Height, depth);
         }
 
         int32_t level = i / 6;
         int32_t zoffset = i % 6;
         if (pImage->compressed)
         {
-            glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->Width, pImage->Height, 1,
+            glCompressedTexSubImage3D(target, level, 0, 0, zoffset, pImage->Width, pImage->Height, 1,
                 internal_format, static_cast<int32_t>(pImage->mipmaps[0].data_size), pImage->data);
         }
         else
         {
-            glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->Width, pImage->Height, 1,
+            glTexSubImage3D(target, level, 0, 0, zoffset, pImage->Width, pImage->Height, 1,
                 format, type, pImage->data);
         }
     }
@@ -487,12 +493,12 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
         {
             if (pImage->compressed)
             {
-                glCompressedTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->mipmaps[level].Width, pImage->mipmaps[level].Height, 1,
+                glCompressedTexSubImage3D(target, level, 0, 0, zoffset, pImage->mipmaps[level].Width, pImage->mipmaps[level].Height, 1,
                     internal_format, static_cast<int32_t>(pImage->mipmaps[level].data_size), pImage->data + pImage->mipmaps[level].offset);
             }
             else
             {
-                glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level, 0, 0, zoffset, pImage->mipmaps[level].Width, pImage->mipmaps[level].Height, 1,
+                glTexSubImage3D(target, level, 0, 0, zoffset, pImage->mipmaps[level].Width, pImage->mipmaps[level].Height, 1,
                     format, type, pImage->data + pImage->mipmaps[level].offset);
             }
         }
@@ -505,7 +511,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
         m_Frames[i].frameContext.skybox = texture_id;
     }
 
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
+    glBindTexture(target, 0);
 
     // skybox VAO
     uint32_t skyboxVAO, skyboxVBO[2];
@@ -1061,7 +1067,13 @@ void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
     uint32_t texture_id = (uint32_t) context.skybox;
     setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
     glActiveTexture(GL_TEXTURE10);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
+    GLenum target;
+#if defined(OS_WEBASSEMBLY)
+    target = GL_TEXTURE_2D_ARRAY;
+#else
+    target = GL_TEXTURE_CUBE_MAP_ARRAY;
+#endif
+    glBindTexture(target, texture_id);
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawSkyBox()

@@ -78,12 +78,28 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
         float3 kD = 1.0f - kS;
         kD *= 1.0f - meta;	  
 
-        float3 irradiance = skybox.SampleLevel(samp0, float4(N, 0.0f), 1.0f).rgb;
+        float3 irradiance;
+#if defined(OS_WEBASSEMBLY)
+        {
+            float3 uvw = convert_xyz_to_cube_uv(N);
+            irradiance = skybox.SampleLevel(samp0, N, 1.0f).rgb;
+        }
+#else
+        irradiance = skybox.SampleLevel(samp0, float4(N, 0.0f), 1.0f).rgb;
+#endif
         float3 diffuse = irradiance * albedo;
 
         // ambient reflect
         const float MAX_REFLECTION_LOD = 9.0f;
-        float3 prefilteredColor = skybox.SampleLevel(samp0, float4(R, 1.0f), rough * MAX_REFLECTION_LOD).rgb;    
+        float3 prefilteredColor;
+#if defined(OS_WEBASSEMBLY)
+        {
+            float3 uvw = convert_xyz_to_cube_uv(R);
+            prefilteredColor = skybox.SampleLevel(samp0, uvw, rough * MAX_REFLECTION_LOD).rgb;    
+        }
+#else
+        prefilteredColor = skybox.SampleLevel(samp0, float4(R, 1.0f), rough * MAX_REFLECTION_LOD).rgb;    
+#endif
         float2 envBRDF  = brdfLUT.Sample(samp0, float2(max(dot(N, V), 0.0f), rough)).rg;
         float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
 

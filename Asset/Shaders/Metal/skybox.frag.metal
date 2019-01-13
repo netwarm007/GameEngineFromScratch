@@ -56,8 +56,68 @@ struct skybox_frag_main_out
 
 struct skybox_frag_main_in
 {
-    float3 input_uvw [[user(locn0)]];
+    float3 _entryPointOutput_uvw [[user(locn0)]];
 };
+
+float3 convert_xyz_to_cube_uv(thread const float3& d)
+{
+    float3 d_abs = abs(d);
+    bool3 isPositive;
+    isPositive.x = int(d.x > 0.0) != 0u;
+    isPositive.y = int(d.y > 0.0) != 0u;
+    isPositive.z = int(d.z > 0.0) != 0u;
+    float maxAxis;
+    float uc;
+    float vc;
+    int index;
+    if ((isPositive.x && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
+    {
+        maxAxis = d_abs.x;
+        uc = -d.z;
+        vc = d.y;
+        index = 0;
+    }
+    if (((!isPositive.x) && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
+    {
+        maxAxis = d_abs.x;
+        uc = d.z;
+        vc = d.y;
+        index = 1;
+    }
+    if ((isPositive.y && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
+    {
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = -d.z;
+        index = 3;
+    }
+    if (((!isPositive.y) && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
+    {
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = d.z;
+        index = 2;
+    }
+    if ((isPositive.z && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
+    {
+        maxAxis = d_abs.z;
+        uc = d.x;
+        vc = d.y;
+        index = 4;
+    }
+    if (((!isPositive.z) && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
+    {
+        maxAxis = d_abs.z;
+        uc = -d.x;
+        vc = d.y;
+        index = 5;
+    }
+    float3 o;
+    o.x = 0.5 * ((uc / maxAxis) + 1.0);
+    o.y = 0.5 * ((vc / maxAxis) + 1.0);
+    o.z = float(index);
+    return o;
+}
 
 float3 exposure_tone_mapping(thread const float3& color)
 {
@@ -69,25 +129,27 @@ float3 gamma_correction(thread const float3& color)
     return pow(max(color, float3(0.0)), float3(0.4545454680919647216796875));
 }
 
-float4 _skybox_frag_main(thread const cube_vert_output& _input, thread texturecube_array<float> skybox, thread sampler samp0)
+float4 _skybox_frag_main(thread const cube_vert_output& _entryPointOutput, thread texture2d_array<float> skybox, thread sampler samp0)
 {
-    float4 outputColor = skybox.sample(samp0, float4(_input.uvw, 0.0).xyz, uint(round(float4(_input.uvw, 0.0).w)), level(0.0));
-    float3 param = outputColor.xyz;
-    float3 _65 = exposure_tone_mapping(param);
-    outputColor = float4(_65.x, _65.y, _65.z, outputColor.w);
+    float3 param = _entryPointOutput.uvw;
+    float3 uvw = convert_xyz_to_cube_uv(param);
+    float4 outputColor = skybox.sample(samp0, uvw.xy, uint(round(uvw.z)), level(0.0));
     float3 param_1 = outputColor.xyz;
-    float3 _71 = gamma_correction(param_1);
-    outputColor = float4(_71.x, _71.y, _71.z, outputColor.w);
+    float3 _267 = exposure_tone_mapping(param_1);
+    outputColor = float4(_267.x, _267.y, _267.z, outputColor.w);
+    float3 param_2 = outputColor.xyz;
+    float3 _273 = gamma_correction(param_2);
+    outputColor = float4(_273.x, _273.y, _273.z, outputColor.w);
     return outputColor;
 }
 
-fragment skybox_frag_main_out skybox_frag_main(skybox_frag_main_in in [[stage_in]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
+fragment skybox_frag_main_out skybox_frag_main(skybox_frag_main_in in [[stage_in]], texture2d_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     skybox_frag_main_out out = {};
-    cube_vert_output _input;
-    _input.pos = gl_FragCoord;
-    _input.uvw = in.input_uvw;
-    cube_vert_output param = _input;
+    cube_vert_output _entryPointOutput;
+    _entryPointOutput.pos = gl_FragCoord;
+    _entryPointOutput.uvw = in._entryPointOutput_uvw;
+    cube_vert_output param = _entryPointOutput;
     out._entryPointOutput = _skybox_frag_main(param, skybox, samp0);
     return out;
 }

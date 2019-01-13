@@ -372,3 +372,78 @@ float level(float2 v0, float2 v1){
      return clamp(distance(v0, v1)/2.0f, 1.0f, 64.0f);
 }
 
+float3 convert_xyz_to_cube_uv(float3 d)
+{
+    float3 d_abs = abs(d);
+  
+    bool3 isPositive;
+    isPositive.x = d.x > 0 ? 1 : 0;
+    isPositive.y = d.y > 0 ? 1 : 0;
+    isPositive.z = d.z > 0 ? 1 : 0;
+  
+    float maxAxis, uc, vc;
+    int index;
+  
+    // POSITIVE X
+    if (isPositive.x && d_abs.x >= d_abs.y && d_abs.x >= d_abs.z) {
+        // u (0 to 1) goes from +y to -y
+        // v (0 to 1) goes from -z to +z
+        maxAxis = d_abs.x;
+        uc = -d.z;
+        vc = d.y;
+        index = 0;
+    }
+    // NEGATIVE X
+    if (!isPositive.x && d_abs.x >= d_abs.y && d_abs.x >= d_abs.z) {
+        // u (0 to 1) goes from -y to +y
+        // v (0 to 1) goes from -z to +z
+        maxAxis = d_abs.x;
+        uc = d.z;
+        vc = d.y;
+        index = 1;
+    }
+    // POSITIVE Y
+    if (isPositive.y && d_abs.y >= d_abs.x && d_abs.y >= d_abs.z) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from +z to -z
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = -d.z;
+        index = 3;
+    }
+    // NEGATIVE Y
+    if (!isPositive.y && d_abs.y >= d_abs.x && d_abs.y >= d_abs.z) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from -z to +z
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = d.z;
+        index = 2;
+    }
+    // POSITIVE Z
+    if (isPositive.z && d_abs.z >= d_abs.x && d_abs.z >= d_abs.y) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from +y to -y
+        maxAxis = d_abs.z;
+        uc = d.x;
+        vc = d.y;
+        index = 4;
+    }
+    // NEGATIVE Z
+    if (!isPositive.z && d_abs.z >= d_abs.x && d_abs.z >= d_abs.y) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from -y to +y
+        maxAxis = d_abs.z;
+        uc = -d.x;
+        vc = d.y;
+        index = 5;
+    }
+
+    // Convert range from -1 to 1 to 0 to 1
+    float3 o;
+    o.x = 0.5f * (uc / maxAxis + 1.0f);
+    o.y = 0.5f * (vc / maxAxis + 1.0f);
+    o.z = (float)index;
+
+    return o;
+}

@@ -24,6 +24,8 @@ namespace My {
 
     protected:
         SDL_Window* m_pWindow;
+
+        bool m_bInDrag = false;
     };
 }
 
