@@ -86,8 +86,7 @@ void CefApplication::OnContextInitialized()
     url = command_line->GetSwitchValue("url");
     if (url.empty())
     {
-        //url = "https://www.khronos.org/registry/webgl/sdk/demos/google/san-angeles/index.html";
-        url = "https://makepad.github.io/makepad.html";
+        url = "http://desktop.chenwenli.com/Viewer.html";
     }
 
     if (use_views) {
@@ -100,6 +99,9 @@ void CefApplication::OnContextInitialized()
     } else {
         // Information used when creating the native window.
         CefWindowInfo window_info;
+
+        window_info.width = m_Config.screenWidth;
+        window_info.height = m_Config.screenHeight;
 
 #if defined(OS_WIN)
         // On Windows we need to specify certain flags that will be passed to

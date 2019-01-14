@@ -1,11 +1,7 @@
 #include "portable.hpp"
 #include "GfxConfiguration.hpp"
-#include "Platform/Sdl/OpenGLApplication.hpp"
-#if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
-#include "RHI/OpenGL/OpenGLESConfig.hpp"
-#else
-#include "RHI/OpenGL/OpenGLConfig.hpp"
-#endif
+#include "CefApplication.hpp"
+#include "RHI/Empty/EmptyConfig.hpp"
 #include "Framework/Common/AssetLoader.hpp"
 #include "Framework/Common/MemoryManager.hpp"
 #include "Framework/Common/SceneManager.hpp"
@@ -17,8 +13,8 @@
 #include "EditorLogic.hpp"
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, "Editor");
-	IApplication*    g_pApp             = static_cast<IApplication*>(new OpenGLApplication(config));
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 1024, 800, "Editor");
+	IApplication*    g_pApp             = static_cast<IApplication*>(new CefApplication(config));
     IGameLogic*       g_pGameLogic       = static_cast<IGameLogic*>(new EditorLogic);
     IPhysicsManager*  g_pPhysicsManager  = static_cast<IPhysicsManager*>(new MyPhysicsManager);
     IMemoryManager*   g_pMemoryManager   = static_cast<IMemoryManager*>(new MemoryManager);

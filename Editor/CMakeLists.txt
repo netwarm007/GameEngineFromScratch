@@ -81,9 +81,10 @@ ENDIF(APPLE)
 
 target_link_libraries(Editor
                         MyPhysics
-                        OpenGLRHI
+                        EmptyRHI
                         Common
-                        Sdl
+                        CEF
+                        PlatformInterface
                     )
 
 # copy dependencies
@@ -97,7 +98,6 @@ IF(WIN32)
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/natives_blob.bin"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/snapshot_blob.bin"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/v8_context_snapshot.bin"
-            "${PROJECT_SOURCE_DIR}/External/Windows/bin/SDL2.dll"
     )
     add_custom_command(TARGET Editor POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

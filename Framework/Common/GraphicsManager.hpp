@@ -17,63 +17,63 @@ namespace My {
     class GraphicsManager : implements IRuntimeModule
     {
     public:
-        virtual ~GraphicsManager() {}
+        virtual ~GraphicsManager() = default;
 
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize() override;
+        void Finalize() override;
 
-        virtual void Tick();
+        void Tick() override;
 
         virtual void Draw();
-        virtual void Present();
+        virtual void Present() {};
 
         virtual void ResizeCanvas(int32_t width, int32_t height);
 
-        virtual void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram);
+        virtual void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) {}
 
-        virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
+        virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) {}
 
-        virtual int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
-        virtual int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count);
-        virtual void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index);
-        virtual void EndShadowMap(const int32_t shadowmap, const uint32_t layer_index);
-        virtual void SetShadowMaps(const Frame& frame);
-        virtual void DestroyShadowMap(int32_t& shadowmap);
+        virtual int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
+        virtual int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
+        virtual void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) {}
+        virtual void EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) {}
+        virtual void SetShadowMaps(const Frame& frame) {}
+        virtual void DestroyShadowMap(int32_t& shadowmap) {}
 
         // skybox
-        virtual void SetSkyBox(const DrawFrameContext& context);
-        virtual void DrawSkyBox();
+        virtual void SetSkyBox(const DrawFrameContext& context) {}
+        virtual void DrawSkyBox() {}
 
         // terrain
-        virtual void SetTerrain(const DrawFrameContext& context);
-        virtual void DrawTerrain();
+        virtual void SetTerrain(const DrawFrameContext& context) {}
+        virtual void DrawTerrain() {}
 
-        virtual int32_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height);
-        virtual void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height);
-        virtual void EndRenderToTexture(int32_t& context);
+        virtual int32_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) { return 0; }
+        virtual void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height) {}
+        virtual void EndRenderToTexture(int32_t& context) {}
 
-        virtual int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height);
-        virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth);
+        virtual int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) { return 0; }
+        virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) {}
 
-        virtual int32_t GetTexture(const char* id);
+        virtual int32_t GetTexture(const char* id) { return 0; }
 
-        virtual void DrawFullScreenQuad();
+        virtual void DrawFullScreenQuad() {}
 
 #ifdef DEBUG
-        virtual void DrawPoint(const Point& point, const Vector3f& color);
-        virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color);
-        virtual void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color);
-        virtual void DrawLine(const Point& from, const Point& to, const Vector3f &color);
-        virtual void DrawLine(const PointList& vertices, const Vector3f &color);
-        virtual void DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
-        virtual void DrawTriangle(const PointList& vertices, const Vector3f &color);
-        virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color);
-        virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color);
-        virtual void DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height);
-        virtual void DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height);
-        virtual void DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f);
-        virtual void DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f);
-        virtual void ClearDebugBuffers();
+        virtual void DrawPoint(const Point& point, const Vector3f& color) {}
+        virtual void DrawPointSet(const PointSet& point_set, const Vector3f& color) {}
+        virtual void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color) {}
+        virtual void DrawLine(const Point& from, const Point& to, const Vector3f &color) {}
+        virtual void DrawLine(const PointList& vertices, const Vector3f &color) {}
+        virtual void DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color) {}
+        virtual void DrawTriangle(const PointList& vertices, const Vector3f &color) {}
+        virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color) {}
+        virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color) {}
+        virtual void DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height) {}
+        virtual void DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) {}
+        virtual void DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f) {}
+        virtual void DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f) {}
+        virtual void ClearDebugBuffers() {}
 
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
         void DrawPolygon(const Face& face, const Vector3f& color);
@@ -85,31 +85,31 @@ namespace My {
 
     protected:
         virtual void BeginScene(const Scene& scene);
-        virtual void EndScene();
+        virtual void EndScene() {}
 
-        virtual void BeginFrame();
-        virtual void EndFrame();
+        virtual void BeginFrame() {}
+        virtual void EndFrame() {}
 
-        virtual void BeginPass();
-        virtual void EndPass();
+        virtual void BeginPass() {}
+        virtual void EndPass() {}
 
-        virtual void BeginCompute();
-        virtual void EndCompute();
+        virtual void BeginCompute() {}
+        virtual void EndCompute() {}
 
 #ifdef DEBUG
-        virtual void RenderDebugBuffers();
+        virtual void RenderDebugBuffers() {}
 #endif
 
     private:
-        void InitConstants();
+        void InitConstants() {}
         void CalculateCameraMatrix();
         void CalculateLights();
 
         void UpdateConstants();
 
-        virtual void SetLightInfo(const LightInfo& lightInfo);
-        virtual void SetPerFrameConstants(const DrawFrameContext& context);
-        virtual void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
+        virtual void SetLightInfo(const LightInfo& lightInfo) {}
+        virtual void SetPerFrameConstants(const DrawFrameContext& context) {}
+        virtual void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) {}
 
     protected:
         uint32_t m_nFrameIndex = 0;
