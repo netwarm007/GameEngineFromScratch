@@ -25,13 +25,13 @@ struct pbr_vert_output
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -52,8 +52,8 @@ layout(binding = 10, std140) uniform PerFrameConstants
     mat4 projectionMatrix;
     mat4 arbitraryMatrix;
     vec4 camPos;
-    uint numLights;
-} _45;
+    int numLights;
+} _44;
 
 layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
@@ -73,17 +73,17 @@ pbr_vert_output _pbr_vert_main(a2v a)
 {
     pbr_vert_output o;
     o.v_world = _25.modelMatrix * vec4(a.inputPosition, 1.0);
-    o.v = _45.viewMatrix * o.v_world;
-    o.pos = _45.projectionMatrix * o.v;
+    o.v = _44.viewMatrix * o.v_world;
+    o.pos = _44.projectionMatrix * o.v;
     o.normal_world = normalize(_25.modelMatrix * vec4(a.inputNormal, 0.0));
-    o.normal = normalize(_45.viewMatrix * o.normal_world);
+    o.normal = normalize(_44.viewMatrix * o.normal_world);
     vec3 tangent = normalize((_25.modelMatrix * vec4(a.inputTangent, 0.0)).xyz);
     tangent = normalize(tangent - (o.normal_world.xyz * dot(tangent, o.normal_world.xyz)));
     vec3 bitangent = cross(o.normal_world.xyz, tangent);
     o.TBN = mat3(vec3(tangent), vec3(bitangent), vec3(o.normal_world.xyz));
     mat3 TBN_trans = transpose(o.TBN);
     o.v_tangent = TBN_trans * o.v_world.xyz;
-    o.camPos_tangent = TBN_trans * _45.camPos.xyz;
+    o.camPos_tangent = TBN_trans * _44.camPos.xyz;
     o.uv.x = a.inputUV.x;
     o.uv.y = 1.0 - a.inputUV.y;
     return o;

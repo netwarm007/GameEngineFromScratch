@@ -1,4 +1,4 @@
-#version 300 es
+#version 320 es
 precision mediump float;
 precision highp int;
 
@@ -10,13 +10,13 @@ struct pos_only_vert_output
 struct Light
 {
     highp float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     highp vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     highp vec4 lightPosition;
     highp vec4 lightColor;
     highp vec4 lightDirection;

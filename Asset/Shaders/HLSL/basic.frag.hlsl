@@ -111,7 +111,7 @@ float3 apply_areaLight(const Light light, basic_vert_output input)
 float4 basic_frag_main(basic_vert_output _entryPointOutput) : SV_Target
 {
     float3 linearColor = 0.0f.xxx;
-    for (uint i = 0; i < numLights; i++)
+    for (int i = 0; i < numLights; i++)
     {
         if (lights[i].lightType == 3) // area light
         {

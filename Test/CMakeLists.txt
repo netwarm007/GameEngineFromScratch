@@ -38,7 +38,7 @@ add_custom_target(PackageAsset ALL
                   Asset/Textures/huff_simple0.jpg
                   Asset/Textures/interior_lod0.tga
                   Asset/Scene/splash.ogex
-                  Asset/Shaders
+                  Asset/Shaders/WebGL
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     VERBATIM
         )

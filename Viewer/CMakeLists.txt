@@ -45,7 +45,7 @@ add_custom_target(SplashAssets ALL
                   Asset/Textures/hdr/spruit_sunrise_radiance_negy.dds
                   Asset/Textures/hdr/spruit_sunrise_radiance_negz.dds
                   Asset/Scene/splash.ogex
-                  Asset/Shaders/OpenGLES
+                  Asset/Shaders/WebGL
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     VERBATIM
         )

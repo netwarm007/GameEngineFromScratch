@@ -1,4 +1,4 @@
-#version 300 es
+#version 320 es
 
 struct a2v_pos_only
 {
@@ -14,13 +14,13 @@ struct cube_vert_output
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -30,27 +30,27 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerFrameConstants
+layout(binding = 10, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     mat4 arbitraryMatrix;
     vec4 camPos;
-    uint numLights;
-} _31;
+    int numLights;
+} _30;
 
 layout(location = 0) in vec3 a_inputPosition;
-out vec3 _entryPointOutput_uvw;
+layout(location = 0) out vec3 _entryPointOutput_uvw;
 
 cube_vert_output _skybox_vert_main(a2v_pos_only a)
 {
     cube_vert_output o;
     o.uvw = a.inputPosition;
-    mat4 _matrix = _31.viewMatrix;
+    mat4 _matrix = _30.viewMatrix;
     _matrix[3].x = 0.0;
     _matrix[3].y = 0.0;
     _matrix[3].z = 0.0;
-    vec4 pos = _31.projectionMatrix * (_matrix * vec4(a.inputPosition, 1.0));
+    vec4 pos = _30.projectionMatrix * (_matrix * vec4(a.inputPosition, 1.0));
     o.pos = pos.xyww;
     return o;
 }

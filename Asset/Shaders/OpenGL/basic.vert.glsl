@@ -22,13 +22,13 @@ struct basic_vert_output
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -49,8 +49,8 @@ layout(binding = 10, std140) uniform PerFrameConstants
     mat4 projectionMatrix;
     mat4 arbitraryMatrix;
     vec4 camPos;
-    uint numLights;
-} _44;
+    int numLights;
+} _43;
 
 layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
@@ -67,10 +67,10 @@ basic_vert_output _basic_vert_main(a2v a)
 {
     basic_vert_output o;
     o.v_world = _24.modelMatrix * vec4(a.inputPosition, 1.0);
-    o.v = _44.viewMatrix * o.v_world;
-    o.pos = _44.projectionMatrix * o.v;
+    o.v = _43.viewMatrix * o.v_world;
+    o.pos = _43.projectionMatrix * o.v;
     o.normal_world = normalize(_24.modelMatrix * vec4(a.inputNormal, 0.0));
-    o.normal = normalize(_44.viewMatrix * o.normal_world);
+    o.normal = normalize(_43.viewMatrix * o.normal_world);
     o.uv.x = a.inputUV.x;
     o.uv.y = 1.0 - a.inputUV.y;
     return o;

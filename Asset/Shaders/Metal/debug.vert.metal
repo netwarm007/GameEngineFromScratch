@@ -23,8 +23,9 @@ struct PerFrameConstants
 {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
+    float4x4 arbitraryMatrix;
     float4 camPos;
-    uint numLights;
+    int numLights;
 };
 
 struct PerBatchConstants
@@ -35,13 +36,13 @@ struct PerBatchConstants
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     float2 lightSize;
-    uint4 lightGuid;
+    int4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;
@@ -70,16 +71,16 @@ struct debug_vert_main_in
     float3 a_inputBiTangent [[attribute(4)]];
 };
 
-pos_only_vert_output _debug_vert_main(thread const a2v& a, constant PerFrameConstants& v_33)
+pos_only_vert_output _debug_vert_main(thread const a2v& a, constant PerFrameConstants& v_32)
 {
     float4 v = float4(a.inputPosition, 1.0);
-    v = v_33.viewMatrix * v;
+    v = v_32.viewMatrix * v;
     pos_only_vert_output o;
-    o.pos = v_33.projectionMatrix * v;
+    o.pos = v_32.projectionMatrix * v;
     return o;
 }
 
-vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], constant PerFrameConstants& v_33 [[buffer(10)]])
+vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], constant PerFrameConstants& v_32 [[buffer(10)]])
 {
     debug_vert_main_out out = {};
     a2v a;
@@ -89,7 +90,7 @@ vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], c
     a.inputTangent = in.a_inputTangent;
     a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
-    out.gl_Position = _debug_vert_main(param, v_33).pos;
+    out.gl_Position = _debug_vert_main(param, v_32).pos;
     return out;
 }
 

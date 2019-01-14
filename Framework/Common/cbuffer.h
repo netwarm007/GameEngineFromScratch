@@ -26,16 +26,16 @@ namespace My {
 	#define SEMANTIC(a) : a 
 	#define REGISTER(x) : register(x)
 	#define unistruct cbuffer
-	#define uint32_t uint
-	#define Guid uint4 
+	#define int32_t int
+	#define Guid int4 
 	#define Vector2f float2
 	#define Vector3f float3
 	#define Vector4f float4
 	#define Matrix2X2f row_major float2x2
 	#define Matrix3X3f row_major float3x3
 	#define Matrix4X4f row_major float4x4
-	#define LightType uint
-	#define AttenCurveType uint
+	#define LightType int
+	#define AttenCurveType int
 #endif
 
 struct Light{
@@ -60,9 +60,9 @@ unistruct PerFrameConstants REGISTER(b10)
 {
 	Matrix4X4f 	viewMatrix;						// 64 bytes
 	Matrix4X4f 	projectionMatrix;				// 64 bytes
-	Matrix4X4f  arbitraryMatrix;				    // 64 bytes
+	Matrix4X4f  arbitraryMatrix;				// 64 bytes
     Vector4f   	camPos;							// 16 bytes
-	uint32_t  	numLights;						// 4 bytes
+	int32_t  	numLights;						// 4 bytes
 };
 
 unistruct PerBatchConstants REGISTER(b11)

@@ -11,7 +11,7 @@ struct PerFrameConstants
     float4x4 projectionMatrix;
     float4x4 arbitraryMatrix;
     float4 camPos;
-    uint numLights;
+    int numLights;
 };
 
 struct PerBatchConstants
@@ -22,13 +22,13 @@ struct PerBatchConstants
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     float2 lightSize;
-    uint4 lightGuid;
+    int4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;
@@ -148,7 +148,8 @@ void _integrateBRDF_comp_main(thread const uint3& DTid, thread texture2d<float, 
     float2 _383 = IntegrateBRDF(param, param_1);
     float4 pixel;
     pixel = float4(_383.x, _383.y, pixel.z, pixel.w);
-    img_output.write(pixel, uint2(pixel_coords));
+    float2 storeTemp = pixel.xy;
+    img_output.write(storeTemp, uint2(pixel_coords));
 }
 
 kernel void integrateBRDF_comp_main(texture2d<float, access::write> img_output [[texture(0)]], uint3 gl_GlobalInvocationID [[thread_position_in_grid]])

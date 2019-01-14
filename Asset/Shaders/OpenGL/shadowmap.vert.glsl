@@ -17,13 +17,13 @@ struct pos_only_vert_output
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -36,8 +36,16 @@ struct Light
 layout(binding = 11, std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
-    mat4 arbitraryMatrix;
 } _32;
+
+layout(binding = 10, std140) uniform PerFrameConstants
+{
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    mat4 arbitraryMatrix;
+    vec4 camPos;
+    int numLights;
+} _42;
 
 layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
@@ -50,7 +58,7 @@ pos_only_vert_output _shadowmap_vert_main(a2v a)
     vec4 v = vec4(a.inputPosition, 1.0);
     v = _32.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = _32.arbitraryMatrix * v;
+    o.pos = _42.arbitraryMatrix * v;
     return o;
 }
 

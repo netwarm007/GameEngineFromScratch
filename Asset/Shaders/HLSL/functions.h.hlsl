@@ -265,6 +265,7 @@ float GeometrySmithIndirect(float3 N, float3 V, float3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+#if !defined(OS_WEBASSEMBLY)
 float RadicalInverse_VdC(uint bits) 
 {
     bits = (bits << 16u) | (bits >> 16u);
@@ -279,6 +280,7 @@ float2 Hammersley(uint i, uint N)
 {
     return float2(float(i)/float(N), RadicalInverse_VdC(i));
 }  
+#endif
 
 float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 {
