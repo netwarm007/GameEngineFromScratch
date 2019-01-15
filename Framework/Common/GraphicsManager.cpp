@@ -20,9 +20,7 @@ int GraphicsManager::Initialize()
 #endif
 
 	InitConstants();
-#if !defined(OS_WEBASSEMBLY)
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
-#endif
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
     return result;
 }

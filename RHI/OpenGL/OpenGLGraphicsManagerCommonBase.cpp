@@ -649,6 +649,11 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
         {
             glDeleteBuffers(1, &m_uboShadowMatricesConstant[i]);
         }
+
+        if (m_uboDebugConstant[i])
+        {
+            glDeleteBuffers(1, &m_uboDebugConstant[i]);
+        }
     }
 
     if (m_TerrainDrawBatchContext.vao)
@@ -908,17 +913,19 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
-#if !defined(OS_WEBASSEMBLY)
     if (light.lightType == LightType::Omni)
     {
+#if defined(OS_WEBASSEMBLY)
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, (uint32_t) shadowmap, 0);
+#else
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (uint32_t) shadowmap, 0);
+#endif
     }
     else
     {
         // we only bind the single layer to FBO
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (uint32_t) shadowmap, 0, layer_index);
     }
-#endif
 
     // Always check that our framebuffer is ok
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -937,76 +944,67 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     }
     glViewport(0, 0, width, height);
 
-    switch (light.lightType)
+    float nearClipDistance = 0.1f;
+    float farClipDistance = 10.0f;
+    ShadowMapConstants constants;
+
+    if (light.lightType == LightType::Omni)
     {
-        case LightType::Omni:
+        static const Vector3f direction[6] = {
+            { 1.0f, 0.0f, 0.0f },
+            {-1.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f },
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f,-1.0f }
+        };
+        static const Vector3f up[6] = {
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f,-1.0f },
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f,-1.0f, 0.0f }
+        };
+
+        float fieldOfView = PI / 2.0f; // 90 degree for each cube map face
+        float screenAspect = (float)width / (float)height;
+        Matrix4X4f projection;
+
+        // Build the perspective projection matrix.
+        BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+
+        Vector3f pos = {light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]};
+        for (int32_t i = 0; i < 6; i++)
         {
-            Matrix4X4f shadowMatrices[6];
-            static const Vector3f direction[6] = {
-                { 1.0f, 0.0f, 0.0f },
-                {-1.0f, 0.0f, 0.0f },
-                { 0.0f, 1.0f, 0.0f },
-                { 0.0f,-1.0f, 0.0f },
-                { 0.0f, 0.0f, 1.0f },
-                { 0.0f, 0.0f,-1.0f }
-            };
-            static const Vector3f up[6] = {
-                { 0.0f,-1.0f, 0.0f },
-                { 0.0f,-1.0f, 0.0f },
-                { 0.0f, 0.0f, 1.0f },
-                { 0.0f, 0.0f,-1.0f },
-                { 0.0f,-1.0f, 0.0f },
-                { 0.0f,-1.0f, 0.0f }
-            };
-
-            float nearClipDistance = 0.1f;
-            float farClipDistance = 10.0f;
-            float fieldOfView = PI / 2.0f; // 90 degree for each cube map face
-            float screenAspect = (float)width / (float)height;
-            Matrix4X4f projection;
-
-            // Build the perspective projection matrix.
-            BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
-
-            Vector3f pos = {light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]};
-            for (int32_t i = 0; i < 6; i++)
-            {
-                BuildViewRHMatrix(shadowMatrices[i], pos, pos + direction[i], up[i]);
-                shadowMatrices[i] = shadowMatrices[i] * projection;
-            }
-
-            uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "ShadowMatrices");
-
-            assert(blockIndex != GL_INVALID_INDEX);
-
-            int32_t blockSize;
-
-            glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
-
-            if (!m_uboShadowMatricesConstant[m_nFrameIndex])
-            {
-                glGenBuffers(1, &m_uboShadowMatricesConstant[m_nFrameIndex]);
-            }
-
-            glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant[m_nFrameIndex]);
-
-            assert(blockSize == sizeof(shadowMatrices));
-            glBufferData(GL_UNIFORM_BUFFER, blockSize, shadowMatrices, GL_DYNAMIC_DRAW);
-
-            glUniformBlockBinding(m_CurrentShader, blockIndex, 2);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_uboShadowMatricesConstant[m_nFrameIndex]);
-
-            setShaderParameter("u_gsPushConstants.layer_index", static_cast<int>(layer_index));
-            setShaderParameter("u_lightParams.lightPos", pos);
-            setShaderParameter("u_lightParams.far_plane", farClipDistance);
-
-            break;
-        }
-        default:
-        {
-            setShaderParameter("u_pushConstants.depthVP", light.lightVP);
+            BuildViewRHMatrix(constants.shadowMatrices[i], pos, pos + direction[i], up[i]);
+            constants.shadowMatrices[i] = constants.shadowMatrices[i] * projection;
         }
     }
+
+    constants.shadowmap_layer_index = layer_index;
+    constants.far_plane = farClipDistance;
+
+    uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "ShadowMapConstants");
+
+    assert(blockIndex != GL_INVALID_INDEX);
+
+    int32_t blockSize;
+
+    glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+
+    if (!m_uboShadowMatricesConstant[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboShadowMatricesConstant[m_nFrameIndex]);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant[m_nFrameIndex]);
+
+    assert(blockSize >= sizeof(constants));
+    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
+
+    glUniformBlockBinding(m_CurrentShader, blockIndex, 14);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 14, m_uboShadowMatricesConstant[m_nFrameIndex]);
 
     glCullFace(GL_FRONT);
 }
@@ -1163,7 +1161,9 @@ void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(int32_t& context, con
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-#if !defined(OS_WEBASSEMBLY)
+#if defined(OS_WEBASSEMBLY)
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, (uint32_t) texture, 0);
+#else
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, (uint32_t) texture, 0);
 #endif
 
@@ -1505,9 +1505,31 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     UseShaderProgram(debugShaderProgram);
 
+    if (!m_uboDebugConstant[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboDebugConstant[m_nFrameIndex]);
+
+        uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DebugConstants");
+
+        assert(blockIndex != GL_INVALID_INDEX);
+
+        int32_t blockSize;
+
+        glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+        assert(blockSize >= sizeof(DebugConstants));
+
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 13);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDebugConstant[m_nFrameIndex]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
+
+    DebugConstants constants;
     for (const auto& dbc : m_DebugDrawBatchContext)
     {
-        setShaderParameter("u_pushConstants.FrontColor", dbc.color);
+        constants.front_color = dbc.color;
+
+        glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
 
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);
@@ -1568,14 +1590,35 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture, 
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t texture, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
 {
     uint32_t texture_id = (uint32_t) texture;
+    DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-    bool result = setShaderParameter("u_pushConstants.layer_index", (float) layer_index);
-    assert(result);
+    constants.layer_index = layer_index;
+
+    if (!m_uboDebugConstant[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboDebugConstant[m_nFrameIndex]);
+
+        uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DebugConstants");
+
+        assert(blockIndex != GL_INVALID_INDEX);
+
+        int32_t blockSize;
+
+        glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+        assert(blockSize == sizeof(DebugConstants));
+
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 13);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDebugConstant[m_nFrameIndex]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
+
+    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
 
     GLfloat vertices[] = {
         vp_left, vp_top, 0.0f,
@@ -1627,12 +1670,33 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
 void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     uint32_t texture_id = (uint32_t) cubemap;
+    DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
 
-    bool result = setShaderParameter("u_pushConstants.level", level);
-    assert(result);
+    constants.mip_level = level;
+
+    if (!m_uboDebugConstant[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboDebugConstant[m_nFrameIndex]);
+
+        uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DebugConstants");
+
+        assert(blockIndex != GL_INVALID_INDEX);
+
+        int32_t blockSize;
+
+        glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+        assert(blockSize >= sizeof(DebugConstants));
+
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 13);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDebugConstant[m_nFrameIndex]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
+
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);
@@ -1775,16 +1839,36 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap, 
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cubemap, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
 {
     uint32_t texture_id = (uint32_t) cubemap;
+    DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    bool result = setShaderParameter("u_pushConstants.layer_index", (float) layer_index);
-    assert(result);
+    constants.layer_index = layer_index;
+    constants.mip_level = level;
 
-    result = setShaderParameter("u_pushConstants.level", level);
+    if (!m_uboDebugConstant[m_nFrameIndex])
+    {
+        glGenBuffers(1, &m_uboDebugConstant[m_nFrameIndex]);
+
+        uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "DebugConstants");
+
+        assert(blockIndex != GL_INVALID_INDEX);
+
+        int32_t blockSize;
+
+        glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+        assert(blockSize >= sizeof(DebugConstants));
+
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 13);
+    }
+
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboDebugConstant[m_nFrameIndex]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
+
+    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);

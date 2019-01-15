@@ -15,8 +15,8 @@ namespace My {
             m_DrawPhases.push_back(std::make_shared<SkyBoxPhase>());
 #if !defined(OS_WEBASSEMBLY)
             m_DrawPhases.push_back(std::make_shared<TerrainPhase>());
-            m_DrawPhases.push_back(std::make_shared<HUDPhase>());
 #endif
+            m_DrawPhases.push_back(std::make_shared<HUDPhase>());
         }
 
         ~ForwardGeometryPass() = default;

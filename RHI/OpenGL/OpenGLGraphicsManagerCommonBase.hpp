@@ -56,9 +56,9 @@ namespace My {
         void DrawTriangleStrip(const PointList& vertices, const Vector3f& color) final;
         void ClearDebugBuffers() final;
         void DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height) final;
-        void DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) final;
+        void DrawTextureArrayOverlay(const int32_t texture, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) final;
         void DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
-        void DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
+        void DrawCubeMapArrayOverlay(const int32_t cubemap, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level) final;
         void RenderDebugBuffers();
 #endif
 
@@ -104,6 +104,7 @@ namespace My {
         uint32_t m_uboLightInfo[GfxConfiguration::kMaxInFlightFrameCount] = {0};
         uint32_t m_uboDrawBatchConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
         uint32_t m_uboShadowMatricesConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
+        uint32_t m_uboDebugConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
 
         struct OpenGLDrawBatchContext : public DrawBatchContext {
             uint32_t vao;
