@@ -38,25 +38,24 @@ layout(binding = 10, std140) uniform PerFrameConstants
 {
     highp mat4 viewMatrix;
     highp mat4 projectionMatrix;
-    highp mat4 arbitraryMatrix;
     highp vec4 camPos;
     int numLights;
-} _645;
+} _837;
 
 layout(binding = 12, std140) uniform LightInfo
 {
     Light lights[100];
-} _715;
+} _907;
 
 uniform highp sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedmetallicMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedroughnessMapsamp0;
-uniform highp samplerCubeArray SPIRV_Cross_CombinedcubeShadowMapsamp0;
+uniform highp sampler2DArray SPIRV_Cross_CombinedcubeShadowMapsamp0;
 uniform highp sampler2DArray SPIRV_Cross_CombinedshadowMapsamp0;
 uniform highp sampler2DArray SPIRV_Cross_CombinedglobalShadowMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedaoMapsamp0;
-uniform highp samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
+uniform highp sampler2DArray SPIRV_Cross_Combinedskyboxsamp0;
 uniform highp sampler2D SPIRV_Cross_CombinedbrdfLUTsamp0;
 
 layout(location = 0) in highp vec4 _entryPointOutput_normal;
@@ -69,7 +68,7 @@ layout(location = 6) in highp vec2 _entryPointOutput_uv;
 layout(location = 7) in highp mat3 _entryPointOutput_TBN;
 layout(location = 0) out highp vec4 _entryPointOutput;
 
-float _112;
+float _115;
 
 highp vec3 inverse_gamma_correction(highp vec3 color)
 {
@@ -92,7 +91,7 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             case 0:
             {
                 highp vec3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = texture(SPIRV_Cross_CombinedcubeShadowMapsamp0, vec4(L, float(light.lightShadowMapIndex))).x;
+                near_occ = texture(SPIRV_Cross_CombinedcubeShadowMapsamp0, vec3(vec4(L, float(light.lightShadowMapIndex)).xyz)).x;
                 if ((length(L) - (near_occ * 10.0)) > bias)
                 {
                     visibility -= 0.87999999523162841796875;
@@ -275,6 +274,66 @@ highp vec3 fresnelSchlickRoughness(highp float cosTheta, highp vec3 F0, highp fl
     return F0 + ((max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0));
 }
 
+highp vec3 convert_xyz_to_cube_uv(highp vec3 d)
+{
+    highp vec3 d_abs = abs(d);
+    bvec3 isPositive;
+    isPositive.x = int(d.x > 0.0) != int(0u);
+    isPositive.y = int(d.y > 0.0) != int(0u);
+    isPositive.z = int(d.z > 0.0) != int(0u);
+    highp float maxAxis;
+    highp float uc;
+    highp float vc;
+    int index;
+    if ((isPositive.x && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
+    {
+        maxAxis = d_abs.x;
+        uc = -d.z;
+        vc = d.y;
+        index = 0;
+    }
+    if (((!isPositive.x) && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
+    {
+        maxAxis = d_abs.x;
+        uc = d.z;
+        vc = d.y;
+        index = 1;
+    }
+    if ((isPositive.y && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
+    {
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = -d.z;
+        index = 3;
+    }
+    if (((!isPositive.y) && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
+    {
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = d.z;
+        index = 2;
+    }
+    if ((isPositive.z && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
+    {
+        maxAxis = d_abs.z;
+        uc = d.x;
+        vc = d.y;
+        index = 4;
+    }
+    if (((!isPositive.z) && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
+    {
+        maxAxis = d_abs.z;
+        uc = -d.x;
+        vc = d.y;
+        index = 5;
+    }
+    highp vec3 o;
+    o.x = 0.5 * ((uc / maxAxis) + 1.0);
+    o.y = 0.5 * ((vc / maxAxis) + 1.0);
+    o.z = float(index);
+    return o;
+}
+
 highp vec3 reinhard_tone_mapping(highp vec3 color)
 {
     return color / (color + vec3(1.0));
@@ -291,7 +350,7 @@ highp vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     highp vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     highp vec3 N = normalize(_entryPointOutput_1.TBN * tangent_normal);
-    highp vec3 V = normalize(_645.camPos.xyz - _entryPointOutput_1.v_world.xyz);
+    highp vec3 V = normalize(_837.camPos.xyz - _entryPointOutput_1.v_world.xyz);
     highp vec3 R = reflect(-V, N);
     highp vec3 param = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     highp vec3 albedo = inverse_gamma_correction(param);
@@ -300,27 +359,27 @@ highp vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     highp vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     highp vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _645.numLights; i++)
+    for (int i = 0; i < _837.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _715.lights[i].lightIntensity;
-        light.lightType = _715.lights[i].lightType;
-        light.lightCastShadow = _715.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _715.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _715.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _715.lights[i].lightDistAttenCurveType;
-        light.lightSize = _715.lights[i].lightSize;
-        light.lightGuid = _715.lights[i].lightGuid;
-        light.lightPosition = _715.lights[i].lightPosition;
-        light.lightColor = _715.lights[i].lightColor;
-        light.lightDirection = _715.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _715.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _715.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _715.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _715.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _715.lights[i].lightVP;
-        light.padding[0] = _715.lights[i].padding[0];
-        light.padding[1] = _715.lights[i].padding[1];
+        light.lightIntensity = _907.lights[i].lightIntensity;
+        light.lightType = _907.lights[i].lightType;
+        light.lightCastShadow = _907.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _907.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _907.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _907.lights[i].lightDistAttenCurveType;
+        light.lightSize = _907.lights[i].lightSize;
+        light.lightGuid = _907.lights[i].lightGuid;
+        light.lightPosition = _907.lights[i].lightPosition;
+        light.lightColor = _907.lights[i].lightColor;
+        light.lightDirection = _907.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _907.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _907.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _907.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _907.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _907.lights[i].lightVP;
+        light.padding[0] = _907.lights[i].padding[0];
+        light.padding[1] = _907.lights[i].padding[1];
         highp vec3 L = normalize(light.lightPosition.xyz - _entryPointOutput_1.v_world.xyz);
         highp vec3 H = normalize(V + L);
         highp float NdotL = max(dot(N, L), 0.0);
@@ -367,17 +426,21 @@ highp vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     highp vec3 kS_1 = F_1;
     highp vec3 kD_1 = vec3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
-    highp vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(N, 0.0), 1.0).xyz;
+    highp vec3 param_22 = N;
+    highp vec3 uvw = convert_xyz_to_cube_uv(param_22);
+    highp vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, N, 1.0).xyz;
     highp vec3 diffuse = irradiance * albedo;
-    highp vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(R, 1.0), rough * 9.0).xyz;
+    highp vec3 param_23 = R;
+    highp vec3 uvw_1 = convert_xyz_to_cube_uv(param_23);
+    highp vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, uvw_1, rough * 9.0).xyz;
     highp vec2 envBRDF = texture(SPIRV_Cross_CombinedbrdfLUTsamp0, vec2(max(dot(N, V), 0.0), rough)).xy;
     highp vec3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + vec3(envBRDF.y));
     highp vec3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     highp vec3 linearColor = ambient + Lo;
-    highp vec3 param_22 = linearColor;
-    linearColor = reinhard_tone_mapping(param_22);
-    highp vec3 param_23 = linearColor;
-    linearColor = gamma_correction(param_23);
+    highp vec3 param_24 = linearColor;
+    linearColor = reinhard_tone_mapping(param_24);
+    highp vec3 param_25 = linearColor;
+    linearColor = gamma_correction(param_25);
     return vec4(linearColor, 1.0);
 }
 

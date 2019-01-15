@@ -60,7 +60,6 @@ unistruct PerFrameConstants REGISTER(b10)
 {
 	Matrix4X4f 	viewMatrix;						// 64 bytes
 	Matrix4X4f 	projectionMatrix;				// 64 bytes
-	Matrix4X4f  arbitraryMatrix;				// 64 bytes
     Vector4f   	camPos;							// 16 bytes
 	int32_t  	numLights;						// 4 bytes
 };
@@ -73,6 +72,26 @@ unistruct PerBatchConstants REGISTER(b11)
 unistruct LightInfo REGISTER(b12)
 {
 	struct Light lights[MAX_LIGHTS];
+};
+
+unistruct DebugConstants REGISTER(b13)
+{
+	float layer_index;
+	float mip_level;
+	float line_width;
+	float padding0;
+	Vector4f front_color;
+	Vector4f back_color;
+};
+
+unistruct ShadowMapConstants REGISTER(b14)
+{
+	int shadowmap_layer_index;              // 4 bytes
+	float far_plane;                        // 4 bytes
+	float padding[2];						// 8 bytes
+	Vector4f lightPos;						// 16 bytes
+	Matrix4X4f lightVP;						// 64 bytes
+    Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
 };
 
 #ifdef __cplusplus

@@ -32,8 +32,9 @@ layout(std140) uniform DebugConstants
     highp float layer_index;
     highp float mip_level;
     highp float line_width;
-    highp vec3 front_color;
-    highp vec3 back_color;
+    highp float padding0;
+    highp vec4 front_color;
+    highp vec4 back_color;
 } _230;
 
 uniform highp sampler2DArray SPIRV_Cross_Combinedcubemapsamp0;

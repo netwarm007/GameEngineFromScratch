@@ -1,14 +1,14 @@
 #include "cbuffer.h"
 #include "vsoutput.h.hlsl"
 
-float4 shadowmap_omni_frag_main() : SV_TARGET
+float shadowmap_omni_frag_main(pos_only_vert_output _entryPointOutput) : SV_DEPTH
 {
     // get distance between fragment and light source
-    float lightDistance = length(FragPos.xyz - u_lightParams.lightPos);
+    float lightDistance = length(_entryPointOutput.pos.xyz - lightPos);
     
     // map to [0;1] range by dividing by far_plane
-    lightDistance = lightDistance / u_lightParams.far_plane;
+    lightDistance = lightDistance / far_plane;
     
     // write this as modified depth
-    gl_FragDepth = lightDistance;
+    return lightDistance;
 }  

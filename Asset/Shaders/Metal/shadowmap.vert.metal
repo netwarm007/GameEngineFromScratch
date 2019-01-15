@@ -26,10 +26,13 @@ struct PerBatchConstants
 
 struct ShadowMapConstants
 {
-    float4x4 lightVP;
-    float4x4 shadowMatrices[6];
     int shadowmap_layer_index;
     float far_plane;
+    char pad2[8];
+    float padding[2];
+    float4 lightPos;
+    float4x4 lightVP;
+    float4x4 shadowMatrices[6];
 };
 
 struct PerFrameConstants
@@ -69,8 +72,9 @@ struct DebugConstants
     float layer_index;
     float mip_level;
     float line_width;
-    float3 front_color;
-    float3 back_color;
+    float padding0;
+    float4 front_color;
+    float4 back_color;
 };
 
 struct shadowmap_vert_main_out
@@ -87,16 +91,16 @@ struct shadowmap_vert_main_in
     float3 a_inputBiTangent [[attribute(4)]];
 };
 
-pos_only_vert_output _shadowmap_vert_main(thread const a2v& a, constant PerBatchConstants& v_32, constant ShadowMapConstants& v_45)
+pos_only_vert_output _shadowmap_vert_main(thread const a2v& a, constant PerBatchConstants& v_32, constant ShadowMapConstants& v_47)
 {
     float4 v = float4(a.inputPosition, 1.0);
     v = v_32.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = v_45.lightVP * v;
+    o.pos = v_47.lightVP * v;
     return o;
 }
 
-vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_32 [[buffer(11)]], constant ShadowMapConstants& v_45 [[buffer(14)]])
+vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_32 [[buffer(11)]], constant ShadowMapConstants& v_47 [[buffer(14)]])
 {
     shadowmap_vert_main_out out = {};
     a2v a;
@@ -106,7 +110,7 @@ vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[s
     a.inputTangent = in.a_inputTangent;
     a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
-    out.gl_Position = _shadowmap_vert_main(param, v_32, v_45).pos;
+    out.gl_Position = _shadowmap_vert_main(param, v_32, v_47).pos;
     return out;
 }
 

@@ -15,7 +15,6 @@ struct PerFrameConstants
 {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
-    float4x4 arbitraryMatrix;
     float4 camPos;
     int numLights;
 };
@@ -54,8 +53,19 @@ struct DebugConstants
     float layer_index;
     float mip_level;
     float line_width;
-    float3 front_color;
-    float3 back_color;
+    float padding0;
+    float4 front_color;
+    float4 back_color;
+};
+
+struct ShadowMapConstants
+{
+    int shadowmap_layer_index;
+    float far_plane;
+    float padding[2];
+    float4 lightPos;
+    float4x4 lightVP;
+    float4x4 shadowMatrices[6];
 };
 
 struct texture_frag_main_out

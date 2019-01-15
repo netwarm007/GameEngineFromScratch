@@ -33,7 +33,6 @@ layout(binding = 10, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    mat4 arbitraryMatrix;
     vec4 camPos;
     int numLights;
 } _280;
@@ -44,7 +43,7 @@ layout(binding = 12, std140) uniform LightInfo
 } _677;
 
 uniform sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
-uniform samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
+uniform sampler2DArray SPIRV_Cross_Combinedskyboxsamp0;
 
 layout(location = 0) in vec4 _entryPointOutput_normal;
 layout(location = 1) in vec4 _entryPointOutput_normal_world;
@@ -303,7 +302,7 @@ vec4 _basic_frag_main(basic_vert_output _entryPointOutput_1)
             linearColor += apply_light(arg_1, param_1);
         }
     }
-    linearColor += (textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(_entryPointOutput_1.normal_world.xyz, 0.0), 2.0).xyz * vec3(0.20000000298023223876953125));
+    linearColor += (textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec3(vec4(_entryPointOutput_1.normal_world.xyz, 0.0).xyz), 2.0).xyz * vec3(0.20000000298023223876953125));
     vec3 param_2 = linearColor;
     linearColor = exposure_tone_mapping(param_2);
     return vec4(linearColor, 1.0);

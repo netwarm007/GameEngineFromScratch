@@ -30,9 +30,10 @@ layout(binding = 13, std140) uniform DebugConstants
     float layer_index;
     float mip_level;
     float line_width;
-    vec3 front_color;
-    vec3 back_color;
-} _33;
+    float padding0;
+    vec4 front_color;
+    vec4 back_color;
+} _32;
 
 uniform sampler2DArray SPIRV_Cross_Combinedtexture_arraysamp0;
 
@@ -41,7 +42,7 @@ layout(location = 0) out vec4 _entryPointOutput;
 
 vec4 _texturearray_frag_main(simple_vert_output _entryPointOutput_1)
 {
-    return textureLod(SPIRV_Cross_Combinedtexture_arraysamp0, vec3(_entryPointOutput_1.uv, _33.layer_index), _33.mip_level);
+    return textureLod(SPIRV_Cross_Combinedtexture_arraysamp0, vec3(_entryPointOutput_1.uv, _32.layer_index), _32.mip_level);
 }
 
 void main()

@@ -30,8 +30,9 @@ layout(binding = 13, std140) uniform DebugConstants
     float layer_index;
     float mip_level;
     float line_width;
-    vec3 front_color;
-    vec3 back_color;
+    float padding0;
+    vec4 front_color;
+    vec4 back_color;
 } _32;
 
 uniform samplerCube SPIRV_Cross_Combinedcubemapsamp0;

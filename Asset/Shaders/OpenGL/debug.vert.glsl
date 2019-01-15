@@ -37,7 +37,6 @@ layout(binding = 10, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    mat4 arbitraryMatrix;
     vec4 camPos;
     int numLights;
 } _32;

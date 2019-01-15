@@ -38,7 +38,6 @@ struct PerFrameConstants
 {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
-    float4x4 arbitraryMatrix;
     float4 camPos;
     int numLights;
 };
@@ -89,6 +88,25 @@ struct Light_2
 struct PerBatchConstants
 {
     float4x4 modelMatrix;
+};
+
+struct DebugConstants
+{
+    float layer_index;
+    float mip_level;
+    float line_width;
+    float padding0;
+    float4 front_color;
+    float4 back_color;
+};
+
+struct ShadowMapConstants
+{
+    int shadowmap_layer_index;
+    float far_plane;
+    float padding[2];
+    float4x4 lightVP;
+    float4x4 shadowMatrices[6];
 };
 
 constant float _130 = {};
@@ -318,7 +336,7 @@ float3 exposure_tone_mapping(thread const float3& color)
     return float3(1.0) - exp((-color) * 1.0);
 }
 
-float4 _basic_frag_main(thread const basic_vert_output& _entryPointOutput, constant PerFrameConstants& v_280, thread texture2d<float> diffuseMap, thread sampler samp0, constant LightInfo& v_677, thread texturecube_array<float> skybox)
+float4 _basic_frag_main(thread const basic_vert_output& _entryPointOutput, constant PerFrameConstants& v_280, thread texture2d<float> diffuseMap, thread sampler samp0, constant LightInfo& v_677, thread texture2d_array<float> skybox)
 {
     float3 linearColor = float3(0.0);
     for (int i = 0; i < v_280.numLights; i++)
@@ -372,13 +390,13 @@ float4 _basic_frag_main(thread const basic_vert_output& _entryPointOutput, const
             linearColor += apply_light(arg_1, param_1, v_280, diffuseMap, samp0);
         }
     }
-    linearColor += (skybox.sample(samp0, float4(_entryPointOutput.normal_world.xyz, 0.0).xyz, uint(round(float4(_entryPointOutput.normal_world.xyz, 0.0).w)), level(2.0)).xyz * float3(0.20000000298023223876953125));
+    linearColor += (skybox.sample(samp0, float3(float4(_entryPointOutput.normal_world.xyz, 0.0).xyz).xy, uint(round(float3(float4(_entryPointOutput.normal_world.xyz, 0.0).xyz).z)), level(2.0)).xyz * float3(0.20000000298023223876953125));
     float3 param_2 = linearColor;
     linearColor = exposure_tone_mapping(param_2);
     return float4(linearColor, 1.0);
 }
 
-fragment basic_frag_main_out basic_frag_main(basic_frag_main_in in [[stage_in]], constant PerFrameConstants& v_280 [[buffer(10)]], constant LightInfo& v_677 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
+fragment basic_frag_main_out basic_frag_main(basic_frag_main_in in [[stage_in]], constant PerFrameConstants& v_280 [[buffer(10)]], constant LightInfo& v_677 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texture2d_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     basic_frag_main_out out = {};
     basic_vert_output _entryPointOutput;
