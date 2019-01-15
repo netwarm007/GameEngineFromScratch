@@ -3,9 +3,14 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion = 27
 
+    task copyAsset(type: Copy) {
+        from "$rootDir/../../Asset"
+        into "$buildDir/Asset"
+    }
+
     sourceSets {
         main {
-            assets.srcDirs = ['../Asset']
+            assets.srcDirs = ["$buildDir/Asset"]
         }
     }
 

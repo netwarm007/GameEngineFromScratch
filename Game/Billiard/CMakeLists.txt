@@ -44,13 +44,4 @@ IF(WIN32)
             $<TARGET_FILE_DIR:BilliardGame>)
 ENDIF(WIN32)
 
-IF(NOT ANDROID)
-    add_custom_command(TARGET BilliardGame POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory 
-            $<TARGET_FILE_DIR:BilliardGame>/Asset
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/Asset"
-            $<TARGET_FILE_DIR:BilliardGame>/Asset)
-ENDIF(NOT ANDROID)
-
 target_include_directories(BilliardGame PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
