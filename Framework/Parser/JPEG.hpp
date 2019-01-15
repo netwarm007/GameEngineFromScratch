@@ -158,13 +158,13 @@ namespace My {
                 {
                     // found restart mark
 #if DUMP_DETAILS
-                    std::cout << "Found RST while scan the ECS." << std::endl;
+                    std::cerr << "Found RST while scan the ECS." << std::endl;
 #endif
                 }
 
 #if DUMP_DETAILS
-                std::cout << "Size Of Scan: " << scanLength << " bytes" << std::endl;
-                std::cout << "Size Of Scan (after remove bitstuff): " << scan_data.size() << " bytes" << std::endl;
+                std::cerr << "Size Of Scan: " << scanLength << " bytes" << std::endl;
+                std::cerr << "Size Of Scan (after remove bitstuff): " << scan_data.size() << " bytes" << std::endl;
 #endif
             }
             
@@ -176,7 +176,7 @@ namespace My {
 
             while (byte_offset < scan_data.size() && mcu_index < mcu_count) {
 #if DUMP_DETAILS
-                std::cout << "MCU: " << mcu_index << std::endl;
+                std::cerr << "MCU: " << mcu_index << std::endl;
 #endif
                 Matrix8X8f block[4]; // 4 is max num of components defined by ITU-T81
                 memset(&block, 0x00, sizeof(block));
@@ -184,10 +184,10 @@ namespace My {
                 for (uint8_t i = 0; i < m_nComponentsInFrame; i++) {
                     const FRAME_COMPONENT_SPEC_PARAMS& fcsp = m_tableFrameComponentsSpec[i];
 #if DUMP_DETAILS
-                    std::cout << "\tComponent Selector: " << (uint16_t)pScsp[i].ComponentSelector << std::endl;
-                    std::cout << "\tQuantization Table Destination Selector: " << (uint16_t)fcsp.QuantizationTableDestSelector << std::endl;
-                    std::cout << "\tDC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].DcEntropyCodingTableDestSelector() << std::endl;
-                    std::cout << "\tAC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].AcEntropyCodingTableDestSelector() << std::endl;
+                    std::cerr << "\tComponent Selector: " << (uint16_t)pScsp[i].ComponentSelector << std::endl;
+                    std::cerr << "\tQuantization Table Destination Selector: " << (uint16_t)fcsp.QuantizationTableDestSelector << std::endl;
+                    std::cerr << "\tDC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].DcEntropyCodingTableDestSelector() << std::endl;
+                    std::cerr << "\tAC Entropy Coding Table Destination Selector: " << (uint16_t)pScsp[i].AcEntropyCodingTableDestSelector() << std::endl;
 #endif
 
                     // Decode DC
@@ -199,7 +199,7 @@ namespace My {
                     if (!dc_code)
                     {
 #if DUMP_DETAILS
-                        std::cout << "Found EOB when decode DC!" << std::endl;
+                        std::cerr << "Found EOB when decode DC!" << std::endl;
 #endif
                         dc_value = 0;
                     } else {
@@ -260,14 +260,14 @@ namespace My {
                         if (!ac_code)
                         {
 #if DUMP_DETAILS
-                            std::cout << "Found EOB when decode AC!" << std::endl;
+                            std::cerr << "Found EOB when decode AC!" << std::endl;
 #endif
                             break;
                         }
                         else if (ac_code == 0xF0)
                         {
 #if DUMP_DETAILS
-                            std::cout << "Found ZRL when decode AC!" << std::endl;
+                            std::cerr << "Found ZRL when decode AC!" << std::endl;
 #endif
                             ac_index += 16;
                             continue;
@@ -326,16 +326,16 @@ namespace My {
 
 #ifdef DUMP_DETAILS
                     printf("Extracted Component[%d] 8x8 block: ", i);
-                    std::cout << block[i];
+                    std::cerr << block[i];
 #endif
                     MatrixMulByElement(block[i], block[i], m_tableQuantization[fcsp.QuantizationTableDestSelector]);
 #ifdef DUMP_DETAILS
-                    std::cout << "After Quantization: " << block[i];
+                    std::cerr << "After Quantization: " << block[i];
 #endif
                     block[i][0][0] += 1024.0f; // level shift. same as +128 to each element after IDCT
                     block[i] = IDCT8X8(block[i]);
 #ifdef DUMP_DETAILS
-                    std::cout << "After IDCT: " << block[i];
+                    std::cerr << "After IDCT: " << block[i];
 #endif
                 } 
 
@@ -391,7 +391,7 @@ namespace My {
             const JFIF_FILEHEADER* pFileHeader = reinterpret_cast<const JFIF_FILEHEADER*>(pData);
             pData += sizeof(JFIF_FILEHEADER);
             if (pFileHeader->SOI == endian_net_unsigned_int((uint16_t)0xFFD8) /* FF D8 */) {
-                std::cout << "Asset is JPEG file" << std::endl;
+                std::cerr << "Asset is JPEG file" << std::endl;
 
                 while(pData < pDataEnd)
                 {
@@ -399,18 +399,18 @@ namespace My {
 
                     const JPEG_SEGMENT_HEADER* pSegmentHeader = reinterpret_cast<const JPEG_SEGMENT_HEADER*>(pData);
 #if DUMP_DETAILS
-                    std::cout << "============================" << std::endl;
+                    std::cerr << "============================" << std::endl;
 #endif
                     switch (endian_net_unsigned_int(pSegmentHeader->Marker)) {
                         case 0xFFC0:
                         case 0xFFC2:
                             {
                                 if (endian_net_unsigned_int(pSegmentHeader->Marker) == 0xFFC0)
-                                    std::cout << "Start Of Frame0 (baseline DCT)" << std::endl;
+                                    std::cerr << "Start Of Frame0 (baseline DCT)" << std::endl;
                                 else
-                                    std::cout << "Start Of Frame2 (progressive DCT)" << std::endl;
+                                    std::cerr << "Start Of Frame2 (progressive DCT)" << std::endl;
 
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 
                                 const FRAME_HEADER* pFrameHeader = reinterpret_cast<const FRAME_HEADER*>(pData);
                                 m_nSamplePrecision = pFrameHeader->SamplePrecision;
@@ -422,20 +422,20 @@ namespace My {
                                 mcu_count_y = ((m_nLines + 7) >> 3);
                                 mcu_count = mcu_count_x * mcu_count_y;
 
-                                std::cout << "Sample Precision: " << m_nSamplePrecision << std::endl;
-                                std::cout << "Num of Lines: " << m_nLines << std::endl;
-                                std::cout << "Num of Samples per Line: " << m_nSamplesPerLine << std::endl;
-                                std::cout << "Num of Components In Frame: " << m_nComponentsInFrame << std::endl;
-                                std::cout << "Total MCU count: " << mcu_count << std::endl;
+                                std::cerr << "Sample Precision: " << m_nSamplePrecision << std::endl;
+                                std::cerr << "Num of Lines: " << m_nLines << std::endl;
+                                std::cerr << "Num of Samples per Line: " << m_nSamplesPerLine << std::endl;
+                                std::cerr << "Num of Components In Frame: " << m_nComponentsInFrame << std::endl;
+                                std::cerr << "Total MCU count: " << mcu_count << std::endl;
 
                                 const uint8_t* pTmp = pData + sizeof(FRAME_HEADER);
                                 const FRAME_COMPONENT_SPEC_PARAMS* pFcsp = reinterpret_cast<const FRAME_COMPONENT_SPEC_PARAMS*>(pTmp);
                                 for (uint8_t i = 0; i < pFrameHeader->NumOfComponentsInFrame; i++) {
-                                    std::cout << "\tComponent Identifier: " << (uint16_t)pFcsp->ComponentIdentifier << std::endl;
-                                    std::cout << "\tHorizontal Sampling Factor: " << (uint16_t)pFcsp->HorizontalSamplingFactor() << std::endl;
-                                    std::cout << "\tVertical Sampling Factor: " << (uint16_t)pFcsp->VerticalSamplingFactor() << std::endl;
-                                    std::cout << "\tQuantization Table Destination Selector: " << (uint16_t)pFcsp->QuantizationTableDestSelector << std::endl;
-                                    std::cout << std::endl;
+                                    std::cerr << "\tComponent Identifier: " << (uint16_t)pFcsp->ComponentIdentifier << std::endl;
+                                    std::cerr << "\tHorizontal Sampling Factor: " << (uint16_t)pFcsp->HorizontalSamplingFactor() << std::endl;
+                                    std::cerr << "\tVertical Sampling Factor: " << (uint16_t)pFcsp->VerticalSamplingFactor() << std::endl;
+                                    std::cerr << "\tQuantization Table Destination Selector: " << (uint16_t)pFcsp->QuantizationTableDestSelector << std::endl;
+                                    std::cerr << std::endl;
                                     m_tableFrameComponentsSpec.push_back(*pFcsp);
                                     pFcsp++;
                                 } 
@@ -452,8 +452,8 @@ namespace My {
                             break;
                         case 0xFFC4:
                             {
-                                std::cout << "Define Huffman Table" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "Define Huffman Table" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 
                                 size_t segmentLength = endian_net_unsigned_int(pSegmentHeader->Length) - 2;
 
@@ -461,8 +461,8 @@ namespace My {
 
                                 while (segmentLength > 0) {
                                     const HUFFMAN_TABLE_SPEC* pHtable = reinterpret_cast<const HUFFMAN_TABLE_SPEC*>(pTmp);
-                                    std::cout << "Table Class: " << pHtable->TableClass() << std::endl;
-                                    std::cout << "Destination Identifier: " << pHtable->DestinationIdentifier() << std::endl;
+                                    std::cerr << "Table Class: " << pHtable->TableClass() << std::endl;
+                                    std::cerr << "Destination Identifier: " << pHtable->DestinationIdentifier() << std::endl;
 
                                     const uint8_t* pCodeValueStart = reinterpret_cast<const uint8_t*>(pHtable) + sizeof(HUFFMAN_TABLE_SPEC);
 
@@ -481,8 +481,8 @@ namespace My {
                             break;
                         case 0xFFDB:
                             {
-                                std::cout << "Define Quantization Table" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "Define Quantization Table" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 
                                 size_t segmentLength = endian_net_unsigned_int(pSegmentHeader->Length) - 2;
 
@@ -490,8 +490,8 @@ namespace My {
 
                                 while (segmentLength > 0) {
                                     const QUANTIZATION_TABLE_SPEC* pQtable = reinterpret_cast<const QUANTIZATION_TABLE_SPEC*>(pTmp);
-                                    std::cout << "Element Precision: " << pQtable->ElementPrecision() << std::endl;
-                                    std::cout << "Destination Identifier: " << pQtable->DestinationIdentifier() << std::endl;
+                                    std::cerr << "Element Precision: " << pQtable->ElementPrecision() << std::endl;
+                                    std::cerr << "Destination Identifier: " << pQtable->DestinationIdentifier() << std::endl;
 
                                     const uint8_t* pElementDataStart = reinterpret_cast<const uint8_t*>(pQtable) + sizeof(QUANTIZATION_TABLE_SPEC);
 
@@ -504,7 +504,7 @@ namespace My {
                                         }
                                     }
 #ifdef DUMP_DETAILS
-                                    std::cout << m_tableQuantization[pQtable->DestinationIdentifier()];
+                                    std::cerr << m_tableQuantization[pQtable->DestinationIdentifier()];
 #endif
 
                                     size_t processed_length = sizeof(QUANTIZATION_TABLE_SPEC) + 64 * (pQtable->ElementPrecision() + 1);
@@ -516,22 +516,22 @@ namespace My {
                             break;
                         case 0xFFDD:
                             {
-                                std::cout << "Define Restart Interval" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "Define Restart Interval" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 
                                 RESTART_INTERVAL_DEF* pRestartHeader = (RESTART_INTERVAL_DEF*) pData;
                                 m_nRestartInterval = endian_net_unsigned_int((uint16_t)pRestartHeader->RestartInterval);
-                                std::cout << "Restart interval: " << m_nRestartInterval << std::endl;
+                                std::cerr << "Restart interval: " << m_nRestartInterval << std::endl;
                                 pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFDA:
                             {
-                                std::cout << "Start Of Scan" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "Start Of Scan" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 
                                 SCAN_HEADER* pScanHeader = (SCAN_HEADER*) pData;
-                                std::cout << "Image Conponents in Scan: " << (uint16_t)pScanHeader->NumOfComponents << std::endl;
+                                std::cerr << "Image Conponents in Scan: " << (uint16_t)pScanHeader->NumOfComponents << std::endl;
                                 assert(pScanHeader->NumOfComponents == m_nComponentsInFrame);
 
                                 const uint8_t* pTmp = pData + sizeof(SCAN_HEADER);
@@ -553,8 +553,8 @@ namespace My {
                         case 0xFFD7:
                             {
 #if DUMP_DETAILS
-                                std::cout << "Restart Of Scan" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "Restart Of Scan" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 #endif
 
                                 const uint8_t* pScanData = pData + 2;
@@ -564,8 +564,8 @@ namespace My {
                             break;
                         case 0xFFD9:
                             {
-                                std::cout << "End Of Scan" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "End Of Scan" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
                                 pData += 2 /* length of marker */;
                             }
                             break;
@@ -576,53 +576,53 @@ namespace My {
                                     case "JFIF\0"_u32: 
                                         {
                                             const JFIF_APP0* pJfifApp0 = reinterpret_cast<const JFIF_APP0*>(pApp0);
-                                            std::cout << "JFIF-APP0" << std::endl;
-                                            std::cout << "----------------------------" << std::endl;
-                                            std::cout << "JFIF Version: " << (uint16_t)pJfifApp0->MajorVersion << "." 
+                                            std::cerr << "JFIF-APP0" << std::endl;
+                                            std::cerr << "----------------------------" << std::endl;
+                                            std::cerr << "JFIF Version: " << (uint16_t)pJfifApp0->MajorVersion << "." 
                                                 << (uint16_t)pJfifApp0->MinorVersion << std::endl;
-                                            std::cout << "Density Units: " << 
+                                            std::cerr << "Density Units: " << 
                                                 ((pJfifApp0->DensityUnits == 0)?"No units" : 
                                                  ((pJfifApp0->DensityUnits == 1)?"Pixels per inch" : "Pixels per centimeter" )) 
                                                 << std::endl;
-                                            std::cout << "Density: " << endian_net_unsigned_int(pJfifApp0->Xdensity) << "*" 
+                                            std::cerr << "Density: " << endian_net_unsigned_int(pJfifApp0->Xdensity) << "*" 
                                                 << endian_net_unsigned_int(pJfifApp0->Ydensity) << std::endl;
                                             if (pJfifApp0->Xthumbnail && pJfifApp0->Ythumbnail) {
-                                                std::cout << "Thumbnail Dimesions [w*h]: " << (uint16_t)pJfifApp0->Xthumbnail << "*" 
+                                                std::cerr << "Thumbnail Dimesions [w*h]: " << (uint16_t)pJfifApp0->Xthumbnail << "*" 
                                                     << (uint16_t)pJfifApp0->Ythumbnail << std::endl;
                                             } else {
-                                                std::cout << "No thumbnail defined in JFIF-APP0 segment!" << std::endl;
+                                                std::cerr << "No thumbnail defined in JFIF-APP0 segment!" << std::endl;
                                             }
                                         }
                                         break;
                                     case "JFXX\0"_u32:
                                         {
                                             const JFXX_APP0* pJfxxApp0 = reinterpret_cast<const JFXX_APP0*>(pApp0);
-                                            std::cout << "Thumbnail Format: ";
+                                            std::cerr << "Thumbnail Format: ";
                                             switch (pJfxxApp0->ThumbnailFormat) {
                                                 case 0x10:
-                                                    std::cout << "JPEG format";
+                                                    std::cerr << "JPEG format";
                                                     break;
                                                 case 0x11:
-                                                    std::cout << "1 byte per pixel palettized format";
+                                                    std::cerr << "1 byte per pixel palettized format";
                                                     break;
                                                 case 0x13:
-                                                    std::cout << "3 byte per pixel RGB format";
+                                                    std::cerr << "3 byte per pixel RGB format";
                                                     break;
                                                 default:
                                                     std::printf("Unrecognized Thumbnail Format: %x\n", pJfxxApp0->ThumbnailFormat);
                                             }
-                                            std::cout << std::endl;
+                                            std::cerr << std::endl;
                                         }
                                     default:
-                                        std::cout << "Ignor Unrecognized APP0 segment." << std::endl;
+                                        std::cerr << "Ignor Unrecognized APP0 segment." << std::endl;
                                 }
                                 pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFFE:
                             {
-                                std::cout << "Text Comment" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "Text Comment" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
                                 pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
@@ -636,7 +636,7 @@ namespace My {
                 }
             }
             else {
-                std::cout << "File is not a JPEG file!" << std::endl;
+                std::cerr << "File is not a JPEG file!" << std::endl;
             }
 
             img.mipmaps[0].Width = img.Width; 

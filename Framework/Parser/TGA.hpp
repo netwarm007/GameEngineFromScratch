@@ -30,25 +30,25 @@ namespace My {
             const uint8_t* pData = buf.GetData();
             const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
 
-            std::cout << "Parsing as TGA file:" << std::endl;
+            std::cerr << "Parsing as TGA file:" << std::endl;
 
             const TGA_FILEHEADER* pFileHeader = reinterpret_cast<const TGA_FILEHEADER*>(pData);
             pData += sizeof(TGA_FILEHEADER);
 
 #ifdef DEBUG
-            std::cout << "ID Length: " << (uint16_t)pFileHeader->IDLength << std::endl;
-            std::cout << "Color Map Type: " << (uint16_t)pFileHeader->ColorMapType << std::endl;
+            std::cerr << "ID Length: " << (uint16_t)pFileHeader->IDLength << std::endl;
+            std::cerr << "Color Map Type: " << (uint16_t)pFileHeader->ColorMapType << std::endl;
 #endif
             if (pFileHeader->ColorMapType) {
-                std::cout << "Unsupported Color Map. Only Type 0 is supported." << std::endl;
+                std::cerr << "Unsupported Color Map. Only Type 0 is supported." << std::endl;
                 return img;
             }
 
 #ifdef DEBUG
-            std::cout << "Image Type: " << (uint16_t)pFileHeader->ImageType << std::endl;
+            std::cerr << "Image Type: " << (uint16_t)pFileHeader->ImageType << std::endl;
 #endif
             if (pFileHeader->ImageType != 2) {
-                std::cout << "Unsupported Image Type. Only Type 2 is supported." << std::endl;
+                std::cerr << "Unsupported Image Type. Only Type 2 is supported." << std::endl;
                 return img;
             }
 
@@ -57,10 +57,10 @@ namespace My {
             uint8_t pixel_depth = pFileHeader->ImageSpec[8];
             uint8_t alpha_depth = (pFileHeader->ImageSpec[9] & 0x0F);
 #ifdef DEBUG
-            std::cout << "Image Width: " << img.Width << std::endl;
-            std::cout << "Image Height: " << img.Height << std::endl;
-            std::cout << "Image Pixel Depth: " << (uint16_t)pixel_depth << std::endl;
-            std::cout << "Image Alpha Depth: " << (uint16_t)alpha_depth << std::endl;
+            std::cerr << "Image Width: " << img.Width << std::endl;
+            std::cerr << "Image Height: " << img.Height << std::endl;
+            std::cerr << "Image Pixel Depth: " << (uint16_t)pixel_depth << std::endl;
+            std::cerr << "Image Alpha Depth: " << (uint16_t)alpha_depth << std::endl;
 #endif
             // skip Image ID
             pData += pFileHeader->IDLength;
