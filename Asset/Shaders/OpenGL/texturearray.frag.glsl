@@ -1,9 +1,9 @@
 #version 420
 
-struct cube_vert_output
+struct simple_vert_output
 {
     vec4 pos;
-    vec3 uvw;
+    vec2 uv;
 };
 
 struct Light
@@ -32,24 +32,24 @@ layout(binding = 13, std140) uniform DebugConstants
     float line_width;
     vec3 front_color;
     vec3 back_color;
-} _32;
+} _33;
 
-uniform samplerCubeArray SPIRV_Cross_Combinedcubemapsamp0;
+uniform sampler2DArray SPIRV_Cross_Combinedtexture_arraysamp0;
 
-layout(location = 0) in vec3 _entryPointOutput_uvw;
+layout(location = 0) in vec2 _entryPointOutput_uv;
 layout(location = 0) out vec4 _entryPointOutput;
 
-vec4 _cubemaparray_frag_main(cube_vert_output _entryPointOutput_1)
+vec4 _texturearray_frag_main(simple_vert_output _entryPointOutput_1)
 {
-    return textureLod(SPIRV_Cross_Combinedcubemapsamp0, vec4(_entryPointOutput_1.uvw, _32.layer_index), _32.mip_level);
+    return textureLod(SPIRV_Cross_Combinedtexture_arraysamp0, vec3(_entryPointOutput_1.uv, _33.layer_index), _33.mip_level);
 }
 
 void main()
 {
-    cube_vert_output _entryPointOutput_1;
+    simple_vert_output _entryPointOutput_1;
     _entryPointOutput_1.pos = gl_FragCoord;
-    _entryPointOutput_1.uvw = _entryPointOutput_uvw;
-    cube_vert_output param = _entryPointOutput_1;
-    _entryPointOutput = _cubemaparray_frag_main(param);
+    _entryPointOutput_1.uv = _entryPointOutput_uv;
+    simple_vert_output param = _entryPointOutput_1;
+    _entryPointOutput = _texturearray_frag_main(param);
 }
 

@@ -195,14 +195,14 @@ void frag_main()
     outputColor = float4(Lo, 1.0f);
 }
 
-SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
+SPIRV_Cross_Output main(SPIRV_Cross_Input _entryPointOutput)
 {
-    v_world = stage_input.v_world;
-    normal_world = stage_input.normal_world;
-    uv = stage_input.uv;
-    TBN = stage_input.TBN;
-    v_tangent = stage_input.v_tangent;
-    camPos_tangent = stage_input.camPos_tangent;
+    v_world = _entryPointOutput.v_world;
+    normal_world = _entryPointOutput.normal_world;
+    uv = _entryPointOutput.uv;
+    TBN = _entryPointOutput.TBN;
+    v_tangent = _entryPointOutput.v_tangent;
+    camPos_tangent = _entryPointOutput.camPos_tangent;
     frag_main();
     SPIRV_Cross_Output stage_output;
     stage_output.outputColor = outputColor;

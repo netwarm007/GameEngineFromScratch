@@ -5,10 +5,10 @@
 
 using namespace metal;
 
-struct cube_vert_output
+struct simple_vert_output
 {
     float4 pos;
-    float3 uvw;
+    float2 uv;
 };
 
 struct DebugConstants
@@ -58,29 +58,29 @@ struct LightInfo
     Light lights[100];
 };
 
-struct cubemap_frag_main_out
+struct texturearray_frag_main_out
 {
     float4 _entryPointOutput [[color(0)]];
 };
 
-struct cubemap_frag_main_in
+struct texturearray_frag_main_in
 {
-    float3 _entryPointOutput_uvw [[user(locn0)]];
+    float2 _entryPointOutput_uv [[user(locn0)]];
 };
 
-float4 _cubemap_frag_main(thread const cube_vert_output& _entryPointOutput, thread texturecube<float> cubemap, thread sampler samp0, constant DebugConstants& v_32)
+float4 _texturearray_frag_main(thread const simple_vert_output& _entryPointOutput, thread texture2d_array<float> texture_array, thread sampler samp0, constant DebugConstants& v_33)
 {
-    return cubemap.sample(samp0, _entryPointOutput.uvw, level(v_32.mip_level));
+    return texture_array.sample(samp0, float3(_entryPointOutput.uv, v_33.layer_index).xy, uint(round(float3(_entryPointOutput.uv, v_33.layer_index).z)), level(v_33.mip_level));
 }
 
-fragment cubemap_frag_main_out cubemap_frag_main(cubemap_frag_main_in in [[stage_in]], constant DebugConstants& v_32 [[buffer(13)]], texturecube<float> cubemap [[texture(0)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
+fragment texturearray_frag_main_out texturearray_frag_main(texturearray_frag_main_in in [[stage_in]], constant DebugConstants& v_33 [[buffer(13)]], texture2d_array<float> texture_array [[texture(0)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
-    cubemap_frag_main_out out = {};
-    cube_vert_output _entryPointOutput;
+    texturearray_frag_main_out out = {};
+    simple_vert_output _entryPointOutput;
     _entryPointOutput.pos = gl_FragCoord;
-    _entryPointOutput.uvw = in._entryPointOutput_uvw;
-    cube_vert_output param = _entryPointOutput;
-    out._entryPointOutput = _cubemap_frag_main(param, cubemap, samp0, v_32);
+    _entryPointOutput.uv = in._entryPointOutput_uv;
+    simple_vert_output param = _entryPointOutput;
+    out._entryPointOutput = _texturearray_frag_main(param, texture_array, samp0, v_33);
     return out;
 }
 

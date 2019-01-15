@@ -37,8 +37,7 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
         float NdotL = max(dot(N, L), 0.0f);
 
         // shadow test
-        //float visibility = shadow_test(_entryPointOutput.v_world, light, NdotL);
-        float visibility = 1.0f;
+        float visibility = shadow_test(_entryPointOutput.v_world, light, NdotL);
 
         float lightToSurfDist = length(L);
         float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));

@@ -38,14 +38,13 @@ layout(binding = 11, std140) uniform PerBatchConstants
     mat4 modelMatrix;
 } _32;
 
-layout(binding = 10, std140) uniform PerFrameConstants
+layout(binding = 14, std140) uniform ShadowMapConstants
 {
-    mat4 viewMatrix;
-    mat4 projectionMatrix;
-    mat4 arbitraryMatrix;
-    vec4 camPos;
-    int numLights;
-} _42;
+    mat4 lightVP;
+    mat4 shadowMatrices[6];
+    int shadowmap_layer_index;
+    float far_plane;
+} _45;
 
 layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
@@ -58,7 +57,7 @@ pos_only_vert_output _shadowmap_vert_main(a2v a)
     vec4 v = vec4(a.inputPosition, 1.0);
     v = _32.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = _42.arbitraryMatrix * v;
+    o.pos = _45.lightVP * v;
     return o;
 }
 
