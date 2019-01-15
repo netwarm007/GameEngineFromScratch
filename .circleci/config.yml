@@ -147,11 +147,11 @@ jobs:
           name: Deploy Assets
           command: |
                    adb wait-for-device
-                   adb push ../../Asset/Scene/Example.ogex /data/local/tmp/Scene/Example.ogex
-                   adb push ../../Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
-                   adb push ../../Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
-                   adb push ../../Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
-                   adb push ../../Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
+                   adb push Asset/Scene/Example.ogex /data/local/tmp/Scene/Example.ogex
+                   adb push Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
+                   adb push Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
+                   adb push Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
+                   adb push Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
           working_directory: Game/Billiard
       - run:
           name: Run Geom Math Library Test
@@ -224,5 +224,5 @@ workflows:
     jobs:
       - build_linux
       - build_macos
-      #- build_android
+      - build_android
 
