@@ -7,7 +7,7 @@ using namespace std;
 
 void HUDPhase::Draw(Frame& frame)
 {
-#if 0
+#ifdef DEBUG
     auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::DepthCopy);
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
@@ -63,6 +63,5 @@ void HUDPhase::Draw(Frame& frame)
 
     auto brdf_lut = g_pGraphicsManager->GetTexture("BRDF_LUT");
     g_pGraphicsManager->DrawTextureOverlay(brdf_lut, left, top, 0.25f, 0.25f);
-
 #endif
 }

@@ -901,7 +901,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t w
     return static_cast<int32_t>(shadowMap);
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index)
+void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index)
 {
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     glGenFramebuffers(1, &m_ShadowMapFramebufferName);
@@ -1011,7 +1011,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     glCullFace(GL_FRONT);
 }
 
-void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, uint32_t layer_index)
+void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, int32_t layer_index)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

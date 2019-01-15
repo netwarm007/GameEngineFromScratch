@@ -28,7 +28,7 @@ void ShadowMapPass::Draw(Frame& frame)
     // count shadow map
     vector<Light*> lights_cast_shadow;
 
-    for (uint32_t i = 0; i < frame.frameContext.numLights; i++)
+    for (int32_t i = 0; i < frame.frameContext.numLights; i++)
     {
         auto& light = frame.lightInfo.lights[i];
         

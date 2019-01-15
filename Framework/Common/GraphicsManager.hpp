@@ -35,8 +35,8 @@ namespace My {
 
         virtual int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
         virtual int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
-        virtual void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) {}
-        virtual void EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) {}
+        virtual void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index) {}
+        virtual void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) {}
         virtual void SetShadowMaps(const Frame& frame) {}
         virtual void DestroyShadowMap(int32_t& shadowmap) {}
 
@@ -70,9 +70,9 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color) {}
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color) {}
         virtual void DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height) {}
-        virtual void DrawTextureArrayOverlay(const int32_t texture, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) {}
+        virtual void DrawTextureArrayOverlay(const int32_t texture, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) {}
         virtual void DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f) {}
-        virtual void DrawCubeMapArrayOverlay(const int32_t cubemap, uint32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f) {}
+        virtual void DrawCubeMapArrayOverlay(const int32_t cubemap, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f) {}
         virtual void ClearDebugBuffers() {}
 
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
