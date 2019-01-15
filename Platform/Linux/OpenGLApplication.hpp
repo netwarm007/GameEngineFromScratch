@@ -5,12 +5,12 @@
 namespace My {
     class OpenGLApplication : public XcbApplication {
     public:
-        OpenGLApplication(GfxConfiguration& config)
-            : XcbApplication(config) {};
+        using XcbApplication:XcbApplication;
 
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
+        int Initialize() override;
+        void Tick() override;
+
+        void CreateMainWindow() override;
 
     private:
         Display *m_pDisplay;

@@ -4,8 +4,7 @@
 namespace My {
     class OpenGLApplication : public SdlApplication {
     public:
-        OpenGLApplication(GfxConfiguration& config)
-            : SdlApplication(config) {};
+        using SdlApplication::SdlApplication;
 
         void Tick() override;
 

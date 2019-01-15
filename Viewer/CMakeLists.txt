@@ -6,18 +6,77 @@ IF(ANDROID)
 
     add_library(Viewer SHARED 
         ViewerLogic.cpp ViewerConfig.cpp)
-ELSE(ANDROID)
+ELSEIF(APPLE)
     add_executable(Viewer MACOSX_BUNDLE
-        ViewerLogic.cpp ViewerConfig.cpp)
+        ViewerLogic.cpp ViewerConfig.cpp
+        Main.metallib
+        )
+ELSE(ANDROID)
+    add_executable(Viewer 
+        ViewerLogic.cpp ViewerConfig.cpp
+        )
 ENDIF(ANDROID)
 
 IF(APPLE)
+    set(SHADER_SOURCES basic.vert basic.frag
+                debug.vert debug.frag
+                pbr.vert pbr.frag
+                skybox.vert skybox.frag
+                shadowmap.vert shadowmap.frag
+                shadowmap_omni.vert shadowmap_omni.frag
+                terrain.vert terrain.frag
+                texture.frag texturearray.frag
+                passthrough.vert passthrough_cube.vert
+                integrateBRDF.comp
+            )
+
+    foreach(SHADER IN LISTS SHADER_SOURCES)
+        add_custom_command(OUTPUT ${SHADER}.air
+            COMMAND xcrun -sdk macosx metal -g -MO -c ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
+            COMMENT "Compile ${SHADER}.metal --> ${SHADER}.air"
+            DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal
+            )
+
+        list(APPEND AIRS ${SHADER}.air)
+    endforeach(SHADER)
+
+    add_custom_command(OUTPUT Main.metalar
+            COMMAND xcrun -sdk macosx metal-ar rcv Main.metalar ${AIRS}
+            COMMENT "Archive ${AIRS} --> Main.metalar"
+            DEPENDS ${AIRS}
+        )
+
+    add_custom_command(OUTPUT Main.metallib
+            COMMAND xcrun -sdk macosx metallib Main.metalar -split-module-without-linking -o Main.metallib
+            COMMENT "Compile Editor.metalar --> Main.metallib"
+            DEPENDS Main.metalar
+        )
+
+    add_custom_target(ViewerShaderLibrary
+                    DEPENDS Main.metallib
+        )
+
     target_link_libraries(Viewer
                             MyPhysics
                             Common
                             MetalRHI
                             PlatformInterface
                         )
+
+    set_target_properties(Viewer PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/mac/Info.plist
+        )
+
+    add_dependencies(Viewer ViewerShaderLibrary)
+
+    set(RESOURCE_FILES
+        Main.metallib
+    )
+
+    set_target_properties(Viewer PROPERTIES
+        RESOURCE "${RESOURCE_FILES}"
+    )
+
 ELSEIF(WA)
     target_link_libraries(Viewer
                             MyPhysics

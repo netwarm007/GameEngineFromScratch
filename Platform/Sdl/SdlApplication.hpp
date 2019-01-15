@@ -7,8 +7,7 @@ namespace My {
     class SdlApplication : public BaseApplication
     {
     public:
-        SdlApplication(GfxConfiguration& config)
-            : BaseApplication(config) {};
+        using BaseApplication::BaseApplication;
 
         int Initialize() override;
         void Finalize() override;

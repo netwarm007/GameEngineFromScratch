@@ -7,8 +7,7 @@ namespace My {
     class CocoaApplication : public BaseApplication
     {
     public:
-        CocoaApplication(GfxConfiguration& config)
-            : BaseApplication(config) {};
+        using BaseApplication::BaseApplication;
 
         void Finalize() override;
         // One cycle of the main loop

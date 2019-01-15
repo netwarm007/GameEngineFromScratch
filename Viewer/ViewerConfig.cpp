@@ -2,11 +2,15 @@
 #include "GfxConfiguration.hpp"
 #if defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
+#elif defined(OS_MACOS)
+#include "CocoaMetalApplication.h"
 #else
 #include "OpenGLApplication.hpp"
 #endif
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
+#elif defined(OS_MACOS)
+#include "RHI/Metal/MetalConfig.hpp"
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
@@ -22,7 +26,11 @@
 
 namespace My {
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, "Viewer");
+#if defined(OS_MACOS)
+	IApplication*    g_pApp             = static_cast<IApplication*>(new CocoaMetalApplication(config));
+#else
 	IApplication*    g_pApp             = static_cast<IApplication*>(new OpenGLApplication(config));
+#endif
     IGameLogic*       g_pGameLogic       = static_cast<IGameLogic*>(new ViewerLogic);
     IPhysicsManager*  g_pPhysicsManager  = static_cast<IPhysicsManager*>(new MyPhysicsManager);
     IMemoryManager*   g_pMemoryManager   = static_cast<IMemoryManager*>(new MemoryManager);

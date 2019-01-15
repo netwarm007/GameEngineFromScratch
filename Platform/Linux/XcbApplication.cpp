@@ -75,14 +75,10 @@ void XcbApplication::CreateMainWindow()
 void XcbApplication::Finalize()
 {
     xcb_disconnect(m_pConn);
-
-    BaseApplication::Finalize();
 }
 
 void XcbApplication::Tick()
 {
-    BaseApplication::Tick();
-
     xcb_generic_event_t* pEvent;
     if((pEvent = xcb_poll_for_event(m_pConn)))
     {

@@ -4,6 +4,10 @@ IF(APPLE)
                 pbr.vert pbr.frag
                 skybox.vert skybox.frag
                 shadowmap.vert shadowmap.frag
+                shadowmap_omni.vert shadowmap_omni.frag
+                terrain.vert terrain.frag
+                texture.frag texturearray.frag
+                passthrough.vert passthrough_cube.vert
                 integrateBRDF.comp
             )
 
@@ -17,27 +21,27 @@ IF(APPLE)
         list(APPEND AIRS ${SHADER}.air)
     endforeach(SHADER)
 
-    add_custom_command(OUTPUT Editor.metalar
-            COMMAND xcrun -sdk macosx metal-ar rcv Editor.metalar ${AIRS}
-            COMMENT "Archive ${AIRS} --> Editor.metalar"
+    add_custom_command(OUTPUT Main.metalar
+            COMMAND xcrun -sdk macosx metal-ar rcv Main.metalar ${AIRS}
+            COMMENT "Archive ${AIRS} --> Main.metalar"
             DEPENDS ${AIRS}
         )
 
-    add_custom_command(OUTPUT Editor.metallib
-            COMMAND xcrun -sdk macosx metallib Editor.metalar -split-module-without-linking -o Editor.metallib
-            COMMENT "Compile Editor.metalar --> Editor.metallib"
-            DEPENDS Editor.metalar
+    add_custom_command(OUTPUT Main.metallib
+            COMMAND xcrun -sdk macosx metallib Main.metalar -split-module-without-linking -o Main.metallib
+            COMMENT "Compile Editor.metalar --> Main.metallib"
+            DEPENDS Main.metalar
         )
 
     add_custom_target(EditorShaderLibrary
-                    DEPENDS Editor.metallib
+                    DEPENDS Main.metallib
         )
 
     # main app
     add_executable(Editor MACOSX_BUNDLE
         EditorLogic.cpp 
         EditorConfig.cpp
-        Editor.metallib
+        Main.metallib
         )
 
     set_target_properties(Editor PROPERTIES
@@ -47,7 +51,7 @@ IF(APPLE)
     add_dependencies(Editor EditorShaderLibrary)
 
     set(RESOURCE_FILES
-        Editor.metallib
+        Main.metallib
     )
 
     set_target_properties(Editor PROPERTIES

@@ -78,7 +78,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Create and load our basic Metal state objects
 
     // Load all the shader files with a metallib 
-    NSString *libraryFile = [[NSBundle mainBundle] pathForResource:@"Editor" ofType:@"metallib"];
+    NSString *libraryFile = [[NSBundle mainBundle] pathForResource:@"Main" ofType:@"metallib"];
     id <MTLLibrary> myLibrary = [_device newLibraryWithFile:libraryFile error:&error];
     if (!myLibrary) {
         NSLog(@"Library error: %@", error);

@@ -8,8 +8,7 @@ namespace My {
     class WindowsApplication : public BaseApplication
     {
     public:
-        WindowsApplication(GfxConfiguration& config)
-            : BaseApplication(config) {};
+        using BaseApplication::BaseApplication;
 
         void Finalize() override;
         // One cycle of the main loop

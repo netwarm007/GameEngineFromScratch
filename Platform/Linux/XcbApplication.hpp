@@ -5,8 +5,7 @@ namespace My {
     class XcbApplication : public BaseApplication
     {
     public:
-        XcbApplication(GfxConfiguration& config)
-            : BaseApplication(config) {};
+        using BaseApplication::BaseApplication;
 
         void Finalize() override;
         // One cycle of the main loop

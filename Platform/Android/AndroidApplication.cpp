@@ -7,11 +7,6 @@
 using namespace My;
 using namespace std;
 
-AndroidApplication::AndroidApplication(GfxConfiguration& cfg) 
-        : BaseApplication(cfg)
-{
-}
-
 int AndroidApplication::Initialize()
 {
     int result = 0;
@@ -21,16 +16,6 @@ int AndroidApplication::Initialize()
         LOGE("AndroidApplication Initialize Failed!");
 
     return result;
-}
-
-void AndroidApplication::Finalize()
-{
-    BaseApplication::Finalize();
-}
-
-void AndroidApplication::Tick()
-{
-    BaseApplication::Tick();
 }
 
 /**
