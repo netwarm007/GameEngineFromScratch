@@ -1516,7 +1516,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
         int32_t blockSize;
 
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
-        assert(blockSize >= sizeof(DebugConstants));
+        assert(blockSize == sizeof(DebugConstants));
 
         glUniformBlockBinding(m_CurrentShader, blockIndex, 13);
     }
@@ -1529,7 +1529,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     {
         constants.front_color = dbc.color;
 
-        glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
 
         glBindVertexArray(dbc.vao);
         glDrawArrays(dbc.mode, 0x00, dbc.count);
@@ -1618,7 +1618,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDebugConstant[m_nFrameIndex]);
     glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
 
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
 
     GLfloat vertices[] = {
         vp_left, vp_top, 0.0f,
@@ -1860,7 +1860,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cube
         int32_t blockSize;
 
         glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
-        assert(blockSize >= sizeof(DebugConstants));
+        assert(blockSize == sizeof(DebugConstants));
 
         glUniformBlockBinding(m_CurrentShader, blockIndex, 13);
     }
@@ -1868,7 +1868,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cube
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDebugConstant[m_nFrameIndex]);
     glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
 
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
 
     const float cell_height = vp_height * 0.5f;
     const float cell_width = vp_width * (1.0f / 3.0f);
