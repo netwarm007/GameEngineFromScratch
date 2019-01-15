@@ -29,7 +29,7 @@ struct Light
 
 layout(std140) uniform DebugConstants
 {
-    highp float layer_index;
+    int layer_index;
     highp float mip_level;
     highp float line_width;
     highp float padding0;
@@ -44,7 +44,7 @@ layout(location = 0) out highp vec4 _entryPointOutput;
 
 highp vec4 _texturearray_frag_main(simple_vert_output _entryPointOutput_1)
 {
-    return textureLod(SPIRV_Cross_Combinedtexture_arraysamp0, vec3(_entryPointOutput_1.uv, _32.layer_index), _32.mip_level);
+    return textureLod(SPIRV_Cross_Combinedtexture_arraysamp0, vec3(_entryPointOutput_1.uv, float(_32.layer_index)), _32.mip_level);
 }
 
 void main()

@@ -128,10 +128,8 @@ add_subdirectory(Test)
 add_subdirectory(Game)
 IF(NOT ANDROID AND NOT WA)
 add_subdirectory(Editor)
-ENDIF(NOT ANDROID)
-IF(WA)
+ENDIF(NOT ANDROID AND NOT WA)
 add_subdirectory(Viewer)
-ENDIF(WA)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 

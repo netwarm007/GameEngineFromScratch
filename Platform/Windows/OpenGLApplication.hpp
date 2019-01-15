@@ -7,12 +7,16 @@ namespace My {
         OpenGLApplication(GfxConfiguration& config)
             : WindowsApplication(config) {};
 
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
+        int Initialize() override;
+        void Finalize() override;
+        void Tick() override;
+
+        void CreateMainWindow() override;
 
     private:
         HDC   m_hDC;
         HGLRC m_RenderContext;
+        int   m_nPixelFormat;
+	    PIXELFORMATDESCRIPTOR m_pfd;
     };
 }

@@ -11,9 +11,9 @@ namespace My {
         WindowsApplication(GfxConfiguration& config)
             : BaseApplication(config) {};
 
-        virtual void Finalize();
+        void Finalize() override;
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick() override;
 
         void* GetMainWindowHandler() override { return m_hWnd; };
         void CreateMainWindow() override;

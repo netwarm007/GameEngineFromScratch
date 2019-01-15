@@ -1,6 +1,10 @@
 #include "portable.hpp"
 #include "GfxConfiguration.hpp"
+#if defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
+#else
+#include "OpenGLApplication.hpp"
+#endif
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
 #else

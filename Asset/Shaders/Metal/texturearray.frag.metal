@@ -13,7 +13,7 @@ struct simple_vert_output
 
 struct DebugConstants
 {
-    float layer_index;
+    int layer_index;
     float mip_level;
     float line_width;
     float padding0;
@@ -80,7 +80,7 @@ struct texturearray_frag_main_in
 
 float4 _texturearray_frag_main(thread const simple_vert_output& _entryPointOutput, thread texture2d_array<float> texture_array, thread sampler samp0, constant DebugConstants& v_32)
 {
-    return texture_array.sample(samp0, float3(_entryPointOutput.uv, v_32.layer_index).xy, uint(round(float3(_entryPointOutput.uv, v_32.layer_index).z)), level(v_32.mip_level));
+    return texture_array.sample(samp0, float3(_entryPointOutput.uv, float(v_32.layer_index)).xy, uint(round(float3(_entryPointOutput.uv, float(v_32.layer_index)).z)), level(v_32.mip_level));
 }
 
 fragment texturearray_frag_main_out texturearray_frag_main(texturearray_frag_main_in in [[stage_in]], constant DebugConstants& v_32 [[buffer(13)]], texture2d_array<float> texture_array [[texture(0)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])

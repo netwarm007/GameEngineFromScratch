@@ -30,6 +30,16 @@ int OpenGLGraphicsManager::Initialize()
         result = 0;
         cout << "OpenGL Version " << GLVersion.major << "." << GLVersion.minor << " loaded" << endl;
 
+        // update the config with real settings
+        int a, r, g, b, d, s;
+        glGetIntegerv(GL_ALPHA_BITS, &a);
+        glGetIntegerv(GL_RED_BITS, &r);
+        glGetIntegerv(GL_GREEN_BITS, &g);
+        glGetIntegerv(GL_BLUE_BITS, &b);
+        glGetIntegerv(GL_DEPTH_BITS, &d);
+        glGetIntegerv(GL_STENCIL_BITS, &s);
+        printf("A:%d R:%d G:%d B:%d D:%d S:%d\n", a, r, g, b, d, s);
+
         if (GLAD_GL_VERSION_3_3) {
             // Set the depth buffer to be entirely cleared to 1.0 values.
             glClearDepth(1.0f);
@@ -46,6 +56,7 @@ int OpenGLGraphicsManager::Initialize()
 
             glEnable(GL_PROGRAM_POINT_SIZE);
         }
+
 
         auto config = g_pApp->GetConfiguration();
         glViewport(0, 0, config.screenWidth, config.screenHeight);
