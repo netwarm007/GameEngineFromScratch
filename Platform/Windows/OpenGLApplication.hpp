@@ -4,7 +4,7 @@
 namespace My {
     class OpenGLApplication : public WindowsApplication {
     public:
-        using WindowsApplication:WindowsApplication;
+        using WindowsApplication::WindowsApplication;
 
         int Initialize() override;
         void Finalize() override;
