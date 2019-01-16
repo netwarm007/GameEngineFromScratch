@@ -5,7 +5,7 @@
 namespace My {
     class OpenGLApplication : public XcbApplication {
     public:
-        using XcbApplication:XcbApplication;
+        using XcbApplication::XcbApplication;
 
         int Initialize() override;
         void Tick() override;
@@ -16,5 +16,7 @@ namespace My {
         Display *m_pDisplay;
         GLXContext m_Context;
         GLXDrawable m_Drawable;
+        GLXFBConfig fb_config;
+        XVisualInfo *vi;
     };
 }

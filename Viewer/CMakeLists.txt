@@ -144,4 +144,4 @@ IF(WIN32)
             $<TARGET_FILE_DIR:Viewer>)
 ENDIF(WIN32)
 
-target_include_directories(BilliardGame PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
+target_include_directories(Viewer PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
