@@ -17,7 +17,7 @@
 # 
 # =============================================================
 
-# Modified by Tim Chen on 2018/09/27 for exporting tangent and bitangent
+# Modified by Tim Chen on 2018/09/27 for exporting tangent
 
 bl_info = {
 	"name": "OpenGEX format (.ogex)",
@@ -60,14 +60,13 @@ axisName = [B"x", B"y", B"z"]
 
 
 class ExportVertex:
-	__slots__ = ("hash", "vertexIndex", "faceIndex", "position", "normal", "tangent", "bitangent", "color", "texcoord0", "texcoord1")
+	__slots__ = ("hash", "vertexIndex", "faceIndex", "position", "normal", "tangent", "color", "texcoord0", "texcoord1")
 
 	def __init__(self):
 		self.color = [1.0, 1.0, 1.0]
 		self.texcoord0 = [0.0, 0.0]
 		self.texcoord1 = [0.0, 0.0]
 		self.tangent = [1.0, 0.0, 0.0]
-		self.bitangent = [0.0, 1.0, 0.0]
 
 	def __eq__(self, v):
 		if (self.hash != v.hash):
@@ -77,8 +76,6 @@ class ExportVertex:
 		if (self.normal != v.normal):
 			return (False)
 		if (self.tangent != v.tangent):
-			return (False)
-		if (self.bitangent != v.bitangent):
 			return (False)
 		if (self.color != v.color):
 			return (False)
@@ -98,9 +95,6 @@ class ExportVertex:
 		h = h * 21737 + hash(self.tangent[0])
 		h = h * 21737 + hash(self.tangent[1])
 		h = h * 21737 + hash(self.tangent[2])
-		h = h * 21737 + hash(self.bitangent[0])
-		h = h * 21737 + hash(self.bitangent[1])
-		h = h * 21737 + hash(self.bitangent[2])
 		h = h * 21737 + hash(self.color[0])
 		h = h * 21737 + hash(self.color[1])
 		h = h * 21737 + hash(self.color[2])
@@ -725,13 +719,15 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 				deltaUV2 = exportVertexArray[vertexIndex + 2].texcoord0 - exportVertexArray[vertexIndex].texcoord0
 
 				if (deltaUV1 != deltaUV2):
-					r = 1.0 / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0])
-					tangent = (deltaPos1 * deltaUV2[1] - deltaPos2 * deltaUV1[1]) * r
-					bitangent = (deltaPos2 * deltaUV1[0] - deltaPos1 * deltaUV2[0]) * r
+					denorm = deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0]
+					if (denorm == 0):
+						tangent = deltaPos1
+					else:
+						r = 1.0 / denorm
+						tangent = (deltaPos1 * deltaUV2[1] - deltaPos2 * deltaUV1[1]) * r
 
 					for i in range(0, 3):
 						exportVertexArray[vertexIndex + i].tangent = tangent
-						exportVertexArray[vertexIndex + i].bitangent = bitangent
 
 				if (len(face.vertices) == 4):
 					deltaPos1 = exportVertexArray[vertexIndex + 4].position - exportVertexArray[vertexIndex + 3].position
@@ -741,13 +737,15 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 					deltaUV2 = exportVertexArray[vertexIndex + 5].texcoord0 - exportVertexArray[vertexIndex + 3].texcoord0
 
 					if (deltaUV1 != deltaUV2):
-						r = 1.0 / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0])
-						tangent = (deltaPos1 * deltaUV2[1] - deltaPos2 * deltaUV1[1]) * r
-						bitangent = (deltaPos2 * deltaUV1[0] - deltaPos1 * deltaUV2[0]) * r
+						denorm = deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0]
+						if (denorm == 0):
+							tangent = deltaPos1
+						else:
+							r = 1.0 / denorm
+							tangent = (deltaPos1 * deltaUV2[1] - deltaPos2 * deltaUV1[1]) * r
 
 					for i in range(3, 6):
 						exportVertexArray[vertexIndex + i].tangent = tangent
-						exportVertexArray[vertexIndex + i].bitangent = bitangent
 
 					vertexIndex += 6
 				else:
@@ -2314,21 +2312,6 @@ class OpenGexExporter(bpy.types.Operator, ExportHelper):
 		self.WriteInt(vertexCount)
 		self.IndentWrite(B"{\n", 0, True)
 		self.WriteVertexArray3D(unifiedVertexArray, "tangent")
-		self.IndentWrite(B"}\n")
-
-		self.indentLevel -= 1
-		self.IndentWrite(B"}\n")
-
-		# Write the bitangent array.
-
-		self.IndentWrite(B"VertexArray (attrib = \"bitangent\")\n")
-		self.IndentWrite(B"{\n")
-		self.indentLevel += 1
-
-		self.IndentWrite(B"float[3]\t\t// ")
-		self.WriteInt(vertexCount)
-		self.IndentWrite(B"{\n", 0, True)
-		self.WriteVertexArray3D(unifiedVertexArray, "bitangent")
 		self.IndentWrite(B"}\n")
 
 		self.indentLevel -= 1

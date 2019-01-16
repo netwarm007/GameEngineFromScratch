@@ -6,7 +6,6 @@ struct a2v
     vec3 inputNormal;
     vec2 inputUV;
     vec3 inputTangent;
-    vec3 inputBiTangent;
 };
 
 struct pos_only_vert_output
@@ -52,7 +51,6 @@ layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
 layout(location = 2) in vec2 a_inputUV;
 layout(location = 3) in vec3 a_inputTangent;
-layout(location = 4) in vec3 a_inputBiTangent;
 
 pos_only_vert_output _shadowmap_vert_main(a2v a)
 {
@@ -70,7 +68,6 @@ void main()
     a.inputNormal = a_inputNormal;
     a.inputUV = a_inputUV;
     a.inputTangent = a_inputTangent;
-    a.inputBiTangent = a_inputBiTangent;
     a2v param = a;
     gl_Position = _shadowmap_vert_main(param).pos;
 }

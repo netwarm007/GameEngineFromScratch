@@ -6,7 +6,6 @@ struct a2v
     vec3 inputNormal;
     vec2 inputUV;
     vec3 inputTangent;
-    vec3 inputBiTangent;
 };
 
 struct basic_vert_output
@@ -55,7 +54,6 @@ layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
 layout(location = 2) in vec2 a_inputUV;
 layout(location = 3) in vec3 a_inputTangent;
-layout(location = 4) in vec3 a_inputBiTangent;
 out vec4 _entryPointOutput_normal;
 out vec4 _entryPointOutput_normal_world;
 out vec4 _entryPointOutput_v;
@@ -82,7 +80,6 @@ void main()
     a.inputNormal = a_inputNormal;
     a.inputUV = a_inputUV;
     a.inputTangent = a_inputTangent;
-    a.inputBiTangent = a_inputBiTangent;
     a2v param = a;
     basic_vert_output flattenTemp = _basic_vert_main(param);
     gl_Position = flattenTemp.pos;

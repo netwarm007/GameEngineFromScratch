@@ -20,7 +20,6 @@ struct PerFrameConstants
 {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
-    float4x4 arbitraryMatrix;
     float4 camPos;
     int numLights;
 };
@@ -52,6 +51,26 @@ struct Light
 struct LightInfo
 {
     Light lights[100];
+};
+
+struct DebugConstants
+{
+    int layer_index;
+    float mip_level;
+    float line_width;
+    float padding0;
+    float4 front_color;
+    float4 back_color;
+};
+
+struct ShadowMapConstants
+{
+    int shadowmap_layer_index;
+    float far_plane;
+    float padding[2];
+    float4 lightPos;
+    float4x4 lightVP;
+    float4x4 shadowMatrices[6];
 };
 
 struct skybox_vert_main_out

@@ -11,7 +11,6 @@ struct a2v
     float3 inputNormal;
     float2 inputUV;
     float3 inputTangent;
-    float3 inputBiTangent;
 };
 
 struct pbr_vert_output
@@ -66,7 +65,7 @@ struct LightInfo
 
 struct DebugConstants
 {
-    float layer_index;
+    int layer_index;
     float mip_level;
     float line_width;
     float padding0;
@@ -79,6 +78,7 @@ struct ShadowMapConstants
     int shadowmap_layer_index;
     float far_plane;
     float padding[2];
+    float4 lightPos;
     float4x4 lightVP;
     float4x4 shadowMatrices[6];
 };
@@ -104,7 +104,6 @@ struct pbr_vert_main_in
     float3 a_inputNormal [[attribute(1)]];
     float2 a_inputUV [[attribute(2)]];
     float3 a_inputTangent [[attribute(3)]];
-    float3 a_inputBiTangent [[attribute(4)]];
 };
 
 pbr_vert_output _pbr_vert_main(thread const a2v& a, constant PerBatchConstants& v_25, constant PerFrameConstants& v_44)
@@ -136,7 +135,6 @@ vertex pbr_vert_main_out pbr_vert_main(pbr_vert_main_in in [[stage_in]], constan
     a.inputNormal = in.a_inputNormal;
     a.inputUV = in.a_inputUV;
     a.inputTangent = in.a_inputTangent;
-    a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
     pbr_vert_output flattenTemp = _pbr_vert_main(param, v_25, v_44);
     out.gl_Position = flattenTemp.pos;

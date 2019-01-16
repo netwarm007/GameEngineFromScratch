@@ -11,7 +11,6 @@ struct a2v
     float3 inputNormal;
     float2 inputUV;
     float3 inputTangent;
-    float3 inputBiTangent;
 };
 
 struct pos_only_vert_output
@@ -87,7 +86,6 @@ struct debug_vert_main_in
     float3 a_inputNormal [[attribute(1)]];
     float2 a_inputUV [[attribute(2)]];
     float3 a_inputTangent [[attribute(3)]];
-    float3 a_inputBiTangent [[attribute(4)]];
 };
 
 pos_only_vert_output _debug_vert_main(thread const a2v& a, constant PerFrameConstants& v_32)
@@ -107,7 +105,6 @@ vertex debug_vert_main_out debug_vert_main(debug_vert_main_in in [[stage_in]], c
     a.inputNormal = in.a_inputNormal;
     a.inputUV = in.a_inputUV;
     a.inputTangent = in.a_inputTangent;
-    a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
     out.gl_Position = _debug_vert_main(param, v_32).pos;
     return out;

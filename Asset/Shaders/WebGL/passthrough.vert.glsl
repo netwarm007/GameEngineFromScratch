@@ -6,7 +6,6 @@ struct a2v
     vec3 inputNormal;
     vec2 inputUV;
     vec3 inputTangent;
-    vec3 inputBiTangent;
 };
 
 struct simple_vert_output
@@ -38,7 +37,6 @@ layout(location = 0) in vec3 a_inputPosition;
 layout(location = 1) in vec3 a_inputNormal;
 layout(location = 2) in vec2 a_inputUV;
 layout(location = 3) in vec3 a_inputTangent;
-layout(location = 4) in vec3 a_inputBiTangent;
 out vec2 _entryPointOutput_uv;
 
 simple_vert_output _passthrough_vert_main(a2v a)
@@ -56,7 +54,6 @@ void main()
     a.inputNormal = a_inputNormal;
     a.inputUV = a_inputUV;
     a.inputTangent = a_inputTangent;
-    a.inputBiTangent = a_inputBiTangent;
     a2v param = a;
     simple_vert_output flattenTemp = _passthrough_vert_main(param);
     gl_Position = flattenTemp.pos;

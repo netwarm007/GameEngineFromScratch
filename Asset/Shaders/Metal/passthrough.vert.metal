@@ -11,7 +11,6 @@ struct a2v
     float3 inputNormal;
     float2 inputUV;
     float3 inputTangent;
-    float3 inputBiTangent;
 };
 
 struct simple_vert_output
@@ -89,7 +88,6 @@ struct passthrough_vert_main_in
     float3 a_inputNormal [[attribute(1)]];
     float2 a_inputUV [[attribute(2)]];
     float3 a_inputTangent [[attribute(3)]];
-    float3 a_inputBiTangent [[attribute(4)]];
 };
 
 simple_vert_output _passthrough_vert_main(thread const a2v& a)
@@ -108,7 +106,6 @@ vertex passthrough_vert_main_out passthrough_vert_main(passthrough_vert_main_in 
     a.inputNormal = in.a_inputNormal;
     a.inputUV = in.a_inputUV;
     a.inputTangent = in.a_inputTangent;
-    a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
     simple_vert_output flattenTemp = _passthrough_vert_main(param);
     out.gl_Position = flattenTemp.pos;

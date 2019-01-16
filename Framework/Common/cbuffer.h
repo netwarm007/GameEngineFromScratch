@@ -106,7 +106,6 @@ struct a2v
     Vector3f inputNormal      SEMANTIC(NORMAL);
     Vector2f inputUV          SEMANTIC(TEXCOORD);
     Vector3f inputTangent     SEMANTIC(TANGENT);
-    Vector3f inputBiTangent   SEMANTIC(BITANGENT);
 };
 
 struct a2v_pos_only
