@@ -54,11 +54,8 @@ int OpenGLApplication::Initialize()
 
     int default_screen;
     GLXFBConfig *fb_configs;
-    GLXFBConfig fb_config;
     int num_fb_configs = 0;
-    XVisualInfo *vi;
     GLXWindow glxwindow;
-    const char *glxExts;
 
     // Get a matching FB config
     static int visual_attribs[] =
@@ -159,6 +156,8 @@ void OpenGLApplication::CreateMainWindow()
 {
     XcbApplication::CreateMainWindow();
 
+    const char *glxExts;
+    int default_screen = DefaultScreen(m_pDisplay);
     /* Get the default screen's GLX extension list */
     glxExts = glXQueryExtensionsString(m_pDisplay, default_screen);
 
@@ -176,7 +175,6 @@ void OpenGLApplication::CreateMainWindow()
         if(!m_Context)
         {
             fprintf(stderr, "glXCreateNewContext failed\n");
-            return -1;
         }
     }
     else
@@ -231,7 +229,7 @@ void OpenGLApplication::CreateMainWindow()
     }
 
     /* Create GLX Window */
-    glxwindow = 
+    GLXWindow glxwindow = 
             glXCreateWindow(
                 m_pDisplay,
                 fb_config,
