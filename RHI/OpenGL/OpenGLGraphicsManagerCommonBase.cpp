@@ -690,6 +690,9 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
 
 void OpenGLGraphicsManagerCommonBase::BeginFrame()
 {
+    // reset gl error
+    glGetError();
+
     // Set the color to clear the screen to.
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
@@ -770,16 +773,12 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
     // Prepare & Bind per frame constant buffer
     uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
 
-    if (blockIndex == GL_INVALID_INDEX)
+    if (blockIndex != GL_INVALID_INDEX)
     {
-        // the shader does not use "PerFrameConstants"
-        // simply return here
-        return;
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
     }
-
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
-
-    glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
 
     // Prepare & Bind light info
     blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
@@ -793,14 +792,21 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
     // Prepare per batch constant buffer binding point
     blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
 
-    if (blockIndex == GL_INVALID_INDEX)
+    if (blockIndex != GL_INVALID_INDEX)
     {
-        // the shader does not use "PerBatchConstants"
-        // simply return here
-        return;
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
     }
 
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
+    // Bind LUT table
+    auto brdf_lut = GetTexture("BRDF_LUT");
+    setShaderParameter("SPIRV_Cross_CombinedbrdfLUTsamp0", 6);
+    glActiveTexture(GL_TEXTURE6);
+    if (brdf_lut > 0) {
+        glBindTexture(GL_TEXTURE_2D, brdf_lut);
+    }
+    else {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     glEnable(GL_CULL_FACE);
 
@@ -989,6 +995,10 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
             constants.shadowMatrices[i] = constants.shadowMatrices[i] * projection;
         }
     }
+    else
+    {
+        constants.shadowMatrices[0] = light.lightVP;
+    }
 
     constants.shadowmap_layer_index = layer_index;
     constants.far_plane = farClipDistance;
@@ -1009,7 +1019,8 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant[m_nFrameIndex]);
 
     assert(blockSize >= sizeof(constants));
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glUniformBlockBinding(m_CurrentShader, blockIndex, 14);
     glBindBufferBase(GL_UNIFORM_BUFFER, 14, m_uboShadowMatricesConstant[m_nFrameIndex]);
@@ -1055,9 +1066,15 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     texture_id = (uint32_t) frame.frameContext.cubeShadowMap;
     setShaderParameter("SPIRV_Cross_CombinedcubeShadowMapsamp0", 9);
     glActiveTexture(GL_TEXTURE9);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    GLenum target;
+#if defined(OS_WEBASSEMBLY)
+    target = GL_TEXTURE_2D_ARRAY;
+#else
+    target = GL_TEXTURE_CUBE_MAP_ARRAY;
+#endif
+    glBindTexture(target, texture_id);
+    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
@@ -1250,7 +1267,7 @@ void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint3
 {
     if(GLAD_GL_ARB_compute_shader)
     {
-        glDispatchCompute((uint32_t)width, (uint32_t)height, (uint32_t)depth);
+        glDispatchCompute((GLuint)width, (GLuint)height, (GLuint)depth);
         // make sure writing to image has finished before read
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }

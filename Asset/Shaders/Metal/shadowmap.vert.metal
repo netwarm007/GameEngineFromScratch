@@ -25,13 +25,12 @@ struct PerBatchConstants
 
 struct ShadowMapConstants
 {
+    float4x4 shadowMatrices[6];
     int shadowmap_layer_index;
     float far_plane;
-    char pad2[8];
+    char pad3[8];
     float padding[2];
     float4 lightPos;
-    float4x4 lightVP;
-    float4x4 shadowMatrices[6];
 };
 
 struct PerFrameConstants
@@ -94,7 +93,7 @@ pos_only_vert_output _shadowmap_vert_main(thread const a2v& a, constant PerBatch
     float4 v = float4(a.inputPosition, 1.0);
     v = v_32.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = v_47.lightVP * v;
+    o.pos = v_47.shadowMatrices[0] * v;
     return o;
 }
 
