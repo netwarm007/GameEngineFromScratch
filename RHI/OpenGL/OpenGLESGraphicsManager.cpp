@@ -8,6 +8,11 @@
 #include <GLES3/gl32.h>
 #include <GLES2/gl2ext.h>
 
+#if defined(OS_WEBASSEMBLY)
+// disable compute shader
+#define GLAD_GL_ARB_compute_shader 0
+#endif
+
 using namespace My;
 using namespace std;
 

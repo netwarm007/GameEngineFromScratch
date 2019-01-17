@@ -378,23 +378,24 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     m_DefaultShaders[DefaultShaderIndex::Debug] = shaderProgram;
 #endif // DEBUG
 
-#if !defined(OS_WEBASSEMBLY)
-    /////////////////
-    // CS Shaders
-
-    // BRDF
-    list = {
-        {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
+    if(GLAD_GL_ARB_compute_shader)
     {
-        return result;
-    }
+        /////////////////
+        // CS Shaders
 
-    m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
-#endif // !defined(OS_WEBASSEMBLY)
+        // BRDF
+        list = {
+            {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
+        };
+
+        result = LoadShaderProgram(list, shaderProgram);
+        if (!result)
+        {
+            return result;
+        }
+
+        m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
+    }
 
     return result;
 }

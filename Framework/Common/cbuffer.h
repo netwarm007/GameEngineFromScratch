@@ -86,12 +86,11 @@ unistruct DebugConstants REGISTER(b13)
 
 unistruct ShadowMapConstants REGISTER(b14)
 {
+    Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
 	int shadowmap_layer_index;              // 4 bytes
 	float far_plane;                        // 4 bytes
 	float padding[2];						// 8 bytes
 	Vector4f lightPos;						// 16 bytes
-	Matrix4X4f lightVP;						// 64 bytes
-    Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
 };
 
 #ifdef __cplusplus

@@ -10,7 +10,7 @@ pos_only_vert_output shadowmap_vert_main(a2v a)
 	// Calculate the position of the vertex against the world, view, and projection matrices.
 	float4 v = float4(a.inputPosition, 1.0f);
 	v = mul(v, modelMatrix);
-	o.pos = mul(v, lightVP);
+	o.pos = mul(v, shadowMatrices[0]);
 
     return o;
 }

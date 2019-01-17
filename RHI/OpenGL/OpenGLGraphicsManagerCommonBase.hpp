@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <unordered_map>
+#include <string>
 #include "GraphicsManager.hpp"
 #include "geommath.hpp"
 #include "SceneManager.hpp"
@@ -38,8 +40,9 @@ namespace My {
         int32_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;
         void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height) final;
         void EndRenderToTexture(int32_t& context) final;
+        int32_t GetTexture(const char* id) final;
 
-        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
+        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
         void DrawFullScreenQuad() final;
@@ -121,7 +124,7 @@ namespace My {
 #endif
 
         std::vector<uint32_t> m_Buffers;
-        std::vector<uint32_t> m_Textures;
+        std::unordered_map<std::string, uint32_t> m_Textures;
 
 #ifdef DEBUG
         std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;

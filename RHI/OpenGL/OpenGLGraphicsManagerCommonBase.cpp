@@ -294,30 +294,38 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                 if (material) {
                     function<uint32_t(const string, const shared_ptr<Image>&)> upload_texture = [this](const string texture_key, const shared_ptr<Image>& texture) {
                         uint32_t texture_id;
-                        glGenTextures(1, &texture_id);
-                        glBindTexture(GL_TEXTURE_2D, texture_id);
-                        uint32_t format, internal_format, type;
-                        getOpenGLTextureFormat(*texture, format, internal_format, type);
-                        if (texture->compressed)
+                        auto& it = m_Textures.find(texture_key);
+                        if (it == m_Textures.end())
                         {
-                            glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->Width, texture->Height, 
-                                0, static_cast<int32_t>(texture->data_size), texture->data);
+                            glGenTextures(1, &texture_id);
+                            glBindTexture(GL_TEXTURE_2D, texture_id);
+                            uint32_t format, internal_format, type;
+                            getOpenGLTextureFormat(*texture, format, internal_format, type);
+                            if (texture->compressed)
+                            {
+                                glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->Width, texture->Height, 
+                                    0, static_cast<int32_t>(texture->data_size), texture->data);
+                            }
+                            else
+                            {
+                                glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->Width, texture->Height, 
+                                    0, format, type, texture->data);
+                            }
+
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                            glGenerateMipmap(GL_TEXTURE_2D);
+
+                            glBindTexture(GL_TEXTURE_2D, 0);
+
+                            m_Textures[texture_key] = texture_id;
                         }
                         else
                         {
-                            glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture->Width, texture->Height, 
-                                0, format, type, texture->data);
+                            texture_id = it->second;
                         }
-
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-                        glGenerateMipmap(GL_TEXTURE_2D);
-
-                        glBindTexture(GL_TEXTURE_2D, 0);
-
-                        m_Textures.push_back(texture_id);
 
                         return texture_id;
                     };
@@ -504,7 +512,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
         }
     }
 
-    m_Textures.push_back(texture_id);
+    m_Textures["SkyBox"] = texture_id;
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
@@ -604,7 +612,7 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    m_Textures.push_back(texture_id);
+    m_Textures["Terrain"] = texture_id;
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
@@ -670,8 +678,8 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
         glDeleteBuffers(1, &buf);
     }
 
-    for (auto& texture : m_Textures) {
-        glDeleteTextures(1, &texture);
+    for (auto& it : m_Textures) {
+        glDeleteTextures(1, &it.second);
     }
 
     m_Buffers.clear();
@@ -682,6 +690,9 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
 
 void OpenGLGraphicsManagerCommonBase::BeginFrame()
 {
+    // reset gl error
+    glGetError();
+
     // Set the color to clear the screen to.
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
@@ -762,16 +773,12 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
     // Prepare & Bind per frame constant buffer
     uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
 
-    if (blockIndex == GL_INVALID_INDEX)
+    if (blockIndex != GL_INVALID_INDEX)
     {
-        // the shader does not use "PerFrameConstants"
-        // simply return here
-        return;
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
     }
-
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
-
-    glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
 
     // Prepare & Bind light info
     blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
@@ -785,14 +792,21 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
     // Prepare per batch constant buffer binding point
     blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
 
-    if (blockIndex == GL_INVALID_INDEX)
+    if (blockIndex != GL_INVALID_INDEX)
     {
-        // the shader does not use "PerBatchConstants"
-        // simply return here
-        return;
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
     }
 
-    glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
+    // Bind LUT table
+    auto brdf_lut = GetTexture("BRDF_LUT");
+    setShaderParameter("SPIRV_Cross_CombinedbrdfLUTsamp0", 6);
+    glActiveTexture(GL_TEXTURE6);
+    if (brdf_lut > 0) {
+        glBindTexture(GL_TEXTURE_2D, brdf_lut);
+    }
+    else {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     glEnable(GL_CULL_FACE);
 
@@ -981,6 +995,10 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
             constants.shadowMatrices[i] = constants.shadowMatrices[i] * projection;
         }
     }
+    else
+    {
+        constants.shadowMatrices[0] = light.lightVP;
+    }
 
     constants.shadowmap_layer_index = layer_index;
     constants.far_plane = farClipDistance;
@@ -1001,7 +1019,8 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant[m_nFrameIndex]);
 
     assert(blockSize >= sizeof(constants));
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, &constants, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glUniformBlockBinding(m_CurrentShader, blockIndex, 14);
     glBindBufferBase(GL_UNIFORM_BUFFER, 14, m_uboShadowMatricesConstant[m_nFrameIndex]);
@@ -1047,9 +1066,15 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
     texture_id = (uint32_t) frame.frameContext.cubeShadowMap;
     setShaderParameter("SPIRV_Cross_CombinedcubeShadowMapsamp0", 9);
     glActiveTexture(GL_TEXTURE9);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    GLenum target;
+#if defined(OS_WEBASSEMBLY)
+    target = GL_TEXTURE_2D_ARRAY;
+#else
+    target = GL_TEXTURE_CUBE_MAP_ARRAY;
+#endif
+    glBindTexture(target, texture_id);
+    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
@@ -1134,6 +1159,19 @@ void OpenGLGraphicsManagerCommonBase::DrawTerrain()
 #endif
 }
 
+int32_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)
+{
+    int32_t result = 0;
+
+    auto& it = m_Textures.find(id);
+    if (it != m_Textures.end())
+    {
+        result = it->second;
+    }
+
+    return result;
+}
+
 int32_t OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id, const uint32_t width, const uint32_t height)
 {
     // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
@@ -1147,7 +1185,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id, const u
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG16F, width, height);
 
-    m_Textures.push_back(texture);
+    m_Textures[id] = texture;
 
     // register the shadow map
     return static_cast<int32_t>(texture);
@@ -1199,7 +1237,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context)
     glCullFace(GL_BACK);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height)
+int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height)
 {
     uint32_t tex_output;
     glGenTextures(1, &tex_output);
@@ -1211,32 +1249,28 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
 
-#if !defined(OS_ANDROID) && !defined(OS_WEBASSEMBLY)
     // Bind it as Write-only Texture
     if(GLAD_GL_ARB_compute_shader)
     {
         glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
     }
-#endif
 
     // Bind it as Read-only Texture
-    glActiveTexture(GL_TEXTURE6);
+    glActiveTexture(GL_TEXTURE0 + slot_index);
     glBindTexture(GL_TEXTURE_2D, tex_output);
 
-    m_Textures.push_back(tex_output);
+    m_Textures[id] = tex_output;
     return static_cast<int32_t>(tex_output);
 }
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
 {
-#if !defined(OS_ANDROID) && !defined(OS_WEBASSEMBLY)
     if(GLAD_GL_ARB_compute_shader)
     {
-        glDispatchCompute((uint32_t)width, (uint32_t)height, (uint32_t)depth);
+        glDispatchCompute((GLuint)width, (GLuint)height, (GLuint)depth);
         // make sure writing to image has finished before read
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
-#endif
 }
 
 #ifdef DEBUG

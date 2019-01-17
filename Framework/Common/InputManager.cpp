@@ -154,19 +154,25 @@ void InputManager::AsciiKeyUp(char keycode)
 
 void InputManager::LeftMouseButtonDown()
 {
+#ifdef DEBUG
     cerr << "[InputManager] Left Mouse Button Down!" << endl;
+#endif
 }
 
 void InputManager::LeftMouseButtonUp()
 {
+#ifdef DEBUG
     cerr << "[InputManager] Left Mouse Button Up!" << endl;
+#endif
 }
 
 void InputManager::LeftMouseDrag(int deltaX, int deltaY)
 {
+#ifdef DEBUG
     cerr << "[InputManager] Left Mouse Dragged! (" 
         << deltaX << ","
         << deltaY << ")"
         << endl;
+#endif
     g_pGameLogic->OnAnalogStick(0, (float)deltaX, (float)deltaY);
 }
