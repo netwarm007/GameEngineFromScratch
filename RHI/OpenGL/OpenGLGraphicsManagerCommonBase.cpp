@@ -7,6 +7,7 @@
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include  <GLES3/gl32.h>
+#define GLAD_GL_ARB_compute_shader 0
 #else
 #include "glad/glad.h"
 #endif
@@ -294,7 +295,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                 if (material) {
                     function<uint32_t(const string, const shared_ptr<Image>&)> upload_texture = [this](const string texture_key, const shared_ptr<Image>& texture) {
                         uint32_t texture_id;
-                        auto& it = m_Textures.find(texture_key);
+                        auto it = m_Textures.find(texture_key);
                         if (it == m_Textures.end())
                         {
                             glGenTextures(1, &texture_id);
@@ -1163,7 +1164,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)
 {
     int32_t result = 0;
 
-    auto& it = m_Textures.find(id);
+    auto it = m_Textures.find(id);
     if (it != m_Textures.end())
     {
         result = it->second;

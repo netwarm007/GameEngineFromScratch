@@ -32,7 +32,7 @@ namespace My {
         void DrawSkyBox() final;
 
         // compute shader tasks
-        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
+        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
 #ifdef __OBJC__
