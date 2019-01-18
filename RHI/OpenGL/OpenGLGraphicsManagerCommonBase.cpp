@@ -931,7 +931,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     if (light.lightType == LightType::Omni)
     {
 #if defined(OS_WEBASSEMBLY)
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, (uint32_t) shadowmap, 0);
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (uint32_t) shadowmap, 0, layer_index);
 #else
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (uint32_t) shadowmap, 0);
 #endif
@@ -1252,11 +1252,13 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+#if !defined(OS_WEBASSEMBLY)
     // Bind it as Write-only Texture
     if(GLAD_GL_ARB_compute_shader)
     {
         glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
     }
+#endif
 
     m_Textures[id] = tex_output;
     return static_cast<int32_t>(tex_output);
@@ -1264,6 +1266,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
 {
+#if !defined(OS_WEBASSEMBLY)
     if(GLAD_GL_ARB_compute_shader)
     {
         glDispatchCompute((GLuint)width, (GLuint)height, (GLuint)depth);
@@ -1272,6 +1275,7 @@ void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint3
     }
 
     glBindImageTexture(0, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
+#endif
 }
 
 #ifdef DEBUG

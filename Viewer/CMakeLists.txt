@@ -126,7 +126,7 @@ ELSEIF(WA)
             )
 
     set_target_properties(Viewer
-            PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
+            PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s DEMANGLE_SUPPORT=1 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
             )
 ELSE(APPLE)
     target_link_libraries(Viewer
