@@ -109,7 +109,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
 
     // shadow test
     float visibility = 1.0f;
-    if (light.lightShadowMapIndex != -1) // the light cast shadow
+    if (light.lightCastShadow) // the light cast shadow
     {
         float bias = (5e-4) * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
         bias = clamp(bias, 0.0f, 0.01f);
@@ -130,7 +130,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
                 break;
             case 1: // spot
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(depth_bias, v_light_space);
+                v_light_space = mul(v_light_space, depth_bias);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -144,7 +144,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
                 break;
             case 2: // infinity
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(depth_bias, v_light_space);
+                v_light_space = mul(v_light_space, depth_bias);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = globalShadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -158,7 +158,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
                 break;
             case 3: // area
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(depth_bias, v_light_space);
+                v_light_space = mul(v_light_space, depth_bias);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;

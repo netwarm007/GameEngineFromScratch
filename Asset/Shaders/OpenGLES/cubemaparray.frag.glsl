@@ -29,7 +29,7 @@ struct Light
 
 layout(binding = 13, std140) uniform DebugConstants
 {
-    int layer_index;
+    highp float layer_index;
     highp float mip_level;
     highp float line_width;
     highp float padding0;
@@ -44,7 +44,7 @@ layout(location = 0) out highp vec4 _entryPointOutput;
 
 highp vec4 _cubemaparray_frag_main(cube_vert_output _entryPointOutput_1)
 {
-    return textureLod(SPIRV_Cross_Combinedcubemapsamp0, vec4(_entryPointOutput_1.uvw, float(_32.layer_index)), _32.mip_level);
+    return textureLod(SPIRV_Cross_Combinedcubemapsamp0, vec4(_entryPointOutput_1.uvw, _32.layer_index), _32.mip_level);
 }
 
 void main()

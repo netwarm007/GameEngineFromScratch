@@ -1,11 +1,8 @@
 #version 320 es
 
-struct a2v
+struct a2v_pos_only
 {
     vec3 inputPosition;
-    vec3 inputNormal;
-    vec2 inputUV;
-    vec3 inputTangent;
 };
 
 struct pos_only_vert_output
@@ -38,30 +35,24 @@ layout(binding = 10, std140) uniform PerFrameConstants
     mat4 projectionMatrix;
     vec4 camPos;
     int numLights;
-} _32;
+} _31;
 
 layout(location = 0) in vec3 a_inputPosition;
-layout(location = 1) in vec3 a_inputNormal;
-layout(location = 2) in vec2 a_inputUV;
-layout(location = 3) in vec3 a_inputTangent;
 
-pos_only_vert_output _debug_vert_main(a2v a)
+pos_only_vert_output _debug_vert_main(a2v_pos_only a)
 {
     vec4 v = vec4(a.inputPosition, 1.0);
-    v = _32.viewMatrix * v;
+    v = _31.viewMatrix * v;
     pos_only_vert_output o;
-    o.pos = _32.projectionMatrix * v;
+    o.pos = _31.projectionMatrix * v;
     return o;
 }
 
 void main()
 {
-    a2v a;
+    a2v_pos_only a;
     a.inputPosition = a_inputPosition;
-    a.inputNormal = a_inputNormal;
-    a.inputUV = a_inputUV;
-    a.inputTangent = a_inputTangent;
-    a2v param = a;
+    a2v_pos_only param = a;
     gl_Position = _debug_vert_main(param).pos;
 }
 

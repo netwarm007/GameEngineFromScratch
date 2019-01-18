@@ -1001,7 +1001,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
         constants.shadowMatrices[0] = light.lightVP;
     }
 
-    constants.shadowmap_layer_index = layer_index;
+    constants.shadowmap_layer_index = static_cast<float>(layer_index);
     constants.far_plane = farClipDistance;
 
     uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "ShadowMapConstants");
@@ -1249,16 +1249,13 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     // Bind it as Write-only Texture
     if(GLAD_GL_ARB_compute_shader)
     {
         glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
     }
-
-    // Bind it as Read-only Texture
-    glActiveTexture(GL_TEXTURE0 + slot_index);
-    glBindTexture(GL_TEXTURE_2D, tex_output);
 
     m_Textures[id] = tex_output;
     return static_cast<int32_t>(tex_output);
@@ -1272,6 +1269,8 @@ void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint3
         // make sure writing to image has finished before read
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
+
+    glBindImageTexture(0, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
 }
 
 #ifdef DEBUG
@@ -1571,7 +1570,11 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture, 
+                                                         const float vp_left, 
+                                                         const float vp_top, 
+                                                         const float vp_width, 
+                                                         const float vp_height)
 {
     uint32_t texture_id = (uint32_t) texture;
 
@@ -1625,14 +1628,20 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture, 
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t texture, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height)
+void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t texture, 
+                                                              const float layer_index, 
+                                                              const float vp_left, 
+                                                              const float vp_top, 
+                                                              const float vp_width, 
+                                                              const float vp_height)
 {
     uint32_t texture_id = (uint32_t) texture;
     DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-    constants.layer_index = layer_index;
+    constants.layer_index = static_cast<float>(layer_index);
+    constants.mip_level = 0;
 
     if (!m_uboDebugConstant[m_nFrameIndex])
     {
@@ -1651,9 +1660,9 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
     }
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDebugConstant[m_nFrameIndex]);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
-
     glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 13, m_uboDebugConstant[m_nFrameIndex]);
 
     GLfloat vertices[] = {
         vp_left, vp_top, 0.0f,
@@ -1702,7 +1711,12 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap, 
+                                                         const float vp_left, 
+                                                         const float vp_top, 
+                                                         const float vp_width, 
+                                                         const float vp_height, 
+                                                         const float level)
 {
     uint32_t texture_id = (uint32_t) cubemap;
     DebugConstants constants;
@@ -1874,7 +1888,13 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap, 
     glDeleteBuffers(2, buffer_id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cubemap, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level)
+void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cubemap, 
+                                                              const float layer_index, 
+                                                              const float vp_left, 
+                                                              const float vp_top, 
+                                                              const float vp_width, 
+                                                              const float vp_height, 
+                                                              const float level)
 {
     uint32_t texture_id = (uint32_t) cubemap;
     DebugConstants constants;

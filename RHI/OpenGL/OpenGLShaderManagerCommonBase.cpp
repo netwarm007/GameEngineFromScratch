@@ -17,11 +17,10 @@ using namespace std;
 #define DEBUG_PS_SHADER_SOURCE_FILE SHADER_ROOT "debug.frag.glsl"
 #define VS_PASSTHROUGH_SOURCE_FILE SHADER_ROOT "passthrough.vert.glsl"
 #define PS_TEXTURE_SOURCE_FILE SHADER_ROOT "texture.frag.glsl"
-#define PS_DEPTH_TEXTURE_ARRAY_SOURCE_FILE SHADER_ROOT "texturearray.frag.glsl"
+#define PS_TEXTURE_ARRAY_SOURCE_FILE SHADER_ROOT "texturearray.frag.glsl"
 #define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE SHADER_ROOT "passthrough_cube.vert.glsl"
+#define PS_CUBEMAP_SOURCE_FILE SHADER_ROOT "cubemap.frag.glsl"
 #define PS_CUBEMAP_ARRAY_SOURCE_FILE SHADER_ROOT "cubemaparray.frag.glsl"
-#define PS_DEPTH_CUBEMAP_ARRAY_SOURCE_FILE SHADER_ROOT "cubemaparray.frag.glsl"
-#define PS_SIMPLE_CUBEMAP_SOURCE_FILE SHADER_ROOT "cubemap.frag.glsl"
 #define VS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.vert.glsl"
 #define PS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.frag.glsl"
 #define VS_PBR_SOURCE_FILE SHADER_ROOT "pbr.vert.glsl"
@@ -288,34 +287,6 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     m_DefaultShaders[DefaultShaderIndex::OmniShadowMap] = shaderProgram;
 #endif
 
-    // Depth Texture overlay shader
-    list = {
-        {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_DEPTH_TEXTURE_ARRAY_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
-    {
-        return result;
-    }
-
-    m_DefaultShaders[DefaultShaderIndex::DepthCopy] = shaderProgram;
-
-    // Depth CubeMap overlay shader
-    list = {
-        {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_DEPTH_CUBEMAP_ARRAY_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
-    {
-        return result;
-    }
-
-    m_DefaultShaders[DefaultShaderIndex::DepthCopyCube] = shaderProgram;
-
     // Texture overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
@@ -330,7 +301,35 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Copy] = shaderProgram;
 
+    // Texture Array overlay shader
+    list = {
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_TEXTURE_ARRAY_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::CopyArray] = shaderProgram;
+
     // CubeMap overlay shader
+    list = {
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_CUBEMAP_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+
+    // CubeMap Array overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
         {GL_FRAGMENT_SHADER, PS_CUBEMAP_ARRAY_SOURCE_FILE}
@@ -342,7 +341,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::CopyCubeArray] = shaderProgram;
 
 #if !defined(OS_WEBASSEMBLY)
     // Terrain shader

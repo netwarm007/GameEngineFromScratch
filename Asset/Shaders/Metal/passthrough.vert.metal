@@ -5,12 +5,10 @@
 
 using namespace metal;
 
-struct a2v
+struct a2v_simple
 {
     float3 inputPosition;
-    float3 inputNormal;
     float2 inputUV;
-    float3 inputTangent;
 };
 
 struct simple_vert_output
@@ -58,7 +56,7 @@ struct LightInfo
 
 struct DebugConstants
 {
-    int layer_index;
+    float layer_index;
     float mip_level;
     float line_width;
     float padding0;
@@ -68,12 +66,11 @@ struct DebugConstants
 
 struct ShadowMapConstants
 {
-    int shadowmap_layer_index;
+    float4x4 shadowMatrices[6];
+    float shadowmap_layer_index;
     float far_plane;
     float padding[2];
     float4 lightPos;
-    float4x4 lightVP;
-    float4x4 shadowMatrices[6];
 };
 
 struct passthrough_vert_main_out
@@ -85,12 +82,10 @@ struct passthrough_vert_main_out
 struct passthrough_vert_main_in
 {
     float3 a_inputPosition [[attribute(0)]];
-    float3 a_inputNormal [[attribute(1)]];
-    float2 a_inputUV [[attribute(2)]];
-    float3 a_inputTangent [[attribute(3)]];
+    float2 a_inputUV [[attribute(1)]];
 };
 
-simple_vert_output _passthrough_vert_main(thread const a2v& a)
+simple_vert_output _passthrough_vert_main(thread const a2v_simple& a)
 {
     simple_vert_output o;
     o.pos = float4(a.inputPosition, 1.0);
@@ -101,12 +96,10 @@ simple_vert_output _passthrough_vert_main(thread const a2v& a)
 vertex passthrough_vert_main_out passthrough_vert_main(passthrough_vert_main_in in [[stage_in]])
 {
     passthrough_vert_main_out out = {};
-    a2v a;
+    a2v_simple a;
     a.inputPosition = in.a_inputPosition;
-    a.inputNormal = in.a_inputNormal;
     a.inputUV = in.a_inputUV;
-    a.inputTangent = in.a_inputTangent;
-    a2v param = a;
+    a2v_simple param = a;
     simple_vert_output flattenTemp = _passthrough_vert_main(param);
     out.gl_Position = flattenTemp.pos;
     out._entryPointOutput_uv = flattenTemp.uv;

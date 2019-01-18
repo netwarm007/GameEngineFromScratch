@@ -26,12 +26,11 @@ struct Light
 
 layout(binding = 14, std140) uniform ShadowMapConstants
 {
-    int shadowmap_layer_index;
+    mat4 shadowMatrices[6];
+    float shadowmap_layer_index;
     float far_plane;
     float padding[2];
     vec4 lightPos;
-    mat4 lightVP;
-    mat4 shadowMatrices[6];
 } _31;
 
 float _shadowmap_omni_frag_main(pos_only_vert_output _entryPointOutput)

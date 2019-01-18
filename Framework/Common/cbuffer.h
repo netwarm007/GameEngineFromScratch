@@ -76,7 +76,7 @@ unistruct LightInfo REGISTER(b12)
 
 unistruct DebugConstants REGISTER(b13)
 {
-	int layer_index;
+	float layer_index;
 	float mip_level;
 	float line_width;
 	float padding0;
@@ -87,7 +87,7 @@ unistruct DebugConstants REGISTER(b13)
 unistruct ShadowMapConstants REGISTER(b14)
 {
     Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
-	int shadowmap_layer_index;              // 4 bytes
+	float shadowmap_layer_index;            // 4 bytes
 	float far_plane;                        // 4 bytes
 	float padding[2];						// 8 bytes
 	Vector4f lightPos;						// 16 bytes
@@ -105,6 +105,12 @@ struct a2v
     Vector3f inputNormal      SEMANTIC(NORMAL);
     Vector2f inputUV          SEMANTIC(TEXCOORD);
     Vector3f inputTangent     SEMANTIC(TANGENT);
+};
+
+struct a2v_simple
+{
+    Vector3f inputPosition    SEMANTIC(POSITION);
+    Vector2f inputUV          SEMANTIC(TEXCOORD);
 };
 
 struct a2v_pos_only

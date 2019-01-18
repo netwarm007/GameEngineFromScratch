@@ -40,12 +40,12 @@ layout(std140) uniform PerFrameConstants
     highp mat4 projectionMatrix;
     highp vec4 camPos;
     int numLights;
-} _837;
+} _836;
 
 layout(std140) uniform LightInfo
 {
     Light lights[100];
-} _907;
+} _906;
 
 uniform highp sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform highp sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
@@ -80,7 +80,7 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
     highp vec4 v_light_space = light.lightVP * p;
     v_light_space /= vec4(v_light_space.w);
     highp float visibility = 1.0;
-    if (light.lightShadowMapIndex != (-1))
+    if (light.lightCastShadow != int(0u))
     {
         highp float bias = 0.0005000000237487256526947021484375 * tan(acos(cosTheta));
         bias = clamp(bias, 0.0, 0.00999999977648258209228515625);
@@ -100,7 +100,7 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             }
             case 1:
             {
-                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -115,7 +115,7 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             }
             case 2:
             {
-                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -130,7 +130,7 @@ highp float shadow_test(highp vec4 p, Light light, highp float cosTheta)
             }
             case 3:
             {
-                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -350,7 +350,7 @@ highp vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     highp vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     highp vec3 N = normalize(_entryPointOutput_1.TBN * tangent_normal);
-    highp vec3 V = normalize(_837.camPos.xyz - _entryPointOutput_1.v_world.xyz);
+    highp vec3 V = normalize(_836.camPos.xyz - _entryPointOutput_1.v_world.xyz);
     highp vec3 R = reflect(-V, N);
     highp vec3 param = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     highp vec3 albedo = inverse_gamma_correction(param);
@@ -359,27 +359,27 @@ highp vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     highp vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     highp vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _837.numLights; i++)
+    for (int i = 0; i < _836.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _907.lights[i].lightIntensity;
-        light.lightType = _907.lights[i].lightType;
-        light.lightCastShadow = _907.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _907.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _907.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _907.lights[i].lightDistAttenCurveType;
-        light.lightSize = _907.lights[i].lightSize;
-        light.lightGuid = _907.lights[i].lightGuid;
-        light.lightPosition = _907.lights[i].lightPosition;
-        light.lightColor = _907.lights[i].lightColor;
-        light.lightDirection = _907.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _907.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _907.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _907.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _907.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _907.lights[i].lightVP;
-        light.padding[0] = _907.lights[i].padding[0];
-        light.padding[1] = _907.lights[i].padding[1];
+        light.lightIntensity = _906.lights[i].lightIntensity;
+        light.lightType = _906.lights[i].lightType;
+        light.lightCastShadow = _906.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _906.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _906.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _906.lights[i].lightDistAttenCurveType;
+        light.lightSize = _906.lights[i].lightSize;
+        light.lightGuid = _906.lights[i].lightGuid;
+        light.lightPosition = _906.lights[i].lightPosition;
+        light.lightColor = _906.lights[i].lightColor;
+        light.lightDirection = _906.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _906.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _906.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _906.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _906.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _906.lights[i].lightVP;
+        light.padding[0] = _906.lights[i].padding[0];
+        light.padding[1] = _906.lights[i].padding[1];
         highp vec3 L = normalize(light.lightPosition.xyz - _entryPointOutput_1.v_world.xyz);
         highp vec3 H = normalize(V + L);
         highp float NdotL = max(dot(N, L), 0.0);

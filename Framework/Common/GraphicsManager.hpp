@@ -69,10 +69,15 @@ namespace My {
         virtual void DrawTriangle(const PointList& vertices, const Vector3f &color) {}
         virtual void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans, const Vector3f &color) {}
         virtual void DrawTriangleStrip(const PointList& vertices, const Vector3f &color) {}
-        virtual void DrawTextureOverlay(const int32_t texture, float vp_left, float vp_top, float vp_width, float vp_height) {}
-        virtual void DrawTextureArrayOverlay(const int32_t texture, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height) {}
-        virtual void DrawCubeMapOverlay(const int32_t cubemap, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f) {}
-        virtual void DrawCubeMapArrayOverlay(const int32_t cubemap, int32_t layer_index, float vp_left, float vp_top, float vp_width, float vp_height, float level = 0.0f) {}
+        virtual void DrawTextureOverlay(const int32_t texture, const float vp_left, const float vp_top, 
+                                const float vp_width, const float vp_height) {}
+        virtual void DrawTextureArrayOverlay(const int32_t texture, const float layer_index, 
+                                     const float vp_left, const float vp_top, const float vp_width, const float vp_height) {}
+        virtual void DrawCubeMapOverlay(const int32_t cubemap, const float vp_left, const float vp_top, 
+                                const float vp_width, const float vp_height, const float level) {}
+        virtual void DrawCubeMapArrayOverlay(const int32_t cubemap, const float layer_index, 
+                                     const float vp_left, const float vp_top, const float vp_width, const float vp_height, 
+                                     const float level) {}
         virtual void ClearDebugBuffers() {}
 
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);

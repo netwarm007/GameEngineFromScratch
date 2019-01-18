@@ -38,22 +38,22 @@ layout(binding = 10, std140) uniform PerFrameConstants
     mat4 projectionMatrix;
     vec4 camPos;
     int numLights;
-} _837;
+} _645;
 
 layout(binding = 12, std140) uniform LightInfo
 {
     Light lights[100];
-} _907;
+} _715;
 
 uniform sampler2D SPIRV_Cross_CombinednormalMapsamp0;
 uniform sampler2D SPIRV_Cross_CombineddiffuseMapsamp0;
 uniform sampler2D SPIRV_Cross_CombinedmetallicMapsamp0;
 uniform sampler2D SPIRV_Cross_CombinedroughnessMapsamp0;
-uniform sampler2DArray SPIRV_Cross_CombinedcubeShadowMapsamp0;
+uniform samplerCubeArray SPIRV_Cross_CombinedcubeShadowMapsamp0;
 uniform sampler2DArray SPIRV_Cross_CombinedshadowMapsamp0;
 uniform sampler2DArray SPIRV_Cross_CombinedglobalShadowMapsamp0;
 uniform sampler2D SPIRV_Cross_CombinedaoMapsamp0;
-uniform sampler2DArray SPIRV_Cross_Combinedskyboxsamp0;
+uniform samplerCubeArray SPIRV_Cross_Combinedskyboxsamp0;
 uniform sampler2D SPIRV_Cross_CombinedbrdfLUTsamp0;
 
 layout(location = 0) in vec4 _entryPointOutput_normal;
@@ -66,7 +66,7 @@ layout(location = 6) in vec2 _entryPointOutput_uv;
 layout(location = 7) in mat3 _entryPointOutput_TBN;
 layout(location = 0) out vec4 _entryPointOutput;
 
-float _115;
+float _112;
 
 vec3 inverse_gamma_correction(vec3 color)
 {
@@ -78,7 +78,7 @@ float shadow_test(vec4 p, Light light, float cosTheta)
     vec4 v_light_space = light.lightVP * p;
     v_light_space /= vec4(v_light_space.w);
     float visibility = 1.0;
-    if (light.lightShadowMapIndex != (-1))
+    if (light.lightCastShadow != int(0u))
     {
         float bias = 0.0005000000237487256526947021484375 * tan(acos(cosTheta));
         bias = clamp(bias, 0.0, 0.00999999977648258209228515625);
@@ -89,7 +89,7 @@ float shadow_test(vec4 p, Light light, float cosTheta)
             case 0:
             {
                 vec3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = texture(SPIRV_Cross_CombinedcubeShadowMapsamp0, vec3(vec4(L, float(light.lightShadowMapIndex)).xyz)).x;
+                near_occ = texture(SPIRV_Cross_CombinedcubeShadowMapsamp0, vec4(L, float(light.lightShadowMapIndex))).x;
                 if ((length(L) - (near_occ * 10.0)) > bias)
                 {
                     visibility -= 0.87999999523162841796875;
@@ -98,7 +98,7 @@ float shadow_test(vec4 p, Light light, float cosTheta)
             }
             case 1:
             {
-                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -113,7 +113,7 @@ float shadow_test(vec4 p, Light light, float cosTheta)
             }
             case 2:
             {
-                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -128,7 +128,7 @@ float shadow_test(vec4 p, Light light, float cosTheta)
             }
             case 3:
             {
-                v_light_space *= mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = mat4(vec4(0.5, 0.0, 0.0, 0.0), vec4(0.0, 0.5, 0.0, 0.0), vec4(0.0, 0.0, 0.5, 0.0), vec4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -272,66 +272,6 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
     return F0 + ((max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0));
 }
 
-vec3 convert_xyz_to_cube_uv(vec3 d)
-{
-    vec3 d_abs = abs(d);
-    bvec3 isPositive;
-    isPositive.x = int(d.x > 0.0) != int(0u);
-    isPositive.y = int(d.y > 0.0) != int(0u);
-    isPositive.z = int(d.z > 0.0) != int(0u);
-    float maxAxis;
-    float uc;
-    float vc;
-    int index;
-    if ((isPositive.x && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
-    {
-        maxAxis = d_abs.x;
-        uc = -d.z;
-        vc = d.y;
-        index = 0;
-    }
-    if (((!isPositive.x) && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
-    {
-        maxAxis = d_abs.x;
-        uc = d.z;
-        vc = d.y;
-        index = 1;
-    }
-    if ((isPositive.y && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
-    {
-        maxAxis = d_abs.y;
-        uc = d.x;
-        vc = -d.z;
-        index = 3;
-    }
-    if (((!isPositive.y) && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
-    {
-        maxAxis = d_abs.y;
-        uc = d.x;
-        vc = d.z;
-        index = 2;
-    }
-    if ((isPositive.z && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
-    {
-        maxAxis = d_abs.z;
-        uc = d.x;
-        vc = d.y;
-        index = 4;
-    }
-    if (((!isPositive.z) && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
-    {
-        maxAxis = d_abs.z;
-        uc = -d.x;
-        vc = d.y;
-        index = 5;
-    }
-    vec3 o;
-    o.x = 0.5 * ((uc / maxAxis) + 1.0);
-    o.y = 0.5 * ((vc / maxAxis) + 1.0);
-    o.z = float(index);
-    return o;
-}
-
 vec3 reinhard_tone_mapping(vec3 color)
 {
     return color / (color + vec3(1.0));
@@ -348,7 +288,7 @@ vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     vec3 tangent_normal = texture(SPIRV_Cross_CombinednormalMapsamp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - vec3(1.0);
     vec3 N = normalize(_entryPointOutput_1.TBN * tangent_normal);
-    vec3 V = normalize(_837.camPos.xyz - _entryPointOutput_1.v_world.xyz);
+    vec3 V = normalize(_645.camPos.xyz - _entryPointOutput_1.v_world.xyz);
     vec3 R = reflect(-V, N);
     vec3 param = texture(SPIRV_Cross_CombineddiffuseMapsamp0, texCoords).xyz;
     vec3 albedo = inverse_gamma_correction(param);
@@ -357,27 +297,27 @@ vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     vec3 F0 = vec3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, vec3(meta));
     vec3 Lo = vec3(0.0);
-    for (int i = 0; i < _837.numLights; i++)
+    for (int i = 0; i < _645.numLights; i++)
     {
         Light light;
-        light.lightIntensity = _907.lights[i].lightIntensity;
-        light.lightType = _907.lights[i].lightType;
-        light.lightCastShadow = _907.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = _907.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = _907.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = _907.lights[i].lightDistAttenCurveType;
-        light.lightSize = _907.lights[i].lightSize;
-        light.lightGuid = _907.lights[i].lightGuid;
-        light.lightPosition = _907.lights[i].lightPosition;
-        light.lightColor = _907.lights[i].lightColor;
-        light.lightDirection = _907.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = _907.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = _907.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = _907.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = _907.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = _907.lights[i].lightVP;
-        light.padding[0] = _907.lights[i].padding[0];
-        light.padding[1] = _907.lights[i].padding[1];
+        light.lightIntensity = _715.lights[i].lightIntensity;
+        light.lightType = _715.lights[i].lightType;
+        light.lightCastShadow = _715.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = _715.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = _715.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = _715.lights[i].lightDistAttenCurveType;
+        light.lightSize = _715.lights[i].lightSize;
+        light.lightGuid = _715.lights[i].lightGuid;
+        light.lightPosition = _715.lights[i].lightPosition;
+        light.lightColor = _715.lights[i].lightColor;
+        light.lightDirection = _715.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = _715.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = _715.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = _715.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = _715.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = _715.lights[i].lightVP;
+        light.padding[0] = _715.lights[i].padding[0];
+        light.padding[1] = _715.lights[i].padding[1];
         vec3 L = normalize(light.lightPosition.xyz - _entryPointOutput_1.v_world.xyz);
         vec3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
@@ -424,21 +364,17 @@ vec4 _pbr_frag_main(pbr_vert_output _entryPointOutput_1)
     vec3 kS_1 = F_1;
     vec3 kD_1 = vec3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
-    vec3 param_22 = N;
-    vec3 uvw = convert_xyz_to_cube_uv(param_22);
-    vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, N, 1.0).xyz;
+    vec3 irradiance = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(N, 0.0), 1.0).xyz;
     vec3 diffuse = irradiance * albedo;
-    vec3 param_23 = R;
-    vec3 uvw_1 = convert_xyz_to_cube_uv(param_23);
-    vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, uvw_1, rough * 9.0).xyz;
+    vec3 prefilteredColor = textureLod(SPIRV_Cross_Combinedskyboxsamp0, vec4(R, 1.0), rough * 9.0).xyz;
     vec2 envBRDF = texture(SPIRV_Cross_CombinedbrdfLUTsamp0, vec2(max(dot(N, V), 0.0), rough)).xy;
     vec3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + vec3(envBRDF.y));
     vec3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     vec3 linearColor = ambient + Lo;
-    vec3 param_24 = linearColor;
-    linearColor = reinhard_tone_mapping(param_24);
-    vec3 param_25 = linearColor;
-    linearColor = gamma_correction(param_25);
+    vec3 param_22 = linearColor;
+    linearColor = reinhard_tone_mapping(param_22);
+    vec3 param_23 = linearColor;
+    linearColor = gamma_correction(param_23);
     return vec4(linearColor, 1.0);
 }
 

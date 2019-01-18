@@ -13,7 +13,7 @@ struct cube_vert_output
 
 struct DebugConstants
 {
-    int layer_index;
+    float layer_index;
     float mip_level;
     float line_width;
     float padding0;
@@ -60,12 +60,11 @@ struct LightInfo
 
 struct ShadowMapConstants
 {
-    int shadowmap_layer_index;
+    float4x4 shadowMatrices[6];
+    float shadowmap_layer_index;
     float far_plane;
     float padding[2];
     float4 lightPos;
-    float4x4 lightVP;
-    float4x4 shadowMatrices[6];
 };
 
 struct cubemaparray_frag_main_out
@@ -80,7 +79,7 @@ struct cubemaparray_frag_main_in
 
 float4 _cubemaparray_frag_main(thread const cube_vert_output& _entryPointOutput, thread texturecube_array<float> cubemap, thread sampler samp0, constant DebugConstants& v_32)
 {
-    return cubemap.sample(samp0, float4(_entryPointOutput.uvw, float(v_32.layer_index)).xyz, uint(round(float4(_entryPointOutput.uvw, float(v_32.layer_index)).w)), level(v_32.mip_level));
+    return cubemap.sample(samp0, float4(_entryPointOutput.uvw, v_32.layer_index).xyz, uint(round(float4(_entryPointOutput.uvw, v_32.layer_index).w)), level(v_32.mip_level));
 }
 
 fragment cubemaparray_frag_main_out cubemaparray_frag_main(cubemaparray_frag_main_in in [[stage_in]], constant DebugConstants& v_32 [[buffer(13)]], texturecube_array<float> cubemap [[texture(0)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])

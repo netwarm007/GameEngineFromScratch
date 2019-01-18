@@ -4,7 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Vertex Shader
 ////////////////////////////////////////////////////////////////////////////////
-pos_only_vert_output shadowmap_vert_main(a2v a)
+pos_only_vert_output shadowmap_vert_main(a2v_pos_only a)
 {
     pos_only_vert_output o;
 	// Calculate the position of the vertex against the world, view, and projection matrices.

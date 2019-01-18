@@ -12,13 +12,12 @@ struct pos_only_vert_output
 
 struct ShadowMapConstants
 {
-    int shadowmap_layer_index;
+    float4x4 shadowMatrices[6];
+    float shadowmap_layer_index;
     float far_plane;
-    char pad2[8];
+    char pad3[8];
     float padding[2];
     float4 lightPos;
-    float4x4 lightVP;
-    float4x4 shadowMatrices[6];
 };
 
 struct PerFrameConstants

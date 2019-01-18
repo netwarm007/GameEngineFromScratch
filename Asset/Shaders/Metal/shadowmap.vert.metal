@@ -5,12 +5,9 @@
 
 using namespace metal;
 
-struct a2v
+struct a2v_pos_only
 {
     float3 inputPosition;
-    float3 inputNormal;
-    float2 inputUV;
-    float3 inputTangent;
 };
 
 struct pos_only_vert_output
@@ -26,7 +23,7 @@ struct PerBatchConstants
 struct ShadowMapConstants
 {
     float4x4 shadowMatrices[6];
-    int shadowmap_layer_index;
+    float shadowmap_layer_index;
     float far_plane;
     char pad3[8];
     float padding[2];
@@ -67,7 +64,7 @@ struct LightInfo
 
 struct DebugConstants
 {
-    int layer_index;
+    float layer_index;
     float mip_level;
     float line_width;
     float padding0;
@@ -83,30 +80,24 @@ struct shadowmap_vert_main_out
 struct shadowmap_vert_main_in
 {
     float3 a_inputPosition [[attribute(0)]];
-    float3 a_inputNormal [[attribute(1)]];
-    float2 a_inputUV [[attribute(2)]];
-    float3 a_inputTangent [[attribute(3)]];
 };
 
-pos_only_vert_output _shadowmap_vert_main(thread const a2v& a, constant PerBatchConstants& v_32, constant ShadowMapConstants& v_47)
+pos_only_vert_output _shadowmap_vert_main(thread const a2v_pos_only& a, constant PerBatchConstants& v_31, constant ShadowMapConstants& v_46)
 {
     float4 v = float4(a.inputPosition, 1.0);
-    v = v_32.modelMatrix * v;
+    v = v_31.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = v_47.shadowMatrices[0] * v;
+    o.pos = v_46.shadowMatrices[0] * v;
     return o;
 }
 
-vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_32 [[buffer(11)]], constant ShadowMapConstants& v_47 [[buffer(14)]])
+vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_31 [[buffer(11)]], constant ShadowMapConstants& v_46 [[buffer(14)]])
 {
     shadowmap_vert_main_out out = {};
-    a2v a;
+    a2v_pos_only a;
     a.inputPosition = in.a_inputPosition;
-    a.inputNormal = in.a_inputNormal;
-    a.inputUV = in.a_inputUV;
-    a.inputTangent = in.a_inputTangent;
-    a2v param = a;
-    out.gl_Position = _shadowmap_vert_main(param, v_32, v_47).pos;
+    a2v_pos_only param = a;
+    out.gl_Position = _shadowmap_vert_main(param, v_31, v_46).pos;
     return out;
 }
 

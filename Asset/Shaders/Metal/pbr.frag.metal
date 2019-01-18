@@ -86,14 +86,14 @@ struct DebugConstants
 
 struct ShadowMapConstants
 {
-    int shadowmap_layer_index;
+    float4x4 shadowMatrices[6];
+    float shadowmap_layer_index;
     float far_plane;
     float padding[2];
-    float4x4 lightVP;
-    float4x4 shadowMatrices[6];
+    float4 lightPos;
 };
 
-constant float _115 = {};
+constant float _112 = {};
 
 struct pbr_frag_main_out
 {
@@ -133,12 +133,12 @@ float3 inverse_gamma_correction(thread const float3& color)
     return pow(max(color, float3(0.0)), float3(2.2000000476837158203125));
 }
 
-float shadow_test(thread const float4& p, thread const Light& light, thread const float& cosTheta, thread texture2d_array<float> cubeShadowMap, thread sampler samp0, thread texture2d_array<float> shadowMap, thread texture2d_array<float> globalShadowMap)
+float shadow_test(thread const float4& p, thread const Light& light, thread const float& cosTheta, thread texturecube_array<float> cubeShadowMap, thread sampler samp0, thread texture2d_array<float> shadowMap, thread texture2d_array<float> globalShadowMap)
 {
     float4 v_light_space = light.lightVP * p;
     v_light_space /= float4(v_light_space.w);
     float visibility = 1.0;
-    if (light.lightShadowMapIndex != (-1))
+    if (light.lightCastShadow != 0u)
     {
         float bias0 = 0.0005000000237487256526947021484375 * tan(acos(cosTheta));
         bias0 = clamp(bias0, 0.0, 0.00999999977648258209228515625);
@@ -149,7 +149,7 @@ float shadow_test(thread const float4& p, thread const Light& light, thread cons
             case 0:
             {
                 float3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = cubeShadowMap.sample(samp0, float3(float4(L, float(light.lightShadowMapIndex)).xyz).xy, uint(round(float3(float4(L, float(light.lightShadowMapIndex)).xyz).z))).x;
+                near_occ = cubeShadowMap.sample(samp0, float4(L, float(light.lightShadowMapIndex)).xyz, uint(round(float4(L, float(light.lightShadowMapIndex)).w))).x;
                 if ((length(L) - (near_occ * 10.0)) > bias0)
                 {
                     visibility -= 0.87999999523162841796875;
@@ -158,7 +158,7 @@ float shadow_test(thread const float4& p, thread const Light& light, thread cons
             }
             case 1:
             {
-                v_light_space *= float4x4(float4(0.5, 0.0, 0.0, 0.0), float4(0.0, 0.5, 0.0, 0.0), float4(0.0, 0.0, 0.5, 0.0), float4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = float4x4(float4(0.5, 0.0, 0.0, 0.0), float4(0.0, 0.5, 0.0, 0.0), float4(0.0, 0.0, 0.5, 0.0), float4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -173,7 +173,7 @@ float shadow_test(thread const float4& p, thread const Light& light, thread cons
             }
             case 2:
             {
-                v_light_space *= float4x4(float4(0.5, 0.0, 0.0, 0.0), float4(0.0, 0.5, 0.0, 0.0), float4(0.0, 0.0, 0.5, 0.0), float4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = float4x4(float4(0.5, 0.0, 0.0, 0.0), float4(0.0, 0.5, 0.0, 0.0), float4(0.0, 0.0, 0.5, 0.0), float4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -188,7 +188,7 @@ float shadow_test(thread const float4& p, thread const Light& light, thread cons
             }
             case 3:
             {
-                v_light_space *= float4x4(float4(0.5, 0.0, 0.0, 0.0), float4(0.0, 0.5, 0.0, 0.0), float4(0.0, 0.0, 0.5, 0.0), float4(0.5, 0.5, 0.5, 1.0));
+                v_light_space = float4x4(float4(0.5, 0.0, 0.0, 0.0), float4(0.0, 0.5, 0.0, 0.0), float4(0.0, 0.0, 0.5, 0.0), float4(0.5, 0.5, 0.5, 1.0)) * v_light_space;
                 i = 0;
                 for (; i < 4; i++)
                 {
@@ -332,66 +332,6 @@ float3 fresnelSchlickRoughness(thread const float& cosTheta, thread const float3
     return F0 + ((max(float3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0));
 }
 
-float3 convert_xyz_to_cube_uv(thread const float3& d)
-{
-    float3 d_abs = abs(d);
-    bool3 isPositive;
-    isPositive.x = int(d.x > 0.0) != 0u;
-    isPositive.y = int(d.y > 0.0) != 0u;
-    isPositive.z = int(d.z > 0.0) != 0u;
-    float maxAxis;
-    float uc;
-    float vc;
-    int index;
-    if ((isPositive.x && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
-    {
-        maxAxis = d_abs.x;
-        uc = -d.z;
-        vc = d.y;
-        index = 0;
-    }
-    if (((!isPositive.x) && (d_abs.x >= d_abs.y)) && (d_abs.x >= d_abs.z))
-    {
-        maxAxis = d_abs.x;
-        uc = d.z;
-        vc = d.y;
-        index = 1;
-    }
-    if ((isPositive.y && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
-    {
-        maxAxis = d_abs.y;
-        uc = d.x;
-        vc = -d.z;
-        index = 3;
-    }
-    if (((!isPositive.y) && (d_abs.y >= d_abs.x)) && (d_abs.y >= d_abs.z))
-    {
-        maxAxis = d_abs.y;
-        uc = d.x;
-        vc = d.z;
-        index = 2;
-    }
-    if ((isPositive.z && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
-    {
-        maxAxis = d_abs.z;
-        uc = d.x;
-        vc = d.y;
-        index = 4;
-    }
-    if (((!isPositive.z) && (d_abs.z >= d_abs.x)) && (d_abs.z >= d_abs.y))
-    {
-        maxAxis = d_abs.z;
-        uc = -d.x;
-        vc = d.y;
-        index = 5;
-    }
-    float3 o;
-    o.x = 0.5 * ((uc / maxAxis) + 1.0);
-    o.y = 0.5 * ((vc / maxAxis) + 1.0);
-    o.z = float(index);
-    return o;
-}
-
 float3 reinhard_tone_mapping(thread const float3& color)
 {
     return color / (color + float3(1.0));
@@ -402,13 +342,13 @@ float3 gamma_correction(thread const float3& color)
     return pow(max(color, float3(0.0)), float3(0.4545454680919647216796875));
 }
 
-float4 _pbr_frag_main(thread const pbr_vert_output& _entryPointOutput, thread texture2d_array<float> cubeShadowMap, thread sampler samp0, thread texture2d_array<float> shadowMap, thread texture2d_array<float> globalShadowMap, thread texture2d<float> normalMap, constant PerFrameConstants& v_837, thread texture2d<float> diffuseMap, thread texture2d<float> metallicMap, thread texture2d<float> roughnessMap, constant LightInfo& v_907, thread texture2d<float> aoMap, thread texture2d_array<float> skybox, thread texture2d<float> brdfLUT)
+float4 _pbr_frag_main(thread const pbr_vert_output& _entryPointOutput, thread texturecube_array<float> cubeShadowMap, thread sampler samp0, thread texture2d_array<float> shadowMap, thread texture2d_array<float> globalShadowMap, thread texture2d<float> normalMap, constant PerFrameConstants& v_645, thread texture2d<float> diffuseMap, thread texture2d<float> metallicMap, thread texture2d<float> roughnessMap, constant LightInfo& v_715, thread texture2d<float> aoMap, thread texturecube_array<float> skybox, thread texture2d<float> brdfLUT)
 {
     float2 texCoords = _entryPointOutput.uv;
     float3 tangent_normal = normalMap.sample(samp0, texCoords).xyz;
     tangent_normal = (tangent_normal * 2.0) - float3(1.0);
     float3 N = normalize(_entryPointOutput.TBN * tangent_normal);
-    float3 V = normalize(v_837.camPos.xyz - _entryPointOutput.v_world.xyz);
+    float3 V = normalize(v_645.camPos.xyz - _entryPointOutput.v_world.xyz);
     float3 R = reflect(-V, N);
     float3 param = diffuseMap.sample(samp0, texCoords).xyz;
     float3 albedo = inverse_gamma_correction(param);
@@ -417,27 +357,27 @@ float4 _pbr_frag_main(thread const pbr_vert_output& _entryPointOutput, thread te
     float3 F0 = float3(0.039999999105930328369140625);
     F0 = mix(F0, albedo, float3(meta));
     float3 Lo = float3(0.0);
-    for (int i = 0; i < v_837.numLights; i++)
+    for (int i = 0; i < v_645.numLights; i++)
     {
         Light light;
-        light.lightIntensity = v_907.lights[i].lightIntensity;
-        light.lightType = v_907.lights[i].lightType;
-        light.lightCastShadow = v_907.lights[i].lightCastShadow;
-        light.lightShadowMapIndex = v_907.lights[i].lightShadowMapIndex;
-        light.lightAngleAttenCurveType = v_907.lights[i].lightAngleAttenCurveType;
-        light.lightDistAttenCurveType = v_907.lights[i].lightDistAttenCurveType;
-        light.lightSize = v_907.lights[i].lightSize;
-        light.lightGuid = v_907.lights[i].lightGuid;
-        light.lightPosition = v_907.lights[i].lightPosition;
-        light.lightColor = v_907.lights[i].lightColor;
-        light.lightDirection = v_907.lights[i].lightDirection;
-        light.lightDistAttenCurveParams[0] = v_907.lights[i].lightDistAttenCurveParams[0];
-        light.lightDistAttenCurveParams[1] = v_907.lights[i].lightDistAttenCurveParams[1];
-        light.lightAngleAttenCurveParams[0] = v_907.lights[i].lightAngleAttenCurveParams[0];
-        light.lightAngleAttenCurveParams[1] = v_907.lights[i].lightAngleAttenCurveParams[1];
-        light.lightVP = v_907.lights[i].lightVP;
-        light.padding[0] = v_907.lights[i].padding[0];
-        light.padding[1] = v_907.lights[i].padding[1];
+        light.lightIntensity = v_715.lights[i].lightIntensity;
+        light.lightType = v_715.lights[i].lightType;
+        light.lightCastShadow = v_715.lights[i].lightCastShadow;
+        light.lightShadowMapIndex = v_715.lights[i].lightShadowMapIndex;
+        light.lightAngleAttenCurveType = v_715.lights[i].lightAngleAttenCurveType;
+        light.lightDistAttenCurveType = v_715.lights[i].lightDistAttenCurveType;
+        light.lightSize = v_715.lights[i].lightSize;
+        light.lightGuid = v_715.lights[i].lightGuid;
+        light.lightPosition = v_715.lights[i].lightPosition;
+        light.lightColor = v_715.lights[i].lightColor;
+        light.lightDirection = v_715.lights[i].lightDirection;
+        light.lightDistAttenCurveParams[0] = v_715.lights[i].lightDistAttenCurveParams[0];
+        light.lightDistAttenCurveParams[1] = v_715.lights[i].lightDistAttenCurveParams[1];
+        light.lightAngleAttenCurveParams[0] = v_715.lights[i].lightAngleAttenCurveParams[0];
+        light.lightAngleAttenCurveParams[1] = v_715.lights[i].lightAngleAttenCurveParams[1];
+        light.lightVP = v_715.lights[i].lightVP;
+        light.padding[0] = v_715.lights[i].padding[0];
+        light.padding[1] = v_715.lights[i].padding[1];
         float3 L = normalize(light.lightPosition.xyz - _entryPointOutput.v_world.xyz);
         float3 H = normalize(V + L);
         float NdotL = max(dot(N, L), 0.0);
@@ -486,25 +426,21 @@ float4 _pbr_frag_main(thread const pbr_vert_output& _entryPointOutput, thread te
     float3 kS_1 = F_1;
     float3 kD_1 = float3(1.0) - kS_1;
     kD_1 *= (1.0 - meta);
-    float3 param_22 = N;
-    float3 uvw = convert_xyz_to_cube_uv(param_22);
-    float3 irradiance = skybox.sample(samp0, N.xy, uint(round(N.z)), level(1.0)).xyz;
+    float3 irradiance = skybox.sample(samp0, float4(N, 0.0).xyz, uint(round(float4(N, 0.0).w)), level(1.0)).xyz;
     float3 diffuse = irradiance * albedo;
-    float3 param_23 = R;
-    float3 uvw_1 = convert_xyz_to_cube_uv(param_23);
-    float3 prefilteredColor = skybox.sample(samp0, uvw_1.xy, uint(round(uvw_1.z)), level(rough * 9.0)).xyz;
+    float3 prefilteredColor = skybox.sample(samp0, float4(R, 1.0).xyz, uint(round(float4(R, 1.0).w)), level(rough * 9.0)).xyz;
     float2 envBRDF = brdfLUT.sample(samp0, float2(max(dot(N, V), 0.0), rough)).xy;
     float3 specular_1 = prefilteredColor * ((F_1 * envBRDF.x) + float3(envBRDF.y));
     float3 ambient = ((kD_1 * diffuse) + specular_1) * ambientOcc;
     float3 linearColor = ambient + Lo;
-    float3 param_24 = linearColor;
-    linearColor = reinhard_tone_mapping(param_24);
-    float3 param_25 = linearColor;
-    linearColor = gamma_correction(param_25);
+    float3 param_22 = linearColor;
+    linearColor = reinhard_tone_mapping(param_22);
+    float3 param_23 = linearColor;
+    linearColor = gamma_correction(param_23);
     return float4(linearColor, 1.0);
 }
 
-fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], constant PerFrameConstants& v_837 [[buffer(10)]], constant LightInfo& v_907 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texture2d<float> normalMap [[texture(1)]], texture2d<float> metallicMap [[texture(2)]], texture2d<float> roughnessMap [[texture(3)]], texture2d<float> aoMap [[texture(4)]], texture2d<float> brdfLUT [[texture(6)]], texture2d_array<float> shadowMap [[texture(7)]], texture2d_array<float> globalShadowMap [[texture(8)]], texture2d_array<float> cubeShadowMap [[texture(9)]], texture2d_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
+fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], constant PerFrameConstants& v_645 [[buffer(10)]], constant LightInfo& v_715 [[buffer(12)]], texture2d<float> diffuseMap [[texture(0)]], texture2d<float> normalMap [[texture(1)]], texture2d<float> metallicMap [[texture(2)]], texture2d<float> roughnessMap [[texture(3)]], texture2d<float> aoMap [[texture(4)]], texture2d<float> brdfLUT [[texture(6)]], texture2d_array<float> shadowMap [[texture(7)]], texture2d_array<float> globalShadowMap [[texture(8)]], texturecube_array<float> cubeShadowMap [[texture(9)]], texturecube_array<float> skybox [[texture(10)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     pbr_frag_main_out out = {};
     float3x3 _entryPointOutput_TBN = {};
@@ -522,7 +458,7 @@ fragment pbr_frag_main_out pbr_frag_main(pbr_frag_main_in in [[stage_in]], const
     _entryPointOutput.uv = in._entryPointOutput_uv;
     _entryPointOutput.TBN = _entryPointOutput_TBN;
     pbr_vert_output param = _entryPointOutput;
-    out._entryPointOutput = _pbr_frag_main(param, cubeShadowMap, samp0, shadowMap, globalShadowMap, normalMap, v_837, diffuseMap, metallicMap, roughnessMap, v_907, aoMap, skybox, brdfLUT);
+    out._entryPointOutput = _pbr_frag_main(param, cubeShadowMap, samp0, shadowMap, globalShadowMap, normalMap, v_645, diffuseMap, metallicMap, roughnessMap, v_715, aoMap, skybox, brdfLUT);
     return out;
 }
 

@@ -62,7 +62,7 @@ struct LightInfo
 
 struct DebugConstants
 {
-    int layer_index;
+    float layer_index;
     float mip_level;
     float line_width;
     float padding0;
@@ -72,12 +72,11 @@ struct DebugConstants
 
 struct ShadowMapConstants
 {
-    int shadowmap_layer_index;
+    float4x4 shadowMatrices[6];
+    float shadowmap_layer_index;
     float far_plane;
     float padding[2];
     float4 lightPos;
-    float4x4 lightVP;
-    float4x4 shadowMatrices[6];
 };
 
 struct basic_vert_main_out

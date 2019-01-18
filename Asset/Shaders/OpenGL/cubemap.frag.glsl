@@ -27,7 +27,7 @@ struct Light
 
 layout(binding = 13, std140) uniform DebugConstants
 {
-    int layer_index;
+    float layer_index;
     float mip_level;
     float line_width;
     float padding0;
