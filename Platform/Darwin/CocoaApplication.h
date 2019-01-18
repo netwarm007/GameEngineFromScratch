@@ -1,7 +1,7 @@
-#ifdef __OBJC__
-#include <Cocoa/Cocoa.h>
-#endif
+#include "portable.hpp"
 #include "BaseApplication.hpp"
+
+OBJC_CLASS(NSWindow);
 
 namespace My {
     class CocoaApplication : public BaseApplication
@@ -17,9 +17,7 @@ namespace My {
         void CreateMainWindow() override;
 
     protected:
-#ifdef __OBJC__
         NSWindow* m_pWindow;
-#endif
     };
 }
 

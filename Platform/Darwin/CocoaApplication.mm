@@ -3,6 +3,7 @@
 #import <Carbon/Carbon.h>
 #include <string.h>
 #include "CocoaApplication.h"
+#include "InputManager.hpp"
 
 using namespace My;
 

@@ -1,15 +1,5 @@
 #pragma once
 #include "IApplication.hpp"
-#include "IShaderManager.hpp"
-#include "IPhysicsManager.hpp"
-#include "IGameLogic.hpp"
-#include "GraphicsManager.hpp"
-#include "MemoryManager.hpp"
-#include "AssetLoader.hpp"
-#include "SceneManager.hpp"
-#include "InputManager.hpp"
-#include "DebugManager.hpp"
-#include "AnimationManager.hpp"
 
 namespace My {
     class BaseApplication : implements IApplication

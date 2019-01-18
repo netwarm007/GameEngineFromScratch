@@ -1,10 +1,8 @@
 #pragma once
+#include "portable.hpp"
 #include "GraphicsManager.hpp"
 
-#ifdef __OBJC__
-#include "MetalView.h"
-#include "Metal2Renderer.h"
-#endif
+OBJC_CLASS(Metal2Renderer);
 
 namespace My {
     class Metal2GraphicsManager : public GraphicsManager
@@ -35,9 +33,7 @@ namespace My {
         int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
-#ifdef __OBJC__
         void SetRenderer(Metal2Renderer* renderer) { m_pRenderer = renderer; }
-#endif
 
     private:
         void BeginScene(const Scene& scene) final;
@@ -61,8 +57,6 @@ namespace My {
         void SetLightInfo(const LightInfo& lightInfo) final;
 
     private:
-#ifdef __OBJC__
         Metal2Renderer* m_pRenderer;
-#endif
     };
 }

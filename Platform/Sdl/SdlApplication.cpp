@@ -1,6 +1,8 @@
 #include "SdlApplication.hpp"
 #include <iostream>
 #include <utility>
+#include "InputManager.hpp"
+#include "GraphicsManager.hpp"
 
 /*
  * Recurse through the list of arguments to clean up, cleaning up
