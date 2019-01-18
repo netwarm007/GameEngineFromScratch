@@ -995,6 +995,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
             BuildViewRHMatrix(constants.shadowMatrices[i], pos, pos + direction[i], up[i]);
             constants.shadowMatrices[i] = constants.shadowMatrices[i] * projection;
         }
+        constants.lightPos = light.lightPosition;
     }
     else
     {

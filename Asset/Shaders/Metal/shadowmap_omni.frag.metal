@@ -13,11 +13,9 @@ struct pos_only_vert_output
 struct ShadowMapConstants
 {
     float4x4 shadowMatrices[6];
+    float4 lightPos;
     float shadowmap_layer_index;
     float far_plane;
-    char pad3[8];
-    float padding[2];
-    float4 lightPos;
 };
 
 struct PerFrameConstants
@@ -72,20 +70,20 @@ struct shadowmap_omni_frag_main_out
     float gl_FragDepth [[depth(any)]];
 };
 
-float _shadowmap_omni_frag_main(thread const pos_only_vert_output& _entryPointOutput, constant ShadowMapConstants& v_31)
+float _shadowmap_omni_frag_main(thread const pos_only_vert_output& _entryPointOutput, constant ShadowMapConstants& v_29)
 {
-    float lightDistance = length(_entryPointOutput.pos.xyz - float3(v_31.lightPos.xyz));
-    lightDistance /= v_31.far_plane;
+    float lightDistance = length(_entryPointOutput.pos.xyz - float3(v_29.lightPos.xyz));
+    lightDistance /= v_29.far_plane;
     return lightDistance;
 }
 
-fragment shadowmap_omni_frag_main_out shadowmap_omni_frag_main(constant ShadowMapConstants& v_31 [[buffer(14)]], float4 gl_FragCoord [[position]])
+fragment shadowmap_omni_frag_main_out shadowmap_omni_frag_main(constant ShadowMapConstants& v_29 [[buffer(14)]], float4 gl_FragCoord [[position]])
 {
     shadowmap_omni_frag_main_out out = {};
     pos_only_vert_output _entryPointOutput;
     _entryPointOutput.pos = gl_FragCoord;
     pos_only_vert_output param = _entryPointOutput;
-    out.gl_FragDepth = _shadowmap_omni_frag_main(param, v_31);
+    out.gl_FragDepth = _shadowmap_omni_frag_main(param, v_29);
     return out;
 }
 

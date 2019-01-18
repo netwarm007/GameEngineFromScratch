@@ -29,16 +29,15 @@ struct Light
 layout(binding = 14, std140) uniform ShadowMapConstants
 {
     highp mat4 shadowMatrices[6];
+    highp vec4 lightPos;
     highp float shadowmap_layer_index;
     highp float far_plane;
-    highp float padding[2];
-    highp vec4 lightPos;
-} _31;
+} _29;
 
 highp float _shadowmap_omni_frag_main(pos_only_vert_output _entryPointOutput)
 {
-    highp float lightDistance = length(_entryPointOutput.pos.xyz - vec3(_31.lightPos.xyz));
-    lightDistance /= _31.far_plane;
+    highp float lightDistance = length(_entryPointOutput.pos.xyz - vec3(_29.lightPos.xyz));
+    lightDistance /= _29.far_plane;
     return lightDistance;
 }
 

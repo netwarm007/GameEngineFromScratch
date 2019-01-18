@@ -23,11 +23,9 @@ struct PerBatchConstants
 struct ShadowMapConstants
 {
     float4x4 shadowMatrices[6];
+    float4 lightPos;
     float shadowmap_layer_index;
     float far_plane;
-    char pad3[8];
-    float padding[2];
-    float4 lightPos;
 };
 
 struct PerFrameConstants
@@ -82,22 +80,22 @@ struct shadowmap_vert_main_in
     float3 a_inputPosition [[attribute(0)]];
 };
 
-pos_only_vert_output _shadowmap_vert_main(thread const a2v_pos_only& a, constant PerBatchConstants& v_31, constant ShadowMapConstants& v_46)
+pos_only_vert_output _shadowmap_vert_main(thread const a2v_pos_only& a, constant PerBatchConstants& v_31, constant ShadowMapConstants& v_44)
 {
     float4 v = float4(a.inputPosition, 1.0);
     v = v_31.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = v_46.shadowMatrices[0] * v;
+    o.pos = v_44.shadowMatrices[0] * v;
     return o;
 }
 
-vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_31 [[buffer(11)]], constant ShadowMapConstants& v_46 [[buffer(14)]])
+vertex shadowmap_vert_main_out shadowmap_vert_main(shadowmap_vert_main_in in [[stage_in]], constant PerBatchConstants& v_31 [[buffer(11)]], constant ShadowMapConstants& v_44 [[buffer(14)]])
 {
     shadowmap_vert_main_out out = {};
     a2v_pos_only a;
     a.inputPosition = in.a_inputPosition;
     a2v_pos_only param = a;
-    out.gl_Position = _shadowmap_vert_main(param, v_31, v_46).pos;
+    out.gl_Position = _shadowmap_vert_main(param, v_31, v_44).pos;
     return out;
 }
 

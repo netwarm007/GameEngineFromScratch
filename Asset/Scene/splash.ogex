@@ -10347,7 +10347,7 @@ GeometryObject $geometry2		// Text
 	}
 }
 
-LightObject $light1 (type = "point", shadow = false)		// Point
+LightObject $light1 (type = "point", shadow = true)		// Point
 {
 	Color (attrib = "light") {float[3] {{0.0, 0.0, 1.0}}}
 	Param (attrib = "intensity") {float {5.0}}

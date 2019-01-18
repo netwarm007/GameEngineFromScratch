@@ -1,4 +1,5 @@
-#version 420
+#version 300 es
+#extension GL_EXT_geometry_shader : require
 layout(triangles) in;
 layout(max_vertices = 18, triangle_strip) out;
 
@@ -32,7 +33,7 @@ struct Light
     vec4 padding[2];
 };
 
-layout(binding = 14, std140) uniform ShadowMapConstants
+layout(std140) uniform ShadowMapConstants
 {
     mat4 shadowMatrices[6];
     vec4 lightPos;

@@ -37,11 +37,10 @@ layout(std140) uniform PerBatchConstants
 layout(std140) uniform ShadowMapConstants
 {
     mat4 shadowMatrices[6];
+    vec4 lightPos;
     float shadowmap_layer_index;
     float far_plane;
-    float padding[2];
-    vec4 lightPos;
-} _46;
+} _44;
 
 layout(location = 0) in vec3 a_inputPosition;
 
@@ -50,7 +49,7 @@ pos_only_vert_output _shadowmap_vert_main(a2v_pos_only a)
     vec4 v = vec4(a.inputPosition, 1.0);
     v = _31.modelMatrix * v;
     pos_only_vert_output o;
-    o.pos = _46.shadowMatrices[0] * v;
+    o.pos = _44.shadowMatrices[0] * v;
     return o;
 }
 

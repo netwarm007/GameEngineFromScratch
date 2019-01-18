@@ -1,7 +1,24 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
+
+struct a2v_pos_only
+{
+    float3 inputPosition;
+};
+
+struct pos_only_vert_output
+{
+    float4 pos;
+};
+
+struct PerBatchConstants
+{
+    float4x4 modelMatrix;
+};
 
 struct PerFrameConstants
 {
@@ -9,11 +26,6 @@ struct PerFrameConstants
     float4x4 projectionMatrix;
     float4 camPos;
     int numLights;
-};
-
-struct PerBatchConstants
-{
-    float4x4 modelMatrix;
 };
 
 struct Light
@@ -53,13 +65,36 @@ struct DebugConstants
 struct ShadowMapConstants
 {
     float4x4 shadowMatrices[6];
+    float4 lightPos;
     float shadowmap_layer_index;
     float far_plane;
-    float padding[2];
-    float4 lightPos;
 };
 
-vertex void shadowmap_omni_vert_main()
+struct shadowmap_omni_vert_main_out
 {
+    float4 gl_Position [[position]];
+};
+
+struct shadowmap_omni_vert_main_in
+{
+    float3 a_inputPosition [[attribute(0)]];
+};
+
+pos_only_vert_output _shadowmap_omni_vert_main(thread const a2v_pos_only& a, constant PerBatchConstants& v_33)
+{
+    float4 v = float4(a.inputPosition, 1.0);
+    pos_only_vert_output o;
+    o.pos = v_33.modelMatrix * v;
+    return o;
+}
+
+vertex shadowmap_omni_vert_main_out shadowmap_omni_vert_main(shadowmap_omni_vert_main_in in [[stage_in]], constant PerBatchConstants& v_33 [[buffer(11)]])
+{
+    shadowmap_omni_vert_main_out out = {};
+    a2v_pos_only a;
+    a.inputPosition = in.a_inputPosition;
+    a2v_pos_only param = a;
+    out.gl_Position = _shadowmap_omni_vert_main(param, v_33).pos;
+    return out;
 }
 
