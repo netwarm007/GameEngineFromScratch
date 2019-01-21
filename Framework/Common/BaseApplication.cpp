@@ -1,5 +1,6 @@
 #include "BaseApplication.hpp"
 #include <iostream>
+#include <cassert>
 
 using namespace My;
 using namespace std;

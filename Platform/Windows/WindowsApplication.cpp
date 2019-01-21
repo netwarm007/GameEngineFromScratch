@@ -1,4 +1,5 @@
 #include "WindowsApplication.hpp"
+#include "InputManager.hpp"
 #include <tchar.h>
 
 using namespace My;
