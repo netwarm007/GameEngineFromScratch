@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string.h>
 #include "XcbApplication.hpp"
+#include "InputManager.hpp"
 
 using namespace My;
 using namespace std;
