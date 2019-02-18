@@ -44,17 +44,17 @@ ENDIF()
 
 SET(ISPC_OPTIONS ${ISPC_OPTIONS} -O2)
 
-SET(GEOMMATH_LIB_HEADER_FOLDER ${CMAKE_CURRENT_BINARY_DIR})
-message(status "GEOMMATH_LIB_HEADER_FOLDER " ${GEOMMATH_LIB_HEADER_FOLDER})
-
-add_library(GeomMath STATIC IMPORTED GLOBAL)
-add_dependencies(GeomMath GeomMathLib)
-
-set_target_properties(GeomMath
-        PROPERTIES
-        IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
-        INTERFACE_INCLUDE_DIRECTORIES ${GEOMMATH_LIB_HEADER_FOLDER}
-        )
-
+add_subdirectory(cpp)
 add_subdirectory(ispc)
 
+IF(WA)
+    add_library(GeomMath ALIAS MyGeomMathLib)
+ELSE(WA)
+    add_library(GeomMath STATIC IMPORTED GLOBAL)
+    add_dependencies(GeomMath IspcGeomMathLib)
+
+    set_target_properties(GeomMath
+            PROPERTIES
+            IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
+            )
+ENDIF(WA)

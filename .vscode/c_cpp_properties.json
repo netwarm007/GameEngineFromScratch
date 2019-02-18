@@ -85,15 +85,17 @@
                 "${workspaceRoot}/Framework/GeomMath/include",
                 "${workspaceRoot}/Framework/Parser",
                 "${workspaceRoot}/Framework/Algorism",
-                "${workspaceRoot}/Platform/Windows",
+                "${workspaceRoot}/Framework/Ability",
+                "${workspaceRoot}/Platform/Cef",
                 "${workspaceRoot}/RHI",
+                "${workspaceRoot}/RHI/Empty",
                 "${workspaceRoot}/RHI/OpenGL",
                 "${workspaceRoot}/RHI/D3d",
                 "${workspaceRoot}/RHI/D2d",
+                "${workspaceRoot}/External/Windows",
                 "${workspaceRoot}/External/Windows/include",
                 "${workspaceRoot}/External/Windows/include/bullet",
-                "${workspaceRoot}/External/src/glad/include",
-                "${workspaceRoot}/Framework/Ability"
+                "${workspaceRoot}/External/src/glad/include"
             ],
             "defines": [
                 "_DEBUG",

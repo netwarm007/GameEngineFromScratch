@@ -1,7 +1,9 @@
 #include "ShaderManager.hpp"
-#ifdef __OBJC__
-#import <MetalKit/MetalKit.h>
-#endif
+#include <unordered_map>
+#include <portable.hpp>
+
+OBJC_CLASS(MTLLibrary);
+OBJC_CLASS(MTLRenderPipelineState);
 
 namespace My {
     class MetalShaderManager : public ShaderManager
@@ -19,8 +21,7 @@ namespace My {
         void ClearShaders() final;
 
     private:
-#ifdef __OBJC__
-        id<MTLLibrary> m_shaderLibrary;
-#endif
+        MTLLibrary* m_shaderLibrary;
+        std::unordered_map<ShaderHandler, MTLRenderPipelineState*> m_pipelineStates;
     };
 }

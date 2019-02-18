@@ -1,10 +1,8 @@
 #pragma once
+#include "portable.hpp"
 #include "GraphicsManager.hpp"
 
-#ifdef __OBJC__
-#include "MetalView.h"
-#include "Metal2Renderer.h"
-#endif
+OBJC_CLASS(Metal2Renderer);
 
 namespace My {
     class Metal2GraphicsManager : public GraphicsManager
@@ -16,14 +14,14 @@ namespace My {
         void Draw() final;
         void Present() final;
     
-        void UseShaderProgram(const int32_t shaderProgram) final;
+        void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
         int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
-        void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) final;
-        void EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) final;
+        void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index) final;
+        void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) final;
         void SetShadowMaps(const Frame& frame) final;
         void DestroyShadowMap(int32_t& shadowmap) final;
 
@@ -32,12 +30,10 @@ namespace My {
         void DrawSkyBox() final;
 
         // compute shader tasks
-        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t width, const uint32_t height) final;
+        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
-#ifdef __OBJC__
         void SetRenderer(Metal2Renderer* renderer) { m_pRenderer = renderer; }
-#endif
 
     private:
         void BeginScene(const Scene& scene) final;
@@ -61,8 +57,6 @@ namespace My {
         void SetLightInfo(const LightInfo& lightInfo) final;
 
     private:
-#ifdef __OBJC__
         Metal2Renderer* m_pRenderer;
-#endif
     };
 }

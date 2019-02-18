@@ -5,12 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS)(OpenGL) Launch Editor",
+            "name": "(Mac OS) Launch Editor",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
             "args": [
-                "Scene/splash.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -19,7 +18,20 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Mac OS)(OpenGL) Launch Game",
+            "name": "(Mac OS) Launch Viewer",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Viewer/Viewer.app/Contents/MacOS/Viewer",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(Mac OS) Launch Game",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
@@ -50,7 +62,18 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
             "args": [
-                "Scene/splash.ogex"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows) Launch Viewer",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Viewer/Debug/Viewer.exe",
+            "args": [
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

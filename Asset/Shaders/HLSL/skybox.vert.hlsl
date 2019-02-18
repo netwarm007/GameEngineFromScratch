@@ -1,9 +1,9 @@
 #include "cbuffer.h"
 #include "vsoutput.h.hlsl"
 
-skybox_vert_output skybox_vert_main(a2v_pos_only a)
+cube_vert_output skybox_vert_main(a2v_pos_only a)
 {
-    skybox_vert_output o;
+    cube_vert_output o;
     o.uvw = a.inputPosition.xyz;
     float4x4 _matrix = viewMatrix;
     _matrix[3][0] = 0.0f;

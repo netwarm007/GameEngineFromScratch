@@ -11,7 +11,7 @@ struct PerFrameConstants
     float4x4 projectionMatrix;
     float4x4 arbitraryMatrix;
     float4 camPos;
-    uint numLights;
+    int numLights;
 };
 
 struct PerBatchConstants
@@ -22,13 +22,13 @@ struct PerBatchConstants
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     float2 lightSize;
-    uint4 lightGuid;
+    int4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;

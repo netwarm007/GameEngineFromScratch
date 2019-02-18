@@ -1,16 +1,16 @@
-#version 310 es
+#version 320 es
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;

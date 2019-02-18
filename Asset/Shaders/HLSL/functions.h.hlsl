@@ -109,7 +109,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
 
     // shadow test
     float visibility = 1.0f;
-    if (light.lightShadowMapIndex != -1) // the light cast shadow
+    if (light.lightCastShadow) // the light cast shadow
     {
         float bias = (5e-4) * tan(acos(cosTheta)); // cosTheta is dot( n,l ), clamped between 0 and 1
         bias = clamp(bias, 0.0f, 0.01f);
@@ -130,7 +130,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
                 break;
             case 1: // spot
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(depth_bias, v_light_space);
+                v_light_space = mul(v_light_space, depth_bias);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -144,7 +144,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
                 break;
             case 2: // infinity
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(depth_bias, v_light_space);
+                v_light_space = mul(v_light_space, depth_bias);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = globalShadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -158,7 +158,7 @@ float shadow_test(float4 p, Light light, float cosTheta) {
                 break;
             case 3: // area
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(depth_bias, v_light_space);
+                v_light_space = mul(v_light_space, depth_bias);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -265,6 +265,7 @@ float GeometrySmithIndirect(float3 N, float3 V, float3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+#if !defined(OS_WEBASSEMBLY)
 float RadicalInverse_VdC(uint bits) 
 {
     bits = (bits << 16u) | (bits >> 16u);
@@ -279,6 +280,7 @@ float2 Hammersley(uint i, uint N)
 {
     return float2(float(i)/float(N), RadicalInverse_VdC(i));
 }  
+#endif
 
 float3 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 {
@@ -372,3 +374,78 @@ float level(float2 v0, float2 v1){
      return clamp(distance(v0, v1)/2.0f, 1.0f, 64.0f);
 }
 
+float3 convert_xyz_to_cube_uv(float3 d)
+{
+    float3 d_abs = abs(d);
+  
+    bool3 isPositive;
+    isPositive.x = d.x > 0 ? 1 : 0;
+    isPositive.y = d.y > 0 ? 1 : 0;
+    isPositive.z = d.z > 0 ? 1 : 0;
+  
+    float maxAxis, uc, vc;
+    int index;
+  
+    // POSITIVE X
+    if (isPositive.x && d_abs.x >= d_abs.y && d_abs.x >= d_abs.z) {
+        // u (0 to 1) goes from +y to -y
+        // v (0 to 1) goes from -z to +z
+        maxAxis = d_abs.x;
+        uc = -d.z;
+        vc = d.y;
+        index = 0;
+    }
+    // NEGATIVE X
+    if (!isPositive.x && d_abs.x >= d_abs.y && d_abs.x >= d_abs.z) {
+        // u (0 to 1) goes from -y to +y
+        // v (0 to 1) goes from -z to +z
+        maxAxis = d_abs.x;
+        uc = d.z;
+        vc = d.y;
+        index = 1;
+    }
+    // POSITIVE Y
+    if (isPositive.y && d_abs.y >= d_abs.x && d_abs.y >= d_abs.z) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from +z to -z
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = -d.z;
+        index = 3;
+    }
+    // NEGATIVE Y
+    if (!isPositive.y && d_abs.y >= d_abs.x && d_abs.y >= d_abs.z) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from -z to +z
+        maxAxis = d_abs.y;
+        uc = d.x;
+        vc = d.z;
+        index = 2;
+    }
+    // POSITIVE Z
+    if (isPositive.z && d_abs.z >= d_abs.x && d_abs.z >= d_abs.y) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from +y to -y
+        maxAxis = d_abs.z;
+        uc = d.x;
+        vc = d.y;
+        index = 4;
+    }
+    // NEGATIVE Z
+    if (!isPositive.z && d_abs.z >= d_abs.x && d_abs.z >= d_abs.y) {
+        // u (0 to 1) goes from -x to +x
+        // v (0 to 1) goes from -y to +y
+        maxAxis = d_abs.z;
+        uc = -d.x;
+        vc = d.y;
+        index = 5;
+    }
+
+    // Convert range from -1 to 1 to 0 to 1
+    float3 o;
+    o.x = 0.5f * (uc / maxAxis + 1.0f);
+    o.y = 0.5f * (vc / maxAxis + 1.0f);
+    o.z = (float)index;
+
+    return o;
+}

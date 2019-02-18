@@ -37,17 +37,17 @@ namespace My {
             const BITMAP_FILEHEADER* pFileHeader = reinterpret_cast<const BITMAP_FILEHEADER*>(buf.GetData());
             const BITMAP_HEADER* pBmpHeader = reinterpret_cast<const BITMAP_HEADER*>(reinterpret_cast<const uint8_t*>(buf.GetData())+ BITMAP_FILEHEADER_SIZE);
             if (pFileHeader->Signature == 0x4D42 /* 'B''M' */) {
-                std::cout << "Asset is Windows BMP file" << std::endl;
-                std::cout << "BMP Header" << std::endl;
-                std::cout << "----------------------------" << std::endl;
-                std::cout << "File Size: " << pFileHeader->Size << std::endl;
-                std::cout << "Data Offset: " << pFileHeader->BitsOffset << std::endl;
-                std::cout << "Image Width: " << pBmpHeader->Width << std::endl;
-                std::cout << "Image Height: " << pBmpHeader->Height << std::endl;
-                std::cout << "Image Planes: " << pBmpHeader->Planes << std::endl;
-                std::cout << "Image BitCount: " << pBmpHeader->BitCount << std::endl;
-                std::cout << "Image Compression: " << pBmpHeader->Compression << std::endl;
-                std::cout << "Image Size: " << pBmpHeader->SizeImage << std::endl;
+                std::cerr << "Asset is Windows BMP file" << std::endl;
+                std::cerr << "BMP Header" << std::endl;
+                std::cerr << "----------------------------" << std::endl;
+                std::cerr << "File Size: " << pFileHeader->Size << std::endl;
+                std::cerr << "Data Offset: " << pFileHeader->BitsOffset << std::endl;
+                std::cerr << "Image Width: " << pBmpHeader->Width << std::endl;
+                std::cerr << "Image Height: " << pBmpHeader->Height << std::endl;
+                std::cerr << "Image Planes: " << pBmpHeader->Planes << std::endl;
+                std::cerr << "Image BitCount: " << pBmpHeader->BitCount << std::endl;
+                std::cerr << "Image Compression: " << pBmpHeader->Compression << std::endl;
+                std::cerr << "Image Size: " << pBmpHeader->SizeImage << std::endl;
 
                 img.Width = pBmpHeader->Width;
                 img.Height = pBmpHeader->Height;
@@ -58,7 +58,7 @@ namespace My {
                 img.data = new uint8_t[img.data_size];
 
                 if (img.bitcount < 24) {
-                    std::cout << "Sorry, only true color BMP is supported at now." << std::endl;
+                    std::cerr << "Sorry, only true color BMP is supported at now." << std::endl;
                 } else {
                     const uint8_t* pSourceData = reinterpret_cast<const uint8_t*>(buf.GetData()) + pFileHeader->BitsOffset;
                     for (int32_t y = img.Height - 1; y >= 0; y--) {

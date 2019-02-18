@@ -7,8 +7,8 @@ namespace My {
         CocoaMetalApplication(GfxConfiguration& config)
             : CocoaApplication(config) {};
 
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
+        void Tick() override;
+
+        void CreateMainWindow() override;
     };
 }

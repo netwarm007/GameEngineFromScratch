@@ -1,4 +1,9 @@
-#version 400
+#version 420
+
+struct pos_only_vert_output
+{
+    vec4 pos;
+};
 
 struct Light
 {
@@ -9,7 +14,7 @@ struct Light
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
     vec2 lightSize;
-    ivec4 lightGUID;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -19,20 +24,26 @@ struct Light
     vec4 padding[2];
 };
 
-struct ps_constant_t
+layout(binding = 14, std140) uniform ShadowMapConstants
 {
-    vec3 lightPos;
+    mat4 shadowMatrices[6];
+    vec4 lightPos;
+    float shadowmap_layer_index;
     float far_plane;
-};
+} _29;
 
-uniform ps_constant_t u_lightParams;
-
-in vec4 FragPos;
+float _shadowmap_omni_frag_main(pos_only_vert_output _entryPointOutput)
+{
+    float lightDistance = length(_entryPointOutput.pos.xyz - vec3(_29.lightPos.xyz));
+    lightDistance /= _29.far_plane;
+    return lightDistance;
+}
 
 void main()
 {
-    float lightDistance = length(FragPos.xyz - u_lightParams.lightPos);
-    lightDistance /= u_lightParams.far_plane;
-    gl_FragDepth = lightDistance;
+    pos_only_vert_output _entryPointOutput;
+    _entryPointOutput.pos = gl_FragCoord;
+    pos_only_vert_output param = _entryPointOutput;
+    gl_FragDepth = _shadowmap_omni_frag_main(param);
 }
 

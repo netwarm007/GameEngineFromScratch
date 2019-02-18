@@ -2,6 +2,7 @@
 #include <climits>
 #include <cstring>
 #include <X11/Xlib-xcb.h>
+#include "glad/glad_glx.h"
 #include "OpenGLApplication.hpp"
 
 using namespace My;
@@ -47,17 +48,14 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev)
     return 0;
 }
 
-int My::OpenGLApplication::Initialize()
+int OpenGLApplication::Initialize()
 {
     int result;
 
     int default_screen;
     GLXFBConfig *fb_configs;
-    GLXFBConfig fb_config;
     int num_fb_configs = 0;
-    XVisualInfo *vi;
     GLXWindow glxwindow;
-    const char *glxExts;
 
     // Get a matching FB config
     static int visual_attribs[] =
@@ -151,8 +149,15 @@ int My::OpenGLApplication::Initialize()
     m_pScreen = screen_iter.data;
     m_nVi = vi->visualid;
 
-    CreateMainWindow();
+    return result;
+}
 
+void OpenGLApplication::CreateMainWindow()
+{
+    XcbApplication::CreateMainWindow();
+
+    const char *glxExts;
+    int default_screen = DefaultScreen(m_pDisplay);
     /* Get the default screen's GLX extension list */
     glxExts = glXQueryExtensionsString(m_pDisplay, default_screen);
 
@@ -170,14 +175,13 @@ int My::OpenGLApplication::Initialize()
         if(!m_Context)
         {
             fprintf(stderr, "glXCreateNewContext failed\n");
-            return -1;
         }
     }
     else
     {
         int context_attribs[] =
           {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+            GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
             GLX_CONTEXT_MINOR_VERSION_ARB, 3,
             None
           };
@@ -188,7 +192,7 @@ int My::OpenGLApplication::Initialize()
 
         XSync(m_pDisplay, False);
         if (!ctxErrorOccurred && m_Context)
-          printf( "Created GL 3.3 context\n" );
+          printf( "Created GL 4.3 context\n" );
         else
         {
           /* GLX_CONTEXT_MAJOR_VERSION_ARB = 1 */
@@ -198,7 +202,7 @@ int My::OpenGLApplication::Initialize()
 
           ctxErrorOccurred = false;
 
-          printf( "Failed to create GL 3.3 context"
+          printf( "Failed to create GL 4.3 context"
                   " ... using old-style GLX context\n" );
           m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0, 
                                             True, context_attribs );
@@ -212,7 +216,6 @@ int My::OpenGLApplication::Initialize()
     if (ctxErrorOccurred || !m_Context)
     {
         printf( "Failed to create an OpenGL context\n" );
-        return -1;
     }
 
     /* Verifying that context is a direct context */
@@ -226,7 +229,7 @@ int My::OpenGLApplication::Initialize()
     }
 
     /* Create GLX Window */
-    glxwindow = 
+    GLXWindow glxwindow = 
             glXCreateWindow(
                 m_pDisplay,
                 fb_config,
@@ -240,7 +243,6 @@ int My::OpenGLApplication::Initialize()
         glXDestroyContext(m_pDisplay, m_Context);
 
         fprintf(stderr, "glxCreateWindow failed\n");
-        return -1;
     }
 
     m_Drawable = glxwindow;
@@ -252,22 +254,12 @@ int My::OpenGLApplication::Initialize()
         glXDestroyContext(m_pDisplay, m_Context);
 
         fprintf(stderr, "glXMakeContextCurrent failed\n");
-        return -1;
     }
 
     XFree(vi);
-
-    result = BaseApplication::Initialize();
-
-    return result;
 }
 
-void My::OpenGLApplication::Finalize()
-{
-    XcbApplication::Finalize();
-}
-
-void My::OpenGLApplication::Tick()
+void OpenGLApplication::Tick()
 {
     XcbApplication::Tick();
     glXSwapBuffers(m_pDisplay, m_Drawable);

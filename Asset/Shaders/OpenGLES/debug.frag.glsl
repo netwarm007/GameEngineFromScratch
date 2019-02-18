@@ -1,4 +1,4 @@
-#version 310 es
+#version 320 es
 precision mediump float;
 precision highp int;
 
@@ -10,13 +10,13 @@ struct pos_only_vert_output
 struct Light
 {
     highp float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     highp vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     highp vec4 lightPosition;
     highp vec4 lightColor;
     highp vec4 lightDirection;
@@ -28,16 +28,16 @@ struct Light
 
 layout(location = 0) out highp vec4 _entryPointOutput;
 
-highp vec4 _debug_frag_main(pos_only_vert_output _input)
+highp vec4 _debug_frag_main(pos_only_vert_output _entryPointOutput_1)
 {
     return vec4(1.0);
 }
 
 void main()
 {
-    pos_only_vert_output _input;
-    _input.pos = gl_FragCoord;
-    pos_only_vert_output param = _input;
+    pos_only_vert_output _entryPointOutput_1;
+    _entryPointOutput_1.pos = gl_FragCoord;
+    pos_only_vert_output param = _entryPointOutput_1;
     _entryPointOutput = _debug_frag_main(param);
 }
 

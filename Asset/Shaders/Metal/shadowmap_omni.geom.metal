@@ -1,16 +1,40 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
 
-struct gs_constant_t
+struct pos_only_vert_output
 {
-    float layer_index;
+    float4 pos;
 };
 
-struct ShadowMatrices
+struct gs_layered_output
+{
+    float4 pos;
+    int slice;
+};
+
+struct ShadowMapConstants
 {
     float4x4 shadowMatrices[6];
+    float4 lightPos;
+    float shadowmap_layer_index;
+    float far_plane;
+};
+
+struct PerFrameConstants
+{
+    float4x4 viewMatrix;
+    float4x4 projectionMatrix;
+    float4 camPos;
+    int numLights;
+};
+
+struct PerBatchConstants
+{
+    float4x4 modelMatrix;
 };
 
 struct Light
@@ -22,7 +46,7 @@ struct Light
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
     float2 lightSize;
-    int4 lightGUID;
+    int4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;
@@ -32,41 +56,70 @@ struct Light
     float4 padding[2];
 };
 
-struct PerFrameConstants
+struct LightInfo
 {
-    float4x4 viewMatrix;
-    float4x4 projectionMatrix;
-    float4 camPos;
-    int numLights;
-    Light allLights[100];
+    Light lights[100];
 };
 
-struct PerBatchConstants
+struct DebugConstants
 {
-    float4x4 modelMatrix;
+    float layer_index;
+    float mip_level;
+    float line_width;
+    float padding0;
+    float4 front_color;
+    float4 back_color;
 };
 
 struct shadowmap_omni_geom_main_out
 {
-    float4 FragPos;
-    int gl_Layer;
     float4 gl_Position;
+    int gl_Layer;
 };
 
-unknown shadowmap_omni_geom_main_out shadowmap_omni_geom_main(constant gs_constant_t& u_gsPushConstants [[buffer(0)]], constant ShadowMatrices& _64 [[buffer(2)]], float4 gl_in [[position]])
+// Implementation of an array copy function to cover GLSL's ability to copy an array via assignment.
+template<typename T, uint N>
+void spvArrayCopy(thread T (&dst)[N], thread const T (&src)[N])
 {
-    shadowmap_omni_geom_main_out out = {};
+    for (uint i = 0; i < N; dst[i] = src[i], i++);
+}
+
+// An overload for constant arrays.
+template<typename T, uint N>
+void spvArrayCopyConstant(thread T (&dst)[N], constant T (&src)[N])
+{
+    for (uint i = 0; i < N; dst[i] = src[i], i++);
+}
+
+void _shadowmap_omni_geom_main(thread const pos_only_vert_output (&_entryPointOutput)[3], thread const gs_layered_output& OutputStream, constant ShadowMapConstants& v_40, thread float4& gl_Position, thread uint& gl_Layer)
+{
     for (int face = 0; face < 6; face++)
     {
-        out.gl_Layer = (int(u_gsPushConstants.layer_index) * 6) + face;
+        gs_layered_output _output;
+        _output.slice = (int(v_40.shadowmap_layer_index) * 6) + face;
         for (int i = 0; i < 3; i++)
         {
-            out.FragPos = gl_in[i].out.gl_Position;
-            out.gl_Position = _64.shadowMatrices[face] * out.FragPos;
+            _output.pos = v_40.shadowMatrices[face] * _entryPointOutput[i].pos;
+            gl_Position = _output.pos;
+            gl_Layer = _output.slice;
             EmitVertex();
         }
         EndPrimitive();
     }
+}
+
+unknown shadowmap_omni_geom_main_out shadowmap_omni_geom_main(constant ShadowMapConstants& v_40 [[buffer(14)]], float4 gl_Position [[position]])
+{
+    shadowmap_omni_geom_main_out out = {};
+    pos_only_vert_output _entryPointOutput[3];
+    _entryPointOutput[0].pos = gl_Position[0];
+    _entryPointOutput[1].pos = gl_Position[1];
+    _entryPointOutput[2].pos = gl_Position[2];
+    pos_only_vert_output param[3];
+    spvArrayCopy(param, _entryPointOutput);
+    gs_layered_output param_1;
+    _shadowmap_omni_geom_main(param, param_1, v_40, out.gl_Position, out.gl_Layer);
+    gs_layered_output OutputStream = param_1;
     return out;
 }
 

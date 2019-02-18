@@ -6,6 +6,31 @@
 using namespace My;
 using namespace std;
 
+#define VS_BASIC_SOURCE_FILE SHADER_ROOT "basic.vert.glsl"
+#define PS_BASIC_SOURCE_FILE SHADER_ROOT "basic.frag.glsl"
+#define VS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.vert.glsl"
+#define PS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.frag.glsl"
+#define VS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.vert.glsl"
+#define PS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.frag.glsl"
+#define GS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.geom.glsl"
+#define DEBUG_VS_SHADER_SOURCE_FILE SHADER_ROOT "debug.vert.glsl"
+#define DEBUG_PS_SHADER_SOURCE_FILE SHADER_ROOT "debug.frag.glsl"
+#define VS_PASSTHROUGH_SOURCE_FILE SHADER_ROOT "passthrough.vert.glsl"
+#define PS_TEXTURE_SOURCE_FILE SHADER_ROOT "texture.frag.glsl"
+#define PS_TEXTURE_ARRAY_SOURCE_FILE SHADER_ROOT "texturearray.frag.glsl"
+#define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE SHADER_ROOT "passthrough_cube.vert.glsl"
+#define PS_CUBEMAP_SOURCE_FILE SHADER_ROOT "cubemap.frag.glsl"
+#define PS_CUBEMAP_ARRAY_SOURCE_FILE SHADER_ROOT "cubemaparray.frag.glsl"
+#define VS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.vert.glsl"
+#define PS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.frag.glsl"
+#define VS_PBR_SOURCE_FILE SHADER_ROOT "pbr.vert.glsl"
+#define PS_PBR_SOURCE_FILE SHADER_ROOT "pbr.frag.glsl"
+#define CS_PBR_BRDF_SOURCE_FILE SHADER_ROOT "integrateBRDF.comp.glsl"
+#define VS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.vert.glsl"
+#define PS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.frag.glsl"
+#define TESC_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tesc.glsl"
+#define TESE_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tese.glsl"
+
 namespace My {
     extern AssetLoader* g_pAssetLoader;
 
@@ -38,10 +63,12 @@ namespace My {
         for(i=0; i<logSize; i++)
         {
                 fout << infoLog[i];
+                cerr << infoLog[i];
         }
 
         // Close the file.
         fout.close();
+        cerr << endl;
 
         // Pop a message up on the screen to notify the user to check the text file for compile errors.
         cerr << "Error compiling shader.  Check shader-error.txt for message." << shaderFilename << endl;
@@ -79,10 +106,12 @@ namespace My {
         for(i=0; i<logSize; i++)
         {
                 fout << infoLog[i];
+                cerr << infoLog[i];
         }
 
         // Close the file.
         fout.close();
+        cerr << endl;
 
         // Pop a message up on the screen to notify the user to check the text file for linker errors.
         cerr << "Error compiling linker.  Check linker-error.txt for message." << endl;
@@ -183,7 +212,7 @@ void OpenGLShaderManagerCommonBase::Tick()
 bool OpenGLShaderManagerCommonBase::InitializeShaders()
 {
     GLuint shaderProgram;
-    bool result;
+    bool result = true;
 
     // Basic Shader
     ShaderSourceList list = {
@@ -213,6 +242,20 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Pbr] = shaderProgram;
 
+    // SkyBox shader
+    list = {
+        {GL_VERTEX_SHADER, VS_SKYBOX_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_SKYBOX_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::SkyBox] = shaderProgram;
+
     // Shadow Map Shader
     list = {
         {GL_VERTEX_SHADER, VS_SHADOWMAP_SOURCE_FILE},
@@ -227,6 +270,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::ShadowMap] = shaderProgram;
 
+#if !defined(OS_WEBASSEMBLY)
     // Omni Shadow Map Shader
     list = {
         {GL_VERTEX_SHADER, VS_OMNI_SHADOWMAP_SOURCE_FILE},
@@ -241,34 +285,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     }
 
     m_DefaultShaders[DefaultShaderIndex::OmniShadowMap] = shaderProgram;
-
-    // Depth Texture overlay shader
-    list = {
-        {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_DEPTH_TEXTURE_ARRAY_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
-    {
-        return result;
-    }
-
-    m_DefaultShaders[DefaultShaderIndex::DepthCopy] = shaderProgram;
-
-    // Depth CubeMap overlay shader
-    list = {
-        {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_DEPTH_CUBEMAP_ARRAY_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
-    {
-        return result;
-    }
-
-    m_DefaultShaders[DefaultShaderIndex::DepthCopyCube] = shaderProgram;
+#endif
 
     // Texture overlay shader
     list = {
@@ -284,7 +301,35 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Copy] = shaderProgram;
 
+    // Texture Array overlay shader
+    list = {
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_TEXTURE_ARRAY_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::CopyArray] = shaderProgram;
+
     // CubeMap overlay shader
+    list = {
+        {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
+        {GL_FRAGMENT_SHADER, PS_CUBEMAP_SOURCE_FILE}
+    };
+
+    result = LoadShaderProgram(list, shaderProgram);
+    if (!result)
+    {
+        return result;
+    }
+
+    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+
+    // CubeMap Array overlay shader
     list = {
         {GL_VERTEX_SHADER, VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE},
         {GL_FRAGMENT_SHADER, PS_CUBEMAP_ARRAY_SOURCE_FILE}
@@ -296,22 +341,9 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
         return result;
     }
 
-    m_DefaultShaders[DefaultShaderIndex::CopyCube] = shaderProgram;
+    m_DefaultShaders[DefaultShaderIndex::CopyCubeArray] = shaderProgram;
 
-    // SkyBox shader
-    list = {
-        {GL_VERTEX_SHADER, VS_SKYBOX_SOURCE_FILE},
-        {GL_FRAGMENT_SHADER, PS_SKYBOX_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
-    {
-        return result;
-    }
-
-    m_DefaultShaders[DefaultShaderIndex::SkyBox] = shaderProgram;
-
+#if !defined(OS_WEBASSEMBLY)
     // Terrain shader
     list = {
         {GL_VERTEX_SHADER, VS_TERRAIN_SOURCE_FILE},
@@ -327,6 +359,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     }
 
     m_DefaultShaders[DefaultShaderIndex::Terrain] = shaderProgram;
+#endif // !defined(OS_WEBASSEMBLY)
 
 #ifdef DEBUG
     // Debug Shader
@@ -342,23 +375,26 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     }
 
     m_DefaultShaders[DefaultShaderIndex::Debug] = shaderProgram;
-#endif
+#endif // DEBUG
 
-    /////////////////
-    // CS Shaders
-
-    // BRDF
-    list = {
-        {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
-    };
-
-    result = LoadShaderProgram(list, shaderProgram);
-    if (!result)
+    if(GLAD_GL_ARB_compute_shader)
     {
-        return result;
-    }
+        /////////////////
+        // CS Shaders
 
-    m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
+        // BRDF
+        list = {
+            {GL_COMPUTE_SHADER, CS_PBR_BRDF_SOURCE_FILE}
+        };
+
+        result = LoadShaderProgram(list, shaderProgram);
+        if (!result)
+        {
+            return result;
+        }
+
+        m_DefaultShaders[DefaultShaderIndex::PbrBrdf] = shaderProgram;
+    }
 
     return result;
 }

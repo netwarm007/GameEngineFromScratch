@@ -1,4 +1,14 @@
-#version 400
+#version 420
+
+struct a2v_pos_only
+{
+    vec3 inputPosition;
+};
+
+struct pos_only_vert_output
+{
+    vec4 pos;
+};
 
 struct Light
 {
@@ -9,7 +19,7 @@ struct Light
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
     vec2 lightSize;
-    ivec4 lightGUID;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -19,15 +29,26 @@ struct Light
     vec4 padding[2];
 };
 
-layout(std140) uniform PerBatchConstants
+layout(binding = 11, std140) uniform PerBatchConstants
 {
     mat4 modelMatrix;
-} _19;
+} _33;
 
-layout(location = 0) in vec3 inputPosition;
+layout(location = 0) in vec3 a_inputPosition;
+
+pos_only_vert_output _shadowmap_omni_vert_main(a2v_pos_only a)
+{
+    vec4 v = vec4(a.inputPosition, 1.0);
+    pos_only_vert_output o;
+    o.pos = _33.modelMatrix * v;
+    return o;
+}
 
 void main()
 {
-    gl_Position = _19.modelMatrix * vec4(inputPosition, 1.0);
+    a2v_pos_only a;
+    a.inputPosition = a_inputPosition;
+    a2v_pos_only param = a;
+    gl_Position = _shadowmap_omni_vert_main(param).pos;
 }
 

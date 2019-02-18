@@ -1,27 +1,23 @@
-#ifdef __OBJC__
-#include <Cocoa/Cocoa.h>
-#endif
+#include "portable.hpp"
 #include "BaseApplication.hpp"
+
+OBJC_CLASS(NSWindow);
 
 namespace My {
     class CocoaApplication : public BaseApplication
     {
     public:
-        CocoaApplication(GfxConfiguration& config)
-            : BaseApplication(config) {};
+        using BaseApplication::BaseApplication;
 
-        virtual int Initialize();
-        virtual void Finalize();
+        void Finalize() override;
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick() override;
+
+        void* GetMainWindowHandler() override;
+        void CreateMainWindow() override;
 
     protected:
-        void CreateWindow();
-
-    protected:
-#ifdef __OBJC__
         NSWindow* m_pWindow;
-#endif
     };
 }
 

@@ -8,7 +8,7 @@ jobs:
           name: Install Dependencies
           command: |
              apt update 
-             apt install -y curl clang cmake git uuid-dev libx11-xcb-dev libgl1-mesa-dev
+             apt install -y curl clang cmake git uuid-dev libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev 
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
              apt install -y git-lfs
       - restore_cache:
@@ -31,8 +31,9 @@ jobs:
           command: |
              ./build_crossguid.sh
              ./build_opengex.sh
-             ./build_zlib.sh
              ./build_bullet.sh
+             ./build_cef.sh
+             ./build_sdl.sh
              ./build.sh
       - run:
           name: Test
@@ -73,6 +74,8 @@ jobs:
              ./build_opengex.sh
              ./build_zlib.sh
              ./build_bullet.sh
+             ./build_cef.sh
+             ./build_sdl.sh
              ./build.sh
       - run:
           name: Test

@@ -53,9 +53,12 @@ config.h
 
 shader-error.txt
 **/.externalNativeBuild
-External/Windows/share/man/man3/zlib.3
-External/Windows/share/pkgconfig/zlib.pc
+External/*/share
+External/*/cmake
 External/*/include
+External/*/libdata
 
 *.baiduyun.uploading.cfg
 Asset/Blender
+
+GPUCache

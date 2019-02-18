@@ -8,18 +8,14 @@ namespace My {
     class WindowsApplication : public BaseApplication
     {
     public:
-        WindowsApplication(GfxConfiguration& config)
-            : BaseApplication(config) {};
+        using BaseApplication::BaseApplication;
 
-        virtual int Initialize();
-        virtual void Finalize();
+        void Finalize() override;
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick() override;
 
-        HWND GetMainWindow() { return m_hWnd; };
-
-    protected:
-        void CreateMainWindow();
+        void* GetMainWindowHandler() override { return m_hWnd; };
+        void CreateMainWindow() override;
 
     private:
         // the WindowProc function prototype

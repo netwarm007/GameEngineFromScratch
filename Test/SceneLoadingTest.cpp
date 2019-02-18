@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        g_pSceneManager->LoadScene("Scene/Example.ogex");
+        g_pSceneManager->LoadScene("Scene/splash.ogex");
     }
     auto& scene = g_pSceneManager->GetSceneForRendering();
 

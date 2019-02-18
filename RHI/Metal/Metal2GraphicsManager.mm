@@ -1,6 +1,7 @@
 #import <Metal/Metal.h>
 
 #include "Metal2GraphicsManager.h"
+#include "Metal2Renderer.h"
 
 using namespace My;
 using namespace std;
@@ -254,7 +255,7 @@ void Metal2GraphicsManager::EndCompute()
     [m_pRenderer endCompute];
 }
 
-void Metal2GraphicsManager::UseShaderProgram(const int32_t shaderProgram)
+void Metal2GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
 {
     [m_pRenderer useShaderProgram:shaderProgram];
 }
@@ -289,12 +290,12 @@ int32_t Metal2GraphicsManager::GenerateShadowMapArray(const uint32_t width, cons
     return [m_pRenderer generateShadowMapArray:width height:height count:count];
 }
 
-void Metal2GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const uint32_t layer_index) 
+void Metal2GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index) 
 {
     [m_pRenderer beginShadowMap:light shadowmap:shadowmap width:width height:height layer_index:layer_index];
 }
 
-void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const uint32_t layer_index) 
+void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const int32_t layer_index) 
 {
     [m_pRenderer endShadowMap:shadowmap layer_index:layer_index];
 }
@@ -319,10 +320,10 @@ void Metal2GraphicsManager::DrawSkyBox()
     [m_pRenderer drawSkyBox];
 }
 
-int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, 
+int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index,
                                         const uint32_t width, const uint32_t height)
 {
-    return [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:0];
+    return [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:slot_index];
 }
 
 void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)

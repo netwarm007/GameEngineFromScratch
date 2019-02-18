@@ -112,7 +112,7 @@ namespace My {
             const PNG_FILEHEADER* pFileHeader = reinterpret_cast<const PNG_FILEHEADER*>(pData);
             pData += sizeof(PNG_FILEHEADER);
             if (pFileHeader->Signature == endian_net_unsigned_int((uint64_t)0x89504E470D0A1A0A)) {
-                std::cout << "Asset is PNG file" << std::endl;
+                std::cerr << "Asset is PNG file" << std::endl;
 
                 while(pData < pDataEnd)
                 {
@@ -121,7 +121,7 @@ namespace My {
                     uint32_t chunk_data_size = endian_net_unsigned_int(pChunkHeader->Length);
 
 #if DUMP_DETAILS
-                    std::cout << "============================" << std::endl
+                    std::cerr << "============================" << std::endl
 #endif
 
                     switch (type) 
@@ -129,8 +129,8 @@ namespace My {
                         case PNG_CHUNK_TYPE::IHDR:
                             {
 #if DUMP_DETAILS
-                                std::cout << "IHDR (Image Header)" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "IHDR (Image Header)" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 #endif
                                 const PNG_IHDR_HEADER* pIHDRHeader = reinterpret_cast<const PNG_IHDR_HEADER*>(pData);
                                 m_Width = endian_net_unsigned_int(pIHDRHeader->Width);
@@ -151,19 +151,19 @@ namespace My {
                                         break;
                                     case 3:  // indexed
                                         m_BytesPerPixel = (m_BitDepth + 7) >> 3;
-                                        std::cout << "Color Type 3 is not supported yet: " << m_ColorType << std::endl;
+                                        std::cerr << "Color Type 3 is not supported yet: " << m_ColorType << std::endl;
                                         assert(0);
                                         break;
                                     case 4:  // grayscale with alpha
                                         m_BytesPerPixel = (m_BitDepth * 2) >> 3;
-                                        std::cout << "Color Type 4 is not supported yet: " << m_ColorType << std::endl;
+                                        std::cerr << "Color Type 4 is not supported yet: " << m_ColorType << std::endl;
                                         assert(0);
                                         break;
                                     case 6:
                                         m_BytesPerPixel = (m_BitDepth * 4) >> 3;
                                         break;
                                     default:
-                                        std::cout << "Unkown Color Type: " << m_ColorType << std::endl;
+                                        std::cerr << "Unkown Color Type: " << m_ColorType << std::endl;
                                         assert(0);
                                 }
 
@@ -178,25 +178,25 @@ namespace My {
                                 img.data = new uint8_t[img.data_size];
 
 #if DUMP_DETAILS
-                                std::cout << "Width: " << m_Width << std::endl;
-                                std::cout << "Height: " << m_Height << std::endl;
-                                std::cout << "Bit Depth: " << (int)m_BitDepth << std::endl;
-                                std::cout << "Color Type: " << (int)m_ColorType << std::endl;
-                                std::cout << "Compression Method: " << (int)m_CompressionMethod << std::endl;
-                                std::cout << "Filter Method: " << (int)m_FilterMethod << std::endl;
-                                std::cout << "Interlace Method: " << (int)m_InterlaceMethod << std::endl;
+                                std::cerr << "Width: " << m_Width << std::endl;
+                                std::cerr << "Height: " << m_Height << std::endl;
+                                std::cerr << "Bit Depth: " << (int)m_BitDepth << std::endl;
+                                std::cerr << "Color Type: " << (int)m_ColorType << std::endl;
+                                std::cerr << "Compression Method: " << (int)m_CompressionMethod << std::endl;
+                                std::cerr << "Filter Method: " << (int)m_FilterMethod << std::endl;
+                                std::cerr << "Interlace Method: " << (int)m_InterlaceMethod << std::endl;
 #endif
                             }
                             break;
                         case PNG_CHUNK_TYPE::PLTE:
                             {
 #if DUMP_DETAILS
-                                std::cout << "PLTE (Palette)" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "PLTE (Palette)" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
                                 const PNG_PLTE_HEADER* pPLTEHeader = reinterpret_cast<const PNG_PLTE_HEADER*>(pData);
                                 for (auto i = 0; i < chunk_data_size / sizeof(*pPLTEHeader->pEntries); i++)
                                 {
-                                    std::cout << "Entry " << i << ": " << pPLTEHeader->pEntries[i] << std::endl;
+                                    std::cerr << "Entry " << i << ": " << pPLTEHeader->pEntries[i] << std::endl;
                                 }
 #endif
                             }
@@ -204,14 +204,14 @@ namespace My {
                         case PNG_CHUNK_TYPE::IDAT:
                             {
 #if DUMP_DETAILS
-                                std::cout << "IDAT (Image Data Start)" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "IDAT (Image Data Start)" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 
-                                std::cout << "Compressed Data Length: " << chunk_data_size << std::endl;
+                                std::cerr << "Compressed Data Length: " << chunk_data_size << std::endl;
 #endif
 
                                 if (imageDataEnded) {
-                                    std::cout << "PNG file looks corrupted. Found IDAT after IEND." << std::endl;
+                                    std::cerr << "PNG file looks corrupted. Found IDAT after IEND." << std::endl;
                                     break;
                                 }
 
@@ -232,14 +232,14 @@ namespace My {
                         case PNG_CHUNK_TYPE::IEND:
                             {
 #if DUMP_DETAILS
-                                std::cout << "IEND (Image Data End)" << std::endl;
-                                std::cout << "----------------------------" << std::endl;
+                                std::cerr << "IEND (Image Data End)" << std::endl;
+                                std::cerr << "----------------------------" << std::endl;
 #endif
 
                                 size_t compressed_data_size = imageDataEndPos - imageDataStartPos;
 
                                 if(!imageDataStarted) {
-                                    std::cout << "PNG file looks corrupted. Found IEND before IDAT." << std::endl;
+                                    std::cerr << "PNG file looks corrupted. Found IEND before IDAT." << std::endl;
                                     break;
                                 } else {
                                     imageDataEnded = true;
@@ -255,7 +255,7 @@ namespace My {
                                 int ret = inflateInit(&strm);
                                 if (ret != Z_OK)
                                 {
-                                    std::cout << "[Error] Failed to init zlib" << std::endl;
+                                    std::cerr << "[Error] Failed to init zlib" << std::endl;
                                     zerr(ret);
                                     break;
                                 }
@@ -343,7 +343,7 @@ namespace My {
                                                                 }
                                                                 break;
                                                             default:
-                                                                std::cout << "[Error] Unknown Filter Type!" << std::endl;
+                                                                std::cerr << "[Error] Unknown Filter Type!" << std::endl;
                                                                 assert(0);
                                                         }
 
@@ -371,7 +371,7 @@ namespace My {
                         default:
                             {
 #if DUMP_DETAILS
-                                std::cout << "Ignor Unrecognized Chunk. Marker=" << type << std::endl;
+                                std::cerr << "Ignor Unrecognized Chunk. Marker=" << type << std::endl;
 #endif
                             }
                             break;
@@ -380,7 +380,7 @@ namespace My {
                 }
             }
             else {
-                std::cout << "File is not a PNG file!" << std::endl;
+                std::cerr << "File is not a PNG file!" << std::endl;
             }
 
             img.mipmaps[0].Width = img.Width; 

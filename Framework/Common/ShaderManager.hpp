@@ -15,8 +15,8 @@ namespace std
 
 		result_type operator()(argument_type const &index) const
 		{
-			std::hash<std::int32_t> hasher;
-			return static_cast<result_type>(hasher((int32_t)index));
+			std::hash<My::IShaderManager::ShaderHandler> hasher;
+			return static_cast<result_type>(hasher((My::IShaderManager::ShaderHandler)index));
 		}
 	};
 }
@@ -28,12 +28,12 @@ namespace My {
         ShaderManager() = default;
         ~ShaderManager() = default;
 
-        virtual int32_t GetDefaultShaderProgram(DefaultShaderIndex index) final
+        virtual IShaderManager::ShaderHandler GetDefaultShaderProgram(DefaultShaderIndex index) final
         {
             return m_DefaultShaders[index];
         }
 
     protected:
-        std::unordered_map<const DefaultShaderIndex, int32_t> m_DefaultShaders;
+        std::unordered_map<const DefaultShaderIndex, IShaderManager::ShaderHandler> m_DefaultShaders;
     };
 }

@@ -1,4 +1,10 @@
-#version 400
+#version 420
+
+struct cube_vert_output
+{
+    vec4 pos;
+    vec3 uvw;
+};
 
 struct Light
 {
@@ -9,7 +15,7 @@ struct Light
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
     vec2 lightSize;
-    ivec4 lightGUID;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -19,20 +25,32 @@ struct Light
     vec4 padding[2];
 };
 
-struct debugPushConstants
+layout(binding = 13, std140) uniform DebugConstants
 {
-    float level;
-};
+    float layer_index;
+    float mip_level;
+    float line_width;
+    float padding0;
+    vec4 front_color;
+    vec4 back_color;
+} _32;
 
-uniform debugPushConstants u_pushConstants;
+uniform samplerCube SPIRV_Cross_Combinedcubemapsamp0;
 
-uniform samplerCube depthSampler;
+layout(location = 0) in vec3 _entryPointOutput_uvw;
+layout(location = 0) out vec4 _entryPointOutput;
 
-layout(location = 0) out vec3 color;
-in vec3 UVW;
+vec4 _cubemap_frag_main(cube_vert_output _entryPointOutput_1)
+{
+    return textureLod(SPIRV_Cross_Combinedcubemapsamp0, _entryPointOutput_1.uvw, _32.mip_level);
+}
 
 void main()
 {
-    color = textureLod(depthSampler, UVW, u_pushConstants.level).xyz;
+    cube_vert_output _entryPointOutput_1;
+    _entryPointOutput_1.pos = gl_FragCoord;
+    _entryPointOutput_1.uvw = _entryPointOutput_uvw;
+    cube_vert_output param = _entryPointOutput_1;
+    _entryPointOutput = _cubemap_frag_main(param);
 }
 

@@ -66,7 +66,7 @@ bool D3dShaderManager::InitializeShaders()
     shaderProgram->pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
     shaderProgram->pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
 
-    m_DefaultShaders[DefaultShaderIndex::Basic] = reinterpret_cast<int32_t>(shaderProgram);
+    m_DefaultShaders[DefaultShaderIndex::Basic] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
 
 #ifdef DEBUG
     // debug shader
@@ -80,7 +80,7 @@ bool D3dShaderManager::InitializeShaders()
     shaderProgram->pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
     shaderProgram->pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
 
-    m_DefaultShaders[DefaultShaderIndex::Debug] = reinterpret_cast<int32_t>(shaderProgram);
+    m_DefaultShaders[DefaultShaderIndex::Debug] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
 #endif
 
     return hr == S_OK;

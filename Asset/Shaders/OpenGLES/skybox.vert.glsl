@@ -1,11 +1,11 @@
-#version 310 es
+#version 320 es
 
 struct a2v_pos_only
 {
     vec3 inputPosition;
 };
 
-struct skybox_vert_output
+struct cube_vert_output
 {
     vec4 pos;
     vec3 uvw;
@@ -14,13 +14,13 @@ struct skybox_vert_output
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     vec2 lightSize;
-    uvec4 lightGuid;
+    ivec4 lightGuid;
     vec4 lightPosition;
     vec4 lightColor;
     vec4 lightDirection;
@@ -34,23 +34,22 @@ layout(binding = 10, std140) uniform PerFrameConstants
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    mat4 arbitraryMatrix;
     vec4 camPos;
-    uint numLights;
-} _31;
+    int numLights;
+} _30;
 
 layout(location = 0) in vec3 a_inputPosition;
 layout(location = 0) out vec3 _entryPointOutput_uvw;
 
-skybox_vert_output _skybox_vert_main(a2v_pos_only a)
+cube_vert_output _skybox_vert_main(a2v_pos_only a)
 {
-    skybox_vert_output o;
+    cube_vert_output o;
     o.uvw = a.inputPosition;
-    mat4 _matrix = _31.viewMatrix;
+    mat4 _matrix = _30.viewMatrix;
     _matrix[3].x = 0.0;
     _matrix[3].y = 0.0;
     _matrix[3].z = 0.0;
-    vec4 pos = _31.projectionMatrix * (_matrix * vec4(a.inputPosition, 1.0));
+    vec4 pos = _30.projectionMatrix * (_matrix * vec4(a.inputPosition, 1.0));
     o.pos = pos.xyww;
     return o;
 }
@@ -60,7 +59,7 @@ void main()
     a2v_pos_only a;
     a.inputPosition = a_inputPosition;
     a2v_pos_only param = a;
-    skybox_vert_output flattenTemp = _skybox_vert_main(param);
+    cube_vert_output flattenTemp = _skybox_vert_main(param);
     gl_Position = flattenTemp.pos;
     _entryPointOutput_uvw = flattenTemp.uvw;
 }

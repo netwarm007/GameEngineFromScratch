@@ -5,16 +5,15 @@ namespace My {
     class XcbApplication : public BaseApplication
     {
     public:
-        XcbApplication(GfxConfiguration& config)
-            : BaseApplication(config) {};
+        using BaseApplication::BaseApplication;
 
-        virtual int Initialize();
-        virtual void Finalize();
+        void Finalize() override;
         // One cycle of the main loop
-        virtual void Tick();
+        void Tick() override;
 
-    protected:
-        void CreateMainWindow();
+        void* GetMainWindowHandler() override { return reinterpret_cast<void*>(m_Window); };
+
+        void CreateMainWindow() override;
 
     protected:
         xcb_connection_t*    m_pConn   = nullptr;

@@ -1,0 +1,15 @@
+add_library(MyGeomMathLib
+CrossProduct.cpp 
+MulByElement.cpp
+Transpose.cpp
+Normalize.cpp
+Transform.cpp
+AddByElement.cpp
+SubByElement.cpp
+MatrixUtil.cpp
+InverseMatrix.cpp
+DCT.cpp
+Absolute.cpp
+Pow.cpp 
+DivByElement.cpp
+)

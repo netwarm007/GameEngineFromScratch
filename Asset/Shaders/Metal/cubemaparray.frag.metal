@@ -1,12 +1,37 @@
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <metal_stdlib>
 #include <simd/simd.h>
 
 using namespace metal;
 
-struct debugPushConstants
+struct cube_vert_output
 {
-    float level;
+    float4 pos;
+    float3 uvw;
+};
+
+struct DebugConstants
+{
     float layer_index;
+    float mip_level;
+    float line_width;
+    float padding0;
+    float4 front_color;
+    float4 back_color;
+};
+
+struct PerFrameConstants
+{
+    float4x4 viewMatrix;
+    float4x4 projectionMatrix;
+    float4 camPos;
+    int numLights;
+};
+
+struct PerBatchConstants
+{
+    float4x4 modelMatrix;
 };
 
 struct Light
@@ -18,7 +43,7 @@ struct Light
     int lightAngleAttenCurveType;
     int lightDistAttenCurveType;
     float2 lightSize;
-    int4 lightGUID;
+    int4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;
@@ -28,34 +53,43 @@ struct Light
     float4 padding[2];
 };
 
-struct PerFrameConstants
+struct LightInfo
 {
-    float4x4 viewMatrix;
-    float4x4 projectionMatrix;
-    float4 camPos;
-    int numLights;
-    Light allLights[100];
+    Light lights[100];
 };
 
-struct PerBatchConstants
+struct ShadowMapConstants
 {
-    float4x4 modelMatrix;
+    float4x4 shadowMatrices[6];
+    float shadowmap_layer_index;
+    float far_plane;
+    float padding[2];
+    float4 lightPos;
 };
 
 struct cubemaparray_frag_main_out
 {
-    float3 color [[color(0)]];
+    float4 _entryPointOutput [[color(0)]];
 };
 
 struct cubemaparray_frag_main_in
 {
-    float3 UVW [[user(locn0)]];
+    float3 _entryPointOutput_uvw [[user(locn0)]];
 };
 
-fragment cubemaparray_frag_main_out cubemaparray_frag_main(cubemaparray_frag_main_in in [[stage_in]], constant debugPushConstants& u_pushConstants [[buffer(0)]], texturecube_array<float> depthSampler [[texture(0)]], sampler depthSamplerSmplr [[sampler(0)]])
+float4 _cubemaparray_frag_main(thread const cube_vert_output& _entryPointOutput, thread texturecube_array<float> cubemap, thread sampler samp0, constant DebugConstants& v_32)
+{
+    return cubemap.sample(samp0, float4(_entryPointOutput.uvw, v_32.layer_index).xyz, uint(round(float4(_entryPointOutput.uvw, v_32.layer_index).w)), level(v_32.mip_level));
+}
+
+fragment cubemaparray_frag_main_out cubemaparray_frag_main(cubemaparray_frag_main_in in [[stage_in]], constant DebugConstants& v_32 [[buffer(13)]], texturecube_array<float> cubemap [[texture(0)]], sampler samp0 [[sampler(0)]], float4 gl_FragCoord [[position]])
 {
     cubemaparray_frag_main_out out = {};
-    out.color = depthSampler.sample(depthSamplerSmplr, float4(in.UVW, u_pushConstants.layer_index).xyz, uint(round(float4(in.UVW, u_pushConstants.layer_index).w)), level(u_pushConstants.level)).xyz;
+    cube_vert_output _entryPointOutput;
+    _entryPointOutput.pos = gl_FragCoord;
+    _entryPointOutput.uvw = in._entryPointOutput_uvw;
+    cube_vert_output param = _entryPointOutput;
+    out._entryPointOutput = _cubemaparray_frag_main(param, cubemap, samp0, v_32);
     return out;
 }
 

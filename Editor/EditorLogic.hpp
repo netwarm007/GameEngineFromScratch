@@ -1,6 +1,5 @@
 #pragma once
 #include "IGameLogic.hpp"
-#include "geommath.hpp"
 
 namespace My {
     class EditorLogic : implements IGameLogic

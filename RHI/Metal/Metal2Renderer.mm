@@ -78,7 +78,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Create and load our basic Metal state objects
 
     // Load all the shader files with a metallib 
-    NSString *libraryFile = [[NSBundle mainBundle] pathForResource:@"Editor" ofType:@"metallib"];
+    NSString *libraryFile = [[NSBundle mainBundle] pathForResource:@"Main" ofType:@"metallib"];
     id <MTLLibrary> myLibrary = [_device newLibraryWithFile:libraryFile error:&error];
     if (!myLibrary) {
         NSLog(@"Library error: %@", error);
@@ -167,10 +167,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
+    samplerDescriptor.rAddressMode = MTLSamplerAddressModeRepeat;
     samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
     samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
 
     _sampler0 = [_device newSamplerStateWithDescriptor:samplerDescriptor];
+
+    samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
+    samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
+    samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
 
     // Create basic pipeline state
     id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:@"basic_vert_main"];
@@ -542,7 +549,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_computeCommandBuffer commit];
 }
 
-- (void)useShaderProgram:(const int32_t)shaderProgram
+- (void)useShaderProgram:(const IShaderManager::ShaderHandler)shaderProgram
 {
 }
 
@@ -820,13 +827,13 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
              shadowmap:(const int32_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
-           layer_index:(const uint32_t)layer_index
+           layer_index:(const int32_t)layer_index
 {
 
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
-         layer_index:(const uint32_t)layer_index
+         layer_index:(const int32_t)layer_index
 {
 
 }

@@ -3,9 +3,9 @@
 
 #define MAX_LIGHTS 100
 
+#include "config.h"
 
 #ifdef __cplusplus
-	#include "portable.hpp"
 	#include "geommath.hpp"
 	#include "Guid.hpp"
 	#include "SceneObjectLight.hpp"
@@ -26,16 +26,16 @@ namespace My {
 	#define SEMANTIC(a) : a 
 	#define REGISTER(x) : register(x)
 	#define unistruct cbuffer
-	#define uint32_t uint
-	#define Guid uint4 
+	#define int32_t int
+	#define Guid int4 
 	#define Vector2f float2
 	#define Vector3f float3
 	#define Vector4f float4
 	#define Matrix2X2f row_major float2x2
 	#define Matrix3X3f row_major float3x3
 	#define Matrix4X4f row_major float4x4
-	#define LightType uint
-	#define AttenCurveType uint
+	#define LightType int
+	#define AttenCurveType int
 #endif
 
 struct Light{
@@ -60,9 +60,8 @@ unistruct PerFrameConstants REGISTER(b10)
 {
 	Matrix4X4f 	viewMatrix;						// 64 bytes
 	Matrix4X4f 	projectionMatrix;				// 64 bytes
-	Matrix4X4f  arbitraryMatrix;				    // 64 bytes
     Vector4f   	camPos;							// 16 bytes
-	uint32_t  	numLights;						// 4 bytes
+	int32_t  	numLights;						// 4 bytes
 };
 
 unistruct PerBatchConstants REGISTER(b11)
@@ -73,6 +72,24 @@ unistruct PerBatchConstants REGISTER(b11)
 unistruct LightInfo REGISTER(b12)
 {
 	struct Light lights[MAX_LIGHTS];
+};
+
+unistruct DebugConstants REGISTER(b13)
+{
+	float layer_index;
+	float mip_level;
+	float line_width;
+	float padding0;
+	Vector4f front_color;
+	Vector4f back_color;
+};
+
+unistruct ShadowMapConstants REGISTER(b14)
+{
+    Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
+	Vector4f lightPos;						// 16 bytes
+	float shadowmap_layer_index;            // 4 bytes
+	float far_plane;                        // 4 bytes
 };
 
 #ifdef __cplusplus
@@ -87,12 +104,23 @@ struct a2v
     Vector3f inputNormal      SEMANTIC(NORMAL);
     Vector2f inputUV          SEMANTIC(TEXCOORD);
     Vector3f inputTangent     SEMANTIC(TANGENT);
-    Vector3f inputBiTangent   SEMANTIC(BITANGENT);
+};
+
+struct a2v_simple
+{
+    Vector3f inputPosition    SEMANTIC(POSITION);
+    Vector2f inputUV          SEMANTIC(TEXCOORD);
 };
 
 struct a2v_pos_only
 {
     Vector3f inputPosition    SEMANTIC(POSITION);
+};
+
+struct a2v_cube
+{
+    Vector3f inputPosition    SEMANTIC(POSITION);
+    Vector3f inputUVW         SEMANTIC(TEXCOORD);
 };
 
 #ifdef __cplusplus
@@ -135,8 +163,13 @@ Texture2D heightMap				REGISTER(t5);
 Texture2D brdfLUT    			REGISTER(t6);
 Texture2DArray shadowMap  		REGISTER(t7);
 Texture2DArray globalShadowMap 	REGISTER(t8);
+#if defined(OS_WEBASSEMBLY)
+Texture2DArray cubeShadowMap 	REGISTER(t9);
+Texture2DArray skybox     		REGISTER(t10);
+#else
 TextureCubeArray cubeShadowMap 	REGISTER(t9);
 TextureCubeArray skybox     	REGISTER(t10);
+#endif
 Texture2D terrainHeightMap		REGISTER(t11);
 
 // samplers

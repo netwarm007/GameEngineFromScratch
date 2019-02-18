@@ -11,7 +11,6 @@ struct a2v
     float3 inputNormal;
     float2 inputUV;
     float3 inputTangent;
-    float3 inputBiTangent;
 };
 
 struct basic_vert_output
@@ -33,21 +32,20 @@ struct PerFrameConstants
 {
     float4x4 viewMatrix;
     float4x4 projectionMatrix;
-    float4x4 arbitraryMatrix;
     float4 camPos;
-    uint numLights;
+    int numLights;
 };
 
 struct Light
 {
     float lightIntensity;
-    uint lightType;
+    int lightType;
     int lightCastShadow;
     int lightShadowMapIndex;
-    uint lightAngleAttenCurveType;
-    uint lightDistAttenCurveType;
+    int lightAngleAttenCurveType;
+    int lightDistAttenCurveType;
     float2 lightSize;
-    uint4 lightGuid;
+    int4 lightGuid;
     float4 lightPosition;
     float4 lightColor;
     float4 lightDirection;
@@ -60,6 +58,25 @@ struct Light
 struct LightInfo
 {
     Light lights[100];
+};
+
+struct DebugConstants
+{
+    float layer_index;
+    float mip_level;
+    float line_width;
+    float padding0;
+    float4 front_color;
+    float4 back_color;
+};
+
+struct ShadowMapConstants
+{
+    float4x4 shadowMatrices[6];
+    float shadowmap_layer_index;
+    float far_plane;
+    float padding[2];
+    float4 lightPos;
 };
 
 struct basic_vert_main_out
@@ -78,23 +95,22 @@ struct basic_vert_main_in
     float3 a_inputNormal [[attribute(1)]];
     float2 a_inputUV [[attribute(2)]];
     float3 a_inputTangent [[attribute(3)]];
-    float3 a_inputBiTangent [[attribute(4)]];
 };
 
-basic_vert_output _basic_vert_main(thread const a2v& a, constant PerBatchConstants& v_24, constant PerFrameConstants& v_44)
+basic_vert_output _basic_vert_main(thread const a2v& a, constant PerBatchConstants& v_24, constant PerFrameConstants& v_43)
 {
     basic_vert_output o;
     o.v_world = v_24.modelMatrix * float4(a.inputPosition, 1.0);
-    o.v = v_44.viewMatrix * o.v_world;
-    o.pos = v_44.projectionMatrix * o.v;
+    o.v = v_43.viewMatrix * o.v_world;
+    o.pos = v_43.projectionMatrix * o.v;
     o.normal_world = normalize(v_24.modelMatrix * float4(a.inputNormal, 0.0));
-    o.normal = normalize(v_44.viewMatrix * o.normal_world);
+    o.normal = normalize(v_43.viewMatrix * o.normal_world);
     o.uv.x = a.inputUV.x;
     o.uv.y = 1.0 - a.inputUV.y;
     return o;
 }
 
-vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& v_44 [[buffer(10)]], constant PerBatchConstants& v_24 [[buffer(11)]])
+vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], constant PerFrameConstants& v_43 [[buffer(10)]], constant PerBatchConstants& v_24 [[buffer(11)]])
 {
     basic_vert_main_out out = {};
     a2v a;
@@ -102,9 +118,8 @@ vertex basic_vert_main_out basic_vert_main(basic_vert_main_in in [[stage_in]], c
     a.inputNormal = in.a_inputNormal;
     a.inputUV = in.a_inputUV;
     a.inputTangent = in.a_inputTangent;
-    a.inputBiTangent = in.a_inputBiTangent;
     a2v param = a;
-    basic_vert_output flattenTemp = _basic_vert_main(param, v_24, v_44);
+    basic_vert_output flattenTemp = _basic_vert_main(param, v_24, v_43);
     out.gl_Position = flattenTemp.pos;
     out._entryPointOutput_normal = flattenTemp.normal;
     out._entryPointOutput_normal_world = flattenTemp.normal_world;

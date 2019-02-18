@@ -98,3 +98,9 @@ namespace My {
         return details::u16(s, 0);
     }
 }
+
+#ifdef __OBJC__
+#define OBJC_CLASS(name) @class name
+#else
+#define OBJC_CLASS(name) typedef struct objc_object name
+#endif

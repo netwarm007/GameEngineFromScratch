@@ -108,24 +108,24 @@ float3 apply_areaLight(const Light light, basic_vert_output input)
     return linearColor;
 }
 
-float4 basic_frag_main(basic_vert_output input) : SV_Target
+float4 basic_frag_main(basic_vert_output _entryPointOutput) : SV_Target
 {
     float3 linearColor = 0.0f.xxx;
-    for (uint i = 0; i < numLights; i++)
+    for (int i = 0; i < numLights; i++)
     {
         if (lights[i].lightType == 3) // area light
         {
-            linearColor += apply_areaLight(lights[i], input); 
+            linearColor += apply_areaLight(lights[i], _entryPointOutput); 
         }
         else
         {
-            linearColor += apply_light(lights[i], input); 
+            linearColor += apply_light(lights[i], _entryPointOutput); 
         }
     }
 
     // add ambient color
     // linearColor += ambientColor.rgb;
-    linearColor += skybox.SampleLevel(samp0, float4(input.normal_world.xyz, 0), 2.0).rgb * 0.20f.xxx;
+    linearColor += skybox.SampleLevel(samp0, float4(_entryPointOutput.normal_world.xyz, 0), 2.0).rgb * 0.20f.xxx;
 
     // tone mapping
     //linearColor = reinhard_tone_mapping(linearColor);

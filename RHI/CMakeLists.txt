@@ -10,7 +10,6 @@ ELSE()
     IF(${APPLE})
         # Darwin specific code
         add_subdirectory(Metal)
-    ELSE(${APPLE})
-        add_subdirectory(OpenGL)
     ENDIF(${APPLE})
+    add_subdirectory(OpenGL)
 ENDIF()

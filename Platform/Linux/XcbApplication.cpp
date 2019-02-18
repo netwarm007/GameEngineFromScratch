@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string.h>
 #include "XcbApplication.hpp"
+#include "InputManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -72,33 +73,13 @@ void XcbApplication::CreateMainWindow()
     xcb_flush(m_pConn);
 }
 
-int XcbApplication::Initialize()
-{
-    int result;
-
-    CreateMainWindow();
-
-    // first call base class initialization
-    result = BaseApplication::Initialize();
-
-    if (result != 0)
-        exit(result);
-
-
-    return result;
-}
-
 void XcbApplication::Finalize()
 {
     xcb_disconnect(m_pConn);
-
-    BaseApplication::Finalize();
 }
 
 void XcbApplication::Tick()
 {
-    BaseApplication::Tick();
-
     xcb_generic_event_t* pEvent;
     if((pEvent = xcb_poll_for_event(m_pConn)))
     {
