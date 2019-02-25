@@ -199,7 +199,7 @@ void My::D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pCommandQueue);
     SafeRelease(&m_pCommandAllocator);
     for (uint32_t i = 0; i < kFrameCount; i++) {
-	    SafeRelease(&m_pRenderTargets[kFrameCount]);
+	    SafeRelease(&m_pRenderTargets[i]);
     }
 	SafeRelease(&m_pSwapChain);
 	SafeRelease(&m_pDev);
