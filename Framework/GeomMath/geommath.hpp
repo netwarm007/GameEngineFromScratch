@@ -241,7 +241,7 @@ namespace My {
     template <typename T, int ROWS, int COLS>
     void MatrixSub(Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1, const Matrix<T, ROWS, COLS>& matrix2)
     {
-        ispc::AddByElement(matrix1, matrix2, result, countof(result.data));
+        ispc::SubByElement(matrix1, matrix2, result, countof(result.data));
     }
 
     template <typename T, int ROWS, int COLS>
