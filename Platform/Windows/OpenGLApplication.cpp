@@ -145,8 +145,8 @@ void OpenGLApplication::CreateMainWindow()
 			WGL_ALPHA_BITS_ARB,		(int)m_Config.alphaBits,
 			WGL_DEPTH_BITS_ARB,     (int)m_Config.depthBits,
 			WGL_STENCIL_BITS_ARB,   (int)m_Config.stencilBits,
-			WGL_SAMPLE_BUFFERS_ARB, 1,  // 4x MSAA
-			WGL_SAMPLES_ARB,        4,  // 4x MSAA
+			WGL_SAMPLE_BUFFERS_ARB, 1,
+			WGL_SAMPLES_ARB,        m_Config.msaaSamples,
 			0
 		};
 

@@ -17,19 +17,19 @@ ELSE(ANDROID)
         )
 ENDIF(ANDROID)
 
-IF(APPLE)
-    set(SHADER_SOURCES basic.vert basic.frag
-                debug.vert debug.frag
-                pbr.vert pbr.frag
-                skybox.vert skybox.frag
-                shadowmap.vert shadowmap.frag
-                shadowmap_omni.vert shadowmap_omni.frag
-                terrain.vert terrain.frag
-                texture.frag texturearray.frag
-                passthrough.vert passthrough_cube.vert
-                integrateBRDF.comp
-            )
+set(SHADER_SOURCES basic.vert basic.frag
+            debug.vert debug.frag
+            pbr.vert pbr.frag
+            skybox.vert skybox.frag
+            shadowmap.vert shadowmap.frag
+            shadowmap_omni.vert shadowmap_omni.frag
+            terrain.vert terrain.frag
+            texture.frag texturearray.frag
+            passthrough.vert passthrough_cube.vert
+            integrateBRDF.comp
+        )
 
+IF(APPLE)
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air
             COMMAND xcrun -sdk macosx metal -g -MO -c ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
@@ -129,6 +129,40 @@ ELSEIF(WA)
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s DEMANGLE_SUPPORT=1 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
             )
 ELSEIF(WIN32)
+    set(SHADER_BIN_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/HLSL)
+    add_custom_command(TARGET Viewer PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
+    )
+
+    foreach(SHADER IN LISTS SHADER_SOURCES)
+        set(SHADER_BIN ${SHADER_BIN_DIR}/${SHADER}.cso)
+        if (SHADER MATCHES "^([a-zA-Z0-9]*)\.vert$")
+            add_custom_command(TARGET Viewer POST_BUILD
+                COMMAND fxc /T vs_5_1 /E ${CMAKE_MATCH_1}_vert_main /I${PROJECT_SOURCE_DIR} /I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl /Fo ${SHADER_BIN}
+                COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                )
+        elseif (SHADER MATCHES "^([a-zA-Z0-9]*)\.frag$")
+            add_custom_command(TARGET Viewer POST_BUILD
+                COMMAND fxc /T ps_5_1 /E ${CMAKE_MATCH_1}_frag_main /I${PROJECT_SOURCE_DIR} /I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl /Fo ${SHADER_BIN}
+                COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                )
+        elseif (SHADER MATCHES "^([a-zA-Z0-9]*)\.comp$")
+            add_custom_command(TARGET Viewer POST_BUILD
+                COMMAND fxc /T cs_5_1 /E ${CMAKE_MATCH_1}_comp_main /I${PROJECT_SOURCE_DIR} /I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl /Fo ${SHADER_BIN}
+                COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                )
+        elseif (SHADER MATCHES "^([a-zA-Z0-9]*)\.geom$")
+            add_custom_command(TARGET Viewer POST_BUILD
+                COMMAND fxc /T gs_5_1 /E ${CMAKE_MATCH_1}_geom_main /I${PROJECT_SOURCE_DIR} /I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl /Fo ${SHADER_BIN}
+                COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                )
+        endif ()
+    endforeach(SHADER)
+
     target_link_libraries(Viewer
                             MyPhysics
                             D3dRHI

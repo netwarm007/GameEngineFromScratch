@@ -43,7 +43,7 @@ using namespace My;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
     self.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     self.framebufferOnly = YES;
-    self.sampleCount = 4;
+    self.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     
     self.paused = YES;
     self.enableSetNeedsDisplay = YES;

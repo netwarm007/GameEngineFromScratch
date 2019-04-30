@@ -62,7 +62,7 @@ void vert_main()
     gl_Position = displaced;
 }
 
-SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
+SPIRV_Cross_Output terrain_vert_main(SPIRV_Cross_Input stage_input)
 {
     inputPosition = stage_input.inputPosition;
     vert_main();

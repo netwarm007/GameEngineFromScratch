@@ -13,7 +13,7 @@
 #include "EditorLogic.hpp"
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 1024, 800, "Editor");
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 800, "Editor");
 	IApplication*    g_pApp             = static_cast<IApplication*>(new CefApplication(config));
     IGameLogic*       g_pGameLogic       = static_cast<IGameLogic*>(new EditorLogic);
     IPhysicsManager*  g_pPhysicsManager  = static_cast<IPhysicsManager*>(new MyPhysicsManager);
