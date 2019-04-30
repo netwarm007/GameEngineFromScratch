@@ -1,5 +1,6 @@
 #import "MetalView.h"
 #import "Metal/Metal2Renderer.h"
+#include "IApplication.hpp"
 #include "InputManager.hpp"
 #include "Metal/Metal2GraphicsManager.h"
 
