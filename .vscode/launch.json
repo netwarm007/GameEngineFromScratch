@@ -4,6 +4,7 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "(Mac OS) Launch Editor",
             "type": "cppdbg",
@@ -12,7 +13,7 @@
             "args": [
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"
@@ -25,7 +26,7 @@
             "args": [
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"
@@ -38,20 +39,7 @@
             "args": [
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Game/Billiard",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb"
-        },
-        {
-            "name": "(Mac OS) Launch Test",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Test/HdrParserTest",
-            "args": [
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"
@@ -64,7 +52,7 @@
             "args": [
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false
         },
@@ -76,19 +64,7 @@
             "args": [
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build/Viewer",
-            "environment": [],
-            "externalConsole": false
-        },
-        {
-            "name": "(Windows) Launch Test",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Test/Debug/DdsParserTest.exe",
-            "args": [
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false
         },
@@ -96,10 +72,10 @@
             "name": "(Windows) Launch Game",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/Debug/BilliardGame.exe",
+            "program": "${workspaceFolder}/Game/Billiard/Debug/BilliardGame.exe",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/Game/Billiard",
+            "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false
         }

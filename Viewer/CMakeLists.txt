@@ -29,6 +29,8 @@ set(SHADER_SOURCES basic.vert basic.frag
             integrateBRDF.comp
         )
 
+set(SHADER_BIN_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/)
+
 IF(APPLE)
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air
@@ -47,7 +49,8 @@ IF(APPLE)
         )
 
     add_custom_command(OUTPUT Main.metallib
-            COMMAND xcrun -sdk macosx metallib Main.metalar -split-module-without-linking -o Main.metallib
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
+            COMMAND xcrun -sdk macosx metallib Main.metalar -split-module-without-linking -o ${SHADER_BIN_DIR}Main.metallib
             COMMENT "Compile Editor.metalar --> Main.metallib"
             DEPENDS Main.metalar
         )
@@ -129,7 +132,6 @@ ELSEIF(WA)
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s DEMANGLE_SUPPORT=1 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
             )
 ELSEIF(WIN32)
-    set(SHADER_BIN_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/HLSL)
     add_custom_command(TARGET Viewer PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
     )

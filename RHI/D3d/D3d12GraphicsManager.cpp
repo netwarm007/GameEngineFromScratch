@@ -1138,8 +1138,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
 
     // basic pass
     {
-        const char* vsFilename = "Shaders/HLSL/basic.vert.cso"; 
-        const char* fsFilename = "Shaders/HLSL/basic.frag.cso";
+        const char* vsFilename = "Shaders/basic.vert.cso"; 
+        const char* fsFilename = "Shaders/basic.frag.cso";
 
         // load the shaders
         Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
