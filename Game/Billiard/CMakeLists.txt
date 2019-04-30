@@ -6,12 +6,65 @@ IF(ANDROID)
 
     add_library(BilliardGame SHARED 
         BilliardGameLogic.cpp BilliardGameConfig.cpp)
-ELSE(ANDROID)
+ELSEIF(APPLE)
     add_executable(BilliardGame MACOSX_BUNDLE
+        BilliardGameLogic.cpp BilliardGameConfig.cpp
+        Main.metallib
+        )
+ELSE(ANDROID)
+    add_executable(BilliardGame
         BilliardGameLogic.cpp BilliardGameConfig.cpp)
 ENDIF(ANDROID)
 
 IF(APPLE)
+    set(SHADER_SOURCES basic.vert basic.frag
+    debug.vert debug.frag
+    pbr.vert pbr.frag
+    skybox.vert skybox.frag
+    shadowmap.vert shadowmap.frag
+    shadowmap_omni.vert shadowmap_omni.frag
+    terrain.vert terrain.frag
+    texture.frag texturearray.frag
+    passthrough.vert passthrough_cube.vert
+    integrateBRDF.comp
+    )
+
+    foreach(SHADER IN LISTS SHADER_SOURCES)
+        add_custom_command(OUTPUT ${SHADER}.air
+        COMMAND xcrun -sdk macosx metal -g -MO -c ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
+        COMMENT "Compile ${SHADER}.metal --> ${SHADER}.air"
+        DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal
+    )
+
+    list(APPEND AIRS ${SHADER}.air)
+    endforeach(SHADER)
+
+    add_custom_command(OUTPUT Main.metalar
+        COMMAND xcrun -sdk macosx metal-ar rcv Main.metalar ${AIRS}
+        COMMENT "Archive ${AIRS} --> Main.metalar"
+        DEPENDS ${AIRS}
+    )
+
+    add_custom_command(OUTPUT Main.metallib
+        COMMAND xcrun -sdk macosx metallib Main.metalar -split-module-without-linking -o Main.metallib
+        COMMENT "Compile Editor.metalar --> Main.metallib"
+        DEPENDS Main.metalar
+    )
+
+    add_custom_target(BilliardGameShaderLibrary
+        DEPENDS Main.metallib
+    )
+
+    add_dependencies(BilliardGame BilliardGameShaderLibrary)
+
+    set(RESOURCE_FILES
+        Main.metallib
+    )
+
+    set_target_properties(BilliardGame PROPERTIES
+        RESOURCE "${RESOURCE_FILES}"
+    )
+
     target_link_libraries(BilliardGame 
                             BulletPhysics
                             Common
