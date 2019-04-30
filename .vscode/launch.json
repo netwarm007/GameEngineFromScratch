@@ -76,7 +76,7 @@
             "args": [
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/Viewer",
             "environment": [],
             "externalConsole": false
         },

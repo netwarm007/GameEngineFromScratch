@@ -39,7 +39,7 @@ namespace My {
         HRESULT CreateGraphicsResources();
 
         uint32_t CreateSamplerBuffer();
-        uint32_t CreateTextureBuffer(SceneObjectTexture& texture);
+        int32_t CreateTextureBuffer(SceneObjectTexture& texture);
         uint32_t CreateConstantBuffer();
         size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
         size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
@@ -65,8 +65,7 @@ namespace My {
         ID3D12RootSignature*            m_pRootSignatureResolve = nullptr;  // a graphics root signature defines what resources are bound to the pipeline
         ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
-		ID3D12DescriptorHeap*           m_pCbvHeap = nullptr;               // an array of descriptors of GPU objects
-		ID3D12DescriptorHeap*           m_pSrvHeap = nullptr;               // an array of descriptors of GPU objects
+		ID3D12DescriptorHeap*           m_pCbvSrvHeap = nullptr;            // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pSamplerHeap = nullptr;           // an array of descriptors of GPU objects
         ID3D12PipelineState*            m_pPipelineState = nullptr;         // an object maintains the state of all currently set shaders
                                                                             // and certain fixed function state objects

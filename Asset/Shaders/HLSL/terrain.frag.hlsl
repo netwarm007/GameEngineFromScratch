@@ -195,7 +195,7 @@ void frag_main()
     outputColor = float4(Lo, 1.0f);
 }
 
-SPIRV_Cross_Output main(SPIRV_Cross_Input _entryPointOutput)
+SPIRV_Cross_Output terrain_frag_main(SPIRV_Cross_Input _entryPointOutput)
 {
     v_world = _entryPointOutput.v_world;
     normal_world = _entryPointOutput.normal_world;

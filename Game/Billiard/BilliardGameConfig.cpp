@@ -25,7 +25,7 @@
 #include "BilliardGameLogic.hpp"
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 0, 960, 540, "Billiard Game");
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 960, 540, "Billiard Game");
 #if defined(OS_MACOS)
 	IApplication*    g_pApp             = static_cast<IApplication*>(new CocoaMetalApplication(config));
 #else

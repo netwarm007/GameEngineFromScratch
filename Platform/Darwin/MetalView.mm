@@ -1,5 +1,6 @@
 #import "MetalView.h"
 #import "Metal/Metal2Renderer.h"
+#include "IApplication.hpp"
 #include "InputManager.hpp"
 #include "Metal/Metal2GraphicsManager.h"
 
@@ -43,7 +44,7 @@ using namespace My;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
     self.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     self.framebufferOnly = YES;
-    self.sampleCount = 4;
+    self.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     
     self.paused = YES;
     self.enableSetNeedsDisplay = YES;
