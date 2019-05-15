@@ -634,7 +634,7 @@ void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
 
 void OpenGLGraphicsManagerCommonBase::EndScene()
 {
-    for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    for (int i = 0; i < m_Frames.size(); i++)
     {
         auto& batchContexts = m_Frames[i].batchContexts;
 
@@ -689,7 +689,7 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
     GraphicsManager::EndScene();
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginFrame()
+void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame)
 {
     // reset gl error
     glGetError();
@@ -698,11 +698,13 @@ void OpenGLGraphicsManagerCommonBase::BeginFrame()
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    SetPerFrameConstants(frame.frameContext);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndFrame()
 {
-
+    m_nFrameIndex = ++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount;
 }
 
 void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
@@ -711,6 +713,44 @@ void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::Sha
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_CurrentShader);
+
+    // Prepare & Bind per frame constant buffer
+    uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
+    }
+
+    // Prepare per batch constant buffer binding point
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 11, m_uboDrawBatchConstant[m_nFrameIndex]);
+    }
+
+    // Prepare & Bind light info
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 12);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 12, m_uboLightInfo[m_nFrameIndex]);
+    }
+
+    // Bind LUT table
+    auto brdf_lut = GetTexture("BRDF_LUT");
+    setShaderParameter("SPIRV_Cross_CombinedbrdfLUTsamp0", 6);
+    glActiveTexture(GL_TEXTURE6);
+    if (brdf_lut > 0) {
+        glBindTexture(GL_TEXTURE_2D, brdf_lut);
+    }
+    else {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
@@ -745,10 +785,8 @@ void OpenGLGraphicsManagerCommonBase::SetLightInfo(const LightInfo& lightInfo)
 
 }
 
-void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
+void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContext& context)
 {
-    uint8_t* pBuff = new uint8_t[kSizePerBatchConstantBuffer * batches.size()];
-
     if (!m_uboDrawBatchConstant[m_nFrameIndex])
     {
         glGenBuffers(1, &m_uboDrawBatchConstant[m_nFrameIndex]);
@@ -756,68 +794,22 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const std::vector<std
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawBatchConstant[m_nFrameIndex]);
 
-    for (auto& pBatch : batches)
-    {
-        const PerBatchConstants& constants = static_cast<PerBatchConstants&>(*pBatch);
-        memcpy(pBuff + pBatch->batchIndex * kSizePerBatchConstantBuffer, &constants, kSizePerBatchConstantBuffer);
-    }
+    const PerBatchConstants& constant = static_cast<const PerBatchConstants&>(context);
 
-    glBufferData(GL_UNIFORM_BUFFER, kSizePerBatchConstantBuffer * batches.size(), pBuff, GL_DYNAMIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, kSizePerBatchConstantBuffer, &constant, GL_DYNAMIC_DRAW);
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    delete[] pBuff;
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
-    // Prepare & Bind per frame constant buffer
-    uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
-
-    if (blockIndex != GL_INVALID_INDEX)
-    {
-        glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
-
-        glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
-    }
-
-    // Prepare & Bind light info
-    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
-
-    if (blockIndex != GL_INVALID_INDEX)
-    {
-        glUniformBlockBinding(m_CurrentShader, blockIndex, 12);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 12, m_uboLightInfo[m_nFrameIndex]);
-    }
-
-    // Prepare per batch constant buffer binding point
-    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
-
-    if (blockIndex != GL_INVALID_INDEX)
-    {
-        glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
-    }
-
-    // Bind LUT table
-    auto brdf_lut = GetTexture("BRDF_LUT");
-    setShaderParameter("SPIRV_Cross_CombinedbrdfLUTsamp0", 6);
-    glActiveTexture(GL_TEXTURE6);
-    if (brdf_lut > 0) {
-        glBindTexture(GL_TEXTURE_2D, brdf_lut);
-    }
-    else {
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
     glEnable(GL_CULL_FACE);
 
     for (auto& pDbc : batches)
     {
-        const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
+        SetPerBatchConstants(*pDbc);
 
-        // Bind per batch constant buffer
-        glBindBufferRange(GL_UNIFORM_BUFFER, 11, m_uboDrawBatchConstant[m_nFrameIndex], 
-                        dbc.batchIndex * kSizePerBatchConstantBuffer, kSizePerBatchConstantBuffer);
+        const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
 
         // Bind textures
         setShaderParameter("SPIRV_Cross_CombineddiffuseMapsamp0", 0);

@@ -39,7 +39,7 @@ namespace My {
         void BeginScene(const Scene& scene) final;
         void EndScene() final;
 
-        void BeginFrame() final;
+        void BeginFrame(const Frame& frame) final;
         void EndFrame() final;
 
         void BeginPass() final;
@@ -52,9 +52,9 @@ namespace My {
         void initializeSkyBox(const Scene& scene);
         void initializeTerrain(const Scene& scene);
 
-        void SetPerFrameConstants(const DrawFrameContext& context) final;
-        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
-        void SetLightInfo(const LightInfo& lightInfo) final;
+        void SetPerFrameConstants(const DrawFrameContext& context);
+        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches);
+        void SetLightInfo(const LightInfo& lightInfo);
 
     private:
         Metal2Renderer* m_pRenderer;

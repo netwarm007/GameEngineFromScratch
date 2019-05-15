@@ -47,11 +47,11 @@ namespace Dummy { /* namespace */
 } /* namespace */
 
 #ifndef PI
-#define PI 3.14159265358979323846
+#define PI 3.14159265358979323846f
 #endif
 
 #ifndef TWO_PI
-#define TWO_PI 3.14159265358979323846 * 2.0
+#define TWO_PI 3.14159265358979323846f * 2.0f
 #endif
 
 namespace My {
@@ -986,7 +986,7 @@ namespace My {
         Matrix4X4f rotation = {{
             {   1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2],  2.0f * q[0] * q[1] + 2.0f * q[3] * q[2],   2.0f * q[0] * q[2] - 2.0f * q[3] * q[1],    0.0f    },
             {   2.0f * q[0] * q[1] - 2.0f * q[3] * q[2],    1.0f - 2.0f * q[0] * q[0] - 2.0f * q[2] * q[2], 2.0f * q[1] * q[2] + 2.0f * q[3] * q[0],    0.0f    },
-            {   2.0f * q[0] * q[2] + 2.0f * q[3] * q[1],    2.0f * q[1] * q[2] - 2.0f * q[1] * q[2] - 2.0f * q[3] * q[0], 1.0f - 2.0f * q[0] * q[0] - 2.0f * q[1] * q[1], 0.0f    },
+            {   2.0f * q[0] * q[2] + 2.0f * q[3] * q[1],    2.0f * q[1] * q[2] - 2.0f * q[3] * q[0], 1.0f - 2.0f * q[0] * q[0] - 2.0f * q[1] * q[1], 0.0f    },
             {   0.0f,   0.0f,   0.0f,   1.0f    }
         }};
 

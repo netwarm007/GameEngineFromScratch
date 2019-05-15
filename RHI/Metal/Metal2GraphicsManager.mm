@@ -225,7 +225,7 @@ void Metal2GraphicsManager::EndScene()
     GraphicsManager::EndScene();
 }
 
-void Metal2GraphicsManager::BeginFrame()
+void Metal2GraphicsManager::BeginFrame(const Frame& frame)
 {
     [m_pRenderer beginFrame];
 }

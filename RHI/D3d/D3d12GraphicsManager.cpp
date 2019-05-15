@@ -254,27 +254,32 @@ void D3d12GraphicsManager::Finalize()
 
     SafeRelease(&m_pRtvHeap);
     SafeRelease(&m_pDsvHeap);
-    SafeRelease(&m_pCbvSrvHeap);
     SafeRelease(&m_pSamplerHeap);
     SafeRelease(&m_pRootSignature);
-    SafeRelease(&m_pRootSignatureResolve);
-    SafeRelease(&m_pCommandQueue);
-    SafeRelease(&m_pCommandAllocator);
 	SafeRelease(&m_pDepthStencilBuffer);
-    SafeRelease(&m_pMsaaRenderTarget);
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        SafeRelease(&m_pRenderTargets[i]);
+        SafeRelease(&m_pCommandAllocator[i]);
+        SafeRelease(&m_pConstantUploadBuffer[i]);
+        SafeRelease(&m_pCbvSrvHeap[i]);
+        SafeRelease(&m_pRenderTargets[2 * i]);
+        SafeRelease(&m_pRenderTargets[2 * i + 1]);
     }
+    SafeRelease(&m_pCommandList);
+    SafeRelease(&m_pCommandQueue);
+    SafeRelease(&m_pPipelineState);
     SafeRelease(&m_pSwapChain);
 
-#if defined(_DEBUG)
-    ID3D12DebugDevice *d3dDebugDevice;
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&d3dDebugDevice))))
-    {
-        d3dDebugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
-    }
-#endif
     SafeRelease(&m_pDev);
+
+#if defined(_DEBUG)
+    if (m_pDebugDev)
+    {
+        m_pDebugDev->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
+    }
+
+    SafeRelease(&m_pDebugDev);
+    SafeRelease(&m_pDebugController);
+#endif
 }
 
 HRESULT D3d12GraphicsManager::WaitForPreviousFrame() {
@@ -284,18 +289,18 @@ HRESULT D3d12GraphicsManager::WaitForPreviousFrame() {
     
     // Signal and increment the fence value.
     HRESULT hr;
-    const uint64_t fence = m_nFenceValue;
-    if(FAILED(hr = m_pCommandQueue->Signal(m_pFence, fence)))
+    const uint64_t fence = m_nFenceValue[m_nFrameIndex];
+    if(FAILED(hr = m_pCommandQueue->Signal(m_pFence[m_nFrameIndex], fence)))
     {
         return hr;
     }
 
-    m_nFenceValue++;
+    m_nFenceValue[m_nFrameIndex]++;
 
     // Wait until the previous frame is finished.
-    if (m_pFence->GetCompletedValue() < fence)
+    if (m_pFence[m_nFrameIndex]->GetCompletedValue() < fence)
     {
-        if(FAILED(hr = m_pFence->SetEventOnCompletion(fence, m_hFenceEvent)))
+        if(FAILED(hr = m_pFence[m_nFrameIndex]->SetEventOnCompletion(fence, m_hFenceEvent)))
         {
             return hr;
         }
@@ -313,7 +318,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
 
     // Describe and create a render target view (RTV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-    rtvHeapDesc.NumDescriptors = GfxConfiguration::kMaxInFlightFrameCount + 1; // +1 for MSAA Resolver
+    rtvHeapDesc.NumDescriptors = 2 * GfxConfiguration::kMaxInFlightFrameCount; // 1 for present + 1 for MSAA Resolver
     rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
     rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_pRtvHeap)))) {
@@ -335,11 +340,15 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
     // a Shader Resource View (SRV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
     cbvHeapDesc.NumDescriptors =
-        GfxConfiguration::kMaxInFlightFrameCount * GfxConfiguration::kMaxSceneObjectCount * 2 + GfxConfiguration::kMaxTextureCount;
+        GfxConfiguration::kMaxSceneObjectCount * 2 + GfxConfiguration::kMaxTextureCount;
     cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if(FAILED(hr = m_pDev->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_pCbvSrvHeap)))) {
-        return hr;
+    for(uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        if(FAILED(hr = m_pDev->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_pCbvSrvHeap[i])))) {
+            return hr;
+        }
+        m_pCbvSrvHeap[i]->SetName(L"CBV SRV Heap");
     }
 
     m_nCbvSrvDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -353,9 +362,14 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
         return hr;
     }
 
-    if(FAILED(hr = m_pDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator)))) {
-        return hr;
+    for(uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        if(FAILED(hr = m_pDev->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_pCommandAllocator[i])))) {
+            return hr;
+        }
+        m_pCommandAllocator[i]->SetName(L"Default Command Allocator");
     }
+
 
     m_nSamplerDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
@@ -368,17 +382,6 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
 
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart();
 
-    // Create a RTV for each frame.
-    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
-    {
-        if (FAILED(hr = m_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i])))) {
-            return hr;
-        }
-        m_pDev->CreateRenderTargetView(m_pRenderTargets[i], nullptr, rtvHandle);
-        rtvHandle.ptr += m_nRtvDescriptorSize;
-    }
-
-    // Create intermediate MSAA RT
     D3D12_RENDER_TARGET_VIEW_DESC renderTargetDesc;
     renderTargetDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
     renderTargetDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
@@ -408,19 +411,34 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget()
     textureDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
     textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
-    if (FAILED(hr = m_pDev->CreateCommittedResource(
-        &prop,
-        D3D12_HEAP_FLAG_NONE,
-        &textureDesc,
-        D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-        &optimizedClearValue,
-        IID_PPV_ARGS(&m_pMsaaRenderTarget)
-    )))
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
-        return hr;
-    }
+        // Create a RTV
+        if (FAILED(hr = m_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[2 * i])))) {
+            return hr;
+        }
+        m_pDev->CreateRenderTargetView(m_pRenderTargets[2 * i], nullptr, rtvHandle);
+        m_pRenderTargets[2 * i]->SetName(L"Render Target");
+        rtvHandle.ptr += m_nRtvDescriptorSize;
 
-    m_pDev->CreateRenderTargetView(m_pMsaaRenderTarget, &renderTargetDesc, rtvHandle);
+        // Create intermediate MSAA RT
+        if (FAILED(hr = m_pDev->CreateCommittedResource(
+            &prop,
+            D3D12_HEAP_FLAG_NONE,
+            &textureDesc,
+            D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+            &optimizedClearValue,
+            IID_PPV_ARGS(&m_pRenderTargets[2 * i + 1])
+        )))
+        {
+            return hr;
+        }
+
+        m_pRenderTargets[2 * i + 1]->SetName(L"MSAA Render Target");
+
+        m_pDev->CreateRenderTargetView(m_pRenderTargets[2 * i + 1], &renderTargetDesc, rtvHandle);
+        rtvHandle.ptr += m_nRtvDescriptorSize;
+    }
 
     return hr;
 }
@@ -472,6 +490,8 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil()
         ))) {
         return hr;
     }
+
+    m_pDepthStencilBuffer->SetName(L"DepthStencilBuffer0");
 
     m_pDev->CreateDepthStencilView(m_pDepthStencilBuffer, &depthStencilDesc, m_pDsvHeap->GetCPUDescriptorHandleForHeapStart());
 
@@ -807,7 +827,7 @@ uint32_t D3d12GraphicsManager::CreateSamplerBuffer()
     {
 		D3D12_CPU_DESCRIPTOR_HANDLE samplerHandle;
 		samplerHandle.ptr = m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart().ptr + i * m_nSamplerDescriptorSize;
-        m_pDev->CreateSampler(&samplerDesc, m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart());
+        m_pDev->CreateSampler(&samplerDesc, samplerHandle);
     }
 
     return S_OK;
@@ -816,8 +836,6 @@ uint32_t D3d12GraphicsManager::CreateSamplerBuffer()
 uint32_t D3d12GraphicsManager::CreateConstantBuffer()
 {
     HRESULT hr;
-
-    const auto kSizeConstantBufferPerFrame = kSizePerBatchConstantBuffer * GfxConfiguration::kMaxSceneObjectCount;
 
     D3D12_HEAP_PROPERTIES prop = { D3D12_HEAP_TYPE_UPLOAD, 
         D3D12_CPU_PAGE_PROPERTY_UNKNOWN, 
@@ -828,7 +846,7 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = kSizeConstantBufferPerFrame;
+    resourceDesc.Width = kSizeConstantBuffer;
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -838,22 +856,62 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	ID3D12Resource* pConstantUploadBuffer;
-    if(FAILED(hr = m_pDev->CreateCommittedResource(
-        &prop,
-        D3D12_HEAP_FLAG_NONE,
-        &resourceDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&pConstantUploadBuffer))))
+    D3D12_RANGE readRange = { 0, 0 };
+
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
-        return hr;
+        if(FAILED(hr = m_pDev->CreateCommittedResource(
+            &prop,
+            D3D12_HEAP_FLAG_NONE,
+            &resourceDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(&m_pConstantUploadBuffer[i]))))
+        {
+            return hr;
+        }
+
+        hr = m_pConstantUploadBuffer[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_pCbvDataBegin[i]));
+        m_pConstantUploadBuffer[i]->SetName(L"Constant Buffer Upload Resource Heap");
+
     }
 
-    D3D12_RANGE readRange = { 0, 0 };
-    hr = pConstantUploadBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_pCbvDataBegin));
+    // Now init descriptors
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+    D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle;
 
-    m_Buffers.push_back(pConstantUploadBuffer);
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        // b[0] --> PerFrameConstantBuffer
+        cbvDesc.BufferLocation = m_pConstantUploadBuffer[i]->GetGPUVirtualAddress();
+        cbvDesc.SizeInBytes = kSizePerFrameConstantBuffer;      // CB size is required to be 256-byte aligned.
+        cbvHandle.ptr = m_pCbvSrvHeap[i]->GetCPUDescriptorHandleForHeapStart().ptr;
+        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
+
+        // b[1] --> PerBatchConstantBuffer
+        cbvDesc.BufferLocation += kSizePerFrameConstantBuffer;
+        cbvDesc.SizeInBytes = kSizePerBatchConstantBuffer;
+        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
+        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
+
+        // b[2] --> LightInfo
+        cbvDesc.BufferLocation += kSizePerBatchConstantBuffer;
+        cbvDesc.SizeInBytes = kSizeLightInfo;
+        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
+        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
+
+        // b[3] --> DebugConstantBuffer
+        cbvDesc.BufferLocation += kSizeLightInfo;
+        cbvDesc.SizeInBytes = kSizeDebugConstantBuffer;
+        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
+        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
+
+        // b[4] --> ShadowMapConstantBuffer
+        cbvDesc.BufferLocation += kSizeDebugConstantBuffer;
+        cbvDesc.SizeInBytes = kSizeShadowMapConstantBuffer;
+        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
+        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
+    }
 
     return hr;
 }
@@ -865,12 +923,10 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
 #if defined(_DEBUG)
     // Enable the D3D12 debug layer.
     {
-        ID3D12Debug* pDebugController;
-        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDebugController))))
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pDebugController))))
         {
-            pDebugController->EnableDebugLayer();
+            m_pDebugController->EnableDebugLayer();
         }
-        SafeRelease(&pDebugController);
     }
 #endif
 
@@ -897,6 +953,13 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
             return hr;
         }
     }
+
+#if defined(_DEBUG)
+    if (m_pDebugController)
+    {
+        m_pDev->QueryInterface(IID_PPV_ARGS(&m_pDebugDev));
+    }
+#endif
 
 	static const D3D_FEATURE_LEVEL s_featureLevels[] =
 	{
@@ -952,6 +1015,7 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     scd.SampleDesc.Count = 1;                               // multi-samples can not be used when in SwapEffect sets to
                                                             // DXGI_SWAP_EFFECT_FLOP_DISCARD
     scd.SampleDesc.Quality = 0;                             // multi-samples can not be used when in SwapEffect sets to
+                                                            // DXGI_SWAP_EFFECT_FLOP_DISCARD
     scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
     scd.BufferCount = GfxConfiguration::kMaxInFlightFrameCount;                          // back buffer count
     scd.Scaling     = DXGI_SCALING_STRETCH;
@@ -1044,9 +1108,9 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
     // root signature for base pass
     {
         D3D12_DESCRIPTOR_RANGE1 ranges[3] = {
-            { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC },
+            { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 5, 10, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND },
             { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0 },
-            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 12, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
+            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 12, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
         };
 
         D3D12_ROOT_PARAMETER1 rootParameters[3] = {
@@ -1079,50 +1143,7 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
             hr = m_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature));
         }
 
-        SafeRelease(&signature);
-        SafeRelease(&error);
-    }
-
-    // root signature for resolve pass
-    {
-        D3D12_DESCRIPTOR_RANGE1 ranges[1] = {
-            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0,D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC }
-        };
-
-        D3D12_ROOT_PARAMETER1 rootParameters[2];
-        rootParameters[0] = 
-            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0] }, D3D12_SHADER_VISIBILITY_PIXEL };
-        rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        rootParameters[1].Constants = { 0, 0, 2 }; 
-        rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-        // Allow input layout and deny uneccessary access to certain pipeline stages.
-        D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-
-        D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {
-                _countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags
-            };
-
-        D3D12_VERSIONED_ROOT_SIGNATURE_DESC versionedRootSignatureDesc = {
-            D3D_ROOT_SIGNATURE_VERSION_1_1,
-        };
-
-        versionedRootSignatureDesc.Desc_1_1 = rootSignatureDesc;
-
-        ID3DBlob* signature = nullptr;
-        ID3DBlob* error = nullptr;
-        if (SUCCEEDED(hr = D3D12SerializeVersionedRootSignature(&versionedRootSignatureDesc, &signature, &error)))
-        {
-            hr = m_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignatureResolve));
-            if (FAILED(hr))
-            {
-                printf_s("failed to create root signature for reolve phase: %x", hr);
-            }
-        }
+        m_pRootSignature->SetName(L"RootSignature0");
 
         SafeRelease(&signature);
         SafeRelease(&error);
@@ -1221,89 +1242,8 @@ HRESULT D3d12GraphicsManager::InitializePSO() {
             return false;
         }
 
-    }
+        m_pPipelineState->SetName(L"Default Pipeline");
 
-    // resolve pass
-    {
-        const char* vsFilename = "Shaders/HLSL/msaa_resolver.vert.cso"; 
-        const char* fsFilename = "Shaders/HLSL/msaa_resolver.frag.cso";
-
-        // load the shaders
-        Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vsFilename);
-        Buffer pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(fsFilename);
-
-        D3D12_SHADER_BYTECODE vertexShaderByteCode;
-        vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
-        vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
-
-        D3D12_SHADER_BYTECODE pixelShaderByteCode;
-        pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
-        pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
-
-        // create the input layout object
-        D3D12_INPUT_ELEMENT_DESC ied[] =
-        {
-            {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        };
-
-        D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
-                                    D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                                    TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF };
-
-        const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend = { FALSE, FALSE,
-            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-            D3D12_LOGIC_OP_NOOP,
-            D3D12_COLOR_WRITE_ENABLE_ALL
-        };
-
-        D3D12_BLEND_DESC bld = { FALSE, FALSE,
-                                                {
-                                                defaultRenderTargetBlend,
-                                                defaultRenderTargetBlend,
-                                                defaultRenderTargetBlend,
-                                                defaultRenderTargetBlend,
-                                                defaultRenderTargetBlend,
-                                                defaultRenderTargetBlend,
-                                                defaultRenderTargetBlend,
-                                                }
-                                        };
-
-        const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, 
-            D3D12_STENCIL_OP_KEEP, 
-            D3D12_STENCIL_OP_KEEP, 
-            D3D12_COMPARISON_FUNC_ALWAYS };
-
-        D3D12_DEPTH_STENCIL_DESC dsd = { FALSE, 
-            D3D12_DEPTH_WRITE_MASK_ALL, 
-            D3D12_COMPARISON_FUNC_LESS, 
-            FALSE, 
-            D3D12_DEFAULT_STENCIL_READ_MASK, 
-            D3D12_DEFAULT_STENCIL_WRITE_MASK, 
-            defaultStencilOp, defaultStencilOp };
-
-        // describe and create the graphics pipeline state object (PSO)
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC psod = {};
-        psod.pRootSignature = m_pRootSignatureResolve;
-        psod.VS             = vertexShaderByteCode;
-        psod.PS             = pixelShaderByteCode;
-        psod.BlendState     = bld;
-        psod.SampleMask     = UINT_MAX;
-        psod.RasterizerState= rsd;
-        psod.DepthStencilState = dsd;
-        psod.InputLayout    = { ied, _countof(ied) };
-        psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psod.NumRenderTargets = 1;
-        psod.RTVFormats[0]  = ::DXGI_FORMAT_R8G8B8A8_UNORM;
-        psod.DSVFormat = ::DXGI_FORMAT_UNKNOWN;
-        psod.SampleDesc.Count = 1;   // no MSAA
-        psod.SampleDesc.Quality = 0; // no MSAA
-
-        if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&m_pPipelineStateResolve))))
-        {
-            return false;
-        }
     }
 
     return hr;
@@ -1317,9 +1257,14 @@ HRESULT D3d12GraphicsManager::CreateCommandList()
 	{
 		hr = m_pDev->CreateCommandList(0, 
 					D3D12_COMMAND_LIST_TYPE_DIRECT, 
-					m_pCommandAllocator, 
+					m_pCommandAllocator[m_nFrameIndex], 
 					m_pPipelineState, 
 					IID_PPV_ARGS(&m_pCommandList));
+
+        if(SUCCEEDED(hr))
+        {
+            m_pCommandList->SetName(L"Default Command List");
+        }
 	}
 
     return hr;
@@ -1423,7 +1368,10 @@ void D3d12GraphicsManager::BeginScene(const Scene& scene)
 
             dbc->node = pGeometryNode;
 
-            m_Frames[m_nFrameIndex].batchContexts.push_back(dbc);
+            for(auto& frame : m_Frames)
+            {
+                frame.batchContexts.push_back(dbc);
+            }
         }
     }
     cout << "Done!" << endl;
@@ -1433,12 +1381,16 @@ void D3d12GraphicsManager::BeginScene(const Scene& scene)
         ID3D12CommandList* ppCommandLists[] = { m_pCommandList };
         m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-        if (FAILED(hr = m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence))))
+        for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
         {
-            return;
+            if (FAILED(hr = m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence[i]))))
+            {
+                return;
+            }
+
+            m_nFenceValue[i] = 1;
         }
 
-        m_nFenceValue = 1;
 
         m_hFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
         if (m_hFenceEvent == NULL)
@@ -1456,7 +1408,6 @@ void D3d12GraphicsManager::BeginScene(const Scene& scene)
 
 void D3d12GraphicsManager::EndScene()
 {
-    SafeRelease(&m_pFence);
     for (auto& p : m_Buffers) {
         SafeRelease(&p);
     }
@@ -1470,25 +1421,23 @@ void D3d12GraphicsManager::EndScene()
 
     for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
-        auto& batchContexts = m_Frames[i].batchContexts;
-
-        for (auto dbc : batchContexts) {
-            // nothing to do here
-        }
-
-        batchContexts.clear();
+        SafeRelease(&m_pFence[i]);
     }
+
+    GraphicsManager::EndScene();
 }
 
-void D3d12GraphicsManager::BeginFrame()
+void D3d12GraphicsManager::BeginFrame(const Frame& frame)
 {
+    GraphicsManager::BeginFrame(frame);
+
     ResetCommandList();
 
     // Indicate that the back buffer will be used as a resolve source.
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pMsaaRenderTarget;
+    barrier.Transition.pResource = m_pRenderTargets[2 * m_nFrameIndex + 1];
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -1497,11 +1446,11 @@ void D3d12GraphicsManager::BeginFrame()
     // Set necessary state.
     m_pCommandList->SetGraphicsRootSignature(m_pRootSignature);
 
-    ID3D12DescriptorHeap* ppHeaps[] = { m_pCbvSrvHeap, m_pSamplerHeap };
+    ID3D12DescriptorHeap* ppHeaps[] = { m_pCbvSrvHeap[m_nFrameIndex], m_pSamplerHeap };
     m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-    // Textures
-    m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCbvSrvHeap->GetGPUDescriptorHandleForHeapStart());
+    // Cbv Srv Uav
+    m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCbvSrvHeap[m_nFrameIndex]->GetGPUDescriptorHandleForHeapStart());
 
     // Sampler
     m_pCommandList->SetGraphicsRootDescriptorTable(1, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
@@ -1513,7 +1462,7 @@ void D3d12GraphicsManager::BeginFrame()
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
     // rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
     // bind the MSAA buffer
-    rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + GfxConfiguration::kMaxInFlightFrameCount * m_nRtvDescriptorSize;
+    rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (2 * m_nFrameIndex + 1) * m_nRtvDescriptorSize;
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
     dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
     m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
@@ -1522,6 +1471,8 @@ void D3d12GraphicsManager::BeginFrame()
     const FLOAT clearColor[] = { 0.2f, 0.3f, 0.4f, 1.0f };
     m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_pCommandList->ClearDepthStencilView(m_pDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    SetPerFrameConstants(frame.frameContext);
 }
 
 void D3d12GraphicsManager::EndFrame()
@@ -1540,17 +1491,9 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
 {
     for (const auto& pDbc : batches)
     {
+        SetPerBatchConstants(*pDbc);
+
         const D3dDrawBatchContext& dbc = dynamic_cast<const D3dDrawBatchContext&>(*pDbc);
-
-        m_pCommandList->SetPipelineState(m_pPipelineState);
-
-        // do 3D rendering on the back buffer here
-        // CBV Per Batch
-        D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvHandle;
-        uint32_t nFrameResourceDescriptorOffset = m_nFrameIndex * 2; // 2 descriptors for each draw call
-        cbvSrvHandle.ptr = m_pCbvSrvHeap->GetGPUDescriptorHandleForHeapStart().ptr 
-                                + (nFrameResourceDescriptorOffset + dbc.batchIndex * 2 /* 2 descriptors for each batch */) * m_nCbvSrvDescriptorSize;
-        m_pCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvHandle);
 
         // select which vertex buffer(s) to use
         for (uint32_t j = 0; j < dbc.property_count; j++)
@@ -1585,14 +1528,11 @@ void D3d12GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
             , &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
 }
 
-void D3d12GraphicsManager::SetPerBatchConstants(const std::vector<shared_ptr<DrawBatchContext>>& batches)
+void D3d12GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
 {
-    for (const auto& pDbc : batches)
-    {
-        memcpy(m_pCbvDataBegin[m_nFrameIndex]
-                + kSizePerFrameConstantBuffer + pDbc->batchIndex * kSizePerBatchConstantBuffer
-                , &static_cast<const PerBatchConstants&>(*pDbc), sizeof(PerBatchConstants));
-    }
+    memcpy(m_pCbvDataBegin[m_nFrameIndex]
+            + kSizePerFrameConstantBuffer
+            , &static_cast<const PerBatchConstants&>(context), sizeof(PerBatchConstants));
 }
 
 HRESULT D3d12GraphicsManager::ResetCommandList()
@@ -1602,12 +1542,12 @@ HRESULT D3d12GraphicsManager::ResetCommandList()
 	// command list allocators can only be reset when the associated 
 	// command lists have finished execution on the GPU; apps should use 
 	// fences to determine GPU execution progress.
-	if (SUCCEEDED(hr = m_pCommandAllocator->Reset()))
+	if (SUCCEEDED(hr = m_pCommandAllocator[m_nFrameIndex]->Reset()))
 	{
         // however, when ExecuteCommandList() is called on a particular command 
         // list, that command list can then be reset at any time and must be before 
         // re-recording.
-        hr = m_pCommandList->Reset(m_pCommandAllocator, m_pPipelineState);
+        hr = m_pCommandList->Reset(m_pCommandAllocator[m_nFrameIndex], m_pPipelineState);
 	}
 
     return hr;
@@ -1617,10 +1557,9 @@ HRESULT D3d12GraphicsManager::MsaaResolve()
 {
     D3D12_RESOURCE_BARRIER barrier = {};
 
-#if 1
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pMsaaRenderTarget;
+    barrier.Transition.pResource = m_pRenderTargets[2 * m_nFrameIndex + 1];
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -1628,17 +1567,17 @@ HRESULT D3d12GraphicsManager::MsaaResolve()
 
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+    barrier.Transition.pResource = m_pRenderTargets[2 * m_nFrameIndex];
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RESOLVE_DEST;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     m_pCommandList->ResourceBarrier(1, &barrier);
 
-    m_pCommandList->ResolveSubresource(m_pRenderTargets[m_nFrameIndex], 0, m_pMsaaRenderTarget, 0, ::DXGI_FORMAT_R8G8B8A8_UNORM);
+    m_pCommandList->ResolveSubresource(m_pRenderTargets[2 * m_nFrameIndex], 0, m_pRenderTargets[2 * m_nFrameIndex + 1], 0, ::DXGI_FORMAT_R8G8B8A8_UNORM);
 
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pMsaaRenderTarget;
+    barrier.Transition.pResource = m_pRenderTargets[2 * m_nFrameIndex + 1];
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -1646,60 +1585,11 @@ HRESULT D3d12GraphicsManager::MsaaResolve()
 
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
+    barrier.Transition.pResource = m_pRenderTargets[2 * m_nFrameIndex];
     barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_DEST;
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     m_pCommandList->ResourceBarrier(1, &barrier);
-#else
-    // MSAA resolve pass
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pMsaaRenderTarget;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_pCommandList->ResourceBarrier(1, &barrier);
-
-    m_pCommandList->SetPipelineState(m_pPipelineStateResolve);
-
-    // Indicate that the back buffer will be used as a render target.
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_pCommandList->ResourceBarrier(1, &barrier);
-
-    rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
-    m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
-    // Set necessary state.
-    m_pCommandList->SetGraphicsRootSignature(m_pRootSignatureResolve);
-
-    // Set CBV
-    m_pCommandList->SetGraphicsRoot32BitConstant(1, g_pApp->GetConfiguration().screenWidth, 0);
-    m_pCommandList->SetGraphicsRoot32BitConstant(1, g_pApp->GetConfiguration().screenHeight, 1);
-
-    // Set SRV
-    auto texture_index = m_TextureIndex["MSAA"];
-    D3D12_GPU_DESCRIPTOR_HANDLE srvHandle;
-    srvHandle.ptr = m_pCbvSrvHeap->GetGPUDescriptorHandleForHeapStart().ptr + (m_kTextureDescStartIndex + texture_index) * m_nCbvSrvDescriptorSize;
-    m_pCommandList->SetGraphicsRootDescriptorTable(0, srvHandle);
-
-    m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-    m_pCommandList->IASetVertexBuffers(0, 1, &m_VertexBufferViewResolve);
-    m_pCommandList->DrawInstanced(4, 1, 0, 0);
-
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nFrameIndex];
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    m_pCommandList->ResourceBarrier(1, &barrier);
-#endif
 
     return S_OK;
 }

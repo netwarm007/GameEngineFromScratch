@@ -90,9 +90,9 @@ namespace My {
 
     protected:
         virtual void BeginScene(const Scene& scene);
-        virtual void EndScene() {}
+        virtual void EndScene();
 
-        virtual void BeginFrame() {}
+        virtual void BeginFrame(const Frame& frame) {}
         virtual void EndFrame() {}
 
         virtual void BeginPass() {}
@@ -111,10 +111,6 @@ namespace My {
         void CalculateLights();
 
         void UpdateConstants();
-
-        virtual void SetLightInfo(const LightInfo& lightInfo) {}
-        virtual void SetPerFrameConstants(const DrawFrameContext& context) {}
-        virtual void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) {}
 
     protected:
         uint32_t m_nFrameIndex = 0;
