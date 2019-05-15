@@ -8,7 +8,7 @@ namespace My {
     };
 
     struct DrawBatchContext : PerBatchConstants {
-        uint32_t batchIndex;
+        int32_t batchIndex;
         std::shared_ptr<SceneGeometryNode> node;
         material_textures material;
 

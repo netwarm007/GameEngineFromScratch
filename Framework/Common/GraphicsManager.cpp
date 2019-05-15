@@ -14,7 +14,6 @@ using namespace std;
 int GraphicsManager::Initialize()
 {
     int result = 0;
-    m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
 #if !defined(OS_WEBASSEMBLY)
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
 #endif
@@ -46,13 +45,11 @@ void GraphicsManager::Tick()
 
     UpdateConstants();
 
-    BeginFrame();
+    BeginFrame(m_Frames[m_nFrameIndex]);
     Draw();
     EndFrame();
 
     Present();
-
-    m_nFrameIndex = (m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount;
 }
 
 void GraphicsManager::ResizeCanvas(int32_t width, int32_t height)
@@ -93,9 +90,6 @@ void GraphicsManager::UpdateConstants()
     CalculateCameraMatrix();
     CalculateLights();
 
-    SetPerFrameConstants(frame.frameContext);
-    SetPerBatchConstants(frame.batchContexts);
-    SetLightInfo(frame.lightInfo);
 }
 
 void GraphicsManager::Draw()
@@ -289,12 +283,19 @@ void GraphicsManager::CalculateLights()
 
 void GraphicsManager::BeginScene(const Scene& scene)
 {
+    m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
+
     for (auto pPass : m_InitPasses)
     {
         BeginCompute();
         pPass->Dispatch();
         EndCompute();
     }
+}
+
+void GraphicsManager::EndScene()
+{
+    m_Frames.clear();
 }
 
 #ifdef DEBUG

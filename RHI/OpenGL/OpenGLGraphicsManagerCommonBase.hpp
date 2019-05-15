@@ -74,7 +74,7 @@ namespace My {
         void BeginScene(const Scene& scene) final;
         void EndScene() final;
 
-        void BeginFrame() final;
+        void BeginFrame(const Frame& frame) final;
         void EndFrame() final;
 
         void BeginPass() final {}
@@ -89,9 +89,9 @@ namespace My {
 
         void drawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
 
-        void SetPerFrameConstants(const DrawFrameContext& context) final;
-        void SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
-        void SetLightInfo(const LightInfo& lightInfo) final;
+        void SetPerFrameConstants(const DrawFrameContext& context);
+        void SetPerBatchConstants(const DrawBatchContext& context);
+        void SetLightInfo(const LightInfo& lightInfo);
 
         bool setShaderParameter(const char* paramName, const Matrix4X4f& param);
         bool setShaderParameter(const char* paramName, const Matrix4X4f* param, const int32_t count);
