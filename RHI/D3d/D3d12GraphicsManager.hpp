@@ -31,7 +31,6 @@ namespace My {
         void EndFrame() final;
 
         void SetPerFrameConstants(const DrawFrameContext& context);
-        void SetPerBatchConstants(const DrawBatchContext& context);
 
         HRESULT CreateDescriptorHeaps();
         HRESULT CreateRenderTarget();
@@ -67,7 +66,7 @@ namespace My {
         ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
         ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
-		ID3D12DescriptorHeap*           m_pCbvSrvHeap[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};            // an array of descriptors of GPU objects
+		ID3D12DescriptorHeap*           m_pSrvHeap[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};            // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pSamplerHeap = nullptr;           // an array of descriptors of GPU objects
         ID3D12PipelineState*            m_pPipelineState = nullptr;         // an object maintains the state of all currently set shaders
                                                                             // and certain fixed function state objects
@@ -75,7 +74,7 @@ namespace My {
         ID3D12GraphicsCommandList*      m_pCommandList = nullptr;           // a list to store GPU commands, which will be submitted to GPU to execute when done
 
         uint32_t                        m_nRtvDescriptorSize;
-        uint32_t                        m_nCbvSrvDescriptorSize;
+        uint32_t                        m_nSrvDescriptorSize;
         uint32_t                        m_nSamplerDescriptorSize;
 
         std::vector<ID3D12Resource*>    m_Buffers;                          // the pointer to the GPU buffer other than texture
@@ -90,8 +89,8 @@ namespace My {
             size_t   property_offset;
         };
 
-        uint8_t*                        m_pCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
-	    ID3D12Resource*                 m_pConstantUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
+        uint8_t*                        m_pPerFrameCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
+	    ID3D12Resource*                 m_pPerFrameConstantUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
 
         // Synchronization objects
         HANDLE                          m_hFenceEvent;

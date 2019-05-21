@@ -25,7 +25,7 @@ namespace My {
         void Tick() override;
 
         virtual void Draw();
-        virtual void Present() {};
+        virtual void Present() {}
 
         virtual void ResizeCanvas(int32_t width, int32_t height);
 

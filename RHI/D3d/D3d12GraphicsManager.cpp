@@ -259,8 +259,8 @@ void D3d12GraphicsManager::Finalize()
 	SafeRelease(&m_pDepthStencilBuffer);
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         SafeRelease(&m_pCommandAllocator[i]);
-        SafeRelease(&m_pConstantUploadBuffer[i]);
-        SafeRelease(&m_pCbvSrvHeap[i]);
+        SafeRelease(&m_pPerFrameConstantUploadBuffer[i]);
+        SafeRelease(&m_pSrvHeap[i]);
         SafeRelease(&m_pRenderTargets[2 * i]);
         SafeRelease(&m_pRenderTargets[2 * i + 1]);
     }
@@ -336,26 +336,24 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
         return hr;
     }
 
-    // Describe and create a Constant Buffer View (CBV) +
-    // a Shader Resource View (SRV) descriptor heap.
-    D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-    cbvHeapDesc.NumDescriptors =
-        GfxConfiguration::kMaxSceneObjectCount * 2 + GfxConfiguration::kMaxTextureCount;
-    cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    // Describe and create a Shader Resource View (SRV) descriptor heap.
+    D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+    srvHeapDesc.NumDescriptors = GfxConfiguration::kMaxTextureCount;
+    srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     for(uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
-        if(FAILED(hr = m_pDev->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_pCbvSrvHeap[i])))) {
+        if(FAILED(hr = m_pDev->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_pSrvHeap[i])))) {
             return hr;
         }
-        m_pCbvSrvHeap[i]->SetName(L"CBV SRV Heap");
+        m_pSrvHeap[i]->SetName(L"SRV Heap");
     }
 
-    m_nCbvSrvDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    m_nSrvDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     // Describe and create a sampler descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
-    samplerHeapDesc.NumDescriptors = GfxConfiguration::kMaxTextureCount; // this is the max D3d12 HW support currently
+    samplerHeapDesc.NumDescriptors = 8; // this is the max D3d12 HW support currently
     samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
     samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&m_pSamplerHeap)))) {
@@ -823,7 +821,7 @@ uint32_t D3d12GraphicsManager::CreateSamplerBuffer()
     samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
     // create samplers
-    for (int32_t i = 0; i < GfxConfiguration::kMaxTextureCount; i++)
+    for (int32_t i = 0; i < 8; i++)
     {
 		D3D12_CPU_DESCRIPTOR_HANDLE samplerHandle;
 		samplerHandle.ptr = m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart().ptr + i * m_nSamplerDescriptorSize;
@@ -846,7 +844,7 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
     D3D12_RESOURCE_DESC resourceDesc = {};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = kSizeConstantBuffer;
+    resourceDesc.Width = kSizePerFrameConstantBuffer;
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -866,51 +864,14 @@ uint32_t D3d12GraphicsManager::CreateConstantBuffer()
             &resourceDesc,
             D3D12_RESOURCE_STATE_GENERIC_READ,
             nullptr,
-            IID_PPV_ARGS(&m_pConstantUploadBuffer[i]))))
+            IID_PPV_ARGS(&m_pPerFrameConstantUploadBuffer[i]))))
         {
             return hr;
         }
 
-        hr = m_pConstantUploadBuffer[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_pCbvDataBegin[i]));
-        m_pConstantUploadBuffer[i]->SetName(L"Constant Buffer Upload Resource Heap");
+        hr = m_pPerFrameConstantUploadBuffer[i]->Map(0, &readRange, reinterpret_cast<void**>(&m_pPerFrameCbvDataBegin[i]));
+        m_pPerFrameConstantUploadBuffer[i]->SetName(L"Per Frame Constant Buffer");
 
-    }
-
-    // Now init descriptors
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-    D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle;
-
-    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
-    {
-        // b[0] --> PerFrameConstantBuffer
-        cbvDesc.BufferLocation = m_pConstantUploadBuffer[i]->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = kSizePerFrameConstantBuffer;      // CB size is required to be 256-byte aligned.
-        cbvHandle.ptr = m_pCbvSrvHeap[i]->GetCPUDescriptorHandleForHeapStart().ptr;
-        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
-
-        // b[1] --> PerBatchConstantBuffer
-        cbvDesc.BufferLocation += kSizePerFrameConstantBuffer;
-        cbvDesc.SizeInBytes = kSizePerBatchConstantBuffer;
-        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
-        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
-
-        // b[2] --> LightInfo
-        cbvDesc.BufferLocation += kSizePerBatchConstantBuffer;
-        cbvDesc.SizeInBytes = kSizeLightInfo;
-        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
-        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
-
-        // b[3] --> DebugConstantBuffer
-        cbvDesc.BufferLocation += kSizeLightInfo;
-        cbvDesc.SizeInBytes = kSizeDebugConstantBuffer;
-        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
-        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
-
-        // b[4] --> ShadowMapConstantBuffer
-        cbvDesc.BufferLocation += kSizeDebugConstantBuffer;
-        cbvDesc.SizeInBytes = kSizeShadowMapConstantBuffer;
-        cbvHandle.ptr += m_nCbvSrvDescriptorSize;
-        m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
     }
 
     return hr;
@@ -1107,17 +1068,25 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
 
     // root signature for base pass
     {
-        D3D12_DESCRIPTOR_RANGE1 ranges[3] = {
-            { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 5, 10, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND },
+        D3D12_DESCRIPTOR_RANGE1 ranges[] = {
             { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0 },
-            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 12, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
+            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, UINT_MAX, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }, 
+            { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, UINT_MAX, 12, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
         };
 
-        D3D12_ROOT_PARAMETER1 rootParameters[3] = {
-            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0] }, D3D12_SHADER_VISIBILITY_ALL },
-            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[1] }, D3D12_SHADER_VISIBILITY_PIXEL },
-            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[2] }, D3D12_SHADER_VISIBILITY_PIXEL }
+        D3D12_ROOT_PARAMETER1 rootParameters[] = {
+            { D3D12_ROOT_PARAMETER_TYPE_CBV, {},  D3D12_SHADER_VISIBILITY_ALL}, // Per Frame Constant
+            { D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS, {},  D3D12_SHADER_VISIBILITY_VERTEX }, // Per Batch Constant
+            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0]}, D3D12_SHADER_VISIBILITY_PIXEL },
+            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[1]}, D3D12_SHADER_VISIBILITY_PIXEL },
+            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[2]}, D3D12_SHADER_VISIBILITY_PIXEL }
         };
+        rootParameters[0].Descriptor.ShaderRegister = 10;
+        rootParameters[0].Descriptor.RegisterSpace = 0;
+        rootParameters[0].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
+        rootParameters[1].Constants.ShaderRegister = 11;
+        rootParameters[1].Constants.RegisterSpace = 0;
+        rootParameters[1].Constants.Num32BitValues = 16;
 
         // Allow input layout and deny uneccessary access to certain pipeline stages.
         D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
@@ -1446,14 +1415,14 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame)
     // Set necessary state.
     m_pCommandList->SetGraphicsRootSignature(m_pRootSignature);
 
-    ID3D12DescriptorHeap* ppHeaps[] = { m_pCbvSrvHeap[m_nFrameIndex], m_pSamplerHeap };
+    ID3D12DescriptorHeap* ppHeaps[] = { m_pSrvHeap[m_nFrameIndex], m_pSamplerHeap };
     m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-    // Cbv Srv Uav
-    m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCbvSrvHeap[m_nFrameIndex]->GetGPUDescriptorHandleForHeapStart());
+    // Per Frame CBV
+    m_pCommandList->SetGraphicsRootConstantBufferView(0, m_pPerFrameConstantUploadBuffer[m_nFrameIndex]->GetGPUVirtualAddress());
 
     // Sampler
-    m_pCommandList->SetGraphicsRootDescriptorTable(1, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
+    m_pCommandList->SetGraphicsRootDescriptorTable(2, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
 
     m_pCommandList->RSSetViewports(1, &m_ViewPort);
     m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
@@ -1491,7 +1460,7 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
 {
     for (const auto& pDbc : batches)
     {
-        SetPerBatchConstants(*pDbc);
+        m_pCommandList->SetGraphicsRoot32BitConstants(1, 16, &pDbc->modelMatrix, 0);
 
         const D3dDrawBatchContext& dbc = dynamic_cast<const D3dDrawBatchContext&>(*pDbc);
 
@@ -1524,15 +1493,8 @@ void D3d12GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler 
 
 void D3d12GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
 {
-    memcpy(m_pCbvDataBegin[m_nFrameIndex]
+    memcpy(m_pPerFrameCbvDataBegin[m_nFrameIndex]
             , &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
-}
-
-void D3d12GraphicsManager::SetPerBatchConstants(const DrawBatchContext& context)
-{
-    memcpy(m_pCbvDataBegin[m_nFrameIndex]
-            + kSizePerFrameConstantBuffer
-            , &static_cast<const PerBatchConstants&>(context), sizeof(PerBatchConstants));
 }
 
 HRESULT D3d12GraphicsManager::ResetCommandList()

@@ -98,11 +98,6 @@ const size_t kSizePerBatchConstantBuffer = ALIGN(sizeof(PerBatchConstants), 256)
 const size_t kSizeLightInfo = ALIGN(sizeof(LightInfo), 256); 					  	// CB size is required to be 256-byte aligned.
 const size_t kSizeDebugConstantBuffer = ALIGN(sizeof(DebugConstants), 256);       	// CB size is required to be 256-byte aligned.
 const size_t kSizeShadowMapConstantBuffer = ALIGN(sizeof(ShadowMapConstants), 256); // CB size is required to be 256-byte aligned.
-const size_t kSizeConstantBuffer = kSizePerFrameConstantBuffer 
-                                   + kSizePerBatchConstantBuffer
-								   + kSizeDebugConstantBuffer
-								   + kSizeShadowMapConstantBuffer
-								   + kSizeLightInfo;
 #endif
 
 struct a2v

@@ -14,28 +14,28 @@ namespace My {
 		/// \param[in] msaa the msaa sample count
 		/// \param[in] width the screen width in pixel
 		/// \param[in] height the screen height in pixel
-		GfxConfiguration(uint32_t r = 8, uint32_t g = 8,
-			uint32_t b = 8, uint32_t a = 8,
-			uint32_t d = 24, uint32_t s = 0, uint32_t msaa = 1,
-			uint32_t width = 1920, uint32_t height = 1080, const char* app_name="GameEngineFromScratch") :
+		GfxConfiguration(int32_t r = 8, int32_t g = 8,
+			int32_t b = 8, int32_t a = 8,
+			int32_t d = 24, int32_t s = 0, int32_t msaa = 1,
+			int32_t width = 1920, int32_t height = 1080, const char* app_name="GameEngineFromScratch") :
 			redBits(r), greenBits(g), blueBits(b), alphaBits(a),
 			depthBits(d), stencilBits(s), msaaSamples(msaa),
 			screenWidth(width), screenHeight(height), appName(app_name)
 		{
 		}
 
-		uint32_t redBits; ///< red color channel depth in bits
-		uint32_t greenBits; ///< green color channel depth in bits
-		uint32_t blueBits; ///< blue color channel depth in bits
-		uint32_t alphaBits; ///< alpha color channel depth in bits
-		uint32_t depthBits; ///< depth buffer depth in bits
-		uint32_t stencilBits; ///< stencil buffer depth in bits
-		uint32_t msaaSamples; ///< MSAA samples
-		uint32_t screenWidth;
-		uint32_t screenHeight;
-        static const uint32_t kMaxInFlightFrameCount = 2;
-        static const uint32_t kMaxSceneObjectCount = 2048;
-        static const uint32_t kMaxTextureCount = 2048;
+		int32_t redBits; ///< red color channel depth in bits
+		int32_t greenBits; ///< green color channel depth in bits
+		int32_t blueBits; ///< blue color channel depth in bits
+		int32_t alphaBits; ///< alpha color channel depth in bits
+		int32_t depthBits; ///< depth buffer depth in bits
+		int32_t stencilBits; ///< stencil buffer depth in bits
+		int32_t msaaSamples; ///< MSAA samples
+		int32_t screenWidth;
+		int32_t screenHeight;
+        static const int32_t kMaxInFlightFrameCount = 2;
+        static const int32_t kMaxSceneObjectCount = 2048;
+        static const int32_t kMaxTextureCount = 2048;
         const char* appName;
 
         friend std::ostream& operator<<(std::ostream& out, const GfxConfiguration& conf)
