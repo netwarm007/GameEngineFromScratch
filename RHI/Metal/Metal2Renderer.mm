@@ -87,8 +87,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     for(NSUInteger i = 0; i < GEFSMaxBuffersInFlight; i++)
     {
         // Create and allocate our uniform buffer object.  Indicate shared storage so that both the
-        //  CPU can access the buffer
-        _uniformBuffers[i] = [_device newBufferWithLength:kSizePerFrameConstantBuffer + kSizePerBatchConstantBuffer * GfxConfiguration::kMaxSceneObjectCount
+        // CPU can access the buffer
+        _uniformBuffers[i] = [_device newBufferWithLength:kSizePerFrameConstantBuffer
                                                      options:MTLResourceStorageModeShared];
 
         _uniformBuffers[i].label = [NSString stringWithFormat:@"uniformBuffer%lu", i];
@@ -478,7 +478,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 #endif
 }
 
-- (void)beginFrame
+- (void)beginFrame:(const My::Frame&)frame
 {
     // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the Metal
     // pipeline (App, Metal, Drivers, GPU, etc)
@@ -495,6 +495,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     {
         _renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
     }
+
+    [self setPerFrameConstants:frame.frameContext];
 }
 
 - (void)endFrame
@@ -557,16 +559,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 {
     std::memcpy(_uniformBuffers[_currentBufferIndex].contents, 
             &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
-}
-
-- (void)setPerBatchConstants:(const std::vector<std::shared_ptr<DrawBatchContext>>&)batches
-{
-    for (const auto& pDbc : batches)
-    {
-        std::memcpy(reinterpret_cast<uint8_t*>(_uniformBuffers[_currentBufferIndex].contents) 
-                + kSizePerFrameConstantBuffer + pDbc->batchIndex * kSizePerBatchConstantBuffer
-                , &static_cast<const PerBatchConstants&>(*pDbc), sizeof(PerBatchConstants));
-    }
 }
 
 - (void)setLightInfo:(const LightInfo&)lightInfo
@@ -691,11 +683,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
         for (const auto& pDbc : batches)
         {
-            const MtlDrawBatchContext& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
-
-            [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                    offset:kSizePerFrameConstantBuffer + dbc.batchIndex * kSizePerBatchConstantBuffer
+            [_renderEncoder setVertexBytes:pDbc->modelMatrix
+                                    length:64
                                     atIndex:11];
+
+            const MtlDrawBatchContext& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
 
             // Set mesh's vertex buffers
             for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)

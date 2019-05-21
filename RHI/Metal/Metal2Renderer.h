@@ -19,8 +19,6 @@ namespace My {
 
 - (void)setPerFrameConstants:(const DrawFrameContext&)context;
 
-- (void)setPerBatchConstants:(const std::vector<std::shared_ptr<DrawBatchContext>>&)batches;
-
 - (void)setLightInfo:(const LightInfo&)lightInfo;
 
 - (void)setSkyBox:(const DrawFrameContext&)context;
@@ -39,7 +37,7 @@ namespace My {
 
 - (uint32_t)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
 
-- (void)beginFrame;
+- (void)beginFrame:(const My::Frame&)frame;
 
 - (void)endFrame;
 

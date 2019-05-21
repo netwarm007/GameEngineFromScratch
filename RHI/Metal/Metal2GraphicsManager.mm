@@ -227,12 +227,16 @@ void Metal2GraphicsManager::EndScene()
 
 void Metal2GraphicsManager::BeginFrame(const Frame& frame)
 {
-    [m_pRenderer beginFrame];
+    GraphicsManager::BeginFrame(frame);
+
+    [m_pRenderer beginFrame:frame];
 }
 
 void Metal2GraphicsManager::EndFrame()
 {
     [m_pRenderer endFrame];
+
+    GraphicsManager::EndFrame();
 }
 
 void Metal2GraphicsManager::BeginPass()
@@ -258,21 +262,6 @@ void Metal2GraphicsManager::EndCompute()
 void Metal2GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
 {
     [m_pRenderer useShaderProgram:shaderProgram];
-}
-
-void Metal2GraphicsManager::SetPerFrameConstants(const DrawFrameContext& context)
-{
-    [m_pRenderer setPerFrameConstants:context];
-}
-
-void Metal2GraphicsManager::SetPerBatchConstants(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) 
-{
-    [m_pRenderer setPerBatchConstants:batches];
-}
-
-void Metal2GraphicsManager::SetLightInfo(const LightInfo& lightInfo)
-{
-    [m_pRenderer setLightInfo:lightInfo];
 }
 
 void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
