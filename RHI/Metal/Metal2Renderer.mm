@@ -497,6 +497,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     }
 
     [self setPerFrameConstants:frame.frameContext];
+    [self setLightInfo:frame.lightInfo];
 }
 
 - (void)endFrame
