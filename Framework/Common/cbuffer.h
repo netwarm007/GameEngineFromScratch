@@ -74,7 +74,7 @@ unistruct LightInfo REGISTER(b12)
 	struct Light lights[MAX_LIGHTS];
 };
 
-unistruct DebugConstants REGISTER(b13)
+unistruct DebugConstants REGISTER(b12)
 {
 	float layer_index;
 	float mip_level;
@@ -84,7 +84,7 @@ unistruct DebugConstants REGISTER(b13)
 	Vector4f back_color;
 };
 
-unistruct ShadowMapConstants REGISTER(b14)
+unistruct ShadowMapConstants REGISTER(b12)
 {
     Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
 	Vector4f lightPos;						// 16 bytes
@@ -98,6 +98,14 @@ const size_t kSizePerBatchConstantBuffer = ALIGN(sizeof(PerBatchConstants), 256)
 const size_t kSizeLightInfo = ALIGN(sizeof(LightInfo), 256); 					  	// CB size is required to be 256-byte aligned.
 const size_t kSizeDebugConstantBuffer = ALIGN(sizeof(DebugConstants), 256);       	// CB size is required to be 256-byte aligned.
 const size_t kSizeShadowMapConstantBuffer = ALIGN(sizeof(ShadowMapConstants), 256); // CB size is required to be 256-byte aligned.
+
+enum A2V_TYPES
+{
+	A2V_TYPES_FULL,
+	A2V_TYPES_SIMPLE,
+	A2V_TYPES_POS_ONLY,
+	A2V_TYPES_CUBE
+};
 #endif
 
 struct a2v

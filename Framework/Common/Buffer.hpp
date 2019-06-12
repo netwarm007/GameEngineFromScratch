@@ -51,6 +51,13 @@ namespace My {
         uint8_t* GetData(void) { return m_pData; };
         const uint8_t* GetData(void) const { return m_pData; };
         size_t GetDataSize(void) const { return m_szSize; };
+        uint8_t* MoveData(void) 
+        { 
+            uint8_t* tmp = m_pData;
+            m_pData = nullptr;
+            m_szSize = 0;
+            return tmp;
+        }
 
     protected:
         uint8_t* m_pData;

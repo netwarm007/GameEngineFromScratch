@@ -8,6 +8,7 @@
 #include "Buffer.hpp"
 #include "Image.hpp"
 #include "SceneObject.hpp"
+#include "D3dShaderManager.hpp"
 
 namespace My {
     class D3d12GraphicsManager : public GraphicsManager
@@ -31,6 +32,7 @@ namespace My {
         void EndFrame() final;
 
         void SetPerFrameConstants(const DrawFrameContext& context);
+        void SetLightInfo(const LightInfo& lightInfo);
 
         HRESULT CreateDescriptorHeaps();
         HRESULT CreateRenderTarget();
@@ -46,7 +48,7 @@ namespace My {
         HRESULT CreateRootSignature();
         HRESULT WaitForPreviousFrame();
         HRESULT ResetCommandList();
-        HRESULT InitializePSO();
+        HRESULT CreatePSO(D3dShaderProgram& shaderProgram);
         HRESULT CreateCommandList();
         HRESULT MsaaResolve();
 
@@ -66,9 +68,11 @@ namespace My {
         ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
         ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
-		ID3D12DescriptorHeap*           m_pSrvHeap[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};            // an array of descriptors of GPU objects
+        int32_t                         m_nSrvCount = 0;
+		ID3D12DescriptorHeap*           m_pSrvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pSamplerHeap = nullptr;           // an array of descriptors of GPU objects
-        ID3D12PipelineState*            m_pPipelineState = nullptr;         // an object maintains the state of all currently set shaders
+        std::vector<ID3D12PipelineState*>            
+                                        m_pPipelineStates;                  // an object maintains the state of all currently set shaders
                                                                             // and certain fixed function state objects
                                                                             // such as the input assembler, tesselator, rasterizer and output manager
         ID3D12GraphicsCommandList*      m_pCommandList = nullptr;           // a list to store GPU commands, which will be submitted to GPU to execute when done
@@ -91,6 +95,9 @@ namespace My {
 
         uint8_t*                        m_pPerFrameCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
 	    ID3D12Resource*                 m_pPerFrameConstantUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
+
+        uint8_t*                        m_pLightDataBegin[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
+	    ID3D12Resource*                 m_pLightDataUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
 
         // Synchronization objects
         HANDLE                          m_hFenceEvent;

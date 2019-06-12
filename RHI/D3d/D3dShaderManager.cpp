@@ -4,32 +4,32 @@
 using namespace My;
 using namespace std;
 
-#define VS_BASIC_SOURCE_FILE "Shaders/HLSL/basic.vert.cso"
-#define PS_BASIC_SOURCE_FILE "Shaders/HLSL/basic.frag.cso"
-#define VS_SHADOWMAP_SOURCE_FILE "Shaders/HLSL/shadowmap.vert.cso"
-#define PS_SHADOWMAP_SOURCE_FILE "Shaders/HLSL/shadowmap.frag.cso"
-#define VS_OMNI_SHADOWMAP_SOURCE_FILE "Shaders/HLSL/shadowmap_omni.vert.cso"
-#define PS_OMNI_SHADOWMAP_SOURCE_FILE "Shaders/HLSL/shadowmap_omni.frag.cso"
-#define GS_OMNI_SHADOWMAP_SOURCE_FILE "Shaders/HLSL/shadowmap_omni.geom.cso"
-#define DEBUG_VS_SHADER_SOURCE_FILE "Shaders/HLSL/debug.vert.cso"
-#define DEBUG_PS_SHADER_SOURCE_FILE "Shaders/HLSL/debug.frag.cso"
-#define VS_PASSTHROUGH_SOURCE_FILE "Shaders/HLSL/passthrough.vert.cso"
-#define PS_TEXTURE_SOURCE_FILE "Shaders/HLSL/texture.frag.cso"
-#define PS_DEPTH_TEXTURE_ARRAY_SOURCE_FILE "Shaders/HLSL/depthtexturearray.frag.cso"
-#define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE "Shaders/HLSL/passthrough_cube.vert.cso"
-#define PS_CUBEMAP_ARRAY_SOURCE_FILE "Shaders/HLSL/cubemaparray.frag.cso"
-#define PS_DEPTH_CUBEMAP_ARRAY_SOURCE_FILE "Shaders/HLSL/depthcubemaparray.frag.cso"
-#define PS_SIMPLE_CUBEMAP_SOURCE_FILE "Shaders/HLSL/cubemap.frag.cso"
-#define VS_SKYBOX_SOURCE_FILE "Shaders/HLSL/skybox.vert.cso"
-#define PS_SKYBOX_SOURCE_FILE "Shaders/HLSL/skybox.frag.cso"
-#define PS_PBR_SOURCE_FILE "Shaders/HLSL/pbr.frag.cso"
-#define CS_PBR_BRDF_SOURCE_FILE "Shaders/HLSL/integrateBRDF.comp.cso"
-#define PS_PBR_BRDF_SOURCE_FILE "Shaders/HLSL/integrateBRDF.frag.cso"
-#define VS_TERRAIN_SOURCE_FILE "Shaders/HLSL/terrain.vert.cso"
-#define PS_TERRAIN_SOURCE_FILE "Shaders/HLSL/terrain.frag.cso"
-#define TESC_TERRAIN_SOURCE_FILE "Shaders/HLSL/terrain.tesc.cso"
-#define TESE_TERRAIN_SOURCE_FILE "Shaders/HLSL/terrain.tese.cso"
+#define SHADER_ROOT "Shaders/HLSL/"
 
+#define VS_BASIC_SOURCE_FILE SHADER_ROOT "basic.vert.cso"
+#define PS_BASIC_SOURCE_FILE SHADER_ROOT "basic.frag.cso"
+#define VS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.vert.cso"
+#define PS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.frag.cso"
+#define VS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.vert.cso"
+#define PS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.frag.cso"
+#define GS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.geom.cso"
+#define DEBUG_VS_SHADER_SOURCE_FILE SHADER_ROOT "debug.vert.cso"
+#define DEBUG_PS_SHADER_SOURCE_FILE SHADER_ROOT "debug.frag.cso"
+#define VS_PASSTHROUGH_SOURCE_FILE SHADER_ROOT "passthrough.vert.cso"
+#define PS_TEXTURE_SOURCE_FILE SHADER_ROOT "texture.frag.cso"
+#define PS_TEXTURE_ARRAY_SOURCE_FILE SHADER_ROOT "texturearray.frag.cso"
+#define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE SHADER_ROOT "passthrough_cube.vert.cso"
+#define PS_CUBEMAP_SOURCE_FILE SHADER_ROOT "cubemap.frag.cso"
+#define PS_CUBEMAP_ARRAY_SOURCE_FILE SHADER_ROOT "cubemaparray.frag.cso"
+#define VS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.vert.cso"
+#define PS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.frag.cso"
+#define VS_PBR_SOURCE_FILE SHADER_ROOT "pbr.vert.cso"
+#define PS_PBR_SOURCE_FILE SHADER_ROOT "pbr.frag.cso"
+#define CS_PBR_BRDF_SOURCE_FILE SHADER_ROOT "integrateBRDF.comp.cso"
+#define VS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.vert.cso"
+#define PS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.frag.cso"
+#define TESC_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tesc.cso"
+#define TESE_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tese.cso"
 
 int D3dShaderManager::Initialize()
 {
@@ -46,39 +46,94 @@ void D3dShaderManager::Tick()
 
 }
 
+static void loadShaders(D3dShaderProgram& program, 
+                        const char* vs, 
+                        const char* ps, 
+                        const char* gs = nullptr,
+                        const char* cs = nullptr
+                       )
+{
+    // load the shaders
+    Buffer vertexShader, pixelShader, geometryShader, computeShader;
+    if (vs)
+    {
+        vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vs);
+    }
+
+    if (ps)
+    {
+        pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(ps);
+    }
+
+    if (gs)
+    {
+        geometryShader = g_pAssetLoader->SyncOpenAndReadBinary(gs);
+    }
+
+    if (cs)
+    {
+        computeShader = g_pAssetLoader->SyncOpenAndReadBinary(cs);
+    }
+
+    program.vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
+    program.vertexShaderByteCode.pShaderBytecode = vertexShader.MoveData();
+
+    program.pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+    program.pixelShaderByteCode.pShaderBytecode = pixelShader.MoveData();
+
+    program.geometryShaderByteCode.BytecodeLength = geometryShader.GetDataSize();
+    program.geometryShaderByteCode.pShaderBytecode = geometryShader.MoveData();
+
+    program.computeShaderByteCode.BytecodeLength = computeShader.GetDataSize();
+    program.computeShaderByteCode.pShaderBytecode = computeShader.MoveData();
+}
+
 bool D3dShaderManager::InitializeShaders()
 {
     HRESULT hr = S_OK;
-    const char* vsFilename = VS_BASIC_SOURCE_FILE;
-    const char* fsFilename = PS_BASIC_SOURCE_FILE;
-    const char* debugVsFilename = DEBUG_VS_SHADER_SOURCE_FILE;
-    const char* debugFsFilename = DEBUG_PS_SHADER_SOURCE_FILE;
 
     // load the shaders
-    // forward rendering shader
-    Buffer vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(VS_BASIC_SOURCE_FILE);
-    Buffer pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(PS_BASIC_SOURCE_FILE);
-
+    // basic shader
     D3dShaderProgram* shaderProgram = new D3dShaderProgram;
-    shaderProgram->vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
-    shaderProgram->vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
-
-    shaderProgram->pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
-    shaderProgram->pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+    loadShaders(*shaderProgram, VS_BASIC_SOURCE_FILE, PS_BASIC_SOURCE_FILE);
+    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_FULL;
 
     m_DefaultShaders[DefaultShaderIndex::Basic] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
+
+    // pbr shader
+    shaderProgram = new D3dShaderProgram;
+    loadShaders(*shaderProgram, VS_PBR_SOURCE_FILE, PS_PBR_SOURCE_FILE);
+    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_FULL;
+
+    m_DefaultShaders[DefaultShaderIndex::Pbr] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
+
+    // skybox shader
+    shaderProgram = new D3dShaderProgram;
+    loadShaders(*shaderProgram, VS_SKYBOX_SOURCE_FILE, PS_SKYBOX_SOURCE_FILE);
+    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_CUBE;
+
+    m_DefaultShaders[DefaultShaderIndex::SkyBox] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
+
+    // shadowmap shader
+    shaderProgram = new D3dShaderProgram;
+    loadShaders(*shaderProgram, VS_SHADOWMAP_SOURCE_FILE, PS_SHADOWMAP_SOURCE_FILE);
+    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
+
+    m_DefaultShaders[DefaultShaderIndex::ShadowMap] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
+
+#if 0
+    // omni shadowmap shader
+    shaderProgram = new D3dShaderProgram;
+    loadShaders(*shaderProgram, VS_OMNI_SHADOWMAP_SOURCE_FILE, PS_OMNI_SHADOWMAP_SOURCE_FILE, GS_OMNI_SHADOWMAP_SOURCE_FILE);
+    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
+
+    m_DefaultShaders[DefaultShaderIndex::OmniShadowMap] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
+#endif
 
 #ifdef DEBUG
     // debug shader
     shaderProgram = new D3dShaderProgram;
-    vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(debugVsFilename);
-    pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(debugFsFilename);
-
-    shaderProgram->vertexShaderByteCode.pShaderBytecode = vertexShader.GetData();
-    shaderProgram->vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
-
-    shaderProgram->pixelShaderByteCode.pShaderBytecode = pixelShader.GetData();
-    shaderProgram->pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+    loadShaders(*shaderProgram, DEBUG_VS_SHADER_SOURCE_FILE, DEBUG_PS_SHADER_SOURCE_FILE);
 
     m_DefaultShaders[DefaultShaderIndex::Debug] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
 #endif
