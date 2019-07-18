@@ -16,17 +16,7 @@ typedef int32_t four_char_enum;
 
 #define ENUM(e) enum class e : four_char_enum 
 
-#ifndef HAVE_MAKE_UNIQUE 
-namespace std {
-    template<typename T, typename... Args>
-    std::unique_ptr<T> make_unique(Args&&... args)
-    {
-            return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-    }
-}
-#endif
-
-#ifndef HAVE_CLAMP
+#ifndef __cpp_lib_clamp
 namespace std {
     template<class T>
     const T& clamp( const T& v, const T& lo, const T& hi )
