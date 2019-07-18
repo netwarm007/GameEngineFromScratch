@@ -89,6 +89,7 @@ namespace My {
         Vector(std::initializer_list<const T> list)
         {
             size_t i = 0;
+            assert(list.size() <= N);
             for (auto val : list)
             {
                 data[i++] = val;

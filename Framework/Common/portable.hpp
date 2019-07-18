@@ -16,7 +16,7 @@ typedef int32_t four_char_enum;
 
 #define ENUM(e) enum class e : four_char_enum 
 
-#ifndef __cpp_lib_clamp
+#if !(__cpp_lib_clamp)
 namespace std {
     template<class T>
     const T& clamp( const T& v, const T& lo, const T& hi )
