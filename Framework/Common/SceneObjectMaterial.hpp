@@ -4,6 +4,7 @@
 #include "BaseSceneObject.hpp"
 #include "SceneObjectTexture.hpp"
 #include "SceneObjectTypeDef.hpp"
+#include "ParameterValueMap.hpp"
 
 namespace My {
     class SceneObjectMaterial : public BaseSceneObject
