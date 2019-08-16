@@ -16,23 +16,6 @@ typedef int32_t four_char_enum;
 
 #define ENUM(e) enum class e : four_char_enum 
 
-#if !(__cpp_lib_clamp)
-namespace std {
-    template<class T>
-    const T& clamp( const T& v, const T& lo, const T& hi )
-    {
-        return clamp( v, lo, hi, std::less<T>() );
-    }
-
-    template<class T, class Compare>
-    const T& clamp( const T& v, const T& lo, const T& hi, Compare comp )
-    {
-        return assert( !comp(hi, lo) ),
-            comp(v, lo) ? lo : comp(hi, v) ? hi : v;
-    }
-}
-#endif
-
 namespace My {
     template <typename T>
     T endian_native_unsigned_int(T net_number)
