@@ -16,33 +16,6 @@ typedef int32_t four_char_enum;
 
 #define ENUM(e) enum class e : four_char_enum 
 
-#ifndef HAVE_MAKE_UNIQUE 
-namespace std {
-    template<typename T, typename... Args>
-    std::unique_ptr<T> make_unique(Args&&... args)
-    {
-            return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-    }
-}
-#endif
-
-#ifndef HAVE_CLAMP
-namespace std {
-    template<class T>
-    const T& clamp( const T& v, const T& lo, const T& hi )
-    {
-        return clamp( v, lo, hi, std::less<T>() );
-    }
-
-    template<class T, class Compare>
-    const T& clamp( const T& v, const T& lo, const T& hi, Compare comp )
-    {
-        return assert( !comp(hi, lo) ),
-            comp(v, lo) ? lo : comp(hi, v) ? hi : v;
-    }
-}
-#endif
-
 namespace My {
     template <typename T>
     T endian_native_unsigned_int(T net_number)

@@ -2,6 +2,7 @@
 git submodule update --init External/src/SDL
 mkdir External\build\SDL
 pushd External\build\SDL
-cmake -DCMAKE_INSTALL_PREFIX=../../Windows -G "Visual Studio 16 2019" ../../src/SDL
+rm -rf *
+cmake -DCMAKE_INSTALL_PREFIX=../../Windows -DBUILD_SHARED_LIBS=OFF -G "Visual Studio 16 2019" -A "x64" -Thost=x64 ../../src/SDL
 cmake --build . --config release --target install
 popd

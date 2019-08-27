@@ -1,8 +1,9 @@
-cmake_minimum_required (VERSION 3.1) 
+cmake_minimum_required (VERSION 3.8) 
 project (GameEngineFromScratch)
 
 set (CMAKE_C_STANDARD 99)
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_EXTENSIONS OFF)
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (USE_ISPC 1)
 IF(UNIX)
@@ -30,10 +31,6 @@ IF(UNIX)
 ELSEIF(WIN32)
     set(MYGE_TARGET_PLATFORM "Windows")
         set(OS_WINDOWS 1)
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES Psp2)
-    set(MYGE_TARGET_PLATFORM "PSP2")
-    set(PSP2 1)
-    set(OS_PSP2 1)
 ENDIF(UNIX)
 
 if(MSVC)
@@ -95,30 +92,7 @@ find_library(OPENGEX_LIBRARY OpenGEX PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAK
 find_library(ZLIB_LIBRARY NAMES z zlib PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
 
 include(CTest)
-include(CheckCXXSourceCompiles)
 include(PlatformDependencies)
-CHECK_CXX_SOURCE_COMPILES(
-"#include <memory>
-
-int main(int argc, char** argv)
-{
-    std::unique_ptr<int> my_int = std::make_unique<int>();
-    *my_int = 0;
-    return *my_int;
-}
-"
- HAVE_MAKE_UNIQUE)
-CHECK_CXX_SOURCE_COMPILES(
-"#include <algorithm>
-
-int main(int argc, char** argv)
-{
-    int result = -1;
-    result = std::clamp(result, 0, 1);
-    return result;
-}
-"
- HAVE_CLAMP)
 configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
 add_subdirectory(Framework)
 add_subdirectory(Platform)
