@@ -712,7 +712,6 @@ static DXGI_FORMAT getDxgiFormat(const Image& img)
 int32_t D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
 {
     HRESULT hr = S_OK;
-    int32_t texture_id = -1;
 
     const auto& pImage = texture.GetTextureImage();
 
@@ -748,7 +747,7 @@ int32_t D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
         nullptr,
         IID_PPV_ARGS(&pTextureBuffer))))
     {
-        return texture_id;
+        return -1;
     }
 
     const UINT subresourceCount = textureDesc.DepthOrArraySize * textureDesc.MipLevels;
@@ -778,7 +777,7 @@ int32_t D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
         IID_PPV_ARGS(&pTextureUploadHeap)
     )))
     {
-        return texture_id;
+        return -1;
     }
 
     // Copy data to the intermediate upload heap and then schedule a copy 
@@ -798,15 +797,10 @@ int32_t D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     m_pCommandList->ResourceBarrier(1, &barrier);
 
-    texture_id = m_nSrvCount++;
-    D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
-    srvHandle.ptr = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart().ptr + texture_id * m_nSrvDescriptorSize;
-    m_pDev->CreateShaderResourceView(pTextureBuffer, NULL, srvHandle);
-
     m_Buffers.push_back(pTextureUploadHeap);
     m_Textures.push_back(pTextureBuffer);
 
-    return texture_id;
+    return static_cast<int32_t>(m_Textures.size() - 1);
 }
 
 uint32_t D3d12GraphicsManager::CreateSamplerBuffer()
@@ -1519,12 +1513,46 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
         m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[dbc.index_offset]);
 
         // Texture
+        D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
+
         if (dbc.material.diffuseMap >= 0)
         {
-            D3D12_GPU_DESCRIPTOR_HANDLE srvHandle = m_pSrvHeap->GetGPUDescriptorHandleForHeapStart();
-            srvHandle.ptr += dbc.material.diffuseMap * m_nSrvDescriptorSize;
-            m_pCommandList->SetGraphicsRootDescriptorTable(3, srvHandle);
+            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.diffuseMap], NULL, srvCpuHandle);
         }
+        srvCpuHandle.ptr += m_nSrvDescriptorSize;
+
+        if (dbc.material.normalMap >= 0)
+        {
+            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.normalMap], NULL, srvCpuHandle);
+        }
+        srvCpuHandle.ptr += m_nSrvDescriptorSize;
+
+        if (dbc.material.metallicMap >= 0) 
+        {
+            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.metallicMap], NULL, srvCpuHandle);
+        }
+        srvCpuHandle.ptr += m_nSrvDescriptorSize;
+
+        if (dbc.material.roughnessMap >= 0) 
+        {
+            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.roughnessMap], NULL, srvCpuHandle);
+        }
+        srvCpuHandle.ptr += m_nSrvDescriptorSize;
+
+        if (dbc.material.aoMap >= 0) 
+        {
+            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.aoMap], NULL, srvCpuHandle);
+        }
+        srvCpuHandle.ptr += m_nSrvDescriptorSize;
+
+        if (dbc.material.heightMap >= 0) 
+        {
+            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.heightMap], NULL, srvCpuHandle);
+        }
+        //srvCpuHandle.ptr += m_nSrvDescriptorSize;
+
+        D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = m_pSrvHeap->GetGPUDescriptorHandleForHeapStart();
+        m_pCommandList->SetGraphicsRootDescriptorTable(3, srvGpuHandle);
 
         // draw the vertex buffer to the back buffer
         m_pCommandList->DrawIndexedInstanced(dbc.index_count, 1, 0, 0, 0);
@@ -1630,4 +1658,34 @@ void D3d12GraphicsManager::Present()
     WaitForPreviousFrame();
 
     (void)hr;
+}
+
+void D3d12GraphicsManager::SetSkyBox(const DrawFrameContext& context)
+{
+    if (context.skybox >= 0)
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
+        srvCpuHandle.ptr += 9 * m_nSrvDescriptorSize;
+
+        m_pDev->CreateShaderResourceView(m_Textures[context.skybox], NULL, srvCpuHandle);
+    }
+}
+
+void D3d12GraphicsManager::DrawSkyBox()
+{
+#if 0
+    // set primitive topology
+    m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // set vertex buffer
+    m_pCommandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+
+    // select index buffer
+    m_pCommandList->IASetIndexBuffer(&indexBufferView);
+
+    // Texture
+
+    // draw the vertex buffer to the back buffer
+    m_pCommandList->DrawIndexedInstanced(sizeof(skyboxIndices) / sizeof(skyboxIndices[0]), 1, 0, 0, 0);
+#endif
 }

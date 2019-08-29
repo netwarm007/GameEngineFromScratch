@@ -24,6 +24,10 @@ namespace My {
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
+        // skybox
+        void SetSkyBox(const DrawFrameContext& context) final;
+        void DrawSkyBox() final;
+
     private:
         void BeginScene(const Scene& scene) final;
         void EndScene() final;

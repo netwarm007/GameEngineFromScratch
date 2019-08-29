@@ -407,37 +407,6 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 
 void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
 {
-    static const float skyboxVertices[] = {
-         1.0f,  1.0f,  1.0f,  // 0
-        -1.0f,  1.0f,  1.0f,  // 1
-         1.0f, -1.0f,  1.0f,  // 2
-         1.0f,  1.0f, -1.0f,  // 3
-        -1.0f,  1.0f, -1.0f,  // 4
-         1.0f, -1.0f, -1.0f,  // 5
-        -1.0f, -1.0f,  1.0f,  // 6
-        -1.0f, -1.0f, -1.0f   // 7
-    };
-
-    static const uint8_t skyboxIndices[] = {
-        4, 7, 5,
-        5, 3, 4,
-
-        6, 7, 4,
-        4, 1, 6,
-
-        5, 2, 0,
-        0, 3, 5,
-
-        6, 1, 0,
-        0, 2, 6,
-
-        4, 3, 0,
-        0, 1, 4,
-
-        7, 6, 5,
-        5, 6, 2
-    };
-
     // load skybox, irradiance map and radiance map
     uint32_t texture_id;
     const uint32_t kMaxMipLevels = 10;
