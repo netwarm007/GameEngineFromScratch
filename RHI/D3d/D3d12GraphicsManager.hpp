@@ -29,11 +29,14 @@ namespace My {
         void DrawSkyBox() final;
 
     private:
-        void BeginScene(const Scene& scene) final;
         void EndScene() final;
 
         void BeginFrame(const Frame& frame) final;
         void EndFrame() final;
+
+        void initializeGeometries(const Scene& scene) final;
+        void initializeSkyBox(const Scene& scene) final;
+        void initializeTerrain(const Scene& scene) final;
 
         void SetPerFrameConstants(const DrawFrameContext& context);
         void SetLightInfo(const LightInfo& lightInfo);
@@ -72,8 +75,7 @@ namespace My {
         ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
         ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
-        int32_t                         m_nSrvCount = 0;
-		ID3D12DescriptorHeap*           m_pSrvHeap = nullptr;               // an array of descriptors of GPU objects
+		std::vector<ID3D12DescriptorHeap*>  m_pSrvHeap;                     // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pSamplerHeap = nullptr;           // an array of descriptors of GPU objects
         std::vector<ID3D12PipelineState*>            
                                         m_pPipelineStates;                  // an object maintains the state of all currently set shaders

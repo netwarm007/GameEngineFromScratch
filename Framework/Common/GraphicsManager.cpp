@@ -291,6 +291,10 @@ void GraphicsManager::BeginScene(const Scene& scene)
         pPass->Dispatch();
         EndCompute();
     }
+
+    initializeGeometries(scene);
+    initializeTerrain(scene);
+    initializeSkyBox(scene);
 }
 
 void GraphicsManager::EndScene()

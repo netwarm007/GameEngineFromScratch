@@ -35,7 +35,7 @@ namespace My {
 		int32_t screenHeight;
         static const int32_t kMaxInFlightFrameCount = 2;
         static const int32_t kMaxSceneObjectCount = 2048;
-        static const int32_t kMaxTextureCount = 2048;
+        static const int32_t kMaxTextureCount = 16;
         const char* appName;
 
         friend std::ostream& operator<<(std::ostream& out, const GfxConfiguration& conf)
