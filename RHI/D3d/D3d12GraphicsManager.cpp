@@ -250,6 +250,11 @@ void D3d12GraphicsManager::Finalize()
 {
     GraphicsManager::Finalize();
 
+    for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        SafeRelease(&m_pFence[i]);
+    }
+
     SafeRelease(&m_pRtvHeap);
     SafeRelease(&m_pDsvHeap);
     SafeRelease(&m_pSamplerHeap);
@@ -257,14 +262,15 @@ void D3d12GraphicsManager::Finalize()
     {
         SafeRelease(&*it);
     }
+    m_pSrvHeap.clear();
     SafeRelease(&m_pRootSignature);
 	SafeRelease(&m_pDepthStencilBuffer);
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         SafeRelease(&m_pCommandAllocator[i]);
         SafeRelease(&m_pPerFrameConstantUploadBuffer[i]);
         SafeRelease(&m_pLightDataUploadBuffer[i]);
-        SafeRelease(&m_pRenderTargets[2 * i]);
-        SafeRelease(&m_pRenderTargets[2 * i + 1]);
+        SafeRelease(&m_pRenderTargets[i << 1]);
+        SafeRelease(&m_pRenderTargets[(i << 1) | 1]);
     }
     SafeRelease(&m_pCommandList);
     SafeRelease(&m_pCommandQueue);
@@ -272,6 +278,7 @@ void D3d12GraphicsManager::Finalize()
     {
         SafeRelease(&*it);
     }
+    m_pPipelineStates.clear();
     SafeRelease(&m_pSwapChain);
 
     SafeRelease(&m_pDev);
@@ -1022,6 +1029,24 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
 
     m_nFrameIndex = m_pSwapChain->GetCurrentBackBufferIndex();
 
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        if (FAILED(hr = m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence[i]))))
+        {
+            return hr;
+        }
+
+        m_nFenceValue[i] = 1;
+    }
+
+    m_hFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (m_hFenceEvent == NULL)
+    {
+        hr = HRESULT_FROM_WIN32(GetLastError());
+        if (FAILED(hr))
+            return hr;
+    }
+
     cout << "Creating Descriptor Heaps ...";
     if (FAILED(hr = CreateDescriptorHeaps())) {
         return hr;
@@ -1503,11 +1528,6 @@ void D3d12GraphicsManager::EndScene()
     m_VertexBufferView.clear();
     m_IndexBufferView.clear();
 
-    for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
-    {
-        SafeRelease(&m_pFence[i]);
-    }
-
     GraphicsManager::EndScene();
 }
 
@@ -1560,25 +1580,6 @@ void D3d12GraphicsManager::EndFrame()
     {
         ID3D12CommandList* ppCommandLists[] = { m_pCommandList };
         m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-        for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
-        {
-            if (FAILED(hr = m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_pFence[i]))))
-            {
-                return;
-            }
-
-            m_nFenceValue[i] = 1;
-        }
-
-
-        m_hFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-        if (m_hFenceEvent == NULL)
-        {
-            hr = HRESULT_FROM_WIN32(GetLastError());
-            if (FAILED(hr))
-                return;
-        }
 
         WaitForPreviousFrame();
     }
