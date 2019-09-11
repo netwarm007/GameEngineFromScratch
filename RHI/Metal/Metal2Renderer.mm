@@ -568,11 +568,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             &lightInfo, sizeof(LightInfo));
 }
 
-- (void)setSkyBox:(const DrawFrameContext&)context
-{
-    _skyboxTexIndex = context.skybox;
-}
-
 - (void)drawSkyBox
 {
     if(_renderPassDescriptor != nil)
