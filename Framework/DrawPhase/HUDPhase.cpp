@@ -42,15 +42,15 @@ void HUDPhase::Draw(Frame& frame)
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
     // SkyBox
-    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.skybox, 0.0f, left, top, 0.25f, 0.25f, 0.0f);
+    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.skybox, 0.0f, left, top, 0.25f, 0.25f, 0.0f);
     top -= 0.30f;
 
     // SkyBox Irradiance
-    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.skybox, 0.0f, left, top, 0.25f, 0.25f, 1.0f);
+    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.skybox, 0.0f, left, top, 0.25f, 0.25f, 1.0f);
     top -= 0.30f;
 
     // SkyBox Radiance
-    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.frameContext.skybox, 1.0f, left, top, 0.25f, 0.25f, 1.0f);
+    g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.skybox, 1.0f, left, top, 0.25f, 0.25f, 1.0f);
     top -= 0.30f;
 
     // BRDF LUT

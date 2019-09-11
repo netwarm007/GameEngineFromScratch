@@ -258,11 +258,8 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pRtvHeap);
     SafeRelease(&m_pDsvHeap);
     SafeRelease(&m_pSamplerHeap);
-    for (vector<ID3D12DescriptorHeap*>::iterator it = m_pSrvHeap.begin(); it != m_pSrvHeap.end(); it++)
-    {
-        SafeRelease(&*it);
-    }
-    m_pSrvHeap.clear();
+    SafeRelease(&m_pSrvHeap);
+    SafeRelease(&m_pPerBatchSrvRingHeap);
     SafeRelease(&m_pRootSignature);
 	SafeRelease(&m_pDepthStencilBuffer);
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
@@ -336,6 +333,7 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_pRtvHeap)))) {
         return hr;
     }
+    m_pRtvHeap->SetName(L"RTV Heap");
 
     m_nRtvDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
@@ -347,19 +345,19 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_pDsvHeap)))) {
         return hr;
     }
+    m_pDsvHeap->SetName(L"DSV Heap");
 
-    // Describe and create a Shader Resource View (SRV) descriptor heap.
+    // Describe and create a shader-non-visible Shader Resource View (SRV) descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = GfxConfiguration::kMaxTextureCount;
+    srvHeapDesc.NumDescriptors = GfxConfiguration::kMaxTexturePerMaterialCount * GfxConfiguration::kMaxSceneObjectCount;
     srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    m_pSrvHeap.resize(1);
-    if(FAILED(hr = m_pDev->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_pSrvHeap[0])))) {
+    srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    if(FAILED(hr = m_pDev->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_pSrvHeap)))) {
         return hr;
     }
-    m_pSrvHeap[0]->SetName(L"SRV Heap 0");
+    m_pSrvHeap->SetName(L"Offline SRV Heap");
 
-    m_nSrvDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    m_nCbvSrvUavDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     // Describe and create a sampler descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc = {};
@@ -369,6 +367,19 @@ HRESULT D3d12GraphicsManager::CreateDescriptorHeaps()
     if(FAILED(hr = m_pDev->CreateDescriptorHeap(&samplerHeapDesc, IID_PPV_ARGS(&m_pSamplerHeap)))) {
         return hr;
     }
+    m_pSamplerHeap->SetName(L"Sample Heap");
+
+    // Describe and create a ring descriptor heap for per batch SRV heap
+    D3D12_DESCRIPTOR_HEAP_DESC perBatchSrvHeapDesc = {};
+    m_nPerBatchSrvRingHeapSize = GfxConfiguration::kMaxTexturePerMaterialCount * GfxConfiguration::kMaxSceneObjectCount * GfxConfiguration::kMaxInFlightFrameCount;
+    m_nPerBatchSrvRingHeapStart = m_nPerBatchSrvRingHeapEnd = 0;
+    perBatchSrvHeapDesc.NumDescriptors = m_nPerBatchSrvRingHeapSize;
+    perBatchSrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    perBatchSrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    if(FAILED(hr = m_pDev->CreateDescriptorHeap(&perBatchSrvHeapDesc, IID_PPV_ARGS(&m_pPerBatchSrvRingHeap)))) {
+        return hr;
+    }
+    m_pPerBatchSrvRingHeap->SetName(L"PerBatch SRV Heap");
 
     for(uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
@@ -809,9 +820,15 @@ int32_t D3d12GraphicsManager::CreateTextureBuffer(SceneObjectTexture& texture)
     m_pCommandList->ResourceBarrier(1, &barrier);
 
     m_Buffers.push_back(pTextureUploadHeap);
+    auto texture_id = m_Textures.size();
     m_Textures.push_back(pTextureBuffer);
 
-    return static_cast<int32_t>(m_Textures.size() - 1);
+    D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
+    srvCpuHandle.ptr += m_nCbvSrvUavDescriptorSize * texture_id;
+
+    m_pDev->CreateShaderResourceView(m_Textures[texture_id], NULL, srvCpuHandle);
+
+    return static_cast<int32_t>(texture_id);
 }
 
 uint32_t D3d12GraphicsManager::CreateSamplerBuffer()
@@ -943,6 +960,24 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     if (m_pDebugController)
     {
         m_pDev->QueryInterface(IID_PPV_ARGS(&m_pDebugDev));
+
+        ID3D12InfoQueue* d3dInfoQueue;
+        if(SUCCEEDED(m_pDev->QueryInterface(IID_PPV_ARGS(&d3dInfoQueue))))
+        {
+            d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+            d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+            d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, false);
+
+            D3D12_MESSAGE_ID blockedIds[] = { D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+                                              D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE, 
+                                              D3D12_MESSAGE_ID_COPY_DESCRIPTORS_INVALID_RANGES };
+
+            D3D12_INFO_QUEUE_FILTER filter = {};
+            filter.DenyList.pIDList = blockedIds;
+            filter.DenyList.NumIDs = 3;
+            d3dInfoQueue->AddRetrievalFilterEntries(&filter);
+            d3dInfoQueue->AddStorageFilterEntries(&filter);
+        }
     }
 #endif
 
@@ -1303,8 +1338,6 @@ HRESULT D3d12GraphicsManager::CreateCommandList()
 
 void D3d12GraphicsManager::initializeGeometries(const Scene& scene)
 {
-    HRESULT hr;
-
     cout << "Creating Draw Batch Contexts ...";
     uint32_t batch_index = 0;
     for (const auto& _it : scene.GeometryNodes)
@@ -1425,7 +1458,7 @@ void D3d12GraphicsManager::initializeSkyBox(const Scene& scene)
     prop.VisibleNodeMask = 1;
 
     D3D12_RESOURCE_DESC textureDesc = {};
-    textureDesc.MipLevels = 1;
+    textureDesc.MipLevels = 2;
     textureDesc.Format = format;
     textureDesc.Width = pImage->Width;
     textureDesc.Height = pImage->Height;
@@ -1507,6 +1540,12 @@ void D3d12GraphicsManager::initializeSkyBox(const Scene& scene)
     m_pCommandList->ResourceBarrier(1, &barrier);
 
     m_Buffers.push_back(pTextureUploadHeap);
+
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        m_Frames[i].skybox = m_Textures.size();
+    }
+
     m_Textures.push_back(pTextureBuffer);
 }
 
@@ -1553,7 +1592,6 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame)
 
     m_pCommandList->RSSetViewports(1, &m_ViewPort);
     m_pCommandList->RSSetScissorRects(1, &m_ScissorRect);
-    m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
     // rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
@@ -1570,6 +1608,9 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame)
 
     SetPerFrameConstants(frame.frameContext);
     SetLightInfo(frame.lightInfo);
+
+    ID3D12DescriptorHeap* ppHeaps[] = { m_pPerBatchSrvRingHeap, m_pSamplerHeap };
+    m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 }
 
 void D3d12GraphicsManager::EndFrame()
@@ -1615,65 +1656,31 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
         m_pCommandList->IASetIndexBuffer(&m_IndexBufferView[dbc.index_offset]);
 
         // SRV
-        if (dbc.batchIndex >= m_pSrvHeap.size())
+        D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
+        D3D12_CPU_DESCRIPTOR_HANDLE dstSrvCpuHandle = m_pPerBatchSrvRingHeap->GetCPUDescriptorHandleForHeapStart();
+        if (m_nPerBatchSrvRingHeapSize - m_nPerBatchSrvRingHeapEnd < 6)
         {
-            m_pSrvHeap.resize(dbc.batchIndex + 1);
-            // Describe and create a Shader Resource View (SRV) descriptor heap.
-            D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-            srvHeapDesc.NumDescriptors = GfxConfiguration::kMaxTextureCount;
-            srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-            srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-            if(FAILED(m_pDev->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_pSrvHeap[dbc.batchIndex])))) {
-                return;
-            }
-            m_pSrvHeap[dbc.batchIndex]->SetName(L"SRV Heap");
+            m_nPerBatchSrvRingHeapEnd = 0;
         }
-
-        D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = m_pSrvHeap[dbc.batchIndex]->GetCPUDescriptorHandleForHeapStart();
+        m_nPerBatchSrvRingHeapStart = m_nPerBatchSrvRingHeapEnd;
+        dstSrvCpuHandle.ptr += m_nPerBatchSrvRingHeapStart * m_nCbvSrvUavDescriptorSize;
 
         if (dbc.material.diffuseMap >= 0)
         {
-            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.diffuseMap], NULL, srvCpuHandle);
+            srvCpuHandle.ptr += dbc.material.diffuseMap * m_nCbvSrvUavDescriptorSize;
+            m_pDev->CopyDescriptorsSimple(6, 
+                                    dstSrvCpuHandle,  
+                                    srvCpuHandle, 
+                                    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         }
-        srvCpuHandle.ptr += m_nSrvDescriptorSize;
 
-        if (dbc.material.normalMap >= 0)
-        {
-            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.normalMap], NULL, srvCpuHandle);
-        }
-        srvCpuHandle.ptr += m_nSrvDescriptorSize;
-
-        if (dbc.material.metallicMap >= 0) 
-        {
-            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.metallicMap], NULL, srvCpuHandle);
-        }
-        srvCpuHandle.ptr += m_nSrvDescriptorSize;
-
-        if (dbc.material.roughnessMap >= 0) 
-        {
-            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.roughnessMap], NULL, srvCpuHandle);
-        }
-        srvCpuHandle.ptr += m_nSrvDescriptorSize;
-
-        if (dbc.material.aoMap >= 0) 
-        {
-            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.aoMap], NULL, srvCpuHandle);
-        }
-        srvCpuHandle.ptr += m_nSrvDescriptorSize;
-
-        if (dbc.material.heightMap >= 0) 
-        {
-            m_pDev->CreateShaderResourceView(m_Textures[dbc.material.heightMap], NULL, srvCpuHandle);
-        }
-        //srvCpuHandle.ptr += m_nSrvDescriptorSize;
-
-        ID3D12DescriptorHeap* ppHeaps[] = { m_pSrvHeap[dbc.batchIndex], m_pSamplerHeap };
-        m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+        m_nPerBatchSrvRingHeapEnd += 6;
 
         // Sampler
         m_pCommandList->SetGraphicsRootDescriptorTable(2, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
 
-        D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = m_pSrvHeap[dbc.batchIndex]->GetGPUDescriptorHandleForHeapStart();
+        D3D12_GPU_DESCRIPTOR_HANDLE srvGpuHandle = m_pPerBatchSrvRingHeap->GetGPUDescriptorHandleForHeapStart();
+        srvGpuHandle.ptr += m_nPerBatchSrvRingHeapStart * m_nCbvSrvUavDescriptorSize;
         m_pCommandList->SetGraphicsRootDescriptorTable(3, srvGpuHandle);
 
         // draw the vertex buffer to the back buffer
@@ -1780,12 +1787,14 @@ void D3d12GraphicsManager::Present()
 
 void D3d12GraphicsManager::SetSkyBox(const DrawFrameContext& context)
 {
-    if (context.skybox >= 0)
+    if (m_Frames[m_nFrameIndex].skybox >= 0)
     {
-        D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = m_pSrvHeap[0]->GetCPUDescriptorHandleForHeapStart();
-        srvCpuHandle.ptr += 9 * m_nSrvDescriptorSize;
+        D3D12_CPU_DESCRIPTOR_HANDLE srcSrvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
+        D3D12_CPU_DESCRIPTOR_HANDLE dstSrvCpuHandle = m_pPerBatchSrvRingHeap->GetCPUDescriptorHandleForHeapStart();
+        srcSrvCpuHandle.ptr += m_Frames[m_nFrameIndex].skybox * m_nCbvSrvUavDescriptorSize;
+        dstSrvCpuHandle.ptr += (m_nPerBatchSrvRingHeapStart + 10) * m_nCbvSrvUavDescriptorSize;
 
-        m_pDev->CreateShaderResourceView(m_Textures[context.skybox], NULL, srvCpuHandle);
+        m_pDev->CopyDescriptorsSimple(1, dstSrvCpuHandle, srcSrvCpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     }
 }
 
