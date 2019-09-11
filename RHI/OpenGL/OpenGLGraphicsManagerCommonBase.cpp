@@ -658,30 +658,6 @@ void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     SetPerFrameConstants(frame.frameContext);
-
-    // Set Sky Box
-    uint32_t texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
-    if (texture_id >= 0)
-    {
-        setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
-        glActiveTexture(GL_TEXTURE10);
-        GLenum target;
-    #if defined(OS_WEBASSEMBLY)
-        target = GL_TEXTURE_2D_ARRAY;
-    #else
-        target = GL_TEXTURE_CUBE_MAP_ARRAY;
-    #endif
-        glBindTexture(target, texture_id);
-    }
-
-    // Set Terrain
-    texture_id = (uint32_t) m_Frames[m_nFrameIndex].terrainHeightMap;
-    if (texture_id >= 0)
-    {
-        setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
-        glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
-    }
 }
 
 void OpenGLGraphicsManagerCommonBase::EndFrame()
@@ -732,6 +708,30 @@ void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::Sha
     }
     else {
         glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    // Set Sky Box
+    uint32_t texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
+    if (texture_id >= 0)
+    {
+        setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
+        glActiveTexture(GL_TEXTURE10);
+        GLenum target;
+    #if defined(OS_WEBASSEMBLY)
+        target = GL_TEXTURE_2D_ARRAY;
+    #else
+        target = GL_TEXTURE_CUBE_MAP_ARRAY;
+    #endif
+        glBindTexture(target, texture_id);
+    }
+
+    // Set Terrain
+    texture_id = (uint32_t) m_Frames[m_nFrameIndex].terrainHeightMap;
+    if (texture_id >= 0)
+    {
+        setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
+        glActiveTexture(GL_TEXTURE11);
+        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     }
 }
 
