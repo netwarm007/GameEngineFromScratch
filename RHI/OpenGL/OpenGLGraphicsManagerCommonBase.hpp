@@ -30,11 +30,9 @@ namespace My {
         void DestroyShadowMap(int32_t& shadowmap) final;
 
         // skybox
-        void SetSkyBox(const DrawFrameContext& context) final;
         void DrawSkyBox() final;
 
         // terrain
-        void SetTerrain(const DrawFrameContext& context) final;
         void DrawTerrain() final;
 
         int32_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;

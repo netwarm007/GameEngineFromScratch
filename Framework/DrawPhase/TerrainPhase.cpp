@@ -10,6 +10,5 @@ void TerrainPhase::Draw(Frame& frame)
 
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-    g_pGraphicsManager->SetTerrain(frame.frameContext);
     g_pGraphicsManager->DrawTerrain();
 }

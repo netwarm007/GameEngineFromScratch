@@ -1658,7 +1658,7 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
         // SRV
         D3D12_CPU_DESCRIPTOR_HANDLE srvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
         D3D12_CPU_DESCRIPTOR_HANDLE dstSrvCpuHandle = m_pPerBatchSrvRingHeap->GetCPUDescriptorHandleForHeapStart();
-        if (m_nPerBatchSrvRingHeapSize - m_nPerBatchSrvRingHeapEnd < 6)
+        if (m_nPerBatchSrvRingHeapSize - m_nPerBatchSrvRingHeapEnd < GfxConfiguration::kMaxTexturePerMaterialCount)
         {
             m_nPerBatchSrvRingHeapEnd = 0;
         }
@@ -1674,7 +1674,17 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
                                     D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         }
 
-        m_nPerBatchSrvRingHeapEnd += 6;
+        // set skybox
+        if (m_Frames[m_nFrameIndex].skybox >= 0)
+        {
+            D3D12_CPU_DESCRIPTOR_HANDLE srcSrvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
+            srcSrvCpuHandle.ptr += m_Frames[m_nFrameIndex].skybox * m_nCbvSrvUavDescriptorSize;
+            dstSrvCpuHandle.ptr += 10 * m_nCbvSrvUavDescriptorSize;
+
+            m_pDev->CopyDescriptorsSimple(1, dstSrvCpuHandle, srcSrvCpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        }
+
+        m_nPerBatchSrvRingHeapEnd += GfxConfiguration::kMaxTexturePerMaterialCount;
 
         // Sampler
         m_pCommandList->SetGraphicsRootDescriptorTable(2, m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart());
@@ -1783,19 +1793,6 @@ void D3d12GraphicsManager::Present()
     WaitForPreviousFrame();
 
     (void)hr;
-}
-
-void D3d12GraphicsManager::SetSkyBox(const DrawFrameContext& context)
-{
-    if (m_Frames[m_nFrameIndex].skybox >= 0)
-    {
-        D3D12_CPU_DESCRIPTOR_HANDLE srcSrvCpuHandle = m_pSrvHeap->GetCPUDescriptorHandleForHeapStart();
-        D3D12_CPU_DESCRIPTOR_HANDLE dstSrvCpuHandle = m_pPerBatchSrvRingHeap->GetCPUDescriptorHandleForHeapStart();
-        srcSrvCpuHandle.ptr += m_Frames[m_nFrameIndex].skybox * m_nCbvSrvUavDescriptorSize;
-        dstSrvCpuHandle.ptr += (m_nPerBatchSrvRingHeapStart + 10) * m_nCbvSrvUavDescriptorSize;
-
-        m_pDev->CopyDescriptorsSimple(1, dstSrvCpuHandle, srcSrvCpuHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-    }
 }
 
 void D3d12GraphicsManager::DrawSkyBox()

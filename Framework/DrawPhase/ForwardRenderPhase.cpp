@@ -12,6 +12,5 @@ void ForwardRenderPhase::Draw(Frame& frame)
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
     g_pGraphicsManager->SetShadowMaps(frame);
-    g_pGraphicsManager->SetSkyBox(frame.frameContext);
     g_pGraphicsManager->DrawBatch(frame.batchContexts);
 }

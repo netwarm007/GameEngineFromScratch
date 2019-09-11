@@ -10,6 +10,5 @@ void SkyBoxPhase::Draw(Frame& frame)
 
     g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
-    g_pGraphicsManager->SetSkyBox(frame.frameContext);
     g_pGraphicsManager->DrawSkyBox();
 }

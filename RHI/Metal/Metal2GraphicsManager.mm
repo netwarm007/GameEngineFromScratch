@@ -299,11 +299,6 @@ void Metal2GraphicsManager::DestroyShadowMap(int32_t& shadowmap)
     [m_pRenderer destroyShadowMap:shadowmap];
 }
 
-void Metal2GraphicsManager::SetSkyBox(const DrawFrameContext& context)
-{
-    [m_pRenderer setSkyBox:context];
-}
-
 void Metal2GraphicsManager::DrawSkyBox()
 {
     [m_pRenderer drawSkyBox];
