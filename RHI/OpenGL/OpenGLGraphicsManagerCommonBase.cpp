@@ -486,7 +486,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
-        m_Frames[i].frameContext.skybox = texture_id;
+        m_Frames[i].skybox = texture_id;
     }
 
     glBindTexture(target, 0);
@@ -586,7 +586,7 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
     {
-        m_Frames[i].frameContext.terrainHeightMap = texture_id;
+        m_Frames[i].terrainHeightMap = texture_id;
     }
 }
 
@@ -1039,7 +1039,7 @@ void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
 // skybox
 void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
 {
-    uint32_t texture_id = (uint32_t) context.skybox;
+    uint32_t texture_id = (uint32_t) m_Textures["SkyBox"];
     setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
     glActiveTexture(GL_TEXTURE10);
     GLenum target;
@@ -1078,7 +1078,7 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
 // terrain 
 void OpenGLGraphicsManagerCommonBase::SetTerrain(const DrawFrameContext& context)
 {
-    uint32_t terrainHeightMap = (uint32_t) context.terrainHeightMap;
+    uint32_t terrainHeightMap = (uint32_t) m_Textures["Terrain"];
     setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
     glActiveTexture(GL_TEXTURE11);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, terrainHeightMap);

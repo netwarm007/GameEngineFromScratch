@@ -146,7 +146,9 @@ struct material_textures
 
 struct global_textures
 {
-	int32_t brdfLUT;
+	int32_t brdfLUT = -1;
+	int32_t skybox = -1;
+	int32_t terrainHeightMap = -1;
 };
 
 struct frame_textures
@@ -159,9 +161,6 @@ struct frame_textures
 
 	int32_t cubeShadowMap = -1;
 	int32_t cubeShadowMapCount = 0;
-
-	int32_t skybox = -1;
-	int32_t terrainHeightMap = -1;
 };
 #else
 Texture2D diffuseMap 			REGISTER(t0);

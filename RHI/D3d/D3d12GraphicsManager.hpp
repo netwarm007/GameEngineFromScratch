@@ -75,8 +75,13 @@ namespace My {
         ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
         ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
-		std::vector<ID3D12DescriptorHeap*>  m_pSrvHeap;                     // an array of descriptors of GPU objects
+		ID3D12DescriptorHeap*           m_pSrvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pSamplerHeap = nullptr;           // an array of descriptors of GPU objects
+        ID3D12DescriptorHeap*           m_pPerBatchSrvRingHeap = nullptr;   // an array of descriptors of GPU objects
+        uint32_t                        m_nPerBatchSrvRingHeapStart;
+        uint32_t                        m_nPerBatchSrvRingHeapEnd;
+        uint32_t                        m_nPerBatchSrvRingHeapSize;
+
         std::vector<ID3D12PipelineState*>            
                                         m_pPipelineStates;                  // an object maintains the state of all currently set shaders
                                                                             // and certain fixed function state objects
@@ -84,7 +89,7 @@ namespace My {
         ID3D12GraphicsCommandList*      m_pCommandList = nullptr;           // a list to store GPU commands, which will be submitted to GPU to execute when done
 
         uint32_t                        m_nRtvDescriptorSize;
-        uint32_t                        m_nSrvDescriptorSize;
+        uint32_t                        m_nCbvSrvUavDescriptorSize;
         uint32_t                        m_nSamplerDescriptorSize;
 
         std::vector<ID3D12Resource*>    m_Buffers;                          // the pointer to the GPU buffer other than texture
