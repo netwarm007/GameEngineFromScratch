@@ -5,8 +5,6 @@
 #include "Platform/Sdl/OpenGLApplication.hpp"
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
-#elif defined(OS_WINDOWS)
-#include "D3d12Application.hpp"
 #else
 #include "OpenGLApplication.hpp"
 #endif
@@ -15,8 +13,6 @@
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
 #elif defined(OS_MACOS)
 #include "RHI/Metal/MetalConfig.hpp"
-#elif defined(OS_WINDOWS)
-#include "RHI/D3d/D3d12Config.hpp"
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
@@ -35,8 +31,6 @@ namespace My {
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 960, 540, "Viewer");
 #if defined(OS_MACOS)
 	IApplication*    g_pApp             = static_cast<IApplication*>(new CocoaMetalApplication(config));
-#elif defined(OS_WINDOWS)
-	IApplication*    g_pApp             = static_cast<IApplication*>(new D3d12Application(config));
 #else
 	IApplication*    g_pApp             = static_cast<IApplication*>(new OpenGLApplication(config));
 #endif
