@@ -21,8 +21,6 @@ namespace My {
 
 - (void)setLightInfo:(const LightInfo&)lightInfo;
 
-- (void)setSkyBox:(const DrawFrameContext&)context;
-
 - (void)drawSkyBox;
 
 - (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches;
