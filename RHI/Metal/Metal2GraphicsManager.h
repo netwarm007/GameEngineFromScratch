@@ -26,7 +26,6 @@ namespace My {
         void DestroyShadowMap(int32_t& shadowmap) final;
 
         // skybox
-        void SetSkyBox(const DrawFrameContext& context) final;
         void DrawSkyBox() final;
 
         // compute shader tasks

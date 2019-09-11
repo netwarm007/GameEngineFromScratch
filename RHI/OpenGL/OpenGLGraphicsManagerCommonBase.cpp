@@ -709,6 +709,30 @@ void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::Sha
     else {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+
+    // Set Sky Box
+    uint32_t texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
+    if (texture_id >= 0)
+    {
+        setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
+        glActiveTexture(GL_TEXTURE10);
+        GLenum target;
+    #if defined(OS_WEBASSEMBLY)
+        target = GL_TEXTURE_2D_ARRAY;
+    #else
+        target = GL_TEXTURE_CUBE_MAP_ARRAY;
+    #endif
+        glBindTexture(target, texture_id);
+    }
+
+    // Set Terrain
+    texture_id = (uint32_t) m_Frames[m_nFrameIndex].terrainHeightMap;
+    if (texture_id >= 0)
+    {
+        setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
+        glActiveTexture(GL_TEXTURE11);
+        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
+    }
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
@@ -1036,21 +1060,6 @@ void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
     shadowmap = -1;
 }
 
-// skybox
-void OpenGLGraphicsManagerCommonBase::SetSkyBox(const DrawFrameContext& context)
-{
-    uint32_t texture_id = (uint32_t) m_Textures["SkyBox"];
-    setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
-    glActiveTexture(GL_TEXTURE10);
-    GLenum target;
-#if defined(OS_WEBASSEMBLY)
-    target = GL_TEXTURE_2D_ARRAY;
-#else
-    target = GL_TEXTURE_CUBE_MAP_ARRAY;
-#endif
-    glBindTexture(target, texture_id);
-}
-
 void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
 {
     // Prepare & Bind per frame constant buffer
@@ -1073,15 +1082,6 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
     glDrawElements(m_SkyBoxDrawBatchContext.mode, m_SkyBoxDrawBatchContext.count, m_SkyBoxDrawBatchContext.type, 0x00);
     glBindVertexArray(0);
     glDepthFunc(GL_LESS); // set depth function back to default
-}
-
-// terrain 
-void OpenGLGraphicsManagerCommonBase::SetTerrain(const DrawFrameContext& context)
-{
-    uint32_t terrainHeightMap = (uint32_t) m_Textures["Terrain"];
-    setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
-    glActiveTexture(GL_TEXTURE11);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, terrainHeightMap);
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawTerrain()
