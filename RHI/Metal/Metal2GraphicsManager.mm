@@ -199,7 +199,7 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene)
 
         for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
         {
-            m_Frames[i].frameContext.skybox = tex_index;
+            m_Frames[i].skybox = tex_index;
         }
     }
 }
