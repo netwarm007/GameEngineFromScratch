@@ -101,6 +101,10 @@ namespace My {
         virtual void BeginCompute() {}
         virtual void EndCompute() {}
 
+        virtual void initializeGeometries(const Scene& scene) {}
+        virtual void initializeSkyBox(const Scene& scene) {}
+        virtual void initializeTerrain(const Scene& scene) {}
+
 #ifdef DEBUG
         virtual void RenderDebugBuffers() {}
 #endif

@@ -590,17 +590,6 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginScene(const Scene& scene)
-{
-    GraphicsManager::BeginScene(scene);
-
-    initializeGeometries(scene);
-    initializeTerrain(scene);
-    initializeSkyBox(scene);
-
-    return;
-}
-
 void OpenGLGraphicsManagerCommonBase::EndScene()
 {
     for (int i = 0; i < m_Frames.size(); i++)

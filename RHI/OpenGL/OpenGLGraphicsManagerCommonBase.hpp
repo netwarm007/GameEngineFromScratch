@@ -71,21 +71,14 @@ namespace My {
 #endif
 
     private:
-        void BeginScene(const Scene& scene) final;
         void EndScene() final;
 
         void BeginFrame(const Frame& frame) final;
         void EndFrame() final;
 
-        void BeginPass() final {}
-        void EndPass() final {}
-
-        void BeginCompute() final {}
-        void EndCompute() final {}
-
-        void initializeGeometries(const Scene& scene);
-        void initializeSkyBox(const Scene& scene);
-        void initializeTerrain(const Scene& scene);
+        void initializeGeometries(const Scene& scene) final;
+        void initializeSkyBox(const Scene& scene) final;
+        void initializeTerrain(const Scene& scene) final;
 
         void drawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
 
