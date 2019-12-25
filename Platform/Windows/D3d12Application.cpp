@@ -7,8 +7,5 @@ using namespace My;
 void D3d12Application::Tick()
 {
     WindowsApplication::Tick();
-    
-    // Present the back buffer to the screen since rendering is complete.
-    SwapBuffers(m_hDc);
 }
 
