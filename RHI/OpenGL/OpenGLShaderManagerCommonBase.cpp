@@ -270,6 +270,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::ShadowMap] = shaderProgram;
 
+#if 0
 #if !defined(OS_WEBASSEMBLY)
     // Omni Shadow Map Shader
     list = {
@@ -285,6 +286,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
     }
 
     m_DefaultShaders[DefaultShaderIndex::OmniShadowMap] = shaderProgram;
+#endif
 #endif
 
     // Texture overlay shader
@@ -343,6 +345,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::CopyCubeArray] = shaderProgram;
 
+#if 0
 #if !defined(OS_WEBASSEMBLY)
     // Terrain shader
     list = {
@@ -360,6 +363,7 @@ bool OpenGLShaderManagerCommonBase::InitializeShaders()
 
     m_DefaultShaders[DefaultShaderIndex::Terrain] = shaderProgram;
 #endif // !defined(OS_WEBASSEMBLY)
+#endif
 
 #ifdef DEBUG
     // Debug Shader

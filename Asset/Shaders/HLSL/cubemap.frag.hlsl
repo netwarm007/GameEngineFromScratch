@@ -1,7 +1,7 @@
 #include "cbuffer.h"
 #include "vsoutput.h.hlsl"
 
-TextureCube cubemap : register(b0);
+TextureCube cubemap : register(t0);
 
 float4 cubemap_frag_main(cube_vert_output _entryPointOutput) : SV_Target
 {

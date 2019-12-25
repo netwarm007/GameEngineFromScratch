@@ -104,6 +104,7 @@ IF(NOT ANDROID AND NOT WA)
 add_subdirectory(Editor)
 ENDIF(NOT ANDROID AND NOT WA)
 add_subdirectory(Viewer)
+add_subdirectory(Asset)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 

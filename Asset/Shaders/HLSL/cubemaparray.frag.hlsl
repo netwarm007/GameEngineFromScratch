@@ -3,9 +3,9 @@
 #include "vsoutput.h.hlsl"
 
 #if defined(OS_WEBASSEMBLY)
-Texture2DArray cubemap : register(b0);
+Texture2DArray cubemap : register(t0);
 #else
-TextureCubeArray cubemap : register(b0);
+TextureCubeArray cubemap : register(t0);
 #endif
 
 float4 cubemaparray_frag_main(cube_vert_output _entryPointOutput) : SV_Target
