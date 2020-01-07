@@ -11,6 +11,7 @@
 
 #include "base/cef_bind.h"
 #include "cef_app.h"
+#include "cef_parser.h"
 #include "views/cef_browser_view.h"
 #include "views/cef_window.h"
 #include "wrapper/cef_closure_task.h"
@@ -23,6 +24,13 @@ using namespace My;
 
 namespace My {
     static SimpleHandler* g_pInstance = NULL;
+
+    // Returns a data: URI with the specified contents.
+    std::string GetDataURI(const std::string& data, const std::string& mime_type) {
+	    return "data:" + mime_type + ";base64," +
+		    CefURIEncode(CefBase64Encode(data.data(), data.size()), false)
+		    	.ToString();
+    }
 }
 
 SimpleHandler::SimpleHandler(bool use_views)
@@ -127,7 +135,7 @@ void SimpleHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
             "<h2>Failed to load URL "
         << std::string(failedUrl) << " with error " << std::string(errorText)
         << " (" << errorCode << ").</h2></body></html>";
-    frame->LoadString(ss.str(), failedUrl);
+    frame->LoadURL(GetDataURI(ss.str(), "text/html"));
 }
 
 void SimpleHandler::CloseAllBrowsers(bool force_close) 
