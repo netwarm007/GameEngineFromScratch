@@ -1,7 +1,12 @@
 git submodule update --init External/src/ispc
 mkdir External\build\ispc
 pushd External\build\ispc
-cmake -DLLVM_INSTALL_DIR=../../Windows -DLLVM_HOME=../../Windows -DARM_ENABLED=ON -DNVPTX_ENABLED=OFF -DISPC_INCLUDE_EXAMPLES=OFF -DISPC_INCLUDE_TESTS=OFF -DCMAKE_INSTALL_PREFIX=../../Windows  -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 16 2019" -Thost=x64 ../../src/ispc
+set INSTALL_ROOT=..\..\Windows
+set LLVM_HOME=..\..\src\llvm
+set LLVM_VERSION=LLVM_8_0
+set ISPC_HOME=..\..\src\ispc
+set PATH=%INSTALL_ROOT%\bin;%PATH%
+cmake -DLLVM_INSTALL_DIR=%INSTALL_ROOT% -DCMAKE_INSTALL_PREFIX=%INSTALL_ROOT% -DARM_ENABLED=ON -DNVPTX_ENABLED=OFF -DISPC_INCLUDE_EXAMPLES=OFF %ISPC_HOME%
 cmake --build . --config release --target install
 popd
 
