@@ -44,5 +44,6 @@
         "variant": "cpp",
         "ostream": "cpp"
     },
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "cmake.configureOnOpen": false
 }

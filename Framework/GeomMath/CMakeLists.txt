@@ -42,7 +42,8 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Android")
     SET(ISPC_OPTIONS --arch=arm --cpu=cortex-a9 --target=neon-i32x4)
 ENDIF()
 
-SET(ISPC_OPTIONS ${ISPC_OPTIONS} -O2)
+# common options for ispc
+SET(ISPC_OPTIONS ${ISPC_OPTIONS} -O2 --pic)
 
 add_subdirectory(cpp)
 add_subdirectory(ispc)
