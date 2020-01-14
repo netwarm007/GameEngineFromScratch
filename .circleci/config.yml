@@ -45,7 +45,7 @@ jobs:
              cmake --build ./build --target test
   build_macos:
     macos:
-      xcode: "10.0.0"
+      xcode: "11.3.1"
     steps:
       - restore_cache:
           keys:
