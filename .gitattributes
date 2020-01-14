@@ -57,3 +57,4 @@ External/Windows/bin filter=lfs diff=lfs merge=lfs -text
 External/Darwin/framework/Chromium[[:space:]]Embedded[[:space:]]Framework.framework/Chromium[[:space:]]Embedded[[:space:]]Framework filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin/llc filter=lfs diff=lfs merge=lfs -text
+External/Darwin/bin/ispc filter=lfs diff=lfs merge=lfs -text
