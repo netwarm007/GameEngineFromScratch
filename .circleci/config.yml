@@ -65,9 +65,9 @@ jobs:
       - run: 
           name: Install Dependencies via MacPorts
           command: |
-             curl -L -o $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg https://github.com/macports/macports-base/releases/download/v2.5.3/MacPorts-2.5.3-10.13-HighSierra.pkg
-             sudo installer -package $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg -target /
-             rm $(pwd)/MacPorts-2.5.3-10.13-HighSierra.pkg
+             curl -L -o $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg https://distfiles.macports.org/MacPorts/MacPorts-2.6.2-10.15-Catalina.pkg
+             sudo installer -package $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg -target /
+             rm $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              sudo -E port -q install cmake
       - run:
