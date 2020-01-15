@@ -13,9 +13,9 @@ IF(APPLE)
 
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air
-            COMMAND xcrun -sdk macosx metal -g -MO -c ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
+            COMMAND xcrun -sdk macosx metal -g -MO -c ${PROJECT_BINARY_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
             COMMENT "Compile ${SHADER}.metal --> ${SHADER}.air"
-            DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/Metal/${SHADER}.metal
+            DEPENDS Engine_Asset_Shaders
             )
 
         list(APPEND AIRS ${SHADER}.air)
