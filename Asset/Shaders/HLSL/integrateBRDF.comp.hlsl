@@ -1,6 +1,6 @@
 #include "functions.h.hlsl"
 
-RWTexture2D<float2> img_output : register(u0);
+RWTexture2D<float4> img_output : register(u0);
 
 float2 IntegrateBRDF(float NdotV, float roughness)
 {
