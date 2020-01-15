@@ -33,6 +33,7 @@ IF(APPLE)
         add_custom_command(OUTPUT ${SHADER}.air
         COMMAND xcrun -sdk macosx metal -g -MO -c ${PROJECT_BINARY_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
         COMMENT "Compile ${SHADER}.metal --> ${SHADER}.air"
+        DEPENDS Engine_Asset_Shaders
     )
 
     list(APPEND AIRS ${SHADER}.air)
