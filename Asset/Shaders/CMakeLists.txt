@@ -31,17 +31,24 @@ foreach(SHADER IN LISTS SHADER_SOURCES)
 
     set(VULKAN_SOURCE_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan)
     set(GLSL_SOURCE_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/OpenGL)
+    set(METAL_SOURCE_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/Metal)
 
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${VULKAN_SOURCE_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${GLSL_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${METAL_SOURCE_DIR}
     )
 
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
         COMMENT "HLSL --> SPIR-V"
-	COMMAND ${GLSL_VALIDATOR} -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
+	    COMMAND ${GLSL_VALIDATOR} -V -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
+        
         COMMENT "SPIR-V --> Desktop GLSL"
-	COMMAND ${SPIRV_CROSS} --version 420 --remove-unused-variables --output ${GLSL_SOURCE_DIR}/${part1}.${part2}.glsl ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
+	    COMMAND ${SPIRV_CROSS} --version 420 --remove-unused-variables --output ${GLSL_SOURCE_DIR}/${part1}.${part2}.glsl ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+
+        COMMENT "SPIR-V --> Metal"
+        COMMAND ${SPIRV_CROSS} --msl --msl-version 020101 --remove-unused-variables --output ${METAL_SOURCE_DIR}/${part1}.${part2}.metal ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     )
 endforeach(SHADER)
