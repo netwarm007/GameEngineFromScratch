@@ -24,4 +24,6 @@ ELSE()
     add_subdirectory(Empty)
 ENDIF(WIN32)
 
-add_subdirectory(Sdl)
+IF(WA)
+    add_subdirectory(Sdl)
+ENDIF(WA)

@@ -16,7 +16,7 @@ set(SHADER_SOURCES basic.vert basic.frag
         )
 
 IF(WIN32)
-    set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/Windows/bin/glslValidator.exe)
+    set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/Windows/bin/glslangValidator.exe)
     set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/Windows/bin/SPIRV-Cross.exe)
 ELSE(WIN32)
 	set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/glslangValidator)

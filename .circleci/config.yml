@@ -35,7 +35,6 @@ jobs:
              ./build_opengex.sh
              ./build_bullet.sh
              ./build_cef.sh
-             ./build_sdl.sh
              ./build_glslangValidator.sh
              ./build_spirvcross.sh
              ./build.sh
@@ -79,7 +78,6 @@ jobs:
              ./build_zlib.sh
              ./build_bullet.sh
              ./build_cef.sh
-             ./build_sdl.sh
              ./build.sh
       - run:
           name: Test

@@ -12,8 +12,6 @@ build_script:
 
     build_cef
 
-    build_sdl
-
     build_glslangValidator
 
     build_spirvcross

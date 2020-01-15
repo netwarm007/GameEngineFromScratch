@@ -3,20 +3,15 @@ add_library(Sdl
     OpenGLApplication.cpp
 )
 
-IF(WA)
-    # nothing here
-ELSE(WA)
-    IF(APPLE)
-        list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/SDL2.framework/Resources")
-    ELSEIF(UNIX)
-        list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/lib/cmake/SDL2")
-    ENDIF(APPLE)
+find_package(SDL2)
+include_directories(${SDL2_INCLUDE_DIRS})
 
-    include(SDL2Config)
+IF(APPLE)
+    list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/SDL2.framework/Resources")
+ELSEIF(UNIX)
+    list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/lib/cmake/SDL2")
+ENDIF(APPLE)
 
-    target_link_libraries(Sdl
-        SDL2::SDL2main
-        SDL2::SDL2
-    )
-
-ENDIF(WA)
+target_link_libraries(Sdl
+    ${SDL2_LIBRARIES}
+)
