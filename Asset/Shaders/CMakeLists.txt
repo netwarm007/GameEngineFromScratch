@@ -15,6 +15,14 @@ set(SHADER_SOURCES basic.vert basic.frag
             integrateBRDF.comp
         )
 
+IF(WIN32)
+    set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/Windows/bin/glslValidator.exe)
+    set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/Windows/bin/SPIRV-Cross.exe)
+ELSE(WIN32)
+	set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/glslangValidator)
+	set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/spirv-cross)
+ENDIF(WIN32)
+
 foreach(SHADER IN LISTS SHADER_SOURCES)
     # Convert HLSL to Others
     string(REPLACE "." ";" arguments ${SHADER})
@@ -31,9 +39,9 @@ foreach(SHADER IN LISTS SHADER_SOURCES)
 
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
         COMMENT "HLSL --> SPIR-V"
-        COMMAND ${PROJECT_SOURCE_DIR}/External/Windows/bin/glslangValidator.exe -H -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
+	COMMAND ${GLSL_VALIDATOR} -H -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
         COMMENT "SPIR-V --> Desktop GLSL"
-        COMMAND ${PROJECT_SOURCE_DIR}/External/Windows/bin/SPIRV-Cross.exe --version 420 --remove-unused-variables --output ${GLSL_SOURCE_DIR}/${part1}.${part2}.glsl ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
+	COMMAND ${SPIRV_CROSS} --version 420 --remove-unused-variables --output ${GLSL_SOURCE_DIR}/${part1}.${part2}.glsl ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     )
 endforeach(SHADER)
