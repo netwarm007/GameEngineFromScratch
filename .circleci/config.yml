@@ -18,10 +18,6 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run:
-          name: Restore git repo from cache
-          command: |
-             git restore .
       - checkout
       - run: 
           name: Git LFS Checkout
