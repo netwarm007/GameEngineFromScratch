@@ -23,7 +23,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLComputeCommandEncoder> _computeEncoder;
 
     // Metal objects
-    id<MTLRenderPipelineState> _pipelineState;
+    id<MTLRenderPipelineState> _basicPipelineState;
     id<MTLRenderPipelineState> _pbrPipelineState;
     id<MTLRenderPipelineState> _skyboxPipelineState;
     id<MTLRenderPipelineState> _shadowMapPipelineState;
@@ -42,7 +42,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     // Vertex descriptor specifying how vertices will by laid out for input into our render
     // pipeline and how ModelIO should layout vertices
-    MTLVertexDescriptor* _mtlVertexDescriptor;
+    MTLVertexDescriptor* _mtlBasicVertexDescriptor;
+    MTLVertexDescriptor* _mtlPbrVertexDescriptor;
     MTLVertexDescriptor* _mtlPosOnlyVertexDescriptor;
 
     MTKView* _mtkView;
@@ -98,9 +99,11 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
     }
 
+    //////////////////////////////////
+    // Position only Vertex Stream layout
     _mtlPosOnlyVertexDescriptor = [[MTLVertexDescriptor alloc] init];
 
-    // Positions.
+    // Positions
     _mtlPosOnlyVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
     _mtlPosOnlyVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].offset = 0;
     _mtlPosOnlyVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = VertexAttribute::VertexAttributePosition;
@@ -111,57 +114,186 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     _mtlPosOnlyVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepFunction = MTLVertexStepFunctionPerVertex;
 
 
-    _mtlVertexDescriptor = [[MTLVertexDescriptor alloc] init];
+    //////////////////////////////////
+    // Basic Vertex Stream layout
+    _mtlBasicVertexDescriptor = [[MTLVertexDescriptor alloc] init];
 
-    // Positions.
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat3;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = VertexAttribute::VertexAttributePosition;
+    // Positions
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat4;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].offset = 0;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = VertexAttribute::VertexAttributePosition;
 
-    // Texture coordinates.
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].format = MTLVertexFormatFloat2;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].bufferIndex = VertexAttribute::VertexAttributeTexcoord;
+    // Normals
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].format = MTLVertexFormatFloat4;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].offset = 0;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].bufferIndex = VertexAttribute::VertexAttributeNormal;
 
-    // Normals.
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].format = MTLVertexFormatFloat3;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].bufferIndex = VertexAttribute::VertexAttributeNormal;
+    // Normals World
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormalWorld].format = MTLVertexFormatFloat4;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormalWorld].offset = 0;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormalWorld].bufferIndex = VertexAttribute::VertexAttributeNormalWorld;
 
-    // Tangents
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].format = MTLVertexFormatFloat3;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].bufferIndex = VertexAttribute::VertexAttributeTangent;
+    // View
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeView].format = MTLVertexFormatFloat4;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeView].offset = 0;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeView].bufferIndex = VertexAttribute::VertexAttributeView;
 
-    // Bitangents
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].format = MTLVertexFormatFloat3;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].offset = 0;
-    _mtlVertexDescriptor.attributes[VertexAttribute::VertexAttributeBitangent].bufferIndex = VertexAttribute::VertexAttributeBitangent;
+    // View World
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeViewWorld].format = MTLVertexFormatFloat4;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeViewWorld].offset = 0;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeViewWorld].bufferIndex = VertexAttribute::VertexAttributeViewWorld;
+
+    // UV
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].format = MTLVertexFormatFloat2;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].offset = 0;
+    _mtlBasicVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].bufferIndex = VertexAttribute::VertexAttributeTexcoord;
 
     // Position Buffer Layout
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stride = 12;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepRate = 1;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepFunction = MTLVertexStepFunctionPerVertex;
-
-    // UV Buffer Layout
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stride = 8;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepRate = 1;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stride = 16;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepRate = 1;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepFunction = MTLVertexStepFunctionPerVertex;
 
     // Normal Buffer Layout
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stride = 12;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepRate = 1;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepFunction = MTLVertexStepFunctionPerVertex;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stride = 16;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepRate = 1;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepFunction = MTLVertexStepFunctionPerVertex;
 
-    // Tangent Buffer Layout
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stride = 12;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stepRate = 1;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stepFunction = MTLVertexStepFunctionPerVertex;
+    // Normal World Buffer Layout
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormalWorld].stride = 16;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormalWorld].stepRate = 1;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormalWorld].stepFunction = MTLVertexStepFunctionPerVertex;
 
-    // Bitangent Buffer Layout
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stride = 12;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stepRate = 1;
-    _mtlVertexDescriptor.layouts[VertexAttribute::VertexAttributeBitangent].stepFunction = MTLVertexStepFunctionPerVertex;
+    // View Buffer Layout
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeView].stride = 16;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeView].stepRate = 1;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeView].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // View World Buffer Layout
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeViewWorld].stride = 16;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeViewWorld].stepRate = 1;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeViewWorld].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // UV Buffer Layout
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stride = 8;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepRate = 1;
+    _mtlBasicVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    //////////////////////////////////
+    // PBR Vertex Stream layout
+    _mtlPbrVertexDescriptor = [[MTLVertexDescriptor alloc] init];
+
+    // Positions
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].format = MTLVertexFormatFloat4;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributePosition].bufferIndex = VertexAttribute::VertexAttributePosition;
+
+    // Normals
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].format = MTLVertexFormatFloat4;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormal].bufferIndex = VertexAttribute::VertexAttributeNormal;
+
+    // Normals World
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormalWorld].format = MTLVertexFormatFloat4;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormalWorld].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeNormalWorld].bufferIndex = VertexAttribute::VertexAttributeNormalWorld;
+
+    // View
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeView].format = MTLVertexFormatFloat4;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeView].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeView].bufferIndex = VertexAttribute::VertexAttributeView;
+
+    // View World
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeViewWorld].format = MTLVertexFormatFloat4;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeViewWorld].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeViewWorld].bufferIndex = VertexAttribute::VertexAttributeViewWorld;
+
+    // Tangent
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].format = MTLVertexFormatFloat3;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTangent].bufferIndex = VertexAttribute::VertexAttributeTangent;
+
+    // Cam Pos Tangent
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeCamPosTangent].format = MTLVertexFormatFloat3;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeCamPosTangent].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeCamPosTangent].bufferIndex = VertexAttribute::VertexAttributeCamPosTangent;
+
+    // UV
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].format = MTLVertexFormatFloat2;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTexcoord].bufferIndex = VertexAttribute::VertexAttributeTexcoord;
+
+    // TBN 0
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN].format = MTLVertexFormatFloat3;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN].bufferIndex = VertexAttribute::VertexAttributeTBN;
+
+    // TBN 1
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN + 1].format = MTLVertexFormatFloat3;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN + 1].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN + 1].bufferIndex = VertexAttribute::VertexAttributeTBN + 1;
+
+    // TBN 2
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN + 2].format = MTLVertexFormatFloat3;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN + 2].offset = 0;
+    _mtlPbrVertexDescriptor.attributes[VertexAttribute::VertexAttributeTBN + 2].bufferIndex = VertexAttribute::VertexAttributeTBN + 2;
+
+    // Position Buffer Layout
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stride = 16;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributePosition].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // Normal Buffer Layout
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stride = 16;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormal].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // Normal World Buffer Layout
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormalWorld].stride = 16;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormalWorld].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeNormalWorld].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // View Buffer Layout
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeView].stride = 16;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeView].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeView].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // View World Buffer Layout
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeViewWorld].stride = 16;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeViewWorld].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeViewWorld].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // UV Buffer Layout
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stride = 8;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTexcoord].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // Tangent
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stride = 12;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTangent].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // Cam Pos Tangent
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeCamPosTangent].stride = 12;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeCamPosTangent].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeCamPosTangent].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // TBN 0 
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN].stride = 12;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // TBN 1 
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN + 1].stride = 12;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN + 1].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN + 1].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    // TBN 2 
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN + 2].stride = 12;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN + 2].stepRate = 1;
+    _mtlPbrVertexDescriptor.layouts[VertexAttribute::VertexAttributeTBN + 2].stepFunction = MTLVertexStepFunctionPerVertex;
+
+    ////////////////////////////
+    // Sampler
 
     MTLSamplerDescriptor* samplerDescriptor = [[MTLSamplerDescriptor alloc] init];
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
@@ -188,15 +320,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
     pipelineStateDescriptor.vertexFunction = vertexFunction;
     pipelineStateDescriptor.fragmentFunction = fragmentFunction;
-    pipelineStateDescriptor.vertexDescriptor = _mtlVertexDescriptor;
+    pipelineStateDescriptor.vertexDescriptor = _mtlBasicVertexDescriptor;
     pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
     pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
 
-    _pipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
-    if (!_pipelineState)
+    _basicPipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
+    if (!_basicPipelineState)
     {
-        NSLog(@"Failed to created pipeline state, error %@", error);
-        assert(0);
+        NSLog(@"Failed to created basic pipeline state, error %@", error);
     }
 
     MTLDepthStencilDescriptor *depthStateDesc = [[MTLDepthStencilDescriptor alloc] init];
@@ -212,17 +343,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     pipelineStateDescriptor.sampleCount = _mtkView.sampleCount;
     pipelineStateDescriptor.vertexFunction = vertexFunction;
     pipelineStateDescriptor.fragmentFunction = fragmentFunction;
-    pipelineStateDescriptor.vertexDescriptor = _mtlVertexDescriptor;
+    pipelineStateDescriptor.vertexDescriptor = _mtlPbrVertexDescriptor;
     pipelineStateDescriptor.colorAttachments[0].pixelFormat = _mtkView.colorPixelFormat;
     pipelineStateDescriptor.depthAttachmentPixelFormat = _mtkView.depthStencilPixelFormat;
 
     _pbrPipelineState = [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
     if (!_pbrPipelineState)
     {
-        NSLog(@"Failed to created pipeline state, error %@", error);
-        assert(0);
+        NSLog(@"Failed to created PBR pipeline state, error %@", error);
     }
 
+/*
     // Create shadowmap pipeline state
     vertexFunction = [myLibrary newFunctionWithName:@"shadowmap_vert_main"];
 
@@ -275,6 +406,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         NSLog(@"Failed to created BRDF compute pipeline state, error %@", error);
         assert(0);
     }
+*/
 
     // Create the command queue
     _commandQueue = [_device newCommandQueue];

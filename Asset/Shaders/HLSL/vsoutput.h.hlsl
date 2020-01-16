@@ -15,9 +15,9 @@ struct pbr_vert_output
     float4 normal_world     : NORMAL1;
     float4 v                : POSITION1;
     float4 v_world          : POSITION2;
+    float2 uv               : TEXCOORD0;
     float3 v_tangent        : POSITION3;
     float3 camPos_tangent   : POSITION4;
-    float2 uv               : TEXCOORD0;
     float3x3 TBN            : MATRIX0;
 };
 
