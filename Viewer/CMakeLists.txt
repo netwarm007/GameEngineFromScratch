@@ -131,7 +131,7 @@ ELSEIF(WA)
 ELSEIF(WIN32)
     target_link_libraries(Viewer
                             MyPhysics
-                            OpenGLRHI 
+                            D3dRHI 
                             Common
                             PlatformInterface
                         )
