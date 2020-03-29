@@ -5,9 +5,9 @@ namespace My {
     Interface IGameLogic : implements IRuntimeModule
     {
     public:
-        virtual int Initialize() = 0;
-        virtual void Finalize() = 0;
-        virtual void Tick() = 0;
+        int Initialize() override = 0;
+        void Finalize() override = 0;
+        void Tick() override = 0;
 
         virtual void OnUpKeyDown() {};
         virtual void OnUpKeyUp() {};

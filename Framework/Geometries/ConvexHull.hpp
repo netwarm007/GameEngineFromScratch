@@ -7,7 +7,7 @@ namespace My {
     {
     public:
         ConvexHull() = default;
-        ~ConvexHull() = default;
+        ~ConvexHull() override = default;
 
         ConvexHull(PointSet& point_set) : m_PointSet(point_set) {};
         ConvexHull(PointSet&& point_set) : m_PointSet(std::move(point_set)) {};

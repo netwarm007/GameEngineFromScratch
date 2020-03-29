@@ -10,7 +10,7 @@ namespace My {
     {
     public:
         MetalShaderManager() = default;
-        ~MetalShaderManager() = default;
+        ~MetalShaderManager() override = default;
 
         int Initialize() final;
         void Finalize() final;

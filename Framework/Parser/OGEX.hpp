@@ -857,7 +857,7 @@ namespace My {
         OgexParser() = default;
         virtual ~OgexParser() = default;
 
-        virtual std::unique_ptr<Scene> Parse(const std::string& buf)
+        std::unique_ptr<Scene> Parse(const std::string& buf) override
         {
             std::unique_ptr<Scene> pScene(new Scene("OGEX Scene"));
             OGEX::OpenGexDataDescription  openGexDataDescription;

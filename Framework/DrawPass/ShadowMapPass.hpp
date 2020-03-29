@@ -5,7 +5,7 @@ namespace My {
     class ShadowMapPass: public BasePass
     {
     public:
-        ~ShadowMapPass() = default;
+        ~ShadowMapPass() override = default;
         void Draw(Frame& frame) final;
     };
 }

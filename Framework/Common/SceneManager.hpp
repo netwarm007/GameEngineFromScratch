@@ -7,12 +7,12 @@ namespace My {
     class SceneManager : implements IRuntimeModule
     {
     public:
-        virtual ~SceneManager();
+        ~SceneManager() override;
 
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize() override;
+        void Finalize() override;
 
-        virtual void Tick();
+        void Tick() override;
 
         int LoadScene(const char* scene_file_name);
 

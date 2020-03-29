@@ -12,7 +12,7 @@ namespace My {
             void*       m_pRigidBody = nullptr;
 
         protected:
-            virtual void dump(std::ostream& out) const 
+            void dump(std::ostream& out) const override 
             { 
                 SceneNode::dump(out);
                 out << "Visible: " << m_bVisible << std::endl;

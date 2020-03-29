@@ -19,6 +19,6 @@ namespace My {
             m_DrawPhases.push_back(std::make_shared<HUDPhase>());
         }
 
-        ~ForwardGeometryPass() = default;
+        ~ForwardGeometryPass() override = default;
     };
 }

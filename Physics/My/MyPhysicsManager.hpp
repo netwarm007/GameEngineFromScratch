@@ -6,25 +6,25 @@ namespace My {
     class MyPhysicsManager : public IPhysicsManager
     {
     public:
-        int Initialize();
-        void Finalize();
-        void Tick();
+        int Initialize() override;
+        void Finalize() override;
+        void Tick() override;
 
-        void CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry);
-        void DeleteRigidBody(SceneGeometryNode& node);
+        void CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry) override;
+        void DeleteRigidBody(SceneGeometryNode& node) override;
 
-        int CreateRigidBodies();
-        void ClearRigidBodies();
+        int CreateRigidBodies() override;
+        void ClearRigidBodies() override;
 
-        Matrix4X4f GetRigidBodyTransform(void* rigidBody);
-        void UpdateRigidBodyTransform(SceneGeometryNode& node);
+        Matrix4X4f GetRigidBodyTransform(void* rigidBody) override;
+        void UpdateRigidBodyTransform(SceneGeometryNode& node) override;
 
-        void ApplyCentralForce(void* rigidBody, Vector3f force);
+        void ApplyCentralForce(void* rigidBody, Vector3f force) override;
 
         void IterateConvexHull();
 
 #ifdef DEBUG
-	    void DrawDebugInfo();
+	    void DrawDebugInfo() override;
 #endif
 
     protected:

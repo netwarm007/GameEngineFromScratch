@@ -23,7 +23,7 @@ namespace My {
     class TgaParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
 

@@ -5,7 +5,7 @@ namespace My {
     class TerrainPhase : implements IDrawPhase
     {
     public:
-        ~TerrainPhase() = default;
+        ~TerrainPhase() override = default;
         void Draw(Frame& frame) final;
     };
 }

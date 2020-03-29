@@ -8,9 +8,9 @@ namespace My {
     class AnimationManager : public IRuntimeModule
     {
     public:
-        int Initialize();
-        void Finalize();
-        void Tick();
+        int Initialize() override;
+        void Finalize() override;
+        void Tick() override;
 
         void AddAnimationClip(std::shared_ptr<SceneObjectAnimationClip> clip);
         void ClearAnimationClips();

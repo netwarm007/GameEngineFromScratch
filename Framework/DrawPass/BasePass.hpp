@@ -8,7 +8,7 @@ namespace My {
     class BasePass : implements IDrawPass
     {
     public:
-        ~BasePass() = default;
+        ~BasePass() override = default;
 
         void Draw(Frame& frame) override;
 

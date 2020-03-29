@@ -17,7 +17,7 @@ namespace My {
     class GraphicsManager : implements IRuntimeModule
     {
     public:
-        virtual ~GraphicsManager() = default;
+        ~GraphicsManager() override = default;
 
         int Initialize() override;
         void Finalize() override;

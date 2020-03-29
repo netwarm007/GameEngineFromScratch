@@ -26,9 +26,9 @@ namespace My {
     {
     public:
         ShaderManager() = default;
-        ~ShaderManager() = default;
+        ~ShaderManager() override = default;
 
-        virtual IShaderManager::ShaderHandler GetDefaultShaderProgram(DefaultShaderIndex index) final
+        IShaderManager::ShaderHandler GetDefaultShaderProgram(DefaultShaderIndex index) final
         {
             return m_DefaultShaders[index];
         }

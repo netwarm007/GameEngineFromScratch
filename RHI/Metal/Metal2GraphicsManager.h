@@ -47,9 +47,9 @@ namespace My {
         void BeginCompute() final;
         void EndCompute() final;
 
-        void initializeGeometries(const Scene& scene);
-        void initializeSkyBox(const Scene& scene);
-        void initializeTerrain(const Scene& scene);
+        void initializeGeometries(const Scene& scene) override;
+        void initializeSkyBox(const Scene& scene) override;
+        void initializeTerrain(const Scene& scene) override;
 
     private:
         Metal2Renderer* m_pRenderer;

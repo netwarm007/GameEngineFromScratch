@@ -31,7 +31,7 @@ namespace My {
     class BmpParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
             const BITMAP_FILEHEADER* pFileHeader = reinterpret_cast<const BITMAP_FILEHEADER*>(buf.GetData());

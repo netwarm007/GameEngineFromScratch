@@ -5,9 +5,9 @@ namespace My {
     class InputManager : implements IRuntimeModule
     {
         public:
-            virtual int Initialize();
-            virtual void Finalize();
-            virtual void Tick();
+            int Initialize() override;
+            void Finalize() override;
+            void Tick() override;
 
             // keyboard handling
             void UpArrowKeyDown();

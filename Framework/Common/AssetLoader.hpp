@@ -10,12 +10,12 @@
 namespace My {
 	class AssetLoader : public IRuntimeModule {
     public:
-        virtual ~AssetLoader() {};
+        ~AssetLoader() override {};
 
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize() override;
+        void Finalize() override;
 
-        virtual void Tick();
+        void Tick() override;
 
         typedef void* AssetFilePtr;
 

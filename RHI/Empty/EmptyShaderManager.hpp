@@ -5,14 +5,14 @@ namespace My {
     {
     public:
         EmptyShaderManager() = default;
-        ~EmptyShaderManager() = default;
+        ~EmptyShaderManager() override = default;
 
-        virtual int Initialize() final { return 0; }
-        virtual void Finalize() final {}
+        int Initialize() final { return 0; }
+        void Finalize() final {}
 
-        virtual void Tick() final {}
+        void Tick() final {}
 
-        virtual bool InitializeShaders() final { return true; }
-        virtual void ClearShaders() final {}
+        bool InitializeShaders() final { return true; }
+        void ClearShaders() final {}
     };
 }

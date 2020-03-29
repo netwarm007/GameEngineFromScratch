@@ -5,7 +5,7 @@ namespace My {
     class BRDFIntegrator : implements IDispatchPass
     {
     public:
-        ~BRDFIntegrator() = default; 
+        ~BRDFIntegrator() override = default; 
         void Dispatch(void) final;
     };
 }

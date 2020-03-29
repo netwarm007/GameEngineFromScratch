@@ -5,7 +5,7 @@ namespace My {
     class SkyBoxPhase : implements IDrawPhase 
     {
     public:
-        ~SkyBoxPhase() = default;
+        ~SkyBoxPhase() override = default;
         void Draw(Frame& frame) final;
     };
 }

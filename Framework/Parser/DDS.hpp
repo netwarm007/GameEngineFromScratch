@@ -185,7 +185,7 @@ namespace My {
     class DdsParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
             uint8_t* pData = buf.GetData();

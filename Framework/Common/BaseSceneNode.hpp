@@ -21,7 +21,7 @@ namespace My {
         public:
             BaseSceneNode() { BuildIdentityMatrix(m_RuntimeTransform); };
             BaseSceneNode(const std::string& name) { m_strName = name; BuildIdentityMatrix(m_RuntimeTransform); };
-			virtual ~BaseSceneNode() {};
+			~BaseSceneNode() override {};
 
             const std::string GetName() const { return m_strName; };
 
@@ -141,7 +141,7 @@ namespace My {
             std::string m_keySceneObject;
 
         protected:
-            virtual void dump(std::ostream& out) const 
+            void dump(std::ostream& out) const override 
             { 
                 out << m_keySceneObject << std::endl;
             };

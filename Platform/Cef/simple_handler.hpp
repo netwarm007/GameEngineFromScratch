@@ -16,31 +16,31 @@ namespace My {
     {
     public:
         explicit SimpleHandler(bool use_views);
-        ~SimpleHandler();
+        ~SimpleHandler() override;
 
         // Provide access to the single global instance of this object.
         static SimpleHandler* GetInstance();
 
         // CefClient methods:
-        virtual CefRefPtr<CefDisplayHandler> GetDisplayHandler() override {
+        CefRefPtr<CefDisplayHandler> GetDisplayHandler() override {
             return this;
         }
-        virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override {
+        CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override {
             return this;
         }
-        virtual CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
+        CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
 
         // CefDisplayHandler methods:
-        virtual void OnTitleChange(CefRefPtr<CefBrowser> browser,
+        void OnTitleChange(CefRefPtr<CefBrowser> browser,
                                     const CefString& title) override;
 
         // CefLifeSpanHandler methods:
-        virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) override;
-        virtual bool DoClose(CefRefPtr<CefBrowser> browser) override;
-        virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser) override;
+        void OnAfterCreated(CefRefPtr<CefBrowser> browser) override;
+        bool DoClose(CefRefPtr<CefBrowser> browser) override;
+        void OnBeforeClose(CefRefPtr<CefBrowser> browser) override;
 
         // CefLoadHandler methods:
-        virtual void OnLoadError(CefRefPtr<CefBrowser> browser,
+        void OnLoadError(CefRefPtr<CefBrowser> browser,
                                 CefRefPtr<CefFrame> frame,
                                 ErrorCode errorCode,
                                 const CefString& errorText,

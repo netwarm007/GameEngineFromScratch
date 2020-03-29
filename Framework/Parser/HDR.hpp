@@ -22,7 +22,7 @@ namespace My {
     class HdrParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
             char* pData = reinterpret_cast<char*>(buf.GetData());

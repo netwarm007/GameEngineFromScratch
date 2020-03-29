@@ -22,7 +22,7 @@ namespace My {
         public:
                 BlockAllocator();
                 BlockAllocator(size_t data_size, size_t page_size, size_t alignment);
-                ~BlockAllocator();
+                ~BlockAllocator() override;
                 // disable copy & assignment
                 BlockAllocator(const BlockAllocator& clone) = delete;
                 BlockAllocator &operator=(const BlockAllocator &rhs) = delete;
@@ -32,9 +32,9 @@ namespace My {
 
                 // alloc and free blocks
                 void* Allocate();
-                void* Allocate(size_t size);
-                void  Free(void* p);
-                void  FreeAll();
+                void* Allocate(size_t size) override;
+                void  Free(void* p) override;
+                void  FreeAll() override;
         private:
 #if defined(_DEBUG)
                 // fill a free page with debug patterns

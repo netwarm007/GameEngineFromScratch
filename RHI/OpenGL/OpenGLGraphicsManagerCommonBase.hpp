@@ -13,7 +13,7 @@ namespace My {
     {
     public:
         // overrides
-        int Initialize() = 0;
+        int Initialize() override = 0;
 
         void Present() final;
 
@@ -65,7 +65,7 @@ namespace My {
         void DrawCubeMapArrayOverlay(const int32_t cubemap, const float layer_index, 
                                      const float vp_left, const float vp_top, const float vp_width, const float vp_height, 
                                      const float level) final;
-        void RenderDebugBuffers();
+        void RenderDebugBuffers() override;
 #endif
 
     private:

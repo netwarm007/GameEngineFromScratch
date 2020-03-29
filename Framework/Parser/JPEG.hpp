@@ -381,7 +381,7 @@ namespace My {
         }
 
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
 

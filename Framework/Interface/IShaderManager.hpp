@@ -25,7 +25,7 @@ namespace My {
     {
     public:
         using ShaderHandler = intptr_t;
-        virtual ~IShaderManager() = default;
+        ~IShaderManager() override = default;
 
         virtual bool InitializeShaders() = 0;
         virtual void ClearShaders() = 0;

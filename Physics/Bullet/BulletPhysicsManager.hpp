@@ -7,20 +7,20 @@ namespace My {
     class BulletPhysicsManager : public IPhysicsManager
     {
     public:
-        virtual int Initialize();
-        virtual void Finalize();
-        virtual void Tick();
+        int Initialize() override;
+        void Finalize() override;
+        void Tick() override;
 
-        virtual void CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry);
-        virtual void DeleteRigidBody(SceneGeometryNode& node);
+        void CreateRigidBody(SceneGeometryNode& node, const SceneObjectGeometry& geometry) override;
+        void DeleteRigidBody(SceneGeometryNode& node) override;
 
-        virtual int CreateRigidBodies();
-        virtual void ClearRigidBodies();
+        int CreateRigidBodies() override;
+        void ClearRigidBodies() override;
 
-        Matrix4X4f GetRigidBodyTransform(void* rigidBody);
-        void UpdateRigidBodyTransform(SceneGeometryNode& node);
+        Matrix4X4f GetRigidBodyTransform(void* rigidBody) override;
+        void UpdateRigidBodyTransform(SceneGeometryNode& node) override;
 
-        void ApplyCentralForce(void* rigidBody, Vector3f force);
+        void ApplyCentralForce(void* rigidBody, Vector3f force) override;
 
     protected:
         btBroadphaseInterface*                  m_btBroadphase;

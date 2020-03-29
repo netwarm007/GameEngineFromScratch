@@ -12,7 +12,7 @@ namespace My {
 
             void SetTarget(Vector3f& target) { m_Target = target; };
             const Vector3f& GetTarget() { return m_Target; };
-            Matrix3X3f GetLocalAxis()
+            Matrix3X3f GetLocalAxis() override
             {
                 Matrix3X3f result;
                 auto pTransform = GetCalculatedTransform();

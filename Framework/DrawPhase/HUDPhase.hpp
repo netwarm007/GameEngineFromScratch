@@ -5,7 +5,7 @@ namespace My {
     class HUDPhase : implements IDrawPhase
     {
     public:
-        ~HUDPhase() = default;
+        ~HUDPhase() override = default;
         void Draw(Frame& frame) final;
     };
 }

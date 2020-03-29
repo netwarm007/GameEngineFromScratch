@@ -6,14 +6,14 @@ namespace My {
     {
     public:
         OpenGLShaderManagerCommonBase() = default;
-        ~OpenGLShaderManagerCommonBase() = default;
+        ~OpenGLShaderManagerCommonBase() override = default;
 
-        virtual int Initialize() final;
-        virtual void Finalize() final;
+        int Initialize() final;
+        void Finalize() final;
 
-        virtual void Tick() final;
+        void Tick() final;
 
-        virtual bool InitializeShaders() final;
-        virtual void ClearShaders() final;
+        bool InitializeShaders() final;
+        void ClearShaders() final;
     };
 }
