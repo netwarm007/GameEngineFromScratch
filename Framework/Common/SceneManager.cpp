@@ -6,8 +6,7 @@ using namespace My;
 using namespace std;
 
 SceneManager::~SceneManager()
-{
-}
+= default;
 
 int SceneManager::Initialize()
 {

@@ -7,7 +7,7 @@ namespace My {
     {
     public:
         IDrawPass() = default;
-        virtual ~IDrawPass() {};
+        virtual ~IDrawPass() = default;;
 
         virtual void Draw(Frame& frame) = 0;
     };

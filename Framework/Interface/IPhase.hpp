@@ -7,7 +7,7 @@ namespace My {
     {
     public:
         IPhase() = default;
-        virtual ~IPhase() {};
+        virtual ~IPhase() = default;;
 
         virtual void BeginPhase() {};
         virtual void EndPhase() {};

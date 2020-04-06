@@ -17,7 +17,7 @@ namespace My {
     class MemoryManager : implements IMemoryManager
     {
     public:
-        ~MemoryManager() override {}
+        ~MemoryManager() override = default;
 
         int Initialize() override;
         void Finalize() override;

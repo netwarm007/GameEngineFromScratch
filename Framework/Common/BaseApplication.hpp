@@ -31,7 +31,7 @@ namespace My {
 
     private:
         // hide the default construct to enforce a configuration
-        BaseApplication(){};
+        BaseApplication()= default;;
     };
 }
 

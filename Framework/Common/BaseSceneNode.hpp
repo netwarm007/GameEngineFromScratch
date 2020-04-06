@@ -21,7 +21,7 @@ namespace My {
         public:
             BaseSceneNode() { BuildIdentityMatrix(m_RuntimeTransform); };
             BaseSceneNode(const std::string& name) { m_strName = name; BuildIdentityMatrix(m_RuntimeTransform); };
-			~BaseSceneNode() override {};
+			~BaseSceneNode() override = default;;
 
             const std::string GetName() const { return m_strName; };
 
