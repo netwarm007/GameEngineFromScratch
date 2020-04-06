@@ -1,10 +1,10 @@
 #pragma once
-#include <cstdint>
-#include <climits>
-#include <memory>
-#include <algorithm>
-#include <assert.h>
 #include "config.h"
+#include <algorithm>
+#include <cassert>
+#include <climits>
+#include <cstdint>
+#include <memory>
 
 #ifdef ALIGN
 #undef ALIGN

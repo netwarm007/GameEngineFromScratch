@@ -663,8 +663,8 @@ GLAPI int gladLoadGL(void);
 
 GLAPI int gladLoadGLLoader(GLADloadproc);
 
-#include <stddef.h>
 #include <KHR/khrplatform.h>
+#include <stddef.h>
 #ifndef GLEXT_64_TYPES_DEFINED
 /* This code block is duplicated in glxext.h, so must be protected */
 #define GLEXT_64_TYPES_DEFINED
@@ -699,7 +699,7 @@ typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
 #else
 /* Fallback if nothing above works */
-#include <inttypes.h>
+#include <cinttypes>
 #endif
 #endif
 typedef unsigned int GLenum;

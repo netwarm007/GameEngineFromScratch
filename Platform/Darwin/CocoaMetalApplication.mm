@@ -1,7 +1,7 @@
-#include <stdio.h>
-#include <climits>
-#include <cstring>
 #include "CocoaMetalApplication.h"
+#include <climits>
+#include <cstdio>
+#include <cstring>
 
 #import "MetalView.h"
 

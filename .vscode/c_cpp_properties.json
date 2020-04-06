@@ -39,7 +39,8 @@
             ],
             "compileCommands": "${workspaceRoot}/build/compile_commands.json",
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "configurationProvider": "vector-of-bool.cmake-tools"
         },
         {
             "name": "Linux",
