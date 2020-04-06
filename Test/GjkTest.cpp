@@ -61,8 +61,8 @@ int main(int argc, char** argv)
         cerr << "num of faces generated: " << B.Faces.size() << endl;
     }
 
-    SupportFunction support_function_A = std::bind(ConvexPolyhedronSupportFunction, A, _1);
-    SupportFunction support_function_B = std::bind(ConvexPolyhedronSupportFunction, B, _1);
+    SupportFunction support_function_A = [=](auto && arg1) { return ConvexPolyhedronSupportFunction(A, arg1); };
+    SupportFunction support_function_B = [=](auto && arg1) { return ConvexPolyhedronSupportFunction(B, arg1); };
     PointList simplex;
     Vector3f direction({1.0f, 0.0f, 0.0f});
     int intersected;
