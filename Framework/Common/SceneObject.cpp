@@ -131,12 +131,12 @@ namespace My {
 		out << static_cast<const BaseSceneObject&>(obj) << endl;
 		out << "Primitive Type: " << obj.m_PrimitiveType << endl;
 		out << "This mesh contains 0x" << obj.m_VertexArray.size() << " vertex properties." << endl;
-		for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
-			out << obj.m_VertexArray[i] << endl;
+		for (const auto & vertex : obj.m_VertexArray) {
+			out << vertex << endl;
 		}
 		out << "This mesh contains 0x" << obj.m_IndexArray.size() << " index arrays." << endl;
-		for (size_t i = 0; i < obj.m_IndexArray.size(); i++) {
-			out << obj.m_IndexArray[i] << endl;
+		for (const auto & index : obj.m_IndexArray) {
+			out << index << endl;
 		}
 
 		return out;

@@ -378,8 +378,8 @@ void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, cons
 
     // vertices
     PointPtr points[8];
-    for (int i = 0; i < 8; i++)
-        points[i] = make_shared<Point>(bbMin);
+    for (auto & point : points)
+        point = make_shared<Point>(bbMin);
     *points[0] = *points[2] = *points[3] = *points[7] = bbMax;
     points[0]->data[0] = bbMin[0];
     points[2]->data[1] = bbMin[1];

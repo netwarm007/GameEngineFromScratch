@@ -164,10 +164,10 @@ namespace My {
         // Create a shader program object.
         shaderProgram = glCreateProgram();
 
-        for (auto it = source.cbegin(); it != source.cend(); it++)
+        for (const auto & it : source)
         {
             GLuint shader;
-            status = LoadShaderFromFile(it->second.c_str(), it->first, shader);
+            status = LoadShaderFromFile(it.second.c_str(), it.first, shader);
             if (!status)
             {
                 return false;
