@@ -1,4 +1,8 @@
 #pragma once
+#include <utility>
+
+
+
 #include "geommath.hpp"
 #include "portable.hpp"
 #include "SceneObjectTexture.hpp"
@@ -13,7 +17,7 @@ namespace My {
         ParameterValueMap() = default;
 
         ParameterValueMap(const T value) : Value(value), ValueMap(nullptr) {};
-        ParameterValueMap(const std::shared_ptr<SceneObjectTexture>& value) : ValueMap(value) {};
+        ParameterValueMap(std::shared_ptr<SceneObjectTexture>  value) : ValueMap(std::move(value)) {};
 
         ParameterValueMap(const ParameterValueMap<T>& rhs) = default;
 

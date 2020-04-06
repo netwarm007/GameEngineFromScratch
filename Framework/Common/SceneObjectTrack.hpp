@@ -1,4 +1,8 @@
 #pragma once
+#include <utility>
+
+
+
 #include "BaseSceneObject.hpp"
 #include "Animatable.hpp"
 #include "Curve.hpp"
@@ -30,7 +34,7 @@ namespace My {
                              std::shared_ptr<CurveBase> value,
                              SceneObjectTrackType type) 
                 : BaseSceneObject(SceneObjectType::kSceneObjectTypeTrack),
-                  m_pTransform(trans), m_Time(time), m_Value(value), m_kTrackType(type)
+                  m_pTransform(std::move(trans)), m_Time(std::move(time)), m_Value(std::move(value)), m_kTrackType(type)
                 {}
             void Update(const float time_point) final; 
 
