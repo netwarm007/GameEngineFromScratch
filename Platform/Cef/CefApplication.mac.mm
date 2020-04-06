@@ -73,7 +73,7 @@ using namespace My;
 // The standard |-applicationShouldTerminate:| is not supported, and code paths
 // leading to it must be redirected.
 - (void)terminate:(id)sender {
-  SimpleAppDelegate* delegate =
+  auto delegate =
       static_cast<SimpleAppDelegate*>([NSApp delegate]);
   [delegate tryToTerminateApplication:self];
   // Return, don't exit. The application is responsible for exiting on its own.

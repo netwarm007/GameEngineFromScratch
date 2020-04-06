@@ -76,7 +76,7 @@ namespace My {
                     // DXGI does not have 24bit formats so we have to extend it to 32bit
                     uint32_t new_pitch = m_pImage->pitch / 3 * 4;
                     size_t data_size = new_pitch * m_pImage->Height;
-                    uint8_t* data = new uint8_t[data_size];
+                    auto* data = new uint8_t[data_size];
                     uint8_t* buf;
                     uint8_t* src;
                     for (uint32_t row = 0; row < m_pImage->Height; row++) {
@@ -109,7 +109,7 @@ namespace My {
                     // DXGI does not have 48bit formats so we have to extend it to 64bit
                     uint32_t new_pitch = m_pImage->pitch / 3 * 4;
                     size_t data_size = new_pitch * m_pImage->Height;
-                    uint8_t* data = new uint8_t[data_size];
+                    auto* data = new uint8_t[data_size];
                     uint8_t* buf;
                     uint8_t* src;
                     for (uint32_t row = 0; row < m_pImage->Height; row++) {

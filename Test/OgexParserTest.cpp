@@ -31,7 +31,7 @@ int main(int , char** )
 
     string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/splash.ogex");
 
-    OgexParser* ogex_parser = new OgexParser ();
+    auto* ogex_parser = new OgexParser ();
     unique_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);
     delete ogex_parser;
 

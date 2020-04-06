@@ -264,7 +264,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array_size, index_array_data, GL_STATIC_DRAW);
 
                 // Set the number of indices in the index array.
-                int32_t indexCount = static_cast<int32_t>(index_array.GetIndexCount());
+                auto indexCount = static_cast<int32_t>(index_array.GetIndexCount());
                 uint32_t type;
                 switch(index_array.GetIndexType())
                 {
@@ -711,7 +711,7 @@ void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::Sha
     }
 
     // Set Sky Box
-    uint32_t texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
+    auto texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
     if (texture_id >= 0)
     {
         setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
@@ -744,7 +744,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContex
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant[m_nFrameIndex]);
 
-    PerFrameConstants constants = static_cast<PerFrameConstants>(context);
+    auto constants = static_cast<PerFrameConstants>(context);
 
     glBufferData(GL_UNIFORM_BUFFER, kSizePerFrameConstantBuffer, &constants, GL_DYNAMIC_DRAW);
 
@@ -776,7 +776,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawBatchConstant[m_nFrameIndex]);
 
-    const PerBatchConstants& constant = static_cast<const PerBatchConstants&>(context);
+    const auto& constant = static_cast<const PerBatchConstants&>(context);
 
     glBufferData(GL_UNIFORM_BUFFER, kSizePerBatchConstantBuffer, &constant, GL_DYNAMIC_DRAW);
 
@@ -791,7 +791,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
     {
         SetPerBatchConstants(*pDbc);
 
-        const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
+        const auto& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
 
         // Bind textures
         setShaderParameter("SPIRV_Cross_CombineddiffuseMapsamp0", 0);
@@ -1018,7 +1018,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, int3
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
-    uint32_t texture_id = (uint32_t) frame.frameContext.shadowMap;
+    auto texture_id = (uint32_t) frame.frameContext.shadowMap;
     setShaderParameter("SPIRV_Cross_CombinedshadowMapsamp0", 7);
     glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
@@ -1055,7 +1055,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 
 void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
 {
-    uint32_t id = (uint32_t) shadowmap;
+    auto id = (uint32_t) shadowmap;
     glDeleteTextures(1, &id);
     shadowmap = -1;
 }
@@ -1178,7 +1178,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    uint32_t framebuffer = (uint32_t) context;
+    auto framebuffer = (uint32_t) context;
     glDeleteFramebuffers(1, &framebuffer);
     context = 0;
 
@@ -1307,7 +1307,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, co
 void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
 {
     const auto count = point_set.size();
-    Point* buffer = new Point[count];
+    auto* buffer = new Point[count];
     int i = 0;
     for(const auto& point_ptr : point_set)
     {
@@ -1322,7 +1322,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, co
 void OpenGLGraphicsManagerCommonBase::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
     const auto count = vertices.size();
-    GLfloat* _vertices = new GLfloat[3 * count];
+    auto* _vertices = new GLfloat[3 * count];
 
     for (auto i = 0; i < count; i++)
     {
@@ -1407,7 +1407,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangle(const PointList& vertices, co
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    Vector3f* data = new Vector3f[count];
+    auto* data = new Vector3f[count];
     for(auto i = 0; i < count; i++)
     {
         data[i] = *vertices[i];
@@ -1449,7 +1449,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangleStrip(const PointList& vertice
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    Vector3f* data = new Vector3f[count];
+    auto* data = new Vector3f[count];
     for(auto i = 0; i < count; i++)
     {
         data[i] = *vertices[i];
@@ -1531,7 +1531,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture,
                                                          const float vp_width, 
                                                          const float vp_height)
 {
-    uint32_t texture_id = (uint32_t) texture;
+    auto texture_id = (uint32_t) texture;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -1590,7 +1590,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
                                                               const float vp_width, 
                                                               const float vp_height)
 {
-    uint32_t texture_id = (uint32_t) texture;
+    auto texture_id = (uint32_t) texture;
     DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
@@ -1673,7 +1673,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap,
                                                          const float vp_height, 
                                                          const float level)
 {
-    uint32_t texture_id = (uint32_t) cubemap;
+    auto texture_id = (uint32_t) cubemap;
     DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
@@ -1851,7 +1851,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cube
                                                               const float vp_height, 
                                                               const float level)
 {
-    uint32_t texture_id = (uint32_t) cubemap;
+    auto texture_id = (uint32_t) cubemap;
     DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);

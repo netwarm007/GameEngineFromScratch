@@ -6,7 +6,7 @@ using namespace std;
 namespace My {
     ostream& operator<<(ostream& out, SceneObjectType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -19,7 +19,7 @@ namespace My {
 
     ostream& operator<<(ostream& out, IndexDataType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -32,7 +32,7 @@ namespace My {
 
     ostream& operator<<(ostream& out, VertexDataType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -45,7 +45,7 @@ namespace My {
 
     ostream& operator<<(ostream& out, PrimitiveType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -58,7 +58,7 @@ namespace My {
   
     ostream& operator<<(ostream& out, CurveType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          

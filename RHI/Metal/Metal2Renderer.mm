@@ -815,7 +815,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                     length:64
                                     atIndex:11];
 
-            const MtlDrawBatchContext& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
+            const auto& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
 
             // Set mesh's vertex buffers
             for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++)

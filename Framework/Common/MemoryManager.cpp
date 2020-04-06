@@ -9,7 +9,7 @@ using namespace std;
 namespace My {
     std::ostream& operator<< (std::ostream& out, MemoryType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          

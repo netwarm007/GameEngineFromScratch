@@ -25,7 +25,7 @@ namespace Dummy
                     {
                         float scale_factor = one_over_four * normalizing_scale_factor(static_cast<float>(u))
                                 * normalizing_scale_factor(static_cast<float>(v));
-                        float normial = static_cast<float>(g[x*8+y] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
+                        auto normial = static_cast<float>(g[x*8+y] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
                                 * cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
 
                         G[u*8+v] += scale_factor * normial;
@@ -49,7 +49,7 @@ namespace Dummy
                     {
                         float scale_factor = one_over_four * normalizing_scale_factor(static_cast<float>(u))
                             * normalizing_scale_factor(static_cast<float>(v));
-                        float normial = static_cast<float>(G[u*8+v] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
+                        auto normial = static_cast<float>(G[u*8+v] * cos((2.0f * x + 1.0f) * u * PI_over_sixteen)
                             * cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
 
                         g[x*8+y] += scale_factor * normial;

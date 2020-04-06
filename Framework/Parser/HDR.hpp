@@ -113,8 +113,8 @@ namespace My {
             // now data section
             assert(remain_size <= 4 * img.Height * img.Width);
             float r, g, b;
-            unsigned char (*pRGBE)[4] = reinterpret_cast<unsigned char (*)[4]>(pData);
-            float (*pOutData)[3] = reinterpret_cast<float (*)[3]>(img.data);
+            auto* pRGBE = reinterpret_cast<unsigned char (*)[4]>(pData);
+            auto* pOutData = reinterpret_cast<float (*)[3]>(img.data);
             if ((*pRGBE)[0] == 2 && (*pRGBE)[1] == 2 && (*pRGBE)[2] == img.Width >> 8 && (*pRGBE)[3] == (img.Width & 0xFF))
             {
                 // the file IS run lenght encoded

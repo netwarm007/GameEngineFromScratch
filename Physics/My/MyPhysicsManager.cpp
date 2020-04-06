@@ -34,7 +34,7 @@ void MyPhysicsManager::IterateConvexHull()
         {
             void* rigidBody = pGeometryNode->RigidBody();
             if (rigidBody) {
-                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
                 auto pGeometry = _rigidBody->GetCollisionShape();
                 if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron)
                 {
@@ -138,7 +138,7 @@ void MyPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node)
 
 void MyPhysicsManager::DeleteRigidBody(SceneGeometryNode& node)
 {
-    RigidBody* rigidBody = reinterpret_cast<RigidBody*>(node.UnlinkRigidBody());
+    auto* rigidBody = reinterpret_cast<RigidBody*>(node.UnlinkRigidBody());
     if(rigidBody) {
         delete rigidBody;
     }
@@ -181,7 +181,7 @@ void MyPhysicsManager::ClearRigidBodies()
 
 Matrix4X4f MyPhysicsManager::GetRigidBodyTransform(void* rigidBody)
 {
-    RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+    auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
     auto motionState = _rigidBody->GetMotionState();
     return motionState->GetTransition();
 }
@@ -203,7 +203,7 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
             if (pGeometryNode)
             {
                 if (void* rigidBody = pGeometryNode->RigidBody()) {
-                    RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                    auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
                     auto motionState = _rigidBody->GetMotionState();
                     auto centerOfMass = motionState->GetCenterOfMassOffset();
                     auto trans = motionState->GetTransition();

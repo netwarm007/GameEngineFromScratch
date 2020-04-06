@@ -17,7 +17,7 @@ namespace My {
                 Matrix3X3f result;
                 auto pTransform = GetCalculatedTransform();
                 Vector3f target = GetTarget();
-                Vector3f camera_position = Vector3f(0.0f);
+                auto camera_position = Vector3f(0.0f);
                 TransformCoord(camera_position, *pTransform);
                 Vector3f up ({0.0f, 0.0f, 1.0f});
                 Vector3f camera_z_axis = camera_position - target;
