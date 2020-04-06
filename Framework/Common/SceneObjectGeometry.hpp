@@ -14,7 +14,7 @@ namespace My {
             float       m_CollisionParameters[10];
 
         public:
-            SceneObjectGeometry(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry), m_CollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeNone) {}
+            SceneObjectGeometry() : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry), m_CollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeNone) {}
 
 			void SetVisibility(bool visible) { m_bVisible = visible; }
 			const bool Visible() { return m_bVisible; }

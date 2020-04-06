@@ -36,7 +36,7 @@ namespace My {
 
         protected:
             // can only be used as base class
-            SceneObjectCamera(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(16.0f / 9.0f), m_fNearClipDistance(1.0f), m_fFarClipDistance(100.0f) {};
+            SceneObjectCamera() : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(16.0f / 9.0f), m_fNearClipDistance(1.0f), m_fFarClipDistance(100.0f) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj);
     };

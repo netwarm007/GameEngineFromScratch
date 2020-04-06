@@ -18,11 +18,11 @@ namespace My {
             HuffmanNode(HuffmanNode&&) = default;
             HuffmanNode& operator=(HuffmanNode&) = default;
             HuffmanNode& operator=(HuffmanNode&&) = default;
-            bool IsLeaf(void) const { return m_isLeaf; };
+            bool IsLeaf() const { return m_isLeaf; };
             void SetLeft(std::shared_ptr<HuffmanNode> pNode) { m_pLeft = pNode; };
             void SetRight(std::shared_ptr<HuffmanNode> pNode) { m_pRight = pNode; };
-            const std::shared_ptr<HuffmanNode<T>> GetLeft(void) const { return m_pLeft; };
-            const std::shared_ptr<HuffmanNode<T>> GetRight(void) const { return m_pRight; };
+            const std::shared_ptr<HuffmanNode<T>> GetLeft() const { return m_pLeft; };
+            const std::shared_ptr<HuffmanNode<T>> GetRight() const { return m_pRight; };
             void SetValue(T value) { m_Value = value; m_isLeaf = true; };
             T GetValue() const { return m_Value; };
     };

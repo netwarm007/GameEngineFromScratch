@@ -9,7 +9,7 @@ namespace My {
         IPhase() = default;
         virtual ~IPhase() {};
 
-        virtual void BeginPhase(void) {};
-        virtual void EndPhase(void) {};
+        virtual void BeginPhase() {};
+        virtual void EndPhase() {};
     };
 }

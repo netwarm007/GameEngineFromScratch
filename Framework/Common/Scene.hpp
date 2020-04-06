@@ -64,7 +64,7 @@ namespace My {
         const std::shared_ptr<SceneObjectMaterial> GetMaterial(const std::string& key) const;
         const std::shared_ptr<SceneObjectMaterial> GetFirstMaterial() const;
 
-        void LoadResource(void);
+        void LoadResource();
     };
 }
 

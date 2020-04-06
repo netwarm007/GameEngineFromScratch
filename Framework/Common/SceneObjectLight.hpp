@@ -55,7 +55,7 @@ namespace My {
                 m_LightDistanceAttenuation = curve;
             }
 
-            const AttenCurve& GetDistanceAttenuation(void)
+            const AttenCurve& GetDistanceAttenuation()
             {
                 return m_LightDistanceAttenuation;
             }
@@ -76,7 +76,7 @@ namespace My {
     class SceneObjectOmniLight : public SceneObjectLight
     {
         public:
-            SceneObjectOmniLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightOmni) {}
+            SceneObjectOmniLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightOmni) {}
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectOmniLight& obj);
     };
@@ -87,7 +87,7 @@ namespace My {
             AttenCurve  m_LightAngleAttenuation;
 
         public:
-            SceneObjectSpotLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightSpot)
+            SceneObjectSpotLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightSpot)
                             {};
 
             void SetAngleAttenuation(AttenCurve curve)
@@ -95,7 +95,7 @@ namespace My {
                 m_LightAngleAttenuation = curve;
             }
 
-            const AttenCurve& GetAngleAttenuation(void)
+            const AttenCurve& GetAngleAttenuation()
             {
                 return m_LightAngleAttenuation;
             }
@@ -106,7 +106,7 @@ namespace My {
     class SceneObjectInfiniteLight : public SceneObjectLight
     {
         public:
-            SceneObjectInfiniteLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightInfi) {}
+            SceneObjectInfiniteLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightInfi) {}
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectInfiniteLight& obj);
     };
@@ -117,7 +117,7 @@ namespace My {
             Vector2f m_LightDimension;
 
         public:
-            SceneObjectAreaLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightArea),
+            SceneObjectAreaLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightArea),
                 m_LightDimension({1.0f, 1.0f})
             {}
 

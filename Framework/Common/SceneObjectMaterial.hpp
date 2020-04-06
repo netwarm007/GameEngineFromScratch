@@ -24,7 +24,7 @@ namespace My {
             Parameter   m_Height;
 
         public:
-            SceneObjectMaterial(void) 
+            SceneObjectMaterial() 
                 : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), 
                 m_Name(""), 
                 m_BaseColor(Vector4f(1.0f)), 

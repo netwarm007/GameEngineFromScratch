@@ -8,6 +8,6 @@ namespace My {
         IDispatchPass() = default;
         virtual ~IDispatchPass() {};
 
-        virtual void Dispatch(void) = 0;
+        virtual void Dispatch() = 0;
     };
 }
