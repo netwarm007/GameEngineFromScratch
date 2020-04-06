@@ -12,7 +12,7 @@
 
 #define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
 
-typedef int32_t four_char_enum;
+using four_char_enum = int32_t;
 
 #define ENUM(e) enum class e : four_char_enum 
 

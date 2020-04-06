@@ -155,6 +155,6 @@ namespace My {
             const std::string& GetSceneObjectRef() { return m_keySceneObject; };
     };
 
-    typedef BaseSceneNode SceneEmptyNode;
+    using SceneEmptyNode = BaseSceneNode;
 
 }

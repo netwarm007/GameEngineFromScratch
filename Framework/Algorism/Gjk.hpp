@@ -6,7 +6,7 @@
 #include "Polyhedron.hpp"
 
 namespace My {
-    typedef std::function<const Point(const Vector3f&)> SupportFunction;
+    using SupportFunction = std::function<const Point (const Vector3f &)>;
 
     inline void NearestPointInTriangleToPoint(const PointList& vertices, const Point& point, float& s, float& t)
     {

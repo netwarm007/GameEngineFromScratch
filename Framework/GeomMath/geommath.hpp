@@ -55,7 +55,7 @@ namespace Dummy { /* namespace */
 #endif
 
 namespace My {
-    typedef float Scalar;
+    using Scalar = float;
 
 #ifdef max
     #undef max
@@ -1060,24 +1060,24 @@ namespace My {
     }
 
     typedef Vector<float, 2> Point2D;
-    typedef std::shared_ptr<Point2D> Point2DPtr;
-    typedef std::vector<Point2DPtr> Point2DList;
+    using Point2DPtr = std::shared_ptr<Point2D>;
+    using Point2DList = std::vector<Point2DPtr>;
     typedef Vector<float, 3> Point;
-    typedef std::shared_ptr<Point> PointPtr;
-    typedef std::unordered_set<PointPtr> PointSet;
-    typedef std::vector<PointPtr> PointList;
+    using PointPtr = std::shared_ptr<Point>;
+    using PointSet = std::unordered_set<PointPtr>;
+    using PointList = std::vector<PointPtr>;
     typedef std::pair<PointPtr, PointPtr> Edge;
     inline bool operator==(const Edge& a, const Edge& b)
     {
         return (a.first == b.first && a.second == b.second) || (a.first == b.second && a.second == b.first);
     }
-    typedef std::shared_ptr<Edge> EdgePtr;
+    using EdgePtr = std::shared_ptr<Edge>;
     inline bool operator==(const EdgePtr& a, const EdgePtr& b)
     {
         return (a->first == b->first && a->second == b->second) || (a->first == b->second && a->second == b->first);
     }
-    typedef std::unordered_set<EdgePtr> EdgeSet;
-    typedef std::vector<EdgePtr> EdgeList;
+    using EdgeSet = std::unordered_set<EdgePtr>;
+    using EdgeList = std::vector<EdgePtr>;
     struct Face {
         EdgeList    Edges;
         Vector3f    Normal;
@@ -1092,9 +1092,9 @@ namespace My {
             return vertices;
         }
     };
-    typedef std::shared_ptr<Face> FacePtr;
-    typedef std::unordered_set<FacePtr> FaceSet;
-    typedef std::vector<FacePtr> FaceList;
+    using FacePtr = std::shared_ptr<Face>;
+    using FaceSet = std::unordered_set<FacePtr>;
+    using FaceList = std::vector<FacePtr>;
 
     inline float PointToPlaneDistance(const PointList& vertices, const Point& point)
     {

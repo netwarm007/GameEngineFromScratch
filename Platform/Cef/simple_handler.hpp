@@ -60,7 +60,7 @@ namespace My {
         const bool use_views_;
 
         // List of existing browser windows. Only accessed on the CEF UI thread.
-        typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
+        using BrowserList = std::list<CefRefPtr<CefBrowser> >;
         BrowserList browser_list_;
 
         bool is_closing_;

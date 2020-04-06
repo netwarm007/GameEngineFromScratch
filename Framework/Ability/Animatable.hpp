@@ -7,7 +7,7 @@ namespace My {
     {
     public:
         virtual ~Animatable() = default;
-        typedef const T ParamType;
+        using ParamType = const T;
         virtual void Update(ParamType param) = 0;
     };
 }

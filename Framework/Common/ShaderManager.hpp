@@ -10,8 +10,8 @@ namespace std
 	template <>
 	struct hash<const My::DefaultShaderIndex>
 	{
-		typedef My::DefaultShaderIndex argument_type;
-		typedef std::size_t result_type;
+		using argument_type = My::DefaultShaderIndex;
+		using result_type = std::size_t;
 
 		result_type operator()(argument_type const &index) const
 		{

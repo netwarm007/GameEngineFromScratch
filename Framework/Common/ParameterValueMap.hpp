@@ -44,7 +44,7 @@ namespace My {
         }
     };
 
-    typedef ParameterValueMap<Vector4f> Color;
-    typedef ParameterValueMap<Vector3f> Normal;
-    typedef ParameterValueMap<float>    Parameter;
+    using Color = ParameterValueMap<Vector4f>;
+    using Normal = ParameterValueMap<Vector3f>;
+    using Parameter = ParameterValueMap<float>;
 }

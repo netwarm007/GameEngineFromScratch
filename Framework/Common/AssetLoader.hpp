@@ -17,7 +17,7 @@ namespace My {
 
         void Tick() override;
 
-        typedef void* AssetFilePtr;
+        using AssetFilePtr = void *;
 
         enum AssetOpenMode {
             MY_OPEN_TEXT   = 0, /// Open In Text Mode
