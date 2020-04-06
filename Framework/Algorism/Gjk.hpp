@@ -8,7 +8,7 @@
 namespace My {
     typedef std::function<const Point(const Vector3f&)> SupportFunction;
 
-    void NearestPointInTriangleToPoint(const PointList& vertices, const Point& point, float& s, float& t)
+    inline void NearestPointInTriangleToPoint(const PointList& vertices, const Point& point, float& s, float& t)
     {
         assert(vertices.size() == 3);
         auto A = vertices[0];
@@ -108,7 +108,7 @@ namespace My {
         }
     }
 
-    int GjkIntersection(const SupportFunction& a, const SupportFunction& b, Vector3f& direction, PointList& simplex)
+    inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b, Vector3f& direction, PointList& simplex)
     {
         Point A;
         if (simplex.size() == 0)
@@ -309,7 +309,7 @@ namespace My {
         return -1;
     }
 
-    const Point ConvexPolyhedronSupportFunction(const Polyhedron& polyhedron, const Vector3f& direction)
+    const inline Point ConvexPolyhedronSupportFunction(const Polyhedron& polyhedron, const Vector3f& direction)
     {
         float max_score = std::numeric_limits<float>::lowest();
         PointPtr extreme_point;
