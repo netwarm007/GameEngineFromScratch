@@ -7,7 +7,7 @@
 namespace My {
     class Buffer {
     public:
-        Buffer() : m_pData(nullptr), m_szSize(0) {}
+        Buffer() = default; 
 
         Buffer(size_t size, size_t alignment = 4) : m_szSize(size) { m_pData = reinterpret_cast<uint8_t*>(new uint8_t[size]); }
 

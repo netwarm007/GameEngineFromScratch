@@ -16,7 +16,7 @@ namespace My {
         bool    compressed;
         bool    is_float;
         uint32_t compress_format;
-        uint32_t mipmap_count;
+        uint32_t mipmap_count{1};
         struct Mipmap {
             uint32_t Width;
             uint32_t Height;
@@ -25,15 +25,8 @@ namespace My {
             size_t data_size;
         } mipmaps[10];
 
-        Image() : Width(0),
-            Height(0),
-            data(nullptr),
-            bitcount(0),
-            pitch(0),
-            data_size(0),
-            compressed(false),
-            is_float(false),
-            mipmap_count(1)
+        Image() 
+            
         {
             std::memset(mipmaps, 0x00, sizeof(mipmaps));
         };

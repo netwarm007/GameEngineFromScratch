@@ -11,12 +11,8 @@
 using namespace My;
 using namespace std;
 
-BlockAllocator::BlockAllocator()
-        : m_pPageList(nullptr), m_pFreeList(nullptr), 
-        m_szPageSize(0), 
-        m_szAlignmentSize(0), m_szBlockSize(0), m_nBlocksPerPage(0) 
-{
-}
+BlockAllocator::BlockAllocator() = default;
+         
 
 BlockAllocator::BlockAllocator(size_t data_size, size_t page_size, size_t alignment)
         : m_pPageList(nullptr), m_pFreeList(nullptr)

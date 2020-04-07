@@ -5,7 +5,7 @@
 
 namespace My {
     struct AttenCurve {
-        AttenCurveType type;
+        AttenCurveType type{AttenCurveType::kNone};
         union AttenCurveParams {
             struct LinearParam { float begin_atten; float end_atten; } linear_params;
             struct SmoothParam { float begin_atten; float end_atten; } smooth_params;
@@ -13,8 +13,7 @@ namespace My {
             struct InverseSquareParam { float scale; float offset; float kq; float kl; float kc; } inverse_squre_params;
         } u;
 
-        AttenCurve() : type(AttenCurveType::kNone)
-                       {}
+        AttenCurve() = default; 
     };
     
     class SceneObjectLight : public BaseSceneObject

@@ -10,11 +10,11 @@ namespace My {
 			bool        m_bVisible;
 			bool        m_bShadow;
 			bool        m_bMotionBlur;
-            SceneObjectCollisionType m_CollisionType;
+            SceneObjectCollisionType m_CollisionType{SceneObjectCollisionType::kSceneObjectCollisionTypeNone};
             float       m_CollisionParameters[10];
 
         public:
-            SceneObjectGeometry() : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry), m_CollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeNone) {}
+            SceneObjectGeometry() : BaseSceneObject(SceneObjectType::kSceneObjectTypeGeometry) {}
 
 			void SetVisibility(bool visible) { m_bVisible = visible; }
 			const bool Visible() { return m_bVisible; }

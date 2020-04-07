@@ -23,7 +23,7 @@ namespace My {
             std::vector<Matrix4X4f> m_Transforms;
 
         public:
-            SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0) {};
+            SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture) {};
             SceneObjectTexture(std::string  name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_Name(std::move(name)), m_nTexCoordIndex(0) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(image) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>&& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(std::move(image)) {};
