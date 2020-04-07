@@ -60,7 +60,7 @@ namespace My {
 
                 if (content)
                 {
-                    result = std::string(std::move(content));
+                    result = std::string(content);
                 }
             }
 

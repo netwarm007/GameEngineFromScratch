@@ -35,7 +35,7 @@ namespace My {
             bool MotionBlur() { return m_bMotionBlur; };
             using SceneNode::AddSceneObjectRef;
             void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
-            void AddMaterialRef(const std::string&& key) { m_Materials.push_back(std::move(key)); };
+            void AddMaterialRef(const std::string&& key) { m_Materials.push_back(key); };
             std::string GetMaterialRef(const size_t index) 
             { 
                 if (index < m_Materials.size())

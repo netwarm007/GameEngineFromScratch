@@ -338,7 +338,7 @@ namespace My {
                                 // ExchangeYandZ(matrix);
                             }
                             transform = std::make_shared<SceneObjectTransform>(matrix, object_flag);
-                            base_node->AppendTransform(_key, std::move(transform));
+                            base_node->AppendTransform(_key, transform);
                         }
                     }
                     return;

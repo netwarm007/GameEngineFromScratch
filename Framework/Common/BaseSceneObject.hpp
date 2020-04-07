@@ -14,9 +14,9 @@ namespace My {
             // can only be used as base class
             BaseSceneObject(SceneObjectType type) : m_Type(type) { m_Guid = newGuid(); };
             BaseSceneObject(Guid& guid, SceneObjectType type) : m_Guid(guid), m_Type(type) {};
-            BaseSceneObject(Guid&& guid, SceneObjectType type) : m_Guid(std::move(guid)), m_Type(type) {};
-            BaseSceneObject(BaseSceneObject&& obj) noexcept : m_Guid(std::move(obj.m_Guid)), m_Type(obj.m_Type) {};
-            BaseSceneObject& operator=(BaseSceneObject&& obj) noexcept { this->m_Guid = std::move(obj.m_Guid); this->m_Type = obj.m_Type; return *this; };
+            BaseSceneObject(Guid&& guid, SceneObjectType type) : m_Guid(guid), m_Type(type) {};
+            BaseSceneObject(BaseSceneObject&& obj) noexcept : m_Guid(obj.m_Guid), m_Type(obj.m_Type) {};
+            BaseSceneObject& operator=(BaseSceneObject&& obj) noexcept { this->m_Guid = obj.m_Guid; this->m_Type = obj.m_Type; return *this; };
             virtual ~BaseSceneObject() = default;
             
         public:
