@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include "SceneObjectTypeDef.hpp"
+#include <string>
 
 namespace My {
     enum VertexAttribute : unsigned long

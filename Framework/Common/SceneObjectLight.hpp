@@ -1,7 +1,7 @@
 #pragma once
-#include <functional>
 #include "BaseSceneObject.hpp"
 #include "ParameterValueMap.hpp"
+#include <functional>
 
 namespace My {
     struct AttenCurve {

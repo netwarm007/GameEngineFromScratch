@@ -1,7 +1,7 @@
 #pragma once
+#include "Animatable.hpp"
 #include "BaseSceneObject.hpp"
 #include "geommath.hpp"
-#include "Animatable.hpp"
 
 namespace My {
     class SceneObjectTransform : public BaseSceneObject, 

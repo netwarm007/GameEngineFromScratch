@@ -1,10 +1,10 @@
-#include <iostream>
 #include "MyPhysicsManager.hpp"
 #include "Box.hpp"
-#include "Plane.hpp"
-#include "Sphere.hpp"
-#include "RigidBody.hpp"
 #include "GraphicsManager.hpp"
+#include "Plane.hpp"
+#include "RigidBody.hpp"
+#include "Sphere.hpp"
+#include <iostream>
 
 using namespace My;
 using namespace std;

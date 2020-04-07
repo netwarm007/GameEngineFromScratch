@@ -1,8 +1,8 @@
 #import "MetalView.h"
-#import "Metal/Metal2Renderer.h"
-#include "IApplication.hpp"
+#import "IApplication.hpp"
 #include "InputManager.hpp"
 #include "Metal/Metal2GraphicsManager.h"
+#include "Metal/Metal2Renderer.h"
 
 using namespace My;
 

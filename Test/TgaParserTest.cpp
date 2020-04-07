@@ -1,8 +1,8 @@
-#include <iostream>
-#include <string>
 #include "AssetLoader.hpp"
 #include "MemoryManager.hpp"
 #include "TGA.hpp"
+#include <iostream>
+#include <string>
 
 using namespace std;
 using namespace My;

@@ -1,5 +1,6 @@
 #pragma once
 #include "IRuntimeModule.hpp"
+#include <cstddef>
 
 namespace My {
     Interface IMemoryManager : implements IRuntimeModule

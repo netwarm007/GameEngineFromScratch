@@ -4,5 +4,5 @@
 
 #define SHADER_ROOT "Shaders/OpenGL/"
 
-#include "glad/glad.h"
 #include "OpenGLShaderManagerCommonBase.cpp"
+#include "glad/glad.h"

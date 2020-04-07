@@ -1,9 +1,9 @@
 #pragma once
+#include "Polyhedron.hpp"
+#include "geommath.hpp"
 #include <functional>
 #include <limits>
 #include <list>
-#include "geommath.hpp"
-#include "Polyhedron.hpp"
 
 namespace My {
     using SupportFunction = std::function<const Point (const Vector3f &)>;

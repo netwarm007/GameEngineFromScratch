@@ -1,7 +1,7 @@
+#include "MemoryManager.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
-#include "MemoryManager.hpp"
 
 using namespace My;
 using namespace std;

@@ -1,7 +1,7 @@
 #pragma once
+#include <cmath>
 #include <functional>
 #include <limits>
-#include <cmath>
 
 using namespace std;
 

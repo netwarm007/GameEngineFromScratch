@@ -1,6 +1,6 @@
 #pragma once
-#include "IRuntimeModule.hpp"
 #include "GfxConfiguration.hpp"
+#include "IRuntimeModule.hpp"
 
 namespace My {
     Interface IApplication : implements IRuntimeModule

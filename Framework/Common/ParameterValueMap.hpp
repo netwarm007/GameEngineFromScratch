@@ -3,9 +3,9 @@
 
 
 
+#include "SceneObjectTexture.hpp"
 #include "geommath.hpp"
 #include "portable.hpp"
-#include "SceneObjectTexture.hpp"
 
 namespace My {
     template <typename T>

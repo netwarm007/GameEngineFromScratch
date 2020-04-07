@@ -1,11 +1,11 @@
+#include "AnimationManager.hpp"
+#include "AssetLoader.hpp"
+#include "MemoryManager.hpp"
+#include "SceneManager.hpp"
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <thread>
-#include "AssetLoader.hpp"
-#include "MemoryManager.hpp"
-#include "SceneManager.hpp"
-#include "AnimationManager.hpp"
 
 using namespace My;
 using namespace std;

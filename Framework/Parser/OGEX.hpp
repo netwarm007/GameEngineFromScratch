@@ -1,12 +1,12 @@
-#include <unordered_map>
-#include "OpenGEX.h"
-#include "portable.hpp"
+#include "Bezier.hpp"
+#include "Curve.hpp"
 #include "ISceneParser.hpp"
+#include "Linear.hpp"
+#include "OpenGEX.h"
 #include "SceneNode.hpp"
 #include "SceneObject.hpp"
-#include "Curve.hpp"
-#include "Bezier.hpp"
-#include "Linear.hpp"
+#include "portable.hpp"
+#include <unordered_map>
 
 namespace My {
     class OgexParser : implements ISceneParser

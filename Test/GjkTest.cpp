@@ -1,8 +1,8 @@
+#include "Gjk.hpp"
+#include "ConvexHull.hpp"
 #include <functional>
 #include <iostream>
 #include <random>
-#include "ConvexHull.hpp"
-#include "Gjk.hpp"
 
 using namespace My;
 using namespace std;

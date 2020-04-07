@@ -1,6 +1,6 @@
 #pragma once
-#include "geommath.hpp"
 #include "Polyhedron.hpp"
+#include "geommath.hpp"
 
 namespace My {
     class QuickHull {

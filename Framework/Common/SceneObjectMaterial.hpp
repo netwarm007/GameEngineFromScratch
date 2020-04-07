@@ -1,10 +1,10 @@
 #pragma once
-#include <string>
-#include "geommath.hpp"
 #include "BaseSceneObject.hpp"
+#include "ParameterValueMap.hpp"
 #include "SceneObjectTexture.hpp"
 #include "SceneObjectTypeDef.hpp"
-#include "ParameterValueMap.hpp"
+#include "geommath.hpp"
+#include <string>
 
 namespace My {
     class SceneObjectMaterial : public BaseSceneObject

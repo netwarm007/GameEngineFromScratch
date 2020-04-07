@@ -1,8 +1,8 @@
+#include "AssetLoader.hpp"
+#include "JPEG.hpp"
+#include "MemoryManager.hpp"
 #include <iostream>
 #include <string>
-#include "AssetLoader.hpp"
-#include "MemoryManager.hpp"
-#include "JPEG.hpp"
 
 using namespace std;
 using namespace My;

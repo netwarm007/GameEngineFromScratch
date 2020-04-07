@@ -1,6 +1,6 @@
 #pragma once
-#include "IPhysicsManager.hpp"
 #include "Geometry.hpp"
+#include "IPhysicsManager.hpp"
 
 namespace My {
     class MyPhysicsManager : public IPhysicsManager

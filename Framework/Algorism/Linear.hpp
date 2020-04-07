@@ -1,7 +1,7 @@
 #pragma once
 #include "Curve.hpp"
-#include "geommath.hpp"
 #include "MatrixComposeDecompose.hpp"
+#include "geommath.hpp"
 
 namespace My {
     template<typename TVAL, typename TPARAM>

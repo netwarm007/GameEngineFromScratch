@@ -1,12 +1,12 @@
 #pragma once
-#include <vector>
-#include <unordered_map>
-#include <string>
 #include "GraphicsManager.hpp"
-#include "geommath.hpp"
-#include "SceneManager.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
+#include "SceneManager.hpp"
+#include "geommath.hpp"
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace My {
     class OpenGLGraphicsManagerCommonBase : public GraphicsManager

@@ -1,14 +1,14 @@
 #pragma once
-#include <cstdio>
-#include <iostream>
-#include <string>
-#include <cassert>
-#include <queue>
-#include <algorithm>
-#include "config.h"
 #include "ImageParser.hpp"
+#include "config.h"
 #include "portable.hpp"
 #include "zlib.h"
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <queue>
+#include <string>
 
 namespace My {
 #pragma pack(push, 1)

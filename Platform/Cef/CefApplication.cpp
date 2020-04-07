@@ -6,12 +6,12 @@
 
 #include "CefApplication.hpp"
 
-#include <string>
 #include "cef_browser.h"
+#include "simple_handler.hpp"
 #include "views/cef_browser_view.h"
 #include "views/cef_window.h"
 #include "wrapper/cef_helpers.h"
-#include "simple_handler.hpp"
+#include <string>
 
 namespace My {
     // When using the Views framework this object provides the delegate

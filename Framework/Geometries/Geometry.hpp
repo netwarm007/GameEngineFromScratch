@@ -1,7 +1,7 @@
 #pragma once
-#include <limits>
 #include "aabb.hpp"
 #include "portable.hpp"
+#include <limits>
 
 namespace My {
     ENUM(GeometryType) {

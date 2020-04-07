@@ -1,6 +1,6 @@
 #pragma once
-#include <cstdio>
 #include "SceneObjectTexture.hpp"
+#include <cstdio>
 
 namespace My {
     class SceneObjectTerrain: public BaseSceneObject

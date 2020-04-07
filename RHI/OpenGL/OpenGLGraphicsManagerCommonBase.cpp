@@ -1,7 +1,7 @@
-#include <iostream>
-#include <sstream>
 #include <algorithm>
 #include <functional>
+#include <iostream>
+#include <sstream>
 
 #include "OpenGLGraphicsManagerCommonBase.hpp"
 

@@ -1,6 +1,6 @@
 #pragma once
-#include <iostream>
 #include "ImageParser.hpp"
+#include <iostream>
 
 namespace My {
 #pragma pack(push, 1)

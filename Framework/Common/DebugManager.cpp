@@ -1,8 +1,8 @@
-#include <iostream>
 #include "DebugManager.hpp"
 #include "GraphicsManager.hpp"
-#include "IPhysicsManager.hpp"
 #include "IGameLogic.hpp"
+#include "IPhysicsManager.hpp"
+#include <iostream>
 
 using namespace My;
 using namespace std;

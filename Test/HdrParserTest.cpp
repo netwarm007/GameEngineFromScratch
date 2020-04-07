@@ -1,8 +1,8 @@
+#include "AssetLoader.hpp"
+#include "HDR.hpp"
+#include "MemoryManager.hpp"
 #include <iostream>
 #include <string>
-#include "AssetLoader.hpp"
-#include "MemoryManager.hpp"
-#include "HDR.hpp"
 
 using namespace std;
 using namespace My;

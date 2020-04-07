@@ -1,6 +1,6 @@
 #pragma once
-#include <iostream>
 #include "Interface.hpp"
+#include <iostream>
 
 namespace My {
     Interface IPhase

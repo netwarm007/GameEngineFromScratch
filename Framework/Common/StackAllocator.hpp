@@ -1,8 +1,8 @@
+#include "IAllocator.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <list>
 #include <memory>
-#include "IAllocator.hpp"
 
 namespace My {
     class StackAllocator : implements IAllocator

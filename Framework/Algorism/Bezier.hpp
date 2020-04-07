@@ -1,9 +1,9 @@
 #pragma once
+#include "Curve.hpp"
+#include "geommath.hpp"
+#include "numerical.hpp"
 #include <cassert>
 #include <map>
-#include "Curve.hpp"
-#include "numerical.hpp"
-#include "geommath.hpp"
 
 namespace My {
     template <typename TVAL, typename TPARAM>

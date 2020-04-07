@@ -1,8 +1,8 @@
+#include "quickhull.hpp"
 #include <functional>
 #include <iostream>
 #include <limits>
 #include <random>
-#include "quickhull.hpp"
 
 using namespace std;
 using namespace My;

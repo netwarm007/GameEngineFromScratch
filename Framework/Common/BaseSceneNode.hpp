@@ -1,10 +1,10 @@
 #pragma once
+#include "SceneObject.hpp"
+#include "Tree.hpp"
+#include "geommath.hpp"
 #include <map>
 #include <string>
 #include <vector>
-#include "geommath.hpp"
-#include "Tree.hpp"
-#include "SceneObject.hpp"
 
 namespace My {
     class BaseSceneNode : public TreeNode {

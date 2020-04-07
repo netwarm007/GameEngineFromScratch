@@ -1,7 +1,7 @@
 #pragma once
+#include "ImageParser.hpp"
 #include <cstdio>
 #include <cstring>
-#include "ImageParser.hpp"
 
 namespace My {
     static inline void 

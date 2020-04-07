@@ -6,9 +6,9 @@
 #include "config.h"
 
 #ifdef __cplusplus
-	#include "geommath.hpp"
 	#include "Guid.hpp"
 	#include "SceneObjectLight.hpp"
+	#include "geommath.hpp"
 	using namespace My;
 	#define SEMANTIC(a) 
 	#define REGISTER(x)

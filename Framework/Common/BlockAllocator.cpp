@@ -1,8 +1,8 @@
+#include "BlockAllocator.hpp"
+#include "MemoryManager.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include "BlockAllocator.hpp"
-#include "MemoryManager.hpp"
 
 #ifndef ALIGN
 #define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))

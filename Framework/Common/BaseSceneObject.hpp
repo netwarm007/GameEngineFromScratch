@@ -1,7 +1,7 @@
 #pragma once
 #include "Guid.hpp"
-#include "portable.hpp"
 #include "SceneObjectTypeDef.hpp"
+#include "portable.hpp"
 
 namespace My {
     using namespace xg;

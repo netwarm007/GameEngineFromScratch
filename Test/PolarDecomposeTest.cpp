@@ -1,8 +1,8 @@
+#include "MatrixComposeDecompose.hpp"
+#include <functional>
 #include <iomanip>
 #include <iostream>
-#include <functional>
 #include <random>
-#include "MatrixComposeDecompose.hpp"
 
 using namespace My;
 using namespace std;

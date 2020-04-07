@@ -1,9 +1,9 @@
-#import <simd/simd.h>
 #import <MetalKit/MetalKit.h>
+#import <simd/simd.h>
 
+#import "Metal2GraphicsManager.h"
 #import "Metal2Renderer.h"
 #import "MetalShaderManager.h"
-#import "Metal2GraphicsManager.h"
 
 #include "IApplication.hpp"
 

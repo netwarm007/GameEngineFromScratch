@@ -1,6 +1,6 @@
 #pragma once
-#include "portable.hpp"
 #include "GraphicsManager.hpp"
+#include "portable.hpp"
 
 OBJC_CLASS(Metal2Renderer);
 

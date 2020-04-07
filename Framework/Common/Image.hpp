@@ -1,8 +1,8 @@
 #pragma once
-#include <cstring>
-#include <iostream>
 #include "config.h"
 #include "geommath.hpp"
+#include <cstring>
+#include <iostream>
 
 namespace My {
 

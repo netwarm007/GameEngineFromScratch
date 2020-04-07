@@ -1,11 +1,11 @@
 #pragma once
-#include <vector>
-#include "SceneObjectIndexArray.hpp"
-#include "SceneObjectVertexArray.hpp"
-#include "geommath.hpp"
 #include "BaseSceneObject.hpp"
 #include "ConvexHull.hpp"
+#include "SceneObjectIndexArray.hpp"
 #include "SceneObjectTypeDef.hpp"
+#include "SceneObjectVertexArray.hpp"
+#include "geommath.hpp"
+#include <vector>
 
 namespace My {
     class SceneObjectMesh : public BaseSceneObject

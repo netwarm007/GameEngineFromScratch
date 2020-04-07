@@ -1,7 +1,7 @@
-#include <iostream>
-#include <fstream>
 #include "AssetLoader.hpp"
 #include "GraphicsManager.hpp"
+#include <fstream>
+#include <iostream>
 
 using namespace My;
 using namespace std;

@@ -1,14 +1,14 @@
 #pragma once
-#include <cstdio>
-#include <iostream>
-#include <string>
-#include <cassert>
-#include <queue>
-#include <algorithm>
+#include "ColorSpaceConversion.hpp"
+#include "HuffmanTree.hpp"
 #include "ImageParser.hpp"
 #include "portable.hpp"
-#include "HuffmanTree.hpp"
-#include "ColorSpaceConversion.hpp"
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <queue>
+#include <string>
 
 // Enable this to print out very detailed decode information
 //#define DUMP_DETAILS 1

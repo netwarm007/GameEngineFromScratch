@@ -3,15 +3,15 @@
 
 
 
-#include "BaseSceneObject.hpp"
-#include "geommath.hpp"
-#include "JPEG.hpp"
-#include "PNG.hpp"
+#include "AssetLoader.hpp"
 #include "BMP.hpp"
-#include "TGA.hpp"
+#include "BaseSceneObject.hpp"
 #include "DDS.hpp"
 #include "HDR.hpp"
-#include "AssetLoader.hpp"
+#include "JPEG.hpp"
+#include "PNG.hpp"
+#include "TGA.hpp"
+#include "geommath.hpp"
 
 namespace My {
     class SceneObjectTexture : public BaseSceneObject

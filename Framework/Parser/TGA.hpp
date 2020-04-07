@@ -1,13 +1,13 @@
 #pragma once
+#include "ImageParser.hpp"
+#include "config.h"
+#include "portable.hpp"
+#include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <iostream>
-#include <string>
-#include <cassert>
 #include <queue>
-#include <algorithm>
-#include "config.h"
-#include "ImageParser.hpp"
-#include "portable.hpp"
+#include <string>
 
 namespace My {
 #pragma pack(push, 1)

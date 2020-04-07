@@ -1,9 +1,9 @@
 #pragma once
+#include "IMemoryManager.hpp"
+#include "portable.hpp"
 #include <map>
 #include <new>
 #include <ostream>
-#include "IMemoryManager.hpp"
-#include "portable.hpp"
 
 namespace My {
     ENUM(MemoryType)

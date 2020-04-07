@@ -1,6 +1,6 @@
 #include "ShaderManager.hpp"
-#include <unordered_map>
 #include <portable.hpp>
+#include <unordered_map>
 
 OBJC_CLASS(MTLLibrary);
 OBJC_CLASS(MTLRenderPipelineState);

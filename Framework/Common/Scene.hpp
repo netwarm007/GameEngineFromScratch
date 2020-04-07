@@ -1,9 +1,9 @@
 #pragma once
+#include "SceneNode.hpp"
+#include "SceneObject.hpp"
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "SceneObject.hpp"
-#include "SceneNode.hpp"
 
 namespace My {
     class Scene {

@@ -1,10 +1,10 @@
-#include <iostream>
 #include "InputManager.hpp"
-#include "GraphicsManager.hpp"
-#include "SceneManager.hpp"
-#include "IGameLogic.hpp"
 #include "DebugManager.hpp"
+#include "GraphicsManager.hpp"
+#include "IGameLogic.hpp"
+#include "SceneManager.hpp"
 #include "geommath.hpp"
+#include <iostream>
 
 using namespace My;
 using namespace std;

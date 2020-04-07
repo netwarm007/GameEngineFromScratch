@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include "portable.hpp"
+#include <vector>
 
 namespace My {
     ENUM(CurveType) {

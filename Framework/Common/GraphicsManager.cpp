@@ -1,12 +1,12 @@
-#include <iostream>
-#include <cstring>
 #include "GraphicsManager.hpp"
-#include "SceneManager.hpp"
+#include "BRDFIntegrator.hpp"
+#include "ForwardGeometryPass.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
-#include "ForwardGeometryPass.hpp"
+#include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
-#include "BRDFIntegrator.hpp"
+#include <cstring>
+#include <iostream>
 
 using namespace My;
 using namespace std;

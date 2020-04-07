@@ -1,6 +1,6 @@
 #pragma once
-#include "IPhase.hpp"
 #include "FrameStructure.hpp"
+#include "IPhase.hpp"
 
 namespace My {
     Interface IDrawPhase : public IPhase

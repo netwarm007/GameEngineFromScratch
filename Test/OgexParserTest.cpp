@@ -1,8 +1,8 @@
-#include <iostream>
-#include <string>
 #include "AssetLoader.hpp"
 #include "MemoryManager.hpp"
 #include "OGEX.hpp"
+#include <iostream>
+#include <string>
 
 using namespace My;
 using namespace std;

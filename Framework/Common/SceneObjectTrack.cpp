@@ -1,7 +1,7 @@
 #include "SceneObjectTrack.hpp"
-#include <cassert>
 #include "Bezier.hpp"
 #include "Linear.hpp"
+#include <cassert>
 
 using namespace My;
 using namespace std;
