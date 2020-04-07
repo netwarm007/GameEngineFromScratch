@@ -28,11 +28,11 @@ namespace My {
             using SceneNode::SceneNode;
 
             void SetVisibility(bool visible) { m_bVisible = visible; };
-            const bool Visible() { return m_bVisible; };
+            bool Visible() { return m_bVisible; };
             void SetIfCastShadow(bool shadow) { m_bShadow = shadow; };
-            const bool CastShadow() { return m_bShadow; };
+            bool CastShadow() { return m_bShadow; };
             void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
-            const bool MotionBlur() { return m_bMotionBlur; };
+            bool MotionBlur() { return m_bMotionBlur; };
             using SceneNode::AddSceneObjectRef;
             void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
             void AddMaterialRef(const std::string&& key) { m_Materials.push_back(std::move(key)); };

@@ -308,7 +308,7 @@ namespace My {
         return -1;
     }
 
-    const inline Point ConvexPolyhedronSupportFunction(const Polyhedron& polyhedron, const Vector3f& direction)
+    inline Point ConvexPolyhedronSupportFunction(const Polyhedron& polyhedron, const Vector3f& direction)
     {
         float max_score = std::numeric_limits<float>::lowest();
         PointPtr extreme_point;

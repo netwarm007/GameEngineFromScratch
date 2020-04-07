@@ -23,7 +23,7 @@ namespace My {
             BaseSceneNode(const std::string& name) { m_strName = name; BuildIdentityMatrix(m_RuntimeTransform); };
 			~BaseSceneNode() override = default;
 
-            [[nodiscard]] const std::string GetName() const { return m_strName; };
+            [[nodiscard]] std::string GetName() const { return m_strName; };
 
             void AttachAnimationClip(int clip_index, std::shared_ptr<SceneObjectAnimationClip> clip)
             {
@@ -61,7 +61,7 @@ namespace My {
                 
             }
 
-            [[nodiscard]] const std::shared_ptr<Matrix4X4f> GetCalculatedTransform() const
+            [[nodiscard]] std::shared_ptr<Matrix4X4f> GetCalculatedTransform() const
             {
                 std::shared_ptr<Matrix4X4f> result (new Matrix4X4f());
                 BuildIdentityMatrix(*result);

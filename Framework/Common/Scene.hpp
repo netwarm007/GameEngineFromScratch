@@ -52,17 +52,17 @@ namespace My {
 
         ~Scene() = default;
 
-        [[nodiscard]] const std::shared_ptr<SceneObjectCamera> GetCamera(const std::string& key) const;
-        [[nodiscard]] const std::shared_ptr<SceneCameraNode> GetFirstCameraNode() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectCamera> GetCamera(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneCameraNode> GetFirstCameraNode() const;
 
-        [[nodiscard]] const std::shared_ptr<SceneObjectLight> GetLight(const std::string& key) const;
-        [[nodiscard]] const std::shared_ptr<SceneLightNode> GetFirstLightNode() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectLight> GetLight(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneLightNode> GetFirstLightNode() const;
 
-        [[nodiscard]] const std::shared_ptr<SceneObjectGeometry> GetGeometry(const std::string& key) const;
-        [[nodiscard]] const std::shared_ptr<SceneGeometryNode> GetFirstGeometryNode() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectGeometry> GetGeometry(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneGeometryNode> GetFirstGeometryNode() const;
 
-        [[nodiscard]] const std::shared_ptr<SceneObjectMaterial> GetMaterial(const std::string& key) const;
-        [[nodiscard]] const std::shared_ptr<SceneObjectMaterial> GetFirstMaterial() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectMaterial> GetMaterial(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneObjectMaterial> GetFirstMaterial() const;
 
         void LoadResource();
     };

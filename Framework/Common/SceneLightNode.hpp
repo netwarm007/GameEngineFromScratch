@@ -11,6 +11,6 @@ namespace My {
             using SceneNode::SceneNode;
 
             void SetIfCastShadow(bool shadow) { m_bShadow = shadow; };
-            const bool CastShadow() { return m_bShadow; };
+            bool CastShadow() { return m_bShadow; };
     };
 }

@@ -19,8 +19,8 @@ namespace My {
             SceneObjectIndexArray(SceneObjectIndexArray& arr) = default;
             SceneObjectIndexArray(SceneObjectIndexArray&& arr) = default;
 
-            [[nodiscard]] const uint32_t GetMaterialIndex() const { return m_nMaterialIndex; };
-            [[nodiscard]] const IndexDataType GetIndexType() const { return m_DataType; };
+            [[nodiscard]] uint32_t GetMaterialIndex() const { return m_nMaterialIndex; };
+            [[nodiscard]] IndexDataType GetIndexType() const { return m_DataType; };
             [[nodiscard]] const void* GetData() const { return m_pData; };
             [[nodiscard]] size_t GetDataSize() const 
             { 

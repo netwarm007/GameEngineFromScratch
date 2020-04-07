@@ -28,8 +28,8 @@ namespace My {
 
             return !m_bFullyBuild;
         }
-        [[nodiscard]] const PointSet GetPointSet() const { return m_PointSet; }
-        [[nodiscard]] const Polyhedron GetHull() const { return *static_cast<const Polyhedron*>(this); }
+        [[nodiscard]] PointSet GetPointSet() const { return m_PointSet; }
+        [[nodiscard]] Polyhedron GetHull() const { return *static_cast<const Polyhedron*>(this); }
 
     protected:
         PointSet m_PointSet;
