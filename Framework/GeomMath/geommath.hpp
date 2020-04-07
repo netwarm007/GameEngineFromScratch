@@ -502,9 +502,11 @@ namespace My {
             Matrix I;
             BuildIdentityMatrix(I);
             if(*this * trans == I)
+            {
                 return true;
-            else
-            	return false;
+            }
+            
+            return false;
         }
     };
 

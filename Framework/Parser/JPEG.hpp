@@ -264,7 +264,8 @@ namespace My {
 #endif
                             break;
                         }
-                        else if (ac_code == 0xF0)
+
+                        if (ac_code == 0xF0)
                         {
 #if DUMP_DETAILS
                             std::cerr << "Found ZRL when decode AC!" << std::endl;

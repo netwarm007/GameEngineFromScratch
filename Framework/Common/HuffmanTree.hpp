@@ -69,9 +69,9 @@ namespace My {
                         {
                             // simply move to upper layer
                             continue;
-                        } else {
-                            found_bottom = true;
-                        }
+                        } 
+
+                        found_bottom = true;
                     }
 
                     auto childrenCount = node_queue.size();

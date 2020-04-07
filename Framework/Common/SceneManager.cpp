@@ -38,9 +38,9 @@ int SceneManager::LoadScene(const char* scene_file_name)
         m_bPhysicalSimulationQueued = false;
         return 0;
     }
-    else {
-        return -1;
-    }
+    
+    return -1;
+    
 }
 
 void SceneManager::ResetScene()
@@ -104,7 +104,7 @@ weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(string name)
     auto it = m_pScene->LUT_Name_GeometryNode.find(name);
     if (it != m_pScene->LUT_Name_GeometryNode.end())
         return it->second;
-    else
+    
         return weak_ptr<SceneGeometryNode>();
 }
 

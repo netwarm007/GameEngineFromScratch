@@ -241,9 +241,10 @@ namespace My {
                                 if(!imageDataStarted) {
                                     std::cerr << "PNG file looks corrupted. Found IEND before IDAT." << std::endl;
                                     break;
-                                } else {
-                                    imageDataEnded = true;
-                                }
+                                } 
+
+                                imageDataEnded = true;
+                                
 
                                 const uint32_t kChunkSize = 256 * 1024;
                                 z_stream strm;

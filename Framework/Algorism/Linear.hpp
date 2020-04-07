@@ -61,7 +61,8 @@ namespace My {
         {
             if (Curve<TVAL, TPARAM>::m_Knots.size() == 0)
                 return 0;
-            else if (Curve<TVAL, TPARAM>::m_Knots.size() == 1)
+
+            if (Curve<TVAL, TPARAM>::m_Knots.size() == 1)
                 return Curve<TVAL, TPARAM>::m_Knots[0];
             else if (Curve<TVAL, TPARAM>::m_Knots.size() < index + 1)
                 return Curve<TVAL, TPARAM>::m_Knots.back();
@@ -148,7 +149,7 @@ namespace My {
             BuildIdentityMatrix(result);
             if (Curve<Matrix4X4f, float>::m_Knots.size() == 0)
                 return result;
-            else if (Curve<Matrix4X4f, float>::m_Knots.size() == 1)
+            if (Curve<Matrix4X4f, float>::m_Knots.size() == 1)
                 return Curve<Matrix4X4f, float>::m_Knots[0];
             else if (Curve<Matrix4X4f, float>::m_Knots.size() < index + 1)
                 return Curve<Matrix4X4f, float>::m_Knots.back();

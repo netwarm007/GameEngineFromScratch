@@ -7,44 +7,52 @@ const shared_ptr<SceneObjectCamera> Scene::GetCamera(const std::string& key) con
 {
     auto i = Cameras.find(key);
     if (i == Cameras.end())
-        return nullptr;
-    else
     {
-        return i->second;
+        return nullptr;
     }
+    
+    
+    return i->second;
+    
 }
 
 const shared_ptr<SceneObjectLight> Scene::GetLight(const std::string& key) const
 {
     auto i = Lights.find(key);
     if (i == Lights.end())
-        return nullptr;
-    else
     {
-        return i->second;
+        return nullptr;
     }
+    
+    
+    return i->second;
+    
 }
 
 const shared_ptr<SceneObjectGeometry> Scene::GetGeometry(const std::string& key) const
 {
     auto i = Geometries.find(key);
     if (i == Geometries.end())
-        return nullptr;
-    else
     {
-        return i->second;
+        return nullptr;
     }
+    
+    
+    return i->second;
+    
 }
 
 const shared_ptr<SceneObjectMaterial> Scene::GetMaterial(const std::string& key) const
 {
     auto i = Materials.find(key);
     if (i == Materials.end())
-        return m_pDefaultMaterial;
-    else
     {
-        return i->second;
+        return m_pDefaultMaterial;
     }
+    
+    
+    return i->second;
+    
 }
 
 const shared_ptr<SceneObjectMaterial> Scene::GetFirstMaterial() const

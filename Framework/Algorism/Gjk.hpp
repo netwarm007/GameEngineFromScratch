@@ -249,50 +249,49 @@ namespace My {
                         // the origin is inside the tetrahedron
                         return 1;
                     }
-                    else
+                    
+                    
+                    float s, t;
+                    auto A = pNextFace->Edges[0]->first;
+                    auto B = pNextFace->Edges[1]->first;
+                    auto C = pNextFace->Edges[2]->first;
+
+                    PointList vertices;
+                    vertices.push_back(A);
+                    vertices.push_back(B);
+                    vertices.push_back(C);
+                    NearestPointInTriangleToPoint(vertices, Point(0.0f), s, t);
+
+                    if (s < std::numeric_limits<float>::epsilon())
                     {
-                        float s, t;
-                        auto A = pNextFace->Edges[0]->first;
-                        auto B = pNextFace->Edges[1]->first;
-                        auto C = pNextFace->Edges[2]->first;
-
-                        PointList vertices;
-                        vertices.push_back(A);
-                        vertices.push_back(B);
-                        vertices.push_back(C);
-                        NearestPointInTriangleToPoint(vertices, Point(0.0f), s, t);
-
-                        if (s < std::numeric_limits<float>::epsilon())
-                        {
-                            // P is on edge 1 (AC) so B can be removed
-                            simplex.clear();
-                            simplex = {A, C};
-                        }
-
-                        if (t < std::numeric_limits<float>::epsilon())
-                        {
-                            // P is on edge 0 (AB) so C can be removed
-                            simplex.clear();
-                            simplex = {A, B};
-                        }
-
-                        if (abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon())
-                        {
-                            // P is on edge 3 (BC) so A can be removed
-                            simplex.clear();
-                            simplex = {B, C};
-                        }
-
-                        if (simplex.size() == 4)
-                        {
-                            simplex.clear();
-                            simplex = {A, B, C};
-                        }
-
-                        P = *A + (*B - *A) * s + (*C - *A) * t;
-
-                        direction = P * -1.0f;
+                        // P is on edge 1 (AC) so B can be removed
+                        simplex.clear();
+                        simplex = {A, C};
                     }
+
+                    if (t < std::numeric_limits<float>::epsilon())
+                    {
+                        // P is on edge 0 (AB) so C can be removed
+                        simplex.clear();
+                        simplex = {A, B};
+                    }
+
+                    if (abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon())
+                    {
+                        // P is on edge 3 (BC) so A can be removed
+                        simplex.clear();
+                        simplex = {B, C};
+                    }
+
+                    if (simplex.size() == 4)
+                    {
+                        simplex.clear();
+                        simplex = {A, B, C};
+                    }
+
+                    P = *A + (*B - *A) * s + (*C - *A) * t;
+
+                    direction = P * -1.0f;
                 }
                 break;
             default:

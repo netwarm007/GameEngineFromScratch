@@ -55,10 +55,10 @@ namespace My {
                 {
                     return it->second;
                 }
-                else
-                {
-                    return std::shared_ptr<SceneObjectTransform>();
-                }
+                
+                
+                return std::shared_ptr<SceneObjectTransform>();
+                
             }
 
             [[nodiscard]] const std::shared_ptr<Matrix4X4f> GetCalculatedTransform() const

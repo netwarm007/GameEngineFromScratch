@@ -103,7 +103,8 @@ namespace My {
         {
             if (Curve<TVAL, TPARAM>::m_Knots.size() == 0)
                 return 0;
-            else if (Curve<TVAL, TPARAM>::m_Knots.size() == 1)
+
+            if (Curve<TVAL, TPARAM>::m_Knots.size() == 1)
                 return Curve<TVAL, TPARAM>::m_Knots[0];
             else if (Curve<TVAL, TPARAM>::m_Knots.size() < index + 1)
                 return Curve<TVAL, TPARAM>::m_Knots.back();

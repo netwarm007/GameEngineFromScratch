@@ -39,9 +39,11 @@ namespace My {
             std::string GetMaterialRef(const size_t index) 
             { 
                 if (index < m_Materials.size())
+                {
                     return m_Materials[index]; 
-                else
-                    return std::string("default");
+                }
+                
+                return std::string("default");
             };
 
             void LinkRigidBody(void* rigidBody)
