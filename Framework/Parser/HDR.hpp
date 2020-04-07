@@ -28,7 +28,7 @@ namespace My {
             char* pData = reinterpret_cast<char*>(buf.GetData());
             auto remain_size = buf.GetDataSize();
 
-            if (std::strncmp(pData, "#?RADIANCE\n", sizeof("#?RADIANCE\n")))
+            if (std::strncmp(pData, "#?RADIANCE\n", sizeof("#?RADIANCE\n")) == 0)
             {
                 std::cerr << "Image File is HDR format" << std::endl;
                 pData += sizeof("#?RADIANCE");
