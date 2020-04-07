@@ -72,9 +72,7 @@ namespace My {
 
         // Pop a message up on the screen to notify the user to check the text file for compile errors.
         cerr << "Error compiling shader.  Check shader-error.txt for message." << shaderFilename << endl;
-
-        return;
-    }
+   }
 
     static void OutputLinkerErrorMessage(unsigned int programId)
     {

@@ -593,8 +593,6 @@ namespace My {
                 DotProduct(result[i][j], matrix1[i], matrix2_transpose[j]);
             }
         }
-
-        return;
     }
 
     template <typename T, int ROWS, int COLS>
@@ -743,9 +741,7 @@ namespace My {
             { (cPitch * sYaw), -sPitch, (cPitch * cYaw), 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
         }};
-
-        return;
-    }
+   }
 
     inline void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix)
     {
@@ -765,9 +761,7 @@ namespace My {
     #else
         Dummy::Transform(vector, matrix);
     #endif
-
-        return;
-    }
+   }
 
     template <typename T, int ROWS, int COLS>
     inline void ExchangeYandZ(Matrix<T,ROWS,COLS>& matrix)
@@ -867,9 +861,7 @@ namespace My {
             { 0.0f, 0.0f, - 2.0f / depth, 0.0f },
             { - (right + left) / width, - (top + bottom) / height, - (far_plane + near_plane) / depth, 1.0f }
         }};
-
-        return;
-    }
+   }
 
     inline void BuildPerspectiveFovLHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
@@ -881,9 +873,7 @@ namespace My {
         }};
 
         matrix = perspective;
-
-        return;
-    }
+   }
 
     inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
@@ -895,9 +885,7 @@ namespace My {
         }};
 
         matrix = perspective;
-
-        return;
-    }
+   }
 
     inline void MatrixTranslation(Matrix4X4f& matrix, const float x, const float y, const float z)
     {
@@ -909,9 +897,7 @@ namespace My {
         }};
 
         matrix = translation;
-
-        return;
-    }
+   }
 
     inline void MatrixTranslation(Matrix4X4f& matrix, const Vector3f& v)
     {
@@ -934,9 +920,7 @@ namespace My {
             {  0.0f,   -s,    c, 0.0f },
             {  0.0f, 0.0f, 0.0f, 1.0f },
         }};
-
-        return;
-    }
+   }
 
     inline void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
@@ -948,9 +932,7 @@ namespace My {
             {    s, 0.0f,    c, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f },
         }};
-
-        return;
-    }
+   }
 
 
     inline void MatrixRotationZ(Matrix4X4f& matrix, const float angle)
@@ -963,9 +945,7 @@ namespace My {
             { 0.0f, 0.0f, 1.0f, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
         }};
-
-        return;
-    }
+   }
 
     inline void MatrixRotationAxis(Matrix4X4f& matrix, const Vector3f& axis, const float angle)
     {
@@ -1004,9 +984,7 @@ namespace My {
         }};
 
         matrix = scale;
-
-        return;
-    }
+   }
 
     inline void MatrixScale(Matrix4X4f& matrix, const Vector3f& v)
     {
