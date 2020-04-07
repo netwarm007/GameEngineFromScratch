@@ -17,7 +17,7 @@ namespace My {
             BaseSceneObject(Guid&& guid, SceneObjectType type) : m_Guid(std::move(guid)), m_Type(type) {};
             BaseSceneObject(BaseSceneObject&& obj) : m_Guid(std::move(obj.m_Guid)), m_Type(obj.m_Type) {};
             BaseSceneObject& operator=(BaseSceneObject&& obj) { this->m_Guid = std::move(obj.m_Guid); this->m_Type = obj.m_Type; return *this; };
-            virtual ~BaseSceneObject() = default;;
+            virtual ~BaseSceneObject() = default;
             
         public:
             // a type must be specified

@@ -10,7 +10,7 @@
 namespace My {
 	class AssetLoader : public IRuntimeModule {
     public:
-        ~AssetLoader() override = default;;
+        ~AssetLoader() override = default;
 
         int Initialize() override;
         void Finalize() override;

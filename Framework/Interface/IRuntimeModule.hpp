@@ -5,7 +5,7 @@
 namespace My {
 	Interface IRuntimeModule{
 public:
-	virtual ~IRuntimeModule() = default;;
+	virtual ~IRuntimeModule() = default;
 
 	virtual int Initialize() = 0;
 	virtual void Finalize() = 0;
