@@ -23,7 +23,7 @@
 using namespace My;
 
 namespace My {
-    static SimpleHandler* g_pInstance = NULL;
+    static SimpleHandler* g_pInstance = nullptr;
 
     // Returns a data: URI with the specified contents.
     std::string GetDataURI(const std::string& data, const std::string& mime_type) {
@@ -42,7 +42,7 @@ SimpleHandler::SimpleHandler(bool use_views)
 
 SimpleHandler::~SimpleHandler() 
 {
-    g_pInstance = NULL;
+    g_pInstance = nullptr;
 }
 
 // static

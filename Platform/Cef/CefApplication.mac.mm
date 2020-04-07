@@ -117,7 +117,7 @@ int CefApplication::Initialize()
     
     CefEnableHighDPISupport();
 
-    void* sandbox_info = NULL;
+    void* sandbox_info = nullptr;
 
 #if defined(CEF_USE_SANDBOX)
     CefScopedSandboxInfo scoped_sandbox;

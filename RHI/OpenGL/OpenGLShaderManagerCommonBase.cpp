@@ -54,7 +54,7 @@ namespace My {
         }
 
         // Now retrieve the info log.
-        glGetShaderInfoLog(shaderId, logSize, NULL, infoLog);
+        glGetShaderInfoLog(shaderId, logSize, nullptr, infoLog);
 
         // Open a file to write the error message to.
         fout.open("shader-error.txt");
@@ -97,7 +97,7 @@ namespace My {
         }
 
         // Now retrieve the info log.
-        glGetProgramInfoLog(programId, logSize, NULL, infoLog);
+        glGetProgramInfoLog(programId, logSize, nullptr, infoLog);
 
         // Open a file to write the error message to.
         fout.open("linker-error.txt");
@@ -138,7 +138,7 @@ namespace My {
 
         // Copy the shader source code strings into the shader objects.
         const char* pStr = shaderBuffer.c_str();
-        glShaderSource(shader, 1, &pStr, NULL);
+        glShaderSource(shader, 1, &pStr, nullptr);
 
         // Compile the shaders.
         glCompileShader(shader);
