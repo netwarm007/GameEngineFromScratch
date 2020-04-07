@@ -42,11 +42,11 @@ void AnimationManager::Tick()
 
     if (!m_bTimeLineStarted)
     {
-        m_TimeLineStartPoint = m_Clock.now();
+        m_TimeLineStartPoint = std::chrono::steady_clock::now();
         m_bTimeLineStarted = true;
     }
 
-    m_TimeLineValue = m_Clock.now() - m_TimeLineStartPoint;
+    m_TimeLineValue = std::chrono::steady_clock::now() - m_TimeLineStartPoint;
 
     for (auto clip : m_AnimationClips)
     {

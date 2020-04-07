@@ -61,26 +61,26 @@ using namespace My;
 - (void)mouseDown:(NSEvent *)theEvent {
     if ([theEvent type] == NSEventTypeLeftMouseDown)
     {
-        g_pInputManager->LeftMouseButtonDown();
+        InputManager::LeftMouseButtonDown();
     }
 }
 
 - (void)mouseUp:(NSEvent *)theEvent {
     if ([theEvent type] == NSEventTypeLeftMouseUp)
     {
-        g_pInputManager->LeftMouseButtonUp();
+        InputManager::LeftMouseButtonUp();
     }
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent {
     if ([theEvent type] == NSEventTypeLeftMouseDragged)
     {
-        g_pInputManager->LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+        InputManager::LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
     }
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent {
-        g_pInputManager->LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+        InputManager::LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
 }
 
 @end
