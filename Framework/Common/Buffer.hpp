@@ -49,8 +49,8 @@ namespace My {
         ~Buffer() { if (m_pData) delete[] m_pData; m_pData = nullptr; }
 
         uint8_t* GetData() { return m_pData; };
-        const uint8_t* GetData() const { return m_pData; };
-        size_t GetDataSize() const { return m_szSize; };
+        [[nodiscard]] const uint8_t* GetData() const { return m_pData; };
+        [[nodiscard]] size_t GetDataSize() const { return m_szSize; };
         uint8_t* MoveData() 
         { 
             uint8_t* tmp = m_pData;

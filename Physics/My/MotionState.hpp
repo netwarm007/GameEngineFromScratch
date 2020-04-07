@@ -11,11 +11,11 @@ namespace My {
             : m_Transition(transition), m_CenterOfMassOffset(centroid) {}
         void SetTransition(const Matrix4X4f& transition) { m_Transition = transition; }
         void SetCenterOfMass(const Vector3f& centroid) { m_CenterOfMassOffset = centroid; }
-        Matrix4X4f GetTransition() const
+        [[nodiscard]] Matrix4X4f GetTransition() const
         { 
             return m_Transition; 
         }
-        Vector3f GetCenterOfMassOffset() const
+        [[nodiscard]] Vector3f GetCenterOfMassOffset() const
         {
             return m_CenterOfMassOffset;
         }

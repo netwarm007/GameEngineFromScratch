@@ -45,15 +45,15 @@ namespace My {
             SceneObjectMaterial(std::string&& name) : SceneObjectMaterial()
                 { m_Name = std::move(name); }
 
-            const std::string& GetName() const { return m_Name; }
-            const Color& GetBaseColor() const { return m_BaseColor; }
-            const Color& GetSpecularColor() const { return m_Specular; }
-            const Parameter& GetSpecularPower() const { return m_SpecularPower; }
-            const Parameter& GetMetallic() const { return m_Metallic; }
-            const Parameter& GetRoughness() const { return m_Roughness; }
-            const Parameter& GetAO() const { return m_AmbientOcclusion; }
-            const Parameter& GetHeight() const { return m_Height; }
-            const Normal& GetNormal() const { return m_Normal; }
+            [[nodiscard]] const std::string& GetName() const { return m_Name; }
+            [[nodiscard]] const Color& GetBaseColor() const { return m_BaseColor; }
+            [[nodiscard]] const Color& GetSpecularColor() const { return m_Specular; }
+            [[nodiscard]] const Parameter& GetSpecularPower() const { return m_SpecularPower; }
+            [[nodiscard]] const Parameter& GetMetallic() const { return m_Metallic; }
+            [[nodiscard]] const Parameter& GetRoughness() const { return m_Roughness; }
+            [[nodiscard]] const Parameter& GetAO() const { return m_AmbientOcclusion; }
+            [[nodiscard]] const Parameter& GetHeight() const { return m_Height; }
+            [[nodiscard]] const Normal& GetNormal() const { return m_Normal; }
             void SetName(const std::string& name) { m_Name = name; }
             void SetName(std::string&& name) { m_Name = std::move(name); }
             void SetColor(const std::string& attrib, const Vector4f& color) 

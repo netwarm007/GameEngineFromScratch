@@ -52,8 +52,8 @@ namespace My {
         public:
             uint8_t     QuantizationTableDestSelector;
 
-            uint16_t HorizontalSamplingFactor() const { return SamplingFactor >> 4; };
-            uint16_t VerticalSamplingFactor() const { return SamplingFactor & 0x07; };
+            [[nodiscard]] uint16_t HorizontalSamplingFactor() const { return SamplingFactor >> 4; };
+            [[nodiscard]] uint16_t VerticalSamplingFactor() const { return SamplingFactor & 0x07; };
     };
 
     struct FRAME_HEADER : public JPEG_SEGMENT_HEADER {
@@ -71,8 +71,8 @@ namespace My {
             uint8_t     EntropyCodingTableDestSelector;
 
         public:
-            uint16_t     DcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector >> 4; };
-            uint16_t     AcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector & 0x07; };
+            [[nodiscard]] uint16_t     DcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector >> 4; };
+            [[nodiscard]] uint16_t     AcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector & 0x07; };
     };
 
     struct SCAN_HEADER : public JPEG_SEGMENT_HEADER {
@@ -84,8 +84,8 @@ namespace My {
             uint8_t data;
 
         public:
-            uint16_t ElementPrecision() const { return data >> 4; };
-            uint16_t DestinationIdentifier() const { return data & 0x07; };
+            [[nodiscard]] uint16_t ElementPrecision() const { return data >> 4; };
+            [[nodiscard]] uint16_t DestinationIdentifier() const { return data & 0x07; };
     };
 
     struct HUFFMAN_TABLE_SPEC {
@@ -95,8 +95,8 @@ namespace My {
         public:
             uint8_t NumOfHuffmanCodes[16];
 
-            uint16_t TableClass() const { return data >> 4; };
-            uint16_t DestinationIdentifier() const { return data & 0x07; };
+            [[nodiscard]] uint16_t TableClass() const { return data >> 4; };
+            [[nodiscard]] uint16_t DestinationIdentifier() const { return data & 0x07; };
     };
 
     struct RESTART_INTERVAL_DEF : public JPEG_SEGMENT_HEADER {

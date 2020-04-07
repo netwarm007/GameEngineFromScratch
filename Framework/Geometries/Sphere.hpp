@@ -12,7 +12,7 @@ namespace My {
                                 Vector3f& aabbMin, 
                                 Vector3f& aabbMax) const final;
 
-        float GetRadius() const { return m_fRadius; };
+        [[nodiscard]] float GetRadius() const { return m_fRadius; };
 
     protected:
         float m_fRadius;

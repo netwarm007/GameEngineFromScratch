@@ -99,7 +99,7 @@ namespace My {
             return NewtonRapson<TVAL, TPARAM>::Solve(0.5f, f, fprime);
         }
 
-        TVAL Interpolate(TPARAM s, const size_t index) const final
+        [[nodiscard]] TVAL Interpolate(TPARAM s, const size_t index) const final
         {
             if (Curve<TVAL, TPARAM>::m_Knots.size() == 0)
                 return 0;
@@ -178,7 +178,7 @@ namespace My {
             return result;
         }
 
-        Quaternion<T> Interpolate(T s, const size_t index) const final
+        [[nodiscard]] Quaternion<T> Interpolate(T s, const size_t index) const final
         {
             Quaternion<T> result = 0;
             assert(0);
@@ -239,7 +239,7 @@ namespace My {
             return result;
         }
 
-        Matrix4X4f Interpolate(float s, const size_t index) const final
+        [[nodiscard]] Matrix4X4f Interpolate(float s, const size_t index) const final
         {
             Matrix4X4f result;
             BuildIdentityMatrix(result);

@@ -31,7 +31,7 @@ namespace My {
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
-            const std::string& GetName() const { return m_Name; };
+            [[nodiscard]] const std::string& GetName() const { return m_Name; };
             void LoadTexture() {
                 if (!m_pImage)
                 {

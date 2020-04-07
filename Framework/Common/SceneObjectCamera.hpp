@@ -31,8 +31,8 @@ namespace My {
                 // TODO: extension
             };
 
-            float GetNearClipDistance() const { return m_fNearClipDistance; };
-            float GetFarClipDistance() const { return m_fFarClipDistance; };
+            [[nodiscard]] float GetNearClipDistance() const { return m_fNearClipDistance; };
+            [[nodiscard]] float GetFarClipDistance() const { return m_fFarClipDistance; };
 
         protected:
             // can only be used as base class
@@ -66,7 +66,7 @@ namespace My {
 
         public:
             SceneObjectPerspectiveCamera(float fov = PI / 2.0) : SceneObjectCamera(), m_fFov(fov) {};
-            float GetFov() const { return m_fFov; };
+            [[nodiscard]] float GetFov() const { return m_fFov; };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj);
     };

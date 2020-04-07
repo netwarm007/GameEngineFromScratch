@@ -12,15 +12,15 @@ namespace My {
         void Tick() override;
 
         void SetCommandLineParameters(int argc, char** argv) override;
-        int  GetCommandLineArgumentsCount() const override;
-        const char* GetCommandLineArgument(int index) const override;
+        [[nodiscard]] int  GetCommandLineArgumentsCount() const override;
+        [[nodiscard]] const char* GetCommandLineArgument(int index) const override;
 
-        bool IsQuit() const override;
+        [[nodiscard]] bool IsQuit() const override;
         void RequestQuit() override { m_bQuit = true; }
 
         void CreateMainWindow() override;
 
-        inline const GfxConfiguration& GetConfiguration() const override { return m_Config; };
+        [[nodiscard]] inline const GfxConfiguration& GetConfiguration() const override { return m_Config; };
 
     protected:
         // Flag if need quit the main loop of the application

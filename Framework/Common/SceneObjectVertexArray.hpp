@@ -32,9 +32,9 @@ namespace My {
             SceneObjectVertexArray(SceneObjectVertexArray& arr) = default; 
             SceneObjectVertexArray(SceneObjectVertexArray&& arr) = default; 
 
-            const std::string& GetAttributeName() const { return m_strAttribute; };
-            VertexDataType GetDataType() const { return m_DataType; };
-            size_t GetDataSize() const 
+            [[nodiscard]] const std::string& GetAttributeName() const { return m_strAttribute; };
+            [[nodiscard]] VertexDataType GetDataType() const { return m_DataType; };
+            [[nodiscard]] size_t GetDataSize() const 
             { 
                 size_t size = m_szData;
 
@@ -59,8 +59,8 @@ namespace My {
 
                 return size;
             }; 
-            const void* GetData() const { return m_pData; };
-            size_t GetVertexCount() const
+            [[nodiscard]] const void* GetData() const { return m_pData; };
+            [[nodiscard]] size_t GetVertexCount() const
             {
                 size_t size = m_szData;
 

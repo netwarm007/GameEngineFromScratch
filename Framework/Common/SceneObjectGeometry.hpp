@@ -23,19 +23,19 @@ namespace My {
 			void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; }
 			const bool MotionBlur() { return m_bMotionBlur; };
             void SetCollisionType(SceneObjectCollisionType collision_type) { m_CollisionType = collision_type; }
-            const SceneObjectCollisionType CollisionType() const { return  m_CollisionType; }
+            [[nodiscard]] const SceneObjectCollisionType CollisionType() const { return  m_CollisionType; }
             void SetCollisionParameters(const float* param, int32_t count)
             {
                 assert(count > 0 && count < 10);
                 memcpy(m_CollisionParameters, param, sizeof(float) * count);
             }
-            const float* CollisionParameters() const { return m_CollisionParameters; }
+            [[nodiscard]] const float* CollisionParameters() const { return m_CollisionParameters; }
 
             void AddMesh(std::shared_ptr<SceneObjectMesh>& mesh) { m_Mesh.push_back(std::move(mesh)); }
             const std::weak_ptr<SceneObjectMesh> GetMesh() { return (m_Mesh.empty()? nullptr : m_Mesh[0]); }
             const std::weak_ptr<SceneObjectMesh> GetMeshLOD(size_t lod) { return (lod < m_Mesh.size()? m_Mesh[lod] : nullptr); }
-            BoundingBox GetBoundingBox() const { return m_Mesh.empty()? BoundingBox() : m_Mesh[0]->GetBoundingBox(); }
-            ConvexHull GetConvexHull() const { return m_Mesh.empty()? ConvexHull() : m_Mesh[0]->GetConvexHull(); }
+            [[nodiscard]] BoundingBox GetBoundingBox() const { return m_Mesh.empty()? BoundingBox() : m_Mesh[0]->GetBoundingBox(); }
+            [[nodiscard]] ConvexHull GetConvexHull() const { return m_Mesh.empty()? ConvexHull() : m_Mesh[0]->GetConvexHull(); }
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectGeometry& obj);
     };

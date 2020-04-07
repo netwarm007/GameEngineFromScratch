@@ -121,7 +121,7 @@ namespace My {
                 m_LightDimension({1.0f, 1.0f})
             {}
 
-            const Vector2f& GetDimension() const
+            [[nodiscard]] const Vector2f& GetDimension() const
             {
                 return m_LightDimension;
             }

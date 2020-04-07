@@ -495,7 +495,7 @@ namespace My {
             return *this;
         }
 
-        bool isOrthogonal() const
+        [[nodiscard]] bool isOrthogonal() const
         {
             Matrix trans;
             Transpose(trans, *this);
@@ -1081,7 +1081,7 @@ namespace My {
     struct Face {
         EdgeList    Edges;
         Vector3f    Normal;
-        PointList GetVertices() const 
+        [[nodiscard]] PointList GetVertices() const 
         {
             PointList vertices;
             for (auto edge : Edges)

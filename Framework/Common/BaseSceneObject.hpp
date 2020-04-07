@@ -27,8 +27,8 @@ namespace My {
             BaseSceneObject& operator=(BaseSceneObject& obj) = delete;
 
         public:
-            const Guid& GetGuid() const { return m_Guid; };
-            const SceneObjectType GetType() const { return m_Type; };
+            [[nodiscard]] const Guid& GetGuid() const { return m_Guid; };
+            [[nodiscard]] const SceneObjectType GetType() const { return m_Type; };
 
         friend std::ostream& operator<<(std::ostream& out, const BaseSceneObject& obj);
     };
