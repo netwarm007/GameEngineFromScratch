@@ -24,9 +24,6 @@ void InputManager::Tick()
 
 void InputManager::UpArrowKeyDown()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Up Arrow Key Down!" << endl;
-#endif
     g_pGameLogic->OnUpKeyDown();
     if (!m_bUpKeyPressed)
     {
@@ -37,18 +34,12 @@ void InputManager::UpArrowKeyDown()
 
 void InputManager::UpArrowKeyUp()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Up Arrow Key Up!" << endl;
-#endif
     g_pGameLogic->OnUpKeyUp();
     m_bUpKeyPressed = false;
 }
 
 void InputManager::DownArrowKeyDown()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Down Arrow Key Down!" << endl;
-#endif
     g_pGameLogic->OnDownKeyDown();
     if (!m_bDownKeyPressed)
     {
@@ -59,18 +50,12 @@ void InputManager::DownArrowKeyDown()
 
 void InputManager::DownArrowKeyUp()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Down Arrow Key Up!" << endl;
-#endif
     g_pGameLogic->OnDownKeyUp();
     m_bDownKeyPressed = false;
 }
 
 void InputManager::LeftArrowKeyDown()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Left Arrow Key Down!" << endl;
-#endif
     g_pGameLogic->OnLeftKeyDown();
     if (!m_bLeftKeyPressed)
     {
@@ -81,18 +66,12 @@ void InputManager::LeftArrowKeyDown()
 
 void InputManager::LeftArrowKeyUp()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Left Arrow Key Up!" << endl;
-#endif
     g_pGameLogic->OnLeftKeyUp();
     m_bLeftKeyPressed = false;
 }
 
 void InputManager::RightArrowKeyDown()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Right Arrow Key Down!" << endl;
-#endif
     g_pGameLogic->OnRightKeyDown();
     if(!m_bRightKeyPressed)
     {
@@ -103,18 +82,12 @@ void InputManager::RightArrowKeyDown()
 
 void InputManager::RightArrowKeyUp()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Right Arrow Key Up!" << endl;
-#endif
     g_pGameLogic->OnRightKeyUp();
     m_bRightKeyPressed = false;
 }
 
 void InputManager::AsciiKeyDown(char keycode)
 {
-#ifdef DEBUG
-    cerr << "[InputManager] ASCII Key Down! (" << keycode << ")" << endl;
-#endif
     switch (keycode)
     {
         case 'd':
@@ -135,9 +108,6 @@ void InputManager::AsciiKeyDown(char keycode)
 
 void InputManager::AsciiKeyUp(char keycode)
 {
-#ifdef DEBUG
-    cerr << "[InputManager] ASCII Key Up! (" << keycode << ")" << endl;
-#endif
     switch (keycode)
     {
         case 'd':
@@ -154,25 +124,13 @@ void InputManager::AsciiKeyUp(char keycode)
 
 void InputManager::LeftMouseButtonDown()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Left Mouse Button Down!" << endl;
-#endif
 }
 
 void InputManager::LeftMouseButtonUp()
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Left Mouse Button Up!" << endl;
-#endif
 }
 
 void InputManager::LeftMouseDrag(int deltaX, int deltaY)
 {
-#ifdef DEBUG
-    cerr << "[InputManager] Left Mouse Dragged! (" 
-        << deltaX << ","
-        << deltaY << ")"
-        << endl;
-#endif
     g_pGameLogic->OnAnalogStick(0, (float)deltaX, (float)deltaY);
 }
