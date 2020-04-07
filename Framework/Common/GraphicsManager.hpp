@@ -79,8 +79,8 @@ namespace My {
         virtual void ClearDebugBuffers() {}
 
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
-        void DrawPolygon(const Face& face, const Vector3f& color);
-        void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawPolygon(const Face& polygon, const Vector3f& color);
+        void DrawPolygon(const Face& polygon, const Matrix4X4f& trans, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
         void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
