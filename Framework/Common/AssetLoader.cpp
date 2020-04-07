@@ -28,7 +28,7 @@ bool AssetLoader::AddSearchPath(const char *path)
         src++;
     }
 
-    m_strSearchPath.push_back(path);
+    m_strSearchPath.emplace_back(path);
     return true;
 }
 
