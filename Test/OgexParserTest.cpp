@@ -15,7 +15,7 @@ namespace My {
 template<typename Key, typename T>
 static ostream& operator<<(ostream& out, unordered_map<Key, shared_ptr<T>> map)
 {
-    for (auto p : map)
+    for (const auto& p : map)
     {
         if (auto ptr = p.second)
             out << *ptr << endl;

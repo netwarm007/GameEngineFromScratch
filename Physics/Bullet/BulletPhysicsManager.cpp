@@ -164,7 +164,7 @@ int BulletPhysicsManager::CreateRigidBodies()
     auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
-    for (auto _it : scene.GeometryNodes)
+    for (const auto& _it : scene.GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode)
@@ -184,7 +184,7 @@ void BulletPhysicsManager::ClearRigidBodies()
     auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
-    for (auto _it : scene.GeometryNodes)
+    for (const auto& _it : scene.GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode)

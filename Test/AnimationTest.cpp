@@ -55,7 +55,7 @@ int main(int argc, char** argv)
         g_pAnimationManager->Tick();
         cout << "Dump of Animatable Nodes" << endl;
         cout << "---------------------------" << endl;
-        for (auto node : scene.AnimatableNodes)
+        for (const auto& node : scene.AnimatableNodes)
         {
             auto pNode = node.lock();
             if (pNode) {

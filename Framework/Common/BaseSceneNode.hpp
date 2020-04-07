@@ -117,15 +117,15 @@ namespace My {
             node.dump(out);
             out << std::endl;
 
-            for (auto sub_node : node.m_Children) {
+            for (const auto& sub_node : node.m_Children) {
                 out << *sub_node << std::endl;
             }
 
-            for (auto trans : node.m_Transforms) {
+            for (const auto& trans : node.m_Transforms) {
                 out << *trans << std::endl;
             }
 
-            for (auto anim_clip : node.m_AnimationClips) {
+            for (const auto& anim_clip : node.m_AnimationClips) {
                 out << *anim_clip.second << std::endl;
             }
 

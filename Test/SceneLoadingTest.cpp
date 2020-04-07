@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 
     cout << "Dump of Geometries" << endl;
     cout << "---------------------------" << endl;
-    for (auto _it : scene.GeometryNodes)
+    for (const auto& _it : scene.GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         cout << *pGeometryNode << endl;
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 
     cout << "Dump of Cameras" << endl;
     cout << "---------------------------" << endl;
-    for (auto _it : scene.CameraNodes)
+    for (const auto& _it : scene.CameraNodes)
     {
         auto pCameraNode = _it.second.lock();
         if (pCameraNode) {
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 
     cout << "Dump of Lights" << endl;
     cout << "---------------------------" << endl;
-    for (auto _it : scene.LightNodes)
+    for (const auto& _it : scene.LightNodes)
     {
         auto pLightNode = _it.second.lock();
         if (pLightNode) {
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 
     cout << "Dump of Materials" << endl;
     cout << "---------------------------" << endl;
-    for (auto _it : scene.Materials)
+    for (const auto& _it : scene.Materials)
     {
         auto pMaterial = _it.second;
         if (pMaterial)
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
 
     cout << "Dump of Bone Nodes" << endl;
     cout << "---------------------------" << endl;
-    for (auto _it : scene.BoneNodes)
+    for (const auto& _it : scene.BoneNodes)
     {
         auto pBone = _it.second.lock();
         if (pBone)

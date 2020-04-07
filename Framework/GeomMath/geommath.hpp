@@ -1064,7 +1064,7 @@ namespace My {
         [[nodiscard]] PointList GetVertices() const 
         {
             PointList vertices;
-            for (auto edge : Edges)
+            for (const auto& edge : Edges)
             {
                 vertices.push_back(edge->first);
             }

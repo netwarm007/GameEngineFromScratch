@@ -8,7 +8,7 @@ int AnimationManager::Initialize()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
-    for (auto node : scene.AnimatableNodes)
+    for (const auto& node : scene.AnimatableNodes)
     {
         auto pNode = node.lock();
         if (pNode) {
@@ -48,7 +48,7 @@ void AnimationManager::Tick()
 
     m_TimeLineValue = std::chrono::steady_clock::now() - m_TimeLineStartPoint;
 
-    for (auto clip : m_AnimationClips)
+    for (const auto& clip : m_AnimationClips)
     {
         clip->Update(m_TimeLineValue.count());
     }

@@ -235,7 +235,7 @@ namespace My {
                     Polyhedron tetrahedron;
                     tetrahedron.AddTetrahedron(simplex);
                     FacePtr pNextFace = nullptr;
-                    for (auto pFace : tetrahedron.Faces)
+                    for (const auto& pFace : tetrahedron.Faces)
                     {
                         if (isPointAbovePlane(pFace, Point(0.0f)))   
                         {
@@ -312,7 +312,7 @@ namespace My {
     {
         float max_score = std::numeric_limits<float>::lowest();
         PointPtr extreme_point;
-        for (auto pFace : polyhedron.Faces)
+        for (const auto& pFace : polyhedron.Faces)
         {
             float score;
             DotProduct(score, pFace->Normal, direction);
@@ -322,7 +322,7 @@ namespace My {
                 continue;
             }
 
-            for (auto pEdge : pFace->Edges)
+            for (const auto& pEdge : pFace->Edges)
             {
                 DotProduct(score, *pEdge->first, direction);
                 if (score > max_score)

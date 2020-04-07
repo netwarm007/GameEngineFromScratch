@@ -83,7 +83,7 @@ shared_ptr<SceneCameraNode> Scene::GetFirstCameraNode() const
 
 void Scene::LoadResource()
 {
-    for (auto material : Materials)
+    for (const auto& material : Materials)
     {
         if (auto ptr = material.second)
             ptr->LoadTextures();

@@ -19,7 +19,7 @@ namespace My {
                 out << "Shadow: " << m_bShadow << std::endl;
                 out << "Motion Blur: " << m_bMotionBlur << std::endl;
                 out << "Material(s): " << std::endl;
-                for (auto material : m_Materials) {
+                for (const auto& material : m_Materials) {
                     out << material << std::endl;
                 }
             };

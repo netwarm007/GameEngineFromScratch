@@ -269,7 +269,7 @@ namespace My {
 	{
 		out << "Animation Clip: " << obj.m_nIndex << endl;
 		out << "Num of Track(s): " << obj.m_Tracks.size() << endl;
-		for (auto track : obj.m_Tracks)
+		for (const auto& track : obj.m_Tracks)
 		{
 			out << *track;
 		}
