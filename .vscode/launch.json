@@ -4,7 +4,7 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        
         {
             "name": "(Mac OS) Launch Editor",
             "type": "cppdbg",
@@ -78,6 +78,19 @@
             "cwd": "${workspaceFolder}/build",
             "environment": [],
             "externalConsole": false
+        },
+        {
+            "name": "(Linux) Launch Viewer",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Viewer/Viewer",
+            "args": [
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "miDebuggerPath": "/usr/bin/gdb"
         }
     ]
 }

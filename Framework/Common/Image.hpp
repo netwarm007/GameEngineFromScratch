@@ -25,11 +25,7 @@ namespace My {
             size_t data_size{0};
         } mipmaps[10];
 
-        Image() 
-            
-        {
-            std::memset(mipmaps, 0x00, sizeof(mipmaps));
-        };
+        Image() = default;
     };
 
     std::ostream& operator<<(std::ostream& out, const Image& image);

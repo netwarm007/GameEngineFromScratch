@@ -60,8 +60,8 @@ namespace My {
         }
 
     protected:
-        uint8_t* m_pData;
-        size_t m_szSize;
+        uint8_t* m_pData{nullptr};
+        size_t m_szSize{0};
     };
 }
 
