@@ -139,9 +139,7 @@ void MyPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node)
 void MyPhysicsManager::DeleteRigidBody(SceneGeometryNode& node)
 {
     auto* rigidBody = reinterpret_cast<RigidBody*>(node.UnlinkRigidBody());
-    if(rigidBody) {
-        delete rigidBody;
-    }
+    delete rigidBody;
 }
 
 int MyPhysicsManager::CreateRigidBodies()

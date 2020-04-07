@@ -29,7 +29,7 @@ namespace My {
                 memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
             } 
             else {
-                if (m_pData) delete[] m_pData; 
+                delete[] m_pData; 
                 m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 
                 memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
                 m_szSize =  rhs.m_szSize;
@@ -38,7 +38,7 @@ namespace My {
         }
 
         Buffer& operator = (Buffer&& rhs) { 
-            if (m_pData) delete[] m_pData; 
+            delete[] m_pData; 
             m_pData = rhs.m_pData;
             m_szSize = rhs.m_szSize;
             rhs.m_pData = nullptr;
@@ -46,7 +46,7 @@ namespace My {
             return *this; 
         }
 
-        ~Buffer() { if (m_pData) delete[] m_pData; m_pData = nullptr; }
+        ~Buffer() { delete[] m_pData; m_pData = nullptr; }
 
         uint8_t* GetData() { return m_pData; };
         [[nodiscard]] const uint8_t* GetData() const { return m_pData; };

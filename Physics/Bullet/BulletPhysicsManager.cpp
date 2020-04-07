@@ -152,8 +152,8 @@ void BulletPhysicsManager::DeleteRigidBody(SceneGeometryNode& node)
     auto* rigidBody = reinterpret_cast<btRigidBody*>(node.UnlinkRigidBody());
     if(rigidBody) {
         m_btDynamicsWorld->removeRigidBody(rigidBody);
-        if (auto motionState = rigidBody->getMotionState())
-            delete motionState;
+        
+            delete rigidBody->getMotionState();
         delete rigidBody;
         //m_btDynamicsWorld->removeCollisionObject(rigidBody);
     }
