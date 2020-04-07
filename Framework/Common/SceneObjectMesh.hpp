@@ -17,7 +17,7 @@ namespace My {
 
         public:
             SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
-            SceneObjectMesh(SceneObjectMesh&& mesh)
+            SceneObjectMesh(SceneObjectMesh&& mesh) noexcept
                 : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh), 
                 m_IndexArray(std::move(mesh.m_IndexArray)),
                 m_VertexArray(std::move(mesh.m_VertexArray)),

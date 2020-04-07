@@ -17,7 +17,7 @@ namespace My {
             m_szSize =  rhs.m_szSize;
         }
 
-        Buffer(Buffer&& rhs) {
+        Buffer(Buffer&& rhs) noexcept {
             m_pData = rhs.m_pData;
             m_szSize = rhs.m_szSize;
             rhs.m_pData = nullptr;
@@ -37,7 +37,7 @@ namespace My {
             return *this; 
         }
 
-        Buffer& operator = (Buffer&& rhs) { 
+        Buffer& operator = (Buffer&& rhs) noexcept { 
             delete[] m_pData; 
             m_pData = rhs.m_pData;
             m_szSize = rhs.m_szSize;

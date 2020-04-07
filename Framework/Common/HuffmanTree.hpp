@@ -16,9 +16,9 @@ namespace My {
             HuffmanNode(T value) : m_Value(value), m_isLeaf(true) {};
             ~HuffmanNode() = default;
             HuffmanNode(HuffmanNode&) = default;
-            HuffmanNode(HuffmanNode&&) = default;
+            HuffmanNode(HuffmanNode&&) noexcept = default;
             HuffmanNode& operator=(HuffmanNode&) = default;
-            HuffmanNode& operator=(HuffmanNode&&) = default;
+            HuffmanNode& operator=(HuffmanNode&&) noexcept = default;
             [[nodiscard]] bool IsLeaf() const { return m_isLeaf; };
             void SetLeft(std::shared_ptr<HuffmanNode> pNode) { m_pLeft = pNode; };
             void SetRight(std::shared_ptr<HuffmanNode> pNode) { m_pRight = pNode; };

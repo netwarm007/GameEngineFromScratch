@@ -21,10 +21,10 @@ namespace My {
 
         ParameterValueMap(const ParameterValueMap<T>& rhs) = default;
 
-        ParameterValueMap(ParameterValueMap<T>&& rhs) = default;
+        ParameterValueMap(ParameterValueMap<T>&& rhs) noexcept = default;
 
         ParameterValueMap& operator=(const ParameterValueMap<T>& rhs) = default;
-        ParameterValueMap& operator=(ParameterValueMap<T>&& rhs) = default;
+        ParameterValueMap& operator=(ParameterValueMap<T>&& rhs) noexcept = default;
         ParameterValueMap& operator=(const std::shared_ptr<SceneObjectTexture>& rhs) 
         {
             ValueMap = rhs;
