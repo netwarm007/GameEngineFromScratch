@@ -19,7 +19,7 @@ namespace My {
             BaseSceneObject& operator=(BaseSceneObject&& obj) { this->m_Guid = std::move(obj.m_Guid); this->m_Type = obj.m_Type; return *this; };
             virtual ~BaseSceneObject() = default;;
             
-        private:
+        public:
             // a type must be specified
             BaseSceneObject() = delete; 
             // can not be copied
