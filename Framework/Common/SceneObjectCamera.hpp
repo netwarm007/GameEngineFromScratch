@@ -65,7 +65,7 @@ namespace My {
             };
 
         public:
-            SceneObjectPerspectiveCamera(float fov = PI / 2.0) : SceneObjectCamera(), m_fFov(fov) {};
+            SceneObjectPerspectiveCamera(float fov = PI / 2.0) :  m_fFov(fov) {};
             [[nodiscard]] float GetFov() const { return m_fFov; };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj);
