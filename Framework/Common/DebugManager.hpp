@@ -15,8 +15,8 @@ namespace My {
         void DrawDebugInfo() override;
 
     protected:
-        void DrawAxis();
-        void DrawGrid();
+        static void DrawAxis();
+        static void DrawGrid();
 
         bool m_bDrawDebugInfo = false;
     };

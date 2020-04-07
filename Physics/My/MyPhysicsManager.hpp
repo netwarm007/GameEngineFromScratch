@@ -21,7 +21,7 @@ namespace My {
 
         void ApplyCentralForce(void* rigidBody, Vector3f force) override;
 
-        void IterateConvexHull();
+        static void IterateConvexHull();
 
 #ifdef DEBUG
 	    void DrawDebugInfo() override;
@@ -29,8 +29,8 @@ namespace My {
 
     protected:
 #ifdef DEBUG
-        void DrawAabb(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass);
-        void DrawShape(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass);
+        static void DrawAabb(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass);
+        static void DrawShape(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass);
 #endif
     };
 }
