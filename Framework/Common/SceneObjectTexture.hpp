@@ -38,7 +38,7 @@ namespace My {
                     // we should lookup if the texture has been loaded already to prevent
                     // duplicated load. This could be done in Asset Loader Manager.
                     Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
-                    std::string ext = m_Name.substr(m_Name.find_last_of("."));
+                    std::string ext = m_Name.substr(m_Name.find_last_of('.'));
                     if (ext == ".jpg" || ext == ".jpeg")
                     {
                         JfifParser jfif_parser;
