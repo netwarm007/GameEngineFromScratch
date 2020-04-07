@@ -7,7 +7,7 @@
 
 #include "glad/glad.h"
 
-extern struct gladGLversionStruct GLVersion;
+
 
 using namespace My;
 using namespace std;
