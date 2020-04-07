@@ -16,7 +16,7 @@ int OpenGLGraphicsManager::Initialize()
 {
     int result;
 
-    result = GraphicsManager::Initialize();
+    result = My::OpenGLGraphicsManagerCommonBase::Initialize();
 
     if (result) {
         return result;
