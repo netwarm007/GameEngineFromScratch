@@ -23,7 +23,7 @@ bool AssetLoader::AddSearchPath(const char *path)
     auto src = m_strSearchPath.begin();
 
     while (src != m_strSearchPath.end()) {
-        if (!(*src).compare(path))
+        if (*src == path)
             return true;
         src++;
     }
@@ -37,7 +37,7 @@ bool AssetLoader::RemoveSearchPath(const char *path)
     auto src = m_strSearchPath.begin();
 
     while (src != m_strSearchPath.end()) {
-        if (!(*src).compare(path)) {
+        if (*src == path) {
             m_strSearchPath.erase(src);
             return true;
         }
