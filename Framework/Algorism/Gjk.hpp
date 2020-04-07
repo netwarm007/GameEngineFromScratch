@@ -111,7 +111,7 @@ namespace My {
     inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b, Vector3f& direction, PointList& simplex)
     {
         Point A;
-        if (simplex.size() == 0)
+        if (simplex.empty())
         {
             // initialize
             A = a(direction) - b(direction * -1.0f);

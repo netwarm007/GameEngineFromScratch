@@ -28,7 +28,7 @@ int MemoryManager::Initialize()
 
 void MemoryManager::Finalize()
 {
-    assert(m_mapMemoryAllocationInfo.size() == 0);
+    assert(m_mapMemoryAllocationInfo.empty());
 }
 
 void MemoryManager::Tick()

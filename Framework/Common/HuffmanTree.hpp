@@ -108,7 +108,7 @@ namespace My {
                 }
 
                 // now append to the root node
-                assert(node_queue.size() <= 2 && node_queue.size() > 0);
+                assert(node_queue.size() <= 2 && !node_queue.empty());
                 auto pLeftNode = node_queue.front();
                 node_queue.pop();
                 m_pRoot->SetLeft(pLeftNode);

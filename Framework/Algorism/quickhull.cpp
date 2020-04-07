@@ -140,7 +140,7 @@ bool QuickHull::Iterate(Polyhedron& hull, PointSet& point_set)
 
     if (point_num_before != 0)
     {
-        if(hull.Faces.size() == 0)
+        if(hull.Faces.empty())
         {
             if(!Init(hull, point_set))
                 return false;
@@ -160,7 +160,7 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
 
     AssignPointsToFaces(hull, point_set, far_point, faces);
 
-    if (point_set.size() == 0) return;
+    if (point_set.empty()) return;
 
     if (far_point)
     {

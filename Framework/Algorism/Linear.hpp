@@ -59,7 +59,7 @@ namespace My {
 
         [[nodiscard]] TVAL Interpolate(TPARAM s, const size_t index) const final
         {
-            if (Curve<TVAL, TPARAM>::m_Knots.size() == 0)
+            if (Curve<TVAL, TPARAM>::m_Knots.empty())
                 return 0;
 
             if (Curve<TVAL, TPARAM>::m_Knots.size() == 1)
@@ -147,7 +147,7 @@ namespace My {
         {
             Matrix4X4f result;
             BuildIdentityMatrix(result);
-            if (Curve<Matrix4X4f, float>::m_Knots.size() == 0)
+            if (Curve<Matrix4X4f, float>::m_Knots.empty())
                 return result;
             if (Curve<Matrix4X4f, float>::m_Knots.size() == 1)
                 return Curve<Matrix4X4f, float>::m_Knots[0];

@@ -101,7 +101,7 @@ namespace My {
 
         [[nodiscard]] TVAL Interpolate(TPARAM s, const size_t index) const final
         {
-            if (Curve<TVAL, TPARAM>::m_Knots.size() == 0)
+            if (Curve<TVAL, TPARAM>::m_Knots.empty())
                 return 0;
 
             if (Curve<TVAL, TPARAM>::m_Knots.size() == 1)
