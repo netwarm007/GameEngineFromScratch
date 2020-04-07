@@ -59,11 +59,7 @@ bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name)
     OgexParser ogex_parser;
     m_pScene = ogex_parser.Parse(ogex_text);
 
-    if (!m_pScene) {
-        return false;
-    }
-
-    return true;
+    return static_cast<bool>(m_pScene);
 }
 
 const Scene& SceneManager::GetSceneForRendering()

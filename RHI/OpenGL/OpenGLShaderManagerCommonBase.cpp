@@ -196,7 +196,7 @@ namespace My {
 
 int OpenGLShaderManagerCommonBase::Initialize()
 {
-    return InitializeShaders() == false;
+    return !InitializeShaders();
 }
 
 void OpenGLShaderManagerCommonBase::Finalize()

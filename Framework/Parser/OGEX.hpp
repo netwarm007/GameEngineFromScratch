@@ -25,12 +25,7 @@ namespace My {
                         if (_key == "up") {
 		                    const auto *dataStructure = static_cast<const ODDL::DataStructure<ODDL::StringDataType> *>(sub_structure);
                             auto axis_name = dataStructure->GetDataElement(0);
-                            if (axis_name == "y") {
-                                m_bUpIsYAxis = true;
-                            }
-                            else {
-                                m_bUpIsYAxis = false;
-                            }
+                            m_bUpIsYAxis = axis_name == "y";
                         }
                     }
                     return;
