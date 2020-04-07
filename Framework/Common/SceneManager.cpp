@@ -99,7 +99,7 @@ weak_ptr<BaseSceneNode> SceneManager::GetRootNode()
     return m_pScene->SceneGraph;
 }
 
-weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(string name)
+weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(const string& name)
 {
     auto it = m_pScene->LUT_Name_GeometryNode.find(name);
     if (it != m_pScene->LUT_Name_GeometryNode.end())
@@ -108,7 +108,7 @@ weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(string name)
         return weak_ptr<SceneGeometryNode>();
 }
 
-weak_ptr<SceneObjectGeometry> SceneManager::GetSceneGeometryObject(string key)
+weak_ptr<SceneObjectGeometry> SceneManager::GetSceneGeometryObject(const string& key)
 {
     return m_pScene->Geometries.find(key)->second;
 }

@@ -171,7 +171,7 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
         for_each(
                     faces.begin(),
                     faces.end(),
-                    [&](FacePtr x)
+                    [&](const FacePtr& x)
                     { 
                         for (auto edge : x->Edges)
                         {

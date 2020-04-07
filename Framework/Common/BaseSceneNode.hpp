@@ -25,7 +25,7 @@ namespace My {
 
             [[nodiscard]] std::string GetName() const { return m_strName; };
 
-            void AttachAnimationClip(int clip_index, std::shared_ptr<SceneObjectAnimationClip> clip)
+            void AttachAnimationClip(int clip_index, const std::shared_ptr<SceneObjectAnimationClip>& clip)
             {
                 m_AnimationClips.insert({clip_index, clip});
             }

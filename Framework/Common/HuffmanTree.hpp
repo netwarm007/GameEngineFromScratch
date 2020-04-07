@@ -34,7 +34,7 @@ namespace My {
             std::shared_ptr<HuffmanNode<T>> m_pRoot;
 
         private:
-            void recursiveDump(const std::shared_ptr<HuffmanNode<T>>& pNode, std::string bit_stream)
+            void recursiveDump(const std::shared_ptr<HuffmanNode<T>>& pNode, const std::string& bit_stream)
             {
                 if (pNode) {
                     if (pNode->IsLeaf()) {

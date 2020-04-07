@@ -23,7 +23,7 @@ void Polyhedron::AddFace(PointList vertices, const PointPtr& inner_point)
     Faces.insert(std::move(pFace));
 }
 
-void Polyhedron::AddTetrahedron(const PointList vertices)
+void Polyhedron::AddTetrahedron(const PointList& vertices)
 {
     assert(vertices.size() == 4);
 

@@ -293,7 +293,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                 const auto& material_key = pGeometryNode->GetMaterialRef(material_index);
                 const auto material = scene.GetMaterial(material_key);
                 if (material) {
-                    function<uint32_t(const string, const shared_ptr<Image>&)> upload_texture = [this](const string texture_key, const shared_ptr<Image>& texture) {
+                    function<uint32_t(const string, const shared_ptr<Image>&)> upload_texture = [this](const string& texture_key, const shared_ptr<Image>& texture) {
                         uint32_t texture_id;
                         auto it = m_Textures.find(texture_key);
                         if (it == m_Textures.end())

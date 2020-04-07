@@ -19,7 +19,7 @@ namespace My {
     class CefAppWindowDelegate : public CefWindowDelegate 
     {
     public:
-        explicit CefAppWindowDelegate(CefRefPtr<CefBrowserView> browser_view)
+        explicit CefAppWindowDelegate(const CefRefPtr<CefBrowserView>& browser_view)
             : browser_view_(browser_view) {}
 
         void OnWindowCreated(CefRefPtr<CefWindow> window) override 

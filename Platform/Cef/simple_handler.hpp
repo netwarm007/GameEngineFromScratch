@@ -53,7 +53,7 @@ namespace My {
 
     private:
         // Platform-specific implementation.
-        static void PlatformTitleChange(CefRefPtr<CefBrowser> browser,
+        static void PlatformTitleChange(const CefRefPtr<CefBrowser>& browser,
                                 const CefString& title);
 
         // True if the application is using the Views framework.

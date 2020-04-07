@@ -197,7 +197,7 @@ namespace My {
 
     public:
         Bezier() : CurveBase(CurveType::kBezier) {}
-        Bezier(const std::vector<Matrix4X4f> knots, const std::vector<Matrix4X4f> incoming_cp, const std::vector<Matrix4X4f> outgoing_cp) 
+        Bezier(const std::vector<Matrix4X4f>& knots, const std::vector<Matrix4X4f>& incoming_cp, const std::vector<Matrix4X4f>& outgoing_cp) 
             : Bezier()
         {
             assert(knots.size() == incoming_cp.size() && knots.size() == outgoing_cp.size());

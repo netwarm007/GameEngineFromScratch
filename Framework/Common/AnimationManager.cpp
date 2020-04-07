@@ -54,7 +54,7 @@ void AnimationManager::Tick()
     }
 }
 
-void AnimationManager::AddAnimationClip(std::shared_ptr<SceneObjectAnimationClip> clip)
+void AnimationManager::AddAnimationClip(const std::shared_ptr<SceneObjectAnimationClip>& clip)
 {
     m_AnimationClips.push_back(clip);
 }

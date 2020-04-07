@@ -120,7 +120,7 @@ namespace My {
     {
     public:
         Linear() : CurveBase(CurveType::kLinear) {}
-        Linear(const std::vector<Matrix4X4f> knots) 
+        Linear(const std::vector<Matrix4X4f>& knots) 
             : Linear()
         {
             Curve<Matrix4X4f, float>::m_Knots = knots;

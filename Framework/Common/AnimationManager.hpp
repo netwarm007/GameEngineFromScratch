@@ -12,7 +12,7 @@ namespace My {
         void Finalize() override;
         void Tick() override;
 
-        void AddAnimationClip(std::shared_ptr<SceneObjectAnimationClip> clip);
+        void AddAnimationClip(const std::shared_ptr<SceneObjectAnimationClip>& clip);
         void ClearAnimationClips();
 
     private:
