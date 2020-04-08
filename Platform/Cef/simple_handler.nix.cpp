@@ -15,7 +15,7 @@
 
 using namespace My;
 
-static void SimpleHandler::PlatformTitleChange(const CefRefPtr<CefBrowser> browser,
+void SimpleHandler::PlatformTitleChange(const CefRefPtr<CefBrowser>& browser,
                                         const CefString& title) {
   std::string titleStr(title);
 
