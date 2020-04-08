@@ -1,6 +1,6 @@
 #pragma once
-#include "BaseApplication.hpp"
 #include "cef_app.h"
+#include "BaseApplication.hpp"
 
 namespace My {
     class CefApplication : public BaseApplication, public CefApp, public CefBrowserProcessHandler
@@ -14,7 +14,7 @@ namespace My {
         // One cycle of the main loop
         void Tick() override;
 
-        void* GetMainWindowHandler() override { return this; };
+        void* GetMainWindowHandler() override { return this; }
 
         // CefApp methods:
         CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override

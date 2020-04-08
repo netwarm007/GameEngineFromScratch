@@ -20,7 +20,7 @@ namespace My {
 
         void CreateMainWindow() override;
 
-        [[nodiscard]] inline const GfxConfiguration& GetConfiguration() const override { return m_Config; };
+        [[nodiscard]] inline const GfxConfiguration& GetConfiguration() const override { return m_Config; }
 
     protected:
         // Flag if need quit the main loop of the application
@@ -31,7 +31,7 @@ namespace My {
 
     private:
         // hide the default construct to enforce a configuration
-        BaseApplication()= default;;
+        BaseApplication()= default;
     };
 }
 
