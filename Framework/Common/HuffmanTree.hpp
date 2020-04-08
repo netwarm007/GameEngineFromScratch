@@ -13,7 +13,7 @@ namespace My {
             bool m_isLeaf = false;
         public:
             HuffmanNode() = default;
-            HuffmanNode(T value) : m_Value(value), m_isLeaf(true) {};
+            explicit HuffmanNode(T value) : m_Value(value), m_isLeaf(true) {};
             ~HuffmanNode() = default;
             HuffmanNode(HuffmanNode&) = default;
             HuffmanNode(HuffmanNode&&) noexcept = default;

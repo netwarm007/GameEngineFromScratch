@@ -16,7 +16,7 @@ namespace My {
 			PrimitiveType	m_PrimitiveType;
 
         public:
-            SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
+            explicit SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
             SceneObjectMesh(SceneObjectMesh&& mesh) noexcept
                 : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh), 
                 m_IndexArray(std::move(mesh.m_IndexArray)),

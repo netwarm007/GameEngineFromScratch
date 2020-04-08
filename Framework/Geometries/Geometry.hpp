@@ -18,7 +18,7 @@ namespace My {
     class Geometry 
     {
         public:
-            Geometry(GeometryType geometry_type) : m_kGeometryType(geometry_type) {};
+            explicit Geometry(GeometryType geometry_type) : m_kGeometryType(geometry_type) {};
             Geometry() = delete;
             virtual ~Geometry() = default;
 

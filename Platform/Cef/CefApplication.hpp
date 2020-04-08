@@ -6,7 +6,7 @@ namespace My {
     class CefApplication : public BaseApplication, public CefApp, public CefBrowserProcessHandler
     {
     public:
-        CefApplication(GfxConfiguration& config)
+        explicit CefApplication(GfxConfiguration& config)
             : BaseApplication(config) {}
 
         int Initialize() override;

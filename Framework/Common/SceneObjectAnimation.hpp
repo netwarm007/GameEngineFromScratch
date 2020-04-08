@@ -14,7 +14,7 @@ namespace My {
 
         public:
             SceneObjectAnimationClip() = delete;
-            SceneObjectAnimationClip(int index) : BaseSceneObject(SceneObjectType::kSceneObjectTypeAnimationClip),
+            explicit SceneObjectAnimationClip(int index) : BaseSceneObject(SceneObjectType::kSceneObjectTypeAnimationClip),
                 m_nIndex(index)
             {}
             int GetIndex() { return m_nIndex; }

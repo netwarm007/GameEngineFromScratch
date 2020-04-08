@@ -9,7 +9,7 @@ namespace My {
     {
     public:
         Linear() : CurveBase(CurveType::kLinear) {}
-        Linear(const std::vector<TVAL> knots) 
+        explicit Linear(const std::vector<TVAL> knots) 
             : Linear()
         {
             Curve<TVAL, TPARAM>::m_Knots = knots;
@@ -26,21 +26,22 @@ namespace My {
 
         TPARAM Reverse(TVAL t, size_t& index) const final
         {
-            TVAL t1 = 0, t2 = 0;
+            TVAL t1{0};
+            TVAL t2{0};
 
             if (Curve<TVAL, TPARAM>::m_Knots.size() < 2)
-                return 0;
+                return TPARAM(0);
 
             if (t <= Curve<TVAL, TPARAM>::m_Knots.front())
             {
                 index = 0;
-                return 0;
+                return TPARAM(0);
             }
 
             if (t >= Curve<TVAL, TPARAM>::m_Knots.back())
             {
                 index = Curve<TVAL, TPARAM>::m_Knots.size();
-                return 1;
+                return TPARAM(1);
             }
 
             for (size_t i = 1; i < Curve<TVAL, TPARAM>::m_Knots.size(); i++)
@@ -60,7 +61,7 @@ namespace My {
         [[nodiscard]] TVAL Interpolate(TPARAM s, const size_t index) const final
         {
             if (Curve<TVAL, TPARAM>::m_Knots.empty())
-                return 0;
+                return static_cast<TVAL>(0);
 
             if (Curve<TVAL, TPARAM>::m_Knots.size() == 1)
                 return Curve<TVAL, TPARAM>::m_Knots[0];
@@ -83,7 +84,7 @@ namespace My {
     {
     public:
         Linear() : CurveBase(CurveType::kLinear) {}
-        Linear(const std::vector<Quaternion<T>> knots) 
+        explicit Linear(const std::vector<Quaternion<T>> knots) 
             : Linear()
         {
             Curve<Quaternion<T>, T>::m_Knots = knots;
@@ -108,7 +109,7 @@ namespace My {
 
         [[nodiscard]] Quaternion<T> Interpolate(T s, const size_t index) const final
         {
-            Quaternion<T> result = 0;
+            Quaternion<T> result{0};
             assert(0);
 
             return result;
@@ -120,7 +121,7 @@ namespace My {
     {
     public:
         Linear() : CurveBase(CurveType::kLinear) {}
-        Linear(const std::vector<Matrix4X4f>& knots) 
+        explicit Linear(const std::vector<Matrix4X4f>& knots) 
             : Linear()
         {
             Curve<Matrix4X4f, float>::m_Knots = knots;

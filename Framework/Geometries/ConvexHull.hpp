@@ -9,8 +9,8 @@ namespace My {
         ConvexHull() = default;
         ~ConvexHull() override = default;
 
-        ConvexHull(PointSet& point_set) : m_PointSet(point_set) {};
-        ConvexHull(PointSet&& point_set) : m_PointSet(std::move(point_set)) {};
+        explicit ConvexHull(PointSet& point_set) : m_PointSet(point_set) {};
+        explicit ConvexHull(PointSet&& point_set) : m_PointSet(std::move(point_set)) {};
 
     public:
         void AddPoint(const Point& new_point) { m_PointSet.insert(std::make_shared<Point>(new_point)); m_bFullyBuild = false; }

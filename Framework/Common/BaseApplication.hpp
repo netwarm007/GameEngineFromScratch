@@ -5,7 +5,7 @@ namespace My {
     class BaseApplication : implements IApplication
     {
     public:
-        BaseApplication(GfxConfiguration& cfg);
+        explicit BaseApplication(GfxConfiguration& cfg);
         int Initialize() override;
         void Finalize() override;
         // One cycle of the main loop

@@ -6,7 +6,7 @@ namespace My {
     {
     public:
         Sphere() = delete;
-        Sphere(const float radius) : Geometry(GeometryType::kSphere), m_fRadius(radius) {};
+        explicit Sphere(const float radius) : Geometry(GeometryType::kSphere), m_fRadius(radius) {};
 
         void GetAabb(const Matrix4X4f& trans, 
                                 Vector3f& aabbMin, 

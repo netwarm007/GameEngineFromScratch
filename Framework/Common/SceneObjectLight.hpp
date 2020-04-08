@@ -65,7 +65,7 @@ namespace My {
 
         protected:
             // can only be used as base class of delivered lighting objects
-            SceneObjectLight(const SceneObjectType type) : BaseSceneObject(type), 
+            explicit SceneObjectLight(const SceneObjectType type) : BaseSceneObject(type), 
                 m_LightColor(Vector4f(1.0f)), m_fIntensity(1.0f), 
                 m_bCastShadows(false) {}
 

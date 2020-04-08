@@ -14,7 +14,7 @@ namespace My {
             const size_t      m_szData;
 
         public:
-            SceneObjectIndexArray(const uint32_t material_index = 0, const size_t restart_index = 0, const IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, const void* data = nullptr, const size_t data_size = 0) 
+            explicit SceneObjectIndexArray(const uint32_t material_index = 0, const size_t restart_index = 0, const IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, const void* data = nullptr, const size_t data_size = 0) 
                 : m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
             SceneObjectIndexArray(SceneObjectIndexArray& arr) = default;
             SceneObjectIndexArray(SceneObjectIndexArray&& arr) = default;

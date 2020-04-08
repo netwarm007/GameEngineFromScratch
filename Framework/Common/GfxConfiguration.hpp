@@ -14,7 +14,7 @@ namespace My {
 		/// \param[in] msaa the msaa sample count
 		/// \param[in] width the screen width in pixel
 		/// \param[in] height the screen height in pixel
-		GfxConfiguration(int32_t r = 8, int32_t g = 8,
+		explicit GfxConfiguration(int32_t r = 8, int32_t g = 8,
 			int32_t b = 8, int32_t a = 8,
 			int32_t d = 24, int32_t s = 0, int32_t msaa = 1,
 			int32_t width = 1920, int32_t height = 1080, const char* app_name="GameEngineFromScratch") :

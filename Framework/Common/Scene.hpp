@@ -40,7 +40,7 @@ namespace My {
             Terrain->SetName("Textures/terrain/area_1", "png");
         }
 
-        Scene(const std::string& scene_name) :
+        explicit Scene(const std::string& scene_name) :
             SceneGraph(new BaseSceneNode(scene_name))
         {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");

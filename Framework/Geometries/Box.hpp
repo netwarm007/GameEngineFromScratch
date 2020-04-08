@@ -6,7 +6,7 @@ namespace My {
     {
     public:
         Box() = delete; 
-        Box(Vector3f halfExtents) : Geometry(GeometryType::kBox), m_vHalfExtents(halfExtents) {}
+        explicit Box(Vector3f halfExtents) : Geometry(GeometryType::kBox), m_vHalfExtents(halfExtents) {}
 
         void GetAabb(const Matrix4X4f& trans, 
                                 Vector3f& aabbMin, 

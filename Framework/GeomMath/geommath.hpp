@@ -78,7 +78,7 @@ namespace My {
         T data[N];
 
         Vector() = default;
-        Vector(const T val)
+        explicit Vector(const T val)
         {
             for (int i = 0; i < N; i++)
             {
@@ -126,19 +126,29 @@ namespace My {
         { 
             Set(pf);
             return *this;
-        };
+        }
 
         Vector& operator=(const T f) 
         { 
             Set(f);
             return *this;
-        };
+        }
 
         Vector& operator=(const Vector& v) 
         { 
             std::memcpy(this, &v, sizeof(v));
             return *this;
-        };
+        }
+
+        T& operator[](size_t index)
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] const T& operator[](size_t index) const
+        {
+            return data[index];
+        }
     };
 
     typedef Vector<float, 2> Vector2f;
@@ -157,8 +167,8 @@ namespace My {
     {
     public:
         using Vector<T, 4>::Vector;
-	Quaternion() = default;
-        Quaternion(const Vector<T, 4> rhs)
+	    Quaternion() = default;
+        explicit Quaternion(const Vector<T, 4> rhs)
         {
             std::memcpy(this, &rhs, sizeof(Quaternion));    
         }

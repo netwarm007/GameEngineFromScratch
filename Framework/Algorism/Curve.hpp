@@ -15,7 +15,7 @@ namespace My {
 
     public:
         CurveBase() = delete;
-        CurveBase(CurveType type) : m_kCurveType(type) {}
+        explicit CurveBase(CurveType type) : m_kCurveType(type) {}
         virtual ~CurveBase() = default;
         [[nodiscard]] CurveType GetCurveType() const { return m_kCurveType; }
     };

@@ -25,24 +25,12 @@ namespace My {
 
         public:
             SceneObjectMaterial() 
-                : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), 
-                m_Name(""), 
-                m_BaseColor(Vector4f(1.0f)), 
-                m_Metallic(0.0f), 
-                m_Roughness(0.0f), 
-                m_Normal(Vector3f({0.0f, 0.0f, 1.0f})), 
-                m_Specular(0.0f), 
-                m_SpecularPower(1.0f), 
-                m_AmbientOcclusion(1.0f), 
-                m_Opacity(1.0f), 
-                m_Transparency(0.0f), 
-                m_Emission(0.0f),
-                m_Height(0.0f) {}
-            SceneObjectMaterial(const char* name) : SceneObjectMaterial()
+                : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial) {}
+            explicit SceneObjectMaterial(const char* name) : SceneObjectMaterial()
                 { m_Name = name; }
-            SceneObjectMaterial(const std::string& name) : SceneObjectMaterial()
+            explicit SceneObjectMaterial(const std::string& name) : SceneObjectMaterial()
                 { m_Name = name; }
-            SceneObjectMaterial(std::string&& name) : SceneObjectMaterial()
+            explicit SceneObjectMaterial(std::string&& name) : SceneObjectMaterial()
                 { m_Name = std::move(name); }
 
             [[nodiscard]] const std::string& GetName() const { return m_Name; }

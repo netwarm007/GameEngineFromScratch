@@ -40,7 +40,7 @@ void SceneObjectTrack::Update(const float time_point)
                     }
                     case SceneObjectTrackType::kVector3:
                     {
-                        auto new_val = dynamic_pointer_cast<Linear<Vector3f, Vector3f>>(m_Value)->Interpolate(proportion, index);
+                        auto new_val = dynamic_pointer_cast<Linear<Vector3f, Vector3f>>(m_Value)->Interpolate(Vector3f(proportion), index);
                         UpdateTransform(new_val);
                         break;
                     }
@@ -69,7 +69,7 @@ void SceneObjectTrack::Update(const float time_point)
                     }
                     case SceneObjectTrackType::kVector3:
                     {
-                        auto new_val = dynamic_pointer_cast<Bezier<Vector3f, Vector3f>>(m_Value)->Interpolate(proportion, index);
+                        auto new_val = dynamic_pointer_cast<Bezier<Vector3f, Vector3f>>(m_Value)->Interpolate(Vector3f(proportion), index);
                         UpdateTransform(new_val);
                         break;
                     }

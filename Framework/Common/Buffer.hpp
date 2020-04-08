@@ -9,7 +9,7 @@ namespace My {
     public:
         Buffer() = default; 
 
-        Buffer(size_t size, size_t alignment = 4) : m_szSize(size) { m_pData = reinterpret_cast<uint8_t*>(new uint8_t[size]); }
+        explicit Buffer(size_t size, size_t alignment = 4) : m_szSize(size) { m_pData = reinterpret_cast<uint8_t*>(new uint8_t[size]); }
 
         Buffer(const Buffer& rhs) { 
             m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 

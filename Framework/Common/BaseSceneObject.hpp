@@ -12,7 +12,7 @@ namespace My {
             SceneObjectType m_Type;
         protected:
             // can only be used as base class
-            BaseSceneObject(SceneObjectType type) : m_Type(type) { m_Guid = newGuid(); };
+            explicit BaseSceneObject(SceneObjectType type) : m_Type(type) { m_Guid = newGuid(); };
             BaseSceneObject(Guid& guid, SceneObjectType type) : m_Guid(guid), m_Type(type) {};
             BaseSceneObject(Guid&& guid, SceneObjectType type) : m_Guid(guid), m_Type(type) {};
             BaseSceneObject(BaseSceneObject&& obj) noexcept : m_Guid(obj.m_Guid), m_Type(obj.m_Type) {};
