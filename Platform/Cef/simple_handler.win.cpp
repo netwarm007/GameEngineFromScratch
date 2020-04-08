@@ -13,7 +13,7 @@
 
 using namespace My;
 
-void SimpleHandler::PlatformTitleChange(const CefRefPtr<CefBrowser> browser,
+static void SimpleHandler::PlatformTitleChange(const CefRefPtr<CefBrowser> browser,
                                         const CefString& title) {
   CefWindowHandle hwnd = browser->GetHost()->GetWindowHandle();
   SetWindowTextW(hwnd, std::wstring(title).c_str());
