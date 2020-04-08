@@ -4,6 +4,6 @@ mkdir External\build\zlib
 pushd External\build\zlib
 rm -rf *
 cmake -DCMAKE_INSTALL_PREFIX=../../ -G "Visual Studio 16 2019" -A "x64" -DBUILD_SHARED_LIBS=off -Thost=x64 ../../src/zlib
-cmake --build . --config release --target install
+cmake --build . --config Release --target install
 popd
 
