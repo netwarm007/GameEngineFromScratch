@@ -99,7 +99,6 @@ IF(WIN32)
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/chrome_elf.dll"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/libEGL.dll"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/libGLESv2.dll"
-            "${PROJECT_SOURCE_DIR}/External/Windows/bin/natives_blob.bin"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/snapshot_blob.bin"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/v8_context_snapshot.bin"
     )
@@ -155,7 +154,6 @@ ELSE(WIN32)
             "${PROJECT_SOURCE_DIR}/External/Linux/lib/libcef.so"
             "${PROJECT_SOURCE_DIR}/External/Linux/lib/libEGL.so"
             "${PROJECT_SOURCE_DIR}/External/Linux/lib/libGLESv2.so"
-            "${PROJECT_SOURCE_DIR}/External/Linux/bin/natives_blob.bin"
             "${PROJECT_SOURCE_DIR}/External/Linux/bin/snapshot_blob.bin"
             "${PROJECT_SOURCE_DIR}/External/Linux/bin/v8_context_snapshot.bin"
     )
