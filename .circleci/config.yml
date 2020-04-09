@@ -51,6 +51,10 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
+      - run: 
+          name: git restore
+          command: |
+             git restore .
       - checkout
       - run: 
           name: Git LFS Checkout
