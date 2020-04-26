@@ -151,16 +151,16 @@ namespace My {
         }
     };
 
-    typedef Vector<float, 2> Vector2f;
+    using Vector2f = Vector<float, 2>;
 
-    typedef Vector<float, 3> Vector3f;
-    typedef Vector<double, 3> Vector3;
-    typedef Vector<int16_t, 3> Vector3i16;
-    typedef Vector<int32_t, 3> Vector3i32;
+    using Vector3f = Vector<float, 3>;
+    using Vector3 = Vector<double, 3>;
+    using Vector3i16 = Vector<int16_t, 3>;
+    using Vector3i32 = Vector<int32_t, 3>;
 
-    typedef Vector<float, 4> Vector4f;
-    typedef Vector<uint8_t, 4> R8G8B8A8Unorm;
-    typedef Vector<uint8_t, 4> Vector4i;
+    using Vector4f = Vector<float, 4>;
+    using R8G8B8A8Unorm = Vector<uint8_t, 4>;
+    using Vector4i = Vector<uint8_t, 4>;
 
     template<typename T>
     class Quaternion : public Vector<T, 4>
@@ -763,7 +763,7 @@ namespace My {
     #else
         Dummy::Transform(tmp, matrix);
     #endif
-        std::memcpy(&vector, &tmp, sizeof(vector));
+	vector = tmp;
     }
 
     inline void Transform(Vector4f& vector, const Matrix4X4f& matrix)

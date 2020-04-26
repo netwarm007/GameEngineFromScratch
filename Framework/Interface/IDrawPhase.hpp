@@ -7,7 +7,7 @@ namespace My {
     {
     public:
         IDrawPhase() = default;
-        ~IDrawPhase() override = default;;
+        ~IDrawPhase() override = default;
 
         virtual void Draw(Frame& frame) = 0;
     };

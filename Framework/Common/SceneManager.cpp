@@ -103,9 +103,11 @@ weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(const string& nam
 {
     auto it = m_pScene->LUT_Name_GeometryNode.find(name);
     if (it != m_pScene->LUT_Name_GeometryNode.end())
+    {
         return it->second;
+    }
     
-        return weak_ptr<SceneGeometryNode>();
+    return weak_ptr<SceneGeometryNode>();
 }
 
 weak_ptr<SceneObjectGeometry> SceneManager::GetSceneGeometryObject(const string& key)
