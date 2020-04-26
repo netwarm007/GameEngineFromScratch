@@ -12,7 +12,7 @@ namespace My {
             virtual void dump(std::ostream& out) const {};
 
         public:
-			virtual ~TreeNode() {};
+			virtual ~TreeNode() = default;
 
             virtual void AppendChild(std::shared_ptr<TreeNode>&& sub_node)
             {

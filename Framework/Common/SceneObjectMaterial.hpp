@@ -1,10 +1,10 @@
 #pragma once
-#include <string>
-#include "geommath.hpp"
 #include "BaseSceneObject.hpp"
+#include "ParameterValueMap.hpp"
 #include "SceneObjectTexture.hpp"
 #include "SceneObjectTypeDef.hpp"
-#include "ParameterValueMap.hpp"
+#include "geommath.hpp"
+#include <string>
 
 namespace My {
     class SceneObjectMaterial : public BaseSceneObject
@@ -24,36 +24,24 @@ namespace My {
             Parameter   m_Height;
 
         public:
-            SceneObjectMaterial(void) 
-                : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial), 
-                m_Name(""), 
-                m_BaseColor(Vector4f(1.0f)), 
-                m_Metallic(0.0f), 
-                m_Roughness(0.0f), 
-                m_Normal(Vector3f({0.0f, 0.0f, 1.0f})), 
-                m_Specular(0.0f), 
-                m_SpecularPower(1.0f), 
-                m_AmbientOcclusion(1.0f), 
-                m_Opacity(1.0f), 
-                m_Transparency(0.0f), 
-                m_Emission(0.0f),
-                m_Height(0.0f) {}
-            SceneObjectMaterial(const char* name) : SceneObjectMaterial()
+            SceneObjectMaterial() 
+                : BaseSceneObject(SceneObjectType::kSceneObjectTypeMaterial) {}
+            explicit SceneObjectMaterial(const char* name) : SceneObjectMaterial()
                 { m_Name = name; }
-            SceneObjectMaterial(const std::string& name) : SceneObjectMaterial()
+            explicit SceneObjectMaterial(const std::string& name) : SceneObjectMaterial()
                 { m_Name = name; }
-            SceneObjectMaterial(std::string&& name) : SceneObjectMaterial()
+            explicit SceneObjectMaterial(std::string&& name) : SceneObjectMaterial()
                 { m_Name = std::move(name); }
 
-            const std::string& GetName() const { return m_Name; }
-            const Color& GetBaseColor() const { return m_BaseColor; }
-            const Color& GetSpecularColor() const { return m_Specular; }
-            const Parameter& GetSpecularPower() const { return m_SpecularPower; }
-            const Parameter& GetMetallic() const { return m_Metallic; }
-            const Parameter& GetRoughness() const { return m_Roughness; }
-            const Parameter& GetAO() const { return m_AmbientOcclusion; }
-            const Parameter& GetHeight() const { return m_Height; }
-            const Normal& GetNormal() const { return m_Normal; }
+            [[nodiscard]] const std::string& GetName() const { return m_Name; }
+            [[nodiscard]] const Color& GetBaseColor() const { return m_BaseColor; }
+            [[nodiscard]] const Color& GetSpecularColor() const { return m_Specular; }
+            [[nodiscard]] const Parameter& GetSpecularPower() const { return m_SpecularPower; }
+            [[nodiscard]] const Parameter& GetMetallic() const { return m_Metallic; }
+            [[nodiscard]] const Parameter& GetRoughness() const { return m_Roughness; }
+            [[nodiscard]] const Parameter& GetAO() const { return m_AmbientOcclusion; }
+            [[nodiscard]] const Parameter& GetHeight() const { return m_Height; }
+            [[nodiscard]] const Normal& GetNormal() const { return m_Normal; }
             void SetName(const std::string& name) { m_Name = name; }
             void SetName(std::string&& name) { m_Name = std::move(name); }
             void SetColor(const std::string& attrib, const Vector4f& color) 

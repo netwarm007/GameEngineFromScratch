@@ -6,12 +6,12 @@
 
 #include "CefApplication.hpp"
 
-#include <string>
 #include "cef_browser.h"
+#include "simple_handler.hpp"
 #include "views/cef_browser_view.h"
 #include "views/cef_window.h"
 #include "wrapper/cef_helpers.h"
-#include "simple_handler.hpp"
+#include <string>
 
 namespace My {
     // When using the Views framework this object provides the delegate
@@ -19,7 +19,7 @@ namespace My {
     class CefAppWindowDelegate : public CefWindowDelegate 
     {
     public:
-        explicit CefAppWindowDelegate(CefRefPtr<CefBrowserView> browser_view)
+        explicit CefAppWindowDelegate(const CefRefPtr<CefBrowserView>& browser_view)
             : browser_view_(browser_view) {}
 
         void OnWindowCreated(CefRefPtr<CefWindow> window) override 
@@ -33,7 +33,7 @@ namespace My {
         }
 
         void OnWindowDestroyed(CefRefPtr<CefWindow> window) override {
-            browser_view_ = NULL;
+            browser_view_ = nullptr;
         }
 
         bool CanClose(CefRefPtr<CefWindow> window) override {
@@ -92,7 +92,7 @@ void CefApplication::OnContextInitialized()
     if (use_views) {
         // Create the BrowserView.
         CefRefPtr<CefBrowserView> browser_view = CefBrowserView::CreateBrowserView(
-            handler, url, browser_settings, NULL, NULL, NULL);
+            handler, url, browser_settings, nullptr, nullptr, nullptr);
 
         // Create the Window. It will show itself after creation.
         CefWindow::CreateTopLevelWindow(new CefAppWindowDelegate(browser_view));
@@ -111,6 +111,6 @@ void CefApplication::OnContextInitialized()
 
         // Create the first browser window.
         CefBrowserHost::CreateBrowser(window_info, handler, url, browser_settings,
-                                    NULL, NULL);
+                                    nullptr, nullptr);
     }
 }

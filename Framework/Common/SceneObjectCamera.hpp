@@ -7,8 +7,8 @@ namespace My {
     {
         protected:
             float m_fAspect;
-            float m_fNearClipDistance;
-            float m_fFarClipDistance;
+            float m_fNearClipDistance{1.0f};
+            float m_fFarClipDistance{100.0f};
 
         public:
             void SetColor(std::string& attrib, Vector4f& color) 
@@ -31,12 +31,12 @@ namespace My {
                 // TODO: extension
             };
 
-            float GetNearClipDistance() const { return m_fNearClipDistance; };
-            float GetFarClipDistance() const { return m_fFarClipDistance; };
+            [[nodiscard]] float GetNearClipDistance() const { return m_fNearClipDistance; };
+            [[nodiscard]] float GetFarClipDistance() const { return m_fFarClipDistance; };
 
         protected:
             // can only be used as base class
-            SceneObjectCamera(void) : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(16.0f / 9.0f), m_fNearClipDistance(1.0f), m_fFarClipDistance(100.0f) {};
+            SceneObjectCamera() : BaseSceneObject(SceneObjectType::kSceneObjectTypeCamera), m_fAspect(16.0f / 9.0f) {};
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectCamera& obj);
     };
@@ -65,8 +65,8 @@ namespace My {
             };
 
         public:
-            SceneObjectPerspectiveCamera(float fov = PI / 2.0) : SceneObjectCamera(), m_fFov(fov) {};
-            float GetFov() const { return m_fFov; };
+            explicit SceneObjectPerspectiveCamera(float fov = PI / 2.0) :  m_fFov(fov) {};
+            [[nodiscard]] float GetFov() const { return m_fFov; };
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectPerspectiveCamera& obj);
     };

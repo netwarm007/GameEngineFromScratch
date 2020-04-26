@@ -1,7 +1,7 @@
 #pragma once
-#include "Interface.hpp"
-#include "Image.hpp"
 #include "Buffer.hpp"
+#include "Image.hpp"
+#include "Interface.hpp"
 
 namespace My {
     Interface ImageParser

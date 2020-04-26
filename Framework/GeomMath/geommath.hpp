@@ -1,13 +1,13 @@
 #pragma once
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <initializer_list>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <limits>
-#include <cmath>
 #include <memory>
 #include <set>
 #include <unordered_set>
@@ -55,7 +55,7 @@ namespace Dummy { /* namespace */
 #endif
 
 namespace My {
-    typedef float Scalar;
+    using Scalar = float;
 
 #ifdef max
     #undef max
@@ -78,7 +78,7 @@ namespace My {
         T data[N];
 
         Vector() = default;
-        Vector(const T val)
+        explicit Vector(const T val)
         {
             for (int i = 0; i < N; i++)
             {
@@ -126,19 +126,29 @@ namespace My {
         { 
             Set(pf);
             return *this;
-        };
+        }
 
         Vector& operator=(const T f) 
         { 
             Set(f);
             return *this;
-        };
+        }
 
         Vector& operator=(const Vector& v) 
         { 
             std::memcpy(this, &v, sizeof(v));
             return *this;
-        };
+        }
+
+        T& operator[](size_t index)
+        {
+            return data[index];
+        }
+
+        [[nodiscard]] const T& operator[](size_t index) const
+        {
+            return data[index];
+        }
     };
 
     typedef Vector<float, 2> Vector2f;
@@ -157,8 +167,8 @@ namespace My {
     {
     public:
         using Vector<T, 4>::Vector;
-	Quaternion() = default;
-        Quaternion(const Vector<T, 4> rhs)
+	    Quaternion() = default;
+        explicit Quaternion(const Vector<T, 4> rhs)
         {
             std::memcpy(this, &rhs, sizeof(Quaternion));    
         }
@@ -495,16 +505,18 @@ namespace My {
             return *this;
         }
 
-        bool isOrthogonal() const
+        [[nodiscard]] bool isOrthogonal() const
         {
             Matrix trans;
             Transpose(trans, *this);
             Matrix I;
             BuildIdentityMatrix(I);
             if(*this * trans == I)
+            {
                 return true;
-            else
-            	return false;
+            }
+            
+            return false;
         }
     };
 
@@ -593,8 +605,6 @@ namespace My {
                 DotProduct(result[i][j], matrix1[i], matrix2_transpose[j]);
             }
         }
-
-        return;
     }
 
     template <typename T, int ROWS, int COLS>
@@ -743,9 +753,7 @@ namespace My {
             { (cPitch * sYaw), -sPitch, (cPitch * cYaw), 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
         }};
-
-        return;
-    }
+   }
 
     inline void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix)
     {
@@ -765,9 +773,7 @@ namespace My {
     #else
         Dummy::Transform(vector, matrix);
     #endif
-
-        return;
-    }
+   }
 
     template <typename T, int ROWS, int COLS>
     inline void ExchangeYandZ(Matrix<T,ROWS,COLS>& matrix)
@@ -867,9 +873,7 @@ namespace My {
             { 0.0f, 0.0f, - 2.0f / depth, 0.0f },
             { - (right + left) / width, - (top + bottom) / height, - (far_plane + near_plane) / depth, 1.0f }
         }};
-
-        return;
-    }
+   }
 
     inline void BuildPerspectiveFovLHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
@@ -881,9 +885,7 @@ namespace My {
         }};
 
         matrix = perspective;
-
-        return;
-    }
+   }
 
     inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix, const float fieldOfView, const float screenAspect, const float screenNear, const float screenDepth)
     {
@@ -895,9 +897,7 @@ namespace My {
         }};
 
         matrix = perspective;
-
-        return;
-    }
+   }
 
     inline void MatrixTranslation(Matrix4X4f& matrix, const float x, const float y, const float z)
     {
@@ -909,9 +909,7 @@ namespace My {
         }};
 
         matrix = translation;
-
-        return;
-    }
+   }
 
     inline void MatrixTranslation(Matrix4X4f& matrix, const Vector3f& v)
     {
@@ -934,9 +932,7 @@ namespace My {
             {  0.0f,   -s,    c, 0.0f },
             {  0.0f, 0.0f, 0.0f, 1.0f },
         }};
-
-        return;
-    }
+   }
 
     inline void MatrixRotationY(Matrix4X4f& matrix, const float angle)
     {
@@ -948,9 +944,7 @@ namespace My {
             {    s, 0.0f,    c, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f },
         }};
-
-        return;
-    }
+   }
 
 
     inline void MatrixRotationZ(Matrix4X4f& matrix, const float angle)
@@ -963,9 +957,7 @@ namespace My {
             { 0.0f, 0.0f, 1.0f, 0.0f },
             { 0.0f, 0.0f, 0.0f, 1.0f }
         }};
-
-        return;
-    }
+   }
 
     inline void MatrixRotationAxis(Matrix4X4f& matrix, const Vector3f& axis, const float angle)
     {
@@ -1004,9 +996,7 @@ namespace My {
         }};
 
         matrix = scale;
-
-        return;
-    }
+   }
 
     inline void MatrixScale(Matrix4X4f& matrix, const Vector3f& v)
     {
@@ -1060,31 +1050,31 @@ namespace My {
     }
 
     typedef Vector<float, 2> Point2D;
-    typedef std::shared_ptr<Point2D> Point2DPtr;
-    typedef std::vector<Point2DPtr> Point2DList;
+    using Point2DPtr = std::shared_ptr<Point2D>;
+    using Point2DList = std::vector<Point2DPtr>;
     typedef Vector<float, 3> Point;
-    typedef std::shared_ptr<Point> PointPtr;
-    typedef std::unordered_set<PointPtr> PointSet;
-    typedef std::vector<PointPtr> PointList;
+    using PointPtr = std::shared_ptr<Point>;
+    using PointSet = std::unordered_set<PointPtr>;
+    using PointList = std::vector<PointPtr>;
     typedef std::pair<PointPtr, PointPtr> Edge;
     inline bool operator==(const Edge& a, const Edge& b)
     {
         return (a.first == b.first && a.second == b.second) || (a.first == b.second && a.second == b.first);
     }
-    typedef std::shared_ptr<Edge> EdgePtr;
+    using EdgePtr = std::shared_ptr<Edge>;
     inline bool operator==(const EdgePtr& a, const EdgePtr& b)
     {
         return (a->first == b->first && a->second == b->second) || (a->first == b->second && a->second == b->first);
     }
-    typedef std::unordered_set<EdgePtr> EdgeSet;
-    typedef std::vector<EdgePtr> EdgeList;
+    using EdgeSet = std::unordered_set<EdgePtr>;
+    using EdgeList = std::vector<EdgePtr>;
     struct Face {
         EdgeList    Edges;
         Vector3f    Normal;
-        PointList GetVertices() const 
+        [[nodiscard]] PointList GetVertices() const 
         {
             PointList vertices;
-            for (auto edge : Edges)
+            for (const auto& edge : Edges)
             {
                 vertices.push_back(edge->first);
             }
@@ -1092,9 +1082,9 @@ namespace My {
             return vertices;
         }
     };
-    typedef std::shared_ptr<Face> FacePtr;
-    typedef std::unordered_set<FacePtr> FaceSet;
-    typedef std::vector<FacePtr> FaceList;
+    using FacePtr = std::shared_ptr<Face>;
+    using FaceSet = std::unordered_set<FacePtr>;
+    using FaceList = std::vector<FacePtr>;
 
     inline float PointToPlaneDistance(const PointList& vertices, const Point& point)
     {

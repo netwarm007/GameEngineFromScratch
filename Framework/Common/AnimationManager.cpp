@@ -8,7 +8,7 @@ int AnimationManager::Initialize()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
-    for (auto node : scene.AnimatableNodes)
+    for (const auto& node : scene.AnimatableNodes)
     {
         auto pNode = node.lock();
         if (pNode) {
@@ -42,19 +42,19 @@ void AnimationManager::Tick()
 
     if (!m_bTimeLineStarted)
     {
-        m_TimeLineStartPoint = m_Clock.now();
+        m_TimeLineStartPoint = std::chrono::steady_clock::now();
         m_bTimeLineStarted = true;
     }
 
-    m_TimeLineValue = m_Clock.now() - m_TimeLineStartPoint;
+    m_TimeLineValue = std::chrono::steady_clock::now() - m_TimeLineStartPoint;
 
-    for (auto clip : m_AnimationClips)
+    for (const auto& clip : m_AnimationClips)
     {
         clip->Update(m_TimeLineValue.count());
     }
 }
 
-void AnimationManager::AddAnimationClip(std::shared_ptr<SceneObjectAnimationClip> clip)
+void AnimationManager::AddAnimationClip(const std::shared_ptr<SceneObjectAnimationClip>& clip)
 {
     m_AnimationClips.push_back(clip);
 }

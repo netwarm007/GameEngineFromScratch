@@ -1,7 +1,7 @@
 #pragma once
+#include <cmath>
 #include <functional>
 #include <limits>
-#include <cmath>
 
 using namespace std;
 
@@ -9,8 +9,8 @@ namespace My {
     template <typename TVAL, typename TPARAM>
     struct NewtonRapson
     {
-        typedef std::function<TVAL(TPARAM)> nr_f;
-        typedef std::function<TVAL(TPARAM)> nr_fprime;
+        using nr_f = std::function<TVAL (TPARAM)>;
+        using nr_fprime = std::function<TVAL (TPARAM)>;
 
         static inline TPARAM Solve(TPARAM x0, nr_f f, nr_fprime fprime)
         {

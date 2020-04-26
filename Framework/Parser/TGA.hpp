@@ -1,13 +1,13 @@
 #pragma once
+#include "ImageParser.hpp"
+#include "config.h"
+#include "portable.hpp"
+#include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <iostream>
-#include <string>
-#include <cassert>
 #include <queue>
-#include <algorithm>
-#include "config.h"
-#include "ImageParser.hpp"
-#include "portable.hpp"
+#include <string>
 
 namespace My {
 #pragma pack(push, 1)
@@ -23,7 +23,7 @@ namespace My {
     class TgaParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
 
@@ -32,7 +32,7 @@ namespace My {
 
             std::cerr << "Parsing as TGA file:" << std::endl;
 
-            const TGA_FILEHEADER* pFileHeader = reinterpret_cast<const TGA_FILEHEADER*>(pData);
+            const auto* pFileHeader = reinterpret_cast<const TGA_FILEHEADER*>(pData);
             pData += sizeof(TGA_FILEHEADER);
 
 #ifdef DEBUG
@@ -74,7 +74,7 @@ namespace My {
             img.data_size = img.pitch * img.Height;
             img.data = new uint8_t[img.data_size];
 
-            uint8_t* pOut = (uint8_t*)img.data;
+            auto* pOut = (uint8_t*)img.data;
             for (decltype(img.Height) i = 0; i < img.Height; i++)
             {
                 for (decltype(img.Width) j = 0; j < img.Width; j++)

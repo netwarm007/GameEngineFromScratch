@@ -1,11 +1,11 @@
 #pragma once
-#include <functional>
 #include "BaseSceneObject.hpp"
 #include "ParameterValueMap.hpp"
+#include <functional>
 
 namespace My {
     struct AttenCurve {
-        AttenCurveType type;
+        AttenCurveType type{AttenCurveType::kNone};
         union AttenCurveParams {
             struct LinearParam { float begin_atten; float end_atten; } linear_params;
             struct SmoothParam { float begin_atten; float end_atten; } smooth_params;
@@ -13,8 +13,7 @@ namespace My {
             struct InverseSquareParam { float scale; float offset; float kq; float kl; float kc; } inverse_squre_params;
         } u;
 
-        AttenCurve() : type(AttenCurveType::kNone)
-                       {}
+        AttenCurve() = default; 
     };
     
     class SceneObjectLight : public BaseSceneObject
@@ -55,7 +54,7 @@ namespace My {
                 m_LightDistanceAttenuation = curve;
             }
 
-            const AttenCurve& GetDistanceAttenuation(void)
+            const AttenCurve& GetDistanceAttenuation()
             {
                 return m_LightDistanceAttenuation;
             }
@@ -66,7 +65,7 @@ namespace My {
 
         protected:
             // can only be used as base class of delivered lighting objects
-            SceneObjectLight(const SceneObjectType type) : BaseSceneObject(type), 
+            explicit SceneObjectLight(const SceneObjectType type) : BaseSceneObject(type), 
                 m_LightColor(Vector4f(1.0f)), m_fIntensity(1.0f), 
                 m_bCastShadows(false) {}
 
@@ -76,7 +75,7 @@ namespace My {
     class SceneObjectOmniLight : public SceneObjectLight
     {
         public:
-            SceneObjectOmniLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightOmni) {}
+            SceneObjectOmniLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightOmni) {}
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectOmniLight& obj);
     };
@@ -87,7 +86,7 @@ namespace My {
             AttenCurve  m_LightAngleAttenuation;
 
         public:
-            SceneObjectSpotLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightSpot)
+            SceneObjectSpotLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightSpot)
                             {};
 
             void SetAngleAttenuation(AttenCurve curve)
@@ -95,7 +94,7 @@ namespace My {
                 m_LightAngleAttenuation = curve;
             }
 
-            const AttenCurve& GetAngleAttenuation(void)
+            const AttenCurve& GetAngleAttenuation()
             {
                 return m_LightAngleAttenuation;
             }
@@ -106,7 +105,7 @@ namespace My {
     class SceneObjectInfiniteLight : public SceneObjectLight
     {
         public:
-            SceneObjectInfiniteLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightInfi) {}
+            SceneObjectInfiniteLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightInfi) {}
 
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectInfiniteLight& obj);
     };
@@ -117,11 +116,11 @@ namespace My {
             Vector2f m_LightDimension;
 
         public:
-            SceneObjectAreaLight(void) : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightArea),
+            SceneObjectAreaLight() : SceneObjectLight(SceneObjectType::kSceneObjectTypeLightArea),
                 m_LightDimension({1.0f, 1.0f})
             {}
 
-            const Vector2f& GetDimension() const
+            [[nodiscard]] const Vector2f& GetDimension() const
             {
                 return m_LightDimension;
             }

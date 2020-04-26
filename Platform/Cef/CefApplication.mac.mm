@@ -1,10 +1,10 @@
 #import <Cocoa/Cocoa.h>
 
+#include "CefApplication.hpp"
 #include "cef_application_mac.h"
+#include "simple_handler.hpp"
 #include "wrapper/cef_helpers.h"
 #include "wrapper/cef_library_loader.h"
-#include "simple_handler.hpp"
-#include "CefApplication.hpp"
 
 using namespace My;
 
@@ -73,7 +73,7 @@ using namespace My;
 // The standard |-applicationShouldTerminate:| is not supported, and code paths
 // leading to it must be redirected.
 - (void)terminate:(id)sender {
-  SimpleAppDelegate* delegate =
+  auto delegate =
       static_cast<SimpleAppDelegate*>([NSApp delegate]);
   [delegate tryToTerminateApplication:self];
   // Return, don't exit. The application is responsible for exiting on its own.
@@ -117,7 +117,7 @@ int CefApplication::Initialize()
     
     CefEnableHighDPISupport();
 
-    void* sandbox_info = NULL;
+    void* sandbox_info = nullptr;
 
 #if defined(CEF_USE_SANDBOX)
     CefScopedSandboxInfo scoped_sandbox;

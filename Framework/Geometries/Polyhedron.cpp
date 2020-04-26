@@ -23,7 +23,7 @@ void Polyhedron::AddFace(PointList vertices, const PointPtr& inner_point)
     Faces.insert(std::move(pFace));
 }
 
-void Polyhedron::AddTetrahedron(const PointList vertices)
+void Polyhedron::AddTetrahedron(const PointList& vertices)
 {
     assert(vertices.size() == 4);
 
@@ -47,9 +47,9 @@ void Polyhedron::GetAabb(const Matrix4X4f& trans,
     aabbMin = Vector3f(numeric_limits<float>::max());
     aabbMax = Vector3f(numeric_limits<float>::lowest());
 
-    for (auto pFace : Faces)
+    for (const auto& pFace : Faces)
     {
-        for (auto pEdge : pFace->Edges)
+        for (const auto& pEdge : pFace->Edges)
         {
             auto pVertex = pEdge->first;
             aabbMin[0] = (aabbMin[0] < pVertex->data[0])? aabbMin[0] : pVertex->data[0];

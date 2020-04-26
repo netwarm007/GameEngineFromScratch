@@ -1,5 +1,5 @@
-#import <MetalKit/MetalKit.h>
 #import "GraphicsManager.hpp"
+#import <MetalKit/MetalKit.h>
 
 namespace My {
     struct MtlDrawBatchContext : public DrawBatchContext {

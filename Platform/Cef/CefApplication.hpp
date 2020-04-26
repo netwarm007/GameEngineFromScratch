@@ -6,7 +6,7 @@ namespace My {
     class CefApplication : public BaseApplication, public CefApp, public CefBrowserProcessHandler
     {
     public:
-        CefApplication(GfxConfiguration& config)
+        explicit CefApplication(GfxConfiguration& config)
             : BaseApplication(config) {}
 
         int Initialize() override;
@@ -14,7 +14,7 @@ namespace My {
         // One cycle of the main loop
         void Tick() override;
 
-        void* GetMainWindowHandler() override { return this; };
+        void* GetMainWindowHandler() override { return this; }
 
         // CefApp methods:
         CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override

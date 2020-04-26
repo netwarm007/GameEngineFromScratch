@@ -1,23 +1,23 @@
 #pragma once
-#include <vector>
-#include <memory>
-#include "cbuffer.h"
-#include "GfxConfiguration.hpp"
 #include "FrameStructure.hpp"
-#include "IRuntimeModule.hpp"
-#include "IShaderManager.hpp"
-#include "geommath.hpp"
-#include "Image.hpp"
-#include "Scene.hpp"
-#include "Polyhedron.hpp"
-#include "IDrawPass.hpp"
+#include "GfxConfiguration.hpp"
 #include "IDispatchPass.hpp"
+#include "IDrawPass.hpp"
+#include "IRuntimeModule.hpp"
+#include "IPipelineStateManager.hpp"
+#include "Image.hpp"
+#include "Polyhedron.hpp"
+#include "Scene.hpp"
+#include "cbuffer.h"
+#include "geommath.hpp"
+#include <memory>
+#include <vector>
 
 namespace My {
     class GraphicsManager : implements IRuntimeModule
     {
     public:
-        virtual ~GraphicsManager() = default;
+        ~GraphicsManager() override = default;
 
         int Initialize() override;
         void Finalize() override;
@@ -29,7 +29,7 @@ namespace My {
 
         virtual void ResizeCanvas(int32_t width, int32_t height);
 
-        virtual void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) {}
+        virtual void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) {}
 
         virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) {}
 
@@ -79,8 +79,8 @@ namespace My {
         virtual void ClearDebugBuffers() {}
 
         void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
-        void DrawPolygon(const Face& face, const Vector3f& color);
-        void DrawPolygon(const Face& face, const Matrix4X4f& trans, const Vector3f& color);
+        void DrawPolygon(const Face& polygon, const Vector3f& color);
+        void DrawPolygon(const Face& polygon, const Matrix4X4f& trans, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color);
         void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color);
         void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);

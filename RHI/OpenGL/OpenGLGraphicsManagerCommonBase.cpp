@@ -1,9 +1,10 @@
-#include <iostream>
-#include <sstream>
 #include <algorithm>
 #include <functional>
+#include <iostream>
+#include <sstream>
 
 #include "OpenGLGraphicsManagerCommonBase.hpp"
+#include "OpenGLPipelineStateManagerCommonBase.hpp"
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include  <GLES3/gl32.h>
@@ -190,29 +191,29 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
 
                 switch (v_property_array.GetDataType()) {
                     case VertexDataType::kVertexDataTypeFloat1:
-                        glVertexAttribPointer(i, 1, GL_FLOAT, false, 0, 0);
+                        glVertexAttribPointer(i, 1, GL_FLOAT, false, 0, nullptr);
                         break;
                     case VertexDataType::kVertexDataTypeFloat2:
-                        glVertexAttribPointer(i, 2, GL_FLOAT, false, 0, 0);
+                        glVertexAttribPointer(i, 2, GL_FLOAT, false, 0, nullptr);
                         break;
                     case VertexDataType::kVertexDataTypeFloat3:
-                        glVertexAttribPointer(i, 3, GL_FLOAT, false, 0, 0);
+                        glVertexAttribPointer(i, 3, GL_FLOAT, false, 0, nullptr);
                         break;
                     case VertexDataType::kVertexDataTypeFloat4:
-                        glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, 0);
+                        glVertexAttribPointer(i, 4, GL_FLOAT, false, 0, nullptr);
                         break;
 #if !defined(OS_ANDROID) && !defined(OS_WEBASSEMBLY)
                     case VertexDataType::kVertexDataTypeDouble1:
-                        glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, 0);
+                        glVertexAttribPointer(i, 1, GL_DOUBLE, false, 0, nullptr);
                         break;
                     case VertexDataType::kVertexDataTypeDouble2:
-                        glVertexAttribPointer(i, 2, GL_DOUBLE, false, 0, 0);
+                        glVertexAttribPointer(i, 2, GL_DOUBLE, false, 0, nullptr);
                         break;
                     case VertexDataType::kVertexDataTypeDouble3:
-                        glVertexAttribPointer(i, 3, GL_DOUBLE, false, 0, 0);
+                        glVertexAttribPointer(i, 3, GL_DOUBLE, false, 0, nullptr);
                         break;
                     case VertexDataType::kVertexDataTypeDouble4:
-                        glVertexAttribPointer(i, 4, GL_DOUBLE, false, 0, 0);
+                        glVertexAttribPointer(i, 4, GL_DOUBLE, false, 0, nullptr);
                         break;
 #endif
                     default:
@@ -264,7 +265,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_array_size, index_array_data, GL_STATIC_DRAW);
 
                 // Set the number of indices in the index array.
-                int32_t indexCount = static_cast<int32_t>(index_array.GetIndexCount());
+                auto indexCount = static_cast<int32_t>(index_array.GetIndexCount());
                 uint32_t type;
                 switch(index_array.GetIndexType())
                 {
@@ -293,7 +294,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene)
                 const auto& material_key = pGeometryNode->GetMaterialRef(material_index);
                 const auto material = scene.GetMaterial(material_key);
                 if (material) {
-                    function<uint32_t(const string, const shared_ptr<Image>&)> upload_texture = [this](const string texture_key, const shared_ptr<Image>& texture) {
+                    function<uint32_t(const string, const shared_ptr<Image>&)> upload_texture = [this](const string& texture_key, const shared_ptr<Image>& texture) {
                         uint32_t texture_id;
                         auto it = m_Textures.find(texture_key);
                         if (it == m_Textures.end())
@@ -500,7 +501,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
     glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     // index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxVBO[1]);
@@ -540,7 +541,7 @@ void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
     glBindBuffer(GL_ARRAY_BUFFER, terrainVBO[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(_vertices), _vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrainVBO[1]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(_index), _index, GL_STATIC_DRAW);
@@ -665,9 +666,10 @@ void OpenGLGraphicsManagerCommonBase::EndFrame()
     m_nFrameIndex = ++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount;
 }
 
-void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
+void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
 {
-    m_CurrentShader = static_cast<uint32_t>(shaderProgram);
+    const std::shared_ptr<const OpenGLPipelineState> pPipelineState = dynamic_pointer_cast<const OpenGLPipelineState>(pipelineState);
+    m_CurrentShader = pPipelineState->shaderProgram;
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_CurrentShader);
@@ -711,7 +713,7 @@ void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::Sha
     }
 
     // Set Sky Box
-    uint32_t texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
+    auto texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
     if (texture_id >= 0)
     {
         setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
@@ -744,7 +746,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContex
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawFrameConstant[m_nFrameIndex]);
 
-    PerFrameConstants constants = static_cast<PerFrameConstants>(context);
+    auto constants = static_cast<PerFrameConstants>(context);
 
     glBufferData(GL_UNIFORM_BUFFER, kSizePerFrameConstantBuffer, &constants, GL_DYNAMIC_DRAW);
 
@@ -776,7 +778,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
 
     glBindBuffer(GL_UNIFORM_BUFFER, m_uboDrawBatchConstant[m_nFrameIndex]);
 
-    const PerBatchConstants& constant = static_cast<const PerBatchConstants&>(context);
+    const auto& constant = static_cast<const PerBatchConstants&>(context);
 
     glBufferData(GL_UNIFORM_BUFFER, kSizePerBatchConstantBuffer, &constant, GL_DYNAMIC_DRAW);
 
@@ -791,7 +793,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
     {
         SetPerBatchConstants(*pDbc);
 
-        const OpenGLDrawBatchContext& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
+        const auto& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);
 
         // Bind textures
         setShaderParameter("SPIRV_Cross_CombineddiffuseMapsamp0", 0);
@@ -850,7 +852,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_pt
 
         glBindVertexArray(dbc.vao);
 
-        glDrawElements(dbc.mode, dbc.count, dbc.type, 0x00);
+        glDrawElements(dbc.mode, dbc.count, dbc.type, nullptr);
     }
 
     glBindVertexArray(0);
@@ -1018,7 +1020,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, int3
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
-    uint32_t texture_id = (uint32_t) frame.frameContext.shadowMap;
+    auto texture_id = (uint32_t) frame.frameContext.shadowMap;
     setShaderParameter("SPIRV_Cross_CombinedshadowMapsamp0", 7);
     glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
@@ -1055,7 +1057,7 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 
 void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
 {
-    uint32_t id = (uint32_t) shadowmap;
+    auto id = (uint32_t) shadowmap;
     glDeleteTextures(1, &id);
     shadowmap = -1;
 }
@@ -1079,7 +1081,7 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
-    glDrawElements(m_SkyBoxDrawBatchContext.mode, m_SkyBoxDrawBatchContext.count, m_SkyBoxDrawBatchContext.type, 0x00);
+    glDrawElements(m_SkyBoxDrawBatchContext.mode, m_SkyBoxDrawBatchContext.count, m_SkyBoxDrawBatchContext.type, nullptr);
     glBindVertexArray(0);
     glDepthFunc(GL_LESS); // set depth function back to default
 }
@@ -1178,7 +1180,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    uint32_t framebuffer = (uint32_t) context;
+    auto framebuffer = (uint32_t) context;
     glDeleteFramebuffers(1, &framebuffer);
     context = 0;
 
@@ -1199,7 +1201,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
 
 #if !defined(OS_WEBASSEMBLY)
@@ -1249,7 +1251,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPoint(const Point &point, const Vector
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     m_DebugBuffers.push_back(buffer_id);
 
@@ -1282,7 +1284,7 @@ void OpenGLGraphicsManagerCommonBase::drawPoints(const Point* buffer, const size
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     m_DebugBuffers.push_back(buffer_id);
 
@@ -1307,7 +1309,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, co
 void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans, const Vector3f& color)
 {
     const auto count = point_set.size();
-    Point* buffer = new Point[count];
+    auto* buffer = new Point[count];
     int i = 0;
     for(const auto& point_ptr : point_set)
     {
@@ -1322,7 +1324,7 @@ void OpenGLGraphicsManagerCommonBase::DrawPointSet(const PointSet& point_set, co
 void OpenGLGraphicsManagerCommonBase::DrawLine(const PointList& vertices, const Matrix4X4f& trans, const Vector3f& color)
 {
     const auto count = vertices.size();
-    GLfloat* _vertices = new GLfloat[3 * count];
+    auto* _vertices = new GLfloat[3 * count];
 
     for (auto i = 0; i < count; i++)
     {
@@ -1350,7 +1352,7 @@ void OpenGLGraphicsManagerCommonBase::DrawLine(const PointList& vertices, const 
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     m_DebugBuffers.push_back(buffer_id);
 
@@ -1407,7 +1409,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangle(const PointList& vertices, co
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    Vector3f* data = new Vector3f[count];
+    auto* data = new Vector3f[count];
     for(auto i = 0; i < count; i++)
     {
         data[i] = *vertices[i];
@@ -1417,7 +1419,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangle(const PointList& vertices, co
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     m_DebugBuffers.push_back(buffer_id);
 
@@ -1449,7 +1451,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangleStrip(const PointList& vertice
 
     // Bind the vertex buffer and load the vertex (position and color) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    Vector3f* data = new Vector3f[count];
+    auto* data = new Vector3f[count];
     for(auto i = 0; i < count; i++)
     {
         data[i] = *vertices[i];
@@ -1459,7 +1461,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTriangleStrip(const PointList& vertice
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     m_DebugBuffers.push_back(buffer_id);
 
@@ -1489,10 +1491,10 @@ void OpenGLGraphicsManagerCommonBase::ClearDebugBuffers()
 
 void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 {
-    const auto debugShaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Debug);
+    const auto pipelineState = g_pPipelineStateManager->GetPipelineState("Debug Drawing");
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    UseShaderProgram(debugShaderProgram);
+    SetPipelineState(pipelineState);
 
     if (!m_uboDebugConstant[m_nFrameIndex])
     {
@@ -1531,7 +1533,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture,
                                                          const float vp_width, 
                                                          const float vp_height)
 {
-    uint32_t texture_id = (uint32_t) texture;
+    auto texture_id = (uint32_t) texture;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -1567,7 +1569,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture,
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     // Bind the vertex buffer and load the vertex (uv) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
@@ -1575,7 +1577,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(const int32_t texture,
 
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, nullptr);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0x00, 4);
 
@@ -1590,7 +1592,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
                                                               const float vp_width, 
                                                               const float vp_height)
 {
-    uint32_t texture_id = (uint32_t) texture;
+    auto texture_id = (uint32_t) texture;
     DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
@@ -1650,7 +1652,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     // Bind the vertex buffer and load the vertex (uv) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
@@ -1658,7 +1660,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
 
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, nullptr);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0x00, 4);
 
@@ -1673,7 +1675,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap,
                                                          const float vp_height, 
                                                          const float level)
 {
-    uint32_t texture_id = (uint32_t) cubemap;
+    auto texture_id = (uint32_t) cubemap;
     DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
@@ -1827,7 +1829,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap,
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     // Bind the vertex buffer and load the vertex (uvw) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
@@ -1835,7 +1837,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(const int32_t cubemap,
 
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, nullptr);
 
     glDrawArrays(GL_TRIANGLES, 0x00, 36);
 
@@ -1851,7 +1853,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cube
                                                               const float vp_height, 
                                                               const float level)
 {
-    uint32_t texture_id = (uint32_t) cubemap;
+    auto texture_id = (uint32_t) cubemap;
     DebugConstants constants;
 
     glActiveTexture(GL_TEXTURE0);
@@ -2005,7 +2007,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cube
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     // Bind the vertex buffer and load the vertex (uvw) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
@@ -2013,7 +2015,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(const int32_t cube
 
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, nullptr);
 
     glDrawArrays(GL_TRIANGLES, 0x00, 36);
 
@@ -2056,7 +2058,7 @@ void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad()
 
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
 
     // Bind the vertex buffer and load the vertex (uv) data into the vertex buffer.
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id[1]);
@@ -2064,7 +2066,7 @@ void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad()
 
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, nullptr);
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0x00, 4);
 

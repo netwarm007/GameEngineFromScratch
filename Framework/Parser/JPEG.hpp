@@ -1,14 +1,14 @@
 #pragma once
-#include <cstdio>
-#include <iostream>
-#include <string>
-#include <cassert>
-#include <queue>
-#include <algorithm>
+#include "ColorSpaceConversion.hpp"
+#include "HuffmanTree.hpp"
 #include "ImageParser.hpp"
 #include "portable.hpp"
-#include "HuffmanTree.hpp"
-#include "ColorSpaceConversion.hpp"
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <queue>
+#include <string>
 
 // Enable this to print out very detailed decode information
 //#define DUMP_DETAILS 1
@@ -52,8 +52,8 @@ namespace My {
         public:
             uint8_t     QuantizationTableDestSelector;
 
-            uint16_t HorizontalSamplingFactor() const { return SamplingFactor >> 4; };
-            uint16_t VerticalSamplingFactor() const { return SamplingFactor & 0x07; };
+            [[nodiscard]] uint16_t HorizontalSamplingFactor() const { return SamplingFactor >> 4; };
+            [[nodiscard]] uint16_t VerticalSamplingFactor() const { return SamplingFactor & 0x07; };
     };
 
     struct FRAME_HEADER : public JPEG_SEGMENT_HEADER {
@@ -71,8 +71,8 @@ namespace My {
             uint8_t     EntropyCodingTableDestSelector;
 
         public:
-            uint16_t     DcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector >> 4; };
-            uint16_t     AcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector & 0x07; };
+            [[nodiscard]] uint16_t     DcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector >> 4; };
+            [[nodiscard]] uint16_t     AcEntropyCodingTableDestSelector() const { return EntropyCodingTableDestSelector & 0x07; };
     };
 
     struct SCAN_HEADER : public JPEG_SEGMENT_HEADER {
@@ -84,8 +84,8 @@ namespace My {
             uint8_t data;
 
         public:
-            uint16_t ElementPrecision() const { return data >> 4; };
-            uint16_t DestinationIdentifier() const { return data & 0x07; };
+            [[nodiscard]] uint16_t ElementPrecision() const { return data >> 4; };
+            [[nodiscard]] uint16_t DestinationIdentifier() const { return data & 0x07; };
     };
 
     struct HUFFMAN_TABLE_SPEC {
@@ -95,8 +95,8 @@ namespace My {
         public:
             uint8_t NumOfHuffmanCodes[16];
 
-            uint16_t TableClass() const { return data >> 4; };
-            uint16_t DestinationIdentifier() const { return data & 0x07; };
+            [[nodiscard]] uint16_t TableClass() const { return data >> 4; };
+            [[nodiscard]] uint16_t DestinationIdentifier() const { return data & 0x07; };
     };
 
     struct RESTART_INTERVAL_DEF : public JPEG_SEGMENT_HEADER {
@@ -264,7 +264,8 @@ namespace My {
 #endif
                             break;
                         }
-                        else if (ac_code == 0xF0)
+
+                        if (ac_code == 0xF0)
                         {
 #if DUMP_DETAILS
                             std::cerr << "Found ZRL when decode AC!" << std::endl;
@@ -381,14 +382,14 @@ namespace My {
         }
 
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
 
             const uint8_t* pData = buf.GetData();
             const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
 
-            const JFIF_FILEHEADER* pFileHeader = reinterpret_cast<const JFIF_FILEHEADER*>(pData);
+            const auto* pFileHeader = reinterpret_cast<const JFIF_FILEHEADER*>(pData);
             pData += sizeof(JFIF_FILEHEADER);
             if (pFileHeader->SOI == endian_net_unsigned_int((uint16_t)0xFFD8) /* FF D8 */) {
                 std::cerr << "Asset is JPEG file" << std::endl;
@@ -397,7 +398,7 @@ namespace My {
                 {
                     size_t scanLength = 0;
 
-                    const JPEG_SEGMENT_HEADER* pSegmentHeader = reinterpret_cast<const JPEG_SEGMENT_HEADER*>(pData);
+                    const auto* pSegmentHeader = reinterpret_cast<const JPEG_SEGMENT_HEADER*>(pData);
 #if DUMP_DETAILS
                     std::cerr << "============================" << std::endl;
 #endif
@@ -412,7 +413,7 @@ namespace My {
 
                                 std::cerr << "----------------------------" << std::endl;
 
-                                const FRAME_HEADER* pFrameHeader = reinterpret_cast<const FRAME_HEADER*>(pData);
+                                const auto* pFrameHeader = reinterpret_cast<const FRAME_HEADER*>(pData);
                                 m_nSamplePrecision = pFrameHeader->SamplePrecision;
                                 m_nLines = endian_net_unsigned_int((uint16_t)pFrameHeader->NumOfLines);
                                 m_nSamplesPerLine = endian_net_unsigned_int((uint16_t)pFrameHeader->NumOfSamplesPerLine);
@@ -429,7 +430,7 @@ namespace My {
                                 std::cerr << "Total MCU count: " << mcu_count << std::endl;
 
                                 const uint8_t* pTmp = pData + sizeof(FRAME_HEADER);
-                                const FRAME_COMPONENT_SPEC_PARAMS* pFcsp = reinterpret_cast<const FRAME_COMPONENT_SPEC_PARAMS*>(pTmp);
+                                const auto* pFcsp = reinterpret_cast<const FRAME_COMPONENT_SPEC_PARAMS*>(pTmp);
                                 for (uint8_t i = 0; i < pFrameHeader->NumOfComponentsInFrame; i++) {
                                     std::cerr << "\tComponent Identifier: " << (uint16_t)pFcsp->ComponentIdentifier << std::endl;
                                     std::cerr << "\tHorizontal Sampling Factor: " << (uint16_t)pFcsp->HorizontalSamplingFactor() << std::endl;
@@ -460,7 +461,7 @@ namespace My {
                                 const uint8_t* pTmp = pData + sizeof(JPEG_SEGMENT_HEADER);
 
                                 while (segmentLength > 0) {
-                                    const HUFFMAN_TABLE_SPEC* pHtable = reinterpret_cast<const HUFFMAN_TABLE_SPEC*>(pTmp);
+                                    const auto* pHtable = reinterpret_cast<const HUFFMAN_TABLE_SPEC*>(pTmp);
                                     std::cerr << "Table Class: " << pHtable->TableClass() << std::endl;
                                     std::cerr << "Destination Identifier: " << pHtable->DestinationIdentifier() << std::endl;
 
@@ -489,7 +490,7 @@ namespace My {
                                 const uint8_t* pTmp = pData + sizeof(JPEG_SEGMENT_HEADER);
 
                                 while (segmentLength > 0) {
-                                    const QUANTIZATION_TABLE_SPEC* pQtable = reinterpret_cast<const QUANTIZATION_TABLE_SPEC*>(pTmp);
+                                    const auto* pQtable = reinterpret_cast<const QUANTIZATION_TABLE_SPEC*>(pTmp);
                                     std::cerr << "Element Precision: " << pQtable->ElementPrecision() << std::endl;
                                     std::cerr << "Destination Identifier: " << pQtable->DestinationIdentifier() << std::endl;
 
@@ -519,7 +520,7 @@ namespace My {
                                 std::cerr << "Define Restart Interval" << std::endl;
                                 std::cerr << "----------------------------" << std::endl;
 
-                                RESTART_INTERVAL_DEF* pRestartHeader = (RESTART_INTERVAL_DEF*) pData;
+                                auto* pRestartHeader = (RESTART_INTERVAL_DEF*) pData;
                                 m_nRestartInterval = endian_net_unsigned_int((uint16_t)pRestartHeader->RestartInterval);
                                 std::cerr << "Restart interval: " << m_nRestartInterval << std::endl;
                                 pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
@@ -530,7 +531,7 @@ namespace My {
                                 std::cerr << "Start Of Scan" << std::endl;
                                 std::cerr << "----------------------------" << std::endl;
 
-                                SCAN_HEADER* pScanHeader = (SCAN_HEADER*) pData;
+                                auto* pScanHeader = (SCAN_HEADER*) pData;
                                 std::cerr << "Image Conponents in Scan: " << (uint16_t)pScanHeader->NumOfComponents << std::endl;
                                 assert(pScanHeader->NumOfComponents == m_nComponentsInFrame);
 
@@ -575,7 +576,7 @@ namespace My {
                                 switch (endian_net_unsigned_int(*(uint32_t*)pApp0->Identifier)) {
                                     case "JFIF\0"_u32: 
                                         {
-                                            const JFIF_APP0* pJfifApp0 = reinterpret_cast<const JFIF_APP0*>(pApp0);
+                                            const auto* pJfifApp0 = reinterpret_cast<const JFIF_APP0*>(pApp0);
                                             std::cerr << "JFIF-APP0" << std::endl;
                                             std::cerr << "----------------------------" << std::endl;
                                             std::cerr << "JFIF Version: " << (uint16_t)pJfifApp0->MajorVersion << "." 
@@ -596,7 +597,7 @@ namespace My {
                                         break;
                                     case "JFXX\0"_u32:
                                         {
-                                            const JFXX_APP0* pJfxxApp0 = reinterpret_cast<const JFXX_APP0*>(pApp0);
+                                            const auto* pJfxxApp0 = reinterpret_cast<const JFXX_APP0*>(pApp0);
                                             std::cerr << "Thumbnail Format: ";
                                             switch (pJfxxApp0->ThumbnailFormat) {
                                                 case 0x10:

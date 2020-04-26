@@ -8,7 +8,7 @@
 #include "Buffer.hpp"
 #include "Image.hpp"
 #include "SceneObject.hpp"
-#include "D3dShaderManager.hpp"
+#include "D3d12PipelineStateManager.hpp"
 
 namespace My {
     class D3d12GraphicsManager : public GraphicsManager
@@ -20,7 +20,7 @@ namespace My {
         void Draw() final;
         void Present() final;
 
-        void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
+        virtual void SetPipelineState(const PipelineState& pipelineState) final;
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
@@ -54,7 +54,7 @@ namespace My {
         HRESULT CreateRootSignature();
         HRESULT WaitForPreviousFrame();
         HRESULT ResetCommandList();
-        HRESULT CreatePSO(D3dShaderProgram& shaderProgram);
+        HRESULT CreatePSO(D3d12PipelineState& pipelineState);
         HRESULT CreateCommandList();
         HRESULT MsaaResolve();
 

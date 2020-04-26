@@ -1,11 +1,11 @@
+#include "AnimationManager.hpp"
+#include "AssetLoader.hpp"
+#include "MemoryManager.hpp"
+#include "SceneManager.hpp"
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <thread>
-#include "AssetLoader.hpp"
-#include "MemoryManager.hpp"
-#include "SceneManager.hpp"
-#include "AnimationManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
         g_pAnimationManager->Tick();
         cout << "Dump of Animatable Nodes" << endl;
         cout << "---------------------------" << endl;
-        for (auto node : scene.AnimatableNodes)
+        for (const auto& node : scene.AnimatableNodes)
         {
             auto pNode = node.lock();
             if (pNode) {

@@ -1,16 +1,16 @@
-#include "ShaderManager.hpp"
-#include <unordered_map>
+#include "PipelineStateManager.hpp"
 #include <portable.hpp>
+#include <unordered_map>
 
 OBJC_CLASS(MTLLibrary);
 OBJC_CLASS(MTLRenderPipelineState);
 
 namespace My {
-    class MetalShaderManager : public ShaderManager
+    class MetalPipelineStateManager : public PipelineStateManager
     {
     public:
-        MetalShaderManager() = default;
-        ~MetalShaderManager() = default;
+        MetalPipelineStateManager() = default;
+        ~MetalPipelineStateManager() override = default;
 
         int Initialize() final;
         void Finalize() final;

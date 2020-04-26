@@ -4,10 +4,10 @@
 namespace My {
     class BilliardGameLogic : implements IGameLogic
     {
-        int Initialize();
-        void Finalize();
-        void Tick();
+        int Initialize() override;
+        void Finalize() override;
+        void Tick() override;
 
-        void OnLeftKey();
+        void OnLeftKey() override;
     };
 }

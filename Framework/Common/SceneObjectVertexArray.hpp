@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include "SceneObjectTypeDef.hpp"
+#include <string>
 
 namespace My {
     enum VertexAttribute : unsigned long
@@ -28,13 +28,13 @@ namespace My {
             const size_t     m_szData;
 
         public:
-            SceneObjectVertexArray(const char* attr = "", const uint32_t morph_index = 0, const VertexDataType data_type = VertexDataType::kVertexDataTypeFloat3, const void* data = nullptr, const size_t data_size = 0) : m_strAttribute(attr), m_nMorphTargetIndex(morph_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
+            explicit SceneObjectVertexArray(const char* attr = "", const uint32_t morph_index = 0, const VertexDataType data_type = VertexDataType::kVertexDataTypeFloat3, const void* data = nullptr, const size_t data_size = 0) : m_strAttribute(attr), m_nMorphTargetIndex(morph_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
             SceneObjectVertexArray(SceneObjectVertexArray& arr) = default; 
             SceneObjectVertexArray(SceneObjectVertexArray&& arr) = default; 
 
-            const std::string& GetAttributeName() const { return m_strAttribute; };
-            VertexDataType GetDataType() const { return m_DataType; };
-            size_t GetDataSize() const 
+            [[nodiscard]] const std::string& GetAttributeName() const { return m_strAttribute; };
+            [[nodiscard]] VertexDataType GetDataType() const { return m_DataType; };
+            [[nodiscard]] size_t GetDataSize() const 
             { 
                 size_t size = m_szData;
 
@@ -59,8 +59,8 @@ namespace My {
 
                 return size;
             }; 
-            const void* GetData() const { return m_pData; };
-            size_t GetVertexCount() const
+            [[nodiscard]] const void* GetData() const { return m_pData; };
+            [[nodiscard]] size_t GetVertexCount() const
             {
                 size_t size = m_szData;
 

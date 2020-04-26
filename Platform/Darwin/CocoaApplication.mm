@@ -1,9 +1,9 @@
-#import <AppDelegate.h>
-#import <WindowDelegate.h>
-#import <Carbon/Carbon.h>
-#include <string.h>
 #include "CocoaApplication.h"
 #include "InputManager.hpp"
+#import <AppDelegate.h>
+#import <Carbon/Carbon.h>
+#import <WindowDelegate.h>
+#include <cstring>
 
 using namespace My;
 
@@ -92,13 +92,13 @@ void CocoaApplication::Tick()
                     switch ([event keyCode])
                     {
                         case kVK_ANSI_D: // d key
-                            g_pInputManager->AsciiKeyUp('d');
+                            InputManager::AsciiKeyUp('d');
                             break;
                         case kVK_ANSI_R: // r key
-                            g_pInputManager->AsciiKeyUp('r');
+                            InputManager::AsciiKeyUp('r');
                             break;
                         case kVK_ANSI_U: // u key
-                            g_pInputManager->AsciiKeyUp('u');
+                            InputManager::AsciiKeyUp('u');
                             break;
                     }
                 }
@@ -134,13 +134,13 @@ void CocoaApplication::Tick()
                     switch ([event keyCode])
                     {
                         case kVK_ANSI_D: // d key
-                            g_pInputManager->AsciiKeyDown('d');
+                            My::InputManager::AsciiKeyDown('d');
                             break;
                         case kVK_ANSI_R: // r key
-                            g_pInputManager->AsciiKeyDown('r');
+                            My::InputManager::AsciiKeyDown('r');
                             break;
                         case kVK_ANSI_U: // u key
-                            g_pInputManager->AsciiKeyDown('u');
+                            My::InputManager::AsciiKeyDown('u');
                             break;
                     }
                 }

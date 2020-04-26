@@ -12,8 +12,8 @@ namespace My {
                                 Vector3f& aabbMin, 
                                 Vector3f& aabbMax) const final;
 
-        Vector3f GetNormal() const { return m_vNormal; };
-        float    GetIntercept() const { return m_fIntercept; };
+        [[nodiscard]] Vector3f GetNormal() const { return m_vNormal; };
+        [[nodiscard]] float    GetIntercept() const { return m_fIntercept; };
 
     protected:
         Vector3f m_vNormal;

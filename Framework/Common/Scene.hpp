@@ -1,9 +1,9 @@
 #pragma once
+#include "SceneNode.hpp"
+#include "SceneObject.hpp"
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include "SceneObject.hpp"
-#include "SceneNode.hpp"
 
 namespace My {
     class Scene {
@@ -40,7 +40,7 @@ namespace My {
             Terrain->SetName("Textures/terrain/area_1", "png");
         }
 
-        Scene(const std::string& scene_name) :
+        explicit Scene(const std::string& scene_name) :
             SceneGraph(new BaseSceneNode(scene_name))
         {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
@@ -52,19 +52,19 @@ namespace My {
 
         ~Scene() = default;
 
-        const std::shared_ptr<SceneObjectCamera> GetCamera(const std::string& key) const;
-        const std::shared_ptr<SceneCameraNode> GetFirstCameraNode() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectCamera> GetCamera(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneCameraNode> GetFirstCameraNode() const;
 
-        const std::shared_ptr<SceneObjectLight> GetLight(const std::string& key) const;
-        const std::shared_ptr<SceneLightNode> GetFirstLightNode() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectLight> GetLight(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneLightNode> GetFirstLightNode() const;
 
-        const std::shared_ptr<SceneObjectGeometry> GetGeometry(const std::string& key) const;
-        const std::shared_ptr<SceneGeometryNode> GetFirstGeometryNode() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectGeometry> GetGeometry(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneGeometryNode> GetFirstGeometryNode() const;
 
-        const std::shared_ptr<SceneObjectMaterial> GetMaterial(const std::string& key) const;
-        const std::shared_ptr<SceneObjectMaterial> GetFirstMaterial() const;
+        [[nodiscard]] std::shared_ptr<SceneObjectMaterial> GetMaterial(const std::string& key) const;
+        [[nodiscard]] std::shared_ptr<SceneObjectMaterial> GetFirstMaterial() const;
 
-        void LoadResource(void);
+        void LoadResource();
     };
 }
 

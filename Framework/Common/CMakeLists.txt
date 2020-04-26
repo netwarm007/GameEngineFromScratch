@@ -8,6 +8,7 @@ GraphicsManager.cpp
 InputManager.cpp
 Image.cpp
 MemoryManager.cpp
+PipelineStateManager.cpp
 Scene.cpp
 SceneManager.cpp
 SceneObject.cpp

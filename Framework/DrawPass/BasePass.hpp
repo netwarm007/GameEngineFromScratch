@@ -1,14 +1,14 @@
 #pragma once
-#include <vector>
+#include "GraphicsManager.hpp"
 #include "IDrawPass.hpp"
 #include "IDrawPhase.hpp"
-#include "GraphicsManager.hpp"
+#include <vector>
 
 namespace My {
     class BasePass : implements IDrawPass
     {
     public:
-        ~BasePass() = default;
+        ~BasePass() override = default;
 
         void Draw(Frame& frame) override;
 

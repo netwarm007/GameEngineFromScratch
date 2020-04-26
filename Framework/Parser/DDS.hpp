@@ -185,17 +185,17 @@ namespace My {
     class DdsParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
             uint8_t* pData = buf.GetData();
 
-            const uint32_t* pdwMagic = reinterpret_cast<const uint32_t*>(pData);
+            const auto* pdwMagic = reinterpret_cast<const uint32_t*>(pData);
             pData += sizeof(uint32_t);
             assert(*pdwMagic == endian_net_unsigned_int("DDS "_u32));
             std::cerr << "The image is DDS format" << std::endl;
 
-            const DDS_HEADER* pHeader = reinterpret_cast<const DDS_HEADER*>(pData);
+            const auto* pHeader = reinterpret_cast<const DDS_HEADER*>(pData);
             pData += sizeof(DDS_HEADER);
 
             assert(pHeader->dwSize == 124);
@@ -211,7 +211,7 @@ namespace My {
                 const char* pCC = reinterpret_cast<const char*>(pdwFourCC);
                 if (pCC[0] != 'D')
                 {
-                    MY_D3DFMT format = (MY_D3DFMT) *pdwFourCC;
+                    auto format = (MY_D3DFMT) *pdwFourCC;
                     img.bitcount = pHeader->ddspf.dwRGBBitCount;
 
                     switch (format)
@@ -278,7 +278,7 @@ namespace My {
                 else if (*pdwFourCC == endian_net_unsigned_int("DX10"_u32))
                 {
                     img.compress_format = "DX10"_u32;
-                    const DDS_HEADER_DXT10* pHeaderDXT10 = reinterpret_cast<const DDS_HEADER_DXT10*>(pData);
+                    const auto* pHeaderDXT10 = reinterpret_cast<const DDS_HEADER_DXT10*>(pData);
                     pData += sizeof(DDS_HEADER_DXT10);
                     std::cerr << "DXGI_FORMAT: " << pHeaderDXT10->dxgiFormat << std::endl;
                 }

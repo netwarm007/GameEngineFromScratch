@@ -1,5 +1,5 @@
-#include "portable.hpp"
 #include "BaseApplication.hpp"
+#include "portable.hpp"
 
 OBJC_CLASS(NSWindow);
 

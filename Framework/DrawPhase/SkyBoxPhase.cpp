@@ -1,14 +1,14 @@
 #include "SkyBoxPhase.hpp"
 #include "GraphicsManager.hpp"
-#include "IShaderManager.hpp"
+#include "IPipelineStateManager.hpp"
 
 using namespace My;
 
 void SkyBoxPhase::Draw(Frame& frame)
 {
-    auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::SkyBox);
+    auto& pPipelineState = g_pPipelineStateManager->GetPipelineState("SkyBox");
 
-    g_pGraphicsManager->UseShaderProgram(shaderProgram);
+    g_pGraphicsManager->SetPipelineState(pPipelineState);
 
     g_pGraphicsManager->DrawSkyBox();
 }

@@ -6,7 +6,7 @@ using namespace std;
 namespace My {
     ostream& operator<<(ostream& out, SceneObjectType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -19,7 +19,7 @@ namespace My {
 
     ostream& operator<<(ostream& out, IndexDataType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -32,7 +32,7 @@ namespace My {
 
     ostream& operator<<(ostream& out, VertexDataType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -45,7 +45,7 @@ namespace My {
 
     ostream& operator<<(ostream& out, PrimitiveType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -58,7 +58,7 @@ namespace My {
   
     ostream& operator<<(ostream& out, CurveType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -131,12 +131,12 @@ namespace My {
 		out << static_cast<const BaseSceneObject&>(obj) << endl;
 		out << "Primitive Type: " << obj.m_PrimitiveType << endl;
 		out << "This mesh contains 0x" << obj.m_VertexArray.size() << " vertex properties." << endl;
-		for (size_t i = 0; i < obj.m_VertexArray.size(); i++) {
-			out << obj.m_VertexArray[i] << endl;
+		for (const auto & vertex : obj.m_VertexArray) {
+			out << vertex << endl;
 		}
 		out << "This mesh contains 0x" << obj.m_IndexArray.size() << " index arrays." << endl;
-		for (size_t i = 0; i < obj.m_IndexArray.size(); i++) {
-			out << obj.m_IndexArray[i] << endl;
+		for (const auto & index : obj.m_IndexArray) {
+			out << index << endl;
 		}
 
 		return out;
@@ -269,7 +269,7 @@ namespace My {
 	{
 		out << "Animation Clip: " << obj.m_nIndex << endl;
 		out << "Num of Track(s): " << obj.m_Tracks.size() << endl;
-		for (auto track : obj.m_Tracks)
+		for (const auto& track : obj.m_Tracks)
 		{
 			out << *track;
 		}

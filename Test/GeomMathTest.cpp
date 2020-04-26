@@ -1,7 +1,7 @@
-#include <iostream>
-#include <assert.h>
 #include "geommath.hpp"
 #include "MatrixComposeDecompose.hpp"
+#include <cassert>
+#include <iostream>
 
 using namespace std;
 using namespace My;

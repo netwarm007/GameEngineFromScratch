@@ -5,8 +5,8 @@
 // Modified by Chen Wenli @ 2018/12/21 for integration purpose
 
 #pragma once
-#include <list>
 #include "cef_client.h"
+#include <list>
 
 namespace My {
     class SimpleHandler : public CefClient,
@@ -16,31 +16,31 @@ namespace My {
     {
     public:
         explicit SimpleHandler(bool use_views);
-        ~SimpleHandler();
+        ~SimpleHandler() override;
 
         // Provide access to the single global instance of this object.
         static SimpleHandler* GetInstance();
 
         // CefClient methods:
-        virtual CefRefPtr<CefDisplayHandler> GetDisplayHandler() override {
+        CefRefPtr<CefDisplayHandler> GetDisplayHandler() override {
             return this;
         }
-        virtual CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override {
+        CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override {
             return this;
         }
-        virtual CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
+        CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
 
         // CefDisplayHandler methods:
-        virtual void OnTitleChange(CefRefPtr<CefBrowser> browser,
+        void OnTitleChange(CefRefPtr<CefBrowser> browser,
                                     const CefString& title) override;
 
         // CefLifeSpanHandler methods:
-        virtual void OnAfterCreated(CefRefPtr<CefBrowser> browser) override;
-        virtual bool DoClose(CefRefPtr<CefBrowser> browser) override;
-        virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser) override;
+        void OnAfterCreated(CefRefPtr<CefBrowser> browser) override;
+        bool DoClose(CefRefPtr<CefBrowser> browser) override;
+        void OnBeforeClose(CefRefPtr<CefBrowser> browser) override;
 
         // CefLoadHandler methods:
-        virtual void OnLoadError(CefRefPtr<CefBrowser> browser,
+        void OnLoadError(CefRefPtr<CefBrowser> browser,
                                 CefRefPtr<CefFrame> frame,
                                 ErrorCode errorCode,
                                 const CefString& errorText,
@@ -53,14 +53,14 @@ namespace My {
 
     private:
         // Platform-specific implementation.
-        void PlatformTitleChange(CefRefPtr<CefBrowser> browser,
+        static void PlatformTitleChange(const CefRefPtr<CefBrowser>& browser,
                                 const CefString& title);
 
         // True if the application is using the Views framework.
         const bool use_views_;
 
         // List of existing browser windows. Only accessed on the CEF UI thread.
-        typedef std::list<CefRefPtr<CefBrowser>> BrowserList;
+        using BrowserList = std::list<CefRefPtr<CefBrowser> >;
         BrowserList browser_list_;
 
         bool is_closing_;

@@ -5,7 +5,7 @@ namespace My {
     class ForwardRenderPhase : implements IDrawPhase
     {
     public:
-        ~ForwardRenderPhase() = default;
+        ~ForwardRenderPhase() override = default;
         void Draw(Frame& frame) final;
     };
 }

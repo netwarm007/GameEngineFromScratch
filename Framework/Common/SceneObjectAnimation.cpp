@@ -10,7 +10,7 @@ void SceneObjectAnimationClip::AddTrack(shared_ptr<SceneObjectTrack>& track)
 
 void SceneObjectAnimationClip::Update(const float time_point)
 {
-    for (auto track : m_Tracks)
+    for (const auto& track : m_Tracks)
     {
         track->Update(time_point);
     }

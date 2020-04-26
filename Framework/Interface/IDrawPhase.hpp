@@ -1,13 +1,13 @@
 #pragma once
-#include "IPhase.hpp"
 #include "FrameStructure.hpp"
+#include "IPhase.hpp"
 
 namespace My {
-    Interface IDrawPhase : public IPhase
+    Interface IDrawPhase : inheritance IPhase
     {
     public:
         IDrawPhase() = default;
-        virtual ~IDrawPhase() {};
+        ~IDrawPhase() override = default;;
 
         virtual void Draw(Frame& frame) = 0;
     };

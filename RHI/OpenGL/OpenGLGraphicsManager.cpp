@@ -1,13 +1,13 @@
-#include <iostream>
-#include <sstream>
 #include <algorithm>
 #include <functional>
+#include <iostream>
+#include <sstream>
 
 #include "OpenGLGraphicsManager.hpp"
 
 #include "glad/glad.h"
 
-extern struct gladGLversionStruct GLVersion;
+
 
 using namespace My;
 using namespace std;
@@ -16,7 +16,7 @@ int OpenGLGraphicsManager::Initialize()
 {
     int result;
 
-    result = GraphicsManager::Initialize();
+    result = My::GraphicsManager::Initialize();
 
     if (result) {
         return result;

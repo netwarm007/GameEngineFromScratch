@@ -1,7 +1,7 @@
 #pragma once
-#include <vector>
 #include "Scene.hpp"
 #include "cbuffer.h"
+#include <vector>
 
 namespace My {
     struct DrawFrameContext : PerFrameConstants, frame_textures {

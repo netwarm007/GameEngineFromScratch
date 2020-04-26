@@ -2,13 +2,13 @@ version: 2
 jobs:
   build_linux:
     docker:
-      - image: ubuntu:18.04
+      - image: ubuntu:20.04
     steps:
       - run: 
           name: Install Dependencies
           command: |
              apt update 
-             apt install -y curl clang cmake git uuid-dev libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev
+             apt install -y curl clang cmake git uuid-dev libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash
              apt install -y git-lfs
           environment:
@@ -44,21 +44,18 @@ jobs:
              cmake --build ./build --target test
   build_macos:
     macos:
-      xcode: "11.3.0"
+      xcode: "11.4.1"
     steps:
       - restore_cache:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run:
-          name: Restore git repo from cache
-          command: |
-             git restore .
       - checkout
       - run: 
           name: Git LFS Checkout
           command: |
+             git restore .
              git lfs fetch
              git checkout
       - save_cache:

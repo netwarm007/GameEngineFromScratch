@@ -12,14 +12,14 @@ namespace My {
             void*       m_pRigidBody = nullptr;
 
         protected:
-            virtual void dump(std::ostream& out) const 
+            void dump(std::ostream& out) const override 
             { 
                 SceneNode::dump(out);
                 out << "Visible: " << m_bVisible << std::endl;
                 out << "Shadow: " << m_bShadow << std::endl;
                 out << "Motion Blur: " << m_bMotionBlur << std::endl;
                 out << "Material(s): " << std::endl;
-                for (auto material : m_Materials) {
+                for (const auto& material : m_Materials) {
                     out << material << std::endl;
                 }
             };
@@ -28,20 +28,22 @@ namespace My {
             using SceneNode::SceneNode;
 
             void SetVisibility(bool visible) { m_bVisible = visible; };
-            const bool Visible() { return m_bVisible; };
+            bool Visible() { return m_bVisible; };
             void SetIfCastShadow(bool shadow) { m_bShadow = shadow; };
-            const bool CastShadow() { return m_bShadow; };
+            bool CastShadow() { return m_bShadow; };
             void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
-            const bool MotionBlur() { return m_bMotionBlur; };
+            bool MotionBlur() { return m_bMotionBlur; };
             using SceneNode::AddSceneObjectRef;
             void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
-            void AddMaterialRef(const std::string&& key) { m_Materials.push_back(std::move(key)); };
+            void AddMaterialRef(const std::string&& key) { m_Materials.push_back(key); };
             std::string GetMaterialRef(const size_t index) 
             { 
                 if (index < m_Materials.size())
+                {
                     return m_Materials[index]; 
-                else
-                    return std::string("default");
+                }
+                
+                return std::string("default");
             };
 
             void LinkRigidBody(void* rigidBody)

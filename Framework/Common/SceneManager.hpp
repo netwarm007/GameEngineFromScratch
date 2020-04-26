@@ -1,18 +1,18 @@
 #pragma once
-#include "geommath.hpp"
 #include "IRuntimeModule.hpp"
 #include "ISceneParser.hpp"
+#include "geommath.hpp"
 
 namespace My {
     class SceneManager : implements IRuntimeModule
     {
     public:
-        virtual ~SceneManager();
+        ~SceneManager() override;
 
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize() override;
+        void Finalize() override;
 
-        virtual void Tick();
+        void Tick() override;
 
         int LoadScene(const char* scene_file_name);
 
@@ -27,8 +27,8 @@ namespace My {
         void ResetScene();
 
         std::weak_ptr<BaseSceneNode> GetRootNode();
-        std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(std::string name);
-        std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(std::string key);
+        std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(const std::string& name);
+        std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(const std::string& key);
 
     protected:
         bool LoadOgexScene(const char* ogex_scene_file_name);

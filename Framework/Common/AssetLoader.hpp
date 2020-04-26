@@ -1,23 +1,23 @@
 #pragma once
 
+#include "Buffer.hpp"
+#include "IRuntimeModule.hpp"
 #include <cstdio>
 #include <string>
 #include <utility>
 #include <vector>
-#include "IRuntimeModule.hpp"
-#include "Buffer.hpp"
 
 namespace My {
 	class AssetLoader : public IRuntimeModule {
     public:
-        virtual ~AssetLoader() {};
+        ~AssetLoader() override = default;
 
-        virtual int Initialize();
-        virtual void Finalize();
+        int Initialize() override;
+        void Finalize() override;
 
-        virtual void Tick();
+        void Tick() override;
 
-        typedef void* AssetFilePtr;
+        using AssetFilePtr = void *;
 
         enum AssetOpenMode {
             MY_OPEN_TEXT   = 0, /// Open In Text Mode
@@ -60,7 +60,7 @@ namespace My {
 
                 if (content)
                 {
-                    result = std::string(std::move(content));
+                    result = std::string(content);
                 }
             }
 

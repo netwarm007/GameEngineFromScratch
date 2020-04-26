@@ -19,7 +19,7 @@ bool QuickHull::Init(Polyhedron& hull, PointSet& point_set)
     PointPtr ExtremePointZMax = make_shared<Point>(numeric_limits<float>::lowest());
 
     // finding the Extreme Points [O(n) complexity]
-    for(auto point_ptr : point_set)
+    for(const auto& point_ptr : point_set)
     {
         if(point_ptr->data[0] < ExtremePointXMin->data[0])
             ExtremePointXMin = point_ptr;
@@ -87,7 +87,7 @@ bool QuickHull::Init(Polyhedron& hull, PointSet& point_set)
         {
             double max_distance = 0.0f;
 
-            for (auto point_ptr : ExtremePoints)
+            for (const auto& point_ptr : ExtremePoints)
             {
                 Vector3f numerator;
                 Vector3f denominator;
@@ -113,7 +113,7 @@ bool QuickHull::Init(Polyhedron& hull, PointSet& point_set)
         {
             float max_distance = 0.0f;
 
-            for (auto point_ptr : point_set)
+            for (const auto& point_ptr : point_set)
             {
                 auto distance = PointToPlaneDistance({A,B,C}, *point_ptr);
                 if (distance > max_distance)
@@ -140,7 +140,7 @@ bool QuickHull::Iterate(Polyhedron& hull, PointSet& point_set)
 
     if (point_num_before != 0)
     {
-        if(hull.Faces.size() == 0)
+        if(hull.Faces.empty())
         {
             if(!Init(hull, point_set))
                 return false;
@@ -160,7 +160,7 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
 
     AssignPointsToFaces(hull, point_set, far_point, faces);
 
-    if (point_set.size() == 0) return;
+    if (point_set.empty()) return;
 
     if (far_point)
     {
@@ -171,9 +171,9 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
         for_each(
                     faces.begin(),
                     faces.end(),
-                    [&](FacePtr x)
+                    [&](const FacePtr& x)
                     { 
-                        for (auto edge : x->Edges)
+                        for (const auto& edge : x->Edges)
                         {
                             Edge reverse_edge = {edge->second, edge->first};
                             if (edges_on_hole.find(*edge) != edges_on_hole.end())
@@ -202,7 +202,7 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set)
         // so we create new faces by connecting
         // them with the new point
         assert(edges_on_hole.size() >= 3);
-        for (auto edge : edges_on_hole)
+        for (const auto& edge : edges_on_hole)
         {
             hull.AddFace({edge.first, edge.second, far_point}, center_of_tetrahedron);
         }
@@ -221,7 +221,7 @@ void QuickHull::AssignPointsToFaces(const Polyhedron& hull, PointSet& point_set,
     {
         bool isInsideHull = true;
         FaceList tmp;
-        for (auto pFace : hull.Faces)
+        for (const auto& pFace : hull.Faces)
         {
             float d;
             if ((d = PointToPlaneDistance(pFace->GetVertices(), **it)) > 0.0f)

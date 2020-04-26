@@ -1,8 +1,8 @@
-#include <iostream>
-#include <functional>
-#include <random>
 #include "Linear.hpp"
 #include "geommath.hpp"
+#include <functional>
+#include <iostream>
+#include <random>
 
 using namespace My;
 using namespace std;

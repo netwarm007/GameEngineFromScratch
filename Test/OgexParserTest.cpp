@@ -1,8 +1,8 @@
-#include <iostream>
-#include <string>
 #include "AssetLoader.hpp"
 #include "MemoryManager.hpp"
 #include "OGEX.hpp"
+#include <iostream>
+#include <string>
 
 using namespace My;
 using namespace std;
@@ -15,7 +15,7 @@ namespace My {
 template<typename Key, typename T>
 static ostream& operator<<(ostream& out, unordered_map<Key, shared_ptr<T>> map)
 {
-    for (auto p : map)
+    for (const auto& p : map)
     {
         if (auto ptr = p.second)
             out << *ptr << endl;
@@ -31,7 +31,7 @@ int main(int , char** )
 
     string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/splash.ogex");
 
-    OgexParser* ogex_parser = new OgexParser ();
+    auto* ogex_parser = new OgexParser ();
     unique_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);
     delete ogex_parser;
 

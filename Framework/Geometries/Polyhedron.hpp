@@ -14,6 +14,6 @@ namespace My {
 
         void AddFace(PointList vertices, const PointPtr& inner_point);
 
-        void AddTetrahedron(const PointList vertices);
+        void AddTetrahedron(const PointList& vertices);
     };
 }

@@ -1,10 +1,10 @@
-#include <iostream>
 #include "MyPhysicsManager.hpp"
 #include "Box.hpp"
-#include "Plane.hpp"
-#include "Sphere.hpp"
-#include "RigidBody.hpp"
 #include "GraphicsManager.hpp"
+#include "Plane.hpp"
+#include "RigidBody.hpp"
+#include "Sphere.hpp"
+#include <iostream>
 
 using namespace My;
 using namespace std;
@@ -27,14 +27,14 @@ void MyPhysicsManager::IterateConvexHull()
     auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
-    for (auto _it : scene.GeometryNodes)
+    for (const auto& _it : scene.GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode)
         {
             void* rigidBody = pGeometryNode->RigidBody();
             if (rigidBody) {
-                RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
                 auto pGeometry = _rigidBody->GetCollisionShape();
                 if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron)
                 {
@@ -138,10 +138,8 @@ void MyPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node)
 
 void MyPhysicsManager::DeleteRigidBody(SceneGeometryNode& node)
 {
-    RigidBody* rigidBody = reinterpret_cast<RigidBody*>(node.UnlinkRigidBody());
-    if(rigidBody) {
-        delete rigidBody;
-    }
+    auto* rigidBody = reinterpret_cast<RigidBody*>(node.UnlinkRigidBody());
+    delete rigidBody;
 }
 
 int MyPhysicsManager::CreateRigidBodies()
@@ -149,7 +147,7 @@ int MyPhysicsManager::CreateRigidBodies()
     auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
-    for (auto _it : scene.GeometryNodes)
+    for (const auto& _it : scene.GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode)
@@ -169,7 +167,7 @@ void MyPhysicsManager::ClearRigidBodies()
     auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
-    for (auto _it : scene.GeometryNodes)
+    for (const auto& _it : scene.GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode)
@@ -181,7 +179,7 @@ void MyPhysicsManager::ClearRigidBodies()
 
 Matrix4X4f MyPhysicsManager::GetRigidBodyTransform(void* rigidBody)
 {
-    RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+    auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
     auto motionState = _rigidBody->GetMotionState();
     return motionState->GetTransition();
 }
@@ -197,13 +195,13 @@ void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force)
         auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
         // Geometries
-        for (auto _it : scene.GeometryNodes)
+        for (const auto& _it : scene.GeometryNodes)
         {
             auto pGeometryNode = _it.second.lock();
             if (pGeometryNode)
             {
                 if (void* rigidBody = pGeometryNode->RigidBody()) {
-                    RigidBody* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                    auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
                     auto motionState = _rigidBody->GetMotionState();
                     auto centerOfMass = motionState->GetCenterOfMassOffset();
                     auto trans = motionState->GetTransition();

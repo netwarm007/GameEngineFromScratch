@@ -1,9 +1,9 @@
 #pragma once
 #include "BasePass.hpp"
 #include "ForwardRenderPhase.hpp"
+#include "HUDPhase.hpp"
 #include "SkyBoxPhase.hpp"
 #include "TerrainPhase.hpp"
-#include "HUDPhase.hpp"
 
 namespace My {
     class ForwardGeometryPass: public BasePass
@@ -19,6 +19,6 @@ namespace My {
             m_DrawPhases.push_back(std::make_shared<HUDPhase>());
         }
 
-        ~ForwardGeometryPass() = default;
+        ~ForwardGeometryPass() override = default;
     };
 }

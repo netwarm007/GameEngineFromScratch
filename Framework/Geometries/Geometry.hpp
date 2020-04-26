@@ -1,7 +1,7 @@
 #pragma once
-#include <limits>
 #include "aabb.hpp"
 #include "portable.hpp"
+#include <limits>
 
 namespace My {
     ENUM(GeometryType) {
@@ -18,7 +18,7 @@ namespace My {
     class Geometry 
     {
         public:
-            Geometry(GeometryType geometry_type) : m_kGeometryType(geometry_type) {};
+            explicit Geometry(GeometryType geometry_type) : m_kGeometryType(geometry_type) {};
             Geometry() = delete;
             virtual ~Geometry() = default;
 
@@ -31,7 +31,7 @@ namespace My {
 
 	        // GetAngularMotionDisc returns the maximum radius needed for Conservative Advancement to handle 
             // time-of-impact with rotations.
-	        virtual float GetAngularMotionDisc() const;
+	        [[nodiscard]] virtual float GetAngularMotionDisc() const;
 
             // CalculateTemporalAabb calculates the enclosing aabb for the moving object over interval [0..timeStep)
             // result is conservative
@@ -42,7 +42,7 @@ namespace My {
                                         Vector3f& temporalAabbMin,
                                         Vector3f& temporalAabbMax) const;
 
-            GeometryType GetGeometryType() const { return m_kGeometryType; };
+            [[nodiscard]] GeometryType GetGeometryType() const { return m_kGeometryType; };
 
         protected:
             GeometryType m_kGeometryType;

@@ -1,7 +1,7 @@
 #pragma once
+#include "ImageParser.hpp"
 #include <cstdio>
 #include <cstring>
-#include "ImageParser.hpp"
 
 namespace My {
     static inline void 
@@ -22,16 +22,16 @@ namespace My {
     class HdrParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
             char* pData = reinterpret_cast<char*>(buf.GetData());
             auto remain_size = buf.GetDataSize();
 
-            if (std::strncmp(pData, "#?RADIANCE\n", sizeof("#?RADIANCE\n")))
+            if (std::strncmp(pData, "#?RADIANCE\n", sizeof("#?RADIANCE\n")) == 0)
             {
                 std::cerr << "Image File is HDR format" << std::endl;
-                pData += sizeof("#?RADIANCE");
+                pData += sizeof("#?RADIANCE\n");
 
                 // process the header
                 while(*pData != '\n')
@@ -67,6 +67,7 @@ namespace My {
                 // process dimension
                 assert(remain_size > 8);
 
+                // bypass '\n'
                 pData++;
                 remain_size--;
 
@@ -97,58 +98,60 @@ namespace My {
                     img.Height = dimension2;
                 }
 
+                pData = p + 1;
                 assert(remain_size);
-                *p++ = '\n';
                 remain_size--;
 
-                pData = p;
-                assert(remain_size);
-            }
+                img.bitcount = 32 * 3; // float[3]
+                img.pitch = (img.bitcount >> 3) * img.Width;
+                img.data_size = img.pitch * img.Height;
+                img.data = new uint8_t[img.data_size];
 
-            img.bitcount = 32 * 3; // float[3]
-            img.pitch = (img.bitcount >> 3) * img.Width;
-            img.data_size = img.pitch * img.Height;
-            img.data = new uint8_t[img.data_size];
-
-            // now data section
-            assert(remain_size <= 4 * img.Height * img.Width);
-            float r, g, b;
-            unsigned char (*pRGBE)[4] = reinterpret_cast<unsigned char (*)[4]>(pData);
-            float (*pOutData)[3] = reinterpret_cast<float (*)[3]>(img.data);
-            if ((*pRGBE)[0] == 2 && (*pRGBE)[1] == 2 && (*pRGBE)[2] == img.Width >> 8 && (*pRGBE)[3] == (img.Width & 0xFF))
-            {
-                // the file IS run lenght encoded
-                std::cerr << "The file *IS* run-length encoded" << std::endl;
-            }
-            else {
-                std::cerr << "The file is *NOT* run-length encoded" << std::endl;
-                // the file is NOT run lenght encoded
-                while (remain_size)
+                // now data section
+                assert(remain_size <= 4 * img.Height * img.Width);
+                assert(remain_size % 4 == 0);
+                float r{0.0f}, g{0.0f}, b{0.0f};
+                auto* pRGBE = reinterpret_cast<unsigned char (*)[4]>(pData);
+                auto* pOutData = reinterpret_cast<float (*)[3]>(img.data);
+                if ((*pRGBE)[0] == 2 && (*pRGBE)[1] == 2 && (*pRGBE)[2] == img.Width >> 8 && (*pRGBE)[3] == (img.Width & 0xFF))
                 {
-                    if ((*pRGBE)[0] == 255 && (*pRGBE)[1] == 255 && (*pRGBE)[2] == 255)
+                    // the file IS run lenght encoded
+                    std::cerr << "The file *IS* run-length encoded" << std::endl;
+                }
+                else {
+                    std::cerr << "The file is *NOT* run-length encoded" << std::endl;
+                    // the file is NOT run lenght encoded
+                    while (remain_size)
                     {
-                        uint8_t repeat_times = (*pRGBE)[3];
-                        for (uint8_t i = 0; i < repeat_times; i++)
+                        if ((*pRGBE)[0] == 255 && (*pRGBE)[1] == 255 && (*pRGBE)[2] == 255)
                         {
+                            uint8_t repeat_times = (*pRGBE)[3];
+                            for (uint8_t i = 0; i < repeat_times; i++)
+                            {
+                                (*pOutData)[0] = r;
+                                (*pOutData)[1] = g;
+                                (*pOutData)[2] = b;
+                                pOutData++;
+                            }
+
+                            remain_size -= 4;
+                            pRGBE++;
+                        }
+                        else
+                        {
+                            rgbe2float(&r, &g, &b, *pRGBE);
                             (*pOutData)[0] = r;
                             (*pOutData)[1] = g;
                             (*pOutData)[2] = b;
+
+                            remain_size -= 4;
+                            pRGBE++;
+                            pOutData++;
                         }
-
-                        remain_size -= 4;
-                        pRGBE++;
-                    }
-                    
-                    rgbe2float(&r, &g, &b, *pRGBE);
-                    (*pOutData)[0] = r;
-                    (*pOutData)[1] = g;
-                    (*pOutData)[2] = b;
-
-                    remain_size -= 4;
-                    pRGBE++;
-                    pOutData++;
-                } 
+                    } 
+                }
             }
+
 
             img.mipmaps[0].Width = img.Width; 
             img.mipmaps[0].Height = img.Height; 

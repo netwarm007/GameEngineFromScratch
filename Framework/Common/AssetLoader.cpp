@@ -20,24 +20,24 @@ void AssetLoader::Tick()
 
 bool AssetLoader::AddSearchPath(const char *path)
 {
-    std::vector<std::string>::iterator src = m_strSearchPath.begin();
+    auto src = m_strSearchPath.begin();
 
     while (src != m_strSearchPath.end()) {
-        if (!(*src).compare(path))
+        if (*src == path)
             return true;
         src++;
     }
 
-    m_strSearchPath.push_back(path);
+    m_strSearchPath.emplace_back(path);
     return true;
 }
 
 bool AssetLoader::RemoveSearchPath(const char *path)
 {
-    std::vector<std::string>::iterator src = m_strSearchPath.begin();
+    auto src = m_strSearchPath.begin();
 
     while (src != m_strSearchPath.end()) {
-        if (!(*src).compare(path)) {
+        if (*src == path) {
             m_strSearchPath.erase(src);
             return true;
         }
@@ -70,7 +70,7 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
 #endif
     std::string fullPath;
     for (int32_t i = 0; i < 10; i++) {
-        std::vector<std::string>::iterator src = m_strSearchPath.begin();
+        auto src = m_strSearchPath.begin();
         bool looping = true;
         while (looping) {
             fullPath.assign(upPath);  // reset to current upPath.

@@ -1,9 +1,9 @@
 #pragma once
-#include "BaseSceneObject.hpp"
 #include "Animatable.hpp"
-#include "SceneObjectTransform.hpp"
+#include "BaseSceneObject.hpp"
 #include "Curve.hpp"
 #include "SceneObjectTrack.hpp"
+#include "SceneObjectTransform.hpp"
 
 namespace My {
     class SceneObjectAnimationClip : public BaseSceneObject, implements Animatable<float>
@@ -14,7 +14,7 @@ namespace My {
 
         public:
             SceneObjectAnimationClip() = delete;
-            SceneObjectAnimationClip(int index) : BaseSceneObject(SceneObjectType::kSceneObjectTypeAnimationClip),
+            explicit SceneObjectAnimationClip(int index) : BaseSceneObject(SceneObjectType::kSceneObjectTypeAnimationClip),
                 m_nIndex(index)
             {}
             int GetIndex() { return m_nIndex; }

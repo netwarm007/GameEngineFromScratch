@@ -1,25 +1,25 @@
 #pragma once
-#include <vector>
-#include <unordered_map>
-#include <string>
 #include "GraphicsManager.hpp"
-#include "geommath.hpp"
-#include "SceneManager.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
+#include "SceneManager.hpp"
+#include "geommath.hpp"
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace My {
     class OpenGLGraphicsManagerCommonBase : public GraphicsManager
     {
     public:
         // overrides
-        int Initialize() = 0;
+        int Initialize() override = 0;
 
         void Present() final;
 
         void ResizeCanvas(int32_t width, int32_t height) final;
 
-        void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
+        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) final;
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
@@ -65,7 +65,7 @@ namespace My {
         void DrawCubeMapArrayOverlay(const int32_t cubemap, const float layer_index, 
                                      const float vp_left, const float vp_top, const float vp_width, const float vp_height, 
                                      const float level) final;
-        void RenderDebugBuffers();
+        void RenderDebugBuffers() override;
 #endif
 
     private:

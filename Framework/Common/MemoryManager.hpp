@@ -1,9 +1,9 @@
 #pragma once
+#include "IMemoryManager.hpp"
+#include "portable.hpp"
 #include <map>
 #include <new>
 #include <ostream>
-#include "IMemoryManager.hpp"
-#include "portable.hpp"
 
 namespace My {
     ENUM(MemoryType)
@@ -17,14 +17,14 @@ namespace My {
     class MemoryManager : implements IMemoryManager
     {
     public:
-        ~MemoryManager() {}
+        ~MemoryManager() override = default;
 
-        int Initialize();
-        void Finalize();
-        void Tick();
+        int Initialize() override;
+        void Finalize() override;
+        void Tick() override;
 
-        void* AllocatePage(size_t size);
-        void  FreePage(void* p);
+        void* AllocatePage(size_t size) override;
+        void  FreePage(void* p) override;
 
     protected:
         struct MemoryAllocationInfo 

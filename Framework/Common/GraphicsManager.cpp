@@ -1,12 +1,12 @@
-#include <iostream>
-#include <cstring>
 #include "GraphicsManager.hpp"
-#include "SceneManager.hpp"
+#include "BRDFIntegrator.hpp"
+#include "ForwardGeometryPass.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
-#include "ForwardGeometryPass.hpp"
+#include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
-#include "BRDFIntegrator.hpp"
+#include <cstring>
+#include <iostream>
 
 using namespace My;
 using namespace std;
@@ -149,7 +149,7 @@ void GraphicsManager::CalculateLights()
     frameContext.numLights = 0;
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    for (auto LightNode : scene.LightNodes) {
+    for (const auto& LightNode : scene.LightNodes) {
         Light& light = light_info.lights[frameContext.numLights];
         auto pLightNode = LightNode.second.lock();
         if (!pLightNode) continue;
@@ -285,7 +285,7 @@ void GraphicsManager::BeginScene(const Scene& scene)
 {
     m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
 
-    for (auto pPass : m_InitPasses)
+    for (const auto& pPass : m_InitPasses)
     {
         BeginCompute();
         pPass->Dispatch();
@@ -307,7 +307,7 @@ void GraphicsManager::DrawEdgeList(const EdgeList& edges, const Vector3f& color)
 {
     PointList point_list;
 
-    for (auto edge : edges)
+    for (const auto& edge : edges)
     {
         point_list.push_back(edge->first);
         point_list.push_back(edge->second);
@@ -320,7 +320,7 @@ void GraphicsManager::DrawPolygon(const Face& polygon, const Vector3f& color)
 {
     PointSet vertices;
     PointList edges;
-    for (auto pEdge : polygon.Edges)
+    for (const auto& pEdge : polygon.Edges)
     {
         vertices.insert({pEdge->first, pEdge->second});
         edges.push_back(pEdge->first);
@@ -337,7 +337,7 @@ void GraphicsManager::DrawPolygon(const Face& polygon, const Matrix4X4f& trans, 
 {
     PointSet vertices;
     PointList edges;
-    for (auto pEdge : polygon.Edges)
+    for (const auto& pEdge : polygon.Edges)
     {
         vertices.insert({pEdge->first, pEdge->second});
         edges.push_back(pEdge->first);
@@ -352,7 +352,7 @@ void GraphicsManager::DrawPolygon(const Face& polygon, const Matrix4X4f& trans, 
 
 void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3f& color)
 {
-    for (auto pFace : polyhedron.Faces)
+    for (const auto& pFace : polyhedron.Faces)
     {
         DrawPolygon(*pFace, color);
     }
@@ -360,7 +360,7 @@ void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Vector3
 
 void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans, const Vector3f& color)
 {
-    for (auto pFace : polyhedron.Faces)
+    for (const auto& pFace : polyhedron.Faces)
     {
         DrawPolygon(*pFace, trans, color);
     }
@@ -378,8 +378,8 @@ void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, cons
 
     // vertices
     PointPtr points[8];
-    for (int i = 0; i < 8; i++)
-        points[i] = make_shared<Point>(bbMin);
+    for (auto & point : points)
+        point = make_shared<Point>(bbMin);
     *points[0] = *points[2] = *points[3] = *points[7] = bbMax;
     points[0]->data[0] = bbMin[0];
     points[2]->data[1] = bbMin[1];

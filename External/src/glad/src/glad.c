@@ -597,10 +597,10 @@
         Too many extensions
 */
 
+#include <glad/glad.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glad/glad.h>
 
 static void* get_proc(const char *namez);
 
@@ -722,7 +722,7 @@ static int max_loaded_minor;
 
 static const char *exts = NULL;
 static int num_exts_i = 0;
-static const char **exts_i = NULL;
+static char **exts_i = NULL;
 
 static int get_exts(void) {
 #ifdef _GLAD_IS_SOME_NEW_VERSION

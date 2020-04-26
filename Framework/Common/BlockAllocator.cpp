@@ -1,8 +1,8 @@
+#include "BlockAllocator.hpp"
+#include "MemoryManager.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
-#include "BlockAllocator.hpp"
-#include "MemoryManager.hpp"
 
 #ifndef ALIGN
 #define ALIGN(x, a)         (((x) + ((a) - 1)) & ~((a) - 1))
@@ -11,12 +11,8 @@
 using namespace My;
 using namespace std;
 
-BlockAllocator::BlockAllocator()
-        : m_pPageList(nullptr), m_pFreeList(nullptr), 
-        m_szPageSize(0), 
-        m_szAlignmentSize(0), m_szBlockSize(0), m_nBlocksPerPage(0) 
-{
-}
+BlockAllocator::BlockAllocator() = default;
+         
 
 BlockAllocator::BlockAllocator(size_t data_size, size_t page_size, size_t alignment)
         : m_pPageList(nullptr), m_pFreeList(nullptr)
@@ -59,7 +55,7 @@ void* BlockAllocator::Allocate()
 {
     if (!m_pFreeList) {
         // allocate a new page
-        PageHeader* pNewPage = reinterpret_cast<PageHeader*>(g_pMemoryManager->AllocatePage(m_szPageSize));
+        auto* pNewPage = reinterpret_cast<PageHeader*>(g_pMemoryManager->AllocatePage(m_szPageSize));
         ++m_nPages;
         m_nBlocks += m_nBlocksPerPage;
         m_nFreeBlocks += m_nBlocksPerPage;
@@ -100,7 +96,7 @@ void* BlockAllocator::Allocate()
 
 void BlockAllocator::Free(void* p)
 {
-    BlockHeader* block = reinterpret_cast<BlockHeader*>(p);
+    auto* block = reinterpret_cast<BlockHeader*>(p);
 
 #if defined(_DEBUG)
     FillFreeBlock(block);

@@ -1,7 +1,7 @@
+#include "MemoryManager.hpp"
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
-#include "MemoryManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -9,7 +9,7 @@ using namespace std;
 namespace My {
     std::ostream& operator<< (std::ostream& out, MemoryType type)
     {
-        int32_t n = static_cast<int32_t>(type);
+        auto n = static_cast<int32_t>(type);
         n = endian_net_unsigned_int<int32_t>(n);
         char* c = reinterpret_cast<char*>(&n);
          
@@ -28,7 +28,7 @@ int MemoryManager::Initialize()
 
 void MemoryManager::Finalize()
 {
-    assert(m_mapMemoryAllocationInfo.size() == 0);
+    assert(m_mapMemoryAllocationInfo.empty());
 }
 
 void MemoryManager::Tick()

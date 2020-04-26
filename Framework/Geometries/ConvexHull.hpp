@@ -7,10 +7,10 @@ namespace My {
     {
     public:
         ConvexHull() = default;
-        ~ConvexHull() = default;
+        ~ConvexHull() override = default;
 
-        ConvexHull(PointSet& point_set) : m_PointSet(point_set) {};
-        ConvexHull(PointSet&& point_set) : m_PointSet(std::move(point_set)) {};
+        explicit ConvexHull(PointSet& point_set) : m_PointSet(point_set) {};
+        explicit ConvexHull(PointSet&& point_set) : m_PointSet(std::move(point_set)) {};
 
     public:
         void AddPoint(const Point& new_point) { m_PointSet.insert(std::make_shared<Point>(new_point)); m_bFullyBuild = false; }
@@ -28,8 +28,8 @@ namespace My {
 
             return !m_bFullyBuild;
         }
-        const PointSet GetPointSet() const { return m_PointSet; }
-        const Polyhedron GetHull() const { return *static_cast<const Polyhedron*>(this); }
+        [[nodiscard]] PointSet GetPointSet() const { return m_PointSet; }
+        [[nodiscard]] Polyhedron GetHull() const { return *static_cast<const Polyhedron*>(this); }
 
     protected:
         PointSet m_PointSet;

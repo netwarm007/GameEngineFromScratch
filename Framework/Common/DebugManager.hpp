@@ -6,17 +6,17 @@ namespace My {
     class DebugManager : implements IRuntimeModule
     {
     public:
-        int Initialize();
-        void Finalize();
-        void Tick();
+        int Initialize() override;
+        void Finalize() override;
+        void Tick() override;
 
         void ToggleDebugInfo();
 
-        void DrawDebugInfo();
+        void DrawDebugInfo() override;
 
     protected:
-        void DrawAxis();
-        void DrawGrid();
+        static void DrawAxis();
+        static void DrawGrid();
 
         bool m_bDrawDebugInfo = false;
     };

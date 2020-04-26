@@ -1,14 +1,14 @@
 #pragma once
-#include <cstdio>
-#include <iostream>
-#include <string>
-#include <cassert>
-#include <queue>
-#include <algorithm>
-#include "config.h"
 #include "ImageParser.hpp"
+#include "config.h"
 #include "portable.hpp"
 #include "zlib.h"
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+#include <queue>
+#include <string>
 
 namespace My {
 #pragma pack(push, 1)
@@ -97,7 +97,7 @@ namespace My {
         uint8_t  m_BytesPerPixel;
 
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
 
@@ -109,15 +109,15 @@ namespace My {
             uint8_t* imageDataStartPos = nullptr;
             uint8_t* imageDataEndPos = nullptr;
 
-            const PNG_FILEHEADER* pFileHeader = reinterpret_cast<const PNG_FILEHEADER*>(pData);
+            const auto* pFileHeader = reinterpret_cast<const PNG_FILEHEADER*>(pData);
             pData += sizeof(PNG_FILEHEADER);
             if (pFileHeader->Signature == endian_net_unsigned_int((uint64_t)0x89504E470D0A1A0A)) {
                 std::cerr << "Asset is PNG file" << std::endl;
 
                 while(pData < pDataEnd)
                 {
-                    const PNG_CHUNK_HEADER * pChunkHeader = reinterpret_cast<const PNG_CHUNK_HEADER*>(pData);
-                    PNG_CHUNK_TYPE type = static_cast<PNG_CHUNK_TYPE>(endian_net_unsigned_int(static_cast<uint32_t>(pChunkHeader->Type)));
+                    const auto * pChunkHeader = reinterpret_cast<const PNG_CHUNK_HEADER*>(pData);
+                    auto type = static_cast<PNG_CHUNK_TYPE>(endian_net_unsigned_int(static_cast<uint32_t>(pChunkHeader->Type)));
                     uint32_t chunk_data_size = endian_net_unsigned_int(pChunkHeader->Length);
 
 #if DUMP_DETAILS
@@ -132,7 +132,7 @@ namespace My {
                                 std::cerr << "IHDR (Image Header)" << std::endl;
                                 std::cerr << "----------------------------" << std::endl;
 #endif
-                                const PNG_IHDR_HEADER* pIHDRHeader = reinterpret_cast<const PNG_IHDR_HEADER*>(pData);
+                                const auto* pIHDRHeader = reinterpret_cast<const PNG_IHDR_HEADER*>(pData);
                                 m_Width = endian_net_unsigned_int(pIHDRHeader->Width);
                                 m_Height = endian_net_unsigned_int(pIHDRHeader->Height);
                                 m_BitDepth = pIHDRHeader->BitDepth;
@@ -241,9 +241,10 @@ namespace My {
                                 if(!imageDataStarted) {
                                     std::cerr << "PNG file looks corrupted. Found IEND before IDAT." << std::endl;
                                     break;
-                                } else {
-                                    imageDataEnded = true;
-                                }
+                                } 
+
+                                imageDataEnded = true;
+                                
 
                                 const uint32_t kChunkSize = 256 * 1024;
                                 z_stream strm;
@@ -261,8 +262,8 @@ namespace My {
                                 }
 
                                 const uint8_t* pIn = imageDataStartPos;  // point to the start of the input data buffer
-                                uint8_t* pOut = reinterpret_cast<uint8_t*>(img.data);  // point to the start of the input data buffer
-                                uint8_t* pDecompressedBuffer = new uint8_t[kChunkSize];
+                                auto* pOut = reinterpret_cast<uint8_t*>(img.data);  // point to the start of the input data buffer
+                                auto* pDecompressedBuffer = new uint8_t[kChunkSize];
                                 uint8_t filter_type = 0;
                                 int current_row = 0;
                                 int current_col = -1;   // -1 means we need read filter type
@@ -394,14 +395,14 @@ namespace My {
             {
                 if (img.bitcount <= 64)
                 {
-                    for (uint16_t* p = reinterpret_cast<uint16_t*>(img.data); p < reinterpret_cast<uint16_t*>(img.data + img.data_size); p++)
+                    for (auto* p = reinterpret_cast<uint16_t*>(img.data); p < reinterpret_cast<uint16_t*>(img.data + img.data_size); p++)
                     {
                         *p = endian_net_unsigned_int(*p);
                     }
                 }
                 else
                 {
-                    for (uint32_t* p = reinterpret_cast<uint32_t*>(img.data); p < reinterpret_cast<uint32_t*>(img.data + img.data_size); p++)
+                    for (auto* p = reinterpret_cast<uint32_t*>(img.data); p < reinterpret_cast<uint32_t*>(img.data + img.data_size); p++)
                     {
                         *p = endian_net_unsigned_int(*p);
                     }

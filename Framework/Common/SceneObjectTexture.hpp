@@ -1,13 +1,17 @@
 #pragma once
-#include "BaseSceneObject.hpp"
-#include "geommath.hpp"
-#include "JPEG.hpp"
-#include "PNG.hpp"
+#include <utility>
+
+
+
+#include "AssetLoader.hpp"
 #include "BMP.hpp"
-#include "TGA.hpp"
+#include "BaseSceneObject.hpp"
 #include "DDS.hpp"
 #include "HDR.hpp"
-#include "AssetLoader.hpp"
+#include "JPEG.hpp"
+#include "PNG.hpp"
+#include "TGA.hpp"
+#include "geommath.hpp"
 
 namespace My {
     class SceneObjectTexture : public BaseSceneObject
@@ -19,22 +23,22 @@ namespace My {
             std::vector<Matrix4X4f> m_Transforms;
 
         public:
-            SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(0) {};
-            SceneObjectTexture(const std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_Name(name), m_nTexCoordIndex(0) {};
+            SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture) {};
+            explicit SceneObjectTexture(std::string  name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_Name(std::move(name)), m_nTexCoordIndex(0) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(image) {};
             SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>&& image) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(std::move(image)) {};
             SceneObjectTexture(SceneObjectTexture&&) = default;
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); };
             void SetName(const std::string& name) { m_Name = name; };
             void SetName(std::string&& name) { m_Name = std::move(name); };
-            const std::string& GetName() const { return m_Name; };
+            [[nodiscard]] const std::string& GetName() const { return m_Name; };
             void LoadTexture() {
                 if (!m_pImage)
                 {
                     // we should lookup if the texture has been loaded already to prevent
                     // duplicated load. This could be done in Asset Loader Manager.
                     Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
-                    std::string ext = m_Name.substr(m_Name.find_last_of("."));
+                    std::string ext = m_Name.substr(m_Name.find_last_of('.'));
                     if (ext == ".jpg" || ext == ".jpeg")
                     {
                         JfifParser jfif_parser;
@@ -76,7 +80,7 @@ namespace My {
                     // DXGI does not have 24bit formats so we have to extend it to 32bit
                     uint32_t new_pitch = m_pImage->pitch / 3 * 4;
                     size_t data_size = new_pitch * m_pImage->Height;
-                    uint8_t* data = new uint8_t[data_size];
+                    auto* data = new uint8_t[data_size];
                     uint8_t* buf;
                     uint8_t* src;
                     for (uint32_t row = 0; row < m_pImage->Height; row++) {
@@ -109,7 +113,7 @@ namespace My {
                     // DXGI does not have 48bit formats so we have to extend it to 64bit
                     uint32_t new_pitch = m_pImage->pitch / 3 * 4;
                     size_t data_size = new_pitch * m_pImage->Height;
-                    uint8_t* data = new uint8_t[data_size];
+                    auto* data = new uint8_t[data_size];
                     uint8_t* buf;
                     uint8_t* src;
                     for (uint32_t row = 0; row < m_pImage->Height; row++) {

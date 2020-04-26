@@ -1,14 +1,14 @@
 #pragma once
+#include "Polyhedron.hpp"
+#include "geommath.hpp"
 #include <functional>
 #include <limits>
 #include <list>
-#include "geommath.hpp"
-#include "Polyhedron.hpp"
 
 namespace My {
-    typedef std::function<const Point(const Vector3f&)> SupportFunction;
+    using SupportFunction = std::function<const Point (const Vector3f &)>;
 
-    void NearestPointInTriangleToPoint(const PointList& vertices, const Point& point, float& s, float& t)
+    inline void NearestPointInTriangleToPoint(const PointList& vertices, const Point& point, float& s, float& t)
     {
         assert(vertices.size() == 3);
         auto A = vertices[0];
@@ -108,10 +108,10 @@ namespace My {
         }
     }
 
-    int GjkIntersection(const SupportFunction& a, const SupportFunction& b, Vector3f& direction, PointList& simplex)
+    inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b, Vector3f& direction, PointList& simplex)
     {
         Point A;
-        if (simplex.size() == 0)
+        if (simplex.empty())
         {
             // initialize
             A = a(direction) - b(direction * -1.0f);
@@ -235,7 +235,7 @@ namespace My {
                     Polyhedron tetrahedron;
                     tetrahedron.AddTetrahedron(simplex);
                     FacePtr pNextFace = nullptr;
-                    for (auto pFace : tetrahedron.Faces)
+                    for (const auto& pFace : tetrahedron.Faces)
                     {
                         if (isPointAbovePlane(pFace, Point(0.0f)))   
                         {
@@ -249,50 +249,49 @@ namespace My {
                         // the origin is inside the tetrahedron
                         return 1;
                     }
-                    else
+                    
+                    
+                    float s, t;
+                    auto A = pNextFace->Edges[0]->first;
+                    auto B = pNextFace->Edges[1]->first;
+                    auto C = pNextFace->Edges[2]->first;
+
+                    PointList vertices;
+                    vertices.push_back(A);
+                    vertices.push_back(B);
+                    vertices.push_back(C);
+                    NearestPointInTriangleToPoint(vertices, Point(0.0f), s, t);
+
+                    if (s < std::numeric_limits<float>::epsilon())
                     {
-                        float s, t;
-                        auto A = pNextFace->Edges[0]->first;
-                        auto B = pNextFace->Edges[1]->first;
-                        auto C = pNextFace->Edges[2]->first;
-
-                        PointList vertices;
-                        vertices.push_back(A);
-                        vertices.push_back(B);
-                        vertices.push_back(C);
-                        NearestPointInTriangleToPoint(vertices, Point(0.0f), s, t);
-
-                        if (s < std::numeric_limits<float>::epsilon())
-                        {
-                            // P is on edge 1 (AC) so B can be removed
-                            simplex.clear();
-                            simplex = {A, C};
-                        }
-
-                        if (t < std::numeric_limits<float>::epsilon())
-                        {
-                            // P is on edge 0 (AB) so C can be removed
-                            simplex.clear();
-                            simplex = {A, B};
-                        }
-
-                        if (abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon())
-                        {
-                            // P is on edge 3 (BC) so A can be removed
-                            simplex.clear();
-                            simplex = {B, C};
-                        }
-
-                        if (simplex.size() == 4)
-                        {
-                            simplex.clear();
-                            simplex = {A, B, C};
-                        }
-
-                        P = *A + (*B - *A) * s + (*C - *A) * t;
-
-                        direction = P * -1.0f;
+                        // P is on edge 1 (AC) so B can be removed
+                        simplex.clear();
+                        simplex = {A, C};
                     }
+
+                    if (t < std::numeric_limits<float>::epsilon())
+                    {
+                        // P is on edge 0 (AB) so C can be removed
+                        simplex.clear();
+                        simplex = {A, B};
+                    }
+
+                    if (abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon())
+                    {
+                        // P is on edge 3 (BC) so A can be removed
+                        simplex.clear();
+                        simplex = {B, C};
+                    }
+
+                    if (simplex.size() == 4)
+                    {
+                        simplex.clear();
+                        simplex = {A, B, C};
+                    }
+
+                    P = *A + (*B - *A) * s + (*C - *A) * t;
+
+                    direction = P * -1.0f;
                 }
                 break;
             default:
@@ -309,11 +308,11 @@ namespace My {
         return -1;
     }
 
-    const Point ConvexPolyhedronSupportFunction(const Polyhedron& polyhedron, const Vector3f& direction)
+    inline Point ConvexPolyhedronSupportFunction(const Polyhedron& polyhedron, const Vector3f& direction)
     {
         float max_score = std::numeric_limits<float>::lowest();
         PointPtr extreme_point;
-        for (auto pFace : polyhedron.Faces)
+        for (const auto& pFace : polyhedron.Faces)
         {
             float score;
             DotProduct(score, pFace->Normal, direction);
@@ -323,7 +322,7 @@ namespace My {
                 continue;
             }
 
-            for (auto pEdge : pFace->Edges)
+            for (const auto& pEdge : pFace->Edges)
             {
                 DotProduct(score, *pEdge->first, direction);
                 if (score > max_score)

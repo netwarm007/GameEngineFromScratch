@@ -1,6 +1,6 @@
-#include <iostream>
-#include <iomanip>
 #include "Bezier.hpp"
+#include <iomanip>
+#include <iostream>
 
 using namespace My;
 using namespace std;

@@ -1,6 +1,7 @@
+#include "portable.hpp"
 #include <memory>
 #include <vector>
-#include "portable.hpp"
+#include <queue>
 
 namespace My {
     template<typename T>
@@ -12,19 +13,19 @@ namespace My {
             bool m_isLeaf = false;
         public:
             HuffmanNode() = default;
-            HuffmanNode(T value) : m_Value(value), m_isLeaf(true) {};
+            explicit HuffmanNode(T value) : m_Value(value), m_isLeaf(true) {};
             ~HuffmanNode() = default;
             HuffmanNode(HuffmanNode&) = default;
-            HuffmanNode(HuffmanNode&&) = default;
+            HuffmanNode(HuffmanNode&&) noexcept = default;
             HuffmanNode& operator=(HuffmanNode&) = default;
-            HuffmanNode& operator=(HuffmanNode&&) = default;
-            bool IsLeaf(void) const { return m_isLeaf; };
+            HuffmanNode& operator=(HuffmanNode&&) noexcept = default;
+            [[nodiscard]] bool IsLeaf() const { return m_isLeaf; };
             void SetLeft(std::shared_ptr<HuffmanNode> pNode) { m_pLeft = pNode; };
             void SetRight(std::shared_ptr<HuffmanNode> pNode) { m_pRight = pNode; };
-            const std::shared_ptr<HuffmanNode<T>> GetLeft(void) const { return m_pLeft; };
-            const std::shared_ptr<HuffmanNode<T>> GetRight(void) const { return m_pRight; };
+            [[nodiscard]] const std::shared_ptr<HuffmanNode<T>> GetLeft() const { return m_pLeft; };
+            [[nodiscard]] const std::shared_ptr<HuffmanNode<T>> GetRight() const { return m_pRight; };
             void SetValue(T value) { m_Value = value; m_isLeaf = true; };
-            T GetValue() const { return m_Value; };
+            [[nodiscard]] T GetValue() const { return m_Value; };
     };
 
     template<typename T>
@@ -33,7 +34,7 @@ namespace My {
             std::shared_ptr<HuffmanNode<T>> m_pRoot;
 
         private:
-            void recursiveDump(const std::shared_ptr<HuffmanNode<T>>& pNode, std::string bit_stream)
+            void recursiveDump(const std::shared_ptr<HuffmanNode<T>>& pNode, const std::string& bit_stream)
             {
                 if (pNode) {
                     if (pNode->IsLeaf()) {
@@ -68,9 +69,9 @@ namespace My {
                         {
                             // simply move to upper layer
                             continue;
-                        } else {
-                            found_bottom = true;
-                        }
+                        } 
+
+                        found_bottom = true;
                     }
 
                     auto childrenCount = node_queue.size();
@@ -107,7 +108,7 @@ namespace My {
                 }
 
                 // now append to the root node
-                assert(node_queue.size() <= 2 && node_queue.size() > 0);
+                assert(node_queue.size() <= 2 && !node_queue.empty());
                 auto pLeftNode = node_queue.front();
                 node_queue.pop();
                 m_pRoot->SetLeft(pLeftNode);

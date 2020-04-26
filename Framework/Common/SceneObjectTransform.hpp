@@ -1,7 +1,7 @@
 #pragma once
+#include "Animatable.hpp"
 #include "BaseSceneObject.hpp"
 #include "geommath.hpp"
-#include "Animatable.hpp"
 
 namespace My {
     class SceneObjectTransform : public BaseSceneObject, 
@@ -15,25 +15,25 @@ namespace My {
             SceneObjectTransform() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTransform) 
             { BuildIdentityMatrix(m_matrix); m_bSceneObjectOnly = false; }
 
-            SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) : SceneObjectTransform() 
+            explicit SceneObjectTransform(const Matrix4X4f& matrix, const bool object_only = false) : SceneObjectTransform() 
             { m_matrix = matrix; m_bSceneObjectOnly = object_only; }
 
-            operator Matrix4X4f() { return m_matrix; }
-            operator const Matrix4X4f() const { return m_matrix; }
+            explicit operator Matrix4X4f() { return m_matrix; }
+            explicit operator const Matrix4X4f() const { return m_matrix; }
 
-            void Update(const float amount) 
+            void Update(const float amount) override 
             {
                 // should not be used.
                 assert(0);
             }
 
-            void Update(const Vector3f amount) 
+            void Update(const Vector3f amount) override 
             {
                 // should not be used.
                 assert(0);
             }
 
-            void Update(const Quaternion<float> amount) 
+            void Update(const Quaternion<float> amount) override 
             {
                 // should not be used.
                 assert(0);
@@ -148,7 +148,7 @@ namespace My {
             }
 
             template<typename T>
-            SceneObjectRotation(const Quaternion<T> quaternion, const bool object_only = false)
+            explicit SceneObjectRotation(const Quaternion<T> quaternion, const bool object_only = false)
                 : SceneObjectRotation()
             {
                 m_Kind = 0;

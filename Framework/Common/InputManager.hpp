@@ -5,9 +5,9 @@ namespace My {
     class InputManager : implements IRuntimeModule
     {
         public:
-            virtual int Initialize();
-            virtual void Finalize();
-            virtual void Tick();
+            int Initialize() override;
+            void Finalize() override;
+            void Tick() override;
 
             // keyboard handling
             void UpArrowKeyDown();
@@ -19,13 +19,13 @@ namespace My {
             void RightArrowKeyDown();
             void RightArrowKeyUp();
 
-            void AsciiKeyDown(char keycode);
-            void AsciiKeyUp(char keycode);
+            static void AsciiKeyDown(char keycode);
+            static void AsciiKeyUp(char keycode);
 
             // mouse handling
-            void LeftMouseButtonDown();
-            void LeftMouseButtonUp();
-            void LeftMouseDrag(int deltaX, int deltaY);
+            static void LeftMouseButtonDown();
+            static void LeftMouseButtonUp();
+            static void LeftMouseDrag(int deltaX, int deltaY);
 
         protected:
             bool m_bUpKeyPressed    = false;

@@ -1,6 +1,6 @@
 #pragma once
-#include <iostream>
 #include "ImageParser.hpp"
+#include <iostream>
 
 namespace My {
 #pragma pack(push, 1)
@@ -31,11 +31,11 @@ namespace My {
     class BmpParser : implements ImageParser
     {
     public:
-        virtual Image Parse(Buffer& buf)
+        Image Parse(Buffer& buf) override
         {
             Image img;
-            const BITMAP_FILEHEADER* pFileHeader = reinterpret_cast<const BITMAP_FILEHEADER*>(buf.GetData());
-            const BITMAP_HEADER* pBmpHeader = reinterpret_cast<const BITMAP_HEADER*>(reinterpret_cast<const uint8_t*>(buf.GetData())+ BITMAP_FILEHEADER_SIZE);
+            const auto* pFileHeader = reinterpret_cast<const BITMAP_FILEHEADER*>(buf.GetData());
+            const auto* pBmpHeader = reinterpret_cast<const BITMAP_HEADER*>(reinterpret_cast<const uint8_t*>(buf.GetData())+ BITMAP_FILEHEADER_SIZE);
             if (pFileHeader->Signature == 0x4D42 /* 'B''M' */) {
                 std::cerr << "Asset is Windows BMP file" << std::endl;
                 std::cerr << "BMP Header" << std::endl;

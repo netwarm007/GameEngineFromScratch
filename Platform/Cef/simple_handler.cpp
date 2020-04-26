@@ -23,7 +23,7 @@
 using namespace My;
 
 namespace My {
-    static SimpleHandler* g_pInstance = NULL;
+    static SimpleHandler* g_pInstance = nullptr;
 
     // Returns a data: URI with the specified contents.
     std::string GetDataURI(const std::string& data, const std::string& mime_type) {
@@ -42,7 +42,7 @@ SimpleHandler::SimpleHandler(bool use_views)
 
 SimpleHandler::~SimpleHandler() 
 {
-    g_pInstance = NULL;
+    g_pInstance = nullptr;
 }
 
 // static
@@ -103,7 +103,7 @@ void SimpleHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser)
     CEF_REQUIRE_UI_THREAD();
 
     // Remove from the list of existing browsers.
-    BrowserList::iterator bit = browser_list_.begin();
+    auto bit = browser_list_.begin();
     for (; bit != browser_list_.end(); ++bit) {
         if ((*bit)->IsSame(browser)) {
         browser_list_.erase(bit);
@@ -150,7 +150,7 @@ void SimpleHandler::CloseAllBrowsers(bool force_close)
     if (browser_list_.empty())
         return;
 
-    BrowserList::const_iterator it = browser_list_.begin();
+    auto it = browser_list_.begin();
     for (; it != browser_list_.end(); ++it)
     {
         (*it)->GetHost()->CloseBrowser(force_close);

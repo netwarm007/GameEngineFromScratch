@@ -1,10 +1,10 @@
 #pragma once
+#include "SceneObject.hpp"
+#include "Tree.hpp"
+#include "geommath.hpp"
 #include <map>
 #include <string>
 #include <vector>
-#include "geommath.hpp"
-#include "Tree.hpp"
-#include "SceneObject.hpp"
 
 namespace My {
     class BaseSceneNode : public TreeNode {
@@ -20,12 +20,12 @@ namespace My {
 
         public:
             BaseSceneNode() { BuildIdentityMatrix(m_RuntimeTransform); };
-            BaseSceneNode(const std::string& name) { m_strName = name; BuildIdentityMatrix(m_RuntimeTransform); };
-			virtual ~BaseSceneNode() {};
+            explicit BaseSceneNode(const std::string& name) { m_strName = name; BuildIdentityMatrix(m_RuntimeTransform); };
+			~BaseSceneNode() override = default;
 
-            const std::string GetName() const { return m_strName; };
+            [[nodiscard]] std::string GetName() const { return m_strName; };
 
-            void AttachAnimationClip(int clip_index, std::shared_ptr<SceneObjectAnimationClip> clip)
+            void AttachAnimationClip(int clip_index, const std::shared_ptr<SceneObjectAnimationClip>& clip)
             {
                 m_AnimationClips.insert({clip_index, clip});
             }
@@ -55,13 +55,13 @@ namespace My {
                 {
                     return it->second;
                 }
-                else
-                {
-                    return std::shared_ptr<SceneObjectTransform>();
-                }
+                
+                
+                return std::shared_ptr<SceneObjectTransform>();
+                
             }
 
-            const std::shared_ptr<Matrix4X4f> GetCalculatedTransform() const
+            [[nodiscard]] std::shared_ptr<Matrix4X4f> GetCalculatedTransform() const
             {
                 std::shared_ptr<Matrix4X4f> result (new Matrix4X4f());
                 BuildIdentityMatrix(*result);
@@ -117,15 +117,15 @@ namespace My {
             node.dump(out);
             out << std::endl;
 
-            for (auto sub_node : node.m_Children) {
+            for (const auto& sub_node : node.m_Children) {
                 out << *sub_node << std::endl;
             }
 
-            for (auto trans : node.m_Transforms) {
+            for (const auto& trans : node.m_Transforms) {
                 out << *trans << std::endl;
             }
 
-            for (auto anim_clip : node.m_AnimationClips) {
+            for (const auto& anim_clip : node.m_AnimationClips) {
                 out << *anim_clip.second << std::endl;
             }
 
@@ -141,7 +141,7 @@ namespace My {
             std::string m_keySceneObject;
 
         protected:
-            virtual void dump(std::ostream& out) const 
+            void dump(std::ostream& out) const override 
             { 
                 out << m_keySceneObject << std::endl;
             };
@@ -155,6 +155,6 @@ namespace My {
             const std::string& GetSceneObjectRef() { return m_keySceneObject; };
     };
 
-    typedef BaseSceneNode SceneEmptyNode;
+    using SceneEmptyNode = BaseSceneNode;
 
 }

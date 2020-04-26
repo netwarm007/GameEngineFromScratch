@@ -1,5 +1,5 @@
-#include <iostream>
 #include "ColorSpaceConversion.hpp"
+#include <iostream>
 
 using namespace std;
 using namespace My;
