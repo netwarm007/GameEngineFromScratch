@@ -18,12 +18,13 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - checkout
       - run: 
           name: Git LFS Checkout
           command: |
+             git reset --hard
              git lfs fetch
              git checkout
+      - checkout
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -51,13 +52,13 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - checkout
       - run: 
           name: Git LFS Checkout
           command: |
-             git restore .
+             git reset --hard
              git lfs fetch
              git checkout
+      - checkout
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
