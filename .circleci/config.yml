@@ -18,12 +18,10 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run: 
-          name: Git LFS Checkout
+      - run:
+          name: LFS install
           command: |
-             git reset --hard
-             git lfs fetch
-             git checkout
+             git lfs install
       - checkout
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
@@ -52,13 +50,11 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run: 
-          name: Git LFS Checkout
-          command: |
-             git reset --hard
-             git lfs fetch
-             git checkout
       - checkout
+      - run:
+          name: LFS install
+          command: |
+             git lfs install
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
