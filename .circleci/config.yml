@@ -2,7 +2,7 @@ version: 2
 jobs:
   build_linux:
     docker:
-      - image: ubuntu:18.04
+      - image: ubuntu:20.04
     steps:
       - run: 
           name: Install Dependencies
@@ -51,14 +51,11 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run: 
-          name: git restore
-          command: |
-             git restore .
       - checkout
       - run: 
           name: Git LFS Checkout
           command: |
+             git restore .
              git lfs fetch
              git checkout
       - save_cache:
