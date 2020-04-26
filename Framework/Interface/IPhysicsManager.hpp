@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace My {
-    Interface IPhysicsManager : implements IRuntimeModule
+    Interface IPhysicsManager : inheritance IRuntimeModule
     {
     public:
         int Initialize() override = 0;

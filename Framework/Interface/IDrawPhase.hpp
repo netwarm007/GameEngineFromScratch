@@ -3,7 +3,7 @@
 #include "IPhase.hpp"
 
 namespace My {
-    Interface IDrawPhase : public IPhase
+    Interface IDrawPhase : inheritance IPhase
     {
     public:
         IDrawPhase() = default;

@@ -1,50 +1,11 @@
-#include "D3dShaderManager.hpp"
+#include "D3d12PipelineStateManager.hpp"
 #include "AssetLoader.hpp"
 
 using namespace My;
 using namespace std;
 
 #define SHADER_ROOT "Shaders/HLSL/"
-
-#define VS_BASIC_SOURCE_FILE SHADER_ROOT "basic.vert.cso"
-#define PS_BASIC_SOURCE_FILE SHADER_ROOT "basic.frag.cso"
-#define VS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.vert.cso"
-#define PS_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap.frag.cso"
-#define VS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.vert.cso"
-#define PS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.frag.cso"
-#define GS_OMNI_SHADOWMAP_SOURCE_FILE SHADER_ROOT "shadowmap_omni.geom.cso"
-#define DEBUG_VS_SHADER_SOURCE_FILE SHADER_ROOT "debug.vert.cso"
-#define DEBUG_PS_SHADER_SOURCE_FILE SHADER_ROOT "debug.frag.cso"
-#define VS_PASSTHROUGH_SOURCE_FILE SHADER_ROOT "passthrough.vert.cso"
-#define PS_TEXTURE_SOURCE_FILE SHADER_ROOT "texture.frag.cso"
-#define PS_TEXTURE_ARRAY_SOURCE_FILE SHADER_ROOT "texturearray.frag.cso"
-#define VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE SHADER_ROOT "passthrough_cube.vert.cso"
-#define PS_CUBEMAP_SOURCE_FILE SHADER_ROOT "cubemap.frag.cso"
-#define PS_CUBEMAP_ARRAY_SOURCE_FILE SHADER_ROOT "cubemaparray.frag.cso"
-#define VS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.vert.cso"
-#define PS_SKYBOX_SOURCE_FILE SHADER_ROOT "skybox.frag.cso"
-#define VS_PBR_SOURCE_FILE SHADER_ROOT "pbr.vert.cso"
-#define PS_PBR_SOURCE_FILE SHADER_ROOT "pbr.frag.cso"
-#define CS_PBR_BRDF_SOURCE_FILE SHADER_ROOT "integrateBRDF.comp.cso"
-#define VS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.vert.cso"
-#define PS_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.frag.cso"
-#define TESC_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tesc.cso"
-#define TESE_TERRAIN_SOURCE_FILE SHADER_ROOT "terrain.tese.cso"
-
-int D3dShaderManager::Initialize()
-{
-    return InitializeShaders() == false;
-}
-
-void D3dShaderManager::Finalize()
-{
-    ClearShaders();
-}
-
-void D3dShaderManager::Tick()
-{
-
-}
+#define SHADER_SUFFIX ".cso"
 
 static void loadShaders(D3dShaderProgram& program, 
                         const char* vs, 
@@ -88,7 +49,7 @@ static void loadShaders(D3dShaderProgram& program,
     program.computeShaderByteCode.pShaderBytecode = computeShader.MoveData();
 }
 
-bool D3dShaderManager::InitializeShaders()
+bool D3d12PipelineStateManager::InitializeShaders()
 {
     HRESULT hr = S_OK;
 
@@ -141,7 +102,7 @@ bool D3dShaderManager::InitializeShaders()
     return hr == S_OK;
 }
 
-void D3dShaderManager::ClearShaders()
+void D3d12PipelineStateManager::ClearShaders()
 {
     for (auto& it : m_DefaultShaders)
     {

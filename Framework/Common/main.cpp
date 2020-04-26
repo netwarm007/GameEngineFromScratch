@@ -5,7 +5,7 @@
 #include "IApplication.hpp"
 #include "IGameLogic.hpp"
 #include "IPhysicsManager.hpp"
-#include "IShaderManager.hpp"
+#include "IPipelineStateManager.hpp"
 #include "InputManager.hpp"
 #include "MemoryManager.hpp"
 #include "SceneManager.hpp"
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
 		return ret;
 	}
 
-	if ((ret = g_pShaderManager->Initialize()) != 0) {
+	if ((ret = g_pPipelineStateManager->Initialize()) != 0) {
         cerr << "Failed. err = " << ret;
 		return ret;
 	}
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 		g_pInputManager->Tick();
 		g_pPhysicsManager->Tick();
 		g_pAnimationManager->Tick();
-		g_pShaderManager->Tick();
+		g_pPipelineStateManager->Tick();
 		g_pGameLogic->Tick();
 		g_pGraphicsManager->Tick();
 	#ifdef DEBUG
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
     g_pAnimationManager->Finalize();
     g_pPhysicsManager->Finalize();
     g_pInputManager->Finalize();
-    g_pShaderManager->Finalize();
+    g_pPipelineStateManager->Finalize();
     g_pGraphicsManager->Finalize();
     g_pSceneManager->Finalize();
     g_pAssetLoader->Finalize();

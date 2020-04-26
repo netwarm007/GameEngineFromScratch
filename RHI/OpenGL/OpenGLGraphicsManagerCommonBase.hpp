@@ -19,7 +19,7 @@ namespace My {
 
         void ResizeCanvas(int32_t width, int32_t height) final;
 
-        void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
+        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) final;
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
         int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;

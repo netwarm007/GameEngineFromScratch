@@ -3,7 +3,7 @@
 #include <cstddef>
 
 namespace My {
-    Interface IMemoryManager : implements IRuntimeModule
+    Interface IMemoryManager : inheritance IRuntimeModule
     {
     public:
         int Initialize() override = 0;

@@ -1,14 +1,14 @@
 #include "TerrainPhase.hpp"
 #include "GraphicsManager.hpp"
-#include "IShaderManager.hpp"
+#include "IPipelineStateManager.hpp"
 
 using namespace My;
 
 void TerrainPhase::Draw(Frame& frame)
 {
-    auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Terrain);
+    auto& pipelineState = g_pPipelineStateManager->GetPipelineState("Terrain");
 
-    g_pGraphicsManager->UseShaderProgram(shaderProgram);
+    g_pGraphicsManager->SetPipelineState(pipelineState);
 
     g_pGraphicsManager->DrawTerrain();
 }

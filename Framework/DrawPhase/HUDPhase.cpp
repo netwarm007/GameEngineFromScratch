@@ -1,6 +1,6 @@
 #include "HUDPhase.hpp"
 #include "GraphicsManager.hpp"
-#include "IShaderManager.hpp"
+#include "IPipelineStateManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -9,9 +9,10 @@ void HUDPhase::Draw(Frame& frame)
 {
 #ifdef DEBUG
     // Draw Shadow Maps
-    auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::CopyArray);
+    g_pGraphicsManager->SetPipelineState(
+        g_pPipelineStateManager->GetPipelineState("Texture Array Debug Output")
+    );
 
-    g_pGraphicsManager->UseShaderProgram(shaderProgram);
 
     float top = 0.95f;
     float left = 0.70f;
@@ -28,9 +29,9 @@ void HUDPhase::Draw(Frame& frame)
         top -= 0.30f;
     }
 
-    shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::CopyCubeArray);
-
-    g_pGraphicsManager->UseShaderProgram(shaderProgram);
+    g_pGraphicsManager->SetPipelineState(
+        g_pPipelineStateManager->GetPipelineState("CubeMap Array Debug Output")
+    );
 
     for (int32_t i = 0; i < frame.frameContext.cubeShadowMapCount; i++)
     {
@@ -39,9 +40,6 @@ void HUDPhase::Draw(Frame& frame)
     }
 
     // Draw Skybox
-    g_pGraphicsManager->UseShaderProgram(shaderProgram);
-
-    // SkyBox
     g_pGraphicsManager->DrawCubeMapArrayOverlay(frame.skybox, 0.0f, left, top, 0.25f, 0.25f, 0.0f);
     top -= 0.30f;
 
@@ -54,8 +52,9 @@ void HUDPhase::Draw(Frame& frame)
     top -= 0.30f;
 
     // BRDF LUT
-    shaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Copy);
-    g_pGraphicsManager->UseShaderProgram(shaderProgram);
+    g_pGraphicsManager->SetPipelineState(
+        g_pPipelineStateManager->GetPipelineState("Texture Debug Output")
+    );
 
     auto brdf_lut = g_pGraphicsManager->GetTexture("BRDF_LUT");
     g_pGraphicsManager->DrawTextureOverlay(brdf_lut, left, top, 0.25f, 0.25f);

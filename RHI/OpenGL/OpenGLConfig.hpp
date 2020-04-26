@@ -1,8 +1,8 @@
 #pragma once
 #include "OpenGL/OpenGLGraphicsManager.hpp"
-#include "OpenGL/OpenGLShaderManager.hpp"
+#include "OpenGL/OpenGLPipelineStateManager.hpp"
 
 namespace My {
     GraphicsManager* g_pGraphicsManager = static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
-    IShaderManager*  g_pShaderManager   = static_cast<IShaderManager*>(new OpenGLShaderManager);
+    IPipelineStateManager*  g_pPipelineStateManager   = static_cast<IPipelineStateManager*>(new OpenGLPipelineStateManager);
 }

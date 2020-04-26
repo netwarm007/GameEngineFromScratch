@@ -107,7 +107,8 @@
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
             },
-            "compileCommands": "${workspaceRoot}/build/compile_commands.json"
+            "compileCommands": "${workspaceRoot}/build/compile_commands.json",
+            "configurationProvider": "vector-of-bool.cmake-tools"
         },
         {
             "name": "Orbis",

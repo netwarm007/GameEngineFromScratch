@@ -4,7 +4,7 @@
 #include "IDispatchPass.hpp"
 #include "IDrawPass.hpp"
 #include "IRuntimeModule.hpp"
-#include "IShaderManager.hpp"
+#include "IPipelineStateManager.hpp"
 #include "Image.hpp"
 #include "Polyhedron.hpp"
 #include "Scene.hpp"
@@ -29,7 +29,7 @@ namespace My {
 
         virtual void ResizeCanvas(int32_t width, int32_t height);
 
-        virtual void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) {}
+        virtual void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) {}
 
         virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) {}
 

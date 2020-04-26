@@ -1,4 +1,4 @@
-#include "OpenGLESShaderManager.hpp"
+#include "OpenGLESPipelineStateManager.hpp"
 
 #if defined(OS_WEBASSEMBLY)
 #define SHADER_ROOT "Shaders/WebGL/"
@@ -11,4 +11,4 @@
 #define GLAD_GL_ARB_compute_shader 0
 #endif
 
-#include "OpenGLShaderManagerCommonBase.cpp"
+#include "OpenGLPipelineStateManagerCommonBase.cpp"

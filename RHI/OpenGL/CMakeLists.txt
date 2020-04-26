@@ -1,14 +1,14 @@
 IF(ANDROID OR WA)
 add_library(OpenGLRHI
         OpenGLESGraphicsManager.cpp
-        OpenGLESShaderManager.cpp
+        OpenGLESPipelineStateManager.cpp
         OpenGLGraphicsManagerCommonBase.cpp
 )
 ELSE(ANDROID OR WA)
 find_package(OpenGL REQUIRED)
 add_library(OpenGLRHI
         OpenGLGraphicsManager.cpp
-        OpenGLShaderManager.cpp
+        OpenGLPipelineStateManager.cpp
         OpenGLGraphicsManagerCommonBase.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad.c
 )

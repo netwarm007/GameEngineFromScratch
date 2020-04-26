@@ -1,6 +1,6 @@
 #include "ShadowMapPass.hpp"
 #include "GraphicsManager.hpp"
-#include "IShaderManager.hpp"
+#include "IPipelineStateManager.hpp"
 
 using namespace std;
 using namespace My;
@@ -88,31 +88,35 @@ void ShadowMapPass::Draw(Frame& frame)
     for (auto it : lights_cast_shadow)
     {
         int32_t shadowmap;
-        DefaultShaderIndex shader_index = DefaultShaderIndex::ShadowMap;
         int32_t width, height;
+
+        const char* pipelineStateName;
 
         switch (it->lightType)
         {
             case LightType::Omni:
-                shader_index = DefaultShaderIndex::OmniShadowMap;
+                pipelineStateName = "Omni Light Shadow Map";
                 shadowmap = frame.frameContext.cubeShadowMap;
                 width = kCubeShadowMapWidth;
                 height = kCubeShadowMapHeight;
                 it->lightShadowMapIndex = cube_shadowmap_index++;
                 break;
             case LightType::Spot:
+                pipelineStateName = "Spot Light Shadow Map";
                 shadowmap = frame.frameContext.shadowMap;
                 width = kShadowMapWidth;
                 height = kShadowMapHeight;
                 it->lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Area:
+                pipelineStateName = "Area Light Shadow Map";
                 shadowmap = frame.frameContext.shadowMap;
                 width = kShadowMapWidth;
                 height = kShadowMapHeight;
                 it->lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Infinity:
+                pipelineStateName = "Sun Light Shadow Map";
                 shadowmap = frame.frameContext.globalShadowMap;
                 width = kGlobalShadowMapWidth;
                 height = kGlobalShadowMapHeight;
@@ -122,10 +126,10 @@ void ShadowMapPass::Draw(Frame& frame)
                 assert(0);
         }
 
-        auto shaderProgram = g_pShaderManager->GetDefaultShaderProgram(shader_index);
 
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-        g_pGraphicsManager->UseShaderProgram(shaderProgram);
+        auto& pPipelineState = g_pPipelineStateManager->GetPipelineState(pipelineStateName);
+        g_pGraphicsManager->SetPipelineState(pPipelineState);
 
         g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
             width, height, it->lightShadowMapIndex);

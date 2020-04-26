@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include "OpenGLGraphicsManagerCommonBase.hpp"
+#include "OpenGLPipelineStateManagerCommonBase.hpp"
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include  <GLES3/gl32.h>
@@ -665,9 +666,10 @@ void OpenGLGraphicsManagerCommonBase::EndFrame()
     m_nFrameIndex = ++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount;
 }
 
-void OpenGLGraphicsManagerCommonBase::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
+void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
 {
-    m_CurrentShader = static_cast<uint32_t>(shaderProgram);
+    const std::shared_ptr<const OpenGLPipelineState> pPipelineState = dynamic_pointer_cast<const OpenGLPipelineState>(pipelineState);
+    m_CurrentShader = pPipelineState->shaderProgram;
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_CurrentShader);
@@ -1489,10 +1491,10 @@ void OpenGLGraphicsManagerCommonBase::ClearDebugBuffers()
 
 void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
 {
-    const auto debugShaderProgram = g_pShaderManager->GetDefaultShaderProgram(DefaultShaderIndex::Debug);
+    const auto pipelineState = g_pPipelineStateManager->GetPipelineState("Debug Drawing");
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    UseShaderProgram(debugShaderProgram);
+    SetPipelineState(pipelineState);
 
     if (!m_uboDebugConstant[m_nFrameIndex])
     {

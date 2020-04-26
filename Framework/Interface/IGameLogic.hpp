@@ -2,7 +2,7 @@
 #include "IRuntimeModule.hpp"
 
 namespace My {
-    Interface IGameLogic : implements IRuntimeModule
+    Interface IGameLogic : inheritance IRuntimeModule
     {
     public:
         int Initialize() override = 0;

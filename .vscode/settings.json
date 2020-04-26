@@ -42,7 +42,14 @@
         "xiosbase": "cpp",
         "xlocale": "cpp",
         "variant": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "cstddef": "cpp",
+        "filesystem": "cpp",
+        "limits": "cpp",
+        "system_error": "cpp",
+        "type_traits": "cpp",
+        "*.def": "cpp",
+        "xtree": "cpp"
     },
     "git.ignoreLimitWarning": true,
     "cmake.configureOnOpen": false
