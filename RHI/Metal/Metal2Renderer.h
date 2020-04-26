@@ -47,7 +47,7 @@ namespace My {
 
 - (void)endCompute;
 
-- (void)useShaderProgram:(const IShaderManager::ShaderHandler)shaderProgram;
+- (void)setPipelineState:(const std::shared_ptr<PipelineState>&)pipelineState;
 
 - (int32_t)generateCubeShadowMapArray:(const uint32_t)width 
                                height:(const uint32_t)height

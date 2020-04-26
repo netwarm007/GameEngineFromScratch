@@ -1,9 +1,6 @@
-#include "CocoaMetalApplication.h"
-#include <climits>
-#include <cstdio>
-#include <cstring>
-
 #import "MetalView.h"
+
+#include "CocoaMetalApplication.h"
 
 using namespace My;
 

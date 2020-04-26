@@ -4,27 +4,12 @@
 using namespace My;
 using namespace std;
 
-int MetalPipelineStateManager::Initialize()
-{
-    return 0;
-}
-
-void MetalPipelineStateManager::Finalize()
-{
-    ClearShaders();
-}
-
-void MetalPipelineStateManager::Tick()
-{
-
-}
-
-bool MetalPipelineStateManager::InitializeShaders()
+bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipelineState)
 {
     return true;
 }
 
-void MetalPipelineStateManager::ClearShaders()
+void MetalPipelineStateManager::DestroyPipelineState(PipelineState& pipelineState)
 {
 
 }

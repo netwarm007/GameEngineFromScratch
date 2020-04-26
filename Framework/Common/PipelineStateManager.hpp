@@ -12,9 +12,9 @@ namespace My {
             void Finalize() override {}
             void Tick() override {}
 
-            bool RegisterPipelineState(PipelineState& pipelineState);
-            void UnregisterPipelineState(PipelineState& pipelineState);
-            void Clear();
+            bool RegisterPipelineState(PipelineState& pipelineState) override;
+            void UnregisterPipelineState(PipelineState& pipelineState) override;
+            void Clear() override;
 
             const std::shared_ptr<PipelineState> GetPipelineState(std::string name) const final;
 

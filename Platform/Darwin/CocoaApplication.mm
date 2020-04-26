@@ -1,9 +1,9 @@
+#import "AppDelegate.h"
+#import "WindowDelegate.h"
+#import <Carbon/Carbon.h>
+#include <cstring>
 #include "CocoaApplication.h"
 #include "InputManager.hpp"
-#import <AppDelegate.h>
-#import <Carbon/Carbon.h>
-#import <WindowDelegate.h>
-#include <cstring>
 
 using namespace My;
 

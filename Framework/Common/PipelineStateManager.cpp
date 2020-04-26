@@ -52,7 +52,7 @@ bool PipelineStateManager::RegisterPipelineState(PipelineState& pipelineState)
 
 void PipelineStateManager::UnregisterPipelineState(PipelineState& pipelineState)
 {
-    auto& it = m_pipelineStates.find(pipelineState.pipelineStateName);
+    const auto& it = m_pipelineStates.find(pipelineState.pipelineStateName);
     if (it != m_pipelineStates.end())
     {
         DestroyPipelineState(*it->second);
@@ -62,7 +62,7 @@ void PipelineStateManager::UnregisterPipelineState(PipelineState& pipelineState)
 
 void PipelineStateManager::Clear()
 {
-    for (auto& it = m_pipelineStates.begin(); it != m_pipelineStates.end(); it++)
+    for (auto it = m_pipelineStates.begin(); it != m_pipelineStates.end(); it++)
     {
         if (it != m_pipelineStates.end())
         {
@@ -76,7 +76,7 @@ void PipelineStateManager::Clear()
 
 const std::shared_ptr<PipelineState> PipelineStateManager::GetPipelineState(std::string name) const
 {
-    auto& it = m_pipelineStates.find(name);
+    const auto& it = m_pipelineStates.find(name);
     if (it != m_pipelineStates.end())
     {
         return it->second;

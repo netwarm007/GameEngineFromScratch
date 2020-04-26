@@ -259,9 +259,9 @@ void Metal2GraphicsManager::EndCompute()
     [m_pRenderer endCompute];
 }
 
-void Metal2GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
+void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
 {
-    [m_pRenderer useShaderProgram:shaderProgram];
+    [m_pRenderer setPipelineState:pipelineState];
 }
 
 void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)

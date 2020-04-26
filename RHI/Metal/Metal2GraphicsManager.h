@@ -1,6 +1,7 @@
 #pragma once
 #include "GraphicsManager.hpp"
 #include "portable.hpp"
+#include "IPipelineStateManager.hpp"
 
 OBJC_CLASS(Metal2Renderer);
 
@@ -14,7 +15,7 @@ namespace My {
         void Draw() final;
         void Present() final;
     
-        void UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram) final;
+        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) final;
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 

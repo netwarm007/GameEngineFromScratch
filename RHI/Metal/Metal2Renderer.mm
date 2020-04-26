@@ -3,7 +3,7 @@
 
 #import "Metal2GraphicsManager.h"
 #import "Metal2Renderer.h"
-#import "MetalShaderManager.h"
+#import "MetalPipelineStateManager.h"
 
 #include "IApplication.hpp"
 
@@ -684,7 +684,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_computeCommandBuffer commit];
 }
 
-- (void)useShaderProgram:(const IShaderManager::ShaderHandler)shaderProgram
+- (void)setPipelineState:(const std::shared_ptr<PipelineState>&)pipelineState
 {
 }
 

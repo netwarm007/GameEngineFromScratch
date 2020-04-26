@@ -2,6 +2,7 @@
 #include <portable.hpp>
 #include <unordered_map>
 
+
 OBJC_CLASS(MTLLibrary);
 OBJC_CLASS(MTLRenderPipelineState);
 
@@ -12,16 +13,11 @@ namespace My {
         MetalPipelineStateManager() = default;
         ~MetalPipelineStateManager() override = default;
 
-        int Initialize() final;
-        void Finalize() final;
-
-        void Tick() final;
-
-        bool InitializeShaders() final;
-        void ClearShaders() final;
+    protected:
+        bool InitializePipelineState(PipelineState** ppPipelineState) final;
+        void DestroyPipelineState(PipelineState& pipelineState) final;
 
     private:
         MTLLibrary* m_shaderLibrary;
-        std::unordered_map<ShaderHandler, MTLRenderPipelineState*> m_pipelineStates;
     };
 }

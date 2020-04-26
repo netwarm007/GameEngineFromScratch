@@ -6,7 +6,7 @@ MESSAGE( STATUS "MTK_LIBRARY: " ${MTK_LIBRARY} )
 add_library(MetalRHI
     Metal2Renderer.mm
     Metal2GraphicsManager.mm
-    MetalShaderManager.mm
+    MetalPipelineStateManager.mm
     )
 target_link_libraries(MetalRHI
         ${MTK_LIBRARY} 
