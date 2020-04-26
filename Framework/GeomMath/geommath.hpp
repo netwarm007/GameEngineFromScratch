@@ -520,10 +520,10 @@ namespace My {
         }
     };
 
-    typedef Matrix<float, 3, 3> Matrix3X3f;
-    typedef Matrix<float, 4, 4> Matrix4X4f;
-    typedef Matrix<int32_t, 8, 8> Matrix8X8i;
-    typedef Matrix<float, 8, 8> Matrix8X8f;
+    using Matrix3X3f = Matrix<float, 3, 3>;
+    using Matrix4X4f = Matrix<float, 4, 4>;
+    using Matrix8X8i = Matrix<int32_t, 8, 8>;
+    using Matrix8X8f = Matrix<float, 8, 8>;
 
     template <typename T, int ROWS, int COLS>
     std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix)
@@ -1049,14 +1049,14 @@ namespace My {
         return result;
     }
 
-    typedef Vector<float, 2> Point2D;
+    using Point2D = Vector<float, 2>;
     using Point2DPtr = std::shared_ptr<Point2D>;
     using Point2DList = std::vector<Point2DPtr>;
-    typedef Vector<float, 3> Point;
+    using Point = Vector<float, 3>;
     using PointPtr = std::shared_ptr<Point>;
     using PointSet = std::unordered_set<PointPtr>;
     using PointList = std::vector<PointPtr>;
-    typedef std::pair<PointPtr, PointPtr> Edge;
+    using Edge = std::pair<PointPtr, PointPtr>;
     inline bool operator==(const Edge& a, const Edge& b)
     {
         return (a.first == b.first && a.second == b.second) || (a.first == b.second && a.second == b.first);
