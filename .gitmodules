@@ -4,9 +4,6 @@
 [submodule "llvm"]
 	path = External/src/llvm
 	url = http://llvm.org/git/llvm
-[submodule "clang"]
-	path = External/src/clang
-	url = http://llvm.org/git/clang
 [submodule "libpng"]
 	path = External/src/libpng
 	url = git://git.code.sf.net/p/libpng/code
@@ -22,12 +19,6 @@
 [submodule "bullet"]
 	path = External/src/bullet
 	url = https://github.com/netwarm007/bullet3.git
-[submodule "libcxx"]
-	path = External/src/libcxx
-	url = http://llvm.org/git/libcxx
-[submodule "libcxxabi"]
-	path = External/src/libcxxabi
-	url = http://llvm.org/git/libcxxabi
 [submodule "libcrc"]
 	path = External/src/libcrc
 	url = https://github.com/lammertb/libcrc.git
