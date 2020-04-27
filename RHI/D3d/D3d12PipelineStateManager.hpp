@@ -1,7 +1,6 @@
 #pragma once
 #include <d3d12.h>
 #include "PipelineStateManager.hpp"
-#include "cbuffer.h"
 
 namespace My {
     struct D3d12PipelineState : public PipelineState
@@ -10,12 +9,10 @@ namespace My {
         D3D12_SHADER_BYTECODE pixelShaderByteCode;
         D3D12_SHADER_BYTECODE geometryShaderByteCode;
         D3D12_SHADER_BYTECODE computeShaderByteCode;
-        int32_t psoIndex;
-        A2V_TYPES a2vType;
+        int32_t psoIndex{-1};
 
-        D3d12PipelineState()
+        D3d12PipelineState(PipelineState& state) : PipelineState(state)
         {
-            psoIndex = -1;
         }
     };
 
@@ -26,7 +23,7 @@ namespace My {
         ~D3d12PipelineStateManager() = default;
 
     protected:
-        virtual bool InitializePipelineState(PipelineState** ppPipelineState) final;
-        virtual void DestroyPipelineState(PipelineState& pipelineState) final;
+        bool InitializePipelineState(PipelineState** ppPipelineState) final;
+        void DestroyPipelineState(PipelineState& pipelineState) final;
     };
 }

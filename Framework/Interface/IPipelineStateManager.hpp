@@ -1,6 +1,7 @@
 #pragma once
 #include "IRuntimeModule.hpp"
 #include "portable.hpp"
+#include "cbuffer.h"
 #include <memory>
 #include <string>
 
@@ -33,6 +34,8 @@ namespace My {
 
         DEPTH_TEST_MODE depthTestMode;
         STENCIL_TEST_MODE stencilTestMode;
+
+        A2V_TYPES a2vType;
 
         virtual ~PipelineState() = default;
     }; 

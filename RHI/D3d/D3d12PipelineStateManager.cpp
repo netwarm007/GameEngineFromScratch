@@ -7,109 +7,55 @@ using namespace std;
 #define SHADER_ROOT "Shaders/HLSL/"
 #define SHADER_SUFFIX ".cso"
 
-static void loadShaders(D3dShaderProgram& program, 
-                        const char* vs, 
-                        const char* ps, 
-                        const char* gs = nullptr,
-                        const char* cs = nullptr
-                       )
+static void loadShaders(D3d12PipelineState* pState)
 {
     // load the shaders
     Buffer vertexShader, pixelShader, geometryShader, computeShader;
-    if (vs)
+    if (!pState->vertexShaderName.empty())
     {
-        vertexShader = g_pAssetLoader->SyncOpenAndReadBinary(vs);
+        vertexShader = g_pAssetLoader->SyncOpenAndReadBinary((SHADER_ROOT + pState->vertexShaderName + SHADER_SUFFIX).c_str());
     }
 
-    if (ps)
+    if (!pState->pixelShaderName.empty())
     {
-        pixelShader = g_pAssetLoader->SyncOpenAndReadBinary(ps);
+        pixelShader = g_pAssetLoader->SyncOpenAndReadBinary((SHADER_ROOT + pState->pixelShaderName + SHADER_SUFFIX).c_str());
     }
 
-    if (gs)
+    if (!pState->geometryShaderName.empty())
     {
-        geometryShader = g_pAssetLoader->SyncOpenAndReadBinary(gs);
+        geometryShader = g_pAssetLoader->SyncOpenAndReadBinary((SHADER_ROOT + pState->geometryShaderName + SHADER_SUFFIX).c_str());
     }
 
-    if (cs)
+    if (!pState->computeShaderName.empty())
     {
-        computeShader = g_pAssetLoader->SyncOpenAndReadBinary(cs);
+        computeShader = g_pAssetLoader->SyncOpenAndReadBinary((SHADER_ROOT + pState->computeShaderName + SHADER_SUFFIX).c_str());
     }
 
-    program.vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
-    program.vertexShaderByteCode.pShaderBytecode = vertexShader.MoveData();
+    pState->vertexShaderByteCode.BytecodeLength = vertexShader.GetDataSize();
+    pState->vertexShaderByteCode.pShaderBytecode = vertexShader.MoveData();
 
-    program.pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
-    program.pixelShaderByteCode.pShaderBytecode = pixelShader.MoveData();
+    pState->pixelShaderByteCode.BytecodeLength = pixelShader.GetDataSize();
+    pState->pixelShaderByteCode.pShaderBytecode = pixelShader.MoveData();
 
-    program.geometryShaderByteCode.BytecodeLength = geometryShader.GetDataSize();
-    program.geometryShaderByteCode.pShaderBytecode = geometryShader.MoveData();
+    pState->geometryShaderByteCode.BytecodeLength = geometryShader.GetDataSize();
+    pState->geometryShaderByteCode.pShaderBytecode = geometryShader.MoveData();
 
-    program.computeShaderByteCode.BytecodeLength = computeShader.GetDataSize();
-    program.computeShaderByteCode.pShaderBytecode = computeShader.MoveData();
+    pState->computeShaderByteCode.BytecodeLength = computeShader.GetDataSize();
+    pState->computeShaderByteCode.pShaderBytecode = computeShader.MoveData();
 }
 
-bool D3d12PipelineStateManager::InitializeShaders()
+bool D3d12PipelineStateManager::InitializePipelineState(PipelineState** ppPipelineState)
 {
-    HRESULT hr = S_OK;
+    D3d12PipelineState* pState = new D3d12PipelineState(**ppPipelineState);
 
-    // load the shaders
-    // basic shader
-    D3dShaderProgram* shaderProgram = new D3dShaderProgram;
-    loadShaders(*shaderProgram, VS_BASIC_SOURCE_FILE, PS_BASIC_SOURCE_FILE);
-    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_FULL;
+    loadShaders(pState);
 
-    m_DefaultShaders[DefaultShaderIndex::Basic] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
+    *ppPipelineState = pState;
 
-    // pbr shader
-    shaderProgram = new D3dShaderProgram;
-    loadShaders(*shaderProgram, VS_PBR_SOURCE_FILE, PS_PBR_SOURCE_FILE);
-    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_FULL;
-
-    m_DefaultShaders[DefaultShaderIndex::Pbr] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
-
-    // skybox shader
-    shaderProgram = new D3dShaderProgram;
-    loadShaders(*shaderProgram, VS_SKYBOX_SOURCE_FILE, PS_SKYBOX_SOURCE_FILE);
-    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_CUBE;
-
-    m_DefaultShaders[DefaultShaderIndex::SkyBox] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
-
-    // shadowmap shader
-    shaderProgram = new D3dShaderProgram;
-    loadShaders(*shaderProgram, VS_SHADOWMAP_SOURCE_FILE, PS_SHADOWMAP_SOURCE_FILE);
-    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
-
-    m_DefaultShaders[DefaultShaderIndex::ShadowMap] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
-
-#if 0
-    // omni shadowmap shader
-    shaderProgram = new D3dShaderProgram;
-    loadShaders(*shaderProgram, VS_OMNI_SHADOWMAP_SOURCE_FILE, PS_OMNI_SHADOWMAP_SOURCE_FILE, GS_OMNI_SHADOWMAP_SOURCE_FILE);
-    shaderProgram->a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
-
-    m_DefaultShaders[DefaultShaderIndex::OmniShadowMap] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
-#endif
-
-#ifdef DEBUG
-    // debug shader
-    shaderProgram = new D3dShaderProgram;
-    loadShaders(*shaderProgram, DEBUG_VS_SHADER_SOURCE_FILE, DEBUG_PS_SHADER_SOURCE_FILE);
-
-    m_DefaultShaders[DefaultShaderIndex::Debug] = reinterpret_cast<IShaderManager::ShaderHandler>(shaderProgram);
-#endif
-
-    return hr == S_OK;
+    return true;
 }
 
-void D3d12PipelineStateManager::ClearShaders()
+void D3d12PipelineStateManager::DestroyPipelineState(PipelineState& pipelineState)
 {
-    for (auto& it : m_DefaultShaders)
-    {
-        D3dShaderProgram* shaderProgram = reinterpret_cast<D3dShaderProgram*>(it.second);
-        if (shaderProgram)
-        {
-            delete shaderProgram;
-        }
-    }
+    // D3d12PipelineState* pPipelineState = dynamic_cast<D3d12PipelineState*>(&pipelineState);
 }
