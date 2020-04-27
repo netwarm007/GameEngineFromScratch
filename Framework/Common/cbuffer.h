@@ -101,6 +101,7 @@ const size_t kSizeShadowMapConstantBuffer = ALIGN(sizeof(ShadowMapConstants), 25
 
 enum A2V_TYPES
 {
+	A2V_TYPES_NONE,
 	A2V_TYPES_FULL,
 	A2V_TYPES_SIMPLE,
 	A2V_TYPES_POS_ONLY,

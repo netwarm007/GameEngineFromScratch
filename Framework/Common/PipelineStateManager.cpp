@@ -96,17 +96,20 @@ int PipelineStateManager::Initialize()
     pipelineState.pipelineStateName = "BASIC";
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.stencilTestMode = STENCIL_TEST_MODE::NONE;
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.vertexShaderName = VS_PBR_SOURCE_FILE;
     pipelineState.pixelShaderName  = PS_PBR_SOURCE_FILE;
     pipelineState.pipelineStateName = "PBR";
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_FULL;
     RegisterPipelineState(pipelineState);
 
     pipelineState.vertexShaderName.clear();
     pipelineState.pixelShaderName.clear();
     pipelineState.computeShaderName = CS_PBR_BRDF_SOURCE_FILE;
     pipelineState.pipelineStateName = "PBR BRDF CS";
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_NONE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.vertexShaderName = VS_OMNI_SHADOWMAP_SOURCE_FILE;
@@ -114,6 +117,7 @@ int PipelineStateManager::Initialize()
     pipelineState.geometryShaderName = GS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.computeShaderName.clear(); 
     pipelineState.pipelineStateName = "Omni Light Shadow Map";
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     RegisterPipelineState(pipelineState);
 
     pipelineState.vertexShaderName = VS_SHADOWMAP_SOURCE_FILE;
@@ -144,6 +148,7 @@ int PipelineStateManager::Initialize()
     pipelineState.vertexShaderName = VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_CUBEMAP_SOURCE_FILE;
     pipelineState.pipelineStateName = "CubeMap Debug Output";
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_CUBE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.vertexShaderName = VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE;
@@ -161,6 +166,7 @@ int PipelineStateManager::Initialize()
     pipelineState.tessControlShaderName = TESC_TERRAIN_SOURCE_FILE;
     pipelineState.tessEvaluateShaderName = TESE_TERRAIN_SOURCE_FILE;
     pipelineState.pipelineStateName = "Terrain";
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     RegisterPipelineState(pipelineState);
 
     return 0;
