@@ -1204,19 +1204,30 @@ HRESULT D3d12GraphicsManager::CreateRootSignature()
     return hr;
 }
 
+static std::wstring s2ws(const std::string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0); 
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
+}
 
 // this is the function that loads and prepares the pso 
-HRESULT D3d12GraphicsManager::CreatePSO(D3dShaderProgram& shaderProgram) {
+HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
     HRESULT hr = S_OK;
     ID3D12PipelineState* pPipelineState;
 
     D3D12_SHADER_BYTECODE vertexShaderByteCode;
-    vertexShaderByteCode.pShaderBytecode = shaderProgram.vertexShaderByteCode.pShaderBytecode;
-    vertexShaderByteCode.BytecodeLength = shaderProgram.vertexShaderByteCode.BytecodeLength;
+    vertexShaderByteCode.pShaderBytecode = pipelineState.vertexShaderByteCode.pShaderBytecode;
+    vertexShaderByteCode.BytecodeLength = pipelineState.vertexShaderByteCode.BytecodeLength;
 
     D3D12_SHADER_BYTECODE pixelShaderByteCode;
-    pixelShaderByteCode.pShaderBytecode = shaderProgram.pixelShaderByteCode.pShaderBytecode;
-    pixelShaderByteCode.BytecodeLength = shaderProgram.pixelShaderByteCode.BytecodeLength;
+    pixelShaderByteCode.pShaderBytecode = pipelineState.pixelShaderByteCode.pShaderBytecode;
+    pixelShaderByteCode.BytecodeLength = pipelineState.pixelShaderByteCode.BytecodeLength;
 
     // create the input layout object
     D3D12_INPUT_ELEMENT_DESC ied_full[] =
@@ -1290,7 +1301,7 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3dShaderProgram& shaderProgram) {
     psod.SampleMask     = UINT_MAX;
     psod.RasterizerState= rsd;
     psod.DepthStencilState = dsd;
-    switch(shaderProgram.a2vType)
+    switch(pipelineState.a2vType)
     {
         case A2V_TYPES::A2V_TYPES_FULL:
             psod.InputLayout    = { ied_full, _countof(ied_full) };
@@ -1319,9 +1330,9 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3dShaderProgram& shaderProgram) {
         return false;
     }
 
-    pPipelineState->SetName(L"PBR Pipeline");
+    pPipelineState->SetName(s2ws(pipelineState.pipelineStateName).c_str());
 
-    shaderProgram.psoIndex = static_cast<int32_t>(m_pPipelineStates.size());
+    pipelineState.psoIndex = static_cast<int32_t>(m_pPipelineStates.size());
     m_pPipelineStates.push_back(pPipelineState);
 
     return hr;
@@ -1732,17 +1743,17 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
     }
 }
 
-void D3d12GraphicsManager::UseShaderProgram(const IShaderManager::ShaderHandler shaderProgram)
+void D3d12GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
 {
-    if (shaderProgram)
+    if (pipelineState)
     {
-        D3dShaderProgram* pgm = reinterpret_cast<D3dShaderProgram*>(shaderProgram);
-        if (pgm->psoIndex == -1)
+        std::shared_ptr<D3d12PipelineState> state = dynamic_pointer_cast<D3d12PipelineState>(pipelineState);
+        if (state->psoIndex == -1)
         {
-            CreatePSO(*pgm);
+            CreatePSO(*state);
         }
 
-        m_pCommandList[m_nFrameIndex]->SetPipelineState(m_pPipelineStates[pgm->psoIndex]);
+        m_pCommandList[m_nFrameIndex]->SetPipelineState(m_pPipelineStates[state->psoIndex]);
     }
 }
 

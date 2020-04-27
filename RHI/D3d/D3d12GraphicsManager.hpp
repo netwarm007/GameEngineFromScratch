@@ -20,7 +20,7 @@ namespace My {
         void Draw() final;
         void Present() final;
 
-        virtual void SetPipelineState(const PipelineState& pipelineState) final;
+        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) final;
 
         void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
 
