@@ -42,4 +42,4 @@
 	url = https://github.com/netwarm007/SDL.git
 [submodule "bison"]
 	path = External/src/bison
-	url = git@github.com:netwarm007/bison.git
+	url = https://github.com/netwarm007/bison.git
