@@ -3,6 +3,6 @@ set -e
 git submodule update --init External/src/libpng
 mkdir -p External/build/libpng
 cd External/build/libpng
-cmake -DCMAKE_INSTALL_PREFIX=../../Linux ../../src/libpng
-cmake --build . --config release --target install
+cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../`uname -s` ../../src/libpng
+cmake --build . --config Release --target install
 
