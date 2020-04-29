@@ -144,13 +144,6 @@ ELSE(APPLE)
                         )
 ENDIF(APPLE)
 
-IF(WIN32)
-    add_custom_command(TARGET Viewer POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
-            $<TARGET_FILE_DIR:Viewer>)
-ENDIF(WIN32)
-
 add_dependencies(Viewer Engine_Asset)
 
 target_include_directories(Viewer PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")

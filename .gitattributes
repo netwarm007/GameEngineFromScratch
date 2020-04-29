@@ -58,3 +58,5 @@ External/Darwin/framework/Chromium[[:space:]]Embedded[[:space:]]Framework.framew
 External/Linux/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/Linux/bin/llc filter=lfs diff=lfs merge=lfs -text
 External/Darwin/bin/ispc filter=lfs diff=lfs merge=lfs -text
+External/Android/bin/ispc filter=lfs diff=lfs merge=lfs -text
+External/FreeBSD/bin/ispc filter=lfs diff=lfs merge=lfs -text

@@ -18,8 +18,13 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run:
-          name: LFS install
+      - run: 
+          name: Git Restore
+          command: |
+             git restore .
+      - checkout
+      - run: 
+          name: Git LFS Checkout
           command: |
              git lfs install
       - checkout
@@ -50,6 +55,10 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
+      - run: 
+          name: Git Restore
+          command: |
+             git restore .
       - checkout
       - run:
           name: LFS install
