@@ -17,13 +17,6 @@ set_target_properties(${TEST_CASES}
         )
 ENDIF(WA)
 
-IF(WIN32)
-add_custom_target(CopyDll ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
-        ${CMAKE_CURRENT_BINARY_DIR})
-ENDIF(WIN32)
-
 target_link_libraries(BulletTest BulletPhysics)
 
 IF(WA)

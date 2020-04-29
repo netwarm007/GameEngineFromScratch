@@ -94,7 +94,6 @@ target_link_libraries(Editor
 # copy dependencies
 IF(WIN32)
     set(OTHER_DEPENDENCIES
-            "${PROJECT_SOURCE_DIR}/External/Windows/bin/zlib.dll"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/libcef.dll"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/chrome_elf.dll"
             "${PROJECT_SOURCE_DIR}/External/Windows/bin/libEGL.dll"
