@@ -2,7 +2,8 @@
 set -e
 git submodule update --init External/src/zlib
 mkdir -p External/build/zlib
-cd External/build/zlib
-cmake -DCMAKE_INSTALL_PREFIX=../../ ../../src/zlib
-cmake --build . --config release --target install
+pushd External/build/zlib
+cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../ ../../src/zlib
+cmake --build . --config Release --target install
+popd
 
