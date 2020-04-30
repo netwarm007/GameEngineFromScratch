@@ -13,12 +13,22 @@ namespace My {
         LARGE_EQUAL,
         EQUAL,
         LESS_EQUAL,
-        LESS
+        LESS,
+        NOT_EQUAL,
+        NEVER,
+        ALWAYS
     };
 
     ENUM(STENCIL_TEST_MODE)
     {
         NONE
+    };
+
+    ENUM(CULL_FACE_MODE)
+    {
+        NONE,
+        FRONT,
+        BACK
     };
 
     struct PipelineState
@@ -33,7 +43,9 @@ namespace My {
         std::string meshShaderName;
 
         DEPTH_TEST_MODE depthTestMode;
+        bool    bDepthWrite;
         STENCIL_TEST_MODE stencilTestMode;
+        CULL_FACE_MODE  cullFaceMode;
 
         A2V_TYPES a2vType;
 

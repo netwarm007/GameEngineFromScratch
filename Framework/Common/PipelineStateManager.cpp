@@ -96,6 +96,7 @@ int PipelineStateManager::Initialize()
     pipelineState.pipelineStateName = "BASIC";
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.stencilTestMode = STENCIL_TEST_MODE::NONE;
+    pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
     RegisterPipelineState(pipelineState);
 
@@ -117,6 +118,7 @@ int PipelineStateManager::Initialize()
     pipelineState.geometryShaderName = GS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.computeShaderName.clear(); 
     pipelineState.pipelineStateName = "Omni Light Shadow Map";
+    pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     RegisterPipelineState(pipelineState);
 
@@ -132,12 +134,10 @@ int PipelineStateManager::Initialize()
     pipelineState.pipelineStateName = "Sun Light Shadow Map";
     RegisterPipelineState(pipelineState);
 
-    pipelineState.pipelineStateName = "Sun Light Shadow Map";
-    RegisterPipelineState(pipelineState);
-
     pipelineState.vertexShaderName = VS_PASSTHROUGH_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_TEXTURE_SOURCE_FILE;
     pipelineState.pipelineStateName = "Texture Debug Output";
+    pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
     RegisterPipelineState(pipelineState);
 
     pipelineState.vertexShaderName = VS_PASSTHROUGH_SOURCE_FILE;
@@ -159,6 +159,7 @@ int PipelineStateManager::Initialize()
     pipelineState.vertexShaderName = VS_SKYBOX_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_SKYBOX_SOURCE_FILE;
     pipelineState.pipelineStateName = "SkyBox";
+    pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     RegisterPipelineState(pipelineState);
 
     pipelineState.vertexShaderName = VS_TERRAIN_SOURCE_FILE;
@@ -166,6 +167,7 @@ int PipelineStateManager::Initialize()
     pipelineState.tessControlShaderName = TESC_TERRAIN_SOURCE_FILE;
     pipelineState.tessEvaluateShaderName = TESE_TERRAIN_SOURCE_FILE;
     pipelineState.pipelineStateName = "Terrain";
+    pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     RegisterPipelineState(pipelineState);
 

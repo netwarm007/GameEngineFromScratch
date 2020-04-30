@@ -735,6 +735,72 @@ void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<Pip
         glActiveTexture(GL_TEXTURE11);
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
     }
+
+    switch(pipelineState->depthTestMode)
+    {
+        case DEPTH_TEST_MODE::NONE:
+            glDisable(GL_DEPTH_TEST);
+            break;
+        case DEPTH_TEST_MODE::LARGE:
+            glEnable(GL_GREATER);
+            break;
+        case DEPTH_TEST_MODE::LARGE_EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_GEQUAL);
+            break;
+        case DEPTH_TEST_MODE::LESS:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            break;
+        case DEPTH_TEST_MODE::LESS_EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LEQUAL);
+            break;
+        case DEPTH_TEST_MODE::EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_EQUAL);
+            break;
+        case DEPTH_TEST_MODE::NOT_EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_NOTEQUAL);
+            break;
+        case DEPTH_TEST_MODE::NEVER:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_NEVER);
+            break;
+        case DEPTH_TEST_MODE::ALWAYS:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_ALWAYS);
+            break;
+        default:
+            assert(0);
+    }
+
+    if(pipelineState->bDepthWrite)
+    {
+        glDepthMask(GL_TRUE);
+    }
+    else
+    {
+        glDepthMask(GL_FALSE);
+    }
+
+    switch(pipelineState->cullFaceMode)
+    {
+        case CULL_FACE_MODE::NONE:
+            glDisable(GL_CULL_FACE);
+            break;
+        case CULL_FACE_MODE::FRONT:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+            break;
+        case CULL_FACE_MODE::BACK:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            break;
+        default:
+            assert(0);
+    }
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
@@ -787,8 +853,6 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
 
 void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
 {
-    glEnable(GL_CULL_FACE);
-
     for (auto& pDbc : batches)
     {
         SetPerBatchConstants(*pDbc);
@@ -926,7 +990,6 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     }
 
     glDrawBuffers(0, nullptr); // No color buffer is drawn to.
-    glDepthMask(GL_TRUE);
     // make sure omni light shadowmap arrays get cleared only
     // once, because glClear will clear all cubemaps in the array
     if (light.lightType != LightType::Omni || layer_index == 0)
@@ -1002,8 +1065,6 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glUniformBlockBinding(m_CurrentShader, blockIndex, 14);
     glBindBufferBase(GL_UNIFORM_BUFFER, 14, m_uboShadowMatricesConstant[m_nFrameIndex]);
-
-    glCullFace(GL_FRONT);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, int32_t layer_index)
@@ -1014,8 +1075,6 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, int3
 
     const GfxConfiguration& conf = g_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
-
-    glCullFace(GL_BACK);
 }
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
@@ -1078,12 +1137,10 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
 
-    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
     glDrawElements(m_SkyBoxDrawBatchContext.mode, m_SkyBoxDrawBatchContext.count, m_SkyBoxDrawBatchContext.type, nullptr);
     glBindVertexArray(0);
-    glDepthFunc(GL_LESS); // set depth function back to default
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawTerrain()
@@ -1170,8 +1227,6 @@ void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(int32_t& context, con
 
     uint32_t buf[] = { GL_COLOR_ATTACHMENT0 };
     glDrawBuffers(1, buf);
-    glDepthMask(GL_FALSE);
-    glDisable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT);
     glViewport(0, 0, width, height);
 }
@@ -1186,9 +1241,6 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context)
 
     const GfxConfiguration& conf = g_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
-
-    glEnable(GL_DEPTH_TEST);
-    glCullFace(GL_BACK);
 }
 
 int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height)
@@ -1230,6 +1282,11 @@ void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint3
 #endif
 }
 
+void OpenGLGraphicsManagerCommonBase::ResizeCanvas(int32_t width, int32_t height)
+{
+    //Reset View    
+    glViewport(0, 0, (GLint)width, (GLint)height);    
+}
 #ifdef DEBUG
 
 void OpenGLGraphicsManagerCommonBase::DrawPoint(const Point &point, const Vector3f& color)
@@ -2072,10 +2129,4 @@ void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad()
 
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(2, buffer_id);
-}
-
-void OpenGLGraphicsManagerCommonBase::ResizeCanvas(int32_t width, int32_t height)
-{
-    //Reset View    
-    glViewport(0, 0, (GLint)width, (GLint)height);    
 }
