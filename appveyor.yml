@@ -16,7 +16,7 @@ build_script:
 
     build_spirvcross
 
-    build-ninja
+    build
 
 test_script:
 - cmd: cmake --build build --target RUN_TESTS
