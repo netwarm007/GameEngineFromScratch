@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 git submodule update --init External/src/bullet
 mkdir -p External/build/bullet
