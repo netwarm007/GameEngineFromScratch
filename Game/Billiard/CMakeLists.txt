@@ -46,8 +46,8 @@ IF(APPLE)
     )
 
     add_custom_command(OUTPUT Main.metallib
-        COMMAND xcrun -sdk macosx metallib Main.metalar -split-module-without-linking -o Main.metallib
-        COMMENT "Compile Editor.metalar --> Main.metallib"
+        COMMAND xcrun -sdk macosx metallib Main.metalar -o Main.metallib
+        COMMENT "Compile Main.metalar --> Main.metallib"
         DEPENDS Main.metalar
     )
 

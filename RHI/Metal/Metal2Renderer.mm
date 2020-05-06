@@ -354,23 +354,38 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
 - (void)setPipelineState:(const MetalPipelineState&)pipelineState
 {
-    switch(pipelineState.cullFaceMode)
+    switch(pipelineState.pipelineType)
     {
-        case CULL_FACE_MODE::NONE:
-            [_renderEncoder setCullMode:MTLCullModeNone];
-            break;
-        case CULL_FACE_MODE::FRONT:
-            [_renderEncoder setCullMode:MTLCullModeFront];
-            break;
-        case CULL_FACE_MODE::BACK:
-            [_renderEncoder setCullMode:MTLCullModeBack];
-            break;
+        case PIPELINE_TYPE::GRAPHIC:
+        {
+            switch(pipelineState.cullFaceMode)
+            {
+                case CULL_FACE_MODE::NONE:
+                    [_renderEncoder setCullMode:MTLCullModeNone];
+                    break;
+                case CULL_FACE_MODE::FRONT:
+                    [_renderEncoder setCullMode:MTLCullModeFront];
+                    break;
+                case CULL_FACE_MODE::BACK:
+                    [_renderEncoder setCullMode:MTLCullModeBack];
+                    break;
+                default:
+                    assert(0);
+            }
+
+            [_renderEncoder setRenderPipelineState:pipelineState.mtlRenderPipelineState];
+            [_renderEncoder setDepthStencilState:pipelineState.depthState];
+        }
+        break;
+        case PIPELINE_TYPE::COMPUTE:
+        {
+            [_computeEncoder setComputePipelineState:pipelineState.mtlComputePipelineState];
+        }
+        break;
         default:
             assert(0);
     }
 
-    [_renderEncoder setRenderPipelineState:pipelineState.mtlRenderPipelineState];
-    [_renderEncoder setDepthStencilState:pipelineState.depthState];
 }
 
 - (void)setPerFrameConstants:(const DrawFrameContext&)context

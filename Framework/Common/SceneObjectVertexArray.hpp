@@ -7,13 +7,8 @@ namespace My {
     {
         VertexAttributePosition,
         VertexAttributeNormal,
-        VertexAttributeNormalWorld,
-        VertexAttributeView,
-        VertexAttributeViewWorld,
         VertexAttributeTexcoord,
-        VertexAttributeTangent,
-        VertexAttributeCamPosTangent,
-        VertexAttributeTBN
+        VertexAttributeTangent
     };
 
     class SceneObjectVertexArray 
