@@ -1243,7 +1243,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context)
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height)
+void OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height)
 {
     uint32_t tex_output;
     glGenTextures(1, &tex_output);
@@ -1265,7 +1265,6 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const ch
 #endif
 
     m_Textures[id] = tex_output;
-    return static_cast<int32_t>(tex_output);
 }
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)

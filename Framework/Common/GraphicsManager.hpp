@@ -50,7 +50,7 @@ namespace My {
         virtual void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height) {}
         virtual void EndRenderToTexture(int32_t& context) {}
 
-        virtual int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) { return 0; }
+        virtual void GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) {}
         virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) {}
 
         virtual int32_t GetTexture(const char* id) { return 0; }

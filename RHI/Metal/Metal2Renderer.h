@@ -72,7 +72,7 @@ namespace My {
 
 - (void)destroyShadowMap:(int32_t&)shadowmap;
 
-- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
+- (void)generateAndBindTextureForWrite:(const uint32_t)width
                                    height:(const uint32_t)height
                                   atIndex:(const uint32_t)atIndex;
 

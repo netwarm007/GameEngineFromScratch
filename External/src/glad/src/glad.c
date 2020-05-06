@@ -9419,11 +9419,7 @@ static void find_coreGL(void) {
     }
 
 /* PR #18 */
-#ifdef _MSC_VER
     sscanf_s(version, "%d.%d", &major, &minor);
-#else
-    sscanf(version, "%d.%d", &major, &minor);
-#endif
 
     GLVersion.major = major; GLVersion.minor = minor;
     max_loaded_major = major; max_loaded_minor = minor;

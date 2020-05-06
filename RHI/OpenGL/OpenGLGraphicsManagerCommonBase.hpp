@@ -40,7 +40,7 @@ namespace My {
         void EndRenderToTexture(int32_t& context) final;
         int32_t GetTexture(const char* id) final;
 
-        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
+        void GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
         void DrawFullScreenQuad() final;

@@ -35,7 +35,7 @@ void AndroidAssetLoader::CloseFile(AssetFilePtr& fp)
     }
 }
 
-Buffer AndroidAssetLoader::SyncOpenAndReadText(const char* assetPath)
+Buffer& AndroidAssetLoader::SyncOpenAndReadText(const char* assetPath)
 {
     AAsset* fp = (AAsset*)OpenFile(assetPath, MY_OPEN_TEXT);
     Buffer* pBuff = nullptr;
@@ -56,7 +56,7 @@ Buffer AndroidAssetLoader::SyncOpenAndReadText(const char* assetPath)
     return *pBuff;
 }
 
-Buffer AndroidAssetLoader::SyncOpenAndReadBinary(const char* assetPath)
+Buffer& AndroidAssetLoader::SyncOpenAndReadBinary(const char* assetPath)
 {
     AAsset* fp = (AAsset*)OpenFile(assetPath, MY_OPEN_BINARY);
     Buffer* pBuff = nullptr;

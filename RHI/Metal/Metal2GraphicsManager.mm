@@ -305,10 +305,10 @@ void Metal2GraphicsManager::DrawSkyBox()
     [m_pRenderer drawSkyBox];
 }
 
-int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index,
+void Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index,
                                         const uint32_t width, const uint32_t height)
 {
-    return [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:slot_index];
+    [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:slot_index];
 }
 
 void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)

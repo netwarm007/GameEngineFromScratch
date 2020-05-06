@@ -54,12 +54,15 @@ namespace My {
             TVAL t1{0};
             TVAL t2{0};
 
+            index = 0;
+            
             if (Curve<TVAL, TPARAM>::m_Knots.size() < 2)
+            {
                 return TPARAM(0);
+            }
 
             if (t <= Curve<TVAL, TPARAM>::m_Knots.front())
             {
-                index = 0;
                 return TPARAM(0);
             }
 

@@ -105,7 +105,7 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
     return nullptr;
 }
 
-Buffer AssetLoader::SyncOpenAndReadText(const char *filePath)
+Buffer& AssetLoader::SyncOpenAndReadText(const char *filePath)
 {
     AssetFilePtr fp = OpenFile(filePath, MY_OPEN_TEXT);
     Buffer* pBuff = nullptr;
@@ -130,7 +130,7 @@ Buffer AssetLoader::SyncOpenAndReadText(const char *filePath)
     return *pBuff;
 }
 
-Buffer AssetLoader::SyncOpenAndReadBinary(const char *filePath)
+Buffer& AssetLoader::SyncOpenAndReadBinary(const char *filePath)
 {
     AssetFilePtr fp = OpenFile(filePath, MY_OPEN_BINARY);
     Buffer* pBuff = nullptr;

@@ -66,11 +66,18 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
 
     // Load all the shader files with a metallib 
     id <MTLDevice> _device = MTLCreateSystemDefaultDevice();
-    NSString *libraryFile = [[NSBundle mainBundle] pathForResource:@"Main" ofType:@"metallib"];
     NSError *error = Nil;
+    NSString *libraryFile = [[NSBundle mainBundle] pathForResource:@"Main" ofType:@"metallib"];
+    if (!libraryFile)
+    {
+        NSLog(@"Metal Shader Library missing");
+        return false;
+    }
+
     id <MTLLibrary> myLibrary = [_device newLibraryWithFile:libraryFile error:&error];
     if (!myLibrary) {
         NSLog(@"Library error: %@", error);
+        return false;
     }
 
     switch (pState->pipelineType)

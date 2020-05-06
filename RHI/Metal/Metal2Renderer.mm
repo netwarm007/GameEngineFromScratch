@@ -656,7 +656,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     _textures[shadowmap] = Nil;
 }
 
-- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
+- (void)generateAndBindTextureForWrite:(const uint32_t)width
                                    height:(const uint32_t)height
                                   atIndex:(const uint32_t)atIndex
 {
@@ -671,13 +671,10 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    _brdfLutIndex = _textures.size();
     _textures.push_back(texture);
 
     [_computeEncoder setTexture:texture
                    atIndex:atIndex];
-
-    return _brdfLutIndex;
 }
 
 - (void)dispatch:(const uint32_t)width
