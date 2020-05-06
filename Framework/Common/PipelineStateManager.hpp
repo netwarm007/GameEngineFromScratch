@@ -5,7 +5,7 @@ namespace My {
     class PipelineStateManager : implements IPipelineStateManager
     {
         public:
-            PipelineStateManager();
+            PipelineStateManager() = default;
             virtual ~PipelineStateManager();
 
             int Initialize() override;

@@ -28,10 +28,6 @@ using namespace std;
 #define TESC_TERRAIN_SOURCE_FILE "terrain.tesc"
 #define TESE_TERRAIN_SOURCE_FILE "terrain.tese"
 
-PipelineStateManager::PipelineStateManager()
-{
-}
-
 PipelineStateManager::~PipelineStateManager()
 {
     Clear();
