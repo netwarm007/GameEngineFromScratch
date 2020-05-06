@@ -91,41 +91,44 @@ const std::shared_ptr<PipelineState> PipelineStateManager::GetPipelineState(std:
 int PipelineStateManager::Initialize()
 {
     PipelineState pipelineState;
+    pipelineState.pipelineStateName = "BASIC";
+    pipelineState.pipelineType = PIPELINE_TYPE::GRAPHIC;
     pipelineState.vertexShaderName = VS_BASIC_SOURCE_FILE;
     pipelineState.pixelShaderName  = PS_BASIC_SOURCE_FILE;
-    pipelineState.pipelineStateName = "BASIC";
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.stencilTestMode = STENCIL_TEST_MODE::NONE;
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "PBR";
     pipelineState.vertexShaderName = VS_PBR_SOURCE_FILE;
     pipelineState.pixelShaderName  = PS_PBR_SOURCE_FILE;
-    pipelineState.pipelineStateName = "PBR";
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_FULL;
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "PBR BRDF CS";
+    pipelineState.pipelineType = PIPELINE_TYPE::COMPUTE;
     pipelineState.vertexShaderName.clear();
     pipelineState.pixelShaderName.clear();
     pipelineState.computeShaderName = CS_PBR_BRDF_SOURCE_FILE;
-    pipelineState.pipelineStateName = "PBR BRDF CS";
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_NONE;
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "Omni Light Shadow Map";
+    pipelineState.pipelineType = PIPELINE_TYPE::GRAPHIC;
     pipelineState.vertexShaderName = VS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.geometryShaderName = GS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.computeShaderName.clear(); 
-    pipelineState.pipelineStateName = "Omni Light Shadow Map";
     pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "Spot Light Shadow Map";
     pipelineState.vertexShaderName = VS_SHADOWMAP_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_SHADOWMAP_SOURCE_FILE;
     pipelineState.geometryShaderName.clear();
-    pipelineState.pipelineStateName = "Spot Light Shadow Map";
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Area Light Shadow Map";
@@ -134,39 +137,39 @@ int PipelineStateManager::Initialize()
     pipelineState.pipelineStateName = "Sun Light Shadow Map";
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "Texture Debug Output";
     pipelineState.vertexShaderName = VS_PASSTHROUGH_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_TEXTURE_SOURCE_FILE;
-    pipelineState.pipelineStateName = "Texture Debug Output";
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "Texture Array Debug Output";
     pipelineState.vertexShaderName = VS_PASSTHROUGH_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_TEXTURE_ARRAY_SOURCE_FILE;
-    pipelineState.pipelineStateName = "Texture Array Debug Output";
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "CubeMap Debug Output";
     pipelineState.vertexShaderName = VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_CUBEMAP_SOURCE_FILE;
-    pipelineState.pipelineStateName = "CubeMap Debug Output";
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_CUBE;
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "CubeMap Array Debug Output";
     pipelineState.vertexShaderName = VS_PASSTHROUGH_CUBEMAP_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_CUBEMAP_ARRAY_SOURCE_FILE;
-    pipelineState.pipelineStateName = "CubeMap Array Debug Output";
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "SkyBox";
     pipelineState.vertexShaderName = VS_SKYBOX_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_SKYBOX_SOURCE_FILE;
-    pipelineState.pipelineStateName = "SkyBox";
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     RegisterPipelineState(pipelineState);
 
+    pipelineState.pipelineStateName = "Terrain";
     pipelineState.vertexShaderName = VS_TERRAIN_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_TERRAIN_SOURCE_FILE;
     pipelineState.tessControlShaderName = TESC_TERRAIN_SOURCE_FILE;
     pipelineState.tessEvaluateShaderName = TESE_TERRAIN_SOURCE_FILE;
-    pipelineState.pipelineStateName = "Terrain";
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     RegisterPipelineState(pipelineState);

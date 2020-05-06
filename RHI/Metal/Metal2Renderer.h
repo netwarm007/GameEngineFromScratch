@@ -1,5 +1,7 @@
 #import "GraphicsManager.hpp"
 #import <MetalKit/MetalKit.h>
+#import "MetalPipelineStateManager.h"
+#import "MetalPipelineState.h"
 
 namespace My {
     struct MtlDrawBatchContext : public DrawBatchContext {
@@ -47,7 +49,7 @@ namespace My {
 
 - (void)endCompute;
 
-- (void)setPipelineState:(const std::shared_ptr<PipelineState>&)pipelineState;
+- (void)setPipelineState:(const MetalPipelineState&)pipelineState;
 
 - (int32_t)generateCubeShadowMapArray:(const uint32_t)width 
                                height:(const uint32_t)height

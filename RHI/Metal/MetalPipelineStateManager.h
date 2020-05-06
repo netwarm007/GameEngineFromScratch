@@ -4,7 +4,6 @@
 
 
 OBJC_CLASS(MTLLibrary);
-OBJC_CLASS(MTLRenderPipelineState);
 
 namespace My {
     class MetalPipelineStateManager : public PipelineStateManager

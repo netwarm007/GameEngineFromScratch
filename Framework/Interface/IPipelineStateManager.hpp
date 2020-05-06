@@ -31,9 +31,17 @@ namespace My {
         BACK
     };
 
+    ENUM(PIPELINE_TYPE)
+    {
+        GRAPHIC,
+        COMPUTE
+    };
+
     struct PipelineState
     {
         std::string pipelineStateName;
+        PIPELINE_TYPE pipelineType;
+
         std::string vertexShaderName;
         std::string pixelShaderName;
         std::string computeShaderName;

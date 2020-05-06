@@ -261,7 +261,8 @@ void Metal2GraphicsManager::EndCompute()
 
 void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
 {
-    [m_pRenderer setPipelineState:pipelineState];
+    const std::shared_ptr<MetalPipelineState> pState = dynamic_pointer_cast<MetalPipelineState>(pipelineState);
+    [m_pRenderer setPipelineState:*pState];
 }
 
 void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
