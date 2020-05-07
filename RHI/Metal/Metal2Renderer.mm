@@ -27,6 +27,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     std::vector<id<MTLTexture>>  _textures;
+    id<MTLSamplerState> _sampler0;
 
     // The index in uniform buffers in _dynamicUniformBuffers to use for the current frame
     uint32_t _currentBufferIndex;
@@ -76,6 +77,19 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         
         _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
     }
+
+   ////////////////////////////
+    // Sampler
+
+    MTLSamplerDescriptor* samplerDescriptor = [[MTLSamplerDescriptor alloc] init];
+    samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
+    samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
+    samplerDescriptor.rAddressMode = MTLSamplerAddressModeRepeat;
+    samplerDescriptor.sAddressMode = MTLSamplerAddressModeRepeat;
+    samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
+
+    _sampler0 = [_device newSamplerStateWithDescriptor:samplerDescriptor];
 
     // Create the command queue
     _commandQueue = [_device newCommandQueue];
@@ -372,7 +386,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 default:
                     assert(0);
             }
-
+            [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
             [_renderEncoder setRenderPipelineState:pipelineState.mtlRenderPipelineState];
             [_renderEncoder setDepthStencilState:pipelineState.depthState];
         }
@@ -411,6 +425,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         {
             [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
                                     atIndex:10];
+
+            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
         }
 
         static const float skyboxVertices[] = {
@@ -487,6 +503,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
                                   offset:0
                                  atIndex:12];
+
+        [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
         if (_skyboxTexIndex >= 0)
         {
