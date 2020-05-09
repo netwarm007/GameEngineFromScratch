@@ -32,7 +32,6 @@ void Metal2GraphicsManager::Present()
 
 void Metal2GraphicsManager::initializeGeometries(const Scene& scene)
 {
-    cout << "Initialize Geometries ...";
     uint32_t batch_index = 0;
     uint32_t v_property_offset = 0;
     uint32_t index_offset = 0;
