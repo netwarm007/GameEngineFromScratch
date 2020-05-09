@@ -42,8 +42,8 @@ void visualize(T points, const string& name)
 int main(int argc, char** argv)
 {
     // raster a line
-    Point2D start_point ({0, 0, 0});
-    Point2D end_point ({11, 4, 0});
+    Point2D start_point ({0, 0});
+    Point2D end_point ({11, 4});
     auto points = BresenhamLineInterpolate(start_point, end_point);
 
     visualize(points, "Line");

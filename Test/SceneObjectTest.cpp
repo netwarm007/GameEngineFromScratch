@@ -32,9 +32,9 @@ int32_t main(int32_t argc, char** argv)
     std::shared_ptr<SceneLightNode>     snLight(new SceneLightNode());
     std::shared_ptr<SceneCameraNode>     snCamera(new SceneCameraNode());
 
-    snGeometry->AddSceneObjectRef(soGeometry);
-    snLight->AddSceneObjectRef(soSpotLight);
-    snCamera->AddSceneObjectRef(soOrthogonalCamera);
+    snGeometry->AddSceneObjectRef(soGeometry->GetGuid());
+    snLight->AddSceneObjectRef(soSpotLight->GetGuid());
+    snCamera->AddSceneObjectRef(soOrthogonalCamera->GetGuid());
 
     snEmpty.AppendChild(std::move(snGeometry));
     snEmpty.AppendChild(std::move(snLight));

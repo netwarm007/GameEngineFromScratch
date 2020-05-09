@@ -2,7 +2,7 @@ set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                OgexParserTest JpegParserTest PngParserTest DdsParserTest HdrParserTest TgaParserTest
                SceneLoadingTest AnimationTest
                BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
-               #RasterizationTest SceneObjectTest
+               RasterizationTest SceneObjectTest
         )
 
 foreach(TEST_CASE IN LISTS TEST_CASES)
