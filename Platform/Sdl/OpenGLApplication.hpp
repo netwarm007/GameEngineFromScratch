@@ -8,6 +8,7 @@ namespace My {
 
         void Tick() override;
 
+    protected:
         void CreateMainWindow() override;
 
     private:

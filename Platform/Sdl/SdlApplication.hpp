@@ -15,9 +15,9 @@ namespace My {
         void Tick() override;
 
         void* GetMainWindowHandler() override { return m_pWindow; };
-        void CreateMainWindow() override;
 
     protected:
+        void CreateMainWindow() override;
         void logSDLError(std::ostream &os, const std::string &msg);
         void onResize(int width, int height);
 

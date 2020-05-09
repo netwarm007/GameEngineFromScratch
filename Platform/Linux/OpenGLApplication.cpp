@@ -50,6 +50,8 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev)
 
 int OpenGLApplication::Initialize()
 {
+    BaseApplication::Initialize();
+
     int result;
 
     int default_screen;

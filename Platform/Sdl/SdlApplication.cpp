@@ -77,6 +77,8 @@ void SdlApplication::onResize(int width, int height)
 
 int SdlApplication::Initialize()
 {
+	BaseApplication::Initialize();
+
 	if (SDL_Init(SDL_INIT_VIDEO) != 0){
 		logSDLError(std::cout, "SDL_Init");
 		return 1;

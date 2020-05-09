@@ -13,6 +13,7 @@ namespace My {
 
         void* GetMainWindowHandler() override { return reinterpret_cast<void*>(m_Window); };
 
+    protected:
         void CreateMainWindow() override;
 
     protected:

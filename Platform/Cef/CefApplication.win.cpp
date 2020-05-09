@@ -6,6 +6,8 @@ using namespace My;
 
 int CefApplication::Initialize()
 {
+    BaseApplication::Initialize();
+
     CefEnableHighDPISupport();
 
     void* sandbox_info = NULL;

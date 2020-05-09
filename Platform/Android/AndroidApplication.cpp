@@ -9,9 +9,8 @@ using namespace std;
 
 int AndroidApplication::Initialize()
 {
-    int result = 0;
+    int result = BaseApplication::Initialize();
     dynamic_cast<AndroidAssetLoader*>(g_pAssetLoader)->SetPlatformAssetManager(m_pApp->activity->assetManager);
-    result = BaseApplication::Initialize();
     if (result)
         LOGE("AndroidApplication Initialize Failed!");
 

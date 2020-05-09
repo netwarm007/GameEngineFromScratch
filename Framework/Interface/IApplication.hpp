@@ -18,10 +18,12 @@ namespace My {
         [[nodiscard]] virtual bool IsQuit() const = 0;
         virtual void RequestQuit() = 0;
 
-        virtual void CreateMainWindow() = 0;
         virtual void* GetMainWindowHandler() = 0;
 
         [[nodiscard]] virtual const GfxConfiguration& GetConfiguration() const = 0;
+
+    protected:
+        virtual void CreateMainWindow() = 0;
     };
 
 	extern IApplication*    g_pApp;

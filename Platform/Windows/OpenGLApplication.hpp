@@ -10,6 +10,7 @@ namespace My {
         void Finalize() override;
         void Tick() override;
 
+    protected:
         void CreateMainWindow() override;
 
     private:

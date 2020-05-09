@@ -14,6 +14,8 @@ namespace My {
         void Tick() override;
 
         void* GetMainWindowHandler() override;
+
+    protected:
         void CreateMainWindow() override;
 
     protected:

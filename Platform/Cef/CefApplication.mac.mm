@@ -107,6 +107,8 @@ using namespace My;
 
 int CefApplication::Initialize()
 {
+    BaseApplication::Initialize();
+
     // Load the CEF framework library at runtime instead of linking directly
     // as required by the macOS sandbox implementation.
     CefScopedLibraryLoader library_loader;

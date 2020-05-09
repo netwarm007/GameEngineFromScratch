@@ -18,11 +18,11 @@ namespace My {
         [[nodiscard]] bool IsQuit() const override;
         void RequestQuit() override { m_bQuit = true; }
 
-        void CreateMainWindow() override;
-
         [[nodiscard]] inline const GfxConfiguration& GetConfiguration() const override { return m_Config; }
 
     protected:
+        void CreateMainWindow() override;
+
         // Flag if need quit the main loop of the application
         static bool         m_bQuit;
         GfxConfiguration    m_Config;

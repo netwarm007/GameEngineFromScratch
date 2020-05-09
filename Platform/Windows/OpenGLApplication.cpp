@@ -96,6 +96,8 @@ int OpenGLApplication::Initialize()
 	ReleaseDC(TemphWnd, TemphDC);
 	DestroyWindow(TemphWnd);
 
+	BaseApplication::Initialize();
+
     return result;
 }
 

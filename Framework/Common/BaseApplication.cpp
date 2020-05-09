@@ -19,6 +19,9 @@ int BaseApplication::Initialize()
 
     cout << m_Config;
 
+	// create the main window
+	CreateMainWindow();
+
 	return ret;
 }
 
