@@ -24,19 +24,9 @@ static ostream& operator<<(ostream& out, unordered_map<string, shared_ptr<T>> ma
     return out;
 }
 
-int main(int argc, char** argv)
+void loadScene(const char* scene_name)
 {
-    g_pMemoryManager->Initialize();
-    g_pSceneManager->Initialize();
-    g_pAssetLoader->Initialize();
-
-    if (argc >= 2) {
-        g_pSceneManager->LoadScene(argv[1]);
-    }
-    else
-    {
-        g_pSceneManager->LoadScene("Scene/splash.ogex");
-    }
+    g_pSceneManager->LoadScene(scene_name);
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
     cout << "Dump of Geometries" << endl;
@@ -99,6 +89,27 @@ int main(int argc, char** argv)
         auto pBone = _it.second.lock();
         if (pBone)
             cout << *pBone << endl;
+    }
+}
+
+int main(int argc, char** argv)
+{
+    g_pMemoryManager->Initialize();
+    g_pSceneManager->Initialize();
+    g_pAssetLoader->Initialize();
+
+    int x = 0;
+    while (x < 10)
+    {
+        if (argc >= 2) {
+            loadScene(argv[1]);
+        }
+        else
+        {
+            loadScene("Scene/splash.ogex");
+        }
+
+        x++;
     }
 
     g_pSceneManager->Finalize();

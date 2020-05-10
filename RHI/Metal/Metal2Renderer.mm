@@ -131,6 +131,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 format = MTLPixelFormatBC5_RGUnorm;
                 break;
             default:
+                std::cerr << img << std::endl;
                 assert(0);
         }
     }

@@ -147,8 +147,6 @@ namespace My {
 		out << static_cast<const BaseSceneObject&>(obj) << endl;
 		out << "Coord Index: " << obj.m_nTexCoordIndex << endl;
 		out << "Name: " << obj.m_Name << endl;
-		if (obj.m_pImage)
-			out << "Image: " << *obj.m_pImage << endl;
 
 		return out;
 	}

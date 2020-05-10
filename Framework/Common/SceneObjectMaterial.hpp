@@ -184,13 +184,6 @@ namespace My {
                 }
             }
 
-            void LoadTextures()
-            {
-                if (m_BaseColor.ValueMap) {
-                    m_BaseColor.ValueMap->LoadTexture();
-                }
-            }
-
         friend std::ostream& operator<<(std::ostream& out, const SceneObjectMaterial& obj);
     };
 }

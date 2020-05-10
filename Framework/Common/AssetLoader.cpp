@@ -84,7 +84,6 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
                 looping = false;
             }
             fullPath.append(name);
-            fprintf(stderr, "Trying to open %s\n", fullPath.c_str());
 
             switch(mode) {
                 case MY_OPEN_TEXT:
@@ -96,11 +95,15 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
             }
 
             if (fp)
+            {
                 return (AssetFilePtr)fp;
+            }
         }
 
         upPath.append("../");
     }
+    
+    fprintf(stderr, "[Warning] Failed to open %s\n", fullPath.c_str());
 
     return nullptr;
 }

@@ -80,12 +80,3 @@ shared_ptr<SceneCameraNode> Scene::GetFirstCameraNode() const
             nullptr 
             : CameraNodes.cbegin()->second.lock());
 }
-
-void Scene::LoadResource()
-{
-    for (const auto& material : Materials)
-    {
-        if (auto ptr = material.second)
-            ptr->LoadTextures();
-    }
-}

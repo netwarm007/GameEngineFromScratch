@@ -1,22 +1,23 @@
 add_library(Common
-AnimationManager.cpp
-AssetLoader.cpp
-BaseApplication.cpp
-BlockAllocator.cpp
-DebugManager.cpp
-GraphicsManager.cpp
-InputManager.cpp
-Image.cpp
-MemoryManager.cpp
-PipelineStateManager.cpp
-Scene.cpp
-SceneManager.cpp
-SceneObject.cpp
-StackAllocator.cpp
-SceneObjectAnimation.cpp
-SceneObjectMesh.cpp
-SceneObjectTrack.cpp
-main.cpp
+        AnimationManager.cpp
+        AssetLoader.cpp
+        BaseApplication.cpp
+        BlockAllocator.cpp
+        DebugManager.cpp
+        GraphicsManager.cpp
+        InputManager.cpp
+        Image.cpp
+        MemoryManager.cpp
+        StackAllocator.cpp
+        PipelineStateManager.cpp
+        Scene.cpp
+        SceneManager.cpp
+        SceneObject.cpp
+        SceneObjectAnimation.cpp
+        SceneObjectMesh.cpp
+        SceneObjectTrack.cpp
+        SceneObjectTexture.cpp
+        main.cpp
 )
 
 target_link_libraries(Common

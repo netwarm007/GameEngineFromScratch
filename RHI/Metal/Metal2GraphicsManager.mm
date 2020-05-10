@@ -128,6 +128,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene)
                 {
                     int32_t texture_id;
                     const Image& image = *texture->GetTextureImage();
+                    assert(image.Width && image.Height);
                     texture_id = [m_pRenderer createTexture:image];
 
                     dbc->material.diffuseMap = texture_id;
