@@ -174,7 +174,7 @@ namespace My {
                                 img.Height = m_Height;
                                 img.bitcount = m_BytesPerPixel * 8;
                                 img.pitch = (img.Width * (img.bitcount >> 3) + 3) & ~3u; // for GPU address alignment
-                                img.data_size = img.pitch * img.Height;
+                                img.data_size = (size_t)img.pitch * img.Height;
                                 img.data = new uint8_t[img.data_size];
 
 #if DUMP_DETAILS
@@ -309,24 +309,24 @@ namespace My {
                                                         }
                                                         else
                                                         {
-                                                            B = *(pOut + img.pitch * (current_row - 1) + current_col);
-                                                            C = (current_col < m_BytesPerPixel) ? 0 : *(pOut + img.pitch * (current_row - 1) + current_col - m_BytesPerPixel);
+                                                            B = *(pOut + (ptrdiff_t)img.pitch * ((ptrdiff_t)current_row - 1) + current_col);
+                                                            C = (current_col < m_BytesPerPixel) ? 0 : *(pOut + (ptrdiff_t)img.pitch * ((ptrdiff_t)current_row - 1) + current_col - m_BytesPerPixel);
                                                         }
 
-                                                        A = (current_col < m_BytesPerPixel) ? 0 : *(pOut + img.pitch * current_row + current_col - m_BytesPerPixel);
+                                                        A = (current_col < m_BytesPerPixel) ? 0 : *(pOut + (ptrdiff_t)img.pitch * current_row + current_col - m_BytesPerPixel);
 
                                                         switch (filter_type) {
                                                             case 0:
-                                                                *(pOut + img.pitch * current_row + current_col) = *p;
+                                                                *(pOut + (ptrdiff_t)img.pitch * current_row + current_col) = *p;
                                                                 break;
                                                             case 1:
-                                                                *(pOut + img.pitch * current_row + current_col) = *p + A;
+                                                                *(pOut + (ptrdiff_t)img.pitch * current_row + current_col) = *p + A;
                                                                 break;
                                                             case 2:
-                                                                *(pOut + img.pitch * current_row + current_col) = *p + B;
+                                                                *(pOut + (ptrdiff_t)img.pitch * current_row + current_col) = *p + B;
                                                                 break;
                                                             case 3:
-                                                                *(pOut + img.pitch * current_row + current_col) = *p + (A + B) / 2;
+                                                                *(pOut + (ptrdiff_t)img.pitch * current_row + current_col) = *p + (A + B) / 2;
                                                                 break;
                                                             case 4:
                                                                 {
@@ -335,11 +335,11 @@ namespace My {
                                                                     int pb = abs(_p - B);
                                                                     int pc = abs(_p - C);
                                                                     if (pa <= pb && pa <= pc) {
-                                                                        *(pOut + img.pitch * current_row + current_col) = *p + A;
+                                                                        *(pOut + (ptrdiff_t)img.pitch * current_row + current_col) = *p + A;
                                                                     } else if (pb <= pc) {
-                                                                        *(pOut + img.pitch * current_row + current_col) = *p + B;
+                                                                        *(pOut + (ptrdiff_t)img.pitch * current_row + current_col) = *p + B;
                                                                     } else {
-                                                                        *(pOut + img.pitch * current_row + current_col) = *p + C;
+                                                                        *(pOut + (ptrdiff_t)img.pitch * current_row + current_col) = *p + C;
                                                                     }
                                                                 }
                                                                 break;

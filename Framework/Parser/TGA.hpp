@@ -71,7 +71,7 @@ namespace My {
             img.bitcount = (alpha_depth?32:24);
             img.pitch = (img.Width * (img.bitcount >> 3) + 3) & ~3u; // for GPU address alignment
 
-            img.data_size = img.pitch * img.Height;
+            img.data_size = (size_t)img.pitch * img.Height;
             img.data = new uint8_t[img.data_size];
 
             auto* pOut = (uint8_t*)img.data;
@@ -86,9 +86,9 @@ namespace My {
                                 assert(alpha_depth == 0);
                                 uint16_t color = *(uint16_t*)pData;
                                 pData += 2;
-                                *(pOut + img.pitch * i + j * 3) = ((color & 0x7C00) >> 10);    // R
-                                *(pOut + img.pitch * i + j * 3 + 1) = ((color & 0x03E0) >> 5); // G
-                                *(pOut + img.pitch * i + j * 3 + 2) = (color & 0x001F);        // B
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3) = ((color & 0x7C00) >> 10);    // R
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 + 1) = ((color & 0x03E0) >> 5); // G
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 + 2) = (color & 0x001F);        // B
                             }
                             break;
                         case 16:
@@ -96,27 +96,27 @@ namespace My {
                                 assert(alpha_depth == 1);
                                 uint16_t color = *(uint16_t*)pData;
                                 pData += 2;
-                                *(pOut + img.pitch * i + j * 4) = ((color & 0x7C00) >> 10);    // R
-                                *(pOut + img.pitch * i + j * 4 + 1) = ((color & 0x03E0) >> 5); // G
-                                *(pOut + img.pitch * i + j * 4 + 2) = (color & 0x001F);        // B
-                                *(pOut + img.pitch * i + j * 4 + 3) = ((color & 0x8000)?0xFF:0x00);  // A
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4) = ((color & 0x7C00) >> 10);    // R
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 + 1) = ((color & 0x03E0) >> 5); // G
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 + 2) = (color & 0x001F);        // B
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 + 3) = ((color & 0x8000)?0xFF:0x00);  // A
                             }
                             break;
                         case 24:
                             {
                                 assert(alpha_depth == 0);
-                                *(pOut + img.pitch * i + j * 3 + 2) = *pData++; // B
-                                *(pOut + img.pitch * i + j * 3 + 1) = *pData++; // G
-                                *(pOut + img.pitch * i + j * 3 ) = *pData++;    // R
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 + 2) = *pData++; // B
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 + 1) = *pData++; // G
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 ) = *pData++;    // R
                             }
                             break;
                         case 32:
                             {
                                 assert(alpha_depth == 8);
-                                *(pOut + img.pitch * i + j * 4 + 3) = *pData++; // A
-                                *(pOut + img.pitch * i + j * 4 + 2) = *pData++; // B
-                                *(pOut + img.pitch * i + j * 4 + 1) = *pData++; // G
-                                *(pOut + img.pitch * i + j * 4 ) = *pData++;    // R
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 + 3) = *pData++; // A
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 + 2) = *pData++; // B
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 + 1) = *pData++; // G
+                                *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 ) = *pData++;    // R
                             }
                             break;
                         default:

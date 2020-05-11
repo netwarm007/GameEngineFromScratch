@@ -32,28 +32,12 @@ int main(int , char** )
     string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/splash.ogex");
 
     auto* ogex_parser = new OgexParser ();
-    unique_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);
+    int count = 0;
+    unique_ptr<Scene> pScene;
+    do {
+        pScene = ogex_parser->Parse(ogex_text);
+    } while (count++ < 100);
     delete ogex_parser;
-
-    cout << "Dump of Scene Graph" << endl;
-    cout << "---------------------------" << endl;
-    cout << *pScene->SceneGraph << endl;
-
-    cout << "Dump of Cameras" << endl;
-    cout << "---------------------------" << endl;
-    cout << pScene->Cameras << endl;
-
-    cout << "Dump of Lights" << endl;
-    cout << "---------------------------" << endl;
-    cout << pScene->Lights  << endl;
-
-    cout << "Dump of Geometries" << endl;
-    cout << "---------------------------" << endl;
-    cout << pScene->Geometries << endl;
-
-    cout << "Dump of Materials" << endl;
-    cout << "---------------------------" << endl;
-    cout << pScene->Materials << endl;
 
     g_pAssetLoader->Finalize();
     g_pMemoryManager->Finalize();

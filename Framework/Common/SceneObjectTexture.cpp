@@ -54,13 +54,13 @@ bool SceneObjectTexture::LoadTexture() {
     {
         // DXGI does not have 24bit formats so we have to extend it to 32bit
         uint32_t new_pitch = image.pitch / 3 * 4;
-        size_t data_size = new_pitch * image.Height;
+        size_t data_size = (size_t)new_pitch * image.Height;
         auto* data = new uint8_t[data_size];
         uint8_t* buf;
         uint8_t* src;
         for (uint32_t row = 0; row < image.Height; row++) {
-            buf = data + row * new_pitch;
-            src = image.data + row * image.pitch;
+            buf = data + (ptrdiff_t)row * new_pitch;
+            src = image.data + (ptrdiff_t)row * image.pitch;
             for (uint32_t col = 0; col < image.Width; col++) {
                 memcpy(buf, src, 3);
                 memset(buf+3, 0x00, 1);  // set alpha to 0
@@ -69,7 +69,7 @@ bool SceneObjectTexture::LoadTexture() {
             }
         }
 
-        delete image.data;
+        delete[] image.data;
         image.data = data;
         image.data_size = data_size;
         image.pitch = new_pitch;
@@ -87,13 +87,13 @@ bool SceneObjectTexture::LoadTexture() {
     {
         // DXGI does not have 48bit formats so we have to extend it to 64bit
         uint32_t new_pitch = image.pitch / 3 * 4;
-        size_t data_size = new_pitch * image.Height;
+        size_t data_size = (size_t)new_pitch * image.Height;
         auto* data = new uint8_t[data_size];
         uint8_t* buf;
         uint8_t* src;
         for (uint32_t row = 0; row < image.Height; row++) {
-            buf = data + row * new_pitch;
-            src = image.data + row * image.pitch;
+            buf = data + (ptrdiff_t)row * new_pitch;
+            src = image.data + (ptrdiff_t)row * image.pitch;
             for (uint32_t col = 0; col < image.Width; col++) {
                 memcpy(buf, src, 6);
                 memset(buf+6, 0x00, 2); // set alpha to 0
@@ -102,7 +102,7 @@ bool SceneObjectTexture::LoadTexture() {
             }
         }
 
-        delete image.data;
+        delete[] image.data;
         image.data = data;
         image.data_size = data_size;
         image.pitch = new_pitch;
@@ -119,21 +119,16 @@ bool SceneObjectTexture::LoadTexture() {
 
     cerr << "End async loading of " << m_Name << endl;
 
-    m_pImage = make_shared<Image>(image);
+    atomic_store_explicit(&m_pImage, make_shared<Image>(std::move(image)), std::memory_order::memory_order_release);
 
     return true;
 }
 
 std::shared_ptr<Image> SceneObjectTexture::GetTextureImage()
 { 
-    if(!m_asyncLoadFuture.valid())
-    {
-        LoadTextureAsync();
-    }
-
     assert(m_asyncLoadFuture.valid());
 
     m_asyncLoadFuture.wait();
     assert(m_asyncLoadFuture.get());
-    return m_pImage;
+    return atomic_load_explicit(&m_pImage, std::memory_order::memory_order_acquire);
 }

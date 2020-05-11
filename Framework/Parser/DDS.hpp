@@ -304,7 +304,7 @@ namespace My {
                             img.mipmaps[i].Width = width; 
                             img.mipmaps[i].Height = height; 
                             img.mipmaps[i].pitch = pitch; 
-                            img.mipmaps[i].data_size = pitch * (ALIGN(height, 4) >> 2);
+                            img.mipmaps[i].data_size = (size_t)pitch * (ALIGN(height, 4) >> 2);
                             img.mipmaps[i].offset = img.data_size;
                             img.data_size += img.mipmaps[i].data_size;
 
@@ -321,7 +321,7 @@ namespace My {
             else
             {
                 img.pitch = ALIGN(img.Width * img.bitcount, 8) / 8;
-                img.data_size = img.pitch * img.Height;
+                img.data_size = (size_t)img.pitch * img.Height;
                     
                 img.mipmaps[0].Width = img.Width; 
                 img.mipmaps[0].Height = img.Height; 
@@ -342,7 +342,7 @@ namespace My {
                             img.mipmaps[i].Width = width; 
                             img.mipmaps[i].Height = height; 
                             img.mipmaps[i].pitch = pitch; 
-                            img.mipmaps[i].data_size = pitch * height;
+                            img.mipmaps[i].data_size = (size_t)pitch * height;
                             img.mipmaps[i].offset = img.data_size;
                             img.data_size += img.mipmaps[i].data_size;
 

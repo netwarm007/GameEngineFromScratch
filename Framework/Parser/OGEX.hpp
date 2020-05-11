@@ -854,7 +854,7 @@ namespace My {
 
         std::unique_ptr<Scene> Parse(const std::string& buf) override
         {
-            std::unique_ptr<Scene> pScene(new Scene("OGEX Scene"));
+            std::unique_ptr<Scene> pScene = make_unique<Scene>("OGEX Scene");
             OGEX::OpenGexDataDescription  openGexDataDescription;
 
             ODDL::DataResult result = openGexDataDescription.ProcessText(buf.c_str());
@@ -872,7 +872,7 @@ namespace My {
             return pScene;
         }
     private:
-        bool m_bUpIsYAxis;
+        bool m_bUpIsYAxis{false};
     };
 }
 

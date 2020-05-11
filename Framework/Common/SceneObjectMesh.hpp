@@ -13,7 +13,7 @@ namespace My {
         protected:
             std::vector<SceneObjectIndexArray>  m_IndexArray;
             std::vector<SceneObjectVertexArray> m_VertexArray;
-			PrimitiveType	m_PrimitiveType;
+            PrimitiveType	m_PrimitiveType{ PrimitiveType::kPrimitiveTypeNone };
 
         public:
             explicit SceneObjectMesh(bool visible = true, bool shadow = true, bool motion_blur = true) : BaseSceneObject(SceneObjectType::kSceneObjectTypeMesh) {};
@@ -24,8 +24,8 @@ namespace My {
                 m_PrimitiveType(mesh.m_PrimitiveType)
             {
             };
-            void AddIndexArray(SceneObjectIndexArray&& array) { m_IndexArray.push_back(std::move(array)); };
-            void AddVertexArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::move(array)); };
+            void AddIndexArray(SceneObjectIndexArray&& array) { m_IndexArray.push_back(std::forward<SceneObjectIndexArray>(array)); };
+            void AddVertexArray(SceneObjectVertexArray&& array) { m_VertexArray.push_back(std::forward<SceneObjectVertexArray>(array)); };
 			void SetPrimitiveType(PrimitiveType type) { m_PrimitiveType = type;  };
 
             [[nodiscard]] size_t GetIndexGroupCount() const { return m_IndexArray.size(); };

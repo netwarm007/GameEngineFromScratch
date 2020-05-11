@@ -16,8 +16,17 @@ namespace My {
         public:
             explicit SceneObjectIndexArray(const uint32_t material_index = 0, const size_t restart_index = 0, const IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, const void* data = nullptr, const size_t data_size = 0) 
                 : m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
-            SceneObjectIndexArray(SceneObjectIndexArray& arr) = default;
-            SceneObjectIndexArray(SceneObjectIndexArray&& arr) = default;
+
+            SceneObjectIndexArray(const SceneObjectIndexArray& rhs) 
+                : m_nMaterialIndex(rhs.m_nMaterialIndex), m_szRestartIndex(rhs.m_szRestartIndex), m_DataType(rhs.m_DataType), m_szData(rhs.m_szData) 
+            { auto data = new uint8_t[m_szData]; memcpy(data, rhs.m_pData, m_szData); m_pData = data; }
+
+            SceneObjectIndexArray(SceneObjectIndexArray&& rhs) noexcept
+                : m_nMaterialIndex(rhs.m_nMaterialIndex), m_szRestartIndex(rhs.m_szRestartIndex), m_DataType(rhs.m_DataType), m_szData(rhs.m_szData) 
+            { m_pData = rhs.m_pData; rhs.m_pData = nullptr; }
+
+            ~SceneObjectIndexArray() { if(m_pData) delete[] m_pData; }
+
 
             [[nodiscard]] uint32_t GetMaterialIndex() const { return m_nMaterialIndex; };
             [[nodiscard]] IndexDataType GetIndexType() const { return m_DataType; };

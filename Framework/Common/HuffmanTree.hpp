@@ -7,7 +7,7 @@ namespace My {
     template<typename T>
     class HuffmanNode {
         protected:
-            T m_Value;
+            T m_Value{0};
             std::shared_ptr<HuffmanNode<T>> m_pLeft;
             std::shared_ptr<HuffmanNode<T>> m_pRight;
             bool m_isLeaf = false;

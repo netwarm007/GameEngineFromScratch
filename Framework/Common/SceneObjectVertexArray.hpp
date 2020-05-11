@@ -15,17 +15,29 @@ namespace My {
     {
         protected:
             const std::string m_strAttribute;
-            const uint32_t    m_nMorphTargetIndex;
-            const VertexDataType m_DataType;
+            const uint32_t    m_nMorphTargetIndex{ 0 };
+            const VertexDataType m_DataType{VertexDataType::kVertexDataTypeFloat3};
 
             const void*      m_pData;
 
             const size_t     m_szData;
 
         public:
-            explicit SceneObjectVertexArray(const char* attr = "", const uint32_t morph_index = 0, const VertexDataType data_type = VertexDataType::kVertexDataTypeFloat3, const void* data = nullptr, const size_t data_size = 0) : m_strAttribute(attr), m_nMorphTargetIndex(morph_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
-            SceneObjectVertexArray(SceneObjectVertexArray& arr) = default; 
-            SceneObjectVertexArray(SceneObjectVertexArray&& arr) = default; 
+            explicit SceneObjectVertexArray(const char* attr = "", const uint32_t morph_index = 0, 
+                const VertexDataType data_type = VertexDataType::kVertexDataTypeFloat3, 
+                const void* data = nullptr, const size_t data_size = 0) : 
+                m_strAttribute(attr), m_nMorphTargetIndex(morph_index), 
+                m_DataType(data_type), m_pData(data), m_szData(data_size) {};
+
+            SceneObjectVertexArray(const SceneObjectVertexArray& rhs) 
+                : m_strAttribute(rhs.m_strAttribute), m_nMorphTargetIndex(rhs.m_nMorphTargetIndex), m_DataType(rhs.m_DataType), m_szData(rhs.m_szData) 
+            { auto data = new uint8_t[m_szData]; memcpy(data, rhs.m_pData, m_szData); m_pData = data; }
+
+            SceneObjectVertexArray(SceneObjectVertexArray&& rhs) noexcept
+                : m_strAttribute(std::move(rhs.m_strAttribute)), m_nMorphTargetIndex(rhs.m_nMorphTargetIndex), m_DataType(rhs.m_DataType), m_szData(rhs.m_szData) 
+            { m_pData = rhs.m_pData; rhs.m_pData = nullptr; }
+
+            ~SceneObjectVertexArray() { if(m_pData) delete[] m_pData; }
 
             [[nodiscard]] const std::string& GetAttributeName() const { return m_strAttribute; };
             [[nodiscard]] VertexDataType GetDataType() const { return m_DataType; };

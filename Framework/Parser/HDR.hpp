@@ -104,11 +104,11 @@ namespace My {
 
                 img.bitcount = 32 * 3; // float[3]
                 img.pitch = (img.bitcount >> 3) * img.Width;
-                img.data_size = img.pitch * img.Height;
+                img.data_size = (size_t)img.pitch * img.Height;
                 img.data = new uint8_t[img.data_size];
 
                 // now data section
-                assert(remain_size <= 4 * img.Height * img.Width);
+                assert(remain_size <= (size_t)4 * img.Height * img.Width);
                 assert(remain_size % 4 == 0);
                 float r{0.0f}, g{0.0f}, b{0.0f};
                 auto* pRGBE = reinterpret_cast<unsigned char (*)[4]>(pData);

@@ -355,7 +355,7 @@ namespace My {
                         }
 
                         pBuf = reinterpret_cast<uint8_t*>(img.data)
-                            + (img.pitch * (mcu_index_y * 8 + i) + (mcu_index_x * 8 + j) * (img.bitcount >> 3));
+                            + ((ptrdiff_t)img.pitch * ((ptrdiff_t)mcu_index_y * 8 + i) + ((ptrdiff_t)mcu_index_x * 8 + j) * (img.bitcount >> 3));
                         rgb = ConvertYCbCr2RGB(ycbcr);
                         reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->data[0] = (uint8_t)rgb[0];
                         reinterpret_cast<R8G8B8A8Unorm*>(pBuf)->data[1] = (uint8_t)rgb[1];
@@ -445,10 +445,10 @@ namespace My {
                                 img.Height = m_nLines;
                                 img.bitcount = 32;
                                 img.pitch = mcu_count_x * 8 * (img.bitcount >> 3);
-                                img.data_size = img.pitch * mcu_count_y * 8 * (img.bitcount >> 3);
+                                img.data_size = (size_t)img.pitch * mcu_count_y * 8 * (img.bitcount >> 3);
                                 img.data = new uint8_t[img.data_size];
 
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFC4:
@@ -477,7 +477,7 @@ namespace My {
                                     pTmp += processed_length;
                                     segmentLength -= processed_length;
                                 }
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFDB:
@@ -508,11 +508,11 @@ namespace My {
                                     std::cerr << m_tableQuantization[pQtable->DestinationIdentifier()];
 #endif
 
-                                    size_t processed_length = sizeof(QUANTIZATION_TABLE_SPEC) + 64 * (pQtable->ElementPrecision() + 1);
+                                    size_t processed_length = sizeof(QUANTIZATION_TABLE_SPEC) + (size_t)64 * ((size_t)pQtable->ElementPrecision() + 1);
                                     pTmp += processed_length;
                                     segmentLength -= processed_length;
                                 }
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFDD:
@@ -523,7 +523,7 @@ namespace My {
                                 auto* pRestartHeader = (RESTART_INTERVAL_DEF*) pData;
                                 m_nRestartInterval = endian_net_unsigned_int((uint16_t)pRestartHeader->RestartInterval);
                                 std::cerr << "Restart interval: " << m_nRestartInterval << std::endl;
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFDA:
@@ -541,7 +541,7 @@ namespace My {
                                 const uint8_t* pScanData = pData + endian_net_unsigned_int((uint16_t)pScanHeader->Length) + 2;
 
                                 scanLength = parseScanData(pScanData, pDataEnd, img);
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 + scanLength /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 + scanLength /* length of marker */;
                             }
                             break;
                         case 0xFFD0:
@@ -617,20 +617,20 @@ namespace My {
                                     default:
                                         std::cerr << "Ignor Unrecognized APP0 segment." << std::endl;
                                 }
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         case 0xFFFE:
                             {
                                 std::cerr << "Text Comment" << std::endl;
                                 std::cerr << "----------------------------" << std::endl;
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                         default:
                             {
                                 std::printf("Ignor Unrecognized Segment. Marker=%0x\n", endian_net_unsigned_int(pSegmentHeader->Marker));
-                                pData += endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
+                                pData += (ptrdiff_t)endian_net_unsigned_int(pSegmentHeader->Length) + 2 /* length of marker */;
                             }
                             break;
                     }
