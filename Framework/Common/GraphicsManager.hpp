@@ -115,13 +115,16 @@ namespace My {
         void UpdateConstants();
 
     protected:
-        uint32_t m_nFrameIndex = 0;
+        uint64_t m_nSceneRevision{0};
+
+        uint32_t m_nFrameIndex{0};
 
         std::vector<Frame>  m_Frames;
         std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
         std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
 
-        constexpr static float skyboxVertices[24] = {
+        constexpr static float skyboxVertices[]
+        {
             1.0f,  1.0f,  1.0f,  // 0
             -1.0f,  1.0f,  1.0f,  // 1
             1.0f, -1.0f,  1.0f,  // 2
@@ -132,7 +135,8 @@ namespace My {
             -1.0f, -1.0f, -1.0f   // 7
         };
 
-        constexpr static uint8_t skyboxIndices[36] = {
+        constexpr static uint8_t skyboxIndices[] 
+        {
             4, 7, 5,
             5, 3, 4,
 

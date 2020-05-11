@@ -34,13 +34,14 @@ void GraphicsManager::Finalize()
 
 void GraphicsManager::Tick()
 {
-    if (g_pSceneManager->IsSceneChanged())
+    auto rev = g_pSceneManager->GetSceneRevision();
+    if (m_nSceneRevision != rev)
     {
         EndScene();
         cerr << "[GraphicsManager] Detected Scene Change, reinitialize buffers ..." << endl;
-        const Scene& scene = g_pSceneManager->GetSceneForRendering();
-        BeginScene(scene);
-        g_pSceneManager->NotifySceneIsRenderingQueued();
+        const auto scene = g_pSceneManager->GetSceneForRendering();
+        BeginScene(*scene);
+        m_nSceneRevision = rev;
     }
 
     UpdateConstants();
@@ -107,7 +108,7 @@ void GraphicsManager::Draw()
 void GraphicsManager::CalculateCameraMatrix()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pCameraNode = scene.GetFirstCameraNode();
+    auto pCameraNode = scene->GetFirstCameraNode();
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
     if (pCameraNode) {
         auto transform = *pCameraNode->GetCalculatedTransform();
@@ -126,7 +127,7 @@ void GraphicsManager::CalculateCameraMatrix()
     float farClipDistance = 100.0f;
 
     if (pCameraNode) {
-        auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
+        auto pCamera = scene->GetCamera(pCameraNode->GetSceneObjectRef());
         // Set the field of view and screen aspect ratio.
         fieldOfView = dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)->GetFov();
         nearClipDistance = pCamera->GetNearClipDistance();
@@ -149,7 +150,7 @@ void GraphicsManager::CalculateLights()
     frameContext.numLights = 0;
 
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    for (const auto& LightNode : scene.LightNodes) {
+    for (const auto& LightNode : scene->LightNodes) {
         Light& light = light_info.lights[frameContext.numLights];
         auto pLightNode = LightNode.second.lock();
         if (!pLightNode) continue;
@@ -160,7 +161,7 @@ void GraphicsManager::CalculateLights()
         Transform(light.lightDirection, *trans_ptr);
         Normalize(light.lightDirection);
 
-        auto pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
+        auto pLight = scene->GetLight(pLightNode->GetSceneObjectRef());
         if (pLight) {
             light.lightGuid = pLight->GetGuid();
             light.lightColor = pLight->GetColor().Value;
@@ -184,9 +185,9 @@ void GraphicsManager::CalculateLights()
 
                 Vector4f target = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-                auto pCameraNode = scene.GetFirstCameraNode();
+                auto pCameraNode = scene->GetFirstCameraNode();
                 if (pCameraNode) {
-                    auto pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
+                    auto pCamera = scene->GetCamera(pCameraNode->GetSceneObjectRef());
                     nearClipDistance = pCamera->GetNearClipDistance();
                     farClipDistance = pCamera->GetFarClipDistance();
 

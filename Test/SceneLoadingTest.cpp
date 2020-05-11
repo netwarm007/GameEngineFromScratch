@@ -31,13 +31,13 @@ void loadScene(const char* scene_name)
 
     cout << "Dump of Geometries" << endl;
     cout << "---------------------------" << endl;
-    for (const auto& _it : scene.GeometryNodes)
+    for (const auto& _it : scene->GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         cout << *pGeometryNode << endl;
         if (pGeometryNode) {
             cout << *pGeometryNode << endl;
-            weak_ptr<SceneObjectGeometry> pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            weak_ptr<SceneObjectGeometry> pGeometry = scene->GetGeometry(pGeometryNode->GetSceneObjectRef());
             auto pObj = pGeometry.lock();
             if (pObj)
                 cout << *pObj << endl;
@@ -46,12 +46,12 @@ void loadScene(const char* scene_name)
 
     cout << "Dump of Cameras" << endl;
     cout << "---------------------------" << endl;
-    for (const auto& _it : scene.CameraNodes)
+    for (const auto& _it : scene->CameraNodes)
     {
         auto pCameraNode = _it.second.lock();
         if (pCameraNode) {
             cout << *pCameraNode << endl;
-            weak_ptr<SceneObjectCamera> pCamera = scene.GetCamera(pCameraNode->GetSceneObjectRef());
+            weak_ptr<SceneObjectCamera> pCamera = scene->GetCamera(pCameraNode->GetSceneObjectRef());
             auto pObj = pCamera.lock();
             if (pObj)
                 cout << *pObj << endl;
@@ -60,12 +60,12 @@ void loadScene(const char* scene_name)
 
     cout << "Dump of Lights" << endl;
     cout << "---------------------------" << endl;
-    for (const auto& _it : scene.LightNodes)
+    for (const auto& _it : scene->LightNodes)
     {
         auto pLightNode = _it.second.lock();
         if (pLightNode) {
             cout << *pLightNode << endl;
-            weak_ptr<SceneObjectLight> pLight = scene.GetLight(pLightNode->GetSceneObjectRef());
+            weak_ptr<SceneObjectLight> pLight = scene->GetLight(pLightNode->GetSceneObjectRef());
             auto pObj = pLight.lock();
             if (pObj)
                 cout << *pObj << endl;
@@ -75,7 +75,7 @@ void loadScene(const char* scene_name)
 
     cout << "Dump of Materials" << endl;
     cout << "---------------------------" << endl;
-    for (const auto& _it : scene.Materials)
+    for (const auto& _it : scene->Materials)
     {
         auto pMaterial = _it.second;
         if (pMaterial)
@@ -84,7 +84,7 @@ void loadScene(const char* scene_name)
 
     cout << "Dump of Bone Nodes" << endl;
     cout << "---------------------------" << endl;
-    for (const auto& _it : scene.BoneNodes)
+    for (const auto& _it : scene->BoneNodes)
     {
         auto pBone = _it.second.lock();
         if (pBone)

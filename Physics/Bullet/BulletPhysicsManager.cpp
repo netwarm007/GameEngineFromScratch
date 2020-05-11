@@ -37,11 +37,12 @@ void BulletPhysicsManager::Finalize()
 
 void BulletPhysicsManager::Tick()
 {
-    if (g_pSceneManager->IsSceneChanged())
+    auto rev = g_pSceneManager->GetSceneRevision();
+    if (m_nSceneRevision != rev)
     {
         ClearRigidBodies();
         CreateRigidBodies();
-        g_pSceneManager->NotifySceneIsPhysicalSimulationQueued();
+        m_nSceneRevision = rev;
     }
 
     m_btDynamicsWorld->stepSimulation(1.0f / 60.0f, 10);
@@ -164,12 +165,12 @@ int BulletPhysicsManager::CreateRigidBodies()
     auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
-    for (const auto& _it : scene.GeometryNodes)
+    for (const auto& _it : scene->GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode)
         {
-            auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
+            auto pGeometry = scene->GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);
 
             CreateRigidBody(*pGeometryNode, *pGeometry);
@@ -184,7 +185,7 @@ void BulletPhysicsManager::ClearRigidBodies()
     auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
-    for (const auto& _it : scene.GeometryNodes)
+    for (const auto& _it : scene->GeometryNodes)
     {
         auto pGeometryNode = _it.second.lock();
         if (pGeometryNode)

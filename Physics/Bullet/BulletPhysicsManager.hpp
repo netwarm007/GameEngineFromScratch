@@ -23,6 +23,7 @@ namespace My {
         void ApplyCentralForce(void* rigidBody, Vector3f force) override;
 
     protected:
+        uint64_t    m_nSceneRevision{0};
         btBroadphaseInterface*                  m_btBroadphase;
         btDefaultCollisionConfiguration*        m_btCollisionConfiguration;
         btCollisionDispatcher*                  m_btDispatcher;

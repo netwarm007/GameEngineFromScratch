@@ -16,10 +16,11 @@ namespace My {
         void ClearAnimationClips();
 
     private:
+        uint64_t m_nSceneRevision{0};
         std::chrono::steady_clock::time_point m_TimeLineStartPoint;
         std::chrono::duration<float> m_TimeLineValue;
         std::list<std::shared_ptr<SceneObjectAnimationClip>> m_AnimationClips;
-        bool m_bTimeLineStarted = false;
+        bool m_bTimeLineStarted{false};
     };
 
     extern AnimationManager* g_pAnimationManager;

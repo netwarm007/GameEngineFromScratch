@@ -45,7 +45,7 @@ void ViewerLogic::DrawDebugInfo()
 void ViewerLogic::OnLeftKeyDown()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pCameraNode = scene.GetFirstCameraNode();
+    auto pCameraNode = scene->GetFirstCameraNode();
     if (pCameraNode) {
         auto local_axis = pCameraNode->GetLocalAxis(); 
         Vector3f camera_x_axis;
@@ -59,7 +59,7 @@ void ViewerLogic::OnLeftKeyDown()
 void ViewerLogic::OnRightKeyDown()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pCameraNode = scene.GetFirstCameraNode();
+    auto pCameraNode = scene->GetFirstCameraNode();
     if (pCameraNode) {
         auto local_axis = pCameraNode->GetLocalAxis(); 
         Vector3f camera_x_axis;
@@ -73,7 +73,7 @@ void ViewerLogic::OnRightKeyDown()
 void ViewerLogic::OnUpKeyDown()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pCameraNode = scene.GetFirstCameraNode();
+    auto pCameraNode = scene->GetFirstCameraNode();
     if (pCameraNode) {
         auto local_axis = pCameraNode->GetLocalAxis(); 
         Vector3f camera_y_axis;
@@ -87,7 +87,7 @@ void ViewerLogic::OnUpKeyDown()
 void ViewerLogic::OnDownKeyDown()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
-    auto pCameraNode = scene.GetFirstCameraNode();
+    auto pCameraNode = scene->GetFirstCameraNode();
     if (pCameraNode) {
         auto local_axis = pCameraNode->GetLocalAxis(); 
         Vector3f camera_y_axis;
@@ -103,7 +103,7 @@ void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY)
     if (id == 0)
     {
         auto& scene = g_pSceneManager->GetSceneForRendering();
-        auto pCameraNode = scene.GetFirstCameraNode();
+        auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
             auto screen_width = g_pApp->GetConfiguration().screenWidth;
             auto screen_height = g_pApp->GetConfiguration().screenHeight;

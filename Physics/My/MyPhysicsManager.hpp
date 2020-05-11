@@ -32,5 +32,7 @@ namespace My {
         static void DrawAabb(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass);
         static void DrawShape(const Geometry& geometry, const Matrix4X4f& trans, const Vector3f& centerOfMass);
 #endif
+    private:
+        uint64_t m_nSceneRevision{0};
     };
 }

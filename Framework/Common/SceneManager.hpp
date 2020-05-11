@@ -16,29 +16,23 @@ namespace My {
 
         int LoadScene(const char* scene_file_name);
 
-        bool IsSceneChanged();
-        void NotifySceneIsRenderingQueued();
-        void NotifySceneIsPhysicalSimulationQueued();
-        void NotifySceneIsAnimationQueued();
+        uint64_t GetSceneRevision() const { return m_nSceneRevision; }
 
-        const Scene& GetSceneForRendering();
-        const Scene& GetSceneForPhysicalSimulation();
+        const std::shared_ptr<Scene> GetSceneForRendering() const ;
+        const std::shared_ptr<Scene> GetSceneForPhysicalSimulation() const ;
 
         void ResetScene();
 
-        std::weak_ptr<BaseSceneNode> GetRootNode();
-        std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(const std::string& name);
-        std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(const std::string& key);
+        std::weak_ptr<BaseSceneNode> GetRootNode() const;
+        std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(const std::string& name) const;
+        std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(const std::string& key) const;
 
     protected:
         bool LoadOgexScene(const char* ogex_scene_file_name);
 
     protected:
         std::shared_ptr<Scene>  m_pScene;
-        bool m_bRenderingQueued = false;
-        bool m_bPhysicalSimulationQueued = false;
-        bool m_bAnimationQueued = false;
-        bool m_bDirtyFlag = false;
+        uint64_t m_nSceneRevision = 0;
     };
 
     extern SceneManager*    g_pSceneManager;

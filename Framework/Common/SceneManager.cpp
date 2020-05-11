@@ -22,19 +22,13 @@ void SceneManager::Finalize()
 
 void SceneManager::Tick()
 {
-    if (m_bDirtyFlag)
-    {
-        m_bDirtyFlag = !(m_bRenderingQueued && m_bPhysicalSimulationQueued && m_bAnimationQueued);
-    }
 }
 
 int SceneManager::LoadScene(const char* scene_file_name)
 {
     // now we only has ogex scene parser, call it directly
     if(LoadOgexScene(scene_file_name)) {
-        m_bDirtyFlag = true;
-        m_bRenderingQueued = false;
-        m_bPhysicalSimulationQueued = false;
+        m_nSceneRevision++;
         return 0;
     }
     
@@ -44,7 +38,7 @@ int SceneManager::LoadScene(const char* scene_file_name)
 
 void SceneManager::ResetScene()
 {
-    m_bDirtyFlag = true;
+    m_nSceneRevision++;
 }
 
 bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name)
@@ -61,44 +55,24 @@ bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name)
     return static_cast<bool>(m_pScene);
 }
 
-const Scene& SceneManager::GetSceneForRendering()
+const std::shared_ptr<Scene> SceneManager::GetSceneForRendering() const
 {
     // TODO: we should perform CPU scene crop at here
-    return *m_pScene;
+    return m_pScene;
 }
 
-const Scene& SceneManager::GetSceneForPhysicalSimulation()
+const std::shared_ptr<Scene> SceneManager::GetSceneForPhysicalSimulation() const
 {
     // TODO: we should perform CPU scene crop at here
-    return *m_pScene;
+    return m_pScene;
 }
 
-bool SceneManager::IsSceneChanged()
-{
-    return m_bDirtyFlag;
-}
-
-void SceneManager::NotifySceneIsRenderingQueued()
-{
-    m_bRenderingQueued = true;
-}
-
-void SceneManager::NotifySceneIsPhysicalSimulationQueued()
-{
-    m_bPhysicalSimulationQueued = true;
-}
-
-void SceneManager::NotifySceneIsAnimationQueued()
-{
-    m_bAnimationQueued = true;
-}
-
-weak_ptr<BaseSceneNode> SceneManager::GetRootNode()
+weak_ptr<BaseSceneNode> SceneManager::GetRootNode() const
 {
     return m_pScene->SceneGraph;
 }
 
-weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(const string& name)
+weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(const string& name) const
 {
     auto it = m_pScene->LUT_Name_GeometryNode.find(name);
     if (it != m_pScene->LUT_Name_GeometryNode.end())
@@ -109,7 +83,7 @@ weak_ptr<SceneGeometryNode> SceneManager::GetSceneGeometryNode(const string& nam
     return weak_ptr<SceneGeometryNode>();
 }
 
-weak_ptr<SceneObjectGeometry> SceneManager::GetSceneGeometryObject(const string& key)
+weak_ptr<SceneObjectGeometry> SceneManager::GetSceneGeometryObject(const string& key) const
 {
     return m_pScene->Geometries.find(key)->second;
 }

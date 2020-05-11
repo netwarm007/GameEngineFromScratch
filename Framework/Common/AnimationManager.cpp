@@ -8,7 +8,7 @@ int AnimationManager::Initialize()
 {
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
-    for (const auto& node : scene.AnimatableNodes)
+    for (const auto& node : scene->AnimatableNodes)
     {
         auto pNode = node.lock();
         if (pNode) {
@@ -32,12 +32,13 @@ void AnimationManager::Finalize()
 
 void AnimationManager::Tick()
 {
-    if (g_pSceneManager->IsSceneChanged())
+    auto rev = g_pSceneManager->GetSceneRevision();
+    if (m_nSceneRevision != rev)
     {
         cerr << "[AnimationManager] Detected Scene Change, reinitialize animations ..." << endl;
         Finalize();
         Initialize();
-        g_pSceneManager->NotifySceneIsAnimationQueued();
+        m_nSceneRevision = rev;
     }
 
     if (!m_bTimeLineStarted)
