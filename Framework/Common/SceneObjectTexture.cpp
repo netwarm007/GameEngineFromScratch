@@ -17,7 +17,7 @@ bool SceneObjectTexture::LoadTexture() {
     cerr << "Start async loading of " << m_Name << endl;
 
     Image image;
-    Buffer& buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
+    Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
     string ext = m_Name.substr(m_Name.find_last_of('.'));
     if (ext == ".jpg" || ext == ".jpeg")
     {
