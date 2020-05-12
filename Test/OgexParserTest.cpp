@@ -33,7 +33,7 @@ int main(int , char** )
 
     auto* ogex_parser = new OgexParser ();
     int count = 0;
-    unique_ptr<Scene> pScene;
+    shared_ptr<Scene> pScene;
     do {
         pScene = ogex_parser->Parse(ogex_text);
     } while (count++ < 100);

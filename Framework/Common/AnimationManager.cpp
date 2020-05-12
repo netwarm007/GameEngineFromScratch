@@ -6,22 +6,6 @@ using namespace std;
 
 int AnimationManager::Initialize()
 {
-    auto& scene = g_pSceneManager->GetSceneForRendering();
-
-    for (const auto& node : scene->AnimatableNodes)
-    {
-        auto pNode = node.lock();
-        if (pNode) {
-            BaseSceneNode::animation_clip_iterator it;
-            if (pNode->GetFirstAnimationClip(it))
-            {
-                do {
-                    AddAnimationClip(it->second);
-                } while (pNode->GetNextAnimationClip(it));
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -36,8 +20,24 @@ void AnimationManager::Tick()
     if (m_nSceneRevision != rev)
     {
         cerr << "[AnimationManager] Detected Scene Change, reinitialize animations ..." << endl;
-        Finalize();
-        Initialize();
+        ClearAnimationClips();
+
+        auto& scene = g_pSceneManager->GetSceneForRendering();
+
+        for (const auto& node : scene->AnimatableNodes)
+        {
+            auto pNode = node.lock();
+            if (pNode) {
+                BaseSceneNode::animation_clip_iterator it;
+                if (pNode->GetFirstAnimationClip(it))
+                {
+                    do {
+                        AddAnimationClip(it->second);
+                    } while (pNode->GetNextAnimationClip(it));
+                }
+            }
+        }
+
         m_nSceneRevision = rev;
     }
 

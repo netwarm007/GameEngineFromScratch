@@ -156,7 +156,7 @@ namespace My {
 						for (int32_t i = 0; i < _count; i++)
 						{
 							const OGEX::MeshStructure* _mesh = (*_meshs)[i];
-                            std::shared_ptr<SceneObjectMesh> mesh(new SceneObjectMesh());
+                            std::shared_ptr<SceneObjectMesh> mesh = make_shared<SceneObjectMesh>();
 							const std::string _primitive_type = static_cast<const char*>(_mesh->GetMeshPrimitive());
 							if (_primitive_type == "points") {
 								mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypePointList);
@@ -220,8 +220,9 @@ namespace My {
                                                     default:
                                                         continue;
                                                 }
-                                                SceneObjectVertexArray& _v_array = *new SceneObjectVertexArray(attr, morph_index, vertexDataType, data, elementCount);
-                                                mesh->AddVertexArray(std::move(_v_array));
+                                                mesh->AddVertexArray(
+                                                    SceneObjectVertexArray(attr, morph_index, vertexDataType, (uint8_t*)data, elementCount)
+                                                );
                                             }
                                             break;
                                         case OGEX::kStructureIndexArray:
@@ -298,9 +299,9 @@ namespace My {
                                                 size_t buf_size = elementCount * data_size;
                                                 void* data = new uint8_t[buf_size];
                                                 memcpy(data, _data, buf_size);
-                                                SceneObjectIndexArray& _i_array = *new SceneObjectIndexArray(material_index, restart_index, index_type, data, elementCount);
-                                                mesh->AddIndexArray(std::move(_i_array));
-
+                                                mesh->AddIndexArray(
+                                                    SceneObjectIndexArray(material_index, restart_index, index_type, (uint8_t*)data, elementCount)
+                                                );
                                             }
                                             break;
                                         default:
@@ -311,7 +312,7 @@ namespace My {
                                     sub_structure = sub_structure->Next();
                                 }
 
-								_object->AddMesh(mesh);
+								_object->AddMesh(std::move(mesh));
                             }
 						}
 

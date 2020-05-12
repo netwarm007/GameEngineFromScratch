@@ -18,7 +18,7 @@ int32_t main(int32_t argc, char** argv)
     std::shared_ptr<SceneObjectMesh>         soMesh(new SceneObjectMesh());
     std::shared_ptr<SceneObjectMaterial>     soMaterial(new SceneObjectMaterial());
 
-    soGeometry->AddMesh(soMesh);
+    soGeometry->AddMesh(std::move(soMesh));
 
     cout << *soGeometry << endl;
     cout << *soMaterial << endl;

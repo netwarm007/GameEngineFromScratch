@@ -24,12 +24,8 @@ namespace My {
 
         public:
             SceneObjectTexture() : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture) {}
-            explicit SceneObjectTexture(const std::string name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_Name(name)
+            explicit SceneObjectTexture(const std::string& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_Name(name)
             { LoadTextureAsync(); }
-            explicit SceneObjectTexture(std::string&& name) : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_Name(std::forward<std::string>(name))
-            { LoadTextureAsync(); }
-            SceneObjectTexture(uint32_t coord_index, std::shared_ptr<Image>&& image) 
-                : BaseSceneObject(SceneObjectType::kSceneObjectTypeTexture), m_nTexCoordIndex(coord_index), m_pImage(std::forward<std::shared_ptr<Image>>(image)) {}
 
             void AddTransform(Matrix4X4f& matrix) { m_Transforms.push_back(matrix); }
             void SetName(const std::string& name) { m_Name = name; LoadTextureAsync(); }

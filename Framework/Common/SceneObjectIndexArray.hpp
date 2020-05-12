@@ -9,17 +9,19 @@ namespace My {
             const size_t      m_szRestartIndex;
             const IndexDataType m_DataType;
 
-            const void*       m_pData;
+            const uint8_t*       m_pData;
 
             const size_t      m_szData;
 
         public:
-            explicit SceneObjectIndexArray(const uint32_t material_index = 0, const size_t restart_index = 0, const IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, const void* data = nullptr, const size_t data_size = 0) 
-                : m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type), m_pData(data), m_szData(data_size) {};
+            explicit SceneObjectIndexArray(const uint32_t material_index = 0, const size_t restart_index = 0, 
+                const IndexDataType data_type = IndexDataType::kIndexDataTypeInt16, const uint8_t* data = nullptr, 
+                const size_t data_size = 0) 
+                : 
+                m_nMaterialIndex(material_index), m_szRestartIndex(restart_index), m_DataType(data_type), 
+                m_pData(data), m_szData(data_size) {};
 
-            SceneObjectIndexArray(const SceneObjectIndexArray& rhs) 
-                : m_nMaterialIndex(rhs.m_nMaterialIndex), m_szRestartIndex(rhs.m_szRestartIndex), m_DataType(rhs.m_DataType), m_szData(rhs.m_szData) 
-            { auto data = new uint8_t[m_szData]; memcpy(data, rhs.m_pData, m_szData); m_pData = data; }
+            SceneObjectIndexArray(const SceneObjectIndexArray& rhs) = delete;
 
             SceneObjectIndexArray(SceneObjectIndexArray&& rhs) noexcept
                 : m_nMaterialIndex(rhs.m_nMaterialIndex), m_szRestartIndex(rhs.m_szRestartIndex), m_DataType(rhs.m_DataType), m_szData(rhs.m_szData) 

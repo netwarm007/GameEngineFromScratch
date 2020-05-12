@@ -1,4 +1,5 @@
 #include "SceneObjectTexture.hpp"
+#include <atomic>
 
 using namespace My;
 using namespace std;
@@ -16,7 +17,7 @@ bool SceneObjectTexture::LoadTexture() {
     cerr << "Start async loading of " << m_Name << endl;
 
     Image image;
-    Buffer buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
+    Buffer& buf = g_pAssetLoader->SyncOpenAndReadBinary(m_Name.c_str());
     string ext = m_Name.substr(m_Name.find_last_of('.'));
     if (ext == ".jpg" || ext == ".jpeg")
     {
@@ -126,8 +127,13 @@ bool SceneObjectTexture::LoadTexture() {
 
 std::shared_ptr<Image> SceneObjectTexture::GetTextureImage()
 { 
-    assert(m_asyncLoadFuture.valid());
+    // if loaded returns directly
+    if(m_pImage) 
+    {
+        return atomic_load_explicit(&m_pImage, std::memory_order_acquire);
+    }
 
+    assert(m_asyncLoadFuture.valid());
     m_asyncLoadFuture.wait();
     assert(m_asyncLoadFuture.get());
     return atomic_load_explicit(&m_pImage, std::memory_order::memory_order_acquire);

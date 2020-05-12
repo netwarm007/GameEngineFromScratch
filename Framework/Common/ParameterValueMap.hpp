@@ -26,6 +26,12 @@ namespace My {
             return *this;
         };
 
+        ParameterValueMap& operator=(std::shared_ptr<SceneObjectTexture>&& rhs) 
+        {
+            ValueMap.swap(rhs);
+            return *this;
+        };
+
         friend std::ostream& operator<<(std::ostream& out, const ParameterValueMap<T>& obj)
         {
             out << "Parameter Value: " << obj.Value << std::endl;

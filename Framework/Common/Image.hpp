@@ -25,9 +25,9 @@ namespace My {
         } mipmaps[10];
 
         Image() = default;
-        Image(const Image& rhs) { memcpy(this, &rhs, sizeof(Image)); data = new uint8_t[data_size]; memcpy(data, rhs.data, data_size); }
+        Image(const Image& rhs)  = delete; // disable copy contruct
         Image(Image&& rhs) noexcept { memcpy(this, &rhs, sizeof(Image)); data = rhs.data; rhs.data = nullptr; }
-        Image& operator =(const Image& rhs) { memcpy(this, &rhs, sizeof(Image)); data = new uint8_t[data_size]; memcpy(data, rhs.data, data_size); }
+        Image& operator =(const Image& rhs) = delete; // disable copy assignment
         Image& operator =(Image&& rhs) noexcept { memcpy(this, &rhs, sizeof(Image)); data = rhs.data; rhs.data = nullptr; return *this; }
         ~Image() { if(data) delete[] data; }
     };

@@ -27,6 +27,7 @@ static ostream& operator<<(ostream& out, unordered_map<string, shared_ptr<T>> ma
 void loadScene(const char* scene_name)
 {
     g_pSceneManager->LoadScene(scene_name);
+#if 0
     auto& scene = g_pSceneManager->GetSceneForRendering();
 
     cout << "Dump of Geometries" << endl;
@@ -90,6 +91,7 @@ void loadScene(const char* scene_name)
         if (pBone)
             cout << *pBone << endl;
     }
+#endif
 }
 
 int main(int argc, char** argv)
@@ -99,7 +101,7 @@ int main(int argc, char** argv)
     g_pAssetLoader->Initialize();
 
     int x = 0;
-    while (x < 10)
+    while (x < 100)
     {
         if (argc >= 2) {
             loadScene(argv[1]);

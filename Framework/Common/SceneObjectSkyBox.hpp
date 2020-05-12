@@ -6,8 +6,11 @@ namespace My {
     class SceneObjectSkyBox : public BaseSceneObject
     {
         public:
-        SceneObjectSkyBox() : BaseSceneObject(SceneObjectType::kSceneObjectTypeSkyBox)
-        {}
+        SceneObjectSkyBox() : BaseSceneObject(SceneObjectType::kSceneObjectTypeSkyBox) {}
+        SceneObjectSkyBox(const SceneObjectSkyBox& rhs) = delete;
+        SceneObjectSkyBox(SceneObjectSkyBox&& rhs) noexcept = delete;
+        SceneObjectSkyBox& operator =(const SceneObjectSkyBox& rhs) = delete;
+        SceneObjectSkyBox& operator =(SceneObjectSkyBox&& rhs) = delete;
 
         void SetName(const char* prefix, const char* ext_name)
         {

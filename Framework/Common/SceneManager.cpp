@@ -12,7 +12,6 @@ int SceneManager::Initialize()
 {
     int result = 0;
 
-    m_pScene = make_shared<Scene>();
     return result;
 }
 

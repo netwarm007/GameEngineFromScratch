@@ -103,7 +103,7 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
         upPath.append("../");
     }
     
-    fprintf(stderr, "[Warning] Failed to open %s\n", fullPath.c_str());
+    fprintf(stderr, "[Warning] Failed to open %s\n", name);
 
     return nullptr;
 }
