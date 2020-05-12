@@ -1229,107 +1229,126 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
     pixelShaderByteCode.pShaderBytecode = pipelineState.pixelShaderByteCode.pShaderBytecode;
     pixelShaderByteCode.BytecodeLength = pipelineState.pixelShaderByteCode.BytecodeLength;
 
-    // create the input layout object
-    D3D12_INPUT_ELEMENT_DESC ied_full[] =
+    D3D12_SHADER_BYTECODE computeShaderByteCode;
+    computeShaderByteCode.pShaderBytecode = pipelineState.computeShaderByteCode.pShaderBytecode;
+    computeShaderByteCode.BytecodeLength = pipelineState.computeShaderByteCode.BytecodeLength;
+
+    if (pipelineState.pipelineType == PIPELINE_TYPE::GRAPHIC)
     {
-        {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"NORMAL", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TANGENT", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-    };
+        // create the input layout object
+        D3D12_INPUT_ELEMENT_DESC ied_full[] =
+        {
+            {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"NORMAL", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TANGENT", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+        };
 
-    D3D12_INPUT_ELEMENT_DESC ied_simple[] =
-    {
-        {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-    };
+        D3D12_INPUT_ELEMENT_DESC ied_simple[] =
+        {
+            {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+        };
 
-    D3D12_INPUT_ELEMENT_DESC ied_cube[] =
-    {
-        {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-    };
+        D3D12_INPUT_ELEMENT_DESC ied_cube[] =
+        {
+            {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+        };
 
-    D3D12_INPUT_ELEMENT_DESC ied_pos_only[] =
-    {
-        {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
-    };
+        D3D12_INPUT_ELEMENT_DESC ied_pos_only[] =
+        {
+            {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+        };
 
-    // create rasterizer descriptor
-    D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
-                                D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                                TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF };
+        // create rasterizer descriptor
+        D3D12_RASTERIZER_DESC rsd = { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, TRUE, 
+                                    D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+                                    TRUE, FALSE, FALSE, 0, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF };
 
-    const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend = { FALSE, FALSE,
-        D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-        D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-        D3D12_LOGIC_OP_NOOP,
-        D3D12_COLOR_WRITE_ENABLE_ALL
-    };
+        const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend = { FALSE, FALSE,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+            D3D12_LOGIC_OP_NOOP,
+            D3D12_COLOR_WRITE_ENABLE_ALL
+        };
 
-    D3D12_BLEND_DESC bld = { FALSE, FALSE,
-                                            {
-                                            defaultRenderTargetBlend,
-                                            defaultRenderTargetBlend,
-                                            defaultRenderTargetBlend,
-                                            defaultRenderTargetBlend,
-                                            defaultRenderTargetBlend,
-                                            defaultRenderTargetBlend,
-                                            defaultRenderTargetBlend,
-                                            }
-                                    };
+        D3D12_BLEND_DESC bld = { FALSE, FALSE,
+                                                {
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                defaultRenderTargetBlend,
+                                                }
+                                        };
 
-    const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, 
-        D3D12_STENCIL_OP_KEEP, 
-        D3D12_STENCIL_OP_KEEP, 
-        D3D12_COMPARISON_FUNC_ALWAYS };
+        const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = { D3D12_STENCIL_OP_KEEP, 
+            D3D12_STENCIL_OP_KEEP, 
+            D3D12_STENCIL_OP_KEEP, 
+            D3D12_COMPARISON_FUNC_ALWAYS };
 
-    D3D12_DEPTH_STENCIL_DESC dsd = { TRUE, 
-        D3D12_DEPTH_WRITE_MASK_ALL, 
-        D3D12_COMPARISON_FUNC_LESS, 
-        FALSE, 
-        D3D12_DEFAULT_STENCIL_READ_MASK, 
-        D3D12_DEFAULT_STENCIL_WRITE_MASK, 
-        defaultStencilOp, defaultStencilOp };
+        D3D12_DEPTH_STENCIL_DESC dsd = { TRUE, 
+            D3D12_DEPTH_WRITE_MASK_ALL, 
+            D3D12_COMPARISON_FUNC_LESS, 
+            FALSE, 
+            D3D12_DEFAULT_STENCIL_READ_MASK, 
+            D3D12_DEFAULT_STENCIL_WRITE_MASK, 
+            defaultStencilOp, defaultStencilOp };
 
-    // describe and create the graphics pipeline state object (PSO)
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psod = {};
-    psod.pRootSignature = m_pRootSignature;
-    psod.VS             = vertexShaderByteCode;
-    psod.PS             = pixelShaderByteCode;
-    psod.BlendState     = bld;
-    psod.SampleMask     = UINT_MAX;
-    psod.RasterizerState= rsd;
-    psod.DepthStencilState = dsd;
-    switch(pipelineState.a2vType)
-    {
-        case A2V_TYPES::A2V_TYPES_FULL:
-            psod.InputLayout    = { ied_full, _countof(ied_full) };
-            break;
-        case A2V_TYPES::A2V_TYPES_SIMPLE:
-            psod.InputLayout    = { ied_simple, _countof(ied_simple) };
-            break;
-        case A2V_TYPES::A2V_TYPES_CUBE:
-            psod.InputLayout    = { ied_cube, _countof(ied_cube) };
-            break;
-        case A2V_TYPES::A2V_TYPES_POS_ONLY:
-            psod.InputLayout    = { ied_pos_only, _countof(ied_pos_only) };
-            break;
-        default:
-            assert(0);
+        // describe and create the graphics pipeline state object (PSO)
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC psod {};
+        psod.pRootSignature = m_pRootSignature;
+        psod.VS             = vertexShaderByteCode;
+        psod.PS             = pixelShaderByteCode;
+        psod.BlendState     = bld;
+        psod.SampleMask     = UINT_MAX;
+        psod.RasterizerState= rsd;
+        psod.DepthStencilState = dsd;
+        switch(pipelineState.a2vType)
+        {
+            case A2V_TYPES::A2V_TYPES_FULL:
+                psod.InputLayout    = { ied_full, _countof(ied_full) };
+                break;
+            case A2V_TYPES::A2V_TYPES_SIMPLE:
+                psod.InputLayout    = { ied_simple, _countof(ied_simple) };
+                break;
+            case A2V_TYPES::A2V_TYPES_CUBE:
+                psod.InputLayout    = { ied_cube, _countof(ied_cube) };
+                break;
+            case A2V_TYPES::A2V_TYPES_POS_ONLY:
+                psod.InputLayout    = { ied_pos_only, _countof(ied_pos_only) };
+                break;
+            default:
+                assert(0);
+        }
+        psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        psod.NumRenderTargets = 1;
+        psod.RTVFormats[0]  = ::DXGI_FORMAT_R8G8B8A8_UNORM;
+        psod.DSVFormat = ::DXGI_FORMAT_D32_FLOAT;
+        psod.SampleDesc.Count = 4; // 4X MSAA
+        psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+
+        if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&pPipelineState))))
+        {
+            return false;
+        }
     }
-    psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    psod.NumRenderTargets = 1;
-    psod.RTVFormats[0]  = ::DXGI_FORMAT_R8G8B8A8_UNORM;
-    psod.DSVFormat = ::DXGI_FORMAT_D32_FLOAT;
-    psod.SampleDesc.Count = 4; // 4X MSAA
-    psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
-
-    if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&pPipelineState))))
+    else
     {
-        return false;
-    }
+        assert(pipelineState.pipelineType == PIPELINE_TYPE::COMPUTE);
 
+        ID3DBlob* pBlob;
+        D3D12_CACHED_PIPELINE_STATE cachedPSO;
+        D3D12_COMPUTE_PIPELINE_STATE_DESC psod {m_pRootSignature, computeShaderByteCode, 0, cachedPSO, D3D12_PIPELINE_STATE_FLAG_NONE};
+
+        if (FAILED(hr = m_pDev->CreateComputePipelineState(&psod, IID_PPV_ARGS(&pPipelineState))))
+        {
+            return false;
+        }
+    }
     pPipelineState->SetName(s2ws(pipelineState.pipelineStateName).c_str());
 
     pipelineState.psoIndex = static_cast<int32_t>(m_pPipelineStates.size());
