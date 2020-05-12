@@ -11,11 +11,12 @@ namespace My {
 
         explicit Buffer(size_t size, size_t alignment = 4) : m_szSize(size) { m_pData = reinterpret_cast<uint8_t*>(new uint8_t[size]); }
 
-        Buffer(const Buffer& rhs) { 
-            m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 
-            memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
-            m_szSize =  rhs.m_szSize;
-        }
+        Buffer(const Buffer& rhs) = delete; 
+        // { 
+        //     m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 
+        //     memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
+        //     m_szSize =  rhs.m_szSize;
+        // }
 
         Buffer(Buffer&& rhs) noexcept {
             m_pData = rhs.m_pData;
@@ -24,18 +25,19 @@ namespace My {
             rhs.m_szSize = 0;
         }
 
-        Buffer& operator = (const Buffer& rhs) { 
-            if (m_szSize >= rhs.m_szSize) {
-                memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
-            } 
-            else {
-                delete[] m_pData; 
-                m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 
-                memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
-                m_szSize =  rhs.m_szSize;
-            }
-            return *this; 
-        }
+        Buffer& operator = (const Buffer& rhs) = delete;
+        // { 
+        //     if (m_szSize >= rhs.m_szSize) {
+        //         memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
+        //     } 
+        //     else {
+        //         delete[] m_pData; 
+        //         m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 
+        //         memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
+        //         m_szSize =  rhs.m_szSize;
+        //     }
+        //     return *this; 
+        // }
 
         Buffer& operator = (Buffer&& rhs) noexcept { 
             delete[] m_pData; 
@@ -46,9 +48,15 @@ namespace My {
             return *this; 
         }
 
-        ~Buffer() { delete[] m_pData; m_pData = nullptr; }
+        ~Buffer() 
+        { 
+            if (m_pData != nullptr)
+            {
+                delete[] m_pData; 
+            }
+        }
 
-        uint8_t* GetData() { return m_pData; };
+        [[nodiscard]] uint8_t* GetData() { return m_pData; };
         [[nodiscard]] const uint8_t* GetData() const { return m_pData; };
         [[nodiscard]] size_t GetDataSize() const { return m_szSize; };
         uint8_t* MoveData() 
@@ -57,6 +65,16 @@ namespace My {
             m_pData = nullptr;
             m_szSize = 0;
             return tmp;
+        }
+
+        void SetData(uint8_t* data, size_t size) 
+        { 
+            if (m_pData != nullptr)
+            {
+                delete[] m_pData; 
+            }
+            m_pData = data;
+            m_szSize = size;
         }
 
     protected:

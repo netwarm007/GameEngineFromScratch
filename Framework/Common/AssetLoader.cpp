@@ -108,53 +108,53 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
     return nullptr;
 }
 
-Buffer& AssetLoader::SyncOpenAndReadText(const char *filePath)
+Buffer AssetLoader::SyncOpenAndReadText(const char *filePath)
 {
     AssetFilePtr fp = OpenFile(filePath, MY_OPEN_TEXT);
-    Buffer* pBuff = nullptr;
+    Buffer buff;
 
     if (fp) {
         size_t length = GetSize(fp);
 
-        pBuff = new Buffer(length + 1);
-        length = fread(pBuff->GetData(), 1, length, static_cast<FILE*>(fp));
+        uint8_t* data = new uint8_t[length + 1];
+        length = fread(data, 1, length, static_cast<FILE*>(fp));
 #ifdef DEBUG
         fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
 #endif
 
-        pBuff->GetData()[length] = '\0';
+        data[length] = '\0';
+        buff.SetData(data, length + 1);
 
         CloseFile(fp);
     } else {
         fprintf(stderr, "Error opening file '%s'\n", filePath);
-        pBuff = new Buffer();
     }
 
-    return *pBuff;
+    return buff;
 }
 
-Buffer& AssetLoader::SyncOpenAndReadBinary(const char *filePath)
+Buffer AssetLoader::SyncOpenAndReadBinary(const char *filePath)
 {
     AssetFilePtr fp = OpenFile(filePath, MY_OPEN_BINARY);
-    Buffer* pBuff = nullptr;
+    Buffer buff;
 
     if (fp) {
         size_t length = GetSize(fp);
 
-        pBuff = new Buffer(length);
-        fread(pBuff->GetData(), length, 1, static_cast<FILE*>(fp));
+        uint8_t* data = new uint8_t[length];
+        fread(data, length, 1, static_cast<FILE*>(fp));
 #ifdef DEBUG
         fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
 #endif
+        buff.SetData(data, length);
 
         CloseFile(fp);
     } else {
         fprintf(stderr, "Error opening file '%s'\n", filePath);
-        pBuff = new Buffer();
     }
 
 
-    return *pBuff;
+    return buff;
 }
 
 void AssetLoader::CloseFile(AssetFilePtr& fp)

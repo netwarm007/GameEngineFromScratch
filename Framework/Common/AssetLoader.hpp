@@ -38,9 +38,9 @@ namespace My {
 
         virtual AssetFilePtr OpenFile(const char* name, AssetOpenMode mode);
 
-        virtual Buffer& SyncOpenAndReadText(const char *filePath);
+        virtual Buffer SyncOpenAndReadText(const char *filePath);
 
-        virtual Buffer& SyncOpenAndReadBinary(const char *filePath);
+        virtual Buffer SyncOpenAndReadBinary(const char *filePath);
 
         virtual size_t SyncRead(const AssetFilePtr& fp, Buffer& buf);
 

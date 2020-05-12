@@ -36,7 +36,7 @@ int main(int , char** )
     shared_ptr<Scene> pScene;
     do {
         pScene = ogex_parser->Parse(ogex_text);
-    } while (count++ < 100);
+    } while (count++ < 10);
     delete ogex_parser;
 
     g_pAssetLoader->Finalize();
