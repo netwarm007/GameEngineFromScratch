@@ -33,10 +33,7 @@ int main(int , char** )
 
     auto* ogex_parser = new OgexParser ();
     int count = 0;
-    shared_ptr<Scene> pScene;
-    do {
-        pScene = ogex_parser->Parse(ogex_text);
-    } while (count++ < 10);
+    shared_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);
     delete ogex_parser;
 
     g_pAssetLoader->Finalize();

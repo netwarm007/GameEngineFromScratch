@@ -100,18 +100,12 @@ int main(int argc, char** argv)
     g_pSceneManager->Initialize();
     g_pAssetLoader->Initialize();
 
-    int x = 0;
-    while (x < 100)
+    if (argc >= 2) {
+        loadScene(argv[1]);
+    }
+    else
     {
-        if (argc >= 2) {
-            loadScene(argv[1]);
-        }
-        else
-        {
-            loadScene("Scene/splash.ogex");
-        }
-
-        x++;
+        loadScene("Scene/splash.ogex");
     }
 
     g_pSceneManager->Finalize();
