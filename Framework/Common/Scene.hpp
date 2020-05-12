@@ -34,8 +34,8 @@ namespace My {
     public:
         Scene() {
             m_pDefaultMaterial = std::make_shared<SceneObjectMaterial>("default");
-            //SkyBox = std::make_shared<SceneObjectSkyBox>();
-            //SkyBox->SetName("Textures/hdr/spruit_sunrise", "dds");
+            SkyBox = std::make_shared<SceneObjectSkyBox>();
+            SkyBox->SetName("Textures/hdr/spruit_sunrise", "dds");
             //Terrain = std::make_shared<SceneObjectTerrain>();
             //Terrain->SetName("Textures/terrain/area_1", "png");
         }

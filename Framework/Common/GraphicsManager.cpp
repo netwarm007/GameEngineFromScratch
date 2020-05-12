@@ -145,7 +145,7 @@ void GraphicsManager::CalculateCameraMatrix()
 void GraphicsManager::CalculateLights()
 {
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
-    LightInfo& light_info = m_Frames[m_nFrameIndex].lightInfo;
+    auto& light_info = m_Frames[m_nFrameIndex].lightInfo;
  
     frameContext.numLights = 0;
 
@@ -293,9 +293,18 @@ void GraphicsManager::BeginScene(const Scene& scene)
         EndCompute();
     }
 
-    initializeGeometries(scene);
-    initializeTerrain(scene);
-    initializeSkyBox(scene);
+    if (scene.Geometries.size())
+    {
+        initializeGeometries(scene);
+    }
+    if (scene.Terrain)
+    {
+        initializeTerrain(scene);
+    }
+    if (scene.SkyBox)
+    {
+        initializeSkyBox(scene);
+    }
 }
 
 void GraphicsManager::EndScene()

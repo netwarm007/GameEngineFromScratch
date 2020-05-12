@@ -650,9 +650,6 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
 
 void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame)
 {
-    // reset gl error
-    glGetError();
-
     // Set the color to clear the screen to.
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
@@ -713,27 +710,27 @@ void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<Pip
     }
 
     // Set Sky Box
-    auto texture_id = (uint32_t) m_Frames[m_nFrameIndex].skybox;
+    setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
+    glActiveTexture(GL_TEXTURE10);
+    GLenum target;
+#if defined(OS_WEBASSEMBLY)
+    target = GL_TEXTURE_2D_ARRAY;
+#else
+    target = GL_TEXTURE_CUBE_MAP_ARRAY;
+#endif
+    auto texture_id = m_Frames[m_nFrameIndex].skybox;
     if (texture_id >= 0)
     {
-        setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
-        glActiveTexture(GL_TEXTURE10);
-        GLenum target;
-    #if defined(OS_WEBASSEMBLY)
-        target = GL_TEXTURE_2D_ARRAY;
-    #else
-        target = GL_TEXTURE_CUBE_MAP_ARRAY;
-    #endif
-        glBindTexture(target, texture_id);
+        glBindTexture(target, (GLuint)texture_id);
     }
 
     // Set Terrain
-    texture_id = (uint32_t) m_Frames[m_nFrameIndex].terrainHeightMap;
+    texture_id = m_Frames[m_nFrameIndex].terrainHeightMap;
     if (texture_id >= 0)
     {
         setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
         glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture_id);
+        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, (GLuint)texture_id);
     }
 
     switch(pipelineState->depthTestMode)
@@ -1079,28 +1076,33 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, int3
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 {
-    auto texture_id = (uint32_t) frame.frameContext.shadowMap;
+    const float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     setShaderParameter("SPIRV_Cross_CombinedshadowMapsamp0", 7);
     glActiveTexture(GL_TEXTURE7);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    const float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
+    auto texture_id = frame.frameContext.shadowMap;
+    if (texture_id >= 0)
+    {
+        glBindTexture(GL_TEXTURE_2D_ARRAY, (GLuint)texture_id);
+    }
 
-    texture_id = (uint32_t) frame.frameContext.globalShadowMap;
     setShaderParameter("SPIRV_Cross_CombinedglobalShadowMapsamp0", 8);
     glActiveTexture(GL_TEXTURE8);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, color);	
+    texture_id = frame.frameContext.globalShadowMap;
+    if (texture_id >= 0)
+    {
+        glBindTexture(GL_TEXTURE_2D_ARRAY, (GLuint)texture_id);
+    }
 
-    texture_id = (uint32_t) frame.frameContext.cubeShadowMap;
     setShaderParameter("SPIRV_Cross_CombinedcubeShadowMapsamp0", 9);
     glActiveTexture(GL_TEXTURE9);
     GLenum target;
@@ -1109,9 +1111,13 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame)
 #else
     target = GL_TEXTURE_CUBE_MAP_ARRAY;
 #endif
-    glBindTexture(target, texture_id);
     glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    texture_id = frame.frameContext.cubeShadowMap;
+    if (texture_id >= 0)
+    {
+        glBindTexture(target, (GLuint)texture_id);
+    }
 }
 
 void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap)
