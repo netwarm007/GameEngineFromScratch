@@ -12,11 +12,6 @@ namespace My {
         explicit Buffer(size_t size, size_t alignment = 4) : m_szSize(size) { m_pData = reinterpret_cast<uint8_t*>(new uint8_t[size]); }
 
         Buffer(const Buffer& rhs) = delete; 
-        // { 
-        //     m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 
-        //     memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
-        //     m_szSize =  rhs.m_szSize;
-        // }
 
         Buffer(Buffer&& rhs) noexcept {
             m_pData = rhs.m_pData;
@@ -26,18 +21,6 @@ namespace My {
         }
 
         Buffer& operator = (const Buffer& rhs) = delete;
-        // { 
-        //     if (m_szSize >= rhs.m_szSize) {
-        //         memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
-        //     } 
-        //     else {
-        //         delete[] m_pData; 
-        //         m_pData = reinterpret_cast<uint8_t*>(new uint8_t[rhs.m_szSize]); 
-        //         memcpy(m_pData, rhs.m_pData, rhs.m_szSize);
-        //         m_szSize =  rhs.m_szSize;
-        //     }
-        //     return *this; 
-        // }
 
         Buffer& operator = (Buffer&& rhs) noexcept { 
             delete[] m_pData; 

@@ -3,6 +3,62 @@
 using namespace std;
 
 namespace My {
+    Image::Image(Image&& rhs) noexcept
+    { 
+        Width = rhs.Width;
+        Height = rhs.Height;
+        data = rhs.data; 
+        bitcount = rhs.bitcount;
+        pitch = rhs.pitch;
+        data_size = rhs.data_size;
+        compressed = rhs.compressed;
+        is_float = rhs.is_float;
+        compress_format = rhs.compress_format;
+        mipmap_count = rhs.mipmap_count;
+        memcpy(mipmaps, rhs.mipmaps, sizeof(mipmaps));
+        rhs.Width = 0;
+        rhs.Height = 0;
+        rhs.data = nullptr; 
+        rhs.bitcount = 0;
+        rhs.pitch = 0;
+        rhs.data_size = 0;
+        rhs.compressed = false;
+        rhs.is_float = false;
+        rhs.compress_format = 0;
+        rhs.mipmap_count = 1;
+        memset(rhs.mipmaps, 0, sizeof(mipmaps));
+    }
+
+    Image& Image::operator =(Image&& rhs) noexcept 
+    { 
+        if (this != &rhs)
+        {
+            Width = rhs.Width;
+            Height = rhs.Height;
+            data = rhs.data; 
+            bitcount = rhs.bitcount;
+            pitch = rhs.pitch;
+            data_size = rhs.data_size;
+            compressed = rhs.compressed;
+            is_float = rhs.is_float;
+            compress_format = rhs.compress_format;
+            mipmap_count = rhs.mipmap_count;
+            memcpy(mipmaps, rhs.mipmaps, sizeof(mipmaps));
+            rhs.Width = 0;
+            rhs.Height = 0;
+            rhs.data = nullptr; 
+            rhs.bitcount = 0;
+            rhs.pitch = 0;
+            rhs.data_size = 0;
+            rhs.compressed = false;
+            rhs.is_float = false;
+            rhs.compress_format = 0;
+            rhs.mipmap_count = 1;
+            memset(rhs.mipmaps, 0, sizeof(mipmaps));
+            return *this; 
+        }
+    }
+
     ostream& operator<<(ostream& out, const Image& image)
     {
         out << "Image" << endl;

@@ -26,9 +26,9 @@ namespace My {
 
         Image() = default;
         Image(const Image& rhs)  = delete; // disable copy contruct
-        Image(Image&& rhs) noexcept { memcpy(this, &rhs, sizeof(Image)); data = rhs.data; rhs.data = nullptr; }
+        Image(Image&& rhs) noexcept;
         Image& operator =(const Image& rhs) = delete; // disable copy assignment
-        Image& operator =(Image&& rhs) noexcept { memcpy(this, &rhs, sizeof(Image)); data = rhs.data; rhs.data = nullptr; return *this; }
+        Image& operator =(Image&& rhs) noexcept;
         ~Image() { if(data) delete[] data; }
     };
 
