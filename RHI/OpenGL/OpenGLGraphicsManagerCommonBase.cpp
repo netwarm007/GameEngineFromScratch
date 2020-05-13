@@ -410,7 +410,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
 {
     // load skybox, irradiance map and radiance map
     uint32_t texture_id;
-    const uint32_t kMaxMipLevels = 10;
+    const size_t kMaxMipLevels = 10;
     glGenTextures(1, &texture_id);
     GLenum target;
 #if defined(OS_WEBASSEMBLY)
@@ -468,7 +468,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
         getOpenGLTextureFormat(*pImage, format, internal_format, type);
 
         int32_t zoffset = (i % 6) + 6;
-        for (decltype(pImage->mipmap_count) level = 0; level < min(pImage->mipmap_count, kMaxMipLevels); level++)
+        for (decltype(pImage->mipmaps.size()) level = 0; level < min(pImage->mipmaps.size(), kMaxMipLevels); level++)
         {
             if (pImage->compressed)
             {

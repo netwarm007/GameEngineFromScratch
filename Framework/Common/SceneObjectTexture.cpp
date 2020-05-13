@@ -77,11 +77,11 @@ bool SceneObjectTexture::LoadTexture() {
         image.bitcount = 32;
         
         // adjust mipmaps
-        for (uint32_t mip = 0; mip < image.mipmap_count; mip++)
+        for (auto& mip : image.mipmaps)
         {
-            image.mipmaps[mip].pitch = image.mipmaps[mip].pitch / 3 * 4;
-            image.mipmaps[mip].offset = image.mipmaps[mip].offset / 3 * 4;
-            image.mipmaps[mip].data_size = image.mipmaps[mip].data_size / 3 * 4;
+            mip.pitch = mip.pitch / 3 * 4;
+            mip.offset = mip.offset / 3 * 4;
+            mip.data_size = mip.data_size / 3 * 4;
         }
     }
     else if (image.bitcount == 48)
@@ -110,11 +110,11 @@ bool SceneObjectTexture::LoadTexture() {
         image.bitcount = 64;
         
         // adjust mipmaps
-        for (uint32_t mip = 0; mip < image.mipmap_count; mip++)
+        for (auto& mip : image.mipmaps)
         {
-            image.mipmaps[mip].pitch = image.mipmaps[mip].pitch / 3 * 4;
-            image.mipmaps[mip].offset = image.mipmaps[mip].offset / 3 * 4;
-            image.mipmaps[mip].data_size = image.mipmaps[mip].data_size / 3 * 4;
+            mip.pitch = mip.pitch / 3 * 4;
+            mip.offset = mip.offset / 3 * 4;
+            mip.data_size = mip.data_size / 3 * 4;
         }
     }
 

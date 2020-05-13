@@ -384,11 +384,7 @@ namespace My {
                 std::cerr << "File is not a PNG file!" << std::endl;
             }
 
-            img.mipmaps[0].Width = img.Width; 
-            img.mipmaps[0].Height = img.Height; 
-            img.mipmaps[0].pitch = img.pitch;
-            img.mipmaps[0].offset = 0;
-            img.mipmaps[0].data_size = img.data_size;
+            img.mipmaps.emplace_back(img.Width, img.Height, img.pitch, 0, img.data_size);
 
             // now swap the endian
             if (img.bitcount > 32)

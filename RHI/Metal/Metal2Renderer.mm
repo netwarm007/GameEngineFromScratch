@@ -220,7 +220,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     textureDesc.pixelFormat = getMtlPixelFormat(*images[0]);
     textureDesc.width = images[0]->Width;
     textureDesc.height = images[0]->Height;
-    textureDesc.mipmapLevelCount = std::max(images[16]->mipmap_count, 2U);
+    textureDesc.mipmapLevelCount = std::max(images[16]->mipmaps.size(), (size_t)2);
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
@@ -228,7 +228,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // now upload the skybox 
     for (int32_t slice = 0; slice < 6; slice++)
     {
-        assert(images[slice]->mipmap_count == 1);
+        assert(images[slice]->mipmaps.size() == 1);
         MTLRegion region = {
             { 0, 0, 0 },                                        // MTLOrigin
             {images[slice]->Width, images[slice]->Height, 1}    // MTLSize
@@ -245,7 +245,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // now upload the irradiance map as 2nd mip of skybox
     for (int32_t slice = 6; slice < 12; slice++)
     {
-        assert(images[slice]->mipmap_count == 1);
+        assert(images[slice]->mipmaps.size() == 1);
         MTLRegion region = {
             { 0, 0, 0 },                                        // MTLOrigin
             {images[slice]->Width, images[slice]->Height, 1}    // MTLSize
@@ -262,19 +262,20 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // now upload the radiance map 2nd cubemap
     for (int32_t slice = 12; slice < 18; slice++)
     {
-        for (int32_t mip = 0; mip < images[slice]->mipmap_count; mip++)
+        int level = 0;
+        for (auto& mip : images[slice]->mipmaps)
         {
             MTLRegion region = {
                 { 0, 0, 0 },                                                                // MTLOrigin
-                {images[slice]->mipmaps[mip].Width, images[slice]->mipmaps[mip].Height, 1}  // MTLSize
+                {mip.Width, mip.Height, 1}  // MTLSize
             };
 
             [texture replaceRegion:region
-                        mipmapLevel:mip
+                        mipmapLevel:level++
                         slice:slice - 6
-                        withBytes:images[slice]->data + images[slice]->mipmaps[mip].offset
-                        bytesPerRow:images[slice]->mipmaps[mip].pitch
-                        bytesPerImage:images[slice]->mipmaps[mip].data_size];
+                        withBytes:images[slice]->data + mip.offset
+                        bytesPerRow:mip.pitch
+                        bytesPerImage:mip.data_size];
         }
     }
 

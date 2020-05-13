@@ -14,8 +14,7 @@ namespace My {
         compressed = rhs.compressed;
         is_float = rhs.is_float;
         compress_format = rhs.compress_format;
-        mipmap_count = rhs.mipmap_count;
-        memcpy(mipmaps, rhs.mipmaps, sizeof(mipmaps));
+        mipmaps = std::move(rhs.mipmaps);
         rhs.Width = 0;
         rhs.Height = 0;
         rhs.data = nullptr; 
@@ -25,8 +24,6 @@ namespace My {
         rhs.compressed = false;
         rhs.is_float = false;
         rhs.compress_format = 0;
-        rhs.mipmap_count = 1;
-        memset(rhs.mipmaps, 0, sizeof(mipmaps));
     }
 
     Image& Image::operator =(Image&& rhs) noexcept 
@@ -42,8 +39,7 @@ namespace My {
             compressed = rhs.compressed;
             is_float = rhs.is_float;
             compress_format = rhs.compress_format;
-            mipmap_count = rhs.mipmap_count;
-            memcpy(mipmaps, rhs.mipmaps, sizeof(mipmaps));
+            mipmaps = std::move(rhs.mipmaps);
             rhs.Width = 0;
             rhs.Height = 0;
             rhs.data = nullptr; 
@@ -53,10 +49,8 @@ namespace My {
             rhs.compressed = false;
             rhs.is_float = false;
             rhs.compress_format = 0;
-            rhs.mipmap_count = 1;
-            memset(rhs.mipmaps, 0, sizeof(mipmaps));
-            return *this; 
         }
+        return *this;
     }
 
     ostream& operator<<(ostream& out, const Image& image)
