@@ -730,7 +730,7 @@ void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<Pip
     {
         setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
         glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, (GLuint)texture_id);
+        glBindTexture(GL_TEXTURE_2D, (GLuint)texture_id);
     }
 
     switch(pipelineState->depthTestMode)
