@@ -127,14 +127,14 @@ bool SceneObjectTexture::LoadTexture() {
 
 std::shared_ptr<Image> SceneObjectTexture::GetTextureImage()
 { 
-    // if loaded returns directly
-    if(m_pImage) 
+    if(m_asyncLoadFuture.valid())
     {
-        return atomic_load_explicit(&m_pImage, std::memory_order_acquire);
+        m_asyncLoadFuture.wait();
+        assert(m_asyncLoadFuture.get());
+        return atomic_load_explicit(&m_pImage, std::memory_order::memory_order_acquire);
     }
-
-    assert(m_asyncLoadFuture.valid());
-    m_asyncLoadFuture.wait();
-    assert(m_asyncLoadFuture.get());
-    return atomic_load_explicit(&m_pImage, std::memory_order::memory_order_acquire);
+    else
+    {
+        return m_pImage;
+    }
 }
