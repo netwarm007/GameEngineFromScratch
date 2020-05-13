@@ -22,6 +22,7 @@ void CocoaApplication::CreateMainWindow()
     id appMenuItem = [NSMenuItem new];
     [menubar addItem: appMenuItem];
     [NSApp setMainMenu:menubar];
+    [menubar release];
 
     id appMenu = [NSMenu new];
     id quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit"
@@ -29,9 +30,12 @@ void CocoaApplication::CreateMainWindow()
         keyEquivalent:@"q"];
     [appMenu addItem:quitMenuItem];
     [appMenuItem setSubmenu:appMenu];
+    [appMenu release];
+    [appMenuItem release];
 
     id appDelegate = [AppDelegate new];
     [NSApp setDelegate: appDelegate];
+    [appDelegate release];
     [NSApp activateIgnoringOtherApps:YES];
     [NSApp finishLaunching];
 
@@ -43,6 +47,7 @@ void CocoaApplication::CreateMainWindow()
     [m_pWindow makeKeyAndOrderFront:nil];
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
+    [winDelegate release];
 }
 
 void CocoaApplication::Finalize()
@@ -150,7 +155,6 @@ void CocoaApplication::Tick()
         }
         [NSApp sendEvent:event];
         [NSApp updateWindows];
-        [event release];
     }
 
 }

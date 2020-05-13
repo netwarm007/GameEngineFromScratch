@@ -73,11 +73,6 @@ int main(int argc, char** argv)
     g_pAssetLoader->Finalize();
     g_pMemoryManager->Finalize();
 
-    delete g_pAnimationManager;
-    delete g_pSceneManager;
-    delete g_pAssetLoader;
-    delete g_pMemoryManager;
-
     return 0;
 }
 

@@ -3,19 +3,9 @@
 using namespace My;
 using namespace std;
 
-int AssetLoader::Initialize()
-{
-    return 0;
-}
-
-void AssetLoader::Finalize()
+void AssetLoader::ClearSearchPath()
 {
     m_strSearchPath.clear();
-}
-
-void AssetLoader::Tick()
-{
-
 }
 
 bool AssetLoader::AddSearchPath(const char *path)

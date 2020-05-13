@@ -12,11 +12,6 @@ namespace My {
     public:
         ~AssetLoader() override = default;
 
-        int Initialize() override;
-        void Finalize() override;
-
-        void Tick() override;
-
         using AssetFilePtr = void *;
 
         enum AssetOpenMode {
@@ -30,9 +25,15 @@ namespace My {
             MY_SEEK_END = 2  /// SEEK_END
         };
 
+        int Initialize() override { return 0; }
+        void Finalize() override {}
+        void Tick() override {}
+
         bool AddSearchPath(const char *path);
 
         bool RemoveSearchPath(const char *path);
+
+        void ClearSearchPath();
 
         virtual bool FileExists(const char *filePath);
 

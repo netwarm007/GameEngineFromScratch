@@ -60,7 +60,7 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
 {
     MetalPipelineState* pState = new MetalPipelineState(**ppPipelineState);
 
-    MTLVertexDescriptor* mtlVertexDescriptor = [[MTLVertexDescriptor alloc] init];
+    MTLVertexDescriptor* mtlVertexDescriptor = [MTLVertexDescriptor new];
 
     initMtlVertexDescriptor(mtlVertexDescriptor, pState);
 
@@ -88,13 +88,16 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
             id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:shaderFileName2MainFuncName(pState->vertexShaderName)];
             id<MTLFunction> fragmentFunction = [myLibrary newFunctionWithName:shaderFileName2MainFuncName(pState->pixelShaderName)];
 
-            MTLRenderPipelineDescriptor *pipelineStateDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
+            MTLRenderPipelineDescriptor *pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
             pipelineStateDescriptor.label = [NSString stringWithCString:pState->pipelineStateName.c_str()
                                                     encoding:[NSString defaultCStringEncoding]];
             pipelineStateDescriptor.sampleCount = 4;
             pipelineStateDescriptor.vertexFunction = vertexFunction;
+            [vertexFunction release];
             pipelineStateDescriptor.fragmentFunction = fragmentFunction;
+            [fragmentFunction release];
             pipelineStateDescriptor.vertexDescriptor = mtlVertexDescriptor;
+            [mtlVertexDescriptor release];
             pipelineStateDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA8Unorm;
             pipelineStateDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
 
@@ -104,17 +107,23 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
             {
                 NSLog(@"Failed to created render pipeline state %@, error %@", pipelineStateDescriptor.label, error);
             }
+            [pipelineStateDescriptor release];
         }
         break;
         case PIPELINE_TYPE::COMPUTE:
         {
             id<MTLFunction> compFunction = [myLibrary newFunctionWithName:shaderFileName2MainFuncName(pState->computeShaderName)];
 
-            pState->mtlComputePipelineState =
-                [_device newComputePipelineStateWithFunction:compFunction error:&error];
-            if (!pState->mtlComputePipelineState)
+            if (compFunction != nil)
             {
-                NSLog(@"Failed to created compute pipeline state, error %@", error);
+                pState->mtlComputePipelineState =
+                    [_device newComputePipelineStateWithFunction:compFunction error:&error];
+                if (!pState->mtlComputePipelineState)
+                {
+                    NSLog(@"Failed to created compute pipeline state, error %@", error);
+                }
+
+                [compFunction release];
             }
         }
         break;
@@ -122,7 +131,9 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
             assert(0);
     }
 
-    MTLDepthStencilDescriptor *depthStateDesc = [[MTLDepthStencilDescriptor alloc] init];
+    [myLibrary release];
+
+    MTLDepthStencilDescriptor *depthStateDesc = [MTLDepthStencilDescriptor new];
 
     switch(pState->depthTestMode)
     {
@@ -167,6 +178,9 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
     }
 
     pState->depthState = [_device newDepthStencilStateWithDescriptor:depthStateDesc];
+    [depthStateDesc release];
+
+    [_device release];
 
     *ppPipelineState = pState;
 
