@@ -295,7 +295,7 @@ namespace My {
                         if (width > 0 && height > 0)
                         {
                             auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) * img.bitcount * 2; //  img.bitcount / 8 * 16
-                            img.mipmaps.emplace_back(width, height, pitch, (size_t)pitch * (ALIGN(height, 4) >> 2), img.data_size);
+                            img.mipmaps.emplace_back(width, height, pitch, pitch * (ALIGN(height, 4) >> 2), img.data_size);
                             img.data_size += img.mipmaps[i].data_size;
 
                             width >>= 1; // /2
@@ -322,11 +322,11 @@ namespace My {
                         if (width > 0 && height > 0)
                         {
                             auto pitch = ALIGN(width * img.bitcount, 8) / 8;
-                            img.mipmaps.emplace_back(width, height, pitch, (size_t)pitch * height, img.data_size);
+                            img.mipmaps.emplace_back(width, height, pitch, img.data_size /* as offset */, pitch * height /* as data_size */);
                             img.data_size += img.mipmaps[i].data_size;
 
-                            width >>= 1; // /2
-                            height >>= 1; // /2
+                            width >>= 1;
+                            height >>= 1;
                         }
                         else
                         {
