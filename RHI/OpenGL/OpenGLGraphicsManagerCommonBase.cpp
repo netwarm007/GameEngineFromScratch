@@ -656,6 +656,7 @@ void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     SetPerFrameConstants(frame.frameContext);
+    SetLightInfo(frame.lightInfo);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndFrame()

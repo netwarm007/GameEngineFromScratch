@@ -56,8 +56,8 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
         float3 F    = fresnelSchlick(max(dot(H, V), 0.0f), F0);       
         
         float3 kS = F;
-        float3 kD = 1.0f - kS;
-        kD *= 1.0f - meta;	  
+        float3 kD = 1.0f.xxx - kS;
+        kD *= (1.0f - meta).xxx;	  
         
         float3 numerator    = NDF * G * F;
         float denominator = 4.0f * max(dot(N, V), 0.0f) * NdotL;
