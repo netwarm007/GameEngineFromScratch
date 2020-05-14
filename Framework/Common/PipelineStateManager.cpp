@@ -68,6 +68,8 @@ void PipelineStateManager::Clear()
     }
 
     assert(m_pipelineStates.empty());
+
+    cout << "Pipeline State Manager Clear has been called. " << endl;
 }
 
 const std::shared_ptr<PipelineState> PipelineStateManager::GetPipelineState(std::string name) const
@@ -169,6 +171,8 @@ int PipelineStateManager::Initialize()
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     RegisterPipelineState(pipelineState);
+
+    cout << "Pipeline State Manager Initialized. [" << m_pipelineStates.size() << "]" << endl;
 
     return 0;
 }

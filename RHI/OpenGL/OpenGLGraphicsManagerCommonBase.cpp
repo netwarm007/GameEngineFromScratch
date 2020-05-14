@@ -606,33 +606,55 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
         if (m_uboDrawFrameConstant[i])
         {
             glDeleteBuffers(1, &m_uboDrawFrameConstant[i]);
+            m_uboDrawFrameConstant[i] = 0;
         }
         
         if (m_uboDrawBatchConstant[i])
         {
             glDeleteBuffers(1, &m_uboDrawBatchConstant[i]);
+            m_uboDrawBatchConstant[i] = 0;
         }
         
+        if (m_uboLightInfo[i])
+        {
+            glDeleteBuffers(1, &m_uboLightInfo[i]);
+            m_uboLightInfo[i] = 0;
+        }
+
         if (m_uboShadowMatricesConstant[i])
         {
             glDeleteBuffers(1, &m_uboShadowMatricesConstant[i]);
+            m_uboShadowMatricesConstant[i] = 0;
         }
 
+#if DEBUG
         if (m_uboDebugConstant[i])
         {
             glDeleteBuffers(1, &m_uboDebugConstant[i]);
+            m_uboDebugConstant[i] = 0;
         }
+#endif
     }
 
     if (m_TerrainDrawBatchContext.vao)
     {
         glDeleteVertexArrays(1, &m_TerrainDrawBatchContext.vao);
+        m_TerrainDrawBatchContext.vao = 0;
     }
 
     if (m_SkyBoxDrawBatchContext.vao)
     {
         glDeleteVertexArrays(1, &m_SkyBoxDrawBatchContext.vao);
+        m_SkyBoxDrawBatchContext.vao = 0;
     }
+
+#if DEBUG
+    m_DebugDrawBatchContext.clear();
+
+    for (auto& buf : m_DebugBuffers) {
+        glDeleteBuffers(1, &buf);
+    }
+#endif
 
     for (auto& buf : m_Buffers) {
         glDeleteBuffers(1, &buf);
@@ -644,6 +666,7 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
 
     m_Buffers.clear();
     m_Textures.clear();
+    m_Frames.clear();
 
     GraphicsManager::EndScene();
 }

@@ -103,16 +103,17 @@ namespace My {
         uint32_t m_uboLightInfo[GfxConfiguration::kMaxInFlightFrameCount] = {0};
         uint32_t m_uboDrawBatchConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
         uint32_t m_uboShadowMatricesConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
-        uint32_t m_uboDebugConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
 
         struct OpenGLDrawBatchContext : public DrawBatchContext {
-            uint32_t vao;
-            uint32_t mode;
-            uint32_t type;
-            int32_t count;
+            uint32_t vao{0};
+            uint32_t mode{0};
+            uint32_t type{0};
+            int32_t count{0};
         };
 
 #ifdef DEBUG
+        uint32_t m_uboDebugConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
+
         struct DebugDrawBatchContext : public OpenGLDrawBatchContext {
             Vector3f color;
             Matrix4X4f trans;
