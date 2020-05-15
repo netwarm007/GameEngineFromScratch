@@ -202,7 +202,7 @@ namespace My {
             img.Width = pHeader->dwWidth;
             img.Height = pHeader->dwHeight;
             img.pitch = pHeader->dwPitchOrLinearSize; //unreliable
-            img.mipmap_count = pHeader->dwMipMapCount;
+            auto mipmap_count = pHeader->dwMipMapCount;
             assert(pHeader->ddspf.dwSize == 32);
 
             if (pHeader->ddspf.dwFlags & 0x4 /* DDPF_FOURCC */)
@@ -241,6 +241,8 @@ namespace My {
                     img.compressed = true;
                 }
             }
+
+            img.mipmaps.reserve(mipmap_count);
 
             if (img.compressed)
             {
@@ -283,29 +285,17 @@ namespace My {
                     std::cerr << "DXGI_FORMAT: " << pHeaderDXT10->dxgiFormat << std::endl;
                 }
                 
-                img.data_size = img.pitch * (ALIGN(img.Height, 4) >> 2);
-                
-                img.mipmaps[0].Width = img.Width; 
-                img.mipmaps[0].Height = img.Height; 
-                img.mipmaps[0].pitch = img.pitch;
-                img.mipmaps[0].offset = 0;
-                img.mipmaps[0].data_size = img.data_size;
-
-                if(img.mipmap_count > 0)
+                if(mipmap_count > 0)
                 {
-                    uint32_t width = img.Width >> 1;
-                    uint32_t height = img.Height >> 1;
+                    uint32_t width = img.Width;
+                    uint32_t height = img.Height;
 
-                    for (decltype(img.mipmap_count) i = 1; i < img.mipmap_count; i++)
+                    for (decltype(mipmap_count) i = 0; i < mipmap_count; i++)
                     {
                         if (width > 0 && height > 0)
                         {
                             auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) * img.bitcount * 2; //  img.bitcount / 8 * 16
-                            img.mipmaps[i].Width = width; 
-                            img.mipmaps[i].Height = height; 
-                            img.mipmaps[i].pitch = pitch; 
-                            img.mipmaps[i].data_size = (size_t)pitch * (ALIGN(height, 4) >> 2);
-                            img.mipmaps[i].offset = img.data_size;
+                            img.mipmaps.emplace_back(width, height, pitch, pitch * (ALIGN(height, 4) >> 2), img.data_size);
                             img.data_size += img.mipmaps[i].data_size;
 
                             width >>= 1; // /2
@@ -321,33 +311,22 @@ namespace My {
             else
             {
                 img.pitch = ALIGN(img.Width * img.bitcount, 8) / 8;
-                img.data_size = (size_t)img.pitch * img.Height;
                     
-                img.mipmaps[0].Width = img.Width; 
-                img.mipmaps[0].Height = img.Height; 
-                img.mipmaps[0].pitch = img.pitch;
-                img.mipmaps[0].offset = 0;
-                img.mipmaps[0].data_size = img.data_size;
-
-                if(img.mipmap_count > 0)
+                if(mipmap_count > 0)
                 {
-                    uint32_t width = img.Width >> 1;
-                    uint32_t height = img.Height >> 1;
+                    uint32_t width = img.Width;
+                    uint32_t height = img.Height;
 
-                    for (decltype(img.mipmap_count) i = 1; i < img.mipmap_count; i++)
+                    for (decltype(mipmap_count) i = 0; i < mipmap_count; i++)
                     {
                         if (width > 0 && height > 0)
                         {
                             auto pitch = ALIGN(width * img.bitcount, 8) / 8;
-                            img.mipmaps[i].Width = width; 
-                            img.mipmaps[i].Height = height; 
-                            img.mipmaps[i].pitch = pitch; 
-                            img.mipmaps[i].data_size = (size_t)pitch * height;
-                            img.mipmaps[i].offset = img.data_size;
+                            img.mipmaps.emplace_back(width, height, pitch, img.data_size /* as offset */, pitch * height /* as data_size */);
                             img.data_size += img.mipmaps[i].data_size;
 
-                            width >>= 1; // /2
-                            height >>= 1; // /2
+                            width >>= 1;
+                            height >>= 1;
                         }
                         else
                         {

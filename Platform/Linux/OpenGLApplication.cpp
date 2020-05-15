@@ -185,6 +185,9 @@ void OpenGLApplication::CreateMainWindow()
           {
             GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
             GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+#ifdef OPENGL_RHI_DEBUG
+			GLX_CONTEXT_FLAGS_ARB,  GLX_CONTEXT_DEBUG_BIT_ARB,
+#endif
             None
           };
 

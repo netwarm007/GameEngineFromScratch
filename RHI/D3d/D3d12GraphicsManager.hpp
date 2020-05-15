@@ -20,9 +20,9 @@ namespace My {
         void Draw() final;
         void Present() final;
 
-        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) final;
+        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame) final;
 
-        void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
+        void DrawBatch(const Frame& frame) final;
 
         // skybox
         void DrawSkyBox() final;

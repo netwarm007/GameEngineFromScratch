@@ -29,9 +29,9 @@ namespace My {
 
         virtual void ResizeCanvas(int32_t width, int32_t height);
 
-        virtual void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) {}
+        virtual void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame) {}
 
-        virtual void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) {}
+        virtual void DrawBatch(const Frame& frame) {}
 
         virtual int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
         virtual int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
@@ -50,7 +50,7 @@ namespace My {
         virtual void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height) {}
         virtual void EndRenderToTexture(int32_t& context) {}
 
-        virtual void GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) {}
+        virtual int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) { return 0; }
         virtual void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) {}
 
         virtual int32_t GetTexture(const char* id) { return 0; }

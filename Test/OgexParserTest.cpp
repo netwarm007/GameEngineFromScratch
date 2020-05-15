@@ -32,18 +32,13 @@ int main(int , char** )
     string ogex_text = g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/splash.ogex");
 
     auto* ogex_parser = new OgexParser ();
-    int count = 0;
-    shared_ptr<Scene> pScene;
-    do {
-        pScene = ogex_parser->Parse(ogex_text);
-    } while (count++ < 10);
+    {
+        shared_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);
+    } // note texture in the scene will be async loaded until process terminate
     delete ogex_parser;
 
     g_pAssetLoader->Finalize();
     g_pMemoryManager->Finalize();
-
-    delete g_pAssetLoader;
-    delete g_pMemoryManager;
 
     return 0;
 }

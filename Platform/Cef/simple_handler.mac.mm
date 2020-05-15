@@ -18,5 +18,8 @@ void SimpleHandler::PlatformTitleChange(const CefRefPtr<CefBrowser>& browser,
   NSWindow* window = [view window];
   std::string titleStr(title);
   NSString* str = [NSString stringWithUTF8String:titleStr.c_str()];
-  [window setTitle:str];
+  if (str != nil)
+  {
+    [window setTitle:str];
+  }
 }

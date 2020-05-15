@@ -3,19 +3,9 @@
 using namespace My;
 using namespace std;
 
-int AssetLoader::Initialize()
-{
-    return 0;
-}
-
-void AssetLoader::Finalize()
+void AssetLoader::ClearSearchPath()
 {
     m_strSearchPath.clear();
-}
-
-void AssetLoader::Tick()
-{
-
 }
 
 bool AssetLoader::AddSearchPath(const char *path)
@@ -103,8 +93,6 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name, AssetOpenMode 
         upPath.append("../");
     }
     
-    fprintf(stderr, "[Warning] Failed to open %s\n", name);
-
     return nullptr;
 }
 

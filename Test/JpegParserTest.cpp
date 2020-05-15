@@ -39,9 +39,6 @@ int main(int argc, const char** argv)
     g_pAssetLoader->Finalize();
     g_pMemoryManager->Finalize();
 
-    delete g_pAssetLoader;
-    delete g_pMemoryManager;
-
     return 0;
 }
 

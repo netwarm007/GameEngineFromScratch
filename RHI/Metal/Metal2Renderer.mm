@@ -90,6 +90,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     samplerDescriptor.tAddressMode = MTLSamplerAddressModeRepeat;
 
     _sampler0 = [_device newSamplerStateWithDescriptor:samplerDescriptor];
+    [samplerDescriptor release];
 
     // Create the command queue
     _commandQueue = [_device newCommandQueue];
@@ -187,6 +188,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
+    [textureDesc release];
 
     // now upload the data
     MTLRegion region = {
@@ -218,7 +220,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     textureDesc.pixelFormat = getMtlPixelFormat(*images[0]);
     textureDesc.width = images[0]->Width;
     textureDesc.height = images[0]->Height;
-    textureDesc.mipmapLevelCount = std::max(images[16]->mipmap_count, 2U);
+    textureDesc.mipmapLevelCount = std::max(images[16]->mipmaps.size(), (size_t)2);
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
@@ -226,7 +228,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // now upload the skybox 
     for (int32_t slice = 0; slice < 6; slice++)
     {
-        assert(images[slice]->mipmap_count == 1);
+        assert(images[slice]->mipmaps.size() == 1);
         MTLRegion region = {
             { 0, 0, 0 },                                        // MTLOrigin
             {images[slice]->Width, images[slice]->Height, 1}    // MTLSize
@@ -243,7 +245,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // now upload the irradiance map as 2nd mip of skybox
     for (int32_t slice = 6; slice < 12; slice++)
     {
-        assert(images[slice]->mipmap_count == 1);
+        assert(images[slice]->mipmaps.size() == 1);
         MTLRegion region = {
             { 0, 0, 0 },                                        // MTLOrigin
             {images[slice]->Width, images[slice]->Height, 1}    // MTLSize
@@ -260,19 +262,20 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // now upload the radiance map 2nd cubemap
     for (int32_t slice = 12; slice < 18; slice++)
     {
-        for (int32_t mip = 0; mip < images[slice]->mipmap_count; mip++)
+        int level = 0;
+        for (auto& mip : images[slice]->mipmaps)
         {
             MTLRegion region = {
                 { 0, 0, 0 },                                                                // MTLOrigin
-                {images[slice]->mipmaps[mip].Width, images[slice]->mipmaps[mip].Height, 1}  // MTLSize
+                {mip.Width, mip.Height, 1}  // MTLSize
             };
 
             [texture replaceRegion:region
-                        mipmapLevel:mip
+                        mipmapLevel:level++
                         slice:slice - 6
-                        withBytes:images[slice]->data + images[slice]->mipmaps[mip].offset
-                        bytesPerRow:images[slice]->mipmaps[mip].pitch
-                        bytesPerImage:images[slice]->mipmaps[mip].data_size];
+                        withBytes:images[slice]->data + mip.offset
+                        bytesPerRow:mip.pitch
+                        bytesPerImage:mip.data_size];
         }
     }
 
@@ -367,7 +370,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_computeCommandBuffer commit];
 }
 
-- (void)setPipelineState:(const MetalPipelineState&)pipelineState
+- (void)setPipelineState:(const MetalPipelineState&)pipelineState frameContext:(const Frame&)frame
 {
     switch(pipelineState.pipelineType)
     {
@@ -400,6 +403,29 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         default:
             assert(0);
     }
+
+    [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+                                offset:0
+                                atIndex:10];
+
+    [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
+                                offset:0
+                                atIndex:10];
+
+    [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
+                                offset:0
+                                atIndex:12];
+
+    [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
+    if (_skyboxTexIndex >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
+                                atIndex:10];
+    }
+
+    [_renderEncoder setFragmentTexture:_textures[_brdfLutIndex]
+                                atIndex:6];
 
 }
 
@@ -465,58 +491,39 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             5, 6, 2
         };
 
+        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+                                 offset:0
+                                atIndex:10];
+
         id<MTLBuffer> indexBuffer;
         indexBuffer = [_device newBufferWithBytes:skyboxIndices
                                            length:sizeof(skyboxIndices) 
                                            options:MTLResourceStorageModeShared];
         
-        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                 offset:0
-                                atIndex:10];
+        if (indexBuffer != nil)
+        {
+            // Draw skybox
+            [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                    indexCount:sizeof(skyboxIndices)/sizeof(skyboxIndices[0])
+                                    indexType:MTLIndexTypeUInt16
+                                indexBuffer:indexBuffer
+                            indexBufferOffset:0];
+        }
 
-        // Draw skybox
-        [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                indexCount:sizeof(skyboxIndices)/sizeof(skyboxIndices[0])
-                                 indexType:MTLIndexTypeUInt16
-                               indexBuffer:indexBuffer
-                         indexBufferOffset:0];
+        [indexBuffer release];
 
         [_renderEncoder popDebugGroup];
     }
 }
 
 // Called whenever the view needs to render
-- (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches
+- (void)drawBatch:(const Frame&) frame
 {
     if(_renderPassDescriptor != nil)
     {
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [_renderEncoder pushDebugGroup:@"DrawMesh"];
-
-        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                  offset:0
-                                 atIndex:10];
-
-        [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
-                                  offset:0
-                                 atIndex:10];
-
-        [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
-                                  offset:0
-                                 atIndex:12];
-
-        [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
-
-        if (_skyboxTexIndex >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
-                                    atIndex:10];
-        }
-
-        [_renderEncoder setFragmentTexture:_textures[_brdfLutIndex]
-                                 atIndex:6];
-
-        for (const auto& pDbc : batches)
+        for (const auto& pDbc : frame.batchContexts)
         {
             [_renderEncoder setVertexBytes:pDbc->modelMatrix
                                     length:64
@@ -623,6 +630,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     uint32_t index = _textures.size();
     _textures.push_back(texture);
 
+    [textureDesc release];
+
     return static_cast<int32_t>(index);
 }
 
@@ -646,6 +655,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     uint32_t index = _textures.size();
     _textures.push_back(texture);
+
+    [textureDesc release];
 
     return static_cast<int32_t>(index);
 }
@@ -675,12 +686,12 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     _textures[shadowmap] = Nil;
 }
 
-- (void)generateAndBindTextureForWrite:(const uint32_t)width
+- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
                                    height:(const uint32_t)height
                                   atIndex:(const uint32_t)atIndex
 {
     id<MTLTexture> texture;
-    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+    MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
 
     textureDesc.pixelFormat = MTLPixelFormatRG32Float;
     textureDesc.width = width;
@@ -689,11 +700,15 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
+    [textureDesc release];
 
+    int32_t texture_id = _textures.size();
     _textures.push_back(texture);
 
     [_computeEncoder setTexture:texture
                    atIndex:atIndex];
+
+    return texture_id;
 }
 
 - (void)dispatch:(const uint32_t)width

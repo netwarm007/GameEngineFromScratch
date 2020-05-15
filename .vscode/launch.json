@@ -5,13 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "lldb",
-            "request": "attach",
-            "name": "(LLDB) OgexParserTest",
-            "program": "${workspaceFolder}/build/Test/OgexParserTest"
-        },
-        
-        {
             "name": "(Mac OS) Launch Editor",
             "type": "cppdbg",
             "request": "launch",

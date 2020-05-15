@@ -54,15 +54,15 @@ bool SceneObjectTexture::LoadTexture() {
     if (image.bitcount == 24)
     {
         // DXGI does not have 24bit formats so we have to extend it to 32bit
-        uint32_t new_pitch = image.pitch / 3 * 4;
-        size_t data_size = (size_t)new_pitch * image.Height;
+        auto new_pitch = image.pitch / 3 * 4;
+        auto data_size = (size_t)new_pitch * image.Height;
         auto* data = new uint8_t[data_size];
         uint8_t* buf;
         uint8_t* src;
-        for (uint32_t row = 0; row < image.Height; row++) {
+        for (decltype(image.Height) row = 0; row < image.Height; row++) {
             buf = data + (ptrdiff_t)row * new_pitch;
             src = image.data + (ptrdiff_t)row * image.pitch;
-            for (uint32_t col = 0; col < image.Width; col++) {
+            for (decltype(image.Width) col = 0; col < image.Width; col++) {
                 memcpy(buf, src, 3);
                 memset(buf+3, 0x00, 1);  // set alpha to 0
                 buf += 4;
@@ -77,25 +77,25 @@ bool SceneObjectTexture::LoadTexture() {
         image.bitcount = 32;
         
         // adjust mipmaps
-        for (uint32_t mip = 0; mip < image.mipmap_count; mip++)
+        for (auto& mip : image.mipmaps)
         {
-            image.mipmaps[mip].pitch = image.mipmaps[mip].pitch / 3 * 4;
-            image.mipmaps[mip].offset = image.mipmaps[mip].offset / 3 * 4;
-            image.mipmaps[mip].data_size = image.mipmaps[mip].data_size / 3 * 4;
+            mip.pitch = mip.pitch / 3 * 4;
+            mip.offset = mip.offset / 3 * 4;
+            mip.data_size = mip.data_size / 3 * 4;
         }
     }
     else if (image.bitcount == 48)
     {
         // DXGI does not have 48bit formats so we have to extend it to 64bit
-        uint32_t new_pitch = image.pitch / 3 * 4;
-        size_t data_size = (size_t)new_pitch * image.Height;
+        auto new_pitch = image.pitch / 3 * 4;
+        auto data_size = new_pitch * image.Height;
         auto* data = new uint8_t[data_size];
         uint8_t* buf;
         uint8_t* src;
-        for (uint32_t row = 0; row < image.Height; row++) {
+        for (decltype(image.Height) row = 0; row < image.Height; row++) {
             buf = data + (ptrdiff_t)row * new_pitch;
             src = image.data + (ptrdiff_t)row * image.pitch;
-            for (uint32_t col = 0; col < image.Width; col++) {
+            for (decltype(image.Width) col = 0; col < image.Width; col++) {
                 memcpy(buf, src, 6);
                 memset(buf+6, 0x00, 2); // set alpha to 0
                 buf += 8;
@@ -110,11 +110,11 @@ bool SceneObjectTexture::LoadTexture() {
         image.bitcount = 64;
         
         // adjust mipmaps
-        for (uint32_t mip = 0; mip < image.mipmap_count; mip++)
+        for (auto& mip : image.mipmaps)
         {
-            image.mipmaps[mip].pitch = image.mipmaps[mip].pitch / 3 * 4;
-            image.mipmaps[mip].offset = image.mipmaps[mip].offset / 3 * 4;
-            image.mipmaps[mip].data_size = image.mipmaps[mip].data_size / 3 * 4;
+            mip.pitch = mip.pitch / 3 * 4;
+            mip.offset = mip.offset / 3 * 4;
+            mip.data_size = mip.data_size / 3 * 4;
         }
     }
 
@@ -127,14 +127,14 @@ bool SceneObjectTexture::LoadTexture() {
 
 std::shared_ptr<Image> SceneObjectTexture::GetTextureImage()
 { 
-    // if loaded returns directly
-    if(m_pImage) 
+    if(m_asyncLoadFuture.valid())
     {
-        return atomic_load_explicit(&m_pImage, std::memory_order_acquire);
+        m_asyncLoadFuture.wait();
+        assert(m_asyncLoadFuture.get());
+        return atomic_load_explicit(&m_pImage, std::memory_order::memory_order_acquire);
     }
-
-    assert(m_asyncLoadFuture.valid());
-    m_asyncLoadFuture.wait();
-    assert(m_asyncLoadFuture.get());
-    return atomic_load_explicit(&m_pImage, std::memory_order::memory_order_acquire);
+    else
+    {
+        return m_pImage;
+    }
 }

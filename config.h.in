@@ -8,3 +8,6 @@
 // Enable this to print out very detailed decode information
 // #define DUMP_DETAILS 1
 
+// Enable this to use OpenGL Debug ARB
+#cmakedefine OPENGL_RHI_DEBUG
+

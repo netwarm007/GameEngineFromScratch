@@ -8,7 +8,7 @@ void TerrainPhase::Draw(Frame& frame)
 {
     auto& pipelineState = g_pPipelineStateManager->GetPipelineState("Terrain");
 
-    g_pGraphicsManager->SetPipelineState(pipelineState);
+    g_pGraphicsManager->SetPipelineState(pipelineState, frame);
 
     g_pGraphicsManager->DrawTerrain();
 }

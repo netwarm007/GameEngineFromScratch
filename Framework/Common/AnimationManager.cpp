@@ -39,6 +39,9 @@ void AnimationManager::Tick()
         }
 
         m_nSceneRevision = rev;
+        
+        // reset timeline
+        m_bTimeLineStarted = false;
     }
 
     if (!m_bTimeLineStarted)

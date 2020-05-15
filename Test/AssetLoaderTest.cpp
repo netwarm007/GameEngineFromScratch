@@ -26,9 +26,6 @@ int main(int , char** )
     g_pAssetLoader->Finalize();
     g_pMemoryManager->Finalize();
 
-    delete g_pAssetLoader;
-    delete g_pMemoryManager;
-
     return 0;
 }
 

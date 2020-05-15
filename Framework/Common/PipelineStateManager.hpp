@@ -19,8 +19,8 @@ namespace My {
             const std::shared_ptr<PipelineState> GetPipelineState(std::string name) const final;
 
         protected:
-            virtual bool InitializePipelineState(PipelineState** ppPipelineState) = 0;
-            virtual void DestroyPipelineState(PipelineState& pipelineState) = 0;
+            virtual bool InitializePipelineState(PipelineState** ppPipelineState) { return true; }
+            virtual void DestroyPipelineState(PipelineState& pipelineState) {}
 
         protected:
             std::map<std::string, std::shared_ptr<PipelineState>> m_pipelineStates;

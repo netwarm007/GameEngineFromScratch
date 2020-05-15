@@ -1685,9 +1685,9 @@ void D3d12GraphicsManager::Draw()
     MsaaResolve();
 }
 
-void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
+void D3d12GraphicsManager::DrawBatch(const Frame& frame)
 {
-    for (const auto& pDbc : batches)
+    for (const auto& pDbc : frame.batchContexts)
     {
         m_pCommandList[m_nFrameIndex]->SetGraphicsRoot32BitConstants(1, 16, &pDbc->modelMatrix, 0);
 
@@ -1762,7 +1762,7 @@ void D3d12GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatch
     }
 }
 
-void D3d12GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
+void D3d12GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame)
 {
     if (pipelineState)
     {
