@@ -687,75 +687,13 @@ void OpenGLGraphicsManagerCommonBase::EndFrame()
     m_nFrameIndex = ++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount;
 }
 
-void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
+void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame)
 {
     const std::shared_ptr<const OpenGLPipelineState> pPipelineState = dynamic_pointer_cast<const OpenGLPipelineState>(pipelineState);
     m_CurrentShader = pPipelineState->shaderProgram;
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
     glUseProgram(m_CurrentShader);
-
-    // Prepare & Bind per frame constant buffer
-    uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
-
-    if (blockIndex != GL_INVALID_INDEX)
-    {
-        glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[m_nFrameIndex]);
-    }
-
-    // Prepare per batch constant buffer binding point
-    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
-
-    if (blockIndex != GL_INVALID_INDEX)
-    {
-        glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 11, m_uboDrawBatchConstant[m_nFrameIndex]);
-    }
-
-    // Prepare & Bind light info
-    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
-
-    if (blockIndex != GL_INVALID_INDEX)
-    {
-        glUniformBlockBinding(m_CurrentShader, blockIndex, 12);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 12, m_uboLightInfo[m_nFrameIndex]);
-    }
-
-    // Bind LUT table
-    auto brdf_lut = GetTexture("BRDF_LUT");
-    setShaderParameter("SPIRV_Cross_CombinedbrdfLUTsamp0", 6);
-    glActiveTexture(GL_TEXTURE6);
-    if (brdf_lut > 0) {
-        glBindTexture(GL_TEXTURE_2D, brdf_lut);
-    }
-    else {
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    // Set Sky Box
-    setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
-    glActiveTexture(GL_TEXTURE10);
-    GLenum target;
-#if defined(OS_WEBASSEMBLY)
-    target = GL_TEXTURE_2D_ARRAY;
-#else
-    target = GL_TEXTURE_CUBE_MAP_ARRAY;
-#endif
-    auto texture_id = m_Frames[m_nFrameIndex].skybox;
-    if (texture_id >= 0)
-    {
-        glBindTexture(target, (GLuint)texture_id);
-    }
-
-    // Set Terrain
-    texture_id = m_Frames[m_nFrameIndex].terrainHeightMap;
-    if (texture_id >= 0)
-    {
-        setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
-        glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_2D, (GLuint)texture_id);
-    }
 
     switch(pipelineState->depthTestMode)
     {
@@ -822,6 +760,71 @@ void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<Pip
         default:
             assert(0);
     }
+
+    // Set Constants
+    // Prepare & Bind per frame constant buffer
+    uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerFrameConstants");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 10);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 10, m_uboDrawFrameConstant[frame.frameIndex]);
+    }
+
+    // Prepare per batch constant buffer binding point
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "PerBatchConstants");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 11);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 11, m_uboDrawBatchConstant[frame.frameIndex]);
+    }
+
+    // Prepare & Bind light info
+    blockIndex = glGetUniformBlockIndex(m_CurrentShader, "LightInfo");
+
+    if (blockIndex != GL_INVALID_INDEX)
+    {
+        glUniformBlockBinding(m_CurrentShader, blockIndex, 12);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 12, m_uboLightInfo[frame.frameIndex]);
+    }
+
+    // Set common textures
+    // Bind LUT table
+    auto texture_id = frame.brdfLUT;
+    setShaderParameter("SPIRV_Cross_CombinedbrdfLUTsamp0", 6);
+    glActiveTexture(GL_TEXTURE6);
+    if (texture_id > 0) {
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+    }
+    else {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    // Set Sky Box
+    setShaderParameter("SPIRV_Cross_Combinedskyboxsamp0", 10);
+    glActiveTexture(GL_TEXTURE10);
+    GLenum target;
+#if defined(OS_WEBASSEMBLY)
+    target = GL_TEXTURE_2D_ARRAY;
+#else
+    target = GL_TEXTURE_CUBE_MAP_ARRAY;
+#endif
+    texture_id = frame.skybox;
+    if (texture_id >= 0)
+    {
+        glBindTexture(target, (GLuint)texture_id);
+    }
+
+    // Set Terrain
+    texture_id = frame.terrainHeightMap;
+    if (texture_id >= 0)
+    {
+        setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
+        glActiveTexture(GL_TEXTURE11);
+        glBindTexture(GL_TEXTURE_2D, (GLuint)texture_id);
+    }
+
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
@@ -872,9 +875,9 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(const DrawBatchContex
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
+void OpenGLGraphicsManagerCommonBase::DrawBatch(const Frame& frame)
 {
-    for (auto& pDbc : batches)
+    for (auto& pDbc : frame.batchContexts)
     {
         SetPerBatchConstants(*pDbc);
 
@@ -1273,7 +1276,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context)
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 }
 
-void OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height)
+int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height)
 {
     uint32_t tex_output;
     glGenTextures(1, &tex_output);
@@ -1295,6 +1298,8 @@ void OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(const char*
 #endif
 
     m_Textures[id] = tex_output;
+
+    return tex_output;
 }
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)
@@ -1580,7 +1585,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers()
     const auto pipelineState = g_pPipelineStateManager->GetPipelineState("Debug Drawing");
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    SetPipelineState(pipelineState);
+    SetPipelineState(pipelineState, m_Frames[m_nFrameIndex]);
 
     if (!m_uboDebugConstant[m_nFrameIndex])
     {

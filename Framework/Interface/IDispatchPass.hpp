@@ -1,5 +1,6 @@
 #pragma once
 #include "Interface.hpp"
+#include "FrameStructure.hpp"
 
 namespace My {
     Interface IDispatchPass
@@ -8,6 +9,6 @@ namespace My {
         IDispatchPass() = default;
         virtual ~IDispatchPass() = default;
 
-        virtual void Dispatch() = 0;
+        virtual void Dispatch(Frame& frame) = 0;
     };
 }

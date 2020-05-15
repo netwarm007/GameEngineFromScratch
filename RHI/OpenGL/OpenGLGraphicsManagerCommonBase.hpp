@@ -19,8 +19,8 @@ namespace My {
 
         void ResizeCanvas(int32_t width, int32_t height) final;
 
-        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState) final;
-        void DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches) final;
+        void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame) final;
+        void DrawBatch(const Frame& frame) final;
 
         int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
         int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
@@ -40,7 +40,7 @@ namespace My {
         void EndRenderToTexture(int32_t& context) final;
         int32_t GetTexture(const char* id) final;
 
-        void GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
+        int32_t GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index, const uint32_t width, const uint32_t height) final;
         void Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth) final;
 
         void DrawFullScreenQuad() final;

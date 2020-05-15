@@ -10,7 +10,8 @@ void HUDPhase::Draw(Frame& frame)
 #ifdef DEBUG
     // Draw Shadow Maps
     g_pGraphicsManager->SetPipelineState(
-        g_pPipelineStateManager->GetPipelineState("Texture Array Debug Output")
+        g_pPipelineStateManager->GetPipelineState("Texture Array Debug Output"),
+        frame
     );
 
 
@@ -30,7 +31,8 @@ void HUDPhase::Draw(Frame& frame)
     }
 
     g_pGraphicsManager->SetPipelineState(
-        g_pPipelineStateManager->GetPipelineState("CubeMap Array Debug Output")
+        g_pPipelineStateManager->GetPipelineState("CubeMap Array Debug Output"),
+        frame
     );
 
     for (int32_t i = 0; i < frame.frameContext.cubeShadowMapCount; i++)
@@ -53,7 +55,8 @@ void HUDPhase::Draw(Frame& frame)
 
     // BRDF LUT
     g_pGraphicsManager->SetPipelineState(
-        g_pPipelineStateManager->GetPipelineState("Texture Debug Output")
+        g_pPipelineStateManager->GetPipelineState("Texture Debug Output"),
+        frame
     );
 
     auto brdf_lut = g_pGraphicsManager->GetTexture("BRDF_LUT");

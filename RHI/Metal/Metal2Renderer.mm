@@ -397,7 +397,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_computeCommandBuffer commit];
 }
 
-- (void)setPipelineState:(const MetalPipelineState&)pipelineState
+- (void)setPipelineState:(const MetalPipelineState&)pipelineState frameContext:(const Frame&)frame
 {
     switch(pipelineState.pipelineType)
     {
@@ -430,6 +430,29 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         default:
             assert(0);
     }
+
+    [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
+                                offset:0
+                                atIndex:10];
+
+    [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
+                                offset:0
+                                atIndex:10];
+
+    [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
+                                offset:0
+                                atIndex:12];
+
+    [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
+    if (_skyboxTexIndex >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
+                                atIndex:10];
+    }
+
+    [_renderEncoder setFragmentTexture:_textures[_brdfLutIndex]
+                                atIndex:6];
 
 }
 
@@ -509,14 +532,13 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 }
 
 // Called whenever the view needs to render
-- (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches
+- (void)drawBatch:(const Frame&) frame
 {
     if(_renderPassDescriptor != nil)
     {
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [_renderEncoder pushDebugGroup:@"DrawMesh"];
-
-        for (const auto& pDbc : batches)
+        for (const auto& pDbc : frame.batchContexts)
         {
             [_renderEncoder setVertexBytes:pDbc->modelMatrix
                                     length:64
@@ -684,7 +706,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     _textures[shadowmap] = Nil;
 }
 
-- (void)generateAndBindTextureForWrite:(const uint32_t)width
+- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
                                    height:(const uint32_t)height
                                   atIndex:(const uint32_t)atIndex
 {
@@ -700,10 +722,13 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     texture = [_device newTextureWithDescriptor:textureDesc];
     [textureDesc release];
 
+    int32_t texture_id = _textures.size();
     _textures.push_back(texture);
 
     [_computeEncoder setTexture:texture
                    atIndex:atIndex];
+
+    return texture_id;
 }
 
 - (void)dispatch:(const uint32_t)width

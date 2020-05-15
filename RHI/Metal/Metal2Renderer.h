@@ -19,15 +19,14 @@ namespace My {
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
                                       device:(nonnull id <MTLDevice>)device;
 
-- (void)setPerFrameConstants:(const DrawFrameContext&)context
-                  frameIndex:(const int32_t)index;
+- (void)setPerFrameConstants:(const DrawFrameContext&)context frameContext:(const Frame&)frame;
 
 - (void)setLightInfo:(const LightInfo&)lightInfo
           frameIndex:(const int32_t)index;
 
 - (void)drawSkyBox;
 
-- (void)drawBatch:(const std::vector<std::shared_ptr<DrawBatchContext>>&) batches;
+- (void)drawBatch:(const Frame&) frame;
 
 - (void)updateDrawableSize:(CGSize)size;
 
@@ -51,7 +50,7 @@ namespace My {
 
 - (void)endCompute;
 
-- (void)setPipelineState:(const MetalPipelineState&)pipelineState;
+- (void)setPipelineState:(const MetalPipelineState&)pipelineState frameContext:(const Frame&)frame;
 
 - (int32_t)generateCubeShadowMapArray:(const uint32_t)width 
                                height:(const uint32_t)height
@@ -74,7 +73,7 @@ namespace My {
 
 - (void)destroyShadowMap:(int32_t&)shadowmap;
 
-- (void)generateAndBindTextureForWrite:(const uint32_t)width
+- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
                                    height:(const uint32_t)height
                                   atIndex:(const uint32_t)atIndex;
 

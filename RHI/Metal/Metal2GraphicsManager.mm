@@ -255,15 +255,15 @@ void Metal2GraphicsManager::EndCompute()
     [m_pRenderer endCompute];
 }
 
-void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState)
+void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame)
 {
     const std::shared_ptr<MetalPipelineState> pState = dynamic_pointer_cast<MetalPipelineState>(pipelineState);
-    [m_pRenderer setPipelineState:*pState];
+    [m_pRenderer setPipelineState:*pState frameContext:frame];
 }
 
-void Metal2GraphicsManager::DrawBatch(const std::vector<std::shared_ptr<DrawBatchContext>>& batches)
+void Metal2GraphicsManager::DrawBatch(const Frame& frame)
 {
-    [m_pRenderer drawBatch:batches];
+    [m_pRenderer drawBatch:frame];
 }
 
 int32_t Metal2GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) 
@@ -301,10 +301,10 @@ void Metal2GraphicsManager::DrawSkyBox()
     [m_pRenderer drawSkyBox];
 }
 
-void Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index,
+int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id, const uint32_t slot_index,
                                         const uint32_t width, const uint32_t height)
 {
-    [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:slot_index];
+    return [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:slot_index];
 }
 
 void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height, const uint32_t depth)

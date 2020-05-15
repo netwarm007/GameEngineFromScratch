@@ -8,7 +8,7 @@ namespace My {
     };
 
     struct DrawBatchContext : PerBatchConstants {
-        int32_t batchIndex;
+        int32_t batchIndex{0};
         std::shared_ptr<SceneGeometryNode> node;
         material_textures material;
 
@@ -16,6 +16,7 @@ namespace My {
     };
 
     struct Frame : global_textures {
+        int32_t frameIndex{0};
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
         LightInfo lightInfo;
