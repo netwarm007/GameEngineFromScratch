@@ -129,12 +129,12 @@ void ShadowMapPass::Draw(Frame& frame)
 
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         auto& pPipelineState = g_pPipelineStateManager->GetPipelineState(pipelineStateName);
-        g_pGraphicsManager->SetPipelineState(pPipelineState);
+        g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
 
         g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
             width, height, it->lightShadowMapIndex);
 
-        g_pGraphicsManager->DrawBatch(frame.batchContexts);
+        g_pGraphicsManager->DrawBatch(frame);
 
         g_pGraphicsManager->EndShadowMap(shadowmap, it->lightShadowMapIndex);
     }

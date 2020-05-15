@@ -9,5 +9,5 @@
 // #define DUMP_DETAILS 1
 
 // Enable this to use OpenGL Debug ARB
-// #define OPENGL_RHI_DEBUG 1
+#cmakedefine OPENGL_RHI_DEBUG
 

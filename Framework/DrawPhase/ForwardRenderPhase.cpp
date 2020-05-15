@@ -10,7 +10,7 @@ void ForwardRenderPhase::Draw(Frame& frame)
     auto& pPipelineState = g_pPipelineStateManager->GetPipelineState("PBR");
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    g_pGraphicsManager->SetPipelineState(pPipelineState);
+    g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
     g_pGraphicsManager->SetShadowMaps(frame);
-    g_pGraphicsManager->DrawBatch(frame.batchContexts);
+    g_pGraphicsManager->DrawBatch(frame);
 }

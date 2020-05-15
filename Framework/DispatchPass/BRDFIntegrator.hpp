@@ -6,6 +6,6 @@ namespace My {
     {
     public:
         ~BRDFIntegrator() override = default; 
-        void Dispatch() final;
+        void Dispatch(Frame& frame) final;
     };
 }

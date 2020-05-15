@@ -285,16 +285,21 @@ void GraphicsManager::CalculateLights()
 void GraphicsManager::BeginScene(const Scene& scene)
 {
     m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
-    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
-    {
-        m_Frames[i].frameIndex = i;
-    }
 
+    // first, call init passes on frame 0
     for (const auto& pPass : m_InitPasses)
     {
         BeginCompute();
-        pPass->Dispatch();
+        pPass->Dispatch(m_Frames[0]);
         EndCompute();
+    }
+
+    // now, copy the frame structures
+    for (int32_t i = 1; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        m_Frames[i] = m_Frames[0];
+        m_Frames[i].frameIndex = i;
+
     }
 
     if (scene.Geometries.size())

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Interface.hpp"
+#include <config.h>
 
 namespace My {
 	Interface IRuntimeModule{

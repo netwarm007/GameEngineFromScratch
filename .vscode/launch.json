@@ -61,7 +61,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/Viewer/Debug/Viewer.exe",
             "args": [
-                "Scene/city.ogex"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",

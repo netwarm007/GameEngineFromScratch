@@ -4,16 +4,16 @@
 
 using namespace My;
 
-void BRDFIntegrator::Dispatch()
+void BRDFIntegrator::Dispatch(Frame& frame)
 {
     auto& pPipelineState = g_pPipelineStateManager->GetPipelineState("PBR BRDF CS");
 
     // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-    g_pGraphicsManager->SetPipelineState(pPipelineState);
+    g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
 
     const uint32_t width = 512u;
     const uint32_t height = 512u;
     const uint32_t depth = 1u;
-    g_pGraphicsManager->GenerateAndBindTextureForWrite("BRDF_LUT", 0, width, height);
+    frame.brdfLUT = g_pGraphicsManager->GenerateAndBindTextureForWrite("BRDF_LUT", 0, width, height);
     g_pGraphicsManager->Dispatch(width, height, depth);
 }
