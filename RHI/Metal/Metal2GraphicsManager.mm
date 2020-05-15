@@ -259,7 +259,7 @@ void Metal2GraphicsManager::EndCompute()
     [m_pRenderer endCompute];
 }
 
-void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, Frame& frame)
+void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame)
 {
     const std::shared_ptr<MetalPipelineState> pState = dynamic_pointer_cast<MetalPipelineState>(pipelineState);
     [m_pRenderer setPipelineState:*pState frameContext:frame];

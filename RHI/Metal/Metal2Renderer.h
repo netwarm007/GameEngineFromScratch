@@ -49,7 +49,7 @@ namespace My {
 
 - (void)endCompute;
 
-- (void)setPipelineState:(const MetalPipelineState&)pipelineState;
+- (void)setPipelineState:(const MetalPipelineState&)pipelineState frameContext:(const Frame&)frame;
 
 - (int32_t)generateCubeShadowMapArray:(const uint32_t)width 
                                height:(const uint32_t)height
