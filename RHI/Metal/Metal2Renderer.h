@@ -19,9 +19,11 @@ namespace My {
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
                                       device:(nonnull id <MTLDevice>)device;
 
-- (void)setPerFrameConstants:(const DrawFrameContext&)context;
+- (void)setPerFrameConstants:(const DrawFrameContext&)context
+                  frameIndex:(const int32_t)index;
 
-- (void)setLightInfo:(const LightInfo&)lightInfo;
+- (void)setLightInfo:(const LightInfo&)lightInfo
+          frameIndex:(const int32_t)index;
 
 - (void)drawSkyBox;
 

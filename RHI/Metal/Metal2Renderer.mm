@@ -29,14 +29,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     std::vector<id<MTLTexture>>  _textures;
     id<MTLSamplerState> _sampler0;
 
-    // The index in uniform buffers in _dynamicUniformBuffers to use for the current frame
-    uint32_t _currentBufferIndex;
+    id<MTLTexture> _defaultFrameBuffer;
 
     MTKView* _mtkView;
-
-    // skybox texture id
-    int32_t _skyboxTexIndex;
-    int32_t _brdfLutIndex;
 }
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device.  We'll also use this
@@ -46,11 +41,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     self = [super init];
     if(self)
     {
-        _currentBufferIndex = 0;
         _mtkView = mtkView;
         _device = device;
         _inFlightSemaphore = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
-        _skyboxTexIndex = -1;
         [self loadMetal];
     }
 
@@ -315,8 +308,44 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         _renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
     }
 
-    [self setPerFrameConstants:frame.frameContext];
-    [self setLightInfo:frame.lightInfo];
+    auto texture_id = frame.brdfLUT;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:6];
+    }
+
+    texture_id = frame.skybox;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:10];
+    }
+
+    texture_id = frame.terrainHeightMap;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:11];
+    }
+
+    [_renderEncoder setVertexBuffer:_uniformBuffers[frame.frameIndex]
+                            offset:0
+                            atIndex:10];
+
+    [_renderEncoder setFragmentBuffer:_uniformBuffers[frame.frameIndex]
+                            offset:0
+                            atIndex:10];
+
+    [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
+                            offset:0
+                            atIndex:12];
+
+    // now fill the buffers
+    [self setPerFrameConstants:frame.frameContext
+                    frameIndex:frame.frameIndex];
+    [self setLightInfo:frame.lightInfo
+            frameIndex:frame.frameIndex];
 }
 
 - (void)endFrame
@@ -333,8 +362,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     // Finalize rendering here & push the command buffer to the GPU
     [_commandBuffer commit];
-
-    _currentBufferIndex = (_currentBufferIndex + 1) % GEFSMaxBuffersInFlight;
 }
 
 - (void)beginPass
@@ -406,15 +433,15 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
 }
 
-- (void)setPerFrameConstants:(const DrawFrameContext&)context
+- (void)setPerFrameConstants:(const DrawFrameContext&)context frameIndex:(const int32_t) frameIndex
 {
-    std::memcpy(_uniformBuffers[_currentBufferIndex].contents, 
+    std::memcpy(_uniformBuffers[frameIndex].contents, 
             &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
 }
 
-- (void)setLightInfo:(const LightInfo&)lightInfo
+- (void)setLightInfo:(const LightInfo&)lightInfo frameIndex:(const int32_t) frameIndex
 {
-    std::memcpy(_lightInfo[_currentBufferIndex].contents,
+    std::memcpy(_lightInfo[frameIndex].contents,
             &lightInfo, sizeof(LightInfo));
 }
 
@@ -424,14 +451,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     {
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
-
-        if (_skyboxTexIndex >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
-                                    atIndex:10];
-
-            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
-        }
 
         static const float skyboxVertices[] = {
             1.0f,  1.0f,  1.0f,  // 0
@@ -468,10 +487,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             5, 6, 2
         };
 
-        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                 offset:0
-                                atIndex:10];
-
         id<MTLBuffer> indexBuffer;
         indexBuffer = [_device newBufferWithBytes:skyboxIndices
                                            length:sizeof(skyboxIndices) 
@@ -500,29 +515,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     {
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [_renderEncoder pushDebugGroup:@"DrawMesh"];
-
-        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                  offset:0
-                                 atIndex:10];
-
-        [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
-                                  offset:0
-                                 atIndex:10];
-
-        [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
-                                  offset:0
-                                 atIndex:12];
-
-        [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
-
-        if (_skyboxTexIndex >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
-                                    atIndex:10];
-        }
-
-        [_renderEncoder setFragmentTexture:_textures[_brdfLutIndex]
-                                 atIndex:6];
 
         for (const auto& pDbc : batches)
         {
@@ -578,25 +570,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                         atIndex:5];
             }
 
-    #if 0
-            [_renderEncoder setFragmentTexture:_brdfLUT
-                                    atIndex:6];
-
-            [_renderEncoder setFragmentTexture:_shadowMap
-                                    atIndex:7];
-
-            [_renderEncoder setFragmentTexture:_globalShadowMap
-                                    atIndex:8];
-
-            [_renderEncoder setFragmentTexture:_cubeShadowMap
-                                    atIndex:9];
-
-            [_renderEncoder setFragmentTexture:_skybox
-                                    atIndex:10];
-
-            [_renderEncoder setFragmentTexture:_terrainHeightMap
-                                    atIndex:11];
-    #endif
+            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
             // Draw our mesh
             [_renderEncoder drawIndexedPrimitives:dbc.index_mode
@@ -668,18 +642,41 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
 {
-
+    _defaultFrameBuffer = _renderPassDescriptor.colorAttachments[0].texture = _textures[shadowmap];
+    _renderPassDescriptor.colorAttachments[0].level = 0;
+    _renderPassDescriptor.colorAttachments[0].slice = layer_index;
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
          layer_index:(const int32_t)layer_index
 {
-
+    _renderPassDescriptor.colorAttachments[0].texture = _defaultFrameBuffer;
+    _renderPassDescriptor.colorAttachments[0].level = 0;
+    _renderPassDescriptor.colorAttachments[0].slice = 0;
 }
 
 - (void)setShadowMaps:(const Frame&)frame
 {
+    auto texture_id = frame.frameContext.shadowMap;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:7];
+    }
 
+    texture_id = frame.frameContext.globalShadowMap;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:8];
+    }
+
+    texture_id = frame.frameContext.cubeShadowMap;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:9];
+    }
 }
 
 - (void)destroyShadowMap:(int32_t&)shadowmap

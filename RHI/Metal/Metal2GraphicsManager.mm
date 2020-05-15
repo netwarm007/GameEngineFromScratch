@@ -213,10 +213,6 @@ void Metal2GraphicsManager::BeginScene(const Scene& scene)
 {
     GraphicsManager::BeginScene(scene);
 
-    initializeGeometries(scene);
-    initializeSkyBox(scene);
-    initializeTerrain(scene);
-
     cout << "Done!" << endl;
 }
 
