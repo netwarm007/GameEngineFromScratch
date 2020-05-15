@@ -285,6 +285,10 @@ void GraphicsManager::CalculateLights()
 void GraphicsManager::BeginScene(const Scene& scene)
 {
     m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
+    {
+        m_Frames[i].frameIndex = i;
+    }
 
     for (const auto& pPass : m_InitPasses)
     {

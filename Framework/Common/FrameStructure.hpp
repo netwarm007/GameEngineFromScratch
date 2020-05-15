@@ -16,6 +16,7 @@ namespace My {
     };
 
     struct Frame : global_textures {
+        int32_t frameIndex;
         DrawFrameContext frameContext;
         std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
         LightInfo lightInfo;
