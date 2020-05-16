@@ -21,7 +21,9 @@ namespace My {
 
         int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
         int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) final;
-        void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index) final;
+        void BeginShadowMap(const Light& light, const int32_t shadowmap, 
+                            const uint32_t width, const uint32_t height, 
+                            const int32_t layer_index, const Frame& frame) final;
         void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) final;
         void SetShadowMaps(const Frame& frame) final;
         void DestroyShadowMap(int32_t& shadowmap) final;

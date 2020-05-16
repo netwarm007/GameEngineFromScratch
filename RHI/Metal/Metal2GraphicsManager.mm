@@ -276,9 +276,9 @@ int32_t Metal2GraphicsManager::GenerateShadowMapArray(const uint32_t width, cons
     return [m_pRenderer generateShadowMapArray:width height:height count:count];
 }
 
-void Metal2GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index) 
+void Metal2GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index, const Frame& frame) 
 {
-    [m_pRenderer beginShadowMap:light shadowmap:shadowmap width:width height:height layer_index:layer_index];
+    [m_pRenderer beginShadowMap:light shadowmap:shadowmap width:width height:height layer_index:layer_index frame:frame];
 }
 
 void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const int32_t layer_index) 

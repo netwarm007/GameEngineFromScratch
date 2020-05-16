@@ -24,12 +24,11 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Metal objects
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     id<MTLBuffer> _lightInfo[GEFSMaxBuffersInFlight];
+    id<MTLBuffer> _shadowMetrics[GEFSMaxBuffersInFlight];
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     std::vector<id<MTLTexture>>  _textures;
     id<MTLSamplerState> _sampler0;
-
-    id<MTLTexture> _defaultFrameBuffer;
 
     MTKView* _mtkView;
 }
@@ -69,12 +68,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         _lightInfo[i] = [_device newBufferWithLength:kSizeLightInfo options:MTLResourceStorageModeShared];
         
         _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
+
+        _shadowMetrics[i] = [_device newBufferWithLength:kSizeShadowMapConstantBuffer
+                                                    options:MTLResourceStorageModeShared];
+        
+        _shadowMetrics[i].label = [NSString stringWithFormat:@"shadowMetrics%lu", i];
     }
 
    ////////////////////////////
     // Sampler
 
-    MTLSamplerDescriptor* samplerDescriptor = [[MTLSamplerDescriptor alloc] init];
+    MTLSamplerDescriptor* samplerDescriptor = [MTLSamplerDescriptor new];
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
@@ -95,6 +99,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     auto dataSize = v_property_array.GetDataSize();
 	auto pData = v_property_array.GetData();
     vertexBuffer = [_device newBufferWithBytes:pData length:dataSize options:MTLResourceStorageModeShared];
+    vertexBuffer.label = [NSString stringWithCString:v_property_array.GetAttributeName().c_str()
+                              encoding: [NSString defaultCStringEncoding]];
     _vertexBuffers.push_back(vertexBuffer);
 }
 
@@ -281,13 +287,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 /// Called whenever view changes orientation or layout is changed
 - (void)updateDrawableSize:(CGSize)size
 {
-#if 0
-    /// React to resize of our draw rect.  In particular update our perspective matrix
-    // Update the aspect ratio and projection matrix since the view orientation or size has changed
-    float aspect = size.width / (float)size.height;
-
-    _projectionMatrix = matrix_perspective_left_hand(65.0f * (M_PI / 180.0f), aspect, 0.1f, 100.0);
-#endif
+    MTLViewport viewport {0.0, 0.0,
+        static_cast<double>(size.width), static_cast<double>(size.height), 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
 }
 
 - (void)beginFrame:(const My::Frame&)frame
@@ -307,39 +309,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     {
         _renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
     }
-
-    auto texture_id = frame.brdfLUT;
-    if (texture_id >= 0)
-    {
-        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
-                                atIndex:6];
-    }
-
-    texture_id = frame.skybox;
-    if (texture_id >= 0)
-    {
-        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
-                                atIndex:10];
-    }
-
-    texture_id = frame.terrainHeightMap;
-    if (texture_id >= 0)
-    {
-        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
-                                atIndex:11];
-    }
-
-    [_renderEncoder setVertexBuffer:_uniformBuffers[frame.frameIndex]
-                            offset:0
-                            atIndex:10];
-
-    [_renderEncoder setFragmentBuffer:_uniformBuffers[frame.frameIndex]
-                            offset:0
-                            atIndex:10];
-
-    [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
-                            offset:0
-                            atIndex:12];
 
     // now fill the buffers
     [self setPerFrameConstants:frame.frameContext
@@ -417,9 +386,38 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 default:
                     assert(0);
             }
+
             [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
             [_renderEncoder setRenderPipelineState:pipelineState.mtlRenderPipelineState];
             [_renderEncoder setDepthStencilState:pipelineState.depthState];
+
+            [_renderEncoder setVertexBuffer:_uniformBuffers[frame.frameIndex]
+                                        offset:0
+                                        atIndex:10];
+
+            [_renderEncoder setFragmentBuffer:_uniformBuffers[frame.frameIndex]
+                                        offset:0
+                                        atIndex:10];
+
+            [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
+                                        offset:0
+                                        atIndex:12];
+
+            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
+            auto texture_id = frame.skybox;
+            if (frame.skybox >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[texture_id]
+                                        atIndex:10];
+            }
+
+            texture_id = frame.brdfLUT;
+            if (texture_id >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[texture_id]
+                                        atIndex:6];
+            }
         }
         break;
         case PIPELINE_TYPE::COMPUTE:
@@ -430,29 +428,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         default:
             assert(0);
     }
-
-    [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                offset:0
-                                atIndex:10];
-
-    [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
-                                offset:0
-                                atIndex:10];
-
-    [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
-                                offset:0
-                                atIndex:12];
-
-    [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
-
-    if (_skyboxTexIndex >= 0)
-    {
-        [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
-                                atIndex:10];
-    }
-
-    [_renderEncoder setFragmentTexture:_textures[_brdfLutIndex]
-                                atIndex:6];
 
 }
 
@@ -586,12 +561,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                         atIndex:4];
             }
 
-            if (dbc.material.heightMap >= 0)
-            {
-                [_renderEncoder setFragmentTexture:_textures[dbc.material.heightMap]
-                                        atIndex:5];
-            }
-
             [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
             // Draw our mesh
@@ -620,6 +589,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     textureDesc.width = width;
     textureDesc.height = height;
     textureDesc.storageMode = MTLStorageModePrivate;
+    textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
@@ -646,6 +616,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     textureDesc.width = width;
     textureDesc.height = height;
     textureDesc.storageMode = MTLStorageModePrivate;
+    textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
@@ -663,18 +634,94 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                  width:(const uint32_t)width
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
+                 frame:(const Frame&)frame
 {
-    _defaultFrameBuffer = _renderPassDescriptor.colorAttachments[0].texture = _textures[shadowmap];
-    _renderPassDescriptor.colorAttachments[0].level = 0;
-    _renderPassDescriptor.colorAttachments[0].slice = layer_index;
+    _renderPassDescriptor.colorAttachments[0] = Nil;
+    _renderPassDescriptor.depthAttachment.texture = _textures[shadowmap];
+    _renderPassDescriptor.depthAttachment.level = 0;
+    _renderPassDescriptor.depthAttachment.slice = layer_index;
+    _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+    _renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
+
+    _renderEncoder =
+        [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+    _renderEncoder.label = @"Offline Render Encoder";
+
+    [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
+
+    MTLViewport viewport {0.0, 0.0, 
+        static_cast<double>(width), static_cast<double>(height), 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    ShadowMapConstants constants;
+    memset(&constants, 0x00, sizeof(ShadowMapConstants));
+
+    float nearClipDistance = 0.1f;
+    float farClipDistance = 10.0f;
+    
+    if (light.lightType == LightType::Omni)
+    {
+        static const Vector3f direction[6] = {
+            { 1.0f, 0.0f, 0.0f },
+            {-1.0f, 0.0f, 0.0f },
+            { 0.0f, 1.0f, 0.0f },
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f,-1.0f }
+        };
+        static const Vector3f up[6] = {
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f, 0.0f, 1.0f },
+            { 0.0f, 0.0f,-1.0f },
+            { 0.0f,-1.0f, 0.0f },
+            { 0.0f,-1.0f, 0.0f }
+        };
+
+        float fieldOfView = PI / 2.0f; // 90 degree for each cube map face
+        float screenAspect = (float)width / (float)height;
+        Matrix4X4f projection;
+
+        // Build the perspective projection matrix.
+        BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
+
+        Vector3f pos = {light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]};
+        for (int32_t i = 0; i < 6; i++)
+        {
+            BuildViewRHMatrix(constants.shadowMatrices[i], pos, pos + direction[i], up[i]);
+            constants.shadowMatrices[i] = constants.shadowMatrices[i] * projection;
+        }
+        constants.lightPos = light.lightPosition;
+    }
+    else
+    {
+        constants.shadowMatrices[0] = light.lightVP;
+    }
+
+    constants.shadowmap_layer_index = static_cast<float>(layer_index);
+    constants.far_plane = farClipDistance;
+
+    std::memcpy(_shadowMetrics[frame.frameIndex].contents,
+            &constants, sizeof(ShadowMapConstants));
+
+    [_renderEncoder setVertexBuffer:_shadowMetrics[frame.frameIndex]
+                                offset:0
+                                atIndex:12];
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
          layer_index:(const int32_t)layer_index
 {
-    _renderPassDescriptor.colorAttachments[0].texture = _defaultFrameBuffer;
-    _renderPassDescriptor.colorAttachments[0].level = 0;
-    _renderPassDescriptor.colorAttachments[0].slice = 0;
+    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+
+    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    MTLViewport viewport {0.0, 0.0, 
+        static_cast<double>(conf.screenWidth), static_cast<double>(conf.screenHeight), 
+        0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+    [_renderEncoder endEncoding];
 }
 
 - (void)setShadowMaps:(const Frame&)frame
@@ -735,7 +782,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
           height:(const uint32_t)height
            depth:(const uint32_t)depth
 {
-    // Set the compute kernel's threadgroup size of 16x16
+    [_renderEncoder pushDebugGroup:@"dispatch"];
+
+    // Set the compute kernel's threadgroup size 
     MTLSize threadgroupSize = MTLSizeMake(1, 1, 1);
     MTLSize threadgroupCount;
 
@@ -747,6 +796,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     [_computeEncoder dispatchThreadgroups:threadgroupCount
                     threadsPerThreadgroup:threadgroupSize];
+
+    [_renderEncoder popDebugGroup];
 }
 
 @end

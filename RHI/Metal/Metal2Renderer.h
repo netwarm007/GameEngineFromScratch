@@ -19,7 +19,8 @@ namespace My {
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
                                       device:(nonnull id <MTLDevice>)device;
 
-- (void)setPerFrameConstants:(const DrawFrameContext&)context frameContext:(const Frame&)frame;
+- (void)setPerFrameConstants:(const DrawFrameContext&)context
+          frameIndex:(const int32_t)index;
 
 - (void)setLightInfo:(const LightInfo&)lightInfo
           frameIndex:(const int32_t)index;
@@ -64,7 +65,8 @@ namespace My {
              shadowmap:(const int32_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
-           layer_index:(const int32_t)layer_index;
+           layer_index:(const int32_t)layer_index
+                 frame:(const Frame&)frame;
 
 - (void)endShadowMap:(const int32_t)shadowmap
          layer_index:(const int32_t)layer_index;

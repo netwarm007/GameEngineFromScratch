@@ -6,6 +6,9 @@ namespace My {
     {
     public:
         ~ShadowMapPass() override = default;
+
+        void BeginPass() override {}
         void Draw(Frame& frame) final;
+        void EndPass() override {}
     };
 }

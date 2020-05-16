@@ -985,7 +985,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t w
     return static_cast<int32_t>(shadowMap);
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index)
+void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index, const Frame& frame)
 {
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     glGenFramebuffers(1, &m_ShadowMapFramebufferName);
@@ -1076,19 +1076,19 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
 
     glGetActiveUniformBlockiv(m_CurrentShader, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
 
-    if (!m_uboShadowMatricesConstant[m_nFrameIndex])
+    if (!m_uboShadowMatricesConstant[frame.frameIndex])
     {
-        glGenBuffers(1, &m_uboShadowMatricesConstant[m_nFrameIndex]);
+        glGenBuffers(1, &m_uboShadowMatricesConstant[frame.frameIndex]);
     }
 
-    glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant[m_nFrameIndex]);
+    glBindBuffer(GL_UNIFORM_BUFFER, m_uboShadowMatricesConstant[frame.frameIndex]);
 
     assert(blockSize >= sizeof(constants));
     glBufferData(GL_UNIFORM_BUFFER, sizeof(constants), &constants, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glUniformBlockBinding(m_CurrentShader, blockIndex, 14);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 14, m_uboShadowMatricesConstant[m_nFrameIndex]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 14, m_uboShadowMatricesConstant[frame.frameIndex]);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap, int32_t layer_index)

@@ -10,7 +10,9 @@ namespace My {
     public:
         ~BasePass() override = default;
 
+        void BeginPass() override { g_pGraphicsManager->BeginPass(); }
         void Draw(Frame& frame) override;
+        void EndPass() override { g_pGraphicsManager->EndPass(); }
 
     protected:
         BasePass() = default;
