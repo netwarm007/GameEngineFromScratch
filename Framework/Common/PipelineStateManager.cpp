@@ -100,6 +100,7 @@ int PipelineStateManager::Initialize()
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
     pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_FULL;
+    pipelineState.flag = PIPELINE_FLAG::LIGHT_INFO;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "PBR";
@@ -113,6 +114,7 @@ int PipelineStateManager::Initialize()
     pipelineState.pixelShaderName.clear();
     pipelineState.computeShaderName = CS_PBR_BRDF_SOURCE_FILE;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_NONE;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Omni Light Shadow Map";
@@ -125,6 +127,7 @@ int PipelineStateManager::Initialize()
     pipelineState.pixelFormat = PIXEL_FORMAT::INVALID;
     pipelineState.sampleCount = 1;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
+    pipelineState.flag = PIPELINE_FLAG::SHADOW_MATRIX;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Spot Light Shadow Map";
@@ -148,6 +151,7 @@ int PipelineStateManager::Initialize()
     pipelineState.bDepthWrite = false;
     pipelineState.pixelFormat = PIXEL_FORMAT::BGRA8UNORM;
     pipelineState.sampleCount = 4;
+    pipelineState.flag = PIPELINE_FLAG::DEBUG_PARAM;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Texture Array Debug Output";
@@ -172,6 +176,7 @@ int PipelineStateManager::Initialize()
     pipelineState.depthTestMode = DEPTH_TEST_MODE::EQUAL;
     pipelineState.bDepthWrite = false;
     pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Terrain";
@@ -183,6 +188,7 @@ int PipelineStateManager::Initialize()
     pipelineState.bDepthWrite = true;
     pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
+    pipelineState.flag = PIPELINE_FLAG::LIGHT_INFO;
     RegisterPipelineState(pipelineState);
 
     cout << "Pipeline State Manager Initialized. [" << m_pipelineStates.size() << "]" << endl;

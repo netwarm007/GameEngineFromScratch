@@ -224,10 +224,10 @@ void GraphicsManager::CalculateLights()
             else 
             {
                 Vector3f position;
-		position.Set(light.lightPosition);
+		        position.Set(light.lightPosition);
                 Vector4f tmp = light.lightPosition + light.lightDirection;
                 Vector3f lookAt; 
-		lookAt.Set(tmp);
+		        lookAt.Set(tmp);
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
                 if (abs(light.lightDirection[0]) <= 0.1f
                     && abs(light.lightDirection[1]) <= 0.1f)

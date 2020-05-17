@@ -5,6 +5,7 @@
 #import "Metal2Renderer.h"
 
 #include "IApplication.hpp"
+#include <stack>
 
 using namespace My;
 
@@ -28,6 +29,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     std::vector<id<MTLTexture>>  _textures;
+    std::stack<uint32_t> _texture_recycled_indexes;
     id<MTLSamplerState> _sampler0;
 
     MTKView* _mtkView;
@@ -200,8 +202,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 withBytes:image.data
                 bytesPerRow:image.pitch];
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     return index;
 }
@@ -278,8 +290,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         }
     }
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     return index;
 }
@@ -335,12 +357,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
 - (void)beginPass
 {
-    if(_renderPassDescriptor != nil)
-    {
-        _renderEncoder =
-            [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
-        _renderEncoder.label = @"MyRenderEncoder";
-    }
+    assert(_renderPassDescriptor != nil);
+
+    _renderEncoder =
+        [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+    _renderEncoder.label = @"MyRenderEncoder";
 }
 
 - (void)endPass
@@ -399,9 +420,25 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                         offset:0
                                         atIndex:10];
 
-            [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
-                                        offset:0
-                                        atIndex:12];
+            switch (pipelineState.flag)
+            {
+                case PIPELINE_FLAG::LIGHT_INFO:
+                [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
+                                            offset:0
+                                            atIndex:12];
+                break;
+                case PIPELINE_FLAG::SHADOW_MATRIX:
+                [_renderEncoder setVertexBuffer:_shadowMetrics[frame.frameIndex]
+                                            offset:0
+                                            atIndex:12];
+                break;
+                case PIPELINE_FLAG::NONE:
+                break;
+                case PIPELINE_FLAG::DEBUG_PARAM:
+                break;
+                default:
+                    assert(0);
+            }
 
             [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
@@ -594,8 +631,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     [textureDesc release];
 
@@ -621,8 +668,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     [textureDesc release];
 
@@ -636,16 +693,19 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
            layer_index:(const int32_t)layer_index
                  frame:(const Frame&)frame
 {
-    _renderPassDescriptor.colorAttachments[0] = Nil;
-    _renderPassDescriptor.depthAttachment.texture = _textures[shadowmap];
-    _renderPassDescriptor.depthAttachment.level = 0;
-    _renderPassDescriptor.depthAttachment.slice = layer_index;
-    _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
-    _renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
+    MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor new];
+    renderPassDescriptor.colorAttachments[0] = Nil;
+    renderPassDescriptor.depthAttachment.texture = _textures[shadowmap];
+    renderPassDescriptor.depthAttachment.level = 0;
+    renderPassDescriptor.depthAttachment.slice = layer_index;
+    renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+    renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
 
     _renderEncoder =
-        [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+        [_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
     _renderEncoder.label = @"Offline Render Encoder";
+
+    [renderPassDescriptor release];
 
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
@@ -703,17 +763,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     std::memcpy(_shadowMetrics[frame.frameIndex].contents,
             &constants, sizeof(ShadowMapConstants));
-
-    [_renderEncoder setVertexBuffer:_shadowMetrics[frame.frameIndex]
-                                offset:0
-                                atIndex:12];
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
          layer_index:(const int32_t)layer_index
 {
-    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
-
     const GfxConfiguration& conf = g_pApp->GetConfiguration();
     MTLViewport viewport {0.0, 0.0, 
         static_cast<double>(conf.screenWidth), static_cast<double>(conf.screenHeight), 
@@ -750,7 +804,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
 - (void)destroyShadowMap:(int32_t&)shadowmap
 {
-    _textures[shadowmap] = Nil;
+    [_textures[shadowmap] release];
+    _texture_recycled_indexes.push(shadowmap);
 }
 
 - (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
@@ -769,13 +824,24 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     texture = [_device newTextureWithDescriptor:textureDesc];
     [textureDesc release];
 
-    int32_t texture_id = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
+
 
     [_computeEncoder setTexture:texture
                    atIndex:atIndex];
 
-    return texture_id;
+    return index;
 }
 
 - (void)dispatch:(const uint32_t)width

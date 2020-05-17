@@ -37,6 +37,14 @@ namespace My {
         COMPUTE
     };
 
+    ENUM(PIPELINE_FLAG)
+    {
+        NONE,
+        LIGHT_INFO,
+        SHADOW_MATRIX,
+        DEBUG_PARAM
+    };
+
     ENUM(PIXEL_FORMAT)
     {
         INVALID,
@@ -64,6 +72,7 @@ namespace My {
         uint32_t    sampleCount{1};
 
         A2V_TYPES a2vType{A2V_TYPES::A2V_TYPES_NONE};
+        PIPELINE_FLAG flag;
 
         virtual ~PipelineState() = default;
     }; 
