@@ -108,6 +108,7 @@ float3 apply_areaLight(const Light light, basic_vert_output input)
     return linearColor;
 }
 
+[RootSignature(MyRS1)]
 float4 basic_frag_main(basic_vert_output _entryPointOutput) : SV_Target
 {
     float3 linearColor = 0.0f.xxx;

@@ -51,7 +51,6 @@ namespace My {
         size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
         size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
 
-        HRESULT CreateRootSignature();
         HRESULT WaitForPreviousFrame();
         HRESULT ResetCommandList();
         HRESULT CreatePSO(D3d12PipelineState& pipelineState);
@@ -72,7 +71,6 @@ namespace My {
         ID3D12CommandAllocator*         m_pCommandAllocator[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};      // the pointer to command buffer allocator
         ID3D12GraphicsCommandList*      m_pCommandList[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};           // a list to store GPU commands, which will be submitted to GPU to execute when done
         ID3D12CommandQueue*             m_pCommandQueue = nullptr;          // the pointer to command queue
-        ID3D12RootSignature*            m_pRootSignature = nullptr;         // a graphics root signature defines what resources are bound to the pipeline
         ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
         ID3D12DescriptorHeap*           m_pSamplerHeap = nullptr;           // an array of descriptors of GPU objects
@@ -82,11 +80,6 @@ namespace My {
         uint32_t                        m_nPerBatchSrvRingHeapStart;
         uint32_t                        m_nPerBatchSrvRingHeapEnd;
         uint32_t                        m_nPerBatchSrvRingHeapSize;
-
-        std::vector<ID3D12PipelineState*>            
-                                        m_pPipelineStates;                  // an object maintains the state of all currently set shaders
-                                                                            // and certain fixed function state objects
-                                                                            // such as the input assembler, tesselator, rasterizer and output manager
 
         uint32_t                        m_nRtvDescriptorSize;
         uint32_t                        m_nCbvSrvUavDescriptorSize;

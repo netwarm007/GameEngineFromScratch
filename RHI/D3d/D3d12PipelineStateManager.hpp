@@ -9,7 +9,9 @@ namespace My {
         D3D12_SHADER_BYTECODE pixelShaderByteCode;
         D3D12_SHADER_BYTECODE geometryShaderByteCode;
         D3D12_SHADER_BYTECODE computeShaderByteCode;
-        int32_t psoIndex{-1};
+        D3D12_SHADER_BYTECODE meshShaderByteCode;
+        ID3D12PipelineState*  pipelineState{nullptr};
+        ID3D12RootSignature*  rootSignature{nullptr};
 
         D3d12PipelineState(PipelineState& state) : PipelineState(state)
         {

@@ -263,7 +263,6 @@ void D3d12GraphicsManager::Finalize()
     SafeRelease(&m_pSrvHeap);
     SafeRelease(&m_pCbvHeap);
     SafeRelease(&m_pPerBatchSrvRingHeap);
-    SafeRelease(&m_pRootSignature);
 	SafeRelease(&m_pDepthStencilBuffer);
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         SafeRelease(&m_pCommandList[i]);
@@ -274,16 +273,11 @@ void D3d12GraphicsManager::Finalize()
         SafeRelease(&m_pRenderTargets[(i << 1) | 1]);
     }
     SafeRelease(&m_pCommandQueue);
-    for (vector<ID3D12PipelineState*>::iterator it = m_pPipelineStates.begin(); it != m_pPipelineStates.end(); it++)
-    {
-        SafeRelease(&*it);
-    }
-    m_pPipelineStates.clear();
     SafeRelease(&m_pSwapChain);
 
     SafeRelease(&m_pDev);
 
-#if defined(D3D12_DEBUG_LAYER)
+#if defined(D3D12_RHI_DEBUG)
     if (m_pDebugDev)
     {
         m_pDebugDev->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL);
@@ -934,7 +928,7 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
 {
     HRESULT hr;
 
-#if defined(D3D12_DEBUG_LAYER)
+#if defined(D3D12_RHI_DEBUG)
     // Enable the D3D12 debug layer.
     {
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pDebugController))))
@@ -968,7 +962,7 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
         }
     }
 
-#if defined(D3D12_DEBUG_LAYER)
+#if defined(D3D12_RHI_DEBUG)
     if (m_pDebugController)
     {
         m_pDev->QueryInterface(IID_PPV_ARGS(&m_pDebugDev));
@@ -1112,12 +1106,6 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
 	}
     cout << "Done!" << endl;
 
-    cout << "Creating Root Signatures ...";
-    if (FAILED(hr = CreateRootSignature())) {
-        return hr;
-    }
-    cout << "Done!" << endl;
-
     cout << "Creating Command List ...";
     if (FAILED(hr = CreateCommandList())) {
         return hr;
@@ -1131,75 +1119,6 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources()
     cout << "Creating Sampler Buffer ...";
 	CreateSamplerBuffer();
     cout << "Done!" << endl;
-
-    return hr;
-}
-
-HRESULT D3d12GraphicsManager::CreateRootSignature()
-{
-    HRESULT hr = S_OK;
-
-    D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
-
-    // This is the highest version the sample supports. If CheckFeatureSupport succeeds, the HighestVersion returned will not be greater than this.
-    featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
-
-    if (FAILED(m_pDev->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
-    {
-        featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
-    }
-
-    // root signature for base pass
-    {
-        D3D12_DESCRIPTOR_RANGE1 ranges[] = {
-            { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0 },
-            { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, UINT_MAX, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }, 
-            { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, UINT_MAX, 12, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND }
-        };
-
-        D3D12_ROOT_PARAMETER1 rootParameters[] = {
-            { D3D12_ROOT_PARAMETER_TYPE_CBV, {},  D3D12_SHADER_VISIBILITY_ALL}, // Per Frame Constant
-            { D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS, {},  D3D12_SHADER_VISIBILITY_VERTEX }, // Per Batch Constant
-            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[0]}, D3D12_SHADER_VISIBILITY_PIXEL }, // Samplers
-            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[1]}, D3D12_SHADER_VISIBILITY_PIXEL }, // SRVs
-            { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, { 1, &ranges[2]}, D3D12_SHADER_VISIBILITY_ALL}  // CBVs
-        };
-        rootParameters[0].Descriptor.ShaderRegister = 10;
-        rootParameters[0].Descriptor.RegisterSpace = 0;
-        rootParameters[0].Descriptor.Flags = D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC;
-        rootParameters[1].Constants.ShaderRegister = 11;
-        rootParameters[1].Constants.RegisterSpace = 0;
-        rootParameters[1].Constants.Num32BitValues = 16;
-
-        // Allow input layout and deny uneccessary access to certain pipeline stages.
-        D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-
-        D3D12_ROOT_SIGNATURE_DESC1 rootSignatureDesc = {
-                _countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags
-            };
-
-        D3D12_VERSIONED_ROOT_SIGNATURE_DESC versionedRootSignatureDesc = {
-            D3D_ROOT_SIGNATURE_VERSION_1_1,
-        };
-
-        versionedRootSignatureDesc.Desc_1_1 = rootSignatureDesc;
-
-        ID3DBlob* signature = nullptr;
-        ID3DBlob* error = nullptr;
-        if (SUCCEEDED(hr = D3D12SerializeVersionedRootSignature(&versionedRootSignatureDesc, &signature, &error)))
-        {
-            hr = m_pDev->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature));
-        }
-
-        m_pRootSignature->SetName(L"RootSignature0");
-
-        SafeRelease(&signature);
-        SafeRelease(&error);
-    }
 
     return hr;
 }
@@ -1219,7 +1138,6 @@ static std::wstring s2ws(const std::string& s)
 // this is the function that loads and prepares the pso 
 HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
     HRESULT hr = S_OK;
-    ID3D12PipelineState* pPipelineState;
 
     D3D12_SHADER_BYTECODE vertexShaderByteCode;
     vertexShaderByteCode.pShaderBytecode = pipelineState.vertexShaderByteCode.pShaderBytecode;
@@ -1298,9 +1216,16 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
             D3D12_DEFAULT_STENCIL_WRITE_MASK, 
             defaultStencilOp, defaultStencilOp };
 
+        // create the root signature
+        if (FAILED(hr = m_pDev->CreateRootSignature(0, computeShaderByteCode.pShaderBytecode, computeShaderByteCode.BytecodeLength, IID_PPV_ARGS(&pipelineState.rootSignature))))
+        {
+            return false;
+        }
+
+
         // describe and create the graphics pipeline state object (PSO)
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psod {};
-        psod.pRootSignature = m_pRootSignature;
+        psod.pRootSignature = pipelineState.rootSignature;
         psod.VS             = vertexShaderByteCode;
         psod.PS             = pixelShaderByteCode;
         psod.BlendState     = bld;
@@ -1331,7 +1256,7 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
         psod.SampleDesc.Count = 4; // 4X MSAA
         psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
 
-        if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&pPipelineState))))
+        if (FAILED(hr = m_pDev->CreateGraphicsPipelineState(&psod, IID_PPV_ARGS(&pipelineState.pipelineState))))
         {
             return false;
         }
@@ -1340,19 +1265,29 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
     {
         assert(pipelineState.pipelineType == PIPELINE_TYPE::COMPUTE);
 
-        ID3DBlob* pBlob;
-        D3D12_CACHED_PIPELINE_STATE cachedPSO;
-        D3D12_COMPUTE_PIPELINE_STATE_DESC psod {m_pRootSignature, computeShaderByteCode, 0, cachedPSO, D3D12_PIPELINE_STATE_FLAG_NONE};
+        // create the root signature
+        if (FAILED(hr = m_pDev->CreateRootSignature(0, computeShaderByteCode.pShaderBytecode, computeShaderByteCode.BytecodeLength, IID_PPV_ARGS(&pipelineState.rootSignature))))
+        {
+            return false;
+        }
 
-        if (FAILED(hr = m_pDev->CreateComputePipelineState(&psod, IID_PPV_ARGS(&pPipelineState))))
+        D3D12_CACHED_PIPELINE_STATE cachedPSO;
+        cachedPSO.pCachedBlob = nullptr;
+        cachedPSO.CachedBlobSizeInBytes = 0;
+        D3D12_COMPUTE_PIPELINE_STATE_DESC psod;
+        psod.pRootSignature = pipelineState.rootSignature; 
+        psod.CS = computeShaderByteCode; 
+        psod.NodeMask = 0; 
+        psod.CachedPSO.pCachedBlob = nullptr;
+        psod.CachedPSO.CachedBlobSizeInBytes = 0;
+        psod.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+        if (FAILED(hr = m_pDev->CreateComputePipelineState(&psod, IID_PPV_ARGS(&pipelineState.pipelineState))))
         {
             return false;
         }
     }
-    pPipelineState->SetName(s2ws(pipelineState.pipelineStateName).c_str());
-
-    pipelineState.psoIndex = static_cast<int32_t>(m_pPipelineStates.size());
-    m_pPipelineStates.push_back(pPipelineState);
+    pipelineState.pipelineState->SetName(s2ws(pipelineState.pipelineStateName).c_str());
 
     return hr;
 }
@@ -1631,22 +1566,18 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame)
     barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     m_pCommandList[m_nFrameIndex]->ResourceBarrier(1, &barrier);
 
-    // Set necessary state.
-    m_pCommandList[m_nFrameIndex]->SetGraphicsRootSignature(m_pRootSignature);
-
     ID3D12DescriptorHeap* ppHeaps[] = { m_pPerBatchSrvRingHeap, m_pSamplerHeap };
     m_pCommandList[m_nFrameIndex]->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-    m_pCommandList[m_nFrameIndex]->RSSetViewports(1, &m_ViewPort);
-    m_pCommandList[m_nFrameIndex]->RSSetScissorRects(1, &m_ScissorRect);
-
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-    // rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nRtvDescriptorSize;
-    // bind the MSAA buffer
+    // bind the MSAA RTV
     rtvHandle.ptr = m_pRtvHeap->GetCPUDescriptorHandleForHeapStart().ptr + (2L * m_nFrameIndex + 1L) * m_nRtvDescriptorSize;
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
     dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
     m_pCommandList[m_nFrameIndex]->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+    m_pCommandList[m_nFrameIndex]->RSSetViewports(1, &m_ViewPort);
+    m_pCommandList[m_nFrameIndex]->RSSetScissorRects(1, &m_ScissorRect);
 
     // clear the back buffer to a deep blue
     const FLOAT clearColor[] = { 0.2f, 0.3f, 0.4f, 1.0f };
@@ -1655,12 +1586,6 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame)
 
     SetPerFrameConstants(frame.frameContext);
     SetLightInfo(frame.lightInfo);
-
-    // Per Frame CBV
-    m_pCommandList[m_nFrameIndex]->SetGraphicsRootConstantBufferView(0, m_pPerFrameConstantUploadBuffer[m_nFrameIndex]->GetGPUVirtualAddress());
-    D3D12_GPU_DESCRIPTOR_HANDLE cbvHandler;
-    cbvHandler.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nCbvSrvUavDescriptorSize;
-    m_pCommandList[m_nFrameIndex]->SetGraphicsRootDescriptorTable(4, cbvHandler);
 }
 
 void D3d12GraphicsManager::EndFrame()
@@ -1767,12 +1692,24 @@ void D3d12GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>
     if (pipelineState)
     {
         std::shared_ptr<D3d12PipelineState> state = dynamic_pointer_cast<D3d12PipelineState>(pipelineState);
-        if (state->psoIndex == -1)
+
+        if (!state->pipelineState)
         {
             CreatePSO(*state);
         }
 
-        m_pCommandList[m_nFrameIndex]->SetPipelineState(m_pPipelineStates[state->psoIndex]);
+        m_pCommandList[m_nFrameIndex]->SetPipelineState(state->pipelineState);
+
+        m_pCommandList[m_nFrameIndex]->SetGraphicsRootSignature(state->rootSignature);
+
+        // Per Frame CBV
+        m_pCommandList[m_nFrameIndex]->SetGraphicsRootConstantBufferView(0, m_pPerFrameConstantUploadBuffer[m_nFrameIndex]->GetGPUVirtualAddress());
+
+        /*
+        D3D12_GPU_DESCRIPTOR_HANDLE cbvHandler;
+        cbvHandler.ptr = m_pCbvHeap->GetGPUDescriptorHandleForHeapStart().ptr + m_nFrameIndex * m_nCbvSrvUavDescriptorSize;
+        m_pCommandList[m_nFrameIndex]->SetGraphicsRootDescriptorTable(4, cbvHandler);
+        */
     }
 }
 
