@@ -28,7 +28,7 @@
 #include "ViewerLogic.hpp"
 
 namespace My {
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 960, 540, "Viewer");
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1920, 1080, "Viewer");
 #if defined(OS_MACOS)
 	IApplication*    g_pApp             = static_cast<IApplication*>(new CocoaMetalApplication(config));
 #else
