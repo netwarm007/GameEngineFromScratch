@@ -74,7 +74,7 @@ unistruct LightInfo REGISTER(b12)
 	struct Light lights[MAX_LIGHTS];
 };
 
-unistruct DebugConstants REGISTER(b12)
+unistruct DebugConstants REGISTER(b13)
 {
 	float layer_index;
 	float mip_level;
@@ -84,7 +84,7 @@ unistruct DebugConstants REGISTER(b12)
 	Vector4f back_color;
 };
 
-unistruct ShadowMapConstants REGISTER(b12)
+unistruct ShadowMapConstants REGISTER(b13)
 {
     Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
 	Vector4f lightPos;						// 16 bytes

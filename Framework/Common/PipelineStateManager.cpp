@@ -148,9 +148,9 @@ int PipelineStateManager::Initialize()
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
     pipelineState.depthTestMode = DEPTH_TEST_MODE::ALWAYS;
-    pipelineState.bDepthWrite = false;
+    pipelineState.bDepthWrite = true;
     pipelineState.pixelFormat = PIXEL_FORMAT::BGRA8UNORM;
-    pipelineState.sampleCount = 4;
+    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     pipelineState.flag = PIPELINE_FLAG::DEBUG_PARAM;
     RegisterPipelineState(pipelineState);
 
@@ -173,7 +173,7 @@ int PipelineStateManager::Initialize()
     pipelineState.pipelineStateName = "SkyBox";
     pipelineState.vertexShaderName = VS_SKYBOX_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_SKYBOX_SOURCE_FILE;
-    pipelineState.depthTestMode = DEPTH_TEST_MODE::EQUAL;
+    pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.bDepthWrite = false;
     pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     pipelineState.flag = PIPELINE_FLAG::NONE;
