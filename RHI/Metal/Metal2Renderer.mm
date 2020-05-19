@@ -709,10 +709,14 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
+    MTLViewport viewport {0.0, static_cast<double>(_textures[shadowmap].height),
+        static_cast<double>(_textures[shadowmap].width), -static_cast<double>(_textures[shadowmap].height), 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
     shadow_map_constants.light_index = light_index;
     shadow_map_constants.shadowmap_layer_index = static_cast<float>(layer_index);
     shadow_map_constants.near_plane = 1.0;
-    shadow_map_constants.far_plane = 10.0;
+    shadow_map_constants.far_plane = 100.0;
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap

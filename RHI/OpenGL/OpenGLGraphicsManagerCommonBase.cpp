@@ -1057,8 +1057,8 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const int32_t light_index, 
         glClear(GL_DEPTH_BUFFER_BIT);
     }
 
-    float nearClipDistance = 0.1f;
-    float farClipDistance = 10.0f;
+    float nearClipDistance = 1.0f;
+    float farClipDistance = 100.0f;
     ShadowMapConstants constants;
 
     constants.light_index = light_index;
