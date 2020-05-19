@@ -200,9 +200,9 @@ void GraphicsManager::CalculateLights()
 
                 light.lightPosition = target - light.lightDirection * farClipDistance;
                 Vector3f position;
-		position.Set((float*)light.lightPosition);
+		        position.Set((float*)light.lightPosition);
                 Vector3f lookAt;
-		lookAt.Set((float*)target); 
+		        lookAt.Set((float*)target); 
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
                 if (abs(light.lightDirection[0]) <= 0.2f
                     && abs(light.lightDirection[1]) <= 0.2f)
@@ -272,7 +272,8 @@ void GraphicsManager::CalculateLights()
                 }
             } 
 
-            light.lightVP = view * projection;
+            light.lightViewMatrix = view;
+            light.lightProjectionMatrix = projection;
             frameContext.numLights++;
         }
         else

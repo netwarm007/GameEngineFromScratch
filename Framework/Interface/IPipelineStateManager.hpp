@@ -40,9 +40,8 @@ namespace My {
     ENUM(PIPELINE_FLAG)
     {
         NONE,
-        LIGHT_INFO,
-        SHADOW_MATRIX,
-        DEBUG_PARAM
+        SHADOW,
+        DEBUG_DRAW
     };
 
     ENUM(PIXEL_FORMAT)

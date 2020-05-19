@@ -62,7 +62,8 @@ static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor, Me
 
     MTLVertexBufferLayoutDescriptor* vertexBufferLayoutUVWDesc = [MTLVertexBufferLayoutDescriptor new];
     vertexBufferLayoutUVWDesc.stride = 12;
-    vertexBufferLayoutUVWDesc.stepRate = 1; vertexBufferLayoutUVWDesc.stepFunction = MTLVertexStepFunctionPerVertex;
+    vertexBufferLayoutUVWDesc.stepRate = 1; 
+    vertexBufferLayoutUVWDesc.stepFunction = MTLVertexStepFunctionPerVertex;
 
     switch(pState->a2vType)
     {

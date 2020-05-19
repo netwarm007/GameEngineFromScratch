@@ -808,7 +808,7 @@ void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<Pip
     }
 
 
-    if (pPipelineState->flag == PIPELINE_FLAG::SHADOW_MATRIX)
+    if (pPipelineState->flag == PIPELINE_FLAG::SHADOW)
     {
         uint32_t blockIndex = glGetUniformBlockIndex(m_CurrentShader, "ShadowMapConstants");
         assert(blockIndex != GL_INVALID_INDEX);
@@ -1019,14 +1019,14 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(const uint32_t w
     return static_cast<int32_t>(shadowMap);
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index, const Frame& frame)
+void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const int32_t light_index, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index, const Frame& frame)
 {
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     glGenFramebuffers(1, &m_ShadowMapFramebufferName);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
 
-    if (light.lightType == LightType::Omni)
+    if (frame.lightInfo.lights[light_index].lightType == LightType::Omni)
     {
 #if defined(OS_WEBASSEMBLY)
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, (uint32_t) shadowmap, 0, layer_index);
@@ -1052,7 +1052,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     glDrawBuffers(0, nullptr); // No color buffer is drawn to.
     // make sure omni light shadowmap arrays get cleared only
     // once, because glClear will clear all cubemaps in the array
-    if (light.lightType != LightType::Omni || layer_index == 0)
+    if (frame.lightInfo.lights[light_index].lightType != LightType::Omni || layer_index == 0)
     {
         glClear(GL_DEPTH_BUFFER_BIT);
     }
@@ -1061,46 +1061,9 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(const Light& light, const i
     float farClipDistance = 10.0f;
     ShadowMapConstants constants;
 
-    if (light.lightType == LightType::Omni)
-    {
-        static const Vector3f direction[6] = {
-            { 1.0f, 0.0f, 0.0f },
-            {-1.0f, 0.0f, 0.0f },
-            { 0.0f, 1.0f, 0.0f },
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f, 0.0f, 1.0f },
-            { 0.0f, 0.0f,-1.0f }
-        };
-        static const Vector3f up[6] = {
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f, 0.0f, 1.0f },
-            { 0.0f, 0.0f,-1.0f },
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f,-1.0f, 0.0f }
-        };
-
-        float fieldOfView = PI / 2.0f; // 90 degree for each cube map face
-        float screenAspect = (float)width / (float)height;
-        Matrix4X4f projection;
-
-        // Build the perspective projection matrix.
-        BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
-
-        Vector3f pos = {light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]};
-        for (int32_t i = 0; i < 6; i++)
-        {
-            BuildViewRHMatrix(constants.shadowMatrices[i], pos, pos + direction[i], up[i]);
-            constants.shadowMatrices[i] = constants.shadowMatrices[i] * projection;
-        }
-        constants.lightPos = light.lightPosition;
-    }
-    else
-    {
-        constants.shadowMatrices[0] = light.lightVP;
-    }
-
+    constants.light_index = light_index;
     constants.shadowmap_layer_index = static_cast<float>(layer_index);
+    constants.near_plane = nearClipDistance;
     constants.far_plane = farClipDistance;
 
     if (!m_uboShadowMatricesConstant[frame.frameIndex])
@@ -1698,7 +1661,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(const int32_t text
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
-    constants.layer_index = static_cast<float>(layer_index);
+    constants.layer_index = layer_index;
     constants.mip_level = 0;
 
     if (!m_uboDebugConstant[m_nFrameIndex])

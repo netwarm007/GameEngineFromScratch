@@ -35,7 +35,7 @@ namespace My {
 
         virtual int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
         virtual int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
-        virtual void BeginShadowMap(const Light& light, const int32_t shadowmap, 
+        virtual void BeginShadowMap(const int32_t light_index, const int32_t shadowmap, 
                                     const uint32_t width, const uint32_t height, 
                                     const int32_t layer_index, const Frame& frame) {}
         virtual void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) {}

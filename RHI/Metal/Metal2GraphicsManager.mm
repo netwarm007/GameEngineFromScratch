@@ -276,9 +276,9 @@ int32_t Metal2GraphicsManager::GenerateShadowMapArray(const uint32_t width, cons
     return [m_pRenderer generateShadowMapArray:width height:height count:count];
 }
 
-void Metal2GraphicsManager::BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index, const Frame& frame) 
+void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index, const Frame& frame) 
 {
-    [m_pRenderer beginShadowMap:light shadowmap:shadowmap width:width height:height layer_index:layer_index frame:frame];
+    [m_pRenderer beginShadowMap:light_index shadowmap:shadowmap width:width height:height layer_index:layer_index frame:frame];
 }
 
 void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const int32_t layer_index) 
@@ -311,3 +311,64 @@ void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height
 {
     [m_pRenderer dispatch:width height:height depth:depth];
 }
+
+#ifdef DEBUG
+void Metal2GraphicsManager::DrawTextureOverlay(const int32_t texture, 
+                                                        const float vp_left, 
+                                                        const float vp_top, 
+                                                        const float vp_width, 
+                                                        const float vp_height)
+{
+    [m_pRenderer drawTextureOverlay:texture vp_left:vp_left 
+                                             vp_top:vp_top
+                                           vp_width:vp_width 
+                                          vp_height:vp_height];
+}
+
+void Metal2GraphicsManager::DrawTextureArrayOverlay(const int32_t texture,
+                                                        const float layer_index,
+                                                        const float vp_left, 
+                                                        const float vp_top, 
+                                                        const float vp_width, 
+                                                        const float vp_height)
+{
+    [m_pRenderer drawTextureArrayOverlay:texture 
+                                             layer_index:layer_index
+                                                 vp_left:vp_left 
+                                                  vp_top:vp_top
+                                                vp_width:vp_width 
+                                               vp_height:vp_height];
+}
+
+void Metal2GraphicsManager::DrawCubeMapOverlay(const int32_t texture, 
+                                                        const float vp_left, 
+                                                        const float vp_top, 
+                                                        const float vp_width, 
+                                                        const float vp_height,
+                                                        const float level)
+{
+    [m_pRenderer drawCubeMapOverlay:texture vp_left:vp_left 
+                                             vp_top:vp_top
+                                           vp_width:vp_width 
+                                          vp_height:vp_height
+                                              level:level];
+}
+
+void Metal2GraphicsManager::DrawCubeMapArrayOverlay(const int32_t texture, 
+                                                        const float layer_index,
+                                                        const float vp_left, 
+                                                        const float vp_top, 
+                                                        const float vp_width, 
+                                                        const float vp_height,
+                                                        const float level)
+{
+    [m_pRenderer drawCubeMapArrayOverlay:texture
+                                             layer_index:layer_index
+                                                 vp_left:vp_left
+                                                  vp_top:vp_top
+                                                vp_width:vp_width 
+                                               vp_height:vp_height
+                                                   level:level];
+}
+
+#endif

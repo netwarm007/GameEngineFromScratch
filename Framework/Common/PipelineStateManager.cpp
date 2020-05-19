@@ -100,7 +100,7 @@ int PipelineStateManager::Initialize()
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
     pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_FULL;
-    pipelineState.flag = PIPELINE_FLAG::LIGHT_INFO;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "PBR";
@@ -127,7 +127,7 @@ int PipelineStateManager::Initialize()
     pipelineState.pixelFormat = PIXEL_FORMAT::INVALID;
     pipelineState.sampleCount = 1;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
-    pipelineState.flag = PIPELINE_FLAG::SHADOW_MATRIX;
+    pipelineState.flag = PIPELINE_FLAG::SHADOW;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Spot Light Shadow Map";
@@ -151,7 +151,7 @@ int PipelineStateManager::Initialize()
     pipelineState.bDepthWrite = true;
     pipelineState.pixelFormat = PIXEL_FORMAT::BGRA8UNORM;
     pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
-    pipelineState.flag = PIPELINE_FLAG::DEBUG_PARAM;
+    pipelineState.flag = PIPELINE_FLAG::DEBUG_DRAW;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Texture Array Debug Output";
@@ -188,7 +188,7 @@ int PipelineStateManager::Initialize()
     pipelineState.bDepthWrite = true;
     pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
-    pipelineState.flag = PIPELINE_FLAG::LIGHT_INFO;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     cout << "Pipeline State Manager Initialized. [" << m_pipelineStates.size() << "]" << endl;

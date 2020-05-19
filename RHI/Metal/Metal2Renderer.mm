@@ -25,7 +25,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Metal objects
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     id<MTLBuffer> _lightInfo[GEFSMaxBuffersInFlight];
-    id<MTLBuffer> _shadowMetrics[GEFSMaxBuffersInFlight];
+    ShadowMapConstants shadow_map_constants;
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     std::vector<id<MTLTexture>>  _textures;
@@ -70,11 +70,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         _lightInfo[i] = [_device newBufferWithLength:kSizeLightInfo options:MTLResourceStorageModeShared];
         
         _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
-
-        _shadowMetrics[i] = [_device newBufferWithLength:kSizeShadowMapConstantBuffer
-                                                    options:MTLResourceStorageModeShared];
-        
-        _shadowMetrics[i].label = [NSString stringWithFormat:@"shadowMetrics%lu", i];
     }
 
    ////////////////////////////
@@ -309,9 +304,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 /// Called whenever view changes orientation or layout is changed
 - (void)updateDrawableSize:(CGSize)size
 {
+#if 0
     MTLViewport viewport {0.0, 0.0,
         static_cast<double>(size.width), static_cast<double>(size.height), 0.0, 1.0};
     [_renderEncoder setViewport:viewport];
+#endif
 }
 
 - (void)beginFrame:(const My::Frame&)frame
@@ -420,21 +417,24 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                         offset:0
                                         atIndex:10];
 
+            [_renderEncoder setVertexBuffer:_lightInfo[frame.frameIndex]
+                                        offset:0
+                                        atIndex:12];
+
+            [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
+                                        offset:0
+                                        atIndex:12];
+
             switch (pipelineState.flag)
             {
-                case PIPELINE_FLAG::LIGHT_INFO:
-                [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
-                                            offset:0
-                                            atIndex:12];
-                break;
-                case PIPELINE_FLAG::SHADOW_MATRIX:
-                [_renderEncoder setVertexBuffer:_shadowMetrics[frame.frameIndex]
-                                            offset:0
-                                            atIndex:12];
+                case PIPELINE_FLAG::SHADOW:
+                [_renderEncoder setVertexBytes:static_cast<const void*>(&shadow_map_constants)
+                                        length:sizeof(ShadowMapConstants)
+                                        atIndex:13];
                 break;
                 case PIPELINE_FLAG::NONE:
                 break;
-                case PIPELINE_FLAG::DEBUG_PARAM:
+                case PIPELINE_FLAG::DEBUG_DRAW:
                 break;
                 default:
                     assert(0);
@@ -686,7 +686,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     return static_cast<int32_t>(index);
 }
 
-- (void)beginShadowMap:(const Light&)light
+- (void)beginShadowMap:(const int32_t)light_index
              shadowmap:(const int32_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
@@ -709,71 +709,15 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
-    MTLViewport viewport {0.0, 0.0, 
-        static_cast<double>(width), static_cast<double>(height), 0.0, 1.0};
-    [_renderEncoder setViewport:viewport];
-
-    ShadowMapConstants constants;
-    memset(&constants, 0x00, sizeof(ShadowMapConstants));
-
-    float nearClipDistance = 0.1f;
-    float farClipDistance = 10.0f;
-    
-    if (light.lightType == LightType::Omni)
-    {
-        static const Vector3f direction[6] = {
-            { 1.0f, 0.0f, 0.0f },
-            {-1.0f, 0.0f, 0.0f },
-            { 0.0f, 1.0f, 0.0f },
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f, 0.0f, 1.0f },
-            { 0.0f, 0.0f,-1.0f }
-        };
-        static const Vector3f up[6] = {
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f, 0.0f, 1.0f },
-            { 0.0f, 0.0f,-1.0f },
-            { 0.0f,-1.0f, 0.0f },
-            { 0.0f,-1.0f, 0.0f }
-        };
-
-        float fieldOfView = PI / 2.0f; // 90 degree for each cube map face
-        float screenAspect = (float)width / (float)height;
-        Matrix4X4f projection;
-
-        // Build the perspective projection matrix.
-        BuildPerspectiveFovRHMatrix(projection, fieldOfView, screenAspect, nearClipDistance, farClipDistance);
-
-        Vector3f pos = {light.lightPosition[0], light.lightPosition[1], light.lightPosition[2]};
-        for (int32_t i = 0; i < 6; i++)
-        {
-            BuildViewRHMatrix(constants.shadowMatrices[i], pos, pos + direction[i], up[i]);
-            constants.shadowMatrices[i] = constants.shadowMatrices[i] * projection;
-        }
-        constants.lightPos = light.lightPosition;
-    }
-    else
-    {
-        constants.shadowMatrices[0] = light.lightVP;
-    }
-
-    constants.shadowmap_layer_index = static_cast<float>(layer_index);
-    constants.far_plane = farClipDistance;
-
-    std::memcpy(_shadowMetrics[frame.frameIndex].contents,
-            &constants, sizeof(ShadowMapConstants));
+    shadow_map_constants.light_index = light_index;
+    shadow_map_constants.shadowmap_layer_index = static_cast<float>(layer_index);
+    shadow_map_constants.near_plane = 1.0;
+    shadow_map_constants.far_plane = 10.0;
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
          layer_index:(const int32_t)layer_index
 {
-    const GfxConfiguration& conf = g_pApp->GetConfiguration();
-    MTLViewport viewport {0.0, 0.0, 
-        static_cast<double>(conf.screenWidth), static_cast<double>(conf.screenHeight), 
-        0.0, 1.0};
-    [_renderEncoder setViewport:viewport];
-
     [_renderEncoder popDebugGroup];
     [_renderEncoder endEncoding];
 }
@@ -865,5 +809,223 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     [_renderEncoder popDebugGroup];
 }
+
+#ifdef DEBUG
+static float rect_vertices[] = {
+   -1.0f,-1.0f, 0.0f,
+    1.0f,-1.0f, 0.0f,
+   -1.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f
+};
+
+static float rect_uv[] = {
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 1.0f
+};
+
+- (void)drawTextureOverlay:(const int32_t)texture_id
+                   vp_left:(const float) vp_left 
+                    vp_top:(const float) vp_top 
+                  vp_width:(const float) vp_width 
+                 vp_height:(const float) vp_height
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    [_renderEncoder pushDebugGroup:@"Draw Texture Overlay"];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:rect_vertices
+                        length:sizeof(rect_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:rect_uv
+                        length:sizeof(rect_uv)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(rect_vertices)/sizeof(rect_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+- (void)drawTextureArrayOverlay:(const int32_t)texture_id
+                    layer_index:(const float) layer_index
+                        vp_left:(const float) vp_left 
+                         vp_top:(const float) vp_top 
+                       vp_width:(const float) vp_width 
+                      vp_height:(const float) vp_height
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    DebugConstants constants;
+
+    constants.layer_index = layer_index;
+    constants.mip_level = 0;
+
+    [_renderEncoder pushDebugGroup:@"Draw Texture Array Overlay"];
+
+    [_renderEncoder setFragmentBytes:&constants
+                            length:sizeof(DebugConstants)
+                           atIndex:13];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:rect_vertices
+                        length:sizeof(rect_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:rect_uv
+                        length:sizeof(rect_uv)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(rect_vertices)/sizeof(rect_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+static float cubemap_unwrap_vertices[] = {
+   -1.0f, 0.0f, 0.0f,
+   -0.333333f, 0.0f, 0.0f,
+   -1.0f, 1.0f, 0.0f,
+   -0.333333f, 1.0f, 0.0f,
+};
+
+static float cubemap_unwrap_uvw[] = {
+         // back
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+};
+
+- (void)drawCubeMapOverlay:(const int32_t)texture_id
+                   vp_left:(const float) vp_left 
+                    vp_top:(const float) vp_top 
+                  vp_width:(const float) vp_width 
+                 vp_height:(const float) vp_height
+                     level:(const float) level
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    DebugConstants constants;
+
+    constants.mip_level = level;
+
+    [_renderEncoder pushDebugGroup:@"Draw CubeMap Overlay"];
+
+    [_renderEncoder setFragmentBytes:&constants
+                              length:sizeof(DebugConstants)
+                             atIndex:13];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_vertices
+                        length:sizeof(cubemap_unwrap_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_uvw
+                        length:sizeof(cubemap_unwrap_uvw)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(cubemap_unwrap_vertices)/sizeof(cubemap_unwrap_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+- (void)drawCubeMapArrayOverlay:(const int32_t)texture_id
+                    layer_index:(const float) layer_index
+                        vp_left:(const float) vp_left 
+                         vp_top:(const float) vp_top 
+                       vp_width:(const float) vp_width 
+                      vp_height:(const float) vp_height
+                          level:(const float) level
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    DebugConstants constants;
+
+    constants.layer_index = layer_index;
+    constants.mip_level = level;
+
+    [_renderEncoder pushDebugGroup:@"Draw CubeMap Array Overlay"];
+
+    [_renderEncoder setFragmentBytes:&constants
+                            length:sizeof(DebugConstants)
+                           atIndex:13];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_vertices
+                        length:sizeof(cubemap_unwrap_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_uvw
+                        length:sizeof(cubemap_unwrap_uvw)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(cubemap_unwrap_vertices)/sizeof(cubemap_unwrap_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+#endif
 
 @end

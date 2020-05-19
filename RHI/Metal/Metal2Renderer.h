@@ -61,7 +61,7 @@ namespace My {
                            height:(const uint32_t)height
                             count:(const uint32_t)count;
 
-- (void)beginShadowMap:(const Light&)light
+- (void)beginShadowMap:(const int32_t)light_index
              shadowmap:(const int32_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
@@ -82,6 +82,36 @@ namespace My {
 - (void)dispatch:(const uint32_t)width
           height:(const uint32_t)height
            depth:(const uint32_t)depth;
+
+#ifdef DEBUG
+- (void)drawTextureOverlay:(const int32_t)texture_id
+                   vp_left:(const float) vp_left 
+                    vp_top:(const float) vp_top 
+                  vp_width:(const float) vp_width 
+                 vp_height:(const float) vp_height;
+
+- (void)drawTextureArrayOverlay:(const int32_t)texture_id
+                    layer_index:(const float) layer_index
+                        vp_left:(const float) vp_left 
+                         vp_top:(const float) vp_top 
+                       vp_width:(const float) vp_width 
+                      vp_height:(const float) vp_height;
+
+- (void)drawCubeMapOverlay:(const int32_t)texture_id
+                   vp_left:(const float) vp_left 
+                    vp_top:(const float) vp_top 
+                  vp_width:(const float) vp_width 
+                 vp_height:(const float) vp_height
+                     level:(const float) level;
+
+- (void)drawCubeMapArrayOverlay:(const int32_t)texture_id
+                    layer_index:(const float) layer_index
+                        vp_left:(const float) vp_left 
+                         vp_top:(const float) vp_top 
+                       vp_width:(const float) vp_width 
+                      vp_height:(const float) vp_height
+                          level:(const float) level;
+#endif
 
 @property (nonnull, readonly, nonatomic) id<MTLDevice> device;
 

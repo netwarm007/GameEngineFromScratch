@@ -90,7 +90,7 @@ float apply_atten_curve(float dist, int atten_curve_type, float4 atten_params[2]
 }
 
 float shadow_test(float4 p, Light light, float cosTheta) {
-    float4 v_light_space = mul(p, light.lightVP);
+    float4 v_light_space = mul(mul(p, light.lightViewMatrix), light.lightProjectionMatrix);
     v_light_space /= v_light_space.w.xxxx;
 
     const float4x4 depth_bias = float4x4 (
