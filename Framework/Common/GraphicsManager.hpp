@@ -35,7 +35,9 @@ namespace My {
 
         virtual int32_t GenerateCubeShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
         virtual int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height, const uint32_t count) { return 0; }
-        virtual void BeginShadowMap(const Light& light, const int32_t shadowmap, const uint32_t width, const uint32_t height, const int32_t layer_index) {}
+        virtual void BeginShadowMap(const int32_t light_index, const int32_t shadowmap, 
+                                    const uint32_t width, const uint32_t height, 
+                                    const int32_t layer_index, const Frame& frame) {}
         virtual void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) {}
         virtual void SetShadowMaps(const Frame& frame) {}
         virtual void DestroyShadowMap(int32_t& shadowmap) {}
@@ -86,15 +88,15 @@ namespace My {
         void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax, const Vector3f& color);
 #endif
 
+        virtual void BeginPass() {}
+        virtual void EndPass() {}
+
     protected:
         virtual void BeginScene(const Scene& scene);
         virtual void EndScene();
 
         virtual void BeginFrame(const Frame& frame) {}
         virtual void EndFrame() {}
-
-        virtual void BeginPass() {}
-        virtual void EndPass() {}
 
         virtual void BeginCompute() {}
         virtual void EndCompute() {}

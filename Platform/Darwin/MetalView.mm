@@ -42,7 +42,7 @@ using namespace My;
 {
     self.device = MTLCreateSystemDefaultDevice();
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
-    self.depthStencilPixelFormat = MTLPixelFormatDepth32Float_Stencil8;
+    self.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     self.framebufferOnly = YES;
     self.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     

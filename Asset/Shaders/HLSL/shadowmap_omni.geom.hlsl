@@ -20,7 +20,7 @@ void shadowmap_omni_geom_main(triangle pos_only_vert_output _entryPointOutput[3]
         output.slice = int(shadowmap_layer_index) * 6 + face; // built-in variable that specifies to which face we render.
         for(int i = 0; i < 3; ++i) // for each triangle's vertices
         {
-            output.pos = mul(_entryPointOutput[i].pos, shadowMatrices[face]);
+            //output.pos = mul(_entryPointOutput[i].pos, shadowMatrices[face]);
             OutputStream.Append(output);
         }    
         OutputStream.RestartStrip();

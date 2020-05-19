@@ -39,6 +39,8 @@ namespace My {
 #endif
 
 struct Light{
+	Matrix4X4f 	lightViewMatrix;				// 64 bytes
+	Matrix4X4f 	lightProjectionMatrix;			// 64 bytes
 	float       lightIntensity;               	// 4 bytes
 	LightType   lightType;                    	// 4 bytes
 	int			lightCastShadow;				// 4 bytes
@@ -52,9 +54,7 @@ struct Light{
 	Vector4f    lightDirection;   				// 16 bytes
 	Vector4f    lightDistAttenCurveParams[2]; 	// 32 bytes
 	Vector4f    lightAngleAttenCurveParams[2];	// 32 bytes
-	Matrix4X4f  lightVP;						// 64 bytes
-	Vector4f    padding[2];						// 32 bytes
-};												// totle 256 bytes
+};												// totle 288 bytes
 
 unistruct PerFrameConstants REGISTER(b10)
 {
@@ -62,7 +62,7 @@ unistruct PerFrameConstants REGISTER(b10)
 	Matrix4X4f 	projectionMatrix;				// 64 bytes
     Vector4f   	camPos;							// 16 bytes
 	int32_t  	numLights;						// 4 bytes
-};
+};												// totle 148 bytes
 
 unistruct PerBatchConstants REGISTER(b11)
 {
@@ -71,26 +71,26 @@ unistruct PerBatchConstants REGISTER(b11)
 
 unistruct LightInfo REGISTER(b12)
 {
-	struct Light lights[MAX_LIGHTS];
+	struct Light lights[MAX_LIGHTS];			// 288 bytes * MAX_LIGHTS
 };
 
-unistruct DebugConstants REGISTER(b12)
+unistruct DebugConstants REGISTER(b13)
 {
-	float layer_index;
-	float mip_level;
-	float line_width;
-	float padding0;
-	Vector4f front_color;
-	Vector4f back_color;
-};
+	Vector4f front_color;						// 16 bytes
+	Vector4f back_color;						// 16 bytes
+	float layer_index;							// 4 bytes
+	float mip_level;							// 4 bytes
+	float line_width;							// 4 bytes
+	float padding0;								// 4 bytes
+};												// 48 bytes
 
-unistruct ShadowMapConstants REGISTER(b12)
+unistruct ShadowMapConstants REGISTER(b13)
 {
-    Matrix4X4f shadowMatrices[6];           // 64 x 6 bytes
-	Vector4f lightPos;						// 16 bytes
+	int32_t light_index;					// 4 bytes
 	float shadowmap_layer_index;            // 4 bytes
+	float near_plane;                       // 4 bytes
 	float far_plane;                        // 4 bytes
-};
+};											// 16 bytes	
 
 #ifdef __cplusplus
 const size_t kSizePerFrameConstantBuffer = ALIGN(sizeof(PerFrameConstants), 256); 	// CB size is required to be 256-byte aligned.

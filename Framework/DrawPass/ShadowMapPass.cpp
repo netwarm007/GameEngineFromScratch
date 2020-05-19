@@ -1,6 +1,8 @@
 #include "ShadowMapPass.hpp"
 #include "GraphicsManager.hpp"
 #include "IPipelineStateManager.hpp"
+#include <vector>
+#include <utility>
 
 using namespace std;
 using namespace My;
@@ -26,7 +28,7 @@ void ShadowMapPass::Draw(Frame& frame)
     }
 
     // count shadow map
-    vector<Light*> lights_cast_shadow;
+    std::vector<std::pair<int32_t, Light*>> lights_cast_shadow;
 
     for (int32_t i = 0; i < frame.frameContext.numLights; i++)
     {
@@ -52,7 +54,7 @@ void ShadowMapPass::Draw(Frame& frame)
                     assert(0);
             }
 
-            lights_cast_shadow.push_back(&light);
+            lights_cast_shadow.emplace_back(i, &light);
         }
     }
 
@@ -92,51 +94,51 @@ void ShadowMapPass::Draw(Frame& frame)
 
         const char* pipelineStateName;
 
-        switch (it->lightType)
+        switch (it.second->lightType)
         {
             case LightType::Omni:
                 pipelineStateName = "Omni Light Shadow Map";
                 shadowmap = frame.frameContext.cubeShadowMap;
                 width = kCubeShadowMapWidth;
                 height = kCubeShadowMapHeight;
-                it->lightShadowMapIndex = cube_shadowmap_index++;
+                it.second->lightShadowMapIndex = cube_shadowmap_index++;
                 break;
             case LightType::Spot:
                 pipelineStateName = "Spot Light Shadow Map";
                 shadowmap = frame.frameContext.shadowMap;
                 width = kShadowMapWidth;
                 height = kShadowMapHeight;
-                it->lightShadowMapIndex = shadowmap_index++;
+                it.second->lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Area:
                 pipelineStateName = "Area Light Shadow Map";
                 shadowmap = frame.frameContext.shadowMap;
                 width = kShadowMapWidth;
                 height = kShadowMapHeight;
-                it->lightShadowMapIndex = shadowmap_index++;
+                it.second->lightShadowMapIndex = shadowmap_index++;
                 break;
             case LightType::Infinity:
                 pipelineStateName = "Sun Light Shadow Map";
                 shadowmap = frame.frameContext.globalShadowMap;
                 width = kGlobalShadowMapWidth;
                 height = kGlobalShadowMapHeight;
-                it->lightShadowMapIndex = global_shadowmap_index++;
+                it.second->lightShadowMapIndex = global_shadowmap_index++;
                 break;
             default:
                 assert(0);
         }
 
 
+        g_pGraphicsManager->BeginShadowMap(it.first, shadowmap, 
+            width, height, it.second->lightShadowMapIndex, frame);
+
         // Set the color shader as the current shader program and set the matrices that it will use for rendering.
         auto& pPipelineState = g_pPipelineStateManager->GetPipelineState(pipelineStateName);
         g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
 
-        g_pGraphicsManager->BeginShadowMap(*it, shadowmap, 
-            width, height, it->lightShadowMapIndex);
-
         g_pGraphicsManager->DrawBatch(frame);
 
-        g_pGraphicsManager->EndShadowMap(shadowmap, it->lightShadowMapIndex);
+        g_pGraphicsManager->EndShadowMap(shadowmap, it.second->lightShadowMapIndex);
     }
 
     assert(shadowmap_index == frame.frameContext.shadowMapCount);

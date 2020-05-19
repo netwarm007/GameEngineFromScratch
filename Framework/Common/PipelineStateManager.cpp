@@ -1,4 +1,5 @@
 #include "PipelineStateManager.hpp"
+#include "IApplication.hpp"
 
 using namespace My;
 using namespace std;
@@ -94,15 +95,17 @@ int PipelineStateManager::Initialize()
     pipelineState.vertexShaderName = VS_BASIC_SOURCE_FILE;
     pipelineState.pixelShaderName  = PS_BASIC_SOURCE_FILE;
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
+    pipelineState.bDepthWrite = true;
     pipelineState.stencilTestMode = STENCIL_TEST_MODE::NONE;
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
-    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
+    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_FULL;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "PBR";
     pipelineState.vertexShaderName = VS_PBR_SOURCE_FILE;
     pipelineState.pixelShaderName  = PS_PBR_SOURCE_FILE;
-    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_FULL;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "PBR BRDF CS";
@@ -111,6 +114,7 @@ int PipelineStateManager::Initialize()
     pipelineState.pixelShaderName.clear();
     pipelineState.computeShaderName = CS_PBR_BRDF_SOURCE_FILE;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_NONE;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Omni Light Shadow Map";
@@ -120,7 +124,10 @@ int PipelineStateManager::Initialize()
     pipelineState.geometryShaderName = GS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.computeShaderName.clear(); 
     pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
+    pipelineState.pixelFormat = PIXEL_FORMAT::INVALID;
+    pipelineState.sampleCount = 1;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
+    pipelineState.flag = PIPELINE_FLAG::SHADOW;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Spot Light Shadow Map";
@@ -139,6 +146,12 @@ int PipelineStateManager::Initialize()
     pipelineState.vertexShaderName = VS_PASSTHROUGH_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_TEXTURE_SOURCE_FILE;
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
+    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
+    pipelineState.depthTestMode = DEPTH_TEST_MODE::ALWAYS;
+    pipelineState.bDepthWrite = true;
+    pipelineState.pixelFormat = PIXEL_FORMAT::BGRA8UNORM;
+    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
+    pipelineState.flag = PIPELINE_FLAG::DEBUG_DRAW;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Texture Array Debug Output";
@@ -161,6 +174,9 @@ int PipelineStateManager::Initialize()
     pipelineState.vertexShaderName = VS_SKYBOX_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_SKYBOX_SOURCE_FILE;
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
+    pipelineState.bDepthWrite = false;
+    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Terrain";
@@ -169,7 +185,10 @@ int PipelineStateManager::Initialize()
     pipelineState.tessControlShaderName = TESC_TERRAIN_SOURCE_FILE;
     pipelineState.tessEvaluateShaderName = TESE_TERRAIN_SOURCE_FILE;
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
+    pipelineState.bDepthWrite = true;
+    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
+    pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
     cout << "Pipeline State Manager Initialized. [" << m_pipelineStates.size() << "]" << endl;

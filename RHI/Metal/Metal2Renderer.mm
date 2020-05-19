@@ -5,6 +5,7 @@
 #import "Metal2Renderer.h"
 
 #include "IApplication.hpp"
+#include <stack>
 
 using namespace My;
 
@@ -24,19 +25,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Metal objects
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     id<MTLBuffer> _lightInfo[GEFSMaxBuffersInFlight];
+    ShadowMapConstants shadow_map_constants;
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     std::vector<id<MTLTexture>>  _textures;
+    std::stack<uint32_t> _texture_recycled_indexes;
     id<MTLSamplerState> _sampler0;
 
-    // The index in uniform buffers in _dynamicUniformBuffers to use for the current frame
-    uint32_t _currentBufferIndex;
-
     MTKView* _mtkView;
-
-    // skybox texture id
-    int32_t _skyboxTexIndex;
-    int32_t _brdfLutIndex;
 }
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device.  We'll also use this
@@ -46,11 +42,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     self = [super init];
     if(self)
     {
-        _currentBufferIndex = 0;
         _mtkView = mtkView;
         _device = device;
         _inFlightSemaphore = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
-        _skyboxTexIndex = -1;
         [self loadMetal];
     }
 
@@ -81,7 +75,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
    ////////////////////////////
     // Sampler
 
-    MTLSamplerDescriptor* samplerDescriptor = [[MTLSamplerDescriptor alloc] init];
+    MTLSamplerDescriptor* samplerDescriptor = [MTLSamplerDescriptor new];
     samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.magFilter = MTLSamplerMinMagFilterLinear;
     samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
@@ -102,6 +96,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     auto dataSize = v_property_array.GetDataSize();
 	auto pData = v_property_array.GetData();
     vertexBuffer = [_device newBufferWithBytes:pData length:dataSize options:MTLResourceStorageModeShared];
+    vertexBuffer.label = [NSString stringWithCString:v_property_array.GetAttributeName().c_str()
+                              encoding: [NSString defaultCStringEncoding]];
     _vertexBuffers.push_back(vertexBuffer);
 }
 
@@ -201,8 +197,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 withBytes:image.data
                 bytesPerRow:image.pitch];
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     return index;
 }
@@ -279,8 +285,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         }
     }
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     return index;
 }
@@ -289,11 +305,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 - (void)updateDrawableSize:(CGSize)size
 {
 #if 0
-    /// React to resize of our draw rect.  In particular update our perspective matrix
-    // Update the aspect ratio and projection matrix since the view orientation or size has changed
-    float aspect = size.width / (float)size.height;
-
-    _projectionMatrix = matrix_perspective_left_hand(65.0f * (M_PI / 180.0f), aspect, 0.1f, 100.0);
+    MTLViewport viewport {0.0, 0.0,
+        static_cast<double>(size.width), static_cast<double>(size.height), 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
 #endif
 }
 
@@ -315,8 +329,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
         _renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
     }
 
-    [self setPerFrameConstants:frame.frameContext];
-    [self setLightInfo:frame.lightInfo];
+    // now fill the buffers
+    [self setPerFrameConstants:frame.frameContext
+                    frameIndex:frame.frameIndex];
+    [self setLightInfo:frame.lightInfo
+            frameIndex:frame.frameIndex];
 }
 
 - (void)endFrame
@@ -333,18 +350,15 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     // Finalize rendering here & push the command buffer to the GPU
     [_commandBuffer commit];
-
-    _currentBufferIndex = (_currentBufferIndex + 1) % GEFSMaxBuffersInFlight;
 }
 
 - (void)beginPass
 {
-    if(_renderPassDescriptor != nil)
-    {
-        _renderEncoder =
-            [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
-        _renderEncoder.label = @"MyRenderEncoder";
-    }
+    assert(_renderPassDescriptor != nil);
+
+    _renderEncoder =
+        [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+    _renderEncoder.label = @"MyRenderEncoder";
 }
 
 - (void)endPass
@@ -390,9 +404,57 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                 default:
                     assert(0);
             }
+
             [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
             [_renderEncoder setRenderPipelineState:pipelineState.mtlRenderPipelineState];
             [_renderEncoder setDepthStencilState:pipelineState.depthState];
+
+            [_renderEncoder setVertexBuffer:_uniformBuffers[frame.frameIndex]
+                                        offset:0
+                                        atIndex:10];
+
+            [_renderEncoder setFragmentBuffer:_uniformBuffers[frame.frameIndex]
+                                        offset:0
+                                        atIndex:10];
+
+            [_renderEncoder setVertexBuffer:_lightInfo[frame.frameIndex]
+                                        offset:0
+                                        atIndex:12];
+
+            [_renderEncoder setFragmentBuffer:_lightInfo[frame.frameIndex]
+                                        offset:0
+                                        atIndex:12];
+
+            switch (pipelineState.flag)
+            {
+                case PIPELINE_FLAG::SHADOW:
+                [_renderEncoder setVertexBytes:static_cast<const void*>(&shadow_map_constants)
+                                        length:sizeof(ShadowMapConstants)
+                                        atIndex:13];
+                break;
+                case PIPELINE_FLAG::NONE:
+                break;
+                case PIPELINE_FLAG::DEBUG_DRAW:
+                break;
+                default:
+                    assert(0);
+            }
+
+            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
+            auto texture_id = frame.skybox;
+            if (frame.skybox >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[texture_id]
+                                        atIndex:10];
+            }
+
+            texture_id = frame.brdfLUT;
+            if (texture_id >= 0)
+            {
+                [_renderEncoder setFragmentTexture:_textures[texture_id]
+                                        atIndex:6];
+            }
         }
         break;
         case PIPELINE_TYPE::COMPUTE:
@@ -404,40 +466,17 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             assert(0);
     }
 
-    [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                offset:0
-                                atIndex:10];
-
-    [_renderEncoder setFragmentBuffer:_uniformBuffers[_currentBufferIndex]
-                                offset:0
-                                atIndex:10];
-
-    [_renderEncoder setFragmentBuffer:_lightInfo[_currentBufferIndex]
-                                offset:0
-                                atIndex:12];
-
-    [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
-
-    if (_skyboxTexIndex >= 0)
-    {
-        [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
-                                atIndex:10];
-    }
-
-    [_renderEncoder setFragmentTexture:_textures[_brdfLutIndex]
-                                atIndex:6];
-
 }
 
-- (void)setPerFrameConstants:(const DrawFrameContext&)context
+- (void)setPerFrameConstants:(const DrawFrameContext&)context frameIndex:(const int32_t) frameIndex
 {
-    std::memcpy(_uniformBuffers[_currentBufferIndex].contents, 
+    std::memcpy(_uniformBuffers[frameIndex].contents, 
             &static_cast<const PerFrameConstants&>(context), sizeof(PerFrameConstants));
 }
 
-- (void)setLightInfo:(const LightInfo&)lightInfo
+- (void)setLightInfo:(const LightInfo&)lightInfo frameIndex:(const int32_t) frameIndex
 {
-    std::memcpy(_lightInfo[_currentBufferIndex].contents,
+    std::memcpy(_lightInfo[frameIndex].contents,
             &lightInfo, sizeof(LightInfo));
 }
 
@@ -447,14 +486,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     {
         // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
         [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
-
-        if (_skyboxTexIndex >= 0)
-        {
-            [_renderEncoder setFragmentTexture:_textures[_skyboxTexIndex]
-                                    atIndex:10];
-
-            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
-        }
 
         static const float skyboxVertices[] = {
             1.0f,  1.0f,  1.0f,  // 0
@@ -490,10 +521,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             7, 6, 5,
             5, 6, 2
         };
-
-        [_renderEncoder setVertexBuffer:_uniformBuffers[_currentBufferIndex]
-                                 offset:0
-                                atIndex:10];
 
         id<MTLBuffer> indexBuffer;
         indexBuffer = [_device newBufferWithBytes:skyboxIndices
@@ -571,31 +598,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
                                         atIndex:4];
             }
 
-            if (dbc.material.heightMap >= 0)
-            {
-                [_renderEncoder setFragmentTexture:_textures[dbc.material.heightMap]
-                                        atIndex:5];
-            }
-
-    #if 0
-            [_renderEncoder setFragmentTexture:_brdfLUT
-                                    atIndex:6];
-
-            [_renderEncoder setFragmentTexture:_shadowMap
-                                    atIndex:7];
-
-            [_renderEncoder setFragmentTexture:_globalShadowMap
-                                    atIndex:8];
-
-            [_renderEncoder setFragmentTexture:_cubeShadowMap
-                                    atIndex:9];
-
-            [_renderEncoder setFragmentTexture:_skybox
-                                    atIndex:10];
-
-            [_renderEncoder setFragmentTexture:_terrainHeightMap
-                                    atIndex:11];
-    #endif
+            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
             // Draw our mesh
             [_renderEncoder drawIndexedPrimitives:dbc.index_mode
@@ -623,12 +626,23 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     textureDesc.width = width;
     textureDesc.height = height;
     textureDesc.storageMode = MTLStorageModePrivate;
+    textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     [textureDesc release];
 
@@ -649,41 +663,93 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     textureDesc.width = width;
     textureDesc.height = height;
     textureDesc.storageMode = MTLStorageModePrivate;
+    textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    uint32_t index = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
 
     [textureDesc release];
 
     return static_cast<int32_t>(index);
 }
 
-- (void)beginShadowMap:(const Light&)light
+- (void)beginShadowMap:(const int32_t)light_index
              shadowmap:(const int32_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
+                 frame:(const Frame&)frame
 {
+    MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor new];
+    renderPassDescriptor.colorAttachments[0] = Nil;
+    renderPassDescriptor.depthAttachment.texture = _textures[shadowmap];
+    renderPassDescriptor.depthAttachment.level = 0;
+    renderPassDescriptor.depthAttachment.slice = layer_index;
+    renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+    renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
 
+    _renderEncoder =
+        [_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+    _renderEncoder.label = @"Offline Render Encoder";
+
+    [renderPassDescriptor release];
+
+    [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
+
+    shadow_map_constants.light_index = light_index;
+    shadow_map_constants.shadowmap_layer_index = static_cast<float>(layer_index);
+    shadow_map_constants.near_plane = 1.0;
+    shadow_map_constants.far_plane = 10.0;
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
          layer_index:(const int32_t)layer_index
 {
-
+    [_renderEncoder popDebugGroup];
+    [_renderEncoder endEncoding];
 }
 
 - (void)setShadowMaps:(const Frame&)frame
 {
+    auto texture_id = frame.frameContext.shadowMap;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:7];
+    }
 
+    texture_id = frame.frameContext.globalShadowMap;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:8];
+    }
+
+    texture_id = frame.frameContext.cubeShadowMap;
+    if (texture_id >= 0)
+    {
+        [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                                atIndex:9];
+    }
 }
 
 - (void)destroyShadowMap:(int32_t&)shadowmap
 {
-    _textures[shadowmap] = Nil;
+    [_textures[shadowmap] release];
+    _texture_recycled_indexes.push(shadowmap);
 }
 
 - (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
@@ -702,20 +768,33 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     texture = [_device newTextureWithDescriptor:textureDesc];
     [textureDesc release];
 
-    int32_t texture_id = _textures.size();
-    _textures.push_back(texture);
+    uint32_t index;
+    if (!_texture_recycled_indexes.empty())
+    {
+        index = _texture_recycled_indexes.top();
+        _texture_recycled_indexes.pop();
+        _textures[index] = texture;
+    }
+    else
+    {
+        index = _textures.size();
+        _textures.push_back(texture);
+    }
+
 
     [_computeEncoder setTexture:texture
                    atIndex:atIndex];
 
-    return texture_id;
+    return index;
 }
 
 - (void)dispatch:(const uint32_t)width
           height:(const uint32_t)height
            depth:(const uint32_t)depth
 {
-    // Set the compute kernel's threadgroup size of 16x16
+    [_renderEncoder pushDebugGroup:@"dispatch"];
+
+    // Set the compute kernel's threadgroup size 
     MTLSize threadgroupSize = MTLSizeMake(1, 1, 1);
     MTLSize threadgroupCount;
 
@@ -727,6 +806,226 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     [_computeEncoder dispatchThreadgroups:threadgroupCount
                     threadsPerThreadgroup:threadgroupSize];
+
+    [_renderEncoder popDebugGroup];
 }
+
+#ifdef DEBUG
+static float rect_vertices[] = {
+   -1.0f,-1.0f, 0.0f,
+    1.0f,-1.0f, 0.0f,
+   -1.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f
+};
+
+static float rect_uv[] = {
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 1.0f
+};
+
+- (void)drawTextureOverlay:(const int32_t)texture_id
+                   vp_left:(const float) vp_left 
+                    vp_top:(const float) vp_top 
+                  vp_width:(const float) vp_width 
+                 vp_height:(const float) vp_height
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    [_renderEncoder pushDebugGroup:@"Draw Texture Overlay"];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:rect_vertices
+                        length:sizeof(rect_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:rect_uv
+                        length:sizeof(rect_uv)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(rect_vertices)/sizeof(rect_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+- (void)drawTextureArrayOverlay:(const int32_t)texture_id
+                    layer_index:(const float) layer_index
+                        vp_left:(const float) vp_left 
+                         vp_top:(const float) vp_top 
+                       vp_width:(const float) vp_width 
+                      vp_height:(const float) vp_height
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    DebugConstants constants;
+
+    constants.layer_index = layer_index;
+    constants.mip_level = 0;
+
+    [_renderEncoder pushDebugGroup:@"Draw Texture Array Overlay"];
+
+    [_renderEncoder setFragmentBytes:&constants
+                            length:sizeof(DebugConstants)
+                           atIndex:13];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:rect_vertices
+                        length:sizeof(rect_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:rect_uv
+                        length:sizeof(rect_uv)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(rect_vertices)/sizeof(rect_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+static float cubemap_unwrap_vertices[] = {
+   -1.0f, 0.0f, 0.0f,
+   -0.333333f, 0.0f, 0.0f,
+   -1.0f, 1.0f, 0.0f,
+   -0.333333f, 1.0f, 0.0f,
+};
+
+static float cubemap_unwrap_uvw[] = {
+         // back
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+};
+
+- (void)drawCubeMapOverlay:(const int32_t)texture_id
+                   vp_left:(const float) vp_left 
+                    vp_top:(const float) vp_top 
+                  vp_width:(const float) vp_width 
+                 vp_height:(const float) vp_height
+                     level:(const float) level
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    DebugConstants constants;
+
+    constants.mip_level = level;
+
+    [_renderEncoder pushDebugGroup:@"Draw CubeMap Overlay"];
+
+    [_renderEncoder setFragmentBytes:&constants
+                              length:sizeof(DebugConstants)
+                             atIndex:13];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_vertices
+                        length:sizeof(cubemap_unwrap_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_uvw
+                        length:sizeof(cubemap_unwrap_uvw)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(cubemap_unwrap_vertices)/sizeof(cubemap_unwrap_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+- (void)drawCubeMapArrayOverlay:(const int32_t)texture_id
+                    layer_index:(const float) layer_index
+                        vp_left:(const float) vp_left 
+                         vp_top:(const float) vp_top 
+                       vp_width:(const float) vp_width 
+                      vp_height:(const float) vp_height
+                          level:(const float) level
+{
+    double screenWidth = _mtkView.drawableSize.width;
+    double screenHeight = _mtkView.drawableSize.height;
+    double halfScreenWidth = screenWidth / 2.0;
+    double halfScreenHeight = screenHeight / 2.0;
+
+    DebugConstants constants;
+
+    constants.layer_index = layer_index;
+    constants.mip_level = level;
+
+    [_renderEncoder pushDebugGroup:@"Draw CubeMap Array Overlay"];
+
+    [_renderEncoder setFragmentBytes:&constants
+                            length:sizeof(DebugConstants)
+                           atIndex:13];
+
+    MTLViewport viewport {(1.0 + vp_left) * halfScreenWidth, (1.0 - vp_top) * halfScreenHeight,
+        vp_width * halfScreenWidth, vp_height * halfScreenHeight,
+                          0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_vertices
+                        length:sizeof(cubemap_unwrap_vertices)
+                       atIndex:0];
+
+    [_renderEncoder setVertexBytes:cubemap_unwrap_uvw
+                        length:sizeof(cubemap_unwrap_uvw)
+                       atIndex:1];
+
+    [_renderEncoder setFragmentTexture:_textures.at(texture_id)
+                            atIndex:0];
+
+    [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
+                       vertexStart:0
+                       vertexCount:sizeof(cubemap_unwrap_vertices)/sizeof(cubemap_unwrap_vertices[0])/3];
+
+    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
+    [_renderEncoder popDebugGroup];
+}
+
+#endif
 
 @end

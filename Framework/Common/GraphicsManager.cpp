@@ -99,9 +99,9 @@ void GraphicsManager::Draw()
 
     for (auto& pDrawPass : m_DrawPasses)
     {
-        BeginPass();
+        pDrawPass->BeginPass();
         pDrawPass->Draw(frame);
-        EndPass();
+        pDrawPass->EndPass();
     }
 }
 
@@ -200,9 +200,9 @@ void GraphicsManager::CalculateLights()
 
                 light.lightPosition = target - light.lightDirection * farClipDistance;
                 Vector3f position;
-		position.Set((float*)light.lightPosition);
+		        position.Set((float*)light.lightPosition);
                 Vector3f lookAt;
-		lookAt.Set((float*)target); 
+		        lookAt.Set((float*)target); 
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
                 if (abs(light.lightDirection[0]) <= 0.2f
                     && abs(light.lightDirection[1]) <= 0.2f)
@@ -224,10 +224,10 @@ void GraphicsManager::CalculateLights()
             else 
             {
                 Vector3f position;
-		position.Set(light.lightPosition);
+		        position.Set(light.lightPosition);
                 Vector4f tmp = light.lightPosition + light.lightDirection;
                 Vector3f lookAt; 
-		lookAt.Set(tmp);
+		        lookAt.Set(tmp);
                 Vector3f up = { 0.0f, 0.0f, 1.0f };
                 if (abs(light.lightDirection[0]) <= 0.1f
                     && abs(light.lightDirection[1]) <= 0.1f)
@@ -272,7 +272,8 @@ void GraphicsManager::CalculateLights()
                 }
             } 
 
-            light.lightVP = view * projection;
+            light.lightViewMatrix = view;
+            light.lightProjectionMatrix = projection;
             frameContext.numLights++;
         }
         else
