@@ -48,7 +48,7 @@ void GraphicsManager::Tick()
 
     BeginFrame(m_Frames[m_nFrameIndex]);
     Draw();
-    EndFrame();
+    EndFrame(m_Frames[m_nFrameIndex]);
 
     Present();
 }

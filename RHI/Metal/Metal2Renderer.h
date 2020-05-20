@@ -16,6 +16,10 @@ namespace My {
 
 @interface Metal2Renderer : NSObject
 
+- (void)initialize;
+
+- (void)finalize;
+
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
                                       device:(nonnull id <MTLDevice>)device;
 
@@ -41,7 +45,7 @@ namespace My {
 
 - (void)beginFrame:(const My::Frame&)frame;
 
-- (void)endFrame;
+- (void)endFrame:(const My::Frame&)frame;
 
 - (void)beginPass;
 
