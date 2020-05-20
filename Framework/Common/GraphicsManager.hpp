@@ -96,7 +96,7 @@ namespace My {
         virtual void EndScene();
 
         virtual void BeginFrame(const Frame& frame) {}
-        virtual void EndFrame() {}
+        virtual void EndFrame(const Frame& frame) {}
 
         virtual void BeginCompute() {}
         virtual void EndCompute() {}

@@ -48,7 +48,7 @@ void GraphicsManager::Tick()
 
     BeginFrame(m_Frames[m_nFrameIndex]);
     Draw();
-    EndFrame();
+    EndFrame(m_Frames[m_nFrameIndex]);
 
     Present();
 }
@@ -177,7 +177,7 @@ void GraphicsManager::CalculateLights()
             BuildIdentityMatrix(projection);
 
             float nearClipDistance = 1.0f;
-            float farClipDistance = 100.0f;
+            float farClipDistance = 1000.0f;
 
             if (pLight->GetType() == SceneObjectType::kSceneObjectTypeLightInfi)
             {

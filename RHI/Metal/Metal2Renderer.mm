@@ -14,7 +14,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 @implementation Metal2Renderer
 {
-    dispatch_semaphore_t _inFlightSemaphore;
+    dispatch_semaphore_t _inFlightSemaphore[GEFSMaxBuffersInFlight];
     id<MTLCommandQueue> _commandQueue;
     id<MTLCommandBuffer> _commandBuffer;
     id<MTLCommandBuffer> _computeCommandBuffer;
@@ -44,8 +44,10 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     {
         _mtkView = mtkView;
         _device = device;
-        _inFlightSemaphore = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
-        [self loadMetal];
+        for (int32_t i = 0; i < GEFSMaxBuffersInFlight; i++)
+        {
+            _inFlightSemaphore[i] = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
+        }
     }
 
     return self;
@@ -54,8 +56,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 /// Create our metal render state objects including our shaders and render state pipeline objects
 - (void) loadMetal
 {
-
-    NSError *error = Nil;
     // Create and load our basic Metal state objects
 
     for(NSUInteger i = 0; i < GEFSMaxBuffersInFlight; i++)
@@ -88,6 +88,16 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     // Create the command queue
     _commandQueue = [_device newCommandQueue];
+}
+
+- (void)initialize
+{
+    [self loadMetal];
+}
+
+- (void)finalize
+{
+
 }
 
 - (void)createVertexBuffer:(const SceneObjectVertexArray&)v_property_array
@@ -315,7 +325,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 {
     // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the Metal
     // pipeline (App, Metal, Drivers, GPU, etc)
-    dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(_inFlightSemaphore[frame.frameIndex], DISPATCH_TIME_FOREVER);
 
     // Create a new command buffer for each render pass to the current drawable
     _commandBuffer = [_commandQueue commandBuffer];
@@ -336,13 +346,13 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
             frameIndex:frame.frameIndex];
 }
 
-- (void)endFrame
+- (void)endFrame:(const Frame&)frame
 {
     [_commandBuffer presentDrawable:_mtkView.currentDrawable];
 
     // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
     // finished processing the commands we're encoding this frame.
-    __block dispatch_semaphore_t block_sema = _inFlightSemaphore;
+    __block dispatch_semaphore_t block_sema = _inFlightSemaphore[frame.frameIndex];
     [_commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer)
      {
          dispatch_semaphore_signal(block_sema);
@@ -709,10 +719,14 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
 
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
+    MTLViewport viewport {0.0, static_cast<double>(_textures[shadowmap].height),
+        static_cast<double>(_textures[shadowmap].width), -static_cast<double>(_textures[shadowmap].height), 0.0, 1.0};
+    [_renderEncoder setViewport:viewport];
+
     shadow_map_constants.light_index = light_index;
     shadow_map_constants.shadowmap_layer_index = static_cast<float>(layer_index);
     shadow_map_constants.near_plane = 1.0;
-    shadow_map_constants.far_plane = 10.0;
+    shadow_map_constants.far_plane = 100.0;
 }
 
 - (void)endShadowMap:(const int32_t)shadowmap
@@ -792,7 +806,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
           height:(const uint32_t)height
            depth:(const uint32_t)depth
 {
-    [_renderEncoder pushDebugGroup:@"dispatch"];
+    [_computeEncoder pushDebugGroup:@"dispatch"];
 
     // Set the compute kernel's threadgroup size 
     MTLSize threadgroupSize = MTLSizeMake(1, 1, 1);
@@ -807,7 +821,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img)
     [_computeEncoder dispatchThreadgroups:threadgroupCount
                     threadsPerThreadgroup:threadgroupSize];
 
-    [_renderEncoder popDebugGroup];
+    [_computeEncoder popDebugGroup];
 }
 
 #ifdef DEBUG
@@ -914,10 +928,10 @@ static float rect_uv[] = {
 }
 
 static float cubemap_unwrap_vertices[] = {
-   -1.0f, 0.0f, 0.0f,
-   -0.333333f, 0.0f, 0.0f,
+   -1.0f,-1.0f, 0.0f,
+    1.0f,-1.0f, 0.0f,
    -1.0f, 1.0f, 0.0f,
-   -0.333333f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f
 };
 
 static float cubemap_unwrap_uvw[] = {
@@ -925,7 +939,7 @@ static float cubemap_unwrap_uvw[] = {
          1.0f,  1.0f,  1.0f,
          1.0f,  1.0f, -1.0f,
         -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f
 };
 
 - (void)drawCubeMapOverlay:(const int32_t)texture_id

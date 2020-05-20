@@ -123,7 +123,12 @@ int PipelineStateManager::Initialize()
     pipelineState.pixelShaderName = PS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.geometryShaderName = GS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.computeShaderName.clear(); 
+#ifdef OS_MACOS
+    // we flip the viewport so we need flip the culling mode too.
+    pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
+#else
     pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
+#endif
     pipelineState.pixelFormat = PIXEL_FORMAT::INVALID;
     pipelineState.sampleCount = 1;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;

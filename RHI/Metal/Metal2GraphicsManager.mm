@@ -12,11 +12,17 @@ int Metal2GraphicsManager::Initialize()
 
     result = GraphicsManager::Initialize();
 
+    if (result == 0)
+    {
+        [m_pRenderer initialize];
+    }
+
     return result;
 }
 
 void Metal2GraphicsManager::Finalize()
 {
+    [m_pRenderer finalize];
     GraphicsManager::Finalize();
 }
 
@@ -228,11 +234,11 @@ void Metal2GraphicsManager::BeginFrame(const Frame& frame)
     [m_pRenderer beginFrame:frame];
 }
 
-void Metal2GraphicsManager::EndFrame()
+void Metal2GraphicsManager::EndFrame(const Frame& frame)
 {
-    [m_pRenderer endFrame];
+    [m_pRenderer endFrame:frame];
 
-    GraphicsManager::EndFrame();
+    GraphicsManager::EndFrame(frame);
 }
 
 void Metal2GraphicsManager::BeginPass()
