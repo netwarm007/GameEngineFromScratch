@@ -1644,7 +1644,7 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame)
     m_pCommandList[m_nFrameIndex]->SetGraphicsRootDescriptorTable(4, cbvHandler);
 }
 
-void D3d12GraphicsManager::EndFrame()
+void D3d12GraphicsManager::EndFrame(const Frame&)
 {
     HRESULT hr;
 
