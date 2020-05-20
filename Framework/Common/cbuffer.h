@@ -186,15 +186,16 @@ Texture2D terrainHeightMap		REGISTER(t11);
 SamplerState samp0 REGISTER(s0);
 #endif
 
-#define MyRS1 "RootFlags( ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | " \
-                         "DENY_VERTEX_SHADER_ROOT_ACCESS), " \
+#define MyRS1 "RootFlags( ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT ), " \
               "CBV(b10, space = 0, flags = DATA_STATIC), " \
-              "DescriptorTable( CBV(b11, numDescriptors = 2), " \
+			  "RootConstants(num32BitConstants=16, b11), " \
+              "DescriptorTable( CBV(b12, numDescriptors = 2, " \
+			  				   "        flags = DESCRIPTORS_VOLATILE), " \
                                "SRV(t0, numDescriptors = 12, " \
                                "        flags = DESCRIPTORS_VOLATILE), " \
                                "UAV(u0, numDescriptors = unbounded, " \
                                "        flags = DESCRIPTORS_VOLATILE)), " \
-              "DescriptorTable(Sampler(s0, space=0, numDescriptors = 4))"
+              "DescriptorTable( Sampler(s0, space=0, numDescriptors = 8))" 
 
 #ifdef __cplusplus
 } // namespace My

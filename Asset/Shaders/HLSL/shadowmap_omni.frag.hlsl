@@ -1,6 +1,7 @@
 #include "cbuffer.h"
 #include "vsoutput.h.hlsl"
 
+[RootSignature(MyRS1)]
 float shadowmap_omni_frag_main(pos_only_vert_output _entryPointOutput) : SV_DEPTH
 {
     // get distance between fragment and light source

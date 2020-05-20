@@ -518,79 +518,6 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene)
     m_SkyBoxDrawBatchContext.count   = sizeof(skyboxIndices) / sizeof(skyboxIndices[0]);
 }
 
-void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene)
-{
-    // skybox VAO
-    uint32_t terrainVAO, terrainVBO[2];
-    glGenVertexArrays(1, &terrainVAO);
-    glGenBuffers(2, terrainVBO);
-    glBindVertexArray(terrainVAO);
-
-    static const float patch_size = 32.0f;
-    static const float _vertices[] = {
-        0.0f,  patch_size, 0.0f,
-        0.0f, 0.0f, 0.0f,
-        patch_size, 0.0f, 0.0f,
-        patch_size, patch_size, 0.0f
-    };
-
-    static const uint8_t _index[] = {
-        0, 1, 2, 3
-    };
-
-    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(_vertices), _vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrainVBO[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(_index), _index, GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-
-    m_Buffers.push_back(terrainVBO[0]);
-    m_Buffers.push_back(terrainVBO[1]);
-
-    m_TerrainDrawBatchContext.vao     = terrainVAO;
-    m_TerrainDrawBatchContext.mode    = GL_PATCHES;
-    m_TerrainDrawBatchContext.type    = GL_UNSIGNED_BYTE;
-    m_TerrainDrawBatchContext.count   = sizeof(_index) / sizeof(_index[0]);
-
-    uint32_t texture_id;
-    glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-
-    auto& texture = scene.Terrain->GetTexture(0);
-    const auto& pImage = texture.GetTextureImage();
-
-    uint32_t format, internal_format, type;
-    getOpenGLTextureFormat(*pImage, format, internal_format, type);
-    if (pImage->compressed)
-    {
-        glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, pImage->Width, pImage->Height, 
-            0, static_cast<int32_t>(pImage->data_size), pImage->data);
-    }
-    else
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pImage->Width, pImage->Height, 
-            0, format, type, pImage->data);
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    m_Textures["Terrain"] = texture_id;
-
-    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++)
-    {
-        m_Frames[i].terrainHeightMap = texture_id;
-    }
-}
-
 void OpenGLGraphicsManagerCommonBase::EndScene()
 {
     for (int i = 0; i < m_Frames.size(); i++)
@@ -634,12 +561,6 @@ void OpenGLGraphicsManagerCommonBase::EndScene()
             m_uboDebugConstant[i] = 0;
         }
 #endif
-    }
-
-    if (m_TerrainDrawBatchContext.vao)
-    {
-        glDeleteVertexArrays(1, &m_TerrainDrawBatchContext.vao);
-        m_TerrainDrawBatchContext.vao = 0;
     }
 
     if (m_SkyBoxDrawBatchContext.vao)
@@ -849,16 +770,6 @@ void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<Pip
     {
         glBindTexture(target, (GLuint)texture_id);
     }
-
-    // Set Terrain
-    texture_id = frame.terrainHeightMap;
-    if (texture_id >= 0)
-    {
-        setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
-        glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_2D, (GLuint)texture_id);
-    }
-
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(const DrawFrameContext& context)
@@ -1147,33 +1058,6 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox()
     glDrawElements(m_SkyBoxDrawBatchContext.mode, m_SkyBoxDrawBatchContext.count, m_SkyBoxDrawBatchContext.type, nullptr);
 
     glBindVertexArray(0);
-}
-
-void OpenGLGraphicsManagerCommonBase::DrawTerrain()
-{
-#if 0
-    glBindVertexArray(m_TerrainDrawBatchContext.vao);
-
-    glPatchParameteri(GL_PATCH_VERTICES, 4);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    const float patch_size = 32.0f;
-    const int32_t patch_num_row = 10;
-    const int32_t patch_num_col = 10;
-
-    for (int32_t i = -patch_num_row / 2; i < patch_num_row / 2; i++)
-    {
-        for (int32_t j = -patch_num_col / 2; j < patch_num_col / 2; j++)
-        {
-            MatrixTranslation(m_TerrainDrawBatchContext.modelMatrix, patch_size * i, patch_size * j, 0.0f);
-            glDrawElements(m_TerrainDrawBatchContext.mode, m_TerrainDrawBatchContext.count, m_TerrainDrawBatchContext.type, 0x00);
-        }
-    }
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glBindVertexArray(0);
-#endif
 }
 
 int32_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id)

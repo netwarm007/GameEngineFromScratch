@@ -307,10 +307,6 @@ void GraphicsManager::BeginScene(const Scene& scene)
     {
         initializeGeometries(scene);
     }
-    if (scene.Terrain)
-    {
-        initializeTerrain(scene);
-    }
     if (scene.SkyBox)
     {
         initializeSkyBox(scene);

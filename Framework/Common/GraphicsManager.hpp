@@ -45,9 +45,6 @@ namespace My {
         // skybox
         virtual void DrawSkyBox() {}
 
-        // terrain
-        virtual void DrawTerrain() {}
-
         virtual int32_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) { return 0; }
         virtual void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height) {}
         virtual void EndRenderToTexture(int32_t& context) {}
@@ -103,7 +100,6 @@ namespace My {
 
         virtual void initializeGeometries(const Scene& scene) {}
         virtual void initializeSkyBox(const Scene& scene) {}
-        virtual void initializeTerrain(const Scene& scene) {}
 
 #ifdef DEBUG
         virtual void RenderDebugBuffers() {}

@@ -8,6 +8,7 @@ Texture2DArray cubemap : register(t0);
 TextureCubeArray cubemap : register(t0);
 #endif
 
+[RootSignature(MyRS1)]
 float4 cubemaparray_frag_main(cube_vert_output _entryPointOutput) : SV_Target
 {
 #if defined(OS_WEBASSEMBLY)

@@ -14,6 +14,8 @@ namespace My {
     class D3d12GraphicsManager : public GraphicsManager
     {
     public:
+        ~D3d12GraphicsManager() override;
+
        	int Initialize() final;
 	    void Finalize() final;
 
@@ -35,7 +37,6 @@ namespace My {
 
         void initializeGeometries(const Scene& scene) final;
         void initializeSkyBox(const Scene& scene) final;
-        void initializeTerrain(const Scene& scene) final;
 
         void SetPerFrameConstants(const DrawFrameContext& context);
         void SetLightInfo(const LightInfo& lightInfo);
@@ -51,7 +52,7 @@ namespace My {
         size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
         size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
 
-        HRESULT WaitForPreviousFrame();
+        HRESULT WaitForPreviousFrame(uint32_t frame_index);
         HRESULT ResetCommandList();
         HRESULT CreatePSO(D3d12PipelineState& pipelineState);
         HRESULT CreateCommandList();
@@ -67,19 +68,13 @@ namespace My {
         D3D12_RECT                      m_ScissorRect;                      // scissor rect structure
         IDXGISwapChain3*                m_pSwapChain = nullptr;             // the pointer to the swap chain interface
         ID3D12Resource*                 m_pRenderTargets[GfxConfiguration::kMaxInFlightFrameCount * 2];    // the pointer to rendering buffer. [descriptor]
-        ID3D12Resource*                 m_pDepthStencilBuffer;              // the pointer to the depth stencil buffer
-        ID3D12CommandAllocator*         m_pCommandAllocator[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};      // the pointer to command buffer allocator
-        ID3D12GraphicsCommandList*      m_pCommandList[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};           // a list to store GPU commands, which will be submitted to GPU to execute when done
-        ID3D12CommandQueue*             m_pCommandQueue = nullptr;          // the pointer to command queue
-        ID3D12DescriptorHeap*           m_pRtvHeap = nullptr;               // an array of descriptors of GPU objects
-        ID3D12DescriptorHeap*           m_pDsvHeap = nullptr;               // an array of descriptors of GPU objects
-        ID3D12DescriptorHeap*           m_pSamplerHeap = nullptr;           // an array of descriptors of GPU objects
-		ID3D12DescriptorHeap*           m_pCbvHeap = nullptr;               // main cbv descriptor table
-		ID3D12DescriptorHeap*           m_pSrvHeap = nullptr;               // main srv descriptor table
-        ID3D12DescriptorHeap*           m_pPerBatchSrvRingHeap = nullptr;   // per batch srv descriptor table
-        uint32_t                        m_nPerBatchSrvRingHeapStart;
-        uint32_t                        m_nPerBatchSrvRingHeapEnd;
-        uint32_t                        m_nPerBatchSrvRingHeapSize;
+        ID3D12Resource*                 m_pDepthStencilBuffer[GfxConfiguration::kMaxInFlightFrameCount];   // the pointer to the depth stencil buffer
+        ID3D12CommandAllocator*         m_pCommandAllocator[GfxConfiguration::kMaxInFlightFrameCount];     // the pointer to command buffer allocator
+        ID3D12GraphicsCommandList*      m_pCommandList[GfxConfiguration::kMaxInFlightFrameCount];          // a list to store GPU commands, which will be submitted to GPU to execute when done
+        ID3D12CommandQueue*             m_pCommandQueue;                                                   // the pointer to command queue
+        ID3D12DescriptorHeap*           m_pRtvHeap[GfxConfiguration::kMaxInFlightFrameCount];              // an array of descriptors of GPU objects
+        ID3D12DescriptorHeap*           m_pDsvHeap[GfxConfiguration::kMaxInFlightFrameCount];              // an array of descriptors of GPU objects
+        ID3D12DescriptorHeap*           m_pSamplerHeap[GfxConfiguration::kMaxInFlightFrameCount];          // an array of descriptors of GPU objects
 
         uint32_t                        m_nRtvDescriptorSize;
         uint32_t                        m_nCbvSrvUavDescriptorSize;
@@ -95,17 +90,28 @@ namespace My {
             size_t   index_offset;
             uint32_t property_count;
             size_t   property_offset;
+		    ID3D12DescriptorHeap* pCbvSrvUavHeap;
+
+            ~D3dDrawBatchContext();
         };
 
-        uint8_t*                        m_pPerFrameCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
-	    ID3D12Resource*                 m_pPerFrameConstantUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
+        uint8_t*                        m_pPerFrameCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount];
+	    ID3D12Resource*                 m_pPerFrameConstantUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
 
-        uint8_t*                        m_pLightDataBegin[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
-	    ID3D12Resource*                 m_pLightDataUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
+        uint8_t*                        m_pLightInfoBegin[GfxConfiguration::kMaxInFlightFrameCount];
+	    ID3D12Resource*                 m_pLightInfoUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
+
+#ifdef DEBUG
+        uint8_t*                        m_pDebugConstantsBegin[GfxConfiguration::kMaxInFlightFrameCount];
+	    ID3D12Resource*                 m_pDebugConstantsUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
+#endif
+
+        uint8_t*                        m_pShadowConstantsBegin[GfxConfiguration::kMaxInFlightFrameCount];
+	    ID3D12Resource*                 m_pShadowDataUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
 
         // Synchronization objects
         HANDLE                          m_hFenceEvent;
-        ID3D12Fence*                    m_pFence[GfxConfiguration::kMaxInFlightFrameCount] = {nullptr};
-        uint32_t                        m_nFenceValue[GfxConfiguration::kMaxInFlightFrameCount] = {0};
+        ID3D12Fence*                    m_pFence[GfxConfiguration::kMaxInFlightFrameCount];
+        uint64_t                        m_nFenceValue[GfxConfiguration::kMaxInFlightFrameCount];
     };
 }

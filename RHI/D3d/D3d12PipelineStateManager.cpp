@@ -1,5 +1,6 @@
 #include "D3d12PipelineStateManager.hpp"
 #include "AssetLoader.hpp"
+#include "D3d12Utility.hpp"
 
 using namespace My;
 using namespace std;
@@ -57,5 +58,7 @@ bool D3d12PipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
 
 void D3d12PipelineStateManager::DestroyPipelineState(PipelineState& pipelineState)
 {
-    // D3d12PipelineState* pPipelineState = dynamic_cast<D3d12PipelineState*>(&pipelineState);
+    D3d12PipelineState* pPipelineState = dynamic_cast<D3d12PipelineState*>(&pipelineState);
+
+    SafeRelease(&pPipelineState->pipelineState);
 }

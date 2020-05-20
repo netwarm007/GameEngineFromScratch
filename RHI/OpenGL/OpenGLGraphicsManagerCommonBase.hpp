@@ -32,9 +32,6 @@ namespace My {
         // skybox
         void DrawSkyBox() final;
 
-        // terrain
-        void DrawTerrain() final;
-
         int32_t GenerateTexture(const char* id, const uint32_t width, const uint32_t height) final;
         void BeginRenderToTexture(int32_t& context, const int32_t texture, const uint32_t width, const uint32_t height) final;
         void EndRenderToTexture(int32_t& context) final;
@@ -76,7 +73,6 @@ namespace My {
 
         void initializeGeometries(const Scene& scene) final;
         void initializeSkyBox(const Scene& scene) final;
-        void initializeTerrain(const Scene& scene) final;
 
         void drawPoints(const Point* buffer, const size_t count, const Matrix4X4f& trans, const Vector3f& color);
 

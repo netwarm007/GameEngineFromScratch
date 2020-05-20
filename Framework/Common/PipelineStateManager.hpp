@@ -9,7 +9,7 @@ namespace My {
             virtual ~PipelineStateManager();
 
             int Initialize() override;
-            void Finalize() override {}
+            void Finalize() override;
             void Tick() override {}
 
             bool RegisterPipelineState(PipelineState& pipelineState) override;
