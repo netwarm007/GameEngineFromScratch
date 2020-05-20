@@ -322,6 +322,16 @@ void GraphicsManager::EndScene()
     m_Frames.clear();
 }
 
+void GraphicsManager::BeginFrame(const Frame& frame)
+{
+
+}
+
+void GraphicsManager::EndFrame(const Frame&)
+{
+    m_nFrameIndex = ++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount;
+}
+
 #ifdef DEBUG
 void GraphicsManager::DrawEdgeList(const EdgeList& edges, const Vector3f& color)
 {

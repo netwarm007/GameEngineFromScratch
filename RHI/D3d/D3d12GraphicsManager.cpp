@@ -1588,7 +1588,7 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame)
     SetLightInfo(frame.lightInfo);
 }
 
-void D3d12GraphicsManager::EndFrame()
+void D3d12GraphicsManager::EndFrame(const Frame&)
 {
     HRESULT hr;
 

@@ -682,9 +682,9 @@ void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame)
     SetLightInfo(frame.lightInfo);
 }
 
-void OpenGLGraphicsManagerCommonBase::EndFrame()
+void OpenGLGraphicsManagerCommonBase::EndFrame(const Frame& frame)
 {
-    m_nFrameIndex = ++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount;
+    GraphicsManager::EndFrame(frame);
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState, const Frame& frame)

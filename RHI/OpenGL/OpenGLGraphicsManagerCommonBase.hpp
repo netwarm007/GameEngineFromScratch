@@ -72,7 +72,7 @@ namespace My {
         void EndScene() final;
 
         void BeginFrame(const Frame& frame) final;
-        void EndFrame() final;
+        void EndFrame(const Frame& frame) final;
 
         void initializeGeometries(const Scene& scene) final;
         void initializeSkyBox(const Scene& scene) final;
