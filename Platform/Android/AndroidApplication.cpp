@@ -1,18 +1,20 @@
-#include <unistd.h>
-#include <thread>
-#include <dlfcn.h>
 #include "AndroidApplication.hpp"
+
+#include <dlfcn.h>
+#include <unistd.h>
+
+#include <thread>
+
 #include "AndroidAssetLoader.hpp"
 
 using namespace My;
 using namespace std;
 
-int AndroidApplication::Initialize()
-{
+int AndroidApplication::Initialize() {
     int result = BaseApplication::Initialize();
-    dynamic_cast<AndroidAssetLoader*>(g_pAssetLoader)->SetPlatformAssetManager(m_pApp->activity->assetManager);
-    if (result)
-        LOGE("AndroidApplication Initialize Failed!");
+    dynamic_cast<AndroidAssetLoader*>(g_pAssetLoader)
+        ->SetPlatformAssetManager(m_pApp->activity->assetManager);
+    if (result) LOGE("AndroidApplication Initialize Failed!");
 
     return result;
 }
@@ -20,7 +22,8 @@ int AndroidApplication::Initialize()
 /**
  * Process the next input event.
  */
-static int32_t engine_handle_input(struct android_app* app, AInputEvent* event) {
+static int32_t engine_handle_input(struct android_app* app,
+                                   AInputEvent* event) {
     AndroidApplication* engine = (AndroidApplication*)app->userData;
     if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
         engine->m_bAnimating = true;
@@ -39,9 +42,12 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
     switch (cmd) {
         case APP_CMD_SAVE_STATE:
             // The system has asked us to save our current state.  Do so.
-            engine->m_pApp->savedState = malloc(sizeof(AndroidApplication::saved_state));
-            *((AndroidApplication::saved_state*)engine->m_pApp->savedState) = engine->m_State;
-            engine->m_pApp->savedStateSize = sizeof(AndroidApplication::saved_state);
+            engine->m_pApp->savedState =
+                malloc(sizeof(AndroidApplication::saved_state));
+            *((AndroidApplication::saved_state*)engine->m_pApp->savedState) =
+                engine->m_State;
+            engine->m_pApp->savedStateSize =
+                sizeof(AndroidApplication::saved_state);
             break;
         case APP_CMD_INIT_WINDOW:
             // The window is being shown, get it ready.
@@ -63,7 +69,7 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
                 // We'd like to get 60 events per second (in us).
                 ASensorEventQueue_setEventRate(engine->m_pSensorEventQueue,
                                                engine->m_pAccelerometerSensor,
-                                               (1000L/60)*1000);
+                                               (1000L / 60) * 1000);
             }
             engine->m_bAnimating = true;
             break;
@@ -87,60 +93,58 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
  */
 #include <dlfcn.h>
 ASensorManager* AcquireASensorManagerInstance(android_app* app) {
+    if (!app) return nullptr;
 
-  if(!app)
-    return nullptr;
+    typedef ASensorManager* (*PF_GETINSTANCEFORPACKAGE)(const char* name);
+    void* androidHandle = dlopen("libandroid.so", RTLD_NOW);
+    PF_GETINSTANCEFORPACKAGE getInstanceForPackageFunc =
+        (PF_GETINSTANCEFORPACKAGE)dlsym(androidHandle,
+                                        "ASensorManager_getInstanceForPackage");
+    if (getInstanceForPackageFunc) {
+        JNIEnv* env = nullptr;
+        app->activity->vm->AttachCurrentThread(&env, NULL);
 
-  typedef ASensorManager *(*PF_GETINSTANCEFORPACKAGE)(const char *name);
-  void* androidHandle = dlopen("libandroid.so", RTLD_NOW);
-  PF_GETINSTANCEFORPACKAGE getInstanceForPackageFunc = (PF_GETINSTANCEFORPACKAGE)
-      dlsym(androidHandle, "ASensorManager_getInstanceForPackage");
-  if (getInstanceForPackageFunc) {
-    JNIEnv* env = nullptr;
-    app->activity->vm->AttachCurrentThread(&env, NULL);
+        jclass android_content_Context =
+            env->GetObjectClass(app->activity->clazz);
+        jmethodID midGetPackageName = env->GetMethodID(
+            android_content_Context, "getPackageName", "()Ljava/lang/String;");
+        jstring packageName = (jstring)env->CallObjectMethod(
+            app->activity->clazz, midGetPackageName);
 
-    jclass android_content_Context = env->GetObjectClass(app->activity->clazz);
-    jmethodID midGetPackageName = env->GetMethodID(android_content_Context,
-                                                   "getPackageName",
-                                                   "()Ljava/lang/String;");
-    jstring packageName= (jstring)env->CallObjectMethod(app->activity->clazz,
-                                                        midGetPackageName);
-
-    const char *nativePackageName = env->GetStringUTFChars(packageName, 0);
-    ASensorManager* mgr = getInstanceForPackageFunc(nativePackageName);
-    env->ReleaseStringUTFChars(packageName, nativePackageName);
-    app->activity->vm->DetachCurrentThread();
-    if (mgr) {
-      dlclose(androidHandle);
-      return mgr;
+        const char* nativePackageName = env->GetStringUTFChars(packageName, 0);
+        ASensorManager* mgr = getInstanceForPackageFunc(nativePackageName);
+        env->ReleaseStringUTFChars(packageName, nativePackageName);
+        app->activity->vm->DetachCurrentThread();
+        if (mgr) {
+            dlclose(androidHandle);
+            return mgr;
+        }
     }
-  }
 
-  typedef ASensorManager *(*PF_GETINSTANCE)();
-  PF_GETINSTANCE getInstanceFunc = (PF_GETINSTANCE)
-      dlsym(androidHandle, "ASensorManager_getInstance");
-  // by all means at this point, ASensorManager_getInstance should be available
-  assert(getInstanceFunc);
-  dlclose(androidHandle);
+    typedef ASensorManager* (*PF_GETINSTANCE)();
+    PF_GETINSTANCE getInstanceFunc =
+        (PF_GETINSTANCE)dlsym(androidHandle, "ASensorManager_getInstance");
+    // by all means at this point, ASensorManager_getInstance should be
+    // available
+    assert(getInstanceFunc);
+    dlclose(androidHandle);
 
-  return getInstanceFunc();
+    return getInstanceFunc();
 }
 
 static int pfd[2];
 
-static void *thread_func()
-{
+static void* thread_func() {
     ssize_t rdsz;
     char buf[128];
-    while((rdsz = read(pfd[0], buf, sizeof(buf) - 1)) > 0)
-    {
-        if(buf[rdsz - 1] == '\n') --rdsz;
+    while ((rdsz = read(pfd[0], buf, sizeof(buf) - 1)) > 0) {
+        if (buf[rdsz - 1] == '\n') --rdsz;
         buf[rdsz] = 0; /* add null-terminator */
         LOGI("%s", buf);
     }
 
     close(pfd[0]);
-    
+
     return 0;
 }
 
@@ -157,8 +161,7 @@ void android_main(struct android_app* state) {
     setvbuf(stderr, 0, _IONBF, 0);
 
     /* create the pipe and redirect stdout and stderr */
-    if(pipe(pfd) == -1)
-    {
+    if (pipe(pfd) == -1) {
         LOGF("Unable to create pipe to redirect stdout/stderr to logs.");
         return;
     }
@@ -180,12 +183,9 @@ void android_main(struct android_app* state) {
     // Prepare to monitor accelerometer
     engine->m_pSensorManager = AcquireASensorManagerInstance(state);
     engine->m_pAccelerometerSensor = ASensorManager_getDefaultSensor(
-                                        engine->m_pSensorManager,
-                                        ASENSOR_TYPE_ACCELEROMETER);
+        engine->m_pSensorManager, ASENSOR_TYPE_ACCELEROMETER);
     engine->m_pSensorEventQueue = ASensorManager_createEventQueue(
-                                    engine->m_pSensorManager,
-                                    state->looper, LOOPER_ID_USER,
-                                    NULL, NULL);
+        engine->m_pSensorManager, state->looper, LOOPER_ID_USER, NULL, NULL);
 
     if (state->savedState != NULL) {
         // We are starting with a previous saved state; restore from it.
@@ -202,9 +202,8 @@ void android_main(struct android_app* state) {
         // If not animating, we will block forever waiting for events.
         // If animating, we loop until all events are read, then continue
         // to draw the next frame of animation.
-        while ((ident=ALooper_pollAll(engine->m_bAnimating ? 0 : -1, NULL, &events,
-                                      (void**)&source)) >= 0) {
-
+        while ((ident = ALooper_pollAll(engine->m_bAnimating ? 0 : -1, NULL,
+                                        &events, (void**)&source)) >= 0) {
             // Process this event.
             if (source != NULL) {
                 source->process(state, source);
@@ -214,8 +213,8 @@ void android_main(struct android_app* state) {
             if (ident == LOOPER_ID_USER) {
                 if (engine->m_pAccelerometerSensor != nullptr) {
                     ASensorEvent event;
-                    while (ASensorEventQueue_getEvents(engine->m_pSensorEventQueue,
-                                                       &event, 1) > 0) {
+                    while (ASensorEventQueue_getEvents(
+                               engine->m_pSensorEventQueue, &event, 1) > 0) {
                         LOGV("accelerometer: x=%f y=%f z=%f",
                              event.acceleration.x, event.acceleration.y,
                              event.acceleration.z);

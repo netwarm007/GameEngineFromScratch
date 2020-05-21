@@ -1,4 +1,5 @@
 #include "PipelineStateManager.hpp"
+
 #include "IApplication.hpp"
 
 using namespace My;
@@ -29,40 +30,33 @@ using namespace std;
 #define TESC_TERRAIN_SOURCE_FILE "terrain.tesc"
 #define TESE_TERRAIN_SOURCE_FILE "terrain.tese"
 
-PipelineStateManager::~PipelineStateManager()
-{
-    Clear();
-}
+PipelineStateManager::~PipelineStateManager() { Clear(); }
 
-bool PipelineStateManager::RegisterPipelineState(PipelineState& pipelineState)
-{
+bool PipelineStateManager::RegisterPipelineState(PipelineState& pipelineState) {
     PipelineState* pPipelineState;
     pPipelineState = &pipelineState;
-    if (InitializePipelineState(&pPipelineState))
-    {
-        m_pipelineStates.emplace(pipelineState.pipelineStateName, pPipelineState);
+    if (InitializePipelineState(&pPipelineState)) {
+        m_pipelineStates.emplace(pipelineState.pipelineStateName,
+                                 pPipelineState);
         return true;
     }
 
     return false;
 }
 
-void PipelineStateManager::UnregisterPipelineState(PipelineState& pipelineState)
-{
+void PipelineStateManager::UnregisterPipelineState(
+    PipelineState& pipelineState) {
     const auto& it = m_pipelineStates.find(pipelineState.pipelineStateName);
-    if (it != m_pipelineStates.end())
-    {
+    if (it != m_pipelineStates.end()) {
         DestroyPipelineState(*it->second);
     }
     m_pipelineStates.erase(it);
 }
 
-void PipelineStateManager::Clear()
-{
-    for (auto it = m_pipelineStates.begin(); it != m_pipelineStates.end(); it++)
-    {
-        if (it != m_pipelineStates.end())
-        {
+void PipelineStateManager::Clear() {
+    for (auto it = m_pipelineStates.begin(); it != m_pipelineStates.end();
+         it++) {
+        if (it != m_pipelineStates.end()) {
             DestroyPipelineState(*it->second);
         }
         m_pipelineStates.erase(it);
@@ -73,27 +67,23 @@ void PipelineStateManager::Clear()
     cout << "Pipeline State Manager Clear has been called. " << endl;
 }
 
-const std::shared_ptr<PipelineState> PipelineStateManager::GetPipelineState(std::string name) const
-{
+const std::shared_ptr<PipelineState> PipelineStateManager::GetPipelineState(
+    std::string name) const {
     const auto& it = m_pipelineStates.find(name);
-    if (it != m_pipelineStates.end())
-    {
+    if (it != m_pipelineStates.end()) {
         return it->second;
-    }
-    else
-    {
+    } else {
         assert(!m_pipelineStates.empty());
         return m_pipelineStates.begin()->second;
     }
 }
 
-int PipelineStateManager::Initialize()
-{
+int PipelineStateManager::Initialize() {
     PipelineState pipelineState;
     pipelineState.pipelineStateName = "BASIC";
     pipelineState.pipelineType = PIPELINE_TYPE::GRAPHIC;
     pipelineState.vertexShaderName = VS_BASIC_SOURCE_FILE;
-    pipelineState.pixelShaderName  = PS_BASIC_SOURCE_FILE;
+    pipelineState.pixelShaderName = PS_BASIC_SOURCE_FILE;
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.bDepthWrite = true;
     pipelineState.stencilTestMode = STENCIL_TEST_MODE::NONE;
@@ -105,7 +95,7 @@ int PipelineStateManager::Initialize()
 
     pipelineState.pipelineStateName = "PBR";
     pipelineState.vertexShaderName = VS_PBR_SOURCE_FILE;
-    pipelineState.pixelShaderName  = PS_PBR_SOURCE_FILE;
+    pipelineState.pixelShaderName = PS_PBR_SOURCE_FILE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "PBR BRDF CS";
@@ -122,7 +112,7 @@ int PipelineStateManager::Initialize()
     pipelineState.vertexShaderName = VS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.geometryShaderName = GS_OMNI_SHADOWMAP_SOURCE_FILE;
-    pipelineState.computeShaderName.clear(); 
+    pipelineState.computeShaderName.clear();
 #ifdef OS_MACOS
     // we flip the viewport so we need flip the culling mode too.
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
@@ -196,7 +186,8 @@ int PipelineStateManager::Initialize()
     pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
-    cout << "Pipeline State Manager Initialized. [" << m_pipelineStates.size() << "]" << endl;
+    cout << "Pipeline State Manager Initialized. [" << m_pipelineStates.size()
+         << "]" << endl;
 
     return 0;
 }

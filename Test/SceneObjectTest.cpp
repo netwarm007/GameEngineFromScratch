@@ -1,22 +1,26 @@
 #include <iostream>
-#include "SceneObject.hpp"
+
 #include "SceneNode.hpp"
+#include "SceneObject.hpp"
 
 using namespace My;
 using namespace std;
 using namespace xg;
 
-int32_t main(int32_t argc, char** argv)
-{
+int32_t main(int32_t argc, char** argv) {
     int32_t result = 0;
-    std::shared_ptr<SceneObjectGeometry>    soGeometry(new SceneObjectGeometry());
-    std::shared_ptr<SceneObjectOmniLight>    soOmniLight(new SceneObjectOmniLight());
-    std::shared_ptr<SceneObjectSpotLight>    soSpotLight(new SceneObjectSpotLight());
-    std::shared_ptr<SceneObjectOrthogonalCamera>      soOrthogonalCamera(new SceneObjectOrthogonalCamera());
-    std::shared_ptr<SceneObjectPerspectiveCamera>     soPerspectiveCamera(new SceneObjectPerspectiveCamera());
+    std::shared_ptr<SceneObjectGeometry> soGeometry(new SceneObjectGeometry());
+    std::shared_ptr<SceneObjectOmniLight> soOmniLight(
+        new SceneObjectOmniLight());
+    std::shared_ptr<SceneObjectSpotLight> soSpotLight(
+        new SceneObjectSpotLight());
+    std::shared_ptr<SceneObjectOrthogonalCamera> soOrthogonalCamera(
+        new SceneObjectOrthogonalCamera());
+    std::shared_ptr<SceneObjectPerspectiveCamera> soPerspectiveCamera(
+        new SceneObjectPerspectiveCamera());
 
-    std::shared_ptr<SceneObjectMesh>         soMesh(new SceneObjectMesh());
-    std::shared_ptr<SceneObjectMaterial>     soMaterial(new SceneObjectMaterial());
+    std::shared_ptr<SceneObjectMesh> soMesh(new SceneObjectMesh());
+    std::shared_ptr<SceneObjectMaterial> soMaterial(new SceneObjectMaterial());
 
     soGeometry->AddMesh(std::move(soMesh));
 
@@ -24,13 +28,13 @@ int32_t main(int32_t argc, char** argv)
     cout << *soMaterial << endl;
     cout << *soOmniLight << endl;
     cout << *soSpotLight << endl;
-    cout << *soOrthogonalCamera  << endl;
+    cout << *soOrthogonalCamera << endl;
     cout << *soPerspectiveCamera << endl;
 
-    SceneEmptyNode      snEmpty;
-    std::shared_ptr<SceneGeometryNode>   snGeometry(new SceneGeometryNode());
-    std::shared_ptr<SceneLightNode>     snLight(new SceneLightNode());
-    std::shared_ptr<SceneCameraNode>     snCamera(new SceneCameraNode());
+    SceneEmptyNode snEmpty;
+    std::shared_ptr<SceneGeometryNode> snGeometry(new SceneGeometryNode());
+    std::shared_ptr<SceneLightNode> snLight(new SceneLightNode());
+    std::shared_ptr<SceneCameraNode> snCamera(new SceneCameraNode());
 
     snGeometry->AddSceneObjectRef(soGeometry->GetGuid());
     snLight->AddSceneObjectRef(soSpotLight->GetGuid());
@@ -44,4 +48,3 @@ int32_t main(int32_t argc, char** argv)
 
     return result;
 }
-

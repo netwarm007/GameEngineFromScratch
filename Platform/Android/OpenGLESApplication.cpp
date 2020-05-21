@@ -3,17 +3,15 @@
 using namespace My;
 using namespace std;
 
-int OpenGLESApplication::Initialize()
-{
+int OpenGLESApplication::Initialize() {
     // initialize OpenGL ES and EGL
 
     const EGLint attribs[] = {
-            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-            EGL_BLUE_SIZE, static_cast<EGLint>(m_Config.blueBits),
-            EGL_GREEN_SIZE, static_cast<EGLint>(m_Config.greenBits),
-            EGL_RED_SIZE, static_cast<EGLint>(m_Config.redBits),
-            EGL_NONE
-    };
+        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+        EGL_BLUE_SIZE,    static_cast<EGLint>(m_Config.blueBits),
+        EGL_GREEN_SIZE,   static_cast<EGLint>(m_Config.greenBits),
+        EGL_RED_SIZE,     static_cast<EGLint>(m_Config.redBits),
+        EGL_NONE};
     EGLint w, h, format;
     EGLint numConfigs;
     EGLConfig config;
@@ -29,25 +27,24 @@ int OpenGLESApplication::Initialize()
     /* Here, the application chooses the configuration it desires.
      * find the best match if possible, otherwise use the very first one
      */
-    eglChooseConfig(display, attribs, nullptr,0, &numConfigs);
+    eglChooseConfig(display, attribs, nullptr, 0, &numConfigs);
     std::unique_ptr<EGLConfig[]> supportedConfigs(new EGLConfig[numConfigs]);
     assert(supportedConfigs);
-    eglChooseConfig(display, attribs, supportedConfigs.get(), numConfigs, &numConfigs);
+    eglChooseConfig(display, attribs, supportedConfigs.get(), numConfigs,
+                    &numConfigs);
     assert(numConfigs);
     auto i = 0;
     for (; i < numConfigs; i++) {
         auto& cfg = supportedConfigs[i];
         EGLint r, g, b, d;
-        if (eglGetConfigAttrib(display, cfg, EGL_RED_SIZE, &r)   &&
+        if (eglGetConfigAttrib(display, cfg, EGL_RED_SIZE, &r) &&
             eglGetConfigAttrib(display, cfg, EGL_GREEN_SIZE, &g) &&
-            eglGetConfigAttrib(display, cfg, EGL_BLUE_SIZE, &b)  &&
+            eglGetConfigAttrib(display, cfg, EGL_BLUE_SIZE, &b) &&
             eglGetConfigAttrib(display, cfg, EGL_DEPTH_SIZE, &d) &&
-            r == static_cast<EGLint>(m_Config.redBits) && 
-            g == static_cast<EGLint>(m_Config.greenBits) && 
-            b == static_cast<EGLint>(m_Config.blueBits) && 
-            d == static_cast<EGLint>(m_Config.depthBits) ) 
-        {
-
+            r == static_cast<EGLint>(m_Config.redBits) &&
+            g == static_cast<EGLint>(m_Config.greenBits) &&
+            b == static_cast<EGLint>(m_Config.blueBits) &&
+            d == static_cast<EGLint>(m_Config.depthBits)) {
             config = supportedConfigs[i];
             break;
         }
@@ -62,7 +59,7 @@ int OpenGLESApplication::Initialize()
      * ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID. */
     eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
     surface = eglCreateWindowSurface(display, config, m_pApp->window, NULL);
-    EGLint contextAttributes[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE };
+    EGLint contextAttributes[] = {EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE};
     context = eglCreateContext(display, config, NULL, contextAttributes);
 
     if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
@@ -88,10 +85,10 @@ int OpenGLESApplication::Initialize()
     return AndroidApplication::Initialize();
 }
 
-void OpenGLESApplication::Finalize()
-{
+void OpenGLESApplication::Finalize() {
     if (m_Display != EGL_NO_DISPLAY) {
-        eglMakeCurrent(m_Display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        eglMakeCurrent(m_Display, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                       EGL_NO_CONTEXT);
         if (m_Context != EGL_NO_CONTEXT) {
             eglDestroyContext(m_Display, m_Context);
         }
@@ -108,10 +105,7 @@ void OpenGLESApplication::Finalize()
     AndroidApplication::Finalize();
 }
 
-void OpenGLESApplication::Tick()
-{
+void OpenGLESApplication::Tick() {
     AndroidApplication::Tick();
     eglSwapBuffers(m_Display, m_Surface);
 }
-
-

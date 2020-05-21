@@ -2,4 +2,3 @@
 
 @interface WindowDelegate : NSObject <NSWindowDelegate>
 @end
-

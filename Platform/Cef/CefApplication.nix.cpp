@@ -1,27 +1,25 @@
-#include "CefApplication.hpp"
 #include <X11/Xlib.h>
 
-namespace My {
-    int XErrorHandlerImpl(Display* display, XErrorEvent* event) {
-      LOG(WARNING) << "X error received: "
-                   << "type " << event->type << ", "
-                   << "serial " << event->serial << ", "
-                   << "error_code " << static_cast<int>(event->error_code) << ", "
-                   << "request_code " << static_cast<int>(event->request_code)
-                   << ", "
-                   << "minor_code " << static_cast<int>(event->minor_code);
-      return 0;
-    }
+#include "CefApplication.hpp"
 
-    int XIOErrorHandlerImpl(Display* display) {
-      return 0;
-    }
-}  // namespace
+namespace My {
+int XErrorHandlerImpl(Display* display, XErrorEvent* event) {
+    LOG(WARNING) << "X error received: "
+                 << "type " << event->type << ", "
+                 << "serial " << event->serial << ", "
+                 << "error_code " << static_cast<int>(event->error_code) << ", "
+                 << "request_code " << static_cast<int>(event->request_code)
+                 << ", "
+                 << "minor_code " << static_cast<int>(event->minor_code);
+    return 0;
+}
+
+int XIOErrorHandlerImpl(Display* display) { return 0; }
+}  // namespace My
 
 using namespace My;
 
-int CefApplication::Initialize()
-{
+int CefApplication::Initialize() {
     BaseApplication::Initialize();
 
     CefEnableHighDPISupport();
@@ -36,15 +34,14 @@ int CefApplication::Initialize()
     CefMainArgs main_args(m_nArgC, m_ppArgV);
 
     int exit_code = CefExecuteProcess(main_args, NULL, sandbox_info);
-    if (exit_code >= 0)
-    {
+    if (exit_code >= 0) {
         return exit_code;
     }
 
-    // Install xlib error handlers so that the application won't be terminated 
-    // on non-fatal errors. 
-    XSetErrorHandler(XErrorHandlerImpl); 
-    XSetIOErrorHandler(XIOErrorHandlerImpl); 
+    // Install xlib error handlers so that the application won't be terminated
+    // on non-fatal errors.
+    XSetErrorHandler(XErrorHandlerImpl);
+    XSetIOErrorHandler(XIOErrorHandlerImpl);
 
     CefSettings settings;
 
@@ -59,13 +56,6 @@ int CefApplication::Initialize()
     return 0;
 }
 
-void CefApplication::Finalize()
-{
-    CefShutdown();
-}
+void CefApplication::Finalize() { CefShutdown(); }
 
-void CefApplication::Tick()
-{
-    CefDoMessageLoopWork();
-}
-
+void CefApplication::Tick() { CefDoMessageLoopWork(); }

@@ -1,12 +1,12 @@
 #include "OpenGLESGraphicsManager.hpp"
 
-#include <iostream>
-#include <sstream>
+#include <GLES2/gl2ext.h>
+#include <GLES3/gl32.h>
+
 #include <algorithm>
 #include <functional>
-
-#include <GLES3/gl32.h>
-#include <GLES2/gl2ext.h>
+#include <iostream>
+#include <sstream>
 
 #if defined(OS_WEBASSEMBLY)
 // disable compute shader
@@ -16,8 +16,7 @@
 using namespace My;
 using namespace std;
 
-int OpenGLESGraphicsManager::Initialize()
-{
+int OpenGLESGraphicsManager::Initialize() {
     int result;
 
     result = GraphicsManager::Initialize();
@@ -34,18 +33,18 @@ int OpenGLESGraphicsManager::Initialize()
     }
 #endif
 
-	// Set the depth buffer to be entirely cleared to 1.0 values.
-	glClearDepthf(1.0f);
+    // Set the depth buffer to be entirely cleared to 1.0 values.
+    glClearDepthf(1.0f);
 
-	// Enable depth testing.
-	glEnable(GL_DEPTH_TEST);
+    // Enable depth testing.
+    glEnable(GL_DEPTH_TEST);
 
-	// Set the polygon winding to front facing for the right handed system.
-	glFrontFace(GL_CCW);
+    // Set the polygon winding to front facing for the right handed system.
+    glFrontFace(GL_CCW);
 
-	// Enable back face culling.
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+    // Enable back face culling.
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     auto config = g_pApp->GetConfiguration();
     glViewport(0, 0, config.screenWidth, config.screenHeight);
@@ -53,12 +52,12 @@ int OpenGLESGraphicsManager::Initialize()
     return result;
 }
 
-void OpenGLESGraphicsManager::getOpenGLTextureFormat(const Image& img, uint32_t& format, uint32_t& internal_format, uint32_t& type)
-{
-    if(img.compressed)
-    {
-        switch (img.compress_format)
-        {
+void OpenGLESGraphicsManager::getOpenGLTextureFormat(const Image& img,
+                                                     uint32_t& format,
+                                                     uint32_t& internal_format,
+                                                     uint32_t& type) {
+    if (img.compressed) {
+        switch (img.compress_format) {
             case "DXT1"_u32:
                 format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
                 internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
@@ -76,57 +75,38 @@ void OpenGLESGraphicsManager::getOpenGLTextureFormat(const Image& img, uint32_t&
         }
 
         type = GL_UNSIGNED_BYTE;
-    }
-    else
-    {
-        if(img.bitcount == 8)
-        {
+    } else {
+        if (img.bitcount == 8) {
             format = GL_RED;
             internal_format = GL_R8;
             type = GL_UNSIGNED_BYTE;
-        }
-        else if(img.bitcount == 16)
-        {
+        } else if (img.bitcount == 16) {
             format = GL_RED;
             internal_format = GL_R16I;
             type = GL_UNSIGNED_SHORT;
-        }
-        else if(img.bitcount == 24)
-        {
+        } else if (img.bitcount == 24) {
             format = GL_RGB;
             internal_format = GL_RGB8;
             type = GL_UNSIGNED_BYTE;
-        }
-        else if(img.bitcount == 64)
-        {
+        } else if (img.bitcount == 64) {
             format = GL_RGBA;
-            if (img.is_float)
-            {
+            if (img.is_float) {
                 internal_format = GL_RGBA16F;
                 type = GL_HALF_FLOAT;
-            }
-            else
-            {
+            } else {
                 internal_format = GL_RGBA16I;
                 type = GL_UNSIGNED_SHORT;
             }
-        }
-        else if(img.bitcount == 128)
-        {
+        } else if (img.bitcount == 128) {
             format = GL_RGBA;
-            if (img.is_float)
-            {
+            if (img.is_float) {
                 internal_format = GL_RGBA32F;
                 type = GL_FLOAT;
-            }
-            else
-            {
+            } else {
                 internal_format = GL_RGBA;
                 type = GL_UNSIGNED_INT;
             }
-        }
-        else
-        {
+        } else {
             format = GL_RGBA;
             internal_format = GL_RGBA8;
             type = GL_UNSIGNED_BYTE;

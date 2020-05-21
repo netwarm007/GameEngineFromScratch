@@ -4,8 +4,7 @@
 
 using namespace My;
 
-int CefApplication::Initialize()
-{
+int CefApplication::Initialize() {
     BaseApplication::Initialize();
 
     CefEnableHighDPISupport();
@@ -21,8 +20,7 @@ int CefApplication::Initialize()
     CefMainArgs main_args(hInstance);
 
     int exit_code = CefExecuteProcess(main_args, NULL, sandbox_info);
-    if (exit_code >= 0)
-    {
+    if (exit_code >= 0) {
         return exit_code;
     }
 
@@ -39,12 +37,6 @@ int CefApplication::Initialize()
     return 0;
 }
 
-void CefApplication::Finalize()
-{
-    CefShutdown();
-}
+void CefApplication::Finalize() { CefShutdown(); }
 
-void CefApplication::Tick()
-{
-    CefDoMessageLoopWork();
-}
+void CefApplication::Tick() { CefDoMessageLoopWork(); }

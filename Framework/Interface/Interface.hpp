@@ -1,6 +1,5 @@
 #pragma once
 
 #define Interface class
-#define inheritance public
+#define inherits public
 #define implements public
-

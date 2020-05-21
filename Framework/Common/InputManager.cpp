@@ -1,95 +1,76 @@
 #include "InputManager.hpp"
+
+#include <iostream>
+
 #include "DebugManager.hpp"
 #include "GraphicsManager.hpp"
 #include "IGameLogic.hpp"
 #include "SceneManager.hpp"
 #include "geommath.hpp"
-#include <iostream>
 
 using namespace My;
 using namespace std;
 
-int InputManager::Initialize()
-{
-    return 0;
-}
+int InputManager::Initialize() { return 0; }
 
-void InputManager::Finalize()
-{
-}
+void InputManager::Finalize() {}
 
-void InputManager::Tick()
-{
-}
+void InputManager::Tick() {}
 
-void InputManager::UpArrowKeyDown()
-{
+void InputManager::UpArrowKeyDown() {
     g_pGameLogic->OnUpKeyDown();
-    if (!m_bUpKeyPressed)
-    {
+    if (!m_bUpKeyPressed) {
         g_pGameLogic->OnUpKey();
         m_bUpKeyPressed = true;
     }
 }
 
-void InputManager::UpArrowKeyUp()
-{
+void InputManager::UpArrowKeyUp() {
     g_pGameLogic->OnUpKeyUp();
     m_bUpKeyPressed = false;
 }
 
-void InputManager::DownArrowKeyDown()
-{
+void InputManager::DownArrowKeyDown() {
     g_pGameLogic->OnDownKeyDown();
-    if (!m_bDownKeyPressed)
-    {
+    if (!m_bDownKeyPressed) {
         g_pGameLogic->OnDownKey();
         m_bDownKeyPressed = true;
     }
 }
 
-void InputManager::DownArrowKeyUp()
-{
+void InputManager::DownArrowKeyUp() {
     g_pGameLogic->OnDownKeyUp();
     m_bDownKeyPressed = false;
 }
 
-void InputManager::LeftArrowKeyDown()
-{
+void InputManager::LeftArrowKeyDown() {
     g_pGameLogic->OnLeftKeyDown();
-    if (!m_bLeftKeyPressed)
-    {
+    if (!m_bLeftKeyPressed) {
         g_pGameLogic->OnLeftKey();
         m_bLeftKeyPressed = true;
     }
 }
 
-void InputManager::LeftArrowKeyUp()
-{
+void InputManager::LeftArrowKeyUp() {
     g_pGameLogic->OnLeftKeyUp();
     m_bLeftKeyPressed = false;
 }
 
-void InputManager::RightArrowKeyDown()
-{
+void InputManager::RightArrowKeyDown() {
     g_pGameLogic->OnRightKeyDown();
-    if(!m_bRightKeyPressed)
-    {
+    if (!m_bRightKeyPressed) {
         g_pGameLogic->OnRightKey();
         m_bRightKeyPressed = true;
     }
 }
 
-void InputManager::RightArrowKeyUp()
-{
+void InputManager::RightArrowKeyUp() {
     g_pGameLogic->OnRightKeyUp();
     m_bRightKeyPressed = false;
 }
 
-void InputManager::AsciiKeyDown(char keycode)
-{
-    switch (keycode)
-    {
+void InputManager::AsciiKeyDown(char keycode) {
+    switch (keycode) {
         case 'd':
 #ifdef DEBUG
             g_pDebugManager->ToggleDebugInfo();
@@ -106,10 +87,8 @@ void InputManager::AsciiKeyDown(char keycode)
     }
 }
 
-void InputManager::AsciiKeyUp(char keycode)
-{
-    switch (keycode)
-    {
+void InputManager::AsciiKeyUp(char keycode) {
+    switch (keycode) {
         case 'd':
             break;
         case 'r':
@@ -122,15 +101,10 @@ void InputManager::AsciiKeyUp(char keycode)
     }
 }
 
-void InputManager::LeftMouseButtonDown()
-{
-}
+void InputManager::LeftMouseButtonDown() {}
 
-void InputManager::LeftMouseButtonUp()
-{
-}
+void InputManager::LeftMouseButtonUp() {}
 
-void InputManager::LeftMouseDrag(int deltaX, int deltaY)
-{
+void InputManager::LeftMouseDrag(int deltaX, int deltaY) {
     g_pGameLogic->OnAnalogStick(0, (float)deltaX, (float)deltaY);
 }

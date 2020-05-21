@@ -14,12 +14,11 @@ using namespace My;
 
 void SimpleHandler::PlatformTitleChange(const CefRefPtr<CefBrowser>& browser,
                                         const CefString& title) {
-  NSView* view = (NSView*)browser->GetHost()->GetWindowHandle();
-  NSWindow* window = [view window];
-  std::string titleStr(title);
-  NSString* str = [NSString stringWithUTF8String:titleStr.c_str()];
-  if (str != nil)
-  {
-    [window setTitle:str];
-  }
+    NSView* view = (NSView*)browser->GetHost()->GetWindowHandle();
+    NSWindow* window = [view window];
+    std::string titleStr(title);
+    NSString* str = [NSString stringWithUTF8String:titleStr.c_str()];
+    if (str != nil) {
+        [window setTitle:str];
+    }
 }

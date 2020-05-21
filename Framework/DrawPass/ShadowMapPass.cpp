@@ -1,28 +1,27 @@
 #include "ShadowMapPass.hpp"
+
+#include <utility>
+#include <vector>
+
 #include "GraphicsManager.hpp"
 #include "IPipelineStateManager.hpp"
-#include <vector>
-#include <utility>
 
 using namespace std;
 using namespace My;
 
-void ShadowMapPass::Draw(Frame& frame)
-{
-    if (frame.frameContext.globalShadowMap != -1)
-    {
-        g_pGraphicsManager->DestroyShadowMap(frame.frameContext.globalShadowMap);
+void ShadowMapPass::Draw(Frame& frame) {
+    if (frame.frameContext.globalShadowMap != -1) {
+        g_pGraphicsManager->DestroyShadowMap(
+            frame.frameContext.globalShadowMap);
         frame.frameContext.globalShadowMapCount = 0;
     }
 
-    if (frame.frameContext.shadowMap != -1)
-    {
+    if (frame.frameContext.shadowMap != -1) {
         g_pGraphicsManager->DestroyShadowMap(frame.frameContext.shadowMap);
         frame.frameContext.shadowMapCount = 0;
     }
 
-    if (frame.frameContext.cubeShadowMap != -1)
-    {
+    if (frame.frameContext.cubeShadowMap != -1) {
         g_pGraphicsManager->DestroyShadowMap(frame.frameContext.cubeShadowMap);
         frame.frameContext.cubeShadowMapCount = 0;
     }
@@ -30,14 +29,11 @@ void ShadowMapPass::Draw(Frame& frame)
     // count shadow map
     std::vector<std::pair<int32_t, Light*>> lights_cast_shadow;
 
-    for (int32_t i = 0; i < frame.frameContext.numLights; i++)
-    {
+    for (int32_t i = 0; i < frame.frameContext.numLights; i++) {
         auto& light = frame.lightInfo.lights[i];
-        
-        if (light.lightCastShadow)
-        {
-            switch (light.lightType)
-            {
+
+        if (light.lightCastShadow) {
+            switch (light.lightType) {
                 case LightType::Omni:
                     frame.frameContext.cubeShadowMapCount++;
                     break;
@@ -58,44 +54,48 @@ void ShadowMapPass::Draw(Frame& frame)
         }
     }
 
-    const uint32_t kShadowMapWidth = 512; // normal shadow map
-    const uint32_t kShadowMapHeight = 512; // normal shadow map
-    const uint32_t kCubeShadowMapWidth = 512; // cube shadow map
-    const uint32_t kCubeShadowMapHeight = 512; // cube shadow map
-    const uint32_t kGlobalShadowMapWidth = 2048;  // shadow map for sun light
-    const uint32_t kGlobalShadowMapHeight = 2048; // shadow map for sun light
+    const uint32_t kShadowMapWidth = 512;          // normal shadow map
+    const uint32_t kShadowMapHeight = 512;         // normal shadow map
+    const uint32_t kCubeShadowMapWidth = 512;      // cube shadow map
+    const uint32_t kCubeShadowMapHeight = 512;     // cube shadow map
+    const uint32_t kGlobalShadowMapWidth = 2048;   // shadow map for sun light
+    const uint32_t kGlobalShadowMapHeight = 2048;  // shadow map for sun light
 
     // generate shadow map array
-    if (frame.frameContext.shadowMapCount)
-    {
-        frame.frameContext.shadowMap = g_pGraphicsManager->GenerateShadowMapArray(kShadowMapWidth, kShadowMapHeight, frame.frameContext.shadowMapCount);
+    if (frame.frameContext.shadowMapCount) {
+        frame.frameContext.shadowMap =
+            g_pGraphicsManager->GenerateShadowMapArray(
+                kShadowMapWidth, kShadowMapHeight,
+                frame.frameContext.shadowMapCount);
     }
 
     // generate global shadow map array
-    if (frame.frameContext.globalShadowMapCount)
-    {
-        frame.frameContext.globalShadowMap = g_pGraphicsManager->GenerateShadowMapArray(kGlobalShadowMapWidth, kGlobalShadowMapHeight, frame.frameContext.globalShadowMapCount);
+    if (frame.frameContext.globalShadowMapCount) {
+        frame.frameContext.globalShadowMap =
+            g_pGraphicsManager->GenerateShadowMapArray(
+                kGlobalShadowMapWidth, kGlobalShadowMapHeight,
+                frame.frameContext.globalShadowMapCount);
     }
 
     // generate cube shadow map array
-    if (frame.frameContext.cubeShadowMapCount)
-    {
-        frame.frameContext.cubeShadowMap = g_pGraphicsManager->GenerateCubeShadowMapArray(kCubeShadowMapWidth, kCubeShadowMapHeight, frame.frameContext.cubeShadowMapCount);
+    if (frame.frameContext.cubeShadowMapCount) {
+        frame.frameContext.cubeShadowMap =
+            g_pGraphicsManager->GenerateCubeShadowMapArray(
+                kCubeShadowMapWidth, kCubeShadowMapHeight,
+                frame.frameContext.cubeShadowMapCount);
     }
 
     uint32_t shadowmap_index = 0;
     uint32_t global_shadowmap_index = 0;
     uint32_t cube_shadowmap_index = 0;
 
-    for (auto it : lights_cast_shadow)
-    {
+    for (auto it : lights_cast_shadow) {
         int32_t shadowmap;
         int32_t width, height;
 
         const char* pipelineStateName;
 
-        switch (it.second->lightType)
-        {
+        switch (it.second->lightType) {
             case LightType::Omni:
                 pipelineStateName = "Omni Light Shadow Map";
                 shadowmap = frame.frameContext.cubeShadowMap;
@@ -128,17 +128,20 @@ void ShadowMapPass::Draw(Frame& frame)
                 assert(0);
         }
 
+        g_pGraphicsManager->BeginShadowMap(it.first, shadowmap, width, height,
+                                           it.second->lightShadowMapIndex,
+                                           frame);
 
-        g_pGraphicsManager->BeginShadowMap(it.first, shadowmap, 
-            width, height, it.second->lightShadowMapIndex, frame);
-
-        // Set the color shader as the current shader program and set the matrices that it will use for rendering.
-        auto& pPipelineState = g_pPipelineStateManager->GetPipelineState(pipelineStateName);
+        // Set the color shader as the current shader program and set the
+        // matrices that it will use for rendering.
+        auto& pPipelineState =
+            g_pPipelineStateManager->GetPipelineState(pipelineStateName);
         g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
 
         g_pGraphicsManager->DrawBatch(frame);
 
-        g_pGraphicsManager->EndShadowMap(shadowmap, it.second->lightShadowMapIndex);
+        g_pGraphicsManager->EndShadowMap(shadowmap,
+                                         it.second->lightShadowMapIndex);
     }
 
     assert(shadowmap_index == frame.frameContext.shadowMapCount);

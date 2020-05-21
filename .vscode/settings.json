@@ -124,5 +124,6 @@
         "__node_handle": "cpp"
     },
     "git.ignoreLimitWarning": true,
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "editor.formatOnSave": true
 }
