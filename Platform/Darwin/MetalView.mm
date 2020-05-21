@@ -8,50 +8,42 @@ using namespace My;
 
 @implementation MetalView
 
-- (instancetype)initWithCoder:(NSCoder *)coder
-{
-    if (self = [super initWithCoder:coder])
-    {
+- (instancetype)initWithCoder:(NSCoder *)coder {
+    if (self = [super initWithCoder:coder]) {
         [self configure];
     }
-    
+
     return self;
 }
 
-- (instancetype)initWithFrame:(CGRect)frame
-{
-    if (self = [super initWithFrame:frame])
-    {
+- (instancetype)initWithFrame:(CGRect)frame {
+    if (self = [super initWithFrame:frame]) {
         [self configure];
     }
-    
+
     return self;
 }
 
-- (instancetype)initWithFrame:(CGRect)frameRect device:(id<MTLDevice>)device
-{
-    if (self = [super initWithFrame:frameRect device:device])
-    {
+- (instancetype)initWithFrame:(CGRect)frameRect device:(id<MTLDevice>)device {
+    if (self = [super initWithFrame:frameRect device:device]) {
         [self configure];
     }
-    
+
     return self;
 }
 
-- (void)configure
-{
+- (void)configure {
     self.device = MTLCreateSystemDefaultDevice();
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
     self.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     self.framebufferOnly = YES;
     self.sampleCount = g_pApp->GetConfiguration().msaaSamples;
-    
+
     self.paused = YES;
     self.enableSetNeedsDisplay = YES;
 
-    dynamic_cast<Metal2GraphicsManager*>(g_pGraphicsManager)->SetRenderer(
-        [[Metal2Renderer new] initWithMetalKitView:self device:self.device] 
-    );
+    dynamic_cast<Metal2GraphicsManager *>(g_pGraphicsManager)
+        ->SetRenderer([[Metal2Renderer new] initWithMetalKitView:self device:self.device]);
 }
 
 - (void)drawRect:(CGRect)drawRect {
@@ -59,28 +51,25 @@ using namespace My;
 }
 
 - (void)mouseDown:(NSEvent *)theEvent {
-    if ([theEvent type] == NSEventTypeLeftMouseDown)
-    {
+    if ([theEvent type] == NSEventTypeLeftMouseDown) {
         InputManager::LeftMouseButtonDown();
     }
 }
 
 - (void)mouseUp:(NSEvent *)theEvent {
-    if ([theEvent type] == NSEventTypeLeftMouseUp)
-    {
+    if ([theEvent type] == NSEventTypeLeftMouseUp) {
         InputManager::LeftMouseButtonUp();
     }
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent {
-    if ([theEvent type] == NSEventTypeLeftMouseDragged)
-    {
+    if ([theEvent type] == NSEventTypeLeftMouseDragged) {
         InputManager::LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
     }
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent {
-        InputManager::LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+    InputManager::LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
 }
 
 @end

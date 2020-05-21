@@ -2,12 +2,10 @@
 
 using namespace My;
 
-bool EmptyPipelineStateManager::InitializePipelineState(PipelineState** ppPipelineState)
-{
+bool EmptyPipelineStateManager::InitializePipelineState(
+    PipelineState** ppPipelineState) {
     return true;
 }
 
-void EmptyPipelineStateManager::DestroyPipelineState(PipelineState& pipelineState)
-{
-
-}
+void EmptyPipelineStateManager::DestroyPipelineState(
+    PipelineState& pipelineState) {}

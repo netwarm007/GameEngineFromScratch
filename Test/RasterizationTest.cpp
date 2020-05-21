@@ -1,35 +1,31 @@
 #include <string>
+
 #include "Bresenham.hpp"
 #include "TriangleRasterization.hpp"
 
 using namespace My;
 using namespace std;
 
-template<class T>
-void visualize(T points, const string& name)
-{
+template <class T>
+void visualize(T points, const string& name) {
     cout << name << ':' << endl;
 
     // dump the result
-    for (auto point : points)
-    {
+    for (auto point : points) {
         cout << *point;
     }
 
     // visualize in the console
     // note y is fliped towarding downside for easy print
     int row = 0, col = 0;
-    for (auto point : points)
-    {
-        while (col < point->data[1])
-        {
+    for (auto point : points) {
+        while (col < point->data[1]) {
             col++;
             cout << endl;
             row = 0;
         }
 
-        while (row++ < point->data[0])
-        {
+        while (row++ < point->data[0]) {
             cout << ' ';
         }
 
@@ -39,11 +35,10 @@ void visualize(T points, const string& name)
     cout << endl;
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     // raster a line
-    Point2D start_point ({0, 0});
-    Point2D end_point ({11, 4});
+    Point2D start_point({0, 0});
+    Point2D end_point({11, 4});
     auto points = BresenhamLineInterpolate(start_point, end_point);
 
     visualize(points, "Line");

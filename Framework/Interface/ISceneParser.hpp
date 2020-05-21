@@ -3,10 +3,8 @@
 #include "Scene.hpp"
 
 namespace My {
-    Interface ISceneParser
-    {
-    public:
-        virtual std::unique_ptr<Scene> Parse(const std::string& buf) = 0;
-    };
-}
-
+_Interface_ ISceneParser {
+   public:
+    virtual std::unique_ptr<Scene> Parse(const std::string& buf) = 0;
+};
+}  // namespace My

@@ -1,31 +1,30 @@
+#include <iostream>
+#include <string>
+
 #include "AssetLoader.hpp"
 #include "MemoryManager.hpp"
 #include "SceneManager.hpp"
-#include <iostream>
-#include <string>
 
 using namespace My;
 using namespace std;
 
 namespace My {
-    IMemoryManager*  g_pMemoryManager = new MemoryManager();
-    AssetLoader*    g_pAssetLoader   = new AssetLoader();
-    SceneManager*   g_pSceneManager  = new SceneManager();
-}
+IMemoryManager* g_pMemoryManager = new MemoryManager();
+AssetLoader* g_pAssetLoader = new AssetLoader();
+SceneManager* g_pSceneManager = new SceneManager();
+}  // namespace My
 
-template<typename T>
-static ostream& operator<<(ostream& out, unordered_map<string, shared_ptr<T>> map)
-{
-    for (auto p : map)
-    {
+template <typename T>
+static ostream& operator<<(ostream& out,
+                           unordered_map<string, shared_ptr<T>> map) {
+    for (auto p : map) {
         out << *p.second << endl;
     }
 
     return out;
 }
 
-void loadScene(const char* scene_name)
-{
+void loadScene(const char* scene_name) {
     g_pSceneManager->LoadScene(scene_name);
 #if 0
     auto& scene = g_pSceneManager->GetSceneForRendering();
@@ -94,17 +93,14 @@ void loadScene(const char* scene_name)
 #endif
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     g_pMemoryManager->Initialize();
     g_pSceneManager->Initialize();
     g_pAssetLoader->Initialize();
 
     if (argc >= 2) {
         loadScene(argv[1]);
-    }
-    else
-    {
+    } else {
         loadScene("Scene/splash.ogex");
     }
 
@@ -114,4 +110,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-

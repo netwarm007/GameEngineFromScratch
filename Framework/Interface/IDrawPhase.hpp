@@ -3,12 +3,11 @@
 #include "IPhase.hpp"
 
 namespace My {
-    Interface IDrawPhase : inheritance IPhase
-    {
-    public:
-        IDrawPhase() = default;
-        ~IDrawPhase() override = default;
+_Interface_ IDrawPhase : _inherits_ IPhase {
+   public:
+    IDrawPhase() = default;
+    ~IDrawPhase() override = default;
 
-        virtual void Draw(Frame& frame) = 0;
-    };
-}
+    virtual void Draw(Frame & frame) = 0;
+};
+}  // namespace My

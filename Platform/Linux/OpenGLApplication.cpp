@@ -1,55 +1,52 @@
-#include <cstdio>
-#include <climits>
-#include <cstring>
-#include <X11/Xlib-xcb.h>
-#include "glad/glad_glx.h"
 #include "OpenGLApplication.hpp"
+
+#include <X11/Xlib-xcb.h>
+
+#include <climits>
+#include <cstdio>
+#include <cstring>
+
+#include "glad/glad_glx.h"
 
 using namespace My;
 using namespace std;
 
 // Helper to check for extension string presence.  Adapted from:
 //   http://www.opengl.org/resources/features/OGLextensions/
-static bool isExtensionSupported(const char *extList, const char *extension)
-{
-  const char *start;
-  const char *where, *terminator;
-  
-  /* Extension names should not have spaces. */
-  where = strchr(extension, ' ');
-  if (where || *extension == '\0')
+static bool isExtensionSupported(const char *extList, const char *extension) {
+    const char *start;
+    const char *where, *terminator;
+
+    /* Extension names should not have spaces. */
+    where = strchr(extension, ' ');
+    if (where || *extension == '\0') return false;
+
+    /* It takes a bit of care to be fool-proof about parsing the
+       OpenGL extensions string. Don't be fooled by sub-strings,
+       etc. */
+    for (start = extList;;) {
+        where = strstr(start, extension);
+
+        if (!where) break;
+
+        terminator = where + strlen(extension);
+
+        if (where == start || *(where - 1) == ' ')
+            if (*terminator == ' ' || *terminator == '\0') return true;
+
+        start = terminator;
+    }
+
     return false;
-
-  /* It takes a bit of care to be fool-proof about parsing the
-     OpenGL extensions string. Don't be fooled by sub-strings,
-     etc. */
-  for (start=extList;;) {
-    where = strstr(start, extension);
-
-    if (!where)
-      break;
-
-    terminator = where + strlen(extension);
-
-    if ( where == start || *(where - 1) == ' ' )
-      if ( *terminator == ' ' || *terminator == '\0' )
-        return true;
-
-    start = terminator;
-  }
-
-  return false;
 }
 
 static bool ctxErrorOccurred = false;
-static int ctxErrorHandler(Display *dpy, XErrorEvent *ev)
-{
+static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
     ctxErrorOccurred = true;
     return 0;
 }
 
-int OpenGLApplication::Initialize()
-{
+int OpenGLApplication::Initialize() {
     BaseApplication::Initialize();
 
     int result;
@@ -60,28 +57,23 @@ int OpenGLApplication::Initialize()
     GLXWindow glxwindow;
 
     // Get a matching FB config
-    static int visual_attribs[] =
-    {
-      GLX_X_RENDERABLE    , True,
-      GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-      GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-      GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-      GLX_RED_SIZE        , static_cast<int>(INT_MAX & m_Config.redBits),
-      GLX_GREEN_SIZE      , static_cast<int>(INT_MAX & m_Config.greenBits),
-      GLX_BLUE_SIZE       , static_cast<int>(INT_MAX & m_Config.blueBits),
-      GLX_ALPHA_SIZE      , static_cast<int>(INT_MAX & m_Config.alphaBits),
-      GLX_DEPTH_SIZE      , static_cast<int>(INT_MAX & m_Config.depthBits),
-      GLX_STENCIL_SIZE    , static_cast<int>(INT_MAX & m_Config.stencilBits),
-      GLX_DOUBLEBUFFER    , True,
-      //GLX_SAMPLE_BUFFERS  , 1,
-      //GLX_SAMPLES         , 4,
-      None
-    };
+    static int visual_attribs[] = {
+        GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE, GLX_RGBA_BIT, GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
+        GLX_RED_SIZE, static_cast<int>(INT_MAX & m_Config.redBits),
+        GLX_GREEN_SIZE, static_cast<int>(INT_MAX & m_Config.greenBits),
+        GLX_BLUE_SIZE, static_cast<int>(INT_MAX & m_Config.blueBits),
+        GLX_ALPHA_SIZE, static_cast<int>(INT_MAX & m_Config.alphaBits),
+        GLX_DEPTH_SIZE, static_cast<int>(INT_MAX & m_Config.depthBits),
+        GLX_STENCIL_SIZE, static_cast<int>(INT_MAX & m_Config.stencilBits),
+        GLX_DOUBLEBUFFER, True,
+        // GLX_SAMPLE_BUFFERS  , 1,
+        // GLX_SAMPLES         , 4,
+        None};
 
-    /* Open Xlib Display */ 
+    /* Open Xlib Display */
     m_pDisplay = XOpenDisplay(NULL);
-    if(!m_pDisplay)
-    {
+    if (!m_pDisplay) {
         fprintf(stderr, "Can't open display\n");
         return -1;
     }
@@ -91,36 +83,40 @@ int OpenGLApplication::Initialize()
     gladLoadGLX(m_pDisplay, default_screen);
 
     /* Query framebuffer configurations */
-    fb_configs = glXChooseFBConfig(m_pDisplay, default_screen, visual_attribs, &num_fb_configs);
-    if(!fb_configs || num_fb_configs == 0)
-    {
+    fb_configs = glXChooseFBConfig(m_pDisplay, default_screen, visual_attribs,
+                                   &num_fb_configs);
+    if (!fb_configs || num_fb_configs == 0) {
         fprintf(stderr, "glXGetFBConfigs failed\n");
         return -1;
     }
 
     /* Pick the FB config/visual with the most samples per pixel */
     {
-        int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+        int best_fbc = -1, worst_fbc = -1, best_num_samp = -1,
+            worst_num_samp = 999;
 
-        for (int i=0; i<num_fb_configs; ++i)
-        {
-            XVisualInfo *vi = glXGetVisualFromFBConfig(m_pDisplay, fb_configs[i]);
-            if (vi)
-            {
+        for (int i = 0; i < num_fb_configs; ++i) {
+            XVisualInfo *vi =
+                glXGetVisualFromFBConfig(m_pDisplay, fb_configs[i]);
+            if (vi) {
                 int samp_buf, samples;
-                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i], GLX_SAMPLE_BUFFERS, &samp_buf);
-                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i], GLX_SAMPLES, &samples);
-      
-                printf( "  Matching fbconfig %d, visual ID 0x%lx: SAMPLE_BUFFERS = %d,"
-                        " SAMPLES = %d\n", 
-                        i, vi -> visualid, samp_buf, samples);
+                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i],
+                                     GLX_SAMPLE_BUFFERS, &samp_buf);
+                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i], GLX_SAMPLES,
+                                     &samples);
+
+                printf(
+                    "  Matching fbconfig %d, visual ID 0x%lx: SAMPLE_BUFFERS = "
+                    "%d,"
+                    " SAMPLES = %d\n",
+                    i, vi->visualid, samp_buf, samples);
 
                 if (best_fbc < 0 || (samp_buf && samples > best_num_samp))
                     best_fbc = i, best_num_samp = samples;
                 if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp)
                     worst_fbc = i, worst_num_samp = samples;
             }
-            XFree( vi );
+            XFree(vi);
         }
 
         fb_config = fb_configs[best_fbc];
@@ -132,8 +128,7 @@ int OpenGLApplication::Initialize()
 
     /* establish connection to X server */
     m_pConn = XGetXCBConnection(m_pDisplay);
-    if(!m_pConn)
-    {
+    if (!m_pConn) {
         XCloseDisplay(m_pDisplay);
         fprintf(stderr, "Can't get xcb connection from display\n");
         return -1;
@@ -143,19 +138,18 @@ int OpenGLApplication::Initialize()
     XSetEventQueueOwner(m_pDisplay, XCBOwnsEventQueue);
 
     /* Find XCB screen */
-    xcb_screen_iterator_t screen_iter = 
+    xcb_screen_iterator_t screen_iter =
         xcb_setup_roots_iterator(xcb_get_setup(m_pConn));
-    for(int screen_num = vi->screen;
-        screen_iter.rem && screen_num > 0;
-        --screen_num, xcb_screen_next(&screen_iter));
+    for (int screen_num = vi->screen; screen_iter.rem && screen_num > 0;
+         --screen_num, xcb_screen_next(&screen_iter))
+        ;
     m_pScreen = screen_iter.data;
     m_nVi = vi->visualid;
 
     return result;
 }
 
-void OpenGLApplication::CreateMainWindow()
-{
+void OpenGLApplication::CreateMainWindow() {
     XcbApplication::CreateMainWindow();
 
     const char *glxExts;
@@ -165,52 +159,50 @@ void OpenGLApplication::CreateMainWindow()
 
     /* Create OpenGL context */
     ctxErrorOccurred = false;
-    int (*oldHandler)(Display*, XErrorEvent*) =
+    int (*oldHandler)(Display *, XErrorEvent *) =
         XSetErrorHandler(&ctxErrorHandler);
 
     if (!isExtensionSupported(glxExts, "GLX_ARB_create_context") ||
-       !glXCreateContextAttribsARB )
-    {
-        printf( "glXCreateContextAttribsARB() not found"
-            " ... using old-style GLX context\n" );
-        m_Context = glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, 0, True);
-        if(!m_Context)
-        {
+        !glXCreateContextAttribsARB) {
+        printf(
+            "glXCreateContextAttribsARB() not found"
+            " ... using old-style GLX context\n");
+        m_Context =
+            glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, 0, True);
+        if (!m_Context) {
             fprintf(stderr, "glXCreateNewContext failed\n");
         }
-    }
-    else
-    {
-        int context_attribs[] =
-          {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+    } else {
+        int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB,
+                                 4,
+                                 GLX_CONTEXT_MINOR_VERSION_ARB,
+                                 3,
 #ifdef OPENGL_RHI_DEBUG
-			GLX_CONTEXT_FLAGS_ARB,  GLX_CONTEXT_DEBUG_BIT_ARB,
+                                 GLX_CONTEXT_FLAGS_ARB,
+                                 GLX_CONTEXT_DEBUG_BIT_ARB,
 #endif
-            None
-          };
+                                 None};
 
-        printf( "Creating context\n" );
-        m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0,
-                                          True, context_attribs );
+        printf("Creating context\n");
+        m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0, True,
+                                               context_attribs);
 
         XSync(m_pDisplay, False);
         if (!ctxErrorOccurred && m_Context)
-          printf( "Created GL 4.3 context\n" );
-        else
-        {
-          /* GLX_CONTEXT_MAJOR_VERSION_ARB = 1 */
-          context_attribs[1] = 1;
-          /* GLX_CONTEXT_MINOR_VERSION_ARB = 0 */
-          context_attribs[3] = 0;
+            printf("Created GL 4.3 context\n");
+        else {
+            /* GLX_CONTEXT_MAJOR_VERSION_ARB = 1 */
+            context_attribs[1] = 1;
+            /* GLX_CONTEXT_MINOR_VERSION_ARB = 0 */
+            context_attribs[3] = 0;
 
-          ctxErrorOccurred = false;
+            ctxErrorOccurred = false;
 
-          printf( "Failed to create GL 4.3 context"
-                  " ... using old-style GLX context\n" );
-          m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0, 
-                                            True, context_attribs );
+            printf(
+                "Failed to create GL 4.3 context"
+                " ... using old-style GLX context\n");
+            m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0,
+                                                   True, context_attribs);
         }
     }
 
@@ -218,32 +210,21 @@ void OpenGLApplication::CreateMainWindow()
 
     XSetErrorHandler(oldHandler);
 
-    if (ctxErrorOccurred || !m_Context)
-    {
-        printf( "Failed to create an OpenGL context\n" );
+    if (ctxErrorOccurred || !m_Context) {
+        printf("Failed to create an OpenGL context\n");
     }
 
     /* Verifying that context is a direct context */
-    if (!glXIsDirect (m_pDisplay, m_Context))
-    {
-        printf( "Indirect GLX rendering context obtained\n" );
-    }
-    else
-    {
-        printf( "Direct GLX rendering context obtained\n" );
+    if (!glXIsDirect(m_pDisplay, m_Context)) {
+        printf("Indirect GLX rendering context obtained\n");
+    } else {
+        printf("Direct GLX rendering context obtained\n");
     }
 
     /* Create GLX Window */
-    GLXWindow glxwindow = 
-            glXCreateWindow(
-                m_pDisplay,
-                fb_config,
-                m_Window,
-                0
-                );
+    GLXWindow glxwindow = glXCreateWindow(m_pDisplay, fb_config, m_Window, 0);
 
-    if(!glxwindow)
-    {
+    if (!glxwindow) {
         xcb_destroy_window(m_pConn, m_Window);
         glXDestroyContext(m_pDisplay, m_Context);
 
@@ -253,8 +234,7 @@ void OpenGLApplication::CreateMainWindow()
     m_Drawable = glxwindow;
 
     /* make OpenGL context current */
-    if(!glXMakeContextCurrent(m_pDisplay, m_Drawable, m_Drawable, m_Context))
-    {
+    if (!glXMakeContextCurrent(m_pDisplay, m_Drawable, m_Drawable, m_Context)) {
         xcb_destroy_window(m_pConn, m_Window);
         glXDestroyContext(m_pDisplay, m_Context);
 
@@ -264,9 +244,7 @@ void OpenGLApplication::CreateMainWindow()
     XFree(vi);
 }
 
-void OpenGLApplication::Tick()
-{
+void OpenGLApplication::Tick() {
     XcbApplication::Tick();
     glXSwapBuffers(m_pDisplay, m_Drawable);
 }
-

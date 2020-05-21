@@ -1,22 +1,23 @@
 #import <MetalKit/MetalKit.h>
 
-#import "MetalPipelineStateManager.h"
-#import "MetalPipelineState.h"
 #include "AssetLoader.hpp"
+#import "MetalPipelineState.h"
+#import "MetalPipelineStateManager.h"
 #include "SceneObjectVertexArray.hpp"
 
 using namespace My;
 using namespace std;
 
-static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor, MetalPipelineState* pState)
-{
+static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor,
+                                    MetalPipelineState* pState) {
     // Positions
     MTLVertexAttributeDescriptor* vertexAttributePositionDesc = [MTLVertexAttributeDescriptor new];
     vertexAttributePositionDesc.format = MTLVertexFormatFloat3;
     vertexAttributePositionDesc.offset = 0;
     vertexAttributePositionDesc.bufferIndex = VertexAttribute::VertexAttributePosition;
 
-    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutPositionDesc = [MTLVertexBufferLayoutDescriptor new];
+    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutPositionDesc =
+        [MTLVertexBufferLayoutDescriptor new];
     vertexBufferLayoutPositionDesc.stride = 12;
     vertexBufferLayoutPositionDesc.stepRate = 1;
     vertexBufferLayoutPositionDesc.stepFunction = MTLVertexStepFunctionPerVertex;
@@ -27,7 +28,8 @@ static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor, Me
     vertexAttributeNormalDesc.offset = 0;
     vertexAttributeNormalDesc.bufferIndex = VertexAttribute::VertexAttributeNormal;
 
-    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutNormalDesc = [MTLVertexBufferLayoutDescriptor new];
+    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutNormalDesc =
+        [MTLVertexBufferLayoutDescriptor new];
     vertexBufferLayoutNormalDesc.stride = 12;
     vertexBufferLayoutNormalDesc.stepRate = 1;
     vertexBufferLayoutNormalDesc.stepFunction = MTLVertexStepFunctionPerVertex;
@@ -38,7 +40,8 @@ static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor, Me
     vertexAttributeTangentDesc.offset = 0;
     vertexAttributeTangentDesc.bufferIndex = VertexAttribute::VertexAttributeTangent;
 
-    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutTangentDesc = [MTLVertexBufferLayoutDescriptor new];
+    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutTangentDesc =
+        [MTLVertexBufferLayoutDescriptor new];
     vertexBufferLayoutTangentDesc.stride = 12;
     vertexBufferLayoutTangentDesc.stepRate = 1;
     vertexBufferLayoutTangentDesc.stepFunction = MTLVertexStepFunctionPerVertex;
@@ -49,7 +52,8 @@ static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor, Me
     vertexAttributeUVDesc.offset = 0;
     vertexAttributeUVDesc.bufferIndex = VertexAttribute::VertexAttributeTexcoord;
 
-    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutUVDesc = [MTLVertexBufferLayoutDescriptor new];
+    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutUVDesc =
+        [MTLVertexBufferLayoutDescriptor new];
     vertexBufferLayoutUVDesc.stride = 8;
     vertexBufferLayoutUVDesc.stepRate = 1;
     vertexBufferLayoutUVDesc.stepFunction = MTLVertexStepFunctionPerVertex;
@@ -60,53 +64,52 @@ static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor, Me
     vertexAttributeUVWDesc.offset = 0;
     vertexAttributeUVWDesc.bufferIndex = VertexAttribute::VertexAttributeTexcoord;
 
-    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutUVWDesc = [MTLVertexBufferLayoutDescriptor new];
+    MTLVertexBufferLayoutDescriptor* vertexBufferLayoutUVWDesc =
+        [MTLVertexBufferLayoutDescriptor new];
     vertexBufferLayoutUVWDesc.stride = 12;
-    vertexBufferLayoutUVWDesc.stepRate = 1; 
+    vertexBufferLayoutUVWDesc.stepRate = 1;
     vertexBufferLayoutUVWDesc.stepFunction = MTLVertexStepFunctionPerVertex;
 
-    switch(pState->a2vType)
-    {
+    switch (pState->a2vType) {
         case A2V_TYPES::A2V_TYPES_FULL:
             mtlVertexDescriptor.attributes[VertexAttributePosition] = vertexAttributePositionDesc;
-            mtlVertexDescriptor.attributes[VertexAttributeNormal]   = vertexAttributeNormalDesc;   
-            mtlVertexDescriptor.attributes[VertexAttributeTexcoord] = vertexAttributeUVDesc;     
-            mtlVertexDescriptor.attributes[VertexAttributeTangent]  = vertexAttributeTangentDesc;  
+            mtlVertexDescriptor.attributes[VertexAttributeNormal] = vertexAttributeNormalDesc;
+            mtlVertexDescriptor.attributes[VertexAttributeTexcoord] = vertexAttributeUVDesc;
+            mtlVertexDescriptor.attributes[VertexAttributeTangent] = vertexAttributeTangentDesc;
 
-            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc; 
-            mtlVertexDescriptor.layouts[VertexAttributeNormal]   = vertexBufferLayoutNormalDesc; 
+            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc;
+            mtlVertexDescriptor.layouts[VertexAttributeNormal] = vertexBufferLayoutNormalDesc;
             mtlVertexDescriptor.layouts[VertexAttributeTexcoord] = vertexBufferLayoutUVDesc;
-            mtlVertexDescriptor.layouts[VertexAttributeTangent]  = vertexBufferLayoutTangentDesc;
+            mtlVertexDescriptor.layouts[VertexAttributeTangent] = vertexBufferLayoutTangentDesc;
 
             break;
         case A2V_TYPES::A2V_TYPES_SIMPLE:
             mtlVertexDescriptor.attributes[VertexAttributePosition] = vertexAttributePositionDesc;
             vertexAttributeUVDesc.bufferIndex = 1;
-            mtlVertexDescriptor.attributes[1] = vertexAttributeUVDesc;     
+            mtlVertexDescriptor.attributes[1] = vertexAttributeUVDesc;
 
-            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc; 
+            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc;
             mtlVertexDescriptor.layouts[1] = vertexBufferLayoutUVDesc;
 
             break;
         case A2V_TYPES::A2V_TYPES_CUBE:
             mtlVertexDescriptor.attributes[VertexAttributePosition] = vertexAttributePositionDesc;
             vertexAttributeUVWDesc.bufferIndex = 1;
-            mtlVertexDescriptor.attributes[1] = vertexAttributeUVWDesc;     
-            
-            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc; 
+            mtlVertexDescriptor.attributes[1] = vertexAttributeUVWDesc;
+
+            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc;
             mtlVertexDescriptor.layouts[1] = vertexBufferLayoutUVWDesc;
 
             break;
         case A2V_TYPES::A2V_TYPES_POS_ONLY:
             mtlVertexDescriptor.attributes[VertexAttributePosition] = vertexAttributePositionDesc;
 
-            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc; 
+            mtlVertexDescriptor.layouts[VertexAttributePosition] = vertexBufferLayoutPositionDesc;
 
             break;
         default:
             assert(0);
     }
-            
 
     [vertexAttributePositionDesc release];
     [vertexAttributeNormalDesc release];
@@ -121,50 +124,49 @@ static void initMtlVertexDescriptor(MTLVertexDescriptor* mtlVertexDescriptor, Me
     [vertexBufferLayoutUVWDesc release];
 }
 
-NSString* shaderFileName2MainFuncName(std::string shaderFileName)
-{
+NSString* shaderFileName2MainFuncName(std::string shaderFileName) {
     NSString* str = [NSString stringWithCString:shaderFileName.c_str()
-                              encoding: [NSString defaultCStringEncoding]];
-    str = [str stringByReplacingOccurrencesOfString: @"." withString:@"_"];
-    str = [str stringByAppendingString: @"_main"];
+                                       encoding:[NSString defaultCStringEncoding]];
+    str = [str stringByReplacingOccurrencesOfString:@"." withString:@"_"];
+    str = [str stringByAppendingString:@"_main"];
     return str;
 }
 
-bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipelineState)
-{
+bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipelineState) {
     MetalPipelineState* pState = new MetalPipelineState(**ppPipelineState);
 
-    // Load all the shader files with a metallib 
-    id <MTLDevice> _device = MTLCreateSystemDefaultDevice();
-    NSError *error = Nil;
-    NSString *libraryFile = [[NSBundle mainBundle] pathForResource:@"Main" ofType:@"metallib"];
-    if (!libraryFile)
-    {
+    // Load all the shader files with a metallib
+    id<MTLDevice> _device = MTLCreateSystemDefaultDevice();
+    NSError* error = Nil;
+    NSString* libraryFile = [[NSBundle mainBundle] pathForResource:@"Main" ofType:@"metallib"];
+    if (!libraryFile) {
         NSLog(@"Metal Shader Library missing");
         return false;
     }
 
-    id <MTLLibrary> myLibrary = [_device newLibraryWithFile:libraryFile error:&error];
+    id<MTLLibrary> myLibrary = [_device newLibraryWithFile:libraryFile error:&error];
     if (!myLibrary) {
         NSLog(@"Library error: %@", error);
         return false;
     }
 
-    switch (pState->pipelineType)
-    {
-        case PIPELINE_TYPE::GRAPHIC:
-        {
+    switch (pState->pipelineType) {
+        case PIPELINE_TYPE::GRAPHIC: {
             MTLVertexDescriptor* mtlVertexDescriptor = [MTLVertexDescriptor new];
 
             initMtlVertexDescriptor(mtlVertexDescriptor, pState);
 
             // Create pipeline state
-            id<MTLFunction> vertexFunction = [myLibrary newFunctionWithName:shaderFileName2MainFuncName(pState->vertexShaderName)];
-            id<MTLFunction> fragmentFunction = [myLibrary newFunctionWithName:shaderFileName2MainFuncName(pState->pixelShaderName)];
+            id<MTLFunction> vertexFunction = [myLibrary
+                newFunctionWithName:shaderFileName2MainFuncName(pState->vertexShaderName)];
+            id<MTLFunction> fragmentFunction = [myLibrary
+                newFunctionWithName:shaderFileName2MainFuncName(pState->pixelShaderName)];
 
-            MTLRenderPipelineDescriptor *pipelineStateDescriptor = [MTLRenderPipelineDescriptor new];
-            pipelineStateDescriptor.label = [NSString stringWithCString:pState->pipelineStateName.c_str()
-                                                    encoding:[NSString defaultCStringEncoding]];
+            MTLRenderPipelineDescriptor* pipelineStateDescriptor =
+                [MTLRenderPipelineDescriptor new];
+            pipelineStateDescriptor.label =
+                [NSString stringWithCString:pState->pipelineStateName.c_str()
+                                   encoding:[NSString defaultCStringEncoding]];
             pipelineStateDescriptor.sampleCount = pState->sampleCount;
             pipelineStateDescriptor.vertexFunction = vertexFunction;
             [vertexFunction release];
@@ -172,55 +174,50 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
             [fragmentFunction release];
             pipelineStateDescriptor.vertexDescriptor = mtlVertexDescriptor;
             [mtlVertexDescriptor release];
-            switch (pState->pixelFormat)
-            {
+            switch (pState->pixelFormat) {
                 case PIXEL_FORMAT::INVALID:
                     pipelineStateDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatInvalid;
-                break;
+                    break;
                 case PIXEL_FORMAT::BGRA8UNORM:
-                    pipelineStateDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
-                break;
+                    pipelineStateDescriptor.colorAttachments[0].pixelFormat =
+                        MTLPixelFormatBGRA8Unorm;
+                    break;
                 default:
                     assert(0);
             }
             pipelineStateDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 
-            pState->mtlRenderPipelineState = 
+            pState->mtlRenderPipelineState =
                 [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
-            if (!pState->mtlRenderPipelineState)
-            {
-                NSLog(@"Failed to created render pipeline state %@, error %@", pipelineStateDescriptor.label, error);
+            if (!pState->mtlRenderPipelineState) {
+                NSLog(@"Failed to created render pipeline state %@, error %@",
+                      pipelineStateDescriptor.label, error);
             }
             [pipelineStateDescriptor release];
-        }
-        break;
-        case PIPELINE_TYPE::COMPUTE:
-        {
-            id<MTLFunction> compFunction = [myLibrary newFunctionWithName:shaderFileName2MainFuncName(pState->computeShaderName)];
+        } break;
+        case PIPELINE_TYPE::COMPUTE: {
+            id<MTLFunction> compFunction = [myLibrary
+                newFunctionWithName:shaderFileName2MainFuncName(pState->computeShaderName)];
 
-            if (compFunction != nil)
-            {
+            if (compFunction != nil) {
                 pState->mtlComputePipelineState =
                     [_device newComputePipelineStateWithFunction:compFunction error:&error];
-                if (!pState->mtlComputePipelineState)
-                {
+                if (!pState->mtlComputePipelineState) {
                     NSLog(@"Failed to created compute pipeline state, error %@", error);
                 }
 
                 [compFunction release];
             }
-        }
-        break;
+        } break;
         default:
             assert(0);
     }
 
     [myLibrary release];
 
-    MTLDepthStencilDescriptor *depthStateDesc = [MTLDepthStencilDescriptor new];
+    MTLDepthStencilDescriptor* depthStateDesc = [MTLDepthStencilDescriptor new];
 
-    switch(pState->depthTestMode)
-    {
+    switch (pState->depthTestMode) {
         case DEPTH_TEST_MODE::NONE:
             depthStateDesc.depthCompareFunction = MTLCompareFunctionAlways;
             break;
@@ -252,12 +249,9 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
             assert(0);
     }
 
-    if(pState->bDepthWrite)
-    {
+    if (pState->bDepthWrite) {
         depthStateDesc.depthWriteEnabled = YES;
-    }
-    else
-    {
+    } else {
         depthStateDesc.depthWriteEnabled = NO;
     }
 
@@ -271,8 +265,7 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
     return true;
 }
 
-void MetalPipelineStateManager::DestroyPipelineState(PipelineState& pipelineState)
-{
+void MetalPipelineStateManager::DestroyPipelineState(PipelineState& pipelineState) {
     MetalPipelineState* pState = dynamic_cast<MetalPipelineState*>(&pipelineState);
     [pState->mtlRenderPipelineState release];
     [pState->mtlComputePipelineState release];

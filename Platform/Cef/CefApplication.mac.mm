@@ -9,30 +9,30 @@
 using namespace My;
 
 // Receives notifications from the application.
-@interface SimpleAppDelegate : NSObject<NSApplicationDelegate>
+@interface SimpleAppDelegate : NSObject <NSApplicationDelegate>
 - (void)createApplication:(id)object;
 - (void)tryToTerminateApplication:(NSApplication*)app;
 @end
 
 // Provide the CefAppProtocol implementation required by CEF.
-@interface SimpleApplication : NSApplication<CefAppProtocol> {
- @private
-  BOOL handlingSendEvent_;
+@interface SimpleApplication : NSApplication <CefAppProtocol> {
+   @private
+    BOOL handlingSendEvent_;
 }
 @end
 
 @implementation SimpleApplication
 - (BOOL)isHandlingSendEvent {
-  return handlingSendEvent_;
+    return handlingSendEvent_;
 }
 
 - (void)setHandlingSendEvent:(BOOL)handlingSendEvent {
-  handlingSendEvent_ = handlingSendEvent;
+    handlingSendEvent_ = handlingSendEvent;
 }
 
 - (void)sendEvent:(NSEvent*)event {
-  CefScopedSendingEvent sendingEventScoper;
-  [super sendEvent:event];
+    CefScopedSendingEvent sendingEventScoper;
+    [super sendEvent:event];
 }
 
 // |-terminate:| is the entry point for orderly "quit" operations in Cocoa. This
@@ -73,10 +73,9 @@ using namespace My;
 // The standard |-applicationShouldTerminate:| is not supported, and code paths
 // leading to it must be redirected.
 - (void)terminate:(id)sender {
-  auto delegate =
-      static_cast<SimpleAppDelegate*>([NSApp delegate]);
-  [delegate tryToTerminateApplication:self];
-  // Return, don't exit. The application is responsible for exiting on its own.
+    auto delegate = static_cast<SimpleAppDelegate*>([NSApp delegate]);
+    [delegate tryToTerminateApplication:self];
+    // Return, don't exit. The application is responsible for exiting on its own.
 }
 @end
 
@@ -84,39 +83,33 @@ using namespace My;
 
 // Create the application on the UI thread.
 - (void)createApplication:(id)object {
-  [NSApplication sharedApplication];
-  [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
-                                owner:NSApp
-                      topLevelObjects:nil];
+    [NSApplication sharedApplication];
+    [[NSBundle mainBundle] loadNibNamed:@"MainMenu" owner:NSApp topLevelObjects:nil];
 
-  // Set the delegate for application events.
-  [[NSApplication sharedApplication] setDelegate:self];
+    // Set the delegate for application events.
+    [[NSApplication sharedApplication] setDelegate:self];
 }
 
 - (void)tryToTerminateApplication:(NSApplication*)app {
-  SimpleHandler* handler = SimpleHandler::GetInstance();
-  if (handler && !handler->IsClosing())
-    handler->CloseAllBrowsers(false);
+    SimpleHandler* handler = SimpleHandler::GetInstance();
+    if (handler && !handler->IsClosing()) handler->CloseAllBrowsers(false);
 }
 
-- (NSApplicationTerminateReply)applicationShouldTerminate:
-    (NSApplication*)sender {
-  return NSTerminateNow;
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender {
+    return NSTerminateNow;
 }
 @end
 
-int CefApplication::Initialize()
-{
+int CefApplication::Initialize() {
     BaseApplication::Initialize();
 
     // Load the CEF framework library at runtime instead of linking directly
     // as required by the macOS sandbox implementation.
     CefScopedLibraryLoader library_loader;
-    if (!library_loader.LoadInMain())
-    {
+    if (!library_loader.LoadInMain()) {
         return 1;
     }
-    
+
     CefEnableHighDPISupport();
 
     void* sandbox_info = nullptr;
@@ -144,18 +137,12 @@ int CefApplication::Initialize()
     // Create the application delegate.
     NSObject* delegate = [[SimpleAppDelegate alloc] init];
     [delegate performSelectorOnMainThread:@selector(createApplication:)
-                                withObject:nil
+                               withObject:nil
                             waitUntilDone:NO];
 
     return 0;
 }
 
-void CefApplication::Finalize()
-{
-    CefShutdown();
-}
+void CefApplication::Finalize() { CefShutdown(); }
 
-void CefApplication::Tick()
-{
-    CefDoMessageLoopWork();
-}
+void CefApplication::Tick() { CefDoMessageLoopWork(); }

@@ -2,13 +2,12 @@
 #include "BasePass.hpp"
 
 namespace My {
-    class ShadowMapPass: public BasePass
-    {
-    public:
-        ~ShadowMapPass() override = default;
+class ShadowMapPass : public BasePass {
+   public:
+    ~ShadowMapPass() override = default;
 
-        void BeginPass() override {}
-        void Draw(Frame& frame) final;
-        void EndPass() override {}
-    };
-}
+    void BeginPass() override {}
+    void Draw(Frame& frame) final;
+    void EndPass() override {}
+};
+}  // namespace My

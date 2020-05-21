@@ -1,14 +1,14 @@
-#include "MatrixComposeDecompose.hpp"
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <random>
 
+#include "MatrixComposeDecompose.hpp"
+
 using namespace My;
 using namespace std;
 
-int main(int , char** )
-{
+int main(int, char**) {
     default_random_engine generator;
     generator.seed(48);
     uniform_real_distribution<float> distribution_r(-1.0f * PI, 1.0f * PI);
@@ -18,19 +18,17 @@ int main(int , char** )
     auto dice_s = bind(distribution_s, generator);
     auto dice_t = bind(distribution_t, generator);
 
-    Vector3f translation ({dice_t(), dice_t(), dice_t()});
-    Vector3f scale ({dice_s(), dice_s(), dice_s()});
-    Vector3f rotation ({dice_r(), dice_r(), dice_r()});
+    Vector3f translation({dice_t(), dice_t(), dice_t()});
+    Vector3f scale({dice_s(), dice_s(), dice_s()});
+    Vector3f rotation({dice_r(), dice_r(), dice_r()});
     Matrix4X4f matrix;
     Matrix4X4fCompose(matrix, rotation, scale, translation);
 
     cerr << "Scale: " << scale;
 
-    Matrix3X3f A = {{
-        {matrix[0][0], matrix[0][1], matrix[0][2]},
-        {matrix[1][0], matrix[1][1], matrix[1][2]},
-        {matrix[2][0], matrix[2][1], matrix[2][2]}
-    }};
+    Matrix3X3f A = {{{matrix[0][0], matrix[0][1], matrix[0][2]},
+                     {matrix[1][0], matrix[1][1], matrix[1][2]},
+                     {matrix[2][0], matrix[2][1], matrix[2][2]}}};
     Matrix3X3f U, P;
 
     MatrixPolarDecompose(A, U, P);
@@ -42,7 +40,7 @@ int main(int , char** )
     cout << A;
     cout << "U:" << endl;
     cout << U;
-    cout << "Orthogonal: " << (U.isOrthogonal()?"true":"false") << endl;
+    cout << "Orthogonal: " << (U.isOrthogonal() ? "true" : "false") << endl;
     cout << "P:" << endl;
     cout << P;
 

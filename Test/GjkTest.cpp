@@ -1,19 +1,18 @@
-#include "Gjk.hpp"
-#include "ConvexHull.hpp"
 #include <functional>
 #include <iostream>
 #include <random>
+
+#include "ConvexHull.hpp"
+#include "Gjk.hpp"
 
 using namespace My;
 using namespace std;
 using namespace std::placeholders;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     int point_num = 100;
 
-    if(argc > 1)
-    {
+    if (argc > 1) {
         point_num = atoi(argv[1]);
     }
 
@@ -27,9 +26,9 @@ int main(int argc, char** argv)
 
         ConvexHull convex_hull;
         cout << "Points Generated:" << endl;
-        for(auto i = 0; i < point_num; i++)
-        {
-            PointPtr point_ptr = make_shared<Point>(Point{dice(), dice(), dice()});
+        for (auto i = 0; i < point_num; i++) {
+            PointPtr point_ptr =
+                make_shared<Point>(Point{dice(), dice(), dice()});
             convex_hull.AddPoint(std::move(point_ptr));
         }
 
@@ -48,9 +47,9 @@ int main(int argc, char** argv)
         auto dice = std::bind(distribution, generator);
 
         ConvexHull convex_hull;
-        for(auto i = 0; i < point_num; i++)
-        {
-            PointPtr point_ptr = make_shared<Point>(Point{dice(), dice(), dice()});
+        for (auto i = 0; i < point_num; i++) {
+            PointPtr point_ptr =
+                make_shared<Point>(Point{dice(), dice(), dice()});
             convex_hull.AddPoint(std::move(point_ptr));
         }
 
@@ -61,24 +60,29 @@ int main(int argc, char** argv)
         cerr << "num of faces generated: " << B.Faces.size() << endl;
     }
 
-    SupportFunction support_function_A = [=](auto && arg1) { return ConvexPolyhedronSupportFunction(A, arg1); };
-    SupportFunction support_function_B = [=](auto && arg1) { return ConvexPolyhedronSupportFunction(B, arg1); };
+    SupportFunction support_function_A = [=](auto&& arg1) {
+        return ConvexPolyhedronSupportFunction(A, arg1);
+    };
+    SupportFunction support_function_B = [=](auto&& arg1) {
+        return ConvexPolyhedronSupportFunction(B, arg1);
+    };
     PointList simplex;
     Vector3f direction({1.0f, 0.0f, 0.0f});
     int intersected;
-    while ((intersected = GjkIntersection(support_function_A, support_function_B, direction, simplex)) == -1)
+    while ((intersected = GjkIntersection(
+                support_function_A, support_function_B, direction, simplex)) ==
+           -1)
         cerr << "approximate direction: " << direction;
 
-    switch (intersected)
-    {
-    case 1:
-        cout << "A and B IS intersected" << endl;
-        break;
-    case 0:
-        cout << "A and B is NOT intersected" << endl;
-        break;
-    default:
-        assert(0);
+    switch (intersected) {
+        case 1:
+            cout << "A and B IS intersected" << endl;
+            break;
+        case 0:
+            cout << "A and B is NOT intersected" << endl;
+            break;
+        default:
+            assert(0);
     }
 
     return 0;

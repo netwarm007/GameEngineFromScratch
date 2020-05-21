@@ -1,19 +1,19 @@
+#include <iostream>
+#include <string>
+
 #include "AssetLoader.hpp"
 #include "JPEG.hpp"
 #include "MemoryManager.hpp"
-#include <iostream>
-#include <string>
 
 using namespace std;
 using namespace My;
 
 namespace My {
-    IMemoryManager* g_pMemoryManager = new MemoryManager();
-    AssetLoader*   g_pAssetLoader = new AssetLoader();
-}
+IMemoryManager* g_pMemoryManager = new MemoryManager();
+AssetLoader* g_pAssetLoader = new AssetLoader();
+}  // namespace My
 
-int main(int argc, const char** argv)
-{
+int main(int argc, const char** argv) {
     g_pMemoryManager->Initialize();
     g_pAssetLoader->Initialize();
 
@@ -26,7 +26,8 @@ int main(int argc, const char** argv)
         if (argc >= 2) {
             buf = g_pAssetLoader->SyncOpenAndReadBinary(argv[1]);
         } else {
-            buf = g_pAssetLoader->SyncOpenAndReadBinary("Textures/huff_simple0.jpg");
+            buf = g_pAssetLoader->SyncOpenAndReadBinary(
+                "Textures/huff_simple0.jpg");
         }
 
         JfifParser jfif_parser;
@@ -41,4 +42,3 @@ int main(int argc, const char** argv)
 
     return 0;
 }
-

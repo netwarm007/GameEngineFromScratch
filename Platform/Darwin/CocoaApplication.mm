@@ -1,40 +1,36 @@
-#import "AppDelegate.h"
-#import "WindowDelegate.h"
+#include "CocoaApplication.h"
 #import <Carbon/Carbon.h>
 #include <cstring>
-#include "CocoaApplication.h"
+#import "AppDelegate.h"
 #include "InputManager.hpp"
+#import "WindowDelegate.h"
 
 using namespace My;
 
-void* CocoaApplication::GetMainWindowHandler() 
-{
-    return m_pWindow;
-}
+void* CocoaApplication::GetMainWindowHandler() { return m_pWindow; }
 
-void CocoaApplication::CreateMainWindow()
-{
-    [NSApplication  sharedApplication];
+void CocoaApplication::CreateMainWindow() {
+    [NSApplication sharedApplication];
 
     // Menu
     NSString* appName = [NSString stringWithFormat:@"%s", m_Config.appName];
     id menubar = [[NSMenu alloc] initWithTitle:appName];
     id appMenuItem = [NSMenuItem new];
-    [menubar addItem: appMenuItem];
+    [menubar addItem:appMenuItem];
     [NSApp setMainMenu:menubar];
     [menubar release];
 
     id appMenu = [NSMenu new];
     id quitMenuItem = [[NSMenuItem alloc] initWithTitle:@"Quit"
-        action:@selector(terminate:)
-        keyEquivalent:@"q"];
+                                                 action:@selector(terminate:)
+                                          keyEquivalent:@"q"];
     [appMenu addItem:quitMenuItem];
     [appMenuItem setSubmenu:appMenu];
     [appMenu release];
     [appMenuItem release];
 
     id appDelegate = [AppDelegate new];
-    [NSApp setDelegate: appDelegate];
+    [NSApp setDelegate:appDelegate];
     [appDelegate release];
     [NSApp activateIgnoringOtherApps:YES];
     [NSApp finishLaunching];
@@ -42,7 +38,11 @@ void CocoaApplication::CreateMainWindow()
     NSInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                       NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
 
-    m_pWindow = [[NSWindow alloc] initWithContentRect:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight) styleMask:style backing:NSBackingStoreBuffered defer:NO];
+    m_pWindow = [[NSWindow alloc]
+        initWithContentRect:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)
+                  styleMask:style
+                    backing:NSBackingStoreBuffered
+                      defer:NO];
     [m_pWindow setTitle:appName];
     [m_pWindow makeKeyAndOrderFront:nil];
     id winDelegate = [WindowDelegate new];
@@ -50,31 +50,24 @@ void CocoaApplication::CreateMainWindow()
     [winDelegate release];
 }
 
-void CocoaApplication::Finalize()
-{
+void CocoaApplication::Finalize() {
     [m_pWindow release];
     BaseApplication::Finalize();
 }
 
-void CocoaApplication::Tick()
-{
-    while(NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                                        untilDate:nil
-                                           inMode:NSDefaultRunLoopMode
-                                          dequeue:YES])
-    {
-
-        switch([(NSEvent *)event type])
-        {
+void CocoaApplication::Tick() {
+    while (NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
+                                               untilDate:nil
+                                                  inMode:NSDefaultRunLoopMode
+                                                 dequeue:YES]) {
+        switch ([(NSEvent*)event type]) {
             case NSEventTypeKeyUp:
                 NSLog(@"[CocoaApp] Key Up Event Received!");
-                if ([event modifierFlags] & NSEventModifierFlagNumericPad)
-                {
+                if ([event modifierFlags] & NSEventModifierFlagNumericPad) {
                     // arrow keys
                     NSString* theArrow = [event charactersIgnoringModifiers];
                     unichar keyChar = 0;
-                    if ([theArrow length] == 1)
-                    {
+                    if ([theArrow length] == 1) {
                         keyChar = [theArrow characterAtIndex:0];
                         if (keyChar == NSLeftArrowFunctionKey) {
                             g_pInputManager->LeftArrowKeyUp();
@@ -94,15 +87,14 @@ void CocoaApplication::Tick()
                         }
                     }
                 } else {
-                    switch ([event keyCode])
-                    {
-                        case kVK_ANSI_D: // d key
+                    switch ([event keyCode]) {
+                        case kVK_ANSI_D:  // d key
                             InputManager::AsciiKeyUp('d');
                             break;
-                        case kVK_ANSI_R: // r key
+                        case kVK_ANSI_R:  // r key
                             InputManager::AsciiKeyUp('r');
                             break;
-                        case kVK_ANSI_U: // u key
+                        case kVK_ANSI_U:  // u key
                             InputManager::AsciiKeyUp('u');
                             break;
                     }
@@ -110,13 +102,11 @@ void CocoaApplication::Tick()
                 break;
             case NSEventTypeKeyDown:
                 NSLog(@"[CocoaApp] Key Down Event Received! keycode=%d", [event keyCode]);
-                if ([event modifierFlags] & NSEventModifierFlagNumericPad)
-                {
+                if ([event modifierFlags] & NSEventModifierFlagNumericPad) {
                     // arrow keys
                     NSString* theArrow = [event charactersIgnoringModifiers];
                     unichar keyChar = 0;
-                    if ([theArrow length] == 1)
-                    {
+                    if ([theArrow length] == 1) {
                         keyChar = [theArrow characterAtIndex:0];
                         if (keyChar == NSLeftArrowFunctionKey) {
                             g_pInputManager->LeftArrowKeyDown();
@@ -136,15 +126,14 @@ void CocoaApplication::Tick()
                         }
                     }
                 } else {
-                    switch ([event keyCode])
-                    {
-                        case kVK_ANSI_D: // d key
+                    switch ([event keyCode]) {
+                        case kVK_ANSI_D:  // d key
                             My::InputManager::AsciiKeyDown('d');
                             break;
-                        case kVK_ANSI_R: // r key
+                        case kVK_ANSI_R:  // r key
                             My::InputManager::AsciiKeyDown('r');
                             break;
-                        case kVK_ANSI_U: // u key
+                        case kVK_ANSI_U:  // u key
                             My::InputManager::AsciiKeyDown('u');
                             break;
                     }
@@ -156,7 +145,4 @@ void CocoaApplication::Tick()
         [NSApp sendEvent:event];
         [NSApp updateWindows];
     }
-
 }
-
-

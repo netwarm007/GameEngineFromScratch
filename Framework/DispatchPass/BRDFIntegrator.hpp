@@ -2,10 +2,9 @@
 #include "IDispatchPass.hpp"
 
 namespace My {
-    class BRDFIntegrator : implements IDispatchPass
-    {
-    public:
-        ~BRDFIntegrator() override = default; 
-        void Dispatch(Frame& frame) final;
-    };
-}
+class BRDFIntegrator : _implements_ IDispatchPass {
+   public:
+    ~BRDFIntegrator() override = default;
+    void Dispatch(Frame& frame) final;
+};
+}  // namespace My

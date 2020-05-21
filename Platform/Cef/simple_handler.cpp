@@ -9,6 +9,8 @@
 #include <sstream>
 #include <string>
 
+#include "GfxConfiguration.hpp"
+#include "IApplication.hpp"
 #include "base/cef_bind.h"
 #include "cef_app.h"
 #include "cef_parser.h"
@@ -17,46 +19,35 @@
 #include "wrapper/cef_closure_task.h"
 #include "wrapper/cef_helpers.h"
 
-#include "GfxConfiguration.hpp"
-#include "IApplication.hpp"
-
 using namespace My;
 
 namespace My {
-    static SimpleHandler* g_pInstance = nullptr;
+static SimpleHandler* g_pInstance = nullptr;
 
-    // Returns a data: URI with the specified contents.
-    std::string GetDataURI(const std::string& data, const std::string& mime_type) {
-	    return "data:" + mime_type + ";base64," +
-		    CefURIEncode(CefBase64Encode(data.data(), data.size()), false)
-		    	.ToString();
-    }
+// Returns a data: URI with the specified contents.
+std::string GetDataURI(const std::string& data, const std::string& mime_type) {
+    return "data:" + mime_type + ";base64," +
+           CefURIEncode(CefBase64Encode(data.data(), data.size()), false)
+               .ToString();
 }
+}  // namespace My
 
 SimpleHandler::SimpleHandler(bool use_views)
-    : use_views_(use_views), is_closing_(false) 
-{
+    : use_views_(use_views), is_closing_(false) {
     DCHECK(!g_pInstance);
     g_pInstance = this;
 }
 
-SimpleHandler::~SimpleHandler() 
-{
-    g_pInstance = nullptr;
-}
+SimpleHandler::~SimpleHandler() { g_pInstance = nullptr; }
 
 // static
-SimpleHandler* SimpleHandler::GetInstance() 
-{
-    return g_pInstance;
-}
+SimpleHandler* SimpleHandler::GetInstance() { return g_pInstance; }
 
 void SimpleHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
-                                const CefString& title) 
-{
+                                  const CefString& title) {
     CEF_REQUIRE_UI_THREAD();
 
-    std::string prefix (g_pApp->GetConfiguration().appName);
+    std::string prefix(g_pApp->GetConfiguration().appName);
 
     if (use_views_) {
         // Set the title of the window using the Views framework.
@@ -73,16 +64,14 @@ void SimpleHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
     }
 }
 
-void SimpleHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser) 
-{
+void SimpleHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     CEF_REQUIRE_UI_THREAD();
 
     // Add to the list of existing browsers.
     browser_list_.push_back(browser);
 }
 
-bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser) 
-{
+bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser) {
     CEF_REQUIRE_UI_THREAD();
 
     // Closing the main window requires special handling. See the DoClose()
@@ -98,16 +87,15 @@ bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser)
     return false;
 }
 
-void SimpleHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser) 
-{
+void SimpleHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     CEF_REQUIRE_UI_THREAD();
 
     // Remove from the list of existing browsers.
     auto bit = browser_list_.begin();
     for (; bit != browser_list_.end(); ++bit) {
         if ((*bit)->IsSame(browser)) {
-        browser_list_.erase(bit);
-        break;
+            browser_list_.erase(bit);
+            break;
         }
     }
 
@@ -118,41 +106,35 @@ void SimpleHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser)
 }
 
 void SimpleHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
-                                CefRefPtr<CefFrame> frame,
-                                ErrorCode errorCode,
+                                CefRefPtr<CefFrame> frame, ErrorCode errorCode,
                                 const CefString& errorText,
-                                const CefString& failedUrl) 
-{
+                                const CefString& failedUrl) {
     CEF_REQUIRE_UI_THREAD();
 
     // Don't display an error for downloaded files.
-    if (errorCode == ERR_ABORTED)
-        return;
+    if (errorCode == ERR_ABORTED) return;
 
     // Display a load error message.
     std::stringstream ss;
     ss << "<html><body bgcolor=\"white\">"
-            "<h2>Failed to load URL "
-        << std::string(failedUrl) << " with error " << std::string(errorText)
-        << " (" << errorCode << ").</h2></body></html>";
+          "<h2>Failed to load URL "
+       << std::string(failedUrl) << " with error " << std::string(errorText)
+       << " (" << errorCode << ").</h2></body></html>";
     frame->LoadURL(GetDataURI(ss.str(), "text/html"));
 }
 
-void SimpleHandler::CloseAllBrowsers(bool force_close) 
-{
+void SimpleHandler::CloseAllBrowsers(bool force_close) {
     if (!CefCurrentlyOn(TID_UI)) {
         // Execute on the UI thread.
         CefPostTask(TID_UI, base::Bind(&SimpleHandler::CloseAllBrowsers, this,
-                                    force_close));
+                                       force_close));
         return;
     }
 
-    if (browser_list_.empty())
-        return;
+    if (browser_list_.empty()) return;
 
     auto it = browser_list_.begin();
-    for (; it != browser_list_.end(); ++it)
-    {
+    for (; it != browser_list_.end(); ++it) {
         (*it)->GetHost()->CloseBrowser(force_close);
     }
 }
