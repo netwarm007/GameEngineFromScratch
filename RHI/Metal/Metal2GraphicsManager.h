@@ -78,7 +78,6 @@ class Metal2GraphicsManager : public GraphicsManager {
 
     void initializeGeometries(const Scene& scene) override;
     void initializeSkyBox(const Scene& scene) override;
-    void initializeTerrain(const Scene& scene) override;
 
    private:
     Metal2Renderer* m_pRenderer;

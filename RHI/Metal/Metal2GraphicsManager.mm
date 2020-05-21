@@ -185,8 +185,6 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
     }
 }
 
-void Metal2GraphicsManager::initializeTerrain(const Scene& scene) {}
-
 void Metal2GraphicsManager::BeginScene(const Scene& scene) {
     GraphicsManager::BeginScene(scene);
 
