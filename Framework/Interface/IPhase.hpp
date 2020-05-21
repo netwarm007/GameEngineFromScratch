@@ -4,7 +4,7 @@
 #include "Interface.hpp"
 
 namespace My {
-Interface IPhase {
+_Interface_ IPhase {
    public:
     IPhase() = default;
     virtual ~IPhase() = default;

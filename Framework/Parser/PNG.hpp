@@ -76,7 +76,7 @@ static void zerr(int ret) {
     }
 }
 
-class PngParser : implements ImageParser {
+class PngParser : _implements_ ImageParser {
    protected:
     uint16_t m_Width;
     uint16_t m_Height;

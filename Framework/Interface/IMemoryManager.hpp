@@ -4,7 +4,7 @@
 #include "IRuntimeModule.hpp"
 
 namespace My {
-Interface IMemoryManager : inherits IRuntimeModule {
+_Interface_ IMemoryManager : _inherits_ IRuntimeModule {
    public:
     int Initialize() override = 0;
     void Finalize() override = 0;

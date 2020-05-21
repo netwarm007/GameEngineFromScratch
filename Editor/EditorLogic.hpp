@@ -2,7 +2,7 @@
 #include "IGameLogic.hpp"
 
 namespace My {
-class EditorLogic : implements IGameLogic {
+class EditorLogic : _implements_ IGameLogic {
     // overrides
     int Initialize() final;
     void Finalize() final;

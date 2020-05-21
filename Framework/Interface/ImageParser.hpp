@@ -4,7 +4,7 @@
 #include "Interface.hpp"
 
 namespace My {
-Interface ImageParser {
+_Interface_ ImageParser {
    public:
     virtual ~ImageParser() = default;
     virtual Image Parse(Buffer & buf) = 0;

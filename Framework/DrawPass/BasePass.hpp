@@ -6,7 +6,7 @@
 #include "IDrawPhase.hpp"
 
 namespace My {
-class BasePass : implements IDrawPass {
+class BasePass : _implements_ IDrawPass {
    public:
     ~BasePass() override = default;
 

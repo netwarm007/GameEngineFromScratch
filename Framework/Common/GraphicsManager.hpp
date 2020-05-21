@@ -15,7 +15,7 @@
 #include "geommath.hpp"
 
 namespace My {
-class GraphicsManager : implements IRuntimeModule {
+class GraphicsManager : _implements_ IRuntimeModule {
    public:
     ~GraphicsManager() override = default;
 

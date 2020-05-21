@@ -5,7 +5,7 @@
 #include "Interface.hpp"
 
 namespace My {
-Interface IRuntimeModule {
+_Interface_ IRuntimeModule {
    public:
     virtual ~IRuntimeModule() = default;
 

@@ -7,7 +7,7 @@
 
 namespace My {
 class SceneObjectAnimationClip : public BaseSceneObject,
-                                 implements Animatable<float> {
+                                 _implements_ Animatable<float> {
    private:
     int m_nIndex = 0;
     std::vector<std::shared_ptr<SceneObjectTrack>> m_Tracks;

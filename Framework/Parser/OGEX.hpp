@@ -10,7 +10,7 @@
 #include "portable.hpp"
 
 namespace My {
-class OgexParser : implements ISceneParser {
+class OgexParser : _implements_ ISceneParser {
    private:
     void ConvertOddlStructureToSceneNode(
         const ODDL::Structure& structure,

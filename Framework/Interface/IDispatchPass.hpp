@@ -3,7 +3,7 @@
 #include "Interface.hpp"
 
 namespace My {
-Interface IDispatchPass {
+_Interface_ IDispatchPass {
    public:
     IDispatchPass() = default;
     virtual ~IDispatchPass() = default;

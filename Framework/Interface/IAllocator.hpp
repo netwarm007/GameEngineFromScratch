@@ -5,7 +5,7 @@
 #include "Interface.hpp"
 
 namespace My {
-Interface IAllocator {
+_Interface_ IAllocator {
    public:
     // debug patterns
     const uint8_t PATTERN_ALIGN = 0xFC;

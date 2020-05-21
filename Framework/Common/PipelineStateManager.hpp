@@ -3,7 +3,7 @@
 #include "IPipelineStateManager.hpp"
 
 namespace My {
-class PipelineStateManager : implements IPipelineStateManager {
+class PipelineStateManager : _implements_ IPipelineStateManager {
    public:
     PipelineStateManager() = default;
     virtual ~PipelineStateManager();

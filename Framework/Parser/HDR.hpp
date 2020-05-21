@@ -18,7 +18,7 @@ static inline void rgbe2float(float* red, float* green, float* blue,
         *red = *green = *blue = 0.0f;
 }
 
-class HdrParser : implements ImageParser {
+class HdrParser : _implements_ ImageParser {
    public:
     Image Parse(Buffer& buf) override {
         Image img;

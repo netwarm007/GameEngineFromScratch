@@ -6,7 +6,7 @@
 #include "IAllocator.hpp"
 
 namespace My {
-class StackAllocator : implements IAllocator {
+class StackAllocator : _implements_ IAllocator {
    public:
     StackAllocator();
     StackAllocator(size_t page_size, size_t alignment);

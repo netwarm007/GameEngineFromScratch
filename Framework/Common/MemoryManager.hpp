@@ -11,7 +11,7 @@ ENUM(MemoryType){CPU = "CPU"_i32, GPU = "GPU"_i32};
 
 std::ostream& operator<<(std::ostream& out, MemoryType type);
 
-class MemoryManager : implements IMemoryManager {
+class MemoryManager : _implements_ IMemoryManager {
    public:
     ~MemoryManager() override = default;
 

@@ -12,7 +12,8 @@ namespace My {
 ENUM(SceneObjectTrackType){kScalar = "SCAL"_i32, kVector3 = "VEC3"_i32,
                            kQuoternion = "QUON"_i32, kMatrix = "MATX"_i32};
 
-class SceneObjectTrack : public BaseSceneObject, implements Animatable<float> {
+class SceneObjectTrack : public BaseSceneObject,
+                         _implements_ Animatable<float> {
    private:
     std::shared_ptr<SceneObjectTransform> m_pTransform;
     std::shared_ptr<CurveBase> m_Time;

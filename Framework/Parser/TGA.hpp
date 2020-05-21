@@ -21,7 +21,7 @@ struct TGA_FILEHEADER {
 };
 #pragma pack(pop)
 
-class TgaParser : implements ImageParser {
+class TgaParser : _implements_ ImageParser {
    public:
     Image Parse(Buffer& buf) override {
         Image img;

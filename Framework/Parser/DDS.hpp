@@ -182,7 +182,7 @@ typedef struct {
     uint32_t miscFlag2;
 } DDS_HEADER_DXT10;
 
-class DdsParser : implements ImageParser {
+class DdsParser : _implements_ ImageParser {
    public:
     Image Parse(Buffer& buf) override {
         Image img;

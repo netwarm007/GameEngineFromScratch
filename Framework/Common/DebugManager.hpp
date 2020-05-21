@@ -3,7 +3,7 @@
 #include "IRuntimeModule.hpp"
 
 namespace My {
-class DebugManager : implements IRuntimeModule {
+class DebugManager : _implements_ IRuntimeModule {
    public:
     int Initialize() override;
     void Finalize() override;

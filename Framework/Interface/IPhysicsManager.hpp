@@ -5,7 +5,7 @@
 #include "SceneManager.hpp"
 
 namespace My {
-Interface IPhysicsManager : inherits IRuntimeModule {
+_Interface_ IPhysicsManager : _inherits_ IRuntimeModule {
    public:
     int Initialize() override = 0;
     void Finalize() override = 0;

@@ -2,7 +2,7 @@
 #include "IDrawPhase.hpp"
 
 namespace My {
-class TerrainPhase : implements IDrawPhase {
+class TerrainPhase : _implements_ IDrawPhase {
    public:
     ~TerrainPhase() override = default;
     void Draw(Frame& frame) final;

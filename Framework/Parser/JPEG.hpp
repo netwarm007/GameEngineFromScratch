@@ -118,7 +118,7 @@ struct RESTART_INTERVAL_DEF : public JPEG_SEGMENT_HEADER {
 
 #pragma pack(pop)
 
-class JfifParser : implements ImageParser {
+class JfifParser : _implements_ ImageParser {
    private:
     const uint8_t m_zigzagIndex[64] = {
         0,  1,  8,  16, 9,  2,  3,  10, 17, 24, 32, 25, 18, 11, 4,  5,

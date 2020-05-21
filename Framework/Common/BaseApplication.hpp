@@ -2,7 +2,7 @@
 #include "IApplication.hpp"
 
 namespace My {
-class BaseApplication : implements IApplication {
+class BaseApplication : _implements_ IApplication {
    public:
     explicit BaseApplication(GfxConfiguration& cfg);
     int Initialize() override;

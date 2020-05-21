@@ -3,7 +3,7 @@
 #include "IRuntimeModule.hpp"
 
 namespace My {
-Interface IApplication : inherits IRuntimeModule {
+_Interface_ IApplication : _inherits_ IRuntimeModule {
    public:
     int Initialize() override = 0;
     void Finalize() override = 0;

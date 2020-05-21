@@ -4,7 +4,7 @@
 #include "geommath.hpp"
 
 namespace My {
-class SceneManager : implements IRuntimeModule {
+class SceneManager : _implements_ IRuntimeModule {
    public:
     ~SceneManager() override;
 

@@ -2,7 +2,7 @@
 #include "IDrawPhase.hpp"
 
 namespace My {
-class ForwardRenderPhase : implements IDrawPhase {
+class ForwardRenderPhase : _implements_ IDrawPhase {
    public:
     ~ForwardRenderPhase() override = default;
     void Draw(Frame& frame) final;

@@ -29,7 +29,7 @@ typedef struct _BITMAP_HEADER {
 } BITMAP_HEADER;
 #pragma pack(pop)
 
-class BmpParser : implements ImageParser {
+class BmpParser : _implements_ ImageParser {
    public:
     Image Parse(Buffer& buf) override {
         Image img;

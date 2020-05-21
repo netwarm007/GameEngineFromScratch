@@ -5,7 +5,7 @@
 
 namespace My {
 class SceneObjectTransform : public BaseSceneObject,
-                             implements Animatable<float>,
+                             _implements_ Animatable<float>,
                              Animatable<Vector3f>,
                              Animatable<Quaternion<float>>,
                              Animatable<Matrix4X4f> {

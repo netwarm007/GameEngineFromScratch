@@ -3,7 +3,7 @@
 #include "Interface.hpp"
 
 namespace My {
-Interface IDrawPass {
+_Interface_ IDrawPass {
    public:
     IDrawPass() = default;
     virtual ~IDrawPass() = default;

@@ -16,7 +16,7 @@ struct PageHeader {
     BlockHeader* Blocks() { return reinterpret_cast<BlockHeader*>(this + 1); }
 };
 
-class BlockAllocator : implements IAllocator {
+class BlockAllocator : _implements_ IAllocator {
    public:
     BlockAllocator();
     BlockAllocator(size_t data_size, size_t page_size, size_t alignment);
