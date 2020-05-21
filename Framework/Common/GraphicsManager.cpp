@@ -324,7 +324,7 @@ void GraphicsManager::EndScene() { m_Frames.clear(); }
 void GraphicsManager::BeginFrame(const Frame& frame) {}
 
 void GraphicsManager::EndFrame(const Frame&) {
-    m_nFrameIndex = ++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount;
+    m_nFrameIndex = (++m_nFrameIndex % GfxConfiguration::kMaxInFlightFrameCount);
 }
 
 #ifdef DEBUG
