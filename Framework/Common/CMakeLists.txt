@@ -29,6 +29,7 @@ target_link_libraries(Common
         DispatchPass
         Geometries
         GeomMath
+        Parser
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 
