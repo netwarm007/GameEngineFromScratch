@@ -294,24 +294,17 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     // pipeline (App, Metal, Drivers, GPU, etc)
     dispatch_semaphore_wait(_inFlightSemaphore[frame.frameIndex], DISPATCH_TIME_FOREVER);
 
-    // Create a new command buffer for each render pass to the current drawable
-    _commandBuffer = [_commandQueue commandBuffer];
-    _commandBuffer.label = @"myCommand";
-
-    // Obtain a renderPassDescriptor generated from the view's drawable textures
-    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
-
-    if (_renderPassDescriptor != nil) {
-        _renderPassDescriptor.colorAttachments[0].clearColor =
-            MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
-    }
-
-    // now fill the buffers
+    // now fill the per frame buffers
     [self setPerFrameConstants:frame.frameContext frameIndex:frame.frameIndex];
     [self setLightInfo:frame.lightInfo frameIndex:frame.frameIndex];
 }
 
 - (void)endFrame:(const Frame&)frame {
+    // Create a new command buffer for each render pass to the current drawable
+    _commandBuffer = [_commandQueue commandBuffer];
+    _commandBuffer.label = @"Submit & Present Command Buffer";
+    [_commandBuffer enqueue];
+
     [_commandBuffer presentDrawable:_mtkView.currentDrawable];
 
     // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
@@ -321,19 +314,32 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
       dispatch_semaphore_signal(block_sema);
     }];
 
-    // Finalize rendering here & push the command buffer to the GPU
     [_commandBuffer commit];
 }
 
 - (void)beginPass {
-    assert(_renderPassDescriptor != nil);
+    // Create a new command buffer for each render pass to the current drawable
+    _commandBuffer = [_commandQueue commandBuffer];
+    _commandBuffer.label = @"Online Command Buffer";
+    [_commandBuffer enqueue];
 
-    _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
-    _renderEncoder.label = @"MyRenderEncoder";
+    // Obtain a renderPassDescriptor generated from the view's drawable textures
+    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+
+    if (_renderPassDescriptor != nil) {
+        _renderPassDescriptor.colorAttachments[0].clearColor =
+            MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
+
+        _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+        _renderEncoder.label = @"MyRenderEncoder";
+    }
 }
 
 - (void)endPass {
     [_renderEncoder endEncoding];
+
+    // Finalize rendering here & push the command buffer to the GPU
+    [_commandBuffer commit];
 }
 
 - (void)beginCompute {
@@ -427,106 +433,102 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 }
 
 - (void)drawSkyBox {
-    if (_renderPassDescriptor != nil) {
-        // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
-        [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
+    // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
+    [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
 
-        static const float skyboxVertices[] = {
-            1.0f,  1.0f,  1.0f,   // 0
-            -1.0f, 1.0f,  1.0f,   // 1
-            1.0f,  -1.0f, 1.0f,   // 2
-            1.0f,  1.0f,  -1.0f,  // 3
-            -1.0f, 1.0f,  -1.0f,  // 4
-            1.0f,  -1.0f, -1.0f,  // 5
-            -1.0f, -1.0f, 1.0f,   // 6
-            -1.0f, -1.0f, -1.0f   // 7
-        };
+    static const float skyboxVertices[] = {
+        1.0f,  1.0f,  1.0f,   // 0
+        -1.0f, 1.0f,  1.0f,   // 1
+        1.0f,  -1.0f, 1.0f,   // 2
+        1.0f,  1.0f,  -1.0f,  // 3
+        -1.0f, 1.0f,  -1.0f,  // 4
+        1.0f,  -1.0f, -1.0f,  // 5
+        -1.0f, -1.0f, 1.0f,   // 6
+        -1.0f, -1.0f, -1.0f   // 7
+    };
 
-        [_renderEncoder setVertexBytes:static_cast<const void*>(skyboxVertices)
-                                length:sizeof(skyboxVertices)
-                               atIndex:0];
+    [_renderEncoder setVertexBytes:static_cast<const void*>(skyboxVertices)
+                            length:sizeof(skyboxVertices)
+                           atIndex:0];
 
-        static const uint16_t skyboxIndices[] = {4, 7, 5, 5, 3, 4,
+    static const uint16_t skyboxIndices[] = {4, 7, 5, 5, 3, 4,
 
-                                                 6, 7, 4, 4, 1, 6,
+                                             6, 7, 4, 4, 1, 6,
 
-                                                 5, 2, 0, 0, 3, 5,
+                                             5, 2, 0, 0, 3, 5,
 
-                                                 6, 1, 0, 0, 2, 6,
+                                             6, 1, 0, 0, 2, 6,
 
-                                                 4, 3, 0, 0, 1, 4,
+                                             4, 3, 0, 0, 1, 4,
 
-                                                 7, 6, 5, 5, 6, 2};
+                                             7, 6, 5, 5, 6, 2};
 
-        id<MTLBuffer> indexBuffer;
-        indexBuffer = [_device newBufferWithBytes:skyboxIndices
-                                           length:sizeof(skyboxIndices)
-                                          options:MTLResourceStorageModeShared];
+    id<MTLBuffer> indexBuffer;
+    indexBuffer = [_device newBufferWithBytes:skyboxIndices
+                                       length:sizeof(skyboxIndices)
+                                      options:MTLResourceStorageModeShared];
 
-        if (indexBuffer != nil) {
-            // Draw skybox
-            [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                       indexCount:sizeof(skyboxIndices) / sizeof(skyboxIndices[0])
-                                        indexType:MTLIndexTypeUInt16
-                                      indexBuffer:indexBuffer
-                                indexBufferOffset:0];
-        }
-
-        [indexBuffer release];
-
-        [_renderEncoder popDebugGroup];
+    if (indexBuffer != nil) {
+        // Draw skybox
+        [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                   indexCount:sizeof(skyboxIndices) / sizeof(skyboxIndices[0])
+                                    indexType:MTLIndexTypeUInt16
+                                  indexBuffer:indexBuffer
+                            indexBufferOffset:0];
     }
+
+    [indexBuffer release];
+
+    [_renderEncoder popDebugGroup];
 }
 
 // Called whenever the view needs to render
 - (void)drawBatch:(const Frame&)frame {
-    if (_renderPassDescriptor != nil) {
-        // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
-        [_renderEncoder pushDebugGroup:@"DrawMesh"];
-        for (const auto& pDbc : frame.batchContexts) {
-            [_renderEncoder setVertexBytes:pDbc->modelMatrix length:64 atIndex:11];
+    // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
+    [_renderEncoder pushDebugGroup:@"DrawMesh"];
+    for (const auto& pDbc : frame.batchContexts) {
+        [_renderEncoder setVertexBytes:pDbc->modelMatrix length:64 atIndex:11];
 
-            const auto& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
+        const auto& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
 
-            // Set mesh's vertex buffers
-            for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++) {
-                id<MTLBuffer> vertexBuffer = _vertexBuffers[dbc.property_offset + bufferIndex];
-                [_renderEncoder setVertexBuffer:vertexBuffer offset:0 atIndex:bufferIndex];
-            }
-
-            // Set any textures read/sampled from our render pipeline
-            if (dbc.material.diffuseMap >= 0) {
-                [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap] atIndex:0];
-            }
-
-            if (dbc.material.normalMap >= 0) {
-                [_renderEncoder setFragmentTexture:_textures[dbc.material.normalMap] atIndex:1];
-            }
-
-            if (dbc.material.metallicMap >= 0) {
-                [_renderEncoder setFragmentTexture:_textures[dbc.material.metallicMap] atIndex:2];
-            }
-
-            if (dbc.material.roughnessMap >= 0) {
-                [_renderEncoder setFragmentTexture:_textures[dbc.material.roughnessMap] atIndex:3];
-            }
-
-            if (dbc.material.aoMap >= 0) {
-                [_renderEncoder setFragmentTexture:_textures[dbc.material.aoMap] atIndex:4];
-            }
-
-            [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
-
-            // Draw our mesh
-            [_renderEncoder drawIndexedPrimitives:dbc.index_mode
-                                       indexCount:dbc.index_count
-                                        indexType:dbc.index_type
-                                      indexBuffer:_indexBuffers[dbc.index_offset]
-                                indexBufferOffset:0];
+        // Set mesh's vertex buffers
+        for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++) {
+            id<MTLBuffer> vertexBuffer = _vertexBuffers[dbc.property_offset + bufferIndex];
+            [_renderEncoder setVertexBuffer:vertexBuffer offset:0 atIndex:bufferIndex];
         }
 
-        [_renderEncoder popDebugGroup];
+        // Set any textures read/sampled from our render pipeline
+        if (dbc.material.diffuseMap >= 0) {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap] atIndex:0];
+        }
+
+        if (dbc.material.normalMap >= 0) {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.normalMap] atIndex:1];
+        }
+
+        if (dbc.material.metallicMap >= 0) {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.metallicMap] atIndex:2];
+        }
+
+        if (dbc.material.roughnessMap >= 0) {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.roughnessMap] atIndex:3];
+        }
+
+        if (dbc.material.aoMap >= 0) {
+            [_renderEncoder setFragmentTexture:_textures[dbc.material.aoMap] atIndex:4];
+        }
+
+        [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
+
+        // Draw our mesh
+        [_renderEncoder drawIndexedPrimitives:dbc.index_mode
+                                   indexCount:dbc.index_count
+                                    indexType:dbc.index_type
+                                  indexBuffer:_indexBuffers[dbc.index_offset]
+                            indexBufferOffset:0];
     }
+
+    [_renderEncoder popDebugGroup];
 }
 
 - (int32_t)generateShadowMapArray:(const uint32_t)width
@@ -601,6 +603,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
                  frame:(const Frame&)frame {
+    // Create a new command buffer for each render pass to the current drawable
+    _commandBuffer = [_commandQueue commandBuffer];
+    _commandBuffer.label = @"Offline Command Buffer";
+    [_commandBuffer enqueue];
+
     MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor new];
     renderPassDescriptor.colorAttachments[0] = Nil;
     renderPassDescriptor.depthAttachment.texture = _textures[shadowmap];
@@ -633,6 +640,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 - (void)endShadowMap:(const int32_t)shadowmap layer_index:(const int32_t)layer_index {
     [_renderEncoder popDebugGroup];
     [_renderEncoder endEncoding];
+    [_commandBuffer commit];
 }
 
 - (void)setShadowMaps:(const Frame&)frame {
