@@ -329,6 +329,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     if (_renderPassDescriptor != nil) {
         _renderPassDescriptor.colorAttachments[0].clearColor =
             MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
+        _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+        _renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
         _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
         _renderEncoder.label = @"MyRenderEncoder";
@@ -799,12 +801,55 @@ static float rect_uv[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
     [_renderEncoder popDebugGroup];
 }
 
-static float cubemap_unwrap_vertices[] = {-1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f,
-                                          -1.0f, 1.0f,  0.0f, 1.0f, 1.0f,  0.0f};
+static float cubemap_unwrap_vertices[] = {
+    // cell (0, 0)
+    -1.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, -0.33333f, 1.0f, 0.0f, -0.33333f, 1.0f, 0.0f, -1.0f, 0.0f,
+    0.0f, -0.33333f, 0.0f, 0.0f,
+
+    // cell (0, 1)
+    -0.33333f, 1.0f, 0.0f, -0.33333f, 0.0f, 0.0f, 0.33333f, 1.0f, 0.0f, 0.33333f, 1.0f, 0.0f,
+    -0.33333f, 0.0f, 0.0f, 0.33333f, 0.0f, 0.0f,
+
+    // cell (0, 2)
+    0.33333f, 1.0f, 0.0f, 0.33333f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.33333f, 0.0f,
+    0.0f, 1.0f, 0.0f, 0.0f,
+
+    // cell (1, 0)
+    -1.0f, 0.0f, 0.0f, -1.0f, -1.0f, 0.0f, -0.33333f, 0.0f, 0.0f, -0.33333f, 0.0f, 0.0f, -1.0f,
+    -1.0f, 0.0f, -0.33333f, -1.0f, 0.0f,
+
+    // cell (1, 1)
+    -0.33333f, 0.0f, 0.0f, -0.33333f, -1.0f, 0.0f, 0.33333f, 0.0f, 0.0f, 0.33333f, 0.0f, 0.0f,
+    -0.33333f, -1.0f, 0.0f, 0.33333f, -1.0f, 0.0f,
+
+    // cell (1, 2)
+    0.33333f, 0.0f, 0.0f, 0.33333f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.33333f,
+    -1.0f, 0.0f, 1.0f, -1.0f, 0.0f};
 
 static float cubemap_unwrap_uvw[] = {
     // back
-    1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f};
+    1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f,
+    -1.0f, 1.0f, -1.0f,
+
+    // left
+    -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f,
+    -1.0f, -1.0f, -1.0f, -1.0f,
+
+    // front
+    -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
+    -1.0f, 1.0f, -1.0f, -1.0f,
+
+    // right
+    1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f,
+    1.0f, 1.0f, -1.0f,
+
+    // top
+    -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+    1.0f, -1.0f, 1.0f,
+
+    // bottom
+    -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f, -1.0f};
 
 - (void)drawCubeMapOverlay:(const int32_t)texture_id
                    vp_left:(const float)vp_left
@@ -842,7 +887,7 @@ static float cubemap_unwrap_uvw[] = {
     [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:0];
 
     [_renderEncoder
-        drawPrimitives:MTLPrimitiveTypeTriangleStrip
+        drawPrimitives:MTLPrimitiveTypeTriangle
            vertexStart:0
            vertexCount:sizeof(cubemap_unwrap_vertices) / sizeof(cubemap_unwrap_vertices[0]) / 3];
 
@@ -890,7 +935,7 @@ static float cubemap_unwrap_uvw[] = {
     [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:0];
 
     [_renderEncoder
-        drawPrimitives:MTLPrimitiveTypeTriangleStrip
+        drawPrimitives:MTLPrimitiveTypeTriangle
            vertexStart:0
            vertexCount:sizeof(cubemap_unwrap_vertices) / sizeof(cubemap_unwrap_vertices[0]) / 3];
 
