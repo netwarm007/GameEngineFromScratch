@@ -28,6 +28,7 @@ target_link_libraries(Common
         DrawPhase
         DispatchPass
         Geometries
+        Parser
         GeomMath
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 

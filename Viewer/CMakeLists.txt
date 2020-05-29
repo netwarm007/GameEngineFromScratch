@@ -24,6 +24,7 @@ set(SHADER_SOURCES basic.vert basic.frag
             shadowmap.vert shadowmap.frag
             shadowmap_omni.vert shadowmap_omni.frag
             texture.frag texturearray.frag
+            cubemap.frag cubemaparray.frag
             passthrough.vert passthrough_cube.vert
             integrateBRDF.comp
         )
