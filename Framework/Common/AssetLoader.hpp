@@ -12,7 +12,6 @@ namespace My {
 class AssetLoader : public IRuntimeModule {
    public:
     ~AssetLoader() override = default;
-
     using AssetFilePtr = void*;
 
     enum AssetOpenMode {

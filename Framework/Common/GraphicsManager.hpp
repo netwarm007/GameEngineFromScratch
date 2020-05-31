@@ -18,7 +18,6 @@ namespace My {
 class GraphicsManager : _implements_ IRuntimeModule {
    public:
     ~GraphicsManager() override = default;
-
     int Initialize() override;
     void Finalize() override;
 
