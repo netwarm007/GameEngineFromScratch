@@ -2,21 +2,21 @@ version: 0.0.{build}
 image: Visual Studio 2019
 build_script:
 - cmd: >-
-    build_crossguid
+    scripts/build_crossguid
 
-    build_opengex
+    scripts/build_opengex
 
-    build_zlib
+    scripts/build_zlib
 
-    build_bullet
+    scripts/build_bullet
 
-    build_cef
+    scripts/build_cef
 
-    build_glslangValidator
+    scripts/build_glslangValidator
 
-    build_spirvcross
+    scripts/build_spirvcross
 
-    build
+    scripts/build
 
 test_script:
 - cmd: cmake --build build --target RUN_TESTS
