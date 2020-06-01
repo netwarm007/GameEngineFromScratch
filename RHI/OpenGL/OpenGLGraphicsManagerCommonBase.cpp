@@ -1065,7 +1065,7 @@ void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap) {
     shadowmap = -1;
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawSkyBox() {
+void OpenGLGraphicsManagerCommonBase::DrawSkyBox([[maybe_unused]] const Frame& frame) {
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
     glDrawElements(m_SkyBoxDrawBatchContext.mode,

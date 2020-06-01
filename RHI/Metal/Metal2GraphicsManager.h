@@ -32,7 +32,7 @@ class Metal2GraphicsManager : public GraphicsManager {
     void DestroyShadowMap(int32_t& shadowmap) final;
 
     // skybox
-    void DrawSkyBox() final;
+    void DrawSkyBox(const Frame& frame) final;
 
     // compute shader tasks
     int32_t GenerateAndBindTextureForWrite(const char* id,
@@ -70,8 +70,8 @@ class Metal2GraphicsManager : public GraphicsManager {
     void BeginFrame(const Frame& frame) final;
     void EndFrame(const Frame& frame) final;
 
-    void BeginPass() final;
-    void EndPass() final;
+    void BeginPass(const Frame& frame) final;
+    void EndPass(const Frame& frame) final;
 
     void BeginCompute() final;
     void EndCompute() final;

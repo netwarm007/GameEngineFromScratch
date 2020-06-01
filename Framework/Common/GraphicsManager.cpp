@@ -97,9 +97,9 @@ void GraphicsManager::Draw() {
     auto& frame = m_Frames[m_nFrameIndex];
 
     for (auto& pDrawPass : m_DrawPasses) {
-        pDrawPass->BeginPass();
+        pDrawPass->BeginPass(frame);
         pDrawPass->Draw(frame);
-        pDrawPass->EndPass();
+        pDrawPass->EndPass(frame);
     }
 }
 

@@ -6,4 +6,3 @@
 
 using namespace My;
 
-void D3d12Application::Tick() { WindowsApplication::Tick(); }

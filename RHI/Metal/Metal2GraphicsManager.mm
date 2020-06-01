@@ -205,9 +205,9 @@ void Metal2GraphicsManager::EndFrame(const Frame& frame) {
     GraphicsManager::EndFrame(frame);
 }
 
-void Metal2GraphicsManager::BeginPass() { [m_pRenderer beginPass]; }
+void Metal2GraphicsManager::BeginPass(const Frame& frame) { [m_pRenderer beginPass:frame]; }
 
-void Metal2GraphicsManager::EndPass() { [m_pRenderer endPass]; }
+void Metal2GraphicsManager::EndPass(const Frame& frame) { [m_pRenderer endPass:frame]; }
 
 void Metal2GraphicsManager::BeginCompute() { [m_pRenderer beginCompute]; }
 
@@ -254,7 +254,7 @@ void Metal2GraphicsManager::DestroyShadowMap(int32_t& shadowmap) {
     [m_pRenderer destroyShadowMap:shadowmap];
 }
 
-void Metal2GraphicsManager::DrawSkyBox() { [m_pRenderer drawSkyBox]; }
+void Metal2GraphicsManager::DrawSkyBox(const Frame& frame) { [m_pRenderer drawSkyBox:frame]; }
 
 int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id,
                                                               const uint32_t slot_index,

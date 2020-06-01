@@ -125,5 +125,6 @@
     },
     "git.ignoreLimitWarning": true,
     "cmake.configureOnOpen": false,
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "python.pythonPath": "C:\\Users\\Tim.AzureAD\\AppData\\Local\\Programs\\Python\\Python38\\python.exe"
 }

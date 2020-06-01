@@ -10,9 +10,11 @@ class BasePass : _implements_ IDrawPass {
    public:
     ~BasePass() override = default;
 
-    void BeginPass() override { g_pGraphicsManager->BeginPass(); }
+    void BeginPass(Frame& frame) override {
+        g_pGraphicsManager->BeginPass(frame);
+    }
     void Draw(Frame& frame) override;
-    void EndPass() override { g_pGraphicsManager->EndPass(); }
+    void EndPass(Frame& frame) override { g_pGraphicsManager->EndPass(frame); }
 
    protected:
     BasePass() = default;

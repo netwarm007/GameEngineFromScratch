@@ -10,5 +10,5 @@ void SkyBoxPhase::Draw(Frame& frame) {
 
     g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
 
-    g_pGraphicsManager->DrawSkyBox();
+    g_pGraphicsManager->DrawSkyBox(frame);
 }

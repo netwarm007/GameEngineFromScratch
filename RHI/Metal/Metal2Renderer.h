@@ -27,7 +27,7 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)setLightInfo:(const LightInfo &)lightInfo frameIndex:(const int32_t)index;
 
-- (void)drawSkyBox;
+- (void)drawSkyBox:(const Frame&)frame;
 
 - (void)drawBatch:(const Frame &)frame;
 
@@ -45,9 +45,9 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)endFrame:(const My::Frame &)frame;
 
-- (void)beginPass;
+- (void)beginPass:(const My::Frame &)frame;
 
-- (void)endPass;
+- (void)endPass:(const My::Frame &)frame;
 
 - (void)beginCompute;
 

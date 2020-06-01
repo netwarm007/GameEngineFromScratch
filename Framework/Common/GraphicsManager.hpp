@@ -56,7 +56,7 @@ class GraphicsManager : _implements_ IRuntimeModule {
     virtual void DestroyShadowMap(int32_t& shadowmap) {}
 
     // skybox
-    virtual void DrawSkyBox() {}
+    virtual void DrawSkyBox(const Frame& frame) {}
 
     virtual int32_t GenerateTexture(const char* id, const uint32_t width,
                                     const uint32_t height) {
@@ -123,8 +123,8 @@ class GraphicsManager : _implements_ IRuntimeModule {
                  const Vector3f& color);
 #endif
 
-    virtual void BeginPass() {}
-    virtual void EndPass() {}
+    virtual void BeginPass(const Frame& frame) {}
+    virtual void EndPass(const Frame& frame) {}
 
    protected:
     virtual void BeginScene(const Scene& scene);
@@ -170,7 +170,7 @@ class GraphicsManager : _implements_ IRuntimeModule {
         -1.0f, -1.0f, -1.0f   // 7
     };
 
-    constexpr static uint8_t skyboxIndices[]{4, 7, 5, 5, 3, 4,
+    constexpr static uint16_t skyboxIndices[]{4, 7, 5, 5, 3, 4,
 
                                              6, 7, 4, 4, 1, 6,
 

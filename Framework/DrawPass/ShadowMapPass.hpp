@@ -6,8 +6,8 @@ class ShadowMapPass : public BasePass {
    public:
     ~ShadowMapPass() override = default;
 
-    void BeginPass() override {}
+    void BeginPass(Frame& frame) override {}
     void Draw(Frame& frame) final;
-    void EndPass() override {}
+    void EndPass(Frame& frame) override {}
 };
 }  // namespace My

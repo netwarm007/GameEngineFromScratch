@@ -28,20 +28,45 @@ class D3d12GraphicsManager : public GraphicsManager {
 
     void DrawBatch(const Frame& frame) final;
 
+    int32_t GenerateCubeShadowMapArray(const uint32_t width,
+                                       const uint32_t height,
+                                       const uint32_t count) final;
+    int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height,
+                                   const uint32_t count) final;
+    void BeginShadowMap(const int32_t light_index, const int32_t shadowmap,
+                        const uint32_t width, const uint32_t height,
+                        const int32_t layer_index, const Frame& frame) final;
+    void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) final;
+    void SetShadowMaps(const Frame& frame) final;
+    void DestroyShadowMap(int32_t& shadowmap) final;
+
     // skybox
-    void DrawSkyBox() final;
+    void DrawSkyBox(const Frame& frame) final;
+
+    // compute shader tasks
+    int32_t GenerateAndBindTextureForWrite(const char* id,
+                                           const uint32_t slot_index,
+                                           const uint32_t width,
+                                           const uint32_t height) final;
+
+    void Dispatch(const uint32_t width, const uint32_t height,
+                  const uint32_t depth) final;
 
    private:
+    void BeginScene(const Scene& scene) final;
     void EndScene() final;
 
     void BeginFrame(const Frame& frame) final;
     void EndFrame(const Frame& frame) final;
 
+    void BeginPass(const Frame& frame) final;
+    void EndPass(const Frame& frame) final {}
+
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;
 
-    void SetPerFrameConstants(const DrawFrameContext& context);
-    void SetLightInfo(const LightInfo& lightInfo);
+    void SetPerFrameConstants(const Frame& frame);
+    void SetLightInfo(const Frame& frame);
 
     HRESULT CreateDescriptorHeaps();
     HRESULT CreateRenderTarget();
@@ -51,11 +76,12 @@ class D3d12GraphicsManager : public GraphicsManager {
     uint32_t CreateSamplerBuffer();
     int32_t CreateTextureBuffer(SceneObjectTexture& texture);
     uint32_t CreateConstantBuffer();
+    size_t CreateIndexBuffer(const void* pData, size_t size, int32_t index_size); 
     size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
+    size_t CreateVertexBuffer(const void* pData, size_t size, int32_t stride);
     size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
 
     HRESULT WaitForPreviousFrame(uint32_t frame_index);
-    HRESULT ResetCommandList();
     HRESULT CreatePSO(D3d12PipelineState& pipelineState);
     HRESULT CreateCommandList();
     HRESULT MsaaResolve();
@@ -77,15 +103,27 @@ class D3d12GraphicsManager : public GraphicsManager {
     ID3D12Resource* m_pDepthStencilBuffer
         [GfxConfiguration::kMaxInFlightFrameCount];  // the pointer to the depth
                                                      // stencil buffer
-    ID3D12CommandAllocator* m_pCommandAllocator
+    ID3D12CommandAllocator* m_pGraphicsCommandAllocator
         [GfxConfiguration::kMaxInFlightFrameCount];  // the pointer to command
                                                      // buffer allocator
-    ID3D12GraphicsCommandList* m_pCommandList
+    ID3D12CommandAllocator*
+        m_pComputeCommandAllocator;                   // the pointer to command
+                                                      // buffer allocator
+    ID3D12CommandAllocator* m_pCopyCommandAllocator;  // the pointer to command
+                                                      // buffer allocator
+    ID3D12GraphicsCommandList* m_pGraphicsCommandList
         [GfxConfiguration::kMaxInFlightFrameCount];  // a list to store GPU
                                                      // commands, which will be
                                                      // submitted to GPU to
                                                      // execute when done
-    ID3D12CommandQueue* m_pCommandQueue;  // the pointer to command queue
+    ID3D12GraphicsCommandList* m_pComputeCommandList;
+    ID3D12GraphicsCommandList* m_pCopyCommandList;
+
+    ID3D12CommandQueue*
+        m_pGraphicsCommandQueue;                 // the pointer to command queue
+    ID3D12CommandQueue* m_pComputeCommandQueue;  // the pointer to command queue
+    ID3D12CommandQueue* m_pCopyCommandQueue;     // the pointer to command queue
+
     ID3D12DescriptorHeap*
         m_pRtvHeap[GfxConfiguration::kMaxInFlightFrameCount];  // an array of
                                                                // descriptors of
@@ -94,6 +132,11 @@ class D3d12GraphicsManager : public GraphicsManager {
         m_pDsvHeap[GfxConfiguration::kMaxInFlightFrameCount];  // an array of
                                                                // descriptors of
                                                                // GPU objects
+
+    ID3D12DescriptorHeap* m_pCbvSrvUavHeap
+        [GfxConfiguration::kMaxInFlightFrameCount];  // an array of descriptors
+                                                     // of GPU objects
+
     ID3D12DescriptorHeap* m_pSamplerHeap
         [GfxConfiguration::kMaxInFlightFrameCount];  // an array of descriptors
                                                      // of GPU objects
@@ -120,6 +163,8 @@ class D3d12GraphicsManager : public GraphicsManager {
 
         ~D3dDrawBatchContext();
     };
+
+    D3dDrawBatchContext m_dbcSkyBox;
 
     uint8_t* m_pPerFrameCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount];
     ID3D12Resource* m_pPerFrameConstantUploadBuffer

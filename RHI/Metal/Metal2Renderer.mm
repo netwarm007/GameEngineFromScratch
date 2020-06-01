@@ -337,7 +337,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     }
 }
 
-- (void)endPass {
+- (void)endPass:(const Frame&) {
     [_renderEncoder endEncoding];
 
     // Finalize rendering here & push the command buffer to the GPU
@@ -434,7 +434,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     std::memcpy(_lightInfo[frameIndex].contents, &lightInfo, sizeof(LightInfo));
 }
 
-- (void)drawSkyBox {
+- (void)drawSkyBox:(const Frame&)frame {
     // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
     [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
 
