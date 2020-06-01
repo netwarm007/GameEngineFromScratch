@@ -3,38 +3,43 @@
 #include <vector>
 
 #include "portable.hpp"
+#include "Tree.hpp"
 
 namespace My {
 template <typename T>
-class HuffmanNode {
+class HuffmanNode : public TreeNode {
    protected:
     T m_Value{0};
-    std::shared_ptr<HuffmanNode<T>> m_pLeft;
-    std::shared_ptr<HuffmanNode<T>> m_pRight;
     bool m_isLeaf = false;
 
+   private:
+    virtual void AppendChild(std::shared_ptr<TreeNode>&& sub_node) {}
+
    public:
-    HuffmanNode() = default;
-    explicit HuffmanNode(T value) : m_Value(value), m_isLeaf(true){};
+    HuffmanNode() {m_Children.resize(2);}
+    explicit HuffmanNode(T value) : HuffmanNode(){
+        m_Value = value; 
+        m_isLeaf = true;
+    }
     ~HuffmanNode() = default;
     HuffmanNode(HuffmanNode&) = default;
     HuffmanNode(HuffmanNode&&) noexcept = default;
     HuffmanNode& operator=(HuffmanNode&) = default;
     HuffmanNode& operator=(HuffmanNode&&) noexcept = default;
-    [[nodiscard]] bool IsLeaf() const { return m_isLeaf; };
-    void SetLeft(std::shared_ptr<HuffmanNode> pNode) { m_pLeft = pNode; };
-    void SetRight(std::shared_ptr<HuffmanNode> pNode) { m_pRight = pNode; };
+    [[nodiscard]] bool IsLeaf() const { return m_isLeaf; }
+    void SetLeft(std::shared_ptr<HuffmanNode> pNode) { m_Children.front() = pNode; }
+    void SetRight(std::shared_ptr<HuffmanNode> pNode) { m_Children.back() = pNode; }
     [[nodiscard]] const std::shared_ptr<HuffmanNode<T>> GetLeft() const {
-        return m_pLeft;
-    };
+        return std::dynamic_pointer_cast<HuffmanNode>(m_Children.front());
+    }
     [[nodiscard]] const std::shared_ptr<HuffmanNode<T>> GetRight() const {
-        return m_pRight;
-    };
+        return std::dynamic_pointer_cast<HuffmanNode>(m_Children.back());
+    }
     void SetValue(T value) {
         m_Value = value;
         m_isLeaf = true;
-    };
-    [[nodiscard]] T GetValue() const { return m_Value; };
+    }
+    [[nodiscard]] T GetValue() const { return m_Value; }
 };
 
 template <typename T>

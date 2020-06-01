@@ -1,13 +1,10 @@
 #pragma once
 #include "FrameStructure.hpp"
-#include "IPhase.hpp"
+#include "ISubPass.hpp"
 
 namespace My {
-_Interface_ IDrawPhase : _inherits_ IPhase {
+_Interface_ IDrawSubPass : _inherits_ ISubPass {
    public:
-    IDrawPhase() = default;
-    ~IDrawPhase() override = default;
-
     virtual void Draw(Frame & frame) = 0;
 };
 }  // namespace My

@@ -1,4 +1,4 @@
-#include "HUDPhase.hpp"
+#include "DebugOverlaySubPass.hpp"
 
 #include "GraphicsManager.hpp"
 #include "IPipelineStateManager.hpp"
@@ -6,7 +6,7 @@
 using namespace My;
 using namespace std;
 
-void HUDPhase::Draw(Frame& frame) {
+void DebugOverlaySubPass::Draw(Frame& frame) {
 #ifdef DEBUG
     // Draw Shadow Maps
     g_pGraphicsManager->SetPipelineState(

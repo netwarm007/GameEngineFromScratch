@@ -1,9 +1,10 @@
 #pragma once
 #include "FrameStructure.hpp"
+#include "IPass.hpp"
 #include "Interface.hpp"
 
 namespace My {
-_Interface_ IDrawPass {
+_Interface_ IDrawPass : _inherits_ IPass {
    public:
     IDrawPass() = default;
     virtual ~IDrawPass() = default;

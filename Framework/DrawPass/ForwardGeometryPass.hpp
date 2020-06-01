@@ -1,18 +1,19 @@
 #pragma once
-#include "BasePass.hpp"
-#include "ForwardRenderPhase.hpp"
-#include "HUDPhase.hpp"
-#include "SkyBoxPhase.hpp"
+#include "BaseDrawPass.hpp"
+#include "DebugOverlaySubPass.hpp"
+#include "GeometrySubPass.hpp"
+#include "SkyBoxSubPass.hpp"
 
 namespace My {
-class ForwardGeometryPass : public BasePass {
+class ForwardGeometryPass : public BaseDrawPass {
    public:
     ForwardGeometryPass() {
-        m_DrawPhases.push_back(std::make_shared<ForwardRenderPhase>());
-        m_DrawPhases.push_back(std::make_shared<SkyBoxPhase>());
-        m_DrawPhases.push_back(std::make_shared<HUDPhase>());
+        m_DrawSubPasses.push_back(std::make_shared<GeometrySubPass>());
+        m_DrawSubPasses.push_back(std::make_shared<SkyBoxSubPass>());
+#if !defined(OS_WEBASSEMBLY)
+        // m_DrawSubPasses.push_back(std::make_shared<TerrainSubPass>());
+#endif
+        m_DrawSubPasses.push_back(std::make_shared<DebugOverlaySubPass>());
     }
-
-    ~ForwardGeometryPass() override = default;
 };
 }  // namespace My

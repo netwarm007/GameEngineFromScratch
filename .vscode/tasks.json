@@ -6,9 +6,9 @@
         {
             "label": "Build External Dependencies",
             "type": "shell",
-            "command": "./build_crossguid.sh && ./build_opengex.sh && ./build_zlib.sh && ./build_bullet.sh",
+            "command": "./scripts/build_crossguid.sh && ./scripts/build_opengex.sh && ./scripts/build_zlib.sh && ./scripts/build_bullet.sh",
             "windows": {
-                "command": "build_crossguid.bat && build_opengex.bat && build_zlib.bat && build_bullet.bat"
+                "command": "scripts\\build_crossguid.bat && scripts\\build_opengex.bat && scripts\\build_zlib.bat && scripts\\build_bullet.bat"
             },
             "problemMatcher": [
                 "$msCompile"
@@ -18,9 +18,9 @@
         {
             "label": "Build Billiard Game",
             "type": "shell",
-            "command": "./build-ninja.sh",
+            "command": "./scripts/build-ninja.sh",
             "windows": {
-                "command": "build.bat"
+                "command": "scripts\\build.bat",
             },
             "problemMatcher": [
                 "$msCompile"

@@ -1,4 +1,4 @@
-#include "ForwardRenderPhase.hpp"
+#include "GeometrySubPass.hpp"
 
 #include "GraphicsManager.hpp"
 #include "IPipelineStateManager.hpp"
@@ -6,7 +6,7 @@
 using namespace My;
 using namespace std;
 
-void ForwardRenderPhase::Draw(Frame& frame) {
+void GeometrySubPass::Draw(Frame& frame) {
     auto& pPipelineState = g_pPipelineStateManager->GetPipelineState("PBR");
 
     // Set the color shader as the current shader program and set the matrices

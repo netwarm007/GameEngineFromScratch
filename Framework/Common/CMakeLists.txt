@@ -25,7 +25,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(Common
         Algorism
         DrawPass
-        DrawPhase
+        DrawSubPass
         DispatchPass
         Geometries
         Parser

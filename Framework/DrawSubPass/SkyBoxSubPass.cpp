@@ -1,11 +1,11 @@
-#include "SkyBoxPhase.hpp"
+#include "SkyBoxSubPass.hpp"
 
 #include "GraphicsManager.hpp"
 #include "IPipelineStateManager.hpp"
 
 using namespace My;
 
-void SkyBoxPhase::Draw(Frame& frame) {
+void SkyBoxSubPass::Draw(Frame& frame) {
     auto& pPipelineState = g_pPipelineStateManager->GetPipelineState("SkyBox");
 
     g_pGraphicsManager->SetPipelineState(pPipelineState, frame);

@@ -3,12 +3,12 @@
 
 #include "GraphicsManager.hpp"
 #include "IDrawPass.hpp"
-#include "IDrawPhase.hpp"
+#include "IDrawSubPass.hpp"
 
 namespace My {
-class BasePass : _implements_ IDrawPass {
+class BaseDrawPass : _implements_ IDrawPass {
    public:
-    ~BasePass() override = default;
+    ~BaseDrawPass() override = default;
 
     void BeginPass(Frame& frame) override {
         g_pGraphicsManager->BeginPass(frame);
@@ -17,9 +17,9 @@ class BasePass : _implements_ IDrawPass {
     void EndPass(Frame& frame) override { g_pGraphicsManager->EndPass(frame); }
 
    protected:
-    BasePass() = default;
+    BaseDrawPass() = default;
 
    protected:
-    std::vector<std::shared_ptr<IDrawPhase>> m_DrawPhases;
+    std::vector<std::shared_ptr<IDrawSubPass>> m_DrawSubPasses;
 };
 }  // namespace My

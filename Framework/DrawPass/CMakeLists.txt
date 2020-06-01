@@ -1,4 +1,4 @@
 add_library(DrawPass 
-BasePass.cpp
+BaseDrawPass.cpp
 ShadowMapPass.cpp
 )
