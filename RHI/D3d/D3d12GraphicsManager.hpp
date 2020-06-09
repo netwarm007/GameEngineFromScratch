@@ -62,6 +62,9 @@ class D3d12GraphicsManager : public GraphicsManager {
     void BeginPass(const Frame& frame) final;
     void EndPass(const Frame& frame) final {}
 
+    void BeginCompute() final;
+    void EndCompute() final;
+
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;
 
@@ -76,7 +79,8 @@ class D3d12GraphicsManager : public GraphicsManager {
     uint32_t CreateSamplerBuffer();
     int32_t CreateTextureBuffer(SceneObjectTexture& texture);
     uint32_t CreateConstantBuffer();
-    size_t CreateIndexBuffer(const void* pData, size_t size, int32_t index_size); 
+    size_t CreateIndexBuffer(const void* pData, size_t size,
+                             int32_t index_size);
     size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
     size_t CreateVertexBuffer(const void* pData, size_t size, int32_t stride);
     size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
@@ -124,22 +128,16 @@ class D3d12GraphicsManager : public GraphicsManager {
     ID3D12CommandQueue* m_pComputeCommandQueue;  // the pointer to command queue
     ID3D12CommandQueue* m_pCopyCommandQueue;     // the pointer to command queue
 
-    ID3D12DescriptorHeap*
-        m_pRtvHeap[GfxConfiguration::kMaxInFlightFrameCount];  // an array of
-                                                               // descriptors of
-                                                               // GPU objects
-    ID3D12DescriptorHeap*
-        m_pDsvHeap[GfxConfiguration::kMaxInFlightFrameCount];  // an array of
-                                                               // descriptors of
-                                                               // GPU objects
+    ID3D12DescriptorHeap* m_pRtvHeap
+        [GfxConfiguration::kMaxInFlightFrameCount];  // an array of heaps store
+                                                     // descriptors of RTV
+    ID3D12DescriptorHeap* m_pDsvHeap
+        [GfxConfiguration::kMaxInFlightFrameCount];  // an array of heaps store
+                                                     // descriptors of DSV
 
-    ID3D12DescriptorHeap* m_pCbvSrvUavHeap
-        [GfxConfiguration::kMaxInFlightFrameCount];  // an array of descriptors
-                                                     // of GPU objects
+    ID3D12DescriptorHeap* m_pCbvSrvUavHeap;
 
-    ID3D12DescriptorHeap* m_pSamplerHeap
-        [GfxConfiguration::kMaxInFlightFrameCount];  // an array of descriptors
-                                                     // of GPU objects
+    ID3D12DescriptorHeap* m_pSamplerHeap;
 
     uint32_t m_nRtvDescriptorSize;
     uint32_t m_nCbvSrvUavDescriptorSize;
@@ -155,13 +153,11 @@ class D3d12GraphicsManager : public GraphicsManager {
         m_IndexBufferView;  // index buffer descriptors
 
     struct D3dDrawBatchContext : public DrawBatchContext {
-        uint32_t index_count;
-        size_t index_offset;
-        uint32_t property_count;
-        size_t property_offset;
-        ID3D12DescriptorHeap* pCbvSrvUavHeap;
-
-        ~D3dDrawBatchContext();
+        uint32_t index_count{0};
+        size_t index_offset{0};
+        uint32_t property_count{0};
+        size_t property_offset{0};
+        size_t cbv_srv_uav_offset{0};
     };
 
     D3dDrawBatchContext m_dbcSkyBox;
@@ -180,13 +176,11 @@ class D3d12GraphicsManager : public GraphicsManager {
         m_pDebugConstantsUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
 #endif
 
-    uint8_t* m_pShadowConstantsBegin[GfxConfiguration::kMaxInFlightFrameCount];
-    ID3D12Resource*
-        m_pShadowDataUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
-
     // Synchronization objects
-    HANDLE m_hFenceEvent;
-    ID3D12Fence* m_pFence[GfxConfiguration::kMaxInFlightFrameCount];
-    uint64_t m_nFenceValue[GfxConfiguration::kMaxInFlightFrameCount];
+    HANDLE m_hGraphicsFenceEvent;
+    HANDLE m_hCopyFenceEvent;
+    HANDLE m_hComputeFenceEvent;
+    ID3D12Fence* m_pGraphicsFence[GfxConfiguration::kMaxInFlightFrameCount];
+    uint64_t m_nGraphicsFenceValue[GfxConfiguration::kMaxInFlightFrameCount];
 };
 }  // namespace My

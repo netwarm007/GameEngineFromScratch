@@ -20,7 +20,7 @@ int GraphicsManager::Initialize() {
 #endif
 
     InitConstants();
-    m_DrawPasses.push_back(make_shared<ShadowMapPass>());
+    //m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
     return result;
 }
