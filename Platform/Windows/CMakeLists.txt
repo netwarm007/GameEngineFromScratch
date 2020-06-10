@@ -3,5 +3,9 @@ add_library(PlatformInterface
                 D3d12Application.cpp
                 OpenGLApplication.cpp
                 ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_wgl.c
+                ${PROJECT_SOURCE_DIR}/External/src/imgui/examples/imgui_impl_win32.cpp
+                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui.cpp
+                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_draw.cpp
+                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_demo.cpp
+                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_widgets.cpp
 )
-target_include_directories(PlatformInterface PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")

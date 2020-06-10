@@ -13,8 +13,6 @@ namespace My {
 class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
    public:
     // overrides
-    int Initialize() override = 0;
-
     void Present() final;
 
     void ResizeCanvas(int32_t width, int32_t height) final;
@@ -91,11 +89,11 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
     void RenderDebugBuffers() override;
 #endif
 
-   private:
+   protected:
     void EndScene() final;
 
-    void BeginFrame(const Frame& frame) final;
-    void EndFrame(const Frame& frame) final;
+    void BeginFrame(const Frame& frame) override;
+    void EndFrame(const Frame& frame) override;
 
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;

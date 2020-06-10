@@ -9,6 +9,7 @@
 #include "IPhysicsManager.hpp"
 #include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
+#include "imgui/imgui.h"
 
 using namespace My;
 using namespace std;
@@ -101,6 +102,12 @@ void GraphicsManager::Draw() {
         pDrawPass->Draw(frame);
         pDrawPass->EndPass();
     }
+
+    ImGui::NewFrame();
+
+    ImGui::ShowDemoWindow();
+
+    ImGui::Render();
 }
 
 void GraphicsManager::CalculateCameraMatrix() {

@@ -26,6 +26,11 @@ class InputManager : _implements_ IRuntimeModule {
     static void LeftMouseButtonUp();
     static void LeftMouseDrag(int deltaX, int deltaY);
 
+    // mouse handling
+    static void RightMouseButtonDown();
+    static void RightMouseButtonUp();
+    static void RightMouseDrag(int deltaX, int deltaY);
+
    protected:
     bool m_bUpKeyPressed = false;
     bool m_bDownKeyPressed = false;

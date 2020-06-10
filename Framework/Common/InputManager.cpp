@@ -108,3 +108,11 @@ void InputManager::LeftMouseButtonUp() {}
 void InputManager::LeftMouseDrag(int deltaX, int deltaY) {
     g_pGameLogic->OnAnalogStick(0, (float)deltaX, (float)deltaY);
 }
+
+void InputManager::RightMouseButtonDown() {}
+
+void InputManager::RightMouseButtonUp() {}
+
+void InputManager::RightMouseDrag(int deltaX, int deltaY) {
+    g_pGameLogic->OnAnalogStick(1, (float)deltaX, (float)deltaY);
+}

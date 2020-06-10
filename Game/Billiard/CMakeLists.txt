@@ -89,5 +89,3 @@ ELSE(APPLE)
                             PlatformInterface
                         )
 ENDIF(APPLE)
-
-target_include_directories(BilliardGame PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")

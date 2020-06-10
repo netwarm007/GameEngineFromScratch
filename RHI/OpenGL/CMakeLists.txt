@@ -11,8 +11,8 @@ add_library(OpenGLRHI
         OpenGLPipelineStateManager.cpp
         OpenGLGraphicsManagerCommonBase.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad.c
+        ${PROJECT_SOURCE_DIR}/External/src/imgui/examples/imgui_impl_opengl3.cpp
 )
-target_include_directories(OpenGLRHI PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
 target_link_libraries(OpenGLRHI
         ${OPENGL_LIBRARIES}
 )

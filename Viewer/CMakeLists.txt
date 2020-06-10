@@ -146,5 +146,3 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 add_dependencies(Viewer Engine_Asset)
-
-target_include_directories(Viewer PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")

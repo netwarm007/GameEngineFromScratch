@@ -3,6 +3,7 @@
 #include <tchar.h>
 
 #include "InputManager.hpp"
+#include "imgui/examples/imgui_impl_win32.h"
 
 using namespace My;
 
@@ -53,9 +54,23 @@ void WindowsApplication::CreateMainWindow() {
 
     // display the window on the screen
     ShowWindow(m_hWnd, SW_SHOW);
+
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    [[maybe_unused]] ImGuiIO& io = ImGui::GetIO();
+
+    ImGui_ImplWin32_Init(m_hWnd);
+    ImGui_ImplWin32_EnableDpiAwareness();
+
+    ImGui::StyleColorsDark();
 }
 
 void WindowsApplication::Finalize() {
+    // Finalize ImGui
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
     ReleaseDC(m_hWnd, m_hDc);
 
     BaseApplication::Finalize();
@@ -79,6 +94,11 @@ void WindowsApplication::Tick() {
     }
 }
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
+                                                             UINT msg,
+                                                             WPARAM wParam,
+                                                             LPARAM lParam);
+
 // this is the main message handler for the program
 LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
                                                 WPARAM wParam, LPARAM lParam) {
@@ -98,6 +118,9 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
         pThis = reinterpret_cast<WindowsApplication*>(
             GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
+
+    // ImGui message handler
+    result = ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
 
     // sort through and find what code to run for the message given
     switch (message) {
@@ -144,23 +167,37 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
         } break;
         case WM_LBUTTONDOWN: {
             g_pInputManager->LeftMouseButtonDown();
-            pThis->m_bInDrag = true;
+            pThis->m_bInLeftDrag = true;
             pThis->m_iPreviousX = GET_X_LPARAM(lParam);
             pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
         } break;
         case WM_LBUTTONUP: {
             g_pInputManager->LeftMouseButtonUp();
-            pThis->m_bInDrag = false;
+            pThis->m_bInLeftDrag = false;
         } break;
-        case WM_MOUSEMOVE:
-            if (pThis->m_bInDrag) {
-                int pos_x = GET_X_LPARAM(lParam);
-                int pos_y = GET_Y_LPARAM(lParam);
+        case WM_RBUTTONDOWN: {
+            g_pInputManager->RightMouseButtonDown();
+            pThis->m_bInRightDrag = true;
+            pThis->m_iPreviousX = GET_X_LPARAM(lParam);
+            pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
+        } break;
+        case WM_RBUTTONUP: {
+            g_pInputManager->RightMouseButtonUp();
+            pThis->m_bInRightDrag = false;
+        } break;
+        case WM_MOUSEMOVE: {
+            int pos_x = GET_X_LPARAM(lParam);
+            int pos_y = GET_Y_LPARAM(lParam);
+            if (pThis->m_bInLeftDrag) {
                 g_pInputManager->LeftMouseDrag(pos_x - pThis->m_iPreviousX,
                                                pos_y - pThis->m_iPreviousY);
             }
-            break;
-            // this message is read when the window is closed
+            else if (pThis->m_bInRightDrag) {
+                g_pInputManager->RightMouseDrag(pos_x - pThis->m_iPreviousX,
+                                               pos_y - pThis->m_iPreviousY);
+            }
+        } break;
+        // this message is read when the window is closed
         case WM_DESTROY: {
             // close the application entirely
             PostQuitMessage(0);
