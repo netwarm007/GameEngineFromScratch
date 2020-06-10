@@ -7,6 +7,7 @@
 #include "ForwardGeometryPass.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
+#include "RayTracePass.hpp"
 #include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
 #include "imgui/imgui.h"
@@ -23,6 +24,7 @@ int GraphicsManager::Initialize() {
     InitConstants();
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
+    m_DrawPasses.push_back(make_shared<RayTracePass>());
     return result;
 }
 
@@ -103,8 +105,7 @@ void GraphicsManager::Draw() {
         pDrawPass->EndPass();
     }
 
-    if (ImGui::GetCurrentContext())
-    {
+    if (ImGui::GetCurrentContext()) {
         ImGui::NewFrame();
 
         ImGui::ShowDemoWindow();
