@@ -35,6 +35,7 @@ jobs:
       - run:
           name: Build
           command: |
+             ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
              ./scripts/build_bullet.sh
@@ -80,6 +81,7 @@ jobs:
           name: Build
           command: |
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+             ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
              ./scripts/build_zlib.sh

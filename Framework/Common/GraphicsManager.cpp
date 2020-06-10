@@ -103,11 +103,14 @@ void GraphicsManager::Draw() {
         pDrawPass->EndPass();
     }
 
-    ImGui::NewFrame();
+    if (ImGui::GetCurrentContext())
+    {
+        ImGui::NewFrame();
 
-    ImGui::ShowDemoWindow();
+        ImGui::ShowDemoWindow();
 
-    ImGui::Render();
+        ImGui::Render();
+    }
 }
 
 void GraphicsManager::CalculateCameraMatrix() {
