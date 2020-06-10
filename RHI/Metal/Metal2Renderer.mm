@@ -7,6 +7,9 @@
 #include <stack>
 #include "IApplication.hpp"
 
+#include "imgui/examples/imgui_impl_metal.h"
+#include "imgui/examples/imgui_impl_osx.h"
+
 using namespace My;
 
 // The max number of command buffers in flight
@@ -88,9 +91,11 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 - (void)initialize {
     [self loadMetal];
+    ImGui_ImplMetal_Init(_device);
 }
 
 - (void)finalize {
+    ImGui_ImplMetal_Shutdown();
 }
 
 - (void)createVertexBuffer:(const SceneObjectVertexArray&)v_property_array {
@@ -297,13 +302,28 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     // now fill the per frame buffers
     [self setPerFrameConstants:frame.frameContext frameIndex:frame.frameIndex];
     [self setLightInfo:frame.lightInfo frameIndex:frame.frameIndex];
+
+    ImGui_ImplMetal_NewFrame(_mtkView.currentRenderPassDescriptor);
+    ImGui_ImplOSX_NewFrame(_mtkView);
 }
 
 - (void)endFrame:(const Frame&)frame {
     // Create a new command buffer for each render pass to the current drawable
     _commandBuffer = [_commandQueue commandBuffer];
-    _commandBuffer.label = @"Submit & Present Command Buffer";
+    _commandBuffer.label = @"GUI Command Buffer";
     [_commandBuffer enqueue];
+
+    if (_renderPassDescriptor) {
+        _renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
+        _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionLoad;
+
+        _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+        _renderEncoder.label = @"GuiRenderEncoder";
+
+        ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), _commandBuffer, _renderEncoder);
+
+        [_renderEncoder endEncoding];
+    }
 
     [_commandBuffer presentDrawable:_mtkView.currentDrawable];
 

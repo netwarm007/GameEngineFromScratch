@@ -7,8 +7,12 @@ add_library(MetalRHI
     Metal2Renderer.mm
     Metal2GraphicsManager.mm
     MetalPipelineStateManager.mm
+    ${PROJECT_SOURCE_DIR}/External/src/imgui/examples/imgui_impl_metal.mm
     )
 target_link_libraries(MetalRHI
         ${MTK_LIBRARY} 
         ${METAL_LIBRARY}
     )
+
+set_property (TARGET MetalRHI APPEND_STRING PROPERTY 
+COMPILE_FLAGS "-fobjc-weak")
