@@ -17,13 +17,16 @@ using namespace std;
 
 int GraphicsManager::Initialize() {
     int result = 0;
+#if 0
 #if !defined(OS_WEBASSEMBLY)
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
 #endif
-
+#endif
     InitConstants();
+#if 0
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
+#endif
     m_DrawPasses.push_back(make_shared<RayTracePass>());
     return result;
 }
