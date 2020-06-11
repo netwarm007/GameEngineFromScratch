@@ -12,6 +12,10 @@ add_library(PlatformInterface
         XcbApplication.cpp 
         OpenGLApplication.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_glx.c
+        ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui.cpp
+        ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_draw.cpp
+        ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_demo.cpp
+        ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_widgets.cpp
 )
 target_link_libraries(PlatformInterface
         ${XCB_LIBRARY} 
