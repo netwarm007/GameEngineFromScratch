@@ -678,7 +678,6 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
 
     m_Buffers.clear();
     m_Textures.clear();
-    m_Frames.clear();
 
     GraphicsManager::EndScene();
 }
@@ -1137,10 +1136,9 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame) {
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap) {
-    auto id = (uint32_t)shadowmap;
+void OpenGLGraphicsManagerCommonBase::ReleaseTexture(int32_t texture) {
+    auto id = (uint32_t)texture;
     glDeleteTextures(1, &id);
-    shadowmap = -1;
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawSkyBox() {

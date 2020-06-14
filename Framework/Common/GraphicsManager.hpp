@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <array>
 #include <vector>
 
 #include "FrameStructure.hpp"
@@ -52,7 +53,6 @@ class GraphicsManager : _implements_ IRuntimeModule {
     virtual void EndShadowMap(const int32_t shadowmap,
                               const int32_t layer_index) {}
     virtual void SetShadowMaps(const Frame& frame) {}
-    virtual void DestroyShadowMap(int32_t& shadowmap) {}
 
     // skybox
     virtual void DrawSkyBox() {}
@@ -64,6 +64,7 @@ class GraphicsManager : _implements_ IRuntimeModule {
                                     const uint32_t height) {
         return 0;
     }
+    virtual void ReleaseTexture(int32_t texture) {}
     virtual void BeginRenderToTexture(int32_t& context, const int32_t texture,
                                       const uint32_t width,
                                       const uint32_t height) {}
@@ -128,15 +129,15 @@ class GraphicsManager : _implements_ IRuntimeModule {
     virtual void BeginPass() {}
     virtual void EndPass() {}
 
+    virtual void BeginCompute() {}
+    virtual void EndCompute() {}
+
    protected:
     virtual void BeginScene(const Scene& scene);
     virtual void EndScene();
 
     virtual void BeginFrame(const Frame& frame);
     virtual void EndFrame(const Frame& frame);
-
-    virtual void BeginCompute() {}
-    virtual void EndCompute() {}
 
     virtual void initializeGeometries(const Scene& scene) {}
     virtual void initializeSkyBox(const Scene& scene) {}
@@ -158,7 +159,7 @@ class GraphicsManager : _implements_ IRuntimeModule {
 
     uint32_t m_nFrameIndex{0};
 
-    std::vector<Frame> m_Frames;
+    std::array<Frame, GfxConfiguration::kMaxInFlightFrameCount> m_Frames;
     std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
 

@@ -252,8 +252,8 @@ void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const int32_t 
 
 void Metal2GraphicsManager::SetShadowMaps(const Frame& frame) { [m_pRenderer setShadowMaps:frame]; }
 
-void Metal2GraphicsManager::DestroyShadowMap(int32_t& shadowmap) {
-    [m_pRenderer destroyShadowMap:shadowmap];
+void Metal2GraphicsManager::ReleaseTexture(int32_t texture) {
+    [m_pRenderer releaseTexture:texture];
 }
 
 void Metal2GraphicsManager::DrawSkyBox() { [m_pRenderer drawSkyBox]; }

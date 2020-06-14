@@ -75,7 +75,7 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)setShadowMaps:(const Frame &)frame;
 
-- (void)destroyShadowMap:(int32_t &)shadowmap;
+- (void)releaseTexture:(int32_t)texture;
 
 - (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
                                    height:(const uint32_t)height

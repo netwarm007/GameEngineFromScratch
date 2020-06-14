@@ -682,9 +682,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     }
 }
 
-- (void)destroyShadowMap:(int32_t&)shadowmap {
-    [_textures[shadowmap] release];
-    _texture_recycled_indexes.push(shadowmap);
+- (void)releaseTexture:(int32_t)texture {
+    [_textures[texture] release];
+    _texture_recycled_indexes.push(texture);
 }
 
 - (int32_t)generateAndBindTextureForWrite:(const uint32_t)width

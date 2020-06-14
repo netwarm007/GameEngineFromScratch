@@ -31,7 +31,7 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                         const int32_t layer_index, const Frame& frame) final;
     void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) final;
     void SetShadowMaps(const Frame& frame) final;
-    void DestroyShadowMap(int32_t& shadowmap) final;
+    void ReleaseTexture(int32_t texture) final;
 
     // skybox
     void DrawSkyBox() final;
