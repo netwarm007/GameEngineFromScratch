@@ -1,7 +1,8 @@
 #pragma once
-#include <memory>
 #include <array>
+#include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "FrameStructure.hpp"
 #include "GfxConfiguration.hpp"
@@ -70,16 +71,16 @@ class GraphicsManager : _implements_ IRuntimeModule {
                                       const uint32_t height) {}
     virtual void EndRenderToTexture(int32_t& context) {}
 
-    virtual int32_t GenerateAndBindTextureForWrite(const char* id,
-                                                   const uint32_t slot_index,
-                                                   const uint32_t width,
-                                                   const uint32_t height) {
-        return 0;
-    }
+    virtual void GenerateTextureForWrite(const char* id,
+                                            const uint32_t width,
+                                            const uint32_t height) {}
+
+    virtual void BindTextureForWrite(const char* id,
+                                     const uint32_t slot_index) {}
     virtual void Dispatch(const uint32_t width, const uint32_t height,
                           const uint32_t depth) {}
 
-    virtual int32_t GetTexture(const char* id) { return 0; }
+    virtual int32_t GetTexture(const char* id);
 
     virtual void DrawFullScreenQuad() {}
 
@@ -155,12 +156,15 @@ class GraphicsManager : _implements_ IRuntimeModule {
     void UpdateConstants();
 
    protected:
+    std::unordered_map<std::string, uint32_t> m_Textures;
+
     uint64_t m_nSceneRevision{0};
 
     uint32_t m_nFrameIndex{0};
 
     std::array<Frame, GfxConfiguration::kMaxInFlightFrameCount> m_Frames;
     std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
+    std::vector<std::shared_ptr<IDispatchPass>> m_DispatchPasses;
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
 
     constexpr static float skyboxVertices[]{

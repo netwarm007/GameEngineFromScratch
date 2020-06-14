@@ -77,9 +77,10 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)releaseTexture:(int32_t)texture;
 
-- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
-                                   height:(const uint32_t)height
-                                  atIndex:(const uint32_t)atIndex;
+- (int32_t)generateTextureForWrite:(const uint32_t)width
+                            height:(const uint32_t)height;
+
+- (void)bindTextureForWrite:(const uint32_t)id atIndex:(const uint32_t)atIndex;
 
 - (void)dispatch:(const uint32_t)width height:(const uint32_t)height depth:(const uint32_t)depth;
 

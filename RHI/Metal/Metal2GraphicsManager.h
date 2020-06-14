@@ -35,10 +35,9 @@ class Metal2GraphicsManager : public GraphicsManager {
     void DrawSkyBox() final;
 
     // compute shader tasks
-    int32_t GenerateAndBindTextureForWrite(const char* id,
-                                           const uint32_t slot_index,
-                                           const uint32_t width,
-                                           const uint32_t height) final;
+    void GenerateTextureForWrite(const char* id, const uint32_t width,
+                                    const uint32_t height) final;
+    void BindTextureForWrite(const char* id, const uint32_t slot_index) final;
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
 

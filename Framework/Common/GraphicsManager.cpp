@@ -10,7 +10,6 @@
 #include "RayTracePass.hpp"
 #include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
-#include "imgui/imgui.h"
 
 using namespace My;
 using namespace std;
@@ -20,12 +19,11 @@ int GraphicsManager::Initialize() {
 #if !defined(OS_WEBASSEMBLY)
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
 #endif
-    InitConstants();
-#if 1
+    m_DispatchPasses.push_back(make_shared<RayTracePass>());
     m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
-#endif
-    // m_DrawPasses.push_back(make_shared<RayTracePass>());
+
+    InitConstants();
     return result;
 }
 
@@ -100,18 +98,16 @@ void GraphicsManager::UpdateConstants() {
 void GraphicsManager::Draw() {
     auto& frame = m_Frames[m_nFrameIndex];
 
+    for (auto& pDispatchPass : m_DispatchPasses) {
+        pDispatchPass->BeginPass();
+        pDispatchPass->Dispatch(frame);
+        pDispatchPass->EndPass();
+    }
+
     for (auto& pDrawPass : m_DrawPasses) {
         pDrawPass->BeginPass();
         pDrawPass->Draw(frame);
         pDrawPass->EndPass();
-    }
-
-    if (ImGui::GetCurrentContext()) {
-        ImGui::NewFrame();
-
-        ImGui::ShowDemoWindow();
-
-        ImGui::Render();
     }
 }
 
@@ -363,6 +359,17 @@ void GraphicsManager::BeginFrame(const Frame& frame) {}
 void GraphicsManager::EndFrame(const Frame&) {
     m_nFrameIndex =
         ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
+}
+
+int32_t GraphicsManager::GetTexture(const char* id) {
+    int32_t result = -1;
+
+    auto it = m_Textures.find(id);
+    if (it != m_Textures.end()) {
+        result = it->second;
+    }
+
+    return result;
 }
 
 #ifdef DEBUG

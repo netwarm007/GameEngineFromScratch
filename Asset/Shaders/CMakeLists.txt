@@ -13,6 +13,7 @@ set(SHADER_SOURCES basic.vert basic.frag
             texture.frag texturearray.frag
             passthrough.vert passthrough_cube.vert
             integrateBRDF.comp
+            raytrace.comp
         )
 
 IF(WIN32)

@@ -29,6 +29,7 @@ using namespace std;
 #define PS_TERRAIN_SOURCE_FILE "terrain.frag"
 #define TESC_TERRAIN_SOURCE_FILE "terrain.tesc"
 #define TESE_TERRAIN_SOURCE_FILE "terrain.tese"
+#define CS_RAYTRACE_SOURCE_FILE "raytrace.comp"
 
 PipelineStateManager::~PipelineStateManager() { Clear(); }
 
@@ -105,6 +106,10 @@ int PipelineStateManager::Initialize() {
     pipelineState.computeShaderName = CS_PBR_BRDF_SOURCE_FILE;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_NONE;
     pipelineState.flag = PIPELINE_FLAG::NONE;
+    RegisterPipelineState(pipelineState);
+
+    pipelineState.pipelineStateName = "RAYTRACE";
+    pipelineState.computeShaderName = CS_RAYTRACE_SOURCE_FILE;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Omni Light Shadow Map";

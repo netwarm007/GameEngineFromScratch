@@ -258,11 +258,13 @@ void Metal2GraphicsManager::ReleaseTexture(int32_t texture) {
 
 void Metal2GraphicsManager::DrawSkyBox() { [m_pRenderer drawSkyBox]; }
 
-int32_t Metal2GraphicsManager::GenerateAndBindTextureForWrite(const char* id,
-                                                              const uint32_t slot_index,
-                                                              const uint32_t width,
-                                                              const uint32_t height) {
-    return [m_pRenderer generateAndBindTextureForWrite:width height:height atIndex:slot_index];
+void Metal2GraphicsManager::GenerateTextureForWrite(const char* id, const uint32_t width, const uint32_t height) {
+    m_Textures[id] = [m_pRenderer generateTextureForWrite:width height:height];
+}
+
+void Metal2GraphicsManager::BindTextureForWrite(const char* id,
+                                                              const uint32_t slot_index) {
+    [m_pRenderer bindTextureForWrite:m_Textures[id] atIndex:slot_index];
 }
 
 void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height,

@@ -2,6 +2,7 @@
 #include "BaseDrawPass.hpp"
 #include "DebugOverlaySubPass.hpp"
 #include "GeometrySubPass.hpp"
+#include "GuiSubPass.hpp"
 #include "SkyBoxSubPass.hpp"
 #include "TerrainSubPass.hpp"
 
@@ -15,6 +16,7 @@ class ForwardGeometryPass : public BaseDrawPass {
         // m_DrawSubPasses.push_back(std::make_shared<TerrainSubPass>());
 #endif
         m_DrawSubPasses.push_back(std::make_shared<DebugOverlaySubPass>());
+        m_DrawSubPasses.push_back(std::make_shared<GuiSubPass>());
     }
 };
 }  // namespace My

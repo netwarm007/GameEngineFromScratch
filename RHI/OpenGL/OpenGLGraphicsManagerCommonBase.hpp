@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "GraphicsManager.hpp"
@@ -45,12 +44,12 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                               const uint32_t width,
                               const uint32_t height) final;
     void EndRenderToTexture(int32_t& context) final;
-    int32_t GetTexture(const char* id) final;
 
-    int32_t GenerateAndBindTextureForWrite(const char* id,
-                                           const uint32_t slot_index,
-                                           const uint32_t width,
-                                           const uint32_t height) final;
+    void GenerateTextureForWrite(const char* id, const uint32_t width,
+                                 const uint32_t height) final;
+
+    void BindTextureForWrite(const char* id, const uint32_t slot_index) final;
+
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
 
@@ -150,7 +149,6 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
 #endif
 
     std::vector<uint32_t> m_Buffers;
-    std::unordered_map<std::string, uint32_t> m_Textures;
 
 #ifdef DEBUG
     std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;

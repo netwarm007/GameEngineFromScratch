@@ -687,9 +687,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _texture_recycled_indexes.push(texture);
 }
 
-- (int32_t)generateAndBindTextureForWrite:(const uint32_t)width
-                                   height:(const uint32_t)height
-                                  atIndex:(const uint32_t)atIndex {
+- (int32_t)generateTextureForWrite:(const uint32_t)width
+                            height:(const uint32_t)height {
     id<MTLTexture> texture;
     MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
 
@@ -702,7 +701,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     texture = [_device newTextureWithDescriptor:textureDesc];
     [textureDesc release];
 
-    uint32_t index;
+    int32_t index;
     if (!_texture_recycled_indexes.empty()) {
         index = _texture_recycled_indexes.top();
         _texture_recycled_indexes.pop();
@@ -712,9 +711,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
         _textures.push_back(texture);
     }
 
-    [_computeEncoder setTexture:texture atIndex:atIndex];
-
     return index;
+}
+
+- (void)bindTextureForWrite:(const uint32_t)id atIndex:(const uint32_t)atIndex {
+    [_computeEncoder setTexture:_textures[id] atIndex:atIndex];
 }
 
 - (void)dispatch:(const uint32_t)width height:(const uint32_t)height depth:(const uint32_t)depth {
