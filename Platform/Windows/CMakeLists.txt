@@ -4,8 +4,4 @@ add_library(PlatformInterface
                 OpenGLApplication.cpp
                 ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_wgl.c
                 ${PROJECT_SOURCE_DIR}/External/src/imgui/examples/imgui_impl_win32.cpp
-                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui.cpp
-                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_draw.cpp
-                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_demo.cpp
-                ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_widgets.cpp
 )
