@@ -4,8 +4,8 @@
 namespace My {
 class BaseDispatchPass : _implements_ IDispatchPass {
    public:
-    void BeginPass(Frame&) override {}
-    void EndPass(Frame&) override {}
+    void BeginPass(Frame&) override;
+    void EndPass(Frame&) override;
 
    protected:
     BaseDispatchPass() = default;

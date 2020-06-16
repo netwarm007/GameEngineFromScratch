@@ -2,6 +2,8 @@ version: 0.0.{build}
 image: Visual Studio 2019
 build_script:
 - cmd: >-
+    scripts/build_imgui
+
     scripts/build_crossguid
 
     scripts/build_opengex

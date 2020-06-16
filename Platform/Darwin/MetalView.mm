@@ -54,11 +54,17 @@ using namespace My;
     if ([theEvent type] == NSEventTypeLeftMouseDown) {
         InputManager::LeftMouseButtonDown();
     }
+    else if ([theEvent type] == NSEventTypeRightMouseDown) {
+        InputManager::RightMouseButtonDown();
+    }
 }
 
 - (void)mouseUp:(NSEvent *)theEvent {
     if ([theEvent type] == NSEventTypeLeftMouseUp) {
         InputManager::LeftMouseButtonUp();
+    }
+    else if ([theEvent type] == NSEventTypeRightMouseUp) {
+        InputManager::RightMouseButtonUp();
     }
 }
 
@@ -66,10 +72,13 @@ using namespace My;
     if ([theEvent type] == NSEventTypeLeftMouseDragged) {
         InputManager::LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
     }
+    else if ([theEvent type] == NSEventTypeRightMouseDragged) {
+        InputManager::RightMouseDrag([theEvent deltaX], [theEvent deltaY]);
+    }
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent {
-    InputManager::LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+    InputManager::RightMouseDrag([theEvent deltaX], [theEvent deltaY]);
 }
 
 @end

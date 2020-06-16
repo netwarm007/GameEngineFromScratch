@@ -4,6 +4,7 @@
 #import "AppDelegate.h"
 #include "InputManager.hpp"
 #import "WindowDelegate.h"
+#include "imgui/examples/imgui_impl_osx.h"
 
 using namespace My;
 
@@ -48,9 +49,20 @@ void CocoaApplication::CreateMainWindow() {
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
     [winDelegate release];
+
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    [[maybe_unused]] ImGuiIO& io = ImGui::GetIO();
+
+    ImGui_ImplOSX_Init();
+
+    ImGui::StyleColorsDark();
 }
 
 void CocoaApplication::Finalize() {
+    ImGui_ImplOSX_Shutdown();
+
     [m_pWindow release];
     BaseApplication::Finalize();
 }
@@ -60,6 +72,9 @@ void CocoaApplication::Tick() {
                                                untilDate:nil
                                                   inMode:NSDefaultRunLoopMode
                                                  dequeue:YES]) {
+
+        ImGui_ImplOSX_HandleEvent(event, [m_pWindow contentView]);
+
         switch ([(NSEvent*)event type]) {
             case NSEventTypeKeyUp:
                 NSLog(@"[CocoaApp] Key Up Event Received!");

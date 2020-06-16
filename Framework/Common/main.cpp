@@ -32,8 +32,9 @@ int main(int argc, char** argv) {
 
     g_pApp->SetCommandLineParameters(argc, argv);
 
+    g_pApp->Initialize();
+
     vector<IRuntimeModule*> run_time_modules;
-    run_time_modules.push_back(g_pApp);
     run_time_modules.push_back(g_pMemoryManager);
     run_time_modules.push_back(g_pAssetLoader);
     run_time_modules.push_back(g_pSceneManager);
@@ -66,6 +67,7 @@ int main(int argc, char** argv) {
     emscripten_set_main_loop(main_loop, 0, true);
 #else
     while (!g_pApp->IsQuit()) {
+        g_pApp->Tick();
         for (auto& module : run_time_modules) {
             module->Tick();
         }

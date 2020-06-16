@@ -7,6 +7,7 @@
 #include "ForwardGeometryPass.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
+#include "RayTracePass.hpp"
 #include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
 
@@ -18,10 +19,11 @@ int GraphicsManager::Initialize() {
 #if !defined(OS_WEBASSEMBLY)
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
 #endif
-
-    InitConstants();
+    //m_DispatchPasses.push_back(make_shared<RayTracePass>());
     //m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
+
+    InitConstants();
     return result;
 }
 
@@ -95,6 +97,12 @@ void GraphicsManager::UpdateConstants() {
 
 void GraphicsManager::Draw() {
     auto& frame = m_Frames[m_nFrameIndex];
+
+    for (auto& pDispatchPass : m_DispatchPasses) {
+        pDispatchPass->BeginPass(frame);
+        pDispatchPass->Dispatch(frame);
+        pDispatchPass->EndPass(frame);
+    }
 
     for (auto& pDrawPass : m_DrawPasses) {
         pDrawPass->BeginPass(frame);
@@ -293,19 +301,44 @@ void GraphicsManager::CalculateLights() {
 }
 
 void GraphicsManager::BeginScene(const Scene& scene) {
-    m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
-
     // first, call init passes on frame 0
     for (const auto& pPass : m_InitPasses) {
-        BeginCompute();
+        pPass->BeginPass(m_Frames[0]);
         pPass->Dispatch(m_Frames[0]);
-        EndCompute();
+        pPass->EndPass(m_Frames[0]);
     }
 
-    // now, copy the frame structures
-    for (int32_t i = 1; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+    // now, copy the frame structures and initialize shadow maps
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         m_Frames[i] = m_Frames[0];
         m_Frames[i].frameIndex = i;
+
+        // generate shadow map array
+        if (m_Frames[i].frameContext.shadowMap == -1) {
+            m_Frames[i].frameContext.shadowMap =
+                g_pGraphicsManager->GenerateShadowMapArray(
+                    GfxConfiguration::kShadowMapWidth,
+                    GfxConfiguration::kShadowMapHeight,
+                    GfxConfiguration::kMaxShadowMapCount);
+        }
+
+        // generate global shadow map array
+        if (m_Frames[i].frameContext.globalShadowMap == -1) {
+            m_Frames[i].frameContext.globalShadowMap =
+                g_pGraphicsManager->GenerateShadowMapArray(
+                    GfxConfiguration::kGlobalShadowMapWidth,
+                    GfxConfiguration::kGlobalShadowMapHeight,
+                    GfxConfiguration::kMaxGlobalShadowMapCount);
+        }
+
+        // generate cube shadow map array
+        if (m_Frames[i].frameContext.cubeShadowMap == -1) {
+            m_Frames[i].frameContext.cubeShadowMap =
+                g_pGraphicsManager->GenerateCubeShadowMapArray(
+                    GfxConfiguration::kCubeShadowMapWidth,
+                    GfxConfiguration::kCubeShadowMapHeight,
+                    GfxConfiguration::kMaxCubeShadowMapCount);
+        }
     }
 
     if (scene.Geometries.size()) {
@@ -316,13 +349,30 @@ void GraphicsManager::BeginScene(const Scene& scene) {
     }
 }
 
-void GraphicsManager::EndScene() { m_Frames.clear(); }
+void GraphicsManager::EndScene() {
+    for (auto& item : m_Textures) {
+        ReleaseTexture(item.second);
+    }
+
+    m_Textures.clear();
+}
 
 void GraphicsManager::BeginFrame(const Frame& frame) {}
 
 void GraphicsManager::EndFrame(const Frame&) {
     m_nFrameIndex =
         ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
+}
+
+intptr_t GraphicsManager::GetTexture(const char* id) {
+    int32_t result = -1;
+
+    auto it = m_Textures.find(id);
+    if (it != m_Textures.end()) {
+        result = it->second;
+    }
+
+    return result;
 }
 
 #ifdef DEBUG

@@ -1,5 +1,102 @@
-version: 2
+version: 2.1
+orbs:
+  win: circleci/windows@2.2.0
+
 jobs:
+  build_windows:
+    executor:
+      name: win/default
+      shell: powershell.exe
+    steps:
+      - run: systeminfo
+      - run:
+          name: "Install CMake"
+          command: |
+            $machinePath = [Environment]::GetEnvironmentVariable('Path', 'MACHINE')
+            $newMachineEnvironmentPath = $machinePath
+            
+            # install chocolatey
+            $chocolateyPath = "$env:AllUsersProfile\chocolatey\bin"
+            if(Get-Command "choco" -ErrorAction SilentlyContinue)
+            {
+              echo "Chocolatey is already installed. Skipping installation."
+            }
+            else
+            {
+              echo "Chocolatey net present. Installing chocolatey."
+              Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+              {
+                echo "Adding $chocolateyPath to Path environment variable"
+                $env:Path += ";$chocolateyPath"
+                $newMachineEnvironmentPath += ";$chocolateyPath"
+              }
+              else
+              {
+                echo "$chocolateyPath already present in Path environment variable"
+              }
+            }
+            
+            # install cmake
+            $cmakePath = "${env:ProgramFiles(x86)}\CMake\bin"
+            if(Get-Command "cmake" -ErrorAction SilentlyContinue)
+            {
+              echo "Cmake is already installed. Skipping installation."
+            }
+            else
+            {
+              echo "Cmake not present. Installing cmake."
+              choco install cmake.portable -y --version 3.16.2
+
+              if (-not ($machinePath.ToLower().Contains($cmakePath.ToLower())))
+              {
+                echo "Adding $cmakePath to Path environment variable"
+                $env:Path += ";$cmakePath"
+                $newMachineEnvironmentPath = "$cmakePath;$newMachineEnvironmentPath"
+              }
+              else
+              {
+                echo "$cmakePath already present in Path environment variable"
+              }
+            }
+
+            # update machine environment path
+            if ($newMachineEnvironmentPath -ne $machinePath)
+            {
+              [Environment]::SetEnvironmentVariable('Path', $newMachineEnvironmentPath, 'MACHINE')
+            }
+      - restore_cache:
+          keys:
+            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+            - source-{{ arch }}-{{ .Branch }}-
+            - source-{{ arch }}
+      - checkout
+      - run:
+          name: git gc
+          command: |
+             git gc
+      - save_cache:
+          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
+      - run:
+          name: "Build Dependencies"
+          command: |
+            scripts/build_imgui
+            scripts/build_crossguid
+            scripts/build_opengex
+            scripts/build_zlib
+            scripts/build_bullet
+            scripts/build_cef
+            scripts/build_glslangValidator
+            scripts/build_spirvcross
+      - run:
+          name: "Build Engine"
+          command: |
+            scripts/build
+      - run:
+          name: "Test"
+          command: |
+            cmake --build build --target RUN_TESTS
   build_linux:
     docker:
       - image: ubuntu:20.04
@@ -18,16 +115,11 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run: 
-          name: Git Restore
-          command: |
-             git restore .
       - checkout
-      - run: 
-          name: Git LFS Checkout
+      - run:
+          name: git gc
           command: |
-             git lfs install
-      - checkout
+             git gc
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -35,6 +127,7 @@ jobs:
       - run:
           name: Build
           command: |
+             ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
              ./scripts/build_bullet.sh
@@ -55,15 +148,11 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
-      - run: 
-          name: Git Restore
-          command: |
-             git restore .
       - checkout
       - run:
-          name: LFS install
+          name: git gc
           command: |
-             git lfs install
+             git gc
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -80,6 +169,7 @@ jobs:
           name: Build
           command: |
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+             ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
              ./scripts/build_zlib.sh
@@ -231,6 +321,7 @@ workflows:
   version: 2
   build_and_test:
     jobs:
+      - build_windows
       - build_linux
       - build_macos
       #- build_android

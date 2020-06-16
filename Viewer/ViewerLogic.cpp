@@ -85,7 +85,7 @@ void ViewerLogic::OnDownKeyDown() {
 }
 
 void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
-    if (id == 0) {
+    if (id == 1) {
         auto& scene = g_pSceneManager->GetSceneForRendering();
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {

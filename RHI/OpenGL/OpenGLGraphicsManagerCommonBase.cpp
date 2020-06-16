@@ -338,7 +338,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
 
                                 m_Textures[texture_key] = texture_id;
                             } else {
-                                texture_id = it->second;
+                                texture_id = static_cast<uint32_t>(it->second);
                             }
 
                             return texture_id;
@@ -603,12 +603,12 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
     }
 
     for (auto& it : m_Textures) {
-        glDeleteTextures(1, &it.second);
+        GLuint texture_id = static_cast<GLuint>(it.second);
+        glDeleteTextures(1, &texture_id);
     }
 
     m_Buffers.clear();
     m_Textures.clear();
-    m_Frames.clear();
 
     GraphicsManager::EndScene();
 }
@@ -1059,10 +1059,9 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame) {
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::DestroyShadowMap(int32_t& shadowmap) {
-    auto id = (uint32_t)shadowmap;
+void OpenGLGraphicsManagerCommonBase::ReleaseTexture(intptr_t texture) {
+    auto id = (uint32_t)texture;
     glDeleteTextures(1, &id);
-    shadowmap = -1;
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawSkyBox([[maybe_unused]] const Frame& frame) {
@@ -1075,18 +1074,7 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox([[maybe_unused]] const Frame& f
     glBindVertexArray(0);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GetTexture(const char* id) {
-    int32_t result = 0;
-
-    auto it = m_Textures.find(id);
-    if (it != m_Textures.end()) {
-        result = it->second;
-    }
-
-    return result;
-}
-
-int32_t OpenGLGraphicsManagerCommonBase::GenerateTexture(
+void OpenGLGraphicsManagerCommonBase::GenerateTexture(
     const char* id, const uint32_t width, const uint32_t height) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
@@ -1101,9 +1089,6 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateTexture(
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG16F, width, height);
 
     m_Textures[id] = texture;
-
-    // register the shadow map
-    return static_cast<int32_t>(texture);
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(
@@ -1149,9 +1134,8 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context) {
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(
-    const char* id, const uint32_t slot_index, const uint32_t width,
-    const uint32_t height) {
+void OpenGLGraphicsManagerCommonBase::GenerateTextureForWrite(
+    const char* id, const uint32_t width, const uint32_t height) {
     uint32_t tex_output;
     glGenTextures(1, &tex_output);
     glActiveTexture(GL_TEXTURE0);
@@ -1164,17 +1148,18 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateAndBindTextureForWrite(
                  nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    m_Textures[id] = tex_output;
+}
+
+void OpenGLGraphicsManagerCommonBase::BindTextureForWrite(
+    const char* id, const uint32_t slot_index) {
 #if !defined(OS_WEBASSEMBLY)
     // Bind it as Write-only Texture
     if (GLAD_GL_ARB_compute_shader) {
-        glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY,
+        glBindImageTexture(0, m_Textures[id], 0, GL_FALSE, 0, GL_WRITE_ONLY,
                            GL_RG32F);
     }
 #endif
-
-    m_Textures[id] = tex_output;
-
-    return tex_output;
 }
 
 void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width,

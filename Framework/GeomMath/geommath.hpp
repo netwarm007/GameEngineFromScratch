@@ -139,6 +139,12 @@ struct Vector {
     [[nodiscard]] const T& operator[](size_t index) const {
         return data[index];
     }
+
+    T Dot3(const Vector& v) {
+        T result;
+        DotProduct(result, *this, v);
+        return result;
+    }
 };
 
 using Vector2f = Vector<float, 2>;
@@ -191,6 +197,11 @@ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     VectorAdd(result, vec1, vec2);
 
     return result;
+}
+
+template <typename T, int N>
+Vector<T, N> operator+=(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+    return vec1 + vec2;
 }
 
 template <typename T, int N>

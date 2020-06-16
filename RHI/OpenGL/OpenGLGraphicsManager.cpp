@@ -7,6 +7,11 @@
 
 #include "glad/glad.h"
 
+#include "imgui/examples/imgui_impl_opengl3.h"
+#ifdef OS_WINDOWS
+#include "imgui/examples/imgui_impl_win32.h"
+#endif
+
 using namespace My;
 using namespace std;
 
@@ -93,7 +98,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id,
 int OpenGLGraphicsManager::Initialize() {
     int result;
 
-    result = My::GraphicsManager::Initialize();
+    result = OpenGLGraphicsManagerCommonBase::Initialize();
 
     if (result) {
         return result;
@@ -141,7 +146,14 @@ int OpenGLGraphicsManager::Initialize() {
         }
     }
 
+    ImGui_ImplOpenGL3_Init("#version 420");
+
     return result;
+}
+
+void OpenGLGraphicsManager::Finalize() {
+    ImGui_ImplOpenGL3_Shutdown();
+    OpenGLGraphicsManagerCommonBase::Finalize();
 }
 
 void OpenGLGraphicsManager::getOpenGLTextureFormat(const Image& img,
@@ -203,4 +215,17 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(const Image& img,
             type = GL_UNSIGNED_BYTE;
         }
     }
+}
+
+void OpenGLGraphicsManager::BeginFrame(const Frame& frame) {
+    OpenGLGraphicsManagerCommonBase::BeginFrame(frame);
+    ImGui_ImplOpenGL3_NewFrame();
+#ifdef OS_WINDOWS
+    ImGui_ImplWin32_NewFrame();
+#endif
+}
+
+void OpenGLGraphicsManager::EndFrame(const Frame& frame) {
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    OpenGLGraphicsManagerCommonBase::EndFrame(frame);
 }

@@ -8,6 +8,7 @@ add_library(PlatformInterface
         AppDelegate.m
         WindowDelegate.m
         MetalView.mm
+        ${PROJECT_SOURCE_DIR}/External/src/imgui/examples/imgui_impl_osx.mm
     )
 target_link_libraries(PlatformInterface
         ${COCOA_LIBRARY} 

@@ -38,16 +38,17 @@ class D3d12GraphicsManager : public GraphicsManager {
                         const int32_t layer_index, const Frame& frame) final;
     void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) final;
     void SetShadowMaps(const Frame& frame) final;
-    void DestroyShadowMap(int32_t& shadowmap) final;
+    void CreateTexture(SceneObjectTexture& texture) final;
+    void ReleaseTexture(intptr_t texture) final;
 
     // skybox
     void DrawSkyBox(const Frame& frame) final;
 
     // compute shader tasks
-    int32_t GenerateAndBindTextureForWrite(const char* id,
-                                           const uint32_t slot_index,
-                                           const uint32_t width,
-                                           const uint32_t height) final;
+    void GenerateTextureForWrite(const char* id, const uint32_t width,
+                                 const uint32_t height) final;
+
+    void BindTextureForWrite(const char* id, const uint32_t slot_index) final;
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
@@ -77,7 +78,6 @@ class D3d12GraphicsManager : public GraphicsManager {
     HRESULT CreateGraphicsResources();
 
     uint32_t CreateSamplerBuffer();
-    int32_t CreateTextureBuffer(SceneObjectTexture& texture);
     uint32_t CreateConstantBuffer();
     size_t CreateIndexBuffer(const void* pData, size_t size,
                              int32_t index_size);
@@ -145,8 +145,6 @@ class D3d12GraphicsManager : public GraphicsManager {
 
     std::vector<ID3D12Resource*>
         m_Buffers;  // the pointer to the GPU buffer other than texture
-    std::vector<ID3D12Resource*>
-        m_Textures;  // the pointer to the Texture buffer
     std::vector<D3D12_VERTEX_BUFFER_VIEW>
         m_VertexBufferView;  // vertex buffer descriptors
     std::vector<D3D12_INDEX_BUFFER_VIEW>

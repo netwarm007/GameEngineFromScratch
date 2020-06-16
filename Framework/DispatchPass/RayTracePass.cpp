@@ -1,13 +1,15 @@
-#include "BRDFIntegrator.hpp"
+#include "RayTracePass.hpp"
 
 #include "GraphicsManager.hpp"
 #include "IPipelineStateManager.hpp"
 
 using namespace My;
 
-void BRDFIntegrator::Dispatch(Frame& frame) {
+static int32_t raytrace_texture = -1;
+
+void RayTracePass::Dispatch(Frame& frame) {
     auto& pPipelineState =
-        g_pPipelineStateManager->GetPipelineState("PBR BRDF CS");
+        g_pPipelineStateManager->GetPipelineState("RAYTRACE");
 
     // Set the color shader as the current shader program and set the matrices
     // that it will use for rendering.
@@ -16,10 +18,10 @@ void BRDFIntegrator::Dispatch(Frame& frame) {
     const uint32_t width = 512u;
     const uint32_t height = 512u;
     const uint32_t depth = 1u;
-    if (frame.brdfLUT == -1) {
-        g_pGraphicsManager->GenerateTextureForWrite("BRDF_LUT", width, height);
-        frame.brdfLUT = g_pGraphicsManager->GetTexture("BRDF_LUT");
+    if (raytrace_texture == -1) {
+        g_pGraphicsManager->GenerateTextureForWrite("RAYTRACE", width, height);
+        raytrace_texture = g_pGraphicsManager->GetTexture("RAYTRACE");
     }
-    g_pGraphicsManager->BindTextureForWrite("BRDF_LUT", 0);
+    g_pGraphicsManager->BindTextureForWrite("RAYTRACE", 0);
     g_pGraphicsManager->Dispatch(width, height, depth);
 }

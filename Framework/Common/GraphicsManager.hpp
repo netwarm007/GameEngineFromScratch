@@ -1,4 +1,6 @@
 #pragma once
+#include <array>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -52,30 +54,28 @@ class GraphicsManager : _implements_ IRuntimeModule {
     virtual void EndShadowMap(const int32_t shadowmap,
                               const int32_t layer_index) {}
     virtual void SetShadowMaps(const Frame& frame) {}
-    virtual void DestroyShadowMap(int32_t& shadowmap) {}
 
     // skybox
     virtual void DrawSkyBox(const Frame& frame) {}
 
-    virtual int32_t GenerateTexture(const char* id, const uint32_t width,
-                                    const uint32_t height) {
-        return 0;
-    }
+    virtual void GenerateTexture(const char* id, const uint32_t width,
+                                 const uint32_t height) {}
+    virtual void CreateTexture(SceneObjectTexture& texture) {}
+    virtual void ReleaseTexture(intptr_t texture) {}
     virtual void BeginRenderToTexture(int32_t& context, const int32_t texture,
                                       const uint32_t width,
                                       const uint32_t height) {}
     virtual void EndRenderToTexture(int32_t& context) {}
 
-    virtual int32_t GenerateAndBindTextureForWrite(const char* id,
-                                                   const uint32_t slot_index,
-                                                   const uint32_t width,
-                                                   const uint32_t height) {
-        return 0;
-    }
+    virtual void GenerateTextureForWrite(const char* id, const uint32_t width,
+                                         const uint32_t height) {}
+
+    virtual void BindTextureForWrite(const char* id,
+                                     const uint32_t slot_index) {}
     virtual void Dispatch(const uint32_t width, const uint32_t height,
                           const uint32_t depth) {}
 
-    virtual int32_t GetTexture(const char* id) { return 0; }
+    virtual intptr_t GetTexture(const char* id);
 
     virtual void DrawFullScreenQuad() {}
 
@@ -125,15 +125,15 @@ class GraphicsManager : _implements_ IRuntimeModule {
     virtual void BeginPass(const Frame& frame) {}
     virtual void EndPass(const Frame& frame) {}
 
+    virtual void BeginCompute() {}
+    virtual void EndCompute() {}
+
    protected:
     virtual void BeginScene(const Scene& scene);
     virtual void EndScene();
 
     virtual void BeginFrame(const Frame& frame);
     virtual void EndFrame(const Frame& frame);
-
-    virtual void BeginCompute() {}
-    virtual void EndCompute() {}
 
     virtual void initializeGeometries(const Scene& scene) {}
     virtual void initializeSkyBox(const Scene& scene) {}
@@ -150,12 +150,15 @@ class GraphicsManager : _implements_ IRuntimeModule {
     void UpdateConstants();
 
    protected:
+    std::map<std::string, intptr_t> m_Textures;
+
     uint64_t m_nSceneRevision{0};
 
     uint32_t m_nFrameIndex{0};
 
-    std::vector<Frame> m_Frames;
+    std::array<Frame, GfxConfiguration::kMaxInFlightFrameCount> m_Frames;
     std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
+    std::vector<std::shared_ptr<IDispatchPass>> m_DispatchPasses;
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
 
     constexpr static float skyboxVertices[]{
@@ -171,15 +174,15 @@ class GraphicsManager : _implements_ IRuntimeModule {
 
     constexpr static uint16_t skyboxIndices[]{4, 7, 5, 5, 3, 4,
 
-                                             6, 7, 4, 4, 1, 6,
+                                              6, 7, 4, 4, 1, 6,
 
-                                             5, 2, 0, 0, 3, 5,
+                                              5, 2, 0, 0, 3, 5,
 
-                                             6, 1, 0, 0, 2, 6,
+                                              6, 1, 0, 0, 2, 6,
 
-                                             4, 3, 0, 0, 1, 4,
+                                              4, 3, 0, 0, 1, 4,
 
-                                             7, 6, 5, 5, 6, 2};
+                                              7, 6, 5, 5, 6, 2};
 };
 
 extern GraphicsManager* g_pGraphicsManager;

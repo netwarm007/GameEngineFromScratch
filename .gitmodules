@@ -43,3 +43,6 @@
 [submodule "bison"]
 	path = External/src/bison
 	url = https://github.com/netwarm007/bison.git
+[submodule "imguid"]
+	path = External/src/imgui
+	url = https://github.com/ocornut/imgui.git

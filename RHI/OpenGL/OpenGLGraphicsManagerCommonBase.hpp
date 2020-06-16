@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "GraphicsManager.hpp"
@@ -13,8 +12,6 @@ namespace My {
 class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
    public:
     // overrides
-    int Initialize() override = 0;
-
     void Present() final;
 
     void ResizeCanvas(int32_t width, int32_t height) final;
@@ -33,23 +30,23 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                         const int32_t layer_index, const Frame& frame) final;
     void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) final;
     void SetShadowMaps(const Frame& frame) final;
-    void DestroyShadowMap(int32_t& shadowmap) final;
+    void ReleaseTexture(intptr_t texture) final;
 
     // skybox
     void DrawSkyBox(const Frame& frame) final;
 
-    int32_t GenerateTexture(const char* id, const uint32_t width,
+    void GenerateTexture(const char* id, const uint32_t width,
                             const uint32_t height) final;
     void BeginRenderToTexture(int32_t& context, const int32_t texture,
                               const uint32_t width,
                               const uint32_t height) final;
     void EndRenderToTexture(int32_t& context) final;
-    int32_t GetTexture(const char* id) final;
 
-    int32_t GenerateAndBindTextureForWrite(const char* id,
-                                           const uint32_t slot_index,
-                                           const uint32_t width,
-                                           const uint32_t height) final;
+    void GenerateTextureForWrite(const char* id, const uint32_t width,
+                                 const uint32_t height) final;
+
+    void BindTextureForWrite(const char* id, const uint32_t slot_index) final;
+
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
 
@@ -88,11 +85,11 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
     void RenderDebugBuffers() override;
 #endif
 
-   private:
+   protected:
     void EndScene() final;
 
-    void BeginFrame(const Frame& frame) final;
-    void EndFrame(const Frame& frame) final;
+    void BeginFrame(const Frame& frame) override;
+    void EndFrame(const Frame& frame) override;
 
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;
@@ -148,7 +145,6 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
 #endif
 
     std::vector<uint32_t> m_Buffers;
-    std::unordered_map<std::string, uint32_t> m_Textures;
 
 #ifdef DEBUG
     std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;
