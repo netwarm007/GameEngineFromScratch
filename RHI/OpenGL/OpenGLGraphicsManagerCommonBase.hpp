@@ -20,15 +20,15 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                           const Frame& frame) final;
     void DrawBatch(const Frame& frame) final;
 
-    int32_t GenerateCubeShadowMapArray(const uint32_t width,
+    intptr_t GenerateCubeShadowMapArray(const uint32_t width,
                                        const uint32_t height,
                                        const uint32_t count) final;
-    int32_t GenerateShadowMapArray(const uint32_t width, const uint32_t height,
+    intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height,
                                    const uint32_t count) final;
-    void BeginShadowMap(const int32_t light_index, const int32_t shadowmap,
+    void BeginShadowMap(const int32_t light_index, const intptr_t shadowmap,
                         const uint32_t width, const uint32_t height,
                         const int32_t layer_index, const Frame& frame) final;
-    void EndShadowMap(const int32_t shadowmap, const int32_t layer_index) final;
+    void EndShadowMap(const intptr_t shadowmap, const int32_t layer_index) final;
     void SetShadowMaps(const Frame& frame) final;
     void ReleaseTexture(intptr_t texture) final;
 
@@ -68,17 +68,17 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
     void DrawTriangleStrip(const PointList& vertices,
                            const Vector3f& color) final;
     void ClearDebugBuffers() final;
-    void DrawTextureOverlay(const int32_t texture, const float vp_left,
+    void DrawTextureOverlay(const intptr_t texture, const float vp_left,
                             const float vp_top, const float vp_width,
                             const float vp_height) final;
-    void DrawTextureArrayOverlay(const int32_t texture, const float layer_index,
+    void DrawTextureArrayOverlay(const intptr_t texture, const float layer_index,
                                  const float vp_left, const float vp_top,
                                  const float vp_width,
                                  const float vp_height) final;
-    void DrawCubeMapOverlay(const int32_t cubemap, const float vp_left,
+    void DrawCubeMapOverlay(const intptr_t cubemap, const float vp_left,
                             const float vp_top, const float vp_width,
                             const float vp_height, const float level) final;
-    void DrawCubeMapArrayOverlay(const int32_t cubemap, const float layer_index,
+    void DrawCubeMapArrayOverlay(const intptr_t cubemap, const float layer_index,
                                  const float vp_left, const float vp_top,
                                  const float vp_width, const float vp_height,
                                  const float level) final;

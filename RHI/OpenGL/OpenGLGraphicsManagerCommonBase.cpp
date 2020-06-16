@@ -899,7 +899,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const Frame& frame) {
     glBindVertexArray(0);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
     const uint32_t width, const uint32_t height, const uint32_t count) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
@@ -926,7 +926,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
     return static_cast<int32_t>(shadowMap);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
     const uint32_t width, const uint32_t height, const uint32_t count) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
@@ -948,7 +948,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
-    const int32_t light_index, const int32_t shadowmap, const uint32_t width,
+    const int32_t light_index, const intptr_t shadowmap, const uint32_t width,
     const uint32_t height, const int32_t layer_index, const Frame& frame) {
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth
     // buffer.
@@ -1007,7 +1007,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap,
+void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap,
                                                    int32_t layer_index) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1496,7 +1496,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers() {
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(
-    const int32_t texture, const float vp_left, const float vp_top,
+    const intptr_t texture, const float vp_left, const float vp_top,
     const float vp_width, const float vp_height) {
     auto texture_id = (uint32_t)texture;
 
@@ -1555,7 +1555,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(
-    const int32_t texture, const float layer_index, const float vp_left,
+    const intptr_t texture, const float layer_index, const float vp_left,
     const float vp_top, const float vp_width, const float vp_height) {
     auto texture_id = (uint32_t)texture;
     DebugConstants constants;
@@ -1640,7 +1640,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(
-    const int32_t cubemap, const float vp_left, const float vp_top,
+    const intptr_t cubemap, const float vp_left, const float vp_top,
     const float vp_width, const float vp_height, const float level) {
     auto texture_id = (uint32_t)cubemap;
     DebugConstants constants;
@@ -1865,7 +1865,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(
-    const int32_t cubemap, const float layer_index, const float vp_left,
+    const intptr_t cubemap, const float layer_index, const float vp_left,
     const float vp_top, const float vp_width, const float vp_height,
     const float level) {
     auto texture_id = (uint32_t)cubemap;

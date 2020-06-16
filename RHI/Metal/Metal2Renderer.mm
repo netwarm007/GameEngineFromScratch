@@ -337,7 +337,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     [_commandBuffer commit];
 }
 
-- (void)beginPass {
+- (void)beginPass:(const Frame&) frame {
     // Create a new command buffer for each render pass to the current drawable
     _commandBuffer = [_commandQueue commandBuffer];
     _commandBuffer.label = @"Online Command Buffer";
@@ -357,7 +357,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     }
 }
 
-- (void)endPass:(const Frame&) {
+- (void)endPass:(const Frame&)frame {
     [_renderEncoder endEncoding];
 
     // Finalize rendering here & push the command buffer to the GPU
@@ -687,8 +687,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _texture_recycled_indexes.push(texture);
 }
 
-- (int32_t)generateTextureForWrite:(const uint32_t)width
-                            height:(const uint32_t)height {
+- (int32_t)generateTextureForWrite:(const uint32_t)width height:(const uint32_t)height {
     id<MTLTexture> texture;
     MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
 
