@@ -1786,25 +1786,25 @@ void D3d12GraphicsManager::DrawSkyBox(const Frame& frame) {
         m_dbcSkyBox.index_count, 1, 0, 0, 0);
 }
 
-int32_t D3d12GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width,
-                                                         const uint32_t height,
-                                                         const uint32_t count) {
-    int32_t texture_id = 0;
+intptr_t D3d12GraphicsManager::GenerateCubeShadowMapArray(
+    const uint32_t width, const uint32_t height, const uint32_t count) {
+    intptr_t texture_id = 0;
 
     return texture_id;
 }
 
-int32_t D3d12GraphicsManager::GenerateShadowMapArray(const uint32_t width,
-                                                     const uint32_t height,
-                                                     const uint32_t count) {
-    int32_t texture_id = 0;
+intptr_t D3d12GraphicsManager::GenerateShadowMapArray(const uint32_t width,
+                                                      const uint32_t height,
+                                                      const uint32_t count) {
+    intptr_t texture_id = 0;
 
     return texture_id;
 }
 
 void D3d12GraphicsManager::BeginShadowMap(
-    const int32_t light_index, const int32_t shadowmap, const uint32_t width,
+    const int32_t light_index, const intptr_t shadowmap, const uint32_t width,
     const uint32_t height, const int32_t layer_index, const Frame& frame) {
+#if 0
     D3D12_VIEWPORT view_port = {
         0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height),
         0.0f, 1.0f};
@@ -1828,9 +1828,10 @@ void D3d12GraphicsManager::BeginShadowMap(
 
     m_pGraphicsCommandList[m_nFrameIndex]->ClearDepthStencilView(
         dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+#endif
 }
 
-void D3d12GraphicsManager::EndShadowMap(const int32_t shadowmap,
+void D3d12GraphicsManager::EndShadowMap(const intptr_t shadowmap,
                                         const int32_t layer_index) {}
 
 void D3d12GraphicsManager::SetShadowMaps(const Frame& frame) {}

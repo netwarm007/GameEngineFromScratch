@@ -20,7 +20,7 @@ int GraphicsManager::Initialize() {
     m_InitPasses.push_back(make_shared<BRDFIntegrator>());
 #endif
     m_DispatchPasses.push_back(make_shared<RayTracePass>());
-    m_DrawPasses.push_back(make_shared<ShadowMapPass>());
+    //m_DrawPasses.push_back(make_shared<ShadowMapPass>());
     m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
 
     InitConstants();
