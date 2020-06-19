@@ -8,9 +8,9 @@
 namespace My {
 class BaseDrawPass : _implements_ IDrawPass {
    public:
-    void BeginPass() override { g_pGraphicsManager->BeginPass(); }
+    void BeginPass(Frame& frame) override { g_pGraphicsManager->BeginPass(frame); }
     void Draw(Frame& frame) override;
-    void EndPass() override { g_pGraphicsManager->EndPass(); }
+    void EndPass(Frame& frame) override { g_pGraphicsManager->EndPass(frame); }
 
    protected:
     BaseDrawPass() = default;

@@ -338,7 +338,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
 
                                 m_Textures[texture_key] = texture_id;
                             } else {
-                                texture_id = it->second;
+                                texture_id = static_cast<uint32_t>(it->second);
                             }
 
                             return texture_id;
@@ -546,71 +546,6 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
         sizeof(skyboxIndices) / sizeof(skyboxIndices[0]);
 }
 
-void OpenGLGraphicsManagerCommonBase::initializeTerrain(const Scene& scene) {
-    // skybox VAO
-    uint32_t terrainVAO, terrainVBO[2];
-    glGenVertexArrays(1, &terrainVAO);
-    glGenBuffers(2, terrainVBO);
-    glBindVertexArray(terrainVAO);
-
-    static const float patch_size = 32.0f;
-    static const float _vertices[] = {0.0f, patch_size, 0.0f,       0.0f,
-                                      0.0f, 0.0f,       patch_size, 0.0f,
-                                      0.0f, patch_size, patch_size, 0.0f};
-
-    static const uint8_t _index[] = {0, 1, 2, 3};
-
-    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(_vertices), _vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, terrainVBO[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(_index), _index,
-                 GL_STATIC_DRAW);
-
-    glBindVertexArray(0);
-
-    m_Buffers.push_back(terrainVBO[0]);
-    m_Buffers.push_back(terrainVBO[1]);
-
-    m_TerrainDrawBatchContext.vao = terrainVAO;
-    m_TerrainDrawBatchContext.mode = GL_PATCHES;
-    m_TerrainDrawBatchContext.type = GL_UNSIGNED_BYTE;
-    m_TerrainDrawBatchContext.count = sizeof(_index) / sizeof(_index[0]);
-
-    uint32_t texture_id;
-    glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-
-    auto& texture = scene.Terrain->GetTexture(0);
-    const auto& pImage = texture.GetTextureImage();
-
-    uint32_t format, internal_format, type;
-    getOpenGLTextureFormat(*pImage, format, internal_format, type);
-    if (pImage->compressed) {
-        glCompressedTexImage2D(
-            GL_TEXTURE_2D, 0, internal_format, pImage->Width, pImage->Height, 0,
-            static_cast<int32_t>(pImage->data_size), pImage->data);
-    } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, pImage->Width,
-                     pImage->Height, 0, format, type, pImage->data);
-    }
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    m_Textures["Terrain"] = texture_id;
-
-    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        m_Frames[i].terrainHeightMap = texture_id;
-    }
-}
-
 void OpenGLGraphicsManagerCommonBase::EndScene() {
     for (int i = 0; i < m_Frames.size(); i++) {
         auto& batchContexts = m_Frames[i].batchContexts;
@@ -650,11 +585,6 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
 #endif
     }
 
-    if (m_TerrainDrawBatchContext.vao) {
-        glDeleteVertexArrays(1, &m_TerrainDrawBatchContext.vao);
-        m_TerrainDrawBatchContext.vao = 0;
-    }
-
     if (m_SkyBoxDrawBatchContext.vao) {
         glDeleteVertexArrays(1, &m_SkyBoxDrawBatchContext.vao);
         m_SkyBoxDrawBatchContext.vao = 0;
@@ -673,7 +603,8 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
     }
 
     for (auto& it : m_Textures) {
-        glDeleteTextures(1, &it.second);
+        GLuint texture_id = static_cast<GLuint>(it.second);
+        glDeleteTextures(1, &texture_id);
     }
 
     m_Buffers.clear();
@@ -858,14 +789,6 @@ void OpenGLGraphicsManagerCommonBase::SetPipelineState(
     if (texture_id >= 0) {
         glBindTexture(target, (GLuint)texture_id);
     }
-
-    // Set Terrain
-    texture_id = frame.terrainHeightMap;
-    if (texture_id >= 0) {
-        setShaderParameter("SPIRV_Cross_CombinedterrainHeightMapsamp0", 11);
-        glActiveTexture(GL_TEXTURE11);
-        glBindTexture(GL_TEXTURE_2D, (GLuint)texture_id);
-    }
 }
 
 void OpenGLGraphicsManagerCommonBase::SetPerFrameConstants(
@@ -976,7 +899,7 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const Frame& frame) {
     glBindVertexArray(0);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
     const uint32_t width, const uint32_t height, const uint32_t count) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
@@ -1003,7 +926,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
     return static_cast<int32_t>(shadowMap);
 }
 
-int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
+intptr_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
     const uint32_t width, const uint32_t height, const uint32_t count) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
@@ -1025,7 +948,7 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
-    const int32_t light_index, const int32_t shadowmap, const uint32_t width,
+    const int32_t light_index, const intptr_t shadowmap, const uint32_t width,
     const uint32_t height, const int32_t layer_index, const Frame& frame) {
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth
     // buffer.
@@ -1084,7 +1007,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void OpenGLGraphicsManagerCommonBase::EndShadowMap(const int32_t shadowmap,
+void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap,
                                                    int32_t layer_index) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1136,12 +1059,12 @@ void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame) {
     }
 }
 
-void OpenGLGraphicsManagerCommonBase::ReleaseTexture(int32_t texture) {
+void OpenGLGraphicsManagerCommonBase::ReleaseTexture(intptr_t texture) {
     auto id = (uint32_t)texture;
     glDeleteTextures(1, &id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawSkyBox() {
+void OpenGLGraphicsManagerCommonBase::DrawSkyBox([[maybe_unused]] const Frame& frame) {
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
     glDrawElements(m_SkyBoxDrawBatchContext.mode,
@@ -1151,33 +1074,7 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox() {
     glBindVertexArray(0);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawTerrain() {
-#if 0
-    glBindVertexArray(m_TerrainDrawBatchContext.vao);
-
-    glPatchParameteri(GL_PATCH_VERTICES, 4);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    const float patch_size = 32.0f;
-    const int32_t patch_num_row = 10;
-    const int32_t patch_num_col = 10;
-
-    for (int32_t i = -patch_num_row / 2; i < patch_num_row / 2; i++)
-    {
-        for (int32_t j = -patch_num_col / 2; j < patch_num_col / 2; j++)
-        {
-            MatrixTranslation(m_TerrainDrawBatchContext.modelMatrix, patch_size * i, patch_size * j, 0.0f);
-            glDrawElements(m_TerrainDrawBatchContext.mode, m_TerrainDrawBatchContext.count, m_TerrainDrawBatchContext.type, 0x00);
-        }
-    }
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glBindVertexArray(0);
-#endif
-}
-
-int32_t OpenGLGraphicsManagerCommonBase::GenerateTexture(
+void OpenGLGraphicsManagerCommonBase::GenerateTexture(
     const char* id, const uint32_t width, const uint32_t height) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
@@ -1192,9 +1089,6 @@ int32_t OpenGLGraphicsManagerCommonBase::GenerateTexture(
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG16F, width, height);
 
     m_Textures[id] = texture;
-
-    // register the shadow map
-    return static_cast<int32_t>(texture);
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(
@@ -1602,7 +1496,7 @@ void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers() {
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(
-    const int32_t texture, const float vp_left, const float vp_top,
+    const intptr_t texture, const float vp_left, const float vp_top,
     const float vp_width, const float vp_height) {
     auto texture_id = (uint32_t)texture;
 
@@ -1661,7 +1555,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureOverlay(
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(
-    const int32_t texture, const float layer_index, const float vp_left,
+    const intptr_t texture, const float layer_index, const float vp_left,
     const float vp_top, const float vp_width, const float vp_height) {
     auto texture_id = (uint32_t)texture;
     DebugConstants constants;
@@ -1746,7 +1640,7 @@ void OpenGLGraphicsManagerCommonBase::DrawTextureArrayOverlay(
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(
-    const int32_t cubemap, const float vp_left, const float vp_top,
+    const intptr_t cubemap, const float vp_left, const float vp_top,
     const float vp_width, const float vp_height, const float level) {
     auto texture_id = (uint32_t)cubemap;
     DebugConstants constants;
@@ -1971,7 +1865,7 @@ void OpenGLGraphicsManagerCommonBase::DrawCubeMapOverlay(
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawCubeMapArrayOverlay(
-    const int32_t cubemap, const float layer_index, const float vp_left,
+    const intptr_t cubemap, const float layer_index, const float vp_left,
     const float vp_top, const float vp_width, const float vp_height,
     const float level) {
     auto texture_id = (uint32_t)cubemap;
