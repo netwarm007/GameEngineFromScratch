@@ -116,42 +116,37 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
             // load material textures
             if (material) {
                 if (auto& texture = material->GetBaseColor().ValueMap) {
-                    int32_t texture_id;
                     const Image& image = *texture->GetTextureImage();
                     assert(image.Width && image.Height);
-                    texture_id = [m_pRenderer createTexture:image];
+                    auto texture_id = [m_pRenderer createTexture:image];
 
                     dbc->material.diffuseMap = texture_id;
                 }
 
                 if (auto& texture = material->GetNormal().ValueMap) {
-                    int32_t texture_id;
                     const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
+                    auto texture_id = [m_pRenderer createTexture:image];
 
                     dbc->material.normalMap = texture_id;
                 }
 
                 if (auto& texture = material->GetMetallic().ValueMap) {
-                    int32_t texture_id;
                     const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
+                    auto texture_id = [m_pRenderer createTexture:image];
 
                     dbc->material.metallicMap = texture_id;
                 }
 
                 if (auto& texture = material->GetRoughness().ValueMap) {
-                    int32_t texture_id;
                     const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
+                    auto texture_id = [m_pRenderer createTexture:image];
 
                     dbc->material.roughnessMap = texture_id;
                 }
 
                 if (auto& texture = material->GetAO().ValueMap) {
-                    int32_t texture_id;
                     const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
+                    auto texture_id = [m_pRenderer createTexture:image];
 
                     dbc->material.aoMap = texture_id;
                 }
@@ -177,7 +172,7 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
             images.push_back(pImage);
         }
 
-        int32_t tex_index = [m_pRenderer createSkyBox:images];
+        auto tex_index = [m_pRenderer createSkyBox:images];
 
         for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
             m_Frames[i].skybox = tex_index;

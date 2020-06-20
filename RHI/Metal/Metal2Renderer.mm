@@ -30,8 +30,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     ShadowMapConstants shadow_map_constants;
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
-    std::vector<id<MTLTexture>> _textures;
-    std::stack<uint32_t> _texture_recycled_indexes;
     id<MTLSamplerState> _sampler0;
 
     MTKView* _mtkView;
@@ -171,7 +169,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     return format;
 }
 
-- (uint32_t)createTexture:(const Image&)image {
+- (intptr_t)createTexture:(const Image&)image {
     id<MTLTexture> texture;
     MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
 
@@ -191,20 +189,10 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     [texture replaceRegion:region mipmapLevel:0 withBytes:image.data bytesPerRow:image.pitch];
 
-    uint32_t index;
-    if (!_texture_recycled_indexes.empty()) {
-        index = _texture_recycled_indexes.top();
-        _texture_recycled_indexes.pop();
-        _textures[index] = texture;
-    } else {
-        index = _textures.size();
-        _textures.push_back(texture);
-    }
-
-    return index;
+    return reinterpret_cast<intptr_t>(texture);
 }
 
-- (uint32_t)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
+- (intptr_t)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
 {
     id<MTLTexture> texture;
 
@@ -272,17 +260,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
         }
     }
 
-    uint32_t index;
-    if (!_texture_recycled_indexes.empty()) {
-        index = _texture_recycled_indexes.top();
-        _texture_recycled_indexes.pop();
-        _textures[index] = texture;
-    } else {
-        index = _textures.size();
-        _textures.push_back(texture);
-    }
-
-    return index;
+    return reinterpret_cast<intptr_t>(texture);
 }
 
 /// Called whenever view changes orientation or layout is changed
@@ -337,7 +315,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     [_commandBuffer commit];
 }
 
-- (void)beginPass:(const Frame&) frame {
+- (void)beginPass:(const Frame&)frame {
     // Create a new command buffer for each render pass to the current drawable
     _commandBuffer = [_commandQueue commandBuffer];
     _commandBuffer.label = @"Online Command Buffer";
@@ -427,14 +405,14 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
             [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
 
-            auto texture_id = frame.skybox;
             if (frame.skybox >= 0) {
-                [_renderEncoder setFragmentTexture:_textures[texture_id] atIndex:10];
+                id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(frame.skybox);
+                [_renderEncoder setFragmentTexture:texture atIndex:10];
             }
 
-            texture_id = frame.brdfLUT;
-            if (texture_id >= 0) {
-                [_renderEncoder setFragmentTexture:_textures[texture_id] atIndex:6];
+            if (frame.brdfLUT >= 0) {
+                id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(frame.brdfLUT);
+                [_renderEncoder setFragmentTexture:texture atIndex:6];
             }
         } break;
         case PIPELINE_TYPE::COMPUTE: {
@@ -521,23 +499,28 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
         // Set any textures read/sampled from our render pipeline
         if (dbc.material.diffuseMap >= 0) {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.diffuseMap] atIndex:0];
+            id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(dbc.material.diffuseMap);
+            [_renderEncoder setFragmentTexture:texture atIndex:0];
         }
 
         if (dbc.material.normalMap >= 0) {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.normalMap] atIndex:1];
+            id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(dbc.material.normalMap);
+            [_renderEncoder setFragmentTexture:texture atIndex:1];
         }
 
         if (dbc.material.metallicMap >= 0) {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.metallicMap] atIndex:2];
+            id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(dbc.material.metallicMap);
+            [_renderEncoder setFragmentTexture:texture atIndex:2];
         }
 
         if (dbc.material.roughnessMap >= 0) {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.roughnessMap] atIndex:3];
+            id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(dbc.material.roughnessMap);
+            [_renderEncoder setFragmentTexture:texture atIndex:3];
         }
 
         if (dbc.material.aoMap >= 0) {
-            [_renderEncoder setFragmentTexture:_textures[dbc.material.aoMap] atIndex:4];
+            id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(dbc.material.aoMap);
+            [_renderEncoder setFragmentTexture:texture atIndex:4];
         }
 
         [_renderEncoder setFragmentSamplerState:_sampler0 atIndex:0];
@@ -553,9 +536,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     [_renderEncoder popDebugGroup];
 }
 
-- (int32_t)generateShadowMapArray:(const uint32_t)width
-                           height:(const uint32_t)height
-                            count:(const uint32_t)count {
+- (intptr_t)generateShadowMapArray:(const uint32_t)width
+                            height:(const uint32_t)height
+                             count:(const uint32_t)count {
     id<MTLTexture> texture;
 
     MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
@@ -571,24 +554,14 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    uint32_t index;
-    if (!_texture_recycled_indexes.empty()) {
-        index = _texture_recycled_indexes.top();
-        _texture_recycled_indexes.pop();
-        _textures[index] = texture;
-    } else {
-        index = _textures.size();
-        _textures.push_back(texture);
-    }
-
     [textureDesc release];
 
-    return static_cast<int32_t>(index);
+    return reinterpret_cast<intptr_t>(texture);
 }
 
-- (int32_t)generateCubeShadowMapArray:(const uint32_t)width
-                               height:(const uint32_t)height
-                                count:(const uint32_t)count {
+- (intptr_t)generateCubeShadowMapArray:(const uint32_t)width
+                                height:(const uint32_t)height
+                                 count:(const uint32_t)count {
     id<MTLTexture> texture;
 
     MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
@@ -604,23 +577,13 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     // create the texture obj
     texture = [_device newTextureWithDescriptor:textureDesc];
 
-    uint32_t index;
-    if (!_texture_recycled_indexes.empty()) {
-        index = _texture_recycled_indexes.top();
-        _texture_recycled_indexes.pop();
-        _textures[index] = texture;
-    } else {
-        index = _textures.size();
-        _textures.push_back(texture);
-    }
-
     [textureDesc release];
 
-    return static_cast<int32_t>(index);
+    return reinterpret_cast<intptr_t>(texture);
 }
 
 - (void)beginShadowMap:(const int32_t)light_index
-             shadowmap:(const int32_t)shadowmap
+             shadowmap:(const intptr_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
@@ -630,9 +593,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _commandBuffer.label = @"Offline Command Buffer";
     [_commandBuffer enqueue];
 
+    id<MTLTexture> _shadowmap = reinterpret_cast<id<MTLTexture>>(shadowmap);
+
     MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor new];
     renderPassDescriptor.colorAttachments[0] = Nil;
-    renderPassDescriptor.depthAttachment.texture = _textures[shadowmap];
+    renderPassDescriptor.depthAttachment.texture = _shadowmap;
     renderPassDescriptor.depthAttachment.level = 0;
     renderPassDescriptor.depthAttachment.slice = layer_index;
     renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
@@ -646,9 +611,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
     MTLViewport viewport{0.0,
-                         static_cast<double>(_textures[shadowmap].height),
-                         static_cast<double>(_textures[shadowmap].width),
-                         -static_cast<double>(_textures[shadowmap].height),
+                         static_cast<double>(_shadowmap.height),
+                         static_cast<double>(_shadowmap.width),
+                         -static_cast<double>(_shadowmap.height),
                          0.0,
                          1.0};
     [_renderEncoder setViewport:viewport];
@@ -659,36 +624,35 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     shadow_map_constants.far_plane = 100.0;
 }
 
-- (void)endShadowMap:(const int32_t)shadowmap layer_index:(const int32_t)layer_index {
+- (void)endShadowMap:(const intptr_t)shadowmap layer_index:(const int32_t)layer_index {
     [_renderEncoder popDebugGroup];
     [_renderEncoder endEncoding];
     [_commandBuffer commit];
 }
 
 - (void)setShadowMaps:(const Frame&)frame {
-    auto texture_id = frame.frameContext.shadowMap;
-    if (texture_id >= 0) {
-        [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:7];
+    id<MTLTexture> texture = reinterpret_cast<id<MTLTexture>>(frame.frameContext.shadowMap);
+    if (texture) {
+        [_renderEncoder setFragmentTexture:texture atIndex:7];
     }
 
-    texture_id = frame.frameContext.globalShadowMap;
-    if (texture_id >= 0) {
-        [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:8];
+    texture = reinterpret_cast<id<MTLTexture>>(frame.frameContext.globalShadowMap);
+    if (texture) {
+        [_renderEncoder setFragmentTexture:texture atIndex:8];
     }
 
-    texture_id = frame.frameContext.cubeShadowMap;
-    if (texture_id >= 0) {
-        [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:9];
+    texture = reinterpret_cast<id<MTLTexture>>(frame.frameContext.cubeShadowMap);
+    if (texture) {
+        [_renderEncoder setFragmentTexture:texture atIndex:9];
     }
 }
 
-- (void)releaseTexture:(int32_t)texture {
-    [_textures[texture] release];
-    _texture_recycled_indexes.push(texture);
+- (void)releaseTexture:(intptr_t)texture {
+    id<MTLTexture> _texture = reinterpret_cast<id<MTLTexture>>(texture);
+    [_texture release];
 }
 
-- (int32_t)generateTextureForWrite:(const uint32_t)width
-                            height:(const uint32_t)height {
+- (intptr_t)generateTextureForWrite:(const uint32_t)width height:(const uint32_t)height {
     id<MTLTexture> texture;
     MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
 
@@ -701,21 +665,12 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     texture = [_device newTextureWithDescriptor:textureDesc];
     [textureDesc release];
 
-    int32_t index;
-    if (!_texture_recycled_indexes.empty()) {
-        index = _texture_recycled_indexes.top();
-        _texture_recycled_indexes.pop();
-        _textures[index] = texture;
-    } else {
-        index = _textures.size();
-        _textures.push_back(texture);
-    }
-
-    return index;
+    return reinterpret_cast<intptr_t>(texture);
 }
 
-- (void)bindTextureForWrite:(const uint32_t)id atIndex:(const uint32_t)atIndex {
-    [_computeEncoder setTexture:_textures[id] atIndex:atIndex];
+- (void)bindTextureForWrite:(const intptr_t)texture atIndex:(const uint32_t)atIndex {
+    id<MTLTexture> _texture = reinterpret_cast<id<MTLTexture>>(texture);
+    [_computeEncoder setTexture:_texture atIndex:atIndex];
 }
 
 - (void)dispatch:(const uint32_t)width height:(const uint32_t)height depth:(const uint32_t)depth {
@@ -742,7 +697,7 @@ static float rect_vertices[] = {-1.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f,
 
 static float rect_uv[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
 
-- (void)drawTextureOverlay:(const int32_t)texture_id
+- (void)drawTextureOverlay:(const intptr_t)texture
                    vp_left:(const float)vp_left
                     vp_top:(const float)vp_top
                   vp_width:(const float)vp_width
@@ -766,7 +721,8 @@ static float rect_uv[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
 
     [_renderEncoder setVertexBytes:rect_uv length:sizeof(rect_uv) atIndex:1];
 
-    [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:0];
+    id<MTLTexture> _texture = reinterpret_cast<id<MTLTexture>>(texture);
+    [_renderEncoder setFragmentTexture:_texture atIndex:0];
 
     [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
                        vertexStart:0
@@ -778,7 +734,7 @@ static float rect_uv[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
     [_renderEncoder popDebugGroup];
 }
 
-- (void)drawTextureArrayOverlay:(const int32_t)texture_id
+- (void)drawTextureArrayOverlay:(const intptr_t)texture
                     layer_index:(const float)layer_index
                         vp_left:(const float)vp_left
                          vp_top:(const float)vp_top
@@ -810,7 +766,8 @@ static float rect_uv[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
 
     [_renderEncoder setVertexBytes:rect_uv length:sizeof(rect_uv) atIndex:1];
 
-    [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:0];
+    id<MTLTexture> _texture = reinterpret_cast<id<MTLTexture>>(texture);
+    [_renderEncoder setFragmentTexture:_texture atIndex:0];
 
     [_renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip
                        vertexStart:0
@@ -872,7 +829,7 @@ static float cubemap_unwrap_uvw[] = {
     -1.0f, -1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, -1.0f, 1.0f,
     -1.0f, 1.0f, 1.0f, -1.0f};
 
-- (void)drawCubeMapOverlay:(const int32_t)texture_id
+- (void)drawCubeMapOverlay:(const intptr_t)texture
                    vp_left:(const float)vp_left
                     vp_top:(const float)vp_top
                   vp_width:(const float)vp_width
@@ -905,7 +862,8 @@ static float cubemap_unwrap_uvw[] = {
 
     [_renderEncoder setVertexBytes:cubemap_unwrap_uvw length:sizeof(cubemap_unwrap_uvw) atIndex:1];
 
-    [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:0];
+    id<MTLTexture> _texture = reinterpret_cast<id<MTLTexture>>(texture);
+    [_renderEncoder setFragmentTexture:_texture atIndex:0];
 
     [_renderEncoder
         drawPrimitives:MTLPrimitiveTypeTriangle
@@ -918,7 +876,7 @@ static float cubemap_unwrap_uvw[] = {
     [_renderEncoder popDebugGroup];
 }
 
-- (void)drawCubeMapArrayOverlay:(const int32_t)texture_id
+- (void)drawCubeMapArrayOverlay:(const intptr_t)texture
                     layer_index:(const float)layer_index
                         vp_left:(const float)vp_left
                          vp_top:(const float)vp_top
@@ -953,7 +911,8 @@ static float cubemap_unwrap_uvw[] = {
 
     [_renderEncoder setVertexBytes:cubemap_unwrap_uvw length:sizeof(cubemap_unwrap_uvw) atIndex:1];
 
-    [_renderEncoder setFragmentTexture:_textures.at(texture_id) atIndex:0];
+    id<MTLTexture> _texture = reinterpret_cast<id<MTLTexture>>(texture);
+    [_renderEncoder setFragmentTexture:_texture atIndex:0];
 
     [_renderEncoder
         drawPrimitives:MTLPrimitiveTypeTriangle

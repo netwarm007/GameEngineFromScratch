@@ -27,7 +27,7 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)setLightInfo:(const LightInfo &)lightInfo frameIndex:(const int32_t)index;
 
-- (void)drawSkyBox:(const Frame&)frame;
+- (void)drawSkyBox:(const Frame &)frame;
 
 - (void)drawBatch:(const Frame &)frame;
 
@@ -37,9 +37,9 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)createIndexBuffer:(const My::SceneObjectIndexArray &)index_array;
 
-- (uint32_t)createTexture:(const My::Image &)image;
+- (intptr_t)createTexture:(const My::Image &)image;
 
-- (uint32_t)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>> &)images;
+- (intptr_t)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>> &)images;
 
 - (void)beginFrame:(const My::Frame &)frame;
 
@@ -56,56 +56,55 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 - (void)setPipelineState:(const MetalPipelineState &)pipelineState
             frameContext:(const Frame &)frame;
 
-- (int32_t)generateCubeShadowMapArray:(const uint32_t)width
-                               height:(const uint32_t)height
-                                count:(const uint32_t)count;
+- (intptr_t)generateCubeShadowMapArray:(const uint32_t)width
+                                height:(const uint32_t)height
+                                 count:(const uint32_t)count;
 
-- (int32_t)generateShadowMapArray:(const uint32_t)width
-                           height:(const uint32_t)height
-                            count:(const uint32_t)count;
+- (intptr_t)generateShadowMapArray:(const uint32_t)width
+                            height:(const uint32_t)height
+                             count:(const uint32_t)count;
 
 - (void)beginShadowMap:(const int32_t)light_index
-             shadowmap:(const int32_t)shadowmap
+             shadowmap:(const intptr_t)shadowmap
                  width:(const uint32_t)width
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
                  frame:(const Frame &)frame;
 
-- (void)endShadowMap:(const int32_t)shadowmap layer_index:(const int32_t)layer_index;
+- (void)endShadowMap:(const intptr_t)shadowmap layer_index:(const int32_t)layer_index;
 
 - (void)setShadowMaps:(const Frame &)frame;
 
-- (void)releaseTexture:(int32_t)texture;
+- (void)releaseTexture:(intptr_t)texture;
 
-- (int32_t)generateTextureForWrite:(const uint32_t)width
-                            height:(const uint32_t)height;
+- (intptr_t)generateTextureForWrite:(const uint32_t)width height:(const uint32_t)height;
 
-- (void)bindTextureForWrite:(const uint32_t)id atIndex:(const uint32_t)atIndex;
+- (void)bindTextureForWrite:(const intptr_t)texture atIndex:(const uint32_t)atIndex;
 
 - (void)dispatch:(const uint32_t)width height:(const uint32_t)height depth:(const uint32_t)depth;
 
 #ifdef DEBUG
-- (void)drawTextureOverlay:(const int32_t)texture_id
+- (void)drawTextureOverlay:(const intptr_t)texture
                    vp_left:(const float)vp_left
                     vp_top:(const float)vp_top
                   vp_width:(const float)vp_width
                  vp_height:(const float)vp_height;
 
-- (void)drawTextureArrayOverlay:(const int32_t)texture_id
+- (void)drawTextureArrayOverlay:(const intptr_t)texture
                     layer_index:(const float)layer_index
                         vp_left:(const float)vp_left
                          vp_top:(const float)vp_top
                        vp_width:(const float)vp_width
                       vp_height:(const float)vp_height;
 
-- (void)drawCubeMapOverlay:(const int32_t)texture_id
+- (void)drawCubeMapOverlay:(const intptr_t)texture
                    vp_left:(const float)vp_left
                     vp_top:(const float)vp_top
                   vp_width:(const float)vp_width
                  vp_height:(const float)vp_height
                      level:(const float)level;
 
-- (void)drawCubeMapArrayOverlay:(const int32_t)texture_id
+- (void)drawCubeMapArrayOverlay:(const intptr_t)texture
                     layer_index:(const float)layer_index
                         vp_left:(const float)vp_left
                          vp_top:(const float)vp_top

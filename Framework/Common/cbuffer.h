@@ -130,29 +130,29 @@ struct a2v_cube {
 
 #ifdef __cplusplus
 struct material_textures {
-    int32_t diffuseMap = -1;
-    int32_t normalMap = -1;
-    int32_t metallicMap = -1;
-    int32_t roughnessMap = -1;
-    int32_t aoMap = -1;
-    int32_t heightMap = -1;
+    intptr_t diffuseMap = -1;
+    intptr_t normalMap = -1;
+    intptr_t metallicMap = -1;
+    intptr_t roughnessMap = -1;
+    intptr_t aoMap = -1;
+    intptr_t heightMap = -1;
 };
 
 struct global_textures {
-    int32_t brdfLUT = -1;
-    int32_t skybox = -1;
-    int32_t terrainHeightMap = -1;
+    intptr_t brdfLUT = -1;
+    intptr_t skybox = -1;
+    intptr_t terrainHeightMap = -1;
 };
 
 struct frame_textures {
-    int32_t shadowMap = -1;
-    int32_t shadowMapCount = 0;
+    intptr_t shadowMap = -1;
+    intptr_t shadowMapCount = 0;
 
-    int32_t globalShadowMap = -1;
-    int32_t globalShadowMapCount = 0;
+    intptr_t globalShadowMap = -1;
+    intptr_t globalShadowMapCount = 0;
 
-    int32_t cubeShadowMap = -1;
-    int32_t cubeShadowMapCount = 0;
+    intptr_t cubeShadowMap = -1;
+    intptr_t cubeShadowMapCount = 0;
 };
 #else
 Texture2D diffuseMap REGISTER(t0);

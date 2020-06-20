@@ -18,7 +18,7 @@ void ShadowMapPass::Draw(Frame& frame) {
         auto& light = frame.lightInfo.lights[i];
 
         if (light.lightCastShadow) {
-            int32_t shadowmap;
+            intptr_t shadowmap;
             int32_t width, height;
 
             const char* pipelineStateName;

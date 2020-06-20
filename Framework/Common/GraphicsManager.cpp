@@ -365,7 +365,7 @@ void GraphicsManager::EndFrame(const Frame&) {
 }
 
 intptr_t GraphicsManager::GetTexture(const char* id) {
-    int32_t result = -1;
+    intptr_t result = -1;
 
     auto it = m_Textures.find(id);
     if (it != m_Textures.end()) {
