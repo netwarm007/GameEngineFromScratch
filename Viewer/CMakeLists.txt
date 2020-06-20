@@ -23,7 +23,6 @@ set(SHADER_SOURCES basic.vert basic.frag
             skybox.vert skybox.frag
             shadowmap.vert shadowmap.frag
             shadowmap_omni.vert shadowmap_omni.frag
-            terrain.vert terrain.frag
             texture.frag texturearray.frag
             cubemap.frag cubemaparray.frag
             passthrough.vert passthrough_cube.vert
@@ -133,7 +132,7 @@ ELSEIF(WA)
 ELSEIF(WIN32)
     target_link_libraries(Viewer
                             MyPhysics
-                            OpenGLRHI 
+                            D3dRHI 
                             Common
                             PlatformInterface
                         )

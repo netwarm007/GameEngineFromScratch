@@ -1,6 +1,7 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
+[RootSignature(MyRS1)]
 float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
 {
     // offset texture coordinates with Parallax Mapping

@@ -4,7 +4,6 @@
 #include "GeometrySubPass.hpp"
 #include "GuiSubPass.hpp"
 #include "SkyBoxSubPass.hpp"
-#include "TerrainSubPass.hpp"
 
 namespace My {
 class ForwardGeometryPass : public BaseDrawPass {

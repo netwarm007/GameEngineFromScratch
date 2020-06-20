@@ -3,10 +3,10 @@
 
 using namespace My;
 
-void BaseDispatchPass::BeginPass() {
+void BaseDispatchPass::BeginPass([[maybe_unused]] Frame& frame) {
     g_pGraphicsManager->BeginCompute(); 
 }
 
-void BaseDispatchPass::EndPass() {
+void BaseDispatchPass::EndPass([[maybe_unused]] Frame& frame) {
     g_pGraphicsManager->EndCompute(); 
 }

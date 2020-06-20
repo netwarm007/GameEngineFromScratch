@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <map>
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -36,51 +37,46 @@ class GraphicsManager : _implements_ IRuntimeModule {
 
     virtual void DrawBatch(const Frame& frame) {}
 
-    virtual int32_t GenerateCubeShadowMapArray(const uint32_t width,
+    virtual intptr_t GenerateCubeShadowMapArray(const uint32_t width,
                                                const uint32_t height,
                                                const uint32_t count) {
         return 0;
     }
-    virtual int32_t GenerateShadowMapArray(const uint32_t width,
+    virtual intptr_t GenerateShadowMapArray(const uint32_t width,
                                            const uint32_t height,
                                            const uint32_t count) {
         return 0;
     }
     virtual void BeginShadowMap(const int32_t light_index,
-                                const int32_t shadowmap, const uint32_t width,
+                                const intptr_t shadowmap, const uint32_t width,
                                 const uint32_t height,
                                 const int32_t layer_index, const Frame& frame) {
     }
-    virtual void EndShadowMap(const int32_t shadowmap,
+    virtual void EndShadowMap(const intptr_t shadowmap,
                               const int32_t layer_index) {}
     virtual void SetShadowMaps(const Frame& frame) {}
 
     // skybox
-    virtual void DrawSkyBox() {}
+    virtual void DrawSkyBox(const Frame& frame) {}
 
-    // terrain
-    virtual void DrawTerrain() {}
-
-    virtual int32_t GenerateTexture(const char* id, const uint32_t width,
-                                    const uint32_t height) {
-        return 0;
-    }
-    virtual void ReleaseTexture(int32_t texture) {}
+    virtual void GenerateTexture(const char* id, const uint32_t width,
+                                 const uint32_t height) {}
+    virtual void CreateTexture(SceneObjectTexture& texture) {}
+    virtual void ReleaseTexture(intptr_t texture) {}
     virtual void BeginRenderToTexture(int32_t& context, const int32_t texture,
                                       const uint32_t width,
                                       const uint32_t height) {}
     virtual void EndRenderToTexture(int32_t& context) {}
 
-    virtual void GenerateTextureForWrite(const char* id,
-                                            const uint32_t width,
-                                            const uint32_t height) {}
+    virtual void GenerateTextureForWrite(const char* id, const uint32_t width,
+                                         const uint32_t height) {}
 
     virtual void BindTextureForWrite(const char* id,
                                      const uint32_t slot_index) {}
     virtual void Dispatch(const uint32_t width, const uint32_t height,
                           const uint32_t depth) {}
 
-    virtual int32_t GetTexture(const char* id);
+    virtual intptr_t GetTexture(const char* id);
 
     virtual void DrawFullScreenQuad() {}
 
@@ -101,17 +97,17 @@ class GraphicsManager : _implements_ IRuntimeModule {
                               const Matrix4X4f& trans, const Vector3f& color) {}
     virtual void DrawTriangleStrip(const PointList& vertices,
                                    const Vector3f& color) {}
-    virtual void DrawTextureOverlay(const int32_t texture, const float vp_left,
+    virtual void DrawTextureOverlay(const intptr_t texture, const float vp_left,
                                     const float vp_top, const float vp_width,
                                     const float vp_height) {}
     virtual void DrawTextureArrayOverlay(
-        const int32_t texture, const float layer_index, const float vp_left,
+        const intptr_t texture, const float layer_index, const float vp_left,
         const float vp_top, const float vp_width, const float vp_height) {}
-    virtual void DrawCubeMapOverlay(const int32_t cubemap, const float vp_left,
+    virtual void DrawCubeMapOverlay(const intptr_t cubemap, const float vp_left,
                                     const float vp_top, const float vp_width,
                                     const float vp_height, const float level) {}
     virtual void DrawCubeMapArrayOverlay(
-        const int32_t cubemap, const float layer_index, const float vp_left,
+        const intptr_t cubemap, const float layer_index, const float vp_left,
         const float vp_top, const float vp_width, const float vp_height,
         const float level) {}
     virtual void ClearDebugBuffers() {}
@@ -127,8 +123,8 @@ class GraphicsManager : _implements_ IRuntimeModule {
                  const Vector3f& color);
 #endif
 
-    virtual void BeginPass() {}
-    virtual void EndPass() {}
+    virtual void BeginPass(const Frame& frame) {}
+    virtual void EndPass(const Frame& frame) {}
 
     virtual void BeginCompute() {}
     virtual void EndCompute() {}
@@ -142,7 +138,6 @@ class GraphicsManager : _implements_ IRuntimeModule {
 
     virtual void initializeGeometries(const Scene& scene) {}
     virtual void initializeSkyBox(const Scene& scene) {}
-    virtual void initializeTerrain(const Scene& scene) {}
 
 #ifdef DEBUG
     virtual void RenderDebugBuffers() {}
@@ -156,7 +151,7 @@ class GraphicsManager : _implements_ IRuntimeModule {
     void UpdateConstants();
 
    protected:
-    std::unordered_map<std::string, uint32_t> m_Textures;
+    std::map<std::string, intptr_t> m_Textures;
 
     uint64_t m_nSceneRevision{0};
 
@@ -178,17 +173,17 @@ class GraphicsManager : _implements_ IRuntimeModule {
         -1.0f, -1.0f, -1.0f   // 7
     };
 
-    constexpr static uint8_t skyboxIndices[]{4, 7, 5, 5, 3, 4,
+    constexpr static uint16_t skyboxIndices[]{4, 7, 5, 5, 3, 4,
 
-                                             6, 7, 4, 4, 1, 6,
+                                              6, 7, 4, 4, 1, 6,
 
-                                             5, 2, 0, 0, 3, 5,
+                                              5, 2, 0, 0, 3, 5,
 
-                                             6, 1, 0, 0, 2, 6,
+                                              6, 1, 0, 0, 2, 6,
 
-                                             4, 3, 0, 0, 1, 4,
+                                              4, 3, 0, 0, 1, 4,
 
-                                             7, 6, 5, 5, 6, 2};
+                                              7, 6, 5, 5, 6, 2};
 };
 
 extern GraphicsManager* g_pGraphicsManager;

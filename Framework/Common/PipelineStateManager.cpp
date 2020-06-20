@@ -31,7 +31,7 @@ using namespace std;
 #define TESE_TERRAIN_SOURCE_FILE "terrain.tese"
 #define CS_RAYTRACE_SOURCE_FILE "raytrace.comp"
 
-PipelineStateManager::~PipelineStateManager() { Clear(); }
+PipelineStateManager::~PipelineStateManager() {}
 
 bool PipelineStateManager::RegisterPipelineState(PipelineState& pipelineState) {
     PipelineState* pPipelineState;
@@ -60,8 +60,9 @@ void PipelineStateManager::Clear() {
         if (it != m_pipelineStates.end()) {
             DestroyPipelineState(*it->second);
         }
-        m_pipelineStates.erase(it);
     }
+
+    m_pipelineStates.clear();
 
     assert(m_pipelineStates.empty());
 
@@ -179,20 +180,10 @@ int PipelineStateManager::Initialize() {
     pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 
-    pipelineState.pipelineStateName = "Terrain";
-    pipelineState.vertexShaderName = VS_TERRAIN_SOURCE_FILE;
-    pipelineState.pixelShaderName = PS_TERRAIN_SOURCE_FILE;
-    pipelineState.tessControlShaderName = TESC_TERRAIN_SOURCE_FILE;
-    pipelineState.tessEvaluateShaderName = TESE_TERRAIN_SOURCE_FILE;
-    pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
-    pipelineState.bDepthWrite = true;
-    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
-    pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
-    pipelineState.flag = PIPELINE_FLAG::NONE;
-    RegisterPipelineState(pipelineState);
-
     cout << "Pipeline State Manager Initialized. [" << m_pipelineStates.size()
          << "]" << endl;
 
     return 0;
 }
+
+void PipelineStateManager::Finalize() { Clear(); }

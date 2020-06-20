@@ -185,8 +185,6 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
     }
 }
 
-void Metal2GraphicsManager::initializeTerrain(const Scene& scene) {}
-
 void Metal2GraphicsManager::BeginScene(const Scene& scene) {
     GraphicsManager::BeginScene(scene);
 
@@ -207,9 +205,9 @@ void Metal2GraphicsManager::EndFrame(const Frame& frame) {
     GraphicsManager::EndFrame(frame);
 }
 
-void Metal2GraphicsManager::BeginPass() { [m_pRenderer beginPass]; }
+void Metal2GraphicsManager::BeginPass(const Frame& frame) { [m_pRenderer beginPass:frame]; }
 
-void Metal2GraphicsManager::EndPass() { [m_pRenderer endPass]; }
+void Metal2GraphicsManager::EndPass(const Frame& frame) { [m_pRenderer endPass:frame]; }
 
 void Metal2GraphicsManager::BeginCompute() { [m_pRenderer beginCompute]; }
 
@@ -224,18 +222,18 @@ void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState
 
 void Metal2GraphicsManager::DrawBatch(const Frame& frame) { [m_pRenderer drawBatch:frame]; }
 
-int32_t Metal2GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width,
+intptr_t Metal2GraphicsManager::GenerateCubeShadowMapArray(const uint32_t width,
                                                           const uint32_t height,
                                                           const uint32_t count) {
     return [m_pRenderer generateCubeShadowMapArray:width height:height count:count];
 }
 
-int32_t Metal2GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height,
+intptr_t Metal2GraphicsManager::GenerateShadowMapArray(const uint32_t width, const uint32_t height,
                                                       const uint32_t count) {
     return [m_pRenderer generateShadowMapArray:width height:height count:count];
 }
 
-void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const int32_t shadowmap,
+void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const intptr_t shadowmap,
                                            const uint32_t width, const uint32_t height,
                                            const int32_t layer_index, const Frame& frame) {
     [m_pRenderer beginShadowMap:light_index
@@ -246,17 +244,17 @@ void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const int3
                           frame:frame];
 }
 
-void Metal2GraphicsManager::EndShadowMap(const int32_t shadowmap, const int32_t layer_index) {
+void Metal2GraphicsManager::EndShadowMap(const intptr_t shadowmap, const int32_t layer_index) {
     [m_pRenderer endShadowMap:shadowmap layer_index:layer_index];
 }
 
 void Metal2GraphicsManager::SetShadowMaps(const Frame& frame) { [m_pRenderer setShadowMaps:frame]; }
 
-void Metal2GraphicsManager::ReleaseTexture(int32_t texture) {
-    [m_pRenderer releaseTexture:texture];
+void Metal2GraphicsManager::ReleaseTexture(intptr_t texture) {
+    [m_pRenderer releaseTexture:static_cast<int32_t>(texture)];
 }
 
-void Metal2GraphicsManager::DrawSkyBox() { [m_pRenderer drawSkyBox]; }
+void Metal2GraphicsManager::DrawSkyBox(const Frame& frame) { [m_pRenderer drawSkyBox:frame]; }
 
 void Metal2GraphicsManager::GenerateTextureForWrite(const char* id, const uint32_t width, const uint32_t height) {
     m_Textures[id] = [m_pRenderer generateTextureForWrite:width height:height];
@@ -273,7 +271,7 @@ void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height
 }
 
 #ifdef DEBUG
-void Metal2GraphicsManager::DrawTextureOverlay(const int32_t texture, const float vp_left,
+void Metal2GraphicsManager::DrawTextureOverlay(const intptr_t texture, const float vp_left,
                                                const float vp_top, const float vp_width,
                                                const float vp_height) {
     [m_pRenderer drawTextureOverlay:texture
@@ -283,7 +281,7 @@ void Metal2GraphicsManager::DrawTextureOverlay(const int32_t texture, const floa
                           vp_height:vp_height];
 }
 
-void Metal2GraphicsManager::DrawTextureArrayOverlay(const int32_t texture, const float layer_index,
+void Metal2GraphicsManager::DrawTextureArrayOverlay(const intptr_t texture, const float layer_index,
                                                     const float vp_left, const float vp_top,
                                                     const float vp_width, const float vp_height) {
     [m_pRenderer drawTextureArrayOverlay:texture
@@ -294,7 +292,7 @@ void Metal2GraphicsManager::DrawTextureArrayOverlay(const int32_t texture, const
                                vp_height:vp_height];
 }
 
-void Metal2GraphicsManager::DrawCubeMapOverlay(const int32_t texture, const float vp_left,
+void Metal2GraphicsManager::DrawCubeMapOverlay(const intptr_t texture, const float vp_left,
                                                const float vp_top, const float vp_width,
                                                const float vp_height, const float level) {
     [m_pRenderer drawCubeMapOverlay:texture
@@ -305,7 +303,7 @@ void Metal2GraphicsManager::DrawCubeMapOverlay(const int32_t texture, const floa
                               level:level];
 }
 
-void Metal2GraphicsManager::DrawCubeMapArrayOverlay(const int32_t texture, const float layer_index,
+void Metal2GraphicsManager::DrawCubeMapArrayOverlay(const intptr_t texture, const float layer_index,
                                                     const float vp_left, const float vp_top,
                                                     const float vp_width, const float vp_height,
                                                     const float level) {

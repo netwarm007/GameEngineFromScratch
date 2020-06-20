@@ -4,8 +4,10 @@
 namespace My {
 class ShadowMapPass : public BaseDrawPass {
    public:
-    void BeginPass() override {}
+    ~ShadowMapPass() override = default;
+
+    void BeginPass(Frame& frame) override {}
     void Draw(Frame& frame) final;
-    void EndPass() override {}
+    void EndPass(Frame& frame) override {}
 };
 }  // namespace My

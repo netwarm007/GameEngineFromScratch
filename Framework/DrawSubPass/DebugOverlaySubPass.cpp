@@ -65,7 +65,7 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
     g_pGraphicsManager->DrawTextureOverlay(brdf_lut, left, top, 0.12f, 0.12f);
     top -= 0.15f;
 
-    auto raytrace = g_pGraphicsManager->GetTexture("RAYTRACE");
-    g_pGraphicsManager->DrawTextureOverlay(raytrace, left, top, 0.12f, 0.12f);
+    // auto raytrace = g_pGraphicsManager->GetTexture("RAYTRACE");
+    // g_pGraphicsManager->DrawTextureOverlay(raytrace, left, top, 0.12f, 0.12f);
 #endif
 }

@@ -5,7 +5,6 @@ IF(APPLE)
                 skybox.vert skybox.frag
                 shadowmap.vert shadowmap.frag
                 shadowmap_omni.vert shadowmap_omni.frag
-                terrain.vert terrain.frag
                 texture.frag texturearray.frag
                 passthrough.vert passthrough_cube.vert
                 integrateBRDF.comp

@@ -99,15 +99,15 @@ void GraphicsManager::Draw() {
     auto& frame = m_Frames[m_nFrameIndex];
 
     for (auto& pDispatchPass : m_DispatchPasses) {
-        pDispatchPass->BeginPass();
+        pDispatchPass->BeginPass(frame);
         pDispatchPass->Dispatch(frame);
-        pDispatchPass->EndPass();
+        pDispatchPass->EndPass(frame);
     }
 
     for (auto& pDrawPass : m_DrawPasses) {
-        pDrawPass->BeginPass();
+        pDrawPass->BeginPass(frame);
         pDrawPass->Draw(frame);
-        pDrawPass->EndPass();
+        pDrawPass->EndPass(frame);
     }
 }
 
@@ -303,9 +303,9 @@ void GraphicsManager::CalculateLights() {
 void GraphicsManager::BeginScene(const Scene& scene) {
     // first, call init passes on frame 0
     for (const auto& pPass : m_InitPasses) {
-        pPass->BeginPass();
+        pPass->BeginPass(m_Frames[0]);
         pPass->Dispatch(m_Frames[0]);
-        pPass->EndPass();
+        pPass->EndPass(m_Frames[0]);
     }
 
     // now, copy the frame structures and initialize shadow maps
@@ -344,15 +344,18 @@ void GraphicsManager::BeginScene(const Scene& scene) {
     if (scene.Geometries.size()) {
         initializeGeometries(scene);
     }
-    if (scene.Terrain) {
-        initializeTerrain(scene);
-    }
     if (scene.SkyBox) {
         initializeSkyBox(scene);
     }
 }
 
-void GraphicsManager::EndScene() {}
+void GraphicsManager::EndScene() {
+    for (auto& item : m_Textures) {
+        ReleaseTexture(item.second);
+    }
+
+    m_Textures.clear();
+}
 
 void GraphicsManager::BeginFrame(const Frame& frame) {}
 
@@ -361,7 +364,7 @@ void GraphicsManager::EndFrame(const Frame&) {
         ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
 }
 
-int32_t GraphicsManager::GetTexture(const char* id) {
+intptr_t GraphicsManager::GetTexture(const char* id) {
     int32_t result = -1;
 
     auto it = m_Textures.find(id);
