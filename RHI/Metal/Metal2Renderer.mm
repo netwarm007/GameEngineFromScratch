@@ -458,42 +458,19 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
     [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
 
-    static const float skyboxVertices[] = {
-        1.0f,  1.0f,  1.0f,   // 0
-        -1.0f, 1.0f,  1.0f,   // 1
-        1.0f,  -1.0f, 1.0f,   // 2
-        1.0f,  1.0f,  -1.0f,  // 3
-        -1.0f, 1.0f,  -1.0f,  // 4
-        1.0f,  -1.0f, -1.0f,  // 5
-        -1.0f, -1.0f, 1.0f,   // 6
-        -1.0f, -1.0f, -1.0f   // 7
-    };
-
-    [_renderEncoder setVertexBytes:static_cast<const void*>(skyboxVertices)
-                            length:sizeof(skyboxVertices)
+    [_renderEncoder setVertexBytes:static_cast<const void*>(My::SceneObjectSkyBox::skyboxVertices)
+                            length:sizeof(My::SceneObjectSkyBox::skyboxVertices)
                            atIndex:0];
 
-    static const uint16_t skyboxIndices[] = {4, 7, 5, 5, 3, 4,
-
-                                             6, 7, 4, 4, 1, 6,
-
-                                             5, 2, 0, 0, 3, 5,
-
-                                             6, 1, 0, 0, 2, 6,
-
-                                             4, 3, 0, 0, 1, 4,
-
-                                             7, 6, 5, 5, 6, 2};
-
     id<MTLBuffer> indexBuffer;
-    indexBuffer = [_device newBufferWithBytes:skyboxIndices
-                                       length:sizeof(skyboxIndices)
+    indexBuffer = [_device newBufferWithBytes:My::SceneObjectSkyBox::skyboxIndices
+                                       length:sizeof(My::SceneObjectSkyBox::skyboxIndices)
                                       options:MTLResourceStorageModeShared];
 
     if (indexBuffer != nil) {
         // Draw skybox
         [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                   indexCount:sizeof(skyboxIndices) / sizeof(skyboxIndices[0])
+                                   indexCount:sizeof(My::SceneObjectSkyBox::skyboxIndices) / sizeof(My::SceneObjectSkyBox::skyboxIndices[0])
                                     indexType:MTLIndexTypeUInt16
                                   indexBuffer:indexBuffer
                             indexBufferOffset:0];

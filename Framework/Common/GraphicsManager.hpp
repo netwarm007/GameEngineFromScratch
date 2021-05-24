@@ -162,29 +162,6 @@ class GraphicsManager : _implements_ IRuntimeModule {
     std::vector<std::shared_ptr<IDispatchPass>> m_DispatchPasses;
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
 
-    constexpr static float skyboxVertices[]{
-        1.0f,  1.0f,  1.0f,   // 0
-        -1.0f, 1.0f,  1.0f,   // 1
-        1.0f,  -1.0f, 1.0f,   // 2
-        1.0f,  1.0f,  -1.0f,  // 3
-        -1.0f, 1.0f,  -1.0f,  // 4
-        1.0f,  -1.0f, -1.0f,  // 5
-        -1.0f, -1.0f, 1.0f,   // 6
-        -1.0f, -1.0f, -1.0f   // 7
-    };
-
-    constexpr static uint16_t skyboxIndices[]{4, 7, 5, 5, 3, 4,
-
-                                              6, 7, 4, 4, 1, 6,
-
-                                              5, 2, 0, 0, 3, 5,
-
-                                              6, 1, 0, 0, 2, 6,
-
-                                              4, 3, 0, 0, 1, 4,
-
-                                              7, 6, 5, 5, 6, 2};
 };
-
-extern GraphicsManager* g_pGraphicsManager;
+    extern GraphicsManager* g_pGraphicsManager;
 }  // namespace My
