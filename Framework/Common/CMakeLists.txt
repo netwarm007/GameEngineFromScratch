@@ -8,15 +8,9 @@ add_library(Common
         InputManager.cpp
         Image.cpp
         MemoryManager.cpp
+        SceneManager.cpp
         StackAllocator.cpp
         PipelineStateManager.cpp
-        Scene.cpp
-        SceneManager.cpp
-        SceneObject.cpp
-        SceneObjectAnimation.cpp
-        SceneObjectMesh.cpp
-        SceneObjectTrack.cpp
-        SceneObjectTexture.cpp
         main.cpp
 )
 
@@ -30,6 +24,7 @@ target_link_libraries(Common
         Geometries
         Parser
         GeomMath
+        SceneGraph
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 

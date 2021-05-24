@@ -6,4 +6,5 @@ add_subdirectory(DispatchPass)
 add_subdirectory(GeomMath)
 add_subdirectory(Geometries)
 add_subdirectory(Parser)
+add_subdirectory(SceneGraph)
 
