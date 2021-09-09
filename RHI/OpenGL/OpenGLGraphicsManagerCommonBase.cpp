@@ -524,14 +524,14 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
     glBindVertexArray(skyboxVAO);
     // vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices,
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SceneObjectSkyBox::skyboxVertices), SceneObjectSkyBox::skyboxVertices,
                  GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     // index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxVBO[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), skyboxIndices,
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(SceneObjectSkyBox::skyboxIndices), SceneObjectSkyBox::skyboxIndices,
                  GL_STATIC_DRAW);
 
     glBindVertexArray(0);
@@ -543,7 +543,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
     m_SkyBoxDrawBatchContext.mode = GL_TRIANGLES;
     m_SkyBoxDrawBatchContext.type = GL_UNSIGNED_BYTE;
     m_SkyBoxDrawBatchContext.count =
-        sizeof(skyboxIndices) / sizeof(skyboxIndices[0]);
+        sizeof(SceneObjectSkyBox::skyboxIndices) / sizeof(SceneObjectSkyBox::skyboxIndices[0]);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndScene() {
