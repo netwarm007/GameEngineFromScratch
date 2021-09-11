@@ -104,7 +104,7 @@ jobs:
   build_linux:
     docker:
       - image: ubuntu:20.04
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - run: 
           name: Install Dependencies
