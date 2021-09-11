@@ -69,6 +69,10 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
+      - run:
+          name: init submodules
+          command: |
+            git submodule update --init --recursive
       - checkout
       - run:
           name: git gc
@@ -116,6 +120,10 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
+      - run:
+          name: init submodules
+          command: |
+            git submodule update --init --recursive
       - checkout
       - run:
           name: git gc
@@ -149,6 +157,10 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
+      - run:
+          name: init submodules
+          command: |
+            git submodule update --init --recursive
       - checkout
       - run:
           name: git gc
@@ -199,6 +211,10 @@ jobs:
             - source-android-{{ .Branch }}-{{ .Revision }}
             - source-android-{{ .Branch }}-
             - source-android
+      - run:
+          name: init submodules
+          command: |
+            git submodule update --init --recursive
       - checkout
       - run: 
           name: Git LFS Checkout
