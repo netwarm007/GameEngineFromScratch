@@ -102,9 +102,12 @@ jobs:
           command: |
             cmake --build build --target RUN_TESTS
   build_linux:
-    docker:
-      - image: ubuntu:20.04
-    resource_class: xlarge
+    #docker:
+    #  - image: ubuntu:20.04
+    #resource_class: xlarge
+    machine:
+      image: ubuntu-2004:202010-01 # recommended linux image
+    resource_class: large
     steps:
       - run: 
           name: Install Dependencies
