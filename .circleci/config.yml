@@ -106,7 +106,7 @@ jobs:
     #  - image: ubuntu:20.04
     #resource_class: xlarge
     machine:
-      image: ubuntu-2004:202010-01 # recommended linux image
+      image: ubuntu:20.04
     resource_class: large
     steps:
       - run: 
