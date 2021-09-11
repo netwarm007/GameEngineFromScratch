@@ -69,11 +69,12 @@ jobs:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
             - source-{{ arch }}
+      - checkout
       - run:
           name: init submodules
           command: |
+            git submodule sync
             git submodule update --init --recursive
-      - checkout
       - run:
           name: git gc
           command: |
@@ -156,24 +157,6 @@ jobs:
     macos:
       xcode: "11.4.1"
     steps:
-      - restore_cache:
-          keys:
-            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}
-      - run:
-          name: init submodules
-          command: |
-            git submodule update --init --recursive
-      - checkout
-      - run:
-          name: git gc
-          command: |
-             git gc
-      - save_cache:
-          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ".git"
       - run: 
           name: Install Dependencies via MacPorts
           command: |
@@ -182,6 +165,25 @@ jobs:
              rm $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              sudo -E port -q install cmake ninja
+      - restore_cache:
+          keys:
+            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+            - source-{{ arch }}-{{ .Branch }}-
+            - source-{{ arch }}
+      - checkout
+      - run:
+          name: init submodules
+          command: |
+            git submodule sync
+            git submodule update --init --recursive
+      - run:
+          name: git gc
+          command: |
+             git gc
+      - save_cache:
+          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
       - run:
           name: Build
           command: |
@@ -215,11 +217,12 @@ jobs:
             - source-android-{{ .Branch }}-{{ .Revision }}
             - source-android-{{ .Branch }}-
             - source-android
+      - checkout
       - run:
           name: init submodules
           command: |
+            git submodule sync
             git submodule update --init --recursive
-      - checkout
       - run: 
           name: Git LFS Checkout
           command: |
