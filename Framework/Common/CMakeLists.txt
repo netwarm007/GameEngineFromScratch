@@ -17,14 +17,6 @@ add_library(Common
 find_package(Threads REQUIRED)
 
 target_link_libraries(Common
-        Algorism
-        DrawPass
-        DrawSubPass
-        DispatchPass
-        Geometries
-        Parser
-        GeomMath
-        SceneGraph
         ${OPENGEX_LIBRARY} 
         ${OPENDDL_LIBRARY} 
         ${XG_LIBRARY} 

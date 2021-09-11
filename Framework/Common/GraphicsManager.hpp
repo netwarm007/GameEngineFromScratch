@@ -11,7 +11,6 @@
 #include "IDrawPass.hpp"
 #include "IPipelineStateManager.hpp"
 #include "IRuntimeModule.hpp"
-#include "Image.hpp"
 #include "Polyhedron.hpp"
 #include "Scene.hpp"
 #include "cbuffer.h"

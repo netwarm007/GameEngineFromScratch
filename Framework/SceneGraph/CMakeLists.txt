@@ -6,3 +6,5 @@ add_library(SceneGraph
         SceneObjectTrack.cpp
         SceneObjectTexture.cpp
 )
+
+target_link_libraries(SceneGraph Common)

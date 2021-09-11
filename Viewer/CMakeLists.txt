@@ -59,7 +59,7 @@ IF(APPLE)
 
     target_link_libraries(Viewer
                             MyPhysics
-                            Common
+                            Framework
                             MetalRHI
                             PlatformInterface
                         )
@@ -82,7 +82,7 @@ ELSEIF(WA)
     target_link_libraries(Viewer
                             MyPhysics
                             OpenGLRHI
-                            Common
+                            Framework
                             Sdl
                         )
 
@@ -133,14 +133,14 @@ ELSEIF(WIN32)
     target_link_libraries(Viewer
                             MyPhysics
                             D3dRHI 
-                            Common
+                            Framework
                             PlatformInterface
                         )
 ELSE(APPLE)
     target_link_libraries(Viewer
                             MyPhysics
                             OpenGLRHI
-                            Common
+                            Framework
                             PlatformInterface
                         )
 ENDIF(APPLE)
