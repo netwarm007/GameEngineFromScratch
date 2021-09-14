@@ -200,6 +200,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
+             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              ./scripts/build-ninja.sh
       - run:
           name: Test

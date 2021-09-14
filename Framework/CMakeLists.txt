@@ -16,8 +16,8 @@ target_link_libraries(Framework INTERFACE
         DrawPass
         DrawSubPass
         DispatchPass
+        Parser
         Geometries
         SceneGraph
-        Parser
         GeomMath
 )
