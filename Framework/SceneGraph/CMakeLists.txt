@@ -6,3 +6,9 @@ add_library(SceneGraph
         SceneObjectTrack.cpp
         SceneObjectTexture.cpp
 )
+
+target_link_libraries(SceneGraph
+        ${XG_LIBRARY} 
+)
+
+__add_xg_platform_dependencies(SceneGraph)

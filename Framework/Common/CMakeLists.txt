@@ -17,12 +17,7 @@ add_library(Common
 find_package(Threads REQUIRED)
 
 target_link_libraries(Common
-        ${OPENGEX_LIBRARY} 
-        ${OPENDDL_LIBRARY} 
-        ${XG_LIBRARY} 
         ${ZLIB_LIBRARY}
         Threads::Threads
 )
-
-__add_xg_platform_dependencies(Common)
 
