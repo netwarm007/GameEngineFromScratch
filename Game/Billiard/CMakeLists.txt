@@ -66,7 +66,7 @@ IF(APPLE)
 
     target_link_libraries(BilliardGame 
                             BulletPhysics
-                            Common
+                            Framework
                             MetalRHI
                             PlatformInterface
                         )
@@ -74,7 +74,7 @@ ELSEIF(WA)
     target_link_libraries(BilliardGame 
                             BulletPhysics
                             OpenGLRHI
-                            Common
+                            Framework
                             Sdl
                         )
     set_target_properties(BilliardGame
@@ -84,7 +84,7 @@ ELSE(APPLE)
     target_link_libraries(BilliardGame 
                             BulletPhysics
                             OpenGLRHI
-                            Common
+                            Framework
                             PlatformInterface
                         )
 ENDIF(APPLE)

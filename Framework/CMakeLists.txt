@@ -11,12 +11,13 @@ add_subdirectory(SceneGraph)
 add_library(Framework INTERFACE)
 
 target_link_libraries(Framework INTERFACE
+        Common
         Algorism
         DrawPass
         DrawSubPass
         DispatchPass
         Geometries
+        SceneGraph
         Parser
         GeomMath
-        SceneGraph
 )

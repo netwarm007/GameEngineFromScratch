@@ -139,7 +139,7 @@ jobs:
           paths:
             - ".git"
       - run:
-          name: Build
+          name: "Build Dependencies"
           command: |
              ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
@@ -160,14 +160,6 @@ jobs:
     macos:
       xcode: "11.4.1"
     steps:
-      - run: 
-          name: Install Dependencies via MacPorts
-          command: |
-             curl -L -o $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg https://distfiles.macports.org/MacPorts/MacPorts-2.6.2-10.15-Catalina.pkg
-             sudo installer -package $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg -target /
-             rm $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             sudo -E port -q install cmake ninja
       - restore_cache:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
@@ -187,8 +179,16 @@ jobs:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
+      - run: 
+          name: Install Dependencies via MacPorts
+          command: |
+             curl -L -o $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg https://distfiles.macports.org/MacPorts/MacPorts-2.6.2-10.15-Catalina.pkg
+             sudo installer -package $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg -target /
+             rm $(pwd)/MacPorts-2.6.2-10.15-Catalina.pkg
+             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+             sudo -E port -q install cmake ninja
       - run:
-          name: Build
+          name: "Build Dependencies"
           command: |
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              ./scripts/build_imgui.sh
