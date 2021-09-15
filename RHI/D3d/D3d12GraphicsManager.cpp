@@ -1365,12 +1365,12 @@ void D3d12GraphicsManager::initializeSkyBox(const Scene& scene) {
     assert(scene.SkyBox);
 
     m_dbcSkyBox.property_offset = CreateVertexBuffer(
-        skyboxVertices, sizeof(SceneObjectSkyBox::skyboxVertices), sizeof(SceneObjectSkyBox::skyboxVertices[0]));
+        SceneObjectSkyBox::skyboxVertices, sizeof(SceneObjectSkyBox::skyboxVertices), sizeof(SceneObjectSkyBox::skyboxVertices[0]));
     m_dbcSkyBox.property_count = 1;
     m_dbcSkyBox.index_offset =
         CreateIndexBuffer(SceneObjectSkyBox::skyboxIndices, sizeof(SceneObjectSkyBox::skyboxIndices),
                           static_cast<int32_t>(sizeof(SceneObjectSkyBox::skyboxIndices[0])));
-    m_dbcSkyBox.index_count = sizeof(skyboxIndices) / sizeof(SceneObjectSkyBox::skyboxIndices[0]);
+    m_dbcSkyBox.index_count = sizeof(SceneObjectSkyBox::skyboxIndices) / sizeof(SceneObjectSkyBox::skyboxIndices[0]);
 
     // Describe and create a Cubemap.
     auto& texture = scene.SkyBox->GetTexture(0);
