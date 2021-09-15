@@ -15,13 +15,13 @@
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
 #include "BilliardGameLogic.hpp"
-#include "Framework/Common/AnimationManager.hpp"
-#include "Framework/Common/AssetLoader.hpp"
-#include "Framework/Common/DebugManager.hpp"
-#include "Framework/Common/InputManager.hpp"
-#include "Framework/Common/MemoryManager.hpp"
-#include "Framework/Common/SceneManager.hpp"
-#include "Physics/Bullet/BulletPhysicsManager.hpp"
+#include "AnimationManager.hpp"
+#include "AssetLoader.hpp"
+#include "DebugManager.hpp"
+#include "InputManager.hpp"
+#include "MemoryManager.hpp"
+#include "SceneManager.hpp"
+#include "Bullet/BulletPhysicsManager.hpp"
 
 namespace My {
 GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 960, 540, "Billiard Game");

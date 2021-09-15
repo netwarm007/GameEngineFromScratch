@@ -5,13 +5,14 @@ add_subdirectory(DrawSubPass)
 add_subdirectory(DispatchPass)
 add_subdirectory(GeomMath)
 add_subdirectory(Geometries)
+add_subdirectory(Manager)
 add_subdirectory(Parser)
 add_subdirectory(SceneGraph)
 
 add_library(Framework INTERFACE)
 
 target_link_libraries(Framework INTERFACE
-        Common
+        Manager
         Algorism
         DrawPass
         DrawSubPass
@@ -20,4 +21,5 @@ target_link_libraries(Framework INTERFACE
         Geometries
         SceneGraph
         GeomMath
+        Common
 )

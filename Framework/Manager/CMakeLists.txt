@@ -1,0 +1,13 @@
+add_library(Manager
+        AnimationManager.cpp
+        AssetLoader.cpp
+        BaseApplication.cpp
+        BlockAllocator.cpp
+        DebugManager.cpp
+        GraphicsManager.cpp
+        InputManager.cpp
+        MemoryManager.cpp
+        SceneManager.cpp
+        StackAllocator.cpp
+        PipelineStateManager.cpp
+)
