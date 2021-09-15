@@ -9,6 +9,7 @@ add_library(SceneGraph
 
 target_link_libraries(SceneGraph
         ${XG_LIBRARY} 
+        ${ZLIB_LIBRARY}
 )
 
 __add_xg_platform_dependencies(SceneGraph)

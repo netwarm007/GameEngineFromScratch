@@ -11,7 +11,3 @@ add_library(Manager
         StackAllocator.cpp
         PipelineStateManager.cpp
 )
-
-target_link_libraries(Manager
-        ${ZLIB_LIBRARY}
-)
