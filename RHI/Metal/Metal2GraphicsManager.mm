@@ -1,7 +1,7 @@
 #import <Metal/Metal.h>
 
-#include "Metal2GraphicsManager.h"
 #include "Metal2Renderer.h"
+#include "Metal2GraphicsManager.h"
 
 using namespace My;
 using namespace std;
