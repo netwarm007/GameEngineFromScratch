@@ -241,7 +241,7 @@ jobs:
           keys:
             - source-android-{{ .Branch }}-{{ .Revision }}
             - source-android-{{ .Branch }}-
-            - source-{{ arch }}-
+            - source-android-
       - run:
           name: restore repo
           command: |
