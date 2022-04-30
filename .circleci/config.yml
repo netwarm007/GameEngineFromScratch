@@ -5,7 +5,7 @@ orbs:
 jobs:
   build_windows:
     executor:
-      name: win/server-2022
+      name: win/default
       shell: powershell.exe
     steps:
       - run: systeminfo
@@ -45,7 +45,7 @@ jobs:
             else
             {
               echo "Cmake not present. Installing cmake."
-              choco install cmake.portable -y --version 3.16.2
+              choco install cmake.portable -y
 
               if (-not ($machinePath.ToLower().Contains($cmakePath.ToLower())))
               {
