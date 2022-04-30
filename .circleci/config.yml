@@ -133,7 +133,7 @@ jobs:
       - run:
           name: restore repo
           command: |
-            if [ -f ".git" ]; then
+            if [ -d ".git" ]; then
               git restore .
             fi
       - checkout
@@ -180,7 +180,7 @@ jobs:
       - run:
           name: restore repo
           command: |
-            if [ -f ".git" ]; then
+            if [ -d ".git" ]; then
               git restore .
             fi
       - checkout
@@ -245,7 +245,7 @@ jobs:
       - run:
           name: restore repo
           command: |
-            if [ -f ".git" ]; then
+            if [ -d ".git" ]; then
               git restore .
             fi
       - checkout
