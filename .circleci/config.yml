@@ -68,7 +68,6 @@ jobs:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}
       - checkout
       - run:
           name: init submodules
@@ -123,7 +122,6 @@ jobs:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}
       - checkout
       - run:
           name: init submodules
@@ -164,7 +162,6 @@ jobs:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}
       - checkout
       - run:
           name: init submodules
@@ -223,7 +220,6 @@ jobs:
           keys:
             - source-android-{{ .Branch }}-{{ .Revision }}
             - source-android-{{ .Branch }}-
-            - source-android
       - checkout
       - run:
           name: init submodules
