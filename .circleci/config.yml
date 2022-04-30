@@ -68,6 +68,13 @@ jobs:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
+            - source-{{ arch }}-
+      - run:
+          name: restore repo
+          command: |
+            if (Test-Path -Path ".git" ) {
+              git restore .
+            }
       - checkout
       - run:
           name: init submodules
@@ -122,6 +129,13 @@ jobs:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
+            - source-{{ arch }}-
+      - run:
+          name: restore repo
+          command: |
+            if [ -f ".git" ]; then
+              git restore .
+            fi
       - checkout
       - run:
           name: init submodules
@@ -162,6 +176,13 @@ jobs:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
             - source-{{ arch }}-{{ .Branch }}-
+            - source-{{ arch }}-
+      - run:
+          name: restore repo
+          command: |
+            if [ -f ".git" ]; then
+              git restore .
+            fi
       - checkout
       - run:
           name: init submodules
@@ -220,6 +241,13 @@ jobs:
           keys:
             - source-android-{{ .Branch }}-{{ .Revision }}
             - source-android-{{ .Branch }}-
+            - source-{{ arch }}-
+      - run:
+          name: restore repo
+          command: |
+            if [ -f ".git" ]; then
+              git restore .
+            fi
       - checkout
       - run:
           name: init submodules
