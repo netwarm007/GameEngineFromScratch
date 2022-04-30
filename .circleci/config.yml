@@ -1,11 +1,11 @@
 version: 2.1
 orbs:
-  win: circleci/windows@2.4.1
+  win: circleci/windows@4.4.1
 
 jobs:
   build_windows:
     executor:
-      name: win/default
+      name: win/server-2022
       shell: powershell.exe
     steps:
       - run: systeminfo
