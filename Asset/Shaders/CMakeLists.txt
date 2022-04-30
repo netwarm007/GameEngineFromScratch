@@ -18,7 +18,7 @@ set(SHADER_SOURCES basic.vert basic.frag
 IF(WIN32)
     set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/Windows/bin/glslangValidator.exe)
     set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/Windows/bin/SPIRV-Cross.exe)
-    set(DXC            ${PROJECT_SOURCE_DIR}/External/Windows/bin/dxc.exe)
+    set(DXC            dxc.exe)
 ELSE(WIN32)
 	set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/glslangValidator)
 	set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/spirv-cross)
@@ -62,40 +62,34 @@ IF(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
     )
 
-    find_program(FXC fxc DOC "fx compiler"
-                 PATHS
-               "$ENV{WindowsSDKDir}/Utilities/Bin/x86"
-               "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v10.0;InstallationFolder]/bin/x86"
-               "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v10.0;InstallationFolder]/bin/"
-               "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v10.0;ProductVersion].0/x86")
-    if(NOT FXC)
-        message(SEND_ERROR "Cannot find fxc.")
-    endif(NOT FXC)
-
     foreach(SHADER IN LISTS SHADER_SOURCES)
         set(SHADER_BIN ${SHADER_BIN_DIR}/${SHADER}.cso)
         if (SHADER MATCHES "^([a-zA-Z0-9_]*)\.vert$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
-                COMMAND ${FXC} -T vs_5_1 -E ${CMAKE_MATCH_1}_vert_main -Fo ${SHADER_BIN} -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                COMMAND ${DXC} -T vs_6_1 -E ${CMAKE_MATCH_1}_vert_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
                 DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         elseif (SHADER MATCHES "^([a-zA-Z0-9_]*)\.frag$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
-                COMMAND ${FXC} -T ps_5_1 -E ${CMAKE_MATCH_1}_frag_main -Fo ${SHADER_BIN} -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                COMMAND ${DXC} -T ps_6_1 -E ${CMAKE_MATCH_1}_frag_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
                 DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         elseif (SHADER MATCHES "^([a-zA-Z0-9_]*)\.comp$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
-                COMMAND ${FXC} -T cs_5_1 -E ${CMAKE_MATCH_1}_comp_main -Fo ${SHADER_BIN} -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                COMMAND ${DXC} -T cs_6_1 -E ${CMAKE_MATCH_1}_comp_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
                 DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         elseif (SHADER MATCHES "^([a-zA-Z0-9_]*)\.geom$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
-                COMMAND ${FXC} -T gs_5_1 -E ${CMAKE_MATCH_1}_geom_main -Fo ${SHADER_BIN} -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_SOURCE_DIR}/Framework/Common ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
+                COMMAND ${DXC} -T gs_6_1 -E ${CMAKE_MATCH_1}_geom_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
                 DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         endif ()
