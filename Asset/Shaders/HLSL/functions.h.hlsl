@@ -119,13 +119,15 @@ float shadow_test(float4 p, Light light, float cosTheta) {
         {
             case 0: // point
                 // recalculate the v_light_space because we do not need to taking account of rotation
-                float3 L = p.xyz - light.lightPosition.xyz;
-                near_occ = cubeShadowMap.Sample(samp0, float4(L, float(light.lightShadowMapIndex))).x;
-
-                if (length(L) - near_occ * 10.0f > bias)
                 {
-                    // we are in the shadow
-                    visibility -= 0.88f;
+                    float3 L = p.xyz - light.lightPosition.xyz;
+                    near_occ = cubeShadowMap.Sample(samp0, float4(L, float(light.lightShadowMapIndex))).x;
+
+                    if (length(L) - near_occ * 10.0f > bias)
+                    {
+                        // we are in the shadow
+                        visibility -= 0.88f;
+                    }
                 }
                 break;
             case 1: // spot
@@ -383,8 +385,8 @@ float3 convert_xyz_to_cube_uv(float3 d)
     isPositive.y = d.y > 0 ? 1 : 0;
     isPositive.z = d.z > 0 ? 1 : 0;
   
-    float maxAxis, uc, vc;
-    int index;
+    float maxAxis = 0.0f, uc = 0.0f, vc = 0.0f;
+    int index = 0;
   
     // POSITIVE X
     if (isPositive.x && d_abs.x >= d_abs.y && d_abs.x >= d_abs.z) {
