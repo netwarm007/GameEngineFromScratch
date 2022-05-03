@@ -1,4 +1,5 @@
 #include <xcb/xcb.h>
+#include <X11/Xlib-xcb.h>
 
 #include "BaseApplication.hpp"
 
@@ -12,16 +13,18 @@ class XcbApplication : public BaseApplication {
     void Tick() override;
 
     void* GetMainWindowHandler() override {
-        return reinterpret_cast<void*>(m_Window);
+        return reinterpret_cast<void*>(m_XWindow);
     };
 
    protected:
     void CreateMainWindow() override;
 
    protected:
+    Display *m_pDisplay;
+    int m_nScreen;
+
     xcb_connection_t* m_pConn = nullptr;
     xcb_screen_t* m_pScreen = nullptr;
-    xcb_window_t m_Window;
-    uint32_t m_nVi = 0;
+    xcb_window_t m_XWindow;
 };
 }  // namespace My

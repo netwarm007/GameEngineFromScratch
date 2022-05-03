@@ -1,6 +1,8 @@
 #pragma once
-#include "XcbApplication.hpp"
+
 #include "glad/glad_glx.h"
+
+#include "XcbApplication.hpp"
 
 namespace My {
 class OpenGLApplication : public XcbApplication {
@@ -15,11 +17,8 @@ class OpenGLApplication : public XcbApplication {
     void CreateMainWindow() override;
 
    private:
-    Display *m_pDisplay;
-    int m_nScreen;
     GLXContext m_Context;
-    GLXDrawable m_Drawable;
+    GLXWindow m_GlxWindow;
     GLXFBConfig fb_config;
-    XVisualInfo *vi;
 };
 }  // namespace My

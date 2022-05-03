@@ -48,8 +48,21 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
 }
 
 int OpenGLApplication::Initialize() {
-    int result;
+    XcbApplication::Initialize();
 
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(static_cast<float>(m_Config.screenWidth), 
+                            static_cast<float>(m_Config.screenHeight)); 
+
+    ImGui::StyleColorsDark();
+
+    return 0;
+}
+
+void OpenGLApplication::CreateMainWindow() {
     /* Open Xlib Display */
     m_pDisplay = XOpenDisplay(NULL);
     if (!m_pDisplay) {
@@ -58,6 +71,12 @@ int OpenGLApplication::Initialize() {
 
     m_nScreen = DefaultScreen(m_pDisplay);
 
+    /* establish connection to X server */
+    m_pConn = XGetXCBConnection(m_pDisplay);
+    if (!m_pConn) {
+        fprintf(stderr, "Can't get xcb connection from display\n");
+    }
+
     gladLoadGLX(m_pDisplay, m_nScreen);
 
     GLXFBConfig *fb_configs;
@@ -65,19 +84,21 @@ int OpenGLApplication::Initialize() {
 
     // Get a matching FB config
     static int visual_attribs[] = {
-        GLX_X_RENDERABLE, True, GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-        GLX_RENDER_TYPE, GLX_RGBA_BIT, GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-        GLX_RED_SIZE, static_cast<int>(INT_MAX & m_Config.redBits),
-        GLX_GREEN_SIZE, static_cast<int>(INT_MAX & m_Config.greenBits),
-        GLX_BLUE_SIZE, static_cast<int>(INT_MAX & m_Config.blueBits),
-        GLX_ALPHA_SIZE, static_cast<int>(INT_MAX & m_Config.alphaBits),
+        GLX_X_RENDERABLE, True, 
+        // GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE, GLX_RGBA_BIT, 
+        GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
+        // GLX_RED_SIZE, static_cast<int>(INT_MAX & m_Config.redBits),
+        // GLX_GREEN_SIZE, static_cast<int>(INT_MAX & m_Config.greenBits),
+        // GLX_BLUE_SIZE, static_cast<int>(INT_MAX & m_Config.blueBits),
+        // GLX_ALPHA_SIZE, static_cast<int>(INT_MAX & m_Config.alphaBits),
         GLX_DEPTH_SIZE, static_cast<int>(INT_MAX & m_Config.depthBits),
-        GLX_STENCIL_SIZE, static_cast<int>(INT_MAX & m_Config.stencilBits),
+        // GLX_STENCIL_SIZE, static_cast<int>(INT_MAX & m_Config.stencilBits),
         GLX_DOUBLEBUFFER, True,
         // GLX_SAMPLE_BUFFERS  , 1,
         // GLX_SAMPLES         , 4,
         None};
-
+    
     {
         /* Query framebuffer configurations */
         fb_configs = glXChooseFBConfig(m_pDisplay, m_nScreen, visual_attribs,
@@ -119,51 +140,38 @@ int OpenGLApplication::Initialize() {
         }
     }
 
-    XcbApplication::Initialize(); // implicitly calling create main window here
-
     /* Get a visual */
-    vi = glXGetVisualFromFBConfig(m_pDisplay, fb_config);
+    auto vi = glXGetVisualFromFBConfig(m_pDisplay, fb_config);
     printf("Chosen visual ID = 0x%lx\n", vi->visualid);
 
-    /* establish connection to X server */
-    m_pConn = XGetXCBConnection(m_pDisplay);
-    if (!m_pConn) {
-        XCloseDisplay(m_pDisplay);
-        fprintf(stderr, "Can't get xcb connection from display\n");
-        return -1;
-    }
+    XcbApplication::CreateMainWindow(); // implicitly calling create main window here
+#if 0
+	auto root = DefaultRootWindow (m_pDisplay);
+	auto cmap = XCreateColormap (m_pDisplay, root, vi->visual, AllocNone);
 
-    /* Acquire event queue ownership */
-    XSetEventQueueOwner(m_pDisplay, XCBOwnsEventQueue);
+	XSetWindowAttributes swa;
+	swa.colormap = cmap;
+	swa.event_mask = ExposureMask | KeyPressMask;
+	m_XWindow = XCreateWindow (m_pDisplay, root, 0, 0, m_Config.screenWidth, m_Config.screenHeight,
+			     0, vi->depth,
+			     InputOutput, vi->visual,
+			     CWColormap | CWEventMask, &swa);
 
-    /* Find XCB screen */
-    xcb_screen_iterator_t screen_iter =
-        xcb_setup_roots_iterator(xcb_get_setup(m_pConn));
-    for (int screen_num = vi->screen; screen_iter.rem && screen_num > 0;
-         --screen_num, xcb_screen_next(&screen_iter))
-        ;
-    m_pScreen = screen_iter.data;
-    m_nVi = vi->visualid;
-
-    // Initialize ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(static_cast<float>(m_Config.screenWidth), 
-                            static_cast<float>(m_Config.screenHeight)); 
-
-    ImGui::StyleColorsDark();
-
-    return result;
-}
-
-void OpenGLApplication::CreateMainWindow() {
-    XcbApplication::CreateMainWindow();
+	XMapWindow (m_pDisplay, m_XWindow);
+	XStoreName (m_pDisplay, m_XWindow, m_Config.appName);
+#endif
 
     /* Create OpenGL context */
     ctxErrorOccurred = false;
     int (*oldHandler)(Display *, XErrorEvent *) =
         XSetErrorHandler(&ctxErrorHandler);
+
+    /* Create GLX Window */
+    m_GlxWindow = glXCreateWindow(m_pDisplay, fb_config, m_XWindow, 0);
+
+    if (!m_GlxWindow) {
+        fprintf(stderr, "glxCreateWindow failed\n");
+    }
 
     /* Get the default screen's GLX extension list */
     const char *glxExts;
@@ -175,7 +183,7 @@ void OpenGLApplication::CreateMainWindow() {
             "glXCreateContextAttribsARB() not found"
             " ... using old-style GLX context\n");
         m_Context =
-            glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, 0, True);
+            glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, NULL, GL_TRUE);
         if (!m_Context) {
             fprintf(stderr, "glXCreateNewContext failed\n");
         }
@@ -205,11 +213,11 @@ void OpenGLApplication::CreateMainWindow() {
 
             ctxErrorOccurred = false;
 
-            printf(
-                "Failed to create GL 4.3 context"
-                " ... using old-style GLX context\n");
-            m_Context = glXCreateContextAttribsARB(m_pDisplay, fb_config, 0,
-                                                   True, context_attribs);
+            m_Context =
+                glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, NULL, GL_TRUE);
+            if (!m_Context) {
+                fprintf(stderr, "glXCreateNewContext failed\n");
+            }
         }
     }
 
@@ -228,23 +236,8 @@ void OpenGLApplication::CreateMainWindow() {
         printf("Direct GLX rendering context obtained\n");
     }
 
-    /* Create GLX Window */
-    GLXWindow glxwindow = glXCreateWindow(m_pDisplay, fb_config, m_Window, 0);
-
-    if (!glxwindow) {
-        xcb_destroy_window(m_pConn, m_Window);
-        glXDestroyContext(m_pDisplay, m_Context);
-
-        fprintf(stderr, "glxCreateWindow failed\n");
-    }
-
-    m_Drawable = glxwindow;
-
     /* make OpenGL context current */
-    if (!glXMakeContextCurrent(m_pDisplay, m_Drawable, m_Drawable, m_Context)) {
-        xcb_destroy_window(m_pConn, m_Window);
-        glXDestroyContext(m_pDisplay, m_Context);
-
+    if (!glXMakeContextCurrent(m_pDisplay, m_XWindow, m_XWindow, m_Context)) {
         fprintf(stderr, "glXMakeContextCurrent failed\n");
     }
 
@@ -252,10 +245,16 @@ void OpenGLApplication::CreateMainWindow() {
 }
 
 void OpenGLApplication::Tick() {
-    glXSwapBuffers(m_pDisplay, m_Drawable);
     XcbApplication::Tick();
+    glXSwapBuffers(m_pDisplay, m_XWindow);
 }
 
 void OpenGLApplication::Finalize() {
     ImGui::DestroyContext();
+
+    glXMakeCurrent (m_pDisplay, None, NULL ); 
+    glXDestroyContext (m_pDisplay, m_Context); 
+    glXDestroyWindow(m_pDisplay, m_GlxWindow);
+    XDestroyWindow (m_pDisplay, m_XWindow); 
+    XCloseDisplay (m_pDisplay); 
 }
