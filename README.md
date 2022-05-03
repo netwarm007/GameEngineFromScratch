@@ -12,7 +12,7 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 
 ## Platform Support Status
 - Windows 10
-- MacOS Catalina
+- MacOS Catalina - Monterey
 - Linux (Build test on Ubuntu 20.04 and CentOS 7)
 - FreeBSD (Not tested recently, build might fail)
 - Android (Not tested recently, build might fail)
