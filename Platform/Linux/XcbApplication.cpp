@@ -16,7 +16,7 @@ void XcbApplication::CreateMainWindow() {
 
     if (!m_pConn) {
         /* establish connection to X server */
-        m_pConn = xcb_connect(0, 0);
+        m_pConn = xcb_connect(NULL, NULL);
     }
 
     if (!m_pScreen) {

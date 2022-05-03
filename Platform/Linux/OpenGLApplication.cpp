@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "glad/glad_glx.h"
+#include "imgui/examples/imgui_impl_opengl3.h"
 
 using namespace My;
 using namespace std;
@@ -47,14 +48,20 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
 }
 
 int OpenGLApplication::Initialize() {
-    BaseApplication::Initialize();
-
     int result;
 
-    int default_screen;
+    /* Open Xlib Display */
+    m_pDisplay = XOpenDisplay(NULL);
+    if (!m_pDisplay) {
+        fprintf(stderr, "Can't open display\n");
+    }
+
+    m_nScreen = DefaultScreen(m_pDisplay);
+
+    gladLoadGLX(m_pDisplay, m_nScreen);
+
     GLXFBConfig *fb_configs;
     int num_fb_configs = 0;
-    GLXWindow glxwindow;
 
     // Get a matching FB config
     static int visual_attribs[] = {
@@ -71,56 +78,48 @@ int OpenGLApplication::Initialize() {
         // GLX_SAMPLES         , 4,
         None};
 
-    /* Open Xlib Display */
-    m_pDisplay = XOpenDisplay(NULL);
-    if (!m_pDisplay) {
-        fprintf(stderr, "Can't open display\n");
-        return -1;
-    }
-
-    default_screen = DefaultScreen(m_pDisplay);
-
-    gladLoadGLX(m_pDisplay, default_screen);
-
-    /* Query framebuffer configurations */
-    fb_configs = glXChooseFBConfig(m_pDisplay, default_screen, visual_attribs,
-                                   &num_fb_configs);
-    if (!fb_configs || num_fb_configs == 0) {
-        fprintf(stderr, "glXGetFBConfigs failed\n");
-        return -1;
-    }
-
-    /* Pick the FB config/visual with the most samples per pixel */
     {
-        int best_fbc = -1, worst_fbc = -1, best_num_samp = -1,
-            worst_num_samp = 999;
-
-        for (int i = 0; i < num_fb_configs; ++i) {
-            XVisualInfo *vi =
-                glXGetVisualFromFBConfig(m_pDisplay, fb_configs[i]);
-            if (vi) {
-                int samp_buf, samples;
-                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i],
-                                     GLX_SAMPLE_BUFFERS, &samp_buf);
-                glXGetFBConfigAttrib(m_pDisplay, fb_configs[i], GLX_SAMPLES,
-                                     &samples);
-
-                printf(
-                    "  Matching fbconfig %d, visual ID 0x%lx: SAMPLE_BUFFERS = "
-                    "%d,"
-                    " SAMPLES = %d\n",
-                    i, vi->visualid, samp_buf, samples);
-
-                if (best_fbc < 0 || (samp_buf && samples > best_num_samp))
-                    best_fbc = i, best_num_samp = samples;
-                if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp)
-                    worst_fbc = i, worst_num_samp = samples;
-            }
-            XFree(vi);
+        /* Query framebuffer configurations */
+        fb_configs = glXChooseFBConfig(m_pDisplay, m_nScreen, visual_attribs,
+                                    &num_fb_configs);
+        if (!fb_configs || num_fb_configs == 0) {
+            fprintf(stderr, "glXGetFBConfigs failed\n");
         }
 
-        fb_config = fb_configs[best_fbc];
+        /* Pick the FB config/visual with the most samples per pixel */
+        {
+            int best_fbc = -1, worst_fbc = -1, best_num_samp = -1,
+                worst_num_samp = 999;
+
+            for (int i = 0; i < num_fb_configs; ++i) {
+                XVisualInfo *vi =
+                    glXGetVisualFromFBConfig(m_pDisplay, fb_configs[i]);
+                if (vi) {
+                    int samp_buf, samples;
+                    glXGetFBConfigAttrib(m_pDisplay, fb_configs[i],
+                                        GLX_SAMPLE_BUFFERS, &samp_buf);
+                    glXGetFBConfigAttrib(m_pDisplay, fb_configs[i], GLX_SAMPLES,
+                                        &samples);
+
+                    printf(
+                        "  Matching fbconfig %d, visual ID 0x%lx: SAMPLE_BUFFERS = "
+                        "%d,"
+                        " SAMPLES = %d\n",
+                        i, vi->visualid, samp_buf, samples);
+
+                    if (best_fbc < 0 || (samp_buf && samples > best_num_samp))
+                        best_fbc = i, best_num_samp = samples;
+                    if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp)
+                        worst_fbc = i, worst_num_samp = samples;
+                }
+                XFree(vi);
+            }
+
+            fb_config = fb_configs[best_fbc];
+        }
     }
+
+    XcbApplication::Initialize(); // implicitly calling create main window here
 
     /* Get a visual */
     vi = glXGetVisualFromFBConfig(m_pDisplay, fb_config);
@@ -146,21 +145,29 @@ int OpenGLApplication::Initialize() {
     m_pScreen = screen_iter.data;
     m_nVi = vi->visualid;
 
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(static_cast<float>(m_Config.screenWidth), 
+                            static_cast<float>(m_Config.screenHeight)); 
+
+    ImGui::StyleColorsDark();
+
     return result;
 }
 
 void OpenGLApplication::CreateMainWindow() {
     XcbApplication::CreateMainWindow();
 
-    const char *glxExts;
-    int default_screen = DefaultScreen(m_pDisplay);
-    /* Get the default screen's GLX extension list */
-    glxExts = glXQueryExtensionsString(m_pDisplay, default_screen);
-
     /* Create OpenGL context */
     ctxErrorOccurred = false;
     int (*oldHandler)(Display *, XErrorEvent *) =
         XSetErrorHandler(&ctxErrorHandler);
+
+    /* Get the default screen's GLX extension list */
+    const char *glxExts;
+    glxExts = glXQueryExtensionsString(m_pDisplay, m_nScreen);
 
     if (!isExtensionSupported(glxExts, "GLX_ARB_create_context") ||
         !glXCreateContextAttribsARB) {
@@ -245,6 +252,10 @@ void OpenGLApplication::CreateMainWindow() {
 }
 
 void OpenGLApplication::Tick() {
-    XcbApplication::Tick();
     glXSwapBuffers(m_pDisplay, m_Drawable);
+    XcbApplication::Tick();
+}
+
+void OpenGLApplication::Finalize() {
+    ImGui::DestroyContext();
 }

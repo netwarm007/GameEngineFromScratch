@@ -8,6 +8,7 @@ class OpenGLApplication : public XcbApplication {
     using XcbApplication::XcbApplication;
 
     int Initialize() override;
+    void Finalize() override;
     void Tick() override;
 
    protected:
@@ -15,6 +16,7 @@ class OpenGLApplication : public XcbApplication {
 
    private:
     Display *m_pDisplay;
+    int m_nScreen;
     GLXContext m_Context;
     GLXDrawable m_Drawable;
     GLXFBConfig fb_config;
