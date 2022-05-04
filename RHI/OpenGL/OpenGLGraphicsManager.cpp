@@ -146,7 +146,9 @@ int OpenGLGraphicsManager::Initialize() {
         }
     }
 
-    ImGui_ImplOpenGL3_Init("#version 420");
+    char version[20];
+    snprintf(version, 20, "#version %d", GLVersion.major * 100 + GLVersion.minor * 10);
+    ImGui_ImplOpenGL3_Init(version);
 
     return result;
 }

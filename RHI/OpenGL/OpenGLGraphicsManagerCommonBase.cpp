@@ -614,6 +614,10 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame) {
+    // Set viewport
+    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    glViewport(0, 0, conf.screenWidth, conf.screenHeight);
+
     // Set the color to clear the screen to.
     glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
     // Clear the screen and depth buffer.
