@@ -147,3 +147,46 @@ ELSE(APPLE)
 ENDIF(APPLE)
 
 add_dependencies(Viewer Engine_Asset)
+
+install(TARGETS Viewer RUNTIME DESTINATION bin)
+IF(WIN32)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/HLSL DESTINATION Asset/Shaders)
+ENDIF(WIN32)
+install(FILES
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_basecolor.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_normal.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_metallic.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_roughness.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/default_ao.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-albedo.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-normal.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-metalness.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-rough.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-ao.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/terrain/area_1_0_0.png
+                    DESTINATION Asset/Textures)
+
+install(FILES
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negz.dds
+                    DESTINATION Asset/Textures/hdr)
+
+install (FILES 
+                    ${PROJECT_SOURCE_DIR}/Asset/Scene/splash.ogex
+                    DESTINATION Asset/Scene)
