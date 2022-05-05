@@ -59,10 +59,18 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name,
             fullPath.assign(upPath);  // reset to current upPath.
             if (src != m_strSearchPath.end()) {
                 fullPath.append(*src);
+                #ifdef OS_MACOS
+                fullPath.append("/Resources/Asset/");
+                #else
                 fullPath.append("/Asset/");
+                #endif
                 src++;
             } else {
+                #ifdef OS_MACOS
+                fullPath.append("Resources/Asset/");
+                #else
                 fullPath.append("Asset/");
+                #endif
                 looping = false;
             }
             fullPath.append(name);

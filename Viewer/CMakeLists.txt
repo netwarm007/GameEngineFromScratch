@@ -1,21 +1,41 @@
-IF(ANDROID)
-    # Export ANativeActivity_onCreate(),
-    # Refer to: https://github.com/android-ndk/ndk/issues/381.
-    set(CMAKE_SHARED_LINKER_FLAGS
-        "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
+set(SCENE_FILES
+                    ${PROJECT_SOURCE_DIR}/Asset/Scene/splash.ogex
+)
 
-    add_library(Viewer SHARED 
-        ViewerLogic.cpp ViewerConfig.cpp)
-ELSEIF(APPLE)
-    add_executable(Viewer MACOSX_BUNDLE
-        ViewerLogic.cpp ViewerConfig.cpp
-        Main.metallib
-        )
-ELSE(ANDROID)
-    add_executable(Viewer 
-        ViewerLogic.cpp ViewerConfig.cpp
-        )
-ENDIF(ANDROID)
+set(SDR_TEXTURES
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_basecolor.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_normal.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_metallic.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_roughness.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/default_ao.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-albedo.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-normal.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-metalness.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-rough.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-ao.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/terrain/area_1_0_0.png
+)
+
+set(HDR_TEXTURES
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posz.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negx.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negy.dds
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negz.dds
+)
 
 set(SHADER_SOURCES basic.vert basic.frag
             debug.vert debug.frag
@@ -29,6 +49,25 @@ set(SHADER_SOURCES basic.vert basic.frag
             integrateBRDF.comp
             raytrace.comp
         )
+
+IF(ANDROID)
+    # Export ANativeActivity_onCreate(),
+    # Refer to: https://github.com/android-ndk/ndk/issues/381.
+    set(CMAKE_SHARED_LINKER_FLAGS
+        "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
+
+    add_library(Viewer SHARED 
+        ViewerLogic.cpp ViewerConfig.cpp)
+ELSEIF(APPLE)
+    add_executable(Viewer MACOSX_BUNDLE
+        ViewerLogic.cpp ViewerConfig.cpp
+        Main.metallib ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
+        )
+ELSE(ANDROID)
+    add_executable(Viewer 
+        ViewerLogic.cpp ViewerConfig.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
+        )
+ENDIF(ANDROID)
 
 IF(APPLE)
     foreach(SHADER IN LISTS SHADER_SOURCES)
@@ -72,11 +111,32 @@ IF(APPLE)
 
     set(RESOURCE_FILES
         Main.metallib
+        SCENE_FILES
+        SDR_TEXTURES
+        HDR_TEXTURES
     )
 
     set_target_properties(Viewer PROPERTIES
         RESOURCE "${RESOURCE_FILES}"
     )
+
+    foreach(SCENE_FILE ${SCENE_FILES})
+        set_property(SOURCE ${SCENE_FILE} PROPERTY
+            MACOSX_PACKAGE_LOCATION "Resources/Asset/Scene"
+        )
+    endforeach(SCENE_FILE)
+
+    foreach(SDR_TEXTURE_FILE ${SDR_TEXTURES})
+        set_property(SOURCE ${SDR_TEXTURE_FILE} PROPERTY
+            MACOSX_PACKAGE_LOCATION "Resources/Asset/Textures"
+        )
+    endforeach(SDR_TEXTURE_FILE)
+
+    foreach(HDR_TEXTURE_FILE ${HDR_TEXTURES})
+        set_property(SOURCE ${HDR_TEXTURE_FILE} PROPERTY
+            MACOSX_PACKAGE_LOCATION "Resources/Asset/Textures/hdr"
+        )
+    endforeach(HDR_TEXTURE_FILE)
 
 ELSEIF(WA)
     target_link_libraries(Viewer
@@ -148,45 +208,7 @@ ENDIF(APPLE)
 
 add_dependencies(Viewer Engine_Asset)
 
-install(TARGETS Viewer RUNTIME DESTINATION bin)
+install(TARGETS Viewer RUNTIME BUNDLE DESTINATION bin)
 IF(WIN32)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/HLSL DESTINATION Asset/Shaders)
 ENDIF(WIN32)
-install(FILES
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_basecolor.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_normal.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_metallic.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_roughness.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/default_ao.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-albedo.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-normal.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-metalness.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-rough.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-ao.png
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/terrain/area_1_0_0.png
-                    DESTINATION Asset/Textures)
-
-install(FILES
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posx.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posy.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posz.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negx.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negy.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_negz.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posx.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posy.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_posz.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negx.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negy.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_irradiance_negz.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posx.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posy.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_posz.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negx.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negy.dds
-                    ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_radiance_negz.dds
-                    DESTINATION Asset/Textures/hdr)
-
-install (FILES 
-                    ${PROJECT_SOURCE_DIR}/Asset/Scene/splash.ogex
-                    DESTINATION Asset/Scene)
