@@ -1,12 +1,5 @@
 #include "AssetLoader.hpp"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <libproc.h>
-#include <unistd.h>
-
 using namespace My;
 using namespace std;
 
