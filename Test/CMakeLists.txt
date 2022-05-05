@@ -19,20 +19,35 @@ ENDIF(WA)
 
 target_link_libraries(BulletTest BulletPhysics)
 
+set(TEST_ASSETS
+                Asset/Textures/eye.png 
+                Asset/Textures/hdr/PaperMill_posx.dds
+                Asset/Textures/hdr/PaperMill_E_3k.hdr
+                Asset/Textures/huff_simple0.jpg
+                Asset/Textures/interior_lod0.tga
+                Asset/Scene/splash.ogex
+)
+
 IF(WA)
 add_custom_target(PackageAsset ALL
     python $ENV{EMSCRIPTEN}/tools/file_packager.py ${CMAKE_CURRENT_BINARY_DIR}/Asset.data 
         --lz4
         --no-heap-copy
         --js-output=${CMAKE_CURRENT_BINARY_DIR}/Asset.preload.js 
-        --preload Asset/Textures/eye.png 
-                  Asset/Textures/hdr/PaperMill_posx.dds
-                  Asset/Textures/hdr/PaperMill_E_3k.hdr
-                  Asset/Textures/huff_simple0.jpg
-                  Asset/Textures/interior_lod0.tga
-                  Asset/Scene/splash.ogex
-                  Asset/Shaders/WebGL
+        --preload ${TEST_ASSETS} Asset/Shaders/WebGL
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     VERBATIM
         )
+ELSE(WA) # For Windows / MacOS / Linux
+    add_custom_target(CopyTestAssets ALL)
+
+    foreach(TEST_ASSET ${TEST_ASSETS})
+        add_custom_command(
+            TARGET CopyTestAssets
+            COMMAND cmake -E copy ${TEST_ASSET} ${CMAKE_CURRENT_BINARY_DIR}/Resources/${TEST_ASSET}
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            VERBATIM
+        )
+    endforeach(TEST_ASSET)
 ENDIF(WA)
+
