@@ -80,15 +80,7 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
     scripts/build_glslangValidator
     scripts/build_spirvcross
     scripts/build
-### MacOS
-    export PATH=/opt/local/bin:/opt/klocal/sbin:$PATH 
-    ./scripts/build_crossguid.sh
-    ./scripts/build_opengex.sh
-    ./scripts/build_zlib.sh
-    ./scripts/build_bullet.sh
-    ./scripts/build_cef.sh
-    ./scripts/build-ninja.sh
-### Linux
+### MacOS & Linux
     ./scripts/build_crossguid.sh
     ./scripts/build_opengex.sh
     ./scripts/build_bullet.sh
