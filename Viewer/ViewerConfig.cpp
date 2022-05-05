@@ -5,6 +5,7 @@
 #include "Platform/Sdl/OpenGLApplication.hpp"
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
+#include "BundleAssetLoader.h"
 #elif defined(OS_WINDOWS)
 //#include "D3d12Application.hpp"
 #include "OpenGLApplication.hpp"
@@ -37,21 +38,23 @@ GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1920, 1080, "Viewer");
 #if defined(OS_MACOS)
 IApplication* g_pApp =
     static_cast<IApplication*>(new CocoaMetalApplication(config));
+AssetLoader* g_pAssetLoader = static_cast<AssetLoader*>(new BundleAssetLoader);
 #elif defined(OS_WINDOWS)
 // IApplication* g_pApp = static_cast<IApplication*>(new
 // D3d12Application(config));
 IApplication* g_pApp =
     static_cast<IApplication*>(new OpenGLApplication(config));
+AssetLoader* g_pAssetLoader = static_cast<AssetLoader*>(new AssetLoader);
 #else
 IApplication* g_pApp =
     static_cast<IApplication*>(new OpenGLApplication(config));
+AssetLoader* g_pAssetLoader = static_cast<AssetLoader*>(new AssetLoader);
 #endif
 IGameLogic* g_pGameLogic = static_cast<IGameLogic*>(new ViewerLogic);
 IPhysicsManager* g_pPhysicsManager =
     static_cast<IPhysicsManager*>(new MyPhysicsManager);
 IMemoryManager* g_pMemoryManager =
     static_cast<IMemoryManager*>(new MemoryManager);
-AssetLoader* g_pAssetLoader = static_cast<AssetLoader*>(new AssetLoader);
 SceneManager* g_pSceneManager = static_cast<SceneManager*>(new SceneManager);
 InputManager* g_pInputManager = static_cast<InputManager*>(new InputManager);
 AnimationManager* g_pAnimationManager =

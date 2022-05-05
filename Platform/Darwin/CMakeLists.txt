@@ -3,6 +3,7 @@ find_library(CV_LIBRARY CoreVideo required)
 
 # Platform Interface library
 add_library(PlatformInterface
+        BundleAssetLoader.mm
         CocoaApplication.mm 
         CocoaMetalApplication.mm
         AppDelegate.m

@@ -65,6 +65,9 @@ class AssetLoader : public IRuntimeModule {
         return result;
     }
 
+   protected:
+    std::string m_strTargetPath;
+
    private:
     std::vector<std::string> m_strSearchPath;
 };

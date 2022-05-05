@@ -1,5 +1,12 @@
 #include "AssetLoader.hpp"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <libproc.h>
+#include <unistd.h>
+
 using namespace My;
 using namespace std;
 
@@ -44,13 +51,7 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name,
                                                 AssetOpenMode mode) {
     FILE* fp = nullptr;
     // loop N times up the hierarchy, testing at each level
-#ifdef __psp2__
-    std::string upPath = "app0:/";
-#elseif __ORBIS__
-    std::string upPath = "/app0/";
-#else
-    std::string upPath;
-#endif
+    std::string upPath(m_strTargetPath);
     std::string fullPath;
     for (int32_t i = 0; i < 10; i++) {
         auto src = m_strSearchPath.begin();
@@ -59,18 +60,10 @@ AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name,
             fullPath.assign(upPath);  // reset to current upPath.
             if (src != m_strSearchPath.end()) {
                 fullPath.append(*src);
-                #ifdef OS_MACOS
-                fullPath.append("/Resources/Asset/");
-                #else
                 fullPath.append("/Asset/");
-                #endif
                 src++;
             } else {
-                #ifdef OS_MACOS
-                fullPath.append("Resources/Asset/");
-                #else
                 fullPath.append("Asset/");
-                #endif
                 looping = false;
             }
             fullPath.append(name);
