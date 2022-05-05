@@ -215,6 +215,8 @@ jobs:
              ./scripts/build_zlib.sh
              ./scripts/build_bullet.sh
              ./scripts/build_cef.sh
+             ./scripts/build_glslangValidator
+             ./scripts/build_spirvcross
       - run:
           name: "Build Engine"
           command: |
