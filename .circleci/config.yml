@@ -168,6 +168,15 @@ jobs:
           name: Test
           command: |
              cmake --build ./build --target test
+      - run:
+          name: Package
+          command: |
+             cmake --build ./build --target package
+      - persist_to_workspace:
+          root: build
+          paths: 
+            - GEFS-0.1.0-Linux.sh
+            - GEFS-0.1.0-Linux.tar.gz
   build_macos:
     macos:
       xcode: "13.3.1"
@@ -424,6 +433,7 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
       - publish_github_release:
           requires:
+            - build_linux
             - build_macos
           filters:
             branches:
