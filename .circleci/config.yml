@@ -231,7 +231,7 @@ jobs:
           name: Package
           command: |
              cmake --build ./build --target package
-      - persist_to_work_space:
+      - persist_to_workspace:
           root: build
           paths: 
             - GEFS-0.1.0-Darwin.sh
