@@ -108,6 +108,16 @@ jobs:
           name: "Test"
           command: |
             cmake --build build --target RUN_TESTS
+      - run:
+          name: Package
+          command: |
+             cmake --build ./build --target package
+      - persist_to_workspace:
+          root: build
+          paths: 
+            - GEFS-0.1.0-win64.exe
+      - store_artifacts:
+          path: build/GEFS-0.1.0-win64.exe
   build_linux:
     #docker:
     #  - image: ubuntu:20.04
@@ -178,6 +188,12 @@ jobs:
             - GEFS-0.1.0-Linux.sh
             - GEFS-0.1.0-Linux.tar.gz
             - GEFS-0.1.0-Linux.tar.Z
+      - store_artifacts:
+          path: build/GEFS-0.1.0-Linux.sh
+      - store_artifacts:
+          path: build/GEFS-0.1.0-Linux.tar.gz
+      - store_artifacts:
+          path: build/GEFS-0.1.0-Linux.tar.Z
   build_macos:
     macos:
       xcode: "13.3.1"
@@ -247,6 +263,10 @@ jobs:
           paths: 
             - GEFS-0.1.0-Darwin.sh
             - GEFS-0.1.0-Darwin.tar.gz
+      - store_artifacts:
+          path: build/GEFS-0.1.0-Darwin.sh
+      - store_artifacts:
+          path: build/GEFS-0.1.0-Darwin.tar.gz
   build_android:
     working_directory: ~/project
     docker:
