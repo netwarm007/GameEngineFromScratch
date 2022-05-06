@@ -1,5 +1,5 @@
 # Game Engine From Scratch 
-[![CircleCI Build Status](https://circleci.com/gh/netwarm007/GameEngineFromScratch.svg?style=shield&branch=master)](https://circleci.com/gh/netwarm007/GameEngineFromScratch) 
+[![CircleCI Build Status](https://circleci.com/gh/netwarm007/GameEngineFromScratch.svg?style=svg)](https://circleci.com/gh/netwarm007/GameEngineFromScratch) 
 [![Build status](https://ci.appveyor.com/api/projects/status/hld88pk7py29thx5?svg=true&branch=master)](https://ci.appveyor.com/project/netwarm007/gameenginefromscratch)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/netwarm007/GameEngineFromScratch/master/LICENSE)
 
