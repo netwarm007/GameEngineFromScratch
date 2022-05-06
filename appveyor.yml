@@ -27,6 +27,6 @@ after_test:
 - cmd: cmake --build build --target package
 
 artifacts:
-    - path: build\GEFS-0.1.0-Windows.exe
-    - name: GEFS
+- path: build\GEFS-0.1.0-Windows.exe
+  name: GEFS
 
