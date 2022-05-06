@@ -1,6 +1,6 @@
 # Game Engine From Scratch 
-[![CircleCI Build Status](https://circleci.com/gh/netwarm007/GameEngineFromScratch.svg?style=shield)](https://circleci.com/gh/netwarm007/GameEngineFromScratch) 
-[![Build status](https://ci.appveyor.com/api/projects/status/hld88pk7py29thx5?svg=true)](https://ci.appveyor.com/project/netwarm007/gameenginefromscratch)
+[![CircleCI Build Status](https://circleci.com/gh/netwarm007/GameEngineFromScratch.svg?style=shield&branch=master)](https://circleci.com/gh/netwarm007/GameEngineFromScratch) 
+[![Build status](https://ci.appveyor.com/api/projects/status/hld88pk7py29thx5?svg=true&branch=master)](https://ci.appveyor.com/project/netwarm007/gameenginefromscratch)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/netwarm007/GameEngineFromScratch/master/LICENSE)
 
 配合我的知乎[专栏](https://zhuanlan.zhihu.com/c_119702958)当中的系列文章《从零开始手敲次世代游戏引擎》所写的项目。
@@ -12,7 +12,7 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 
 ## Platform Support Status
 - Windows 10
-- MacOS Catalina
+- MacOS Catalina - Monterey
 - Linux (Build test on Ubuntu 20.04 and CentOS 7)
 - FreeBSD (Not tested recently, build might fail)
 - Android (Not tested recently, build might fail)
@@ -80,15 +80,7 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
     scripts/build_glslangValidator
     scripts/build_spirvcross
     scripts/build
-### MacOS
-    export PATH=/opt/local/bin:/opt/klocal/sbin:$PATH 
-    ./scripts/build_crossguid.sh
-    ./scripts/build_opengex.sh
-    ./scripts/build_zlib.sh
-    ./scripts/build_bullet.sh
-    ./scripts/build_cef.sh
-    ./scripts/build-ninja.sh
-### Linux
+### MacOS & Linux
     ./scripts/build_crossguid.sh
     ./scripts/build_opengex.sh
     ./scripts/build_bullet.sh
