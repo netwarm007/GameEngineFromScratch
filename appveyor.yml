@@ -1,4 +1,4 @@
-version: 0.0.{build}
+version: 0.1.0-{build}
 image: Visual Studio 2019
 build_script:
 - cmd: >-
@@ -22,3 +22,7 @@ build_script:
 
 test_script:
 - cmd: cmake --build build --target RUN_TESTS
+
+package_script:
+- cmd: cmake --build build --target package
+

@@ -177,6 +177,7 @@ jobs:
           paths: 
             - GEFS-0.1.0-Linux.sh
             - GEFS-0.1.0-Linux.tar.gz
+            - GEFS-0.1.0-Linux.tar.Z
   build_macos:
     macos:
       xcode: "13.3.1"
