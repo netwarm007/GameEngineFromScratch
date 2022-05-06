@@ -429,7 +429,12 @@ workflows:
   version: 2
   build-and-test: #for branch
     jobs:
-      - build_windows
+      - build_windows: #only for tags because easily run out circleCI free plan budget
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\d+$/
       - build_linux
       - build_macos
   build-and-test-and-release: #for tags
