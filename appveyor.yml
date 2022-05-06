@@ -1,5 +1,6 @@
 version: 0.1.0-{build}
 image: Visual Studio 2019
+clone_depth: 100
 build_script:
 - cmd: >-
     scripts/build_imgui
@@ -27,6 +28,6 @@ after_test:
 - cmd: cmake --build build --target package
 
 artifacts:
-- path: build\GEFS-0.1.0-Windows.exe
+- path: build\GEFS-0.1.0-win64.exe
   name: GEFS
 
