@@ -23,6 +23,10 @@ build_script:
 test_script:
 - cmd: cmake --build build --target RUN_TESTS
 
-package_script:
+after_test:
 - cmd: cmake --build build --target package
+
+artifacts:
+    - path: build\GEFS-0.1.0-Windows.exe
+    - name: GEFS
 
