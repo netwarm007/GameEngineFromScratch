@@ -230,6 +230,7 @@ jobs:
       - run:
           name: Package
           command: |
+             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              cmake --build ./build --target package
       - persist_to_workspace:
           root: build
