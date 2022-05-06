@@ -31,3 +31,15 @@ artifacts:
 - path: build\GEFS-0.1.0-win64.exe
   name: GEFS
 
+deploy:
+  release: GEFS-0.1.0-$(APPVEYOR_BUILD_VERSION)
+  description: 'prerelese'
+  provider: GitHub
+  auth_token:
+    secure: pIYqTxy2j+k+mc5nQUf108hSt7eMW9s/FroCE3qhl7eSeO8b11x64kXhu6a2Tsbz # your encrypted token from GitHub
+  artifact: build\GEFS-0.1.0-win64.exe # upload all NuGet packages to release assets
+  draft: false
+  prerelease: yes
+  on:
+    branch: master                 # release from master branch only
+    APPVEYOR_REPO_TAG: true        # deploy on tag push only
