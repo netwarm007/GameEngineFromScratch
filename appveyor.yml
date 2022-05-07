@@ -32,7 +32,7 @@ artifacts:
   name: GEFS
 
 deploy:
-  release: GEFS-0.1.0-$(APPVEYOR_BUILD_VERSION)
+  release: 0.1.0
   description: 'prerelese'
   provider: GitHub
   auth_token:
