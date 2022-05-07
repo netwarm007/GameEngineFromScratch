@@ -32,7 +32,6 @@ artifacts:
   name: GEFS
 
 deploy:
-  release: 0.1.0
   description: 'prerelese'
   provider: GitHub
   auth_token:
