@@ -85,6 +85,7 @@ jobs:
           name: git gc
           command: |
              git gc
+             git lfs prune
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -156,6 +157,7 @@ jobs:
           name: git gc
           command: |
              git gc
+             git lfs prune
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -219,6 +221,7 @@ jobs:
           name: git gc
           command: |
              git gc
+             git lfs prune
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -296,11 +299,11 @@ jobs:
           command: |
             git submodule sync
             git submodule update --init --recursive
-      - run: 
-          name: Git LFS Checkout
+      - run:
+          name: git gc
           command: |
-             git lfs fetch
-             git checkout
+             git gc
+             git lfs prune
       - save_cache:
           key: source-android-{{ .Branch }}-{{ .Revision }}
           paths:
