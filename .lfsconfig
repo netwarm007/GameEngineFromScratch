@@ -1,2 +1,2 @@
-[lfs]
-	url = https://github.com/netwarm007/GameEngineFromScratch.git/info/lfs
+[remote "gitee"]
+	lfsurl = https://lfs.chenwenli.com
