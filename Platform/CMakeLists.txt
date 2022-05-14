@@ -2,9 +2,12 @@ IF(WIN32)
     # Windows specific code
     add_subdirectory(Windows)
 ELSEIF(UNIX)
-    IF(APPLE)
-        # Apple specific code
+    IF(OS_MACOS)
+        # macOS specific code
         add_subdirectory(Darwin)
+    ELSEIF(OS_IOS)
+        # iOS specific code
+        add_subdirectory(iOS)
     ELSEIF(ANDROID)
         add_subdirectory(Android)
     ELSEIF(WA)
@@ -12,10 +15,10 @@ ELSEIF(UNIX)
     ELSEIF(BSD)
         add_subdirectory(Linux)
 	    # CEF not support BSD yet
-    ELSE(APPLE)
+    ELSE()
         # Linux specific code
         add_subdirectory(Linux)
-    ENDIF(APPLE)
+    ENDIF(OS_MACOS)
 ELSE()
     # Empty
     add_subdirectory(Empty)

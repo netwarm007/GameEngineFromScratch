@@ -13,6 +13,5 @@ add_library(PlatformInterface
     )
 target_link_libraries(PlatformInterface
         ${COCOA_LIBRARY} 
-        ${OPENGL_LIBRARY}
         dl
     )

@@ -6,6 +6,8 @@
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
 #include "BundleAssetLoader.h"
+#elif defined(OS_IOS)
+#include "UIKitApplication.h"
 #elif defined(OS_WINDOWS)
 //#include "D3d12Application.hpp"
 #include "OpenGLApplication.hpp"
@@ -15,7 +17,7 @@
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
-#elif defined(OS_MACOS)
+#elif defined(OS_MACOS) || defined(OS_IOS)
 #include "RHI/Metal/MetalConfig.hpp"
 #elif defined(OS_WINDOWS)
 //#include "RHI/D3d/D3d12Config.hpp"
@@ -39,6 +41,10 @@ GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1920, 1080, "Viewer");
 IApplication* g_pApp =
     static_cast<IApplication*>(new CocoaMetalApplication(config));
 AssetLoader* g_pAssetLoader = static_cast<AssetLoader*>(new BundleAssetLoader);
+#elif defined(OS_IOS)
+IApplication* g_pApp =
+    static_cast<IApplication*>(new UIKitApplication(config));
+AssetLoader* g_pAssetLoader = static_cast<AssetLoader*>(new AssetLoader);
 #elif defined(OS_WINDOWS)
 // IApplication* g_pApp = static_cast<IApplication*>(new
 // D3d12Application(config));

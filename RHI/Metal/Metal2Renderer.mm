@@ -8,7 +8,12 @@
 #include "IApplication.hpp"
 
 #include "imgui/examples/imgui_impl_metal.h"
+#ifdef OS_MACOS
 #include "imgui/examples/imgui_impl_osx.h"
+#endif
+#ifdef OS_IOS
+#include "imgui_impl_ios.h"
+#endif
 
 using namespace My;
 
@@ -125,6 +130,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     if (img.compressed) {
         switch (img.compress_format) {
+#ifndef OS_IOS // not supported by IOS
             case "DXT1"_u32:
                 format = MTLPixelFormatBC1_RGBA;
                 break;
@@ -134,6 +140,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             case "DXT5"_u32:
                 format = MTLPixelFormatBC5_RGUnorm;
                 break;
+#endif
             default:
                 std::cerr << img << std::endl;
                 assert(0);
@@ -304,7 +311,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     [self setLightInfo:frame.lightInfo frameIndex:frame.frameIndex];
 
     ImGui_ImplMetal_NewFrame(_mtkView.currentRenderPassDescriptor);
+#ifdef OS_MACOS
     ImGui_ImplOSX_NewFrame(_mtkView);
+#endif
 }
 
 - (void)endFrame:(const Frame&)frame {

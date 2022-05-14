@@ -28,9 +28,15 @@ IF(APPLE)
     integrateBRDF.comp
     )
 
+    if(OS_MACOS)
+        set(SDK macosx)
+    else(OS_IOS)
+        set(SDK iphoneos)
+    endif(OS_MACOS)
+
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air
-        COMMAND xcrun -sdk macosx metal -g -MO -c ${PROJECT_BINARY_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
+        COMMAND xcrun -sdk ${SDK} metal -g -MO -c ${PROJECT_BINARY_DIR}/Asset/Shaders/Metal/${SHADER}.metal -o ${SHADER}.air
         COMMENT "Compile ${SHADER}.metal --> ${SHADER}.air"
         DEPENDS Engine_Asset_Shaders
     )
@@ -39,13 +45,13 @@ IF(APPLE)
     endforeach(SHADER)
 
     add_custom_command(OUTPUT Main.metalar
-        COMMAND xcrun -sdk macosx metal-ar rcv Main.metalar ${AIRS}
+        COMMAND xcrun -sdk ${SDK} metal-ar rcv Main.metalar ${AIRS}
         COMMENT "Archive ${AIRS} --> Main.metalar"
         DEPENDS ${AIRS}
     )
 
     add_custom_command(OUTPUT Main.metallib
-        COMMAND xcrun -sdk macosx metallib Main.metalar -o Main.metallib
+        COMMAND xcrun -sdk ${SDK} metallib Main.metalar -o Main.metallib
         COMMENT "Compile Main.metalar --> Main.metallib"
         DEPENDS Main.metalar
     )
