@@ -1,15 +1,13 @@
 # Empty
 add_subdirectory(Empty)
-IF(${WIN32})
+IF(OS_WINDOWS)
     # Windows specific code
     add_subdirectory(D2d)
     add_subdirectory(D3d)
     add_subdirectory(OpenGL)
-ENDIF(${WIN32})
-IF(${APPLE})
+ENDIF(OS_WINDOWS)
+IF(APPLE)
     # Darwin specific code
     add_subdirectory(Metal)
-ENDIF(${APPLE})
-IF(${LINUX})
-    add_subdirectory(OpenGL)
-ENDIF(${LINUX})
+ENDIF(APPLE)
+add_subdirectory(OpenGL)
