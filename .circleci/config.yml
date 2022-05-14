@@ -98,7 +98,6 @@ jobs:
             scripts/build_opengex
             scripts/build_zlib
             scripts/build_bullet
-            scripts/build_cef
             scripts/build_glslangValidator
             scripts/build_spirvcross
       - run:
@@ -169,7 +168,6 @@ jobs:
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
              ./scripts/build_bullet.sh
-             ./scripts/build_cef.sh
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
       - run:
@@ -243,7 +241,6 @@ jobs:
              ./scripts/build_opengex.sh
              ./scripts/build_zlib.sh
              ./scripts/build_bullet.sh
-             ./scripts/build_cef.sh
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
       - run:
