@@ -18,14 +18,17 @@
     Metal2Renderer *_renderer;
 }
 
-- (void)viewDidLoad
-{
-    [super viewDidLoad];
-
+- (instancetype)init {
     _view = (MTKView *)self.view;
 
     _view.device = MTLCreateSystemDefaultDevice();
+    //_view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    //_view.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
+    //_view.framebufferOnly = YES;
+    //_view.sampleCount = g_pApp->GetConfiguration().msaaSamples;
     _view.backgroundColor = UIColor.blackColor;
+    //_view.paused = YES;
+    //_view.enableSetNeedsDisplay = YES;
 
     if(!_view.device)
     {
@@ -41,6 +44,8 @@
     [_renderer mtkView:_view drawableSizeWillChange:_view.bounds.size];
 
     _view.delegate = _renderer;
+
+    return self;
 }
 
 @end

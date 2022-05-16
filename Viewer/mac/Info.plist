@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>${EXECUTABLE_NAME}</string>
+	<string>Viewer</string>
 	<key>CFBundleIconFile</key>
 	<string>Viewer.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -19,7 +19,9 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>0.1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
 	<key>LSEnvironment</key>
 	<dict>
 		<key>MallocNanoZone</key>

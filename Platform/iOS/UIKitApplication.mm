@@ -5,12 +5,21 @@
 #include "imgui_impl_ios.h"
 
 #import "UIKit/UIKit.h"
+#import "Foundation/Foundation.h"
+
+#import "GameViewController.h"
 
 using namespace My;
 
-void* UIKitApplication::GetMainWindowHandler() { return (void*)NULL; }
+void* UIKitApplication::GetMainWindowHandler() { return m_pWindow; }
 
 void UIKitApplication::CreateMainWindow() {
+    [UIApplication sharedApplication].statusBarHidden = YES;
+
+    m_pWindow = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    m_pWindow.rootViewController = [[GameViewController new] init];
+    [m_pWindow makeKeyAndVisible];
+
     // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -23,6 +32,8 @@ void UIKitApplication::CreateMainWindow() {
 
 void UIKitApplication::Finalize() {
     ImGui_ImplIOS_Shutdown();
+
+    [m_pWindow release];
 
     BaseApplication::Finalize();
 }

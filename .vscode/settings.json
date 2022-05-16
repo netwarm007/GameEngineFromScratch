@@ -121,7 +121,8 @@
         "coroutine": "cpp",
         "propagate_const": "cpp",
         "*.ipp": "cpp",
-        "__node_handle": "cpp"
+        "__node_handle": "cpp",
+        "sdl_internal.h": "c"
     },
     "git.ignoreLimitWarning": true,
     "cmake.configureOnOpen": false,

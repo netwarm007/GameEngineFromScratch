@@ -10,4 +10,6 @@ IF(APPLE)
     # Darwin specific code
     add_subdirectory(Metal)
 ENDIF(APPLE)
+IF(NOT OS_IOS)
 add_subdirectory(OpenGL)
+ENDIF(NOT OS_IOS)

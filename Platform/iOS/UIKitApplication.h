@@ -16,5 +16,8 @@ class UIKitApplication : public BaseApplication {
 
    protected:
     void CreateMainWindow() override;
+
+   protected:
+    UIWindow* m_pWindow;
 };
 }  // namespace My

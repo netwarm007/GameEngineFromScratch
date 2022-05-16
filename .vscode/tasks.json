@@ -16,7 +16,7 @@
             "group": "build"
         },
         {
-            "label": "Build Billiard Game",
+            "label": "Build Viewer",
             "type": "shell",
             "command": "./scripts/build-ninja.sh",
             "windows": {
