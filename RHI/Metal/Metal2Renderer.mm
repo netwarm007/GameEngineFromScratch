@@ -534,31 +534,31 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
                            height:(const uint32_t)height
                             count:(const uint32_t)count {
     id<MTLTexture> texture;
-
-    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
-
-    textureDesc.textureType = MTLTextureType2DArray;
-    textureDesc.arrayLength = count;
-    textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
-    textureDesc.width = width;
-    textureDesc.height = height;
-    textureDesc.storageMode = MTLStorageModePrivate;
-    textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-
-    // create the texture obj
-    texture = [_device newTextureWithDescriptor:textureDesc];
-
     uint32_t index;
-    if (!_texture_recycled_indexes.empty()) {
-        index = _texture_recycled_indexes.top();
-        _texture_recycled_indexes.pop();
-        _textures[index] = texture;
-    } else {
-        index = _textures.size();
-        _textures.push_back(texture);
-    }
 
-    [textureDesc release];
+    @autoreleasepool {
+        MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+
+        textureDesc.textureType = MTLTextureType2DArray;
+        textureDesc.arrayLength = count;
+        textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
+        textureDesc.width = width;
+        textureDesc.height = height;
+        textureDesc.storageMode = MTLStorageModePrivate;
+        textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+
+        // create the texture obj
+        texture = [_device newTextureWithDescriptor:textureDesc];
+
+        if (!_texture_recycled_indexes.empty()) {
+            index = _texture_recycled_indexes.top();
+            _texture_recycled_indexes.pop();
+            _textures[index] = texture;
+        } else {
+            index = _textures.size();
+            _textures.push_back(texture);
+        }
+    }
 
     return static_cast<int32_t>(index);
 }
@@ -567,31 +567,31 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
                                height:(const uint32_t)height
                                 count:(const uint32_t)count {
     id<MTLTexture> texture;
-
-    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
-
-    textureDesc.textureType = MTLTextureTypeCubeArray;
-    textureDesc.arrayLength = count;
-    textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
-    textureDesc.width = width;
-    textureDesc.height = height;
-    textureDesc.storageMode = MTLStorageModePrivate;
-    textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
-
-    // create the texture obj
-    texture = [_device newTextureWithDescriptor:textureDesc];
-
     uint32_t index;
-    if (!_texture_recycled_indexes.empty()) {
-        index = _texture_recycled_indexes.top();
-        _texture_recycled_indexes.pop();
-        _textures[index] = texture;
-    } else {
-        index = _textures.size();
-        _textures.push_back(texture);
-    }
 
-    [textureDesc release];
+    @autoreleasepool {
+        MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+
+        textureDesc.textureType = MTLTextureTypeCubeArray;
+        textureDesc.arrayLength = count;
+        textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
+        textureDesc.width = width;
+        textureDesc.height = height;
+        textureDesc.storageMode = MTLStorageModePrivate;
+        textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+
+        // create the texture obj
+        texture = [_device newTextureWithDescriptor:textureDesc];
+
+        if (!_texture_recycled_indexes.empty()) {
+            index = _texture_recycled_indexes.top();
+            _texture_recycled_indexes.pop();
+            _textures[index] = texture;
+        } else {
+            index = _textures.size();
+            _textures.push_back(texture);
+        }
+    }
 
     return static_cast<int32_t>(index);
 }
@@ -617,7 +617,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
     _renderEncoder.label = @"Offline Render Encoder";
-
     [renderPassDescriptor release];
 
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
@@ -667,18 +666,20 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 - (int32_t)generateTextureForWrite:(const uint32_t)width
                             height:(const uint32_t)height {
     id<MTLTexture> texture;
-    MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
-
-    textureDesc.pixelFormat = MTLPixelFormatRG32Float;
-    textureDesc.width = width;
-    textureDesc.height = height;
-    textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
-
-    // create the texture obj
-    texture = [_device newTextureWithDescriptor:textureDesc];
-    [textureDesc release];
-
     int32_t index;
+
+    @autoreleasepool {
+        MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
+
+        textureDesc.pixelFormat = MTLPixelFormatRG32Float;
+        textureDesc.width = width;
+        textureDesc.height = height;
+        textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+
+        // create the texture obj
+        texture = [_device newTextureWithDescriptor:textureDesc];
+    }
+
     if (!_texture_recycled_indexes.empty()) {
         index = _texture_recycled_indexes.top();
         _texture_recycled_indexes.pop();
@@ -775,12 +776,12 @@ static float rect_uv[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
 
     [_renderEncoder setFragmentBytes:&constants length:sizeof(DebugConstants) atIndex:13];
 
-    MTLViewport viewport{(1.0 + vp_left) * halfScreenWidth,
-                         (1.0 - vp_top) * halfScreenHeight,
+    MTLViewport viewport{(1.0f + vp_left) * halfScreenWidth,
+                         (1.0f - vp_top) * halfScreenHeight,
                          vp_width * halfScreenWidth,
                          vp_height * halfScreenHeight,
-                         0.0,
-                         1.0};
+                         0.0f,
+                         1.0f};
     [_renderEncoder setViewport:viewport];
 
     [_renderEncoder setVertexBytes:rect_vertices length:sizeof(rect_vertices) atIndex:0];
@@ -868,12 +869,12 @@ static float cubemap_unwrap_uvw[] = {
 
     [_renderEncoder setFragmentBytes:&constants length:sizeof(DebugConstants) atIndex:13];
 
-    MTLViewport viewport{(1.0 + vp_left) * halfScreenWidth,
-                         (1.0 - vp_top) * halfScreenHeight,
+    MTLViewport viewport{(1.0f + vp_left) * halfScreenWidth,
+                         (1.0f - vp_top) * halfScreenHeight,
                          vp_width * halfScreenWidth,
                          vp_height * halfScreenHeight,
-                         0.0,
-                         1.0};
+                         0.0f,
+                         1.0f};
     [_renderEncoder setViewport:viewport];
 
     [_renderEncoder setVertexBytes:cubemap_unwrap_vertices
@@ -889,7 +890,7 @@ static float cubemap_unwrap_uvw[] = {
            vertexStart:0
            vertexCount:sizeof(cubemap_unwrap_vertices) / sizeof(cubemap_unwrap_vertices[0]) / 3];
 
-    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    viewport = {0, 0, screenWidth, screenHeight, 0.0f, 1.0f};
     [_renderEncoder setViewport:viewport];
 
     [_renderEncoder popDebugGroup];
@@ -916,12 +917,12 @@ static float cubemap_unwrap_uvw[] = {
 
     [_renderEncoder setFragmentBytes:&constants length:sizeof(DebugConstants) atIndex:13];
 
-    MTLViewport viewport{(1.0 + vp_left) * halfScreenWidth,
-                         (1.0 - vp_top) * halfScreenHeight,
+    MTLViewport viewport{(1.0f + vp_left) * halfScreenWidth,
+                         (1.0f - vp_top) * halfScreenHeight,
                          vp_width * halfScreenWidth,
                          vp_height * halfScreenHeight,
-                         0.0,
-                         1.0};
+                         0.0f,
+                         1.0f};
     [_renderEncoder setViewport:viewport];
 
     [_renderEncoder setVertexBytes:cubemap_unwrap_vertices
@@ -937,7 +938,7 @@ static float cubemap_unwrap_uvw[] = {
            vertexStart:0
            vertexCount:sizeof(cubemap_unwrap_vertices) / sizeof(cubemap_unwrap_vertices[0]) / 3];
 
-    viewport = {0, 0, screenWidth, screenHeight, 0.0, 1.0};
+    viewport = {0, 0, screenWidth, screenHeight, 0.0f, 1.0f};
     [_renderEncoder setViewport:viewport];
 
     [_renderEncoder popDebugGroup];
