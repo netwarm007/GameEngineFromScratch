@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "ImageParser.hpp"
+#include "IImageParser.hpp"
 
 namespace My {
 static inline void rgbe2float(float* red, float* green, float* blue,

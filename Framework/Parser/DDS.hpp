@@ -6,7 +6,7 @@
 #else
 #endif
 
-#include "ImageParser.hpp"
+#include "IImageParser.hpp"
 #include "portable.hpp"
 
 namespace My {

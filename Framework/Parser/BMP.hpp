@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-#include "ImageParser.hpp"
+#include "IImageParser.hpp"
 
 namespace My {
 #pragma pack(push, 1)

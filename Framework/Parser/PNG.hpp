@@ -6,7 +6,7 @@
 #include <queue>
 #include <string>
 
-#include "ImageParser.hpp"
+#include "IImageParser.hpp"
 #include "config.h"
 #include "portable.hpp"
 #include "zlib.h"
