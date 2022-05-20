@@ -43,3 +43,6 @@
 [submodule "imguid"]
 	path = External/src/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "External/src/flatbuffers"]
+	path = External/src/flatbuffers
+	url = https://github.com/google/flatbuffers.git
