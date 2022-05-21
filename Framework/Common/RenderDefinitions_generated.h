@@ -1293,26 +1293,14 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(1) DepthStencilOperation FLATBUFFERS_FINAL_C
   rendering::StencilOperation fail() const {
     return static_cast<rendering::StencilOperation>(flatbuffers::EndianScalar(fail_));
   }
-  void mutate_fail(rendering::StencilOperation _fail) {
-    flatbuffers::WriteScalar(&fail_, static_cast<int8_t>(_fail));
-  }
   rendering::StencilOperation depth_fail() const {
     return static_cast<rendering::StencilOperation>(flatbuffers::EndianScalar(depth_fail_));
-  }
-  void mutate_depth_fail(rendering::StencilOperation _depth_fail) {
-    flatbuffers::WriteScalar(&depth_fail_, static_cast<int8_t>(_depth_fail));
   }
   rendering::StencilOperation pass() const {
     return static_cast<rendering::StencilOperation>(flatbuffers::EndianScalar(pass_));
   }
-  void mutate_pass(rendering::StencilOperation _pass) {
-    flatbuffers::WriteScalar(&pass_, static_cast<int8_t>(_pass));
-  }
   rendering::ComparisonFunction func() const {
     return static_cast<rendering::ComparisonFunction>(flatbuffers::EndianScalar(func_));
-  }
-  void mutate_func(rendering::ComparisonFunction _func) {
-    flatbuffers::WriteScalar(&func_, static_cast<int8_t>(_func));
   }
 };
 FLATBUFFERS_STRUCT_END(DepthStencilOperation, 4);
@@ -1367,50 +1355,26 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(2) RenderTargetBlend FLATBUFFERS_FINAL_CLASS
   bool blend_enable() const {
     return flatbuffers::EndianScalar(blend_enable_) != 0;
   }
-  void mutate_blend_enable(bool _blend_enable) {
-    flatbuffers::WriteScalar(&blend_enable_, static_cast<uint8_t>(_blend_enable));
-  }
   rendering::Blend src_blend() const {
     return static_cast<rendering::Blend>(flatbuffers::EndianScalar(src_blend_));
-  }
-  void mutate_src_blend(rendering::Blend _src_blend) {
-    flatbuffers::WriteScalar(&src_blend_, static_cast<uint16_t>(_src_blend));
   }
   rendering::Blend dst_blend() const {
     return static_cast<rendering::Blend>(flatbuffers::EndianScalar(dst_blend_));
   }
-  void mutate_dst_blend(rendering::Blend _dst_blend) {
-    flatbuffers::WriteScalar(&dst_blend_, static_cast<uint16_t>(_dst_blend));
-  }
   rendering::BlendOperation blend_operation() const {
     return static_cast<rendering::BlendOperation>(flatbuffers::EndianScalar(blend_operation_));
-  }
-  void mutate_blend_operation(rendering::BlendOperation _blend_operation) {
-    flatbuffers::WriteScalar(&blend_operation_, static_cast<int8_t>(_blend_operation));
   }
   rendering::Blend src_blend_alpha() const {
     return static_cast<rendering::Blend>(flatbuffers::EndianScalar(src_blend_alpha_));
   }
-  void mutate_src_blend_alpha(rendering::Blend _src_blend_alpha) {
-    flatbuffers::WriteScalar(&src_blend_alpha_, static_cast<uint16_t>(_src_blend_alpha));
-  }
   rendering::Blend dst_blend_alpha() const {
     return static_cast<rendering::Blend>(flatbuffers::EndianScalar(dst_blend_alpha_));
-  }
-  void mutate_dst_blend_alpha(rendering::Blend _dst_blend_alpha) {
-    flatbuffers::WriteScalar(&dst_blend_alpha_, static_cast<uint16_t>(_dst_blend_alpha));
   }
   rendering::BlendOperation blend_operation_alpha() const {
     return static_cast<rendering::BlendOperation>(flatbuffers::EndianScalar(blend_operation_alpha_));
   }
-  void mutate_blend_operation_alpha(rendering::BlendOperation _blend_operation_alpha) {
-    flatbuffers::WriteScalar(&blend_operation_alpha_, static_cast<int8_t>(_blend_operation_alpha));
-  }
   int8_t color_write_mask() const {
     return flatbuffers::EndianScalar(color_write_mask_);
-  }
-  void mutate_color_write_mask(int8_t _color_write_mask) {
-    flatbuffers::WriteScalar(&color_write_mask_, _color_write_mask);
   }
 };
 FLATBUFFERS_STRUCT_END(RenderTargetBlend, 14);
@@ -1456,49 +1420,25 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(1) DepthStencilState FLATBUFFERS_FINAL_CLASS
   bool enable() const {
     return flatbuffers::EndianScalar(enable_) != 0;
   }
-  void mutate_enable(bool _enable) {
-    flatbuffers::WriteScalar(&enable_, static_cast<uint8_t>(_enable));
-  }
   rendering::ComparisonFunction depth_function() const {
     return static_cast<rendering::ComparisonFunction>(flatbuffers::EndianScalar(depth_function_));
-  }
-  void mutate_depth_function(rendering::ComparisonFunction _depth_function) {
-    flatbuffers::WriteScalar(&depth_function_, static_cast<int8_t>(_depth_function));
   }
   rendering::DepthWriteMask depth_write_mask() const {
     return static_cast<rendering::DepthWriteMask>(flatbuffers::EndianScalar(depth_write_mask_));
   }
-  void mutate_depth_write_mask(rendering::DepthWriteMask _depth_write_mask) {
-    flatbuffers::WriteScalar(&depth_write_mask_, static_cast<int8_t>(_depth_write_mask));
-  }
   bool stencil_enable() const {
     return flatbuffers::EndianScalar(stencil_enable_) != 0;
-  }
-  void mutate_stencil_enable(bool _stencil_enable) {
-    flatbuffers::WriteScalar(&stencil_enable_, static_cast<uint8_t>(_stencil_enable));
   }
   int8_t stencil_read_mask() const {
     return flatbuffers::EndianScalar(stencil_read_mask_);
   }
-  void mutate_stencil_read_mask(int8_t _stencil_read_mask) {
-    flatbuffers::WriteScalar(&stencil_read_mask_, _stencil_read_mask);
-  }
   int8_t stencil_write_mask() const {
     return flatbuffers::EndianScalar(stencil_write_mask_);
-  }
-  void mutate_stencil_write_mask(int8_t _stencil_write_mask) {
-    flatbuffers::WriteScalar(&stencil_write_mask_, _stencil_write_mask);
   }
   const rendering::DepthStencilOperation &front_face() const {
     return front_face_;
   }
-  rendering::DepthStencilOperation &mutable_front_face() {
-    return front_face_;
-  }
   const rendering::DepthStencilOperation &back_face() const {
-    return back_face_;
-  }
-  rendering::DepthStencilOperation &mutable_back_face() {
     return back_face_;
   }
 };
@@ -1557,56 +1497,29 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) RasterizerState FLATBUFFERS_FINAL_CLASS {
   rendering::FillMode fill_mode() const {
     return static_cast<rendering::FillMode>(flatbuffers::EndianScalar(fill_mode_));
   }
-  void mutate_fill_mode(rendering::FillMode _fill_mode) {
-    flatbuffers::WriteScalar(&fill_mode_, static_cast<int8_t>(_fill_mode));
-  }
   rendering::CullMode cull_mode() const {
     return static_cast<rendering::CullMode>(flatbuffers::EndianScalar(cull_mode_));
-  }
-  void mutate_cull_mode(rendering::CullMode _cull_mode) {
-    flatbuffers::WriteScalar(&cull_mode_, static_cast<int8_t>(_cull_mode));
   }
   bool front_counter_clockwise() const {
     return flatbuffers::EndianScalar(front_counter_clockwise_) != 0;
   }
-  void mutate_front_counter_clockwise(bool _front_counter_clockwise) {
-    flatbuffers::WriteScalar(&front_counter_clockwise_, static_cast<uint8_t>(_front_counter_clockwise));
-  }
   int32_t depth_bias() const {
     return flatbuffers::EndianScalar(depth_bias_);
-  }
-  void mutate_depth_bias(int32_t _depth_bias) {
-    flatbuffers::WriteScalar(&depth_bias_, _depth_bias);
   }
   float depth_bias_clamp() const {
     return flatbuffers::EndianScalar(depth_bias_clamp_);
   }
-  void mutate_depth_bias_clamp(float _depth_bias_clamp) {
-    flatbuffers::WriteScalar(&depth_bias_clamp_, _depth_bias_clamp);
-  }
   float slope_scaled_depth_bias() const {
     return flatbuffers::EndianScalar(slope_scaled_depth_bias_);
-  }
-  void mutate_slope_scaled_depth_bias(float _slope_scaled_depth_bias) {
-    flatbuffers::WriteScalar(&slope_scaled_depth_bias_, _slope_scaled_depth_bias);
   }
   bool depth_clip_enabled() const {
     return flatbuffers::EndianScalar(depth_clip_enabled_) != 0;
   }
-  void mutate_depth_clip_enabled(bool _depth_clip_enabled) {
-    flatbuffers::WriteScalar(&depth_clip_enabled_, static_cast<uint8_t>(_depth_clip_enabled));
-  }
   bool multisample_enabled() const {
     return flatbuffers::EndianScalar(multisample_enabled_) != 0;
   }
-  void mutate_multisample_enabled(bool _multisample_enabled) {
-    flatbuffers::WriteScalar(&multisample_enabled_, static_cast<uint8_t>(_multisample_enabled));
-  }
   bool conservative() const {
     return flatbuffers::EndianScalar(conservative_) != 0;
-  }
-  void mutate_conservative(bool _conservative) {
-    flatbuffers::WriteScalar(&conservative_, static_cast<uint8_t>(_conservative));
   }
 };
 FLATBUFFERS_STRUCT_END(RasterizerState, 20);
@@ -1657,61 +1570,31 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(2) BlendState FLATBUFFERS_FINAL_CLASS {
   bool enable() const {
     return flatbuffers::EndianScalar(enable_) != 0;
   }
-  void mutate_enable(bool _enable) {
-    flatbuffers::WriteScalar(&enable_, static_cast<uint8_t>(_enable));
-  }
   bool separate_blend() const {
     return flatbuffers::EndianScalar(separate_blend_) != 0;
   }
-  void mutate_separate_blend(bool _separate_blend) {
-    flatbuffers::WriteScalar(&separate_blend_, static_cast<uint8_t>(_separate_blend));
-  }
   const rendering::RenderTargetBlend &render_target_blend0() const {
-    return render_target_blend0_;
-  }
-  rendering::RenderTargetBlend &mutable_render_target_blend0() {
     return render_target_blend0_;
   }
   const rendering::RenderTargetBlend &render_target_blend1() const {
     return render_target_blend1_;
   }
-  rendering::RenderTargetBlend &mutable_render_target_blend1() {
-    return render_target_blend1_;
-  }
   const rendering::RenderTargetBlend &render_target_blend2() const {
-    return render_target_blend2_;
-  }
-  rendering::RenderTargetBlend &mutable_render_target_blend2() {
     return render_target_blend2_;
   }
   const rendering::RenderTargetBlend &render_target_blend3() const {
     return render_target_blend3_;
   }
-  rendering::RenderTargetBlend &mutable_render_target_blend3() {
-    return render_target_blend3_;
-  }
   const rendering::RenderTargetBlend &render_target_blend4() const {
-    return render_target_blend4_;
-  }
-  rendering::RenderTargetBlend &mutable_render_target_blend4() {
     return render_target_blend4_;
   }
   const rendering::RenderTargetBlend &render_target_blend5() const {
     return render_target_blend5_;
   }
-  rendering::RenderTargetBlend &mutable_render_target_blend5() {
-    return render_target_blend5_;
-  }
   const rendering::RenderTargetBlend &render_target_blend6() const {
     return render_target_blend6_;
   }
-  rendering::RenderTargetBlend &mutable_render_target_blend6() {
-    return render_target_blend6_;
-  }
   const rendering::RenderTargetBlend &render_target_blend7() const {
-    return render_target_blend7_;
-  }
-  rendering::RenderTargetBlend &mutable_render_target_blend7() {
     return render_target_blend7_;
   }
 };
@@ -1755,26 +1638,14 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PipelineState FLATBUFFERS_FINAL_CLASS {
   const rendering::BlendState &blend_state() const {
     return blend_state_;
   }
-  rendering::BlendState &mutable_blend_state() {
-    return blend_state_;
-  }
   const rendering::RasterizerState &rasterizer_state() const {
-    return rasterizer_state_;
-  }
-  rendering::RasterizerState &mutable_rasterizer_state() {
     return rasterizer_state_;
   }
   const rendering::DepthStencilState &depth_stencil_state() const {
     return depth_stencil_state_;
   }
-  rendering::DepthStencilState &mutable_depth_stencil_state() {
-    return depth_stencil_state_;
-  }
   rendering::TopologyType topology_type() const {
     return static_cast<rendering::TopologyType>(flatbuffers::EndianScalar(topology_type_));
-  }
-  void mutate_topology_type(rendering::TopologyType _topology_type) {
-    flatbuffers::WriteScalar(&topology_type_, static_cast<int8_t>(_topology_type));
   }
 };
 FLATBUFFERS_STRUCT_END(PipelineState, 152);
@@ -1815,32 +1686,17 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) RenderTarget FLATBUFFERS_FINAL_CLASS {
   uint16_t width() const {
     return flatbuffers::EndianScalar(width_);
   }
-  void mutate_width(uint16_t _width) {
-    flatbuffers::WriteScalar(&width_, _width);
-  }
   uint16_t height() const {
     return flatbuffers::EndianScalar(height_);
-  }
-  void mutate_height(uint16_t _height) {
-    flatbuffers::WriteScalar(&height_, _height);
   }
   float scale_x() const {
     return flatbuffers::EndianScalar(scale_x_);
   }
-  void mutate_scale_x(float _scale_x) {
-    flatbuffers::WriteScalar(&scale_x_, _scale_x);
-  }
   float scale_y() const {
     return flatbuffers::EndianScalar(scale_y_);
   }
-  void mutate_scale_y(float _scale_y) {
-    flatbuffers::WriteScalar(&scale_y_, _scale_y);
-  }
   rendering::TextureFormat format() const {
     return static_cast<rendering::TextureFormat>(flatbuffers::EndianScalar(format_));
-  }
-  void mutate_format(rendering::TextureFormat _format) {
-    flatbuffers::WriteScalar(&format_, static_cast<uint16_t>(_format));
   }
 };
 FLATBUFFERS_STRUCT_END(RenderTarget, 16);
@@ -1857,9 +1713,6 @@ struct RenderPipeline FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   };
   const rendering::PipelineState *state() const {
     return GetStruct<const rendering::PipelineState *>(VT_STATE);
-  }
-  rendering::PipelineState *mutable_state() {
-    return GetStruct<rendering::PipelineState *>(VT_STATE);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1905,14 +1758,6 @@ inline const rendering::RenderPipeline *GetRenderPipeline(const void *buf) {
 
 inline const rendering::RenderPipeline *GetSizePrefixedRenderPipeline(const void *buf) {
   return flatbuffers::GetSizePrefixedRoot<rendering::RenderPipeline>(buf);
-}
-
-inline RenderPipeline *GetMutableRenderPipeline(void *buf) {
-  return flatbuffers::GetMutableRoot<RenderPipeline>(buf);
-}
-
-inline rendering::RenderPipeline *GetMutableSizePrefixedRenderPipeline(void *buf) {
-  return flatbuffers::GetMutableSizePrefixedRoot<rendering::RenderPipeline>(buf);
 }
 
 inline bool VerifyRenderPipelineBuffer(

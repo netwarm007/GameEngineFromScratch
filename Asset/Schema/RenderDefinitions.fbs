@@ -155,8 +155,8 @@ struct PipelineState {
 attribute "ui";
 
 struct RenderTarget {
-    width                   : ushort (ui: "min:1, max:16384");
-    height                  : ushort (ui: "min:1, max:16384");
+    width                   : ushort (ui: "min:800, max:7680");
+    height                  : ushort (ui: "min:600, max:4320");
     scale_x                 : float;
     scale_y                 : float;
     format                  : TextureFormat;

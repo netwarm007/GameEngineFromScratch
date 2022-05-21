@@ -23,12 +23,7 @@ void GuiSubPass::Draw(Frame& frame) {
             if (s_texture_formats_enum_data.size() == 0) {
                 const reflection::Enum* enum_ = nullptr;
 
-                for (flatbuffers::uoffset_t i = 0; i < enums->size(); i++) {
-                    enum_ = enums->Get(i);
-                    if (strcmp(enum_->name()->c_str(), "rendering.TextureFormat") == 0) {
-                        break;
-                    }
-                }
+                enum_ = enums->LookupByKey("rendering.TextureFormat");
 
                 if (enum_ != nullptr) {
                     auto values = enum_->values();
@@ -62,12 +57,10 @@ void GuiSubPass::Draw(Frame& frame) {
                     snprintf( svalue, 128, "%s", field->name()->c_str());
 
                     if (field_index >= 0) {
-                        const reflection::Enum* enum_ = enums->Get(field_index);
-
                         static int32_t s_data = 0;
                         int ivalue = static_cast<int>(flatbuffers::GetAnyFieldI(*root, *field));
                         ImGui::Combo(svalue, &ivalue, s_texture_formats_enum_values, s_texture_formats_enum_data.size());
-                        flatbuffers::SetAnyFieldI(root, *field, static_cast<int64_t>(ivalue));
+                        flatbuffers::SetAnyFieldI(root, *field, ivalue);
                     } 
                     else {
                         switch (field_base_type) {
@@ -99,8 +92,10 @@ void GuiSubPass::Draw(Frame& frame) {
                     }
                 }
             }
-            fprintf(stderr, "RenderTarget: width = %d, height = %d\n, scale_x = %f, scale_y = %f\n", 
-                                            rt.width(), rt.height(), rt.scale_x(), rt.scale_y());
+
+            fprintf(stderr, "RenderTarget: width = %d, height = %d\n, scale_x = %f, scale_y = %f, format = %s\n", 
+                rt.width(), rt.height(), rt.scale_x(), rt.scale_y(), 
+                rendering::EnumNamesTextureFormat()[static_cast<int>(rt.format())]);
 
             ImGui::End();
         }
