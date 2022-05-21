@@ -5,19 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(Mac OS) Launch Editor",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Editor/Editor.app/Contents/MacOS/Editor",
-            "args": [
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb"
-        },
-        {
             "name": "(Mac OS) Launch Viewer",
             "type": "cppdbg",
             "request": "launch",
@@ -42,18 +29,6 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"
-        },
-        {
-            "name": "(Windows) Launch Editor",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Editor/Debug/Editor.exe",
-            "args": [
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build",
-            "environment": [],
-            "externalConsole": false
         },
         {
             "name": "(Windows) Launch Viewer",
