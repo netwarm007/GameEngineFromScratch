@@ -1,4 +1,6 @@
 /* recongnize tokens for the calculator and print them out */
+%option noyywrap
+
 %%
 "+"		{ printf("加\n"); }
 "-"		{ printf("减\n"); }
@@ -10,3 +12,9 @@
 [ \t]		{ }
 .		{ printf("一些神奇的字符 %s\n", yytext); }
 %%
+
+int main()
+{
+    yylex();
+    return 0;
+}
