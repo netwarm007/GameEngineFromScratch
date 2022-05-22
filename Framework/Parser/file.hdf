@@ -1,0 +1,20 @@
+// file.hdf
+/* test data */
+/*
+  Multi-line comment
+*/
+
+enum BlendOperation : byte { Add, Subtract, RevSubtract, Min, Max }
+
+struct RenderTarget {
+    uint16 			width;
+    uint16 			height;
+    float 			scale_x;
+    float 			scale_y;
+    TextureFormat 	format;
+};
+
+struct RenderPass {
+    RenderTarget 	rt0;
+};
+

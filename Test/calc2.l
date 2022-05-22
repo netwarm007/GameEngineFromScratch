@@ -11,7 +11,8 @@
 "|"     { return ABS; }
 "("     { return OP;  }
 ")"     { return CP;  }
-"//".*  /* ignore comments */
+"//".*  { /* ignore comments */ }
+"/*"([^*]|(\*+[^*/]))*\*+\/             { /* ignore C-style comments */ }
 [0-9]+  { yylval = atoi(yytext); return NUMBER; }
 \n      { return EOL; }
 [ \t]   { /* ignore whitespace */ }
