@@ -30,6 +30,12 @@ float       (({frac}{exp_opt})|({dseq}{exp}))
 "}"     { return MGEMXParser::token::CBR;   }
 "<"     { return MGEMXParser::token::OAB;   }
 ">"     { return MGEMXParser::token::CAB;   }
+"struct"                                { return MGEMXParser::token::STRUCT;    }
+"table"                                 { return MGEMXParser::token::TABLE;     }
+"enum"                                  { return MGEMXParser::token::ENUM;      }
+"namespace"                             { return MGEMXParser::token::NAMESPACE; }
+"attribute"                             { return MGEMXParser::token::ATTR;      }
+"root_type"                             { return MGEMXParser::token::ROOT;      }
 [a-zA-Z][a-zA-Z0-9_]*                   { yylval->emplace<std::string>(yytext); return MGEMXParser::token::IDN; }
 "\""([^"])*"\""                         { yylval->emplace<std::string>(yytext); return MGEMXParser::token::STR; }
 "//".*                                  { /* ignore comments */         }
