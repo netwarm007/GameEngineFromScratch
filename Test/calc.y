@@ -1,6 +1,9 @@
 /* simplest version of calculator */
 %{
 #include <stdio.h>
+
+extern int yylex();
+void yyerror(char* s);
 %}
 
 /* declare tokens */
@@ -32,13 +35,11 @@ term: NUMBER
 
 %%
 
-int main(int argc, char** argv)
-{
-    yyparse();
-}
-
 void yyerror(char* s)
 {
     fprintf(stderr, "error: %s\n", s);
 }
 
+int main() {
+    yyparse();
+}

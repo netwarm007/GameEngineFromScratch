@@ -3,6 +3,8 @@
 #include "calc.tab.h"
 %}
 
+%option noyywrap
+
 %%
 "+"     { return ADD; }
 "-"     { return SUB; }
@@ -18,4 +20,3 @@
 [ \t]   { /* ignore whitespace */ }
 .       { printf("魔法字符 %c\n", *yytext); }
 %%
-
