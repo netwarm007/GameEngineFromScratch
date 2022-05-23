@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.11) 
+cmake_minimum_required (VERSION 3.20) 
 project (GameEngineFromScratch)
 source_group(TREE ${PROJECT_SOURCE_DIR})
 

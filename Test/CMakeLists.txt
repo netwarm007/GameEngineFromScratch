@@ -12,6 +12,8 @@ foreach(TEST_CASE IN LISTS TEST_CASES)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach(TEST_CASE)
 
+target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
+
 IF(WA)
 set_target_properties(${TEST_CASES}
         PROPERTIES LINK_FLAGS "--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Test.html"

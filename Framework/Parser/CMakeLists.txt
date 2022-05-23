@@ -1,8 +1,8 @@
-add_library(Parser OGEX.cpp MGEMX.scanner.generated.cpp MGEMX.parser.generated.cpp)
+add_library(Parser OGEX.cpp 
+    MGEMX.scanner.generated.cpp 
+    MGEMX.parser.generated.cpp)
 
-set_property(SOURCE MGEMX.scanner.generated.hpp PROPERTY GENERATED)
 set_property(SOURCE MGEMX.scanner.generated.cpp PROPERTY GENERATED)
-set_property(SOURCE MGEMX.parser.generated.hpp PROPERTY GENERATED)
 set_property(SOURCE MGEMX.parser.generated.cpp PROPERTY GENERATED)
 
 IF(WIN32)
@@ -14,13 +14,11 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 add_custom_command(OUTPUT MGEMX.scanner.generated.cpp 
-	COMMAND ${FLEX} MGEMX.l
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	COMMAND ${FLEX} ${CMAKE_CURRENT_LIST_DIR}/MGEMX.l
 )
 
 add_custom_command(OUTPUT MGEMX.parser.generated.cpp 
-    COMMAND ${BISON} MGEMX.y
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ${BISON} ${CMAKE_CURRENT_LIST_DIR}/MGEMX.y
 )
 
 target_link_libraries(Parser
