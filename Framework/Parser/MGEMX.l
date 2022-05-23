@@ -23,18 +23,18 @@ ucn     (\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})
 %%
 {integer}   { yylval->emplace<long long>(strtoll(yytext, nullptr, 10)); return MGEMXParser::token::INT; }
 {float}     { yylval->emplace<double>(strtod(yytext, nullptr)); return MGEMXParser::token::FLT;         }
-"("     { return MGEMXParser::token::OP;    }
-")"     { return MGEMXParser::token::CP;    }
-":"     { return MGEMXParser::token::COLON; }
-";"     { return MGEMXParser::token::SEMIC; }
-","     { return MGEMXParser::token::COMMA; }
-"*"     { return MGEMXParser::token::ASTER; }
-"["     { return MGEMXParser::token::OBK;   }
-"]"     { return MGEMXParser::token::CBK;   }
-"{"     { return MGEMXParser::token::OBR;   }
-"}"     { return MGEMXParser::token::CBR;   }
-"<"     { return MGEMXParser::token::OAB;   }
-">"     { return MGEMXParser::token::CAB;   }
+"(" |
+")" |
+":" |
+";" |
+"," |
+"*" |
+"[" |
+"]" |
+"{" |
+"}" |
+"<" |
+">"                                     { return yytext[0];   }
 "struct"                                { return MGEMXParser::token::STRUCT;    }
 "table"                                 { return MGEMXParser::token::TABLE;     }
 "enum"                                  { return MGEMXParser::token::ENUM;      }
@@ -55,7 +55,7 @@ L?\"([^"\\]|\\['"?\\abfnrtv]|\\[0-7]{1,3}|\\[Xx][0-9a-fA-F]+|{ucn})*\"    {
 <COMMENT><<EOF>>                        { printf("%d: Unterminated comment\n",
 			                                           yylineno); return 0; }
                                                  
-[ \t\v\f]                               { /* ignore whitespace */ }
+[ \t]                               { /* ignore whitespace */ }
 \n      { /* ignore it */   }
 \0      { return MGEMXParser::token::EOS;   }
 .       { printf("魔法字符 %c\n", *yytext); }
