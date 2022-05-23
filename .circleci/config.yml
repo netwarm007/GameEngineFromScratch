@@ -147,7 +147,7 @@ jobs:
     #  - image: ubuntu:20.04
     #resource_class: xlarge
     machine:
-      image: ubuntu-2004:202107-02 # recommended linux image
+      image: ubuntu-2204:2022.04.1 # recommended linux image
     resource_class: large
     steps:
       - run: 
