@@ -37,7 +37,8 @@ float       (({frac}{exp_opt})|({dseq}{exp}))
 "attribute"                             { return MGEMXParser::token::ATTR;      }
 "root_type"                             { return MGEMXParser::token::ROOT;      }
 [a-zA-Z][a-zA-Z0-9_]*                   { yylval->emplace<std::string>(yytext); return MGEMXParser::token::IDN; }
-"\""([^"])*"\""                         { yylval->emplace<std::string>(yytext); return MGEMXParser::token::STR; }
+L?\"([^"\\]|\\['"?\\abfnrtv]|\\[0-7]{1,3}|\\[Xx][0-9a-fA-F]+|{UCN})*\"    {
+                                          yylval->emplace<std::string>(yytext); return MGEMXParser::token::STR; }
 "//".*                                  { /* ignore comments */         }
 "/*"([^*]|(\*+[^*/]))*\*+\/             { /* ignore C-style comments */ }
 [ \t\v\f]                               { /* ignore whitespace */ }
