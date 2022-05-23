@@ -10,7 +10,7 @@ jobs:
     steps:
       - run: systeminfo
       - run:
-          name: "Install CMake"
+          name: "Install CMake, Flex and Bison"
           command: |
             $machinePath = [Environment]::GetEnvironmentVariable('Path', 'MACHINE')
             $newMachineEnvironmentPath = $machinePath
@@ -56,6 +56,29 @@ jobs:
               else
               {
                 echo "$cmakePath already present in Path environment variable"
+              }
+            }
+
+            # install winflexbison3
+            $winflexbison3Path = "${env:ProgramFiles(x86)}\WinFlexBison\bin"
+            if(Get-Command "bison" -ErrorAction SilentlyContinue)
+            {
+              echo "bison is already installed. Skipping installation."
+            }
+            else
+            {
+              echo "bison not present. Installing bison."
+              choco install winflexbison3 -y
+
+              if (-not ($machinePath.ToLower().Contains($winflexbison3Path.ToLower())))
+              {
+                echo "Adding $winflexbison3Path to Path environment variable"
+                $env:Path += ";$winflexbison3Path"
+                $newMachineEnvironmentPath = "$winflexbison3Path;$newMachineEnvironmentPath"
+              }
+              else
+              {
+                echo "$winflexbison3Path already present in Path environment variable"
               }
             }
 
