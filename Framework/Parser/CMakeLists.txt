@@ -8,10 +8,14 @@ ELSE(WIN32)
     set(BISON bison)
 ENDIF(WIN32)
 
-add_custom_command(TARGET Parser PRE_BUILD
+add_custom_command(OUTPUT MGEMX.scanner.generated.cpp 
 	COMMAND ${FLEX} MGEMX.l
-        COMMAND ${BISON} MGEMX.y
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_custom_command(OUTPUT MGEMX.parser.generated.cpp 
+    COMMAND ${BISON} MGEMX.y
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(Parser
