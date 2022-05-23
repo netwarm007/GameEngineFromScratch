@@ -1,11 +1,11 @@
 /* recognize tokens in MGEMX file */
 %{
 #include <cstdlib>
-#include "MGEMX.parser.hpp"
+#include "MGEMX.parser.generated.hpp"
 using namespace My;
 %}
 
-%option reentrant noyywrap yylineno nodefault outfile="MGEMX.scanner.cpp" header="MGEMX.scanner.hpp"
+%option reentrant noyywrap yylineno nodefault outfile="MGEMX.scanner.generated.cpp" header="MGEMX.scanner.generated.hpp"
 %x COMMENT
 
 dseq        ([[:digit:]]+)

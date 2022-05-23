@@ -1,4 +1,4 @@
-add_library(Parser OGEX.cpp MGEMX.scanner.cpp MGEMX.parser.cpp)
+add_library(Parser OGEX.cpp MGEMX.scanner.generated.cpp MGEMX.parser.generated.cpp)
 
 target_link_libraries(Parser
         ${OPENGEX_LIBRARY} 

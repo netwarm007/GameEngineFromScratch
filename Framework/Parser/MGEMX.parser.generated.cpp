@@ -43,12 +43,12 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include "MGEMX.scanner.hpp"
+#include "MGEMX.scanner.generated.hpp"
 
-#line 49 "MGEMX.parser.cpp"
+#line 49 "MGEMX.parser.generated.cpp"
 
 
-#include "MGEMX.parser.hpp"
+#include "MGEMX.parser.generated.hpp"
 
 
 
@@ -124,7 +124,7 @@
 
 #line 16 "MGEMX.y"
 namespace My {
-#line 128 "MGEMX.parser.cpp"
+#line 128 "MGEMX.parser.generated.cpp"
 
   /// Build a parser object.
   MGEMXParser::MGEMXParser (yyscan_t scanner_yyarg)
@@ -725,91 +725,91 @@ namespace My {
   case 10: // namespace_declaration: NAMESPACE IDN ';'
 #line 58 "MGEMX.y"
                                                     { printf("【命名空间】名称：%s\n", yystack_[1].value.as < std::string > ().c_str()); }
-#line 729 "MGEMX.parser.cpp"
+#line 729 "MGEMX.parser.generated.cpp"
     break;
 
   case 11: // enum_declaration: ENUM IDN '{' enum_value_list '}'
 #line 61 "MGEMX.y"
                                                     { printf("【枚举体】名称：%s\n", yystack_[3].value.as < std::string > ().c_str()); }
-#line 735 "MGEMX.parser.cpp"
+#line 735 "MGEMX.parser.generated.cpp"
     break;
 
   case 12: // enum_declaration: ENUM IDN ':' IDN '{' enum_value_list '}'
 #line 62 "MGEMX.y"
                                                     { printf("【枚举体】名称：%s ，类型：%s\n", yystack_[5].value.as < std::string > ().c_str(), yystack_[3].value.as < std::string > ().c_str()); }
-#line 741 "MGEMX.parser.cpp"
+#line 741 "MGEMX.parser.generated.cpp"
     break;
 
   case 15: // enum_value: IDN
 #line 69 "MGEMX.y"
                                                     { printf("【枚举体值】%s\n", yystack_[0].value.as < std::string > ().c_str()); }
-#line 747 "MGEMX.parser.cpp"
+#line 747 "MGEMX.parser.generated.cpp"
     break;
 
   case 16: // enum_value: IDN '=' INT
 #line 70 "MGEMX.y"
                                                     { printf("【枚举体值】%s = %lld\n", yystack_[2].value.as < std::string > ().c_str(), yystack_[0].value.as < long long > ()); }
-#line 753 "MGEMX.parser.cpp"
+#line 753 "MGEMX.parser.generated.cpp"
     break;
 
   case 17: // struct_declaration: STRUCT IDN '{' variable_declaration_list '}'
 #line 73 "MGEMX.y"
                                                                  { 
                                                       printf("【结构体】名称：%s\n", yystack_[3].value.as < std::string > ().c_str()); }
-#line 760 "MGEMX.parser.cpp"
+#line 760 "MGEMX.parser.generated.cpp"
     break;
 
   case 20: // variable_declaration: IDN ':' IDN ';'
 #line 81 "MGEMX.y"
                                                     { printf("【变量】名称：%s ，类型：%s\n", yystack_[3].value.as < std::string > ().c_str(), yystack_[1].value.as < std::string > ().c_str()); }
-#line 766 "MGEMX.parser.cpp"
+#line 766 "MGEMX.parser.generated.cpp"
     break;
 
   case 21: // variable_declaration: IDN ':' IDN property_list ';'
 #line 82 "MGEMX.y"
                                                     { printf("【变量】名称：%s ，类型：%s ，%lu个属性\n", yystack_[4].value.as < std::string > ().c_str(), yystack_[2].value.as < std::string > ().c_str(), yystack_[1].value.as < std::vector<std::string> > ().size()); }
-#line 772 "MGEMX.parser.cpp"
+#line 772 "MGEMX.parser.generated.cpp"
     break;
 
   case 22: // property_list: property
 #line 85 "MGEMX.y"
                                                     { yylhs.value.as < std::vector<std::string> > ().emplace_back(yystack_[0].value.as < std::string > ()); }
-#line 778 "MGEMX.parser.cpp"
+#line 778 "MGEMX.parser.generated.cpp"
     break;
 
   case 23: // property_list: property_list property
 #line 86 "MGEMX.y"
                                                     { yylhs.value.as < std::vector<std::string> > ().emplace_back(yystack_[0].value.as < std::string > ()); }
-#line 784 "MGEMX.parser.cpp"
+#line 784 "MGEMX.parser.generated.cpp"
     break;
 
   case 24: // property: '(' IDN ':' STR ')'
 #line 89 "MGEMX.y"
                                                     { yylhs.value.as < std::string > () = yystack_[3].value.as < std::string > () + ":" + yystack_[1].value.as < std::string > (); printf("【属性】名称：%s ，值：%s\n", yystack_[3].value.as < std::string > ().c_str(), yystack_[1].value.as < std::string > ().c_str()); }
-#line 790 "MGEMX.parser.cpp"
+#line 790 "MGEMX.parser.generated.cpp"
     break;
 
   case 25: // attribute_declaration: ATTR STR ';'
 #line 92 "MGEMX.y"
                                                     { printf("【属性声明】名称：%s\n", yystack_[1].value.as < std::string > ().c_str()); }
-#line 796 "MGEMX.parser.cpp"
+#line 796 "MGEMX.parser.generated.cpp"
     break;
 
   case 26: // root_type_declaration: ROOT IDN ';'
 #line 95 "MGEMX.y"
                                                     { printf("【根类型】名称：%s\n", yystack_[1].value.as < std::string > ().c_str());   }
-#line 802 "MGEMX.parser.cpp"
+#line 802 "MGEMX.parser.generated.cpp"
     break;
 
   case 27: // table_declaration: TABLE IDN '{' variable_declaration_list '}'
 #line 98 "MGEMX.y"
                                                                { 
                                                       printf("【表格体】名称：%s\n", yystack_[3].value.as < std::string > ().c_str()); }
-#line 809 "MGEMX.parser.cpp"
+#line 809 "MGEMX.parser.generated.cpp"
     break;
 
 
-#line 813 "MGEMX.parser.cpp"
+#line 813 "MGEMX.parser.generated.cpp"
 
             default:
               break;
@@ -1191,7 +1191,7 @@ namespace My {
 
 #line 16 "MGEMX.y"
 } // My
-#line 1195 "MGEMX.parser.cpp"
+#line 1195 "MGEMX.parser.generated.cpp"
 
 #line 102 "MGEMX.y"
 

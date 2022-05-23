@@ -1,6 +1,6 @@
-#line 1 "MGEMX.scanner.cpp"
+#line 1 "MGEMX.scanner.generated.cpp"
 
-#line 3 "MGEMX.scanner.cpp"
+#line 3 "MGEMX.scanner.generated.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -555,12 +555,12 @@ static const flex_int32_t yy_rule_can_match_eol[32] =
 /* recognize tokens in MGEMX file */
 #line 3 "MGEMX.l"
 #include <cstdlib>
-#include "MGEMX.parser.hpp"
+#include "MGEMX.parser.generated.hpp"
 using namespace My;
-#line 560 "MGEMX.scanner.cpp"
+#line 560 "MGEMX.scanner.generated.cpp"
 
 /* Universal Character Name */
-#line 563 "MGEMX.scanner.cpp"
+#line 563 "MGEMX.scanner.generated.cpp"
 
 #define INITIAL 0
 #define COMMENT 1
@@ -823,7 +823,7 @@ YY_DECL
 	{
 #line 23 "MGEMX.l"
 
-#line 826 "MGEMX.scanner.cpp"
+#line 826 "MGEMX.scanner.generated.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1025,7 +1025,7 @@ YY_RULE_SETUP
 #line 62 "MGEMX.l"
 YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-#line 1028 "MGEMX.scanner.cpp"
+#line 1028 "MGEMX.scanner.generated.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

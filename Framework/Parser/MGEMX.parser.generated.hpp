@@ -32,7 +32,7 @@
 
 
 /**
- ** \file MGEMX.parser.hpp
+ ** \file MGEMX.parser.generated.hpp
  ** Define the My::parser class.
  */
 
@@ -42,8 +42,8 @@
 // especially those whose name start with YY_ or yy_.  They are
 // private implementation details that can be changed or removed.
 
-#ifndef YY_YY_MGEMX_PARSER_HPP_INCLUDED
-# define YY_YY_MGEMX_PARSER_HPP_INCLUDED
+#ifndef YY_YY_MGEMX_PARSER_GENERATED_HPP_INCLUDED
+# define YY_YY_MGEMX_PARSER_GENERATED_HPP_INCLUDED
 
 
 # include <cstdlib> // std::abort
@@ -179,7 +179,7 @@
 
 #line 16 "MGEMX.y"
 namespace My {
-#line 183 "MGEMX.parser.hpp"
+#line 183 "MGEMX.parser.generated.hpp"
 
 
 
@@ -1374,7 +1374,7 @@ switch (yykind)
 
 #line 16 "MGEMX.y"
 } // My
-#line 1378 "MGEMX.parser.hpp"
+#line 1378 "MGEMX.parser.generated.hpp"
 
 
 // "%code provides" blocks.
@@ -1384,7 +1384,7 @@ switch (yykind)
         int yylex(My::MGEMXParser::semantic_type *yylval, yyscan_t yyscanner)
     YY_DECL;
 
-#line 1388 "MGEMX.parser.hpp"
+#line 1388 "MGEMX.parser.generated.hpp"
 
 
-#endif // !YY_YY_MGEMX_PARSER_HPP_INCLUDED
+#endif // !YY_YY_MGEMX_PARSER_GENERATED_HPP_INCLUDED

@@ -4,13 +4,13 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include "MGEMX.scanner.hpp"
+#include "MGEMX.scanner.generated.hpp"
 %}
 
 %require "3.7.4"
 %language "C++"
-%defines "MGEMX.parser.hpp"
-%output  "MGEMX.parser.cpp"
+%defines "MGEMX.parser.generated.hpp"
+%output  "MGEMX.parser.generated.cpp"
 
 %define api.parser.class {MGEMXParser}
 %define api.namespace {My}

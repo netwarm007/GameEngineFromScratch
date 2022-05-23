@@ -1,6 +1,6 @@
 #include "AssetLoader.hpp"
-#include "MGEMX.scanner.hpp"
-#include "MGEMX.parser.hpp"
+#include "MGEMX.scanner.generated.hpp"
+#include "MGEMX.parser.generated.hpp"
 
 namespace My {
 AssetLoader* g_pAssetLoader = new AssetLoader();

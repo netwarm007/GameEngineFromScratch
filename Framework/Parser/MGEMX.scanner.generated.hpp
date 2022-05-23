@@ -2,9 +2,9 @@
 #define yyHEADER_H 1
 #define yyIN_HEADER 1
 
-#line 5 "MGEMX.scanner.hpp"
+#line 5 "MGEMX.scanner.generated.hpp"
 
-#line 7 "MGEMX.scanner.hpp"
+#line 7 "MGEMX.scanner.generated.hpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -488,6 +488,6 @@ extern int yylex (yyscan_t yyscanner);
 #line 62 "MGEMX.l"
 
 
-#line 491 "MGEMX.scanner.hpp"
+#line 491 "MGEMX.scanner.generated.hpp"
 #undef yyIN_HEADER
 #endif /* yyHEADER_H */
