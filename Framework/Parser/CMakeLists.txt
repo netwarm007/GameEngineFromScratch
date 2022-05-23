@@ -6,7 +6,7 @@ set_property(SOURCE MGEMX.scanner.generated.cpp PROPERTY GENERATED)
 set_property(SOURCE MGEMX.parser.generated.cpp PROPERTY GENERATED)
 
 IF(WIN32)
-    set(FLEX win_flex.exe)
+    set(FLEX win_flex.exe --wincompat)
     set(BISON win_bison.exe)
 ELSE(WIN32)
     set(FLEX flex)
