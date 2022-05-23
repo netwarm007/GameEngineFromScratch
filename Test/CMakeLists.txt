@@ -3,6 +3,7 @@ set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                SceneLoadingTest AnimationTest
                BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
                RasterizationTest SceneObjectTest
+               ASTNodeTest MGEMXParserTest
         )
 
 foreach(TEST_CASE IN LISTS TEST_CASES)

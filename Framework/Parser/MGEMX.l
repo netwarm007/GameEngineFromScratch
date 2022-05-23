@@ -60,12 +60,3 @@ L?\"([^"\\]|\\['"?\\abfnrtv]|\\[0-7]{1,3}|\\[Xx][0-9a-fA-F]+|{ucn})*\"    {
 \0      { return MGEMXParser::token::EOS;   }
 .       { printf("魔法字符 %c\n", *yytext); }
 %%
-
-int main() {
-    yyscan_t scanner;
-    yylex_init(&scanner);
-    My::MGEMXParser parser(scanner);
-    std::cout.precision(10);
-    parser.parse();
-    yylex_destroy(scanner);
-}
