@@ -1,5 +1,10 @@
 add_library(Parser OGEX.cpp MGEMX.scanner.generated.cpp MGEMX.parser.generated.cpp)
 
+set_property(SOURCE MGEMX.scanner.generated.hpp PROPERTY GENERATED)
+set_property(SOURCE MGEMX.scanner.generated.cpp PROPERTY GENERATED)
+set_property(SOURCE MGEMX.parser.generated.hpp PROPERTY GENERATED)
+set_property(SOURCE MGEMX.parser.generated.cpp PROPERTY GENERATED)
+
 IF(WIN32)
     set(FLEX win_flex.exe)
     set(BISON win_bison.exe)
