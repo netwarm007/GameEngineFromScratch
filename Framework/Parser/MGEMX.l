@@ -5,7 +5,7 @@
 using namespace My;
 %}
 
-%option reentrant interactive noyywrap yylineno nodefault outfile="MGEMX.scanner.cpp" header="MGEMX.scanner.hpp"
+%option reentrant noyywrap yylineno nodefault outfile="MGEMX.scanner.cpp" header="MGEMX.scanner.hpp"
 %x COMMENT
 
 dseq        ([[:digit:]]+)
