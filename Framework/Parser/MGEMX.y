@@ -5,6 +5,8 @@
 #include <vector>
 #include <cmath>
 #include "MGEMX.scanner.generated.hpp"
+
+#include "AST.hpp"
 %}
 
 %require "3.7.4"
