@@ -106,7 +106,7 @@ bool SceneObjectTexture::LoadTexture() {
     cerr << "End async loading of " << m_Name << endl;
 
     atomic_store_explicit(&m_pImage, make_shared<Image>(std::move(image)),
-                          std::memory_order::memory_order_release);
+                          std::memory_order_release);
 
     return true;
 }
@@ -116,7 +116,7 @@ std::shared_ptr<Image> SceneObjectTexture::GetTextureImage() {
         m_asyncLoadFuture.wait();
         assert(m_asyncLoadFuture.get());
         return atomic_load_explicit(&m_pImage,
-                                    std::memory_order::memory_order_acquire);
+                                    std::memory_order_acquire);
     } else {
         return m_pImage;
     }

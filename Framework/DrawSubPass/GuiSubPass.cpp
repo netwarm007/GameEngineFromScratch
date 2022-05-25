@@ -13,7 +13,8 @@ void GuiSubPass::Draw(Frame& frame) {
     if (ImGui::GetCurrentContext()) {
         ImGui::NewFrame();
 
-        static auto bfbsfile = g_pAssetLoader->SyncOpenAndReadBinary("Data/RenderDefinitions.bfbs");
+        static Buffer bfbsfile;
+
         if (bfbsfile.GetDataSize() > 0) {
             static const reflection::Schema& schema = *reflection::GetSchema(bfbsfile.GetData());
             static auto enums = schema.enums();
@@ -98,6 +99,9 @@ void GuiSubPass::Draw(Frame& frame) {
                 rendering::EnumNamesTextureFormat()[static_cast<int>(rt.format())]);
 
             ImGui::End();
+        }
+        else {
+            bfbsfile = g_pAssetLoader->SyncOpenAndReadBinary("Data/RenderDefinitions.bfbs");
         }
 
         ImGui::Render();

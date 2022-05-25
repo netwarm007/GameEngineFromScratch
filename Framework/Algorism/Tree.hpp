@@ -29,7 +29,9 @@ class TreeNode {
         out << std::endl;
 
         for (const std::shared_ptr<TreeNode>& sub_node : node.m_Children) {
-            out << *sub_node << std::endl;
+            if (sub_node) {
+                out << *sub_node << std::endl;
+            }
         }
 
         indent--;

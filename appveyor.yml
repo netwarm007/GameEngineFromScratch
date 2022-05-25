@@ -1,6 +1,83 @@
 version: 0.1.0-{build}
 image: Visual Studio 2019
-clone_depth: 100
+clone_depth: 50
+init:
+- ps: |
+      $machinePath = [Environment]::GetEnvironmentVariable('Path', 'MACHINE')
+      $newMachineEnvironmentPath = $machinePath
+      
+      # install chocolatey
+      $chocolateyPath = "$env:AllUsersProfile\chocolatey\bin"
+      if(Get-Command "choco" -ErrorAction SilentlyContinue)
+      {
+        echo "Chocolatey is already installed. Skipping installation."
+      }
+      else
+      {
+        echo "Chocolatey net present. Installing chocolatey."
+        Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+        {
+          echo "Adding $chocolateyPath to Path environment variable"
+          $env:Path += ";$chocolateyPath"
+          $newMachineEnvironmentPath += ";$chocolateyPath"
+        }
+        else
+        {
+          echo "$chocolateyPath already present in Path environment variable"
+        }
+      }
+      
+      # install cmake
+      $cmakePath = "${env:ProgramFiles(x86)}\CMake\bin"
+      if(Get-Command "cmake" -ErrorAction SilentlyContinue)
+      {
+        echo "Cmake is already installed. Skipping installation."
+      }
+      else
+      {
+        echo "Cmake not present. Installing cmake."
+        choco install cmake.portable -y
+
+        if (-not ($machinePath.ToLower().Contains($cmakePath.ToLower())))
+        {
+          echo "Adding $cmakePath to Path environment variable"
+          $env:Path += ";$cmakePath"
+          $newMachineEnvironmentPath = "$cmakePath;$newMachineEnvironmentPath"
+        }
+        else
+        {
+          echo "$cmakePath already present in Path environment variable"
+        }
+      }
+
+      # install winflexbison3
+      $winflexbison3Path = "${env:ProgramFiles(x86)}\WinFlexBison\bin"
+      if(Get-Command "bison" -ErrorAction SilentlyContinue)
+      {
+        echo "bison is already installed. Skipping installation."
+      }
+      else
+      {
+        echo "bison not present. Installing bison."
+        choco install winflexbison3 -y
+
+        if (-not ($machinePath.ToLower().Contains($winflexbison3Path.ToLower())))
+        {
+          echo "Adding $winflexbison3Path to Path environment variable"
+          $env:Path += ";$winflexbison3Path"
+          $newMachineEnvironmentPath = "$winflexbison3Path;$newMachineEnvironmentPath"
+        }
+        else
+        {
+          echo "$winflexbison3Path already present in Path environment variable"
+        }
+      }
+
+      # update machine environment path
+      if ($newMachineEnvironmentPath -ne $machinePath)
+      {
+        [Environment]::SetEnvironmentVariable('Path', $newMachineEnvironmentPath, 'MACHINE')
+      }
 build_script:
 - cmd: >-
     scripts/build_imgui

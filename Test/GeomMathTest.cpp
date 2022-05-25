@@ -8,12 +8,12 @@ using namespace std;
 using namespace My;
 
 void vector_test() {
-    Vector2f x = {55.3f, 22.1f};
+    Vector2f x {55.3f, 22.1f};
     cout << "Vector2f: ";
     cout << x;
 
-    Vector3f a = {1.0f, 2.0f, 3.0f};
-    Vector3f b = {5.0f, 6.0f, 7.0f};
+    Vector3f a {1.0f, 2.0f, 3.0f};
+    Vector3f b {5.0f, 6.0f, 7.0f};
 
     cout << "vec 1: ";
     cout << a;
@@ -34,8 +34,8 @@ void vector_test() {
     cout << "Element Product of vec 1 and vec 2: ";
     cout << c;
 
-    Vector4f e = {-3.0f, 3.0f, 6.0f, 1.0f};
-    Vector4f f = {2.0f, 0.0f, -0.7f, 0.0f};
+    Vector4f e {-3.0f, 3.0f, 6.0f, 1.0f};
+    Vector4f f {2.0f, 0.0f, -0.7f, 0.0f};
     cout << "vec 3: " << e;
     cout << "vec 4: " << f;
 
@@ -102,7 +102,7 @@ void matrix_test() {
     cout << "Re-composed Transform Matrix: " << endl;
     cout << recomposed_transform;
 
-    Vector3f v = {1.0f, 0.0f, 0.0f};
+    Vector3f v {1.0f, 0.0f, 0.0f};
 
     Vector3f v1 = v;
     cout << "Vector : " << v1;
@@ -149,7 +149,7 @@ void matrix_test() {
     cout << endl;
     assert(Length(v1 - v2) < 10E-6f);
 
-    Vector3f position = {0, 0, -5}, lookAt = {0, 0, 0}, up = {0, 1, 0};
+    Vector3f position {0, 0, -5}, lookAt {0, 0, 0}, up {0, 1, 0};
     Matrix4X4f view;
     BuildViewRHMatrix(view, position, lookAt, up);
     cout << "View Matrix with position(" << position << ") lookAt(" << lookAt

@@ -13,13 +13,12 @@ class HuffmanNode : public TreeNode {
     bool m_isLeaf = false;
 
    private:
-    virtual void AppendChild(std::shared_ptr<TreeNode>&& sub_node) {}
+    void AppendChild(std::shared_ptr<TreeNode>&& sub_node) override {}
 
    public:
     HuffmanNode() {m_Children.resize(2);}
     explicit HuffmanNode(T value) : HuffmanNode(){
-        m_Value = value; 
-        m_isLeaf = true;
+        SetValue(value);
     }
     ~HuffmanNode() = default;
     HuffmanNode(HuffmanNode&) = default;

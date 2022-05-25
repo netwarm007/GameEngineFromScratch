@@ -3,6 +3,7 @@ set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                SceneLoadingTest AnimationTest
                BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
                RasterizationTest SceneObjectTest
+               ASTNodeTest MGEMXParserTest
         )
 
 foreach(TEST_CASE IN LISTS TEST_CASES)
@@ -10,6 +11,8 @@ foreach(TEST_CASE IN LISTS TEST_CASES)
     target_link_libraries(${TEST_CASE} Framework)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach(TEST_CASE)
+
+target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 
 IF(WA)
 set_target_properties(${TEST_CASES}

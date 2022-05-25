@@ -65,3 +65,5 @@ GPUCache
 
 .vscode/ipch
 imgui.ini
+**/*.generated.hpp
+**/*.generated.cpp
