@@ -39,11 +39,25 @@ namespace My {
     using ASTNodeRef = ASTNode*;
     std::map<std::string, ASTNodeRef> global_symbol_table;
 
+    template <typename T, typename V>
+    using ASTPair  = std::pair<T, V>;
+
     template <typename T>
     using ASTList = std::vector<T>;
 
+    template<typename T, typename U>
+    std::ostream& operator<<(std::ostream& s, const ASTPair<T, U>& v) 
+    {
+        s.put('(');
+        char comma[3] = {'\0', ' ', '\0'};
+        s << comma << v.first;
+        comma[0] = ',';
+        s << comma << v.second;
+        return s << ')';
+    }
+
     template<typename T>
-    std::ostream& operator<<(std::ostream& s, const std::vector<T>& v) 
+    std::ostream& operator<<(std::ostream& s, const ASTList<T>& v) 
     {
         s.put('[');
         char comma[3] = {'\0', ' ', '\0'};
@@ -52,20 +66,6 @@ namespace My {
             comma[0] = ',';
         }
         return s << ']';
-    }
-
-    template <typename T, typename V>
-    using ASTPair  = std::pair<T, V>;
-
-    template<typename T, typename U>
-    std::ostream& operator<<(std::ostream& s, const std::pair<T, U>& v) 
-    {
-        s.put('(');
-        char comma[3] = {'\0', ' ', '\0'};
-        s << comma << v.first;
-        comma[0] = ',';
-        s << comma << v.second;
-        return s << ')';
     }
 
     template <AST_NODE_TYPE T, typename V, class...Args>
