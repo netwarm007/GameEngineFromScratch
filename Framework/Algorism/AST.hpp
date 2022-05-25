@@ -16,6 +16,10 @@ namespace My {
         TABLE
     };
     
+    class ASTNode;
+
+    using ASTNodeRef = std::shared_ptr<ASTNode>;
+
     class ASTNode : public TreeNode {
         protected:
             std::string m_Idn;
@@ -25,18 +29,18 @@ namespace My {
             void AppendChild(std::shared_ptr<TreeNode>&& sub_node) override { assert(false); };
 
         public:
-            void SetLeft(std::shared_ptr<ASTNode> pNode) { m_Children.front() = pNode; }
-            void SetRight(std::shared_ptr<ASTNode> pNode) { m_Children.back() = pNode; }
+            void SetLeft(ASTNodeRef pNode) { m_Children.front() = pNode; }
+            void SetRight(ASTNodeRef pNode) { m_Children.back() = pNode; }
 
-            [[nodiscard]] const std::shared_ptr<ASTNode> GetLeft() const {
+
+            [[nodiscard]] const ASTNodeRef GetLeft() const {
                 return std::dynamic_pointer_cast<ASTNode>(m_Children.front());
             }
-            [[nodiscard]] const std::shared_ptr<ASTNode> GetRight() const {
+            [[nodiscard]] const ASTNodeRef GetRight() const {
                 return std::dynamic_pointer_cast<ASTNode>(m_Children.back());
             }
     };
 
-    using ASTNodeRef = ASTNode*;
     std::map<std::string, ASTNodeRef> global_symbol_table;
 
     template <typename T, typename V>
@@ -97,20 +101,30 @@ namespace My {
             void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn; }
     };
 
+    template <class...Args>
     using ASTNodeNone =
             ASTNodeT<AST_NODE_TYPE::NONE,        void>;
+
     template <class...Args>
     using ASTNodeNameSpace =
             ASTNodeT<AST_NODE_TYPE::NAMESPACE,   std::string,                                      Args...>;
+
     template <class...Args>
     using ASTNodeEnum =
             ASTNodeT<AST_NODE_TYPE::ENUM,        ASTList<std::string>,                             Args...>;
+
     template <class...Args>
     using ASTNodeStruct =
             ASTNodeT<AST_NODE_TYPE::STRUCT,      ASTList<ASTPair<std::string, std::string>>,       Args...>;
+
     template <class...Args>
     using ASTNodeTable =
             ASTNodeT<AST_NODE_TYPE::TABLE,       ASTList<ASTPair<std::string, std::string>>,       Args...>;
 
+    template <template<class...> class T, class...Args>
+    ASTNodeRef make_ASTNodeRef(const char* idn, Args&&... args) {
+        return std::make_shared<T<Args...>>(idn, std::forward<Args>(args)...);
+    }
 } // namespace My
+
 
