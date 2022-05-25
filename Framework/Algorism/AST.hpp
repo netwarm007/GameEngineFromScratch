@@ -23,12 +23,14 @@ namespace My {
     class ASTNode : public TreeNode {
         protected:
             std::string m_Idn;
+            AST_NODE_TYPE node_type;
 
         protected:
             ASTNode() { m_Children.resize(2); }
             void AppendChild(std::shared_ptr<TreeNode>&& sub_node) override { assert(false); };
 
         public:
+            AST_NODE_TYPE GetNodeType() const { return node_type; }
             void SetLeft(ASTNodeRef pNode) { m_Children.front() = pNode; }
             void SetRight(ASTNodeRef pNode) { m_Children.back() = pNode; }
 
@@ -75,14 +77,14 @@ namespace My {
     template <AST_NODE_TYPE T, typename V, class...Args>
     class ASTNodeT : public ASTNode {
         public:
-            using ValueType = V;
+            using value_type = V;
 
         private:
+            ASTNodeT() = delete;
             V m_Value;
-            AST_NODE_TYPE node_type = T;
 
         public:
-            explicit ASTNodeT(const char* idn, Args&&... args) : m_Value(std::forward<Args>(args)...) { m_Idn = idn; }
+            explicit ASTNodeT(const char* idn, Args&&... args) : m_Value(std::forward<Args>(args)...) { node_type = T; m_Idn = idn; }
             [[nodiscard]] V GetValue() const { return m_Value; }
         
         protected:
@@ -91,14 +93,14 @@ namespace My {
 
     template <AST_NODE_TYPE T>
     class ASTNodeT<T, void> : public ASTNode {
-        private:
-            AST_NODE_TYPE node_type = T;
+        public:
+            using value_type = void;
 
         private:
             ASTNodeT() = delete;
 
         public:
-            explicit ASTNodeT(const char* idn) { m_Idn = idn; }
+            explicit ASTNodeT(const char* idn) { node_type = T; m_Idn = idn; }
         
         protected:
             void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn; }
@@ -108,21 +110,31 @@ namespace My {
     using ASTNodeNone =
             ASTNodeT<AST_NODE_TYPE::NONE,        void>;
 
+    using ASTNodeNoneValueType = ASTNodeNone<>::value_type;
+
     template <class...Args>
     using ASTNodeNameSpace =
             ASTNodeT<AST_NODE_TYPE::NAMESPACE,   std::string,                                      Args...>;
+
+    using ASTNodeNameSpaceValueType = ASTNodeNameSpace<>::value_type;
 
     template <class...Args>
     using ASTNodeEnum =
             ASTNodeT<AST_NODE_TYPE::ENUM,        ASTList<std::string>,                             Args...>;
 
+    using ASTNodeEnumValueType = ASTNodeEnum<>::value_type;
+
     template <class...Args>
     using ASTNodeStruct =
             ASTNodeT<AST_NODE_TYPE::STRUCT,      ASTList<ASTPair<std::string, std::string>>,       Args...>;
 
+    using ASTNodeStructValueType = ASTNodeStruct<>::value_type;
+
     template <class...Args>
     using ASTNodeTable =
             ASTNodeT<AST_NODE_TYPE::TABLE,       ASTList<ASTPair<std::string, std::string>>,       Args...>;
+
+    using ASTNodeTableValueType = ASTNodeTable<>::value_type;
 
     template <template<class...> class T, class...Args>
     ASTNodeRef make_ASTNodeRef(const char* idn, Args&&... args) {
