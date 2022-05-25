@@ -1,4 +1,5 @@
 #include "AssetLoader.hpp"
+#include "AST.hpp"
 #include "MGEMX.scanner.generated.hpp"
 #include "MGEMX.parser.generated.hpp"
 
@@ -18,6 +19,8 @@ int main() {
     std::cout.precision(10);
     parser.parse();
     yylex_destroy(scanner);
+
+    //std::cout << *ast_root << std::endl;
 
     return 0;
 }

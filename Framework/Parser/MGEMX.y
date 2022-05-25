@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <map>
 #include <cmath>
+#include "AST.hpp"
 #include "MGEMX.scanner.generated.hpp"
 
-#include "AST.hpp"
 %}
 
 %require "3.7.4"
@@ -27,68 +28,116 @@
 }
 
 /* token define */
-%token STRUCT       /* Structure */
-%token ENUM         /* Enum      */
-%token NAMESPACE    /* Namespace */
-%token TABLE        /* Table     */
-%token ATTR         /* Attribute */
-%token ROOT         /* Root Type */
+%token                   STRUCT       /* Structure */
+%token                   ENUM         /* Enum      */
+%token                   NAMESPACE    /* Namespace */
+%token                   TABLE        /* Table     */
+%token                   ATTR         /* Attribute */
+%token                   ROOT         /* Root Type */
 
 %token <std::string>     STR          /* String     */
 %token <std::string>     IDN          /* Identifier */
-%token <long long>       INT          /* Integer    */
+%token <int32_t>         INT          /* Integer    */
 %token <double>          FLT          /* Float      */
 
 %token EOS          /* End of Stream */
 %token EOL          /* End of Line   */
 
-%nterm <std::string>    property
-%nterm <std::vector<std::string>>    property_list
+%nterm <My::ASTNodeRef> module namespace_declaration enum_declaration struct_declaration table_declaration
+%nterm <std::pair<std::string, std::string>>                variable_declaration
+%nterm <std::vector<std::pair<std::string, std::string>>>   variable_declaration_list
+%nterm <std::string>                                        attribute
+%nterm <std::vector<std::string>>                           attribute_list
+%nterm <std::pair<std::string,     int32_t>>                enum_value
+%nterm <std::vector<std::pair<std::string, int32_t>>>       enum_value_list
 
+%code provides
+{
+    extern std::map<std::string, My::ASTNodeRef> global_symbol_table;
+
+    extern My::ASTNodeRef ast_root;
+    extern My::ASTNodeRef prev;
+}
 %%
 /* rules */
-module: /* nothing */
+module: /* nothing */                               { 
+                                                      $$ = My::make_ASTNodeRef<My::ASTNodeNone>( "MODULE" );
+                                                      prev->SetRight($$); prev = $$; }
     | module EOS 
-    | module namespace_declaration
-    | module struct_declaration 
-    | module enum_declaration
+    | module namespace_declaration                  { prev->SetRight($2); prev = $2; }
+    | module enum_declaration                       { prev->SetRight($2); prev = $2; }
+    | module struct_declaration                     { prev->SetRight($2); prev = $2; }
+    | module table_declaration                      { prev->SetRight($2); prev = $2; }
     | module attribute_declaration
     | module root_type_declaration
-    | module table_declaration
     ;
 
-namespace_declaration: NAMESPACE IDN ';'            { printf("【命名空间】名称：%s\n", $2.c_str()); }
+namespace_declaration: NAMESPACE IDN ';'            {
+                                                        printf("【命名空间】名称：%s\n", $2.c_str()); 
+                                                        $$ = My::make_ASTNodeRef<My::ASTNodeNameSpace, const char*>( 
+                                                                $2.c_str(), "https://www.chenwenli.com" );
+                                                        prev->SetRight($$);
+                                                        prev = $$;
+                                                    }
     ;
 
-enum_declaration: ENUM IDN '{' enum_value_list '}'  { printf("【枚举体】名称：%s\n", $2.c_str()); }
-    | ENUM IDN ':' IDN '{' enum_value_list '}'      { printf("【枚举体】名称：%s ，类型：%s\n", $2.c_str(), $4.c_str()); }
+enum_declaration: ENUM IDN '{' enum_value_list '}'  { 
+                                                        printf("【枚举体】名称：%s\n", $2.c_str()); 
+                                                        $$ = My::make_ASTNodeRef<My::ASTNodeEnum, ASTNodeEnumValueType>( 
+                                                                $2.c_str(), std::move($4) );
+                                                        prev->SetRight($$);
+                                                        prev = $$;
+                                                    }
+    | ENUM IDN ':' IDN '{' enum_value_list '}'      { 
+                                                        printf("【枚举体】名称：%s ，类型：%s\n", $2.c_str(), $4.c_str()); 
+                                                        $$ = My::make_ASTNodeRef<My::ASTNodeEnum, ASTNodeEnumValueType>( 
+                                                                $2.c_str(), std::move($6) );
+                                                        prev->SetRight($$);
+                                                        prev = $$;
+                                                    }
     ;
 
-enum_value_list: enum_value
-    | enum_value_list ',' enum_value
+enum_value_list: enum_value                         {   $$.emplace_back($1); }
+    | enum_value_list ',' enum_value                {   $$.emplace_back($3); }
     ;
 
-enum_value: IDN                                     { printf("【枚举体值】%s\n", $1.c_str()); }
-    | IDN '=' INT                                   { printf("【枚举体值】%s = %lld\n", $1.c_str(), $3); }
+enum_value: IDN                                     { 
+                                                        printf("【枚举体值】%s\n", $1.c_str()); 
+                                                        $$.first = $1;
+                                                    }
+    | IDN '=' INT                                   { 
+                                                        printf("【枚举体值】%s = %d\n", $1.c_str(), $3); 
+                                                        $$.first = $1; $$.second = $3;
+                                                    }
     ;
 
 struct_declaration: STRUCT IDN '{' variable_declaration_list '}' { 
-                                                      printf("【结构体】名称：%s\n", $2.c_str()); }
+                                                        printf("【结构体】名称：%s\n", $2.c_str()); 
+                                                        $$ = My::make_ASTNodeRef<My::ASTNodeStruct, ASTNodeStructValueType>( 
+                                                                $2.c_str(), std::move($4) );
+                                                        prev->SetRight($$);
+                                                        prev = $$;
+                                                    }
     ;
 
-variable_declaration_list: variable_declaration
-    | variable_declaration_list variable_declaration
+variable_declaration_list: variable_declaration     {   $$.emplace_back($1); }
+    | variable_declaration_list variable_declaration{   $$.emplace_back($2); }
     ;
 
-variable_declaration: IDN ':' IDN ';'               { printf("【变量】名称：%s ，类型：%s\n", $1.c_str(), $3.c_str()); }
-    | IDN ':' IDN property_list ';'                 { printf("【变量】名称：%s ，类型：%s ，%lu个属性\n", $1.c_str(), $3.c_str(), $4.size()); }
+variable_declaration: IDN ':' IDN ';'               { 
+                                                        printf("【变量】名称：%s ，类型：%s\n", $1.c_str(), $3.c_str()); 
+                                                        $$.first = $1; $$.second = $3;
+                                                    }
+    | IDN ':' IDN attribute_list ';'                { 
+                                                        printf("【变量】名称：%s ，类型：%s ，%lu个属性\n", $1.c_str(), $3.c_str(), $4.size()); 
+                                                    }
     ;
 
-property_list: property                             { $$.emplace_back($1); }
-    | property_list property                        { $$.emplace_back($2); }
+attribute_list: attribute                           { $$.emplace_back($1); }
+    | attribute_list attribute                      { $$.emplace_back($2); }
     ;
 
-property: '(' IDN ':' STR ')'                       { $$ = $2 + ":" + $4; printf("【属性】名称：%s ，值：%s\n", $2.c_str(), $4.c_str()); }
+attribute: '(' IDN ':' STR ')'                      { $$ = $2 + ":" + $4; printf("【属性】名称：%s ，值：%s\n", $2.c_str(), $4.c_str()); }
     ;
 
 attribute_declaration: ATTR STR ';'                 { printf("【属性声明】名称：%s\n", $2.c_str()); }
@@ -98,10 +147,20 @@ root_type_declaration: ROOT IDN ';'                 { printf("【根类型】名
     ;
 
 table_declaration: TABLE IDN '{' variable_declaration_list '}' { 
-                                                      printf("【表格体】名称：%s\n", $2.c_str()); }
+                                                        printf("【表格体】名称：%s\n", $2.c_str());
+                                                        $$ = My::make_ASTNodeRef<My::ASTNodeTable, ASTNodeTableValueType>( 
+                                                                $2.c_str(), std::move($4) );
+                                                        prev->SetRight($$);
+                                                        prev = $$;
+                                                    }
     ;
 
 %%
+
+std::map<std::string, My::ASTNodeRef> global_symbol_table;
+
+My::ASTNodeRef ast_root = My::make_ASTNodeRef<My::ASTNodeNone>( "ROOT" );
+My::ASTNodeRef prev = ast_root;
 
 void My::MGEMXParser::error(const std::string& msg)
 {

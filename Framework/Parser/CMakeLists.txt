@@ -15,10 +15,12 @@ ENDIF(WIN32)
 
 add_custom_command(OUTPUT MGEMX.scanner.generated.cpp 
 	COMMAND ${FLEX} ${CMAKE_CURRENT_LIST_DIR}/MGEMX.l
+    DEPENDS MGEMX.l
 )
 
 add_custom_command(OUTPUT MGEMX.parser.generated.cpp 
     COMMAND ${BISON} ${CMAKE_CURRENT_LIST_DIR}/MGEMX.y
+    DEPENDS MGEMX.y
 )
 
 target_link_libraries(Parser

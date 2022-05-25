@@ -43,8 +43,6 @@ namespace My {
             }
     };
 
-    std::map<std::string, ASTNodeRef> global_symbol_table;
-
     template <typename T, typename V>
     using ASTPair  = std::pair<T, V>;
 
@@ -120,7 +118,7 @@ namespace My {
 
     template <class...Args>
     using ASTNodeEnum =
-            ASTNodeT<AST_NODE_TYPE::ENUM,        ASTList<std::string>,                             Args...>;
+            ASTNodeT<AST_NODE_TYPE::ENUM,        ASTList<ASTPair<std::string, int32_t>>,           Args...>;
 
     using ASTNodeEnumValueType = ASTNodeEnum<>::value_type;
 
