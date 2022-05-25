@@ -43,7 +43,7 @@ namespace My {
     using ASTList = std::vector<T>;
 
     template<typename T>
-    std::ostream& operator<<(std::ostream& s, const ASTList<T>& v) 
+    std::ostream& operator<<(std::ostream& s, const std::vector<T>& v) 
     {
         s.put('[');
         char comma[3] = {'\0', ' ', '\0'};
@@ -58,7 +58,7 @@ namespace My {
     using ASTPair  = std::pair<T, V>;
 
     template<typename T, typename U>
-    std::ostream& operator<<(std::ostream& s, const ASTPair<T, U>& v) 
+    std::ostream& operator<<(std::ostream& s, const std::pair<T, U>& v) 
     {
         s.put('(');
         char comma[3] = {'\0', ' ', '\0'};
