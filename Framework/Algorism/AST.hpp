@@ -39,35 +39,6 @@ namespace My {
     using ASTNodeRef = ASTNode*;
     std::map<std::string, ASTNodeRef> global_symbol_table;
 
-    template <AST_NODE_TYPE T, typename V, class...Args>
-    class ASTNodeT : public ASTNode {
-        private:
-            V m_Value;
-            AST_NODE_TYPE node_type = T;
-
-        public:
-            explicit ASTNodeT(const char* idn, Args&&... args) : m_Value(std::forward<Args>(args)...) { m_Idn = idn; }
-            [[nodiscard]] V GetValue() const { return m_Value; }
-        
-        protected:
-            void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn << std::endl << "Value:\t" << m_Value; }
-    };
-
-    template <AST_NODE_TYPE T>
-    class ASTNodeT<T, void> : public ASTNode {
-        private:
-            AST_NODE_TYPE node_type = T;
-
-        private:
-            ASTNodeT() = delete;
-
-        public:
-            explicit ASTNodeT(const char* idn) { m_Idn = idn; }
-        
-        protected:
-            void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn; }
-    };
-
     template <typename T>
     using ASTList = std::vector<T>;
 
@@ -96,6 +67,35 @@ namespace My {
         s << comma << v.second;
         return s << ')';
     }
+
+    template <AST_NODE_TYPE T, typename V, class...Args>
+    class ASTNodeT : public ASTNode {
+        private:
+            V m_Value;
+            AST_NODE_TYPE node_type = T;
+
+        public:
+            explicit ASTNodeT(const char* idn, Args&&... args) : m_Value(std::forward<Args>(args)...) { m_Idn = idn; }
+            [[nodiscard]] V GetValue() const { return m_Value; }
+        
+        protected:
+            void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn << std::endl << "Value:\t" << m_Value; }
+    };
+
+    template <AST_NODE_TYPE T>
+    class ASTNodeT<T, void> : public ASTNode {
+        private:
+            AST_NODE_TYPE node_type = T;
+
+        private:
+            ASTNodeT() = delete;
+
+        public:
+            explicit ASTNodeT(const char* idn) { m_Idn = idn; }
+        
+        protected:
+            void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn; }
+    };
 
     using ASTNodeNone =
             ASTNodeT<AST_NODE_TYPE::NONE,        void>;
