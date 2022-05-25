@@ -20,7 +20,7 @@ int main() {
     parser.parse();
     yylex_destroy(scanner);
 
-    //std::cout << *ast_root << std::endl;
+    std::cout << *ast_root << std::endl;
 
     return 0;
 }
