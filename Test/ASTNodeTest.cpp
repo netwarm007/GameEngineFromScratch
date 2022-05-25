@@ -14,20 +14,20 @@ int main(int argc, char* argv[])
     auto ns     = make_ASTNodeRef<ASTNodeNameSpace, const char*>( 
                                                         "namespace", "My" );
 
-    ASTList<std::string> enum_items 
-        { "A", "B", "C", "D", "E" };
-    auto enum_  = make_ASTNodeRef<ASTNodeEnum, decltype(enum_items)> ( 
-                                            "Enum", std::move(enum_items) );
+    auto enum_  = make_ASTNodeRef<ASTNodeEnum, ASTList<std::string>> ( 
+        "Enum", 
+        { "Apple", "Banana", "Cherry", "Donut", "Egg" }
+    );
 
-    ASTList<ASTPair<std::string, std::string>> field_list 
-        { {"field1","int"}, {"field2","double"}, {"field3","string"} };
-    auto struct_= make_ASTNodeRef<ASTNodeStruct, decltype(field_list)> ( 
-                                            "Struct", std::move(field_list) );
+    auto struct_= make_ASTNodeRef<ASTNodeStruct, ASTList<ASTPair<std::string, std::string>>> ( 
+        "Struct", 
+        { {"field1", "int"}, {"field2", "double"}, {"field3", "string"} }
+    );
 
-    ASTList<ASTPair<std::string, std::string>> record_list 
-        { {"field1","uuid"}, {"field2","Texture"}, {"field3","Shader"} };
-    auto table  = make_ASTNodeRef<ASTNodeTable, decltype(record_list)> (
-                                            "Table", std::move(record_list) );
+    auto table = make_ASTNodeRef<ASTNodeTable, ASTList<ASTPair<std::string, std::string>>> ( 
+        "Table",
+        { {"field1", "uuid"}, {"field2", "Texture"}, {"field3", "Shader"} }
+    );
 
     root->SetLeft(ns);
     ns->SetLeft(enum_);

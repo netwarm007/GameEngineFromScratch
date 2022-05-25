@@ -74,6 +74,9 @@ namespace My {
 
     template <AST_NODE_TYPE T, typename V, class...Args>
     class ASTNodeT : public ASTNode {
+        public:
+            using ValueType = V;
+
         private:
             V m_Value;
             AST_NODE_TYPE node_type = T;
