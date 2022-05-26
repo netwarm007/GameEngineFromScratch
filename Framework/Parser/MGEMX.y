@@ -150,7 +150,7 @@ std::map<std::string, My::ASTNodeRef> global_symbol_table;
 
 My::ASTNodeRef ast_root = My::make_ASTNodeRef<My::ASTNodeNone>( "ROOT" );
 
-void My::MGEMXParser::error(const std::string& msg)
-{
+void My::MGEMXParser::error(const std::string& msg) {
     std::cerr << msg << '\n';
 }
+
