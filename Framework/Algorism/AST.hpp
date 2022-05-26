@@ -29,6 +29,30 @@ namespace My {
             ASTNode() { m_Children.resize(2); }
             void AppendChild(std::shared_ptr<TreeNode>&& sub_node) override { assert(false); };
 
+            void dump(std::ostream& out) const override { 
+                out << "IDN:\t" << m_Idn << std::endl; 
+                out << "Type:\t";
+                switch(node_type) {
+                case AST_NODE_TYPE::NONE:
+                    out << "AST_NODE_TYPE::NONE" << std::endl;
+                    break;
+                case AST_NODE_TYPE::ENUM:
+                    out << "AST_NODE_TYPE::ENUM" << std::endl;
+                    break;
+                case AST_NODE_TYPE::NAMESPACE:
+                    out << "AST_NODE_TYPE::NAMESPACE" << std::endl;
+                    break;
+                case AST_NODE_TYPE::STRUCT:
+                    out << "AST_NODE_TYPE::STRUCT" << std::endl;
+                    break;
+                case AST_NODE_TYPE::TABLE:
+                    out << "AST_NODE_TYPE::TABLE" << std::endl;
+                    break;
+                default:
+                    assert(0);
+                }
+            }
+
         public:
             AST_NODE_TYPE GetNodeType() const { return node_type; }
             void SetLeft(ASTNodeRef pNode) { m_Children.front() = pNode; }
@@ -86,7 +110,10 @@ namespace My {
             [[nodiscard]] V GetValue() const { return m_Value; }
         
         protected:
-            void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn << std::endl << "Value:\t" << m_Value; }
+            void dump(std::ostream& out) const override { 
+                ASTNode::dump(out);
+                out << "IDN:\t" << m_Idn << std::endl << "Value:\t" << m_Value; 
+            }
     };
 
     template <AST_NODE_TYPE T>
@@ -99,9 +126,6 @@ namespace My {
 
         public:
             explicit ASTNodeT(const char* idn) { node_type = T; m_Idn = idn; }
-        
-        protected:
-            void dump(std::ostream& out) const override { out << "IDN:\t" << m_Idn; }
     };
 
     template <class...Args>
