@@ -62,7 +62,7 @@ module: /* nothing */                               {
                                                       $$ = My::make_ASTNodeRef<My::ASTNodeNone>( "MODULE" );
                                                       ast_root->SetRight($$); }
     | module EOS 
-    | module namespace_declaration                  { $1->SetRight($2); $$ = $2; }
+    | module namespace_declaration                  { $1->SetLeft($2); $$ = $2; }
     | module enum_declaration                       { $1->SetRight($2); $$ = $2; }
     | module struct_declaration                     { $1->SetRight($2); $$ = $2; }
     | module table_declaration                      { $1->SetRight($2); $$ = $2; }
