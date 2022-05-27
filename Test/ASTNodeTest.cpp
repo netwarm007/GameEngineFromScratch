@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
     auto ns     = make_ASTNodeRef<ASTNodeNameSpace, const char*>( 
                                                         "My", "https://www.chenwenli.com" );
 
-    auto enum_  = make_ASTNodeRef<ASTNodeEnum, ASTNodeEnumValueType> ( 
+    auto enum_  = make_ASTNodeRef<ASTNodeEnum, ASTEnumItems> ( 
         "Foods", 
         { {"Apple", 1}, {"Banana", 2}, {"Cherry", 3}, {"Donut", 4}, {"Egg", 5} }
     );
@@ -25,12 +25,12 @@ int main(int argc, char* argv[])
      { "Apple", "Banana", "Cherry", "Donut", "Egg" }
     ));
     */
-    auto struct_= make_ASTNodeRef<ASTNodeStruct, ASTNodeStructValueType> (
+    auto struct_= make_ASTNodeRef<ASTNodeStruct, ASTFieldList> (
         "Struct", 
         { {"field1", "int"}, {"field2", "double"}, {"field3", "string"} }
     );
 
-    auto table = make_ASTNodeRef<ASTNodeTable, ASTNodeTableValueType> ( 
+    auto table = make_ASTNodeRef<ASTNodeTable, ASTFieldList> ( 
         "Table",
         { {"field1", "uuid"}, {"field2", "Texture"}, {"field3", "Shader"} }
     );

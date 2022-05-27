@@ -44,18 +44,22 @@ int main() {
     ASTNode::IDN_TYPE   idn;
     ASTNodeRef          ref;
 
+    // find start point
     std::tie(result, idn) = findRootType();
     if(!result) {
         std::cout << "no root type defined!" << std::endl;
         return -1;
     }
 
+    // find the symbol and dump
     std::tie(result, ref) = findSymbol(idn);
     if(!result) {
         printf("Can not find symbol with IDN{%s}!\n", idn.c_str());
         return -1;
     }
 
+    std::cout << std::string(3, '\n');
+    std::cout << "\x1b[7m解析完成，打印数据结构：\x1b[0m" << std::endl;
     std::cout << *ref << std::endl;
 
     return 0;

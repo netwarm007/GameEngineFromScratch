@@ -9,7 +9,10 @@ class TreeNode {
     std::list<std::shared_ptr<TreeNode>> m_Children;
 
    protected:
-    virtual void dump(std::ostream& out) const {};
+    virtual void dump(std::ostream& out) const {
+        out << "Tree Node" << std::endl;
+        out << "----------" << std::endl;
+    };
 
    public:
     virtual ~TreeNode() = default;
@@ -20,21 +23,14 @@ class TreeNode {
     }
 
     friend std::ostream& operator<<(std::ostream& out, const TreeNode& node) {
-        static thread_local int32_t indent = 0;
-        indent++;
-
-        out << std::string(indent, ' ') << "Tree Node" << std::endl;
-        out << std::string(indent, ' ') << "----------" << std::endl;
         node.dump(out);
         out << std::endl;
 
         for (const auto& sub_node : node.m_Children) {
             if (sub_node) {
-                out << *sub_node << std::endl;
+                out << *sub_node;
             }
         }
-
-        indent--;
 
         return out;
     }

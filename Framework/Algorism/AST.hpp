@@ -79,11 +79,21 @@ namespace My {
             }
     };
 
+    using ASTAttr       = std::string;
+
     template <typename T, typename V>
-    using ASTPair  = std::pair<T, V>;
+    using ASTPair       = std::pair<T, V>;
+
+    using ASTFieldDecl  = ASTPair<std::string, std::string>;
+    using ASTEnumItemDecl  = ASTPair<std::string, int64_t>;
 
     template <typename T>
-    using ASTList = std::vector<T>;
+    using ASTList       = std::vector<T>;
+
+    using ASTFieldList  = ASTList<ASTFieldDecl>;
+    using ASTEnumItems  = ASTList<ASTEnumItemDecl>;
+    using ASTAttrList   = ASTList<ASTAttr>;
+
 
     template<typename T, typename U>
     std::ostream& operator<<(std::ostream& s, const ASTPair<T, U>& v) 
@@ -96,8 +106,26 @@ namespace My {
         return s << ')';
     }
 
+    static inline std::ostream& operator<<(std::ostream& s, const ASTFieldDecl& v)
+    {
+        s << "字段名：";
+        s << v.first << '\t';
+        s << "类型：";
+        s << v.second;
+        return s;
+    }
+
+    static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItemDecl& v)
+    {
+        s << "枚举值名：";
+        s << v.first << '\t';
+        s << "值：";
+        s << v.second;
+        return s;
+    }
+
     template<typename T>
-    std::ostream& operator<<(std::ostream& s, const ASTList<T>& v) 
+    std::ostream& operator<<(std::ostream& s, const ASTList<T>& v)
     {
         s.put('[');
         char comma[3] = {'\0', ' ', '\0'};
@@ -106,6 +134,14 @@ namespace My {
             comma[0] = ',';
         }
         return s << ']';
+    }
+
+    static inline std::ostream& operator<<(std::ostream& s, const ASTFieldList& v)
+    {
+        for (const auto& e : v) {
+            s << "|\t" << e << std::endl;
+        }
+        return s;
     }
 
     template <AST_NODE_TYPE T, typename V, class...Args>
@@ -124,7 +160,7 @@ namespace My {
         protected:
             void dump(std::ostream& out) const override { 
                 ASTNode::dump(out);
-                out << "Value:\t" << m_Value; 
+                out << m_Value; 
             }
     };
 
@@ -144,43 +180,30 @@ namespace My {
     using ASTNodeNone =
             ASTNodeT<AST_NODE_TYPE::NONE,        void>;
 
-    using ASTNodeNoneValueType = ASTNodeNone<>::value_type;
-
     template <class...Args>
     using ASTNodeNameSpace =
             ASTNodeT<AST_NODE_TYPE::NAMESPACE,   std::string,                                      Args...>;
 
-    using ASTNodeNameSpaceValueType = ASTNodeNameSpace<>::value_type;
-
     template <class...Args>
     using ASTNodeEnum =
-            ASTNodeT<AST_NODE_TYPE::ENUM,        ASTList<ASTPair<std::string, int32_t>>,           Args...>;
-
-    using ASTNodeEnumValueType = ASTNodeEnum<>::value_type;
+            ASTNodeT<AST_NODE_TYPE::ENUM,        ASTEnumItems,          Args...>;
 
     template <class...Args>
     using ASTNodeStruct =
-            ASTNodeT<AST_NODE_TYPE::STRUCT,      ASTList<ASTPair<std::string, std::string>>,       Args...>;
-
-    using ASTNodeStructValueType = ASTNodeStruct<>::value_type;
+            ASTNodeT<AST_NODE_TYPE::STRUCT,      ASTFieldList,          Args...>;
 
     template <class...Args>
     using ASTNodeTable =
-            ASTNodeT<AST_NODE_TYPE::TABLE,       ASTList<ASTPair<std::string, std::string>>,       Args...>;
-
-    using ASTNodeTableValueType = ASTNodeTable<>::value_type;
+            ASTNodeT<AST_NODE_TYPE::TABLE,       ASTFieldList,          Args...>;
 
     template <class...Args>
     using ASTNodeAttribute =
             ASTNodeT<AST_NODE_TYPE::ATTRIBUTE,        void>;
 
-    using ASTNodeAttributeValueType = ASTNodeAttribute<>::value_type;
-
     template <class...Args>
     using ASTNodeRootType =
             ASTNodeT<AST_NODE_TYPE::ROOTTYPE,        void>;
 
-    using ASTNodeRootTypeValueType = ASTNodeRootType<>::value_type;
 
     // Factory
     template <template<class...> class T, class...Args>
@@ -188,9 +211,9 @@ namespace My {
         return std::make_shared<T<Args...>>(idn, std::forward<Args>(args)...);
     }
 
+    // Utility Functions
     extern std::map<std::string, ASTNodeRef> global_symbol_table;
 
-    // Utility Functions
     static inline std::pair<bool, ASTNode::IDN_TYPE> findRootType() {
         auto it = global_symbol_table.find(static_cast<ASTNode::IDN_TYPE>("[root type]"));
         if (it != global_symbol_table.end()) {

@@ -43,14 +43,14 @@
 %token EOS          /* End of Stream */
 %token EOL          /* End of Line   */
 
-%nterm <ASTNodeRef> module namespace_declaration enum_declaration struct_declaration table_declaration
-%nterm <ASTNodeRef> attribute_declaration root_type_declaration
-%nterm <ASTPair<std::string, std::string>>                  variable_declaration
-%nterm <ASTNodeStructValueType>                             variable_declaration_list
-%nterm <std::string>                                        attribute
-%nterm <std::vector<std::string>>                           attribute_list
-%nterm <ASTPair<std::string,     int32_t>>                  enum_value
-%nterm <ASTNodeEnumValueType>                               enum_value_list
+%nterm <ASTNodeRef>   module namespace_declaration enum_declaration struct_declaration table_declaration
+%nterm <ASTNodeRef>   attribute_declaration root_type_declaration
+%nterm <ASTFieldDecl> variable_declaration
+%nterm <ASTFieldList> variable_declaration_list
+%nterm <std::string>  attribute
+%nterm <ASTAttrList>  attribute_list
+%nterm <ASTEnumItemDecl> enum_value
+%nterm <ASTEnumItems> enum_value_list
 
 %code provides
 {
@@ -86,12 +86,12 @@ namespace_declaration: NAMESPACE IDN ';'            {
 
 enum_declaration: ENUM IDN '{' enum_value_list '}'  { 
                                                         printf("【枚举体】名称：%s\n", $2.c_str()); 
-                                                        $$ = make_ASTNodeRef<ASTNodeEnum, ASTNodeEnumValueType>( 
+                                                        $$ = make_ASTNodeRef<ASTNodeEnum, ASTEnumItems>( 
                                                                 $2.c_str(), std::move($4) );
                                                     }
     | ENUM IDN ':' IDN '{' enum_value_list '}'      { 
                                                         printf("【枚举体】名称：%s ，类型：%s\n", $2.c_str(), $4.c_str()); 
-                                                        $$ = make_ASTNodeRef<ASTNodeEnum, ASTNodeEnumValueType>( 
+                                                        $$ = make_ASTNodeRef<ASTNodeEnum, ASTEnumItems>( 
                                                                 $2.c_str(), std::move($6) );
                                                     }
     ;
@@ -112,7 +112,7 @@ enum_value: IDN                                     {
 
 struct_declaration: STRUCT IDN '{' variable_declaration_list '}' { 
                                                         printf("【结构体】名称：%s\n", $2.c_str()); 
-                                                        $$ = make_ASTNodeRef<ASTNodeStruct, ASTNodeStructValueType>( 
+                                                        $$ = make_ASTNodeRef<ASTNodeStruct, ASTFieldList>( 
                                                                 $2.c_str(), std::move($4) );
                                                     }
     ;
@@ -153,7 +153,7 @@ root_type_declaration: ROOT IDN ';'                 {
 
 table_declaration: TABLE IDN '{' variable_declaration_list '}' { 
                                                         printf("【表格体】名称：%s\n", $2.c_str());
-                                                        $$ = make_ASTNodeRef<ASTNodeTable, ASTNodeTableValueType>( 
+                                                        $$ = make_ASTNodeRef<ASTNodeTable, ASTFieldList>( 
                                                                 $2.c_str(), std::move($4) );
                                                     }
     ;

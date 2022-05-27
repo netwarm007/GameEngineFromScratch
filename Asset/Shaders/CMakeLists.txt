@@ -43,6 +43,7 @@ foreach(SHADER IN LISTS SHADER_SOURCES)
         COMMENT "HLSL --> SPIR-V"
 	    COMMAND ${GLSL_VALIDATOR} -V -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS HLSL/${part1}.${part2}.hlsl
     )
         
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
