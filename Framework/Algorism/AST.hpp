@@ -13,7 +13,9 @@ namespace My {
         ENUM, 
         NAMESPACE,
         STRUCT,
-        TABLE
+        TABLE,
+        ATTRIBUTE,
+        ROOTTYPE
     };
     
     class ASTNode;
@@ -47,6 +49,12 @@ namespace My {
                     break;
                 case AST_NODE_TYPE::TABLE:
                     out << "AST_NODE_TYPE::TABLE" << std::endl;
+                    break;
+                case AST_NODE_TYPE::ATTRIBUTE:
+                    out << "AST_NODE_TYPE::ATTRIBUTE" << std::endl;
+                    break;
+                case AST_NODE_TYPE::ROOTTYPE:
+                    out << "AST_NODE_TYPE::ROOTTYPE" << std::endl;
                     break;
                 default:
                     assert(0);
@@ -157,6 +165,18 @@ namespace My {
             ASTNodeT<AST_NODE_TYPE::TABLE,       ASTList<ASTPair<std::string, std::string>>,       Args...>;
 
     using ASTNodeTableValueType = ASTNodeTable<>::value_type;
+
+    template <class...Args>
+    using ASTNodeAttribute =
+            ASTNodeT<AST_NODE_TYPE::ATTRIBUTE,        void>;
+
+    using ASTNodeAttributeValueType = ASTNodeAttribute<>::value_type;
+
+    template <class...Args>
+    using ASTNodeRootType =
+            ASTNodeT<AST_NODE_TYPE::ROOTTYPE,        void>;
+
+    using ASTNodeRootTypeValueType = ASTNodeRootType<>::value_type;
 
     // Factory
     template <template<class...> class T, class...Args>

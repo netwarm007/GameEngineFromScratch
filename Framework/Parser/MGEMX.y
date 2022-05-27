@@ -44,6 +44,7 @@
 %token EOL          /* End of Line   */
 
 %nterm <ASTNodeRef> module namespace_declaration enum_declaration struct_declaration table_declaration
+%nterm <ASTNodeRef> attribute_declaration root_type_declaration
 %nterm <ASTPair<std::string, std::string>>                  variable_declaration
 %nterm <ASTNodeStructValueType>                             variable_declaration_list
 %nterm <std::string>                                        attribute
@@ -71,8 +72,8 @@ module: %empty /* nothing */                        {
     | module enum_declaration                       { $1->SetRight($2); $$ = $2; }
     | module struct_declaration                     { $1->SetRight($2); $$ = $2; }
     | module table_declaration                      { $1->SetRight($2); $$ = $2; }
-    | module attribute_declaration
-    | module root_type_declaration
+    | module attribute_declaration                  { $1->SetRight($2); $$ = $2; }
+    | module root_type_declaration                  { $1->SetRight($2); $$ = $2; }
     ;
 
 namespace_declaration: NAMESPACE IDN ';'            {
@@ -141,10 +142,16 @@ attribute_list: attribute                           { $$ = {$1}; }
 attribute: IDN ':' STR                              { $$ = $1 + ":" + $3; printf("【属性】名称：%s ，值：%s\n", $1.c_str(), $3.c_str()); }
     ;
 
-attribute_declaration: ATTR STR ';'                 { printf("【属性声明】名称：%s\n", $2.c_str()); }
+attribute_declaration: ATTR STR ';'                 { 
+                                                        printf("【属性声明】名称：%s\n", $2.c_str()); 
+                                                        $$ = make_ASTNodeRef<ASTNodeAttribute>( $2.c_str() );
+                                                    }
     ;
 
-root_type_declaration: ROOT IDN ';'                 { printf("【根类型】名称：%s\n", $2.c_str());   }
+root_type_declaration: ROOT IDN ';'                 { 
+                                                        printf("【根类型】名称：%s\n", $2.c_str());   
+                                                        $$ = make_ASTNodeRef<ASTNodeRootType>( $2.c_str() );
+                                                    }
     ;
 
 table_declaration: TABLE IDN '{' variable_declaration_list '}' { 

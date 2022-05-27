@@ -50,8 +50,9 @@ int main() {
         { "float",  primitive_type_nodes[6] },
         { "double", primitive_type_nodes[7] }
     };
-    parse("Schema/RenderDefinitions.wrong.fbs");
-    //std::cout << *ast_root << std::endl;
+    parse("Schema/RenderDefinitions.fbs");
+
+    std::cout << *ast_root << std::endl;
 
     return 0;
 }
