@@ -28,14 +28,14 @@ static void parse(const char* file) {
 
 int main() {
     global_symbol_table = {
-        { "byte",   nullptr },
-        { "short",  nullptr },
-        { "ushort", nullptr },
-        { "bool",   nullptr },
-        { "int",    nullptr },
-        { "uint",   nullptr },
-        { "float",  nullptr },
-        { "double", nullptr }
+        { "byte",   make_ASTNodeRef<ASTNodePrimitive>( "byte" ) },
+        { "short",  make_ASTNodeRef<ASTNodePrimitive>( "short" ) },
+        { "ushort", make_ASTNodeRef<ASTNodePrimitive>( "ushort" ) },
+        { "bool",   make_ASTNodeRef<ASTNodePrimitive>( "bool" ) },
+        { "int",    make_ASTNodeRef<ASTNodePrimitive>( "int" ) },
+        { "uint",   make_ASTNodeRef<ASTNodePrimitive>( "uint" ) },
+        { "float",  make_ASTNodeRef<ASTNodePrimitive>( "float" ) },
+        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) }
     };
 
     parse("Schema/RenderDefinitions.fbs");

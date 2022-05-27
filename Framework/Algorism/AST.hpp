@@ -10,6 +10,7 @@
 namespace My {
     enum class AST_NODE_TYPE {
         NONE,
+        PRIMITIVE,
         ENUM, 
         NAMESPACE,
         STRUCT,
@@ -40,6 +41,9 @@ namespace My {
                 switch(node_type) {
                 case AST_NODE_TYPE::NONE:
                     out << "AST_NODE_TYPE::NONE" << std::endl;
+                    break;
+                case AST_NODE_TYPE::PRIMITIVE:
+                    out << "AST_NODE_TYPE::PRIMITIVE" << std::endl;
                     break;
                 case AST_NODE_TYPE::ENUM:
                     out << "AST_NODE_TYPE::ENUM" << std::endl;
@@ -84,7 +88,7 @@ namespace My {
     template <typename T, typename V>
     using ASTPair       = std::pair<T, V>;
 
-    using ASTFieldDecl  = ASTPair<std::string, std::string>;
+    using ASTFieldDecl  = ASTPair<std::string, ASTNodeRef>;
     using ASTEnumItemDecl  = ASTPair<std::string, int64_t>;
 
     template <typename T>
@@ -111,7 +115,9 @@ namespace My {
         s << "字段名：";
         s << v.first << '\t';
         s << "类型：";
-        s << v.second;
+        assert(v.second);
+        s << v.second->GetIDN() << std::endl;
+        s << *v.second;
         return s;
     }
 
@@ -137,6 +143,14 @@ namespace My {
     }
 
     static inline std::ostream& operator<<(std::ostream& s, const ASTFieldList& v)
+    {
+        for (const auto& e : v) {
+            s << "|\t" << e << std::endl;
+        }
+        return s;
+    }
+
+    static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItems& v)
     {
         for (const auto& e : v) {
             s << "|\t" << e << std::endl;
@@ -181,8 +195,12 @@ namespace My {
             ASTNodeT<AST_NODE_TYPE::NONE,        void>;
 
     template <class...Args>
+    using ASTNodePrimitive =
+            ASTNodeT<AST_NODE_TYPE::PRIMITIVE,   void>;
+
+    template <class...Args>
     using ASTNodeNameSpace =
-            ASTNodeT<AST_NODE_TYPE::NAMESPACE,   std::string,                                      Args...>;
+            ASTNodeT<AST_NODE_TYPE::NAMESPACE,   std::string,           Args...>;
 
     template <class...Args>
     using ASTNodeEnum =

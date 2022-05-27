@@ -45,8 +45,8 @@
 
 %nterm <ASTNodeRef>   module namespace_declaration enum_declaration struct_declaration table_declaration
 %nterm <ASTNodeRef>   attribute_declaration root_type_declaration
-%nterm <ASTFieldDecl> variable_declaration
-%nterm <ASTFieldList> variable_declaration_list
+%nterm <ASTFieldDecl> field_declaration
+%nterm <ASTFieldList> field_declaration_list
 %nterm <std::string>  attribute
 %nterm <ASTAttrList>  attribute_list
 %nterm <ASTEnumItemDecl> enum_value
@@ -110,25 +110,28 @@ enum_value: IDN                                     {
                                                     }
     ;
 
-struct_declaration: STRUCT IDN '{' variable_declaration_list '}' { 
+struct_declaration: STRUCT IDN '{' field_declaration_list '}' { 
                                                         printf("【结构体】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeStruct, ASTFieldList>( 
                                                                 $2.c_str(), std::move($4) );
                                                     }
     ;
 
-variable_declaration_list: variable_declaration     {   $$ = {$1}; }
-    | variable_declaration_list variable_declaration{   $1.emplace_back($2); $$ = $1; }
+field_declaration_list: field_declaration           {   $$ = {$1}; }
+    | field_declaration_list field_declaration      {   $1.emplace_back($2); $$ = $1; }
     ;
 
-variable_declaration: IDN ':' IDN ';'               { 
+field_declaration: IDN ':' IDN ';'                  { 
                                                         printf("【变量】名称：%s ，类型：%s\n", $1.c_str(), $3.c_str()); 
-                                                        check_type_def($3.c_str());
-                                                        $$.first = $1; $$.second = $3;
+                                                        auto [result, ref] = findSymbol($3.c_str());
+                                                        $$.first = $1; 
+                                                        if (result) $$.second = ref;
                                                     }
     | IDN ':' IDN '(' attribute_list ')' ';'        { 
                                                         printf("【变量】名称：%s ，类型：%s ，%lu个属性\n", $1.c_str(), $3.c_str(), $5.size()); 
-                                                        $$.first = $1; $$.second = $3;
+                                                        auto [result, ref] = findSymbol($3.c_str());
+                                                        $$.first = $1; 
+                                                        if (result) $$.second = ref;
                                                     }
     ;
 
@@ -151,7 +154,7 @@ root_type_declaration: ROOT IDN ';'                 {
                                                     }
     ;
 
-table_declaration: TABLE IDN '{' variable_declaration_list '}' { 
+table_declaration: TABLE IDN '{' field_declaration_list '}' { 
                                                         printf("【表格体】名称：%s\n", $2.c_str());
                                                         $$ = make_ASTNodeRef<ASTNodeTable, ASTFieldList>( 
                                                                 $2.c_str(), std::move($4) );
