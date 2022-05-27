@@ -23,8 +23,11 @@ namespace My {
     using ASTNodeRef = std::shared_ptr<ASTNode>;
 
     class ASTNode : public TreeNode {
+        public:
+            using IDN_TYPE = std::string;
+
         protected:
-            std::string m_Idn;
+            IDN_TYPE m_Idn;
             AST_NODE_TYPE node_type;
 
         protected:
@@ -62,6 +65,7 @@ namespace My {
             }
 
         public:
+            IDN_TYPE      GetIDN()      const { return m_Idn; }
             AST_NODE_TYPE GetNodeType() const { return node_type; }
             void SetLeft(ASTNodeRef pNode) { m_Children.front() = pNode; }
             void SetRight(ASTNodeRef pNode) { m_Children.back() = pNode; }
@@ -120,7 +124,7 @@ namespace My {
         protected:
             void dump(std::ostream& out) const override { 
                 ASTNode::dump(out);
-                out << "IDN:\t" << m_Idn << std::endl << "Value:\t" << m_Value; 
+                out << "Value:\t" << m_Value; 
             }
     };
 
@@ -183,6 +187,27 @@ namespace My {
     ASTNodeRef make_ASTNodeRef(const char* idn, Args&&... args) {
         return std::make_shared<T<Args...>>(idn, std::forward<Args>(args)...);
     }
+
+    extern std::map<std::string, ASTNodeRef> global_symbol_table;
+
+    // Utility Functions
+    static inline std::pair<bool, ASTNode::IDN_TYPE> findRootType() {
+        auto it = global_symbol_table.find(static_cast<ASTNode::IDN_TYPE>("[root type]"));
+        if (it != global_symbol_table.end()) {
+            assert(it->second);
+            return std::make_pair(true, it->second->GetIDN());
+        }
+        return std::make_pair(false, nullptr);
+    }
+
+    static inline std::pair<bool, ASTNodeRef> findSymbol(ASTNode::IDN_TYPE idn) {
+        auto it = global_symbol_table.find(idn);
+        if (it != global_symbol_table.end()) {
+            return std::make_pair(true, it->second);
+        }
+        return std::make_pair(false, nullptr);
+    }
+
 } // namespace My
 
 

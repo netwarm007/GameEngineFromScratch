@@ -58,7 +58,8 @@
         extern std::map<std::string, ASTNodeRef> global_symbol_table;
         extern ASTNodeRef ast_root;
     
-        void register_type(const char*, ASTNodeRef);
+        void register_type(ASTNodeRef);
+        void register_type(ASTNode::IDN_TYPE, ASTNodeRef);
         void check_type_def(const char*);
     }
 }
@@ -68,19 +69,18 @@ module: %empty /* nothing */                        {
                                                       $$ = make_ASTNodeRef<ASTNodeNone>( "MODULE" );
                                                       ast_root->SetRight($$); }
     | module EOS 
-    | module namespace_declaration                  { $1->SetLeft($2); $$ = $2; }
-    | module enum_declaration                       { $1->SetRight($2); $$ = $2; }
-    | module struct_declaration                     { $1->SetRight($2); $$ = $2; }
-    | module table_declaration                      { $1->SetRight($2); $$ = $2; }
-    | module attribute_declaration                  { $1->SetRight($2); $$ = $2; }
-    | module root_type_declaration                  { $1->SetRight($2); $$ = $2; }
+    | module namespace_declaration                  { register_type($2); }
+    | module enum_declaration                       { register_type($2); }
+    | module struct_declaration                     { register_type($2); }
+    | module table_declaration                      { register_type($2); }
+    | module attribute_declaration                  { register_type($2); }
+    | module root_type_declaration                  { register_type(static_cast<ASTNode::IDN_TYPE>("[root type]"), $2); }
     ;
 
 namespace_declaration: NAMESPACE IDN ';'            {
                                                         printf("【命名空间】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeNameSpace, const char*>( 
                                                                 $2.c_str(), "https://www.chenwenli.com" );
-                                                        register_type($2.c_str(), $$);
                                                     }
     ;
 
@@ -88,13 +88,11 @@ enum_declaration: ENUM IDN '{' enum_value_list '}'  {
                                                         printf("【枚举体】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeEnum, ASTNodeEnumValueType>( 
                                                                 $2.c_str(), std::move($4) );
-                                                        register_type($2.c_str(), $$);
                                                     }
     | ENUM IDN ':' IDN '{' enum_value_list '}'      { 
                                                         printf("【枚举体】名称：%s ，类型：%s\n", $2.c_str(), $4.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeEnum, ASTNodeEnumValueType>( 
                                                                 $2.c_str(), std::move($6) );
-                                                        register_type($2.c_str(), $$);
                                                     }
     ;
 
@@ -116,7 +114,6 @@ struct_declaration: STRUCT IDN '{' variable_declaration_list '}' {
                                                         printf("【结构体】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeStruct, ASTNodeStructValueType>( 
                                                                 $2.c_str(), std::move($4) );
-                                                        register_type($2.c_str(), $$);
                                                     }
     ;
 
@@ -158,7 +155,6 @@ table_declaration: TABLE IDN '{' variable_declaration_list '}' {
                                                         printf("【表格体】名称：%s\n", $2.c_str());
                                                         $$ = make_ASTNodeRef<ASTNodeTable, ASTNodeTableValueType>( 
                                                                 $2.c_str(), std::move($4) );
-                                                        register_type($2.c_str(), $$);
                                                     }
     ;
 
@@ -166,33 +162,38 @@ table_declaration: TABLE IDN '{' variable_declaration_list '}' {
 
 namespace My {
 
-void MGEMXParser::error(const std::string& msg) {
-    std::cerr << msg << std::endl;
-}
-
-void register_type(const char* idn, ASTNodeRef ref) {
-
-    if(global_symbol_table.end() != global_symbol_table.find(idn)) {
-        // symbol already defined
-        std::cerr << "\x1b[41m\x1b[33m";
-        std::cerr << "【错误】符号重定义 {" << idn << "} ！" << std::endl;
-        std::cerr << "\x1b[49m\x1b[37m";
+    void MGEMXParser::error(const std::string& msg) {
+        std::cerr << msg << std::endl;
     }
-    else {
-        global_symbol_table.emplace(idn, ref);
-        std::cout << "\x1b[46m\x1b[30m";
-        std::cout << "【信息】符号{" << idn << "}已经注册到全局符号表！" << std::endl;
-        std::cout << "\x1b[49m\x1b[37m";
-    }
-}
 
-void check_type_def(const char* idn) {
-    if(global_symbol_table.end() == global_symbol_table.find(idn)) {
-        // symbol type is not defined yet
-        std::cerr << "\x1b[41m\x1b[33m";
-        std::cerr << "【错误】类型{" << idn << "}尚未定义！" << std::endl;
-        std::cerr << "\x1b[49m\x1b[37m";
+    void register_type(ASTNode::IDN_TYPE idn, ASTNodeRef ref) {
+
+        if(global_symbol_table.end() != global_symbol_table.find(idn)) {
+            // symbol already defined
+            std::cerr << "\x1b[41m\x1b[33m";
+            std::cerr << "【错误】符号重定义 {" << idn << "} ！" << std::endl;
+            std::cerr << "\x1b[49m\x1b[37m";
+        }
+        else {
+            global_symbol_table.emplace(idn, ref);
+            std::cout << "\x1b[46m\x1b[30m";
+            std::cout << "【信息】符号{" << idn << "}已经注册到全局符号表！" << std::endl;
+            std::cout << "\x1b[49m\x1b[37m";
+        }
     }
-}
+
+    void register_type(ASTNodeRef ref) {
+        assert(ref);
+        register_type(ref->GetIDN(), ref);
+    }
+
+    void check_type_def(const char* idn) {
+        if(global_symbol_table.end() == global_symbol_table.find(idn)) {
+            // symbol type is not defined yet
+            std::cerr << "\x1b[41m\x1b[33m";
+            std::cerr << "【错误】类型{" << idn << "}尚未定义！" << std::endl;
+            std::cerr << "\x1b[49m\x1b[37m";
+        }
+    }
 
 } // namespace My

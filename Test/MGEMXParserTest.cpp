@@ -9,7 +9,7 @@ namespace My {
 
     std::map<std::string, ASTNodeRef> global_symbol_table;
 
-    ASTNodeRef ast_root = make_ASTNodeRef<ASTNodeNone>( "ROOT" );
+    ASTNodeRef ast_root = make_ASTNodeRef<ASTNodeNone>( "AST ROOT" );
 }  // namespace My
 
 using namespace My;
@@ -27,32 +27,36 @@ static void parse(const char* file) {
 }
 
 int main() {
-    ASTNodeRef primitive_type_nodes[8];
     global_symbol_table = {
-        { "byte",   primitive_type_nodes[0] },
-        { "short",  primitive_type_nodes[1] },
-        { "ushort", primitive_type_nodes[2] },
-        { "bool",   primitive_type_nodes[3] },
-        { "int",    primitive_type_nodes[4] },
-        { "uint",   primitive_type_nodes[5] },
-        { "float",  primitive_type_nodes[6] },
-        { "double", primitive_type_nodes[7] }
+        { "byte",   nullptr },
+        { "short",  nullptr },
+        { "ushort", nullptr },
+        { "bool",   nullptr },
+        { "int",    nullptr },
+        { "uint",   nullptr },
+        { "float",  nullptr },
+        { "double", nullptr }
     };
+
     parse("Schema/RenderDefinitions.fbs");
 
-    global_symbol_table = {
-        { "byte",   primitive_type_nodes[0] },
-        { "short",  primitive_type_nodes[1] },
-        { "ushort", primitive_type_nodes[2] },
-        { "bool",   primitive_type_nodes[3] },
-        { "int",    primitive_type_nodes[4] },
-        { "uint",   primitive_type_nodes[5] },
-        { "float",  primitive_type_nodes[6] },
-        { "double", primitive_type_nodes[7] }
-    };
-    parse("Schema/RenderDefinitions.fbs");
+    bool                result;
+    ASTNode::IDN_TYPE   idn;
+    ASTNodeRef          ref;
 
-    std::cout << *ast_root << std::endl;
+    std::tie(result, idn) = findRootType();
+    if(!result) {
+        std::cout << "no root type defined!" << std::endl;
+        return -1;
+    }
+
+    std::tie(result, ref) = findSymbol(idn);
+    if(!result) {
+        printf("Can not find symbol with IDN{%s}!\n", idn.c_str());
+        return -1;
+    }
+
+    std::cout << *ref << std::endl;
 
     return 0;
 }
