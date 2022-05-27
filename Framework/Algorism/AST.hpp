@@ -158,6 +158,7 @@ namespace My {
 
     using ASTNodeTableValueType = ASTNodeTable<>::value_type;
 
+    // Factory
     template <template<class...> class T, class...Args>
     ASTNodeRef make_ASTNodeRef(const char* idn, Args&&... args) {
         return std::make_shared<T<Args...>>(idn, std::forward<Args>(args)...);
