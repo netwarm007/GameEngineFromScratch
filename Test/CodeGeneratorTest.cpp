@@ -1,17 +1,28 @@
-#include "AST.hpp"
+#include <iostream>
+#include "CodeGenerator.hpp"
 #include "MGEMX.scanner.generated.hpp"
 #include "MGEMX.parser.generated.hpp"
 #include "AssetLoader.hpp"
 
+using namespace My;
+
 namespace My {
     AssetLoader* g_pAssetLoader = new AssetLoader();
 
-    std::map<std::string, ASTNodeRef> global_symbol_table;
+    std::map<std::string, ASTNodeRef> global_symbol_table =
+    {
+        { "byte",   make_ASTNodeRef<ASTNodePrimitive>( "byte" ) },
+        { "short",  make_ASTNodeRef<ASTNodePrimitive>( "short" ) },
+        { "ushort", make_ASTNodeRef<ASTNodePrimitive>( "ushort" ) },
+        { "bool",   make_ASTNodeRef<ASTNodePrimitive>( "bool" ) },
+        { "int",    make_ASTNodeRef<ASTNodePrimitive>( "int" ) },
+        { "uint",   make_ASTNodeRef<ASTNodePrimitive>( "uint" ) },
+        { "float",  make_ASTNodeRef<ASTNodePrimitive>( "float" ) },
+        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) }
+    };
 
     ASTNodeRef ast_root = make_ASTNodeRef<ASTNodeNone>( "AST ROOT" );
 }  // namespace My
-
-using namespace My;
 
 static void parse(const char* file) {
     yyscan_t scanner;
@@ -25,19 +36,12 @@ static void parse(const char* file) {
     yylex_destroy(scanner);
 }
 
-int main() {
-    global_symbol_table = {
-        { "byte",   make_ASTNodeRef<ASTNodePrimitive>( "byte" ) },
-        { "short",  make_ASTNodeRef<ASTNodePrimitive>( "short" ) },
-        { "ushort", make_ASTNodeRef<ASTNodePrimitive>( "ushort" ) },
-        { "bool",   make_ASTNodeRef<ASTNodePrimitive>( "bool" ) },
-        { "int",    make_ASTNodeRef<ASTNodePrimitive>( "int" ) },
-        { "uint",   make_ASTNodeRef<ASTNodePrimitive>( "uint" ) },
-        { "float",  make_ASTNodeRef<ASTNodePrimitive>( "float" ) },
-        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) }
-    };
-
-    parse("Schema/RenderDefinitions.fbs");
+int main(int argc, char** argv) {
+    if (argc > 2) {
+        parse(argv[1]);
+    } else {
+        parse("Schema/RenderDefinitions.fbs");
+    }
 
     bool                result;
     ASTNode::IDN_TYPE   idn;
@@ -60,13 +64,6 @@ int main() {
     std::cerr << std::string(3, '\n');
     std::cerr << "\x1b[7m解析完成，输出数据结构：\x1b[0m" << std::endl;
 
-    if (ref) {
-        std::cout << "digraph ";
-        std::cout << idn;
-        std::cout << " {rankdir=LR node [shape=record]; Pipeline [label=\"" << std::endl;
-        std::cout << *ref << std::endl;
-        std::cout << "\"];}" << std::endl;
-    }
-
-    return 0;
+    CodeGenerator generator;
+    generator.GenerateCode(std::cout, ref, CodeGenerator::CODE_GENERATION_TYPE::GRAPHVIZ_DOT);
 }

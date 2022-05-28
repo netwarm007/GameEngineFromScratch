@@ -23,6 +23,21 @@ namespace My {
 
     using ASTNodeRef = std::shared_ptr<ASTNode>;
 
+    using ASTAttr       = std::string;
+
+    template <typename T, typename V>
+    using ASTPair       = std::pair<T, V>;
+
+    using ASTFieldDecl  = ASTPair<std::string, ASTNodeRef>;
+    using ASTEnumItemDecl  = ASTPair<std::string, int64_t>;
+
+    template <typename T>
+    using ASTList       = std::vector<T>;
+
+    using ASTFieldList  = ASTList<ASTFieldDecl>;
+    using ASTEnumItems  = ASTList<ASTEnumItemDecl>;
+    using ASTAttrList   = ASTList<ASTAttr>;
+
     class ASTNode : public TreeNode {
         public:
             using IDN_TYPE = std::string;
@@ -37,37 +52,37 @@ namespace My {
 
             void dump(std::ostream& out) const override { 
                 out << m_Idn;
-                out << "|{Type|";
+                out << "Type:\t";
                 switch(node_type) {
                 case AST_NODE_TYPE::NONE:
-                    out << "AST_NODE_TYPE::NONE" << std::endl;
+                    out << "NONE";
                     break;
                 case AST_NODE_TYPE::PRIMITIVE:
-                    out << "AST_NODE_TYPE::PRIMITIVE" << std::endl;
+                    out << "PRIMITIVE";
                     break;
                 case AST_NODE_TYPE::ENUM:
-                    out << "AST_NODE_TYPE::ENUM" << std::endl;
+                    out << "ENUM";
                     break;
                 case AST_NODE_TYPE::NAMESPACE:
-                    out << "AST_NODE_TYPE::NAMESPACE" << std::endl;
+                    out << "NAMESPACE";
                     break;
                 case AST_NODE_TYPE::STRUCT:
-                    out << "AST_NODE_TYPE::STRUCT" << std::endl;
+                    out << "STRUCT";
                     break;
                 case AST_NODE_TYPE::TABLE:
-                    out << "AST_NODE_TYPE::TABLE" << std::endl;
+                    out << "TABLE";
                     break;
                 case AST_NODE_TYPE::ATTRIBUTE:
-                    out << "AST_NODE_TYPE::ATTRIBUTE" << std::endl;
+                    out << "ATTRIBUTE";
                     break;
                 case AST_NODE_TYPE::ROOTTYPE:
-                    out << "AST_NODE_TYPE::ROOTTYPE" << std::endl;
+                    out << "ROOTTYPE";
                     break;
                 default:
                     assert(0);
                 }
 
-                out << "}";
+                out << std::endl;
             }
 
         public:
@@ -85,93 +100,6 @@ namespace My {
             }
     };
 
-    using ASTAttr       = std::string;
-
-    template <typename T, typename V>
-    using ASTPair       = std::pair<T, V>;
-
-    using ASTFieldDecl  = ASTPair<std::string, ASTNodeRef>;
-    using ASTEnumItemDecl  = ASTPair<std::string, int64_t>;
-
-    template <typename T>
-    using ASTList       = std::vector<T>;
-
-    using ASTFieldList  = ASTList<ASTFieldDecl>;
-    using ASTEnumItems  = ASTList<ASTEnumItemDecl>;
-    using ASTAttrList   = ASTList<ASTAttr>;
-
-
-    template<typename T, typename U>
-    std::ostream& operator<<(std::ostream& s, const ASTPair<T, U>& v) 
-    {
-        s.put('(');
-        char comma[3] = {'\0', ' ', '\0'};
-        s << comma << v.first;
-        comma[0] = ',';
-        s << comma << v.second;
-        return s << ')';
-    }
-
-    static inline std::ostream& operator<<(std::ostream& s, const ASTFieldDecl& v)
-    {
-        s << '{' << v.first << '\t';
-        s << "|{";
-        assert(v.second);
-        s << *v.second << "}}";
-        return s;
-    }
-
-    static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItemDecl& v)
-    {
-        s << '{' << v.first << '\t';
-        s << "|{" << v.second;
-        s << "}}";
-        return s;
-    }
-
-    template<typename T>
-    std::ostream& operator<<(std::ostream& s, const ASTList<T>& v)
-    {
-        s.put('[');
-        char comma[3] = {'\0', ' ', '\0'};
-        for (const auto& e : v) {
-            s << comma << e;
-            comma[0] = ',';
-        }
-        return s << ']';
-    }
-
-    static inline std::ostream& operator<<(std::ostream& s, const ASTFieldList& v)
-    {
-        bool first = true;
-        s << "{";
-        for (const auto& e : v) {
-            if (first) { 
-                first = false; 
-            } else {
-                s << '|'; 
-            }
-            s << e << std::endl;
-        }
-        s << "}";
-        return s;
-    }
-
-    static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItems& v)
-    {
-        bool first = true;
-        s << "{";
-        for (const auto& e : v) {
-            if (first) { 
-                first = false; 
-            } else {
-                s << '|'; 
-            }
-            s << e << std::endl;
-        }
-        s << "}";
-        return s;
-    }
 
     template <AST_NODE_TYPE T, typename V, class...Args>
     class ASTNodeT : public ASTNode {
@@ -185,12 +113,6 @@ namespace My {
         public:
             explicit ASTNodeT(const char* idn, Args&&... args) : m_Value(std::forward<Args>(args)...) { node_type = T; m_Idn = idn; }
             [[nodiscard]] V GetValue() const { return m_Value; }
-        
-        protected:
-            void dump(std::ostream& out) const override { 
-                ASTNode::dump(out);
-                out << "|{Value|" << m_Value << "}"; 
-            }
     };
 
     template <AST_NODE_TYPE T>
