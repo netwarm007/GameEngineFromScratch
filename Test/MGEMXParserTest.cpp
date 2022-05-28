@@ -2,6 +2,7 @@
 #include "MGEMX.scanner.generated.hpp"
 #include "MGEMX.parser.generated.hpp"
 #include "AssetLoader.hpp"
+#include "CodeGenerator.hpp"
 
 namespace My {
     AssetLoader* g_pAssetLoader = new AssetLoader();
@@ -60,13 +61,8 @@ int main() {
     std::cerr << std::string(3, '\n');
     std::cerr << "\x1b[7m解析完成，输出数据结构：\x1b[0m" << std::endl;
 
-    if (ref) {
-        std::cout << "digraph ";
-        std::cout << idn;
-        std::cout << " {rankdir=LR node [shape=record]; Pipeline [label=\"" << std::endl;
-        std::cout << *ref << std::endl;
-        std::cout << "\"];}" << std::endl;
-    }
+    CodeGenerator generator;
+    generator.GenerateCode(std::cout, ref, CodeGenerator::CODE_GENERATION_TYPE::GRAPHVIZ_DOT);
 
     return 0;
 }
