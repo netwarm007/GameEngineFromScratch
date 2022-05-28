@@ -1,10 +1,22 @@
+#include <functional>
 #include <iostream>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "AST.hpp"
 
 using namespace My;
+
+void travelAndPrint(ASTNodeRef node) {
+    assert(node);
+    std::cout << *node << std::endl;
+    auto left = node->GetLeft();
+    if (left)
+        travelAndPrint(left);
+    auto right = node->GetRight();
+    if (right)
+        travelAndPrint(right);
+};
 
 int main(int argc, char* argv[])
 {
@@ -20,12 +32,12 @@ int main(int argc, char* argv[])
 
     auto struct_= make_ASTNodeRef<ASTNodeStruct, ASTFieldList> (
         "Struct", 
-        { {"field1", enum_}, {"field2", nullptr}, {"field3", nullptr} }
+        { {"field1", enum_}, {"field2", enum_}, {"field3", enum_} }
     );
 
     auto table = make_ASTNodeRef<ASTNodeTable, ASTFieldList> ( 
         "Table",
-        { {"field1", enum_}, {"field2", struct_}, {"field3", nullptr} }
+        { {"field1", enum_}, {"field2", struct_}, {"field3", enum_} }
     );
 
     root->SetLeft(ns);
@@ -33,7 +45,8 @@ int main(int argc, char* argv[])
     enum_->SetRight(struct_);
     struct_->SetRight(table);
 
-    std::cout << *root << std::endl;
+
+    travelAndPrint(root);
 
     return 0;
 }

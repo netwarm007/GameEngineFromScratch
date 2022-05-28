@@ -26,12 +26,6 @@ class TreeNode {
         node.dump(out);
         out << std::endl;
 
-        for (const auto& sub_node : node.m_Children) {
-            if (sub_node) {
-                out << *sub_node;
-            }
-        }
-
         return out;
     }
 };

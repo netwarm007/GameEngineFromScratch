@@ -75,10 +75,10 @@ namespace My {
             void SetRight(ASTNodeRef pNode) { m_Children.back() = pNode; }
 
 
-            [[nodiscard]] const ASTNodeRef GetLeft() const {
+            [[nodiscard]] ASTNodeRef GetLeft() const {
                 return std::dynamic_pointer_cast<ASTNode>(m_Children.front());
             }
-            [[nodiscard]] const ASTNodeRef GetRight() const {
+            [[nodiscard]] ASTNodeRef GetRight() const {
                 return std::dynamic_pointer_cast<ASTNode>(m_Children.back());
             }
     };
