@@ -17,7 +17,7 @@ static std::ostream& operator<<(std::ostream& s, const ASTPair<T, U>& v)
 
 static inline std::ostream& operator<<(std::ostream& s, const ASTFieldDecl& v)
 {
-    s << '{' << v.first << '\t';
+    s << '{' << v.first;
     s << "|{";
     assert(v.second);
     dump_node(s, v.second);
@@ -27,7 +27,7 @@ static inline std::ostream& operator<<(std::ostream& s, const ASTFieldDecl& v)
 
 static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItemDecl& v)
 {
-    s << '{' << v.first << '\t';
+    s << '{' << v.first;
     s << "|{" << v.second;
     s << "}}";
     return s;
@@ -55,7 +55,7 @@ static inline std::ostream& operator<<(std::ostream& s, const ASTFieldList& v)
         } else {
             s << '|'; 
         }
-        s << e << std::endl;
+        s << e;
     }
     s << "}";
     return s;
@@ -71,7 +71,7 @@ static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItems& v)
         } else {
             s << '|'; 
         }
-        s << e << std::endl;
+        s << e;
     }
     s << "}";
     return s;
@@ -124,9 +124,9 @@ void CodeGenerator::generateGraphvizDot(std::ostream& out, const ASTNodeRef& ref
     auto idn = ref->GetIDN();
     out << "digraph ";
     out << idn;
-    out << " {rankdir=LR node [shape=record]; " << idn << " [label=\"" << std::endl;
+    out << " {rankdir=LR node [shape=record]; " << idn << " [label=\"";
 
     dump_node(out, ref);
 
-    out << "\"];}" << std::endl;
+    out << "\"];}";
 }
