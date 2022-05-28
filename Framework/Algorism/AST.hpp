@@ -36,8 +36,8 @@ namespace My {
             void AppendChild(std::shared_ptr<TreeNode>&& sub_node) override { assert(false); };
 
             void dump(std::ostream& out) const override { 
-                out << "IDN:\t" << m_Idn << std::endl; 
-                out << "Type:\t";
+                out << m_Idn;
+                out << "|{Type|";
                 switch(node_type) {
                 case AST_NODE_TYPE::NONE:
                     out << "AST_NODE_TYPE::NONE" << std::endl;
@@ -66,6 +66,8 @@ namespace My {
                 default:
                     assert(0);
                 }
+
+                out << "}";
             }
 
         public:
@@ -112,21 +114,18 @@ namespace My {
 
     static inline std::ostream& operator<<(std::ostream& s, const ASTFieldDecl& v)
     {
-        s << "字段名：";
-        s << v.first << '\t';
-        s << "类型：";
+        s << '{' << v.first << '\t';
+        s << "|{";
         assert(v.second);
-        s << v.second->GetIDN() << std::endl;
-        s << *v.second;
+        s << *v.second << "}}";
         return s;
     }
 
     static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItemDecl& v)
     {
-        s << "枚举值名：";
-        s << v.first << '\t';
-        s << "值：";
-        s << v.second;
+        s << '{' << v.first << '\t';
+        s << "|{" << v.second;
+        s << "}}";
         return s;
     }
 
@@ -144,17 +143,33 @@ namespace My {
 
     static inline std::ostream& operator<<(std::ostream& s, const ASTFieldList& v)
     {
+        bool first = true;
+        s << "{";
         for (const auto& e : v) {
-            s << "|\t" << e << std::endl;
+            if (first) { 
+                first = false; 
+            } else {
+                s << '|'; 
+            }
+            s << e << std::endl;
         }
+        s << "}";
         return s;
     }
 
     static inline std::ostream& operator<<(std::ostream& s, const ASTEnumItems& v)
     {
+        bool first = true;
+        s << "{";
         for (const auto& e : v) {
-            s << "|\t" << e << std::endl;
+            if (first) { 
+                first = false; 
+            } else {
+                s << '|'; 
+            }
+            s << e << std::endl;
         }
+        s << "}";
         return s;
     }
 
@@ -174,7 +189,7 @@ namespace My {
         protected:
             void dump(std::ostream& out) const override { 
                 ASTNode::dump(out);
-                out << m_Value; 
+                out << "|{Value|" << m_Value << "}"; 
             }
     };
 

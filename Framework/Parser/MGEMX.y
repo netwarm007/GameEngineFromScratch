@@ -78,19 +78,16 @@ module: %empty /* nothing */                        {
     ;
 
 namespace_declaration: NAMESPACE IDN ';'            {
-                                                        printf("【命名空间】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeNameSpace, const char*>( 
                                                                 $2.c_str(), "https://www.chenwenli.com" );
                                                     }
     ;
 
 enum_declaration: ENUM IDN '{' enum_value_list '}'  { 
-                                                        printf("【枚举体】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeEnum, ASTEnumItems>( 
                                                                 $2.c_str(), std::move($4) );
                                                     }
     | ENUM IDN ':' IDN '{' enum_value_list '}'      { 
-                                                        printf("【枚举体】名称：%s ，类型：%s\n", $2.c_str(), $4.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeEnum, ASTEnumItems>( 
                                                                 $2.c_str(), std::move($6) );
                                                     }
@@ -101,17 +98,14 @@ enum_value_list: enum_value                         {   $$  = {$1}; }
     ;
 
 enum_value: IDN                                     { 
-                                                        printf("【枚举体值】%s\n", $1.c_str()); 
                                                         $$.first = $1;
                                                     }
     | IDN '=' INT                                   { 
-                                                        printf("【枚举体值】%s = %d\n", $1.c_str(), $3); 
                                                         $$.first = $1; $$.second = $3;
                                                     }
     ;
 
 struct_declaration: STRUCT IDN '{' field_declaration_list '}' { 
-                                                        printf("【结构体】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeStruct, ASTFieldList>( 
                                                                 $2.c_str(), std::move($4) );
                                                     }
@@ -122,13 +116,11 @@ field_declaration_list: field_declaration           {   $$ = {$1}; }
     ;
 
 field_declaration: IDN ':' IDN ';'                  { 
-                                                        printf("【变量】名称：%s ，类型：%s\n", $1.c_str(), $3.c_str()); 
                                                         auto [result, ref] = findSymbol($3.c_str());
                                                         $$.first = $1; 
                                                         if (result) $$.second = ref;
                                                     }
     | IDN ':' IDN '(' attribute_list ')' ';'        { 
-                                                        printf("【变量】名称：%s ，类型：%s ，%lu个属性\n", $1.c_str(), $3.c_str(), $5.size()); 
                                                         auto [result, ref] = findSymbol($3.c_str());
                                                         $$.first = $1; 
                                                         if (result) $$.second = ref;
@@ -139,23 +131,20 @@ attribute_list: attribute                           { $$ = {$1}; }
     | attribute_list ',' attribute                  { $1.emplace_back($3); $$ = $1; }
     ;
 
-attribute: IDN ':' STR                              { $$ = $1 + ":" + $3; printf("【属性】名称：%s ，值：%s\n", $1.c_str(), $3.c_str()); }
+attribute: IDN ':' STR                              { $$ = $1 + ":" + $3; }
     ;
 
 attribute_declaration: ATTR STR ';'                 { 
-                                                        printf("【属性声明】名称：%s\n", $2.c_str()); 
                                                         $$ = make_ASTNodeRef<ASTNodeAttribute>( $2.c_str() );
                                                     }
     ;
 
 root_type_declaration: ROOT IDN ';'                 { 
-                                                        printf("【根类型】名称：%s\n", $2.c_str());   
                                                         $$ = make_ASTNodeRef<ASTNodeRootType>( $2.c_str() );
                                                     }
     ;
 
 table_declaration: TABLE IDN '{' field_declaration_list '}' { 
-                                                        printf("【表格体】名称：%s\n", $2.c_str());
                                                         $$ = make_ASTNodeRef<ASTNodeTable, ASTFieldList>( 
                                                                 $2.c_str(), std::move($4) );
                                                     }
@@ -179,9 +168,9 @@ namespace My {
         }
         else {
             global_symbol_table.emplace(idn, ref);
-            std::cout << "\x1b[46m\x1b[30m";
-            std::cout << "【信息】符号{" << idn << "}已经注册到全局符号表！" << std::endl;
-            std::cout << "\x1b[49m\x1b[37m";
+            std::cerr << "\x1b[46m\x1b[30m";
+            std::cerr << "【信息】符号{" << idn << "}已经注册到全局符号表！" << std::endl;
+            std::cerr << "\x1b[49m\x1b[37m";
         }
     }
 

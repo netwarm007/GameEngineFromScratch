@@ -47,20 +47,27 @@ int main() {
     // find start point
     std::tie(result, idn) = findRootType();
     if(!result) {
-        std::cout << "no root type defined!" << std::endl;
+        std::cerr << "no root type defined!" << std::endl;
         return -1;
     }
 
     // find the symbol and dump
     std::tie(result, ref) = findSymbol(idn);
     if(!result) {
-        printf("Can not find symbol with IDN{%s}!\n", idn.c_str());
+        fprintf(stderr, "Can not find symbol with IDN{%s}!\n", idn.c_str());
         return -1;
     }
 
-    std::cout << std::string(3, '\n');
-    std::cout << "\x1b[7m解析完成，打印数据结构：\x1b[0m" << std::endl;
-    std::cout << *ref << std::endl;
+    std::cerr << std::string(3, '\n');
+    std::cerr << "\x1b[7m解析完成，输出数据结构：\x1b[0m" << std::endl;
+
+    if (ref) {
+        std::cout << "digraph ";
+        std::cout << idn;
+        std::cout << " {rankdir=LR node [shape=record]; Pipeline [label=\"" << std::endl;
+        std::cout << *ref << std::endl;
+        std::cout << "\"];}" << std::endl;
+    }
 
     return 0;
 }

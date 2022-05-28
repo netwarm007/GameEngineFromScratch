@@ -45,7 +45,6 @@ int main(int argc, char* argv[])
     enum_->SetRight(struct_);
     struct_->SetRight(table);
 
-
     travelAndPrint(root);
 
     return 0;
