@@ -21,10 +21,5 @@ void GuiSubPass::Draw(Frame& frame) {
         ImGui::Render();
 
         ImGui::EndFrame();
-
-        ImGuiIO& io = ImGui::GetIO();
-        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-            ImGui::UpdatePlatformWindows();
-        }
     }
 }

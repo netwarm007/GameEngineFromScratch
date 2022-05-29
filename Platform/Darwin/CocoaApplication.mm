@@ -57,13 +57,21 @@ void CocoaApplication::CreateMainWindow() {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+    ImGui::StyleColorsDark();
+
+    ImGuiStyle& im_style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        im_style.WindowRounding = 0.0f;
+        im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
     ImGui_ImplOSX_Init([m_pWindow contentView]);
 
-    ImGui::StyleColorsDark();
 }
 
 void CocoaApplication::Finalize() {
     ImGui_ImplOSX_Shutdown();
+    ImGui::DestroyContext();
 
     [m_pWindow release];
     BaseApplication::Finalize();
@@ -159,10 +167,5 @@ void CocoaApplication::Tick() {
         }
         [NSApp sendEvent:event];
         [NSApp updateWindows];
-    }
-
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::RenderPlatformWindowsDefault();
     }
 }
