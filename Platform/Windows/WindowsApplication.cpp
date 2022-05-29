@@ -3,7 +3,7 @@
 #include <tchar.h>
 
 #include "InputManager.hpp"
-#include "imgui/examples/imgui_impl_win32.h"
+#include "imgui_impl_win32.h"
 
 using namespace My;
 

@@ -7,8 +7,8 @@
 #include <stack>
 #include "IApplication.hpp"
 
-#include "imgui/examples/imgui_impl_metal.h"
-#include "imgui/examples/imgui_impl_osx.h"
+#include "imgui_impl_metal.h"
+#include "imgui_impl_osx.h"
 
 using namespace My;
 

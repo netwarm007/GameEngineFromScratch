@@ -1,5 +1,6 @@
 find_library(COCOA_LIBRARY Cocoa required)
 find_library(CV_LIBRARY CoreVideo required)
+find_library(GAMECONTROLLER_LIBRARY GameController required)
 
 # Platform Interface library
 add_library(PlatformInterface
@@ -9,10 +10,11 @@ add_library(PlatformInterface
         AppDelegate.m
         WindowDelegate.m
         MetalView.mm
-        ${PROJECT_SOURCE_DIR}/External/src/imgui/examples/imgui_impl_osx.mm
+        imgui_impl_osx.mm
     )
 target_link_libraries(PlatformInterface
         ${COCOA_LIBRARY} 
         ${OPENGL_LIBRARY}
+        ${GAMECONTROLLER_LIBRARY}
         dl
     )
