@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include <map>
+#include <set>
 #include <sstream>
 #include "AST.hpp"
 
@@ -18,7 +20,7 @@ namespace My {
                 GENERATED
             };
 
-            void GenerateCode(std::ostream& out, const ASTNodeRef& ref, CODE_GENERATION_TYPE type);
+            void GenerateCode(std::ostream& out, const char* name_space, const ASTNodeRef& ref, CODE_GENERATION_TYPE type);
 
             static GENERATION_STATUS GetGenerationStatus(ASTNode::IDN_TYPE idn);
             static void AppendGenerationSource(ASTNode::IDN_TYPE idn);

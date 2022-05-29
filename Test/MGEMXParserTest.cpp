@@ -62,7 +62,7 @@ int main() {
     std::cerr << "\x1b[7m解析完成，输出数据结构：\x1b[0m" << std::endl;
 
     CodeGenerator generator;
-    generator.GenerateCode(std::cout, ref, CodeGenerator::CODE_GENERATION_TYPE::GRAPHVIZ_DOT);
+    generator.GenerateCode(std::cout, "My", ref, CodeGenerator::CODE_GENERATION_TYPE::GRAPHVIZ_DOT);
 
     return 0;
 }

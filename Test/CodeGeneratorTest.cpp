@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "CodeGenerator.hpp"
 #include "MGEMX.scanner.generated.hpp"
 #include "MGEMX.parser.generated.hpp"
@@ -67,12 +68,16 @@ int main(int argc, char** argv) {
     CodeGenerator generator;
 
     // generate main data structure
-    generator.GenerateCode(std::cout, ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+    std::ofstream source(ref->GetIDN() + ".hpp");
+    generator.GenerateCode(source, "My", ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+    source.close();
 
     // now check if any other dependencies and generate them
     auto next_ref = generator.NextWaitingASTNode();
     while (next_ref) {
-        generator.GenerateCode(std::cout, next_ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+        source.open(next_ref->GetIDN() + ".hpp");
+        generator.GenerateCode(source, "My", next_ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+        source.close();
         next_ref = generator.NextWaitingASTNode();
     }
 }

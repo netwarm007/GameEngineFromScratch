@@ -2,6 +2,7 @@
 
 using namespace My;
 
+class headers_stream    : public std::stringstream { using std::stringstream::stringstream; };
 class values_stream     : public std::stringstream { using std::stringstream::stringstream; };
 class reflect_stream    : public std::stringstream { using std::stringstream::stringstream; };
 class function_stream   : public std::stringstream { using std::stringstream::stringstream; };
@@ -9,7 +10,7 @@ class function_stream   : public std::stringstream { using std::stringstream::st
 extern ASTNodeRef ast_root;
 
 // statics
-static uint indent_val = 0;
+static int indent_val = 0;
 
 static inline std::string indent() {
     return std::string(4 * indent_val, ' ');
@@ -74,7 +75,6 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
     case AST_NODE_TYPE::ENUM:
         s << indent() << type_idn << "::Enum " << v.first << ';' << std::endl;
         s << indent() << "ImGui::Combo( \"" << v.first << "\", (int32_t*)&" << v.first << ", " << type_idn << "::s_value_names, " << type_idn << "::Count );" << std::endl;
-        CodeGenerator::AppendGenerationSource(type_idn);
         break;
     case AST_NODE_TYPE::NAMESPACE:
         break;
@@ -82,13 +82,11 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
         s << indent() << type_idn << '\t' << v.first << ';' << std::endl;
         s << indent() << "ImGui::Text(\"" << v.first << "\");" << std::endl;
         s << indent() << v.first << ".reflectMembers();" << std::endl;
-        CodeGenerator::AppendGenerationSource(type_idn);
         break;
     case AST_NODE_TYPE::TABLE:
         s << indent() << type_idn << '\t' << v.first << ';' << std::endl;
         s << indent() << "ImGui::Text(\"" << v.first << "\");" << std::endl;
         s << indent() << v.first << ".reflectMembers();" << std::endl;
-        CodeGenerator::AppendGenerationSource(type_idn);
         break;
     case AST_NODE_TYPE::ATTRIBUTE:
         break;
@@ -100,15 +98,31 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
     return s;
 }
 
-static inline std::ostream& operator<<(values_stream& s, const ASTEnumItemDecl& v)
+static inline std::ostream& operator<<(headers_stream& s, const ASTFieldDecl& v)
 {
-    s << v.first << " = " << v.second;
-    return s;
-}
-
-static inline std::ostream& operator<<(reflect_stream& s, const ASTEnumItemDecl& v)
-{
-    s << '\"' << v.first << '\"';
+    assert(v.second);
+    auto type_idn = v.second->GetIDN();
+    switch(v.second->GetNodeType())
+    {
+    case AST_NODE_TYPE::NONE:
+        break;
+    case AST_NODE_TYPE::PRIMITIVE:
+        break;
+    case AST_NODE_TYPE::ENUM:
+    case AST_NODE_TYPE::STRUCT:
+    case AST_NODE_TYPE::TABLE:
+        s << "#include \"" << type_idn << ".hpp\"";
+        CodeGenerator::AppendGenerationSource(type_idn);
+        break;
+    case AST_NODE_TYPE::NAMESPACE:
+        break;
+    case AST_NODE_TYPE::ATTRIBUTE:
+        break;
+    case AST_NODE_TYPE::ROOTTYPE:
+        break;
+    default:
+        assert(0);
+    }
     return s;
 }
 
@@ -125,6 +139,26 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldList& v)
     for (const auto& e : v) {
         s << e << std::endl;
     }
+    return s;
+}
+
+static inline std::ostream& operator<<(headers_stream& s, const ASTFieldList& v)
+{
+    for (const auto& e : v) {
+        s << e << std::endl;
+    }
+    return s;
+}
+
+static inline std::ostream& operator<<(values_stream& s, const ASTEnumItemDecl& v)
+{
+    s << v.first << " = " << v.second;
+    return s;
+}
+
+static inline std::ostream& operator<<(reflect_stream& s, const ASTEnumItemDecl& v)
+{
+    s << '\"' << v.first << '\"';
     return s;
 }
 
@@ -162,6 +196,11 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTEnumItems& v)
 
 // private
 void CodeGenerator::generateEnumCpp(std::ostream& out, const ASTNodeRef& ref) {
+    if (!nameSpace.empty()) {
+        out << indent() << "namespace " << nameSpace << " {" << std::endl;
+        indent_val++;
+    }
+
     out << indent() << "namespace " << ref->GetIDN() << " {" << std::endl;
 
     indent_val++;
@@ -192,17 +231,32 @@ void CodeGenerator::generateEnumCpp(std::ostream& out, const ASTNodeRef& ref) {
         fs << indent() << "}" << std::endl;
     }
 
-    indent_val--;
+    out << vs.str();
+    out << std::endl;
+    out << rs.str();
+    out << std::endl;
+    out << fs.str();
 
-    out << indent() << vs.str();
-    out << std::endl;
-    out << indent() << rs.str();
-    out << std::endl;
-    out << indent() << fs.str();
-    out << "} // namespace " << ref->GetIDN() << std::endl;
+    indent_val--;
+    out << indent() << "} // namespace " << ref->GetIDN() << std::endl;
+
+    if (!nameSpace.empty()) {
+        indent_val--;
+        out << indent() << "} // namespace " << nameSpace << std::endl;
+    }
 }
 
 void CodeGenerator::generateStructCpp(std::ostream& out, const ASTNodeRef& ref) {
+    headers_stream hs (std::ios_base::out);
+    hs << std::dynamic_pointer_cast<ASTNodeStruct<ASTFieldList>>(ref)->GetValue();
+
+    out << hs.str() << std::endl;
+
+    if (!nameSpace.empty()) {
+        out << indent() << "namespace " << nameSpace << " {" << std::endl;
+        indent_val++;
+    }
+
     out << indent() << "struct " << ref->GetIDN() << " {" << std::endl;
 
     indent_val++;
@@ -223,24 +277,39 @@ void CodeGenerator::generateStructCpp(std::ostream& out, const ASTNodeRef& ref) 
     if (genGuiBindCode) {
         fs << indent() << "reflectUI() {" << std::endl;
         indent_val++;
-        fs << indent() << "ImGui::Begin(" << ref->GetIDN() << "\");" << std::endl;
+        fs << indent() << "ImGui::Begin(\"" << ref->GetIDN() << "\");" << std::endl;
         fs << indent() << "reflectMembers();" << std::endl;
         fs << indent() << "ImGui::End();" << std::endl;
         indent_val--;
         fs << indent() << "}" << std::endl;
     }
 
-    indent_val--;
+    out << vs.str();
+    out << std::endl;
+    out << rs.str();
+    out << std::endl;
+    out << fs.str();
 
-    out << indent() << vs.str();
-    out << std::endl;
-    out << indent() << rs.str();
-    out << std::endl;
-    out << indent() << fs.str();
-    out << "};" << std::endl;
+    indent_val--;
+    out << indent() << "};" << std::endl;
+ 
+    if (!nameSpace.empty()) {
+        indent_val--;
+        out << indent() << "} // namespace " << nameSpace << std::endl;
+    }
 }
 
 void CodeGenerator::generateTableCpp(std::ostream& out, const ASTNodeRef& ref) {
+    headers_stream hs (std::ios_base::out);
+    hs << std::dynamic_pointer_cast<ASTNodeTable<ASTFieldList>>(ref)->GetValue();
+
+    out << hs.str() << std::endl;
+
+    if (!nameSpace.empty()) {
+        out << indent() << "namespace " << nameSpace << " {" << std::endl;
+        indent_val++;
+    }
+
     out << indent() << "struct " << ref->GetIDN() << " {" << std::endl;
 
     indent_val++;
@@ -261,21 +330,26 @@ void CodeGenerator::generateTableCpp(std::ostream& out, const ASTNodeRef& ref) {
     if (genGuiBindCode) {
         fs << indent() << "reflectUI() {" << std::endl;
         indent_val++;
-        fs << indent() << "ImGui::Begin(" << ref->GetIDN() << "\");" << std::endl;
+        fs << indent() << "ImGui::Begin(\"" << ref->GetIDN() << "\");" << std::endl;
         fs << indent() << "reflectMembers();" << std::endl;
         fs << indent() << "ImGui::End();" << std::endl;
         indent_val--;
         fs << indent() << "}" << std::endl;
     }
 
-    indent_val--;
+    out << vs.str();
+    out << std::endl;
+    out << rs.str();
+    out << std::endl;
+    out << fs.str();
 
-    out << indent() << vs.str();
-    out << std::endl;
-    out << indent() << rs.str();
-    out << std::endl;
-    out << indent() << fs.str();
-    out << "};" << std::endl;
+    indent_val--;
+    out << indent() << "};" << std::endl;
+ 
+    if (!nameSpace.empty()) {
+        indent_val--;
+        out << indent() << "} // namespace " << nameSpace << std::endl;
+    }
 }
 
 void CodeGenerator::generateCppSnippet(std::ostream& out, const ASTNodeRef& ref) {

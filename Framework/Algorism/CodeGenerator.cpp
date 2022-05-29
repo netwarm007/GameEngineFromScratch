@@ -36,13 +36,11 @@ void CodeGenerator::ResetStatus() {
     task_list.clear();
 }
 
-void CodeGenerator::GenerateCode(std::ostream& out, const ASTNodeRef& ref, CODE_GENERATION_TYPE type) {
+void CodeGenerator::GenerateCode(std::ostream& out, const char* name_space, const ASTNodeRef& ref, CODE_GENERATION_TYPE type) {
     assert(ref);
     auto idn = ref->GetIDN();
 
-    if (ref->GetNodeType() == AST_NODE_TYPE::NAMESPACE) {
-        nameSpace = idn;
-    }
+    nameSpace = name_space;
 
     auto status = GetGenerationStatus(idn);
     switch (status) {
