@@ -166,4 +166,4 @@ table RenderPipeline {
     state                   : PipelineState;
 }
 
-root_type RenderTarget;
+root_type RenderPipeline;

@@ -11,7 +11,19 @@ namespace My {
                 CPP_SNIPPET
             };
 
+            enum class GENERATION_STATUS {
+                NONE,
+                WAITING,
+                GENERATING,
+                GENERATED
+            };
+
             void GenerateCode(std::ostream& out, const ASTNodeRef& ref, CODE_GENERATION_TYPE type);
+
+            static GENERATION_STATUS GetGenerationStatus(ASTNode::IDN_TYPE idn);
+            static void AppendGenerationSource(ASTNode::IDN_TYPE idn);
+            static ASTNodeRef NextWaitingASTNode();
+            static void ResetStatus();
 
         private:
             void generateGraphvizDot(std::ostream& out, const ASTNodeRef& ref);
@@ -23,7 +35,9 @@ namespace My {
 
         private:
             std::string nameSpace;
-            bool genRelfectionCode  = false;
-            bool genGuiBindCode     = false;
+            bool genRelfectionCode  = true;
+            bool genGuiBindCode     = true;
+
+            static std::map<std::string, GENERATION_STATUS> task_list;
     };
 }

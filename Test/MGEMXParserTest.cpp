@@ -7,7 +7,7 @@
 namespace My {
     AssetLoader* g_pAssetLoader = new AssetLoader();
 
-    std::map<std::string, ASTNodeRef> global_symbol_table;
+    std::map<ASTNode::IDN_TYPE, ASTNodeRef> global_symbol_table;
 
     ASTNodeRef ast_root = make_ASTNodeRef<ASTNodeNone>( "AST ROOT" );
 }  // namespace My

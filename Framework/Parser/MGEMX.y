@@ -69,11 +69,11 @@ module: %empty /* nothing */                        {
                                                       $$ = make_ASTNodeRef<ASTNodeNone>( "MODULE" );
                                                       ast_root->SetRight($$); }
     | module EOS 
-    | module namespace_declaration                  { register_type($2); }
-    | module enum_declaration                       { register_type($2); }
-    | module struct_declaration                     { register_type($2); }
-    | module table_declaration                      { register_type($2); }
-    | module attribute_declaration                  { register_type($2); }
+    | module namespace_declaration                  { register_type($2); $1->SetLeft($2); $$ = $2; }
+    | module enum_declaration                       { register_type($2); $1->SetRight($2); $$ = $2; }
+    | module struct_declaration                     { register_type($2); $1->SetRight($2); $$ = $2; }
+    | module table_declaration                      { register_type($2); $1->SetRight($2); $$ = $2; }
+    | module attribute_declaration                  { register_type($2); $1->SetRight($2); $$ = $2; }
     | module root_type_declaration                  { register_type(static_cast<ASTNode::IDN_TYPE>("[root type]"), $2); }
     ;
 

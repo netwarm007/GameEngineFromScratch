@@ -56,28 +56,28 @@ namespace My {
                 out << "Type:\t";
                 switch(node_type) {
                 case AST_NODE_TYPE::NONE:
-                    out << "NONE";
+                    out << "AST_NODE_TYPE::NONE";
                     break;
                 case AST_NODE_TYPE::PRIMITIVE:
-                    out << "PRIMITIVE";
+                    out << "AST_NODE_TYPE::PRIMITIVE";
                     break;
                 case AST_NODE_TYPE::ENUM:
-                    out << "ENUM";
+                    out << "AST_NODE_TYPE::ENUM";
                     break;
                 case AST_NODE_TYPE::NAMESPACE:
-                    out << "NAMESPACE";
+                    out << "AST_NODE_TYPE::NAMESPACE";
                     break;
                 case AST_NODE_TYPE::STRUCT:
-                    out << "STRUCT";
+                    out << "AST_NODE_TYPE::STRUCT";
                     break;
                 case AST_NODE_TYPE::TABLE:
-                    out << "TABLE";
+                    out << "AST_NODE_TYPE::TABLE";
                     break;
                 case AST_NODE_TYPE::ATTRIBUTE:
-                    out << "ATTRIBUTE";
+                    out << "AST_NODE_TYPE::ATTRIBUTE";
                     break;
                 case AST_NODE_TYPE::ROOTTYPE:
-                    out << "ROOTTYPE";
+                    out << "AST_NODE_TYPE::ROOTTYPE";
                     break;
                 default:
                     assert(0);
@@ -168,7 +168,7 @@ namespace My {
     }
 
     // Utility Functions
-    extern std::map<std::string, ASTNodeRef> global_symbol_table;
+    extern std::map<ASTNode::IDN_TYPE, ASTNodeRef> global_symbol_table;
 
     static inline std::pair<bool, ASTNode::IDN_TYPE> findRootType() {
         auto it = global_symbol_table.find(static_cast<ASTNode::IDN_TYPE>("[root type]"));

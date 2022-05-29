@@ -9,7 +9,7 @@ using namespace My;
 namespace My {
     AssetLoader* g_pAssetLoader = new AssetLoader();
 
-    std::map<std::string, ASTNodeRef> global_symbol_table =
+    std::map<ASTNode::IDN_TYPE, ASTNodeRef> global_symbol_table =
     {
         { "byte",   make_ASTNodeRef<ASTNodePrimitive>( "byte" ) },
         { "short",  make_ASTNodeRef<ASTNodePrimitive>( "short" ) },
@@ -65,5 +65,14 @@ int main(int argc, char** argv) {
     std::cerr << "\x1b[7m解析完成，输出数据结构：\x1b[0m" << std::endl;
 
     CodeGenerator generator;
+
+    // generate main data structure
     generator.GenerateCode(std::cout, ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+
+    // now check if any other dependencies and generate them
+    auto next_ref = generator.NextWaitingASTNode();
+    while (next_ref) {
+        generator.GenerateCode(std::cout, next_ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+        next_ref = generator.NextWaitingASTNode();
+    }
 }
