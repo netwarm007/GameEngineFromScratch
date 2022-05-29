@@ -6,7 +6,6 @@ namespace My {
 
 
         void reflectMembers() {
-            PipelineState	state;
             ImGui::Text("state");
             state.reflectMembers();
 

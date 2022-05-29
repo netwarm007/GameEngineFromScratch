@@ -16,19 +16,15 @@ namespace My {
 
 
         void reflectMembers() {
-            BlendState	blend_state;
             ImGui::Text("blend_state");
             blend_state.reflectMembers();
 
-            RasterizerState	rasterizer_state;
             ImGui::Text("rasterizer_state");
             rasterizer_state.reflectMembers();
 
-            DepthStencilState	depth_stencil_state;
             ImGui::Text("depth_stencil_state");
             depth_stencil_state.reflectMembers();
 
-            TopologyType::Enum topology_type;
             ImGui::Combo( "topology_type", (int32_t*)&topology_type, TopologyType::s_value_names, TopologyType::Count );
 
         }

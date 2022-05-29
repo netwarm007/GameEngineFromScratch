@@ -31,10 +31,8 @@ namespace My {
 
 
         void reflectMembers() {
-            FillMode::Enum fill_mode;
             ImGui::Combo( "fill_mode", (int32_t*)&fill_mode, FillMode::s_value_names, FillMode::Count );
 
-            CullMode::Enum cull_mode;
             ImGui::Combo( "cull_mode", (int32_t*)&cull_mode, CullMode::s_value_names, CullMode::Count );
 
             ImGui::Checkbox( "front_counter_clockwise", &front_counter_clockwise );

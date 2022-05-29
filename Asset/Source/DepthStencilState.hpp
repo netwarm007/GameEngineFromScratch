@@ -29,20 +29,16 @@ namespace My {
 
         void reflectMembers() {
             ImGui::Checkbox( "enable", &enable );
-            ComparisonFunction::Enum depth_function;
             ImGui::Combo( "depth_function", (int32_t*)&depth_function, ComparisonFunction::s_value_names, ComparisonFunction::Count );
 
-            DepthWriteMask::Enum depth_write_mask;
             ImGui::Combo( "depth_write_mask", (int32_t*)&depth_write_mask, DepthWriteMask::s_value_names, DepthWriteMask::Count );
 
             ImGui::Checkbox( "stencil_enable", &stencil_enable );
             ImGui::InputScalar( "stencil_read_mask", ImGuiDataType_S8, &stencil_read_mask );
             ImGui::InputScalar( "stencil_write_mask", ImGuiDataType_S8, &stencil_write_mask );
-            DepthStencilOperation	front_face;
             ImGui::Text("front_face");
             front_face.reflectMembers();
 
-            DepthStencilOperation	back_face;
             ImGui::Text("back_face");
             back_face.reflectMembers();
 

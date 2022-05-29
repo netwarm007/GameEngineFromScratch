@@ -76,18 +76,15 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
         }
         break;
     case AST_NODE_TYPE::ENUM:
-        s << indent() << type_idn << "::Enum " << v.first << ';' << std::endl;
         s << indent() << "ImGui::Combo( \"" << v.first << "\", (int32_t*)&" << v.first << ", " << type_idn << "::s_value_names, " << type_idn << "::Count );" << std::endl;
         break;
     case AST_NODE_TYPE::NAMESPACE:
         break;
     case AST_NODE_TYPE::STRUCT:
-        s << indent() << type_idn << '\t' << v.first << ';' << std::endl;
         s << indent() << "ImGui::Text(\"" << v.first << "\");" << std::endl;
         s << indent() << v.first << ".reflectMembers();" << std::endl;
         break;
     case AST_NODE_TYPE::TABLE:
-        s << indent() << type_idn << '\t' << v.first << ';' << std::endl;
         s << indent() << "ImGui::Text(\"" << v.first << "\");" << std::endl;
         s << indent() << v.first << ".reflectMembers();" << std::endl;
         break;
