@@ -7,7 +7,7 @@
 #include <cstring>
 
 #include "glad/glad_glx.h"
-#include "imgui_impl_opengl3.h"
+#include "imgui.h"
 
 using namespace My;
 using namespace std;
