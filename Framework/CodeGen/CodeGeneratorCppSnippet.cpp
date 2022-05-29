@@ -31,6 +31,9 @@ static inline std::ostream& operator<<(values_stream& s, const ASTFieldDecl& v)
 {
     assert(v.second);
     auto type_idn = v.second->GetIDN();
+    if (v.second->GetNodeType() == AST_NODE_TYPE::ENUM) {
+        type_idn += "::Enum";
+    }
 
     // convert prilimitive types
     auto it = prilimitive_types.find(type_idn);
@@ -252,7 +255,7 @@ void CodeGenerator::generateStructCpp(std::ostream& out, const ASTNodeRef& ref) 
     headers_stream hs (std::ios_base::out);
     hs << std::dynamic_pointer_cast<ASTNodeStruct<ASTFieldList>>(ref)->GetValue();
 
-    out << "#pragma once";
+    out << "#pragma once" << std::endl;
     out << hs.str() << std::endl;
 
     if (!nameSpace.empty()) {
@@ -278,7 +281,7 @@ void CodeGenerator::generateStructCpp(std::ostream& out, const ASTNodeRef& ref) 
 
     function_stream fs (std::ios_base::out);
     if (genGuiBindCode) {
-        fs << indent() << "reflectUI() {" << std::endl;
+        fs << indent() << "void reflectUI() {" << std::endl;
         indent_val++;
         fs << indent() << "ImGui::Begin(\"" << ref->GetIDN() << "\");" << std::endl;
         fs << indent() << "reflectMembers();" << std::endl;
@@ -331,7 +334,7 @@ void CodeGenerator::generateTableCpp(std::ostream& out, const ASTNodeRef& ref) {
 
     function_stream fs (std::ios_base::out);
     if (genGuiBindCode) {
-        fs << indent() << "reflectUI() {" << std::endl;
+        fs << indent() << "void reflectUI() {" << std::endl;
         indent_val++;
         fs << indent() << "ImGui::Begin(\"" << ref->GetIDN() << "\");" << std::endl;
         fs << indent() << "reflectMembers();" << std::endl;
