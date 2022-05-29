@@ -111,8 +111,10 @@ static inline std::ostream& operator<<(headers_stream& s, const ASTFieldDecl& v)
     case AST_NODE_TYPE::ENUM:
     case AST_NODE_TYPE::STRUCT:
     case AST_NODE_TYPE::TABLE:
-        s << "#include \"" << type_idn << ".hpp\"";
-        CodeGenerator::AppendGenerationSource(type_idn);
+        if (CodeGenerator::AppendGenerationSource(type_idn)) {
+            // only include once;
+            s << "#include \"" << type_idn << ".hpp\"";
+        }
         break;
     case AST_NODE_TYPE::NAMESPACE:
         break;
@@ -250,6 +252,7 @@ void CodeGenerator::generateStructCpp(std::ostream& out, const ASTNodeRef& ref) 
     headers_stream hs (std::ios_base::out);
     hs << std::dynamic_pointer_cast<ASTNodeStruct<ASTFieldList>>(ref)->GetValue();
 
+    out << "#pragma once";
     out << hs.str() << std::endl;
 
     if (!nameSpace.empty()) {

@@ -14,11 +14,15 @@ CodeGenerator::GENERATION_STATUS CodeGenerator::GetGenerationStatus(ASTNode::IDN
     return status;
 }
 
-void CodeGenerator::AppendGenerationSource(ASTNode::IDN_TYPE idn) {
+bool CodeGenerator::AppendGenerationSource(ASTNode::IDN_TYPE idn) {
+    bool result = false;
     auto it = task_list.find(idn);
     if (it == task_list.end()) {
         task_list[idn] = GENERATION_STATUS::WAITING;
+        result = true;
     }
+
+    return result;
 }
 
 ASTNodeRef CodeGenerator::NextWaitingASTNode() {

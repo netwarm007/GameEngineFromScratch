@@ -23,7 +23,7 @@ namespace My {
             void GenerateCode(std::ostream& out, const char* name_space, const ASTNodeRef& ref, CODE_GENERATION_TYPE type);
 
             static GENERATION_STATUS GetGenerationStatus(ASTNode::IDN_TYPE idn);
-            static void AppendGenerationSource(ASTNode::IDN_TYPE idn);
+            static bool AppendGenerationSource(ASTNode::IDN_TYPE idn);
             static ASTNodeRef NextWaitingASTNode();
             static void ResetStatus();
 
