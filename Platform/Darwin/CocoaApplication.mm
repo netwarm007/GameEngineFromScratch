@@ -55,6 +55,7 @@ void CocoaApplication::CreateMainWindow() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplOSX_Init([m_pWindow contentView]);
 
@@ -158,5 +159,10 @@ void CocoaApplication::Tick() {
         }
         [NSApp sendEvent:event];
         [NSApp updateWindows];
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::RenderPlatformWindowsDefault();
     }
 }
