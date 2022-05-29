@@ -53,7 +53,8 @@ void CocoaApplication::CreateMainWindow() {
     // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    [[maybe_unused]] ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui_ImplOSX_Init([m_pWindow contentView]);
 

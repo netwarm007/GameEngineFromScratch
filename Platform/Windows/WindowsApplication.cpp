@@ -58,7 +58,8 @@ void WindowsApplication::CreateMainWindow() {
     // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    [[maybe_unused]] ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui_ImplWin32_Init(m_hWnd);
     ImGui_ImplWin32_EnableDpiAwareness();

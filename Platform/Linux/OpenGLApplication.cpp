@@ -56,6 +56,7 @@ int OpenGLApplication::Initialize() {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2(static_cast<float>(m_Config.screenWidth), 
                             static_cast<float>(m_Config.screenHeight)); 
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui::StyleColorsDark();
 

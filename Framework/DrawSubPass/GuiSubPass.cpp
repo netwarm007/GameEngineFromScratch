@@ -14,6 +14,8 @@ void GuiSubPass::Draw(Frame& frame) {
     if (ImGui::GetCurrentContext()) {
         ImGui::NewFrame();
 
+        ImGui::ShowAboutWindow();
+
         pipeline.reflectUI();
 
         ImGui::Render();
