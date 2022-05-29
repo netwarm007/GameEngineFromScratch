@@ -1,2 +1,1 @@
-add_library(Algorism quickhull.cpp 
-            CodeGenerator.cpp CodeGeneratorGraphviz.cpp CodeGeneratorCppSnippet.cpp)
+add_library(Algorism quickhull.cpp)

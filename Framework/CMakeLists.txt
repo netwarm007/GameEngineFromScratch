@@ -1,4 +1,5 @@
 add_subdirectory(Algorism)
+add_subdirectory(CodeGen)
 add_subdirectory(Common)
 add_subdirectory(DrawPass)
 add_subdirectory(DrawSubPass)
@@ -14,6 +15,7 @@ add_library(Framework INTERFACE)
 target_link_libraries(Framework INTERFACE
         Manager
         Algorism
+        CodeGen
         DrawPass
         DrawSubPass
         DispatchPass
