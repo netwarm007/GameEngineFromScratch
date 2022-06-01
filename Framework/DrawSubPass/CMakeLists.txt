@@ -9,6 +9,3 @@ add_library(DrawSubPass
     ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_widgets.cpp
     ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_tables.cpp
 )
-target_link_libraries(DrawSubPass
-   ${FL_LIBRARY} 
-)
