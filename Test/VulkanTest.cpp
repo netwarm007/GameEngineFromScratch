@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <fstream>
 #include <iostream>
@@ -475,8 +476,10 @@ int main() {
 
     // 获取命令队列句柄
     VkQueue graphicsQueue;
+    VkQueue presentQueue;
     {
-        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     }
 
     // 创建渲染工序（Render Pass）
@@ -501,12 +504,20 @@ int main() {
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
 
+        VkSubpassDependency dependency {};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+
         VkRenderPassCreateInfo renderPassInfo {};
         renderPassInfo.sType            = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount  = 1;
         renderPassInfo.pAttachments     = &colorAttachment;
         renderPassInfo.subpassCount     = 1;
         renderPassInfo.pSubpasses       = &subpass;
+        renderPassInfo.dependencyCount  = 1;
+        renderPassInfo.pDependencies    = &dependency;
 
         if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
@@ -808,7 +819,7 @@ int main() {
             }
     }
 
-    auto drawFrame = [device, swapChain, imageAvailableSemaphore, inFlightFence, recordCommandBuffer]() {
+    auto drawFrame = [&]() {
         vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
         vkResetFences(device, 1, &inFlightFence);
 
@@ -817,6 +828,38 @@ int main() {
 
         vkResetCommandBuffer(commandBuffer, 0);
         recordCommandBuffer(imageIndex);
+
+        // 提交 Command Buffer
+        VkSubmitInfo submitInfo {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+            throw std::runtime_error("failed to submit draw command buffer!");
+        }
+
+        VkPresentInfoKHR presentInfo {};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+
+        VkSwapchainKHR swapChains[] = {swapChain};
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pResults = nullptr;
+        vkQueuePresentKHR(presentQueue, &presentInfo);
     };
 
     // 主消息循环
@@ -824,6 +867,8 @@ int main() {
         glfwPollEvents();
         drawFrame();
     }
+
+    vkDeviceWaitIdle(device);
 
     // 清场
     {
