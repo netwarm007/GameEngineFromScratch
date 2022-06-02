@@ -4,7 +4,11 @@ set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
                RasterizationTest SceneObjectTest
                ASTNodeTest MGEMXParserTest CodeGeneratorTest
-        )
+)
+
+if(Vulkan_FOUND)
+list(APPEND TEST_CASES VulkanRHITest)
+endif(Vulkan_FOUND)
 
 foreach(TEST_CASE IN LISTS TEST_CASES)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
@@ -14,6 +18,10 @@ endforeach(TEST_CASE)
 
 target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
+
+if(Vulkan_FOUND)
+target_link_libraries(VulkanRHITest VulkanRHI)
+endif(Vulkan_FOUND)
 
 IF(WA)
 set_target_properties(${TEST_CASES}
