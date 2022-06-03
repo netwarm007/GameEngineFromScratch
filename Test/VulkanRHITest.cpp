@@ -12,7 +12,7 @@ int main() {
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window = glfwCreateWindow(800, 600, "Vulkan Window", nullptr, nullptr);
+        window = glfwCreateWindow(800, 600, "GEFS Vulkan Window", nullptr, nullptr);
     }
 
     // 获取窗口所需的Extensions
@@ -75,8 +75,8 @@ int main() {
     // 创建图形管道
     {
         AssetLoader asset_loader;
-        auto vertShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple_v.spv");
-        auto fragShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple_f.spv");
+        auto vertShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple.vert.spv");
+        auto fragShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple.frag.spv");
         rhi.setShaders(vertShader, fragShader);
         rhi.createGraphicsPipeline();
     }
