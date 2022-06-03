@@ -90,6 +90,9 @@ int main() {
     // 创建顶点缓冲区
     rhi.createVertexBuffer();
 
+    // 创建索引缓冲区
+    rhi.createIndexBuffer();
+
     // 创建 Command Buffer
     rhi.createCommandBuffers();
     

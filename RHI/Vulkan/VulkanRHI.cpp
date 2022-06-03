@@ -128,10 +128,15 @@ struct Vertex {
     }
 };
 
-std::vector<Vertex> vertices = {
-    {{ 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{ 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}
+const std::vector<Vertex> vertices = {
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0
 };
 
 
@@ -159,6 +164,9 @@ VulkanRHI::~VulkanRHI() {
     vkDeviceWaitIdle(m_vkDevice);
 
     cleanupSwapChain(); 
+
+    vkDestroyBuffer(m_vkDevice, m_vkIndexBuffer, nullptr);
+    vkFreeMemory(m_vkDevice, m_vkIndexBufferMemory, nullptr);
 
     vkDestroyBuffer(m_vkDevice, m_vkVertexBuffer, nullptr);
     vkFreeMemory(m_vkDevice, m_vkVertexBufferMemory, nullptr);
@@ -856,7 +864,9 @@ void VulkanRHI::recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t ima
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(m_vkCommandBuffers[m_nCurrentFrame], 0, 1, vertexBuffers, offsets);
 
-    vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+    vkCmdBindIndexBuffer(m_vkCommandBuffers[m_nCurrentFrame], m_vkIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -1050,6 +1060,29 @@ void VulkanRHI::createVertexBuffer() {
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vkVertexBuffer, m_vkVertexBufferMemory);
 
     copyBuffer(stagingBuffer, m_vkVertexBuffer, bufferSize);
+
+    vkDestroyBuffer(m_vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(m_vkDevice, stagingBufferMemory, nullptr);
+} 
+
+void VulkanRHI::createIndexBuffer() {
+    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+    // 创建中间缓冲区
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+    // 上传数据
+    void* data;
+    vkMapMemory(m_vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, indices.data(), (size_t) bufferSize);
+    vkUnmapMemory(m_vkDevice, stagingBufferMemory);
+
+    // 创建设备专有缓冲区
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vkIndexBuffer, m_vkIndexBufferMemory);
+
+    copyBuffer(stagingBuffer, m_vkIndexBuffer, bufferSize);
 
     vkDestroyBuffer(m_vkDevice, stagingBuffer, nullptr);
     vkFreeMemory(m_vkDevice, stagingBufferMemory, nullptr);

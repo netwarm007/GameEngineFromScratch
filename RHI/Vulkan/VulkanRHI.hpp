@@ -43,6 +43,8 @@ namespace My {
 
         VkBuffer                 m_vkVertexBuffer;
         VkDeviceMemory           m_vkVertexBufferMemory;
+        VkBuffer                 m_vkIndexBuffer;
+        VkDeviceMemory           m_vkIndexBufferMemory;
 
         VkShaderModule m_vkVertShaderModule;
         VkShaderModule m_vkFragShaderModule;
@@ -66,6 +68,7 @@ namespace My {
         void createFramebuffers();
         void createCommandPool();
         void createVertexBuffer();
+        void createIndexBuffer();
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex);
         void createSyncObjects();
