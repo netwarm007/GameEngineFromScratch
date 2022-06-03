@@ -39,23 +39,33 @@ namespace My {
         std::vector<VkSemaphore>    m_vkRenderFinishedSemaphores;
         std::vector<VkFence>        m_vkInFlightFences;
 
+        VkShaderModule m_vkVertShaderModule;
+        VkShaderModule m_vkFragShaderModule;
+
+        using QueryFrameBufferSizeFunc = std::function<void(int&, int&)>;
+        QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
+
     public:
+        void setFramebufferSizeQueryCB(const QueryFrameBufferSizeFunc& func) { m_fQueryFramebufferSize = func; }
         void createInstance(std::vector<const char*> extensions); 
         void setupDebugMessenger();
         void createSurface(const std::function<void(const VkInstance&, VkSurfaceKHR&)>&);
         void pickPhysicalDevice();
         void createLogicalDevice();
-        void createSwapChain (const int width, const int height);
+        void createSwapChain ();
         void createImageViews();
         void getDeviceQueues();
         void createRenderPass();
-        void createGraphicsPipeline(const Buffer& vertShaderCode, const Buffer& fragShaderCode);
+        void setShaders(const Buffer& vertShaderCode, const Buffer& fragShaderCode);
+        void createGraphicsPipeline();
         void createFramebuffers();
         void createCommandPool();
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex);
         void createSyncObjects();
         void drawFrame();
+        void cleanupSwapChain();
+        void recreateSwapChain();
 
     private:
         uint32_t m_nCurrentFrame = 0;

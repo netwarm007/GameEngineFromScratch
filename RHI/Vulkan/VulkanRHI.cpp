@@ -119,6 +119,9 @@ VulkanRHI::VulkanRHI() {
 VulkanRHI::~VulkanRHI() {
     vkDeviceWaitIdle(m_vkDevice);
 
+    vkDestroyShaderModule(m_vkDevice, m_vkFragShaderModule, nullptr);
+    vkDestroyShaderModule(m_vkDevice, m_vkVertShaderModule, nullptr);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(m_vkDevice, m_vkImageAvailableSemaphores[i], nullptr);
         vkDestroySemaphore(m_vkDevice, m_vkRenderFinishedSemaphores[i], nullptr);
@@ -127,21 +130,7 @@ VulkanRHI::~VulkanRHI() {
 
     vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
 
-    vkDestroyPipeline(m_vkDevice, m_vkGraphicPipeline, nullptr);
-
-    vkDestroyPipelineLayout(m_vkDevice, m_vkPipelineLayout, nullptr);
-
-    for (auto& framebuffer : m_vkSwapChainFramebuffers) {
-        vkDestroyFramebuffer(m_vkDevice, framebuffer, nullptr);
-    }
-
-    vkDestroyRenderPass(m_vkDevice, m_vkRenderPass, nullptr);
-
-    for (auto& imageView : m_vkSwapChainImageViews) {
-        vkDestroyImageView(m_vkDevice, imageView, nullptr);
-    }
-
-    vkDestroySwapchainKHR(m_vkDevice, m_vkSwapChain, nullptr);
+    cleanupSwapChain(); 
 
     vkDestroyDevice(m_vkDevice, nullptr);     // 销毁逻辑设备
 
@@ -419,7 +408,11 @@ static VkExtent2D chooseSwapExtent(const int width, const int height, const VkSu
     }
 }
 
-void VulkanRHI::createSwapChain (const int width, const int height) {
+void VulkanRHI::createSwapChain () {
+    int width, height;
+
+    m_fQueryFramebufferSize(width, height);
+
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_vkPhysicalDevice, m_vkSurface);
 
     VkSurfaceFormatKHR  surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -560,22 +553,24 @@ static VkShaderModule createShaderModule(const VkDevice& device, const Buffer& c
     }
 
     return shaderModule;
-};
+}
 
-void VulkanRHI::createGraphicsPipeline(const Buffer& vertShaderCode, const Buffer& fragShaderCode) {
-    VkShaderModule vertShaderModule = createShaderModule(m_vkDevice, vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(m_vkDevice, fragShaderCode);
+void VulkanRHI::setShaders(const Buffer& vertShaderCode, const Buffer& fragShaderCode) {
+    m_vkVertShaderModule = createShaderModule(m_vkDevice, vertShaderCode);
+    m_vkFragShaderModule = createShaderModule(m_vkDevice, fragShaderCode);
+}
 
+void VulkanRHI::createGraphicsPipeline() {
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module  = vertShaderModule;
+    vertShaderStageInfo.module  = m_vkVertShaderModule;
     vertShaderStageInfo.pName   = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
     fragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module  = fragShaderModule;
+    fragShaderStageInfo.module  = m_vkFragShaderModule;
     fragShaderStageInfo.pName   = "main";
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
@@ -708,9 +703,6 @@ void VulkanRHI::createGraphicsPipeline(const Buffer& vertShaderCode, const Buffe
     if (vkCreateGraphicsPipelines(m_vkDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_vkGraphicPipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
-
-    vkDestroyShaderModule(m_vkDevice, fragShaderModule, nullptr);
-    vkDestroyShaderModule(m_vkDevice, vertShaderModule, nullptr);
 }
 
 void VulkanRHI::createFramebuffers() {
@@ -823,7 +815,14 @@ void VulkanRHI::drawFrame() {
     vkResetFences(m_vkDevice, 1, &m_vkInFlightFences[m_nCurrentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_vkDevice, m_vkSwapChain, UINT64_MAX, m_vkImageAvailableSemaphores[m_nCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_vkDevice, m_vkSwapChain, UINT64_MAX, m_vkImageAvailableSemaphores[m_nCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreateSwapChain();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
 
     vkResetCommandBuffer(m_vkCommandBuffers[m_nCurrentFrame], 0);
     recordCommandBuffer(m_vkCommandBuffers[m_nCurrentFrame], imageIndex);
@@ -860,5 +859,42 @@ void VulkanRHI::drawFrame() {
     presentInfo.pResults = nullptr;
     vkQueuePresentKHR(m_vkPresentQueue, &presentInfo);
 
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        recreateSwapChain();
+        return;
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
     m_nCurrentFrame = (m_nCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void VulkanRHI::cleanupSwapChain() {
+    for (auto& framebuffer : m_vkSwapChainFramebuffers) {
+        vkDestroyFramebuffer(m_vkDevice, framebuffer, nullptr);
+    }
+
+    vkDestroyPipeline(m_vkDevice, m_vkGraphicPipeline, nullptr);
+
+    vkDestroyPipelineLayout(m_vkDevice, m_vkPipelineLayout, nullptr);
+
+    vkDestroyRenderPass(m_vkDevice, m_vkRenderPass, nullptr);
+
+    for (auto& imageView : m_vkSwapChainImageViews) {
+        vkDestroyImageView(m_vkDevice, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_vkDevice, m_vkSwapChain, nullptr);
+}
+
+void VulkanRHI::recreateSwapChain() {
+    vkDeviceWaitIdle(m_vkDevice);
+
+    cleanupSwapChain();
+
+    createSwapChain();
+    createImageViews();
+    createRenderPass();
+    createGraphicsPipeline();
+    createFramebuffers();
 }

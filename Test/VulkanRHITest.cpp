@@ -23,6 +23,16 @@ int main() {
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
     VulkanRHI rhi;
+    // 设置回调函数
+    auto getFramebufferSize = [window](int& width, int& height) {
+        glfwGetFramebufferSize(window, &width, &height);
+        while (width == 0 || height == 0) {
+            glfwGetFramebufferSize(window, &width, &height);
+            glfwWaitEvents();
+        }
+    };
+
+    rhi.setFramebufferSizeQueryCB(getFramebufferSize);
 
     // 创建实例
     rhi.createInstance(extensions);
@@ -50,7 +60,7 @@ int main() {
     {
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
-        rhi.createSwapChain(width, height);
+        rhi.createSwapChain();
     }
 
     // 创建Image View
@@ -67,7 +77,8 @@ int main() {
         AssetLoader asset_loader;
         auto vertShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple_v.spv");
         auto fragShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple_f.spv");
-        rhi.createGraphicsPipeline(vertShader, fragShader);
+        rhi.setShaders(vertShader, fragShader);
+        rhi.createGraphicsPipeline();
     }
 
     // 创建 Framebuffers
