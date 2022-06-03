@@ -30,11 +30,15 @@ namespace My {
 
         VkRenderPass             m_vkRenderPass;
         VkPipeline               m_vkGraphicPipeline;
+        VkDescriptorSetLayout    m_vkDescriptorSetLayout;
         VkPipelineLayout         m_vkPipelineLayout;
 
         std::vector<VkFramebuffer> m_vkSwapChainFramebuffers;
         VkCommandPool            m_vkCommandPool;
         VkCommandPool            m_vkCommandPoolTransfer;
+
+        VkDescriptorPool         m_vkDescriptorPool;
+        std::vector<VkDescriptorSet> m_vkDescriptorSets;
         
         std::vector<VkCommandBuffer> m_vkCommandBuffers;
         std::vector<VkSemaphore>    m_vkImageAvailableSemaphores;
@@ -45,6 +49,9 @@ namespace My {
         VkDeviceMemory           m_vkVertexBufferMemory;
         VkBuffer                 m_vkIndexBuffer;
         VkDeviceMemory           m_vkIndexBufferMemory;
+
+        std::vector<VkBuffer>    m_vkUniformBuffers;
+        std::vector<VkDeviceMemory> m_vkUniformBuffersMemory;
 
         VkShaderModule m_vkVertShaderModule;
         VkShaderModule m_vkFragShaderModule;
@@ -63,12 +70,16 @@ namespace My {
         void createImageViews();
         void getDeviceQueues();
         void createRenderPass();
+        void createDescriptorSetLayout();
         void setShaders(const Buffer& vertShaderCode, const Buffer& fragShaderCode);
         void createGraphicsPipeline();
         void createFramebuffers();
         void createCommandPool();
         void createVertexBuffer();
         void createIndexBuffer();
+        void createUniformBuffers();
+        void createDescriptorPool();
+        void createDescriptorSets();
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex);
         void createSyncObjects();
@@ -79,6 +90,7 @@ namespace My {
     private:
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        void updateUniformBufer(uint32_t currentImage);
 
     private:
         uint32_t m_nCurrentFrame = 0;

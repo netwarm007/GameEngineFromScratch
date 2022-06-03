@@ -72,6 +72,9 @@ int main() {
     // 创建渲染工序（Render Pass）
     rhi.createRenderPass();
 
+    // 创建 Descriptor 布局
+    rhi.createDescriptorSetLayout();
+
     // 创建图形管道
     {
         AssetLoader asset_loader;
@@ -92,6 +95,15 @@ int main() {
 
     // 创建索引缓冲区
     rhi.createIndexBuffer();
+
+    // 创建常量缓冲区
+    rhi.createUniformBuffers();
+
+    // 创建资源描述子池
+    rhi.createDescriptorPool();
+
+    // 创建资源描述子集
+    rhi.createDescriptorSets();
 
     // 创建 Command Buffer
     rhi.createCommandBuffers();
