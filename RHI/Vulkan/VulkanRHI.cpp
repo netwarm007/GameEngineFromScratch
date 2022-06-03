@@ -1,6 +1,7 @@
 #include "VulkanRHI.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <functional>
@@ -10,6 +11,8 @@
 #include <optional>
 #include <set>
 #include <vector>
+
+#include "geommath.hpp"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -96,6 +99,42 @@ bool checkValidationLayerSupport() {
 
 using namespace My;
 
+struct Vertex {
+    Vector2f pos;
+    Vector3f color;
+
+    static VkVertexInputBindingDescription getBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription {};
+        bindingDescription.binding = 0;
+        bindingDescription.stride  = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format  = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset  = offsetof(Vertex, pos);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        return attributeDescriptions;
+    }
+};
+
+std::vector<Vertex> vertices = {
+    {{ 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{ 0.5f,  0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}}
+};
+
+
 VulkanRHI::VulkanRHI() {
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -119,6 +158,11 @@ VulkanRHI::VulkanRHI() {
 VulkanRHI::~VulkanRHI() {
     vkDeviceWaitIdle(m_vkDevice);
 
+    cleanupSwapChain(); 
+
+    vkDestroyBuffer(m_vkDevice, m_vkVertexBuffer, nullptr);
+    vkFreeMemory(m_vkDevice, m_vkVertexBufferMemory, nullptr);
+
     vkDestroyShaderModule(m_vkDevice, m_vkFragShaderModule, nullptr);
     vkDestroyShaderModule(m_vkDevice, m_vkVertShaderModule, nullptr);
 
@@ -129,8 +173,7 @@ VulkanRHI::~VulkanRHI() {
     }
 
     vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
-
-    cleanupSwapChain(); 
+    vkDestroyCommandPool(m_vkDevice, m_vkCommandPoolTransfer, nullptr);
 
     vkDestroyDevice(m_vkDevice, nullptr);     // 销毁逻辑设备
 
@@ -214,9 +257,10 @@ void VulkanRHI::createSurface(const std::function<void(const VkInstance&, VkSurf
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> transferFamily;
 
     bool isComplete() {
-        return graphicsFamily.has_value() && presentFamily.has_value();
+        return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value();
     }
 };
 
@@ -230,19 +274,25 @@ static QueueFamilyIndices findQueueFamilies (const VkPhysicalDevice& device, con
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies) {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        if (!_indices.graphicsFamily.has_value() && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             _indices.graphicsFamily = i;
+        } else if (!_indices.transferFamily.has_value() && queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            _indices.transferFamily = i;
         }
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-        if (presentSupport) {
+        if (!_indices.presentFamily.has_value() && presentSupport) {
             _indices.presentFamily = i;
         }
 
         if (_indices.isComplete()) break;
 
         i++;
+    }
+
+    if (!_indices.transferFamily.has_value()) {
+        _indices.transferFamily = _indices.graphicsFamily;
     }
 
     return _indices;
@@ -337,7 +387,16 @@ void VulkanRHI::createLogicalDevice () {
     auto indices = findQueueFamilies(m_vkPhysicalDevice, m_vkSurface);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies;
+    if (indices.graphicsFamily.has_value()) {
+        uniqueQueueFamilies.emplace(indices.graphicsFamily.value());
+    }
+    if (indices.presentFamily.has_value()) {
+        uniqueQueueFamilies.emplace(indices.presentFamily.value());
+    }
+    if (indices.transferFamily.has_value()) {
+        uniqueQueueFamilies.emplace(indices.transferFamily.value());
+    }
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies) {
@@ -497,6 +556,7 @@ void VulkanRHI::getDeviceQueues() {
 
     vkGetDeviceQueue(m_vkDevice, indices.graphicsFamily.value(), 0, &m_vkGraphicsQueue);
     vkGetDeviceQueue(m_vkDevice, indices.presentFamily.value(), 0, &m_vkPresentQueue);
+    vkGetDeviceQueue(m_vkDevice, indices.transferFamily.value(), 0, &m_vkTransferQueue);
 }
 
 void VulkanRHI::createRenderPass() {
@@ -578,10 +638,14 @@ void VulkanRHI::createGraphicsPipeline() {
     // 顶点输入格式
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount   = 0;
-    vertexInputInfo.pVertexBindingDescriptions      = nullptr;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
+
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+    vertexInputInfo.vertexBindingDescriptionCount   = 1;
+    vertexInputInfo.pVertexBindingDescriptions      = &bindingDescription;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexAttributeDescriptions    = attributeDescriptions.data();
 
     // IA
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -739,6 +803,14 @@ void VulkanRHI::createCommandPool() {
     if (vkCreateCommandPool(m_vkDevice, &poolInfo, nullptr, &m_vkCommandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     }
+
+    // create a secondary command pool for command buffers submits to transfer queue family
+    poolInfo.queueFamilyIndex =indices.transferFamily.value();
+
+    if (vkCreateCommandPool(m_vkDevice, &poolInfo, nullptr, &m_vkCommandPoolTransfer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create transfer command pool!");
+    }
+
 }
 
 void VulkanRHI::createCommandBuffers() {
@@ -780,7 +852,11 @@ void VulkanRHI::recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t ima
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkGraphicPipeline);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    VkBuffer vertexBuffers[] = {m_vkVertexBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(m_vkCommandBuffers[m_nCurrentFrame], 0, 1, vertexBuffers, offsets);
+
+    vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -897,4 +973,118 @@ void VulkanRHI::recreateSwapChain() {
     createRenderPass();
     createGraphicsPipeline();
     createFramebuffers();
+}
+
+void VulkanRHI::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+    VkBufferCreateInfo bufferInfo {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size  = size;
+    bufferInfo.usage = usage;
+    bufferInfo.flags = 0;
+
+    auto indices = findQueueFamilies(m_vkPhysicalDevice, m_vkSurface);
+
+    if (indices.graphicsFamily.value() != indices.transferFamily.value()) {
+        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.transferFamily.value()};
+
+        bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        bufferInfo.queueFamilyIndexCount = 2;
+        bufferInfo.pQueueFamilyIndices = queueFamilyIndices;
+    } else {
+        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value()};
+
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.queueFamilyIndexCount = 1;
+        bufferInfo.pQueueFamilyIndices = queueFamilyIndices;
+        bufferInfo.flags = 0;
+    }
+
+    if (vkCreateBuffer(m_vkDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create buffer!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(m_vkDevice, buffer, &memRequirements);
+
+    auto findMemoryType = [this](uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(m_vkPhysicalDevice, &memProperties);
+
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if ((typeFilter & (1 << i)) && 
+                ((memProperties.memoryTypes[i].propertyFlags & properties) == properties)) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("failed to find suitable memory type!");
+    };
+
+    VkMemoryAllocateInfo allocInfo {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(m_vkDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory");
+    }
+
+    vkBindBufferMemory(m_vkDevice, buffer, bufferMemory, 0);
+}
+
+void VulkanRHI::createVertexBuffer() {
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+    // 创建中间缓冲区
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+    // 上传数据
+    void* data;
+    vkMapMemory(m_vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, vertices.data(), (size_t) bufferSize);
+    vkUnmapMemory(m_vkDevice, stagingBufferMemory);
+
+    // 创建设备专有缓冲区
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vkVertexBuffer, m_vkVertexBufferMemory);
+
+    copyBuffer(stagingBuffer, m_vkVertexBuffer, bufferSize);
+
+    vkDestroyBuffer(m_vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(m_vkDevice, stagingBufferMemory, nullptr);
+} 
+
+void VulkanRHI::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    VkCommandBufferAllocateInfo allocInfo {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = m_vkCommandPoolTransfer;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(m_vkDevice, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion {};
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(m_vkTransferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_vkTransferQueue);
+    
+    vkFreeCommandBuffers(m_vkDevice, m_vkCommandPoolTransfer, 1, &commandBuffer);
 }

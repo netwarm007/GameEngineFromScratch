@@ -26,6 +26,7 @@ namespace My {
         VkQueue                  m_vkGraphicsQueue;
         VkQueue                  m_vkComputeQueue;
         VkQueue                  m_vkPresentQueue;
+        VkQueue                  m_vkTransferQueue;
 
         VkRenderPass             m_vkRenderPass;
         VkPipeline               m_vkGraphicPipeline;
@@ -33,11 +34,15 @@ namespace My {
 
         std::vector<VkFramebuffer> m_vkSwapChainFramebuffers;
         VkCommandPool            m_vkCommandPool;
+        VkCommandPool            m_vkCommandPoolTransfer;
         
         std::vector<VkCommandBuffer> m_vkCommandBuffers;
         std::vector<VkSemaphore>    m_vkImageAvailableSemaphores;
         std::vector<VkSemaphore>    m_vkRenderFinishedSemaphores;
         std::vector<VkFence>        m_vkInFlightFences;
+
+        VkBuffer                 m_vkVertexBuffer;
+        VkDeviceMemory           m_vkVertexBufferMemory;
 
         VkShaderModule m_vkVertShaderModule;
         VkShaderModule m_vkFragShaderModule;
@@ -60,12 +65,17 @@ namespace My {
         void createGraphicsPipeline();
         void createFramebuffers();
         void createCommandPool();
+        void createVertexBuffer();
         void createCommandBuffers();
         void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex);
         void createSyncObjects();
         void drawFrame();
         void cleanupSwapChain();
         void recreateSwapChain();
+
+    private:
+        void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
     private:
         uint32_t m_nCurrentFrame = 0;

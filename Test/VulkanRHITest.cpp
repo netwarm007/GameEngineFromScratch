@@ -87,6 +87,9 @@ int main() {
     // 创建 Command Pools
     rhi.createCommandPool();
 
+    // 创建顶点缓冲区
+    rhi.createVertexBuffer();
+
     // 创建 Command Buffer
     rhi.createCommandBuffers();
     
