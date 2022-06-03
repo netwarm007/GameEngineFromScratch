@@ -122,7 +122,7 @@ int main() {
 
         for (const auto& extension : extensions) {
             std::cout << '\t' << extension.extensionName << std::endl;
-            if (strncmp(extension.extensionName, "VK_KHR_portability_subset", sizeof(VK_MAX_EXTENSION_NAME_SIZE)) == 0) {
+            if (strncmp(extension.extensionName, "VK_KHR_portability_enumeration", VK_MAX_EXTENSION_NAME_SIZE) == 0) {
                 deviceExtensions.push_back("VK_KHR_portability_subset");
             }
         }

@@ -122,7 +122,12 @@
         "propagate_const": "cpp",
         "*.ipp": "cpp",
         "__node_handle": "cpp",
-        "climits": "cpp"
+        "climits": "cpp",
+        "__errc": "cpp",
+        "barrier": "cpp",
+        "numbers": "cpp",
+        "span": "cpp",
+        "__bits": "cpp"
     },
     "git.ignoreLimitWarning": true,
     "cmake.configureOnOpen": false,

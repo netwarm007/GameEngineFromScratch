@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <vector>
+#include "Buffer.hpp"
 
 namespace My {
     class VulkanRHI {
@@ -39,18 +40,24 @@ namespace My {
         std::vector<VkFence>        m_vkInFlightFences;
 
     public:
-        void createInstance(); 
+        void createInstance(std::vector<const char*> extensions); 
         void setupDebugMessenger();
-        void createSurface();
+        void createSurface(const std::function<void(const VkInstance&, VkSurfaceKHR&)>&);
         void pickPhysicalDevice();
         void createLogicalDevice();
-        void createSwapChain();
+        void createSwapChain (const int width, const int height);
         void createImageViews();
+        void getDeviceQueues();
         void createRenderPass();
-        void createGraphicsPipeline();
+        void createGraphicsPipeline(const Buffer& vertShaderCode, const Buffer& fragShaderCode);
         void createFramebuffers();
         void createCommandPool();
         void createCommandBuffers();
+        void recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t imageIndex);
         void createSyncObjects();
+        void drawFrame();
+
+    private:
+        uint32_t m_nCurrentFrame = 0;
     };
 }

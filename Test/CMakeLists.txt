@@ -6,10 +6,6 @@ set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                ASTNodeTest MGEMXParserTest CodeGeneratorTest
 )
 
-if(Vulkan_FOUND)
-list(APPEND TEST_CASES VulkanRHITest)
-endif(Vulkan_FOUND)
-
 foreach(TEST_CASE IN LISTS TEST_CASES)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
     target_link_libraries(${TEST_CASE} Framework)
@@ -20,7 +16,11 @@ target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framewo
 target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 
 if(Vulkan_FOUND)
-target_link_libraries(VulkanRHITest VulkanRHI)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(GLFW REQUIRED glfw3)
+add_executable(VulkanRHITest VulkanRHITest.cpp)
+target_include_directories(VulkanRHITest PRIVATE ${GLFW_INCLUDE_DIRS})
+target_link_libraries(VulkanRHITest Manager VulkanRHI ${GLFW_LIBRARIES})
 endif(Vulkan_FOUND)
 
 IF(WA)
