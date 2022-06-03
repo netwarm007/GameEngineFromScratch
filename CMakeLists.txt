@@ -104,7 +104,9 @@ find_library(ZLIB_LIBRARY NAMES z zlib PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CM
 find_library(SDL2_LIBRARY NAMES SDL2 libSDL2 PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
 
 find_package(Vulkan)
+if(Vulkan_FOUND)
 include_directories(${Vulkan_INCLUDE_DIRS})
+endif(Vulkan_FOUND)
 
 include(CTest)
 
