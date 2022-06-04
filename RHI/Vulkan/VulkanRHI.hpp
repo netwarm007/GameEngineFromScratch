@@ -56,12 +56,18 @@ namespace My {
         VkImageView              m_vkTextureImageView;
         VkSampler                m_vkTextureSampler;
 
+        VkImage                  m_vkColorImage;
+        VkDeviceMemory           m_vkColorImageMemory;
+        VkImageView              m_vkColorImageView;
+
         VkImage                  m_vkDepthImage;
         VkDeviceMemory           m_vkDepthImageMemory;
         VkImageView              m_vkDepthImageView;
 
         std::vector<VkBuffer>    m_vkUniformBuffers;
         std::vector<VkDeviceMemory> m_vkUniformBuffersMemory;
+
+        VkSampleCountFlagBits m_vkMsaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
         VkShaderModule m_vkVertShaderModule;
         VkShaderModule m_vkFragShaderModule;
@@ -84,6 +90,7 @@ namespace My {
         void setShaders(const Buffer& vertShaderCode, const Buffer& fragShaderCode);
         void createGraphicsPipeline();
         void createCommandPool();
+        void createColorResources();
         void createDepthResources();
         void createFramebuffers();
         void createTextureImage(Image& image);
@@ -104,7 +111,7 @@ namespace My {
     private:
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         void createImage(Image& image, VkImageTiling tiling, VkImageUsageFlags usage, VkSharingMode sharing_mode, VkMemoryPropertyFlags properties, VkImage& vk_image, VkDeviceMemory& vk_image_memory, uint32_t queueFamilyIndexCount, uint32_t* queueFamilyIndices);
-        void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkSharingMode sharing_mode, VkMemoryPropertyFlags properties, VkImage& vk_image, VkDeviceMemory& vk_image_memory, uint32_t queueFamilyIndexCount = 1, uint32_t* queueFamilyIndices = nullptr);
+        void createImage(uint32_t width, uint32_t height, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkSharingMode sharing_mode, VkMemoryPropertyFlags properties, VkImage& vk_image, VkDeviceMemory& vk_image_memory, uint32_t queueFamilyIndexCount = 1, uint32_t* queueFamilyIndices = nullptr);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void copyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height);
@@ -117,6 +124,7 @@ namespace My {
                 uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED, uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
         VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkFormat findDepthFormat();
+        VkSampleCountFlagBits getMaxUsableSampleCount();
 
     private:
         uint32_t m_nCurrentFrame = 0;

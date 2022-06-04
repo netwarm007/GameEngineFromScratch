@@ -88,6 +88,9 @@ int main() {
     // 创建 Command Pools
     rhi.createCommandPool();
 
+    // 创建backend RT
+    rhi.createColorResources();
+
     // 创建深度缓冲区
     rhi.createDepthResources();
 
