@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "Buffer.hpp"
+#include "Image.hpp"
 
 namespace My {
     class VulkanRHI {
@@ -50,6 +51,12 @@ namespace My {
         VkBuffer                 m_vkIndexBuffer;
         VkDeviceMemory           m_vkIndexBufferMemory;
 
+        VkImage                  m_vkTextureImage;
+        VkDeviceMemory           m_vkTextureImageMemory;
+        VkImageView              m_vkTextureImageView;
+
+        VkSampler                m_vkTextureSampler;
+
         std::vector<VkBuffer>    m_vkUniformBuffers;
         std::vector<VkDeviceMemory> m_vkUniformBuffersMemory;
 
@@ -75,6 +82,9 @@ namespace My {
         void createGraphicsPipeline();
         void createFramebuffers();
         void createCommandPool();
+        void createTextureImage(Image& image);
+        void createTextureImageView(Image& image);
+        void createTextureSampler();
         void createVertexBuffer();
         void createIndexBuffer();
         void createUniformBuffers();
@@ -89,8 +99,17 @@ namespace My {
 
     private:
         void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+        void createImage(Image& image, VkImageTiling tiling, VkImageUsageFlags usage, VkSharingMode sharing_mode, VkMemoryPropertyFlags properties, VkImage& vk_image, VkDeviceMemory& vk_image_memory, uint32_t queueFamilyIndexCount, uint32_t* queueFamilyIndices);
+        VkImageView createImageView(VkImage image, VkFormat format);
         void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        void copyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height);
+        uint32_t findMemoryType (uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void updateUniformBufer(uint32_t currentImage);
+        void getTextureFormat(const Image& img, VkFormat& internal_format);
+        VkCommandBuffer beginSingleTimeCommands();
+        void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, 
+                uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED, uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
 
     private:
         uint32_t m_nCurrentFrame = 0;

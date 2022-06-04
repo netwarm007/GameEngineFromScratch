@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "AssetLoader.hpp"
+#include "JPEG.hpp"
 #include "Vulkan/VulkanRHI.hpp"
 
 using namespace My;
@@ -89,6 +90,19 @@ int main() {
 
     // 创建 Command Pools
     rhi.createCommandPool();
+
+    // 加载贴图
+    {
+        AssetLoader asset_loader;
+        auto buf = asset_loader.SyncOpenAndReadBinary("Textures/jpeg_decoder_test_8.jpg");
+        JfifParser parser;
+        auto image = parser.Parse(buf);
+        rhi.createTextureImage(image);
+        rhi.createTextureImageView(image);
+    }
+
+    // 创建采样器
+    rhi.createTextureSampler();
 
     // 创建顶点缓冲区
     rhi.createVertexBuffer();
