@@ -457,6 +457,7 @@ void VulkanRHI::createLogicalDevice () {
 
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
+    deviceFeatures.sampleRateShading = m_bUseSampleShading;
 
     auto extensions = deviceExtensions;
     if (hasPortabilityEnumeration) {
@@ -753,9 +754,9 @@ void VulkanRHI::createGraphicsPipeline() {
     // 多采样（Multisampling）
     VkPipelineMultisampleStateCreateInfo multisampling {};
     multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable   = VK_FALSE;
     multisampling.rasterizationSamples  = m_vkMsaaSamples;
-    multisampling.minSampleShading      = 1.0f;
+    multisampling.sampleShadingEnable   = m_bUseSampleShading;
+    multisampling.minSampleShading      = 0.2f;
     multisampling.pSampleMask           = nullptr;
     multisampling.alphaToCoverageEnable = VK_FALSE;
     multisampling.alphaToOneEnable      = VK_FALSE;

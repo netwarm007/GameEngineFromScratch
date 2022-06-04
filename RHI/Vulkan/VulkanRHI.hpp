@@ -128,5 +128,6 @@ namespace My {
 
     private:
         uint32_t m_nCurrentFrame = 0;
+        VkBool32 m_bUseSampleShading = VK_TRUE;
     };
 }
