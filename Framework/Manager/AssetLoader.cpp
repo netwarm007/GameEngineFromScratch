@@ -31,6 +31,40 @@ bool AssetLoader::RemoveSearchPath(const char* path) {
     return true;
 }
 
+std::string AssetLoader::GetFileRealPath(const char* filePath) {
+    FILE* fp = nullptr;
+    // loop N times up the hierarchy, testing at each level
+    std::string upPath(m_strTargetPath);
+    std::string fullPath;
+    for (int32_t i = 0; i < 10; i++) {
+        auto src = m_strSearchPath.begin();
+        bool looping = true;
+        while (looping) {
+            fullPath.assign(upPath);  // reset to current upPath.
+            if (src != m_strSearchPath.end()) {
+                fullPath.append(*src);
+                fullPath.append("/Asset/");
+                src++;
+            } else {
+                fullPath.append("Asset/");
+                looping = false;
+            }
+            fullPath.append(filePath);
+
+            fp = fopen(fullPath.c_str(), "r");
+
+            if (fp) {
+                fclose(fp);
+                return fullPath;
+            }
+        }
+
+        upPath.append("../");
+    }
+
+    return std::string();
+}
+
 bool AssetLoader::FileExists(const char* filePath) {
     AssetFilePtr fp = OpenFile(filePath, MY_OPEN_BINARY);
     if (fp != nullptr) {

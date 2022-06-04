@@ -4,6 +4,9 @@
 #include "PNG.hpp"
 #include "Vulkan/VulkanRHI.hpp"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 using namespace My;
 
 int main() {
@@ -100,7 +103,7 @@ int main() {
     // 加载贴图
     {
         AssetLoader asset_loader;
-        auto buf = asset_loader.SyncOpenAndReadBinary("Textures/Lava_03_emissive-1K.png");
+        auto buf = asset_loader.SyncOpenAndReadBinary("Textures/viking_room.png");
         PngParser parser;
         auto image = parser.Parse(buf);
         rhi.createTextureImage(image);
@@ -109,6 +112,46 @@ int main() {
 
     // 创建采样器
     rhi.createTextureSampler();
+
+    // 加载模型
+    {
+        AssetLoader asset_loader;
+        auto model_path = asset_loader.GetFileRealPath("Models/viking_room.obj");
+        std::vector<Vertex>      vertices;
+        std::vector<uint32_t>    indices;
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+        std::string warn, err;
+
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, model_path.c_str())) {
+            throw std::runtime_error(warn + err);
+        }
+
+        for (const auto& shape : shapes) {
+            for (const auto& index : shape.mesh.indices) {
+                Vertex vertex {};
+
+                vertex.pos = {
+                    attrib.vertices[3 * index.vertex_index + 0],
+                    attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 2]
+                };
+
+                vertex.texCoord = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+                };
+
+                vertex.color = {1.0f, 1.0f, 1.0f};
+
+                vertices.push_back(vertex);
+                indices.push_back(indices.size());
+            }
+
+            rhi.setModel(vertices, indices);
+        }
+    }
 
     // 创建顶点缓冲区
     rhi.createVertexBuffer();

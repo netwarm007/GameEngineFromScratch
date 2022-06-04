@@ -101,58 +101,6 @@ bool checkValidationLayerSupport() {
 
 using namespace My;
 
-struct Vertex {
-    Vector3f pos;
-    Vector3f color;
-    Vector2f texCoord;
-
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription {};
-        bindingDescription.binding = 0;
-        bindingDescription.stride  = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
-    }
-
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format  = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset  = offsetof(Vertex, pos);
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-        return attributeDescriptions;
-    }
-};
-
-const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f,  0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-};
-
-const std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
-};
-
 struct UniformBufferObject {
     Matrix4X4f model;
     Matrix4X4f view;
@@ -935,11 +883,11 @@ void VulkanRHI::recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t ima
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(m_vkCommandBuffers[m_nCurrentFrame], 0, 1, vertexBuffers, offsets);
 
-    vkCmdBindIndexBuffer(m_vkCommandBuffers[m_nCurrentFrame], m_vkIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(m_vkCommandBuffers[m_nCurrentFrame], m_vkIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
     vkCmdBindDescriptorSets(m_vkCommandBuffers[m_nCurrentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkPipelineLayout, 0, 1, &m_vkDescriptorSets[m_nCurrentFrame], 0, nullptr);
 
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_Indices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -1129,7 +1077,7 @@ void VulkanRHI::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 }
 
 void VulkanRHI::createVertexBuffer() {
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    VkDeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
 
     // 创建中间缓冲区
     VkBuffer stagingBuffer;
@@ -1139,7 +1087,7 @@ void VulkanRHI::createVertexBuffer() {
     // 上传数据
     void* data;
     vkMapMemory(m_vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), (size_t) bufferSize);
+        memcpy(data, m_Vertices.data(), (size_t) bufferSize);
     vkUnmapMemory(m_vkDevice, stagingBufferMemory);
 
     // 创建设备专有缓冲区
@@ -1152,7 +1100,7 @@ void VulkanRHI::createVertexBuffer() {
 } 
 
 void VulkanRHI::createIndexBuffer() {
-    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    VkDeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
 
     // 创建中间缓冲区
     VkBuffer stagingBuffer;
@@ -1162,7 +1110,7 @@ void VulkanRHI::createIndexBuffer() {
     // 上传数据
     void* data;
     vkMapMemory(m_vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), (size_t) bufferSize);
+        memcpy(data, m_Indices.data(), (size_t) bufferSize);
     vkUnmapMemory(m_vkDevice, stagingBufferMemory);
 
     // 创建设备专有缓冲区
@@ -1253,7 +1201,7 @@ void VulkanRHI::updateUniformBufer(uint32_t currentImage) {
 
     UniformBufferObject ubo {};
     BuildIdentityMatrix(ubo.model);
-    MatrixRotationAxis(ubo.model, {0.0f, 0.0f, 1.0f}, time * PI / 2.0f);
+    MatrixRotationAxis(ubo.model, {0.0f, 0.0f, 1.0f}, time * PI / 8.0f);
     BuildViewRHMatrix(ubo.view, {2.0f, 2.0f, 2.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f});
     BuildPerspectiveFovRHMatrix(ubo.proj, PI / 4.0f, m_vkSwapChainExtent.width / m_vkSwapChainExtent.height, 0.1f, 10.0f);
     ubo.proj[1][1] *= -1.0f;
@@ -1679,4 +1627,9 @@ void VulkanRHI::createColorResources() {
 
     createImage(m_vkSwapChainExtent.width, m_vkSwapChainExtent.height, m_vkMsaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vkColorImage, m_vkColorImageMemory);
     m_vkColorImageView = createImageView(m_vkColorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+}
+
+void VulkanRHI::setModel(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
+    m_Vertices = vertices;
+    m_Indices = indices;
 }

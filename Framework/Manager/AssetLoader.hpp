@@ -35,6 +35,8 @@ class AssetLoader : public IRuntimeModule {
 
     void ClearSearchPath();
 
+    std::string GetFileRealPath(const char* filePath);
+
     virtual bool FileExists(const char* filePath);
 
     virtual AssetFilePtr OpenFile(const char* name, AssetOpenMode mode);

@@ -46,3 +46,6 @@
 [submodule "External/src/flatbuffers"]
 	path = External/src/flatbuffers
 	url = https://github.com/google/flatbuffers.git
+[submodule "tinyobjloader"]
+	path = External/src/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader.git

@@ -3,8 +3,10 @@
 #include <vector>
 #include "Buffer.hpp"
 #include "Image.hpp"
+#include "Vertex.hpp"
 
 namespace My {
+
     class VulkanRHI {
     public:
         VulkanRHI();
@@ -46,6 +48,8 @@ namespace My {
         std::vector<VkSemaphore>    m_vkRenderFinishedSemaphores;
         std::vector<VkFence>        m_vkInFlightFences;
 
+        std::vector<Vertex>      m_Vertices;
+        std::vector<uint32_t>    m_Indices;
         VkBuffer                 m_vkVertexBuffer;
         VkDeviceMemory           m_vkVertexBufferMemory;
         VkBuffer                 m_vkIndexBuffer;
@@ -96,6 +100,7 @@ namespace My {
         void createTextureImage(Image& image);
         void createTextureImageView(Image& image);
         void createTextureSampler();
+        void setModel(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
         void createVertexBuffer();
         void createIndexBuffer();
         void createUniformBuffers();
