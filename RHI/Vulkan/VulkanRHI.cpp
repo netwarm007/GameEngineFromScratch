@@ -102,7 +102,7 @@ bool checkValidationLayerSupport() {
 using namespace My;
 
 struct Vertex {
-    Vector2f pos;
+    Vector3f pos;
     Vector3f color;
     Vector2f texCoord;
 
@@ -119,7 +119,7 @@ struct Vertex {
         std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format  = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].format  = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset  = offsetof(Vertex, pos);
 
         attributeDescriptions[1].binding = 0;
@@ -137,14 +137,20 @@ struct Vertex {
 };
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-    {{ 0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5f,  0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-    {{-0.5f,  0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+    {{-0.5f, -0.5f,  0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{ 0.5f, -0.5f,  0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.5f,  0.5f,  0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f,  0.5f,  0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+    {{ 0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{ 0.5f,  0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f,  0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> indices = {
-    0, 1, 2, 2, 3, 0
+    0, 1, 2, 2, 3, 0,
+    4, 5, 6, 6, 7, 4
 };
 
 struct UniformBufferObject {
@@ -571,7 +577,7 @@ void VulkanRHI::createImageViews() {
     m_vkSwapChainImageViews.resize(m_vkSwapChainImages.size());
 
     for(size_t i = 0; i < m_vkSwapChainImages.size(); i++) {
-        m_vkSwapChainImageViews[i] = createImageView(m_vkSwapChainImages[i], m_vkSwapChainImageFormat);
+        m_vkSwapChainImageViews[i] = createImageView(m_vkSwapChainImages[i], m_vkSwapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 }
 
@@ -598,23 +604,40 @@ void VulkanRHI::createRenderPass() {
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentDescription depthAttachment {};
+    depthAttachment.format   = findDepthFormat();
+    depthAttachment.samples  = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.loadOp   = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp  = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef {};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkSubpassDescription subpass {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     VkSubpassDependency dependency {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
 
     VkRenderPassCreateInfo renderPassInfo {};
     renderPassInfo.sType            = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount  = 1;
-    renderPassInfo.pAttachments     = &colorAttachment;
+    renderPassInfo.attachmentCount  = static_cast<uint32_t>(attachments.size());
+    renderPassInfo.pAttachments     = attachments.data();
     renderPassInfo.subpassCount     = 1;
     renderPassInfo.pSubpasses       = &subpass;
     renderPassInfo.dependencyCount  = 1;
@@ -722,6 +745,17 @@ void VulkanRHI::createGraphicsPipeline() {
     multisampling.alphaToOneEnable      = VK_FALSE;
 
     // 深度以及蒙板测试
+    VkPipelineDepthStencilStateCreateInfo depthStencil {};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.minDepthBounds = 0.0f;
+    depthStencil.maxDepthBounds = 1.0f;
+    depthStencil.stencilTestEnable = VK_FALSE;
+    depthStencil.front = {};
+    depthStencil.back = {};
     
     // 色彩混合
     VkPipelineColorBlendAttachmentState colorBlendAttachment {};
@@ -779,7 +813,7 @@ void VulkanRHI::createGraphicsPipeline() {
     pipelineInfo.pViewportState         = &viewportState;
     pipelineInfo.pRasterizationState    = &rasterizer;
     pipelineInfo.pMultisampleState      = &multisampling;
-    pipelineInfo.pDepthStencilState     = nullptr;
+    pipelineInfo.pDepthStencilState     = &depthStencil;
     pipelineInfo.pColorBlendState       = &colorBlending;
     pipelineInfo.pDynamicState          = nullptr;
     pipelineInfo.layout                 = m_vkPipelineLayout;
@@ -797,15 +831,16 @@ void VulkanRHI::createFramebuffers() {
     m_vkSwapChainFramebuffers.resize(m_vkSwapChainImageViews.size());
 
     for (size_t i = 0; i < m_vkSwapChainImageViews.size(); i++) {
-        VkImageView attachments[] = {
-            m_vkSwapChainImageViews[i]
+        std::array<VkImageView, 2> attachments = {
+            m_vkSwapChainImageViews[i],
+            m_vkDepthImageView
         };
 
         VkFramebufferCreateInfo framebufferInfo {};
         framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass      = m_vkRenderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments    = attachments;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments    = attachments.data();
         framebufferInfo.width           = m_vkSwapChainExtent.width;
         framebufferInfo.height          = m_vkSwapChainExtent.height;
         framebufferInfo.layers          = 1;
@@ -868,9 +903,11 @@ void VulkanRHI::recordCommandBuffer(VkCommandBuffer& commandBuffer, uint32_t ima
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_vkSwapChainExtent;
 
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    std::array<VkClearValue, 2> clearValues {};
+    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    clearValues[1].depthStencil = {1.0f, 0};
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -977,6 +1014,10 @@ void VulkanRHI::drawFrame() {
 }
 
 void VulkanRHI::cleanupSwapChain() {
+    vkDestroyImageView(m_vkDevice, m_vkDepthImageView, nullptr);
+    vkDestroyImage(m_vkDevice, m_vkDepthImage, nullptr);
+    vkFreeMemory(m_vkDevice, m_vkDepthImageMemory, nullptr);
+
     for (auto& framebuffer : m_vkSwapChainFramebuffers) {
         vkDestroyFramebuffer(m_vkDevice, framebuffer, nullptr);
     }
@@ -1003,6 +1044,7 @@ void VulkanRHI::recreateSwapChain() {
     createImageViews();
     createRenderPass();
     createGraphicsPipeline();
+    createDepthResources();
     createFramebuffers();
 }
 
@@ -1343,24 +1385,30 @@ void VulkanRHI::createImage(Image& image, VkImageTiling tiling, VkImageUsageFlag
         throw std::runtime_error("faild to load texture image!");
     }
 
+    VkFormat format;
+    getTextureFormat(image, format);
+    createImage(image.Width, image.Height, format, tiling, usage, sharing_mode, properties, vk_image, vk_image_memory, queueFamilyIndexCount, queueFamilyIndices);
+}
+
+void VulkanRHI::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkSharingMode sharing_mode, VkMemoryPropertyFlags properties, VkImage& vk_image, VkDeviceMemory& vk_image_memory, uint32_t queueFamilyIndexCount, uint32_t* queueFamilyIndices) {
     VkImageCreateInfo imageInfo {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = image.Width;
-    imageInfo.extent.height = image.Height;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
     imageInfo.extent.depth = 1;
-    imageInfo.mipLevels =  static_cast<uint32_t>(image.mipmaps.size());
+    imageInfo.mipLevels = 1;
     imageInfo.arrayLayers = 1;
 
-    VkFormat format;
-    getTextureFormat(image, format);
     imageInfo.format = format;
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage;
     imageInfo.sharingMode = sharing_mode;
-    imageInfo.queueFamilyIndexCount = queueFamilyIndexCount;
-    imageInfo.pQueueFamilyIndices = queueFamilyIndices;
+    if (queueFamilyIndexCount > 0) {
+        imageInfo.queueFamilyIndexCount = queueFamilyIndexCount;
+        imageInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.flags = 0;
 
@@ -1421,13 +1469,13 @@ void VulkanRHI::createTextureImage(Image& image) {
     vkFreeMemory(m_vkDevice, stagingBufferMemory, nullptr);
 }
 
-VkImageView VulkanRHI::createImageView(VkImage image, VkFormat format) {
+VkImageView VulkanRHI::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
     VkImageViewCreateInfo viewInfo {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -1444,7 +1492,7 @@ VkImageView VulkanRHI::createImageView(VkImage image, VkFormat format) {
 void VulkanRHI::createTextureImageView(Image& image) {
     VkFormat format;
     getTextureFormat(image, format);
-    m_vkTextureImageView = createImageView(m_vkTextureImage, format);
+    m_vkTextureImageView = createImageView(m_vkTextureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void VulkanRHI::createTextureSampler() {
@@ -1552,4 +1600,38 @@ void VulkanRHI::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
                         1, &barrier);
 
     endSingleTimeCommands(commandBuffer);
+}
+
+VkFormat VulkanRHI::findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+    for (VkFormat format : candidates) {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(m_vkPhysicalDevice, format, &props);
+
+        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
+            return format;
+        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+    }
+
+    throw std::runtime_error("failed to find supported format!");
+}
+
+VkFormat VulkanRHI::findDepthFormat() {
+    return findSupportedFormat(
+        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+    );
+}
+
+static bool hasStencilComponent(VkFormat format) {
+    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+void VulkanRHI::createDepthResources() {
+    VkFormat depthFormat = findDepthFormat();
+
+    createImage(m_vkSwapChainExtent.width, m_vkSwapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vkDepthImage, m_vkDepthImageMemory);
+    m_vkDepthImageView = createImageView(m_vkDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 }

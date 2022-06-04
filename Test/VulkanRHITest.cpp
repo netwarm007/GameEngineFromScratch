@@ -1,7 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "AssetLoader.hpp"
-#include "JPEG.hpp"
+#include "PNG.hpp"
 #include "Vulkan/VulkanRHI.hpp"
 
 using namespace My;
@@ -85,17 +85,20 @@ int main() {
         rhi.createGraphicsPipeline();
     }
 
-    // 创建 Framebuffers
-    rhi.createFramebuffers();
-
     // 创建 Command Pools
     rhi.createCommandPool();
+
+    // 创建深度缓冲区
+    rhi.createDepthResources();
+
+    // 创建 Framebuffers
+    rhi.createFramebuffers();
 
     // 加载贴图
     {
         AssetLoader asset_loader;
-        auto buf = asset_loader.SyncOpenAndReadBinary("Textures/jpeg_decoder_test_8.jpg");
-        JfifParser parser;
+        auto buf = asset_loader.SyncOpenAndReadBinary("Textures/Lava_03_emissive-1K.png");
+        PngParser parser;
         auto image = parser.Parse(buf);
         rhi.createTextureImage(image);
         rhi.createTextureImageView(image);
