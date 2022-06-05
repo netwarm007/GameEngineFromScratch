@@ -36,6 +36,7 @@ int main() {
         }
     };
 
+    // 设置回调函数
     rhi.setFramebufferSizeQueryCB(getFramebufferSize);
 
     // 创建实例
@@ -46,10 +47,13 @@ int main() {
 
     // 创建（连接）画布
     {
-        auto createWindowSurface = [window](const VkInstance& instance, VkSurfaceKHR& surface) {
-            if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+        auto createWindowSurface = [window](const vk::Instance& instance, vk::SurfaceKHR& surface) {
+            VkSurfaceKHR _surface;
+            if (glfwCreateWindowSurface(instance, window, nullptr, &_surface) != VK_SUCCESS) {
                 throw std::runtime_error("faild to create window surface!");
             }
+
+            surface = _surface;
         };
         rhi.createSurface(createWindowSurface);
     }

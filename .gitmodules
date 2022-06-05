@@ -49,3 +49,6 @@
 [submodule "tinyobjloader"]
 	path = External/src/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "Vulkan-Hpp"]
+	path = External/src/Vulkan-hpp
+	url = https://github.com/KhronosGroup/Vulkan-Hpp.git

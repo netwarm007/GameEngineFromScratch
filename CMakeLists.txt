@@ -106,6 +106,7 @@ find_library(SDL2_LIBRARY NAMES SDL2 libSDL2 PATHS ${MYGE_EXTERNAL_LIBRARY_PATH}
 find_package(Vulkan)
 if(Vulkan_FOUND)
 include_directories(${Vulkan_INCLUDE_DIRS})
+include_directories(${MYGE_EXTERNAL_ROOT}/../src/Vulkan-hpp/)
 endif(Vulkan_FOUND)
 
 include(CTest)
