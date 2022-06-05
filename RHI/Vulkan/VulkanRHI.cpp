@@ -265,6 +265,7 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
 
     if (enableValidationLayers) {
         instanceCreateInfo.setPEnabledLayerNames(validationLayers);
+        instanceCreateInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         populateDebugMessengerCreateInfo(debugCreateInfo);
         instanceCreateInfo.setPNext(&debugCreateInfo);
@@ -886,7 +887,7 @@ void VulkanRHI::recordCommandBuffer(vk::CommandBuffer& commandBuffer,
 
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
                                      m_vkPipelineLayout, 0,
-                                     m_vkDescriptorSets[m_nCurrentFrame], 0u);
+                                     m_vkDescriptorSets[m_nCurrentFrame], nullptr);
 
     commandBuffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0,
                               0);
