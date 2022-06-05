@@ -38,4 +38,10 @@ namespace My {
             return attributeDescriptions;
         }
     };
+
+    struct UniformBufferObject {
+        Matrix4X4f model;
+        Matrix4X4f view;
+        Matrix4X4f proj;
+    };
 }
