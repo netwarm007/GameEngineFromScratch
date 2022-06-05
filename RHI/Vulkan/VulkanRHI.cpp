@@ -58,7 +58,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(  VkInstance insta
     return pfnVkCreateDebugUtilsMessengerEXT( instance, pCreateInfo, pAllocator, pDebugMessenger );
 }
 
-VKAPI_ATTR void VKAPI_CALL DestroyDebugUtilsMessengerEXT( VkInstance instance, 
+VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT( VkInstance instance, 
                                                           VkDebugUtilsMessengerEXT debugMessenger, 
                                                           const VkAllocationCallbacks* pAllocator) {
     return pfnVkDestroyDebugUtilsMessengerEXT( instance, debugMessenger, pAllocator );
@@ -212,6 +212,10 @@ VulkanRHI::~VulkanRHI() {
 
     m_vkDevice.destroy();     // 销毁逻辑设备
 
+    if (enableValidationLayers) {
+        m_vkInstance.destroyDebugUtilsMessengerEXT( m_vkDebugMessenger );
+    }
+
     m_vkInstance.destroySurfaceKHR(m_vkSurface);
 }
 
@@ -265,15 +269,15 @@ void VulkanRHI::setupDebugMessenger() {
         pfnVkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>( m_vkInstance.getProcAddr( "vkCreateDebugUtilsMessengerEXT" ) );
         if ( !pfnVkCreateDebugUtilsMessengerEXT )
         {
-        std::cout << "GetInstanceProcAddr: Unable to find pfnVkCreateDebugUtilsMessengerEXT function." << std::endl;
-        exit( 1 );
+            std::cout << "GetInstanceProcAddr: Unable to find pfnVkCreateDebugUtilsMessengerEXT function." << std::endl;
+            exit( 1 );
         }
 
         pfnVkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>( m_vkInstance.getProcAddr( "vkDestroyDebugUtilsMessengerEXT" ) );
         if ( !pfnVkDestroyDebugUtilsMessengerEXT )
         {
-        std::cout << "GetInstanceProcAddr: Unable to find pfnVkDestroyDebugUtilsMessengerEXT function." << std::endl;
-        exit( 1 );
+            std::cout << "GetInstanceProcAddr: Unable to find pfnVkDestroyDebugUtilsMessengerEXT function." << std::endl;
+            exit( 1 );
         }
 
         vk::DebugUtilsMessageSeverityFlagsEXT severityFlags( vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
