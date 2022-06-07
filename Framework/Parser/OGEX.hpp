@@ -1,10 +1,11 @@
 #include <unordered_map>
 
+#include "OpenGEX.h"
+
 #include "Bezier.hpp"
 #include "Curve.hpp"
 #include "ISceneParser.hpp"
 #include "Linear.hpp"
-#include "OpenGEX.h"
 #include "SceneNode.hpp"
 #include "SceneObject.hpp"
 #include "portable.hpp"

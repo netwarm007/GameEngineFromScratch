@@ -14,7 +14,6 @@ class CocoaApplication : public BaseApplication {
 
     void* GetMainWindowHandler() override;
 
-   protected:
     void CreateMainWindow() override;
 
    protected:

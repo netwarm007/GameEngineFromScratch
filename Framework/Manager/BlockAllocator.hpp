@@ -18,8 +18,8 @@ struct PageHeader {
 
 class BlockAllocator : _implements_ IAllocator {
    public:
-    BlockAllocator();
-    BlockAllocator(size_t data_size, size_t page_size, size_t alignment);
+    BlockAllocator(IMemoryManager* pMmgr) : IAllocator(pMmgr) {};
+    BlockAllocator(IMemoryManager* pMmgr, size_t data_size, size_t page_size, size_t alignment);
     ~BlockAllocator() override;
     // disable copy & assignment
     BlockAllocator(const BlockAllocator& clone) = delete;

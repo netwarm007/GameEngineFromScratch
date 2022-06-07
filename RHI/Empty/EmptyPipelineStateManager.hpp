@@ -3,7 +3,7 @@
 namespace My {
 class EmptyPipelineStateManager : public PipelineStateManager {
    public:
-    EmptyPipelineStateManager() = default;
+   using PipelineStateManager::PipelineStateManager;
     ~EmptyPipelineStateManager() = default;
 
     int Initialize() final { return 0; }

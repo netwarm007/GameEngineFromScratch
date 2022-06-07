@@ -8,8 +8,6 @@
 using namespace My;
 
 namespace My {
-    AssetLoader* g_pAssetLoader = new AssetLoader();
-
     std::map<ASTNode::IDN_TYPE, ASTNodeRef> global_symbol_table =
     {
         { "byte",   make_ASTNodeRef<ASTNodePrimitive>( "byte" ) },
@@ -27,7 +25,8 @@ namespace My {
 
 static void parse(const char* file) {
     yyscan_t scanner;
-    auto fp = (FILE*) g_pAssetLoader->OpenFile(file, 
+    AssetLoader assetLoader;
+    auto fp = (FILE*) assetLoader.OpenFile(file, 
                                             AssetLoader::AssetOpenMode::MY_OPEN_TEXT);
     yylex_init(&scanner);
     yyset_in(fp, scanner);

@@ -1,39 +1,30 @@
 #pragma once
-#include "Geometry.hpp"
-#include "IPhysicsManager.hpp"
+#include "PhysicsManager.hpp"
 
 namespace My {
-class MyPhysicsManager : public IPhysicsManager {
+class MyPhysicsManager : public PhysicsManager {
    public:
-    int Initialize() override;
-    void Finalize() override;
-    void Tick() override;
+    MyPhysicsManager() = default;
+    ~MyPhysicsManager() override = default;
+
+    int Initialize() final;
+    void Finalize() final;
+    void Tick() final;
 
     void CreateRigidBody(SceneGeometryNode& node,
-                         const SceneObjectGeometry& geometry) override;
-    void DeleteRigidBody(SceneGeometryNode& node) override;
+                         const SceneObjectGeometry& geometry) final;
+    void DeleteRigidBody(SceneGeometryNode& node) final;
 
-    int CreateRigidBodies() override;
-    void ClearRigidBodies() override;
+    int CreateRigidBodies() final;
+    void ClearRigidBodies() final;
 
-    Matrix4X4f GetRigidBodyTransform(void* rigidBody) override;
-    void UpdateRigidBodyTransform(SceneGeometryNode& node) override;
+    Matrix4X4f GetRigidBodyTransform(void* rigidBody) final;
+    void UpdateRigidBodyTransform(SceneGeometryNode& node) final;
 
-    void ApplyCentralForce(void* rigidBody, Vector3f force) override;
+    void ApplyCentralForce(void* rigidBody, Vector3f force) final;
 
-    static void IterateConvexHull();
+    void IterateConvexHull();
 
-#ifdef DEBUG
-    void DrawDebugInfo() override;
-#endif
-
-   protected:
-#ifdef DEBUG
-    static void DrawAabb(const Geometry& geometry, const Matrix4X4f& trans,
-                         const Vector3f& centerOfMass);
-    static void DrawShape(const Geometry& geometry, const Matrix4X4f& trans,
-                          const Vector3f& centerOfMass);
-#endif
    private:
     uint64_t m_nSceneRevision{0};
 };

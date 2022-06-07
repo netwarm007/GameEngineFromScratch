@@ -5,7 +5,8 @@
 namespace My {
 _Interface_ IPass {
    public:
-    virtual void BeginPass(Frame& frame) = 0;
-    virtual void EndPass(Frame& frame) = 0;
+    virtual ~IPass() = default;
+    virtual void BeginPass(Frame & frame) = 0;
+    virtual void EndPass(Frame & frame) = 0;
 };
 }  // namespace My

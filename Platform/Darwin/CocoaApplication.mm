@@ -1,7 +1,8 @@
-#include "CocoaApplication.h"
 #import <Carbon/Carbon.h>
 #include <cstring>
+
 #import "AppDelegate.h"
+#include "CocoaApplication.h"
 #include "InputManager.hpp"
 #import "WindowDelegate.h"
 #include "imgui_impl_osx.h"
@@ -55,7 +56,7 @@ void CocoaApplication::CreateMainWindow() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
 
@@ -66,7 +67,6 @@ void CocoaApplication::CreateMainWindow() {
     }
 
     ImGui_ImplOSX_Init([m_pWindow contentView]);
-
 }
 
 void CocoaApplication::Finalize() {
@@ -78,92 +78,94 @@ void CocoaApplication::Finalize() {
 }
 
 void CocoaApplication::Tick() {
+    BaseApplication::Tick();
     while (NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                untilDate:nil
                                                   inMode:NSDefaultRunLoopMode
                                                  dequeue:YES]) {
-
-        switch ([(NSEvent*)event type]) {
-            case NSEventTypeKeyUp:
-                NSLog(@"[CocoaApp] Key Up Event Received!");
-                if ([event modifierFlags] & NSEventModifierFlagNumericPad) {
-                    // arrow keys
-                    NSString* theArrow = [event charactersIgnoringModifiers];
-                    unichar keyChar = 0;
-                    if ([theArrow length] == 1) {
-                        keyChar = [theArrow characterAtIndex:0];
-                        if (keyChar == NSLeftArrowFunctionKey) {
-                            g_pInputManager->LeftArrowKeyUp();
-                            break;
+        if (m_pInputManager) {
+            switch ([(NSEvent*)event type]) {
+                case NSEventTypeKeyUp:
+                    NSLog(@"[CocoaApp] Key Up Event Received!");
+                    if ([event modifierFlags] & NSEventModifierFlagNumericPad) {
+                        // arrow keys
+                        NSString* theArrow = [event charactersIgnoringModifiers];
+                        unichar keyChar = 0;
+                        if ([theArrow length] == 1) {
+                            keyChar = [theArrow characterAtIndex:0];
+                            if (keyChar == NSLeftArrowFunctionKey) {
+                                m_pInputManager->LeftArrowKeyUp();
+                                break;
+                            }
+                            if (keyChar == NSRightArrowFunctionKey) {
+                                m_pInputManager->RightArrowKeyUp();
+                                break;
+                            }
+                            if (keyChar == NSUpArrowFunctionKey) {
+                                m_pInputManager->UpArrowKeyUp();
+                                break;
+                            }
+                            if (keyChar == NSDownArrowFunctionKey) {
+                                m_pInputManager->DownArrowKeyUp();
+                                break;
+                            }
                         }
-                        if (keyChar == NSRightArrowFunctionKey) {
-                            g_pInputManager->RightArrowKeyUp();
-                            break;
-                        }
-                        if (keyChar == NSUpArrowFunctionKey) {
-                            g_pInputManager->UpArrowKeyUp();
-                            break;
-                        }
-                        if (keyChar == NSDownArrowFunctionKey) {
-                            g_pInputManager->DownArrowKeyUp();
-                            break;
-                        }
-                    }
-                } else {
-                    switch ([event keyCode]) {
-                        case kVK_ANSI_D:  // d key
-                            InputManager::AsciiKeyUp('d');
-                            break;
-                        case kVK_ANSI_R:  // r key
-                            InputManager::AsciiKeyUp('r');
-                            break;
-                        case kVK_ANSI_U:  // u key
-                            InputManager::AsciiKeyUp('u');
-                            break;
-                    }
-                }
-                break;
-            case NSEventTypeKeyDown:
-                NSLog(@"[CocoaApp] Key Down Event Received! keycode=%d", [event keyCode]);
-                if ([event modifierFlags] & NSEventModifierFlagNumericPad) {
-                    // arrow keys
-                    NSString* theArrow = [event charactersIgnoringModifiers];
-                    unichar keyChar = 0;
-                    if ([theArrow length] == 1) {
-                        keyChar = [theArrow characterAtIndex:0];
-                        if (keyChar == NSLeftArrowFunctionKey) {
-                            g_pInputManager->LeftArrowKeyDown();
-                            break;
-                        }
-                        if (keyChar == NSRightArrowFunctionKey) {
-                            g_pInputManager->RightArrowKeyDown();
-                            break;
-                        }
-                        if (keyChar == NSUpArrowFunctionKey) {
-                            g_pInputManager->UpArrowKeyDown();
-                            break;
-                        }
-                        if (keyChar == NSDownArrowFunctionKey) {
-                            g_pInputManager->DownArrowKeyDown();
-                            break;
+                    } else {
+                        switch ([event keyCode]) {
+                            case kVK_ANSI_D:  // d key
+                                m_pInputManager->AsciiKeyUp('d');
+                                break;
+                            case kVK_ANSI_R:  // r key
+                                m_pInputManager->AsciiKeyUp('r');
+                                break;
+                            case kVK_ANSI_U:  // u key
+                                m_pInputManager->AsciiKeyUp('u');
+                                break;
                         }
                     }
-                } else {
-                    switch ([event keyCode]) {
-                        case kVK_ANSI_D:  // d key
-                            My::InputManager::AsciiKeyDown('d');
-                            break;
-                        case kVK_ANSI_R:  // r key
-                            My::InputManager::AsciiKeyDown('r');
-                            break;
-                        case kVK_ANSI_U:  // u key
-                            My::InputManager::AsciiKeyDown('u');
-                            break;
+                    break;
+                case NSEventTypeKeyDown:
+                    NSLog(@"[CocoaApp] Key Down Event Received! keycode=%d", [event keyCode]);
+                    if ([event modifierFlags] & NSEventModifierFlagNumericPad) {
+                        // arrow keys
+                        NSString* theArrow = [event charactersIgnoringModifiers];
+                        unichar keyChar = 0;
+                        if ([theArrow length] == 1) {
+                            keyChar = [theArrow characterAtIndex:0];
+                            if (keyChar == NSLeftArrowFunctionKey) {
+                                m_pInputManager->LeftArrowKeyDown();
+                                break;
+                            }
+                            if (keyChar == NSRightArrowFunctionKey) {
+                                m_pInputManager->RightArrowKeyDown();
+                                break;
+                            }
+                            if (keyChar == NSUpArrowFunctionKey) {
+                                m_pInputManager->UpArrowKeyDown();
+                                break;
+                            }
+                            if (keyChar == NSDownArrowFunctionKey) {
+                                m_pInputManager->DownArrowKeyDown();
+                                break;
+                            }
+                        }
+                    } else {
+                        switch ([event keyCode]) {
+                            case kVK_ANSI_D:  // d key
+                                m_pInputManager->AsciiKeyDown('d');
+                                break;
+                            case kVK_ANSI_R:  // r key
+                                m_pInputManager->AsciiKeyDown('r');
+                                break;
+                            case kVK_ANSI_U:  // u key
+                                m_pInputManager->AsciiKeyDown('u');
+                                break;
+                        }
                     }
-                }
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    break;
+            }
         }
         [NSApp sendEvent:event];
         [NSApp updateWindows];

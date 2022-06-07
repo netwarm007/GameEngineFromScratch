@@ -1,7 +1,9 @@
+#include "OGEX.hpp"
+
 #include "SceneManager.hpp"
 
 #include "AssetLoader.hpp"
-#include "OGEX.hpp"
+#include "BaseApplication.hpp"
 
 using namespace My;
 using namespace std;
@@ -31,8 +33,10 @@ int SceneManager::LoadScene(const char* scene_file_name) {
 void SceneManager::ResetScene() { m_nSceneRevision++; }
 
 bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name) {
+    auto pAssetLoader = dynamic_cast<BaseApplication*>(m_pApp)->GetAssetLoader();
+
     string ogex_text =
-        g_pAssetLoader->SyncOpenAndReadTextFileToString(ogex_scene_file_name);
+        pAssetLoader->SyncOpenAndReadTextFileToString(ogex_scene_file_name);
 
     if (ogex_text.empty()) {
         return false;

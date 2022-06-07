@@ -16,7 +16,6 @@ class XcbApplication : public BaseApplication {
         return reinterpret_cast<void*>(m_XWindow);
     };
 
-   protected:
     void CreateMainWindow() override;
 
    protected:

@@ -2,7 +2,6 @@
 #include <future>
 #include <utility>
 
-#include "AssetLoader.hpp"
 #include "BMP.hpp"
 #include "BaseSceneObject.hpp"
 #include "DDS.hpp"

@@ -1,18 +1,12 @@
 #include <iostream>
 #include <string>
 
+#include "BaseApplication.hpp"
 #include "AssetLoader.hpp"
-#include "MemoryManager.hpp"
 #include "SceneManager.hpp"
 
 using namespace My;
 using namespace std;
-
-namespace My {
-IMemoryManager* g_pMemoryManager = new MemoryManager();
-AssetLoader* g_pAssetLoader = new AssetLoader();
-SceneManager* g_pSceneManager = new SceneManager();
-}  // namespace My
 
 template <typename T>
 static ostream& operator<<(ostream& out,
@@ -24,10 +18,9 @@ static ostream& operator<<(ostream& out,
     return out;
 }
 
-void loadScene(const char* scene_name) {
-    g_pSceneManager->LoadScene(scene_name);
-#if 0
-    auto& scene = g_pSceneManager->GetSceneForRendering();
+void loadScene(SceneManager& sceneManager, const char* scene_name) {
+    sceneManager.LoadScene(scene_name);
+    auto& scene = sceneManager.GetSceneForRendering();
 
     cout << "Dump of Geometries" << endl;
     cout << "---------------------------" << endl;
@@ -90,23 +83,27 @@ void loadScene(const char* scene_name) {
         if (pBone)
             cout << *pBone << endl;
     }
-#endif
 }
 
 int main(int argc, char** argv) {
-    g_pMemoryManager->Initialize();
-    g_pSceneManager->Initialize();
-    g_pAssetLoader->Initialize();
+    int error = 0;
+
+    BaseApplication app;
+    AssetLoader assetLoader;
+    SceneManager sceneManager;
+
+    app.RegisterManagerModule(&assetLoader, &assetLoader);
+    app.RegisterManagerModule(&sceneManager, &sceneManager);
+
+    error = app.Initialize();
 
     if (argc >= 2) {
-        loadScene(argv[1]);
+        sceneManager.LoadScene(argv[1]);
     } else {
-        loadScene("Scene/splash.ogex");
+        sceneManager.LoadScene("Scene/splash.ogex");
     }
 
-    g_pSceneManager->Finalize();
-    g_pAssetLoader->Finalize();
-    g_pMemoryManager->Finalize();
+    app.Finalize();
 
-    return 0;
+    return error;
 }

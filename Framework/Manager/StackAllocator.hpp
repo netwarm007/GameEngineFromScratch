@@ -8,9 +8,10 @@
 namespace My {
 class StackAllocator : _implements_ IAllocator {
    public:
-    StackAllocator();
-    StackAllocator(size_t page_size, size_t alignment);
     ~StackAllocator() override;
+
+    StackAllocator(IMemoryManager* pMmgr) : IAllocator(pMmgr) {};
+    StackAllocator(IMemoryManager* pMmgr, size_t page_size, size_t alignment);
     // disable copy & assignment
     StackAllocator(const StackAllocator& clone) = delete;
     StackAllocator& operator=(const StackAllocator& rhs) = delete;

@@ -124,89 +124,91 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
     result = ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
 
     // sort through and find what code to run for the message given
-    switch (message) {
-        case WM_CHAR: {
-            g_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
-        } break;
-        case WM_KEYUP: {
-            switch (wParam) {
-                case VK_LEFT:
-                    g_pInputManager->LeftArrowKeyUp();
-                    break;
-                case VK_RIGHT:
-                    g_pInputManager->RightArrowKeyUp();
-                    break;
-                case VK_UP:
-                    g_pInputManager->UpArrowKeyUp();
-                    break;
-                case VK_DOWN:
-                    g_pInputManager->DownArrowKeyUp();
-                    break;
+    if (m_pInputManager) {
+        switch (message) {
+            case WM_CHAR: {
+                m_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
+            } break;
+            case WM_KEYUP: {
+                switch (wParam) {
+                    case VK_LEFT:
+                        m_pInputManager->LeftArrowKeyUp();
+                        break;
+                    case VK_RIGHT:
+                        m_pInputManager->RightArrowKeyUp();
+                        break;
+                    case VK_UP:
+                        m_pInputManager->UpArrowKeyUp();
+                        break;
+                    case VK_DOWN:
+                        m_pInputManager->DownArrowKeyUp();
+                        break;
 
-                default:
-                    break;
-            }
-        } break;
-        case WM_KEYDOWN: {
-            switch (wParam) {
-                case VK_LEFT:
-                    g_pInputManager->LeftArrowKeyDown();
-                    break;
-                case VK_RIGHT:
-                    g_pInputManager->RightArrowKeyDown();
-                    break;
-                case VK_UP:
-                    g_pInputManager->UpArrowKeyDown();
-                    break;
-                case VK_DOWN:
-                    g_pInputManager->DownArrowKeyDown();
-                    break;
+                    default:
+                        break;
+                }
+            } break;
+            case WM_KEYDOWN: {
+                switch (wParam) {
+                    case VK_LEFT:
+                        m_pInputManager->LeftArrowKeyDown();
+                        break;
+                    case VK_RIGHT:
+                        m_pInputManager->RightArrowKeyDown();
+                        break;
+                    case VK_UP:
+                        m_pInputManager->UpArrowKeyDown();
+                        break;
+                    case VK_DOWN:
+                        m_pInputManager->DownArrowKeyDown();
+                        break;
 
-                default:
-                    break;
-            }
-        } break;
-        case WM_LBUTTONDOWN: {
-            g_pInputManager->LeftMouseButtonDown();
-            pThis->m_bInLeftDrag = true;
-            pThis->m_iPreviousX = GET_X_LPARAM(lParam);
-            pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
-        } break;
-        case WM_LBUTTONUP: {
-            g_pInputManager->LeftMouseButtonUp();
-            pThis->m_bInLeftDrag = false;
-        } break;
-        case WM_RBUTTONDOWN: {
-            g_pInputManager->RightMouseButtonDown();
-            pThis->m_bInRightDrag = true;
-            pThis->m_iPreviousX = GET_X_LPARAM(lParam);
-            pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
-        } break;
-        case WM_RBUTTONUP: {
-            g_pInputManager->RightMouseButtonUp();
-            pThis->m_bInRightDrag = false;
-        } break;
-        case WM_MOUSEMOVE: {
-            int pos_x = GET_X_LPARAM(lParam);
-            int pos_y = GET_Y_LPARAM(lParam);
-            if (pThis->m_bInLeftDrag) {
-                g_pInputManager->LeftMouseDrag(pos_x - pThis->m_iPreviousX,
-                                               pos_y - pThis->m_iPreviousY);
-            }
-            else if (pThis->m_bInRightDrag) {
-                g_pInputManager->RightMouseDrag(pos_x - pThis->m_iPreviousX,
-                                               pos_y - pThis->m_iPreviousY);
-            }
-        } break;
-        // this message is read when the window is closed
-        case WM_DESTROY: {
-            // close the application entirely
-            PostQuitMessage(0);
-            m_bQuit = true;
-        } break;
-        default:
-            // Handle any messages the switch statement didn't
-            result = DefWindowProc(hWnd, message, wParam, lParam);
+                    default:
+                        break;
+                }
+            } break;
+            case WM_LBUTTONDOWN: {
+                m_pInputManager->LeftMouseButtonDown();
+                pThis->m_bInLeftDrag = true;
+                pThis->m_iPreviousX = GET_X_LPARAM(lParam);
+                pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
+            } break;
+            case WM_LBUTTONUP: {
+                m_pInputManager->LeftMouseButtonUp();
+                pThis->m_bInLeftDrag = false;
+            } break;
+            case WM_RBUTTONDOWN: {
+                m_pInputManager->RightMouseButtonDown();
+                pThis->m_bInRightDrag = true;
+                pThis->m_iPreviousX = GET_X_LPARAM(lParam);
+                pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
+            } break;
+            case WM_RBUTTONUP: {
+                m_pInputManager->RightMouseButtonUp();
+                pThis->m_bInRightDrag = false;
+            } break;
+            case WM_MOUSEMOVE: {
+                int pos_x = GET_X_LPARAM(lParam);
+                int pos_y = GET_Y_LPARAM(lParam);
+                if (pThis->m_bInLeftDrag) {
+                    m_pInputManager->LeftMouseDrag(pos_x - pThis->m_iPreviousX,
+                                                   pos_y - pThis->m_iPreviousY);
+                } else if (pThis->m_bInRightDrag) {
+                    m_pInputManager->RightMouseDrag(
+                        pos_x - pThis->m_iPreviousX,
+                        pos_y - pThis->m_iPreviousY);
+                }
+            } break;
+            // this message is read when the window is closed
+            case WM_DESTROY: {
+                // close the application entirely
+                PostQuitMessage(0);
+                m_bQuit = true;
+            } break;
+            default:
+                // Handle any messages the switch statement didn't
+                result = DefWindowProc(hWnd, message, wParam, lParam);
+        }
     }
 
     return result;

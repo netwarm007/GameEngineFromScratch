@@ -9,7 +9,7 @@ void CocoaMetalApplication::CreateMainWindow() {
 
     @autoreleasepool {
         MetalView* pView = [[MetalView new]
-            initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)];
+            initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight) pApp:this];
 
         [m_pWindow setContentView:pView];
     }

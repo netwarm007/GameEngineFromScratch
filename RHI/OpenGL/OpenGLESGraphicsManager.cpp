@@ -46,7 +46,7 @@ int OpenGLESGraphicsManager::Initialize() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    auto config = g_pApp->GetConfiguration();
+    auto config = m_pApp->GetConfiguration();
     glViewport(0, 0, config.screenWidth, config.screenHeight);
 
     return result;

@@ -1,34 +1,31 @@
 #pragma once
-#include "IRuntimeModule.hpp"
+#include "Interface.hpp"
 
 namespace My {
-_Interface_ IGameLogic : _inherits_ IRuntimeModule {
+_Interface_ IGameLogic {
    public:
-    int Initialize() override = 0;
-    void Finalize() override = 0;
-    void Tick() override = 0;
+    IGameLogic() = default;
+    virtual ~IGameLogic() = default;
 
-    virtual void OnUpKeyDown(){};
-    virtual void OnUpKeyUp(){};
-    virtual void OnUpKey(){};
+    virtual void OnUpKeyDown() = 0;
+    virtual void OnUpKeyUp() = 0;
+    virtual void OnUpKey() = 0;
 
-    virtual void OnDownKeyDown(){};
-    virtual void OnDownKeyUp(){};
-    virtual void OnDownKey(){};
+    virtual void OnDownKeyDown() = 0;
+    virtual void OnDownKeyUp() = 0;
+    virtual void OnDownKey() = 0;
 
-    virtual void OnLeftKeyDown(){};
-    virtual void OnLeftKeyUp(){};
-    virtual void OnLeftKey(){};
+    virtual void OnLeftKeyDown() = 0;
+    virtual void OnLeftKeyUp() = 0;
+    virtual void OnLeftKey() = 0;
 
-    virtual void OnRightKeyDown(){};
-    virtual void OnRightKeyUp(){};
-    virtual void OnRightKey(){};
+    virtual void OnRightKeyDown() = 0;
+    virtual void OnRightKeyUp() = 0;
+    virtual void OnRightKey() = 0;
 
-    virtual void OnButton1Down(){};
-    virtual void OnButton1Up(){};
+    virtual void OnButton1Down() = 0;
+    virtual void OnButton1Up() = 0;
 
-    virtual void OnAnalogStick(int id, float deltaX, float deltaY){};
+    virtual void OnAnalogStick(int id, float deltaX, float deltaY) = 0;
 };
-
-extern IGameLogic* g_pGameLogic;
 }  // namespace My

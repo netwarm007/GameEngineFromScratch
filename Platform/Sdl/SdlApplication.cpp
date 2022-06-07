@@ -11,7 +11,7 @@
  * the first one in the list each iteration.
  */
 template <typename T, typename... Args>
-void cleanup(T *t, Args &&... args) {
+void cleanup(T *t, Args &&...args) {
     // Cleanup the first item in the list
     cleanup(t);
     // Recurse to clean up the remaining arguments
@@ -73,7 +73,7 @@ void SdlApplication::onResize(int width, int height) {
         height = 1;
     }
 
-    g_pGraphicsManager->ResizeCanvas(width, height);
+    m_pGraphicsManager->ResizeCanvas(width, height);
 }
 
 int SdlApplication::Initialize() {
@@ -96,40 +96,42 @@ void SdlApplication::Tick() {
     SDL_Event e;
 
     while (SDL_PollEvent(&e)) {
-        switch (e.type) {
-            case SDL_QUIT:
-                m_bQuit = true;
-                break;
-            case SDL_KEYDOWN:
-                break;
-            case SDL_KEYUP: {
-                g_pInputManager->AsciiKeyDown(
-                    static_cast<char>(e.key.keysym.sym));
-            } break;
-            case SDL_MOUSEBUTTONDOWN: {
-                if (e.button.button == SDL_BUTTON_LEFT) {
-                    g_pInputManager->LeftMouseButtonDown();
-                    m_bInDrag = true;
-                }
-            } break;
-            case SDL_MOUSEBUTTONUP: {
-                if (e.button.button == SDL_BUTTON_LEFT) {
-                    g_pInputManager->LeftMouseButtonUp();
-                    m_bInDrag = false;
-                }
-            } break;
-            case SDL_MOUSEMOTION: {
-                if (m_bInDrag) {
-                    g_pInputManager->LeftMouseDrag(e.motion.xrel,
-                                                   e.motion.yrel);
-                }
-            } break;
-            case SDL_WINDOWEVENT:
-                if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    int tmpX, tmpY;
-                    SDL_GetWindowSize(m_pWindow, &tmpX, &tmpY);
-                    onResize(tmpX, tmpY);
-                }
+        if (m_pInputManager) {
+            switch (e.type) {
+                case SDL_QUIT:
+                    m_bQuit = true;
+                    break;
+                case SDL_KEYDOWN:
+                    break;
+                case SDL_KEYUP: {
+                    m_pInputManager->AsciiKeyDown(
+                        static_cast<char>(e.key.keysym.sym));
+                } break;
+                case SDL_MOUSEBUTTONDOWN: {
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        m_pInputManager->LeftMouseButtonDown();
+                        m_bInDrag = true;
+                    }
+                } break;
+                case SDL_MOUSEBUTTONUP: {
+                    if (e.button.button == SDL_BUTTON_LEFT) {
+                        m_pInputManager->LeftMouseButtonUp();
+                        m_bInDrag = false;
+                    }
+                } break;
+                case SDL_MOUSEMOTION: {
+                    if (m_bInDrag) {
+                        m_pInputManager->LeftMouseDrag(e.motion.xrel,
+                                                       e.motion.yrel);
+                    }
+                } break;
+                case SDL_WINDOWEVENT:
+                    if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                        int tmpX, tmpY;
+                        SDL_GetWindowSize(m_pWindow, &tmpX, &tmpY);
+                        onResize(tmpX, tmpY);
+                    }
+            }
         }
     }
 }

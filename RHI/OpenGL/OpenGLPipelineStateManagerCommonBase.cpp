@@ -8,8 +8,6 @@ using namespace My;
 using namespace std;
 
 namespace My {
-extern AssetLoader* g_pAssetLoader;
-
 static void OutputShaderErrorMessage(unsigned int shaderId,
                                      const char* shaderFilename) {
     int logSize, i;
@@ -101,7 +99,8 @@ static bool LoadShaderFromFile(const char* filename, const GLenum shaderType,
     int status;
 
     // Load the shader source file into a text buffer.
-    shaderBuffer = g_pAssetLoader->SyncOpenAndReadTextFileToString(filename);
+    AssetLoader assetLoader;
+    shaderBuffer = assetLoader.SyncOpenAndReadTextFileToString(filename);
     if (shaderBuffer.empty()) {
         return false;
     }

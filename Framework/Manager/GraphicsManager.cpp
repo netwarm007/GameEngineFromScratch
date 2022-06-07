@@ -4,9 +4,8 @@
 #include <iostream>
 
 #include "BRDFIntegrator.hpp"
+#include "BaseApplication.hpp"
 #include "ForwardGeometryPass.hpp"
-#include "IApplication.hpp"
-#include "IPhysicsManager.hpp"
 #include "RayTracePass.hpp"
 #include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
@@ -16,12 +15,20 @@ using namespace std;
 
 int GraphicsManager::Initialize() {
     int result = 0;
+
+    auto pPipelineStateMgr =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetPipelineStateManager();
+    assert(pPipelineStateMgr);
+
 #if !defined(OS_WEBASSEMBLY)
-    m_InitPasses.push_back(make_shared<BRDFIntegrator>());
+    m_InitPasses.push_back(
+        make_shared<BRDFIntegrator>(this, pPipelineStateMgr));
 #endif
-    //m_DispatchPasses.push_back(make_shared<RayTracePass>());
-    m_DrawPasses.push_back(make_shared<ShadowMapPass>());
-    m_DrawPasses.push_back(make_shared<ForwardGeometryPass>());
+    // m_DispatchPasses.push_back(make_shared<RayTracePass>(this,
+    // pPipelineStateMgr));
+    m_DrawPasses.push_back(make_shared<ShadowMapPass>(this, pPipelineStateMgr));
+    m_DrawPasses.push_back(
+        make_shared<ForwardGeometryPass>(this, pPipelineStateMgr));
 
     InitConstants();
     return result;
@@ -35,13 +42,18 @@ void GraphicsManager::Finalize() {
 }
 
 void GraphicsManager::Tick() {
-    auto rev = g_pSceneManager->GetSceneRevision();
-    if (m_nSceneRevision != rev) {
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto rev = pSceneManager->GetSceneRevision();
+    if (rev == 0) return;  // scene is not loaded yet
+    assert(m_nSceneRevision <= rev);
+    if (m_nSceneRevision < rev) {
         EndScene();
         cerr << "[GraphicsManager] Detected Scene Change, reinitialize buffers "
                 "..."
              << endl;
-        const auto scene = g_pSceneManager->GetSceneForRendering();
+        const auto scene = pSceneManager->GetSceneForRendering();
+        assert(scene);
         BeginScene(*scene);
         m_nSceneRevision = rev;
     }
@@ -71,7 +83,9 @@ void GraphicsManager::UpdateConstants() {
             // the geometry has rigid body bounded, we blend the simlation
             // result here.
             Matrix4X4f simulated_result =
-                g_pPhysicsManager->GetRigidBodyTransform(rigidBody);
+                dynamic_cast<BaseApplication*>(m_pApp)
+                    ->GetPhysicsManager()
+                    ->GetRigidBodyTransform(rigidBody);
 
             BuildIdentityMatrix(trans);
 
@@ -112,7 +126,9 @@ void GraphicsManager::Draw() {
 }
 
 void GraphicsManager::CalculateCameraMatrix() {
-    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto& scene = pSceneManager->GetSceneForRendering();
     auto pCameraNode = scene->GetFirstCameraNode();
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
     if (pCameraNode) {
@@ -142,7 +158,8 @@ void GraphicsManager::CalculateCameraMatrix() {
         farClipDistance = pCamera->GetFarClipDistance();
     }
 
-    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    assert(m_pApp);
+    const GfxConfiguration& conf = m_pApp->GetConfiguration();
 
     float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
 
@@ -158,7 +175,9 @@ void GraphicsManager::CalculateLights() {
 
     frameContext.numLights = 0;
 
-    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto& scene = pSceneManager->GetSceneForRendering();
     for (const auto& LightNode : scene->LightNodes) {
         Light& light = light_info.lights[frameContext.numLights];
         auto pLightNode = LightNode.second.lock();
@@ -316,28 +335,25 @@ void GraphicsManager::BeginScene(const Scene& scene) {
         // generate shadow map array
         if (m_Frames[i].frameContext.shadowMap == -1) {
             m_Frames[i].frameContext.shadowMap =
-                g_pGraphicsManager->GenerateShadowMapArray(
-                    GfxConfiguration::kShadowMapWidth,
-                    GfxConfiguration::kShadowMapHeight,
-                    GfxConfiguration::kMaxShadowMapCount);
+                GenerateShadowMapArray(GfxConfiguration::kShadowMapWidth,
+                                       GfxConfiguration::kShadowMapHeight,
+                                       GfxConfiguration::kMaxShadowMapCount);
         }
 
         // generate global shadow map array
         if (m_Frames[i].frameContext.globalShadowMap == -1) {
-            m_Frames[i].frameContext.globalShadowMap =
-                g_pGraphicsManager->GenerateShadowMapArray(
-                    GfxConfiguration::kGlobalShadowMapWidth,
-                    GfxConfiguration::kGlobalShadowMapHeight,
-                    GfxConfiguration::kMaxGlobalShadowMapCount);
+            m_Frames[i].frameContext.globalShadowMap = GenerateShadowMapArray(
+                GfxConfiguration::kGlobalShadowMapWidth,
+                GfxConfiguration::kGlobalShadowMapHeight,
+                GfxConfiguration::kMaxGlobalShadowMapCount);
         }
 
         // generate cube shadow map array
         if (m_Frames[i].frameContext.cubeShadowMap == -1) {
-            m_Frames[i].frameContext.cubeShadowMap =
-                g_pGraphicsManager->GenerateCubeShadowMapArray(
-                    GfxConfiguration::kCubeShadowMapWidth,
-                    GfxConfiguration::kCubeShadowMapHeight,
-                    GfxConfiguration::kMaxCubeShadowMapCount);
+            m_Frames[i].frameContext.cubeShadowMap = GenerateCubeShadowMapArray(
+                GfxConfiguration::kCubeShadowMapWidth,
+                GfxConfiguration::kCubeShadowMapHeight,
+                GfxConfiguration::kMaxCubeShadowMapCount);
         }
     }
 

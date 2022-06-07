@@ -1,11 +1,10 @@
 #include <map>
-
+#include "IApplication.hpp"
 #include "IPipelineStateManager.hpp"
 
 namespace My {
 class PipelineStateManager : _implements_ IPipelineStateManager {
    public:
-    PipelineStateManager() = default;
     virtual ~PipelineStateManager();
 
     int Initialize() override;
