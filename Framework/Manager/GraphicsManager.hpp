@@ -163,5 +163,7 @@ class GraphicsManager : _implements_ IGraphicsManager,
     std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
     std::vector<std::shared_ptr<IDispatchPass>> m_DispatchPasses;
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
+    
+    std::map<std::string, material_textures> material_map;
 };
 }  // namespace My
