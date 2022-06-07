@@ -3,9 +3,9 @@
 #include "IPipelineStateManager.hpp"
 
 namespace My {
-class PipelineStateManager : _implements_ IPipelineStateManager {
+class PipelineStateManager : _implements_ IPipelineStateManager, _implements_ IRuntimeModule {
    public:
-    virtual ~PipelineStateManager();
+    ~PipelineStateManager() override;
 
     int Initialize() override;
     void Finalize() override;

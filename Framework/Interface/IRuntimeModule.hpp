@@ -19,5 +19,4 @@ _Interface_ IRuntimeModule {
    protected:
     IApplication* m_pApp;
 };
-
 }  // namespace My
