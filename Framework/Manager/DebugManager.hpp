@@ -1,10 +1,9 @@
 #pragma once
 #ifdef DEBUG
 #include "IDebugManager.hpp"
-#include "IRuntimeModule.hpp"
 
 namespace My {
-class DebugManager : _implements_ IDebugManager, _implements_ IRuntimeModule {
+class DebugManager : _implements_ IDebugManager {
    public:
     int Initialize() override;
     void Finalize() override;

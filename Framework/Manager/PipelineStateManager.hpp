@@ -3,7 +3,7 @@
 #include "IPipelineStateManager.hpp"
 
 namespace My {
-class PipelineStateManager : _implements_ IPipelineStateManager, _implements_ IRuntimeModule {
+class PipelineStateManager : _implements_ IPipelineStateManager {
    public:
     ~PipelineStateManager() override;
 

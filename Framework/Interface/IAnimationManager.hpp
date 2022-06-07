@@ -1,9 +1,9 @@
 #pragma once
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 #include "SceneObjectAnimation.hpp"
 
 namespace My {
-_Interface_ IAnimationManager {
+_Interface_ IAnimationManager : _inherits_ IRuntimeModule {
    public:
     IAnimationManager() = default;
     virtual ~IAnimationManager() = default;

@@ -1,11 +1,9 @@
 #pragma once
 #include "Geometry.hpp"
 #include "IPhysicsManager.hpp"
-#include "IRuntimeModule.hpp"
 
 namespace My {
-_Interface_ PhysicsManager : _implements_ IPhysicsManager,
-                              _implements_ IRuntimeModule {
+_Interface_ PhysicsManager : _implements_ IPhysicsManager {
    public:
     PhysicsManager() = default;
     ~PhysicsManager() override = default;

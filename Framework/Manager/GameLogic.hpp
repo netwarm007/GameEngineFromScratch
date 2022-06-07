@@ -1,8 +1,7 @@
 #include "IGameLogic.hpp"
-#include "IRuntimeModule.hpp"
 
 namespace My {
-class GameLogic : _implements_ IGameLogic, _implements_ IRuntimeModule {
+class GameLogic : _implements_ IGameLogic {
     // overrides
     int Initialize() { return 0; }
     void Finalize() {}

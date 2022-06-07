@@ -28,9 +28,9 @@ int main(int argc, char** argv) {
     SceneManager sceneManager;
     AnimationManager animationManager;
 
-    app.RegisterManagerModule(&assetLoader, &assetLoader);
-    app.RegisterManagerModule(&sceneManager, &sceneManager);
-    app.RegisterManagerModule(&animationManager, &animationManager);
+    app.RegisterManagerModule(&assetLoader);
+    app.RegisterManagerModule(&sceneManager);
+    app.RegisterManagerModule(&animationManager);
 
     error = app.Initialize();
 

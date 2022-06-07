@@ -11,15 +11,13 @@
 #include "IDispatchPass.hpp"
 #include "IDrawPass.hpp"
 #include "IGraphicsManager.hpp"
-#include "IRuntimeModule.hpp"
 #include "Polyhedron.hpp"
 #include "Scene.hpp"
 #include "cbuffer.h"
 #include "geommath.hpp"
 
 namespace My {
-class GraphicsManager : _implements_ IGraphicsManager,
-                        _implements_ IRuntimeModule {
+class GraphicsManager : _implements_ IGraphicsManager {
    public:
     ~GraphicsManager() override = default;
     int Initialize() override;

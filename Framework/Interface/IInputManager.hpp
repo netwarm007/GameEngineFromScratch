@@ -1,8 +1,8 @@
 #pragma once
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 
 namespace My {
-_Interface_ IInputManager {
+_Interface_ IInputManager : _inherits_ IRuntimeModule {
    public:
     IInputManager() = default;
     virtual ~IInputManager() = default;

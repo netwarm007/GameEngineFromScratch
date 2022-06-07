@@ -1,12 +1,12 @@
 #pragma once
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 
 #include <memory>
 #include "FrameStructure.hpp"
 #include "IPipelineStateManager.hpp"
 
 namespace My {
-_Interface_ IGraphicsManager {
+_Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
    public:
     IGraphicsManager() = default;
     virtual ~IGraphicsManager() = default;

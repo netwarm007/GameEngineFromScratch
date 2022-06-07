@@ -1,9 +1,9 @@
 #pragma once
 #ifdef DEBUG
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 
 namespace My {
-_Interface_ IDebugManager {
+_Interface_ IDebugManager : _inherits_ IRuntimeModule {
    public:
     IDebugManager() = default;
     virtual ~IDebugManager() = default;

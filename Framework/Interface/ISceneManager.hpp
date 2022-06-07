@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 #include "Scene.hpp"
 
 namespace My {
-_Interface_ ISceneManager {
+_Interface_ ISceneManager : _inherits_ IRuntimeModule {
    public:
     ISceneManager() = default;
     virtual ~ISceneManager() = default;

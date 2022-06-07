@@ -80,17 +80,17 @@ int main(int argc, char** argv) {
 
     g_pApp->SetCommandLineParameters(argc, argv);
 
-    g_pApp->RegisterManagerModule(g_pAnimationManager, g_pAnimationManager);
-    g_pApp->RegisterManagerModule(g_pAssetLoader, g_pAssetLoader);
-    g_pApp->RegisterManagerModule(g_pGraphicsManager, g_pGraphicsManager);
-    g_pApp->RegisterManagerModule(g_pInputManager, g_pInputManager);
-    g_pApp->RegisterManagerModule(g_pMemoryManager, g_pMemoryManager);
-    g_pApp->RegisterManagerModule(g_pPhysicsManager, g_pPhysicsManager);
-    g_pApp->RegisterManagerModule(g_pPipelineStateManager, g_pPipelineStateManager);
-    g_pApp->RegisterManagerModule(g_pSceneManager, g_pSceneManager);
-    g_pApp->RegisterManagerModule(g_pGameLogic, g_pGameLogic);
+    g_pApp->RegisterManagerModule(g_pAnimationManager);
+    g_pApp->RegisterManagerModule(g_pAssetLoader);
+    g_pApp->RegisterManagerModule(g_pGraphicsManager);
+    g_pApp->RegisterManagerModule(g_pInputManager);
+    g_pApp->RegisterManagerModule(g_pMemoryManager);
+    g_pApp->RegisterManagerModule(g_pPhysicsManager);
+    g_pApp->RegisterManagerModule(g_pPipelineStateManager);
+    g_pApp->RegisterManagerModule(g_pSceneManager);
+    g_pApp->RegisterManagerModule(g_pGameLogic);
 #ifdef DEBUG
-    g_pApp->RegisterManagerModule(g_pDebugManager, g_pDebugManager);
+    g_pApp->RegisterManagerModule(g_pDebugManager);
 #endif
 
     g_pApp->CreateMainWindow();

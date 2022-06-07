@@ -1,11 +1,10 @@
 #pragma once
-#include "IRuntimeModule.hpp"
 #include "ISceneManager.hpp"
 #include "ISceneParser.hpp"
 #include "geommath.hpp"
 
 namespace My {
-class SceneManager : _implements_ ISceneManager, _implements_ IRuntimeModule {
+class SceneManager : _implements_ ISceneManager {
    public:
     SceneManager() {}
     ~SceneManager() override;

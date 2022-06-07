@@ -45,7 +45,7 @@ struct PipelineState {
     PIPELINE_FLAG flag;
 };
 
-_Interface_ IPipelineStateManager {
+_Interface_ IPipelineStateManager : _inherits_ IRuntimeModule {
    public:
     virtual bool RegisterPipelineState(PipelineState & pipelineState) = 0;
     virtual void UnregisterPipelineState(PipelineState & pipelineState) = 0;

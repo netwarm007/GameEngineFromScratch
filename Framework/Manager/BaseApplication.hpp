@@ -39,18 +39,17 @@ class BaseApplication : _implements_ IApplication {
     void CreateMainWindow() override {}
     void* GetMainWindowHandler() override { return nullptr; }
 
-    void RegisterManagerModule(IGraphicsManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IMemoryManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IAssetLoader* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IInputManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(ISceneManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IAnimationManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IPhysicsManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IPipelineStateManager* mgr,
-                               IRuntimeModule* module);
-    void RegisterManagerModule(IGameLogic* logic, IRuntimeModule* module);
+    void RegisterManagerModule(IGraphicsManager* mgr);
+    void RegisterManagerModule(IMemoryManager* mgr);
+    void RegisterManagerModule(IAssetLoader* mgr);
+    void RegisterManagerModule(IInputManager* mgr);
+    void RegisterManagerModule(ISceneManager* mgr);
+    void RegisterManagerModule(IAnimationManager* mgr);
+    void RegisterManagerModule(IPhysicsManager* mgr);
+    void RegisterManagerModule(IPipelineStateManager* mgr);
+    void RegisterManagerModule(IGameLogic* logic);
 #ifdef DEBUG 
-    void RegisterManagerModule(IDebugManager* mgr, IRuntimeModule* module);
+    void RegisterManagerModule(IDebugManager* mgr);
 #endif
 
     IGraphicsManager* GetGraphicsManager() { return m_pGraphicsManager; }
