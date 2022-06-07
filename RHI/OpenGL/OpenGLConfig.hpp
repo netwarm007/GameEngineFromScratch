@@ -4,5 +4,5 @@
 
 namespace My {
 using TGraphicsManager = OpenGLGraphicsManager;
-using PipelineStateManager = OpenGLPipelineStateManager;
+using TPipelineStateManager = OpenGLPipelineStateManager;
 }  // namespace My
