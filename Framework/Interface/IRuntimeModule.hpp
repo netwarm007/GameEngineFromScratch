@@ -1,12 +1,12 @@
 #pragma once
 
-#include <config.h>
-
+#include "IApplication.hpp"
 #include "Interface.hpp"
 
 namespace My {
 _Interface_ IRuntimeModule {
    public:
+    IRuntimeModule() = default;
     virtual ~IRuntimeModule() = default;
 
     virtual int Initialize() = 0;
@@ -14,9 +14,10 @@ _Interface_ IRuntimeModule {
 
     virtual void Tick() = 0;
 
-#ifdef DEBUG
-    virtual void DrawDebugInfo(){};
-#endif
+    void SetAppPointer(IApplication* pApp) { m_pApp = pApp; }
+
+   protected:
+    IApplication* m_pApp;
 };
 
 }  // namespace My

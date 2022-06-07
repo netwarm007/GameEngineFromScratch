@@ -4,6 +4,7 @@
 namespace My {
 class ShadowMapPass : public BaseDrawPass {
    public:
+    using BaseDrawPass::BaseDrawPass;
     ~ShadowMapPass() override = default;
 
     void BeginPass(Frame& frame) override {}

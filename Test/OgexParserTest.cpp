@@ -2,16 +2,10 @@
 #include <string>
 
 #include "AssetLoader.hpp"
-#include "MemoryManager.hpp"
 #include "OGEX.hpp"
 
 using namespace My;
 using namespace std;
-
-namespace My {
-IMemoryManager* g_pMemoryManager = new MemoryManager();
-AssetLoader* g_pAssetLoader = new AssetLoader();
-}  // namespace My
 
 template <typename Key, typename T>
 static ostream& operator<<(ostream& out,
@@ -24,20 +18,18 @@ static ostream& operator<<(ostream& out,
 }
 
 int main(int, char**) {
-    g_pMemoryManager->Initialize();
-    g_pAssetLoader->Initialize();
+    AssetLoader assetLoader;
+    assetLoader.Initialize();
 
     string ogex_text =
-        g_pAssetLoader->SyncOpenAndReadTextFileToString("Scene/splash.ogex");
+        assetLoader.SyncOpenAndReadTextFileToString("Scene/splash.ogex");
 
-    auto* ogex_parser = new OgexParser();
+    OgexParser ogexParser;
     {
-        shared_ptr<Scene> pScene = ogex_parser->Parse(ogex_text);
+        shared_ptr<Scene> pScene = ogexParser.Parse(ogex_text);
     }  // note texture in the scene will be async loaded until process terminate
-    delete ogex_parser;
 
-    g_pAssetLoader->Finalize();
-    g_pMemoryManager->Finalize();
+    assetLoader.Finalize();
 
     return 0;
 }

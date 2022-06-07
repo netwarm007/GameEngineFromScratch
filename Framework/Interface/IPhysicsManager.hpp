@@ -1,15 +1,15 @@
 #pragma once
 #include <vector>
 
-#include "IRuntimeModule.hpp"
-#include "SceneManager.hpp"
+#include "Interface.hpp"
+#include "SceneGeometryNode.hpp"
+#include "SceneObjectGeometry.hpp"
 
 namespace My {
-_Interface_ IPhysicsManager : _inherits_ IRuntimeModule {
+_Interface_ IPhysicsManager {
    public:
-    int Initialize() override = 0;
-    void Finalize() override = 0;
-    void Tick() override = 0;
+    IPhysicsManager() = default;
+    virtual ~IPhysicsManager() = default;
 
     virtual void CreateRigidBody(SceneGeometryNode & node,
                                  const SceneObjectGeometry& geometry) = 0;
@@ -23,6 +23,4 @@ _Interface_ IPhysicsManager : _inherits_ IRuntimeModule {
 
     virtual void ApplyCentralForce(void* rigidBody, Vector3f force) = 0;
 };
-
-extern IPhysicsManager* g_pPhysicsManager;
 }  // namespace My

@@ -9,7 +9,6 @@ class CocoaMetalApplication : public CocoaApplication {
 
     void Tick() override;
 
-   protected:
     void CreateMainWindow() override;
 };
 }  // namespace My

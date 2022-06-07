@@ -54,6 +54,4 @@ _Interface_ IPipelineStateManager : _inherits_ IRuntimeModule {
     [[nodiscard]] virtual const std::shared_ptr<PipelineState> GetPipelineState(
         std::string name) const = 0;
 };
-
-extern IPipelineStateManager* g_pPipelineStateManager;
 }  // namespace My

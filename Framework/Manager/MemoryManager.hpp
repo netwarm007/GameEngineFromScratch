@@ -4,6 +4,7 @@
 #include <ostream>
 
 #include "IMemoryManager.hpp"
+#include "IRuntimeModule.hpp"
 #include "portable.hpp"
 
 namespace My {
@@ -11,9 +12,9 @@ ENUM(MemoryType){CPU = "CPU"_i32, GPU = "GPU"_i32};
 
 std::ostream& operator<<(std::ostream& out, MemoryType type);
 
-class MemoryManager : _implements_ IMemoryManager {
+class MemoryManager : _implements_ IMemoryManager, _implements_ IRuntimeModule {
    public:
-    ~MemoryManager() override = default;
+    ~MemoryManager() = default;
     int Initialize() override;
     void Finalize() override;
     void Tick() override;

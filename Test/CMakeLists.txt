@@ -1,4 +1,4 @@
-set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
+set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                OgexParserTest JpegParserTest PngParserTest DdsParserTest HdrParserTest TgaParserTest
                SceneLoadingTest AnimationTest
                BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
@@ -6,7 +6,7 @@ set(TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                ASTNodeTest MGEMXParserTest CodeGeneratorTest
 )
 
-foreach(TEST_CASE IN LISTS TEST_CASES)
+foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
     target_link_libraries(${TEST_CASE} Framework)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
@@ -22,6 +22,13 @@ if(Vulkan_FOUND)
     target_include_directories(VulkanRHITest PRIVATE ${GLFW_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
     target_link_libraries(VulkanRHITest Framework VulkanRHI ${GLFW_LIBRARIES})
 endif(Vulkan_FOUND)
+
+set(PLATFORM_TEST_CASES BasicWindowTest)
+
+foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
+    add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
+    target_link_libraries(${TEST_CASE} Framework PlatformInterface)
+endforeach(TEST_CASE)
 
 IF(WA)
 set_target_properties(${TEST_CASES}

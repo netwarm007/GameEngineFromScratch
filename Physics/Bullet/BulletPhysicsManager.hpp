@@ -1,11 +1,13 @@
 #pragma once
-#include "IPhysicsManager.hpp"
+#include "PhysicsManager.hpp"
 #define BT_USE_DOUBLE_PRECISION 1
 #include <btBulletDynamicsCommon.h>
 
 namespace My {
-class BulletPhysicsManager : public IPhysicsManager {
+class BulletPhysicsManager : public PhysicsManager {
    public:
+    BulletPhysicsManager() = default;
+    ~BulletPhysicsManager() override = default;
     int Initialize() override;
     void Finalize() override;
     void Tick() override;

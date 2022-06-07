@@ -6,9 +6,9 @@
 using namespace My;
 
 void SkyBoxSubPass::Draw(Frame& frame) {
-    auto& pPipelineState = g_pPipelineStateManager->GetPipelineState("SkyBox");
+    auto& pPipelineState = m_pPipelineStateManager->GetPipelineState("SkyBox");
 
-    g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
+    m_pGraphicsManager->SetPipelineState(pPipelineState, frame);
 
-    g_pGraphicsManager->DrawSkyBox(frame);
+    m_pGraphicsManager->DrawSkyBox(frame);
 }

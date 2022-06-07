@@ -46,4 +46,68 @@ struct Image {
 };
 
 std::ostream& operator<<(std::ostream& out, const Image& image);
+
+static inline void adjust_image(Image& image) {
+    if (image.bitcount == 24) {
+        // DXGI does not have 24bit formats so we have to extend it to 32bit
+        auto new_pitch = image.pitch / 3 * 4;
+        auto data_size = (size_t)new_pitch * image.Height;
+        auto* data = new uint8_t[data_size];
+        uint8_t* buf;
+        uint8_t* src;
+        for (decltype(image.Height) row = 0; row < image.Height; row++) {
+            buf = data + (ptrdiff_t)row * new_pitch;
+            src = image.data + (ptrdiff_t)row * image.pitch;
+            for (decltype(image.Width) col = 0; col < image.Width; col++) {
+                memcpy(buf, src, 3);
+                memset(buf + 3, 0x00, 1);  // set alpha to 0
+                buf += 4;
+                src += 3;
+            }
+        }
+
+        delete[] image.data;
+        image.data = data;
+        image.data_size = data_size;
+        image.pitch = new_pitch;
+        image.bitcount = 32;
+
+        // adjust mipmaps
+        for (auto& mip : image.mipmaps) {
+            mip.pitch = mip.pitch / 3 * 4;
+            mip.offset = mip.offset / 3 * 4;
+            mip.data_size = mip.data_size / 3 * 4;
+        }
+    } else if (image.bitcount == 48) {
+        // DXGI does not have 48bit formats so we have to extend it to 64bit
+        auto new_pitch = image.pitch / 3 * 4;
+        auto data_size = new_pitch * image.Height;
+        auto* data = new uint8_t[data_size];
+        uint8_t* buf;
+        uint8_t* src;
+        for (decltype(image.Height) row = 0; row < image.Height; row++) {
+            buf = data + (ptrdiff_t)row * new_pitch;
+            src = image.data + (ptrdiff_t)row * image.pitch;
+            for (decltype(image.Width) col = 0; col < image.Width; col++) {
+                memcpy(buf, src, 6);
+                memset(buf + 6, 0x00, 2);  // set alpha to 0
+                buf += 8;
+                src += 6;
+            }
+        }
+
+        delete[] image.data;
+        image.data = data;
+        image.data_size = data_size;
+        image.pitch = new_pitch;
+        image.bitcount = 64;
+
+        // adjust mipmaps
+        for (auto& mip : image.mipmaps) {
+            mip.pitch = mip.pitch / 3 * 4;
+            mip.offset = mip.offset / 3 * 4;
+            mip.data_size = mip.data_size / 3 * 4;
+        }
+    }
+}
 }  // namespace My

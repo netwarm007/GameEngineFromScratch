@@ -8,7 +8,7 @@ OBJC_CLASS(MTLLibrary);
 namespace My {
 class MetalPipelineStateManager : public PipelineStateManager {
    public:
-    MetalPipelineStateManager() = default;
+    using PipelineStateManager::PipelineStateManager;
     ~MetalPipelineStateManager() override = default;
 
    protected:

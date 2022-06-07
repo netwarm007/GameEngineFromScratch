@@ -131,7 +131,7 @@ int OpenGLGraphicsManager::Initialize() {
             glEnable(GL_PROGRAM_POINT_SIZE);
         }
 
-        auto config = g_pApp->GetConfiguration();
+        auto config = m_pApp->GetConfiguration();
         glViewport(0, 0, config.screenWidth, config.screenHeight);
 
         int flags;

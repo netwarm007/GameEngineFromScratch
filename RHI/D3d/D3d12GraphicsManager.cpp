@@ -30,7 +30,7 @@ int D3d12GraphicsManager::Initialize() {
     int result = GraphicsManager::Initialize();
 
     if (!result) {
-        const GfxConfiguration& config = g_pApp->GetConfiguration();
+        const GfxConfiguration& config = m_pApp->GetConfiguration();
         m_ViewPort = {0.0f,
                       0.0f,
                       static_cast<float>(config.screenWidth),
@@ -222,12 +222,12 @@ HRESULT D3d12GraphicsManager::CreateRenderTarget() {
     D3D12_RESOURCE_DESC textureDesc{};
     textureDesc.MipLevels = 1;
     textureDesc.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
-    textureDesc.Width = g_pApp->GetConfiguration().screenWidth;
-    textureDesc.Height = g_pApp->GetConfiguration().screenHeight;
+    textureDesc.Width = m_pApp->GetConfiguration().screenWidth;
+    textureDesc.Height = m_pApp->GetConfiguration().screenHeight;
     textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     textureDesc.DepthOrArraySize = 1;
     textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    textureDesc.SampleDesc.Count = g_pApp->GetConfiguration().msaaSamples;
+    textureDesc.SampleDesc.Count = m_pApp->GetConfiguration().msaaSamples;
     textureDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
@@ -287,8 +287,8 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil() {
     prop.CreationNodeMask = 1;
     prop.VisibleNodeMask = 1;
 
-    uint32_t width = g_pApp->GetConfiguration().screenWidth;
-    uint32_t height = g_pApp->GetConfiguration().screenHeight;
+    uint32_t width = m_pApp->GetConfiguration().screenWidth;
+    uint32_t height = m_pApp->GetConfiguration().screenHeight;
     D3D12_RESOURCE_DESC resourceDesc{};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     resourceDesc.Alignment = 0;
@@ -297,7 +297,7 @@ HRESULT D3d12GraphicsManager::CreateDepthStencil() {
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
     resourceDesc.Format = ::DXGI_FORMAT_D32_FLOAT;
-    resourceDesc.SampleDesc.Count = g_pApp->GetConfiguration().msaaSamples;
+    resourceDesc.SampleDesc.Count = m_pApp->GetConfiguration().msaaSamples;
     resourceDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -783,7 +783,7 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources() {
         }
     }
 
-    HWND hWnd = reinterpret_cast<HWND>(g_pApp->GetMainWindowHandler());
+    HWND hWnd = reinterpret_cast<HWND>(m_pApp->GetMainWindowHandler());
 
     // Describe and create the command queue.
     D3D12_COMMAND_QUEUE_DESC queueDesc{};
@@ -825,8 +825,8 @@ HRESULT D3d12GraphicsManager::CreateGraphicsResources() {
     ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC1));
 
     // fill the swap chain description struct
-    scd.Width = g_pApp->GetConfiguration().screenWidth;
-    scd.Height = g_pApp->GetConfiguration().screenHeight;
+    scd.Width = m_pApp->GetConfiguration().screenWidth;
+    scd.Height = m_pApp->GetConfiguration().screenHeight;
     scd.Format = ::DXGI_FORMAT_R8G8B8A8_UNORM;  // use 32-bit color
     scd.Stereo = FALSE;
     scd.SampleDesc.Count =

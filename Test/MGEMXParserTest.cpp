@@ -5,8 +5,6 @@
 #include "CodeGenerator.hpp"
 
 namespace My {
-    AssetLoader* g_pAssetLoader = new AssetLoader();
-
     std::map<ASTNode::IDN_TYPE, ASTNodeRef> global_symbol_table;
 
     ASTNodeRef ast_root = make_ASTNodeRef<ASTNodeNone>( "AST ROOT" );
@@ -16,7 +14,8 @@ using namespace My;
 
 static void parse(const char* file) {
     yyscan_t scanner;
-    auto fp = (FILE*) g_pAssetLoader->OpenFile(file, 
+    AssetLoader assetLoader;
+    auto fp = (FILE*) assetLoader.OpenFile(file, 
                                             AssetLoader::AssetOpenMode::MY_OPEN_TEXT);
     yylex_init(&scanner);
     yyset_in(fp, scanner);

@@ -10,7 +10,7 @@ struct OpenGLPipelineState : public PipelineState {
 
 class OpenGLPipelineStateManagerCommonBase : public PipelineStateManager {
    public:
-    OpenGLPipelineStateManagerCommonBase() = default;
+    using PipelineStateManager::PipelineStateManager;
     virtual ~OpenGLPipelineStateManagerCommonBase() = default;
 
    protected:

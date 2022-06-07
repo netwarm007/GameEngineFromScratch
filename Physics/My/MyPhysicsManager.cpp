@@ -2,8 +2,8 @@
 
 #include <iostream>
 
+#include "BaseApplication.hpp"
 #include "Box.hpp"
-#include "GraphicsManager.hpp"
 #include "Plane.hpp"
 #include "RigidBody.hpp"
 #include "Sphere.hpp"
@@ -23,7 +23,9 @@ void MyPhysicsManager::Finalize() {
 }
 
 void MyPhysicsManager::IterateConvexHull() {
-    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {
@@ -51,7 +53,9 @@ void MyPhysicsManager::IterateConvexHull() {
 }
 
 void MyPhysicsManager::Tick() {
-    auto rev = g_pSceneManager->GetSceneRevision();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto rev = pSceneManager->GetSceneRevision();
     if (m_nSceneRevision != rev) {
         ClearRigidBodies();
         CreateRigidBodies();
@@ -123,7 +127,9 @@ void MyPhysicsManager::DeleteRigidBody(SceneGeometryNode& node) {
 }
 
 int MyPhysicsManager::CreateRigidBodies() {
-    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {
@@ -141,7 +147,9 @@ int MyPhysicsManager::CreateRigidBodies() {
 }
 
 void MyPhysicsManager::ClearRigidBodies() {
-    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {
@@ -159,60 +167,3 @@ Matrix4X4f MyPhysicsManager::GetRigidBodyTransform(void* rigidBody) {
 }
 
 void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force) {}
-
-#ifdef DEBUG
-void MyPhysicsManager::DrawDebugInfo() {
-    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
-
-    // Geometries
-    for (const auto& _it : scene->GeometryNodes) {
-        auto pGeometryNode = _it.second.lock();
-        if (pGeometryNode) {
-            if (void* rigidBody = pGeometryNode->RigidBody()) {
-                auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
-                auto motionState = _rigidBody->GetMotionState();
-                auto centerOfMass = motionState->GetCenterOfMassOffset();
-                auto trans = motionState->GetTransition();
-                auto pGeometry = _rigidBody->GetCollisionShape();
-                DrawAabb(*pGeometry, trans, centerOfMass);
-                DrawShape(*pGeometry, trans, centerOfMass);
-            }
-        }
-    }
-}
-
-void MyPhysicsManager::DrawAabb(const Geometry& geometry,
-                                const Matrix4X4f& trans,
-                                const Vector3f& centerOfMass) {
-    Vector3f bbMin, bbMax;
-    Vector3f color({0.7f, 0.6f, 0.5f});
-
-    Matrix4X4f _trans;
-    BuildIdentityMatrix(_trans);
-    _trans.data[3][0] = centerOfMass[0] * trans.data[0][0];  // scale by x-scale
-    _trans.data[3][1] = centerOfMass[1] * trans.data[1][1];  // scale by y-scale
-    _trans.data[3][2] = centerOfMass[2] * trans.data[2][2];  // scale by z-scale
-    MatrixMultiply(_trans, trans, _trans);
-
-    geometry.GetAabb(_trans, bbMin, bbMax);
-    g_pGraphicsManager->DrawBox(bbMin, bbMax, color);
-}
-
-void MyPhysicsManager::DrawShape(const Geometry& geometry,
-                                 const Matrix4X4f& trans,
-                                 const Vector3f& centerOfMass) {
-    Vector3f color({0.8f, 0.7f, 0.6f});
-
-    Matrix4X4f _trans;
-    BuildIdentityMatrix(_trans);
-    _trans.data[3][0] = centerOfMass[0] * trans.data[0][0];  // scale by x-scale
-    _trans.data[3][1] = centerOfMass[1] * trans.data[1][1];  // scale by y-scale
-    _trans.data[3][2] = centerOfMass[2] * trans.data[2][2];  // scale by z-scale
-    MatrixMultiply(_trans, trans, _trans);
-
-    if (geometry.GetGeometryType() == GeometryType::kPolyhydron) {
-        g_pGraphicsManager->DrawPolyhydron(
-            reinterpret_cast<const Polyhedron&>(geometry), trans, color);
-    }
-}
-#endif

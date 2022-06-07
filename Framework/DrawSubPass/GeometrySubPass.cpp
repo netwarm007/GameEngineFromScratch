@@ -7,11 +7,11 @@ using namespace My;
 using namespace std;
 
 void GeometrySubPass::Draw(Frame& frame) {
-    auto& pPipelineState = g_pPipelineStateManager->GetPipelineState("PBR");
+    auto& pPipelineState = m_pPipelineStateManager->GetPipelineState("PBR");
 
     // Set the color shader as the current shader program and set the matrices
     // that it will use for rendering.
-    g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
-    g_pGraphicsManager->SetShadowMaps(frame);
-    g_pGraphicsManager->DrawBatch(frame);
+    m_pGraphicsManager->SetPipelineState(pPipelineState, frame);
+    m_pGraphicsManager->SetShadowMaps(frame);
+    m_pGraphicsManager->DrawBatch(frame);
 }

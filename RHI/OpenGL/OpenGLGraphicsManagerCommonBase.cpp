@@ -14,6 +14,8 @@
 #include "glad/glad.h"
 #endif
 
+#include "BaseApplication.hpp"
+
 using namespace std;
 using namespace My;
 
@@ -615,7 +617,7 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
 
 void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame) {
     // Set viewport
-    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    const GfxConfiguration& conf = m_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 
     // Set the color to clear the screen to.
@@ -1017,7 +1019,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap,
 
     glDeleteFramebuffers(1, &m_ShadowMapFramebufferName);
 
-    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    const GfxConfiguration& conf = m_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 }
 
@@ -1134,7 +1136,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context) {
     glDeleteFramebuffers(1, &framebuffer);
     context = 0;
 
-    const GfxConfiguration& conf = g_pApp->GetConfiguration();
+    const GfxConfiguration& conf = m_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 }
 
@@ -1460,8 +1462,9 @@ void OpenGLGraphicsManagerCommonBase::ClearDebugBuffers() {
 }
 
 void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers() {
+    auto pPipelineStateManager = dynamic_cast<BaseApplication*>(m_pApp)->GetPipelineStateManager();
     const auto pipelineState =
-        g_pPipelineStateManager->GetPipelineState("Debug Drawing");
+        pPipelineStateManager->GetPipelineState("Debug Drawing");
 
     // Set the color shader as the current shader program and set the matrices
     // that it will use for rendering.
