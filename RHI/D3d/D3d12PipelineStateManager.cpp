@@ -13,25 +13,24 @@ using namespace std;
 static void loadShaders(D3d12PipelineState* pState) {
     // load the shaders
     Buffer vertexShader, pixelShader, geometryShader, computeShader;
-    auto pAssetLoader = dynamic_cast<BaseApplication*>(m_pApp)->GetAssetLoader();
-    assert(pAssetLoader);
+    AssetLoader asetLoader;
     if (!pState->vertexShaderName.empty()) {
-        vertexShader = pAssetLoader->SyncOpenAndReadBinary(
+        vertexShader = assetLoader.SyncOpenAndReadBinary(
             (SHADER_ROOT + pState->vertexShaderName + SHADER_SUFFIX).c_str());
     }
 
     if (!pState->pixelShaderName.empty()) {
-        pixelShader = pAssetLoader->SyncOpenAndReadBinary(
+        pixelShader = assetLoader.SyncOpenAndReadBinary(
             (SHADER_ROOT + pState->pixelShaderName + SHADER_SUFFIX).c_str());
     }
 
     if (!pState->geometryShaderName.empty()) {
-        geometryShader = pAssetLoader->SyncOpenAndReadBinary(
+        geometryShader = assetLoader.SyncOpenAndReadBinary(
             (SHADER_ROOT + pState->geometryShaderName + SHADER_SUFFIX).c_str());
     }
 
     if (!pState->computeShaderName.empty()) {
-        computeShader = pAssetLoader->SyncOpenAndReadBinary(
+        computeShader = assetLoader.SyncOpenAndReadBinary(
             (SHADER_ROOT + pState->computeShaderName + SHADER_SUFFIX).c_str());
     }
 
