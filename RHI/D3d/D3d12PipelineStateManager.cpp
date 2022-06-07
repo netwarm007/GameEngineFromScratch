@@ -13,7 +13,7 @@ using namespace std;
 static void loadShaders(D3d12PipelineState* pState) {
     // load the shaders
     Buffer vertexShader, pixelShader, geometryShader, computeShader;
-    AssetLoader asetLoader;
+    AssetLoader assetLoader;
     if (!pState->vertexShaderName.empty()) {
         vertexShader = assetLoader.SyncOpenAndReadBinary(
             (SHADER_ROOT + pState->vertexShaderName + SHADER_SUFFIX).c_str());

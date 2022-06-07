@@ -27,7 +27,7 @@ class TgaParser : _implements_ ImageParser {
         Image img;
 
         const uint8_t* pData = buf.GetData();
-        const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
+        [[maybe_unused]] const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
 
         std::cerr << "Parsing as TGA file:" << std::endl;
 

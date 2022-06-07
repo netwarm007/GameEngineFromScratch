@@ -124,7 +124,7 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
     result = ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
 
     // sort through and find what code to run for the message given
-    if (m_pInputManager) {
+    if (pThis->m_pInputManager) {
         switch (message) {
             case WM_CHAR: {
                 pThis->m_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
@@ -203,7 +203,7 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
             case WM_DESTROY: {
                 // close the application entirely
                 PostQuitMessage(0);
-                m_bQuit = true;
+                pThis->m_bQuit = true;
             } break;
             default:
                 // Handle any messages the switch statement didn't

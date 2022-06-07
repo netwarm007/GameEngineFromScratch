@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
 
     g_pApp->RegisterManagerModule(g_pAnimationManager, g_pAnimationManager);
     g_pApp->RegisterManagerModule(g_pAssetLoader, g_pAssetLoader);
-    g_pApp->RegisterManagerModule(g_pDebugManager, g_pDebugManager);
     g_pApp->RegisterManagerModule(g_pGraphicsManager, g_pGraphicsManager);
     g_pApp->RegisterManagerModule(g_pInputManager, g_pInputManager);
     g_pApp->RegisterManagerModule(g_pMemoryManager, g_pMemoryManager);
@@ -90,6 +89,9 @@ int main(int argc, char** argv) {
     g_pApp->RegisterManagerModule(g_pPipelineStateManager, g_pPipelineStateManager);
     g_pApp->RegisterManagerModule(g_pSceneManager, g_pSceneManager);
     g_pApp->RegisterManagerModule(g_pGameLogic, g_pGameLogic);
+#ifdef DEBUG
+    g_pApp->RegisterManagerModule(g_pDebugManager, g_pDebugManager);
+#endif
 
     g_pApp->CreateMainWindow();
 
@@ -113,7 +115,6 @@ int main(int argc, char** argv) {
 
     delete g_pAnimationManager;
     delete g_pAssetLoader;
-    delete g_pDebugManager;
     delete g_pGameLogic;
     delete g_pGraphicsManager;
     delete g_pInputManager;
@@ -121,6 +122,9 @@ int main(int argc, char** argv) {
     delete g_pPhysicsManager;
     delete g_pPipelineStateManager;
     delete g_pSceneManager;
+#ifdef DEBUG
+    delete g_pDebugManager;
+#endif
 
     return EXIT_SUCCESS;
 }

@@ -87,12 +87,14 @@ void BaseApplication::RegisterManagerModule(ISceneManager* mgr,
     runtime_modules.push_back(module);
 }
 
+#ifdef DEBUG
 void BaseApplication::RegisterManagerModule(IDebugManager* mgr,
                                             IRuntimeModule* module) {
     m_pDebugManager = mgr;
     module->SetAppPointer(this);
     runtime_modules.push_back(module);
 }
+#endif
 
 void BaseApplication::RegisterManagerModule(IAnimationManager* mgr,
                                             IRuntimeModule* module) {
