@@ -6,10 +6,9 @@
 #include <vector>
 
 #include "IAssetLoader.hpp"
-#include "IRuntimeModule.hpp"
 
 namespace My {
-class AssetLoader : _implements_ IAssetLoader, _implements_ IRuntimeModule {
+class AssetLoader : _implements_ IAssetLoader {
    public:
     AssetLoader() = default;
     ~AssetLoader() override = default;

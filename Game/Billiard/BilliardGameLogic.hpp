@@ -8,5 +8,6 @@ class BilliardGameLogic : public GameLogic {
     void Tick() final;
 
     void OnLeftKey() final;
+    void OnAnalogStick(int id, float deltaX, float deltaY) final;
 };
 }  // namespace My

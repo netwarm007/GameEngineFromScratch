@@ -1,6 +1,5 @@
 #include "config.h"
 #include "GfxConfiguration.hpp"
-#include "portable.hpp"
 
 #if defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
@@ -28,9 +27,9 @@ using namespace My;
 int main() {
     int result;
 
-    g_pApp->CreateMainWindow();
-
     result = g_pApp->Initialize();
+
+    g_pApp->CreateMainWindow();
 
     while(!g_pApp->IsQuit()) {
         g_pApp->Tick();

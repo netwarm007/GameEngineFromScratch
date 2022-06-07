@@ -40,3 +40,21 @@ void BilliardGameLogic::OnLeftKey() {
         }
     }
 }
+
+void BilliardGameLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
+    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+
+    if (id == 1) {
+        auto& scene = pSceneManager->GetSceneForRendering();
+        if (scene) {
+            auto pCameraNode = scene->GetFirstCameraNode();
+            if (pCameraNode) {
+                auto screen_width = m_pApp->GetConfiguration().screenWidth;
+                auto screen_height = m_pApp->GetConfiguration().screenHeight;
+                // move camera along its local axis -y direction
+                pCameraNode->RotateBy(deltaX / screen_width * PI,
+                                    deltaY / screen_height * PI, 0.0f);
+            }
+        }
+    }
+}

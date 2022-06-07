@@ -1,12 +1,12 @@
 #pragma once
 #include <vector>
 
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 #include "SceneGeometryNode.hpp"
 #include "SceneObjectGeometry.hpp"
 
 namespace My {
-_Interface_ IPhysicsManager {
+_Interface_ IPhysicsManager : _inherits_ IRuntimeModule {
    public:
     IPhysicsManager() = default;
     virtual ~IPhysicsManager() = default;

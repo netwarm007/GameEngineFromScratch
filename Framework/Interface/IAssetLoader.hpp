@@ -1,10 +1,10 @@
 #pragma once
 #include <string>
 #include "Buffer.hpp"
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 
 namespace My {
-_Interface_ IAssetLoader {
+_Interface_ IAssetLoader : _inherits_ IRuntimeModule {
    public:
     IAssetLoader() = default;
     virtual ~IAssetLoader() = default;

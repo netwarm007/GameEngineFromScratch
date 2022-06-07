@@ -5,7 +5,7 @@
 
 namespace My {
 GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 960, 540, "Billiard Game");
-IGameLogic* g_pGameLogic = static_cast<IGameLogic*>(new BilliardGameLogic);
-IPhysicsManager* g_pPhysicsManager =
-    static_cast<IPhysicsManager*>(new BulletPhysicsManager);
+GameLogic* g_pGameLogic = static_cast<GameLogic*>(new BilliardGameLogic);
+PhysicsManager* g_pPhysicsManager =
+    static_cast<PhysicsManager*>(new BulletPhysicsManager);
 }  // namespace My

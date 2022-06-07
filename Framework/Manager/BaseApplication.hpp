@@ -39,30 +39,33 @@ class BaseApplication : _implements_ IApplication {
     void CreateMainWindow() override {}
     void* GetMainWindowHandler() override { return nullptr; }
 
-    void RegisterManagerModule(IGraphicsManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IMemoryManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IAssetLoader* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IInputManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(ISceneManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IDebugManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IAnimationManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IPhysicsManager* mgr, IRuntimeModule* module);
-    void RegisterManagerModule(IPipelineStateManager* mgr,
-                               IRuntimeModule* module);
-    void RegisterManagerModule(IGameLogic* logic, IRuntimeModule* module);
+    void RegisterManagerModule(IGraphicsManager* mgr);
+    void RegisterManagerModule(IMemoryManager* mgr);
+    void RegisterManagerModule(IAssetLoader* mgr);
+    void RegisterManagerModule(IInputManager* mgr);
+    void RegisterManagerModule(ISceneManager* mgr);
+    void RegisterManagerModule(IAnimationManager* mgr);
+    void RegisterManagerModule(IPhysicsManager* mgr);
+    void RegisterManagerModule(IPipelineStateManager* mgr);
+    void RegisterManagerModule(IGameLogic* logic);
+#ifdef DEBUG 
+    void RegisterManagerModule(IDebugManager* mgr);
+#endif
 
     IGraphicsManager* GetGraphicsManager() { return m_pGraphicsManager; }
     IMemoryManager* GetMemoryManager() { return m_pMemoryManager; }
     IAssetLoader* GetAssetLoader() { return m_pAssetLoader; }
     IInputManager* GetInputManager() { return m_pInputManager; }
     ISceneManager* GetSceneManager() { return m_pSceneManager; }
-    IDebugManager* GetDebugManager() { return m_pDebugManager; }
     IAnimationManager* GetAnimationManager() { return m_pAnimationManager; }
     IPhysicsManager* GetPhysicsManager() { return m_pPhysicsManager; }
     IPipelineStateManager* GetPipelineStateManager() {
         return m_pPipelineStateManager;
     }
     IGameLogic* GetGameLogic() { return m_pGameLogic; }
+#ifdef DEBUG 
+    IDebugManager* GetDebugManager() { return m_pDebugManager; }
+#endif
 
    protected:
     // Flag if need quit the main loop of the application
@@ -76,11 +79,13 @@ class BaseApplication : _implements_ IApplication {
     IAssetLoader* m_pAssetLoader = nullptr;
     IInputManager* m_pInputManager = nullptr;
     ISceneManager* m_pSceneManager = nullptr;
-    IDebugManager* m_pDebugManager = nullptr;
     IAnimationManager* m_pAnimationManager = nullptr;
     IPhysicsManager* m_pPhysicsManager = nullptr;
     IPipelineStateManager* m_pPipelineStateManager = nullptr;
     IGameLogic* m_pGameLogic = nullptr;
+#ifdef DEBUG
+    IDebugManager* m_pDebugManager = nullptr;
+#endif
 
    private:
     std::vector<IRuntimeModule*> runtime_modules;

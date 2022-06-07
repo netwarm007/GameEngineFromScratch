@@ -1,8 +1,8 @@
 #pragma once
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 
 namespace My {
-_Interface_ IGameLogic {
+_Interface_ IGameLogic : _inherits_ IRuntimeModule {
    public:
     IGameLogic() = default;
     virtual ~IGameLogic() = default;

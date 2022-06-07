@@ -1,9 +1,8 @@
 #pragma once
 #include "IInputManager.hpp"
-#include "IRuntimeModule.hpp"
 
 namespace My {
-class InputManager : _implements_ IInputManager, _implements_ IRuntimeModule {
+class InputManager : _implements_ IInputManager {
    public:
     int Initialize() override;
     void Finalize() override;

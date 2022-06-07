@@ -92,8 +92,8 @@ int main(int argc, char** argv) {
     AssetLoader assetLoader;
     SceneManager sceneManager;
 
-    app.RegisterManagerModule(&assetLoader, &assetLoader);
-    app.RegisterManagerModule(&sceneManager, &sceneManager);
+    app.RegisterManagerModule(&assetLoader);
+    app.RegisterManagerModule(&sceneManager);
 
     error = app.Initialize();
 

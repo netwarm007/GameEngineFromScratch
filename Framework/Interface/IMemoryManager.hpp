@@ -1,10 +1,10 @@
 #pragma once
 #include <cstddef>
 
-#include "Interface.hpp"
+#include "IRuntimeModule.hpp"
 
 namespace My {
-_Interface_ IMemoryManager {
+_Interface_ IMemoryManager : _inherits_ IRuntimeModule {
    public:
     IMemoryManager() = default;
     virtual ~IMemoryManager() = default;

@@ -68,8 +68,6 @@ void D3d12GraphicsManager::Finalize() {
 
     GraphicsManager::Finalize();
 
-    g_pPipelineStateManager->Clear();
-
     for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         SafeRelease(&m_pGraphicsFence[i]);
         SafeRelease(&m_pRtvHeap[i]);

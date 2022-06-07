@@ -182,7 +182,7 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
                 simplex = {A, B};
             }
 
-            if (abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon()) {
+            if (std::abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon()) {
                 // P is on edge 3 (BC) so A can be removed
                 simplex.clear();
                 simplex = {B, C};
@@ -231,7 +231,7 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
                 simplex = {A, B};
             }
 
-            if (abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon()) {
+            if (std::abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon()) {
                 // P is on edge 3 (BC) so A can be removed
                 simplex.clear();
                 simplex = {B, C};

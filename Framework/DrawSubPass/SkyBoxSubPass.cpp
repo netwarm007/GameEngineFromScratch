@@ -1,7 +1,6 @@
 #include "SkyBoxSubPass.hpp"
 
 #include "GraphicsManager.hpp"
-#include "IPipelineStateManager.hpp"
 
 using namespace My;
 

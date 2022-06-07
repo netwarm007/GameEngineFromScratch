@@ -3,13 +3,10 @@
 #include <list>
 
 #include "IAnimationManager.hpp"
-#include "IRuntimeModule.hpp"
-#include "ISceneManager.hpp"
 #include "SceneObject.hpp"
 
 namespace My {
-class AnimationManager : _implements_ IAnimationManager,
-                         _implements_ IRuntimeModule {
+class AnimationManager : _implements_ IAnimationManager {
    public:
     AnimationManager() {}
     ~AnimationManager() override {}
