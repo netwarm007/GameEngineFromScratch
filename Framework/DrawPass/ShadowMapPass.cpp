@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "GraphicsManager.hpp"
-#include "IPipelineStateManager.hpp"
 
 using namespace std;
 using namespace My;

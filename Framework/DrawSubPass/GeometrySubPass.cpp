@@ -1,7 +1,6 @@
 #include "GeometrySubPass.hpp"
 
 #include "GraphicsManager.hpp"
-#include "IPipelineStateManager.hpp"
 
 using namespace My;
 using namespace std;
