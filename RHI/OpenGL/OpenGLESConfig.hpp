@@ -5,6 +5,6 @@
 namespace My {
 GraphicsManager* g_pGraphicsManager =
     static_cast<GraphicsManager*>(new OpenGLESGraphicsManager);
-IPipelineStateManager* g_pShaderManager =
-    static_cast<IPipelineStateManager*>(new OpenGLESPipelineStateManager);
+PipelineStateManager* g_pShaderManager =
+    static_cast<PipelineStateManager*>(new OpenGLESPipelineStateManager);
 }  // namespace My

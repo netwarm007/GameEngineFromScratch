@@ -2,19 +2,21 @@
 #include <chrono>
 #include <list>
 
-#include "IRuntimeModule.hpp"
+#include "IAnimationManager.hpp"
 #include "SceneObject.hpp"
 
 namespace My {
-class AnimationManager : public IRuntimeModule {
+class AnimationManager : _implements_ IAnimationManager {
    public:
+    AnimationManager() {}
+    ~AnimationManager() override {}
     int Initialize() override;
     void Finalize() override;
     void Tick() override;
 
     void AddAnimationClip(
-        const std::shared_ptr<SceneObjectAnimationClip>& clip);
-    void ClearAnimationClips();
+        const std::shared_ptr<SceneObjectAnimationClip>& clip) override;
+    void ClearAnimationClips() override;
 
    private:
     uint64_t m_nSceneRevision{0};
@@ -23,6 +25,4 @@ class AnimationManager : public IRuntimeModule {
     std::list<std::shared_ptr<SceneObjectAnimationClip>> m_AnimationClips;
     bool m_bTimeLineStarted{false};
 };
-
-extern AnimationManager* g_pAnimationManager;
 }  // namespace My

@@ -113,48 +113,55 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
             dbc->property_offset = v_property_offset;
             dbc->property_count = vertexPropertiesCount;
 
-            // load material textures
-            if (material) {
-                if (auto& texture = material->GetBaseColor().ValueMap) {
-                    int32_t texture_id;
-                    const Image& image = *texture->GetTextureImage();
-                    assert(image.Width && image.Height);
-                    texture_id = [m_pRenderer createTexture:image];
+            auto it = material_map.find(material_key);
+            if (it == material_map.end()) {
+                // load material textures
+                if (material) {
+                    if (auto& texture = material->GetBaseColor().ValueMap) {
+                        int32_t texture_id;
+                        const Image& image = *texture->GetTextureImage();
+                        assert(image.Width && image.Height);
+                        texture_id = [m_pRenderer createTexture:image];
 
-                    dbc->material.diffuseMap = texture_id;
+                        dbc->material.diffuseMap = texture_id;
+                    }
+
+                    if (auto& texture = material->GetNormal().ValueMap) {
+                        int32_t texture_id;
+                        const Image& image = *texture->GetTextureImage();
+                        texture_id = [m_pRenderer createTexture:image];
+
+                        dbc->material.normalMap = texture_id;
+                    }
+
+                    if (auto& texture = material->GetMetallic().ValueMap) {
+                        int32_t texture_id;
+                        const Image& image = *texture->GetTextureImage();
+                        texture_id = [m_pRenderer createTexture:image];
+
+                        dbc->material.metallicMap = texture_id;
+                    }
+
+                    if (auto& texture = material->GetRoughness().ValueMap) {
+                        int32_t texture_id;
+                        const Image& image = *texture->GetTextureImage();
+                        texture_id = [m_pRenderer createTexture:image];
+
+                        dbc->material.roughnessMap = texture_id;
+                    }
+
+                    if (auto& texture = material->GetAO().ValueMap) {
+                        int32_t texture_id;
+                        const Image& image = *texture->GetTextureImage();
+                        texture_id = [m_pRenderer createTexture:image];
+
+                        dbc->material.aoMap = texture_id;
+                    }
+
+                    material_map.emplace(material_key, dbc->material);
                 }
-
-                if (auto& texture = material->GetNormal().ValueMap) {
-                    int32_t texture_id;
-                    const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
-
-                    dbc->material.normalMap = texture_id;
-                }
-
-                if (auto& texture = material->GetMetallic().ValueMap) {
-                    int32_t texture_id;
-                    const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
-
-                    dbc->material.metallicMap = texture_id;
-                }
-
-                if (auto& texture = material->GetRoughness().ValueMap) {
-                    int32_t texture_id;
-                    const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
-
-                    dbc->material.roughnessMap = texture_id;
-                }
-
-                if (auto& texture = material->GetAO().ValueMap) {
-                    int32_t texture_id;
-                    const Image& image = *texture->GetTextureImage();
-                    texture_id = [m_pRenderer createTexture:image];
-
-                    dbc->material.aoMap = texture_id;
-                }
+            } else {
+                dbc->material = it->second;
             }
 
             dbc->node = pGeometryNode;

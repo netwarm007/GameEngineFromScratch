@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "BaseApplication.hpp"
+
 using namespace My;
 using namespace std;
 
@@ -36,7 +38,9 @@ void BulletPhysicsManager::Finalize() {
 }
 
 void BulletPhysicsManager::Tick() {
-    auto rev = g_pSceneManager->GetSceneRevision();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto rev = pSceneManager->GetSceneRevision();
     if (m_nSceneRevision != rev) {
         ClearRigidBodies();
         CreateRigidBodies();
@@ -150,7 +154,9 @@ void BulletPhysicsManager::DeleteRigidBody(SceneGeometryNode& node) {
 }
 
 int BulletPhysicsManager::CreateRigidBodies() {
-    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {
@@ -168,7 +174,9 @@ int BulletPhysicsManager::CreateRigidBodies() {
 }
 
 void BulletPhysicsManager::ClearRigidBodies() {
-    auto& scene = g_pSceneManager->GetSceneForPhysicalSimulation();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {

@@ -13,7 +13,7 @@ std::ostream& operator<<(std::ostream& out, MemoryType type);
 
 class MemoryManager : _implements_ IMemoryManager {
    public:
-    ~MemoryManager() override = default;
+    ~MemoryManager() = default;
     int Initialize() override;
     void Finalize() override;
     void Tick() override;

@@ -57,15 +57,15 @@ IF(ANDROID)
         "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 
     add_library(Viewer SHARED 
-        ViewerLogic.cpp ViewerConfig.cpp)
+        ViewerLogic.cpp)
 ELSEIF(APPLE)
     add_executable(Viewer MACOSX_BUNDLE
-        ViewerLogic.cpp ViewerConfig.cpp
+        main.cpp ViewerLogic.cpp
         Main.metallib ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
         )
 ELSE(ANDROID)
     add_executable(Viewer 
-        ViewerLogic.cpp ViewerConfig.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
+        main.cpp ViewerLogic.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
         )
 ENDIF(ANDROID)
 

@@ -637,7 +637,7 @@ inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix) {
     bool result = true;
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
-            if (abs(matrix[i][j]) > std::numeric_limits<T>::epsilon()) {
+            if (std::abs(matrix[i][j]) > std::numeric_limits<T>::epsilon()) {
                 result = false;
             }
         }

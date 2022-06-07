@@ -123,7 +123,6 @@ jobs:
             scripts/build_bullet
             scripts/build_glslangValidator
             scripts/build_spirvcross
-            scripts/build_flatbuffers
       - run:
           name: "Build Engine"
           command: |
@@ -196,7 +195,6 @@ jobs:
              ./scripts/build_bullet.sh
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
-             ./scripts/build_flatbuffers.sh
       - run:
           name: "Build Engine"
           command: |
@@ -270,7 +268,6 @@ jobs:
              ./scripts/build_bullet.sh
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
-             ./scripts/build_flatbuffers.sh
       - run:
           name: "Build Engine"
           command: |

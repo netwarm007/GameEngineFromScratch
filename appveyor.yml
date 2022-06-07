@@ -94,8 +94,6 @@ build_script:
 
     scripts/build_spirvcross
 
-    scripts/build_flatbuffers
-
     scripts/build
 
 test_script:

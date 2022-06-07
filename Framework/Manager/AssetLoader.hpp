@@ -5,53 +5,41 @@
 #include <utility>
 #include <vector>
 
-#include "Buffer.hpp"
-#include "IRuntimeModule.hpp"
+#include "IAssetLoader.hpp"
 
 namespace My {
-class AssetLoader : public IRuntimeModule {
+class AssetLoader : _implements_ IAssetLoader {
    public:
+    AssetLoader() = default;
     ~AssetLoader() override = default;
-    using AssetFilePtr = void*;
-
-    enum AssetOpenMode {
-        MY_OPEN_TEXT = 0,    /// Open In Text Mode
-        MY_OPEN_BINARY = 1,  /// Open In Binary Mode
-    };
-
-    enum AssetSeekBase {
-        MY_SEEK_SET = 0,  /// SEEK_SET
-        MY_SEEK_CUR = 1,  /// SEEK_CUR
-        MY_SEEK_END = 2   /// SEEK_END
-    };
-
     int Initialize() override { return 0; }
     void Finalize() override {}
     void Tick() override {}
 
-    bool AddSearchPath(const char* path);
+    bool AddSearchPath(const char* path) override;
 
-    bool RemoveSearchPath(const char* path);
+    bool RemoveSearchPath(const char* path) override;
 
-    void ClearSearchPath();
+    void ClearSearchPath() override;
 
-    virtual bool FileExists(const char* filePath);
+    bool FileExists(const char* filePath) override;
 
-    virtual AssetFilePtr OpenFile(const char* name, AssetOpenMode mode);
+    AssetFilePtr OpenFile(const char* name, AssetOpenMode mode) override;
 
-    virtual Buffer SyncOpenAndReadText(const char* filePath);
+    Buffer SyncOpenAndReadText(const char* filePath) override;
 
-    virtual Buffer SyncOpenAndReadBinary(const char* filePath);
+    Buffer SyncOpenAndReadBinary(const char* filePath) override;
 
-    virtual size_t SyncRead(const AssetFilePtr& fp, Buffer& buf);
+    size_t SyncRead(const AssetFilePtr& fp, Buffer& buf) override;
 
-    virtual void CloseFile(AssetFilePtr& fp);
+    void CloseFile(AssetFilePtr& fp) override;
 
-    virtual size_t GetSize(const AssetFilePtr& fp);
+    size_t GetSize(const AssetFilePtr& fp) override;
 
-    virtual int32_t Seek(AssetFilePtr fp, long offset, AssetSeekBase where);
+    int32_t Seek(AssetFilePtr fp, long offset, AssetSeekBase where) override;
 
-    inline std::string SyncOpenAndReadTextFileToString(const char* fileName) {
+    inline std::string SyncOpenAndReadTextFileToString(
+        const char* fileName) override {
         std::string result;
         Buffer buffer = SyncOpenAndReadText(fileName);
         if (buffer.GetDataSize()) {
@@ -71,6 +59,4 @@ class AssetLoader : public IRuntimeModule {
    private:
     std::vector<std::string> m_strSearchPath;
 };
-
-extern AssetLoader* g_pAssetLoader;
 }  // namespace My

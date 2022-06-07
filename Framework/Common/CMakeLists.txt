@@ -1,6 +1,5 @@
 add_library(Common
         Image.cpp
-        main.cpp
 )
 
 find_package(Threads REQUIRED)

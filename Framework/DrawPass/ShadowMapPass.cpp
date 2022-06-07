@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "GraphicsManager.hpp"
-#include "IPipelineStateManager.hpp"
 
 using namespace std;
 using namespace My;
@@ -72,18 +71,18 @@ void ShadowMapPass::Draw(Frame& frame) {
                     assert(0);
             }
 
-            g_pGraphicsManager->BeginShadowMap(
+            m_pGraphicsManager->BeginShadowMap(
                 i, shadowmap, width, height, light.lightShadowMapIndex, frame);
 
             // Set the color shader as the current shader program and set the
             // matrices that it will use for rendering.
             auto& pPipelineState =
-                g_pPipelineStateManager->GetPipelineState(pipelineStateName);
-            g_pGraphicsManager->SetPipelineState(pPipelineState, frame);
+                m_pPipelineStateManager->GetPipelineState(pipelineStateName);
+            m_pGraphicsManager->SetPipelineState(pPipelineState, frame);
 
-            g_pGraphicsManager->DrawBatch(frame);
+            m_pGraphicsManager->DrawBatch(frame);
 
-            g_pGraphicsManager->EndShadowMap(shadowmap,
+            m_pGraphicsManager->EndShadowMap(shadowmap,
                                              light.lightShadowMapIndex);
         }
     }

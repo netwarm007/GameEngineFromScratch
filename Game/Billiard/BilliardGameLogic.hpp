@@ -1,12 +1,13 @@
 #pragma once
-#include "IGameLogic.hpp"
+#include "GameLogic.hpp"
 
 namespace My {
-class BilliardGameLogic : _implements_ IGameLogic {
-    int Initialize() override;
-    void Finalize() override;
-    void Tick() override;
+class BilliardGameLogic : public GameLogic {
+    int Initialize() final;
+    void Finalize() final;
+    void Tick() final;
 
-    void OnLeftKey() override;
+    void OnLeftKey() final;
+    void OnAnalogStick(int id, float deltaX, float deltaY) final;
 };
 }  // namespace My

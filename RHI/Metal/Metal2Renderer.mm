@@ -7,8 +7,8 @@
 #include <stack>
 #include "IApplication.hpp"
 
-#include "imgui/examples/imgui_impl_metal.h"
-#include "imgui/examples/imgui_impl_osx.h"
+#include "imgui_impl_metal.h"
+#include "imgui_impl_osx.h"
 
 using namespace My;
 
@@ -307,8 +307,10 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     [self setPerFrameConstants:frame.frameContext frameIndex:frame.frameIndex];
     [self setLightInfo:frame.lightInfo frameIndex:frame.frameIndex];
 
-    ImGui_ImplMetal_NewFrame(_mtkView.currentRenderPassDescriptor);
+    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+    ImGui_ImplMetal_NewFrame(_renderPassDescriptor);
     ImGui_ImplOSX_NewFrame(_mtkView);
+    _renderPassDescriptor = nil;
 }
 
 - (void)endFrame:(const Frame&)frame {
@@ -317,17 +319,16 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _commandBuffer.label = @"GUI Command Buffer";
     [_commandBuffer enqueue];
 
-    if (_renderPassDescriptor) {
-        _renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
-        _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionLoad;
+    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+    _renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
+    _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionLoad;
 
-        _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
-        _renderEncoder.label = @"GuiRenderEncoder";
+    _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+    _renderEncoder.label = @"GuiRenderEncoder";
 
-        ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), _commandBuffer, _renderEncoder);
+    ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), _commandBuffer, _renderEncoder);
 
-        [_renderEncoder endEncoding];
-    }
+    [_renderEncoder endEncoding];
 
     [_commandBuffer presentDrawable:_mtkView.currentDrawable];
 
@@ -339,6 +340,18 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     }];
 
     [_commandBuffer commit];
+
+    // Update and Render additional Platform Windows
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
+    [_mtkView setNeedsDisplay:YES];
+
+    _renderPassDescriptor = nil;
 }
 
 - (void)beginPass:(const Frame&) frame {
@@ -366,6 +379,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     // Finalize rendering here & push the command buffer to the GPU
     [_commandBuffer commit];
+
+    _renderPassDescriptor = nil;
 }
 
 - (void)beginCompute {

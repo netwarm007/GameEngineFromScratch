@@ -7,9 +7,9 @@
 
 #include "glad/glad.h"
 
-#include "imgui/examples/imgui_impl_opengl3.h"
+#include "imgui_impl_opengl3.h"
 #ifdef OS_WINDOWS
-#include "imgui/examples/imgui_impl_win32.h"
+#include "imgui_impl_win32.h"
 #endif
 
 using namespace My;
@@ -131,7 +131,7 @@ int OpenGLGraphicsManager::Initialize() {
             glEnable(GL_PROGRAM_POINT_SIZE);
         }
 
-        auto config = g_pApp->GetConfiguration();
+        auto config = m_pApp->GetConfiguration();
         glViewport(0, 0, config.screenWidth, config.screenHeight);
 
         int flags;

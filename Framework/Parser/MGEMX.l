@@ -1,6 +1,8 @@
 /* recognize tokens in MGEMX file */
 %{
 #include <cstdlib>
+#include "AST.hpp"
+
 #include "MGEMX.parser.generated.hpp"
 using namespace My;
 %}

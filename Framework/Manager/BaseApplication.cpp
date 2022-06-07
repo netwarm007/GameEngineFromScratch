@@ -6,27 +6,37 @@
 using namespace My;
 using namespace std;
 
-bool BaseApplication::m_bQuit = false;
-
-BaseApplication::BaseApplication(GfxConfiguration& cfg) : m_Config(cfg) {}
-
 // Parse command line, read configuration, initialize all sub modules
 int BaseApplication::Initialize() {
     int ret = 0;
 
     cout << m_Config;
 
-    // create the main window
-    CreateMainWindow();
+    for (auto module : runtime_modules) {
+        if ((ret = module->Initialize()) != 0) {
+            std::cerr << "Module initialize failed!\n";
+            break;
+        }
+    }
 
     return ret;
 }
 
 // Finalize all sub modules and clean up all runtime temporary files.
-void BaseApplication::Finalize() {}
+void BaseApplication::Finalize() {
+    for (auto module : runtime_modules) {
+        module->Finalize();
+    }
+
+    runtime_modules.clear();
+}
 
 // One cycle of the main loop
-void BaseApplication::Tick() {}
+void BaseApplication::Tick() {
+    for (auto module : runtime_modules) {
+        module->Tick();
+    }
+}
 
 void BaseApplication::SetCommandLineParameters(int argc, char** argv) {
     m_nArgC = argc;
@@ -40,6 +50,66 @@ const char* BaseApplication::GetCommandLineArgument(int index) const {
     return m_ppArgV[index];
 }
 
-void BaseApplication::CreateMainWindow() {}
-
 bool BaseApplication::IsQuit() const { return m_bQuit; }
+
+void BaseApplication::RegisterManagerModule(IGraphicsManager* mgr) {
+    m_pGraphicsManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+void BaseApplication::RegisterManagerModule(IMemoryManager* mgr) {
+    m_pMemoryManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+void BaseApplication::RegisterManagerModule(IAssetLoader* mgr) {
+    m_pAssetLoader = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+void BaseApplication::RegisterManagerModule(IInputManager* mgr) {
+    m_pInputManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+void BaseApplication::RegisterManagerModule(ISceneManager* mgr) {
+    m_pSceneManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+#ifdef DEBUG
+void BaseApplication::RegisterManagerModule(IDebugManager* mgr) {
+    m_pDebugManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+#endif
+
+void BaseApplication::RegisterManagerModule(IAnimationManager* mgr) {
+    m_pAnimationManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+void BaseApplication::RegisterManagerModule(IPhysicsManager* mgr) {
+    m_pPhysicsManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+void BaseApplication::RegisterManagerModule(IPipelineStateManager* mgr) {
+    m_pPipelineStateManager = mgr;
+    mgr->SetAppPointer(this);
+    runtime_modules.push_back(mgr);
+}
+
+void BaseApplication::RegisterManagerModule(IGameLogic* logic) {
+    m_pGameLogic = logic;
+    logic->SetAppPointer(this);
+    runtime_modules.push_back(logic);
+}

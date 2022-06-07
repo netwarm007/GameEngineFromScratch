@@ -7,14 +7,10 @@
 
 using namespace My;
 
-namespace My {
-extern IApplication* g_pApp;
-}
-
 HRESULT My::D2dGraphicsManager::CreateGraphicsResources() {
     HRESULT hr = S_OK;
 
-    HWND hWnd = reinterpret_cast<HWND>(g_pApp->GetMainWindowHandler());
+    HWND hWnd = reinterpret_cast<HWND>(m_pApp->GetMainWindowHandler());
 
     if (m_pRenderTarget == nullptr) {
         RECT rc;

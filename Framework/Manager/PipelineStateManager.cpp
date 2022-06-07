@@ -90,7 +90,7 @@ int PipelineStateManager::Initialize() {
     pipelineState.bDepthWrite = true;
     pipelineState.stencilTestMode = STENCIL_TEST_MODE::NONE;
     pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
-    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
+    pipelineState.sampleCount = m_pApp->GetConfiguration().msaaSamples;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_FULL;
     pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
@@ -151,7 +151,7 @@ int PipelineStateManager::Initialize() {
     pipelineState.depthTestMode = DEPTH_TEST_MODE::ALWAYS;
     pipelineState.bDepthWrite = true;
     pipelineState.pixelFormat = PIXEL_FORMAT::BGRA8UNORM;
-    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
+    pipelineState.sampleCount = m_pApp->GetConfiguration().msaaSamples;
     pipelineState.flag = PIPELINE_FLAG::DEBUG_DRAW;
     RegisterPipelineState(pipelineState);
 
@@ -176,7 +176,7 @@ int PipelineStateManager::Initialize() {
     pipelineState.pixelShaderName = PS_SKYBOX_SOURCE_FILE;
     pipelineState.depthTestMode = DEPTH_TEST_MODE::LESS_EQUAL;
     pipelineState.bDepthWrite = false;
-    pipelineState.sampleCount = g_pApp->GetConfiguration().msaaSamples;
+    pipelineState.sampleCount = m_pApp->GetConfiguration().msaaSamples;
     pipelineState.flag = PIPELINE_FLAG::NONE;
     RegisterPipelineState(pipelineState);
 

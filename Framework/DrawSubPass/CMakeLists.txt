@@ -7,7 +7,5 @@ add_library(DrawSubPass
     ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_draw.cpp
     ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_demo.cpp 
     ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_widgets.cpp
-)
-target_link_libraries(DrawSubPass
-   ${FL_LIBRARY} 
+    ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_tables.cpp
 )

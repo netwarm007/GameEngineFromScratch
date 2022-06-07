@@ -3,20 +3,13 @@
 #include <string>
 #include <thread>
 
+#include "BaseApplication.hpp"
 #include "AnimationManager.hpp"
 #include "AssetLoader.hpp"
-#include "MemoryManager.hpp"
 #include "SceneManager.hpp"
 
 using namespace My;
 using namespace std;
-
-namespace My {
-IMemoryManager* g_pMemoryManager = new MemoryManager();
-AssetLoader* g_pAssetLoader = new AssetLoader();
-SceneManager* g_pSceneManager = new SceneManager();
-AnimationManager* g_pAnimationManager = new AnimationManager();
-}  // namespace My
 
 template <typename T>
 static ostream& operator<<(ostream& out,
@@ -29,44 +22,50 @@ static ostream& operator<<(ostream& out,
 }
 
 int main(int argc, char** argv) {
-    g_pMemoryManager->Initialize();
-    g_pSceneManager->Initialize();
-    g_pAssetLoader->Initialize();
+    int error = 0; 
+    BaseApplication app;
+    AssetLoader assetLoader;
+    SceneManager sceneManager;
+    AnimationManager animationManager;
+
+    app.RegisterManagerModule(&assetLoader);
+    app.RegisterManagerModule(&sceneManager);
+    app.RegisterManagerModule(&animationManager);
+
+    error = app.Initialize();
 
     if (argc >= 2) {
-        g_pSceneManager->LoadScene(argv[1]);
+        sceneManager.LoadScene(argv[1]);
     } else {
-        g_pSceneManager->LoadScene("Scene/splash.ogex");
+        sceneManager.LoadScene("Scene/splash.ogex");
     }
 
-    g_pAnimationManager->Initialize();
+    animationManager.Initialize();
 
-    auto& scene = g_pSceneManager->GetSceneForRendering();
+    auto& scene = sceneManager.GetSceneForRendering();
 
     cout.precision(4);
     cout.setf(ios::fixed);
 
-    for (auto i = 0; i < 250; i++) {
-        cout << "Tick #" << i << endl;
-        g_pAnimationManager->Tick();
-        cout << "Dump of Animatable Nodes" << endl;
-        cout << "---------------------------" << endl;
-        for (const auto& node : scene->AnimatableNodes) {
-            auto pNode = node.lock();
-            if (pNode) {
-                cout << *pNode->GetCalculatedTransform() << endl;
+    for (auto i = 0; i < 300; i++) {
+        animationManager.Tick();
+        if (i % 10 == 0) {
+            cout << "Tick #" << i << endl;
+            cout << "Dump of Animatable Nodes" << endl;
+            cout << "---------------------------" << endl;
+            for (const auto& node : scene->AnimatableNodes) {
+                auto pNode = node.lock();
+                if (pNode) {
+                    cout << *pNode->GetCalculatedTransform() << endl;
+                }
             }
         }
-#if 0
-        const chrono::milliseconds one_frame_time(33);
+
+        const chrono::milliseconds one_frame_time(16); // 16ms
         this_thread::sleep_for(one_frame_time);
-#endif
     }
 
-    g_pAnimationManager->Finalize();
-    g_pSceneManager->Finalize();
-    g_pAssetLoader->Finalize();
-    g_pMemoryManager->Finalize();
+    app.Finalize();
 
-    return 0;
+    return error;
 }

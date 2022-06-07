@@ -3,30 +3,21 @@
 
 #include "AssetLoader.hpp"
 #include "DDS.hpp"
-#include "MemoryManager.hpp"
 
-using namespace std;
 using namespace My;
 
-namespace My {
-IMemoryManager* g_pMemoryManager = new MemoryManager();
-AssetLoader* g_pAssetLoader = new AssetLoader();
-}  // namespace My
-
 int main(int argc, const char** argv) {
-    g_pMemoryManager->Initialize();
-    g_pAssetLoader->Initialize();
+    int error = 0;
+    AssetLoader assetLoader;
 
-#ifdef __ORBIS__
-    g_pAssetLoader->AddSearchPath("/app0");
-#endif
+    error = assetLoader.Initialize();
 
-    {
+    if (!error) {
         Buffer buf;
         if (argc >= 2) {
-            buf = g_pAssetLoader->SyncOpenAndReadBinary(argv[1]);
+            buf = assetLoader.SyncOpenAndReadBinary(argv[1]);
         } else {
-            buf = g_pAssetLoader->SyncOpenAndReadBinary(
+            buf = assetLoader.SyncOpenAndReadBinary(
                 "Textures/hdr/PaperMill_posx.dds");
         }
 
@@ -34,11 +25,10 @@ int main(int argc, const char** argv) {
 
         Image image = dds_parser.Parse(buf);
 
-        cout << image;
+        std::cout << image;
     }
 
-    g_pAssetLoader->Finalize();
-    g_pMemoryManager->Finalize();
+    assetLoader.Finalize();
 
-    return 0;
+    return error;
 }

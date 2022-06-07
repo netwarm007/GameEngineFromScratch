@@ -13,11 +13,9 @@
 using namespace My;
 using namespace std;
 
-BlockAllocator::BlockAllocator() = default;
-
-BlockAllocator::BlockAllocator(size_t data_size, size_t page_size,
+BlockAllocator::BlockAllocator(IMemoryManager* pMmgr, size_t data_size, size_t page_size,
                                size_t alignment)
-    : m_pPageList(nullptr), m_pFreeList(nullptr) {
+    : IAllocator(pMmgr), m_pPageList(nullptr), m_pFreeList(nullptr) {
     Reset(data_size, page_size, alignment);
 }
 
@@ -53,7 +51,7 @@ void* BlockAllocator::Allocate() {
     if (!m_pFreeList) {
         // allocate a new page
         auto* pNewPage = reinterpret_cast<PageHeader*>(
-            g_pMemoryManager->AllocatePage(m_szPageSize));
+            m_pMemoryManager->AllocatePage(m_szPageSize));
         ++m_nPages;
         m_nBlocks += m_nBlocksPerPage;
         m_nFreeBlocks += m_nBlocksPerPage;
@@ -110,7 +108,7 @@ void BlockAllocator::FreeAll() {
         PageHeader* _p = pPage;
         pPage = pPage->pNext;
 
-        g_pMemoryManager->FreePage(reinterpret_cast<void*>(_p));
+        m_pMemoryManager->FreePage(reinterpret_cast<void*>(_p));
     }
 
     m_pPageList = nullptr;

@@ -4,9 +4,9 @@
 using namespace My;
 
 void BaseDispatchPass::BeginPass([[maybe_unused]] Frame& frame) {
-    g_pGraphicsManager->BeginCompute(); 
+    m_pGraphicsManager->BeginCompute(); 
 }
 
 void BaseDispatchPass::EndPass([[maybe_unused]] Frame& frame) {
-    g_pGraphicsManager->EndCompute(); 
+    m_pGraphicsManager->EndCompute(); 
 }
