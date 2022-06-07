@@ -60,12 +60,12 @@ IF(ANDROID)
         ViewerLogic.cpp ViewerConfig.cpp)
 ELSEIF(APPLE)
     add_executable(Viewer MACOSX_BUNDLE
-        ViewerLogic.cpp ViewerConfig.cpp
+        ../Framework/Common/main.cpp ViewerLogic.cpp ViewerConfig.cpp
         Main.metallib ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
         )
 ELSE(ANDROID)
     add_executable(Viewer 
-        ViewerLogic.cpp ViewerConfig.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
+        ../Framework/Common/main.cpp ViewerLogic.cpp ViewerConfig.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
         )
 ENDIF(ANDROID)
 

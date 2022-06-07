@@ -8,12 +8,12 @@ IF(ANDROID)
         BilliardGameLogic.cpp BilliardGameConfig.cpp)
 ELSEIF(APPLE)
     add_executable(BilliardGame MACOSX_BUNDLE
-        BilliardGameLogic.cpp BilliardGameConfig.cpp
+        ../../Framework/Common/main.cpp BilliardGameLogic.cpp BilliardGameConfig.cpp
         Main.metallib
         )
 ELSE(ANDROID)
     add_executable(BilliardGame
-        BilliardGameLogic.cpp BilliardGameConfig.cpp)
+        ../../Framework/Common/main.cpp BilliardGameLogic.cpp BilliardGameConfig.cpp)
 ENDIF(ANDROID)
 
 IF(APPLE)
