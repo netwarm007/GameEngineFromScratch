@@ -3,8 +3,6 @@
 #include "OpenGL/OpenGLPipelineStateManager.hpp"
 
 namespace My {
-GraphicsManager* g_pGraphicsManager =
-    static_cast<GraphicsManager*>(new OpenGLGraphicsManager);
-PipelineStateManager* g_pPipelineStateManager =
-    static_cast<PipelineStateManager*>(new OpenGLPipelineStateManager);
+using TGraphicsManager = OpenGLGraphicsManager;
+using PipelineStateManager = OpenGLPipelineStateManager;
 }  // namespace My

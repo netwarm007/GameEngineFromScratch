@@ -5,15 +5,15 @@ IF(ANDROID)
         "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
 
     add_library(BilliardGame SHARED 
-        BilliardGameLogic.cpp BilliardGameConfig.cpp)
+        BilliardGameLogic.cpp)
 ELSEIF(APPLE)
     add_executable(BilliardGame MACOSX_BUNDLE
-        ../../Framework/Common/main.cpp BilliardGameLogic.cpp BilliardGameConfig.cpp
+        main.cpp BilliardGameLogic.cpp
         Main.metallib
         )
 ELSE(ANDROID)
     add_executable(BilliardGame
-        ../../Framework/Common/main.cpp BilliardGameLogic.cpp BilliardGameConfig.cpp)
+        main.cpp BilliardGameLogic.cpp)
 ENDIF(ANDROID)
 
 IF(APPLE)
