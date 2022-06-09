@@ -83,69 +83,69 @@ void XcbApplication::Finalize() {
 }
 
 void XcbApplication::Tick() {
+    BaseApplication::Tick();
+
     xcb_generic_event_t* pEvent;
     if ((pEvent = xcb_poll_for_event(m_pConn))) {
-        if (m_pInputManager) {
-            switch (pEvent->response_type & ~0x80) {
-                case XCB_EXPOSE: {
-                    XWindowAttributes gwa;
-                    XGetWindowAttributes(m_pDisplay, m_XWindow, &gwa);
-                    m_Config.screenWidth = gwa.screen->width;
-                    m_Config.screenHeight = gwa.screen->height;
-                    break;
-                }
-                case XCB_KEY_PRESS: {
-                    auto key_code =
-                        reinterpret_cast<xcb_key_press_event_t*>(pEvent)
-                            ->detail;
-                    printf("[XcbApplication] Key Press: Keycode: %d\n",
-                           key_code);
-                    switch (key_code) {
-                        case 113:
-                            m_pInputManager->LeftArrowKeyDown();
-                            break;
-                        case 114:
-                            m_pInputManager->RightArrowKeyDown();
-                            break;
-                        case 111:
-                            m_pInputManager->UpArrowKeyDown();
-                            break;
-                        case 116:
-                            m_pInputManager->DownArrowKeyDown();
-                            break;
-                        case 27:
-                            m_pInputManager->AsciiKeyDown('r');
-                            break;
-                    }
-                    break;
-                }
-                case XCB_KEY_RELEASE: {
-                    auto key_code =
-                        reinterpret_cast<xcb_key_release_event_t*>(pEvent)
-                            ->detail;
-                    printf("[XcbApplication] Key Release: Keycode: %d\n",
-                           key_code);
-                    switch (key_code) {
-                        case 113:
-                            m_pInputManager->LeftArrowKeyUp();
-                            break;
-                        case 114:
-                            m_pInputManager->RightArrowKeyUp();
-                            break;
-                        case 111:
-                            m_pInputManager->UpArrowKeyUp();
-                            break;
-                        case 116:
-                            m_pInputManager->DownArrowKeyUp();
-                            break;
-                        case 27:
-                            m_pInputManager->AsciiKeyUp('r');
-                            break;
-                    }
-                } break;
-                default:
-                    break;
+        switch (pEvent->response_type & ~0x80) {
+            case XCB_EXPOSE: {
+                XWindowAttributes gwa;
+                XGetWindowAttributes(m_pDisplay, m_XWindow, &gwa);
+                m_Config.screenWidth = gwa.screen->width;
+                m_Config.screenHeight = gwa.screen->height;
+                break;
             }
+            case XCB_KEY_PRESS: {
+                auto key_code =
+                    reinterpret_cast<xcb_key_press_event_t*>(pEvent)
+                        ->detail;
+                printf("[XcbApplication] Key Press: Keycode: %d\n",
+                       key_code);
+                switch (key_code) {
+                    case 113:
+                        m_pInputManager->LeftArrowKeyDown();
+                        break;
+                    case 114:
+                        m_pInputManager->RightArrowKeyDown();
+                        break;
+                    case 111:
+                        m_pInputManager->UpArrowKeyDown();
+                        break;
+                    case 116:
+                        m_pInputManager->DownArrowKeyDown();
+                        break;
+                    case 27:
+                        m_pInputManager->AsciiKeyDown('r');
+                        break;
+                }
+                break;
+            }
+            case XCB_KEY_RELEASE: {
+                auto key_code =
+                    reinterpret_cast<xcb_key_release_event_t*>(pEvent)
+                        ->detail;
+                printf("[XcbApplication] Key Release: Keycode: %d\n",
+                       key_code);
+                switch (key_code) {
+                    case 113:
+                        m_pInputManager->LeftArrowKeyUp();
+                        break;
+                    case 114:
+                        m_pInputManager->RightArrowKeyUp();
+                        break;
+                    case 111:
+                        m_pInputManager->UpArrowKeyUp();
+                        break;
+                    case 116:
+                        m_pInputManager->DownArrowKeyUp();
+                        break;
+                    case 27:
+                        m_pInputManager->AsciiKeyUp('r');
+                        break;
+                }
+            } break;
+            default:
+                break;
         }
         free(pEvent);
     } else {
