@@ -145,7 +145,7 @@ void GraphicsManager::CalculateCameraMatrix() {
     }
 
     float fieldOfView = PI / 3.0f;
-    float nearClipDistance = 1.0f;
+    float nearClipDistance = 10.0f;
     float farClipDistance = 100.0f;
 
     if (pCameraNode) {
@@ -164,9 +164,15 @@ void GraphicsManager::CalculateCameraMatrix() {
     float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
 
     // Build the perspective projection matrix.
-    BuildPerspectiveFovRHMatrix(frameContext.projectionMatrix, fieldOfView,
-                                screenAspect, nearClipDistance,
-                                farClipDistance);
+    if (conf.fixOpenGLPerspectiveMatrix) {
+        BuildOpenglPerspectiveFovRHMatrix(frameContext.projectionMatrix, fieldOfView,
+                                    screenAspect, nearClipDistance,
+                                    farClipDistance);
+    } else {
+        BuildPerspectiveFovRHMatrix(frameContext.projectionMatrix, fieldOfView,
+                                    screenAspect, nearClipDistance,
+                                    farClipDistance);
+    }
 }
 
 void GraphicsManager::CalculateLights() {

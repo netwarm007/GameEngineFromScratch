@@ -48,6 +48,9 @@ int main(int argc, char** argv) {
     int ret;
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer");
+#if defined(IS_OPENGL)
+    config.fixOpenGLPerspectiveMatrix = true;
+#endif
     ViewerLogic gameLogic;
     MyPhysicsManager physicsManager;
 #if defined(OS_MACOS)

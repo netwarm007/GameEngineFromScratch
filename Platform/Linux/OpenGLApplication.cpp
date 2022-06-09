@@ -243,7 +243,6 @@ void OpenGLApplication::CreateMainWindow() {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     ImGui::StyleColorsDark();
-
 }
 
 void OpenGLApplication::Tick() {

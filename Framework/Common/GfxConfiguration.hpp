@@ -55,6 +55,8 @@ struct GfxConfiguration {
 
     const char* appName;
 
+    bool fixOpenGLPerspectiveMatrix = false;
+
     friend std::ostream& operator<<(std::ostream& out,
                                     const GfxConfiguration& conf) {
         out << "App Name:" << conf.appName << std::endl;

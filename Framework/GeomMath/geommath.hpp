@@ -877,6 +877,23 @@ inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix,
     matrix = perspective;
 }
 
+inline void BuildOpenglPerspectiveFovRHMatrix(Matrix4X4f& matrix,
+                                        const float fieldOfView,
+                                        const float screenAspect,
+                                        const float screenNear,
+                                        const float screenDepth) {
+    Matrix4X4f perspective = {
+        {{1.0f / (screenAspect * std::tan(fieldOfView * 0.5f)), 0.0f, 0.0f,
+          0.0f},
+         {0.0f, 1.0f / std::tan(fieldOfView * 0.5f), 0.0f, 0.0f},
+         {0.0f, 0.0f, (screenNear + screenDepth) / (screenNear - screenDepth), -1.0f},
+         {0.0f, 0.0f, (-2.0f * screenNear * screenDepth) / (screenDepth - screenNear),
+          0.0f}}};
+
+    matrix = perspective;
+}
+
+
 inline void MatrixTranslation(Matrix4X4f& matrix, const float x, const float y,
                               const float z) {
     Matrix4X4f translation = {{{1.0f, 0.0f, 0.0f, 0.0f},
