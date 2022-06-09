@@ -97,10 +97,10 @@ build_script:
     scripts/build Release
 
 test_script:
-- cmd: cmake --build build --target RUN_TESTS
+- cmd: cmake --build build --config Release --target RUN_TESTS
 
 after_test:
-- cmd: cmake --build build --target package
+- cmd: cmake --build build --config Release --target package
 
 artifacts:
 - path: build\GEFS-0.1.0-win64.exe
