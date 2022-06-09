@@ -52,3 +52,6 @@
 [submodule "Vulkan-Hpp"]
 	path = External/src/Vulkan-hpp
 	url = https://github.com/KhronosGroup/Vulkan-Hpp.git
+[submodule "glfw"]
+	path = External/src/glfw
+	url = https://github.com/glfw/glfw.git

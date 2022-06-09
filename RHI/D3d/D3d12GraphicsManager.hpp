@@ -93,7 +93,7 @@ class D3d12GraphicsManager : public GraphicsManager {
    private:
     ID3D12Device* m_pDev =
         nullptr;  // the pointer to our Direct3D device interface
-#if defined(_DEBUG)
+#if defined(D3D12_RHI_DEBUG)
     ID3D12Debug* m_pDebugController = nullptr;
     ID3D12DebugDevice* m_pDebugDev = nullptr;
 #endif

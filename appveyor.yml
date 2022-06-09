@@ -1,5 +1,5 @@
 version: 0.1.0-{build}
-image: Visual Studio 2019
+image: Visual Studio 2022
 clone_depth: 50
 init:
 - ps: |
@@ -80,27 +80,27 @@ init:
       }
 build_script:
 - cmd: >-
-    scripts/build_imgui
+    scripts/build_imgui Release
 
-    scripts/build_crossguid
+    scripts/build_crossguid Release
 
-    scripts/build_opengex
+    scripts/build_opengex Release
 
-    scripts/build_zlib
+    scripts/build_zlib Release
 
-    scripts/build_bullet
+    scripts/build_bullet Release
 
-    scripts/build_glslangValidator
+    scripts/build_glslangValidator Release
 
-    scripts/build_spirvcross
+    scripts/build_spirvcross Release
 
-    scripts/build
+    scripts/build Release
 
 test_script:
-- cmd: cmake --build build --target RUN_TESTS
+- cmd: cmake --build build --config Release --target RUN_TESTS
 
 after_test:
-- cmd: cmake --build build --target package
+- cmd: cmake --build build --config Release --target package
 
 artifacts:
 - path: build\GEFS-0.1.0-win64.exe

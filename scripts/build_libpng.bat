@@ -2,6 +2,6 @@
 git submodule update --init External/src/libpng
 mkdir External\build\libpng
 pushd External\build\libpng
-cmake -DCMAKE_INSTALL_PREFIX=../../Windows -G "Visual Studio 16 2019" -A "x64" ../../src/libpng
-cmake --build . --config Release --target install
+cmake -DCMAKE_INSTALL_PREFIX=../../Windows -G "Visual Studio 17 2022" -A "x64" ../../src/libpng
+if "%1" == "" (cmake --build . --config Debug --target install) else (cmake --build . --config %1 --target install)
 popd
