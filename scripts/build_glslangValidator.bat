@@ -4,6 +4,6 @@ mkdir External\build\glslang
 pushd External\build\glslang
 rm -rf *
 cmake -DCMAKE_INSTALL_PREFIX=../../Windows/ -DCMAKE_INSTALL_RPATH=../../Windows/ -DBUILD_EXTERNAL=NO ../../src/glslang
-cmake --build . --config Release --target install
+if "%1" == "" (cmake --build . --config Debug --target install) else (cmake --build . --config %1 --target install)
 popd
 echo "Completed build of glslangValidator"
