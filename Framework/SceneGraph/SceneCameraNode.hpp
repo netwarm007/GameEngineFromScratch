@@ -24,9 +24,9 @@ class SceneCameraNode : public SceneNode<SceneObjectCamera> {
         Vector3f camera_y_axis;
         CrossProduct(camera_x_axis, camera_z_axis, up);
         CrossProduct(camera_y_axis, camera_x_axis, camera_z_axis);
-        memcpy(result[0], camera_x_axis.data, sizeof(camera_x_axis));
-        memcpy(result[1], camera_y_axis.data, sizeof(camera_y_axis));
-        memcpy(result[2], camera_z_axis.data, sizeof(camera_z_axis));
+        result[0] = camera_x_axis;
+        result[1] = camera_y_axis;
+        result[2] = camera_z_axis;
 
         return result;
     }
