@@ -8,7 +8,7 @@ set(HLSL_SHADER_SOURCES basic.vert basic.frag
             pbr.vert pbr.frag
             skybox.vert skybox.frag
             shadowmap.vert shadowmap.frag
-            shadowmap_omni.vert shadowmap_omni.frag
+            shadowmap_omni.geom shadowmap_omni.vert shadowmap_omni.frag
             texture.frag texturearray.frag
             passthrough.vert passthrough_cube.vert
             integrateBRDF.comp
