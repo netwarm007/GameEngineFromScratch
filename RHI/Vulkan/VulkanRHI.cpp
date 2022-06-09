@@ -21,8 +21,6 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 static std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-static bool hasPortabilityEnumeration = false;
-
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"};
 
@@ -177,11 +175,6 @@ VulkanRHI::VulkanRHI() {
 
     for (const auto& extension : extensions) {
         std::cout << '\t' << extension.extensionName << std::endl;
-        if (strncmp(extension.extensionName,
-                    VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
-                    VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-            hasPortabilityEnumeration = true;
-        }
     }
 }
 
@@ -244,10 +237,6 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
 
-    if (hasPortabilityEnumeration) {
-        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    }
-
     std::cout << "create instance with extensions:\n";
 
     for (const auto& extension : extensions) {
@@ -260,16 +249,7 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
         VK_MAKE_VERSION(0, 1, 0), VK_API_VERSION_1_1);
 
     // 初始化 vk::InstanceCreateInfo
-    vk::InstanceCreateInfo instanceCreateInfo({}, &applicationInfo, {},
-                                              extensions);
-
-    if (enableValidationLayers) {
-        instanceCreateInfo.setPEnabledLayerNames(validationLayers);
-        instanceCreateInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-        populateDebugMessengerCreateInfo(debugCreateInfo);
-        instanceCreateInfo.setPNext(&debugCreateInfo);
-    }
+    vk::InstanceCreateInfo instanceCreateInfo({}, &applicationInfo, {}, extensions);
 
     m_vkInstance = vk::createInstance(instanceCreateInfo);
 }
@@ -480,9 +460,6 @@ void VulkanRHI::createLogicalDevice() {
     deviceFeatures.sampleRateShading = m_bUseSampleShading;
 
     auto extensions = deviceExtensions;
-    if (hasPortabilityEnumeration) {
-        extensions.push_back("VK_KHR_portability_subset");
-    }
 
     vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos,
                                     {}, extensions, &deviceFeatures);

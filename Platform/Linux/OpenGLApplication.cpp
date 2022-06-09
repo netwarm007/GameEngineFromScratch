@@ -50,16 +50,6 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
 int OpenGLApplication::Initialize() {
     XcbApplication::Initialize();
 
-    // Initialize ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(static_cast<float>(m_Config.screenWidth), 
-                            static_cast<float>(m_Config.screenHeight)); 
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-    ImGui::StyleColorsDark();
-
     return 0;
 }
 
@@ -243,6 +233,17 @@ void OpenGLApplication::CreateMainWindow() {
     }
 
     XFree(vi);
+
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2(static_cast<float>(m_Config.screenWidth), 
+                            static_cast<float>(m_Config.screenHeight)); 
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+    ImGui::StyleColorsDark();
+
 }
 
 void OpenGLApplication::Tick() {
