@@ -142,25 +142,22 @@ jobs:
       - store_artifacts:
           path: build/GEFS-0.1.0-win64.exe
   build_linux:
-    docker:
-      - image: ubuntu:20.04
-    resource_class: xlarge
-    #machine:
-    #  image: ubuntu-2204:2022.04.1 # recommended linux image
-    #resource_class: large
+    #docker:
+    #  - image: ubuntu:20.04
+    #resource_class: xlarge
+    machine:
+      image: ubuntu-2204:2022.04.1 # recommended linux image
+    resource_class: large
     steps:
       - run: 
           name: Install Dependencies
           command: |
-             sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-focal.list http://packages.lunarg.com/vulkan/lunarg-vulkan-focal.list
              sudo apt update 
              sudo apt install -y curl clang cmake ninja-build git uuid-dev 
              sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt install -y flex bison
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
-             wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
-             sudo apt install vulkan-sdk glfw3
           environment:
              DEBIAN_FRONTEND: noninteractive
       - restore_cache:
