@@ -4,8 +4,7 @@
 namespace My {
 class CocoaMetalApplication : public CocoaApplication {
    public:
-    explicit CocoaMetalApplication(GfxConfiguration& config)
-        : CocoaApplication(config){};
+    using CocoaApplication::CocoaApplication;
 
     void Tick() override;
 

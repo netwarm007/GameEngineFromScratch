@@ -1,8 +1,6 @@
 #import "MetalView.h"
 #import "BaseApplication.hpp"
 #include "InputManager.hpp"
-#include "Metal/Metal2GraphicsManager.h"
-#include "Metal/Metal2Renderer.h"
 
 using namespace My;
 
@@ -29,12 +27,6 @@ using namespace My;
 
     self.paused = YES;
     self.enableSetNeedsDisplay = YES;
-
-    auto pGraphicsManager = dynamic_cast<BaseApplication *>(m_pApp)->GetGraphicsManager();
-    if (pGraphicsManager) {
-        dynamic_cast<Metal2GraphicsManager *>(pGraphicsManager)
-            ->SetRenderer([[Metal2Renderer new] initWithMetalKitView:self device:self.device]);
-    }
 }
 
 - (void)mouseDown:(NSEvent *)theEvent {

@@ -69,6 +69,16 @@ void CocoaApplication::CreateMainWindow() {
     ImGui_ImplOSX_Init([m_pWindow contentView]);
 }
 
+void CocoaApplication::GetFramebufferSize(int& width, int& height) {
+    @autoreleasepool {
+        const NSRect contentRect = [[m_pWindow contentView] frame];
+        const NSRect fbRect = [[m_pWindow contentView] convertRectToBacking:contentRect];
+
+        width = static_cast<int>(fbRect.size.width);
+        height = static_cast<int>(fbRect.size.height);
+    }
+}
+
 void CocoaApplication::Finalize() {
     ImGui_ImplOSX_Shutdown();
     ImGui::DestroyContext();

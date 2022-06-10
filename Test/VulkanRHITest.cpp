@@ -1,6 +1,8 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "config.h"
 #include "AssetLoader.hpp"
+#if defined(OS_MACOS) 
+#include "CocoaVulkanApplication.h"
+#endif
 #include "PNG.hpp"
 #include "Vulkan/VulkanRHI.hpp"
 
@@ -11,30 +13,27 @@ using namespace My;
 
 int main() {
     try {
-        // 创建窗口
-        GLFWwindow* window;
-        {
-            glfwInit();
+        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600, "Vulkan RHI Test");
+#if defined(OS_MACOS) 
+        CocoaVulkanApplication app(config);
+#endif
 
-            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-            window = glfwCreateWindow(800, 600, "GEFS Vulkan Window", nullptr, nullptr);
+        // 创建窗口
+        {
+            app.Initialize();
+
+            app.CreateMainWindow();
         }
 
         // 获取窗口所需的Extensions
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+#if defined(OS_MACOS) 
+        std::vector<const char*> extensions = { "VK_KHR_surface", "VK_EXT_metal_surface" };
+#endif
 
         VulkanRHI rhi;
         // 设置回调函数
-        auto getFramebufferSize = [window](int& width, int& height) {
-            glfwGetFramebufferSize(window, &width, &height);
-            while (width == 0 || height == 0) {
-                glfwGetFramebufferSize(window, &width, &height);
-                glfwWaitEvents();
-            }
+        auto getFramebufferSize = [&app](int& width, int& height) {
+            app.GetFramebufferSize(width, height);
         };
 
         // 设置回调函数
@@ -48,9 +47,11 @@ int main() {
 
         // 创建（连接）画布
         {
-            auto createWindowSurface = [window](const vk::Instance& instance, vk::SurfaceKHR& surface) {
+            auto createWindowSurface = [&app](const vk::Instance& instance, vk::SurfaceKHR& surface) {
                 VkSurfaceKHR _surface;
-                if (glfwCreateWindowSurface(instance, window, nullptr, &_surface) != VK_SUCCESS) {
+                assert(instance);
+
+                if (dynamic_cast<CocoaVulkanApplication*>(&app)->CreateWindowSurface(instance, _surface) != VK_SUCCESS) {
                     throw std::runtime_error("faild to create window surface!");
                 }
 
@@ -68,7 +69,7 @@ int main() {
         // 创建 SwapChain
         {
             int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
+            app.GetFramebufferSize(width, height);
             rhi.createSwapChain();
         }
 
@@ -180,11 +181,12 @@ int main() {
         rhi.createSyncObjects();
 
         // 主消息循环
-        while(!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
+        while(!app.IsQuit()) {
+            app.Tick();
             rhi.drawFrame();
         }
 
+        app.Finalize();
     }
     catch ( vk::SystemError & err ) {
         std::cout << "vk::SystemError: " << err.what() << std::endl;

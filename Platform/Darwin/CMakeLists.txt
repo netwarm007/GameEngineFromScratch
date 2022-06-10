@@ -7,6 +7,7 @@ add_library(PlatformInterface
         BundleAssetLoader.mm
         CocoaApplication.mm 
         CocoaMetalApplication.mm
+        CocoaVulkanApplication.mm
         AppDelegate.m
         WindowDelegate.m
         MetalView.mm

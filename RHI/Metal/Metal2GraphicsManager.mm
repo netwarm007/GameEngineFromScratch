@@ -2,6 +2,7 @@
 
 #include "Metal2Renderer.h"
 #include "Metal2GraphicsManager.h"
+#include "MetalView.h"
 
 using namespace My;
 using namespace std;
@@ -10,6 +11,10 @@ int Metal2GraphicsManager::Initialize() {
     int result;
 
     result = GraphicsManager::Initialize();
+
+    NSWindow* pWindow = (NSWindow*)m_pApp->GetMainWindowHandler();
+    MetalView* view = [pWindow contentView];
+    m_pRenderer = [[Metal2Renderer new] initWithMetalKitView:view device:view.device];
 
     if (result == 0) {
         [m_pRenderer initialize];

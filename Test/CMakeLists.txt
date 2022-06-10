@@ -16,11 +16,9 @@ target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framewo
 target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 
 if(Vulkan_FOUND)
-    if(GLFW3_FOUND)
-        add_executable(VulkanRHITest VulkanRHITest.cpp)
-        target_include_directories(VulkanRHITest PRIVATE ${GLFW3_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
-        target_link_libraries(VulkanRHITest Framework VulkanRHI ${GLFW3_LIBRARY})
-    endif(GLFW3_FOUND)
+    add_executable(VulkanRHITest VulkanRHITest.cpp)
+    target_include_directories(VulkanRHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
+    target_link_libraries(VulkanRHITest Framework VulkanRHI PlatformInterface)
 endif(Vulkan_FOUND)
 
 set(PLATFORM_TEST_CASES BasicWindowTest)

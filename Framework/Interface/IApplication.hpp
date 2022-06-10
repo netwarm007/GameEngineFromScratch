@@ -18,5 +18,7 @@ _Interface_ IApplication {
     virtual void* GetMainWindowHandler() = 0;
 
     [[nodiscard]] virtual const GfxConfiguration& GetConfiguration() const = 0;
+
+    virtual void GetFramebufferSize(int& width, int& height) = 0;
 };
 }  // namespace My
