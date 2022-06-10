@@ -117,7 +117,7 @@ class PngParser : _implements_ ImageParser {
 
 #if DUMP_DETAILS
                 std::cerr << "============================"
-                          << std::endl
+                          << std::endl;
 #endif
 
                     switch (type) {
@@ -173,6 +173,11 @@ class PngParser : _implements_ ImageParser {
                         img.Width = m_Width;
                         img.Height = m_Height;
                         img.bitcount = m_BytesPerPixel * 8;
+                        if (m_BitDepth >= 16) {
+                            img.is_float = true;
+                        } else {
+                            img.is_float = false;
+                        }
                         img.pitch = (img.Width * (img.bitcount >> 3) + 3) &
                                     ~3u;  // for GPU address alignment
                         img.data_size = (size_t)img.pitch * img.Height;

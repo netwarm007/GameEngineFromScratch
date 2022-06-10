@@ -6054,7 +6054,7 @@ Material $material1
 
 	Texture (attrib = "diffuse")
 	{
-		string {"Textures/viking_room.png"}
+		string {"Textures/viking_room.pvr"}
 	}
 
 	Texture (attrib = "normal")

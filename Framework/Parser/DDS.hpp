@@ -240,27 +240,27 @@ class DdsParser : _implements_ ImageParser {
         if (img.compressed) {
             const uint32_t* pdwFourCC = &pHeader->ddspf.dwFourCC;
             if (*pdwFourCC == endian_net_unsigned_int("DXT1"_u32)) {
-                img.compress_format = "DXT1"_u32;
+                img.compress_format = COMPRESSED_FORMAT::DXT1;
                 img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 2;
                 img.bitcount = 4;
             } else if (*pdwFourCC == endian_net_unsigned_int("DXT2"_u32)) {
-                img.compress_format = "DXT2"_u32;
+                img.compress_format = COMPRESSED_FORMAT::DXT2;
                 img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
                 img.bitcount = 8;
             } else if (*pdwFourCC == endian_net_unsigned_int("DXT3"_u32)) {
-                img.compress_format = "DXT3"_u32;
+                img.compress_format = COMPRESSED_FORMAT::DXT3;
                 img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
                 img.bitcount = 8;
             } else if (*pdwFourCC == endian_net_unsigned_int("DXT4"_u32)) {
-                img.compress_format = "DXT4"_u32;
+                img.compress_format = COMPRESSED_FORMAT::DXT4;
                 img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
                 img.bitcount = 8;
             } else if (*pdwFourCC == endian_net_unsigned_int("DXT5"_u32)) {
-                img.compress_format = "DXT5"_u32;
+                img.compress_format = COMPRESSED_FORMAT::DXT5;
                 img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
                 img.bitcount = 8;
             } else if (*pdwFourCC == endian_net_unsigned_int("DX10"_u32)) {
-                img.compress_format = "DX10"_u32;
+                img.compress_format = COMPRESSED_FORMAT::DXT10;
                 const auto* pHeaderDXT10 =
                     reinterpret_cast<const DDS_HEADER_DXT10*>(pData);
                 pData += sizeof(DDS_HEADER_DXT10);

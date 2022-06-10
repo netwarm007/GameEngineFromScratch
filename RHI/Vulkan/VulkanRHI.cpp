@@ -1259,41 +1259,44 @@ void VulkanRHI::getTextureFormat(const Image& img,
                                  vk::Format& internal_format) {
     if (img.compressed) {
         switch (img.compress_format) {
-            case "BC1_"_u32:
+            case COMPRESSED_FORMAT::BC1:
                 internal_format = vk::Format::eBc1RgbSrgbBlock;
                 break;
-            case "BC1A"_u32:
+            case COMPRESSED_FORMAT::BC1A:
                 internal_format = vk::Format::eBc1RgbaSrgbBlock;
                 break;
-            case "BC2_"_u32:
+            case COMPRESSED_FORMAT::BC2:
                 internal_format = vk::Format::eBc2SrgbBlock;
                 break;
-            case "BC3_"_u32:
+            case COMPRESSED_FORMAT::BC3:
                 internal_format = vk::Format::eBc3SrgbBlock;
                 break;
-            case "BC4S"_u32:
+            case COMPRESSED_FORMAT::BC4S:
                 internal_format = vk::Format::eBc4SnormBlock;
                 break;
-            case "BC4U"_u32:
+            case COMPRESSED_FORMAT::BC4U:
                 internal_format = vk::Format::eBc4UnormBlock;
                 break;
-            case "BC5S"_u32:
+            case COMPRESSED_FORMAT::BC5S:
                 internal_format = vk::Format::eBc5SnormBlock;
                 break;
-            case "BC5U"_u32:
+            case COMPRESSED_FORMAT::BC5U:
                 internal_format = vk::Format::eBc5UnormBlock;
                 break;
-            case "BC6S"_u32:
+            case COMPRESSED_FORMAT::BC6S:
                 internal_format = vk::Format::eBc6HSfloatBlock;
                 break;
-            case "BC6U"_u32:
+            case COMPRESSED_FORMAT::BC6U:
                 internal_format = vk::Format::eBc6HUfloatBlock;
                 break;
-            case "BC7S"_u32:
+            case COMPRESSED_FORMAT::BC7S:
                 internal_format = vk::Format::eBc7SrgbBlock;
                 break;
-            case "BC7U"_u32:
+            case COMPRESSED_FORMAT::BC7U:
                 internal_format = vk::Format::eBc7UnormBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC:
+                internal_format = vk::Format::eAstc8x8SrgbBlock;
                 break;
             default:
                 assert(0);

@@ -68,3 +68,4 @@ GPUCache
 imgui.ini
 **/*.generated.hpp
 **/*.generated.cpp
+External/Darwin/astcenc

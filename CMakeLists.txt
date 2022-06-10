@@ -132,6 +132,7 @@ add_subdirectory(Test)
 add_subdirectory(Game)
 add_subdirectory(Viewer)
 add_subdirectory(Asset)
+add_subdirectory(Utility)
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 

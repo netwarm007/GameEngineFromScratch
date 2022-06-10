@@ -166,14 +166,17 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(const Image& img,
         format = GL_COMPRESSED_RGB;
 
         switch (img.compress_format) {
-            case "DXT1"_u32:
+            case COMPRESSED_FORMAT::DXT1:
                 internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
                 break;
-            case "DXT3"_u32:
+            case COMPRESSED_FORMAT::DXT3:
                 internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
                 break;
-            case "DXT5"_u32:
+            case COMPRESSED_FORMAT::DXT5:
                 internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                break;
+            case COMPRESSED_FORMAT::ASTC:
+                internal_format = GL_COMPRESSED_RGBA_ASTC_8x8_KHR;
                 break;
             default:
                 assert(0);

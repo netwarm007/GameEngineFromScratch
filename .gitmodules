@@ -55,3 +55,9 @@
 [submodule "glfw"]
 	path = External/src/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "astc-encoder"]
+	path = External/src/astc-encoder
+	url = https://github.com/ARM-software/astc-encoder.git
+[submodule "ISPCTextureCompressor"]
+	path = External/src/ISPCTextureCompressor
+	url = https://github.com/netwarm007/ISPCTextureCompressor.git

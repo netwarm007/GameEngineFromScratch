@@ -2,14 +2,9 @@
 #include <future>
 #include <utility>
 
-#include "BMP.hpp"
 #include "BaseSceneObject.hpp"
-#include "DDS.hpp"
-#include "HDR.hpp"
-#include "JPEG.hpp"
-#include "PNG.hpp"
-#include "TGA.hpp"
 #include "geommath.hpp"
+#include "Image.hpp"
 
 namespace My {
 class SceneObjectTexture : public BaseSceneObject {

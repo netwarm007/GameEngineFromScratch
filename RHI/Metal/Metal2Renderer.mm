@@ -125,14 +125,27 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     if (img.compressed) {
         switch (img.compress_format) {
-            case "DXT1"_u32:
+            case COMPRESSED_FORMAT::DXT1:
+            case COMPRESSED_FORMAT::BC1:
                 format = MTLPixelFormatBC1_RGBA;
                 break;
-            case "DXT3"_u32:
+            case COMPRESSED_FORMAT::DXT2:
+            case COMPRESSED_FORMAT::BC2:
+                format = MTLPixelFormatBC2_RGBA;
+                break;
+            case COMPRESSED_FORMAT::DXT3:
+            case COMPRESSED_FORMAT::BC3:
                 format = MTLPixelFormatBC3_RGBA;
                 break;
-            case "DXT5"_u32:
+            case COMPRESSED_FORMAT::BC4U:
+                format = MTLPixelFormatBC4_RUnorm;
+                break;
+            case COMPRESSED_FORMAT::DXT5:
+            case COMPRESSED_FORMAT::BC5U:
                 format = MTLPixelFormatBC5_RGUnorm;
+                break;
+            case COMPRESSED_FORMAT::ASTC:
+                format = MTLPixelFormatASTC_8x8_sRGB;
                 break;
             default:
                 std::cerr << img << std::endl;

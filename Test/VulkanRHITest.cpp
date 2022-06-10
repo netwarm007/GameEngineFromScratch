@@ -4,7 +4,7 @@
 #include "BundleAssetLoader.h"
 #include "CocoaVulkanApplication.h"
 #endif
-#include "PNG.hpp"
+#include "PVR.hpp"
 #include "Vulkan/VulkanRHI.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -120,8 +120,8 @@ int main() {
 #else
             AssetLoader asset_loader;
 #endif
-            auto buf = asset_loader.SyncOpenAndReadBinary("Textures/viking_room.png");
-            PngParser parser;
+            auto buf = asset_loader.SyncOpenAndReadBinary("Textures/viking_room.pvr");
+            PVR::PvrParser parser;
             auto image = parser.Parse(buf);
             rhi.createTextureImage(image);
             rhi.createTextureImageView(image);
