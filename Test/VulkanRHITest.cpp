@@ -1,6 +1,7 @@
 #include "config.h"
 #include "AssetLoader.hpp"
 #if defined(OS_MACOS) 
+#include "BundleAssetLoader.h"
 #include "CocoaVulkanApplication.h"
 #endif
 #include "PNG.hpp"
@@ -89,7 +90,11 @@ int main() {
 
         // 创建图形管道
         {
+#if defined(OS_MACOS) 
+            BundleAssetLoader asset_loader;
+#else
             AssetLoader asset_loader;
+#endif
             auto vertShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple.vert.spv");
             auto fragShader = asset_loader.SyncOpenAndReadBinary("Shaders/Vulkan/simple.frag.spv");
             rhi.setShaders(vertShader, fragShader);
@@ -110,7 +115,11 @@ int main() {
 
         // 加载贴图
         {
+#if defined(OS_MACOS) 
+            BundleAssetLoader asset_loader;
+#else
             AssetLoader asset_loader;
+#endif
             auto buf = asset_loader.SyncOpenAndReadBinary("Textures/viking_room.png");
             PngParser parser;
             auto image = parser.Parse(buf);
@@ -123,7 +132,11 @@ int main() {
 
         // 加载模型
         {
+#if defined(OS_MACOS) 
+            BundleAssetLoader asset_loader;
+#else
             AssetLoader asset_loader;
+#endif
             auto model_path = asset_loader.GetFileRealPath("Models/viking_room.obj");
             std::vector<Vertex>      vertices;
             std::vector<uint32_t>    indices;

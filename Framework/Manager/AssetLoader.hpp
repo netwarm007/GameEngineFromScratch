@@ -56,9 +56,9 @@ class AssetLoader : _implements_ IAssetLoader {
     }
 
    protected:
-    std::string m_strTargetPath;
+    static std::string m_strTargetPath;
 
    private:
-    std::vector<std::string> m_strSearchPath;
+    static std::vector<std::string> m_strSearchPath;
 };
 }  // namespace My

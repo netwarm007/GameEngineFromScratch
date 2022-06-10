@@ -3,6 +3,10 @@
 using namespace My;
 using namespace std;
 
+std::string AssetLoader::m_strTargetPath;
+
+std::vector<std::string> AssetLoader::m_strSearchPath;
+
 void AssetLoader::ClearSearchPath() { m_strSearchPath.clear(); }
 
 bool AssetLoader::AddSearchPath(const char* path) {
