@@ -51,9 +51,11 @@ int main() {
                 VkSurfaceKHR _surface;
                 assert(instance);
 
+#if defined(OS_MACOS) 
                 if (dynamic_cast<CocoaVulkanApplication*>(&app)->CreateWindowSurface(instance, _surface) != VK_SUCCESS) {
                     throw std::runtime_error("faild to create window surface!");
                 }
+#endif
 
                 surface = _surface;
             };

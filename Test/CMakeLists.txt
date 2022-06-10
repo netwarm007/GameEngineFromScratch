@@ -15,11 +15,13 @@ endforeach(TEST_CASE)
 target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 
+if(OS_MACOS)
 if(Vulkan_FOUND)
     add_executable(VulkanRHITest VulkanRHITest.cpp)
     target_include_directories(VulkanRHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
     target_link_libraries(VulkanRHITest Framework VulkanRHI PlatformInterface)
 endif(Vulkan_FOUND)
+endif(OS_MACOS)
 
 set(PLATFORM_TEST_CASES BasicWindowTest)
 
