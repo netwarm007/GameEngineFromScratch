@@ -92,7 +92,10 @@ class HdrParser : _implements_ ImageParser {
             remain_size--;
 
             img.bitcount = 32 * 3;  // float[3]
+            img.bitdepth = 32;
             img.pitch = (img.bitcount >> 3) * img.Width;
+            img.pixel_format = PIXEL_FORMAT::RGBA32;
+            img.is_float = true;
             img.data_size = (size_t)img.pitch * img.Height;
             img.data = new uint8_t[img.data_size];
 

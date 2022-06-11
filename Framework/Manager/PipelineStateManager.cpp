@@ -125,7 +125,7 @@ int PipelineStateManager::Initialize() {
 #else
     pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
 #endif
-    pipelineState.pixelFormat = PIXEL_FORMAT::INVALID;
+    pipelineState.pixelFormat = PIXEL_FORMAT::UNKNOWN;
     pipelineState.sampleCount = 1;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;
     pipelineState.flag = PIPELINE_FLAG::SHADOW;
@@ -150,7 +150,7 @@ int PipelineStateManager::Initialize() {
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
     pipelineState.depthTestMode = DEPTH_TEST_MODE::ALWAYS;
     pipelineState.bDepthWrite = true;
-    pipelineState.pixelFormat = PIXEL_FORMAT::BGRA8UNORM;
+    pipelineState.pixelFormat = PIXEL_FORMAT::RGBA8;
     pipelineState.sampleCount = m_pApp->GetConfiguration().msaaSamples;
     pipelineState.flag = PIPELINE_FLAG::DEBUG_DRAW;
     RegisterPipelineState(pipelineState);

@@ -188,7 +188,8 @@ class DdsParser : _implements_ ImageParser {
         Image img;
         uint8_t* pData = buf.GetData();
 
-        [[maybe_unused]] const auto* pdwMagic = reinterpret_cast<const uint32_t*>(pData);
+        [[maybe_unused]] const auto* pdwMagic =
+            reinterpret_cast<const uint32_t*>(pData);
         pData += sizeof(uint32_t);
         assert(*pdwMagic == endian_net_unsigned_int("DDS "_u32));
         std::cerr << "The image is DDS format" << std::endl;

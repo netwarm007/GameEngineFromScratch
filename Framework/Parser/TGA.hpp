@@ -78,8 +78,9 @@ class TgaParser : _implements_ ImageParser {
 
         // reading the pixel data
         img.bitcount = (alpha_depth ? 32 : 24);
-        img.pitch = (img.Width * (img.bitcount >> 3) + 3) &
-                    ~3u;  // for GPU address alignment
+        img.bitdepth = 8;
+        img.pixel_format = (alpha_depth ? PIXEL_FORMAT::RGBA8 : PIXEL_FORMAT::RGB8);
+        img.pitch = img.Width * ALIGN((img.bitcount >> 3), 4); // for GPU address alignment
 
         img.data_size = (size_t)img.pitch * img.Height;
         img.data = new uint8_t[img.data_size];

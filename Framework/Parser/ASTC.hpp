@@ -43,12 +43,14 @@ class AstcParser : _implements_ ImageParser {
             pImage->header.magic[1] == 0xAB &&
             pImage->header.magic[2] == 0xA1 &&
             pImage->header.magic[3] == 0x5c) {
+#if DUMP_DETAILS
             std::cerr << "Asset is ASTC compressed image" << std::endl;
             std::cerr << "ASTC Header" << std::endl;
             std::cerr << "----------------------------" << std::endl;
             fprintf(stderr, "Image block size: (%d x %d x %d)\n",
                     pImage->header.block_x, pImage->header.block_y,
                     pImage->header.block_z);
+#endif
 
             img.Width = pImage->DimX();
             img.Height = pImage->DimY();

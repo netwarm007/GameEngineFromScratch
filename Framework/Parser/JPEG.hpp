@@ -523,6 +523,8 @@ class JfifParser : _implements_ ImageParser {
                         img.Width = m_nSamplesPerLine;
                         img.Height = m_nLines;
                         img.bitcount = 32;
+                        img.bitdepth = 8;
+                        img.pixel_format = PIXEL_FORMAT::RGB8;
                         img.pitch = mcu_count_x * 8 * (img.bitcount >> 3);
                         img.data_size = (size_t)img.pitch * mcu_count_y * 8 *
                                         (img.bitcount >> 3);

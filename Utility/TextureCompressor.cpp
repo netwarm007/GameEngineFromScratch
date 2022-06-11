@@ -79,56 +79,36 @@ int main(int argc, char** argv) {
             compressedFile.header.metadata_size = 0;
 
             size_t compressed_size = 0;
-            if (!image.is_float) {
-                // SRGB
-                switch (image.bitcount) {
-                    case 8:
-                        compressedFile.header.pixel_format = PVR::PixelFormat::BC4;
-                        compressed_size = (ALIGN(image.Height, 4) >> 2) *
-                                        (ALIGN(image.Width, 4) >> 2) * 8;
-                        break;
-                    case 16:
-                        compressedFile.header.pixel_format = PVR::PixelFormat::BC5;
-                        compressed_size = (ALIGN(image.Height, 4) >> 2) *
-                                        (ALIGN(image.Width, 4) >> 2) * 16;
-                        break;
-                    case 24:
-                        adjust_image(image);
-                        compressedFile.header.pixel_format = PVR::PixelFormat::BC1;
-                        compressed_size = (ALIGN(image.Height, 4) >> 2) *
-                                        (ALIGN(image.Width, 4) >> 2) * 8;
-                        break;
-                    case 32:
-                        compressedFile.header.pixel_format = PVR::PixelFormat::BC3;
-                        compressed_size = (ALIGN(image.Height, 4) >> 2) *
-                                        (ALIGN(image.Width, 4) >> 2) * 16;
-                        break;
-                    default:
-                        assert(0);
-                }
-            } else {
-                // HDR
-                switch (image.bitcount) {
-                    case 16:
-                        compressedFile.header.pixel_format = PVR::PixelFormat::BC4;
-                        compressed_size = (ALIGN(image.Height, 4) >> 2) *
-                                        (ALIGN(image.Width, 4) >> 2) * 16;
-                        break;
-                    case 48:
-                        adjust_image(image);
-                        compressedFile.header.pixel_format = PVR::PixelFormat::BC1;
-                        compressed_size = (ALIGN(image.Height, 4) >> 2) *
-                                        (ALIGN(image.Width, 4) >> 2) * 8;
-                        break;
-                    case 64:
-                        compressedFile.header.pixel_format = PVR::PixelFormat::BC3;
-                        compressed_size = (ALIGN(image.Height, 4) >> 2) *
-                                        (ALIGN(image.Width, 4) >> 2) * 16;
-                        break;
-                    default:
-                        assert(0);
-                }
 
+            switch (image.pixel_format) {
+                case PIXEL_FORMAT::R8:
+                    compressedFile.header.pixel_format = PVR::PixelFormat::BC4;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                      (ALIGN(image.Width, 4) >> 2) * 8;
+                    break;
+                case PIXEL_FORMAT::RG8:
+                    compressedFile.header.pixel_format = PVR::PixelFormat::BC5;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                      (ALIGN(image.Width, 4) >> 2) * 16;
+                    break;
+                case PIXEL_FORMAT::RGB8:
+                    compressedFile.header.pixel_format = PVR::PixelFormat::BC1;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                      (ALIGN(image.Width, 4) >> 2) * 8;
+                    break;
+                case PIXEL_FORMAT::RGBA8:
+                    compressedFile.header.pixel_format = PVR::PixelFormat::BC3;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                      (ALIGN(image.Width, 4) >> 2) * 16;
+                    break;
+                case PIXEL_FORMAT::RGB16:
+                    compressedFile.header.pixel_format = PVR::PixelFormat::BC6H;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                      (ALIGN(image.Width, 4) >> 2) * 16;
+                    break;
+                default:
+                    fprintf(stderr, "format not supported. %hu\n", image.pixel_format);
+                    assert(0);
             }
 
             rgba_surface src_surface;
@@ -137,7 +117,7 @@ int main(int argc, char** argv) {
             src_surface.ptr = image.data;
             src_surface.stride = static_cast<int32_t>(image.pitch);
 
-            std::vector<uint8_t> _dst_buf (compressed_size);
+            std::vector<uint8_t> _dst_buf(compressed_size);
 
             switch (compressedFile.header.pixel_format) {
                 case PVR::PixelFormat::BC1:
@@ -156,15 +136,33 @@ int main(int argc, char** argv) {
                     fprintf(stderr, "Compress with BC5\n");
                     CompressBlocksBC5(&src_surface, _dst_buf.data());
                     break;
+                case PVR::PixelFormat::BC6H:
+                    fprintf(stderr, "Compress with BC6H\n");
+                    {
+                        bc6h_enc_settings settings;
+                        GetProfile_bc6h_basic(&settings);
+                        CompressBlocksBC6H(&src_surface, _dst_buf.data(),
+                                           &settings);
+                    }
+                    break;
+                case PVR::PixelFormat::BC7:
+                    fprintf(stderr, "Compress with BC7\n");
+                    {
+                        bc7_enc_settings settings;
+                        GetProfile_basic(&settings);
+                        CompressBlocksBC7(&src_surface, _dst_buf.data(),
+                                          &settings);
+                    }
+                    break;
                 default:
                     assert(0);
             }
 
-            fprintf(stderr,
-                    "decompressed size: %zu bytes, compressed size: %zu bytes\n",
-                    image.data_size, compressed_size);
+            fprintf(
+                stderr,
+                "decompressed size: %zu bytes, compressed size: %zu bytes\n",
+                image.data_size, compressed_size);
 
-            std::vector<uint8_t> _buffer(compressed_size);
             compressedFile.pTextureData = _dst_buf.data();
             compressedFile.szTextureDataSize = compressed_size;
 

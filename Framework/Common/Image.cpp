@@ -13,16 +13,11 @@ Image::Image(Image&& rhs) noexcept {
     compressed = rhs.compressed;
     is_float = rhs.is_float;
     compress_format = rhs.compress_format;
+    bitdepth = rhs.bitdepth;
+    pixel_format = rhs.pixel_format;
+    is_signed = rhs.is_signed;
     mipmaps = std::move(rhs.mipmaps);
-    rhs.Width = 0;
-    rhs.Height = 0;
     rhs.data = nullptr;
-    rhs.bitcount = 0;
-    rhs.pitch = 0;
-    rhs.data_size = 0;
-    rhs.compressed = false;
-    rhs.is_float = false;
-    rhs.compress_format = COMPRESSED_FORMAT::NONE;
 }
 
 Image& Image::operator=(Image&& rhs) noexcept {
@@ -36,16 +31,11 @@ Image& Image::operator=(Image&& rhs) noexcept {
         compressed = rhs.compressed;
         is_float = rhs.is_float;
         compress_format = rhs.compress_format;
+        bitdepth = rhs.bitdepth;
+        pixel_format = rhs.pixel_format;
+        is_signed = rhs.is_signed;
         mipmaps = std::move(rhs.mipmaps);
-        rhs.Width = 0;
-        rhs.Height = 0;
         rhs.data = nullptr;
-        rhs.bitcount = 0;
-        rhs.pitch = 0;
-        rhs.data_size = 0;
-        rhs.compressed = false;
-        rhs.is_float = false;
-        rhs.compress_format = COMPRESSED_FORMAT::NONE;
     }
     return *this;
 }
@@ -138,4 +128,5 @@ ostream& operator<<(ostream& out, const Image& image) {
 
     return out;
 }
+
 }  // namespace My

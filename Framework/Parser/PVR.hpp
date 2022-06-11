@@ -26,7 +26,7 @@ enum class PixelFormat : uint64_t {
     BC3 = 11,
     BC4 = 12,
     BC5 = 13,
-    BC6 = 14,
+    BC6H = 14,
     BC7 = 15,
     UYVY = 16,
     YUY2 = 17,
@@ -65,10 +65,7 @@ enum class PixelFormat : uint64_t {
     ASTC_6x6x6 = 50
 };
 
-enum class ColorSpace : uint32_t {
-    LinearRGB = 0,
-    sRGB = 1
-};
+enum class ColorSpace : uint32_t { LinearRGB = 0, sRGB = 1 };
 
 enum class ChannelType : uint32_t {
     Unsigned_Byte_Normalised = 0,
@@ -120,7 +117,8 @@ inline std::ostream& operator<<(std::ostream& s, const PVR::Header h) {
     return s;
 }
 
-inline std::ostream& operator<<(std::ostream& s, const std::vector<MetaData> metas) {
+inline std::ostream& operator<<(std::ostream& s,
+                                const std::vector<MetaData> metas) {
     for (auto& meta : metas) {
         s << meta.fourCC;
         s << meta.key;
@@ -145,10 +143,10 @@ class PvrParser : _implements_ ImageParser {
             std::cerr << "Asset is PVR file" << std::endl;
             std::cerr << "PVR Header" << std::endl;
             std::cerr << "----------------------------" << std::endl;
-            fprintf(stderr, "Image dimension: (%d x %d x %d)\n",
-                    pHeader->width, pHeader->height,
-                    pHeader->depth);
-            fprintf(stderr, "Image pixel format: %llu\n", pHeader->pixel_format);
+            fprintf(stderr, "Image dimension: (%d x %d x %d)\n", pHeader->width,
+                    pHeader->height, pHeader->depth);
+            fprintf(stderr, "Image pixel format: %llu\n",
+                    pHeader->pixel_format);
 
             img.Width = pHeader->width;
             img.Height = pHeader->height;
@@ -172,13 +170,14 @@ class PvrParser : _implements_ ImageParser {
                 case PVR::PixelFormat::BC5:
                     img.compress_format = COMPRESSED_FORMAT::BC5U;
                     break;
-                case PVR::PixelFormat::BC6:
+                case PVR::PixelFormat::BC6H:
                     img.compress_format = COMPRESSED_FORMAT::BC6U;
                     break;
                 case PVR::PixelFormat::BC7:
                     img.compress_format = COMPRESSED_FORMAT::BC7U;
                     break;
-                default: assert(0);
+                default:
+                    assert(0);
             }
 
             memcpy(img.data, buf.GetData() + data_offset, img.data_size);
