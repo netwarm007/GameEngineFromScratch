@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
         Image image = astc_parser.Parse(buf);
 
         std::cout << image;
+
+        image.SaveTGA("PvrParserTest.tga");
     }
 
     assetLoader.Finalize();

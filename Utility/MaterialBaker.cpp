@@ -1,14 +1,16 @@
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "AssetLoader.hpp"
 #include "BaseApplication.hpp"
+#include "PVR.hpp"
 #include "SceneManager.hpp"
 #include "ispc_texcomp.h"
-#include "PVR.hpp"
 
 using namespace My;
 using namespace std;
@@ -21,6 +23,90 @@ static ostream& operator<<(ostream& out,
     }
 
     return out;
+}
+
+void save_as_tga(const rgba_surface& surface, const std::string&& filename) {
+    assert(filename != "");
+    // must end in .tga
+    FILE* file = fopen(filename.c_str(), "wb");
+    // misc header information
+    for (int i = 0; i < 18; i++) {
+        if (i == 2)
+            fprintf(file, "%c", 2);
+        else if (i == 12)
+            fprintf(file, "%c", surface.width % 256);
+        else if (i == 13)
+            fprintf(file, "%c", surface.width / 256);
+        else if (i == 14)
+            fprintf(file, "%c", surface.height % 256);
+        else if (i == 15)
+            fprintf(file, "%c", surface.height / 256);
+        else if (i == 16)
+            fprintf(file, "%c", 32);
+        else if (i == 17)
+            fprintf(file, "%c", 32);
+        else
+            fprintf(file, "%c", 0);
+    }
+    // the data
+    for (int32_t y = 0; y < surface.height; y++) {
+        for (int32_t x = 0; x < surface.width; x++) {
+            // note reversed order: b, g, r, a
+            fprintf(file, "%c",
+                    *(surface.ptr + y * surface.stride + x * 4 + 2));
+            fprintf(file, "%c",
+                    *(surface.ptr + y * surface.stride + x * 4 + 1));
+            fprintf(file, "%c",
+                    *(surface.ptr + y * surface.stride + x * 4 + 0));
+            fprintf(file, "%c",
+                    *(surface.ptr + y * surface.stride + x * 4 + 3));
+        }
+    }
+    fclose(file);
+}
+
+#define USE_BC7 1
+void save_as_pvr(const rgba_surface& surface, const std::string&& filename) {
+    auto compressed_size =
+        (ALIGN(surface.height, 4) >> 2) * (ALIGN(surface.width, 4) >> 2) * 16;
+
+    std::vector<uint8_t> _dst_buf(compressed_size);
+
+#if USE_BC7
+    bc7_enc_settings settings;
+    GetProfile_slow(&settings);
+    settings.channels = 4;
+    CompressBlocksBC7(&surface, _dst_buf.data(), &settings);
+#else
+    CompressBlocksBC3(&surface, _dst_buf.data());
+#endif
+
+    PVR::File compressedFile;
+
+    compressedFile.header.flags = PVR::Flags::NoFlag;
+    compressedFile.header.channel_type = PVR::ChannelType::Unsigned_Byte;
+    compressedFile.header.height = ALIGN(surface.height, 4);
+    compressedFile.header.width = ALIGN(surface.width, 4);
+    compressedFile.header.depth = 1;
+    compressedFile.header.num_faces = 1;
+    compressedFile.header.num_surfaces = 1;
+    compressedFile.header.mipmap_count = 1;
+    compressedFile.header.metadata_size = 0;
+#if USE_BC7
+    compressedFile.header.pixel_format = PVR::PixelFormat::BC7;
+#else
+    compressedFile.header.pixel_format = PVR::PixelFormat::BC3;
+#endif
+    compressedFile.pTextureData = _dst_buf.data();
+    compressedFile.szTextureDataSize = compressed_size;
+
+    std::cerr << "generate " << filename << std::endl;
+    std::ofstream outputFile(filename, std::ios::binary);
+
+    outputFile << compressedFile;
+
+    outputFile.close();
+    std::cerr << "finished " << filename << std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -42,6 +128,8 @@ int main(int argc, char** argv) {
     }
 
     auto& scene = sceneManager.GetSceneForRendering();
+
+    std::vector<std::future<void>> tasks;
 
     cerr << "Baking Materials" << endl;
     cerr << "---------------------------" << endl;
@@ -110,106 +198,114 @@ int main(int argc, char** argv) {
               +--------+--------+--------+--------+
             */
 
-            rgba_surface surf1, surf2;
-            surf1.width = max_width_1;
-            surf1.height = max_height_1;
-            surf1.stride = 4 * surf1.width;
-            std::vector<uint8_t> buf1 (surf1.stride * surf1.height);
-            surf1.ptr = buf1.data();
-            
-            for (int32_t y = 0; y < max_height_1; y++) {
-                for (int32_t x = 0; x < max_width_1; x++) {
-                    *(surf1.ptr + y * surf1.stride + x * 4) = albedo_texture->GetR(x, y);
-                    *(surf1.ptr + y * surf1.stride + x * 4 + 1) = albedo_texture->GetG(x, y);
-                    *(surf1.ptr + y * surf1.stride + x * 4 + 2) = albedo_texture->GetB(x, y);
-                    *(surf1.ptr + y * surf1.stride + x * 4 + 3) = normal_texture->GetX(x, y);
+            auto combine_textures_1 = [=]() {
+                // surf
+                rgba_surface surf;
+                surf.width = max_width_1;
+                surf.height = max_height_1;
+                surf.stride = 4 * surf.width;
+                std::vector<uint8_t> buf1(surf.stride * surf.height);
+                surf.ptr = buf1.data();
+                float albedo_ratio_x = (float)albedo_texture_width / surf.width;
+                float albedo_ratio_y =
+                    (float)albedo_texture_height / surf.height;
+                float normal_ratio_x = (float)normal_texture_width / surf.width;
+                float normal_ratio_y =
+                    (float)normal_texture_height / surf.height;
+
+                for (int32_t y = 0; y < surf.height; y++) {
+                    for (int32_t x = 0; x < surf.width; x++) {
+                        *(surf.ptr + y * surf.stride + x * 4) =
+                            albedo_texture->GetR(
+                                std::floor(x * albedo_ratio_x),
+                                std::floor(y * albedo_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * 4 + 1) =
+                            albedo_texture->GetG(
+                                std::floor(x * albedo_ratio_x),
+                                std::floor(y * albedo_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * 4 + 2) =
+                            albedo_texture->GetB(
+                                std::floor(x * albedo_ratio_x),
+                                std::floor(y * albedo_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * 4 + 3) =
+                            normal_texture->GetX(
+                                std::floor(x * normal_ratio_x),
+                                std::floor(y * normal_ratio_y));
+                    }
                 }
-            }
 
-            // Now, compress surf1 with BC7
-            auto compressed_size = (ALIGN(max_height_1, 4) >> 2) *
-                                      (ALIGN(max_width_1, 4) >> 2) * 16;
-
-            std::vector<uint8_t> _dst_buf(compressed_size);
-
-            bc7_enc_settings settings;
-            GetProfile_basic(&settings);
-            CompressBlocksBC7(&surf1, _dst_buf.data(), &settings);
-
-            PVR::File compressedFile;
-
-            compressedFile.header.flags = PVR::Flags::NoFlag;
-            compressedFile.header.channel_type =
-                PVR::ChannelType::Unsigned_Byte;
-            compressedFile.header.height = ALIGN(max_height_1, 4);
-            compressedFile.header.width = ALIGN(max_width_1, 4);
-            compressedFile.header.depth = 1;
-            compressedFile.header.num_faces = 1;
-            compressedFile.header.num_surfaces = 1;
-            compressedFile.header.mipmap_count = 1;
-            compressedFile.header.metadata_size = 0;
-            compressedFile.header.pixel_format = PVR::PixelFormat::BC7;
-            compressedFile.pTextureData = _dst_buf.data();
-            compressedFile.szTextureDataSize = compressed_size;
-
-            auto outputFileName = pMaterial->GetName();
-            if (argc >= 3) {
-                outputFileName = argv[2];
-            }
-            outputFileName += "_1";
-
-            cerr << "generate " << outputFileName << std::endl;
-            std::ofstream outputFile(outputFileName.c_str(), std::ios::binary);
-
-            outputFile << compressedFile;
-
-            outputFile.close();
-            cerr << "finished " << outputFileName << std::endl;
-
-            // surf2
-            surf2.width = max_width_2;
-            surf2.height = max_height_2;
-            surf2.stride = 4 * surf2.width;
-            std::vector<uint8_t> buf2 (surf2.stride * surf2.height);
-            surf2.ptr = buf2.data();
-
-            for (int32_t y = 0; y < max_height_2; y++) {
-                for (int32_t x = 0; x < max_width_2; x++) {
-                    *(surf2.ptr + y * surf2.stride + x * 4) = metallic_texture->GetR(x, y);
-                    *(surf2.ptr + y * surf2.stride + x * 4 + 1) = roughness_texture->GetR(x, y);
-                    *(surf2.ptr + y * surf2.stride + x * 4 + 2) = ao_texture->GetR(x, y);
-                    *(surf2.ptr + y * surf2.stride + x * 4 + 3) = normal_texture->GetY(x, y);
+                // Now, compress surf with BC7
+                auto outputFileName = pMaterial->GetName();
+                if (argc >= 3) {
+                    outputFileName = argv[2];
                 }
-            }
+                outputFileName += "_1";
 
-            // Now, compress surf2 with BC7
-            compressed_size = (ALIGN(max_height_2, 4) >> 2) *
-                                      (ALIGN(max_width_2, 4) >> 2) * 16;
+                save_as_pvr(surf, outputFileName + ".pvr");
+                save_as_tga(surf, outputFileName + ".tga");
+            };
 
-            _dst_buf.resize(compressed_size);
+            tasks.push_back(std::async(launch::async, combine_textures_1));
 
-            GetProfile_basic(&settings);
-            CompressBlocksBC7(&surf1, _dst_buf.data(), &settings);
+            auto combine_textures_2 = [=]() {
+                // surf
+                rgba_surface surf;
+                surf.width = max_width_2;
+                surf.height = max_height_2;
+                surf.stride = 4 * surf.width;
+                std::vector<uint8_t> buf2(surf.stride * surf.height);
+                surf.ptr = buf2.data();
+                float normal_ratio_x = (float)normal_texture_width / surf.width;
+                float normal_ratio_y =
+                    (float)normal_texture_height / surf.height;
+                float metallic_ratio_x =
+                    (float)metallic_texture_width / surf.width;
+                float metallic_ratio_y =
+                    (float)metallic_texture_height / surf.height;
+                float roughness_ratio_x =
+                    (float)roughness_texture_width / surf.width;
+                float roughness_ratio_y =
+                    (float)roughness_texture_height / surf.height;
+                float ao_ratio_x = (float)ao_texture_width / surf.width;
+                float ao_ratio_y = (float)ao_texture_height / surf.height;
 
-            compressedFile.header.height = ALIGN(max_height_2, 4);
-            compressedFile.header.width = ALIGN(max_width_2, 4);
-            compressedFile.pTextureData = _dst_buf.data();
-            compressedFile.szTextureDataSize = compressed_size;
+                for (int32_t y = 0; y < surf.height; y++) {
+                    for (int32_t x = 0; x < surf.width; x++) {
+                        *(surf.ptr + y * surf.stride + x * 4) =
+                            metallic_texture->GetR(
+                                std::floor(x * metallic_ratio_x),
+                                std::floor(y * metallic_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * 4 + 1) =
+                            roughness_texture->GetR(
+                                std::floor(x * roughness_ratio_x),
+                                std::floor(y * roughness_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * 4 + 2) =
+                            ao_texture->GetR(std::floor(x * ao_ratio_x),
+                                             std::floor(y * ao_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * 4 + 3) =
+                            normal_texture->GetY(
+                                std::floor(x * normal_ratio_x),
+                                std::floor(y * normal_ratio_y));
+                    }
+                }
 
-            outputFileName = pMaterial->GetName();
-            if (argc >= 3) {
-                outputFileName = argv[2];
-            }
-            outputFileName += "_2";
+                // Now, compress surf with BC7
+                auto outputFileName = pMaterial->GetName();
+                if (argc >= 3) {
+                    outputFileName = argv[2];
+                }
+                outputFileName += "_2";
 
-            cerr << "generate " << outputFileName << std::endl;
-            outputFile.open(outputFileName.c_str(), std::ios::binary);
+                save_as_pvr(surf, outputFileName + ".pvr");
+                save_as_tga(surf, outputFileName + ".tga");
+            };
 
-            outputFile << compressedFile;
-
-            outputFile.close();
-            cerr << "finished " << outputFileName << std::endl;
+            tasks.push_back(std::async(launch::async, combine_textures_2));
         }
+    }
+
+    for (auto& task : tasks) {
+        task.wait();
     }
 
     app.Finalize();
