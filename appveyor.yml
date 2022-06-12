@@ -94,6 +94,8 @@ build_script:
 
     scripts/build_spirvcross Release
 
+    scripts/build_libispc-texcomp Release
+
     scripts/build Release
 
 test_script:

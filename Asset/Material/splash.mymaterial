@@ -1,0 +1,67 @@
+Material $material1
+{
+	Name {string {"Material.002"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.640000066757203, 0.640000066757203, 0.640000066757203}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/redbricks2b-albedo.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Textures/redbricks2b-normal.png"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/redbricks2b-metalness.png"}
+	}
+	
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/redbricks2b-rough.png"}
+	}
+	
+	Texture (attrib = "ao")
+	{
+		string {"Textures/redbricks2b-ao.png"}
+	}
+}
+
+Material $material2
+{
+	Name {string {"Material.001"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/gold-scuffed_basecolor.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Textures/gold-scuffed_normal.png"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/gold-scuffed_metallic.png"}
+	}
+	
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/gold-scuffed_roughness.png"}
+	}
+	
+	Texture (attrib = "ao")
+	{
+		string {"Textures/default_ao.png"}
+	}
+}
