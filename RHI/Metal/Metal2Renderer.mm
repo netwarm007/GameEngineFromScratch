@@ -144,6 +144,9 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             case COMPRESSED_FORMAT::BC5U:
                 format = MTLPixelFormatBC5_RGUnorm;
                 break;
+            case COMPRESSED_FORMAT::BC6U:
+                format = MTLPixelFormatBC6H_RGBUfloat;
+                break;
             case COMPRESSED_FORMAT::BC7U:
                 format = MTLPixelFormatBC7_RGBAUnorm;
                 break;

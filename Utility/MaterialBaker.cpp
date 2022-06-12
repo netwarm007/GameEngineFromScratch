@@ -25,7 +25,7 @@ static ostream& operator<<(ostream& out,
     return out;
 }
 
-void save_as_tga(const rgba_surface& surface, const std::string&& filename) {
+void save_as_tga(const rgba_surface& surface, int32_t channels, const std::string&& filename) {
     assert(filename != "");
     // must end in .tga
     FILE* file = fopen(filename.c_str(), "wb");
@@ -53,33 +53,68 @@ void save_as_tga(const rgba_surface& surface, const std::string&& filename) {
         for (int32_t x = 0; x < surface.width; x++) {
             // note reversed order: b, g, r, a
             fprintf(file, "%c",
-                    *(surface.ptr + y * surface.stride + x * 4 + 2));
+                    (channels > 2) ? *(surface.ptr + y * surface.stride + x * channels + 2) : '\0');
             fprintf(file, "%c",
-                    *(surface.ptr + y * surface.stride + x * 4 + 1));
+                    (channels > 1) ? *(surface.ptr + y * surface.stride + x * channels + 1) : '\0');
             fprintf(file, "%c",
-                    *(surface.ptr + y * surface.stride + x * 4 + 0));
+                    (channels > 0) ? *(surface.ptr + y * surface.stride + x * channels + 0) : '\0');
             fprintf(file, "%c",
-                    *(surface.ptr + y * surface.stride + x * 4 + 3));
+                    (channels > 3) ? *(surface.ptr + y * surface.stride + x * channels + 3) : '\0');
         }
     }
     fclose(file);
 }
 
-#define USE_BC7 1
-void save_as_pvr(const rgba_surface& surface, const std::string&& filename) {
-    auto compressed_size =
-        (ALIGN(surface.height, 4) >> 2) * (ALIGN(surface.width, 4) >> 2) * 16;
+void save_as_pvr(const rgba_surface& surface, const std::string&& filename,
+                 PVR::PixelFormat compress_format) {
+    size_t compressed_size = 0;
+
+    switch (compress_format) {
+        case PVR::PixelFormat::BC1:
+        case PVR::PixelFormat::BC4:
+            compressed_size = (ALIGN(surface.height, 4) >> 2) *
+                              (ALIGN(surface.width, 4) >> 2) * 8;
+            break;
+        case PVR::PixelFormat::BC3:
+        case PVR::PixelFormat::BC5:
+        case PVR::PixelFormat::BC6H:
+        case PVR::PixelFormat::BC7:
+            compressed_size = (ALIGN(surface.height, 4) >> 2) *
+                              (ALIGN(surface.width, 4) >> 2) * 16;
+            break;
+        default:
+            assert(0);
+    }
 
     std::vector<uint8_t> _dst_buf(compressed_size);
 
-#if USE_BC7
-    bc7_enc_settings settings;
-    GetProfile_slow(&settings);
-    settings.channels = 4;
-    CompressBlocksBC7(&surface, _dst_buf.data(), &settings);
-#else
-    CompressBlocksBC3(&surface, _dst_buf.data());
-#endif
+    switch (compress_format) {
+        case PVR::PixelFormat::BC1:
+            CompressBlocksBC1(&surface, _dst_buf.data());
+            break;
+        case PVR::PixelFormat::BC3:
+            CompressBlocksBC3(&surface, _dst_buf.data());
+            break;
+        case PVR::PixelFormat::BC4:
+            CompressBlocksBC4(&surface, _dst_buf.data());
+            break;
+        case PVR::PixelFormat::BC5:
+            CompressBlocksBC5(&surface, _dst_buf.data());
+            break;
+        case PVR::PixelFormat::BC6H: {
+            bc6h_enc_settings settings;
+            GetProfile_bc6h_basic(&settings);
+            CompressBlocksBC6H(&surface, _dst_buf.data(), &settings);
+        } break;
+        case PVR::PixelFormat::BC7: {
+            bc7_enc_settings settings;
+            GetProfile_basic(&settings);
+            settings.channels = 4;
+            CompressBlocksBC7(&surface, _dst_buf.data(), &settings);
+        } break;
+        default:
+            assert(0);
+    }
 
     PVR::File compressedFile;
 
@@ -92,11 +127,7 @@ void save_as_pvr(const rgba_surface& surface, const std::string&& filename) {
     compressedFile.header.num_surfaces = 1;
     compressedFile.header.mipmap_count = 1;
     compressedFile.header.metadata_size = 0;
-#if USE_BC7
-    compressedFile.header.pixel_format = PVR::PixelFormat::BC7;
-#else
-    compressedFile.header.pixel_format = PVR::PixelFormat::BC3;
-#endif
+    compressedFile.header.pixel_format = compress_format;
     compressedFile.pTextureData = _dst_buf.data();
     compressedFile.szTextureDataSize = compressed_size;
 
@@ -192,9 +223,11 @@ int main(int argc, char** argv) {
               +--------+--------+--------+--------+
               | R      | G      | B      | A      |
               +--------+--------+--------+--------+
-              | Albe.R | Albe.G | Albe.B | Norm.X |   surf1
+              | Albe.R | Albe.G | Albe.B |        |     surf1
               +--------+--------+--------+--------+
-              | Meta   | Rough  | AO     | Norm.Y |   surf2
+              | Metal  | Rough  | AO     |        |     surf2
+              +--------+--------+--------+--------+
+              | Norm.X | Norm.Y |   -    |    -   |     surf3
               +--------+--------+--------+--------+
             */
 
@@ -203,46 +236,42 @@ int main(int argc, char** argv) {
                 rgba_surface surf;
                 surf.width = max_width_1;
                 surf.height = max_height_1;
-                surf.stride = 4 * surf.width;
+                int32_t channels = 4;
+                surf.stride = channels * surf.width;
                 std::vector<uint8_t> buf1(surf.stride * surf.height);
                 surf.ptr = buf1.data();
                 float albedo_ratio_x = (float)albedo_texture_width / surf.width;
                 float albedo_ratio_y =
                     (float)albedo_texture_height / surf.height;
-                float normal_ratio_x = (float)normal_texture_width / surf.width;
-                float normal_ratio_y =
-                    (float)normal_texture_height / surf.height;
 
                 for (int32_t y = 0; y < surf.height; y++) {
                     for (int32_t x = 0; x < surf.width; x++) {
-                        *(surf.ptr + y * surf.stride + x * 4) =
+                        *(surf.ptr + y * surf.stride + x * channels) =
                             albedo_texture->GetR(
                                 std::floor(x * albedo_ratio_x),
                                 std::floor(y * albedo_ratio_y));
-                        *(surf.ptr + y * surf.stride + x * 4 + 1) =
+                        *(surf.ptr + y * surf.stride + x * channels + 1) =
                             albedo_texture->GetG(
                                 std::floor(x * albedo_ratio_x),
                                 std::floor(y * albedo_ratio_y));
-                        *(surf.ptr + y * surf.stride + x * 4 + 2) =
+                        *(surf.ptr + y * surf.stride + x * channels + 2) =
                             albedo_texture->GetB(
                                 std::floor(x * albedo_ratio_x),
                                 std::floor(y * albedo_ratio_y));
-                        *(surf.ptr + y * surf.stride + x * 4 + 3) =
-                            normal_texture->GetX(
-                                std::floor(x * normal_ratio_x),
-                                std::floor(y * normal_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * channels + 3) = 0;
                     }
                 }
 
-                // Now, compress surf with BC7
+                // Now, compress surf with BC1
                 auto outputFileName = pMaterial->GetName();
                 if (argc >= 3) {
                     outputFileName = argv[2];
                 }
                 outputFileName += "_1";
 
-                save_as_pvr(surf, outputFileName + ".pvr");
-                save_as_tga(surf, outputFileName + ".tga");
+                save_as_pvr(surf, outputFileName + ".pvr",
+                            PVR::PixelFormat::BC1);
+                save_as_tga(surf, channels, outputFileName + ".tga");
             };
 
             tasks.push_back(std::async(launch::async, combine_textures_1));
@@ -252,12 +281,10 @@ int main(int argc, char** argv) {
                 rgba_surface surf;
                 surf.width = max_width_2;
                 surf.height = max_height_2;
-                surf.stride = 4 * surf.width;
+                int32_t channels = 4;
+                surf.stride = channels * surf.width;
                 std::vector<uint8_t> buf2(surf.stride * surf.height);
                 surf.ptr = buf2.data();
-                float normal_ratio_x = (float)normal_texture_width / surf.width;
-                float normal_ratio_y =
-                    (float)normal_texture_height / surf.height;
                 float metallic_ratio_x =
                     (float)metallic_texture_width / surf.width;
                 float metallic_ratio_y =
@@ -271,36 +298,75 @@ int main(int argc, char** argv) {
 
                 for (int32_t y = 0; y < surf.height; y++) {
                     for (int32_t x = 0; x < surf.width; x++) {
-                        *(surf.ptr + y * surf.stride + x * 4) =
-                            metallic_texture->GetR(
+                        *(surf.ptr + y * surf.stride + x * channels) = 
+                            metallic_texture->GetX(
                                 std::floor(x * metallic_ratio_x),
                                 std::floor(y * metallic_ratio_y));
-                        *(surf.ptr + y * surf.stride + x * 4 + 1) =
-                            roughness_texture->GetR(
+                        *(surf.ptr + y * surf.stride + x * channels + 1) =
+                            roughness_texture->GetX(
                                 std::floor(x * roughness_ratio_x),
                                 std::floor(y * roughness_ratio_y));
-                        *(surf.ptr + y * surf.stride + x * 4 + 2) =
-                            ao_texture->GetR(std::floor(x * ao_ratio_x),
-                                             std::floor(y * ao_ratio_y));
-                        *(surf.ptr + y * surf.stride + x * 4 + 3) =
-                            normal_texture->GetY(
-                                std::floor(x * normal_ratio_x),
-                                std::floor(y * normal_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * channels + 2) =
+                            ao_texture->GetX(
+                                std::floor(x * ao_ratio_x),
+                                std::floor(y * ao_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * channels + 3) = 0;
                     }
                 }
 
-                // Now, compress surf with BC7
+                // Now, compress surf with BC1
                 auto outputFileName = pMaterial->GetName();
                 if (argc >= 3) {
                     outputFileName = argv[2];
                 }
                 outputFileName += "_2";
 
-                save_as_pvr(surf, outputFileName + ".pvr");
-                save_as_tga(surf, outputFileName + ".tga");
+                save_as_pvr(surf, outputFileName + ".pvr",
+                            PVR::PixelFormat::BC1);
+                save_as_tga(surf, channels, outputFileName + ".tga");
             };
 
             tasks.push_back(std::async(launch::async, combine_textures_2));
+
+            auto combine_textures_3 = [=]() {
+                // surf
+                rgba_surface surf;
+                int32_t channels = 2;
+                surf.width = max_width_2;
+                surf.height = max_height_2;
+                surf.stride = channels * surf.width;
+                std::vector<uint8_t> buf2(surf.stride * surf.height);
+                surf.ptr = buf2.data();
+                float normal_ratio_x = (float)normal_texture_width / surf.width;
+                float normal_ratio_y =
+                    (float)normal_texture_height / surf.height;
+
+                for (int32_t y = 0; y < surf.height; y++) {
+                    for (int32_t x = 0; x < surf.width; x++) {
+                       *(surf.ptr + y * surf.stride + x * channels) =
+                            normal_texture->GetX(
+                                std::floor(x * normal_ratio_x),
+                                std::floor(y * normal_ratio_y));
+                        *(surf.ptr + y * surf.stride + x * channels + 1) =
+                            normal_texture->GetY(
+                                std::floor(x * normal_ratio_x),
+                                std::floor(y * normal_ratio_y));
+                    }
+                }
+
+                // Now, compress surf with BC5
+                auto outputFileName = pMaterial->GetName();
+                if (argc >= 3) {
+                    outputFileName = argv[2];
+                }
+                outputFileName += "_3";
+
+                save_as_pvr(surf, outputFileName + ".pvr",
+                            PVR::PixelFormat::BC5);
+                save_as_tga(surf, channels, outputFileName + ".tga");
+            };
+
+            tasks.push_back(std::async(launch::async, combine_textures_3));
         }
     }
 
