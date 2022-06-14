@@ -1,7 +1,10 @@
 #pragma once
 #include <iostream>
+#include <map>
 
 #include "IImageParser.hpp"
+
+#define MAGIC_FILE_CONSTANT 0x5CA1AB13
 
 namespace My {
 struct astc_header {
@@ -57,12 +60,21 @@ class AstcParser : _implements_ ImageParser {
             img.data_size = (size_t)buf.GetDataSize() - sizeof(astc_header);
             img.data = new uint8_t[img.data_size];
             img.compressed = true;
-            img.compress_format = COMPRESSED_FORMAT::ASTC;
+            uint32_t type_index = ((uint32_t)pImage->header.block_x << 16) | ((uint32_t)pImage->header.block_y << 8) | pImage->header.block_z;
+            auto it = fmt_lut.find(type_index);
+            if (it != fmt_lut.end()) {
+                img.compress_format = it->second;
+            } else {
+                img.compress_format = COMPRESSED_FORMAT::UNKNOWN;
+            }
 
             memcpy(img.data, &pImage->data, img.data_size);
         }
 
         return img;
     }
+
+    protected:
+    static std::map<uint32_t, COMPRESSED_FORMAT> fmt_lut;
 };
 }  // namespace My

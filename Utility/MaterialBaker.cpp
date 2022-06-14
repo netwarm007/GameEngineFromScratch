@@ -108,8 +108,7 @@ void save_as_pvr(const rgba_surface& surface, const std::string&& filename,
         } break;
         case PVR::PixelFormat::BC7: {
             bc7_enc_settings settings;
-            GetProfile_basic(&settings);
-            settings.channels = 4;
+            GetProfile_alpha_basic(&settings);
             CompressBlocksBC7(&surface, _dst_buf.data(), &settings);
         } break;
         default:

@@ -19,17 +19,37 @@ enum class COMPRESSED_FORMAT : uint16_t {
     BC1A,
     BC2,
     BC3,
-    BC4S,
-    BC4U,
-    BC5S,
-    BC5U,
-    BC6S,
-    BC6U,
-    BC7S,
-    BC7U,
+    BC4,
+    BC5,
+    BC6H,
+    BC7,
     PVRTC,
     ETC,
-    ASTC
+    ASTC_4x4,
+    ASTC_5x4,
+    ASTC_5x5,
+    ASTC_6x5,
+    ASTC_6x6,
+    ASTC_8x5,
+    ASTC_8x6,
+    ASTC_8x8,
+    ASTC_10x5,
+    ASTC_10x6,
+    ASTC_10x8,
+    ASTC_10x10,
+    ASTC_12x10,
+    ASTC_12x12,
+    ASTC_3x3x3,
+    ASTC_4x3x3,
+    ASTC_4x4x3,
+    ASTC_4x4x4,
+    ASTC_5x4x4,
+    ASTC_5x5x4,
+    ASTC_5x5x5,
+    ASTC_6x5x5,
+    ASTC_6x6x5,
+    ASTC_6x6x6,
+    UNKNOWN
 };
 
 enum class PIXEL_FORMAT : uint16_t {
@@ -109,10 +129,12 @@ struct Image {
             case PIXEL_FORMAT::RG16:
             case PIXEL_FORMAT::RGB16:
             case PIXEL_FORMAT::RGBA16:
+                return *(data + y * pitch + x * (bitcount >> 3) + 1);
             case PIXEL_FORMAT::R32:
             case PIXEL_FORMAT::RG32:
             case PIXEL_FORMAT::RGB32:
             case PIXEL_FORMAT::RGBA32:
+                return *(data + y * pitch + x * (bitcount >> 3) + 3);
             case PIXEL_FORMAT::R10G10B10A2:
                 // not supported
                 return 0;
@@ -267,71 +289,5 @@ struct Image {
 
 std::ostream& operator<<(std::ostream& out, const Image& image);
 
-static inline void adjust_image(Image& image) {
-    if (!image.compressed) {
-        if (image.pixel_format == PIXEL_FORMAT::RGB8) {
-            // DXGI does not have 24bit formats so we have to extend it to 32bit
-            auto new_pitch = image.pitch / 3 * 4;
-            auto data_size = (size_t)new_pitch * image.Height;
-            auto* data = new uint8_t[data_size];
-            uint8_t* buf;
-            uint8_t* src;
-            for (decltype(image.Height) row = 0; row < image.Height; row++) {
-                buf = data + (ptrdiff_t)row * new_pitch;
-                src = image.data + (ptrdiff_t)row * image.pitch;
-                for (decltype(image.Width) col = 0; col < image.Width; col++) {
-                    memcpy(buf, src, 3);
-                    memset(buf + 3, 0x00, 1);  // set alpha to 0
-                    buf += 4;
-                    src += 3;
-                }
-            }
-
-            delete[] image.data;
-            image.data = data;
-            image.data_size = data_size;
-            image.pitch = new_pitch;
-            image.bitcount = 32;
-            image.pixel_format = PIXEL_FORMAT::RGBA8;
-
-            // adjust mipmaps
-            for (auto& mip : image.mipmaps) {
-                mip.pitch = mip.pitch / 3 * 4;
-                mip.offset = mip.offset / 3 * 4;
-                mip.data_size = mip.data_size / 3 * 4;
-            }
-        } else if (image.pixel_format == PIXEL_FORMAT::RGB16) {
-            // DXGI does not have 48bit formats so we have to extend it to 64bit
-            auto new_pitch = image.pitch / 3 * 4;
-            auto data_size = new_pitch * image.Height;
-            auto* data = new uint8_t[data_size];
-            uint8_t* buf;
-            uint8_t* src;
-            for (decltype(image.Height) row = 0; row < image.Height; row++) {
-                buf = data + (ptrdiff_t)row * new_pitch;
-                src = image.data + (ptrdiff_t)row * image.pitch;
-                for (decltype(image.Width) col = 0; col < image.Width; col++) {
-                    memcpy(buf, src, 6);
-                    memset(buf + 6, 0x00, 2);  // set alpha to 0
-                    buf += 8;
-                    src += 6;
-                }
-            }
-
-            delete[] image.data;
-            image.data = data;
-            image.data_size = data_size;
-            image.pitch = new_pitch;
-            image.bitcount = 64;
-            image.pixel_format = PIXEL_FORMAT::RGBA16;
-
-            // adjust mipmaps
-            for (auto& mip : image.mipmaps) {
-                mip.pitch = mip.pitch / 3 * 4;
-                mip.offset = mip.offset / 3 * 4;
-                mip.data_size = mip.data_size / 3 * 4;
-            }
-        }
-    }
-}
+void adjust_image(Image& image);
 }  // namespace My

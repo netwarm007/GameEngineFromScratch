@@ -122,43 +122,44 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
             if (it == material_map.end()) {
                 // load material textures
                 if (material) {
+                    int32_t texture_id = 0;
+
                     if (auto& texture = material->GetBaseColor().ValueMap) {
-                        int32_t texture_id;
-                        const Image& image = *texture->GetTextureImage();
-                        assert(image.Width && image.Height);
-                        texture_id = [m_pRenderer createTexture:image];
+                        auto image = texture->GetTextureImage();
+                        if (image)
+                            texture_id = [m_pRenderer createTexture:*image];
 
                         dbc->material.diffuseMap = texture_id;
                     }
 
                     if (auto& texture = material->GetNormal().ValueMap) {
-                        int32_t texture_id;
-                        const Image& image = *texture->GetTextureImage();
-                        texture_id = [m_pRenderer createTexture:image];
+                        auto image = texture->GetTextureImage();
+                        if (image)
+                            texture_id = [m_pRenderer createTexture:*image];
 
                         dbc->material.normalMap = texture_id;
                     }
 
                     if (auto& texture = material->GetMetallic().ValueMap) {
-                        int32_t texture_id;
-                        const Image& image = *texture->GetTextureImage();
-                        texture_id = [m_pRenderer createTexture:image];
+                        auto image = texture->GetTextureImage();
+                        if (image)
+                            texture_id = [m_pRenderer createTexture:*image];
 
                         dbc->material.metallicMap = texture_id;
                     }
 
                     if (auto& texture = material->GetRoughness().ValueMap) {
-                        int32_t texture_id;
-                        const Image& image = *texture->GetTextureImage();
-                        texture_id = [m_pRenderer createTexture:image];
+                        auto image = texture->GetTextureImage();
+                        if (image)
+                            texture_id = [m_pRenderer createTexture:*image];
 
                         dbc->material.roughnessMap = texture_id;
                     }
 
                     if (auto& texture = material->GetAO().ValueMap) {
-                        int32_t texture_id;
-                        const Image& image = *texture->GetTextureImage();
-                        texture_id = [m_pRenderer createTexture:image];
+                        auto image = texture->GetTextureImage();
+                        if (image)
+                            texture_id = [m_pRenderer createTexture:*image];
 
                         dbc->material.aoMap = texture_id;
                     }

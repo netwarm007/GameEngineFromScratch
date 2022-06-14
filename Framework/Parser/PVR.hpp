@@ -165,16 +165,16 @@ class PvrParser : _implements_ ImageParser {
                     img.compress_format = COMPRESSED_FORMAT::BC3;
                     break;
                 case PVR::PixelFormat::BC4:
-                    img.compress_format = COMPRESSED_FORMAT::BC4U;
+                    img.compress_format = COMPRESSED_FORMAT::BC4;
                     break;
                 case PVR::PixelFormat::BC5:
-                    img.compress_format = COMPRESSED_FORMAT::BC5U;
+                    img.compress_format = COMPRESSED_FORMAT::BC5;
                     break;
                 case PVR::PixelFormat::BC6H:
-                    img.compress_format = COMPRESSED_FORMAT::BC6U;
+                    img.compress_format = COMPRESSED_FORMAT::BC6H;
                     break;
                 case PVR::PixelFormat::BC7:
-                    img.compress_format = COMPRESSED_FORMAT::BC7U;
+                    img.compress_format = COMPRESSED_FORMAT::BC7;
                     break;
                 default:
                     assert(0);

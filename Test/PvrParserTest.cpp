@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
 
         std::cout << image;
 
-        image.SaveTGA("PvrParserTest.tga");
+        //image.SaveTGA("PvrParserTest.tga");
     }
 
     assetLoader.Finalize();

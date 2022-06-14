@@ -249,7 +249,8 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
         VK_MAKE_VERSION(0, 1, 0), VK_API_VERSION_1_1);
 
     // 初始化 vk::InstanceCreateInfo
-    vk::InstanceCreateInfo instanceCreateInfo({}, &applicationInfo, {}, extensions);
+    vk::InstanceCreateInfo instanceCreateInfo({}, &applicationInfo, {},
+                                              extensions);
 
     m_vkInstance = vk::createInstance(instanceCreateInfo);
 }
@@ -862,9 +863,9 @@ void VulkanRHI::recordCommandBuffer(vk::CommandBuffer& commandBuffer,
 
     commandBuffer.bindIndexBuffer(m_vkIndexBuffer, 0, vk::IndexType::eUint32);
 
-    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                     m_vkPipelineLayout, 0,
-                                     m_vkDescriptorSets[m_nCurrentFrame], nullptr);
+    commandBuffer.bindDescriptorSets(
+        vk::PipelineBindPoint::eGraphics, m_vkPipelineLayout, 0,
+        m_vkDescriptorSets[m_nCurrentFrame], nullptr);
 
     commandBuffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0,
                               0);
@@ -1271,33 +1272,96 @@ void VulkanRHI::getTextureFormat(const Image& img,
             case COMPRESSED_FORMAT::BC3:
                 internal_format = vk::Format::eBc3SrgbBlock;
                 break;
-            case COMPRESSED_FORMAT::BC4S:
-                internal_format = vk::Format::eBc4SnormBlock;
+            case COMPRESSED_FORMAT::BC4:
+                internal_format = (img.is_signed) ? vk::Format::eBc4SnormBlock
+                                                  : vk::Format::eBc4UnormBlock;
                 break;
-            case COMPRESSED_FORMAT::BC4U:
-                internal_format = vk::Format::eBc4UnormBlock;
+            case COMPRESSED_FORMAT::BC5:
+                internal_format = (img.is_signed) ? vk::Format::eBc5SnormBlock
+                                                  : vk::Format::eBc5UnormBlock;
                 break;
-            case COMPRESSED_FORMAT::BC5S:
-                internal_format = vk::Format::eBc5SnormBlock;
+            case COMPRESSED_FORMAT::BC6H:
+                internal_format = (img.is_signed)
+                                      ? vk::Format::eBc6HSfloatBlock
+                                      : vk::Format::eBc6HUfloatBlock;
                 break;
-            case COMPRESSED_FORMAT::BC5U:
-                internal_format = vk::Format::eBc5UnormBlock;
-                break;
-            case COMPRESSED_FORMAT::BC6S:
-                internal_format = vk::Format::eBc6HSfloatBlock;
-                break;
-            case COMPRESSED_FORMAT::BC6U:
-                internal_format = vk::Format::eBc6HUfloatBlock;
-                break;
-            case COMPRESSED_FORMAT::BC7S:
-                internal_format = vk::Format::eBc7SrgbBlock;
-                break;
-            case COMPRESSED_FORMAT::BC7U:
+            case COMPRESSED_FORMAT::BC7:
                 internal_format = vk::Format::eBc7UnormBlock;
                 break;
-            case COMPRESSED_FORMAT::ASTC:
+            case COMPRESSED_FORMAT::ASTC_4x4:
+                internal_format = vk::Format::eAstc4x4SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x4:
+                internal_format = vk::Format::eAstc5x4SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x5:
+                internal_format = vk::Format::eAstc5x5SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x5:
+                internal_format = vk::Format::eAstc6x5SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x6:
+                internal_format = vk::Format::eAstc6x6SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x5:
+                internal_format = vk::Format::eAstc8x5SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x6:
+                internal_format = vk::Format::eAstc8x6SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x8:
                 internal_format = vk::Format::eAstc8x8SrgbBlock;
                 break;
+            case COMPRESSED_FORMAT::ASTC_10x5:
+                internal_format = vk::Format::eAstc10x5SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x6:
+                internal_format = vk::Format::eAstc10x6SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x8:
+                internal_format = vk::Format::eAstc10x8SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x10:
+                internal_format = vk::Format::eAstc10x10SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_12x10:
+                internal_format = vk::Format::eAstc12x10SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_12x12:
+                internal_format = vk::Format::eAstc12x12SrgbBlock;
+                break;
+#if 0
+            case COMPRESSED_FORMAT::ASTC_3x3x3:
+                internal_format = vk::Format::eAstc3x3x3SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_4x3x3:
+                internal_format = vk::Format::eAstc4x3x3SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_4x4x3:
+                internal_format = vk::Format::eAstc4x4x3SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_4x4x4:
+                internal_format = vk::Format::eAstc4x4x4SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x4x4:
+                internal_format = vk::Format::eAstc5x4x4SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x5x4:
+                internal_format = vk::Format::eAstc5x5x4SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x5x5:
+                internal_format = vk::Format::eAstc5x5x5SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x5x5:
+                internal_format = vk::Format::eAstc6x5x5SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x6x5:
+                internal_format = vk::Format::eAstc6x6x5SrgbBlock;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x6x6:
+                internal_format = vk::Format::eAstc6x6x6SrgbBlock;
+                break;
+#endif
             default:
                 assert(0);
         }

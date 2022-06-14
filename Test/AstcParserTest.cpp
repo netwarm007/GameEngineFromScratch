@@ -1,4 +1,5 @@
 #include <cstdio>
+#define DUMP_DETAILS 1
 #include "ASTC.hpp"
 #include "AssetLoader.hpp"
 
