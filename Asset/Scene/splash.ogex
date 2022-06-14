@@ -10409,17 +10409,17 @@ Material $material1
 
 	Texture (attrib = "diffuse")
 	{
-		string {"Material/Material.002_1.pvr"}
+		string {"Materials/redbricks2b_1.pvr"}
 	}
 
 	Texture (attrib = "normal")
 	{
-		string {"Material/Material.002_3.pvr"}
+		string {"Materials/redbricks2b_3.pvr"}
 	}
 
 	Texture (attrib = "metallic")
 	{
-		string {"Material/Material.002_2.pvr"}
+		string {"Materials/redbricks2b_2.pvr"}
 	}
 }
 
@@ -10433,16 +10433,16 @@ Material $material2
 
 	Texture (attrib = "diffuse")
 	{
-		string {"Material/Material.001_1.pvr"}
+		string {"Materials/gold-scuffed_1.pvr"}
 	}
 
 	Texture (attrib = "normal")
 	{
-		string {"Material/Material.001_3.pvr"}
+		string {"Materials/gold-scuffed_3.pvr"}
 	}
 	
 	Texture (attrib = "metallic")
 	{
-		string {"Material/Material.001_2.pvr"}
+		string {"Materials/gold-scuffed_2.pvr"}
 	}
 }

@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
     if (argc >= 2) {
         sceneManager.LoadScene(argv[1]);
     } else {
-        sceneManager.LoadScene("Material/splash.mymaterial");
+        sceneManager.LoadScene("Materials/splash.mymaterial");
     }
 
     auto& scene = sceneManager.GetSceneForRendering();
