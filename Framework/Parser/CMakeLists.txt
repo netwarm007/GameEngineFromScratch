@@ -1,4 +1,4 @@
-add_library(Parser OGEX.cpp ASTC.cpp
+add_library(Parser OGEX.cpp 
     MGEMX.scanner.generated.cpp 
     MGEMX.parser.generated.cpp)
 
