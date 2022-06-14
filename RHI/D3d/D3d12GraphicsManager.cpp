@@ -486,30 +486,33 @@ static DXGI_FORMAT getDxgiFormat(const Image& img) {
 
     if (img.compressed) {
         switch (img.compress_format) {
-            case "DXT1"_u32:
+            case COMPRESSED_FORMAT::BC1:
+            case COMPRESSED_FORMAT::DXT1:
                 format = ::DXGI_FORMAT_BC1_UNORM;
                 break;
-            case "DXT3"_u32:
+            case COMPRESSED_FORMAT::BC3:
+            case COMPRESSED_FORMAT::DXT3:
                 format = ::DXGI_FORMAT_BC3_UNORM;
                 break;
-            case "DXT5"_u32:
+            case COMPRESSED_FORMAT::BC5:
+            case COMPRESSED_FORMAT::DXT5:
                 format = ::DXGI_FORMAT_BC5_UNORM;
                 break;
             default:
                 assert(0);
         }
     } else {
-        switch (img.bitcount) {
-            case 8:
+        switch (img.pixel_format) {
+            case PIXEL_FORMAT::R8:
                 format = ::DXGI_FORMAT_R8_UNORM;
                 break;
-            case 16:
+            case PIXEL_FORMAT::RG8:
                 format = ::DXGI_FORMAT_R8G8_UNORM;
                 break;
-            case 32:
+            case PIXEL_FORMAT::RGBA8:
                 format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
                 break;
-            case 64:
+            case PIXEL_FORMAT::RGBA16:
                 format = ::DXGI_FORMAT_R16G16B16A16_FLOAT;
                 break;
             default:
