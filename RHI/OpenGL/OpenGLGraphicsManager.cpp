@@ -166,17 +166,38 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(const Image& img,
         format = GL_COMPRESSED_RGB;
 
         switch (img.compress_format) {
+            case COMPRESSED_FORMAT::BC1:
             case COMPRESSED_FORMAT::DXT1:
                 internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
                 break;
+            case COMPRESSED_FORMAT::BC3:
             case COMPRESSED_FORMAT::DXT3:
                 internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
                 break;
+            case COMPRESSED_FORMAT::BC5:
             case COMPRESSED_FORMAT::DXT5:
                 internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
                 break;
             case COMPRESSED_FORMAT::ASTC_4x4:
                 internal_format = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x4:
+                internal_format = GL_COMPRESSED_RGBA_ASTC_5x4_KHR;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x5:
+                internal_format = GL_COMPRESSED_RGBA_ASTC_5x5_KHR;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x5:
+                internal_format = GL_COMPRESSED_RGBA_ASTC_6x5_KHR;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x6:
+                internal_format = GL_COMPRESSED_RGBA_ASTC_6x6_KHR;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x5:
+                internal_format = GL_COMPRESSED_RGBA_ASTC_8x5_KHR;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x6:
+                internal_format = GL_COMPRESSED_RGBA_ASTC_8x6_KHR;
                 break;
             case COMPRESSED_FORMAT::ASTC_8x8:
                 internal_format = GL_COMPRESSED_RGBA_ASTC_8x8_KHR;

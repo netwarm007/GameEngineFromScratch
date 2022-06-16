@@ -351,10 +351,12 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                     if (color.ValueMap) {
                         const auto& texture_key = color.ValueMap->GetName();
                         const auto& texture = color.ValueMap->GetTextureImage();
-                        uint32_t texture_id =
-                            upload_texture(texture_key, texture);
-                        dbc->material.diffuseMap =
-                            static_cast<int32_t>(texture_id);
+                        if (texture) {
+                            uint32_t texture_id =
+                                upload_texture(texture_key, texture);
+                            dbc->material.diffuseMap =
+                                static_cast<int32_t>(texture_id);
+                        }
                     }
 
                     // normal
@@ -363,10 +365,12 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& texture_key = normal.ValueMap->GetName();
                         const auto& texture =
                             normal.ValueMap->GetTextureImage();
-                        uint32_t texture_id =
-                            upload_texture(texture_key, texture);
-                        dbc->material.normalMap =
-                            static_cast<int32_t>(texture_id);
+                        if (texture) {
+                            uint32_t texture_id =
+                                upload_texture(texture_key, texture);
+                            dbc->material.normalMap =
+                                static_cast<int32_t>(texture_id);
+                        }
                     }
 
                     // metallic
@@ -375,10 +379,12 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& texture_key = metallic.ValueMap->GetName();
                         const auto& texture =
                             metallic.ValueMap->GetTextureImage();
-                        uint32_t texture_id =
-                            upload_texture(texture_key, texture);
-                        dbc->material.metallicMap =
-                            static_cast<int32_t>(texture_id);
+                        if (texture) {
+                            uint32_t texture_id =
+                                upload_texture(texture_key, texture);
+                            dbc->material.metallicMap =
+                                static_cast<int32_t>(texture_id);
+                        }
                     }
 
                     // roughness
@@ -387,10 +393,12 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& texture_key = roughness.ValueMap->GetName();
                         const auto& texture =
                             roughness.ValueMap->GetTextureImage();
-                        uint32_t texture_id =
-                            upload_texture(texture_key, texture);
-                        dbc->material.roughnessMap =
-                            static_cast<int32_t>(texture_id);
+                        if (texture) {
+                            uint32_t texture_id =
+                                upload_texture(texture_key, texture);
+                            dbc->material.roughnessMap =
+                                static_cast<int32_t>(texture_id);
+                        }
                     }
 
                     // ao
@@ -398,9 +406,12 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                     if (ao.ValueMap) {
                         const auto& texture_key = ao.ValueMap->GetName();
                         const auto& texture = ao.ValueMap->GetTextureImage();
-                        uint32_t texture_id =
-                            upload_texture(texture_key, texture);
-                        dbc->material.aoMap = static_cast<int32_t>(texture_id);
+                        if (texture) {
+                            uint32_t texture_id =
+                                upload_texture(texture_key, texture);
+                            dbc->material.aoMap =
+                                static_cast<int32_t>(texture_id);
+                        }
                     }
 
                     // height map
@@ -409,10 +420,12 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& texture_key = heightmap.ValueMap->GetName();
                         const auto& texture =
                             heightmap.ValueMap->GetTextureImage();
-                        uint32_t texture_id =
-                            upload_texture(texture_key, texture);
-                        dbc->material.heightMap =
-                            static_cast<int32_t>(texture_id);
+                        if (texture) {
+                            uint32_t texture_id =
+                                upload_texture(texture_key, texture);
+                            dbc->material.heightMap =
+                                static_cast<int32_t>(texture_id);
+                        }
                     }
                 }
 

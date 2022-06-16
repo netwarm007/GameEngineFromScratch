@@ -41,6 +41,6 @@ class Geometry {
    protected:
     GeometryType m_kGeometryType;
     float m_fMargin = std::numeric_limits<float>::epsilon();
-    Vector3f m_color;
+    Vector3f m_color = { 0, 0, 0 };
 };
 }  // namespace My

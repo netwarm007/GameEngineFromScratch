@@ -141,6 +141,8 @@ struct Image {
             default:
                 assert(0);
         }
+
+        return 0;
     }
 
     uint8_t GetG(int32_t x, int32_t y) const {
@@ -174,6 +176,8 @@ struct Image {
             default:
                 assert(0);
         }
+
+        return 0;
     }
 
     uint8_t GetB(int32_t x, int32_t y) const {
@@ -205,6 +209,8 @@ struct Image {
             default:
                 assert(0);
         }
+
+        return 0;
     }
 
     uint8_t GetA(int32_t x, int32_t y) const {
@@ -233,6 +239,8 @@ struct Image {
             default:
                 assert(0);
         }
+
+        return 0;
     }
 
     uint8_t GetX(int32_t x, int32_t y) const { return GetR(x, y); }

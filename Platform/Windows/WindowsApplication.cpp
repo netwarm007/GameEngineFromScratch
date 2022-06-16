@@ -124,7 +124,7 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
     result = ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
 
     // sort through and find what code to run for the message given
-    if (pThis->m_pInputManager) {
+    if (pThis && pThis->m_pInputManager) {
         switch (message) {
             case WM_CHAR: {
                 pThis->m_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
