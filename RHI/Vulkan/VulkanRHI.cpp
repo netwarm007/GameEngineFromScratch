@@ -178,7 +178,9 @@ VulkanRHI::VulkanRHI() {
     }
 }
 
-VulkanRHI::~VulkanRHI() {
+VulkanRHI::~VulkanRHI() {}
+
+void VulkanRHI::destroyAll() {
     // 等待图形管道空闲
     m_vkDevice.waitIdle();
 
@@ -894,65 +896,73 @@ void VulkanRHI::createSyncObjects() {
 }
 
 void VulkanRHI::drawFrame() {
-    while (vk::Result::eTimeout ==
-           m_vkDevice.waitForFences(m_vkInFlightFences[m_nCurrentFrame],
-                                    VK_TRUE, UINT64_MAX))
-        ;
-    m_vkDevice.resetFences(m_vkInFlightFences[m_nCurrentFrame]);
+    try {
+        while (vk::Result::eTimeout ==
+               m_vkDevice.waitForFences(m_vkInFlightFences[m_nCurrentFrame],
+                                        VK_TRUE, UINT64_MAX))
+            ;
+        m_vkDevice.resetFences(m_vkInFlightFences[m_nCurrentFrame]);
 
-    uint32_t imageIndex;
-    vk::ResultValue<uint32_t> currentBuffer = m_vkDevice.acquireNextImageKHR(
-        m_vkSwapChain, UINT64_MAX,
-        m_vkImageAvailableSemaphores[m_nCurrentFrame], nullptr);
+        uint32_t imageIndex;
+        vk::ResultValue<uint32_t> currentBuffer =
+            m_vkDevice.acquireNextImageKHR(
+                m_vkSwapChain, UINT64_MAX,
+                m_vkImageAvailableSemaphores[m_nCurrentFrame], nullptr);
 
-    switch (currentBuffer.result) {
-        case vk::Result::eSuccess:
-        case vk::Result::eSuboptimalKHR:
-            imageIndex = currentBuffer.value;
-            break;
-        case vk::Result::eErrorOutOfDateKHR:
-            recreateSwapChain();
-            return;
-        default:
-            throw std::runtime_error("failed to acquire swap chain image!");
+        switch (currentBuffer.result) {
+            case vk::Result::eSuccess:
+            case vk::Result::eSuboptimalKHR:
+                imageIndex = currentBuffer.value;
+                break;
+            case vk::Result::eErrorOutOfDateKHR:
+                recreateSwapChain();
+                return;
+            default:
+                throw std::runtime_error("failed to acquire swap chain image!");
+        }
+
+        m_vkCommandBuffers[m_nCurrentFrame].reset();
+        recordCommandBuffer(m_vkCommandBuffers[m_nCurrentFrame], imageIndex);
+
+        // 更新常量
+        updateUniformBufer(m_nCurrentFrame);
+
+        // 提交 Command Buffer
+        vk::SubmitInfo submitInfo;
+        submitInfo.setWaitSemaphores(
+            m_vkImageAvailableSemaphores[m_nCurrentFrame]);
+        std::array<vk::PipelineStageFlags, 1> waitStages = {
+            vk::PipelineStageFlagBits::eColorAttachmentOutput};
+        submitInfo.setWaitDstStageMask(waitStages);
+        submitInfo.setCommandBuffers(m_vkCommandBuffers[m_nCurrentFrame]);
+        submitInfo.setSignalSemaphores(
+            m_vkRenderFinishedSemaphores[m_nCurrentFrame]);
+
+        m_vkGraphicsQueue.submit(submitInfo,
+                                 m_vkInFlightFences[m_nCurrentFrame]);
+
+        vk::PresentInfoKHR presentInfo(
+            m_vkRenderFinishedSemaphores[m_nCurrentFrame], m_vkSwapChain,
+            imageIndex);
+
+        auto result = m_vkPresentQueue.presentKHR(presentInfo);
+
+        switch (result) {
+            case vk::Result::eSuccess:
+                break;
+            case vk::Result::eSuboptimalKHR:
+            case vk::Result::eErrorOutOfDateKHR:
+                recreateSwapChain();
+                return;
+            default:
+                throw std::runtime_error("failed to acquire swap chain image!");
+        }
+
+        m_nCurrentFrame = (m_nCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    } catch (vk::OutOfDateKHRError& err) {
+        recreateSwapChain();
+        return;
     }
-
-    m_vkCommandBuffers[m_nCurrentFrame].reset();
-    recordCommandBuffer(m_vkCommandBuffers[m_nCurrentFrame], imageIndex);
-
-    // 更新常量
-    updateUniformBufer(m_nCurrentFrame);
-
-    // 提交 Command Buffer
-    vk::SubmitInfo submitInfo;
-    submitInfo.setWaitSemaphores(m_vkImageAvailableSemaphores[m_nCurrentFrame]);
-    std::array<vk::PipelineStageFlags, 1> waitStages = {
-        vk::PipelineStageFlagBits::eColorAttachmentOutput};
-    submitInfo.setWaitDstStageMask(waitStages);
-    submitInfo.setCommandBuffers(m_vkCommandBuffers[m_nCurrentFrame]);
-    submitInfo.setSignalSemaphores(
-        m_vkRenderFinishedSemaphores[m_nCurrentFrame]);
-
-    m_vkGraphicsQueue.submit(submitInfo, m_vkInFlightFences[m_nCurrentFrame]);
-
-    vk::PresentInfoKHR presentInfo(
-        m_vkRenderFinishedSemaphores[m_nCurrentFrame], m_vkSwapChain,
-        imageIndex);
-
-    auto result = m_vkPresentQueue.presentKHR(presentInfo);
-
-    switch (result) {
-        case vk::Result::eSuccess:
-            break;
-        case vk::Result::eSuboptimalKHR:
-        case vk::Result::eErrorOutOfDateKHR:
-            recreateSwapChain();
-            return;
-        default:
-            throw std::runtime_error("failed to acquire swap chain image!");
-    }
-
-    m_nCurrentFrame = (m_nCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void VulkanRHI::cleanupSwapChain() {

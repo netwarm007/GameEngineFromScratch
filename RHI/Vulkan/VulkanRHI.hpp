@@ -118,6 +118,8 @@ class VulkanRHI {
     void cleanupSwapChain();
     void recreateSwapChain();
 
+    void destroyAll();
+
    private:
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                       vk::MemoryPropertyFlags properties, vk::Buffer& buffer,

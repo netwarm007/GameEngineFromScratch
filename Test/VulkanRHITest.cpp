@@ -218,6 +218,9 @@ int main() {
             rhi.drawFrame();
         }
 
+        // 销毁Vulkan上下文
+        rhi.destroyAll();
+
         app.Finalize();
     } catch (vk::SystemError& err) {
         std::cout << "vk::SystemError: " << err.what() << std::endl;

@@ -24,8 +24,7 @@ void alloc_image(rgba_surface* img, int width, int height) {
 
 int idiv_ceil(int n, int d) { return (n + d - 1) / d; }
 
-void flip_image(rgba_surface* rec_img)
-{
+void flip_image(rgba_surface* rec_img) {
     rec_img->ptr += (rec_img->height - 1) * rec_img->stride;
     rec_img->stride *= -1;
 }
@@ -119,6 +118,7 @@ int main(int argc, char** argv) {
                                           (ALIGN(image.Width, 4) >> 2) * 16;
                         break;
                     case PIXEL_FORMAT::RGB8:
+                        adjust_image(image);
                         compressed_format = COMPRESSED_FORMAT::BC1;
                         pvr_pixel_format = PVR::PixelFormat::BC1;
                         compressed_size = (ALIGN(image.Height, 4) >> 2) *
@@ -131,6 +131,7 @@ int main(int argc, char** argv) {
                                           (ALIGN(image.Width, 4) >> 2) * 16;
                         break;
                     case PIXEL_FORMAT::RGB16:
+                        adjust_image(image);
                         compressed_format = COMPRESSED_FORMAT::BC6H;
                         pvr_pixel_format = PVR::PixelFormat::BC6H;
                         compressed_size = (ALIGN(image.Height, 4) >> 2) *
