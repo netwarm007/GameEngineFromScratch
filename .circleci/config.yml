@@ -129,6 +129,10 @@ jobs:
           command: |
             scripts/build
       - run:
+          name: "Cook Asset"
+          command: |
+            scripts/cook_material
+      - run:
           name: "Test"
           command: |
             cmake --build build --target RUN_TESTS
@@ -201,6 +205,10 @@ jobs:
           name: "Build Engine"
           command: |
              ./scripts/build-ninja.sh
+      - run:
+          name: "Cook Asset"
+          command: |
+            scripts/cook_material.sh
       - run:
           name: Test
           command: |
@@ -276,6 +284,10 @@ jobs:
           command: |
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              ./scripts/build-ninja.sh
+      - run:
+          name: "Cook Asset"
+          command: |
+            scripts/cook_material.sh
       - run:
           name: Test
           command: |

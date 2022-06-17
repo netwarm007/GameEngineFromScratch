@@ -641,7 +641,7 @@ void VulkanRHI::createRenderPass() {
     dependency.srcStageMask =
         vk::PipelineStageFlagBits::eColorAttachmentOutput |
         vk::PipelineStageFlagBits::eEarlyFragmentTests;
-    dependency.srcAccessMask = vk::AccessFlagBits::eNone;
+    dependency.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
     dependency.dstStageMask =
         vk::PipelineStageFlagBits::eColorAttachmentOutput |
         vk::PipelineStageFlagBits::eEarlyFragmentTests;
@@ -1620,7 +1620,7 @@ void VulkanRHI::transitionImageLayout(vk::Image image, vk::Format format,
 
     if (oldLayout == vk::ImageLayout::eUndefined &&
         newLayout == vk::ImageLayout::eTransferDstOptimal) {
-        barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+        barrier.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
         barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
         sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
