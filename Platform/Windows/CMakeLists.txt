@@ -1,6 +1,7 @@
 set (PlatformSources 
                 WindowsApplication.cpp
                 OpenGLApplication.cpp
+                AssetLoader.cpp
                 ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_wgl.c
                 imgui_impl_win32.cpp)
 

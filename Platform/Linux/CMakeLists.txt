@@ -11,6 +11,7 @@ endif(${CMAKE_HOST_SYSTEM_NAME} MATCHES FreeBSD)
 add_library(PlatformInterface
         XcbApplication.cpp 
         OpenGLApplication.cpp
+        AssetLoader.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_glx.c
 )
 target_link_libraries(PlatformInterface
