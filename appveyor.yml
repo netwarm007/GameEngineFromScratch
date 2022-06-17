@@ -6,7 +6,7 @@ environment:
 cache:
   - VulkanSDK.exe
 install:
-  - if(-not test-path -path VulkanSDK.exe) { curl -L --silent --show-error --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.3.216.0/windows/VulkanSDK-1.3.216.0-Installer.exe?Human=true }
+  - if(-not (test-path -path VulkanSDK.exe)) { curl.exe -L --silent --show-error --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.3.216.0/windows/VulkanSDK-1.3.216.0-Installer.exe?Human=true }
   - VulkanSDK.exe /S
 init:
 - ps: |
