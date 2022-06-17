@@ -87,7 +87,7 @@ init:
       if(-not (test-path -path VulkanSDK.exe)) {
         curl.exe -L --silent --show-error --output VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.3.216.0/windows/VulkanSDK-1.3.216.0-Installer.exe?Human=true
       }
-      VulkanSDK.exe /S
+      .\VulkanSDK.exe /S
 build_script:
 - cmd: >-
     scripts/build_imgui Release
