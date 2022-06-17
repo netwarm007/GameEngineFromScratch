@@ -88,6 +88,8 @@ init:
 
 build_script:
 - cmd: >-
+    git submodule update --init External/src/Vulkan-hpp
+
     scripts/build_imgui Release
 
     scripts/build_crossguid Release
