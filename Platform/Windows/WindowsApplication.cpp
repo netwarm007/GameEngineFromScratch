@@ -9,7 +9,7 @@ using namespace My;
 
 void WindowsApplication::CreateMainWindow() {
     // get the HINSTANCE of the Console Program
-    HINSTANCE hInstance = GetModuleHandle(NULL);
+    m_hInstance = GetModuleHandle(NULL);
 
     // this struct holds information for the window class
     WNDCLASSEX wc;
@@ -21,7 +21,7 @@ void WindowsApplication::CreateMainWindow() {
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WindowProc;
-    wc.hInstance = hInstance;
+    wc.hInstance = m_hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
     wc.lpszClassName = _T("GameEngineFromScratch");
@@ -45,10 +45,10 @@ void WindowsApplication::CreateMainWindow() {
         CW_USEDEFAULT,                          // y-position of the window
         m_Config.screenWidth + width_adjust,    // width of the window
         m_Config.screenHeight + height_adjust,  // height of the window
-        NULL,       // we have no parent window, NULL
-        NULL,       // we aren't using menus, NULL
-        hInstance,  // application handle
-        this);      // pass pointer to current object
+        NULL,         // we have no parent window, NULL
+        NULL,         // we aren't using menus, NULL
+        m_hInstance,  // application handle
+        this);        // pass pointer to current object
 
     m_hDc = GetDC(m_hWnd);
 
@@ -124,12 +124,14 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
     result = ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
 
     // sort through and find what code to run for the message given
-    if (pThis && pThis->m_pInputManager) {
-        switch (message) {
-            case WM_CHAR: {
+    switch (message) {
+        case WM_CHAR:
+            if (pThis && pThis->m_pInputManager) {
                 pThis->m_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
-            } break;
-            case WM_KEYUP: {
+            }
+            break;
+        case WM_KEYUP:
+            if (pThis && pThis->m_pInputManager) {
                 switch (wParam) {
                     case VK_LEFT:
                         pThis->m_pInputManager->LeftArrowKeyUp();
@@ -147,8 +149,10 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
                     default:
                         break;
                 }
-            } break;
-            case WM_KEYDOWN: {
+            }
+            break;
+        case WM_KEYDOWN:
+            if (pThis && pThis->m_pInputManager) {
                 switch (wParam) {
                     case VK_LEFT:
                         pThis->m_pInputManager->LeftArrowKeyDown();
@@ -166,50 +170,63 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
                     default:
                         break;
                 }
-            } break;
-            case WM_LBUTTONDOWN: {
+            }
+            break;
+        case WM_LBUTTONDOWN:
+            if (pThis && pThis->m_pInputManager) {
                 pThis->m_pInputManager->LeftMouseButtonDown();
                 pThis->m_bInLeftDrag = true;
                 pThis->m_iPreviousX = GET_X_LPARAM(lParam);
                 pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
-            } break;
-            case WM_LBUTTONUP: {
+            }
+            break;
+        case WM_LBUTTONUP:
+            if (pThis && pThis->m_pInputManager) {
                 pThis->m_pInputManager->LeftMouseButtonUp();
                 pThis->m_bInLeftDrag = false;
-            } break;
-            case WM_RBUTTONDOWN: {
+            }
+            break;
+        case WM_RBUTTONDOWN:
+            if (pThis && pThis->m_pInputManager) {
                 pThis->m_pInputManager->RightMouseButtonDown();
                 pThis->m_bInRightDrag = true;
                 pThis->m_iPreviousX = GET_X_LPARAM(lParam);
                 pThis->m_iPreviousY = GET_Y_LPARAM(lParam);
-            } break;
-            case WM_RBUTTONUP: {
+            }
+            break;
+        case WM_RBUTTONUP:
+            if (pThis && pThis->m_pInputManager) {
                 pThis->m_pInputManager->RightMouseButtonUp();
                 pThis->m_bInRightDrag = false;
-            } break;
-            case WM_MOUSEMOVE: {
+            }
+            break;
+        case WM_MOUSEMOVE:
+            if (pThis && pThis->m_pInputManager) {
                 int pos_x = GET_X_LPARAM(lParam);
                 int pos_y = GET_Y_LPARAM(lParam);
                 if (pThis->m_bInLeftDrag) {
-                    pThis->m_pInputManager->LeftMouseDrag(pos_x - pThis->m_iPreviousX,
-                                                   pos_y - pThis->m_iPreviousY);
+                    pThis->m_pInputManager->LeftMouseDrag(
+                        pos_x - pThis->m_iPreviousX,
+                        pos_y - pThis->m_iPreviousY);
                 } else if (pThis->m_bInRightDrag) {
                     pThis->m_pInputManager->RightMouseDrag(
                         pos_x - pThis->m_iPreviousX,
                         pos_y - pThis->m_iPreviousY);
                 }
-            } break;
-            // this message is read when the window is closed
-            case WM_DESTROY: {
-                // close the application entirely
-                PostQuitMessage(0);
+            }
+            break;
+        // this message is read when the window is closed
+        case WM_DESTROY: {
+            // close the application entirely
+            PostQuitMessage(0);
+            if (pThis && pThis->m_pInputManager) {
                 pThis->m_bQuit = true;
-            } break;
-            default:
-                // Handle any messages the switch statement didn't
-                result = DefWindowProc(hWnd, message, wParam, lParam);
-        }
+            }
+        } break;
+        default:;
     }
+
+    result = DefWindowProc(hWnd, message, wParam, lParam);
 
     return result;
 }

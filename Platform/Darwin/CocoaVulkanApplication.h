@@ -1,5 +1,4 @@
 #pragma once
-#define COCOA_META_APPLICATION_DISABLE_RENDERER
 #include "CocoaMetalApplication.h"
 #include "vulkan/vulkan.hpp"
 

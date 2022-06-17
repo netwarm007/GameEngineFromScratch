@@ -24,8 +24,9 @@ class WindowsApplication : public BaseApplication {
                                        LPARAM lParam);
 
    protected:
-    HWND m_hWnd;
-    HDC m_hDc;
+    HINSTANCE m_hInstance = NULL;
+    HWND m_hWnd = NULL;
+    HDC m_hDc = NULL;
     bool m_bInLeftDrag = false;
     bool m_bInRightDrag = false;
     int m_iPreviousX = 0;
