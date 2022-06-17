@@ -106,6 +106,7 @@ find_library(ISPCTEXCOMP_LIBRARY ispc_texcomp PATHS ${MYGE_EXTERNAL_LIBRARY_PATH
 
 include(FindVulkan)
 if(Vulkan_FOUND)
+execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/Vulkan-hpp)
 include_directories(${Vulkan_INCLUDE_DIRS})
 include_directories(${MYGE_EXTERNAL_ROOT}/../src/Vulkan-hpp/)
 endif(Vulkan_FOUND)
