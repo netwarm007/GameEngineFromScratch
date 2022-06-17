@@ -1,10 +1,10 @@
-#include "BundleAssetLoader.h"
+#include "AssetLoader.hpp"
 
 #include <mach-o/dyld.h>
 #include <sys/syslimits.h>
 
 namespace My {
-    BundleAssetLoader::BundleAssetLoader() {
+    int AssetLoader::Initialize() {
         char path[PATH_MAX + 1];
         path[0] = '\0';
         uint32_t size = sizeof(path);
@@ -14,5 +14,7 @@ namespace My {
         }
 
         AddSearchPath("Resources");
+
+        return 0;
     }
 }

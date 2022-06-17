@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+
+#define VK_ENABLE_BETA_EXTENSIONS
 #include <vulkan/vulkan.hpp>
 #include "Buffer.hpp"
 #include "Image.hpp"

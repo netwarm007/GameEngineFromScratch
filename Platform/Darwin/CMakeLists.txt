@@ -4,7 +4,7 @@ find_library(GAMECONTROLLER_LIBRARY GameController required)
 
 # Platform Interface library
 set (PlatformSources 
-        BundleAssetLoader.mm
+        AssetLoader.mm
         CocoaApplication.mm 
         CocoaMetalApplication.mm
         AppDelegate.m

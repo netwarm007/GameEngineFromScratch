@@ -1,11 +1,9 @@
 #include "AssetLoader.hpp"
 #include "config.h"
 #if defined(OS_MACOS)
-#include "BundleAssetLoader.h"
 #include "CocoaVulkanApplication.h"
 #endif
 #if defined(OS_WINDOWS)
-#include "AssetLoader.hpp"
 #include "VulkanApplication.hpp"
 #endif
 #include "PVR.hpp"
@@ -27,9 +25,13 @@ int main() {
         VulkanApplication app(config);
 #endif
 
+        AssetLoader asset_loader;
+
+        assert(asset_loader.Initialize() == 0 && "Asset Loader Initialize Failed!");
+
         // 创建窗口
         {
-            app.Initialize();
+            assert(app.Initialize() == 0 && "App Initialize Failed!");
 
             app.CreateMainWindow();
         }
@@ -37,7 +39,9 @@ int main() {
         // 获取窗口所需的Extensions
 #if defined(OS_MACOS)
         std::vector<const char*> extensions = {"VK_KHR_surface",
-                                               "VK_EXT_metal_surface"};
+                                               "VK_EXT_metal_surface",
+                                               "VK_KHR_portability_enumeration",
+                                               "VK_KHR_get_physical_device_properties2"};
 #endif
 #if defined(OS_WINDOWS)
         std::vector<const char*> extensions = {"VK_KHR_surface",
@@ -102,11 +106,6 @@ int main() {
 
         // 创建图形管道
         {
-#if defined(OS_MACOS)
-            BundleAssetLoader asset_loader;
-#else
-            AssetLoader asset_loader;
-#endif
             auto vertShader = asset_loader.SyncOpenAndReadBinary(
                 "Shaders/Vulkan/simple.vert.spv");
             auto fragShader = asset_loader.SyncOpenAndReadBinary(
@@ -129,11 +128,6 @@ int main() {
 
         // 加载贴图
         {
-#if defined(OS_MACOS)
-            BundleAssetLoader asset_loader;
-#else
-            AssetLoader asset_loader;
-#endif
             auto buf =
                 asset_loader.SyncOpenAndReadBinary("Textures/viking_room.pvr");
             PVR::PvrParser parser;
@@ -147,11 +141,6 @@ int main() {
 
         // 加载模型
         {
-#if defined(OS_MACOS)
-            BundleAssetLoader asset_loader;
-#else
-            AssetLoader asset_loader;
-#endif
             auto model_path =
                 asset_loader.GetFileRealPath("Models/viking_room.obj");
 

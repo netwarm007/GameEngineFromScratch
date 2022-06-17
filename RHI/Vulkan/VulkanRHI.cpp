@@ -251,7 +251,7 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
         VK_MAKE_VERSION(0, 1, 0), VK_API_VERSION_1_1);
 
     // 初始化 vk::InstanceCreateInfo
-    vk::InstanceCreateInfo instanceCreateInfo({}, &applicationInfo, {},
+    vk::InstanceCreateInfo instanceCreateInfo({vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR}, &applicationInfo, {},
                                               extensions);
 
     m_vkInstance = vk::createInstance(instanceCreateInfo);
@@ -464,8 +464,12 @@ void VulkanRHI::createLogicalDevice() {
 
     auto extensions = deviceExtensions;
 
+    auto result = m_vkPhysicalDevice.getFeatures2<vk::PhysicalDeviceFeatures2KHR, vk::PhysicalDevicePortabilitySubsetFeaturesKHR> ({});
+    auto portabilityFeatures = result.get<vk::PhysicalDevicePortabilitySubsetFeaturesKHR>();
+
     vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos,
                                     {}, extensions, &deviceFeatures);
+    createInfo.pNext = (VkPhysicalDevicePortabilitySubsetFeaturesKHR*)&portabilityFeatures;
 
     m_vkDevice = m_vkPhysicalDevice.createDevice(createInfo);
 }

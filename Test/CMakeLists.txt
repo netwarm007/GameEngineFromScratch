@@ -9,7 +9,7 @@ set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
 
 foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
-    target_link_libraries(${TEST_CASE} Framework)
+    target_link_libraries(${TEST_CASE} Framework PlatformInterface)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach(TEST_CASE)
 
@@ -18,6 +18,7 @@ target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Frame
 
 if(OS_MACOS OR OS_WINDOWS)
 if(Vulkan_FOUND)
+    execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/tinyobjloader)
     add_executable(VulkanRHITest VulkanRHITest.cpp)
     target_include_directories(VulkanRHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
     target_link_libraries(VulkanRHITest Framework VulkanRHI PlatformInterface)

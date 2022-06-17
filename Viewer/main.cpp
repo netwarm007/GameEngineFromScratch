@@ -13,7 +13,6 @@
 #if defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
 #elif defined(OS_MACOS)
-#include "BundleAssetLoader.h"
 #include "CocoaMetalApplication.h"
 #elif defined(OS_WINDOWS)
 //#include "D3d12Application.hpp"
@@ -51,19 +50,17 @@ int main(int argc, char** argv) {
 #if defined(IS_OPENGL)
     config.fixOpenGLPerspectiveMatrix = true;
 #endif
-    ViewerLogic gameLogic;
-    MyPhysicsManager physicsManager;
 #if defined(OS_MACOS)
     CocoaMetalApplication app(config);
-    BundleAssetLoader assetLoader;
 #elif defined(OS_WINDOWS)
     // D3d12Application app(config);
     OpenGLApplication app(config);
-    AssetLoader assetLoader;
 #else
     OpenGLApplication app(config);
-    AssetLoader assetLoader;
 #endif
+    ViewerLogic gameLogic;
+    MyPhysicsManager physicsManager;
+    AssetLoader assetLoader;
     MemoryManager memoryManager;
     SceneManager sceneManager;
     InputManager inputManager;

@@ -12,7 +12,7 @@ class AssetLoader : _implements_ IAssetLoader {
    public:
     AssetLoader() = default;
     ~AssetLoader() override = default;
-    int Initialize() override { return 0; }
+    int Initialize() override; 
     void Finalize() override {}
     void Tick() override {}
 

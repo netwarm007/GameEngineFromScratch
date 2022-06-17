@@ -1,6 +1,5 @@
 add_executable(TextureCompressor TextureCompressor.cpp)
-
-target_link_libraries(TextureCompressor Framework ${ISPCTEXCOMP_LIBRARY})
+target_link_libraries(TextureCompressor Framework PlatformInterface ${ISPCTEXCOMP_LIBRARY})
 
 add_executable(MaterialBaker MaterialBaker.cpp)
-target_link_libraries(MaterialBaker Framework ${ISPCTEXCOMP_LIBRARY})
+target_link_libraries(MaterialBaker Framework PlatformInterface ${ISPCTEXCOMP_LIBRARY})
