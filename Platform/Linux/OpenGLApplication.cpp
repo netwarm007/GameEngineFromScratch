@@ -62,12 +62,6 @@ void OpenGLApplication::CreateMainWindow() {
 
     m_nScreen = DefaultScreen(m_pDisplay);
 
-    /* establish connection to X server */
-    m_pConn = XGetXCBConnection(m_pDisplay);
-    if (!m_pConn) {
-        fprintf(stderr, "Can't get xcb connection from display\n");
-    }
-
     gladLoadGLX(m_pDisplay, m_nScreen);
 
     GLXFBConfig *fb_configs;
@@ -256,6 +250,6 @@ void OpenGLApplication::Finalize() {
     glXMakeCurrent (m_pDisplay, None, NULL ); 
     glXDestroyContext (m_pDisplay, m_Context); 
     glXDestroyWindow(m_pDisplay, m_GlxWindow);
-    XDestroyWindow (m_pDisplay, m_XWindow); 
-    XCloseDisplay (m_pDisplay); 
+
+    XcbApplication::Finalize();
 }
