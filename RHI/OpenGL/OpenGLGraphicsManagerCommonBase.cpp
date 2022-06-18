@@ -539,15 +539,16 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
     glBindVertexArray(skyboxVAO);
     // vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(SceneObjectSkyBox::skyboxVertices), SceneObjectSkyBox::skyboxVertices,
-                 GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SceneObjectSkyBox::skyboxVertices),
+                 SceneObjectSkyBox::skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
     // index buffer
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxVBO[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(SceneObjectSkyBox::skyboxIndices), SceneObjectSkyBox::skyboxIndices,
-                 GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 sizeof(SceneObjectSkyBox::skyboxIndices),
+                 SceneObjectSkyBox::skyboxIndices, GL_STATIC_DRAW);
 
     glBindVertexArray(0);
 
@@ -556,9 +557,10 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
 
     m_SkyBoxDrawBatchContext.vao = skyboxVAO;
     m_SkyBoxDrawBatchContext.mode = GL_TRIANGLES;
-    m_SkyBoxDrawBatchContext.type = GL_UNSIGNED_BYTE;
+    m_SkyBoxDrawBatchContext.type = GL_UNSIGNED_SHORT;
     m_SkyBoxDrawBatchContext.count =
-        sizeof(SceneObjectSkyBox::skyboxIndices) / sizeof(SceneObjectSkyBox::skyboxIndices[0]);
+        sizeof(SceneObjectSkyBox::skyboxIndices) /
+        sizeof(SceneObjectSkyBox::skyboxIndices[0]);
 }
 
 void OpenGLGraphicsManagerCommonBase::EndScene() {
@@ -1083,7 +1085,8 @@ void OpenGLGraphicsManagerCommonBase::ReleaseTexture(intptr_t texture) {
     glDeleteTextures(1, &id);
 }
 
-void OpenGLGraphicsManagerCommonBase::DrawSkyBox([[maybe_unused]] const Frame& frame) {
+void OpenGLGraphicsManagerCommonBase::DrawSkyBox(
+    [[maybe_unused]] const Frame& frame) {
     glBindVertexArray(m_SkyBoxDrawBatchContext.vao);
 
     glDrawElements(m_SkyBoxDrawBatchContext.mode,
@@ -1093,8 +1096,9 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox([[maybe_unused]] const Frame& f
     glBindVertexArray(0);
 }
 
-void OpenGLGraphicsManagerCommonBase::GenerateTexture(
-    const char* id, const uint32_t width, const uint32_t height) {
+void OpenGLGraphicsManagerCommonBase::GenerateTexture(const char* id,
+                                                      const uint32_t width,
+                                                      const uint32_t height) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
     uint32_t texture;
@@ -1475,7 +1479,8 @@ void OpenGLGraphicsManagerCommonBase::ClearDebugBuffers() {
 }
 
 void OpenGLGraphicsManagerCommonBase::RenderDebugBuffers() {
-    auto pPipelineStateManager = dynamic_cast<BaseApplication*>(m_pApp)->GetPipelineStateManager();
+    auto pPipelineStateManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetPipelineStateManager();
     const auto pipelineState =
         pPipelineStateManager->GetPipelineState("Debug Drawing");
 
