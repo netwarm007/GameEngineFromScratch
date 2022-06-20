@@ -60,6 +60,13 @@ void WindowsApplication::CreateMainWindow() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    ImGuiStyle& im_style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        im_style.WindowRounding = 0.0f;
+        im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
 
     ImGui_ImplWin32_Init(m_hWnd);
     ImGui_ImplWin32_EnableDpiAwareness();

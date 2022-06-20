@@ -207,32 +207,28 @@ class DdsParser : _implements_ ImageParser {
         if (pHeader->ddspf.dwFlags & 0x4 /* DDPF_FOURCC */) {
             const uint32_t* pdwFourCC = &pHeader->ddspf.dwFourCC;
             const char* pCC = reinterpret_cast<const char*>(pdwFourCC);
-            if (pCC[0] != 'D') {
-                auto format = (MY_D3DFMT)*pdwFourCC;
-                img.bitcount = pHeader->ddspf.dwRGBBitCount;
+            auto format = (MY_D3DFMT)*pdwFourCC;
+            img.bitcount = pHeader->ddspf.dwRGBBitCount;
 
-                switch (format) {
-                    case MY_D3DFMT::D3DFMT_A16B16G16R16F:
-                        std::cerr << "D3DFMT_A16B16G16R16F" << std::endl;
-                        img.compressed = false;
-                        img.is_float = true;
-                        assert(img.bitcount == 64);
-                        break;
-                    case MY_D3DFMT::D3DFMT_A32B32G32R32F:
-                        std::cerr << "D3DFMT_A32B32G32R32F" << std::endl;
-                        img.compressed = false;
-                        img.is_float = true;
-                        assert(img.bitcount == 128);
-                        break;
-                    default:
-                        std::cerr << "format is not supported!" << std::endl;
-                        assert(0);
-                }
-            } else {
-                std::cerr << "Compressed: ";
-                std::cerr << pCC[0] << pCC[1] << pCC[2] << pCC[3] << std::endl;
+            switch (format) {
+                case MY_D3DFMT::D3DFMT_A16B16G16R16F:
+                    std::cerr << "D3DFMT_A16B16G16R16F" << std::endl;
+                    img.compressed = false;
+                    img.is_float = true;
+                    assert(img.bitcount == 64);
+                    break;
+                case MY_D3DFMT::D3DFMT_A32B32G32R32F:
+                    std::cerr << "D3DFMT_A32B32G32R32F" << std::endl;
+                    img.compressed = false;
+                    img.is_float = true;
+                    assert(img.bitcount == 128);
+                    break;
+                default:
+                    std::cerr << "Compressed: ";
+                    std::cerr << pCC[0] << pCC[1] << pCC[2] << pCC[3]
+                              << std::endl;
 
-                img.compressed = true;
+                    img.compressed = true;
             }
         }
 
@@ -267,6 +263,10 @@ class DdsParser : _implements_ ImageParser {
                 pData += sizeof(DDS_HEADER_DXT10);
                 std::cerr << "DXGI_FORMAT: " << pHeaderDXT10->dxgiFormat
                           << std::endl;
+            } else if (*pdwFourCC == endian_net_unsigned_int("ATI2"_u32)) {
+                img.compress_format = COMPRESSED_FORMAT::BC5;
+                img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
+                img.bitcount = 8;
             }
 
             if (mipmap_count > 0) {

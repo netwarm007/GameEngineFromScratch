@@ -25,7 +25,8 @@ static ostream& operator<<(ostream& out,
     return out;
 }
 
-void save_as_tga(const rgba_surface& surface, int32_t channels, const std::string&& filename) {
+void save_as_tga(const rgba_surface& surface, int32_t channels,
+                 const std::string&& filename) {
     assert(filename != "");
     // must end in .tga
     FILE* file = fopen(filename.c_str(), "wb");
@@ -53,13 +54,21 @@ void save_as_tga(const rgba_surface& surface, int32_t channels, const std::strin
         for (int32_t x = 0; x < surface.width; x++) {
             // note reversed order: b, g, r, a
             fprintf(file, "%c",
-                    (channels > 2) ? *(surface.ptr + y * surface.stride + x * channels + 2) : '\0');
+                    (channels > 2)
+                        ? *(surface.ptr + y * surface.stride + x * channels + 2)
+                        : '\0');
             fprintf(file, "%c",
-                    (channels > 1) ? *(surface.ptr + y * surface.stride + x * channels + 1) : '\0');
+                    (channels > 1)
+                        ? *(surface.ptr + y * surface.stride + x * channels + 1)
+                        : '\0');
             fprintf(file, "%c",
-                    (channels > 0) ? *(surface.ptr + y * surface.stride + x * channels + 0) : '\0');
+                    (channels > 0)
+                        ? *(surface.ptr + y * surface.stride + x * channels + 0)
+                        : '\0');
             fprintf(file, "%c",
-                    (channels > 3) ? *(surface.ptr + y * surface.stride + x * channels + 3) : '\0');
+                    (channels > 3)
+                        ? *(surface.ptr + y * surface.stride + x * channels + 3)
+                        : '\0');
         }
     }
     fclose(file);
@@ -203,19 +212,21 @@ int main(int argc, char** argv) {
             auto ao_texture_width = ao_texture->Width;
             auto ao_texture_height = ao_texture->Height;
 
-            auto max_width_1 =
-                std::max({albedo_texture_width, normal_texture_width});
+            auto max_width_1 = albedo_texture_width;
 
             auto max_width_2 =
-                std::max({normal_texture_width, metallic_texture_width,
-                          roughness_texture_width, ao_texture_width});
+                std::max({metallic_texture_width, roughness_texture_width,
+                          ao_texture_width});
 
-            auto max_height_1 =
-                std::max({albedo_texture_height, normal_texture_height});
+            auto max_width_3 = normal_texture_width;
+
+            auto max_height_1 = albedo_texture_height;
 
             auto max_height_2 =
-                std::max({normal_texture_height, metallic_texture_height,
-                          roughness_texture_height, ao_texture_height});
+                std::max({metallic_texture_height, roughness_texture_height,
+                          ao_texture_height});
+
+            auto max_height_3 = normal_texture_height;
 
             /*
               Now we pack the texture into following format:
@@ -297,7 +308,7 @@ int main(int argc, char** argv) {
 
                 for (int32_t y = 0; y < surf.height; y++) {
                     for (int32_t x = 0; x < surf.width; x++) {
-                        *(surf.ptr + y * surf.stride + x * channels) = 
+                        *(surf.ptr + y * surf.stride + x * channels) =
                             metallic_texture->GetX(
                                 std::floor(x * metallic_ratio_x),
                                 std::floor(y * metallic_ratio_y));
@@ -306,9 +317,8 @@ int main(int argc, char** argv) {
                                 std::floor(x * roughness_ratio_x),
                                 std::floor(y * roughness_ratio_y));
                         *(surf.ptr + y * surf.stride + x * channels + 2) =
-                            ao_texture->GetX(
-                                std::floor(x * ao_ratio_x),
-                                std::floor(y * ao_ratio_y));
+                            ao_texture->GetX(std::floor(x * ao_ratio_x),
+                                             std::floor(y * ao_ratio_y));
                         *(surf.ptr + y * surf.stride + x * channels + 3) = 0;
                     }
                 }
@@ -331,8 +341,8 @@ int main(int argc, char** argv) {
                 // surf
                 rgba_surface surf;
                 int32_t channels = 2;
-                surf.width = max_width_2;
-                surf.height = max_height_2;
+                surf.width = max_width_3;
+                surf.height = max_height_3;
                 surf.stride = channels * surf.width;
                 std::vector<uint8_t> buf2(surf.stride * surf.height);
                 surf.ptr = buf2.data();
@@ -342,7 +352,7 @@ int main(int argc, char** argv) {
 
                 for (int32_t y = 0; y < surf.height; y++) {
                     for (int32_t x = 0; x < surf.width; x++) {
-                       *(surf.ptr + y * surf.stride + x * channels) =
+                        *(surf.ptr + y * surf.stride + x * channels) =
                             normal_texture->GetX(
                                 std::floor(x * normal_ratio_x),
                                 std::floor(y * normal_ratio_y));

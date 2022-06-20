@@ -10414,7 +10414,7 @@ Material $material1
 
 	Texture (attrib = "normal")
 	{
-		string {"Materials/redbricks2b_3.pvr"}
+		string {"Textures/redbricks2b-normal.png"}
 	}
 
 	Texture (attrib = "metallic")
@@ -10438,7 +10438,7 @@ Material $material2
 
 	Texture (attrib = "normal")
 	{
-		string {"Materials/gold-scuffed_3.pvr"}
+		string {"Textures/gold-scuffed_normal.png"}
 	}
 	
 	Texture (attrib = "metallic")

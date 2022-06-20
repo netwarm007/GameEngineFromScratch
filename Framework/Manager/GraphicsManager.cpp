@@ -10,6 +10,8 @@
 #include "SceneManager.hpp"
 #include "ShadowMapPass.hpp"
 
+#include "imgui.h"
+
 using namespace My;
 using namespace std;
 
@@ -63,6 +65,12 @@ void GraphicsManager::Tick() {
     BeginFrame(m_Frames[m_nFrameIndex]);
     Draw();
     EndFrame(m_Frames[m_nFrameIndex]);
+
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 
     Present();
 }
@@ -165,9 +173,9 @@ void GraphicsManager::CalculateCameraMatrix() {
 
     // Build the perspective projection matrix.
     if (conf.fixOpenGLPerspectiveMatrix) {
-        BuildOpenglPerspectiveFovRHMatrix(frameContext.projectionMatrix, fieldOfView,
-                                    screenAspect, nearClipDistance,
-                                    farClipDistance);
+        BuildOpenglPerspectiveFovRHMatrix(frameContext.projectionMatrix,
+                                          fieldOfView, screenAspect,
+                                          nearClipDistance, farClipDistance);
     } else {
         BuildPerspectiveFovRHMatrix(frameContext.projectionMatrix, fieldOfView,
                                     screenAspect, nearClipDistance,

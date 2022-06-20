@@ -360,14 +360,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     [_commandBuffer commit];
 
-    // Update and Render additional Platform Windows
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
-
     [_mtkView setNeedsDisplay:YES];
 
     _renderPassDescriptor = nil;

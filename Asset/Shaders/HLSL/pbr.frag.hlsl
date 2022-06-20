@@ -13,8 +13,8 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
     float meta = metallicMap.Sample(samp0, texCoords).r; 
     float rough = metallicMap.Sample(samp0, texCoords).g; 
     float3 tangent_normal.xy = normalMap.Sample(samp0, texCoords).rg;
-    tangent_normal = tangent_normal * 2.0f - 1.0f;   
-    tangent_normal.z = sqrt(clamp(1.0f - tangent_normal.x * tangent_normal.x- tangent_normal.y * tangent_normal.y, 0.0f, 1.0f));
+    tangent_normal = tangent_normal * 2.0f - 1.00392f;   
+    tangent_normal.z = sqrt(clamp(1.0f - tangent_normal.x * tangent_normal.x - tangent_normal.y * tangent_normal.y, 0.0f, 1.0f));
     float3 N = normalize(mul(tangent_normal, _entryPointOutput.TBN)); 
 
     float3 V = normalize(camPos.xyz - _entryPointOutput.v_world.xyz);
