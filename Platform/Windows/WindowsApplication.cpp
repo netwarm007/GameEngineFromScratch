@@ -75,13 +75,13 @@ void WindowsApplication::CreateMainWindow() {
 }
 
 void WindowsApplication::Finalize() {
+    BaseApplication::Finalize();
+
     // Finalize ImGui
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
     ReleaseDC(m_hWnd, m_hDc);
-
-    BaseApplication::Finalize();
 }
 
 void WindowsApplication::Tick() {

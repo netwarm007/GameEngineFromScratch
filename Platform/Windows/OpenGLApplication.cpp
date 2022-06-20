@@ -24,7 +24,7 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam,
 int OpenGLApplication::Initialize() {
     int result = 0;
 
-    BaseApplication::Initialize();
+    WindowsApplication::Initialize();
 
     return result;
 }
