@@ -5,15 +5,15 @@
 using namespace My;
 using namespace std;
 
+#include "ASTC.hpp"
 #include "AssetLoader.hpp"
 #include "BMP.hpp"
 #include "DDS.hpp"
 #include "HDR.hpp"
 #include "JPEG.hpp"
 #include "PNG.hpp"
-#include "TGA.hpp"
-#include "ASTC.hpp"
 #include "PVR.hpp"
+#include "TGA.hpp"
 
 void SceneObjectTexture::LoadTextureAsync() {
     if (!m_asyncLoadFuture.valid()) {
@@ -59,9 +59,6 @@ bool SceneObjectTexture::LoadTexture() {
         assert(0);
     }
 
-    // GPU does not support 24bit and 48bit textures, so adjust it
-    adjust_image(image);
-
     cerr << "End async loading of " << m_Name << endl;
 
     atomic_store_explicit(&m_pImage, make_shared<Image>(std::move(image)),
@@ -74,8 +71,7 @@ std::shared_ptr<Image> SceneObjectTexture::GetTextureImage() {
     if (m_asyncLoadFuture.valid()) {
         m_asyncLoadFuture.wait();
         if (m_asyncLoadFuture.get()) {
-            return atomic_load_explicit(&m_pImage,
-                                        std::memory_order_acquire);
+            return atomic_load_explicit(&m_pImage, std::memory_order_acquire);
         } else {
             return m_pImage;
         }

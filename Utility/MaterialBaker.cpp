@@ -45,7 +45,9 @@ void save_as_tga(const rgba_surface& surface, int32_t channels,
         else if (i == 16)
             fprintf(file, "%c", 32);
         else if (i == 17)
-            fprintf(file, "%c", 32);
+            fprintf(
+                file, "%c",
+                0x28);  // Bit 5: screen origin bit, Bit 3 - 0 alpha bit depth
         else
             fprintf(file, "%c", 0);
     }
@@ -68,7 +70,7 @@ void save_as_tga(const rgba_surface& surface, int32_t channels,
             fprintf(file, "%c",
                     (channels > 3)
                         ? *(surface.ptr + y * surface.stride + x * channels + 3)
-                        : '\0');
+                        : '\1');
         }
     }
     fclose(file);
@@ -218,15 +220,11 @@ int main(int argc, char** argv) {
                 std::max({metallic_texture_width, roughness_texture_width,
                           ao_texture_width});
 
-            auto max_width_3 = normal_texture_width;
-
             auto max_height_1 = albedo_texture_height;
 
             auto max_height_2 =
                 std::max({metallic_texture_height, roughness_texture_height,
                           ao_texture_height});
-
-            auto max_height_3 = normal_texture_height;
 
             /*
               Now we pack the texture into following format:
@@ -341,25 +339,18 @@ int main(int argc, char** argv) {
                 // surf
                 rgba_surface surf;
                 int32_t channels = 2;
-                surf.width = max_width_3;
-                surf.height = max_height_3;
+                surf.width = normal_texture_width;
+                surf.height = normal_texture_height;
                 surf.stride = channels * surf.width;
                 std::vector<uint8_t> buf2(surf.stride * surf.height);
                 surf.ptr = buf2.data();
-                float normal_ratio_x = (float)normal_texture_width / surf.width;
-                float normal_ratio_y =
-                    (float)normal_texture_height / surf.height;
 
                 for (int32_t y = 0; y < surf.height; y++) {
                     for (int32_t x = 0; x < surf.width; x++) {
                         *(surf.ptr + y * surf.stride + x * channels) =
-                            normal_texture->GetX(
-                                std::floor(x * normal_ratio_x),
-                                std::floor(y * normal_ratio_y));
+                            normal_texture->GetX(x, y);
                         *(surf.ptr + y * surf.stride + x * channels + 1) =
-                            normal_texture->GetY(
-                                std::floor(x * normal_ratio_x),
-                                std::floor(y * normal_ratio_y));
+                            normal_texture->GetY(x, y);
                     }
                 }
 

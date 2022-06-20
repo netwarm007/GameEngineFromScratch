@@ -27,7 +27,8 @@ class TgaParser : _implements_ ImageParser {
         Image img;
 
         const uint8_t* pData = buf.GetData();
-        [[maybe_unused]] const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
+        [[maybe_unused]] const uint8_t* pDataEnd =
+            buf.GetData() + buf.GetDataSize();
 
         std::cerr << "Parsing as TGA file:" << std::endl;
 
@@ -79,8 +80,10 @@ class TgaParser : _implements_ ImageParser {
         // reading the pixel data
         img.bitcount = (alpha_depth ? 32 : 24);
         img.bitdepth = 8;
-        img.pixel_format = (alpha_depth ? PIXEL_FORMAT::RGBA8 : PIXEL_FORMAT::RGB8);
-        img.pitch = img.Width * ALIGN((img.bitcount >> 3), 4); // for GPU address alignment
+        img.pixel_format =
+            (alpha_depth ? PIXEL_FORMAT::RGBA8 : PIXEL_FORMAT::RGB8);
+        img.pitch = img.Width *
+                    ALIGN((img.bitcount >> 3), 4);  // for GPU address alignment
 
         img.data_size = (size_t)img.pitch * img.Height;
         img.data = new uint8_t[img.data_size];
@@ -125,13 +128,13 @@ class TgaParser : _implements_ ImageParser {
                     case 32: {
                         assert(alpha_depth == 8);
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
-                          3) = *pData++;  // A
-                        *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
                           2) = *pData++;  // B
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
                           1) = *pData++;  // G
-                        *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4) =
-                            *pData++;  // R
+                        *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
+                          0) = *pData++;  // R
+                        *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
+                          3) = *pData++;  // A
                     } break;
                     default:;
                 }

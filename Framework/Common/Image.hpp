@@ -276,7 +276,7 @@ struct Image {
             else if (i == 16)
                 fprintf(file, "%c", 32);
             else if (i == 17)
-                fprintf(file, "%c", 32);
+                fprintf(file, "%c", 0x28);
             else
                 fprintf(file, "%c", 0);
         }
