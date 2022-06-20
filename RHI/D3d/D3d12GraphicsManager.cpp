@@ -490,12 +490,15 @@ static DXGI_FORMAT getDxgiFormat(const Image& img) {
             case COMPRESSED_FORMAT::DXT1:
                 format = ::DXGI_FORMAT_BC1_UNORM;
                 break;
-            case COMPRESSED_FORMAT::BC3:
+            case COMPRESSED_FORMAT::BC2:
             case COMPRESSED_FORMAT::DXT3:
+                format = ::DXGI_FORMAT_BC2_UNORM;
+                break;
+            case COMPRESSED_FORMAT::BC3:
+            case COMPRESSED_FORMAT::DXT5:
                 format = ::DXGI_FORMAT_BC3_UNORM;
                 break;
             case COMPRESSED_FORMAT::BC5:
-            case COMPRESSED_FORMAT::DXT5:
                 format = ::DXGI_FORMAT_BC5_UNORM;
                 break;
             default:
