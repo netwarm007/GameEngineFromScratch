@@ -129,18 +129,17 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             case COMPRESSED_FORMAT::BC1:
                 format = MTLPixelFormatBC1_RGBA;
                 break;
-            case COMPRESSED_FORMAT::DXT2:
+            case COMPRESSED_FORMAT::DXT3:
             case COMPRESSED_FORMAT::BC2:
                 format = MTLPixelFormatBC2_RGBA;
                 break;
-            case COMPRESSED_FORMAT::DXT3:
+            case COMPRESSED_FORMAT::DXT5:
             case COMPRESSED_FORMAT::BC3:
                 format = MTLPixelFormatBC3_RGBA;
                 break;
             case COMPRESSED_FORMAT::BC4:
                 format = MTLPixelFormatBC4_RUnorm;
                 break;
-            case COMPRESSED_FORMAT::DXT5:
             case COMPRESSED_FORMAT::BC5:
                 format = MTLPixelFormatBC5_RGUnorm;
                 break;
@@ -150,8 +149,47 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             case COMPRESSED_FORMAT::BC7:
                 format = MTLPixelFormatBC7_RGBAUnorm;
                 break;
+            case COMPRESSED_FORMAT::ASTC_4x4:
+                format = MTLPixelFormatASTC_4x4_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x4:
+                format = MTLPixelFormatASTC_5x4_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x5:
+                format = MTLPixelFormatASTC_5x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x5:
+                format = MTLPixelFormatASTC_6x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x6:
+                format = MTLPixelFormatASTC_6x6_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x5:
+                format = MTLPixelFormatASTC_8x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x6:
+                format = MTLPixelFormatASTC_8x6_sRGB;
+                break;
             case COMPRESSED_FORMAT::ASTC_8x8:
                 format = MTLPixelFormatASTC_8x8_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x5:
+                format = MTLPixelFormatASTC_10x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x6:
+                format = MTLPixelFormatASTC_10x6_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x8:
+                format = MTLPixelFormatASTC_10x8_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x10:
+                format = MTLPixelFormatASTC_10x10_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_12x10:
+                format = MTLPixelFormatASTC_12x10_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_12x12:
+                format = MTLPixelFormatASTC_12x12_sRGB;
                 break;
             default:
                 std::cerr << img << std::endl;
