@@ -40,7 +40,7 @@ void ViewerLogic::OnLeftKeyDown() {
             auto local_axis = pCameraNode->GetLocalAxis();
             Vector3f camera_x_axis = local_axis[0];
 
-            // move camera along its local axis -x direction
+            // pan camera along its local axis -x direction
             pCameraNode->MoveBy(camera_x_axis * -1.0f);
             auto target = pCameraNode->GetTarget();
             target -= camera_x_axis;
@@ -59,7 +59,7 @@ void ViewerLogic::OnRightKeyDown() {
             auto local_axis = pCameraNode->GetLocalAxis();
             Vector3f camera_x_axis = local_axis[0];
 
-            // move along camera local axis x direction
+            // pan along camera local axis x direction
             pCameraNode->MoveBy(camera_x_axis);
             auto target = pCameraNode->GetTarget();
             target += camera_x_axis;
@@ -78,7 +78,7 @@ void ViewerLogic::OnUpKeyDown() {
             auto local_axis = pCameraNode->GetLocalAxis();
             Vector3f camera_z_axis = local_axis[2];
 
-            // move camera along its local axis y direction
+            // lifting camera along its local axis y direction
             pCameraNode->MoveBy(camera_z_axis);
             auto target = pCameraNode->GetTarget();
             target += camera_z_axis;
@@ -97,7 +97,7 @@ void ViewerLogic::OnDownKeyDown() {
             auto local_axis = pCameraNode->GetLocalAxis();
             Vector3f camera_z_axis = local_axis[2];
 
-            // move camera along its local axis -y direction
+            // lifting camera along its local axis -y direction
             pCameraNode->MoveBy(camera_z_axis * -1.0f);
             auto target = pCameraNode->GetTarget();
             target -= camera_z_axis;
@@ -119,7 +119,7 @@ void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
                 Vector3f camera_y_axis = local_axis[1];
                 pCameraNode->MoveBy(camera_y_axis * -deltaY);
                 Vector3f camera_x_axis = local_axis[0];
-                pCameraNode->MoveBy(camera_x_axis * deltaX);
+                pCameraNode->RotateBy(0.0f, 0.0f, deltaX / (2.0 * PI));
             }
         }
     }
