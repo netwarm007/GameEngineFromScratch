@@ -141,10 +141,11 @@ void GraphicsManager::CalculateCameraMatrix() {
     DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
     if (pCameraNode) {
         auto transform = *pCameraNode->GetCalculatedTransform();
-        frameContext.camPos =
+        Vector3f position =
             Vector3f({transform[3][0], transform[3][1], transform[3][2]});
-        InverseMatrix4X4f(transform);
-        frameContext.viewMatrix = transform;
+        Vector3f lookAt = pCameraNode->GetTarget();
+        Vector3f up = {0.0f, 0.0f, 1.0f};
+        BuildViewRHMatrix(frameContext.viewMatrix, position, lookAt, up);
     } else {
         // use default build-in camera
         Vector3f position = {0.0f, -5.0f, 0.0f}, lookAt = {0.0f, 0.0f, 0.0f},

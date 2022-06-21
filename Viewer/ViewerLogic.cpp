@@ -40,8 +40,11 @@ void ViewerLogic::OnLeftKeyDown() {
             auto local_axis = pCameraNode->GetLocalAxis();
             Vector3f camera_x_axis = local_axis[0];
 
-            // move camera along its local axis x direction
-            pCameraNode->MoveBy(camera_x_axis);
+            // move camera along its local axis -x direction
+            pCameraNode->MoveBy(camera_x_axis * -1.0f);
+            auto target = pCameraNode->GetTarget();
+            target -= camera_x_axis;
+            pCameraNode->SetTarget(target);
         }
     }
 }
@@ -56,8 +59,11 @@ void ViewerLogic::OnRightKeyDown() {
             auto local_axis = pCameraNode->GetLocalAxis();
             Vector3f camera_x_axis = local_axis[0];
 
-            // move along camera local axis -x direction
-            pCameraNode->MoveBy(camera_x_axis * -1.0f);
+            // move along camera local axis x direction
+            pCameraNode->MoveBy(camera_x_axis);
+            auto target = pCameraNode->GetTarget();
+            target += camera_x_axis;
+            pCameraNode->SetTarget(target);
         }
     }
 }
@@ -70,10 +76,13 @@ void ViewerLogic::OnUpKeyDown() {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
             auto local_axis = pCameraNode->GetLocalAxis();
-            Vector3f camera_y_axis = local_axis[1];
+            Vector3f camera_z_axis = local_axis[2];
 
             // move camera along its local axis y direction
-            pCameraNode->MoveBy(camera_y_axis);
+            pCameraNode->MoveBy(camera_z_axis);
+            auto target = pCameraNode->GetTarget();
+            target += camera_z_axis;
+            pCameraNode->SetTarget(target);
         }
     }
 }
@@ -86,10 +95,13 @@ void ViewerLogic::OnDownKeyDown() {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
             auto local_axis = pCameraNode->GetLocalAxis();
-            Vector3f camera_y_axis = local_axis[1];
+            Vector3f camera_z_axis = local_axis[2];
 
             // move camera along its local axis -y direction
-            pCameraNode->MoveBy(camera_y_axis * -1.0f);
+            pCameraNode->MoveBy(camera_z_axis * -1.0f);
+            auto target = pCameraNode->GetTarget();
+            target -= camera_z_axis;
+            pCameraNode->SetTarget(target);
         }
     }
 }
@@ -104,8 +116,8 @@ void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
             if (pCameraNode) {
                 static auto local_axis = pCameraNode->GetLocalAxis();
                 // move camera along its local axis -z direction
-                Vector3f camera_z_axis = local_axis[2];
-                pCameraNode->MoveBy(camera_z_axis * -deltaY);
+                Vector3f camera_y_axis = local_axis[1];
+                pCameraNode->MoveBy(camera_y_axis * -deltaY);
                 Vector3f camera_x_axis = local_axis[0];
                 pCameraNode->MoveBy(camera_x_axis * deltaX);
             }
