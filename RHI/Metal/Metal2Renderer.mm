@@ -292,11 +292,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             };
 
             [texture replaceRegion:region
-                    mipmapLevel:0
-                            slice:slice
-                        withBytes:images[slice]->data
-                    bytesPerRow:images[slice]->pitch
-                    bytesPerImage:images[slice]->data_size];
+                       mipmapLevel:0
+                             slice:slice
+                         withBytes:images[slice]->data
+                       bytesPerRow:images[slice]->pitch
+                     bytesPerImage:images[slice]->data_size];
         }
 
         // now upload the irradiance map as 2nd mip of skybox
@@ -308,11 +308,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             };
 
             [texture replaceRegion:region
-                    mipmapLevel:1
-                            slice:slice - 6
-                        withBytes:images[slice]->data
-                    bytesPerRow:images[slice]->pitch
-                    bytesPerImage:images[slice]->data_size];
+                       mipmapLevel:1
+                             slice:slice - 6
+                         withBytes:images[slice]->data
+                       bytesPerRow:images[slice]->pitch
+                     bytesPerImage:images[slice]->data_size];
         }
 
         // now upload the radiance map 2nd cubemap
@@ -325,11 +325,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
                 };
 
                 [texture replaceRegion:region
-                        mipmapLevel:level++
-                                slice:slice - 6
-                            withBytes:images[slice]->data + mip.offset
-                        bytesPerRow:mip.pitch
-                        bytesPerImage:mip.data_size];
+                           mipmapLevel:level++
+                                 slice:slice - 6
+                             withBytes:images[slice]->data + mip.offset
+                           bytesPerRow:mip.pitch
+                         bytesPerImage:mip.data_size];
             }
         }
 
@@ -403,7 +403,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _renderPassDescriptor = nil;
 }
 
-- (void)beginPass:(const Frame&) frame {
+- (void)beginPass:(const Frame&)frame {
     // Create a new command buffer for each render pass to the current drawable
     _commandBuffer = [_commandQueue commandBuffer];
     _commandBuffer.label = @"Online Command Buffer";
@@ -538,7 +538,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     if (indexBuffer != nil) {
         // Draw skybox
         [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                   indexCount:sizeof(My::SceneObjectSkyBox::skyboxIndices) / sizeof(My::SceneObjectSkyBox::skyboxIndices[0])
+                                   indexCount:sizeof(My::SceneObjectSkyBox::skyboxIndices) /
+                                              sizeof(My::SceneObjectSkyBox::skyboxIndices[0])
                                     indexType:MTLIndexTypeUInt16
                                   indexBuffer:indexBuffer
                             indexBufferOffset:0];
@@ -731,8 +732,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _texture_recycled_indexes.push(texture);
 }
 
-- (int32_t)generateTextureForWrite:(const uint32_t)width
-                            height:(const uint32_t)height {
+- (int32_t)generateTextureForWrite:(const uint32_t)width height:(const uint32_t)height {
     id<MTLTexture> texture;
     int32_t index;
 
