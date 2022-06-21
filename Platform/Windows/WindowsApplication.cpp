@@ -226,7 +226,7 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
         case WM_DESTROY: {
             // close the application entirely
             PostQuitMessage(0);
-            if (pThis && pThis->m_pInputManager) {
+            if (pThis) {
                 pThis->m_bQuit = true;
             }
         } break;
