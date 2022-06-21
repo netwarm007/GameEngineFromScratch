@@ -10438,7 +10438,7 @@ Material $material2
 
 	Texture (attrib = "normal")
 	{
-		string {"Textures/gold-scuffed_normal.png"}
+		string {"Materials/gold-scuffed_3.pvr"}
 	}
 	
 	Texture (attrib = "metallic")

@@ -147,7 +147,8 @@ int OpenGLGraphicsManager::Initialize() {
     }
 
     char version[20];
-    snprintf(version, 20, "#version %d", GLVersion.major * 100 + GLVersion.minor * 10);
+    snprintf(version, 20, "#version %d",
+             GLVersion.major * 100 + GLVersion.minor * 10);
     ImGui_ImplOpenGL3_Init(version);
 
     return result;
@@ -170,13 +171,25 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(const Image& img,
             case COMPRESSED_FORMAT::DXT1:
                 internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
                 break;
-            case COMPRESSED_FORMAT::BC3:
+            case COMPRESSED_FORMAT::BC2:
             case COMPRESSED_FORMAT::DXT3:
                 internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
                 break;
-            case COMPRESSED_FORMAT::BC5:
+            case COMPRESSED_FORMAT::BC3:
             case COMPRESSED_FORMAT::DXT5:
                 internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                break;
+            case COMPRESSED_FORMAT::BC4:
+                internal_format = GL_COMPRESSED_RED_RGTC1;
+                break;
+            case COMPRESSED_FORMAT::BC5:
+                internal_format = GL_COMPRESSED_RG_RGTC2;
+                break;
+            case COMPRESSED_FORMAT::BC6H:
+                internal_format = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB;
+                break;
+            case COMPRESSED_FORMAT::BC7:
+                internal_format = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
                 break;
             case COMPRESSED_FORMAT::ASTC_4x4:
                 internal_format = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
