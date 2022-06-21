@@ -85,14 +85,15 @@ template <typename T, int N>
 struct Vector {
     T data[N];
 
-    Vector() = default;
+    Vector() { std::memset(data, 0x00, sizeof(T) * N); }
+
     explicit Vector(const T val) {
         for (int i = 0; i < N; i++) {
             data[i] = val;
         }
     }
 
-    Vector(std::initializer_list<const T> list) {
+    Vector(std::initializer_list<const T> list) : Vector() {
         size_t i = 0;
         assert(list.size() <= N);
         for (auto val : list) {
@@ -883,21 +884,22 @@ inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix,
 }
 
 inline void BuildOpenglPerspectiveFovRHMatrix(Matrix4X4f& matrix,
-                                        const float fieldOfView,
-                                        const float screenAspect,
-                                        const float screenNear,
-                                        const float screenDepth) {
+                                              const float fieldOfView,
+                                              const float screenAspect,
+                                              const float screenNear,
+                                              const float screenDepth) {
     Matrix4X4f perspective = {
         {{1.0f / (screenAspect * std::tan(fieldOfView * 0.5f)), 0.0f, 0.0f,
           0.0f},
          {0.0f, 1.0f / std::tan(fieldOfView * 0.5f), 0.0f, 0.0f},
-         {0.0f, 0.0f, (screenNear + screenDepth) / (screenNear - screenDepth), -1.0f},
-         {0.0f, 0.0f, (-2.0f * screenNear * screenDepth) / (screenDepth - screenNear),
+         {0.0f, 0.0f, (screenNear + screenDepth) / (screenNear - screenDepth),
+          -1.0f},
+         {0.0f, 0.0f,
+          (-2.0f * screenNear * screenDepth) / (screenDepth - screenNear),
           0.0f}}};
 
     matrix = perspective;
 }
-
 
 inline void MatrixTranslation(Matrix4X4f& matrix, const float x, const float y,
                               const float z) {
