@@ -10414,7 +10414,7 @@ Material $material1
 
 	Texture (attrib = "normal")
 	{
-		string {"Textures/redbricks2b-normal.png"}
+		string {"Materials/redbricks2b_3.pvr"}
 	}
 
 	Texture (attrib = "metallic")
