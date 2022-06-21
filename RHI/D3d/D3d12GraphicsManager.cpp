@@ -498,8 +498,17 @@ static DXGI_FORMAT getDxgiFormat(const Image& img) {
             case COMPRESSED_FORMAT::DXT5:
                 format = ::DXGI_FORMAT_BC3_UNORM;
                 break;
+            case COMPRESSED_FORMAT::BC4:
+                format = ::DXGI_FORMAT_BC4_UNORM;
+                break;
             case COMPRESSED_FORMAT::BC5:
                 format = ::DXGI_FORMAT_BC5_UNORM;
+                break;
+            case COMPRESSED_FORMAT::BC6H:
+                format = ::DXGI_FORMAT_BC6H_UF16;
+                break;
+            case COMPRESSED_FORMAT::BC7:
+                format = ::DXGI_FORMAT_BC7_UNORM;
                 break;
             default:
                 assert(0);
@@ -1368,13 +1377,17 @@ void D3d12GraphicsManager::initializeSkyBox(const Scene& scene) {
 
     assert(scene.SkyBox);
 
-    m_dbcSkyBox.property_offset = CreateVertexBuffer(
-        SceneObjectSkyBox::skyboxVertices, sizeof(SceneObjectSkyBox::skyboxVertices), sizeof(SceneObjectSkyBox::skyboxVertices[0]));
+    m_dbcSkyBox.property_offset =
+        CreateVertexBuffer(SceneObjectSkyBox::skyboxVertices,
+                           sizeof(SceneObjectSkyBox::skyboxVertices),
+                           sizeof(SceneObjectSkyBox::skyboxVertices[0]));
     m_dbcSkyBox.property_count = 1;
-    m_dbcSkyBox.index_offset =
-        CreateIndexBuffer(SceneObjectSkyBox::skyboxIndices, sizeof(SceneObjectSkyBox::skyboxIndices),
-                          static_cast<int32_t>(sizeof(SceneObjectSkyBox::skyboxIndices[0])));
-    m_dbcSkyBox.index_count = sizeof(SceneObjectSkyBox::skyboxIndices) / sizeof(SceneObjectSkyBox::skyboxIndices[0]);
+    m_dbcSkyBox.index_offset = CreateIndexBuffer(
+        SceneObjectSkyBox::skyboxIndices,
+        sizeof(SceneObjectSkyBox::skyboxIndices),
+        static_cast<int32_t>(sizeof(SceneObjectSkyBox::skyboxIndices[0])));
+    m_dbcSkyBox.index_count = sizeof(SceneObjectSkyBox::skyboxIndices) /
+                              sizeof(SceneObjectSkyBox::skyboxIndices[0]);
 
     // Describe and create a Cubemap.
     auto& texture = scene.SkyBox->GetTexture(0);
