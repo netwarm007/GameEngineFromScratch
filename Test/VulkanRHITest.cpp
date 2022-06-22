@@ -27,7 +27,8 @@ int main() {
 
         AssetLoader asset_loader;
 
-        assert(asset_loader.Initialize() == 0 && "Asset Loader Initialize Failed!");
+        assert(asset_loader.Initialize() == 0 &&
+               "Asset Loader Initialize Failed!");
 
         // 创建窗口
         {
@@ -38,10 +39,10 @@ int main() {
 
         // 获取窗口所需的Extensions
 #if defined(OS_MACOS)
-        std::vector<const char*> extensions = {"VK_KHR_surface",
-                                               "VK_EXT_metal_surface",
-                                               "VK_KHR_portability_enumeration",
-                                               "VK_KHR_get_physical_device_properties2"};
+        std::vector<const char*> extensions = {
+            "VK_KHR_surface", "VK_EXT_metal_surface",
+            "VK_KHR_portability_enumeration",
+            "VK_KHR_get_physical_device_properties2"};
 #endif
 #if defined(OS_WINDOWS)
         std::vector<const char*> extensions = {"VK_KHR_surface",
@@ -86,11 +87,7 @@ int main() {
         rhi.createLogicalDevice();
 
         // 创建 SwapChain
-        {
-            int width, height;
-            app.GetFramebufferSize(width, height);
-            rhi.createSwapChain();
-        }
+        rhi.createSwapChain();
 
         // 创建Image View
         rhi.createImageViews();
