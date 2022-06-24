@@ -1,13 +1,8 @@
 #include "AssetLoader.hpp"
-#include "config.h"
-#if defined(OS_MACOS)
-#include "CocoaVulkanApplication.h"
-#endif
-#if defined(OS_WINDOWS)
-#include "VulkanApplication.hpp"
-#endif
 #include "PVR.hpp"
 #include "Vulkan/VulkanRHI.hpp"
+#include "VulkanApplication.hpp"
+#include "config.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
@@ -18,12 +13,7 @@ int main() {
     try {
         GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
                                 "Vulkan RHI Test");
-#if defined(OS_MACOS)
-        CocoaVulkanApplication app(config);
-#endif
-#if defined(OS_WINDOWS)
         VulkanApplication app(config);
-#endif
 
         AssetLoader asset_loader;
 
@@ -36,18 +26,6 @@ int main() {
 
             app.CreateMainWindow();
         }
-
-        // 获取窗口所需的Extensions
-#if defined(OS_MACOS)
-        std::vector<const char*> extensions = {
-            "VK_KHR_surface", "VK_EXT_metal_surface",
-            "VK_KHR_portability_enumeration",
-            "VK_KHR_get_physical_device_properties2"};
-#endif
-#if defined(OS_WINDOWS)
-        std::vector<const char*> extensions = {"VK_KHR_surface",
-                                               "VK_KHR_win32_surface"};
-#endif
 
         auto& rhi = app.GetRHI();
 

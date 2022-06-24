@@ -1,5 +1,5 @@
 #import <Cocoa/Cocoa.h>
-#include "CocoaVulkanApplication.h"
+#include "VulkanApplication.hpp"
 
 using namespace My;
 
@@ -15,7 +15,7 @@ typedef struct VkMetalSurfaceCreateInfoEXT
 
 typedef VkResult (VKAPI_PTR *PFN_vkCreateMetalSurfaceEXT)(VkInstance, const VkMetalSurfaceCreateInfoEXT*, const VkAllocationCallbacks*, VkSurfaceKHR*);
 
-VkResult CocoaVulkanApplication::CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface) {
+VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface) {
     @autoreleasepool {
         VkResult err;
 
@@ -39,7 +39,7 @@ VkResult CocoaVulkanApplication::CreateWindowSurface(vk::Instance instance, VkSu
     }
 }
 
-void CocoaVulkanApplication::CreateMainWindow() {
+void VulkanApplication::CreateMainWindow() {
     CocoaMetalApplication::CreateMainWindow();
 
     // 设置回调函数
@@ -51,6 +51,11 @@ void CocoaVulkanApplication::CreateMainWindow() {
     m_Rhi.setFramebufferSizeQueryCB(getFramebufferSize);
 
     // 创建实例
+    std::vector<const char*> extensions = {
+        "VK_KHR_surface", "VK_EXT_metal_surface",
+        "VK_KHR_portability_enumeration",
+        "VK_KHR_get_physical_device_properties2"};
+
     m_Rhi.createInstance(extensions);
 
     // 开启调试层（对发行版不起作用）
@@ -83,8 +88,8 @@ void CocoaVulkanApplication::CreateMainWindow() {
     m_Rhi.createSwapChain();
 }
 
-void CocoaVulkanApplication::Finalize() {
+void VulkanApplication::Finalize() {
     m_Rhi.destroyAll();
 
-    CocoaVulkanApplication::Finalize();
+    VulkanApplication::Finalize();
 }

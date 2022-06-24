@@ -3,7 +3,7 @@
 #include "Vulkan/VulkanRHI.hpp"
 
 namespace My {
-class CocoaVulkanApplication : public CocoaMetalApplication {
+class VulkanApplication : public CocoaMetalApplication {
    public:
     using CocoaMetalApplication::CocoaMetalApplication;
     VkResult CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface);
@@ -11,6 +11,8 @@ class CocoaVulkanApplication : public CocoaMetalApplication {
     void CreateMainWindow() final;
 
     void Finalize() final;
+
+    VulkanRHI& GetRHI() { return m_Rhi; }
 
    private:
     VulkanRHI m_Rhi;

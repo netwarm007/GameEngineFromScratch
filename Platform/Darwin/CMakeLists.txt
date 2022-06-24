@@ -14,7 +14,7 @@ set (PlatformSources
 )
 
 if(Vulkan_FOUND)
-list (APPEND PlatformSources CocoaVulkanApplication.mm)
+list (APPEND PlatformSources VulkanApplication.mm)
 endif(Vulkan_FOUND)
 
 add_library(PlatformInterface
