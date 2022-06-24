@@ -85,6 +85,7 @@ init:
 
       # install vulkan SDK
       choco install vulkan-sdk -y
+      refreshenv
 
 build_script:
 - cmd: >-
