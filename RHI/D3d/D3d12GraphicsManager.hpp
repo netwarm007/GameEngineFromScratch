@@ -20,7 +20,6 @@ class D3d12GraphicsManager : public GraphicsManager {
     int Initialize() final;
     void Finalize() final;
 
-    void Draw() final;
     void Present() final;
 
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
@@ -29,14 +28,15 @@ class D3d12GraphicsManager : public GraphicsManager {
     void DrawBatch(const Frame& frame) final;
 
     intptr_t GenerateCubeShadowMapArray(const uint32_t width,
-                                       const uint32_t height,
-                                       const uint32_t count) final;
+                                        const uint32_t height,
+                                        const uint32_t count) final;
     intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height,
-                                   const uint32_t count) final;
+                                    const uint32_t count) final;
     void BeginShadowMap(const int32_t light_index, const intptr_t shadowmap,
                         const uint32_t width, const uint32_t height,
                         const int32_t layer_index, const Frame& frame) final;
-    void EndShadowMap(const intptr_t shadowmap, const int32_t layer_index) final;
+    void EndShadowMap(const intptr_t shadowmap,
+                      const int32_t layer_index) final;
     void SetShadowMaps(const Frame& frame) final;
     void CreateTexture(SceneObjectTexture& texture) final;
     void ReleaseTexture(intptr_t texture) final;

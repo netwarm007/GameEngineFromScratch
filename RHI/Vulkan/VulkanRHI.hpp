@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <vector>
 
 #define VK_ENABLE_BETA_EXTENSIONS
@@ -10,9 +11,51 @@
 namespace My {
 
 class VulkanRHI {
+    using QueryFrameBufferSizeFunc = std::function<void(int&, int&)>;
+    using CreateSurfaceFunc =
+        std::function<void(const vk::Instance&, vk::SurfaceKHR&)>;
+
    public:
     VulkanRHI();
     ~VulkanRHI();
+
+   public:
+    void setFramebufferSizeQueryCB(const QueryFrameBufferSizeFunc& func) {
+        m_fQueryFramebufferSize = func;
+    }
+    void createInstance(std::vector<const char*> extensions);
+    void setupDebugMessenger();
+    void createSurface(const CreateSurfaceFunc& func);
+    void pickPhysicalDevice();
+    void createLogicalDevice();
+    void createSwapChain();
+    void createImageViews();
+    void getDeviceQueues();
+    void createRenderPass();
+    void createDescriptorSetLayout();
+    void setShaders(const Buffer& vertShaderCode, const Buffer& fragShaderCode);
+    void createGraphicsPipeline();
+    void createCommandPool();
+    void createColorResources();
+    void createDepthResources();
+    void createFramebuffers();
+    void createTextureImage(Image& image);
+    void createTextureImageView(Image& image);
+    void createTextureSampler();
+    void setModel(const std::vector<Vertex>& vertices,
+                  const std::vector<uint32_t>& indices);
+    void createVertexBuffer();
+    void createIndexBuffer();
+    void createUniformBuffers();
+    void createDescriptorPool();
+    void createDescriptorSets();
+    void createCommandBuffers();
+    void createSyncObjects();
+    void drawFrame();
+    void cleanupSwapChain();
+    void recreateSwapChain();
+
+    void destroyAll();
 
    private:
     vk::Instance m_vkInstance;
@@ -78,51 +121,11 @@ class VulkanRHI {
     vk::ShaderModule m_vkVertShaderModule;
     vk::ShaderModule m_vkFragShaderModule;
 
-    using QueryFrameBufferSizeFunc = std::function<void(int&, int&)>;
     QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
 
-   public:
-    void setFramebufferSizeQueryCB(const QueryFrameBufferSizeFunc& func) {
-        m_fQueryFramebufferSize = func;
-    }
-    void createInstance(std::vector<const char*> extensions);
-    void setupDebugMessenger();
-    void createSurface(
-        const std::function<void(const vk::Instance&, vk::SurfaceKHR&)>&);
-    void pickPhysicalDevice();
-    void createLogicalDevice();
-    void createSwapChain();
-    void createImageViews();
-    void getDeviceQueues();
-    void createRenderPass();
-    void createDescriptorSetLayout();
-    void setShaders(const Buffer& vertShaderCode, const Buffer& fragShaderCode);
-    void createGraphicsPipeline();
-    void createCommandPool();
-    void createColorResources();
-    void createDepthResources();
-    void createFramebuffers();
-    void createTextureImage(Image& image);
-    void createTextureImageView(Image& image);
-    void createTextureSampler();
-    void setModel(const std::vector<Vertex>& vertices,
-                  const std::vector<uint32_t>& indices);
-    void createVertexBuffer();
-    void createIndexBuffer();
-    void createUniformBuffers();
-    void createDescriptorPool();
-    void createDescriptorSets();
-    void createCommandBuffers();
+   private:
     void recordCommandBuffer(vk::CommandBuffer& commandBuffer,
                              uint32_t imageIndex);
-    void createSyncObjects();
-    void drawFrame();
-    void cleanupSwapChain();
-    void recreateSwapChain();
-
-    void destroyAll();
-
-   private:
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                       vk::MemoryPropertyFlags properties, vk::Buffer& buffer,
                       vk::DeviceMemory& bufferMemory);
@@ -148,7 +151,7 @@ class VulkanRHI {
                            uint32_t width, uint32_t height);
     uint32_t findMemoryType(uint32_t typeFilter,
                             vk::MemoryPropertyFlags properties);
-    void updateUniformBufer(uint32_t currentImage);
+    void updateUniformBufer();
     void getTextureFormat(const Image& img, vk::Format& internal_format);
     vk::CommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(vk::CommandBuffer& commandBuffer);

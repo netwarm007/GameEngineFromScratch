@@ -1,6 +1,7 @@
 add_library(D3dRHI
     D3d12GraphicsManager.cpp
     D3d12PipelineStateManager.cpp
+    D3d12RHI.cpp
     imgui_impl_dx12.cpp
 )
 

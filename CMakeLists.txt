@@ -8,7 +8,9 @@ set (CMAKE_CXX_EXTENSIONS OFF)
 set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (THREADS_PREFER_PTHREAD_FLAG ON)
 
-set (USE_ISPC 1)
+option(USE_ISPC "Use ISPC for geometry math" ON)
+option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
+
 IF(UNIX)
     IF(APPLE)
         set(MYGE_TARGET_PLATFORM "Darwin")
@@ -106,6 +108,7 @@ find_library(ISPCTEXCOMP_LIBRARY ispc_texcomp PATHS ${MYGE_EXTERNAL_LIBRARY_PATH
 
 include(FindVulkan)
 if(Vulkan_FOUND)
+set(HAS_VULKAN 1)
 execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/Vulkan-hpp)
 include_directories(${Vulkan_INCLUDE_DIRS})
 include_directories(${MYGE_EXTERNAL_ROOT}/../src/Vulkan-hpp/)

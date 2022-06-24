@@ -2,20 +2,22 @@ add_custom_target(Engine_Asset_Shaders
         COMMAND echo "Start processing Engine Shaders"
     )
 
-set(HLSL_SHADER_SOURCES basic.vert basic.frag
+set(HLSL_SHADER_SOURCES 
+            simple.vert simple.frag
+            basic.vert basic.frag
             debug.vert debug.frag
             cubemap.frag cubemaparray.frag
             pbr.vert pbr.frag
             skybox.vert skybox.frag
             shadowmap.vert shadowmap.frag
-            shadowmap_omni.geom shadowmap_omni.vert shadowmap_omni.frag
+            shadowmap_omni.vert shadowmap_omni.frag
             texture.frag texturearray.frag
             passthrough.vert passthrough_cube.vert
             integrateBRDF.comp
             raytrace.comp
         )
 
-set(GLSL_SHADER_SOURCES simple.vert simple.frag
+set(GLSL_SHADER_SOURCES #simple.vert simple.frag
         )
 
 IF(WIN32)
@@ -44,7 +46,7 @@ foreach(SHADER IN LISTS HLSL_SHADER_SOURCES)
 
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
         COMMENT "HLSL --> SPIR-V"
-	    COMMAND ${GLSL_VALIDATOR} -V -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
+	    COMMAND ${GLSL_VALIDATOR} -V -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main --uniform-base 1 ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS HLSL/${part1}.${part2}.hlsl
     )
@@ -91,7 +93,7 @@ IF(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
     )
 
-    foreach(SHADER IN LISTS SHADER_SOURCES)
+    foreach(SHADER IN LISTS HLSL_SHADER_SOURCES)
         set(SHADER_BIN ${SHADER_BIN_DIR}/${SHADER}.cso)
         if (SHADER MATCHES "^([a-zA-Z0-9_]*)\.vert$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD

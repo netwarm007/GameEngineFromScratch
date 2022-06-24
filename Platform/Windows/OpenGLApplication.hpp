@@ -6,7 +6,6 @@ class OpenGLApplication : public WindowsApplication {
    public:
     using WindowsApplication::WindowsApplication;
 
-    int Initialize() override;
     void Finalize() override;
     void Tick() override;
 

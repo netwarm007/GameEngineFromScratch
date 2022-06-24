@@ -1606,8 +1606,6 @@ void D3d12GraphicsManager::BeginPass(const Frame& frame) {
         dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
-void D3d12GraphicsManager::Draw() { GraphicsManager::Draw(); }
-
 void D3d12GraphicsManager::DrawBatch(const Frame& frame) {
     for (const auto& pDbc : frame.batchContexts) {
         const D3dDrawBatchContext& dbc =

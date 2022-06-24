@@ -25,11 +25,32 @@ if(Vulkan_FOUND)
 endif(Vulkan_FOUND)
 endif(OS_MACOS OR OS_WINDOWS)
 
+if(OS_WINDOWS)
+    execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/tinyobjloader)
+    add_executable(D3d12RHITest D3d12RHITest.cpp)
+    target_include_directories(D3d12RHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
+    target_link_libraries(D3d12RHITest Framework D3dRHI PlatformInterface)
+endif(OS_WINDOWS)
+
 set(PLATFORM_TEST_CASES BasicWindowTest)
 
 foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
     target_link_libraries(${TEST_CASE} Framework PlatformInterface)
+endforeach(TEST_CASE)
+
+set(GRAPHICS_TEST_CASES GraphicsWindowTest ImGuiTest)
+
+foreach(TEST_CASE IN LISTS GRAPHICS_TEST_CASES)
+    add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
+    target_link_libraries(${TEST_CASE} Framework PlatformInterface)
+    if(OS_MACOS)
+        target_link_libraries(${TEST_CASE} MetalRHI VulkanRHI)
+    elseif(OS_WINDOWS)
+        target_link_libraries(${TEST_CASE} D3dRHI OpenGLRHI VulkanRHI)
+    else()
+        target_link_libraries(${TEST_CASE} OpenGLRHI VulkanRHI)
+    endif(OS_MACOS)
 endforeach(TEST_CASE)
 
 IF(WA)

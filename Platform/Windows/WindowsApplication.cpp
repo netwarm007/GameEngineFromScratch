@@ -20,7 +20,7 @@ void WindowsApplication::CreateMainWindow() {
     // fill in the struct with the needed information
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = WindowProc;
+    wc.lpfnWndProc = m_fWindowProc;
     wc.hInstance = m_hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
@@ -108,8 +108,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              LPARAM lParam);
 
 // this is the main message handler for the program
-LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
-                                                WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK WindowsApplication::m_fWindowProc(HWND hWnd, UINT message,
+                                                   WPARAM wParam,
+                                                   LPARAM lParam) {
     LRESULT result = 0;
 
     WindowsApplication* pThis;
@@ -132,6 +133,11 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
 
     // sort through and find what code to run for the message given
     switch (message) {
+        case WM_SIZE:
+            if (pThis) {
+                pThis->onWindowResize(LOWORD(lParam), HIWORD(lParam));
+            }
+            break;
         case WM_CHAR:
             if (pThis && pThis->m_pInputManager) {
                 pThis->m_pInputManager->AsciiKeyDown(static_cast<char>(wParam));
@@ -223,17 +229,25 @@ LRESULT CALLBACK WindowsApplication::WindowProc(HWND hWnd, UINT message,
             }
             break;
         // this message is read when the window is closed
-        case WM_DESTROY: {
+        case WM_CLOSE: {
             // close the application entirely
-            PostQuitMessage(0);
             if (pThis) {
                 pThis->m_bQuit = true;
             }
+
+            return 0;
         } break;
         default:;
     }
-
     result = DefWindowProc(hWnd, message, wParam, lParam);
 
     return result;
+}
+
+void WindowsApplication::GetFramebufferSize(int& width, int& height) {
+    RECT rect;
+    GetClientRect(m_hWnd, &rect);
+
+    width = rect.right - rect.left;
+    height = rect.bottom - rect.top;
 }

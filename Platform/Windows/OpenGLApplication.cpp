@@ -21,14 +21,6 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam,
     return 0;
 }
 
-int OpenGLApplication::Initialize() {
-    int result = 0;
-
-    WindowsApplication::Initialize();
-
-    return result;
-}
-
 void OpenGLApplication::Finalize() {
     if (m_RenderContext) {
         wglMakeCurrent(NULL, NULL);
@@ -89,7 +81,8 @@ void OpenGLApplication::CreateMainWindow() {
     HDC TemphDC = GetDC(TemphWnd);
     // Set a temporary default pixel format.
     m_nPixelFormat = ChoosePixelFormat(TemphDC, &m_pfd);
-    assert(m_nPixelFormat && "Pixel format specified it not supported by the platform!");
+    assert(m_nPixelFormat &&
+           "Pixel format specified it not supported by the platform!");
 
     auto result = SetPixelFormat(TemphDC, m_nPixelFormat, &m_pfd);
     assert(result == 1 && "SetPixelFormat failed!");
@@ -155,7 +148,8 @@ void OpenGLApplication::CreateMainWindow() {
             printf("wglChoosePixelFormatARB failed!\n");
         }
 
-        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) && "SetPixelFormat failed!\n");
+        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) &&
+               "SetPixelFormat failed!\n");
 
         const int context_attributes[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB,
@@ -173,9 +167,11 @@ void OpenGLApplication::CreateMainWindow() {
             0};
 
         assert((m_RenderContext =
-            wglCreateContextAttribsARB(m_hDC, 0, context_attributes)) && "wglCreateContextAttributeARB failed!\n");
+                    wglCreateContextAttribsARB(m_hDC, 0, context_attributes)) &&
+               "wglCreateContextAttributeARB failed!\n");
 
-        assert(wglMakeCurrent(m_hDC, m_RenderContext) && "wglMakeCurrent failed!\n");
+        assert(wglMakeCurrent(m_hDC, m_RenderContext) &&
+               "wglMakeCurrent failed!\n");
     } else {
         // Set pixel format.
         m_nPixelFormat = ChoosePixelFormat(m_hDC, &m_pfd);
@@ -183,13 +179,16 @@ void OpenGLApplication::CreateMainWindow() {
             printf("ChoosePixelFormat failed!\n");
         }
 
-        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) && "SetPixelFormat failed!\n");
+        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) &&
+               "SetPixelFormat failed!\n");
 
         // Create rendering context.
-        assert((m_RenderContext = wglCreateContext(m_hDC)) && "wglCreateContext failed!\n");
+        assert((m_RenderContext = wglCreateContext(m_hDC)) &&
+               "wglCreateContext failed!\n");
 
         // Set the rendering context as the current rendering context for this
         // window.
-        assert(wglMakeCurrent(m_hDC, m_RenderContext) && "wglMakeCurrent failed!\n");
+        assert(wglMakeCurrent(m_hDC, m_RenderContext) &&
+               "wglMakeCurrent failed!\n");
     }
 }

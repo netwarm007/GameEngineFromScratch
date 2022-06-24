@@ -18,10 +18,15 @@ class WindowsApplication : public BaseApplication {
 
     void CreateMainWindow() override;
 
+    void GetFramebufferSize(int& width, int& height) override;
+
+   protected:
+    virtual void onWindowResize(int new_width, int new_height) {}
+
    private:
     // the WindowProc function prototype
-    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam,
-                                       LPARAM lParam);
+    static LRESULT CALLBACK m_fWindowProc(HWND hWnd, UINT message,
+                                          WPARAM wParam, LPARAM lParam);
 
    protected:
     HINSTANCE m_hInstance = NULL;

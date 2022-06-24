@@ -4,7 +4,7 @@
 struct gs_layered_output
 {
     float4 pos : SV_POSITION;
-    int slice  : SV_RENDERTARGETARRAYINDEX;
+    uint slice  : SV_RENDERTARGETARRAYINDEX;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -17,10 +17,10 @@ void shadowmap_omni_geom_main(triangle pos_only_vert_output _entryPointOutput[3]
 
     for(int face = 0; face < 6; face++)
     {
-        output.slice = int(shadowmap_layer_index) * 6 + face; // built-in variable that specifies to which face we render.
+        output.slice = uint(shadowmap_layer_index) * 6 + face; // built-in variable that specifies to which face we render.
         for(int i = 0; i < 3; ++i) // for each triangle's vertices
         {
-            //output.pos = mul(_entryPointOutput[i].pos, shadowMatrices[face]);
+            output.pos = mul(_entryPointOutput[i].pos, shadowMatrices[face]);
             OutputStream.Append(output);
         }    
         OutputStream.RestartStrip();

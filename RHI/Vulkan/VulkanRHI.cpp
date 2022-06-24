@@ -251,8 +251,9 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
         VK_MAKE_VERSION(0, 1, 0), VK_API_VERSION_1_1);
 
     // 初始化 vk::InstanceCreateInfo
-    vk::InstanceCreateInfo instanceCreateInfo({vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR}, &applicationInfo, {},
-                                              extensions);
+    vk::InstanceCreateInfo instanceCreateInfo(
+        {vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR},
+        &applicationInfo, {}, extensions);
 
     m_vkInstance = vk::createInstance(instanceCreateInfo);
 }
@@ -464,12 +465,17 @@ void VulkanRHI::createLogicalDevice() {
 
     auto extensions = deviceExtensions;
 
-    auto result = m_vkPhysicalDevice.getFeatures2<vk::PhysicalDeviceFeatures2KHR, vk::PhysicalDevicePortabilitySubsetFeaturesKHR> ({});
-    auto portabilityFeatures = result.get<vk::PhysicalDevicePortabilitySubsetFeaturesKHR>();
+    auto result =
+        m_vkPhysicalDevice
+            .getFeatures2<vk::PhysicalDeviceFeatures2KHR,
+                          vk::PhysicalDevicePortabilitySubsetFeaturesKHR>({});
+    auto portabilityFeatures =
+        result.get<vk::PhysicalDevicePortabilitySubsetFeaturesKHR>();
 
     vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos,
                                     {}, extensions, &deviceFeatures);
-    createInfo.pNext = (VkPhysicalDevicePortabilitySubsetFeaturesKHR*)&portabilityFeatures;
+    createInfo.pNext =
+        (VkPhysicalDevicePortabilitySubsetFeaturesKHR*)&portabilityFeatures;
 
     m_vkDevice = m_vkPhysicalDevice.createDevice(createInfo);
 }
@@ -683,12 +689,12 @@ void VulkanRHI::createGraphicsPipeline() {
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo;
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
     vertShaderStageInfo.module = m_vkVertShaderModule;
-    vertShaderStageInfo.pName = "main";
+    vertShaderStageInfo.pName = "simple_vert_main";
 
     vk::PipelineShaderStageCreateInfo fragShaderStageInfo;
     fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
     fragShaderStageInfo.module = m_vkFragShaderModule;
-    fragShaderStageInfo.pName = "main";
+    fragShaderStageInfo.pName = "simple_frag_main";
 
     std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages = {
         vertShaderStageInfo, fragShaderStageInfo};
@@ -929,7 +935,7 @@ void VulkanRHI::drawFrame() {
         recordCommandBuffer(m_vkCommandBuffers[m_nCurrentFrame], imageIndex);
 
         // 更新常量
-        updateUniformBufer(m_nCurrentFrame);
+        updateUniformBufer();
 
         // 提交 Command Buffer
         vk::SubmitInfo submitInfo;
@@ -1193,7 +1199,7 @@ void VulkanRHI::createUniformBuffers() {
     }
 }
 
-void VulkanRHI::updateUniformBufer(uint32_t currentImage) {
+void VulkanRHI::updateUniformBufer() {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -1213,10 +1219,10 @@ void VulkanRHI::updateUniformBufer(uint32_t currentImage) {
 
     // 上传数据
     void* data;
-    vkMapMemory(m_vkDevice, m_vkUniformBuffersMemory[currentImage], 0,
+    vkMapMemory(m_vkDevice, m_vkUniformBuffersMemory[m_nCurrentFrame], 0,
                 sizeof(ubo), 0, &data);
     memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(m_vkDevice, m_vkUniformBuffersMemory[currentImage]);
+    vkUnmapMemory(m_vkDevice, m_vkUniformBuffersMemory[m_nCurrentFrame]);
 }
 
 void VulkanRHI::createDescriptorPool() {
@@ -1385,7 +1391,7 @@ void VulkanRHI::getTextureFormat(const Image& img,
         } else if (img.bitcount == 16) {
             internal_format = vk::Format::eR16Unorm;
         } else if (img.bitcount == 24) {
-            internal_format = vk::Format::eR8G8B8Srgb;
+            internal_format = vk::Format::eR8G8B8A8Unorm;
         } else if (img.bitcount == 32) {
             internal_format = vk::Format::eR8G8B8A8Unorm;
         } else if (img.bitcount == 64) {
