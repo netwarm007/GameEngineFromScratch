@@ -27,30 +27,6 @@ int main() {
 
     auto& rhi = app.GetRHI();
 
-    // 创建设备
-    rhi.CreateDevice();
-
-    // 打开调试层（只对Debug版本有效）
-    rhi.EnableDebugLayer();
-
-    // 创建命令提交队列
-    rhi.CreateCommandQueues();
-
-    // 创建交换链
-    rhi.CreateSwapChain();
-
-    // 创建同步对象
-    rhi.CreateSyncObjects();
-
-    // 创建渲染目标缓冲区
-    rhi.CreateRenderTargets();
-
-    // 创建深度和蒙板缓冲区
-    rhi.CreateDepthStencils();
-
-    // 创建Framebuffer描述表
-    rhi.CreateFramebuffers();
-
     // 创建图形管道
     {
         auto vertShader =
@@ -91,7 +67,7 @@ int main() {
 
         assert(!model_path.empty() && "Can not find model file!");
 
-        std::vector<Vertex> vertices;
+        std::vector<D3d12RHI::Vertex> vertices;
         std::vector<uint32_t> indices;
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
@@ -105,7 +81,7 @@ int main() {
 
         for (const auto& shape : shapes) {
             for (const auto& index : shape.mesh.indices) {
-                Vertex vertex{};
+                D3d12RHI::Vertex vertex{};
 
                 vertex.pos = {attrib.vertices[3 * index.vertex_index + 0],
                               attrib.vertices[3 * index.vertex_index + 1],
@@ -147,9 +123,6 @@ int main() {
         // 绘制一帧
         rhi.DrawFrame();
     }
-
-    // 销毁相关资源
-    rhi.DestroyAll();
 
     app.Finalize();
 

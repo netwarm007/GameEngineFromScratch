@@ -921,7 +921,7 @@ void D3d12RHI::DrawFrame() {
 
     // MSAA Resolve
     if (m_fGetGfxConfigHandler().msaaSamples > 1) {
-        MsaaResolve();
+        msaaResolve();
     }
 
     // 更新常量
@@ -942,7 +942,7 @@ void D3d12RHI::DrawFrame() {
     moveToNextFrame();
 }
 
-void D3d12RHI::MsaaResolve() {
+void D3d12RHI::msaaResolve() {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
     D3D12_RESOURCE_BARRIER barrier[2];

@@ -11,8 +11,7 @@
 #include "Buffer.hpp"
 #include "GfxConfiguration.hpp"
 #include "Image.hpp"
-
-#include "a2v.hpp"
+#include "geommath.hpp"
 
 namespace My {
 
@@ -21,6 +20,19 @@ class D3d12RHI {
     using GetWindowHandlerFunc = std::function<HWND()>;
     using GetGfxConfigFunc = std::function<const GfxConfiguration&()>;
     using ResourceID = size_t;
+
+   public:
+    struct Vertex {
+        Vector3f pos;
+        Vector3f color;
+        Vector2f texCoord;
+    };
+
+    struct UniformBufferObject {
+        Matrix4X4f model;
+        Matrix4X4f view;
+        Matrix4X4f proj;
+    };
 
    public:
     D3d12RHI();
@@ -72,7 +84,6 @@ class D3d12RHI {
     void DestroyAll();
 
     void DrawFrame();
-    void MsaaResolve();
 
     void setModel(const std::vector<Vertex>& vertices,
                   const std::vector<uint32_t>& indices);
@@ -80,6 +91,7 @@ class D3d12RHI {
     void setShaders(Buffer& vertShaderCode, Buffer& fragShaderCode);
 
    private:
+    void msaaResolve();
     void beginSingleTimeCommands();
     void endSingleTimeCommands();
     void waitOnFrame();

@@ -49,45 +49,7 @@ int main() {
                                                "VK_KHR_win32_surface"};
 #endif
 
-        VulkanRHI rhi;
-        // 设置回调函数
-        auto getFramebufferSize = [&app](int& width, int& height) {
-            app.GetFramebufferSize(width, height);
-        };
-
-        // 设置回调函数
-        rhi.setFramebufferSizeQueryCB(getFramebufferSize);
-
-        // 创建实例
-        rhi.createInstance(extensions);
-
-        // 开启调试层（对发行版不起作用）
-        rhi.setupDebugMessenger();
-
-        // 创建（连接）画布
-        {
-            auto createWindowSurface = [&app](const vk::Instance& instance,
-                                              vk::SurfaceKHR& surface) {
-                VkSurfaceKHR _surface;
-                assert(instance);
-
-                if (app.CreateWindowSurface(instance, _surface) != VK_SUCCESS) {
-                    throw std::runtime_error("faild to create window surface!");
-                }
-
-                surface = _surface;
-            };
-            rhi.createSurface(createWindowSurface);
-        }
-
-        // 枚举物理设备并选择
-        rhi.pickPhysicalDevice();
-
-        // 创建逻辑设备
-        rhi.createLogicalDevice();
-
-        // 创建 SwapChain
-        rhi.createSwapChain();
+        auto& rhi = app.GetRHI();
 
         // 创建Image View
         rhi.createImageViews();
@@ -143,7 +105,7 @@ int main() {
 
             assert(!model_path.empty() && "Can not find model file!");
 
-            std::vector<Vertex> vertices;
+            std::vector<VulkanRHI::Vertex> vertices;
             std::vector<uint32_t> indices;
             tinyobj::attrib_t attrib;
             std::vector<tinyobj::shape_t> shapes;
@@ -157,7 +119,7 @@ int main() {
 
             for (const auto& shape : shapes) {
                 for (const auto& index : shape.mesh.indices) {
-                    Vertex vertex{};
+                    VulkanRHI::Vertex vertex{};
 
                     vertex.pos = {attrib.vertices[3 * index.vertex_index + 0],
                                   attrib.vertices[3 * index.vertex_index + 1],
@@ -201,9 +163,6 @@ int main() {
             app.Tick();
             rhi.drawFrame();
         }
-
-        // 销毁Vulkan上下文
-        rhi.destroyAll();
 
         app.Finalize();
     } catch (vk::SystemError& err) {

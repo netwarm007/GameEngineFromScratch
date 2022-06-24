@@ -10,12 +10,13 @@ class D3d12Application : public WindowsApplication {
    public:
     using WindowsApplication::WindowsApplication;
 
-    void CreateMainWindow() override;
+    void Finalize() final;
+    void CreateMainWindow() final;
 
     D3d12RHI& GetRHI() { return m_Rhi; }
 
    private:
-    void onWindowResize(int new_width, int new_height) override;
+    void onWindowResize(int new_width, int new_height) final;
 
    private:
     D3d12RHI m_Rhi;
