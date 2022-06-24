@@ -41,15 +41,19 @@ endforeach(TEST_CASE)
 
 set(GRAPHICS_TEST_CASES GraphicsWindowTest ImGuiTest)
 
+if(Vulkan_FOUND)
+set(VULKAN_RHI VulkanRHI)
+endif(Vulkan_FOUND)
+
 foreach(TEST_CASE IN LISTS GRAPHICS_TEST_CASES)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
     target_link_libraries(${TEST_CASE} Framework PlatformInterface)
     if(OS_MACOS)
-        target_link_libraries(${TEST_CASE} MetalRHI VulkanRHI)
+        target_link_libraries(${TEST_CASE} MetalRHI ${VULKAN_RHI})
     elseif(OS_WINDOWS)
-        target_link_libraries(${TEST_CASE} D3dRHI OpenGLRHI VulkanRHI)
+        target_link_libraries(${TEST_CASE} D3dRHI OpenGLRHI ${VULKAN_RHI})
     else()
-        target_link_libraries(${TEST_CASE} OpenGLRHI VulkanRHI)
+        target_link_libraries(${TEST_CASE} OpenGLRHI ${VULKAN_RHI})
     endif(OS_MACOS)
 endforeach(TEST_CASE)
 
