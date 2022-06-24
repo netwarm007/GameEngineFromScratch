@@ -215,12 +215,14 @@ class DdsParser : _implements_ ImageParser {
                     std::cerr << "D3DFMT_A16B16G16R16F" << std::endl;
                     img.compressed = false;
                     img.is_float = true;
+                    img.pixel_format = PIXEL_FORMAT::RGBA16;
                     assert(img.bitcount == 64);
                     break;
                 case MY_D3DFMT::D3DFMT_A32B32G32R32F:
                     std::cerr << "D3DFMT_A32B32G32R32F" << std::endl;
                     img.compressed = false;
                     img.is_float = true;
+                    img.pixel_format = PIXEL_FORMAT::RGBA32;
                     assert(img.bitcount == 128);
                     break;
                 default:
