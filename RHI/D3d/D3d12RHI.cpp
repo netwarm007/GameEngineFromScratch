@@ -240,7 +240,7 @@ void D3d12RHI::CreateSyncObjects() {
                                          IID_PPV_ARGS(&m_pGraphicsFence))) &&
            "failed to create fence object");
 
-    memset(m_nGraphicsFenceValues, 0, sizeof(m_nGraphicsFenceValues));
+    m_nGraphicsFenceValues.fill(0);
 
     m_hGraphicsFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     assert(m_hGraphicsFenceEvent);
@@ -523,10 +523,15 @@ D3d12RHI::ResourceID D3d12RHI::CreateTextureImage(Image& img) {
     // Copy data to the intermediate upload heap and then schedule a copy
     // from the upload heap to the Texture2D.
     D3D12_SUBRESOURCE_DATA textureData{};
-    textureData.pData = img.data;
-    textureData.RowPitch = img.pitch;
-    textureData.SlicePitch =
-        static_cast<uint64_t>(img.pitch) * static_cast<uint64_t>(img.Height);
+    if (img.compressed) {
+        textureData.pData = img.data;
+        textureData.RowPitch = img.pitch;
+        textureData.SlicePitch = img.data_size;
+    } else {
+        textureData.pData = img.data;
+        textureData.RowPitch = img.pitch;
+        textureData.SlicePitch = img.pitch * img.Height;
+    }
 
     beginSingleTimeCommands();
     UpdateSubresources(m_pCopyCommandList, pTextureBuffer, pTextureUploadHeap,
@@ -538,8 +543,6 @@ D3d12RHI::ResourceID D3d12RHI::CreateTextureImage(Image& img) {
 
     return m_pTextureBuffers.size();
 }
-
-void D3d12RHI::CreateTextureImageView(ResourceID idRes, uint32_t pos) { ; }
 
 void D3d12RHI::CreateTextureSampler() {
     const uint32_t num_samplers = 8;
@@ -649,8 +652,9 @@ void D3d12RHI::CreateGraphicsPipeline() {
     static const D3D12_INPUT_ELEMENT_DESC ied_simple[]{
         {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
          D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 2, 0,
-         D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
+        {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 0,
+         offsetof(Vertex, texCoord), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+         0}};
 
     // describe and create the graphics pipeline state object (PSO)
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psod{};
@@ -710,17 +714,21 @@ void D3d12RHI::CreateDescriptorSets() {
 }
 
 void D3d12RHI::waitOnFrame() {
-    auto fence_value = m_nGraphicsFenceValues[m_nCurrentFrame];
+    if (m_pGraphicsCommandQueue && m_pGraphicsFence &&
+        m_hGraphicsFenceEvent != INVALID_HANDLE_VALUE) {
+        auto fence_value = m_nGraphicsFenceValues[m_nCurrentFrame];
 
-    assert(SUCCEEDED(
-        m_pGraphicsCommandQueue->Signal(m_pGraphicsFence, fence_value)));
+        assert(SUCCEEDED(
+            m_pGraphicsCommandQueue->Signal(m_pGraphicsFence, fence_value)));
 
-    assert(SUCCEEDED(m_pGraphicsFence->SetEventOnCompletion(
-        fence_value, m_hGraphicsFenceEvent)));
+        assert(SUCCEEDED(m_pGraphicsFence->SetEventOnCompletion(
+            fence_value, m_hGraphicsFenceEvent)));
 
-    std::ignore = WaitForSingleObjectEx(m_hGraphicsFenceEvent, INFINITE, FALSE);
+        std::ignore =
+            WaitForSingleObjectEx(m_hGraphicsFenceEvent, INFINITE, FALSE);
 
-    m_nGraphicsFenceValues[m_nCurrentFrame]++;
+        m_nGraphicsFenceValues[m_nCurrentFrame]++;
+    }
 }
 
 void D3d12RHI::moveToNextFrame() {
@@ -768,6 +776,9 @@ void D3d12RHI::RecreateSwapChain() {
         CreateRenderTargets();
         CreateDepthStencils();
         CreateFramebuffers();
+
+        m_nCurrentFrame = 0;
+        m_nGraphicsFenceValues.fill(0);
     }
 }
 
@@ -854,8 +865,7 @@ void D3d12RHI::DrawFrame() {
     vertexBufferView.BufferLocation =
         m_pVertexBuffers[0]->GetGPUVirtualAddress();
     vertexBufferView.StrideInBytes = (UINT)sizeof(m_Vertices[0]);
-    vertexBufferView.SizeInBytes =
-        (UINT)m_Vertices.size() * sizeof(m_Vertices[0]);
+    vertexBufferView.SizeInBytes = m_Vertices.size() * sizeof(m_Vertices[0]);
 
     m_pCmdList->IASetVertexBuffers(0, 1, &vertexBufferView);
 
@@ -902,7 +912,7 @@ void D3d12RHI::DrawFrame() {
                                  ->GetGPUDescriptorHandleForHeapStart();
     m_pCmdList->SetGraphicsRootDescriptorTable(0, descriptorHandler);
 
-    // Sampler (s0)
+    // Sampler
     descriptorHandler = m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart();
     m_pCmdList->SetGraphicsRootDescriptorTable(1, descriptorHandler);
 
@@ -954,7 +964,7 @@ void D3d12RHI::MsaaResolve() {
 
     m_pCmdList->ResolveSubresource(m_pRenderTargets[m_nCurrentFrame], 0,
                                    m_pRenderTargets.back(), 0,
-                                   ::DXGI_FORMAT_R8G8B8A8_UNORM);
+                                   m_eSurfaceFormat);
 
     barrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;

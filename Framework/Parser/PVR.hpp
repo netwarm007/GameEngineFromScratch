@@ -157,24 +157,31 @@ class PvrParser : _implements_ ImageParser {
             switch (pHeader->pixel_format) {
                 case PVR::PixelFormat::BC1:
                     img.compress_format = COMPRESSED_FORMAT::BC1;
+                    img.pitch = img.Width / 4 * 8;
                     break;
                 case PVR::PixelFormat::BC2:
                     img.compress_format = COMPRESSED_FORMAT::BC2;
+                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC3:
                     img.compress_format = COMPRESSED_FORMAT::BC3;
+                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC4:
                     img.compress_format = COMPRESSED_FORMAT::BC4;
+                    img.pitch = img.Width / 4 * 8;
                     break;
                 case PVR::PixelFormat::BC5:
                     img.compress_format = COMPRESSED_FORMAT::BC5;
+                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC6H:
                     img.compress_format = COMPRESSED_FORMAT::BC6H;
+                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC7:
                     img.compress_format = COMPRESSED_FORMAT::BC7;
+                    img.pitch = img.Width / 4 * 16;
                     break;
                 default:
                     assert(0);

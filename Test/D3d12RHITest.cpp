@@ -25,7 +25,7 @@ int main() {
         app.CreateMainWindow();
     }
 
-    auto rhi = app.GetRHI();
+    auto& rhi = app.GetRHI();
 
     // 创建设备
     rhi.CreateDevice();
@@ -79,7 +79,6 @@ int main() {
         PVR::PvrParser parser;
         auto image = parser.Parse(buf);
         auto res_id = rhi.CreateTextureImage(image);
-        rhi.CreateTextureImageView(res_id, 0);
     }
 
     // 创建采样器

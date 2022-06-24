@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <functional>
 #include <vector>
 
@@ -51,7 +52,6 @@ class D3d12RHI {
     void CreateCommandLists();
 
     ResourceID CreateTextureImage(Image& img);
-    void CreateTextureImageView(ResourceID id, uint32_t pos);
 
     void CreateTextureSampler();
 
@@ -103,19 +103,20 @@ class D3d12RHI {
         nullptr;  // the pointer to the swap chain interface
     std::vector<ID3D12Resource*>
         m_pRenderTargets;  // the pointer to rendering buffer. [descriptor]
-    ID3D12Resource* m_pDepthStencilBuffer;
+    ID3D12Resource* m_pDepthStencilBuffer = nullptr;
 
-    ID3D12CommandAllocator* m_pGraphicsCommandAllocator;
+    ID3D12CommandAllocator* m_pGraphicsCommandAllocator = nullptr;
 
-    ID3D12CommandAllocator*
-        m_pComputeCommandAllocator;                   // the pointer to command
-                                                      // buffer allocator
-    ID3D12CommandAllocator* m_pCopyCommandAllocator;  // the pointer to command
-                                                      // buffer allocator
+    ID3D12CommandAllocator* m_pComputeCommandAllocator =
+        nullptr;  // the pointer to command
+                  // buffer allocator
+    ID3D12CommandAllocator* m_pCopyCommandAllocator =
+        nullptr;  // the pointer to command
+                  // buffer allocator
     std::vector<ID3D12GraphicsCommandList*> m_pGraphicsCommandLists;
 
-    ID3D12GraphicsCommandList* m_pComputeCommandList;
-    ID3D12GraphicsCommandList* m_pCopyCommandList;
+    ID3D12GraphicsCommandList* m_pComputeCommandList = nullptr;
+    ID3D12GraphicsCommandList* m_pCopyCommandList = nullptr;
 
     ID3D12CommandQueue*
         m_pGraphicsCommandQueue;                 // the pointer to command queue
@@ -124,11 +125,11 @@ class D3d12RHI {
 
     std::vector<ID3D12DescriptorHeap*> m_pRtvHeaps;
 
-    ID3D12DescriptorHeap* m_pDsvHeap;
+    ID3D12DescriptorHeap* m_pDsvHeap = nullptr;
 
     std::vector<ID3D12DescriptorHeap*> m_pCbvSrvUavHeaps;
 
-    ID3D12DescriptorHeap* m_pSamplerHeap;
+    ID3D12DescriptorHeap* m_pSamplerHeap = nullptr;
 
     uint32_t m_nRtvDescriptorSize;
     uint32_t m_nCbvSrvUavDescriptorSize;
@@ -154,16 +155,18 @@ class D3d12RHI {
     D3D12_SHADER_BYTECODE m_PixelShaderModule;
 
     // Synchronization objects
-    HANDLE m_hGraphicsFenceEvent;
-    HANDLE m_hCopyFenceEvent;
-    HANDLE m_hComputeFenceEvent;
-    ID3D12Fence* m_pGraphicsFence;
-    uint64_t m_nGraphicsFenceValues[GfxConfiguration::kMaxInFlightFrameCount];
+    HANDLE m_hGraphicsFenceEvent = INVALID_HANDLE_VALUE;
+    HANDLE m_hCopyFenceEvent = INVALID_HANDLE_VALUE;
+    HANDLE m_hComputeFenceEvent = INVALID_HANDLE_VALUE;
+    ID3D12Fence* m_pGraphicsFence = nullptr;
+    std::array<uint64_t, GfxConfiguration::kMaxInFlightFrameCount>
+        m_nGraphicsFenceValues;
 
     QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
     GetWindowHandlerFunc m_fGetWindowHandler;
     GetGfxConfigFunc m_fGetGfxConfigHandler;
 
     uint32_t m_nCurrentFrame = 0;
+    bool m_bInitialized = false;
 };
 }  // namespace My
