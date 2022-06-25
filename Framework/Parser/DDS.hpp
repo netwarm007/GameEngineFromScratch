@@ -277,12 +277,10 @@ class DdsParser : _implements_ ImageParser {
 
                 for (decltype(mipmap_count) i = 0; i < mipmap_count; i++) {
                     if (width > 0 && height > 0) {
-                        auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) *
-                                     img.bitcount *
-                                     2;  //  img.bitcount / 8 * 16
+                        auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) * ((img.compress_format == COMPRESSED_FORMAT::DXT1)? 8 : 16);
                         img.mipmaps.emplace_back(
                             width, height, pitch,
-                            pitch * (ALIGN(height, 4) >> 2), img.data_size);
+                            img.data_size, pitch * (ALIGN(height, 4) >> 2));
                         img.data_size += img.mipmaps[i].data_size;
 
                         width >>= 1;   // /2

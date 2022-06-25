@@ -524,10 +524,9 @@ class JfifParser : _implements_ ImageParser {
                         img.Height = m_nLines;
                         img.bitcount = 32;
                         img.bitdepth = 8;
-                        img.pixel_format = PIXEL_FORMAT::RGB8;
+                        img.pixel_format = PIXEL_FORMAT::RGBA8; // alpha is fixed to 0xFF
                         img.pitch = mcu_count_x * 8 * (img.bitcount >> 3);
-                        img.data_size = (size_t)img.pitch * mcu_count_y * 8 *
-                                        (img.bitcount >> 3);
+                        img.data_size = (size_t)img.pitch * mcu_count_y * 8;
                         img.data = new uint8_t[img.data_size];
 
                         pData += (ptrdiff_t)endian_net_unsigned_int(
