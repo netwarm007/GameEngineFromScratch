@@ -9,18 +9,17 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
     //float2 texCoords = ParallaxMapping(_entryPointOutput.uv, viewDir);
     float2 texCoords = _entryPointOutput.uv;
 
-    float3 tangent_normal = normalMap.Sample(samp0, texCoords).rgb;
-    tangent_normal = tangent_normal * 2.0f - 1.0f;   
-    float3 N = normalize(mul(tangent_normal, _entryPointOutput.TBN)); 
+    float3 albedo = inverse_gamma_correction(diffuseMap.Sample(samp0, texCoords).rgb); 
+    float meta = metallicMap.Sample(samp0, texCoords).r; 
+    float rough = metallicMap.Sample(samp0, texCoords).g; 
+    float3 tangent_normal;
+    tangent_normal.xy = normalMap.Sample(samp0, texCoords).rg;
+    tangent_normal = tangent_normal * 2.0f - 1.00392f;   
+    tangent_normal.z = sqrt(clamp(1.0f - tangent_normal.x * tangent_normal.x - tangent_normal.y * tangent_normal.y, 0.0f, 1.0f));
+    float3 N = mul(tangent_normal, _entryPointOutput.TBN); 
 
     float3 V = normalize(camPos.xyz - _entryPointOutput.v_world.xyz);
     float3 R = reflect(-V, N);   
-
-    float3 albedo = inverse_gamma_correction(diffuseMap.Sample(samp0, texCoords).rgb); 
-
-    float meta = metallicMap.Sample(samp0, texCoords).r; 
-
-    float rough = roughnessMap.Sample(samp0, texCoords).r; 
 
     float3 F0 = 0.04f.xxx; 
     F0 = lerp(F0, albedo, meta);
@@ -71,7 +70,7 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
     float3 ambient;
     {
         // ambient diffuse
-        float ambientOcc = aoMap.Sample(samp0, texCoords).r;
+        float ambientOcc = metallicMap.Sample(samp0, texCoords).b;
 
         float3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0f), F0, rough);
         float3 kS = F;
@@ -107,7 +106,7 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
     }
 
     float3 linearColor = ambient + Lo;
-	
+
     // tone mapping
     linearColor = reinhard_tone_mapping(linearColor);
    

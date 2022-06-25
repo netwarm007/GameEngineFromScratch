@@ -163,13 +163,13 @@ namespace My {
         if(global_symbol_table.end() != global_symbol_table.find(idn)) {
             // symbol already defined
             std::cerr << "\x1b[41m\x1b[33m";
-            std::cerr << "【错误】符号重定义 {" << idn << "} ！" << std::endl;
+            std::cerr << "[Error] Redefine of symbol {" << idn << "} !" << std::endl;
             std::cerr << "\x1b[49m\x1b[37m";
         }
         else {
             global_symbol_table.emplace(idn, ref);
             std::cerr << "\x1b[46m\x1b[30m";
-            std::cerr << "【信息】符号{" << idn << "}已经注册到全局符号表！" << std::endl;
+            std::cerr << "[Info] symbol {" << idn << "} has been registered!" << std::endl;
             std::cerr << "\x1b[49m\x1b[37m";
         }
     }
@@ -183,7 +183,7 @@ namespace My {
         if(global_symbol_table.end() == global_symbol_table.find(idn)) {
             // symbol type is not defined yet
             std::cerr << "\x1b[41m\x1b[33m";
-            std::cerr << "【错误】类型{" << idn << "}尚未定义！" << std::endl;
+            std::cerr << "[Error] type {" << idn << "} has not been defined yet!" << std::endl;
             std::cerr << "\x1b[49m\x1b[37m";
         }
     }

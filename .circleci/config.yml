@@ -5,7 +5,7 @@ orbs:
 jobs:
   build_windows:
     executor:
-      name: win/default
+      name: win/server-2022
       shell: powershell.exe
     steps:
       - run: systeminfo
@@ -123,10 +123,15 @@ jobs:
             scripts/build_bullet
             scripts/build_glslangValidator
             scripts/build_spirvcross
+            scripts/build_libispc-texcomp
       - run:
           name: "Build Engine"
           command: |
             scripts/build
+      - run:
+          name: "Cook Asset"
+          command: |
+            scripts/cook_material
       - run:
           name: "Test"
           command: |
@@ -195,10 +200,15 @@ jobs:
              ./scripts/build_bullet.sh
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
+             ./scripts/build_libispc-texcomp.sh
       - run:
           name: "Build Engine"
           command: |
              ./scripts/build-ninja.sh
+      - run:
+          name: "Cook Asset"
+          command: |
+            scripts/cook_material.sh
       - run:
           name: Test
           command: |
@@ -268,11 +278,16 @@ jobs:
              ./scripts/build_bullet.sh
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
+             ./scripts/build_libispc-texcomp.sh
       - run:
           name: "Build Engine"
           command: |
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              ./scripts/build-ninja.sh
+      - run:
+          name: "Cook Asset"
+          command: |
+            scripts/cook_material.sh
       - run:
           name: Test
           command: |

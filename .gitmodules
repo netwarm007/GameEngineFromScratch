@@ -43,6 +43,21 @@
 [submodule "imguid"]
 	path = External/src/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "External/src/flatbuffers"]
-	path = External/src/flatbuffers
-	url = https://github.com/google/flatbuffers.git
+[submodule "tinyobjloader"]
+	path = External/src/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "Vulkan-Hpp"]
+	path = External/src/Vulkan-hpp
+	url = https://github.com/KhronosGroup/Vulkan-Hpp.git
+[submodule "glfw"]
+	path = External/src/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "ISPCTextureCompressor"]
+	path = External/src/ISPCTextureCompressor
+	url = https://github.com/netwarm007/ISPCTextureCompressor.git
+[submodule "External/src/astc-encoder"]
+	path = External/src/astc-encoder
+	url = https://github.com/ARM-software/astc-encoder.git
+[submodule "External/src/Smouking"]
+	path = External/src/Smouking
+	url = https://gist.github.com/60a589d2f2ef5a68ac6e.git

@@ -57,6 +57,7 @@ External/*/share
 External/*/cmake
 External/*/include
 External/*/libdata
+External/*/share
 
 *.baiduyun.uploading.cfg
 Asset/Blender
@@ -67,3 +68,4 @@ GPUCache
 imgui.ini
 **/*.generated.hpp
 **/*.generated.cpp
+External/*/astcenc

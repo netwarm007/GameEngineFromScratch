@@ -8,7 +8,7 @@
 namespace My {
 template <typename T>
 struct ParameterValueMap {
-    T Value;
+    T Value = (T)0;
     std::shared_ptr<SceneObjectTexture> ValueMap;
 
     ParameterValueMap() = default;

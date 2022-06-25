@@ -11,4 +11,4 @@
 // Enable this to use OpenGL Debug ARB
 #cmakedefine OPENGL_RHI_DEBUG
 #cmakedefine D3D12_RHI_DEBUG
-
+#cmakedefine HAS_VULKAN

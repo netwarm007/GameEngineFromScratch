@@ -12,7 +12,7 @@ class AssetLoader : _implements_ IAssetLoader {
    public:
     AssetLoader() = default;
     ~AssetLoader() override = default;
-    int Initialize() override { return 0; }
+    int Initialize() override; 
     void Finalize() override {}
     void Tick() override {}
 
@@ -21,6 +21,8 @@ class AssetLoader : _implements_ IAssetLoader {
     bool RemoveSearchPath(const char* path) override;
 
     void ClearSearchPath() override;
+
+    std::string GetFileRealPath(const char* filePath);
 
     bool FileExists(const char* filePath) override;
 
@@ -54,9 +56,9 @@ class AssetLoader : _implements_ IAssetLoader {
     }
 
    protected:
-    std::string m_strTargetPath;
+    static std::string m_strTargetPath;
 
    private:
-    std::vector<std::string> m_strSearchPath;
+    static std::vector<std::string> m_strSearchPath;
 };
 }  // namespace My

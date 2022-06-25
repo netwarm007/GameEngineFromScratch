@@ -4,11 +4,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build External Dependencies",
+            "label": "Build External Dependencies (Debug)",
             "type": "shell",
-            "command": "./scripts/build_crossguid.sh && ./scripts/build_opengex.sh && ./scripts/build_zlib.sh && ./scripts/build_bullet.sh",
+            "command": "./scripts/build_crossguid.sh && ./scripts/build_opengex.sh && ./scripts/build_zlib.sh && ./scripts/build_bullet.sh && ./scripts/build_glslangValidator.sh && ./scripts/build_spirvcross.sh && ./scripts/build_libispc-texcomp.bat",
             "windows": {
-                "command": "scripts\\build_crossguid.bat && scripts\\build_opengex.bat && scripts\\build_zlib.bat && scripts\\build_bullet.bat"
+                "command": "scripts\\build_crossguid.bat; scripts\\build_opengex.bat; scripts\\build_zlib.bat; scripts\\build_bullet.bat; scripts\\build_glslangValidator.bat; scripts\\build_spirvcross.bat; scripts\\build_libispc-texcomp.bat"
             },
             "problemMatcher": [
                 "$msCompile"
@@ -16,11 +16,38 @@
             "group": "build"
         },
         {
-            "label": "Build Billiard Game",
+            "label": "Build External Dependencies (Release)",
             "type": "shell",
-            "command": "./scripts/build-ninja.sh",
+            "command": "./scripts/build_crossguid.sh Release && ./scripts/build_opengex.sh Release && ./scripts/build_zlib.sh Release && ./scripts/build_bullet.sh Release && ./scripts/build_glslangValidator.sh Release && ./scripts/build_spirvcross.sh Release && ./scripts/build_libispc-texcomp.sh Release",
             "windows": {
-                "command": "scripts\\build.bat",
+                "command": "scripts\\build_crossguid.bat Release; scripts\\build_opengex.bat Release; scripts\\build_zlib.bat Release; scripts\\build_bullet.bat Release; scripts\\build_glslangValidator.bat Release; scripts\\build_spirvcross.bat Release; scripts\\build_libispc-texcomp.bat Release"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "Build Engine (Debug)",
+            "type": "shell",
+            "command": "./scripts/build-ninja.sh Debug",
+            "windows": {
+                "command": "scripts\\build-ninja.bat Debug",
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build Engine (Release)",
+            "type": "shell",
+            "command": "./scripts/build-ninja.sh Release",
+            "windows": {
+                "command": "scripts\\build-ninja.bat Release",
             },
             "problemMatcher": [
                 "$msCompile"

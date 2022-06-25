@@ -116,11 +116,10 @@ class PngParser : _implements_ ImageParser {
                     endian_net_unsigned_int(pChunkHeader->Length);
 
 #if DUMP_DETAILS
-                std::cerr << "============================"
-                          << std::endl
+                std::cerr << "============================" << std::endl;
 #endif
 
-                    switch (type) {
+                switch (type) {
                     case PNG_CHUNK_TYPE::IHDR: {
 #if DUMP_DETAILS
                         std::cerr << "IHDR (Image Header)" << std::endl;
@@ -140,9 +139,35 @@ class PngParser : _implements_ ImageParser {
                         switch (m_ColorType) {
                             case 0:  // grayscale
                                 m_BytesPerPixel = (m_BitDepth + 7) >> 3;
+                                switch (m_BytesPerPixel) {
+                                    case 1:
+                                        img.pixel_format = PIXEL_FORMAT::R8;
+                                        break;
+                                    case 2:
+                                        img.pixel_format = PIXEL_FORMAT::R16;
+                                        break;
+                                    case 4:
+                                        img.pixel_format = PIXEL_FORMAT::R32;
+                                        break;
+                                    default:
+                                        assert(0);
+                                }
                                 break;
                             case 2:  // rgb true color
-                                m_BytesPerPixel = (m_BitDepth * 3) >> 3;
+                                m_BytesPerPixel = (m_BitDepth * 3 + 7) >> 3;
+                                switch (m_BytesPerPixel) {
+                                    case 3:
+                                        img.pixel_format = PIXEL_FORMAT::RGB8;
+                                        break;
+                                    case 6:
+                                        img.pixel_format = PIXEL_FORMAT::RGB16;
+                                        break;
+                                    case 12:
+                                        img.pixel_format = PIXEL_FORMAT::RGB32;
+                                        break;
+                                    default:
+                                        assert(0);
+                                }
                                 break;
                             case 3:  // indexed
                                 m_BytesPerPixel = (m_BitDepth + 7) >> 3;
@@ -152,14 +177,27 @@ class PngParser : _implements_ ImageParser {
                                 assert(0);
                                 break;
                             case 4:  // grayscale with alpha
-                                m_BytesPerPixel = (m_BitDepth * 2) >> 3;
+                                m_BytesPerPixel = (m_BitDepth * 2 + 7) >> 3;
                                 std::cerr
                                     << "Color Type 4 is not supported yet: "
                                     << m_ColorType << std::endl;
                                 assert(0);
                                 break;
-                            case 6:
-                                m_BytesPerPixel = (m_BitDepth * 4) >> 3;
+                            case 6:  // RGBA
+                                m_BytesPerPixel = (m_BitDepth * 4 + 7) >> 3;
+                                switch (m_BytesPerPixel) {
+                                    case 4:
+                                        img.pixel_format = PIXEL_FORMAT::RGBA8;
+                                        break;
+                                    case 8:
+                                        img.pixel_format = PIXEL_FORMAT::RGBA16;
+                                        break;
+                                    case 16:
+                                        img.pixel_format = PIXEL_FORMAT::RGBA32;
+                                        break;
+                                    default:
+                                        assert(0);
+                                }
                                 break;
                             default:
                                 std::cerr
@@ -168,13 +206,16 @@ class PngParser : _implements_ ImageParser {
                                 assert(0);
                         }
 
+                        assert(img.pixel_format != PIXEL_FORMAT::UNKNOWN);
+
                         m_ScanLineSize = m_BytesPerPixel * m_Width;
 
                         img.Width = m_Width;
                         img.Height = m_Height;
                         img.bitcount = m_BytesPerPixel * 8;
-                        img.pitch = (img.Width * (img.bitcount >> 3) + 3) &
-                                    ~3u;  // for GPU address alignment
+                        img.bitdepth = m_BitDepth;
+                        img.pitch = ALIGN(m_Width * m_BytesPerPixel,
+                                          4);  // for GPU address alignment
                         img.data_size = (size_t)img.pitch * img.Height;
                         img.data = new uint8_t[img.data_size];
 

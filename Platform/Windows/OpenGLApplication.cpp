@@ -21,8 +21,24 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam,
     return 0;
 }
 
-int OpenGLApplication::Initialize() {
-    int result;
+void OpenGLApplication::Finalize() {
+    if (m_RenderContext) {
+        wglMakeCurrent(NULL, NULL);
+        wglDeleteContext(m_RenderContext);
+        m_RenderContext = 0;
+    }
+
+    WindowsApplication::Finalize();
+}
+
+void OpenGLApplication::Tick() {
+    WindowsApplication::Tick();
+
+    // Present the back buffer to the screen since rendering is complete.
+    SwapBuffers(m_hDC);
+}
+
+void OpenGLApplication::CreateMainWindow() {
     auto colorBits =
         m_Config.redBits + m_Config.greenBits +
         m_Config
@@ -65,74 +81,32 @@ int OpenGLApplication::Initialize() {
     HDC TemphDC = GetDC(TemphWnd);
     // Set a temporary default pixel format.
     m_nPixelFormat = ChoosePixelFormat(TemphDC, &m_pfd);
-    if (m_nPixelFormat == 0) return -1;
+    assert(m_nPixelFormat &&
+           "Pixel format specified it not supported by the platform!");
 
-    result = SetPixelFormat(TemphDC, m_nPixelFormat, &m_pfd);
-    if (result != 1) {
-        return result;
-    }
+    auto result = SetPixelFormat(TemphDC, m_nPixelFormat, &m_pfd);
+    assert(result == 1 && "SetPixelFormat failed!");
 
     // Create a temporary rendering context.
     m_RenderContext = wglCreateContext(TemphDC);
-    if (!m_RenderContext) {
-        printf("wglCreateContext failed!\n");
-        return -1;
-    }
+    assert(m_RenderContext && "wglCreateContext failed!");
 
     // Set the temporary rendering context as the current rendering context for
     // this window.
     result = wglMakeCurrent(TemphDC, m_RenderContext);
-    if (result != 1) {
-        return result;
-    }
+    assert(result && "wglMakeCurrent failed!");
 
-    if (!gladLoadWGL(TemphDC)) {
-        printf("WGL initialize failed!\n");
-        result = -1;
-    } else {
-        result = 0;
-        printf("WGL initialize finished!\n");
-    }
+    assert(gladLoadWGL(TemphDC) && "WGL initialize failed!\n");
+    printf("WGL initialize finished!\n");
 
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(m_RenderContext);
     ReleaseDC(TemphWnd, TemphDC);
     DestroyWindow(TemphWnd);
 
-    BaseApplication::Initialize();
-
-    return result;
-}
-
-void OpenGLApplication::Finalize() {
-    if (m_RenderContext) {
-        wglMakeCurrent(NULL, NULL);
-        wglDeleteContext(m_RenderContext);
-        m_RenderContext = 0;
-    }
-
-    WindowsApplication::Finalize();
-}
-
-void OpenGLApplication::Tick() {
-    WindowsApplication::Tick();
-
-    // Present the back buffer to the screen since rendering is complete.
-    SwapBuffers(m_hDC);
-}
-
-void OpenGLApplication::CreateMainWindow() {
-    int result;
-    auto colorBits =
-        m_Config.redBits + m_Config.greenBits +
-        m_Config
-            .blueBits;  // note on windows this does not include alpha bitplane
-
     WindowsApplication::CreateMainWindow();
 
     m_hDC = GetDC(m_hWnd);
-
-    PIXELFORMATDESCRIPTOR m_pfd;
 
     // now we try to init OpenGL Core profile context
     if (GLAD_WGL_ARB_pixel_format && GLAD_WGL_ARB_multisample &&
@@ -168,16 +142,14 @@ void OpenGLApplication::CreateMainWindow() {
 
         UINT numFormats;
 
-        if (FAILED(wglChoosePixelFormatARB(m_hDC, attributes, nullptr, 1,
+        if (FAILED(wglChoosePixelFormatARB(m_hDC, attributes, nullptr, 1u,
                                            &m_nPixelFormat, &numFormats)) ||
             numFormats == 0) {
             printf("wglChoosePixelFormatARB failed!\n");
         }
 
-        result = SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd);
-        if (result != 1) {
-            printf("SetPixelFormat failed!\n");
-        }
+        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) &&
+               "SetPixelFormat failed!\n");
 
         const int context_attributes[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB,
@@ -194,41 +166,29 @@ void OpenGLApplication::CreateMainWindow() {
 #endif
             0};
 
-        m_RenderContext =
-            wglCreateContextAttribsARB(m_hDC, 0, context_attributes);
-        if (!m_RenderContext) {
-            printf("wglCreateContextAttributeARB failed!\n");
-        }
+        assert((m_RenderContext =
+                    wglCreateContextAttribsARB(m_hDC, 0, context_attributes)) &&
+               "wglCreateContextAttributeARB failed!\n");
 
-        result = wglMakeCurrent(m_hDC, m_RenderContext);
-        if (result != 1) {
-            printf("wglMakeCurrent failed!\n");
-        }
-
-        result = 0;  // we use 0 as success while OpenGL use 1, so convert it
+        assert(wglMakeCurrent(m_hDC, m_RenderContext) &&
+               "wglMakeCurrent failed!\n");
     } else {
         // Set pixel format.
-        int m_nPixelFormat = ChoosePixelFormat(m_hDC, &m_pfd);
+        m_nPixelFormat = ChoosePixelFormat(m_hDC, &m_pfd);
         if (m_nPixelFormat == 0) {
             printf("ChoosePixelFormat failed!\n");
         }
 
-        result = SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd);
-        if (result != 1) {
-            printf("SetPixelFormat failed!\n");
-        }
+        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) &&
+               "SetPixelFormat failed!\n");
 
         // Create rendering context.
-        m_RenderContext = wglCreateContext(m_hDC);
-        if (!m_RenderContext) {
-            printf("wglCreateContext failed!\n");
-        }
+        assert((m_RenderContext = wglCreateContext(m_hDC)) &&
+               "wglCreateContext failed!\n");
 
         // Set the rendering context as the current rendering context for this
         // window.
-        result = wglMakeCurrent(m_hDC, m_RenderContext);
-        if (result != 1) {
-            printf("wglMakeCurrent failed!\n");
-        }
+        assert(wglMakeCurrent(m_hDC, m_RenderContext) &&
+               "wglMakeCurrent failed!\n");
     }
 }

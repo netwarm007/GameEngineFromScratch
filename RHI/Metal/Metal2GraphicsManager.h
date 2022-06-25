@@ -41,8 +41,6 @@ class Metal2GraphicsManager : public GraphicsManager {
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
 
-    void SetRenderer(Metal2Renderer* renderer) { m_pRenderer = renderer; }
-
 #ifdef DEBUG
     void DrawTextureOverlay(const intptr_t texture, const float vp_left,
                             const float vp_top, const float vp_width,

@@ -98,9 +98,9 @@ int main(int argc, char** argv) {
     error = app.Initialize();
 
     if (argc >= 2) {
-        sceneManager.LoadScene(argv[1]);
+        loadScene(sceneManager, argv[1]);
     } else {
-        sceneManager.LoadScene("Scene/splash.ogex");
+        loadScene(sceneManager, "Scene/splash.ogex");
     }
 
     app.Finalize();

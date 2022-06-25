@@ -14,6 +14,12 @@ void XcbApplication::CreateMainWindow() {
     uint32_t mask = 0;
     uint32_t values[3];
 
+    /* Open Xlib Display */
+    m_pDisplay = XOpenDisplay(NULL);
+    if (!m_pDisplay) {
+        fprintf(stderr, "Can't open display\n");
+    }
+
     if (!m_pConn) {
         /* establish connection to X server */
         m_pConn = xcb_connect(NULL, NULL);
@@ -27,11 +33,6 @@ void XcbApplication::CreateMainWindow() {
     /* Acquire event queue ownership */
     XSetEventQueueOwner(m_pDisplay, XCBOwnsEventQueue);
 
-    if (!m_pScreen) {
-        /* get the first screen */
-        m_pScreen = xcb_setup_roots_iterator(xcb_get_setup(m_pConn)).data;
-    }
-
     /* get the root window */
     m_XWindow = m_pScreen->root;
 
@@ -40,6 +41,20 @@ void XcbApplication::CreateMainWindow() {
 
     xcb_create_colormap(m_pConn, XCB_COLORMAP_ALLOC_NONE, colormap, m_XWindow,
                         m_pScreen->root_visual);
+
+    /* create black (foreground) graphic context */
+    auto foreground = xcb_generate_id(m_pConn);
+    mask = XCB_GC_FOREGROUND | XCB_GC_GRAPHICS_EXPOSURES;
+    values[0] = m_pScreen->black_pixel;
+    values[1] = 0;
+    xcb_create_gc(m_pConn, foreground, m_XWindow, mask, values);
+
+    /* create white (background) graphic context */
+    auto background = xcb_generate_id(m_pConn);
+    mask = XCB_GC_BACKGROUND | XCB_GC_GRAPHICS_EXPOSURES;
+    values[0] = m_pScreen->white_pixel;
+    values[1] = 0;
+    xcb_create_gc(m_pConn, background, m_XWindow, mask, values);
 
     /* create window */
     m_XWindow = xcb_generate_id(m_pConn);
@@ -101,22 +116,24 @@ void XcbApplication::Tick() {
                         ->detail;
                 printf("[XcbApplication] Key Press: Keycode: %d\n",
                        key_code);
-                switch (key_code) {
-                    case 113:
-                        m_pInputManager->LeftArrowKeyDown();
-                        break;
-                    case 114:
-                        m_pInputManager->RightArrowKeyDown();
-                        break;
-                    case 111:
-                        m_pInputManager->UpArrowKeyDown();
-                        break;
-                    case 116:
-                        m_pInputManager->DownArrowKeyDown();
-                        break;
-                    case 27:
-                        m_pInputManager->AsciiKeyDown('r');
-                        break;
+                if (m_pInputManager) {
+                    switch (key_code) {
+                        case 113:
+                            m_pInputManager->LeftArrowKeyDown();
+                            break;
+                        case 114:
+                            m_pInputManager->RightArrowKeyDown();
+                            break;
+                        case 111:
+                            m_pInputManager->UpArrowKeyDown();
+                            break;
+                        case 116:
+                            m_pInputManager->DownArrowKeyDown();
+                            break;
+                        case 27:
+                            m_pInputManager->AsciiKeyDown('r');
+                            break;
+                    }
                 }
                 break;
             }
@@ -126,22 +143,24 @@ void XcbApplication::Tick() {
                         ->detail;
                 printf("[XcbApplication] Key Release: Keycode: %d\n",
                        key_code);
-                switch (key_code) {
-                    case 113:
-                        m_pInputManager->LeftArrowKeyUp();
-                        break;
-                    case 114:
-                        m_pInputManager->RightArrowKeyUp();
-                        break;
-                    case 111:
-                        m_pInputManager->UpArrowKeyUp();
-                        break;
-                    case 116:
-                        m_pInputManager->DownArrowKeyUp();
-                        break;
-                    case 27:
-                        m_pInputManager->AsciiKeyUp('r');
-                        break;
+                if (m_pInputManager) {
+                    switch (key_code) {
+                        case 113:
+                            m_pInputManager->LeftArrowKeyUp();
+                            break;
+                        case 114:
+                            m_pInputManager->RightArrowKeyUp();
+                            break;
+                        case 111:
+                            m_pInputManager->UpArrowKeyUp();
+                            break;
+                        case 116:
+                            m_pInputManager->DownArrowKeyUp();
+                            break;
+                        case 27:
+                            m_pInputManager->AsciiKeyUp('r');
+                            break;
+                    }
                 }
             } break;
             default:

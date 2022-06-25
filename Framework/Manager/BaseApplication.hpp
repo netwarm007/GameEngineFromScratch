@@ -36,6 +36,8 @@ class BaseApplication : _implements_ IApplication {
         return m_Config;
     }
 
+    void GetFramebufferSize(int& width, int& height) override {}
+
     void CreateMainWindow() override {}
     void* GetMainWindowHandler() override { return nullptr; }
 
@@ -48,7 +50,7 @@ class BaseApplication : _implements_ IApplication {
     void RegisterManagerModule(IPhysicsManager* mgr);
     void RegisterManagerModule(IPipelineStateManager* mgr);
     void RegisterManagerModule(IGameLogic* logic);
-#ifdef DEBUG 
+#ifdef DEBUG
     void RegisterManagerModule(IDebugManager* mgr);
 #endif
 
@@ -63,7 +65,7 @@ class BaseApplication : _implements_ IApplication {
         return m_pPipelineStateManager;
     }
     IGameLogic* GetGameLogic() { return m_pGameLogic; }
-#ifdef DEBUG 
+#ifdef DEBUG
     IDebugManager* GetDebugManager() { return m_pDebugManager; }
 #endif
 

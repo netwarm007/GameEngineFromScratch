@@ -5,5 +5,10 @@ mkdir -p External/build/glslang
 pushd External/build/glslang
 rm -rf *
 cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../`uname -s`/ -DCMAKE_INSTALL_RPATH=../../`uname -s`/ -DBUILD_EXTERNAL=NO ../../src/glslang
-cmake --build . --config Release --target install
+if [[ -z $1 ]];
+then
+    cmake --build . --config Debug --target install
+else
+    cmake --build . --config $1 --target install
+fi
 popd

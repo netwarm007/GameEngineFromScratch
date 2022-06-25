@@ -57,6 +57,8 @@ class BmpParser : _implements_ ImageParser {
             img.Width = pBmpHeader->Width;
             img.Height = pBmpHeader->Height;
             img.bitcount = 32;
+            img.bitdepth = 8;
+            img.pixel_format = PIXEL_FORMAT::RGBA8;
             auto byte_count = img.bitcount >> 3;
             img.pitch = ((img.Width * byte_count) + 3) & ~3;
             img.data_size = (size_t)img.pitch * img.Height;

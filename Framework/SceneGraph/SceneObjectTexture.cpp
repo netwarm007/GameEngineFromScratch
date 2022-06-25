@@ -5,7 +5,15 @@
 using namespace My;
 using namespace std;
 
+#include "ASTC.hpp"
 #include "AssetLoader.hpp"
+#include "BMP.hpp"
+#include "DDS.hpp"
+#include "HDR.hpp"
+#include "JPEG.hpp"
+#include "PNG.hpp"
+#include "PVR.hpp"
+#include "TGA.hpp"
 
 void SceneObjectTexture::LoadTextureAsync() {
     if (!m_asyncLoadFuture.valid()) {
@@ -41,10 +49,15 @@ bool SceneObjectTexture::LoadTexture() {
     } else if (ext == ".hdr") {
         HdrParser hdr_parser;
         image = hdr_parser.Parse(buf);
+    } else if (ext == ".astc") {
+        AstcParser astc_parser;
+        image = astc_parser.Parse(buf);
+    } else if (ext == ".pvr") {
+        PVR::PvrParser pvr_parser;
+        image = pvr_parser.Parse(buf);
+    } else {
+        assert(0);
     }
-
-    // GPU does not support 24bit and 48bit textures, so adjust it
-    adjust_image(image);
 
     cerr << "End async loading of " << m_Name << endl;
 
@@ -57,9 +70,11 @@ bool SceneObjectTexture::LoadTexture() {
 std::shared_ptr<Image> SceneObjectTexture::GetTextureImage() {
     if (m_asyncLoadFuture.valid()) {
         m_asyncLoadFuture.wait();
-        assert(m_asyncLoadFuture.get());
-        return atomic_load_explicit(&m_pImage,
-                                    std::memory_order_acquire);
+        if (m_asyncLoadFuture.get()) {
+            return atomic_load_explicit(&m_pImage, std::memory_order_acquire);
+        } else {
+            return m_pImage;
+        }
     } else {
         return m_pImage;
     }

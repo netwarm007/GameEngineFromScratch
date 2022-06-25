@@ -175,10 +175,10 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
             pipelineStateDescriptor.vertexDescriptor = mtlVertexDescriptor;
             [mtlVertexDescriptor release];
             switch (pState->pixelFormat) {
-                case PIXEL_FORMAT::INVALID:
+                case PIXEL_FORMAT::UNKNOWN:
                     pipelineStateDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatInvalid;
                     break;
-                case PIXEL_FORMAT::BGRA8UNORM:
+                case PIXEL_FORMAT::RGBA8:
                     pipelineStateDescriptor.colorAttachments[0].pixelFormat =
                         MTLPixelFormatBGRA8Unorm;
                     break;

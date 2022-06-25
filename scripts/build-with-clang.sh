@@ -2,8 +2,13 @@
 set -e
 PATH=$(pwd)/External/Linux/bin:$PATH
 mkdir -p build
-cd build
-rm -rf *
+pushd build
 cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/clang.cmake ..
-cmake --build . --config debug
+if [[ -z $1 ]];
+then
+    cmake --build . --config Debug
+else
+    cmake --build . --config $1
+fi
+popd
 

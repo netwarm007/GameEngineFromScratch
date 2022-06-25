@@ -5,7 +5,7 @@
 namespace My {
 class TreeNode {
    protected:
-    TreeNode* m_Parent;
+    TreeNode* m_Parent = nullptr;
     std::list<std::shared_ptr<TreeNode>> m_Children;
 
    protected:

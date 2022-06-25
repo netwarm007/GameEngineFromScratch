@@ -16,6 +16,8 @@ class CocoaApplication : public BaseApplication {
 
     void CreateMainWindow() override;
 
+    void GetFramebufferSize(int& width, int& height) override;
+
    protected:
     NSWindow* m_pWindow;
 };

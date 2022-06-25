@@ -125,14 +125,71 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     if (img.compressed) {
         switch (img.compress_format) {
-            case "DXT1"_u32:
+            case COMPRESSED_FORMAT::DXT1:
+            case COMPRESSED_FORMAT::BC1:
                 format = MTLPixelFormatBC1_RGBA;
                 break;
-            case "DXT3"_u32:
+            case COMPRESSED_FORMAT::DXT3:
+            case COMPRESSED_FORMAT::BC2:
+                format = MTLPixelFormatBC2_RGBA;
+                break;
+            case COMPRESSED_FORMAT::DXT5:
+            case COMPRESSED_FORMAT::BC3:
                 format = MTLPixelFormatBC3_RGBA;
                 break;
-            case "DXT5"_u32:
+            case COMPRESSED_FORMAT::BC4:
+                format = MTLPixelFormatBC4_RUnorm;
+                break;
+            case COMPRESSED_FORMAT::BC5:
                 format = MTLPixelFormatBC5_RGUnorm;
+                break;
+            case COMPRESSED_FORMAT::BC6H:
+                format = MTLPixelFormatBC6H_RGBUfloat;
+                break;
+            case COMPRESSED_FORMAT::BC7:
+                format = MTLPixelFormatBC7_RGBAUnorm;
+                break;
+            case COMPRESSED_FORMAT::ASTC_4x4:
+                format = MTLPixelFormatASTC_4x4_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x4:
+                format = MTLPixelFormatASTC_5x4_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_5x5:
+                format = MTLPixelFormatASTC_5x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x5:
+                format = MTLPixelFormatASTC_6x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_6x6:
+                format = MTLPixelFormatASTC_6x6_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x5:
+                format = MTLPixelFormatASTC_8x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x6:
+                format = MTLPixelFormatASTC_8x6_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_8x8:
+                format = MTLPixelFormatASTC_8x8_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x5:
+                format = MTLPixelFormatASTC_10x5_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x6:
+                format = MTLPixelFormatASTC_10x6_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x8:
+                format = MTLPixelFormatASTC_10x8_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_10x10:
+                format = MTLPixelFormatASTC_10x10_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_12x10:
+                format = MTLPixelFormatASTC_12x10_sRGB;
+                break;
+            case COMPRESSED_FORMAT::ASTC_12x12:
+                format = MTLPixelFormatASTC_12x12_sRGB;
                 break;
             default:
                 std::cerr << img << std::endl;
@@ -235,11 +292,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             };
 
             [texture replaceRegion:region
-                    mipmapLevel:0
-                            slice:slice
-                        withBytes:images[slice]->data
-                    bytesPerRow:images[slice]->pitch
-                    bytesPerImage:images[slice]->data_size];
+                       mipmapLevel:0
+                             slice:slice
+                         withBytes:images[slice]->data
+                       bytesPerRow:images[slice]->pitch
+                     bytesPerImage:images[slice]->data_size];
         }
 
         // now upload the irradiance map as 2nd mip of skybox
@@ -251,11 +308,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
             };
 
             [texture replaceRegion:region
-                    mipmapLevel:1
-                            slice:slice - 6
-                        withBytes:images[slice]->data
-                    bytesPerRow:images[slice]->pitch
-                    bytesPerImage:images[slice]->data_size];
+                       mipmapLevel:1
+                             slice:slice - 6
+                         withBytes:images[slice]->data
+                       bytesPerRow:images[slice]->pitch
+                     bytesPerImage:images[slice]->data_size];
         }
 
         // now upload the radiance map 2nd cubemap
@@ -268,11 +325,11 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
                 };
 
                 [texture replaceRegion:region
-                        mipmapLevel:level++
-                                slice:slice - 6
-                            withBytes:images[slice]->data + mip.offset
-                        bytesPerRow:mip.pitch
-                        bytesPerImage:mip.data_size];
+                           mipmapLevel:level++
+                                 slice:slice - 6
+                             withBytes:images[slice]->data + mip.offset
+                           bytesPerRow:mip.pitch
+                         bytesPerImage:mip.data_size];
             }
         }
 
@@ -341,20 +398,12 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     [_commandBuffer commit];
 
-    // Update and Render additional Platform Windows
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
-
     [_mtkView setNeedsDisplay:YES];
 
     _renderPassDescriptor = nil;
 }
 
-- (void)beginPass:(const Frame&) frame {
+- (void)beginPass:(const Frame&)frame {
     // Create a new command buffer for each render pass to the current drawable
     _commandBuffer = [_commandQueue commandBuffer];
     _commandBuffer.label = @"Online Command Buffer";
@@ -489,7 +538,8 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     if (indexBuffer != nil) {
         // Draw skybox
         [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                   indexCount:sizeof(My::SceneObjectSkyBox::skyboxIndices) / sizeof(My::SceneObjectSkyBox::skyboxIndices[0])
+                                   indexCount:sizeof(My::SceneObjectSkyBox::skyboxIndices) /
+                                              sizeof(My::SceneObjectSkyBox::skyboxIndices[0])
                                     indexType:MTLIndexTypeUInt16
                                   indexBuffer:indexBuffer
                             indexBufferOffset:0];
@@ -682,8 +732,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _texture_recycled_indexes.push(texture);
 }
 
-- (int32_t)generateTextureForWrite:(const uint32_t)width
-                            height:(const uint32_t)height {
+- (int32_t)generateTextureForWrite:(const uint32_t)width height:(const uint32_t)height {
     id<MTLTexture> texture;
     int32_t index;
 

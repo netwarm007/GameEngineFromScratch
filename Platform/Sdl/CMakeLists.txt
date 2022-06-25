@@ -1,6 +1,7 @@
 add_library(Sdl
     SdlApplication.cpp
     OpenGLApplication.cpp
+    AssetLoader.cpp
 )
 
 IF(APPLE)

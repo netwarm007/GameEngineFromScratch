@@ -18,8 +18,6 @@ ENUM(PIPELINE_TYPE){GRAPHIC, COMPUTE};
 
 ENUM(PIPELINE_FLAG){NONE, SHADOW, DEBUG_DRAW};
 
-ENUM(PIXEL_FORMAT){INVALID, BGRA8UNORM};
-
 struct PipelineState {
     virtual ~PipelineState() = default;
 
@@ -38,7 +36,7 @@ struct PipelineState {
     bool bDepthWrite{true};
     STENCIL_TEST_MODE stencilTestMode{STENCIL_TEST_MODE::NONE};
     CULL_FACE_MODE cullFaceMode{CULL_FACE_MODE::BACK};
-    PIXEL_FORMAT pixelFormat{PIXEL_FORMAT::BGRA8UNORM};
+    PIXEL_FORMAT pixelFormat{PIXEL_FORMAT::RGBA8};
     uint32_t sampleCount{1};
 
     A2V_TYPES a2vType{A2V_TYPES::A2V_TYPES_NONE};

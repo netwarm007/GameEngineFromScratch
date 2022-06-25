@@ -85,14 +85,15 @@ template <typename T, int N>
 struct Vector {
     T data[N];
 
-    Vector() = default;
+    Vector() { std::memset(data, 0x00, sizeof(T) * N); }
+
     explicit Vector(const T val) {
         for (int i = 0; i < N; i++) {
             data[i] = val;
         }
     }
 
-    Vector(std::initializer_list<const T> list) {
+    Vector(std::initializer_list<const T> list) : Vector() {
         size_t i = 0;
         assert(list.size() <= N);
         for (auto val : list) {
@@ -131,6 +132,26 @@ struct Vector {
 
     Vector& operator=(const Vector& v) {
         std::memcpy(this, &v, sizeof(v));
+        return *this;
+    }
+
+    Vector& operator+=(const Vector& v) {
+        *this = *this + v;
+        return *this;
+    }
+
+    Vector& operator-=(const Vector& v) {
+        *this = *this - v;
+        return *this;
+    }
+
+    Vector& operator/=(const Scalar scalar) {
+        *this = *this / scalar;
+        return *this;
+    }
+
+    Vector& operator/=(const Vector& v) {
+        *this = *this / v;
         return *this;
     }
 
@@ -197,11 +218,6 @@ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     VectorAdd(result, vec1, vec2);
 
     return result;
-}
-
-template <typename T, int N>
-Vector<T, N> operator+=(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
-    return vec1 + vec2;
 }
 
 template <typename T, int N>
@@ -355,11 +371,6 @@ Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar scalar) {
 }
 
 template <typename T, int N>
-Vector<T, N> operator/=(const Vector<T, N>& vec, const Scalar scalar) {
-    return vec / scalar;
-}
-
-template <typename T, int N>
 Vector<T, N> operator/(const Scalar scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
@@ -373,11 +384,6 @@ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     DivByElement(result, vec1, vec2);
 
     return result;
-}
-
-template <typename T, int N>
-Vector<T, N> operator/=(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
-    return vec1 / vec2;
 }
 
 template <typename T>
@@ -872,6 +878,24 @@ inline void BuildPerspectiveFovRHMatrix(Matrix4X4f& matrix,
          {0.0f, 1.0f / std::tan(fieldOfView * 0.5f), 0.0f, 0.0f},
          {0.0f, 0.0f, screenDepth / (screenNear - screenDepth), -1.0f},
          {0.0f, 0.0f, (-screenNear * screenDepth) / (screenDepth - screenNear),
+          0.0f}}};
+
+    matrix = perspective;
+}
+
+inline void BuildOpenglPerspectiveFovRHMatrix(Matrix4X4f& matrix,
+                                              const float fieldOfView,
+                                              const float screenAspect,
+                                              const float screenNear,
+                                              const float screenDepth) {
+    Matrix4X4f perspective = {
+        {{1.0f / (screenAspect * std::tan(fieldOfView * 0.5f)), 0.0f, 0.0f,
+          0.0f},
+         {0.0f, 1.0f / std::tan(fieldOfView * 0.5f), 0.0f, 0.0f},
+         {0.0f, 0.0f, (screenNear + screenDepth) / (screenNear - screenDepth),
+          -1.0f},
+         {0.0f, 0.0f,
+          (-2.0f * screenNear * screenDepth) / (screenDepth - screenNear),
           0.0f}}};
 
     matrix = perspective;

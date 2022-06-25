@@ -3,6 +3,7 @@
 #include <d3d12.h>
 #include <stdint.h>
 
+#include <array>
 #include <map>
 #include <vector>
 
@@ -20,7 +21,6 @@ class D3d12GraphicsManager : public GraphicsManager {
     int Initialize() final;
     void Finalize() final;
 
-    void Draw() final;
     void Present() final;
 
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
@@ -29,14 +29,15 @@ class D3d12GraphicsManager : public GraphicsManager {
     void DrawBatch(const Frame& frame) final;
 
     intptr_t GenerateCubeShadowMapArray(const uint32_t width,
-                                       const uint32_t height,
-                                       const uint32_t count) final;
+                                        const uint32_t height,
+                                        const uint32_t count) final;
     intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height,
-                                   const uint32_t count) final;
+                                    const uint32_t count) final;
     void BeginShadowMap(const int32_t light_index, const intptr_t shadowmap,
                         const uint32_t width, const uint32_t height,
                         const int32_t layer_index, const Frame& frame) final;
-    void EndShadowMap(const intptr_t shadowmap, const int32_t layer_index) final;
+    void EndShadowMap(const intptr_t shadowmap,
+                      const int32_t layer_index) final;
     void SetShadowMaps(const Frame& frame) final;
     void CreateTexture(SceneObjectTexture& texture) final;
     void ReleaseTexture(intptr_t texture) final;
@@ -85,15 +86,16 @@ class D3d12GraphicsManager : public GraphicsManager {
     size_t CreateVertexBuffer(const void* pData, size_t size, int32_t stride);
     size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
 
-    HRESULT WaitForPreviousFrame(uint32_t frame_index);
+    void waitOnFrame();
+    void moveToNextFrame();
     HRESULT CreatePSO(D3d12PipelineState& pipelineState);
     HRESULT CreateCommandList();
     HRESULT MsaaResolve();
 
    private:
-    ID3D12Device* m_pDev =
+    ID3D12Device4* m_pDev =
         nullptr;  // the pointer to our Direct3D device interface
-#if defined(_DEBUG)
+#if defined(D3D12_RHI_DEBUG)
     ID3D12Debug* m_pDebugController = nullptr;
     ID3D12DebugDevice* m_pDebugDev = nullptr;
 #endif
@@ -101,25 +103,23 @@ class D3d12GraphicsManager : public GraphicsManager {
     D3D12_RECT m_ScissorRect;   // scissor rect structure
     IDXGISwapChain3* m_pSwapChain =
         nullptr;  // the pointer to the swap chain interface
-    ID3D12Resource*
-        m_pRenderTargets[GfxConfiguration::kMaxInFlightFrameCount *
-                         2];  // the pointer to rendering buffer. [descriptor]
-    ID3D12Resource* m_pDepthStencilBuffer
-        [GfxConfiguration::kMaxInFlightFrameCount];  // the pointer to the depth
-                                                     // stencil buffer
-    ID3D12CommandAllocator* m_pGraphicsCommandAllocator
-        [GfxConfiguration::kMaxInFlightFrameCount];  // the pointer to command
-                                                     // buffer allocator
+    std::vector<ID3D12Resource*>
+        m_pRenderTargets;  // the pointer to rendering buffer. [descriptor]
+    ID3D12Resource* m_pDepthStencilBuffer;  // the pointer to the depth
+                                            // stencil buffer
+    ID3D12CommandAllocator*
+        m_pGraphicsCommandAllocator;  // the pointer to command
+                                      // buffer allocator
     ID3D12CommandAllocator*
         m_pComputeCommandAllocator;                   // the pointer to command
                                                       // buffer allocator
     ID3D12CommandAllocator* m_pCopyCommandAllocator;  // the pointer to command
                                                       // buffer allocator
-    ID3D12GraphicsCommandList* m_pGraphicsCommandList
-        [GfxConfiguration::kMaxInFlightFrameCount];  // a list to store GPU
-                                                     // commands, which will be
-                                                     // submitted to GPU to
-                                                     // execute when done
+    std::vector<ID3D12GraphicsCommandList*>
+        m_pGraphicsCommandLists;  // a list to store GPU
+                                  // commands, which will be
+                                  // submitted to GPU to
+                                  // execute when done
     ID3D12GraphicsCommandList* m_pComputeCommandList;
     ID3D12GraphicsCommandList* m_pCopyCommandList;
 
@@ -128,14 +128,13 @@ class D3d12GraphicsManager : public GraphicsManager {
     ID3D12CommandQueue* m_pComputeCommandQueue;  // the pointer to command queue
     ID3D12CommandQueue* m_pCopyCommandQueue;     // the pointer to command queue
 
-    ID3D12DescriptorHeap* m_pRtvHeap
-        [GfxConfiguration::kMaxInFlightFrameCount];  // an array of heaps store
-                                                     // descriptors of RTV
-    ID3D12DescriptorHeap* m_pDsvHeap
-        [GfxConfiguration::kMaxInFlightFrameCount];  // an array of heaps store
-                                                     // descriptors of DSV
+    std::array<ID3D12DescriptorHeap*, GfxConfiguration::kMaxInFlightFrameCount>
+        m_pRtvHeaps;                   // an array of heaps store
+                                       // descriptors of RTV
+    ID3D12DescriptorHeap* m_pDsvHeap;  // an array of heaps store
+                                       // descriptors of DSV
 
-    ID3D12DescriptorHeap* m_pCbvSrvUavHeap;
+    std::vector<ID3D12DescriptorHeap*> m_pCbvSrvUavHeaps;
 
     ID3D12DescriptorHeap* m_pSamplerHeap;
 
@@ -160,25 +159,18 @@ class D3d12GraphicsManager : public GraphicsManager {
 
     D3dDrawBatchContext m_dbcSkyBox;
 
-    uint8_t* m_pPerFrameCbvDataBegin[GfxConfiguration::kMaxInFlightFrameCount];
-    ID3D12Resource* m_pPerFrameConstantUploadBuffer
-        [GfxConfiguration::kMaxInFlightFrameCount];
+    std::array<ID3D12Resource*, GfxConfiguration::kMaxInFlightFrameCount>
+        m_pPerFrameConstantUploadBuffer;
 
-    uint8_t* m_pLightInfoBegin[GfxConfiguration::kMaxInFlightFrameCount];
-    ID3D12Resource*
-        m_pLightInfoUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
-
-#ifdef DEBUG
-    uint8_t* m_pDebugConstantsBegin[GfxConfiguration::kMaxInFlightFrameCount];
-    ID3D12Resource*
-        m_pDebugConstantsUploadBuffer[GfxConfiguration::kMaxInFlightFrameCount];
-#endif
+    std::array<ID3D12Resource*, GfxConfiguration::kMaxInFlightFrameCount>
+        m_pLightInfoUploadBuffer;
 
     // Synchronization objects
     HANDLE m_hGraphicsFenceEvent;
     HANDLE m_hCopyFenceEvent;
     HANDLE m_hComputeFenceEvent;
-    ID3D12Fence* m_pGraphicsFence[GfxConfiguration::kMaxInFlightFrameCount];
-    uint64_t m_nGraphicsFenceValue[GfxConfiguration::kMaxInFlightFrameCount];
+    ID3D12Fence* m_pGraphicsFence;
+    std::array<uint64_t, GfxConfiguration::kMaxInFlightFrameCount>
+        m_nGraphicsFenceValues;
 };
 }  // namespace My

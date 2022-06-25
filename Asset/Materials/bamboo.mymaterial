@@ -1,0 +1,33 @@
+Material $material1
+{
+	Name {string {"Bamboo Wood Semigloss"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.800000011920929, 0.800000011920929, 0.800000011920929}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {49}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/viking_room.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Textures/bamboo-wood-semigloss-normal.png"}
+	}
+
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/bamboo-wood-semigloss-metal.png"}
+	}
+
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/bamboo-wood-semigloss-roughness.png"}
+	}
+
+	Texture (attrib = "ao")
+	{
+		string {"Textures/bamboo-wood-semigloss-ao.png"}
+	}
+}
