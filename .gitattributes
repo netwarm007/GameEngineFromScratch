@@ -64,5 +64,5 @@ External/Darwin/bin/spirv-remap filter=lfs diff=lfs merge=lfs -text
 External/Android/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/FreeBSD/bin/ispc filter=lfs diff=lfs merge=lfs -text
 External/Darwin/bin/spirv-cross filter=lfs diff=lfs merge=lfs -text
-Asset/Textures/viking_room.astc filter=lfs diff=lfs merge=lfs -text
-Asset/Textures/viking_room.pvr filter=lfs diff=lfs merge=lfs -text
+*.astc filter=lfs diff=lfs merge=lfs -text
+*.pvr filter=lfs diff=lfs merge=lfs -text

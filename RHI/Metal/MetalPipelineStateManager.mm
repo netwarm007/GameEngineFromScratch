@@ -187,6 +187,16 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
             }
             pipelineStateDescriptor.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
 
+            MTLRenderPipelineColorAttachmentDescriptor* renderbufferAttachment =
+                pipelineStateDescriptor.colorAttachments[0];
+            renderbufferAttachment.blendingEnabled = YES;
+            renderbufferAttachment.rgbBlendOperation = MTLBlendOperationAdd;
+            renderbufferAttachment.alphaBlendOperation = MTLBlendOperationAdd;
+            renderbufferAttachment.sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
+            renderbufferAttachment.sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+            renderbufferAttachment.destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            renderbufferAttachment.destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+
             pState->mtlRenderPipelineState =
                 [_device newRenderPipelineStateWithDescriptor:pipelineStateDescriptor error:&error];
             if (!pState->mtlRenderPipelineState) {

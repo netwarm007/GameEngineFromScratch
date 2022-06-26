@@ -1,0 +1,364 @@
+Metric (key = "distance") {float {1.0}}
+Metric (key = "angle") {float {1.0}}
+Metric (key = "time") {float {1.0}}
+Metric (key = "up") {string {"z"}}
+
+GeometryNode $node1
+{
+	Name {string {"Plane.002"}}
+	ObjectRef {ref {$geometry1}}
+	MaterialRef (index = 0) {ref {$material3}}
+
+	Transform
+	{
+		float[16]
+		{
+			{1.093848466873169, 0.0, -1.490066409111023, 0.0,
+			 0.0, 1.8484593629837036, 0.0, 0.0,
+			 1.490066409111023, 0.0, 1.093848466873169, 0.0,
+			 0.22213542461395264, 6.7540130615234375, 1.1412358283996582, 1.0}
+		}
+	}
+}
+
+GeometryNode $node2
+{
+	Name {string {"Plane.001"}}
+	ObjectRef {ref {$geometry2}}
+	MaterialRef (index = 0) {ref {$material5}}
+
+	Transform
+	{
+		float[16]
+		{
+			{1.093848466873169, 0.0, -1.490066409111023, 0.0,
+			 0.0, 1.8484593629837036, 0.0, 0.0,
+			 1.490066409111023, 0.0, 1.093848466873169, 0.0,
+			 -0.022138595581054688, 2.215557813644409, 1.0196785926818848, 1.0}
+		}
+	}
+}
+
+GeometryNode $node3
+{
+	Name {string {"Plane"}}
+	ObjectRef {ref {$geometry3}}
+	MaterialRef (index = 0) {ref {$material1}}
+
+	Transform
+	{
+		float[16]
+		{
+			{1.093848466873169, 0.0, -1.490066409111023, 0.0,
+			 0.0, 1.8484593629837036, 0.0, 0.0,
+			 1.490066409111023, 0.0, 1.093848466873169, 0.0,
+			 -0.19176647067070007, -2.320873260498047, 0.941734790802002, 1.0}
+		}
+	}
+}
+
+LightNode $node4
+{
+	Name {string {"Lamp"}}
+	ObjectRef {ref {$light1}}
+
+	Transform
+	{
+		float[16]
+		{
+			{-0.29086464643478394, 0.9551711678504944, -0.05518905818462372, 0.0,
+			 -0.7711008191108704, -0.1998833566904068, 0.6045247316360474, 0.0,
+			 0.5663931965827942, 0.21839119493961334, 0.7946722507476807, 0.0,
+			 4.076245307922363, 1.0054539442062378, 5.903861999511719, 1.0}
+		}
+	}
+}
+
+CameraNode $node5
+{
+	Name {string {"Camera"}}
+	ObjectRef {ref {$camera1}}
+
+	Transform
+	{
+		float[16]
+		{
+			{0.6859206557273865, 0.7276763319969177, 0.0, 0.0,
+			 -0.32401347160339355, 0.305420845746994, 0.8953956365585327, 0.0,
+			 0.6515582203865051, -0.6141703724861145, 0.44527140259742737, 0.0,
+			 7.481131553649902, -6.5076398849487305, 5.34366512298584, 1.0}
+		}
+	}
+}
+
+GeometryObject $geometry1		// Plane.002
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3]		// 6
+			{
+				{-1.0, -1.0, 0.0}, {1.0, -1.0, 0.0}, {1.0, 1.0, 0.0}, {-1.0, -1.0, 0.0}, {1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}
+			}
+		}
+
+		VertexArray (attrib = "normal")
+		{
+			float[3]		// 6
+			{
+				{0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}
+			}
+		}
+
+		VertexArray (attrib = "texcoord")
+		{
+			float[2]		// 6
+			{
+				{0.00010003960051108152, 9.998001041822135e-05}, {0.9999000430107117, 9.998001041822135e-05}, {0.9999000430107117, 0.9999000430107117}, {0.00010003960051108152, 9.998001041822135e-05}, {0.9999000430107117, 0.9999000430107117}, {9.998001041822135e-05, 0.9999000430107117}
+			}
+		}
+		VertexArray (attrib = "tangent")
+		{
+			float[3]		// 6
+			{
+				{2.0004000663757324, 0.0, 0.0}, {2.0004000663757324, 0.0, 0.0}, {2.0004000663757324, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}
+			}
+		}
+
+		IndexArray
+		{
+			unsigned_int32[3]		// 2
+			{
+				{0, 1, 2}, {3, 4, 5}
+			}
+		}
+	}
+}
+
+GeometryObject $geometry2		// Plane.001
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3]		// 6
+			{
+				{-1.0, -1.0, 0.0}, {1.0, -1.0, 0.0}, {1.0, 1.0, 0.0}, {-1.0, -1.0, 0.0}, {1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}
+			}
+		}
+
+		VertexArray (attrib = "normal")
+		{
+			float[3]		// 6
+			{
+				{0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}
+			}
+		}
+
+		VertexArray (attrib = "texcoord")
+		{
+			float[2]		// 6
+			{
+				{0.00010003960051108152, 9.998001041822135e-05}, {0.9999000430107117, 9.998001041822135e-05}, {0.9999000430107117, 0.9999000430107117}, {0.00010003960051108152, 9.998001041822135e-05}, {0.9999000430107117, 0.9999000430107117}, {9.998001041822135e-05, 0.9999000430107117}
+			}
+		}
+		VertexArray (attrib = "tangent")
+		{
+			float[3]		// 6
+			{
+				{2.0004000663757324, 0.0, 0.0}, {2.0004000663757324, 0.0, 0.0}, {2.0004000663757324, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}
+			}
+		}
+
+		IndexArray
+		{
+			unsigned_int32[3]		// 2
+			{
+				{0, 1, 2}, {3, 4, 5}
+			}
+		}
+	}
+}
+
+GeometryObject $geometry3		// Plane
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3]		// 6
+			{
+				{-1.0, -1.0, 0.0}, {1.0, -1.0, 0.0}, {1.0, 1.0, 0.0}, {-1.0, -1.0, 0.0}, {1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}
+			}
+		}
+
+		VertexArray (attrib = "normal")
+		{
+			float[3]		// 6
+			{
+				{0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}
+			}
+		}
+
+		VertexArray (attrib = "texcoord")
+		{
+			float[2]		// 6
+			{
+				{0.00010003960051108152, 9.998001041822135e-05}, {0.9999000430107117, 9.998001041822135e-05}, {0.9999000430107117, 0.9999000430107117}, {0.00010003960051108152, 9.998001041822135e-05}, {0.9999000430107117, 0.9999000430107117}, {9.998001041822135e-05, 0.9999000430107117}
+			}
+		}
+		VertexArray (attrib = "tangent")
+		{
+			float[3]		// 6
+			{
+				{2.0004000663757324, 0.0, 0.0}, {2.0004000663757324, 0.0, 0.0}, {2.0004000663757324, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}, {2.0003998279571533, 0.0, 0.0}
+			}
+		}
+
+		IndexArray
+		{
+			unsigned_int32[3]		// 2
+			{
+				{0, 1, 2}, {3, 4, 5}
+			}
+		}
+	}
+}
+
+LightObject $light1 (type = "point")		// Lamp
+{
+	Color (attrib = "light") {float[3] {{1.0, 1.0, 1.0}}}
+
+	Atten (curve = "inverse_square")
+	{
+		Param (attrib = "scale") {float {5.47722400800463}}
+	}
+}
+
+CameraObject $camera1		// Camera
+{
+	Param (attrib = "fov") {float {0.8575560450553894}}
+	Param (attrib = "near") {float {0.10000000149011612}}
+	Param (attrib = "far") {float {100.0}}
+}
+
+Material $material1
+{
+	Name {string {"Material.Origin"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/testpattern1.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Materials/gold-scuffed_3.pvr"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Materials/gold-scuffed_2.pvr"}
+	}
+}
+
+Material $material2
+{
+	Name {string {"Material.BC1"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/testpattern1.bc1.pvr"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Materials/gold-scuffed_3.pvr"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Materials/gold-scuffed_2.pvr"}
+	}
+}
+
+Material $material3
+{
+	Name {string {"Material.BC3"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/testpattern1.bc3.pvr"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Materials/gold-scuffed_3.pvr"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Materials/gold-scuffed_2.pvr"}
+	}
+}
+
+Material $material4
+{
+	Name {string {"Material.BC7"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/testpattern1.bc7.pvr"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Materials/gold-scuffed_3.pvr"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Materials/gold-scuffed_2.pvr"}
+	}
+}
+
+Material $material5
+{
+	Name {string {"Material.BC2"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/testpattern1.dds"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Materials/gold-scuffed_3.pvr"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Materials/gold-scuffed_2.pvr"}
+	}
+}

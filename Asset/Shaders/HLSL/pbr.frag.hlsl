@@ -10,6 +10,7 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
     float2 texCoords = _entryPointOutput.uv;
 
     float3 albedo = inverse_gamma_correction(diffuseMap.Sample(samp0, texCoords).rgb); 
+    float alpha = diffuseMap.Sample(samp0, texCoords).a;
     float meta = metallicMap.Sample(samp0, texCoords).r; 
     float rough = metallicMap.Sample(samp0, texCoords).g; 
     float3 tangent_normal;
@@ -113,5 +114,5 @@ float4 pbr_frag_main(pbr_vert_output _entryPointOutput) : SV_Target
     // gamma correction
     linearColor = gamma_correction(linearColor);
 
-    return float4(linearColor, 1.0f);
+    return float4(linearColor, alpha);
 }

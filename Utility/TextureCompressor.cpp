@@ -99,10 +99,33 @@ int main(int argc, char** argv) {
             int astc_image_height_in_blocks =
                 idiv_ceil(image.Height, astc_block_size_x);
 
-            if (argc > 3 && strncmp(argv[3], "astc", 4) == 0) {
+            if (argc > 3) {
+                if (strncmp(argv[3], "astc", 4) == 0) {
                 compressed_format = COMPRESSED_FORMAT::ASTC_6x6;
                 compressed_size = astc_image_width_in_blocks *
                                   astc_image_height_in_blocks * 16;
+                } else if (strncmp(argv[3], "bc1", 3) == 0) {
+                    assert(image.pixel_format == PIXEL_FORMAT::RGB8 || image.pixel_format == PIXEL_FORMAT::RGBA8);
+                    if (image.pixel_format == PIXEL_FORMAT::RGB8) adjust_image(image);
+                    compressed_format = COMPRESSED_FORMAT::BC1;
+                    pvr_pixel_format = PVR::PixelFormat::BC1;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                        (ALIGN(image.Width, 4) >> 2) * 8;
+                } else if (strncmp(argv[3], "bc3", 3) == 0) {
+                    assert(image.pixel_format == PIXEL_FORMAT::RGB8 || image.pixel_format == PIXEL_FORMAT::RGBA8);
+                    if (image.pixel_format == PIXEL_FORMAT::RGB8) adjust_image(image);
+                    compressed_format = COMPRESSED_FORMAT::BC3;
+                    pvr_pixel_format = PVR::PixelFormat::BC3;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                        (ALIGN(image.Width, 4) >> 2) * 16;
+                } else if (strncmp(argv[3], "bc7", 3) == 0) {
+                    assert(image.pixel_format == PIXEL_FORMAT::RGB8 || image.pixel_format == PIXEL_FORMAT::RGBA8);
+                    if (image.pixel_format == PIXEL_FORMAT::RGB8) adjust_image(image);
+                    compressed_format = COMPRESSED_FORMAT::BC7;
+                    pvr_pixel_format = PVR::PixelFormat::BC7;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                        (ALIGN(image.Width, 4) >> 2) * 16;
+                }
             } else {
                 switch (image.pixel_format) {
                     case PIXEL_FORMAT::R8:
@@ -150,7 +173,7 @@ int main(int argc, char** argv) {
             src_surface.ptr = image.data;
             src_surface.stride = static_cast<int32_t>(image.pitch);
 
-            flip_image(&src_surface);
+            // flip_image(&src_surface);
 
             rgba_surface edged_img;
             fill_borders(&edged_img, &src_surface, 6, 6);
