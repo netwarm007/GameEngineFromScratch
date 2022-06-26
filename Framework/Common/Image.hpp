@@ -214,7 +214,7 @@ struct Image {
     }
 
     uint8_t GetA(int32_t x, int32_t y) const {
-        if (x >= Width || y >= Height) return 0;
+        if (x >= Width || y >= Height) return 0xFF;
 
         switch (pixel_format) {
             case PIXEL_FORMAT::UNKNOWN:
@@ -224,7 +224,7 @@ struct Image {
             case PIXEL_FORMAT::RG8:
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::R5G6B5:
-                return 0;
+                return 0xFF;
             case PIXEL_FORMAT::RGBA8:
                 return *(data + y * pitch + x * (bitcount >> 3) + 3);
             case PIXEL_FORMAT::RG16:
@@ -235,7 +235,7 @@ struct Image {
             case PIXEL_FORMAT::RGBA32:
             case PIXEL_FORMAT::R10G10B10A2:
                 // not supported
-                return 0;
+                return 0xFF;
             default:
                 assert(0);
         }

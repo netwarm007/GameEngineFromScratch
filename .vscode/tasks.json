@@ -6,7 +6,7 @@
         {
             "label": "Build External Dependencies (Debug)",
             "type": "shell",
-            "command": "./scripts/build_crossguid.sh && ./scripts/build_opengex.sh && ./scripts/build_zlib.sh && ./scripts/build_bullet.sh && ./scripts/build_glslangValidator.sh && ./scripts/build_spirvcross.sh && ./scripts/build_libispc-texcomp.bat",
+            "command": "./scripts/build_crossguid.sh && ./scripts/build_opengex.sh && ./scripts/build_zlib.sh && ./scripts/build_bullet.sh && ./scripts/build_glslangValidator.sh && ./scripts/build_spirvcross.sh && ./scripts/build_libispc-texcomp.sh",
             "windows": {
                 "command": "scripts\\build_crossguid.bat; scripts\\build_opengex.bat; scripts\\build_zlib.bat; scripts\\build_bullet.bat; scripts\\build_glslangValidator.bat; scripts\\build_spirvcross.bat; scripts\\build_libispc-texcomp.bat"
             },

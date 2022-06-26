@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
               +--------+--------+--------+--------+
               | R      | G      | B      | A      |
               +--------+--------+--------+--------+
-              | Albe.R | Albe.G | Albe.B |        |     surf1
+              | Albe.R | Albe.G | Albe.B | Albe.A |     surf1
               +--------+--------+--------+--------+
               | Metal  | Rough  | AO     |        |     surf2
               +--------+--------+--------+--------+
@@ -266,11 +266,14 @@ int main(int argc, char** argv) {
                             albedo_texture->GetB(
                                 std::floor(x * albedo_ratio_x),
                                 std::floor(y * albedo_ratio_y));
-                        *(surf.ptr + y * surf.stride + x * channels + 3) = 0;
+                        *(surf.ptr + y * surf.stride + x * channels + 3) =
+                            albedo_texture->GetA(
+                                std::floor(x * albedo_ratio_x),
+                                std::floor(y * albedo_ratio_y));
                     }
                 }
 
-                // Now, compress surf with BC1
+                // Now, compress surf with BC7
                 auto outputFileName = pMaterial->GetName();
                 if (argc >= 3) {
                     outputFileName = argv[2];
@@ -278,7 +281,7 @@ int main(int argc, char** argv) {
                 outputFileName += "_1";
 
                 save_as_pvr(surf, outputFileName + ".pvr",
-                            PVR::PixelFormat::BC1);
+                            PVR::PixelFormat::BC7);
                 save_as_tga(surf, channels, outputFileName + ".tga");
             };
 

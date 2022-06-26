@@ -114,11 +114,7 @@ void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
         if (scene) {
             auto pCameraNode = scene->GetFirstCameraNode();
             if (pCameraNode) {
-                static auto local_axis = pCameraNode->GetLocalAxis();
-                // move camera along its local axis -z direction
-                //Vector3f camera_y_axis = local_axis[1];
-                //pCameraNode->MoveBy(camera_y_axis * -deltaY);
-                Vector3f camera_x_axis = local_axis[0];
+                // pCameraNode->RotateBy(deltaY / (2.0 * PI), 0.0f, 0.0f);
                 pCameraNode->RotateBy(0.0f, 0.0f, deltaX / (2.0 * PI));
             }
         }
