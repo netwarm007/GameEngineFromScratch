@@ -118,6 +118,12 @@ int main(int argc, char** argv) {
                     pvr_pixel_format = PVR::PixelFormat::BC3;
                     compressed_size = (ALIGN(image.Height, 4) >> 2) *
                                         (ALIGN(image.Width, 4) >> 2) * 16;
+                } else if (strncmp(argv[3], "bc4", 3) == 0) {
+                    assert(image.pixel_format == PIXEL_FORMAT::R8);
+                    compressed_format = COMPRESSED_FORMAT::BC4;
+                    pvr_pixel_format = PVR::PixelFormat::BC4;
+                    compressed_size = (ALIGN(image.Height, 4) >> 2) *
+                                        (ALIGN(image.Width, 4) >> 2) * 8;
                 } else if (strncmp(argv[3], "bc7", 3) == 0) {
                     assert(image.pixel_format == PIXEL_FORMAT::RGB8 || image.pixel_format == PIXEL_FORMAT::RGBA8);
                     if (image.pixel_format == PIXEL_FORMAT::RGB8) adjust_image(image);
