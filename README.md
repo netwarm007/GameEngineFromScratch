@@ -11,9 +11,9 @@ This project is written by me as the sample of My articles [Hand-made Next-Gen G
 https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプルソースである
 
 ## Platform Support Status
-- Windows 10
+- Windows 10 / 11
 - MacOS Catalina - Monterey
-- Linux (Build test on Ubuntu 20.04 and CentOS 7)
+- Linux (Build test on Ubuntu 20.04 - 22.04 and CentOS 7)
 - FreeBSD (Not tested recently, build might fail)
 - Android (Not tested recently, build might fail)
 - WebAssembly (Emscripten, not tested recently, build might fail)
@@ -25,7 +25,7 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - OpenGL ES (Not tested recently)
 - Metal2
 - DirectX 12 (On going)
-- Vulkan (On the roadmap, not implemented yet)
+- Vulkan (On going)
 - GNM (Not disclosed due to NDA)
 
 ## Physics
@@ -46,6 +46,8 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - HDR
 - DDS
 - BMP
+- PVR (BC1 - 7)
+- ASTC
 
 ## High Performance / Parallel Computing
 - ISPC
@@ -72,14 +74,16 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 
 ## Build Steps
 ### Windows
-    scripts/build_crossguid
-    scripts/build_opengex
-    scripts/build_zlib
-    scripts/build_bullet
-    scripts/build_cef
-    scripts/build_glslangValidator
-    scripts/build_spirvcross
-    scripts/build
+    scripts\build_crossguid
+    scripts\build_opengex
+    scripts\build_zlib
+    scripts\build_bullet
+    scripts\build_cef
+    scripts\build_glslangValidator
+    scripts\build_spirvcross
+    scripts\build_imgui
+    scripts\build_libispc-texcomp
+    scripts\build
 ### MacOS & Linux
     ./scripts/build_crossguid.sh
     ./scripts/build_opengex.sh
@@ -87,4 +91,12 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
     ./scripts/build_cef.sh
     ./scripts/build_glslangValidator.sh
     ./scripts/build_spirvcross.sh
+    ./scripts/build_imgui
+    ./scripts/build_libispc-texcomp
     ./scripts/build-ninja.sh
+
+## Cook Materials
+### Windows
+    scripts\cook_material
+### Mac)S & Linux
+    ./scripts/cook_material
