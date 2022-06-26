@@ -55,6 +55,7 @@ foreach(SHADER IN LISTS HLSL_SHADER_SOURCES)
         COMMENT "SPIR-V --> Desktop GLSL"
 	    COMMAND ${SPIRV_CROSS} --version 420 --remove-unused-variables --output ${GLSL_SOURCE_DIR}/${part1}.${part2}.glsl ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS HLSL/${part1}.${part2}.hlsl
     )
 
 if(APPLE)
@@ -66,6 +67,7 @@ if(APPLE)
         COMMENT "SPIR-V --> Metal"
         COMMAND ${SPIRV_CROSS} --msl --msl-version 020101 --msl-decoration-binding --remove-unused-variables --output ${METAL_SOURCE_DIR}/${part1}.${part2}.metal ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS HLSL/${part1}.${part2}.hlsl
     )
 endif(APPLE)
 endforeach(SHADER)

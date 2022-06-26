@@ -10,7 +10,7 @@ pbr_vert_output pbr_vert_main(a2v a)
     o.pos = mul(o.v, projectionMatrix);
     o.normal_world = normalize(mul(float4(a.inputNormal, 0.0f), modelMatrix));
     o.normal = normalize(mul(o.normal_world, viewMatrix));
-    float3 tangent = normalize(float3(mul(float4(a.inputTangent, 0.0f), modelMatrix).xyz));
+    float3 tangent = mul(float4(a.inputTangent, 0.0f), modelMatrix).xyz;
     tangent = normalize(tangent - (o.normal_world.xyz * dot(tangent, o.normal_world.xyz)));
     float3 bitangent = cross(o.normal_world.xyz, tangent);
     o.TBN = float3x3(float3(tangent), float3(bitangent), float3(o.normal_world.xyz));

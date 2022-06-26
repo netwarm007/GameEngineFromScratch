@@ -146,6 +146,8 @@ void GraphicsManager::CalculateCameraMatrix() {
         Vector3f lookAt = pCameraNode->GetTarget();
         Vector3f up = {0.0f, 0.0f, 1.0f};
         BuildViewRHMatrix(frameContext.viewMatrix, position, lookAt, up);
+
+        frameContext.camPos = {position[0], position[1], position[2], 0.0f};
     } else {
         // use default build-in camera
         Vector3f position = {0.0f, -5.0f, 0.0f}, lookAt = {0.0f, 0.0f, 0.0f},
