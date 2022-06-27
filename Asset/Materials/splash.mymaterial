@@ -1,6 +1,6 @@
 Material $material1
 {
-	Name {string {"redbricks2b"}}
+	Name {string {"Red Bricks"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.640000066757203, 0.640000066757203, 0.640000066757203}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
@@ -34,7 +34,7 @@ Material $material1
 
 Material $material2
 {
-	Name {string {"gold-scuffed"}}
+	Name {string {"Gold Scuffed"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
@@ -63,5 +63,142 @@ Material $material2
 	Texture (attrib = "ao")
 	{
 		string {"Textures/default_ao.png"}
+	}
+}
+
+Material $material3
+{
+	Name {string {"Bamboo Wood Semigloss"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.800000011920929, 0.800000011920929, 0.800000011920929}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {49}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/bamboo-wood-semigloss-albedo.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Textures/bamboo-wood-semigloss-normal.png"}
+	}
+
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/bamboo-wood-semigloss-metal.png"}
+	}
+
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/bamboo-wood-semigloss-roughness.png"}
+	}
+
+	Texture (attrib = "ao")
+	{
+		string {"Textures/bamboo-wood-semigloss-ao.png"}
+	}
+}
+
+Material $material4
+{
+	Name {string {"Rusted Iron"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/rustediron2_basecolor.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Textures/rustediron2_normal.png"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/rustediron2_metallic.png"}
+	}
+	
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/rustediron2_roughness.png"}
+	}
+
+	Texture (attrib = "ao")
+	{
+		string {"Textures/default_ao.png"}
+	}
+}
+
+Material $material5
+{
+	Name {string {"Loose Table Cloth"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+	Param (attrib = "roughness") {float {0.0}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/loose-tablecloth_albedo.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Textures/loose-tablecloth_normal.png"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/loose-tablecloth_metallic.png"}
+	}
+	
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/loose-tablecloth_roughness.png"}
+	}
+
+	Texture (attrib = "ao")
+	{
+		string {"Textures/loose-tablecloth_ao.png"}
+	}
+}
+
+Material $material6
+{
+	Name {string {"Framed Square Metal"}}
+
+	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
+	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
+	Param (attrib = "specular_power") {float {50}}
+
+	Texture (attrib = "diffuse")
+	{
+		string {"Textures/framed-square-metal-pattern1-albedo.png"}
+	}
+
+	Texture (attrib = "normal")
+	{
+		string {"Textures/framed-square-metal-pattern1-normal-dx.png"}
+	}
+	
+	Texture (attrib = "metallic")
+	{
+		string {"Textures/framed-square-metal-pattern1-metallic.png"}
+	}
+	
+	Texture (attrib = "roughness")
+	{
+		string {"Textures/framed-square-metal-pattern1-roughness.png"}
+	}
+
+	Texture (attrib = "ao")
+	{
+		string {"Textures/framed-square-metal-pattern1-ao.png"}
 	}
 }
