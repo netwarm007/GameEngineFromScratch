@@ -123,5 +123,5 @@
   // gamma correction
   linearColor = gamma_correction(linearColor);
 
-  return float4(linearColor, 1.0f);
+  return float4(linearColor, alpha);
 }
