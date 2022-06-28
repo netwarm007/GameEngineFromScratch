@@ -1,6 +1,6 @@
 Material $material1
 {
-	Name {string {"Red Bricks"}}
+	Name {string {"Red_Bricks"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.640000066757203, 0.640000066757203, 0.640000066757203}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
@@ -34,7 +34,7 @@ Material $material1
 
 Material $material2
 {
-	Name {string {"Gold Scuffed"}}
+	Name {string {"Gold_Scuffed"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
@@ -68,7 +68,7 @@ Material $material2
 
 Material $material3
 {
-	Name {string {"Bamboo Wood Semigloss"}}
+	Name {string {"Bamboo_Wood_Semigloss"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.800000011920929, 0.800000011920929, 0.800000011920929}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
@@ -102,7 +102,7 @@ Material $material3
 
 Material $material4
 {
-	Name {string {"Rusted Iron"}}
+	Name {string {"Rusted_Iron"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
@@ -136,7 +136,7 @@ Material $material4
 
 Material $material5
 {
-	Name {string {"Loose Table Cloth"}}
+	Name {string {"Loose_Table_Cloth"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
@@ -171,7 +171,7 @@ Material $material5
 
 Material $material6
 {
-	Name {string {"Framed Square Metal"}}
+	Name {string {"Framed_Square_Metal"}}
 
 	Color (attrib = "diffuse") {float[3] {{0.6400000190734865, 0.6400000190734865, 0.6400000190734865}}}
 	Color (attrib = "specular") {float[3] {{0.5, 0.5, 0.5}}}
