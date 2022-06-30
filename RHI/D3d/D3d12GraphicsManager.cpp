@@ -1569,6 +1569,8 @@ void D3d12GraphicsManager::EndFrame(const Frame& frame) {
             assert(0);
         }
     }
+
+    GraphicsManager::EndFrame(frame);
 }
 
 void D3d12GraphicsManager::BeginPass(const Frame& frame) {

@@ -631,6 +631,7 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame) {
+    GraphicsManager::BeginFrame(frame);
     // Set viewport
     const GfxConfiguration& conf = m_pApp->GetConfiguration();
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
@@ -645,6 +646,9 @@ void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame) {
 }
 
 void OpenGLGraphicsManagerCommonBase::EndFrame(const Frame& frame) {
+    m_nFrameIndex =
+        ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
+
     GraphicsManager::EndFrame(frame);
 }
 

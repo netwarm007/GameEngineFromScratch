@@ -225,6 +225,9 @@ void Metal2GraphicsManager::BeginFrame(const Frame& frame) {
 void Metal2GraphicsManager::EndFrame(const Frame& frame) {
     [m_pRenderer endFrame:frame];
 
+    m_nFrameIndex =
+        ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
+
     GraphicsManager::EndFrame(frame);
 }
 

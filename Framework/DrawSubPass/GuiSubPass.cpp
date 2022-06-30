@@ -9,12 +9,6 @@ using namespace My;
 
 void GuiSubPass::Draw(Frame& frame) {
     if (ImGui::GetCurrentContext()) {
-        ImGui::NewFrame();
-
         ImGui::ShowAboutWindow();
-
-        ImGui::Render();
-
-        ImGui::EndFrame();
     }
 }

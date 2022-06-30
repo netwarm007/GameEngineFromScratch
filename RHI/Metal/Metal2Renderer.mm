@@ -383,7 +383,10 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
     _renderEncoder.label = @"GuiRenderEncoder";
 
-    ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), _commandBuffer, _renderEncoder);
+    auto imgui_draw_data = ImGui::GetDrawData();
+    if (imgui_draw_data) {
+        ImGui_ImplMetal_RenderDrawData(imgui_draw_data, _commandBuffer, _renderEncoder);
+    }
 
     [_renderEncoder endEncoding];
 

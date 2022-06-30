@@ -69,7 +69,10 @@ void GraphicsManager::Tick() {
     UpdateConstants();
 
     BeginFrame(m_Frames[m_nFrameIndex]);
+    ImGui::NewFrame();
     Draw();
+    ImGui::Render();
+    ImGui::EndFrame();
     EndFrame(m_Frames[m_nFrameIndex]);
 
     ImGuiIO& io = ImGui::GetIO();
@@ -408,11 +411,10 @@ void GraphicsManager::EndScene() {
     m_Textures.clear();
 }
 
-void GraphicsManager::BeginFrame(const Frame& frame) {}
+void GraphicsManager::BeginFrame(const Frame& frame) {
+}
 
 void GraphicsManager::EndFrame(const Frame&) {
-    m_nFrameIndex =
-        ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
 }
 
 intptr_t GraphicsManager::GetTexture(const char* id) {
