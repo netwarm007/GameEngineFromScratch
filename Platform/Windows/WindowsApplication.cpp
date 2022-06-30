@@ -228,6 +228,20 @@ LRESULT CALLBACK WindowsApplication::m_fWindowProc(HWND hWnd, UINT message,
                 }
             }
             break;
+        case WM_MOUSEWHEEL:
+            if (pThis && pThis->m_pInputManager) {
+                auto fwKeys = GET_KEYSTATE_WPARAM(wParam);
+                auto yDelta = GET_WHEEL_DELTA_WPARAM(wParam) * WHEEL_DELTA;
+                pThis->m_pInputManager->RightMouseDrag(0, yDelta);
+            }
+            break;
+        case WM_MOUSEHWHEEL:
+            if (pThis && pThis->m_pInputManager) {
+                auto fwKeys = GET_KEYSTATE_WPARAM(wParam);
+                auto xDelta = GET_WHEEL_DELTA_WPARAM(wParam) * WHEEL_DELTA;
+                pThis->m_pInputManager->RightMouseDrag(xDelta, 0);
+            }
+            break;
         // this message is read when the window is closed
         case WM_CLOSE: {
             // close the application entirely
