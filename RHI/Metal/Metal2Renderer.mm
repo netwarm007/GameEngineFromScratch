@@ -398,8 +398,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     [_commandBuffer commit];
 
-    [_mtkView setNeedsDisplay:YES];
-
     _renderPassDescriptor = nil;
 }
 
@@ -780,6 +778,10 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     [_computeEncoder dispatchThreadgroups:threadgroupCount threadsPerThreadgroup:threadgroupSize];
 
     [_computeEncoder popDebugGroup];
+}
+
+- (void)present {
+    [_mtkView setNeedsDisplay:YES];
 }
 
 #ifdef DEBUG

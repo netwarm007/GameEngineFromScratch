@@ -20,6 +20,8 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)finalize;
 
+- (void)present;
+
 - (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
                                       device:(nonnull id<MTLDevice>)device;
 

@@ -28,9 +28,9 @@ void Metal2GraphicsManager::Finalize() {
     GraphicsManager::Finalize();
 }
 
-void Metal2GraphicsManager::Draw() { GraphicsManager::Draw(); }
-
-void Metal2GraphicsManager::Present() {}
+void Metal2GraphicsManager::Present() {
+    [m_pRenderer present];
+}
 
 void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
     uint32_t batch_index = 0;
