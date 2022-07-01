@@ -208,14 +208,6 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
     }
 }
 
-void Metal2GraphicsManager::BeginScene(const Scene& scene) {
-    GraphicsManager::BeginScene(scene);
-
-    cout << "Done!" << endl;
-}
-
-void Metal2GraphicsManager::EndScene() { GraphicsManager::EndScene(); }
-
 void Metal2GraphicsManager::BeginFrame(const Frame& frame) {
     GraphicsManager::BeginFrame(frame);
 

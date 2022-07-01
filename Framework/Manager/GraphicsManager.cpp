@@ -71,17 +71,17 @@ void GraphicsManager::Tick() {
     BeginFrame(m_Frames[m_nFrameIndex]);
     ImGui::NewFrame();
     Draw();
-    ImGui::Render();
     ImGui::EndFrame();
+    ImGui::Render();
     EndFrame(m_Frames[m_nFrameIndex]);
+
+    Present();
 
     ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
-
-    Present();
 }
 
 void GraphicsManager::ResizeCanvas(int32_t width, int32_t height) {
