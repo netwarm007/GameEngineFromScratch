@@ -56,7 +56,6 @@ class TestGraphicsManager : public TGraphicsManager {
         {
             static float f = 0.0f;
             static int counter = 0;
-            static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
             ImGui::Begin("Hello, world!");  // Create a window called "Hello,
                                             // world!" and append into it.
@@ -73,7 +72,7 @@ class TestGraphicsManager : public TGraphicsManager {
                 1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3(
                 "clear color",
-                (float*)&clear_color);  // Edit 3 floats representing a color
+                (float*)frame.clearColor);  // Edit 3 floats representing a color
 
             if (ImGui::Button(
                     "Button"))  // Buttons return true when clicked (most

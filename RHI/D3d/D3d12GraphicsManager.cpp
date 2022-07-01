@@ -482,7 +482,7 @@ void D3d12GraphicsManager::EndFrame(const Frame& frame) {
 
 void D3d12GraphicsManager::BeginPass(const Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
-    rhi.BeginPass();
+    rhi.BeginPass(frame.clearColor);
 }
 
 void D3d12GraphicsManager::EndPass(const Frame& frame) {

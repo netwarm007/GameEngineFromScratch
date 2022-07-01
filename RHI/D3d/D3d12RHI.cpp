@@ -798,7 +798,7 @@ void D3d12RHI::DestroyAll() {
 #endif
 }
 
-void D3d12RHI::BeginPass() {
+void D3d12RHI::BeginPass(const Vector4f& clearColor) {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
     m_pCmdList->Reset(m_pGraphicsCommandAllocator, NULL);
@@ -835,7 +835,6 @@ void D3d12RHI::BeginPass() {
     m_pCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
     // clear the back buffer to a deep blue
-    const FLOAT clearColor[] = {0.2f, 0.3f, 0.4f, 1.0f};
     m_pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
                                       0, 0, nullptr);

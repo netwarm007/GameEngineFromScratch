@@ -94,7 +94,7 @@ class D3d12RHI {
     void DestroyAll();
 
     void BeginFrame();
-    void BeginPass();
+    void BeginPass(const Vector4f& clearColor);
     void SetPipelineState(ID3D12PipelineState* pPipelineState);
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void Draw();

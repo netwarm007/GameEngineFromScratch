@@ -217,13 +217,14 @@ int main() {
 
     rhi.DestroyResourceCB(destroyResourceFunc);
 
+    Vector4f clearColor {1.0f, 1.0f, 1.0f, 1.0f};
     // 主消息循环
     while (!app.IsQuit()) {
         app.Tick();
 
         // 绘制一帧
         rhi.BeginFrame();
-        rhi.BeginPass();
+        rhi.BeginPass(clearColor);
         rhi.SetPipelineState(pPipelineState);
         rhi.SetRootSignature(pRootSignature);
         rhi.Draw();
