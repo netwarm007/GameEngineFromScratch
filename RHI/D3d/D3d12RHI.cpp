@@ -331,7 +331,8 @@ void D3d12RHI::CreateDepthStencils() {
     resourceDesc.Format = ::DXGI_FORMAT_D32_FLOAT;
     resourceDesc.SampleDesc.Count = config.msaaSamples;
     if (config.msaaSamples > 1) {
-        resourceDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+        resourceDesc.SampleDesc.Quality =
+            DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
     } else {
         resourceDesc.SampleDesc.Quality = 0;
     }
@@ -376,7 +377,7 @@ void D3d12RHI::CreateFramebuffers() {
             rtvHandle.ptr += m_nRtvDescriptorSize;
 
             m_pDev->CreateRenderTargetView(m_pRenderTargets.back(), nullptr,
-                                        rtvHandle);
+                                           rtvHandle);
         }
     }
 
@@ -594,7 +595,7 @@ ID3D12RootSignature* D3d12RHI::CreateRootSignature(
         0, shader.pShaderBytecode, shader.BytecodeLength,
         IID_PPV_ARGS(&pRootSignature))));
 
-    return pRootSignature; 
+    return pRootSignature;
 }
 
 ID3D12PipelineState* D3d12RHI::CreateGraphicsPipeline(
@@ -636,7 +637,8 @@ void D3d12RHI::CreateDescriptorPool(size_t num_descriptors,
     }
 }
 
-void D3d12RHI::CreateDescriptorSets(ID3D12Resource** ppResources, size_t count) {
+void D3d12RHI::CreateDescriptorSets(ID3D12Resource** ppResources,
+                                    size_t count) {
     for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         // uniform buffer (constant buffer)
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
@@ -837,7 +839,6 @@ void D3d12RHI::BeginPass() {
     m_pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
                                       0, 0, nullptr);
-
 }
 
 void D3d12RHI::SetPipelineState(ID3D12PipelineState* pPipelineState) {
@@ -894,16 +895,15 @@ void D3d12RHI::Draw() {
     // draw the vertex buffer to the back buffer
     m_pCmdList->DrawIndexedInstanced(m_Indices.size(), 1, 0, 0, 0);
 
-    // MSAA Resolve
-    if (m_fGetGfxConfigHandler().msaaSamples > 1) {
-        msaaResolve();
-    }
-
     // 更新常量
     updateUniformBufer();
 }
 
 void D3d12RHI::EndPass() {
+    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+}
+
+void D3d12RHI::Present() {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
     D3D12_RESOURCE_BARRIER barrier;
@@ -925,9 +925,7 @@ void D3d12RHI::EndPass() {
         assert(SUCCEEDED(m_pGraphicsCommandQueue->Signal(
             m_pGraphicsFence, m_nGraphicsFenceValues[m_nCurrentFrame])));
     }
-}
 
-void D3d12RHI::Present() {
     // swap the back buffer and the front buffer
     assert(SUCCEEDED(m_pSwapChain->Present(1, 0)));
 
@@ -1296,9 +1294,20 @@ size_t D3d12RHI::CreateIndexBuffer(const void* pData, size_t size,
     return offset;
 }
 
+void D3d12RHI::BeginFrame() {
+    // nothing here
+}
+
+void D3d12RHI::EndFrame() {
+    // MSAA Resolve
+    if (m_fGetGfxConfigHandler().msaaSamples > 1) {
+        msaaResolve();
+    }
+}
+
 #include "imgui_impl_dx12.h"
 
-void D3d12RHI::DrawGUI() {
+void D3d12RHI::DrawGUI(ID3D12DescriptorHeap* pCbvRsvHeap) {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
     // now draw GUI overlay
@@ -1307,6 +1316,11 @@ void D3d12RHI::DrawGUI() {
     rtvHandle =
         m_pRtvHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart();
     m_pCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+    // set descriptor heaps
+    ID3D12DescriptorHeap* ppHeaps[] = {pCbvRsvHeap};
+    m_pCmdList->SetDescriptorHeaps(static_cast<int32_t>(_countof(ppHeaps)),
+                                   ppHeaps);
 
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_pCmdList);
 }

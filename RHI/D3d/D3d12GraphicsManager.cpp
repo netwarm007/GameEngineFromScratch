@@ -19,7 +19,7 @@ using namespace My;
 using namespace std;
 
 D3d12GraphicsManager::~D3d12GraphicsManager() {
-    SafeRelease(&m_pCbvSrvUavHeap);
+    SafeRelease(&m_pCbvSrvUavHeapImGui);
 }
 
 int D3d12GraphicsManager::Initialize() {
@@ -34,16 +34,16 @@ int D3d12GraphicsManager::Initialize() {
     cbvSrvUavHeapDesc.NumDescriptors = 1;
 
     assert(SUCCEEDED(pDev->CreateDescriptorHeap(
-        &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeap))));
-    m_pCbvSrvUavHeap->SetName(L"ImGui CbvSrvUav Heap");
+        &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeapImGui))));
+    m_pCbvSrvUavHeapImGui->SetName(L"ImGui CbvSrvUav Heap");
 
     auto cpuDescriptorHandle =
-        m_pCbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
+        m_pCbvSrvUavHeapImGui->GetCPUDescriptorHandleForHeapStart();
     auto gpuDescriptorHandle =
-        m_pCbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart();
+        m_pCbvSrvUavHeapImGui->GetGPUDescriptorHandleForHeapStart();
 
     ImGui_ImplDX12_Init(pDev, GfxConfiguration::kMaxInFlightFrameCount,
-                        ::DXGI_FORMAT_R8G8B8A8_UNORM, m_pCbvSrvUavHeap,
+                        ::DXGI_FORMAT_R8G8B8A8_UNORM, m_pCbvSrvUavHeapImGui,
                         cpuDescriptorHandle, gpuDescriptorHandle);
 
     // 创建命令清单池
@@ -474,6 +474,9 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame) {
 }
 
 void D3d12GraphicsManager::EndFrame(const Frame& frame) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+    rhi.EndFrame();
+    rhi.DrawGUI(m_pCbvSrvUavHeapImGui);
     GraphicsManager::EndFrame(frame);
 }
 
@@ -495,7 +498,6 @@ void D3d12GraphicsManager::DrawBatch(const Frame& frame) {
 
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     rhi.Draw();
-    rhi.DrawGUI();
 }
 
 void D3d12GraphicsManager::SetPipelineState(

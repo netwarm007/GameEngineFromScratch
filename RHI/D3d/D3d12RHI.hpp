@@ -93,12 +93,14 @@ class D3d12RHI {
     void ResetAllBuffers();
     void DestroyAll();
 
+    void BeginFrame();
     void BeginPass();
     void SetPipelineState(ID3D12PipelineState* pPipelineState);
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void Draw();
-    void DrawGUI();
+    void DrawGUI(ID3D12DescriptorHeap* pCbvSrvHeap);
     void EndPass();
+    void EndFrame();
 
     void Present();
 

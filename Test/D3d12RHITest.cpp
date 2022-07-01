@@ -222,11 +222,13 @@ int main() {
         app.Tick();
 
         // 绘制一帧
+        rhi.BeginFrame();
         rhi.BeginPass();
         rhi.SetPipelineState(pPipelineState);
         rhi.SetRootSignature(pRootSignature);
         rhi.Draw();
         rhi.EndPass();
+        rhi.EndFrame();
 
         rhi.Present();
     }

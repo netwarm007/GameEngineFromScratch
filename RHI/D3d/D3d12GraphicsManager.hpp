@@ -78,7 +78,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     HRESULT CreatePSO(D3d12PipelineState& pipelineState);
 
    private:
-    ID3D12DescriptorHeap* m_pCbvSrvUavHeap;
+    ID3D12DescriptorHeap* m_pCbvSrvUavHeapImGui;
 
     struct D3dDrawBatchContext : public DrawBatchContext {
         uint32_t index_count{0};
