@@ -61,7 +61,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     void EndFrame(const Frame& frame) final;
 
     void BeginPass(const Frame& frame) final;
-    void EndPass(const Frame& frame) final {}
+    void EndPass(const Frame& frame) final;
 
     void BeginCompute() final;
     void EndCompute() final;

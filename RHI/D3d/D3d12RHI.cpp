@@ -330,7 +330,11 @@ void D3d12RHI::CreateDepthStencils() {
     resourceDesc.MipLevels = 1;
     resourceDesc.Format = ::DXGI_FORMAT_D32_FLOAT;
     resourceDesc.SampleDesc.Count = config.msaaSamples;
-    resourceDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+    if (config.msaaSamples > 1) {
+        resourceDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+    } else {
+        resourceDesc.SampleDesc.Quality = 0;
+    }
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
@@ -368,10 +372,12 @@ void D3d12RHI::CreateFramebuffers() {
 
         m_pDev->CreateRenderTargetView(m_pRenderTargets[i], nullptr, rtvHandle);
 
-        rtvHandle.ptr += m_nRtvDescriptorSize;
+        if (m_fGetGfxConfigHandler().msaaSamples > 1) {
+            rtvHandle.ptr += m_nRtvDescriptorSize;
 
-        m_pDev->CreateRenderTargetView(m_pRenderTargets.back(), nullptr,
-                                       rtvHandle);
+            m_pDev->CreateRenderTargetView(m_pRenderTargets.back(), nullptr,
+                                        rtvHandle);
+        }
     }
 
     // Describe and create a depth stencil view (DSV) descriptor heap.
@@ -810,6 +816,19 @@ void D3d12RHI::BeginPass() {
         rtvHandle.ptr += m_nRtvDescriptorSize;
     }
 
+    // transfer resource state
+    D3D12_RESOURCE_BARRIER barrier;
+
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+    m_pCmdList->ResourceBarrier(1, &barrier);
+
+    // set frame buffers
     dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
     m_pCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
@@ -887,6 +906,17 @@ void D3d12RHI::Draw() {
 void D3d12RHI::EndPass() {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
+    D3D12_RESOURCE_BARRIER barrier;
+
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+    m_pCmdList->ResourceBarrier(1, &barrier);
+
     if (SUCCEEDED(m_pCmdList->Close())) {
         ID3D12CommandList* ppCommandLists[] = {m_pCmdList};
         m_pGraphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists),
@@ -919,7 +949,7 @@ void D3d12RHI::msaaResolve() {
     barrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier[1].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barrier[1].Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
-    barrier[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    barrier[1].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RESOLVE_DEST;
     barrier[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     m_pCmdList->ResourceBarrier(2, barrier);

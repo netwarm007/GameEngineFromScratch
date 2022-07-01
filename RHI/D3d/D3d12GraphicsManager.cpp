@@ -474,15 +474,17 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame) {
 }
 
 void D3d12GraphicsManager::EndFrame(const Frame& frame) {
-    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
-    rhi.EndPass();
-
     GraphicsManager::EndFrame(frame);
 }
 
 void D3d12GraphicsManager::BeginPass(const Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     rhi.BeginPass();
+}
+
+void D3d12GraphicsManager::EndPass(const Frame& frame) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+    rhi.EndPass();
 }
 
 void D3d12GraphicsManager::DrawBatch(const Frame& frame) {

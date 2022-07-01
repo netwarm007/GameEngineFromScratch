@@ -119,7 +119,11 @@ int main() {
         psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psod.NumRenderTargets = 1;
         psod.SampleDesc.Count = config.msaaSamples;
-        psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+        if (config.msaaSamples > 1) {
+            psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
+        } else {
+            psod.SampleDesc.Quality = 0;
+        }
         psod.DSVFormat = ::DXGI_FORMAT_D32_FLOAT;
         psod.RTVFormats[0] = ::DXGI_FORMAT_R8G8B8A8_UNORM;
 
@@ -199,16 +203,17 @@ int main() {
 
     // 创建资源描述子池
     rhi.CreateDescriptorPool(2, L"CbvSrvUav Heap",
-                                 config.kMaxInFlightFrameCount);
+                             config.kMaxInFlightFrameCount);
 
     // 创建资源描述子集
     rhi.CreateDescriptorSets(&pTexture, 1);
 
-    D3d12RHI::DestroyResourceFunc destroyResourceFunc = [pTexture, pPipelineState, pRootSignature](){
-        pTexture->Release();
-        pPipelineState->Release();
-        pRootSignature->Release();
-    };
+    D3d12RHI::DestroyResourceFunc destroyResourceFunc =
+        [pTexture, pPipelineState, pRootSignature]() {
+            pTexture->Release();
+            pPipelineState->Release();
+            pRootSignature->Release();
+        };
 
     rhi.DestroyResourceCB(destroyResourceFunc);
 
