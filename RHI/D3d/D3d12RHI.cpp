@@ -790,13 +790,35 @@ void D3d12RHI::DestroyAll() {
 #endif
 }
 
-void D3d12RHI::BeginGraphicCommands() {
+void D3d12RHI::BeginPass() {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
     m_pCmdList->Reset(m_pGraphicsCommandAllocator, NULL);
 
     m_pCmdList->RSSetViewports(1, &m_ViewPort);
     m_pCmdList->RSSetScissorRects(1, &m_ScissorRect);
+
+    // bind the frame buffer
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+
+    rtvHandle.ptr =
+        m_pRtvHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart().ptr;
+
+    if (m_fGetGfxConfigHandler().msaaSamples > 1) {
+        // point to MASS buffer
+        rtvHandle.ptr += m_nRtvDescriptorSize;
+    }
+
+    dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
+    m_pCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+    // clear the back buffer to a deep blue
+    const FLOAT clearColor[] = {0.2f, 0.3f, 0.4f, 1.0f};
+    m_pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
+                                      0, 0, nullptr);
+
 }
 
 void D3d12RHI::SetPipelineState(ID3D12PipelineState* pPipelineState) {
@@ -835,27 +857,6 @@ void D3d12RHI::Draw() {
     // set primitive topology
     m_pCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // bind the frame buffer
-    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-    D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
-
-    rtvHandle.ptr =
-        m_pRtvHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart().ptr;
-
-    if (config.msaaSamples > 1) {
-        // point to MASS buffer
-        rtvHandle.ptr += m_nRtvDescriptorSize;
-    }
-
-    dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
-    m_pCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-    // clear the back buffer to a deep blue
-    const FLOAT clearColor[] = {0.2f, 0.3f, 0.4f, 1.0f};
-    m_pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-    m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
-                                      0, 0, nullptr);
-
     // set descriptor heaps
     ID3D12DescriptorHeap* ppHeaps[] = {m_pCbvSrvUavHeaps[m_nCurrentFrame],
                                        m_pSamplerHeap};
@@ -883,19 +884,8 @@ void D3d12RHI::Draw() {
     updateUniformBufer();
 }
 
-void D3d12RHI::EndGraphicCommands() {
+void D3d12RHI::EndPass() {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
-
-    D3D12_RESOURCE_BARRIER barrier;
-
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-    m_pCmdList->ResourceBarrier(1, &barrier);
 
     if (SUCCEEDED(m_pCmdList->Close())) {
         ID3D12CommandList* ppCommandLists[] = {m_pCmdList};

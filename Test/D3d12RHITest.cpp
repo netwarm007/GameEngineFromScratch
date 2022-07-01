@@ -217,11 +217,11 @@ int main() {
         app.Tick();
 
         // 绘制一帧
-        rhi.BeginGraphicCommands();
+        rhi.BeginPass();
         rhi.SetPipelineState(pPipelineState);
         rhi.SetRootSignature(pRootSignature);
         rhi.Draw();
-        rhi.EndGraphicCommands();
+        rhi.EndPass();
 
         rhi.Present();
     }

@@ -76,7 +76,8 @@ class D3d12RHI {
 
     void CreateUniformBuffers();
 
-    ID3D12RootSignature* CreateRootSignature(const D3D12_SHADER_BYTECODE& shader);
+    ID3D12RootSignature* CreateRootSignature(
+        const D3D12_SHADER_BYTECODE& shader);
 
     ID3D12PipelineState* CreateGraphicsPipeline(
         D3D12_GRAPHICS_PIPELINE_STATE_DESC& psod);
@@ -85,20 +86,19 @@ class D3d12RHI {
         D3D12_COMPUTE_PIPELINE_STATE_DESC& psod);
 
     void CreateDescriptorPool(size_t num_descriptors,
-                              const wchar_t* heap_group_name,
-                              size_t num_heaps);
+                              const wchar_t* heap_group_name, size_t num_heaps);
 
     void CreateDescriptorSets(ID3D12Resource** ppResources, size_t count);
 
     void ResetAllBuffers();
     void DestroyAll();
 
-    void BeginGraphicCommands();
+    void BeginPass();
     void SetPipelineState(ID3D12PipelineState* pPipelineState);
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void Draw();
     void DrawGUI();
-    void EndGraphicCommands();
+    void EndPass();
 
     void Present();
 

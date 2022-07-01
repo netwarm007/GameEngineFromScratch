@@ -58,7 +58,6 @@ class TestGraphicsManager : public TGraphicsManager {
             static int counter = 0;
             static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-
             ImGui::Begin("Hello, world!");  // Create a window called "Hello,
                                             // world!" and append into it.
 
@@ -96,37 +95,29 @@ int main(int argc, char** argv) {
     int result;
 
 #if defined(OS_MACOS)
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "ImGUI Test (Cocoa Meta)");
-        CocoaMetalApplication app(config);
-
-        TestGraphicsManager graphicsManager;
-
-        app.SetCommandLineParameters(argc, argv);
-        app.RegisterManagerModule(&graphicsManager);
-
-        result |= test(app);
-    }
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
+                            "ImGUI Test (Cocoa Meta)");
+    CocoaMetalApplication app(config);
 #endif
 
 #if defined(OS_WINDOWS)
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "ImGUI Test (DX12)");
-        D3d12Application app(config);
-        result |= test(app);
-    }
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
+                            "ImGUI Test (DX12)");
+    D3d12Application app(config);
 #endif
 
 #if defined(OS_LINUX)
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "ImGUI Test (OpenGL)");
-        OpenGLApplication app(config);
-        result |= test(app);
-    }
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
+                            "ImGUI Test (OpenGL)");
+    OpenGLApplication app(config);
 #endif
+
+    TestGraphicsManager graphicsManager;
+
+    app.SetCommandLineParameters(argc, argv);
+    app.RegisterManagerModule(&graphicsManager);
+
+    result |= test(app);
 
     return result;
 }
