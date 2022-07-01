@@ -54,7 +54,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
 
-   private:
+   protected:
     void BeginScene(const Scene& scene) final;
     void EndScene() final;
 

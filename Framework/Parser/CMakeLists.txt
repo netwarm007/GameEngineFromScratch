@@ -2,7 +2,13 @@ find_package(BISON)
 BISON_TARGET(MGEMXParser MGEMX.y ${CMAKE_CURRENT_BINARY_DIR}/MGEMX.parser.generated.cpp)
 
 find_package(FLEX)
-FLEX_TARGET(MGEMXScanner MGEMX.l ${CMAKE_CURRENT_BINARY_DIR}/MGEMX.scanner.generated.cpp)
+if(OS_WINDOWS)
+set(FLEX_COMPILE_FLAGS "--wincompat")
+endif(OS_WINDOWS)
+
+FLEX_TARGET(MGEMXScanner MGEMX.l ${CMAKE_CURRENT_BINARY_DIR}/MGEMX.scanner.generated.cpp
+    COMPILE_FLAGS ${FLEX_COMPILE_FLAGS}
+)
 
 add_library(Parser OGEX.cpp
     ${BISON_MGEMXParser_OUTPUTS}
