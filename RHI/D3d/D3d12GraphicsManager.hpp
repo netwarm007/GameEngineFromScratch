@@ -55,7 +55,6 @@ class D3d12GraphicsManager : public GraphicsManager {
                   const uint32_t depth) final;
 
    private:
-    void BeginScene(const Scene& scene) final;
     void EndScene() final;
 
     void BeginFrame(const Frame& frame) final;
@@ -73,81 +72,13 @@ class D3d12GraphicsManager : public GraphicsManager {
     void SetPerFrameConstants(const Frame& frame);
     void SetLightInfo(const Frame& frame);
 
-    HRESULT CreateDescriptorHeaps();
-    HRESULT CreateRenderTarget();
-    HRESULT CreateDepthStencil();
-    HRESULT CreateGraphicsResources();
-
-    uint32_t CreateSamplerBuffer();
-    uint32_t CreateConstantBuffer();
-    size_t CreateIndexBuffer(const void* pData, size_t size,
-                             int32_t index_size);
     size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
-    size_t CreateVertexBuffer(const void* pData, size_t size, int32_t stride);
     size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
 
-    void waitOnFrame();
-    void moveToNextFrame();
     HRESULT CreatePSO(D3d12PipelineState& pipelineState);
-    HRESULT CreateCommandList();
-    HRESULT MsaaResolve();
 
    private:
-    ID3D12Device4* m_pDev =
-        nullptr;  // the pointer to our Direct3D device interface
-#if defined(D3D12_RHI_DEBUG)
-    ID3D12Debug* m_pDebugController = nullptr;
-    ID3D12DebugDevice* m_pDebugDev = nullptr;
-#endif
-    D3D12_VIEWPORT m_ViewPort;  // viewport structure
-    D3D12_RECT m_ScissorRect;   // scissor rect structure
-    IDXGISwapChain3* m_pSwapChain =
-        nullptr;  // the pointer to the swap chain interface
-    std::vector<ID3D12Resource*>
-        m_pRenderTargets;  // the pointer to rendering buffer. [descriptor]
-    ID3D12Resource* m_pDepthStencilBuffer;  // the pointer to the depth
-                                            // stencil buffer
-    ID3D12CommandAllocator*
-        m_pGraphicsCommandAllocator;  // the pointer to command
-                                      // buffer allocator
-    ID3D12CommandAllocator*
-        m_pComputeCommandAllocator;                   // the pointer to command
-                                                      // buffer allocator
-    ID3D12CommandAllocator* m_pCopyCommandAllocator;  // the pointer to command
-                                                      // buffer allocator
-    std::vector<ID3D12GraphicsCommandList*>
-        m_pGraphicsCommandLists;  // a list to store GPU
-                                  // commands, which will be
-                                  // submitted to GPU to
-                                  // execute when done
-    ID3D12GraphicsCommandList* m_pComputeCommandList;
-    ID3D12GraphicsCommandList* m_pCopyCommandList;
-
-    ID3D12CommandQueue*
-        m_pGraphicsCommandQueue;                 // the pointer to command queue
-    ID3D12CommandQueue* m_pComputeCommandQueue;  // the pointer to command queue
-    ID3D12CommandQueue* m_pCopyCommandQueue;     // the pointer to command queue
-
-    std::array<ID3D12DescriptorHeap*, GfxConfiguration::kMaxInFlightFrameCount>
-        m_pRtvHeaps;                   // an array of heaps store
-                                       // descriptors of RTV
-    ID3D12DescriptorHeap* m_pDsvHeap;  // an array of heaps store
-                                       // descriptors of DSV
-
-    std::vector<ID3D12DescriptorHeap*> m_pCbvSrvUavHeaps;
-
-    ID3D12DescriptorHeap* m_pSamplerHeap;
-
-    uint32_t m_nRtvDescriptorSize;
-    uint32_t m_nCbvSrvUavDescriptorSize;
-    uint32_t m_nSamplerDescriptorSize;
-
-    std::vector<ID3D12Resource*>
-        m_Buffers;  // the pointer to the GPU buffer other than texture
-    std::vector<D3D12_VERTEX_BUFFER_VIEW>
-        m_VertexBufferView;  // vertex buffer descriptors
-    std::vector<D3D12_INDEX_BUFFER_VIEW>
-        m_IndexBufferView;  // index buffer descriptors
+    ID3D12DescriptorHeap* m_pCbvSrvUavHeap;
 
     struct D3dDrawBatchContext : public DrawBatchContext {
         uint32_t index_count{0};
@@ -158,19 +89,5 @@ class D3d12GraphicsManager : public GraphicsManager {
     };
 
     D3dDrawBatchContext m_dbcSkyBox;
-
-    std::array<ID3D12Resource*, GfxConfiguration::kMaxInFlightFrameCount>
-        m_pPerFrameConstantUploadBuffer;
-
-    std::array<ID3D12Resource*, GfxConfiguration::kMaxInFlightFrameCount>
-        m_pLightInfoUploadBuffer;
-
-    // Synchronization objects
-    HANDLE m_hGraphicsFenceEvent;
-    HANDLE m_hCopyFenceEvent;
-    HANDLE m_hComputeFenceEvent;
-    ID3D12Fence* m_pGraphicsFence;
-    std::array<uint64_t, GfxConfiguration::kMaxInFlightFrameCount>
-        m_nGraphicsFenceValues;
 };
 }  // namespace My

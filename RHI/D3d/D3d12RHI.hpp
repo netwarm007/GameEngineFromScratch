@@ -16,12 +16,12 @@
 namespace My {
 
 class D3d12RHI {
+   public:
     using QueryFrameBufferSizeFunc = std::function<void(int&, int&)>;
     using GetWindowHandlerFunc = std::function<HWND()>;
     using GetGfxConfigFunc = std::function<const GfxConfiguration&()>;
-    using ResourceID = size_t;
+    using DestroyResourceFunc = std::function<void()>;
 
-   public:
     struct Vertex {
         Vector3f pos;
         Vector3f color;
@@ -48,6 +48,9 @@ class D3d12RHI {
     void SetGetGfxConfigCB(const GetGfxConfigFunc& func) {
         m_fGetGfxConfigHandler = func;
     }
+    void DestroyResourceCB(const DestroyResourceFunc& func) {
+        m_fDestroyResourceHandler = func;
+    }
     void CreateDevice();
     void EnableDebugLayer();
     void CreateCommandQueues();
@@ -63,7 +66,7 @@ class D3d12RHI {
     void CreateCommandPools();
     void CreateCommandLists();
 
-    ResourceID CreateTextureImage(Image& img);
+    ID3D12Resource* CreateTextureImage(Image& img);
 
     void CreateTextureSampler();
 
@@ -73,22 +76,40 @@ class D3d12RHI {
 
     void CreateUniformBuffers();
 
-    void CreateDescriptorSetLayout();
+    ID3D12RootSignature* CreateRootSignature(const D3D12_SHADER_BYTECODE& shader);
 
-    void CreateGraphicsPipeline();
+    ID3D12PipelineState* CreateGraphicsPipeline(
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC& psod);
 
-    void CreateDescriptorPool();
+    ID3D12PipelineState* CreateComputePipeline(
+        D3D12_COMPUTE_PIPELINE_STATE_DESC& psod);
 
-    void CreateDescriptorSets();
+    void CreateDescriptorPool(size_t num_descriptors,
+                              const wchar_t* heap_group_name,
+                              size_t num_heaps);
 
+    void CreateDescriptorSets(ID3D12Resource** ppResources, size_t count);
+
+    void ResetAllBuffers();
     void DestroyAll();
 
-    void DrawFrame();
+    void BeginGraphicCommands();
+    void SetPipelineState(ID3D12PipelineState* pPipelineState);
+    void SetRootSignature(ID3D12RootSignature* pRootSignature);
+    void Draw();
+    void DrawGUI();
+    void EndGraphicCommands();
+
+    void Present();
 
     void setModel(const std::vector<Vertex>& vertices,
                   const std::vector<uint32_t>& indices);
 
-    void setShaders(Buffer& vertShaderCode, Buffer& fragShaderCode);
+    size_t CreateIndexBuffer(const void* pData, size_t size,
+                             int32_t index_size);
+    size_t CreateVertexBuffer(const void* pData, size_t size, int32_t stride);
+
+    ID3D12Device* GetDevice() { return m_pDev; }
 
    private:
     void msaaResolve();
@@ -147,24 +168,18 @@ class D3d12RHI {
     uint32_t m_nCbvSrvUavDescriptorSize;
     uint32_t m_nSamplerDescriptorSize;
 
-    ID3D12RootSignature* m_pRootSignature;
-    ID3D12PipelineState* m_pPipelineState;
-
     std::vector<ID3D12Resource*> m_pRawBuffers;
 
-    std::vector<ID3D12Resource*> m_pTextureBuffers;
-
     std::vector<ID3D12Resource*> m_pIndexBuffers;
+    std::vector<D3D12_INDEX_BUFFER_VIEW> m_IndexBufferViews;
 
     std::vector<ID3D12Resource*> m_pVertexBuffers;
+    std::vector<D3D12_VERTEX_BUFFER_VIEW> m_VertexBufferViews;
 
     std::vector<ID3D12Resource*> m_pUniformBuffers;
 
     std::vector<Vertex> m_Vertices;
     std::vector<uint32_t> m_Indices;
-
-    D3D12_SHADER_BYTECODE m_VertexShaderModule;
-    D3D12_SHADER_BYTECODE m_PixelShaderModule;
 
     // Synchronization objects
     HANDLE m_hGraphicsFenceEvent = INVALID_HANDLE_VALUE;
@@ -177,6 +192,7 @@ class D3d12RHI {
     QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
     GetWindowHandlerFunc m_fGetWindowHandler;
     GetGfxConfigFunc m_fGetGfxConfigHandler;
+    DestroyResourceFunc m_fDestroyResourceHandler;
 
     uint32_t m_nCurrentFrame = 0;
     bool m_bInitialized = false;

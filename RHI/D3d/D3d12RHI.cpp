@@ -465,7 +465,7 @@ void D3d12RHI::endSingleTimeCommands() {
     SafeRelease(&pCopyQueueFence);
 }
 
-D3d12RHI::ResourceID D3d12RHI::CreateTextureImage(Image& img) {
+ID3D12Resource* D3d12RHI::CreateTextureImage(Image& img) {
     // Describe and create a Texture2D.
     D3D12_HEAP_PROPERTIES prop{};
     prop.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -539,9 +539,8 @@ D3d12RHI::ResourceID D3d12RHI::CreateTextureImage(Image& img) {
     endSingleTimeCommands();
 
     SafeRelease(&pTextureUploadHeap);
-    m_pTextureBuffers.push_back(pTextureBuffer);
 
-    return m_pTextureBuffers.size();
+    return pTextureBuffer;
 }
 
 void D3d12RHI::CreateTextureSampler() {
@@ -581,121 +580,57 @@ void D3d12RHI::CreateTextureSampler() {
     }
 }
 
-void D3d12RHI::setShaders(Buffer& vertShaderCode, Buffer& fragShaderCode) {
-    m_VertexShaderModule.BytecodeLength = vertShaderCode.GetDataSize();
-    m_VertexShaderModule.pShaderBytecode = vertShaderCode.MoveData();
-
-    m_PixelShaderModule.BytecodeLength = fragShaderCode.GetDataSize();
-    m_PixelShaderModule.pShaderBytecode = fragShaderCode.MoveData();
-}
-
-void D3d12RHI::CreateDescriptorSetLayout() {
+ID3D12RootSignature* D3d12RHI::CreateRootSignature(
+    const D3D12_SHADER_BYTECODE& shader) {
     // create the root signature
+    ID3D12RootSignature* pRootSignature;
     assert(SUCCEEDED(m_pDev->CreateRootSignature(
-        0, m_PixelShaderModule.pShaderBytecode,
-        m_PixelShaderModule.BytecodeLength, IID_PPV_ARGS(&m_pRootSignature))));
+        0, shader.pShaderBytecode, shader.BytecodeLength,
+        IID_PPV_ARGS(&pRootSignature))));
+
+    return pRootSignature; 
 }
 
-void D3d12RHI::CreateGraphicsPipeline() {
-    auto config = m_fGetGfxConfigHandler();
-
-    // create rasterizer descriptor
-    D3D12_RASTERIZER_DESC rsd{D3D12_FILL_MODE_SOLID,
-                              D3D12_CULL_MODE_BACK,
-                              TRUE,
-                              D3D12_DEFAULT_DEPTH_BIAS,
-                              D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-                              TRUE,
-                              FALSE,
-                              FALSE,
-                              0,
-                              D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF};
-
-    const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend{
-        FALSE,
-        FALSE,
-        D3D12_BLEND_ONE,
-        D3D12_BLEND_ZERO,
-        D3D12_BLEND_OP_ADD,
-        D3D12_BLEND_ONE,
-        D3D12_BLEND_ZERO,
-        D3D12_BLEND_OP_ADD,
-        D3D12_LOGIC_OP_NOOP,
-        D3D12_COLOR_WRITE_ENABLE_ALL};
-
-    const D3D12_BLEND_DESC bld{FALSE,
-                               FALSE,
-                               {
-                                   defaultRenderTargetBlend,
-                                   defaultRenderTargetBlend,
-                                   defaultRenderTargetBlend,
-                                   defaultRenderTargetBlend,
-                                   defaultRenderTargetBlend,
-                                   defaultRenderTargetBlend,
-                                   defaultRenderTargetBlend,
-                               }};
-
-    static const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp{
-        D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP,
-        D3D12_COMPARISON_FUNC_ALWAYS};
-
-    D3D12_DEPTH_STENCIL_DESC dsd{TRUE,
-                                 D3D12_DEPTH_WRITE_MASK_ALL,
-                                 D3D12_COMPARISON_FUNC_LESS,
-                                 FALSE,
-                                 D3D12_DEFAULT_STENCIL_READ_MASK,
-                                 D3D12_DEFAULT_STENCIL_WRITE_MASK,
-                                 defaultStencilOp,
-                                 defaultStencilOp};
-
-    // create the input layout object
-    static const D3D12_INPUT_ELEMENT_DESC ied_simple[]{
-        {"POSITION", 0, ::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
-         D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, ::DXGI_FORMAT_R32G32_FLOAT, 0,
-         offsetof(Vertex, texCoord), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-         0}};
-
-    // describe and create the graphics pipeline state object (PSO)
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psod{};
-    psod.pRootSignature = m_pRootSignature;
-    psod.VS = m_VertexShaderModule;
-    psod.PS = m_PixelShaderModule;
-    psod.BlendState = bld;
-    psod.SampleMask = UINT_MAX;
-    psod.RasterizerState = rsd;
-    psod.DepthStencilState = dsd;
-    psod.InputLayout = {ied_simple, _countof(ied_simple)};
-
-    psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    psod.NumRenderTargets = 1;
-    psod.RTVFormats[0] = m_eSurfaceFormat;
-    psod.SampleDesc.Count = config.msaaSamples;
-    psod.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;
-    psod.DSVFormat = ::DXGI_FORMAT_D32_FLOAT;
+ID3D12PipelineState* D3d12RHI::CreateGraphicsPipeline(
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC& psod) {
+    ID3D12PipelineState* pPipelineState;
 
     assert(SUCCEEDED(m_pDev->CreateGraphicsPipelineState(
-        &psod, IID_PPV_ARGS(&m_pPipelineState))));
+        &psod, IID_PPV_ARGS(&pPipelineState))));
+
+    return pPipelineState;
 }
 
-void D3d12RHI::CreateDescriptorPool() {
+ID3D12PipelineState* D3d12RHI::CreateComputePipeline(
+    D3D12_COMPUTE_PIPELINE_STATE_DESC& psod) {
+    ID3D12PipelineState* pPipelineState;
+
+    assert(SUCCEEDED(m_pDev->CreateComputePipelineState(
+        &psod, IID_PPV_ARGS(&pPipelineState))));
+
+    return pPipelineState;
+}
+
+void D3d12RHI::CreateDescriptorPool(size_t num_descriptors,
+                                    const wchar_t* heap_group_name,
+                                    size_t num_heaps) {
     // Describe and create a CBV SRV UAV descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc{};
-    cbvSrvUavHeapDesc.NumDescriptors = 2;
     cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    cbvSrvUavHeapDesc.NumDescriptors = num_descriptors;
     m_nCbvSrvUavDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-    m_pCbvSrvUavHeaps.resize(GfxConfiguration::kMaxInFlightFrameCount);
-    for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+    m_pCbvSrvUavHeaps.resize(num_heaps);
+    for (int i = 0; i < num_heaps; i++) {
         assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
             &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeaps[i]))));
-        m_pCbvSrvUavHeaps[i]->SetName(L"CBV SRV UAV Descriptor Pool");
+        m_pCbvSrvUavHeaps[i]->SetName(heap_group_name);
     }
 }
 
-void D3d12RHI::CreateDescriptorSets() {
+void D3d12RHI::CreateDescriptorSets(ID3D12Resource** ppResources, size_t count) {
     for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         // uniform buffer (constant buffer)
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
@@ -708,8 +643,11 @@ void D3d12RHI::CreateDescriptorSets() {
 
         cbvHandle.ptr += m_nCbvSrvUavDescriptorSize;
 
-        // texture
-        m_pDev->CreateShaderResourceView(m_pTextureBuffers[0], NULL, cbvHandle);
+        // SRVs
+        for (size_t n = 0; n < count; n++) {
+            m_pDev->CreateShaderResourceView(ppResources[n], NULL, cbvHandle);
+            cbvHandle.ptr += m_nCbvSrvUavDescriptorSize;
+        }
     }
 }
 
@@ -782,15 +720,7 @@ void D3d12RHI::RecreateSwapChain() {
     }
 }
 
-void D3d12RHI::DestroyAll() {
-    CleanupSwapChain();
-
-    for (auto& pool : m_pCbvSrvUavHeaps) {
-        SafeRelease(&pool);
-    }
-
-    SafeRelease(&m_pSamplerHeap);
-
+void D3d12RHI::ResetAllBuffers() {
     for (auto& buf : m_pRawBuffers) {
         SafeRelease(&buf);
     }
@@ -803,17 +733,28 @@ void D3d12RHI::DestroyAll() {
         SafeRelease(&buf);
     }
 
-    for (auto& buf : m_pTextureBuffers) {
-        SafeRelease(&buf);
-    }
-
     for (auto& buf : m_pUniformBuffers) {
         SafeRelease(&buf);
     }
 
-    SafeRelease(&m_pPipelineState);
+    m_VertexBufferViews.clear();
+    m_IndexBufferViews.clear();
+}
 
-    SafeRelease(&m_pRootSignature);
+void D3d12RHI::DestroyAll() {
+    CleanupSwapChain();
+
+    if (m_fDestroyResourceHandler) {
+        m_fDestroyResourceHandler();
+    }
+
+    ResetAllBuffers();
+
+    for (auto& pool : m_pCbvSrvUavHeaps) {
+        SafeRelease(&pool);
+    }
+
+    SafeRelease(&m_pSamplerHeap);
 
     SafeRelease(&m_pGraphicsFence);
 
@@ -849,16 +790,30 @@ void D3d12RHI::DestroyAll() {
 #endif
 }
 
-void D3d12RHI::DrawFrame() {
-    auto config = m_fGetGfxConfigHandler();
-
+void D3d12RHI::BeginGraphicCommands() {
     auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
-    m_pCmdList->Reset(m_pGraphicsCommandAllocator, m_pPipelineState);
-    m_pCmdList->SetGraphicsRootSignature(m_pRootSignature);
+    m_pCmdList->Reset(m_pGraphicsCommandAllocator, NULL);
 
     m_pCmdList->RSSetViewports(1, &m_ViewPort);
     m_pCmdList->RSSetScissorRects(1, &m_ScissorRect);
+}
+
+void D3d12RHI::SetPipelineState(ID3D12PipelineState* pPipelineState) {
+    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+
+    m_pCmdList->SetPipelineState(pPipelineState);
+}
+
+void D3d12RHI::SetRootSignature(ID3D12RootSignature* pRootSignature) {
+    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    m_pCmdList->SetGraphicsRootSignature(pRootSignature);
+}
+
+void D3d12RHI::Draw() {
+    auto config = m_fGetGfxConfigHandler();
+
+    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
 
     // set which vertex buffer to use
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
@@ -926,6 +881,21 @@ void D3d12RHI::DrawFrame() {
 
     // 更新常量
     updateUniformBufer();
+}
+
+void D3d12RHI::EndGraphicCommands() {
+    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+
+    D3D12_RESOURCE_BARRIER barrier;
+
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    barrier.Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+    m_pCmdList->ResourceBarrier(1, &barrier);
 
     if (SUCCEEDED(m_pCmdList->Close())) {
         ID3D12CommandList* ppCommandLists[] = {m_pCmdList};
@@ -935,7 +905,9 @@ void D3d12RHI::DrawFrame() {
         assert(SUCCEEDED(m_pGraphicsCommandQueue->Signal(
             m_pGraphicsFence, m_nGraphicsFenceValues[m_nCurrentFrame])));
     }
+}
 
+void D3d12RHI::Present() {
     // swap the back buffer and the front buffer
     assert(SUCCEEDED(m_pSwapChain->Present(1, 0)));
 
@@ -977,7 +949,7 @@ void D3d12RHI::msaaResolve() {
     barrier[1].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     barrier[1].Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
     barrier[1].Transition.StateBefore = D3D12_RESOURCE_STATE_RESOLVE_DEST;
-    barrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+    barrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
     barrier[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
     m_pCmdList->ResourceBarrier(2, barrier);
 }
@@ -1155,4 +1127,166 @@ void D3d12RHI::updateUniformBufer() {
     std::memcpy(data, &ubo, sizeof(ubo));
 
     m_pUniformBuffers[m_nCurrentFrame]->Unmap(0, &readRange);
+}
+
+size_t D3d12RHI::CreateVertexBuffer(const void* pData, size_t data_size,
+                                    int32_t stride_size) {
+    HRESULT hr;
+
+    ID3D12Resource* pVertexBufferUploadHeap;
+
+    // create vertex GPU heap
+    D3D12_HEAP_PROPERTIES prop{};
+    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    prop.CreationNodeMask = 1;
+    prop.VisibleNodeMask = 1;
+
+    D3D12_RESOURCE_DESC resourceDesc{};
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resourceDesc.Alignment = 0;
+    resourceDesc.Width = data_size;
+    resourceDesc.Height = 1;
+    resourceDesc.DepthOrArraySize = 1;
+    resourceDesc.MipLevels = 1;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
+    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.SampleDesc.Quality = 0;
+    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+    ID3D12Resource* pVertexBuffer;
+
+    if (FAILED(hr = m_pDev->CreateCommittedResource(
+                   &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+                   D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+                   IID_PPV_ARGS(&pVertexBuffer)))) {
+        return hr;
+    }
+
+    m_pVertexBuffers.push_back(pVertexBuffer);
+
+    prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    prop.CreationNodeMask = 1;
+    prop.VisibleNodeMask = 1;
+
+    if (FAILED(hr = m_pDev->CreateCommittedResource(
+                   &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+                   D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                   IID_PPV_ARGS(&pVertexBufferUploadHeap)))) {
+        return hr;
+    }
+
+    D3D12_SUBRESOURCE_DATA vertexData{};
+    vertexData.pData = pData;
+
+    beginSingleTimeCommands();
+    UpdateSubresources<1>(m_pCopyCommandList, pVertexBuffer,
+                          pVertexBufferUploadHeap, 0, 0, 1, &vertexData);
+    endSingleTimeCommands();
+
+    SafeRelease(&pVertexBufferUploadHeap);
+
+    // initialize the vertex buffer view
+    D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+    vertexBufferView.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
+    vertexBufferView.StrideInBytes = (UINT)(stride_size);
+    vertexBufferView.SizeInBytes = (UINT)data_size;
+    auto offset = m_VertexBufferViews.size();
+    m_VertexBufferViews.push_back(vertexBufferView);
+
+    return offset;
+}
+
+size_t D3d12RHI::CreateIndexBuffer(const void* pData, size_t size,
+                                   int32_t index_size) {
+    HRESULT hr;
+
+    ID3D12Resource* pIndexBufferUploadHeap;
+
+    // create index GPU heap
+    D3D12_HEAP_PROPERTIES prop{};
+    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    prop.CreationNodeMask = 1;
+    prop.VisibleNodeMask = 1;
+
+    D3D12_RESOURCE_DESC resourceDesc{};
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resourceDesc.Alignment = 0;
+    resourceDesc.Width = size;
+    resourceDesc.Height = 1;
+    resourceDesc.DepthOrArraySize = 1;
+    resourceDesc.MipLevels = 1;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
+    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.SampleDesc.Quality = 0;
+    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+    ID3D12Resource* pIndexBuffer;
+
+    if (FAILED(hr = m_pDev->CreateCommittedResource(
+                   &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+                   D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+                   IID_PPV_ARGS(&pIndexBuffer)))) {
+        return hr;
+    }
+
+    m_pIndexBuffers.push_back(pIndexBuffer);
+
+    prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+    if (FAILED(hr = m_pDev->CreateCommittedResource(
+                   &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+                   D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+                   IID_PPV_ARGS(&pIndexBufferUploadHeap)))) {
+        return hr;
+    }
+
+    D3D12_SUBRESOURCE_DATA indexData{};
+    indexData.pData = pData;
+
+    beginSingleTimeCommands();
+    UpdateSubresources<1>(m_pCopyCommandList, pIndexBuffer,
+                          pIndexBufferUploadHeap, 0, 0, 1, &indexData);
+    endSingleTimeCommands();
+
+    // initialize the index buffer view
+    D3D12_INDEX_BUFFER_VIEW indexBufferView;
+    indexBufferView.BufferLocation = pIndexBuffer->GetGPUVirtualAddress();
+    switch (index_size) {
+        case 2:
+            indexBufferView.Format = ::DXGI_FORMAT_R16_UINT;
+            break;
+        case 4:
+            indexBufferView.Format = ::DXGI_FORMAT_R32_UINT;
+            break;
+        default:
+            assert(0);
+    }
+    indexBufferView.SizeInBytes = (UINT)size;
+    auto offset = m_IndexBufferViews.size();
+    m_IndexBufferViews.push_back(indexBufferView);
+
+    return offset;
+}
+
+#include "imgui_impl_dx12.h"
+
+void D3d12RHI::DrawGUI() {
+    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+
+    // now draw GUI overlay
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
+    // bind the final RTV
+    rtvHandle =
+        m_pRtvHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart();
+    m_pCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_pCmdList);
 }
