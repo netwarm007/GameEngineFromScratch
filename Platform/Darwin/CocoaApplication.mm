@@ -5,7 +5,6 @@
 #include "CocoaApplication.h"
 #include "InputManager.hpp"
 #import "WindowDelegate.h"
-#include "imgui_impl_osx.h"
 
 using namespace My;
 
@@ -50,23 +49,6 @@ void CocoaApplication::CreateMainWindow() {
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
     [winDelegate release];
-
-    // Initialize ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-
-    ImGui::StyleColorsDark();
-
-    ImGuiStyle& im_style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        im_style.WindowRounding = 0.0f;
-        im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-    ImGui_ImplOSX_Init([m_pWindow contentView]);
 }
 
 void CocoaApplication::GetFramebufferSize(int& width, int& height) {
@@ -80,9 +62,6 @@ void CocoaApplication::GetFramebufferSize(int& width, int& height) {
 }
 
 void CocoaApplication::Finalize() {
-    ImGui_ImplOSX_Shutdown();
-    ImGui::DestroyContext();
-
     [m_pWindow release];
     BaseApplication::Finalize();
 }
