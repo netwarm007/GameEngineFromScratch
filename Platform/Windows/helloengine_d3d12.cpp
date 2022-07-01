@@ -93,8 +93,9 @@ ComPtr<ID3D12Resource>          g_pConstantUploadBuffer;            // the point
 
 struct SimpleConstants
 {
-    XMFLOAT4X4  m_modelView;
-    XMFLOAT4X4  m_modelViewProjection;
+    XMFLOAT4X4  m_modelMatrix;
+    XMFLOAT4X4  m_viewMatrix;
+    XMFLOAT4X4  m_projectionMatrix;
     XMFLOAT4    m_lightPosition;
     XMFLOAT4    m_lightColor;
     XMFLOAT4    m_ambientColor;
@@ -132,30 +133,24 @@ struct SimpleMeshVertex
 SimpleMesh torus;
 
 // matrix
-XMMATRIX g_mWorldToViewMatrix;
-XMMATRIX g_mViewToWorldMatrix;
-XMMATRIX g_mLightToWorldMatrix;
+XMMATRIX g_mWorldMatrix;
+XMMATRIX g_mViewMatrix;
 XMMATRIX g_mProjectionMatrix;
-XMMATRIX g_mViewProjectionMatrix;
 
 void InitConstants() {
-    g_mViewToWorldMatrix = XMMatrixIdentity();
     const XMVECTOR lightPositionX = XMVectorSet(-1.5f, 4.0f, 9.0f, 1.0f);
     const XMVECTOR lightTargetX   = XMVectorSet( 0.0f, 0.0f, 0.0f, 1.0f);
     const XMVECTOR lightUpX       = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f);
-    g_mLightToWorldMatrix = XMMatrixInverse(nullptr, XMMatrixLookAtRH(lightPositionX, lightTargetX, lightUpX));
 
     const float g_depthNear = 1.0f;
     const float g_depthFar  = 100.0f;
     const float aspect      = static_cast<float>(nScreenWidth)/static_cast<float>(nScreenHeight);
-    g_mProjectionMatrix  = XMMatrixPerspectiveOffCenterRH(-aspect, aspect, -1, 1, g_depthNear, g_depthFar);
+    //g_mProjectionMatrix  = XMMatrixPerspectiveOffCenterRH(-aspect, aspect, -1.0f, 1.0f, g_depthNear, g_depthFar);
+    g_mProjectionMatrix  = XMMatrixPerspectiveFovRH(DirectX::XM_PIDIV2, aspect, g_depthNear, g_depthFar);
     const XMVECTOR eyePos         = XMVectorSet( 0.0f, 0.0f, 2.5f, 1.0f);
     const XMVECTOR lookAtPos      = XMVectorSet( 0.0f, 0.0f, 0.0f, 1.0f);
     const XMVECTOR upVec          = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f);
-    g_mWorldToViewMatrix = XMMatrixLookAtRH(eyePos, lookAtPos, upVec);
-    g_mViewToWorldMatrix = XMMatrixInverse(nullptr, g_mWorldToViewMatrix);
-
-    g_mViewProjectionMatrix = g_mWorldToViewMatrix * g_mProjectionMatrix;
+    g_mViewMatrix = XMMatrixLookAtRH(eyePos, lookAtPos, upVec);
 }
 
 void BuildTorusMesh(
@@ -528,7 +523,7 @@ void InitGraphics() {
     
        // Copy data to the intermediate upload heap and then schedule a copy 
        // from the upload heap to the vertex buffer.
-       D3D12_SUBRESOURCE_DATA indexData = {};
+       D3D12_SUBRESOURCE_DATA indexData;
        indexData.pData      = torus.m_indexBuffer;
        indexData.RowPitch   = torus.m_indexType;
        indexData.SlicePitch = indexData.RowPitch;
@@ -884,11 +879,10 @@ void Update()
     rotationAngle += rotationSpeed;
     if (rotationAngle >= XM_PI * 2.0) rotationAngle -= XM_PI * 2.0;
     const XMMATRIX m = XMMatrixRotationRollPitchYaw(rotationAngle, rotationAngle, 0.0f);
-    XMStoreFloat4x4(&g_ConstantBufferData.m_modelView, XMMatrixTranspose(m * g_mWorldToViewMatrix));
-    XMStoreFloat4x4(&g_ConstantBufferData.m_modelViewProjection, XMMatrixTranspose(m * g_mViewProjectionMatrix));
-    XMVECTOR v = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
-    v = XMVector4Transform(v, g_mLightToWorldMatrix);
-    v = XMVector4Transform(v, g_mWorldToViewMatrix);
+    XMStoreFloat4x4(&g_ConstantBufferData.m_modelMatrix, XMMatrixTranspose(m));
+    XMStoreFloat4x4(&g_ConstantBufferData.m_viewMatrix, XMMatrixTranspose(g_mViewMatrix));
+    XMStoreFloat4x4(&g_ConstantBufferData.m_projectionMatrix, XMMatrixTranspose(g_mProjectionMatrix));
+    XMVECTOR v = XMVectorSet(3.0f, 3.0f, 3.0f, 1.0f);
     XMStoreFloat4(&g_ConstantBufferData.m_lightPosition, v);
     g_ConstantBufferData.m_lightColor       = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     g_ConstantBufferData.m_ambientColor     = XMFLOAT4(0.0f, 0.0f, 0.7f, 1.0f);

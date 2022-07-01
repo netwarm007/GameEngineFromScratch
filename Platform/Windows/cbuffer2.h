@@ -11,8 +11,9 @@ struct a2v
 
 cbuffer Constants : register(b0)
 {
-	float4x4 m_modelView;
-	float4x4 m_modelViewProjection;
+	float4x4 m_model;
+	float4x4 m_view;
+	float4x4 m_projection;
 	float4   m_lightPosition;
 	float4   m_lightColor;
 	float4   m_ambientColor;
