@@ -58,6 +58,3 @@
 [submodule "External/src/astc-encoder"]
 	path = External/src/astc-encoder
 	url = https://github.com/ARM-software/astc-encoder.git
-[submodule "External/src/Smouking"]
-	path = External/src/Smouking
-	url = https://gist.github.com/60a589d2f2ef5a68ac6e.git
