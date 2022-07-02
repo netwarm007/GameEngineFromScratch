@@ -35,7 +35,7 @@ int test(BaseApplication& app) {
     result = app.Initialize();
 
     AssetLoader assetLoader;
-    auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansCJKsc-VF.ttf");
+    auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
 
     ImGuiIO& io = ImGui::GetIO();
     ImVector<ImWchar> ranges;
@@ -44,7 +44,7 @@ int test(BaseApplication& app) {
     builder.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); // Add one of the default ranges
     builder.BuildRanges(&ranges);                          // Build the final result (ordered ranges with all the unique characters submitted)
 
-    io.Fonts->AddFontFromFileTTF(font_path.c_str(), 13.0f, NULL, ranges.Data);
+    io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
     io.Fonts->Build();
 
     if (result == 0) {
