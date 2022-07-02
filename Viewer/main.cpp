@@ -15,8 +15,8 @@
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
 #elif defined(OS_WINDOWS)
-#include "D3d12Application.hpp"
-//#include "OpenGLApplication.hpp"
+//#include "D3d12Application.hpp"
+#include "OpenGLApplication.hpp"
 #else
 #include "OpenGLApplication.hpp"
 #endif
@@ -26,8 +26,8 @@
 #elif defined(OS_MACOS)
 #include "RHI/Metal/MetalConfig.hpp"
 #elif defined(OS_WINDOWS)
-#include "RHI/D3d/D3d12Config.hpp"
-//#include "RHI/OpenGL/OpenGLConfig.hpp"
+//#include "RHI/D3d/D3d12Config.hpp"
+#include "RHI/OpenGL/OpenGLConfig.hpp"
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
@@ -53,8 +53,8 @@ int main(int argc, char** argv) {
 #if defined(OS_MACOS)
     CocoaMetalApplication app(config);
 #elif defined(OS_WINDOWS)
-    D3d12Application app(config);
-    //OpenGLApplication app(config);
+    //D3d12Application app(config);
+    OpenGLApplication app(config);
 #else
     OpenGLApplication app(config);
 #endif
