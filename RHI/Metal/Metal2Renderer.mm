@@ -418,7 +418,7 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
     if (renderPassDescriptor != nil) {
         renderPassDescriptor.colorAttachments[0].clearColor =
-            MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
+            MTLClearColorMake(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2], frame.clearColor[3]);
         renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
         renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 

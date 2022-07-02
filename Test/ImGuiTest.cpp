@@ -30,14 +30,16 @@ using namespace My;
 int test(BaseApplication& app) {
     int result;
 
-    app.CreateMainWindow();
-
-    result = app.Initialize();
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     AssetLoader assetLoader;
     auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
 
-    ImGuiIO& io = ImGui::GetIO();
     ImVector<ImWchar> ranges;
     ImFontGlyphRangesBuilder builder;
     builder.AddText((const char*)u8"屏擎渲帧钮");                        // Add a string (here "Hello world" contains 7 unique characters)
@@ -47,6 +49,19 @@ int test(BaseApplication& app) {
     io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
     io.Fonts->Build();
 
+    ImGui::StyleColorsDark();
+
+    ImGuiStyle& im_style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        im_style.WindowRounding = 0.0f;
+        im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // Create Main Window
+    app.CreateMainWindow();
+
+    result = app.Initialize();
+
     if (result == 0) {
         while (!app.IsQuit()) {
             app.Tick();
@@ -54,6 +69,8 @@ int test(BaseApplication& app) {
 
         app.Finalize();
     }
+
+    ImGui::DestroyContext();
 
     return result;
 }
