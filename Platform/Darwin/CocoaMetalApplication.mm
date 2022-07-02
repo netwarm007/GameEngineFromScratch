@@ -25,7 +25,6 @@ void CocoaMetalApplication::Tick() {
 
 void CocoaMetalApplication::Finalize() {
     ImGui_ImplOSX_Shutdown();
-    ImGui::DestroyContext();
 
     CocoaApplication::Finalize();
 }

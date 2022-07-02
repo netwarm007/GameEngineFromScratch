@@ -7,7 +7,6 @@
 #include <cstring>
 
 #include "glad/glad_glx.h"
-#include "imgui.h"
 
 using namespace My;
 using namespace std;
@@ -227,16 +226,6 @@ void OpenGLApplication::CreateMainWindow() {
     }
 
     XFree(vi);
-
-    // Initialize ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(static_cast<float>(m_Config.screenWidth), 
-                            static_cast<float>(m_Config.screenHeight)); 
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-    ImGui::StyleColorsDark();
 }
 
 void OpenGLApplication::Tick() {
@@ -245,8 +234,6 @@ void OpenGLApplication::Tick() {
 }
 
 void OpenGLApplication::Finalize() {
-    ImGui::DestroyContext();
-
     glXMakeCurrent (m_pDisplay, None, NULL ); 
     glXDestroyContext (m_pDisplay, m_Context); 
     glXDestroyWindow(m_pDisplay, m_GlxWindow);
