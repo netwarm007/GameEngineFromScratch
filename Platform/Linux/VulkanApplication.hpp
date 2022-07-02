@@ -1,11 +1,11 @@
 #pragma once
 #include "Vulkan/VulkanRHI.hpp"
-#include "WindowsApplication.hpp"
+#include "XcbApplication.hpp"
 
 namespace My {
-class VulkanApplication : public WindowsApplication {
-   public:
-    using WindowsApplication::WindowsApplication;
+class VulkanApplication : public XcbApplication {
+public:
+    using XcbApplication::XcbApplication;
 
     void Finalize() final;
 
@@ -15,7 +15,8 @@ class VulkanApplication : public WindowsApplication {
 
     VulkanRHI& GetRHI() { return m_Rhi; }
 
-   private:
+private:
     VulkanRHI m_Rhi;
 };
-}  // namespace My
+} // namespace My
+

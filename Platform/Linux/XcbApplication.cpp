@@ -173,3 +173,12 @@ void XcbApplication::Tick() {
         }
     }
 }
+
+void XcbApplication::GetFramebufferSize(int& width, int& height) {
+    auto geom = xcb_get_geometry_reply(m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
+
+    width = geom->width;
+    height = geom->height;
+
+    free(geom);
+}
