@@ -20,5 +20,6 @@ struct Frame : global_textures {
     DrawFrameContext frameContext;
     std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
     LightInfo lightInfo;
+    Vector4f clearColor {0.2f, 0.3f, 0.4f, 1.0f};
 };
 }  // namespace My

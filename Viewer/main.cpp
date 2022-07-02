@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 #if defined(OS_MACOS)
     CocoaMetalApplication app(config);
 #elif defined(OS_WINDOWS)
-    // D3d12Application app(config);
+    //D3d12Application app(config);
     OpenGLApplication app(config);
 #else
     OpenGLApplication app(config);

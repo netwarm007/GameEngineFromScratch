@@ -15,7 +15,7 @@ elseif(PSP2)
 elseif(WA)
     # nothing here
 else()
-    find_package(Libuuid REQUIRED)
+    find_package(LibUUID REQUIRED)
     if (NOT LIBUUID_FOUND)
         message(FATAL_ERROR
             "You might need to run 'sudo apt-get install uuid-dev' or similar")
