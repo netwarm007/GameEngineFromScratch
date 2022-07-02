@@ -73,7 +73,7 @@ struct MtlDrawBatchContext : public DrawBatchContext {
            layer_index:(const int32_t)layer_index
                  frame:(const Frame &)frame;
 
-- (void)endShadowMap:(const int32_t)shadowmap layer_index:(const int32_t)layer_index;
+- (void)endShadowMap:(const int32_t)shadowmap layer_index:(const int32_t)layer_index frame:(const Frame&)frame;
 
 - (void)setShadowMaps:(const Frame &)frame;
 

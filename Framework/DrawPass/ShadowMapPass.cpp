@@ -83,7 +83,7 @@ void ShadowMapPass::Draw(Frame& frame) {
             m_pGraphicsManager->DrawBatch(frame);
 
             m_pGraphicsManager->EndShadowMap(shadowmap,
-                                             light.lightShadowMapIndex);
+                                             light.lightShadowMapIndex, frame);
         }
     }
 

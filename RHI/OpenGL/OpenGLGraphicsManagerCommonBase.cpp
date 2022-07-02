@@ -1033,7 +1033,7 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap,
-                                                   int32_t layer_index) {
+                                                   int32_t layer_index, const Frame&) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glDeleteFramebuffers(1, &m_ShadowMapFramebufferName);

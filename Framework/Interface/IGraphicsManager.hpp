@@ -39,7 +39,7 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
         const Frame& frame) = 0;
 
     virtual void EndShadowMap(const intptr_t shadowmap,
-                              const int32_t layer_index) = 0;
+                              const int32_t layer_index, const Frame& frame) = 0;
 
     virtual void SetShadowMaps(const Frame& frame) = 0;
 

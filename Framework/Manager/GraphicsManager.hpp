@@ -55,7 +55,7 @@ class GraphicsManager : _implements_ IGraphicsManager {
                         const int32_t layer_index,
                         const Frame& frame) override {}
     void EndShadowMap(const intptr_t shadowmap,
-                      const int32_t layer_index) override {}
+                      const int32_t layer_index, const Frame& frame) override {}
     void SetShadowMaps(const Frame& frame) override {}
 
     // skybox

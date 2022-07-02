@@ -262,8 +262,8 @@ void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const intp
                           frame:frame];
 }
 
-void Metal2GraphicsManager::EndShadowMap(const intptr_t shadowmap, const int32_t layer_index) {
-    [m_pRenderer endShadowMap:shadowmap layer_index:layer_index];
+void Metal2GraphicsManager::EndShadowMap(const intptr_t shadowmap, const int32_t layer_index, const Frame& frame) {
+    [m_pRenderer endShadowMap:shadowmap layer_index:layer_index frame:frame];
 }
 
 void Metal2GraphicsManager::SetShadowMaps(const Frame& frame) { [m_pRenderer setShadowMaps:frame]; }

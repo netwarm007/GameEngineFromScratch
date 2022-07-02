@@ -16,11 +16,10 @@ using namespace My;
 static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightFrameCount;
 
 @implementation Metal2Renderer {
-    dispatch_semaphore_t _inFlightSemaphore[GEFSMaxBuffersInFlight];
-    id<MTLCommandQueue> _commandQueue;
-    id<MTLCommandBuffer> _commandBuffer;
+    std::vector<dispatch_semaphore_t> _inFlightSemaphores;
+    id<MTLCommandQueue> _graphicsQueue;
+    std::vector<id<MTLCommandBuffer>> _commandBuffers;
     id<MTLCommandBuffer> _computeCommandBuffer;
-    MTLRenderPassDescriptor* _renderPassDescriptor;
     id<MTLRenderCommandEncoder> _renderEncoder;
     id<MTLComputeCommandEncoder> _computeEncoder;
 
@@ -45,8 +44,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     if (self) {
         _mtkView = mtkView;
         _device = device;
+        _inFlightSemaphores.resize(GEFSMaxBuffersInFlight);
         for (int32_t i = 0; i < GEFSMaxBuffersInFlight; i++) {
-            _inFlightSemaphore[i] = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
+            _inFlightSemaphores[i] = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
         }
     }
 
@@ -63,12 +63,12 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         _uniformBuffers[i] = [_device newBufferWithLength:kSizePerFrameConstantBuffer
                                                   options:MTLResourceStorageModeShared];
 
-        _uniformBuffers[i].label = [NSString stringWithFormat:@"uniformBuffer%lu", i];
+        _uniformBuffers[i].label = [NSString stringWithFormat:@"uniformBuffer %lu", i];
 
         _lightInfo[i] = [_device newBufferWithLength:kSizeLightInfo
                                              options:MTLResourceStorageModeShared];
 
-        _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo%lu", i];
+        _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo %lu", i];
     }
 
     ////////////////////////////
@@ -86,7 +86,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [samplerDescriptor release];
 
     // Create the command queue
-    _commandQueue = [_device newCommandQueue];
+    _graphicsQueue = [_device newCommandQueue];
+
+    // Create command lists
+    _commandBuffers.resize(GEFSMaxBuffersInFlight);
+    for (NSUInteger i = 0; i < GEFSMaxBuffersInFlight; i++) {
+        _commandBuffers[i] = [_graphicsQueue commandBuffer];
+        _commandBuffers[i].label = [NSString stringWithFormat:@"Per Frame Command Buffer %lu", i];
+    }
 }
 
 - (void)initialize {
@@ -356,86 +363,81 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 }
 
 - (void)beginFrame:(const My::Frame&)frame {
-    // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the Metal
-    // pipeline (App, Metal, Drivers, GPU, etc)
-    dispatch_semaphore_wait(_inFlightSemaphore[frame.frameIndex], DISPATCH_TIME_FOREVER);
+    @autoreleasepool {
+        // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the
+        // Metal pipeline (App, Metal, Drivers, GPU, etc)
+        dispatch_semaphore_wait(_inFlightSemaphores[frame.frameIndex], DISPATCH_TIME_FOREVER);
 
-    // now fill the per frame buffers
-    [self setPerFrameConstants:frame.frameContext frameIndex:frame.frameIndex];
-    [self setLightInfo:frame.lightInfo frameIndex:frame.frameIndex];
+        // now fill the per frame buffers
+        [self setPerFrameConstants:frame.frameContext frameIndex:frame.frameIndex];
+        [self setLightInfo:frame.lightInfo frameIndex:frame.frameIndex];
 
-    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
-    ImGui_ImplMetal_NewFrame(_renderPassDescriptor);
-    ImGui_ImplOSX_NewFrame(_mtkView);
-    _renderPassDescriptor = nil;
+        MTLRenderPassDescriptor* renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+        ImGui_ImplMetal_NewFrame(renderPassDescriptor);
+        ImGui_ImplOSX_NewFrame(_mtkView);
+    }
+
+    [_commandBuffers[frame.frameIndex] release];
+    _commandBuffers[frame.frameIndex] = [_graphicsQueue commandBuffer];
+    _commandBuffers[frame.frameIndex].label = [NSString stringWithFormat:@"Per Frame Command Buffer %d", frame.frameIndex];
 }
 
 - (void)endFrame:(const Frame&)frame {
-    // Create a new command buffer for each render pass to the current drawable
-    _commandBuffer = [_commandQueue commandBuffer];
-    _commandBuffer.label = @"GUI Command Buffer";
-    [_commandBuffer enqueue];
+    @autoreleasepool {
+        MTLRenderPassDescriptor* renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+        renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
+        renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionLoad;
 
-    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
-    _renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
-    _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionLoad;
+        id<MTLRenderCommandEncoder> renderEncoder = [_commandBuffers[frame.frameIndex]
+            renderCommandEncoderWithDescriptor:renderPassDescriptor];
+        renderEncoder.label = @"GuiRenderEncoder";
 
-    _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
-    _renderEncoder.label = @"GuiRenderEncoder";
+        auto imgui_draw_data = ImGui::GetDrawData();
+        if (imgui_draw_data) {
+            ImGui_ImplMetal_RenderDrawData(imgui_draw_data, _commandBuffers[frame.frameIndex], renderEncoder);
+        }
 
-    auto imgui_draw_data = ImGui::GetDrawData();
-    if (imgui_draw_data) {
-        ImGui_ImplMetal_RenderDrawData(imgui_draw_data, _commandBuffer, _renderEncoder);
+        [renderEncoder endEncoding];
+
+        [_commandBuffers[frame.frameIndex] presentDrawable:_mtkView.currentDrawable];
+
+        // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
+        // finished processing the commands we're encoding this frame.
+        __block dispatch_semaphore_t block_sema = _inFlightSemaphores[frame.frameIndex];
+        [_commandBuffers[frame.frameIndex] addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+          dispatch_semaphore_signal(block_sema);
+        }];
+
+        [_commandBuffers[frame.frameIndex] commit];
     }
-
-    [_renderEncoder endEncoding];
-
-    [_commandBuffer presentDrawable:_mtkView.currentDrawable];
-
-    // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
-    // finished processing the commands we're encoding this frame.
-    __block dispatch_semaphore_t block_sema = _inFlightSemaphore[frame.frameIndex];
-    [_commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      dispatch_semaphore_signal(block_sema);
-    }];
-
-    [_commandBuffer commit];
-
-    _renderPassDescriptor = nil;
 }
 
 - (void)beginPass:(const Frame&)frame {
-    // Create a new command buffer for each render pass to the current drawable
-    _commandBuffer = [_commandQueue commandBuffer];
-    _commandBuffer.label = @"Online Command Buffer";
-    [_commandBuffer enqueue];
-
     // Obtain a renderPassDescriptor generated from the view's drawable textures
-    _renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+    MTLRenderPassDescriptor* renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
 
-    if (_renderPassDescriptor != nil) {
-        _renderPassDescriptor.colorAttachments[0].clearColor =
+    if (renderPassDescriptor != nil) {
+        renderPassDescriptor.colorAttachments[0].clearColor =
             MTLClearColorMake(0.2f, 0.3f, 0.4f, 1.0f);
-        _renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
-        _renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
+        renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+        renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
-        _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:_renderPassDescriptor];
+        _renderEncoder =
+            [_commandBuffers[frame.frameIndex] renderCommandEncoderWithDescriptor:renderPassDescriptor];
         _renderEncoder.label = @"MyRenderEncoder";
     }
+
+    [renderPassDescriptor release];
 }
 
 - (void)endPass:(const Frame&)frame {
     [_renderEncoder endEncoding];
-
-    // Finalize rendering here & push the command buffer to the GPU
-    [_commandBuffer commit];
-
-    _renderPassDescriptor = nil;
+    [_renderEncoder release];
 }
 
 - (void)beginCompute {
     // Create a new command buffer for each render pass to the current drawable
-    _computeCommandBuffer = [_commandQueue commandBuffer];
+    _computeCommandBuffer = [_graphicsQueue commandBuffer];
     _computeCommandBuffer.label = @"MyComputeCommand";
 
     _computeEncoder = [_computeCommandBuffer computeCommandEncoder];
@@ -672,11 +674,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
                  frame:(const Frame&)frame {
-    // Create a new command buffer for each render pass to the current drawable
-    _commandBuffer = [_commandQueue commandBuffer];
-    _commandBuffer.label = @"Offline Command Buffer";
-    [_commandBuffer enqueue];
-
     MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor new];
     renderPassDescriptor.colorAttachments[0] = Nil;
     renderPassDescriptor.depthAttachment.texture = _textures[shadowmap];
@@ -685,18 +682,20 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
     renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
 
-    _renderEncoder = [_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+    _renderEncoder = [_commandBuffers[frame.frameIndex]
+        renderCommandEncoderWithDescriptor:renderPassDescriptor];
     _renderEncoder.label = @"Offline Render Encoder";
+
     [renderPassDescriptor release];
 
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
     MTLViewport viewport{0.0,
-                         static_cast<double>(_textures[shadowmap].height),
-                         static_cast<double>(_textures[shadowmap].width),
-                         -static_cast<double>(_textures[shadowmap].height),
-                         0.0,
-                         1.0};
+                            static_cast<double>(_textures[shadowmap].height),
+                            static_cast<double>(_textures[shadowmap].width),
+                            -static_cast<double>(_textures[shadowmap].height),
+                            0.0,
+                            1.0};
     [_renderEncoder setViewport:viewport];
 
     shadow_map_constants.light_index = light_index;
@@ -705,10 +704,10 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     shadow_map_constants.far_plane = 100.0;
 }
 
-- (void)endShadowMap:(const int32_t)shadowmap layer_index:(const int32_t)layer_index {
+- (void)endShadowMap:(const int32_t)shadowmap layer_index:(const int32_t)layer_index frame:(const Frame&)frame {
     [_renderEncoder popDebugGroup];
     [_renderEncoder endEncoding];
-    [_commandBuffer commit];
+    [_renderEncoder release];
 }
 
 - (void)setShadowMaps:(const Frame&)frame {

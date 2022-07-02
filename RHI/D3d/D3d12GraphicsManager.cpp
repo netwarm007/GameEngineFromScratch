@@ -1851,7 +1851,7 @@ void D3d12GraphicsManager::BeginShadowMap(
 }
 
 void D3d12GraphicsManager::EndShadowMap(const intptr_t shadowmap,
-                                        const int32_t layer_index) {}
+                                        const int32_t layer_index, const Frame& frame) {}
 
 void D3d12GraphicsManager::SetShadowMaps(const Frame& frame) {}
 

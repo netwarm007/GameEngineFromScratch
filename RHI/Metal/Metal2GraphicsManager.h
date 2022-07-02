@@ -27,7 +27,7 @@ class Metal2GraphicsManager : public GraphicsManager {
                         const uint32_t width, const uint32_t height,
                         const int32_t layer_index, const Frame& frame) final;
     void EndShadowMap(const intptr_t shadowmap,
-                      const int32_t layer_index) final;
+                      const int32_t layer_index, const Frame& frame) final;
     void SetShadowMaps(const Frame& frame) final;
     void ReleaseTexture(intptr_t texture) final;
 
