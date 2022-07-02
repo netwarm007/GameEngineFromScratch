@@ -140,7 +140,7 @@ class D3d12RHI {
         m_pRenderTargets;  // the pointer to rendering buffer. [descriptor]
     ID3D12Resource* m_pDepthStencilBuffer = nullptr;
 
-    ID3D12CommandAllocator* m_pGraphicsCommandAllocator = nullptr;
+    std::vector<ID3D12CommandAllocator*> m_pGraphicsCommandAllocators;
 
     ID3D12CommandAllocator* m_pComputeCommandAllocator =
         nullptr;  // the pointer to command

@@ -399,10 +399,14 @@ void D3d12RHI::CreateFramebuffers() {
 
 void D3d12RHI::CreateCommandPools() {
     // Graphics
-    assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
-        D3D12_COMMAND_LIST_TYPE_DIRECT,
-        IID_PPV_ARGS(&m_pGraphicsCommandAllocator))));
-    m_pGraphicsCommandAllocator->SetName(L"Graphics Command Allocator");
+    m_pGraphicsCommandAllocators.resize(GfxConfiguration::kMaxInFlightFrameCount);
+
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+        assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
+            D3D12_COMMAND_LIST_TYPE_DIRECT,
+            IID_PPV_ARGS(&m_pGraphicsCommandAllocators[i]))));
+        m_pGraphicsCommandAllocators[i]->SetName((std::wstring(L"Graphics Command Allocator") + std::to_wstring(i)).c_str());
+    }
 
     // Compute
     assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
@@ -420,17 +424,15 @@ void D3d12RHI::CreateCommandPools() {
 
 void D3d12RHI::CreateCommandLists() {
     // Graphics
-    m_pGraphicsCommandLists.resize(GfxConfiguration::kMaxInFlightFrameCount);
+    m_pGraphicsCommandLists.resize(1);
 
-    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        assert(SUCCEEDED(m_pDev->CreateCommandList1(
-            0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE,
-            IID_PPV_ARGS(&m_pGraphicsCommandLists[i]))));
+    assert(SUCCEEDED(m_pDev->CreateCommandList1(
+        0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE,
+        IID_PPV_ARGS(&m_pGraphicsCommandLists[0]))));
 
-        m_pGraphicsCommandLists[i]->SetName(
-            (std::wstring(L"Graphics Command List ") + std::to_wstring(i))
-                .c_str());
-    }
+    m_pGraphicsCommandLists[0]->SetName(
+        (std::wstring(L"Graphics Command List ") + std::to_wstring(0))
+            .c_str());
 
     // Compute
     assert(SUCCEEDED(m_pDev->CreateCommandList1(
@@ -774,7 +776,10 @@ void D3d12RHI::DestroyAll() {
 
     SafeRelease(&m_pCopyCommandAllocator);
     SafeRelease(&m_pComputeCommandAllocator);
-    SafeRelease(&m_pGraphicsCommandAllocator);
+
+    for (auto& commandAllocator : m_pGraphicsCommandAllocators) {
+        SafeRelease(&commandAllocator);
+    }
 
     CloseHandle(m_hComputeFenceEvent);
     CloseHandle(m_hCopyFenceEvent);
@@ -799,9 +804,9 @@ void D3d12RHI::DestroyAll() {
 }
 
 void D3d12RHI::BeginPass(const Vector4f& clearColor) {
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
-    m_pCmdList->Reset(m_pGraphicsCommandAllocator, NULL);
+    m_pCmdList->Reset(m_pGraphicsCommandAllocators[m_nCurrentFrame], NULL);
 
     m_pCmdList->RSSetViewports(1, &m_ViewPort);
     m_pCmdList->RSSetScissorRects(1, &m_ScissorRect);
@@ -841,20 +846,20 @@ void D3d12RHI::BeginPass(const Vector4f& clearColor) {
 }
 
 void D3d12RHI::SetPipelineState(ID3D12PipelineState* pPipelineState) {
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
     m_pCmdList->SetPipelineState(pPipelineState);
 }
 
 void D3d12RHI::SetRootSignature(ID3D12RootSignature* pRootSignature) {
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
     m_pCmdList->SetGraphicsRootSignature(pRootSignature);
 }
 
 void D3d12RHI::Draw() {
     auto config = m_fGetGfxConfigHandler();
 
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
     // set which vertex buffer to use
     D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
@@ -899,11 +904,11 @@ void D3d12RHI::Draw() {
 }
 
 void D3d12RHI::EndPass() {
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
 }
 
 void D3d12RHI::Present() {
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
     D3D12_RESOURCE_BARRIER barrier;
 
@@ -932,7 +937,7 @@ void D3d12RHI::Present() {
 }
 
 void D3d12RHI::msaaResolve() {
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
     D3D12_RESOURCE_BARRIER barrier[2];
 
@@ -1294,7 +1299,7 @@ size_t D3d12RHI::CreateIndexBuffer(const void* pData, size_t size,
 }
 
 void D3d12RHI::BeginFrame() {
-    // nothing here
+    m_pGraphicsCommandAllocators[m_nCurrentFrame]->Reset();
 }
 
 void D3d12RHI::EndFrame() {
@@ -1307,7 +1312,7 @@ void D3d12RHI::EndFrame() {
 #include "imgui_impl_dx12.h"
 
 void D3d12RHI::DrawGUI(ID3D12DescriptorHeap* pCbvRsvHeap) {
-    auto& m_pCmdList = m_pGraphicsCommandLists[m_nCurrentFrame];
+    auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
     // now draw GUI overlay
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;

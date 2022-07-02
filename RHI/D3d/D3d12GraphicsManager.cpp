@@ -470,6 +470,9 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame) {
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
 
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+    rhi.BeginFrame();
+
     assert(frame.frameIndex == m_nFrameIndex);
 }
 
