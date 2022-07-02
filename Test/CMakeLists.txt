@@ -39,7 +39,10 @@ foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
     target_link_libraries(${TEST_CASE} Framework PlatformInterface)
 endforeach(TEST_CASE)
 
-set(GRAPHICS_TEST_CASES GraphicsWindowTest ImGuiTest)
+set(GRAPHICS_TEST_CASES GraphicsWindowTest)
+if(OS_WINDOWS OR OS_MACOS)
+list (APPEND GRAPHICS_TEST_CASES ImGuiTest)
+endif(OS_WINDOWS OR OS_MACOS)
 
 if(Vulkan_FOUND)
 set(VULKAN_RHI VulkanRHI)
