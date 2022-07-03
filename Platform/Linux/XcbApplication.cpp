@@ -93,11 +93,13 @@ void XcbApplication::CreateMainWindow() {
 
     xcb_flush(m_pConn);
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.BackendPlatformName = "imgui_impl_x11";
-    io.DisplaySize.x = DisplayWidth(m_pDisplay, m_nScreen);
-    io.DisplaySize.y = DisplayHeight(m_pDisplay, m_nScreen);
-    io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+    if (ImGui::GetCurrentContext()) {
+        ImGuiIO& io = ImGui::GetIO();
+        io.BackendPlatformName = "imgui_impl_x11";
+        io.DisplaySize.x = DisplayWidth(m_pDisplay, m_nScreen);
+        io.DisplaySize.y = DisplayHeight(m_pDisplay, m_nScreen);
+        io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+    }
 }
 
 void XcbApplication::Finalize() {
