@@ -8,17 +8,17 @@
 #elif defined(OS_WINDOWS)
 #include "WindowsApplication.hpp"
 #else
-#include "XcbApplication.hpp"
+#include "Platform/Sdl/SdlApplication.hpp"
 #endif
 
 namespace My {
-GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600, "Basic Window Test");
+GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600, "SDL2 Window Test");
 #if defined(OS_MACOS)
 BaseApplication* g_pApp = new CocoaApplication(config);
 #elif defined(OS_WINDOWS)
 BaseApplication* g_pApp = new WindowsApplication(config);
 #else
-BaseApplication* g_pApp = new XcbApplication(config);
+BaseApplication* g_pApp = new SdlApplication(config);
 #endif
 } // namespace My
 

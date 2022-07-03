@@ -7,6 +7,8 @@
 
 #include "InputManager.hpp"
 
+#include "imgui.h"
+
 using namespace My;
 using namespace std;
 
@@ -90,6 +92,12 @@ void XcbApplication::CreateMainWindow() {
     xcb_map_window(m_pConn, m_XWindow);
 
     xcb_flush(m_pConn);
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.BackendPlatformName = "imgui_impl_x11";
+    io.DisplaySize.x = DisplayWidth(m_pDisplay, m_nScreen);
+    io.DisplaySize.y = DisplayHeight(m_pDisplay, m_nScreen);
+    io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
 }
 
 void XcbApplication::Finalize() {
@@ -98,8 +106,6 @@ void XcbApplication::Finalize() {
 }
 
 void XcbApplication::Tick() {
-    BaseApplication::Tick();
-
     xcb_generic_event_t* pEvent;
     if ((pEvent = xcb_poll_for_event(m_pConn))) {
         switch (pEvent->response_type & ~0x80) {
@@ -112,10 +118,8 @@ void XcbApplication::Tick() {
             }
             case XCB_KEY_PRESS: {
                 auto key_code =
-                    reinterpret_cast<xcb_key_press_event_t*>(pEvent)
-                        ->detail;
-                printf("[XcbApplication] Key Press: Keycode: %d\n",
-                       key_code);
+                    reinterpret_cast<xcb_key_press_event_t*>(pEvent)->detail;
+                printf("[XcbApplication] Key Press: Keycode: %d\n", key_code);
                 if (m_pInputManager) {
                     switch (key_code) {
                         case 113:
@@ -139,10 +143,8 @@ void XcbApplication::Tick() {
             }
             case XCB_KEY_RELEASE: {
                 auto key_code =
-                    reinterpret_cast<xcb_key_release_event_t*>(pEvent)
-                        ->detail;
-                printf("[XcbApplication] Key Release: Keycode: %d\n",
-                       key_code);
+                    reinterpret_cast<xcb_key_release_event_t*>(pEvent)->detail;
+                printf("[XcbApplication] Key Release: Keycode: %d\n", key_code);
                 if (m_pInputManager) {
                     switch (key_code) {
                         case 113:
@@ -172,10 +174,13 @@ void XcbApplication::Tick() {
             m_bQuit = true;
         }
     }
+
+    BaseApplication::Tick();
 }
 
 void XcbApplication::GetFramebufferSize(int& width, int& height) {
-    auto geom = xcb_get_geometry_reply(m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
+    auto geom = xcb_get_geometry_reply(
+        m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
 
     width = geom->width;
     height = geom->height;

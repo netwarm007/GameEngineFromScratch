@@ -8,7 +8,7 @@
 #elif defined(OS_WINDOWS)
 #include "D3d12Application.hpp"
 #else
-#include "OpenGLApplication.hpp"
+#include "Platform/Sdl/OpenGLApplication.hpp"
 #endif
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
@@ -38,13 +38,19 @@ int test(BaseApplication& app) {
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     AssetLoader assetLoader;
-    auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
+    auto font_path =
+        assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
 
     ImVector<ImWchar> ranges;
     ImFontGlyphRangesBuilder builder;
-    builder.AddText((const char*)u8"屏擎渲帧钮");                        // Add a string (here "Hello world" contains 7 unique characters)
-    builder.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); // Add one of the default ranges
-    builder.BuildRanges(&ranges);                          // Build the final result (ordered ranges with all the unique characters submitted)
+    builder.AddText(
+        (const char*)u8"屏擎渲帧钮");  // Add a string (here "Hello world"
+                                       // contains 7 unique characters)
+    builder.AddRanges(
+        io.Fonts->GetGlyphRangesChineseSimplifiedCommon());  // Add one of the
+                                                             // default ranges
+    builder.BuildRanges(&ranges);  // Build the final result (ordered ranges
+                                   // with all the unique characters submitted)
 
     io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
     io.Fonts->Build();
@@ -89,12 +95,15 @@ class TestGraphicsManager : public TGraphicsManager {
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin((const char*)u8"你好，引擎！");  // Create a window called "Hello,
-                                            // world!" and append into it.
+            ImGui::Begin(
+                (const char*)u8"你好，引擎！");  // Create a window called
+                                                 // "Hello, world!" and append
+                                                 // into it.
 
             ImGui::Text(
-                (const char*)u8"这里有一些重要信息。");  // Display some text (you can use
-                                               // a format strings too)
+                (const char*)u8"这里有一些重要信息。");  // Display some text
+                                                         // (you can use a
+                                                         // format strings too)
             ImGui::Checkbox((const char*)u8"演示窗口",
                             &show_demo_window);  // Edit bools storing our
                                                  // window open/close state
@@ -104,11 +113,13 @@ class TestGraphicsManager : public TGraphicsManager {
                 1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3(
                 (const char*)u8"清屏色",
-                (float*)frame.clearColor);  // Edit 3 floats representing a color
+                (float*)
+                    frame.clearColor);  // Edit 3 floats representing a color
 
             if (ImGui::Button(
-                    (const char*)u8"按钮"))  // Buttons return true when clicked (most
-                                // widgets return true when edited/activated)
+                    (const char*)u8"按钮"))  // Buttons return true when clicked
+                                             // (most widgets return true when
+                                             // edited/activated)
                 counter++;
             ImGui::SameLine();
             ImGui::Text((const char*)u8"按压次数 = %d", counter);

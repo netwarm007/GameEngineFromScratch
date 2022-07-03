@@ -6,6 +6,8 @@
 #include "InputManager.hpp"
 #import "WindowDelegate.h"
 
+#include "imgui_impl_osx.h"
+
 using namespace My;
 
 void* CocoaApplication::GetMainWindowHandler() { return m_pWindow; }
@@ -67,7 +69,6 @@ void CocoaApplication::Finalize() {
 }
 
 void CocoaApplication::Tick() {
-    BaseApplication::Tick();
     while (NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                untilDate:nil
                                                   inMode:NSDefaultRunLoopMode
@@ -159,4 +160,7 @@ void CocoaApplication::Tick() {
         [NSApp sendEvent:event];
         [NSApp updateWindows];
     }
+
+    ImGui_ImplOSX_NewFrame(_mtkView);
+    BaseApplication::Tick();
 }

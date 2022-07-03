@@ -8,7 +8,6 @@
 #include "IApplication.hpp"
 
 #include "imgui_impl_metal.h"
-#include "imgui_impl_osx.h"
 
 using namespace My;
 
@@ -374,7 +373,6 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
 
         MTLRenderPassDescriptor* renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
         ImGui_ImplMetal_NewFrame(renderPassDescriptor);
-        ImGui_ImplOSX_NewFrame(_mtkView);
     }
 
     [_commandBuffers[frame.frameIndex] release];

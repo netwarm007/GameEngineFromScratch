@@ -68,8 +68,6 @@ void WindowsApplication::Finalize() {
 }
 
 void WindowsApplication::Tick() {
-    BaseApplication::Tick();
-
     // this struct holds Windows event messages
     MSG msg;
 
@@ -83,6 +81,9 @@ void WindowsApplication::Tick() {
         // send the message to the WindowProc function
         DispatchMessage(&msg);
     }
+
+    ImGui_ImplWin32_NewFrame();
+    BaseApplication::Tick();
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,

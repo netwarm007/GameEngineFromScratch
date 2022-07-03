@@ -20,7 +20,7 @@ void CocoaMetalApplication::CreateMainWindow() {
 
 void CocoaMetalApplication::Tick() {
     CocoaApplication::Tick();
-    //[[m_pWindow contentView] setNeedsDisplay:YES];
+
 }
 
 void CocoaMetalApplication::Finalize() {

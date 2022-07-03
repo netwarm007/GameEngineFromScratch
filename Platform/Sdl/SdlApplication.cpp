@@ -6,6 +6,8 @@
 #include "GraphicsManager.hpp"
 #include "InputManager.hpp"
 
+#include "imgui_impl_sdl.h"
+
 /*
  * Recurse through the list of arguments to clean up, cleaning up
  * the first one in the list each iteration.
@@ -88,6 +90,8 @@ int SdlApplication::Initialize() {
 }
 
 void SdlApplication::Finalize() {
+    ImGui_ImplSDL2_Shutdown;
+
     cleanup(m_pWindow);
     SDL_Quit();
 }
@@ -96,44 +100,50 @@ void SdlApplication::Tick() {
     SDL_Event e;
 
     while (SDL_PollEvent(&e)) {
-        if (m_pInputManager) {
-            switch (e.type) {
-                case SDL_QUIT:
-                    m_bQuit = true;
-                    break;
-                case SDL_KEYDOWN:
-                    break;
-                case SDL_KEYUP: {
+        ImGui_ImplSDL2_ProcessEvent(&e);
+
+        switch (e.type) {
+            case SDL_QUIT:
+                m_bQuit = true;
+                break;
+            case SDL_KEYDOWN:
+                break;
+            case SDL_KEYUP: {
+                if (m_pInputManager) {
                     m_pInputManager->AsciiKeyDown(
                         static_cast<char>(e.key.keysym.sym));
-                } break;
-                case SDL_MOUSEBUTTONDOWN: {
-                    if (e.button.button == SDL_BUTTON_LEFT) {
-                        m_pInputManager->LeftMouseButtonDown();
-                        m_bInDrag = true;
-                    }
-                } break;
-                case SDL_MOUSEBUTTONUP: {
-                    if (e.button.button == SDL_BUTTON_LEFT) {
-                        m_pInputManager->LeftMouseButtonUp();
-                        m_bInDrag = false;
-                    }
-                } break;
-                case SDL_MOUSEMOTION: {
-                    if (m_bInDrag) {
+                }
+            } break;
+            case SDL_MOUSEBUTTONDOWN: {
+                if (e.button.button == SDL_BUTTON_LEFT) {
+                    if (m_pInputManager) m_pInputManager->LeftMouseButtonDown();
+                    m_bInDrag = true;
+                }
+            } break;
+            case SDL_MOUSEBUTTONUP: {
+                if (e.button.button == SDL_BUTTON_LEFT) {
+                    if (m_pInputManager) m_pInputManager->LeftMouseButtonUp();
+                    m_bInDrag = false;
+                }
+            } break;
+            case SDL_MOUSEMOTION: {
+                if (m_bInDrag) {
+                    if (m_pInputManager)
                         m_pInputManager->LeftMouseDrag(e.motion.xrel,
                                                        e.motion.yrel);
-                    }
-                } break;
-                case SDL_WINDOWEVENT:
-                    if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
-                        int tmpX, tmpY;
-                        SDL_GetWindowSize(m_pWindow, &tmpX, &tmpY);
-                        onResize(tmpX, tmpY);
-                    }
-            }
+                }
+            } break;
+            case SDL_WINDOWEVENT:
+                if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    int tmpX, tmpY;
+                    SDL_GetWindowSize(m_pWindow, &tmpX, &tmpY);
+                    onResize(tmpX, tmpY);
+                }
         }
     }
+
+    ImGui_ImplSDL2_NewFrame();
+    BaseApplication::Tick();
 }
 
 void SdlApplication::CreateMainWindow() {

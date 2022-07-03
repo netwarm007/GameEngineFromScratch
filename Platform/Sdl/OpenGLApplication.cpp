@@ -2,6 +2,8 @@
 
 #include <cstdio>
 
+#include "imgui_impl_sdl.h"
+
 using namespace std;
 using namespace My;
 
@@ -19,8 +21,8 @@ void OpenGLApplication::CreateMainWindow() {
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, m_Config.alphaBits);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, m_Config.depthBits);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, m_Config.stencilBits);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, m_Config.msaaSamples);
+    // SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    // SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, m_Config.msaaSamples);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     m_pWindow = SDL_CreateWindow(m_Config.appName, SDL_WINDOWPOS_CENTERED,
@@ -37,6 +39,8 @@ void OpenGLApplication::CreateMainWindow() {
         logSDLError(std::cout, "SDL_GL_CreateContext");
         SDL_Quit();
     }
+    SDL_GL_MakeCurrent(m_pWindow, m_hContext);
+    SDL_GL_SetSwapInterval(1);  // Enable vsync
 
     int major_ver, minor_ver;
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &major_ver);
@@ -44,6 +48,8 @@ void OpenGLApplication::CreateMainWindow() {
     printf("Initialized GL context: %d.%d\n", major_ver, minor_ver);
 
     SDL_GL_SetSwapInterval(1);
+
+    ImGui_ImplSDL2_InitForOpenGL(m_pWindow, m_hContext);
 }
 
 void OpenGLApplication::Tick() {

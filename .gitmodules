@@ -34,9 +34,6 @@
 [submodule "emsdk"]
 	path = External/src/emsdk
 	url = https://github.com/netwarm007/emsdk.git
-[submodule "SDL"]
-	path = External/src/SDL
-	url = https://github.com/netwarm007/SDL.git
 [submodule "bison"]
 	path = External/src/bison
 	url = https://github.com/netwarm007/bison.git
