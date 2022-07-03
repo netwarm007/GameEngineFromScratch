@@ -44,8 +44,8 @@ int test(BaseApplication& app) {
     ImVector<ImWchar> ranges;
     ImFontGlyphRangesBuilder builder;
     builder.AddText(
-        (const char*)u8"屏擎渲帧钮");  // Add a string (here "Hello world"
-                                       // contains 7 unique characters)
+        (const char*)u8"屏擎渲帧钮");
+
     builder.AddRanges(
         io.Fonts->GetGlyphRangesChineseSimplifiedCommon());  // Add one of the
                                                              // default ranges
