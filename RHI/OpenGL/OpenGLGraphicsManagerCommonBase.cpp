@@ -637,7 +637,8 @@ void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame) {
     glViewport(0, 0, conf.screenWidth, conf.screenHeight);
 
     // Set the color to clear the screen to.
-    glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+    glClearColor(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2],
+                 frame.clearColor[3]);
     // Clear the screen and depth buffer.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1033,7 +1034,8 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
 }
 
 void OpenGLGraphicsManagerCommonBase::EndShadowMap(const intptr_t shadowmap,
-                                                   int32_t layer_index, const Frame&) {
+                                                   int32_t layer_index,
+                                                   const Frame&) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glDeleteFramebuffers(1, &m_ShadowMapFramebufferName);

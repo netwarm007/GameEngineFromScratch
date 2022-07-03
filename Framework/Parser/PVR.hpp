@@ -145,8 +145,7 @@ class PvrParser : _implements_ ImageParser {
             std::cerr << "----------------------------" << std::endl;
             fprintf(stderr, "Image dimension: (%d x %d x %d)\n", pHeader->width,
                     pHeader->height, pHeader->depth);
-            fprintf(stderr, "Image pixel format: %llu\n",
-                    pHeader->pixel_format);
+            //std::cerr << "Image pixel format: " << pHeader->pixel_format << std::endl;
 
             img.Width = pHeader->width;
             img.Height = pHeader->height;

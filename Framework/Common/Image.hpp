@@ -112,7 +112,7 @@ struct Image {
         if (data) delete[] data;
     }
 
-    uint8_t GetR(int32_t x, int32_t y) const {
+    uint8_t GetR(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -145,7 +145,7 @@ struct Image {
         return 0;
     }
 
-    uint8_t GetG(int32_t x, int32_t y) const {
+    uint8_t GetG(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -180,7 +180,7 @@ struct Image {
         return 0;
     }
 
-    uint8_t GetB(int32_t x, int32_t y) const {
+    uint8_t GetB(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -213,7 +213,7 @@ struct Image {
         return 0;
     }
 
-    uint8_t GetA(int32_t x, int32_t y) const {
+    uint8_t GetA(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0xFF;
 
         switch (pixel_format) {
@@ -282,8 +282,8 @@ struct Image {
         }
         // the data
         // flip y so that (0,0) is bottom left corner
-        for (int32_t y = Height - 1; y >= 0; y--) {
-            for (int32_t x = 0; x < Width; x++) {
+        for (uint32_t y = Height - 1; y >= 0; y--) {
+            for (uint32_t x = 0; x < Width; x++) {
                 // note reversed order: b, g, r
                 fprintf(file, "%c", GetA(x, y));
                 fprintf(file, "%c", GetB(x, y));

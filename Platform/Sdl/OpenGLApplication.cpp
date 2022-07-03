@@ -21,8 +21,10 @@ void OpenGLApplication::CreateMainWindow() {
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, m_Config.alphaBits);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, m_Config.depthBits);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, m_Config.stencilBits);
-    // SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    // SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, m_Config.msaaSamples);
+    if (m_Config.msaaSamples > 1) {
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, m_Config.msaaSamples);
+    }
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     m_pWindow = SDL_CreateWindow(m_Config.appName, SDL_WINDOWPOS_CENTERED,

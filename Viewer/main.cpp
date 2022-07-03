@@ -18,7 +18,11 @@
 //#include "D3d12Application.hpp"
 #include "OpenGLApplication.hpp"
 #else
-#include "OpenGLApplication.hpp"
+#if defined(HAS_SDL2)
+#include "Platform/Sdl/OpenGLApplication.hpp"
+#else
+#include "Platform/Linux/OpenGLApplication.hpp"
+#endif
 #endif
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
