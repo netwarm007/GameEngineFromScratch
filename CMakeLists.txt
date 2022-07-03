@@ -113,6 +113,10 @@ set(HAS_VULKAN 1)
 include_directories(${Vulkan_INCLUDE_DIRS})
 endif(Vulkan_FOUND)
 
+if(SDL2_FOUND)
+set(HAS_SDL2 1)
+endif(SDL2_FOUND)
+
 include(CTest)
 
 set(CPACK_PACKAGE_NAME "GEFS")

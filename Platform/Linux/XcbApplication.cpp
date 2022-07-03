@@ -112,8 +112,8 @@ void XcbApplication::Tick() {
             case XCB_EXPOSE: {
                 XWindowAttributes gwa;
                 XGetWindowAttributes(m_pDisplay, m_XWindow, &gwa);
-                m_Config.screenWidth = gwa.screen->width;
-                m_Config.screenHeight = gwa.screen->height;
+                m_Config.screenWidth = gwa.width;
+                m_Config.screenHeight = gwa.height;
                 break;
             }
             case XCB_KEY_PRESS: {

@@ -8,7 +8,6 @@ class OpenGLApplication : public SdlApplication {
 
     void Tick() override;
 
-   protected:
     void CreateMainWindow() override;
 
    private:

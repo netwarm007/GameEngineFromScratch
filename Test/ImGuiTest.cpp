@@ -149,8 +149,8 @@ int main(int argc, char** argv) {
 #endif
 
 #if defined(OS_LINUX)
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                            "ImGUI Test (OpenGL)");
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 1, 800, 600,
+                            "ImGUI Test (OpenGL + SDL2)");
     OpenGLApplication app(config);
 #endif
 

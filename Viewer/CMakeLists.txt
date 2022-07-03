@@ -63,7 +63,7 @@ ELSEIF(APPLE)
         main.cpp ViewerLogic.cpp
         Main.metallib ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
         )
-ELSE(ANDROID)
+ELSE()
     add_executable(Viewer 
         main.cpp ViewerLogic.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
         )
@@ -174,13 +174,17 @@ ELSEIF(WIN32)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
-ELSE(APPLE) # LINUX
+ELSE() # LINUX
+if(SDL2_FOUND)
+set(PLATFORM_INTERFACE PlatformInterfaceSDL2)
+else()
+set(PLATFORM_INTERFACE PlatformInterface)
+endif(SDL2_FOUND)
     target_link_libraries(Viewer
                             MyPhysics
                             OpenGLRHI
                             Framework
-                            PlatformInterface
-                        )
+                            ${PLATFORM_INTERFACE})
 
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
