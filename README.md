@@ -42,7 +42,7 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 ## Texture Format
 - JPEG
 - PNG
-- TIFF
+- TGA
 - HDR
 - DDS
 - BMP
