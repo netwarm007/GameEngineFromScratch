@@ -161,6 +161,6 @@ void CocoaApplication::Tick() {
         [NSApp updateWindows];
     }
 
-    ImGui_ImplOSX_NewFrame(_mtkView);
+    ImGui_ImplOSX_NewFrame([m_pWindow contentView]);
     BaseApplication::Tick();
 }
