@@ -14,27 +14,26 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
         ImGui::Text(
             (const char*)u8"阴影贴图");  // Display some text (you can use
                                             // a format strings too)
-        for (int32_t i = 0; i < frame.frameContext.globalShadowMapCount; i++) {
-            ImGui::Image((ImTextureID)frame.frameContext.globalShadowMap, ImVec2(128, 128));
+        for (int32_t i = 0; i < frame.frameContext.globalShadowMap.size; i++) {
+            ImGui::Image((ImTextureID)frame.frameContext.globalShadowMap.handler, ImVec2(128, 128));
         }
 
-        for (int32_t i = 0; i < frame.frameContext.shadowMapCount; i++) {
-            ImGui::Image((ImTextureID)frame.frameContext.shadowMap, ImVec2(128, 128));
+        for (int32_t i = 0; i < frame.frameContext.shadowMap.size; i++) {
+            ImGui::Image((ImTextureID)frame.frameContext.shadowMap.handler, ImVec2(128, 128));
         }
 
-        for (int32_t i = 0; i < frame.frameContext.cubeShadowMapCount; i++) {
-            ImGui::Image((ImTextureID)frame.frameContext.cubeShadowMap, ImVec2(128, 128));
+        for (int32_t i = 0; i < frame.frameContext.cubeShadowMap.size; i++) {
+            ImGui::Image((ImTextureID)frame.frameContext.cubeShadowMap.handler, ImVec2(128, 128));
         }
 
         ImGui::Text(
             (const char*)u8"天空盒");  // Display some text (you can use
                                             // a format strings too)
         // Draw Skybox
-        ImGui::Image((ImTextureID)frame.skybox, ImVec2(128, 128));
+        ImGui::Image((ImTextureID)frame.skybox.handler, ImVec2(128, 128));
 
         // BRDF LUT
-        auto brdf_lut = m_pGraphicsManager->GetTexture("BRDF_LUT");
-        ImGui::Image((ImTextureID)brdf_lut, ImVec2(128, 128));
+        ImGui::Image((ImTextureID)frame.brdfLUT.handler, ImVec2(128, 128));
 
         ImGui::End(); // finish the debug window
     }

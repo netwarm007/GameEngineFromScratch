@@ -10,21 +10,23 @@ void CocoaMetalApplication::CreateMainWindow() {
 
     @autoreleasepool {
         MetalView* pView = [[MetalView new]
-            initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight) pApp:this];
+            initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)
+                     pApp:this];
 
         [m_pWindow setContentView:pView];
 
-        ImGui_ImplOSX_Init(pView);
+        if (ImGui::GetCurrentContext()) {
+            ImGui_ImplOSX_Init(pView);
+        }
     }
 }
 
-void CocoaMetalApplication::Tick() {
-    CocoaApplication::Tick();
-
-}
+void CocoaMetalApplication::Tick() { CocoaApplication::Tick(); }
 
 void CocoaMetalApplication::Finalize() {
-    ImGui_ImplOSX_Shutdown();
+    if (ImGui::GetCurrentContext()) {
+        ImGui_ImplOSX_Shutdown();
+    }
 
     CocoaApplication::Finalize();
 }

@@ -19,6 +19,7 @@
 namespace My {
 class GraphicsManager : _implements_ IGraphicsManager {
    public:
+    GraphicsManager();
     ~GraphicsManager() override = default;
     int Initialize() override;
     void Finalize() override;
@@ -41,44 +42,37 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void BeginCompute() override {}
     void EndCompute() override {}
 
-    TextureID GenerateCubeShadowMapArray(const uint32_t width,
-                                        const uint32_t height,
-                                        const uint32_t count) override {
-        return 0;
-    }
-    TextureID GenerateShadowMapArray(const uint32_t width, const uint32_t height,
-                                    const uint32_t count) override {
-        return 0;
-    }
-    void BeginShadowMap(const int32_t light_index, const TextureID shadowmap,
-                        const uint32_t width, const uint32_t height,
+    void Generate2DTexture(Texture2D& texture) override {}
+
+    void ReleaseTexture(TextureBase& texture) override {}
+
+    void GenerateCubeShadowMapArray(TextureCubeArray& texture_array) override {}
+
+    void GenerateShadowMapArray(Texture2DArray& texture_array) override {}
+
+
+    void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index,
                         const Frame& frame) override {}
-    void EndShadowMap(const TextureID shadowmap,
+    void EndShadowMap(const TextureBase* pShadowmap,
                       const int32_t layer_index, const Frame& frame) override {}
     void SetShadowMaps(const Frame& frame) override {}
 
     // skybox
     void DrawSkyBox(const Frame& frame) override {}
 
-    void GenerateTexture(const char* id, const uint32_t width,
-                         const uint32_t height) override {}
     void CreateTexture(SceneObjectTexture& texture) override {}
-    void ReleaseTexture(TextureID texture) override {}
     void BeginRenderToTexture(int32_t& context, const int32_t texture,
                               const uint32_t width,
                               const uint32_t height) override {}
     void EndRenderToTexture(int32_t& context) override {}
 
-    void GenerateTextureForWrite(const char* id, const uint32_t width,
-                                 const uint32_t height) override {}
+    void GenerateTextureForWrite(Texture2D& texture) override {}
 
-    void BindTextureForWrite(const char* id,
+    void BindTextureForWrite(Texture2D& texture,
                              const uint32_t slot_index) override {}
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) override {}
-
-    TextureID GetTexture(const char* id) override;
 
     virtual void DrawFullScreenQuad() override {}
 
@@ -100,12 +94,10 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void UpdateConstants();
 
    protected:
-    std::map<std::string, TextureID> m_Textures;
-
     uint64_t m_nSceneRevision{0};
     uint32_t m_nFrameIndex{0};
 
-    std::array<Frame, GfxConfiguration::kMaxInFlightFrameCount> m_Frames;
+    std::vector<Frame> m_Frames;
     std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
     std::vector<std::shared_ptr<IDispatchPass>> m_DispatchPasses;
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;

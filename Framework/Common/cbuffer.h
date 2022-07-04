@@ -129,30 +129,48 @@ struct a2v_cube {
 };
 
 #ifdef __cplusplus
+using TextureHandler = intptr_t;
+
+struct TextureBase {
+    TextureHandler handler = 0;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t mips = 1;
+};
+
+struct Texture2D : TextureBase {
+};
+
+struct Texture2DArray : Texture2D {
+    uint32_t size = 0;
+};
+
+struct TextureCube : TextureBase {
+};
+
+struct TextureCubeArray : TextureCube {
+    uint32_t size = 0;
+};
+
 struct material_textures {
-    int32_t diffuseMap = -1;
-    int32_t normalMap = -1;
-    int32_t metallicMap = -1;
-    int32_t roughnessMap = -1;
-    int32_t aoMap = -1;
-    int32_t heightMap = -1;
+    Texture2D diffuseMap;
+    Texture2D normalMap;
+    Texture2D metallicMap;
+    Texture2D roughnessMap;
+    Texture2D aoMap;
+    Texture2D heightMap;
 };
 
 struct global_textures {
-    int32_t brdfLUT = -1;
-    int32_t skybox = -1;
-    int32_t terrainHeightMap = -1;
+    Texture2D brdfLUT;
+    TextureCubeArray skybox;
+    Texture2D terrainHeightMap;
 };
 
 struct frame_textures {
-    int32_t shadowMap = -1;
-    int32_t shadowMapCount = 0;
-
-    int32_t globalShadowMap = -1;
-    int32_t globalShadowMapCount = 0;
-
-    int32_t cubeShadowMap = -1;
-    int32_t cubeShadowMapCount = 0;
+    Texture2DArray shadowMap;
+    Texture2DArray globalShadowMap;
+    TextureCubeArray cubeShadowMap;
 };
 #else
 Texture2D diffuseMap REGISTER(t0);

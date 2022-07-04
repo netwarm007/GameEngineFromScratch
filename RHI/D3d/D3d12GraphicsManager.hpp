@@ -28,11 +28,10 @@ class D3d12GraphicsManager : public GraphicsManager {
 
     void DrawBatch(const Frame& frame) final;
 
-    TextureID GenerateCubeShadowMapArray(const uint32_t width,
-                                        const uint32_t height,
-                                        const uint32_t count) final;
-    TextureID GenerateShadowMapArray(const uint32_t width, const uint32_t height,
-                                    const uint32_t count) final;
+    void GenerateCubeShadowMapArray(TextureCubeArray& texture_array) final;
+
+    void GenerateShadowMapArray(Texture2DArray& texture_array) final;
+
     void BeginShadowMap(const int32_t light_index, const TextureID shadowmap,
                         const uint32_t width, const uint32_t height,
                         const int32_t layer_index, const Frame& frame) final;
@@ -45,11 +44,9 @@ class D3d12GraphicsManager : public GraphicsManager {
     // skybox
     void DrawSkyBox(const Frame& frame) final;
 
-    // compute shader tasks
-    void GenerateTextureForWrite(const char* id, const uint32_t width,
-                                 const uint32_t height) final;
+    void GenerateTextureForWrite(Texture2D& texture) final;
 
-    void BindTextureForWrite(const char* id, const uint32_t slot_index) final;
+    void BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) final;
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;

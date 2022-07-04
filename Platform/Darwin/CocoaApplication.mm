@@ -161,6 +161,8 @@ void CocoaApplication::Tick() {
         [NSApp updateWindows];
     }
 
-    ImGui_ImplOSX_NewFrame([m_pWindow contentView]);
+    if (ImGui::GetCurrentContext()) {
+        ImGui_ImplOSX_NewFrame([m_pWindow contentView]);
+    }
     BaseApplication::Tick();
 }

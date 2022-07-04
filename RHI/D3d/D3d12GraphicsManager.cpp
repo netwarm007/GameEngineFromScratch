@@ -530,19 +530,12 @@ void D3d12GraphicsManager::Present() {
 
 void D3d12GraphicsManager::DrawSkyBox(const Frame& frame) {}
 
-GraphicsManager::TextureID D3d12GraphicsManager::GenerateCubeShadowMapArray(
-    const uint32_t width, const uint32_t height, const uint32_t count) {
-    TextureID texture_id = 0;
-
-    return texture_id;
+void D3d12GraphicsManager::GenerateCubeShadowMapArray(TextureCubeArray& texture_array) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
 }
 
-GraphicsManager::TextureID D3d12GraphicsManager::GenerateShadowMapArray(const uint32_t width,
-                                                      const uint32_t height,
-                                                      const uint32_t count) {
-    TextureID texture_id = 0;
-
-    return texture_id;
+void D3d12GraphicsManager::GenerateShadowMapArray(Texture2DArray& texture_array) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
 }
 
 void D3d12GraphicsManager::BeginShadowMap(
@@ -561,12 +554,9 @@ void D3d12GraphicsManager::ReleaseTexture(TextureID texture) {
     SafeRelease(&pTmp);
 }
 
-void D3d12GraphicsManager::GenerateTextureForWrite(const char* id,
-                                                   const uint32_t width,
-                                                   const uint32_t height) {}
+void D3d12GraphicsManager::GenerateTextureForWrite(Texture2D& texture) {}
 
-void D3d12GraphicsManager::BindTextureForWrite(const char* texture,
-                                               const uint32_t slot_index) {}
+void D3d12GraphicsManager::BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) {}
 
 void D3d12GraphicsManager::Dispatch(const uint32_t width, const uint32_t height,
                                     const uint32_t depth) {}

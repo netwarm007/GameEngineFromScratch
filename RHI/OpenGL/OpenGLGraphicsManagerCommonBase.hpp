@@ -20,32 +20,29 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                           const Frame& frame) final;
     void DrawBatch(const Frame& frame) final;
 
-    TextureID GenerateCubeShadowMapArray(const uint32_t width,
-                                       const uint32_t height,
-                                       const uint32_t count) final;
-    TextureID GenerateShadowMapArray(const uint32_t width, const uint32_t height,
-                                   const uint32_t count) final;
-    void BeginShadowMap(const int32_t light_index, const TextureID shadowmap,
-                        const uint32_t width, const uint32_t height,
+    void Generate2DTexture(Texture2D& texture) final;
+
+    void GenerateCubeShadowMapArray(TextureCubeArray& texture_array) final;
+
+    void GenerateShadowMapArray(Texture2DArray& texture_array) final;
+
+    void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;
-    void EndShadowMap(const TextureID shadowmap, const int32_t layer_index, const Frame& frame) final;
+    void EndShadowMap(const TextureBase* pShadowmap, const int32_t layer_index, const Frame& frame) final;
     void SetShadowMaps(const Frame& frame) final;
-    void ReleaseTexture(TextureID texture) final;
+    void ReleaseTexture(TextureBase& texture) final;
 
     // skybox
     void DrawSkyBox(const Frame& frame) final;
 
-    void GenerateTexture(const char* id, const uint32_t width,
-                            const uint32_t height) final;
     void BeginRenderToTexture(int32_t& context, const int32_t texture,
                               const uint32_t width,
                               const uint32_t height) final;
     void EndRenderToTexture(int32_t& context) final;
 
-    void GenerateTextureForWrite(const char* id, const uint32_t width,
-                                 const uint32_t height) final;
+    void GenerateTextureForWrite(Texture2D& texture) final;
 
-    void BindTextureForWrite(const char* id, const uint32_t slot_index) final;
+    void BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) final;
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
@@ -102,21 +99,8 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
         int32_t count{0};
     };
 
-#ifdef DEBUG
-    uint32_t m_uboDebugConstant[GfxConfiguration::kMaxInFlightFrameCount] = {0};
-
-    struct DebugDrawBatchContext : public OpenGLDrawBatchContext {
-        Vector3f color;
-        Matrix4X4f trans;
-    };
-#endif
 
     std::vector<uint32_t> m_Buffers;
-
-#ifdef DEBUG
-    std::vector<DebugDrawBatchContext> m_DebugDrawBatchContext;
-    std::vector<uint32_t> m_DebugBuffers;
-#endif
 
     OpenGLDrawBatchContext m_SkyBoxDrawBatchContext;
     OpenGLDrawBatchContext m_TerrainDrawBatchContext;
