@@ -539,18 +539,17 @@ void D3d12GraphicsManager::GenerateShadowMapArray(Texture2DArray& texture_array)
 }
 
 void D3d12GraphicsManager::BeginShadowMap(
-    const int32_t light_index, const TextureID shadowmap, const uint32_t width,
-    const uint32_t height, const int32_t layer_index, const Frame& frame) {}
+    const int32_t light_index, const TextureBase* pShadowmap, const int32_t layer_index, const Frame& frame) {}
 
-void D3d12GraphicsManager::EndShadowMap(const TextureID shadowmap,
+void D3d12GraphicsManager::EndShadowMap(const TextureBase* pShadowmap,
                                         const int32_t layer_index, const Frame& frame) {}
 
 void D3d12GraphicsManager::SetShadowMaps(const Frame& frame) {}
 
 void D3d12GraphicsManager::CreateTexture(SceneObjectTexture& texture) {}
 
-void D3d12GraphicsManager::ReleaseTexture(TextureID texture) {
-    ID3D12Resource* pTmp = reinterpret_cast<ID3D12Resource*>(texture);
+void D3d12GraphicsManager::ReleaseTexture(TextureBase& texture) {
+    ID3D12Resource* pTmp = reinterpret_cast<ID3D12Resource*>(texture.handler);
     SafeRelease(&pTmp);
 }
 

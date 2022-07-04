@@ -32,14 +32,13 @@ class D3d12GraphicsManager : public GraphicsManager {
 
     void GenerateShadowMapArray(Texture2DArray& texture_array) final;
 
-    void BeginShadowMap(const int32_t light_index, const TextureID shadowmap,
-                        const uint32_t width, const uint32_t height,
+    void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;
-    void EndShadowMap(const TextureID shadowmap,
+    void EndShadowMap(const TextureBase* pShadowmap,
                       const int32_t layer_index, const Frame& frame) final;
     void SetShadowMaps(const Frame& frame) final;
     void CreateTexture(SceneObjectTexture& texture) final;
-    void ReleaseTexture(TextureID texture) final;
+    void ReleaseTexture(TextureBase& texture) final;
 
     // skybox
     void DrawSkyBox(const Frame& frame) final;
