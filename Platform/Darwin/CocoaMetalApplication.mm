@@ -1,7 +1,6 @@
 #import "MetalView.h"
 
 #include "CocoaMetalApplication.h"
-#include "imgui_impl_osx.h"
 
 using namespace My;
 
@@ -14,19 +13,9 @@ void CocoaMetalApplication::CreateMainWindow() {
                      pApp:this];
 
         [m_pWindow setContentView:pView];
-
-        if (ImGui::GetCurrentContext()) {
-            ImGui_ImplOSX_Init(pView);
-        }
     }
 }
 
 void CocoaMetalApplication::Tick() { CocoaApplication::Tick(); }
 
-void CocoaMetalApplication::Finalize() {
-    if (ImGui::GetCurrentContext()) {
-        ImGui_ImplOSX_Shutdown();
-    }
-
-    CocoaApplication::Finalize();
-}
+void CocoaMetalApplication::Finalize() { CocoaApplication::Finalize(); }

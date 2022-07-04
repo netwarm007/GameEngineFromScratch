@@ -51,6 +51,10 @@ void CocoaApplication::CreateMainWindow() {
     id winDelegate = [WindowDelegate new];
     [m_pWindow setDelegate:winDelegate];
     [winDelegate release];
+
+    if (ImGui::GetCurrentContext()) {
+        ImGui_ImplOSX_Init([m_pWindow contentView]);
+    }
 }
 
 void CocoaApplication::GetFramebufferSize(int& width, int& height) {
@@ -64,6 +68,10 @@ void CocoaApplication::GetFramebufferSize(int& width, int& height) {
 }
 
 void CocoaApplication::Finalize() {
+    if (ImGui::GetCurrentContext()) {
+        ImGui_ImplOSX_Shutdown();
+    }
+
     [m_pWindow release];
     BaseApplication::Finalize();
 }

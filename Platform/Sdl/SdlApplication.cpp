@@ -90,7 +90,9 @@ int SdlApplication::Initialize() {
 }
 
 void SdlApplication::Finalize() {
-    ImGui_ImplSDL2_Shutdown;
+    if (ImGui::GetCurrentContext()) {
+        ImGui_ImplSDL2_Shutdown();
+    }
 
     cleanup(m_pWindow);
     SDL_Quit();
@@ -142,7 +144,9 @@ void SdlApplication::Tick() {
         }
     }
 
-    ImGui_ImplSDL2_NewFrame();
+    if (ImGui::GetCurrentContext()) {
+        ImGui_ImplSDL2_NewFrame();
+    }
     BaseApplication::Tick();
 }
 

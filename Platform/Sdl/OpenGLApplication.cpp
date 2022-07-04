@@ -51,7 +51,9 @@ void OpenGLApplication::CreateMainWindow() {
 
     SDL_GL_SetSwapInterval(1);
 
-    ImGui_ImplSDL2_InitForOpenGL(m_pWindow, m_hContext);
+    if (ImGui::GetCurrentContext()) {
+        ImGui_ImplSDL2_InitForOpenGL(m_pWindow, m_hContext);
+    }
 }
 
 void OpenGLApplication::Tick() {
