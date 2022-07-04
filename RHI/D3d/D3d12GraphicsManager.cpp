@@ -530,33 +530,33 @@ void D3d12GraphicsManager::Present() {
 
 void D3d12GraphicsManager::DrawSkyBox(const Frame& frame) {}
 
-intptr_t D3d12GraphicsManager::GenerateCubeShadowMapArray(
+GraphicsManager::TextureID D3d12GraphicsManager::GenerateCubeShadowMapArray(
     const uint32_t width, const uint32_t height, const uint32_t count) {
-    intptr_t texture_id = 0;
+    TextureID texture_id = 0;
 
     return texture_id;
 }
 
-intptr_t D3d12GraphicsManager::GenerateShadowMapArray(const uint32_t width,
+GraphicsManager::TextureID D3d12GraphicsManager::GenerateShadowMapArray(const uint32_t width,
                                                       const uint32_t height,
                                                       const uint32_t count) {
-    intptr_t texture_id = 0;
+    TextureID texture_id = 0;
 
     return texture_id;
 }
 
 void D3d12GraphicsManager::BeginShadowMap(
-    const int32_t light_index, const intptr_t shadowmap, const uint32_t width,
+    const int32_t light_index, const TextureID shadowmap, const uint32_t width,
     const uint32_t height, const int32_t layer_index, const Frame& frame) {}
 
-void D3d12GraphicsManager::EndShadowMap(const intptr_t shadowmap,
+void D3d12GraphicsManager::EndShadowMap(const TextureID shadowmap,
                                         const int32_t layer_index, const Frame& frame) {}
 
 void D3d12GraphicsManager::SetShadowMaps(const Frame& frame) {}
 
 void D3d12GraphicsManager::CreateTexture(SceneObjectTexture& texture) {}
 
-void D3d12GraphicsManager::ReleaseTexture(intptr_t texture) {
+void D3d12GraphicsManager::ReleaseTexture(TextureID texture) {
     ID3D12Resource* pTmp = reinterpret_cast<ID3D12Resource*>(texture);
     SafeRelease(&pTmp);
 }

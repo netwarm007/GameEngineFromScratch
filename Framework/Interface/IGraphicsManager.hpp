@@ -8,6 +8,8 @@
 namespace My {
 _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
    public:
+    using TextureID = intptr_t;
+
     IGraphicsManager() = default;
     virtual ~IGraphicsManager() = default;
     virtual void Draw() = 0;
@@ -27,18 +29,18 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     virtual void BeginCompute() = 0;
     virtual void EndCompute() = 0;
 
-    virtual intptr_t GenerateCubeShadowMapArray(
+    virtual TextureID GenerateCubeShadowMapArray(
         const uint32_t width, const uint32_t height, const uint32_t count) = 0;
 
-    virtual intptr_t GenerateShadowMapArray(
+    virtual TextureID GenerateShadowMapArray(
         const uint32_t width, const uint32_t height, const uint32_t count) = 0;
 
     virtual void BeginShadowMap(
-        const int32_t light_index, const intptr_t shadowmap,
+        const int32_t light_index, const TextureID shadowmap,
         const uint32_t width, const uint32_t height, const int32_t layer_index,
         const Frame& frame) = 0;
 
-    virtual void EndShadowMap(const intptr_t shadowmap,
+    virtual void EndShadowMap(const TextureID shadowmap,
                               const int32_t layer_index, const Frame& frame) = 0;
 
     virtual void SetShadowMaps(const Frame& frame) = 0;
@@ -51,7 +53,7 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
 
     virtual void CreateTexture(SceneObjectTexture & texture) = 0;
 
-    virtual void ReleaseTexture(intptr_t texture) = 0;
+    virtual void ReleaseTexture(TextureID texture) = 0;
 
     virtual void BeginRenderToTexture(int32_t & context, const int32_t texture,
                                       const uint32_t width,
@@ -68,43 +70,8 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     virtual void Dispatch(const uint32_t width, const uint32_t height,
                           const uint32_t depth) = 0;
 
-    virtual intptr_t GetTexture(const char* id) = 0;
+    virtual TextureID GetTexture(const char* id) = 0;
 
     virtual void DrawFullScreenQuad() = 0;
-
-#ifdef DEBUG
-    virtual void DrawPoint(const Point& point, const Vector3f& color) = 0;
-    virtual void DrawPointSet(const PointSet& point_set,
-                              const Vector3f& color) = 0;
-    virtual void DrawPointSet(const PointSet& point_set,
-                              const Matrix4X4f& trans,
-                              const Vector3f& color) = 0;
-    virtual void DrawLine(const Point& from, const Point& to,
-                          const Vector3f& color) = 0;
-    virtual void DrawLine(const PointList& vertices, const Vector3f& color) = 0;
-    virtual void DrawLine(const PointList& vertices, const Matrix4X4f& trans,
-                          const Vector3f& color) = 0;
-    virtual void DrawTriangle(const PointList& vertices,
-                              const Vector3f& color) = 0;
-    virtual void DrawTriangle(const PointList& vertices,
-                              const Matrix4X4f& trans,
-                              const Vector3f& color) = 0;
-    virtual void DrawTriangleStrip(const PointList& vertices,
-                                   const Vector3f& color) = 0;
-    virtual void DrawTextureOverlay(const intptr_t texture, const float vp_left,
-                                    const float vp_top, const float vp_width,
-                                    const float vp_height) = 0;
-    virtual void DrawTextureArrayOverlay(
-        const intptr_t texture, const float layer_index, const float vp_left,
-        const float vp_top, const float vp_width, const float vp_height) = 0;
-    virtual void DrawCubeMapOverlay(
-        const intptr_t cubemap, const float vp_left, const float vp_top,
-        const float vp_width, const float vp_height, const float level) = 0;
-    virtual void DrawCubeMapArrayOverlay(
-        const intptr_t cubemap, const float layer_index, const float vp_left,
-        const float vp_top, const float vp_width, const float vp_height,
-        const float level) = 0;
-    virtual void ClearDebugBuffers() = 0;
-#endif
 };
 }  // namespace My

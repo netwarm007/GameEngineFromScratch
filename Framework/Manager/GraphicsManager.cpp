@@ -39,9 +39,6 @@ int GraphicsManager::Initialize() {
 }
 
 void GraphicsManager::Finalize() {
-#ifdef DEBUG
-    ClearDebugBuffers();
-#endif
     EndScene();
 }
 
@@ -417,7 +414,7 @@ void GraphicsManager::BeginFrame(const Frame& frame) {
 void GraphicsManager::EndFrame(const Frame&) {
 }
 
-intptr_t GraphicsManager::GetTexture(const char* id) {
+GraphicsManager::TextureID GraphicsManager::GetTexture(const char* id) {
     int32_t result = -1;
 
     auto it = m_Textures.find(id);
@@ -427,109 +424,3 @@ intptr_t GraphicsManager::GetTexture(const char* id) {
 
     return result;
 }
-
-#ifdef DEBUG
-void GraphicsManager::DrawEdgeList(const EdgeList& edges,
-                                   const Vector3f& color) {
-    PointList point_list;
-
-    for (const auto& edge : edges) {
-        point_list.push_back(edge->first);
-        point_list.push_back(edge->second);
-    }
-
-    DrawLine(point_list, color);
-}
-
-void GraphicsManager::DrawPolygon(const Face& polygon, const Vector3f& color) {
-    PointSet vertices;
-    PointList edges;
-    for (const auto& pEdge : polygon.Edges) {
-        vertices.insert({pEdge->first, pEdge->second});
-        edges.push_back(pEdge->first);
-        edges.push_back(pEdge->second);
-    }
-    DrawLine(edges, color);
-
-    DrawPointSet(vertices, color);
-
-    DrawTriangle(polygon.GetVertices(), color * 0.5f);
-}
-
-void GraphicsManager::DrawPolygon(const Face& polygon, const Matrix4X4f& trans,
-                                  const Vector3f& color) {
-    PointSet vertices;
-    PointList edges;
-    for (const auto& pEdge : polygon.Edges) {
-        vertices.insert({pEdge->first, pEdge->second});
-        edges.push_back(pEdge->first);
-        edges.push_back(pEdge->second);
-    }
-    DrawLine(edges, trans, color);
-
-    DrawPointSet(vertices, trans, color);
-
-    DrawTriangle(polygon.GetVertices(), trans, color * 0.5f);
-}
-
-void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron,
-                                     const Vector3f& color) {
-    for (const auto& pFace : polyhedron.Faces) {
-        DrawPolygon(*pFace, color);
-    }
-}
-
-void GraphicsManager::DrawPolyhydron(const Polyhedron& polyhedron,
-                                     const Matrix4X4f& trans,
-                                     const Vector3f& color) {
-    for (const auto& pFace : polyhedron.Faces) {
-        DrawPolygon(*pFace, trans, color);
-    }
-}
-
-void GraphicsManager::DrawBox(const Vector3f& bbMin, const Vector3f& bbMax,
-                              const Vector3f& color) {
-    //  ******0--------3********
-    //  *****/:       /|********
-    //  ****1--------2 |********
-    //  ****| :      | |********
-    //  ****| 4- - - | 7********
-    //  ****|/       |/*********
-    //  ****5--------6**********
-
-    // vertices
-    PointPtr points[8];
-    for (auto& point : points) point = make_shared<Point>(bbMin);
-    *points[0] = *points[2] = *points[3] = *points[7] = bbMax;
-    points[0]->data[0] = bbMin[0];
-    points[2]->data[1] = bbMin[1];
-    points[7]->data[2] = bbMin[2];
-    points[1]->data[2] = bbMax[2];
-    points[4]->data[1] = bbMax[1];
-    points[6]->data[0] = bbMax[0];
-
-    // edges
-    EdgeList edges;
-
-    // top
-    edges.push_back(make_shared<Edge>(make_pair(points[0], points[3])));
-    edges.push_back(make_shared<Edge>(make_pair(points[3], points[2])));
-    edges.push_back(make_shared<Edge>(make_pair(points[2], points[1])));
-    edges.push_back(make_shared<Edge>(make_pair(points[1], points[0])));
-
-    // bottom
-    edges.push_back(make_shared<Edge>(make_pair(points[4], points[7])));
-    edges.push_back(make_shared<Edge>(make_pair(points[7], points[6])));
-    edges.push_back(make_shared<Edge>(make_pair(points[6], points[5])));
-    edges.push_back(make_shared<Edge>(make_pair(points[5], points[4])));
-
-    // side
-    edges.push_back(make_shared<Edge>(make_pair(points[0], points[4])));
-    edges.push_back(make_shared<Edge>(make_pair(points[1], points[5])));
-    edges.push_back(make_shared<Edge>(make_pair(points[2], points[6])));
-    edges.push_back(make_shared<Edge>(make_pair(points[3], points[7])));
-
-    DrawEdgeList(edges, color);
-}
-
-#endif

@@ -20,17 +20,17 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                           const Frame& frame) final;
     void DrawBatch(const Frame& frame) final;
 
-    intptr_t GenerateCubeShadowMapArray(const uint32_t width,
+    TextureID GenerateCubeShadowMapArray(const uint32_t width,
                                        const uint32_t height,
                                        const uint32_t count) final;
-    intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height,
+    TextureID GenerateShadowMapArray(const uint32_t width, const uint32_t height,
                                    const uint32_t count) final;
-    void BeginShadowMap(const int32_t light_index, const intptr_t shadowmap,
+    void BeginShadowMap(const int32_t light_index, const TextureID shadowmap,
                         const uint32_t width, const uint32_t height,
                         const int32_t layer_index, const Frame& frame) final;
-    void EndShadowMap(const intptr_t shadowmap, const int32_t layer_index, const Frame& frame) final;
+    void EndShadowMap(const TextureID shadowmap, const int32_t layer_index, const Frame& frame) final;
     void SetShadowMaps(const Frame& frame) final;
-    void ReleaseTexture(intptr_t texture) final;
+    void ReleaseTexture(TextureID texture) final;
 
     // skybox
     void DrawSkyBox(const Frame& frame) final;
@@ -51,39 +51,6 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                   const uint32_t depth) final;
 
     void DrawFullScreenQuad() final;
-
-#ifdef DEBUG
-    void DrawPoint(const Point& point, const Vector3f& color) final;
-    void DrawPointSet(const PointSet& point_set, const Vector3f& color) final;
-    void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans,
-                      const Vector3f& color) final;
-    void DrawLine(const Point& from, const Point& to,
-                  const Vector3f& color) final;
-    void DrawLine(const PointList& vertices, const Vector3f& color) final;
-    void DrawLine(const PointList& vertices, const Matrix4X4f& trans,
-                  const Vector3f& color) final;
-    void DrawTriangle(const PointList& vertices, const Vector3f& color) final;
-    void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans,
-                      const Vector3f& color) final;
-    void DrawTriangleStrip(const PointList& vertices,
-                           const Vector3f& color) final;
-    void ClearDebugBuffers() final;
-    void DrawTextureOverlay(const intptr_t texture, const float vp_left,
-                            const float vp_top, const float vp_width,
-                            const float vp_height) final;
-    void DrawTextureArrayOverlay(const intptr_t texture, const float layer_index,
-                                 const float vp_left, const float vp_top,
-                                 const float vp_width,
-                                 const float vp_height) final;
-    void DrawCubeMapOverlay(const intptr_t cubemap, const float vp_left,
-                            const float vp_top, const float vp_width,
-                            const float vp_height, const float level) final;
-    void DrawCubeMapArrayOverlay(const intptr_t cubemap, const float layer_index,
-                                 const float vp_left, const float vp_top,
-                                 const float vp_width, const float vp_height,
-                                 const float level) final;
-    void RenderDebugBuffers() override;
-#endif
 
    protected:
     void EndScene() final;

@@ -41,20 +41,20 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void BeginCompute() override {}
     void EndCompute() override {}
 
-    intptr_t GenerateCubeShadowMapArray(const uint32_t width,
+    TextureID GenerateCubeShadowMapArray(const uint32_t width,
                                         const uint32_t height,
                                         const uint32_t count) override {
         return 0;
     }
-    intptr_t GenerateShadowMapArray(const uint32_t width, const uint32_t height,
+    TextureID GenerateShadowMapArray(const uint32_t width, const uint32_t height,
                                     const uint32_t count) override {
         return 0;
     }
-    void BeginShadowMap(const int32_t light_index, const intptr_t shadowmap,
+    void BeginShadowMap(const int32_t light_index, const TextureID shadowmap,
                         const uint32_t width, const uint32_t height,
                         const int32_t layer_index,
                         const Frame& frame) override {}
-    void EndShadowMap(const intptr_t shadowmap,
+    void EndShadowMap(const TextureID shadowmap,
                       const int32_t layer_index, const Frame& frame) override {}
     void SetShadowMaps(const Frame& frame) override {}
 
@@ -64,7 +64,7 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void GenerateTexture(const char* id, const uint32_t width,
                          const uint32_t height) override {}
     void CreateTexture(SceneObjectTexture& texture) override {}
-    void ReleaseTexture(intptr_t texture) override {}
+    void ReleaseTexture(TextureID texture) override {}
     void BeginRenderToTexture(int32_t& context, const int32_t texture,
                               const uint32_t width,
                               const uint32_t height) override {}
@@ -78,56 +78,9 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) override {}
 
-    intptr_t GetTexture(const char* id) override;
+    TextureID GetTexture(const char* id) override;
 
     virtual void DrawFullScreenQuad() override {}
-
-#ifdef DEBUG
-    void DrawPoint(const Point& point, const Vector3f& color) override {}
-    void DrawPointSet(const PointSet& point_set,
-                      const Vector3f& color) override {}
-    void DrawPointSet(const PointSet& point_set, const Matrix4X4f& trans,
-                      const Vector3f& color) override {}
-    void DrawLine(const Point& from, const Point& to,
-                  const Vector3f& color) override {}
-    void DrawLine(const PointList& vertices, const Vector3f& color) override {}
-    void DrawLine(const PointList& vertices, const Matrix4X4f& trans,
-                  const Vector3f& color) override {}
-    void DrawTriangle(const PointList& vertices,
-                      const Vector3f& color) override {}
-    void DrawTriangle(const PointList& vertices, const Matrix4X4f& trans,
-                      const Vector3f& color) override {}
-    void DrawTriangleStrip(const PointList& vertices,
-                           const Vector3f& color) override {}
-    void DrawTextureOverlay(const intptr_t texture, const float vp_left,
-                            const float vp_top, const float vp_width,
-                            const float vp_height) override {}
-    void DrawTextureArrayOverlay(const intptr_t texture,
-                                 const float layer_index, const float vp_left,
-                                 const float vp_top, const float vp_width,
-                                 const float vp_height) override {}
-    void DrawCubeMapOverlay(const intptr_t cubemap, const float vp_left,
-                            const float vp_top, const float vp_width,
-                            const float vp_height, const float level) override {
-    }
-    void DrawCubeMapArrayOverlay(const intptr_t cubemap,
-                                 const float layer_index, const float vp_left,
-                                 const float vp_top, const float vp_width,
-                                 const float vp_height,
-                                 const float level) override {}
-    void ClearDebugBuffers() override {}
-
-    void DrawEdgeList(const EdgeList& edges, const Vector3f& color);
-    void DrawPolygon(const Face& polygon, const Vector3f& color);
-    void DrawPolygon(const Face& polygon, const Matrix4X4f& trans,
-                     const Vector3f& color);
-    void DrawPolyhydron(const Polyhedron& polyhedron,
-                        const Vector3f& color);
-    void DrawPolyhydron(const Polyhedron& polyhedron, const Matrix4X4f& trans,
-                        const Vector3f& color);
-    void DrawBox(const Vector3f& bbMin, const Vector3f& bbMax,
-                 const Vector3f& color);
-#endif
 
    protected:
     virtual void BeginScene(const Scene& scene);
@@ -139,10 +92,6 @@ class GraphicsManager : _implements_ IGraphicsManager {
     virtual void initializeGeometries(const Scene& scene) {}
     virtual void initializeSkyBox(const Scene& scene) {}
 
-#ifdef DEBUG
-    virtual void RenderDebugBuffers() {}
-#endif
-
    private:
     void InitConstants() {}
     void CalculateCameraMatrix();
@@ -151,10 +100,9 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void UpdateConstants();
 
    protected:
-    std::map<std::string, intptr_t> m_Textures;
+    std::map<std::string, TextureID> m_Textures;
 
     uint64_t m_nSceneRevision{0};
-
     uint32_t m_nFrameIndex{0};
 
     std::array<Frame, GfxConfiguration::kMaxInFlightFrameCount> m_Frames;

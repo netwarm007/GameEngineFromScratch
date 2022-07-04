@@ -1,70 +1,42 @@
 #include "DebugOverlaySubPass.hpp"
 
 #include "GraphicsManager.hpp"
+#include "imgui.h"
 
 using namespace My;
 using namespace std;
 
 void DebugOverlaySubPass::Draw(Frame& frame) {
 #ifdef DEBUG
-    // Draw Shadow Maps
-    m_pGraphicsManager->SetPipelineState(
-        m_pPipelineStateManager->GetPipelineState("Texture Array Debug Output"),
-        frame);
+    if (ImGui::GetCurrentContext()) {
+        ImGui::Begin((const char*)u8"调试窗口");  // Create a debug window
 
-    float top = 0.95f;
-    float left = 0.86f;
+        ImGui::Text(
+            (const char*)u8"阴影贴图");  // Display some text (you can use
+                                            // a format strings too)
+        for (int32_t i = 0; i < frame.frameContext.globalShadowMapCount; i++) {
+            ImGui::Image((ImTextureID)frame.frameContext.globalShadowMap, ImVec2(128, 128));
+        }
 
-    for (int32_t i = 0; i < frame.frameContext.globalShadowMapCount; i++) {
-        m_pGraphicsManager->DrawTextureArrayOverlay(
-            frame.frameContext.globalShadowMap, static_cast<float>(i), left,
-            top, 0.12f, 0.12f);
-        top -= 0.15f;
+        for (int32_t i = 0; i < frame.frameContext.shadowMapCount; i++) {
+            ImGui::Image((ImTextureID)frame.frameContext.shadowMap, ImVec2(128, 128));
+        }
+
+        for (int32_t i = 0; i < frame.frameContext.cubeShadowMapCount; i++) {
+            ImGui::Image((ImTextureID)frame.frameContext.cubeShadowMap, ImVec2(128, 128));
+        }
+
+        ImGui::Text(
+            (const char*)u8"天空盒");  // Display some text (you can use
+                                            // a format strings too)
+        // Draw Skybox
+        ImGui::Image((ImTextureID)frame.skybox, ImVec2(128, 128));
+
+        // BRDF LUT
+        auto brdf_lut = m_pGraphicsManager->GetTexture("BRDF_LUT");
+        ImGui::Image((ImTextureID)brdf_lut, ImVec2(128, 128));
+
+        ImGui::End(); // finish the debug window
     }
-
-    for (int32_t i = 0; i < frame.frameContext.shadowMapCount; i++) {
-        m_pGraphicsManager->DrawTextureArrayOverlay(
-            frame.frameContext.shadowMap, static_cast<float>(i), left, top,
-            0.12f, 0.12f);
-        top -= 0.15f;
-    }
-
-    m_pGraphicsManager->SetPipelineState(
-        m_pPipelineStateManager->GetPipelineState("CubeMap Array Debug Output"),
-        frame);
-
-    for (int32_t i = 0; i < frame.frameContext.cubeShadowMapCount; i++) {
-        m_pGraphicsManager->DrawCubeMapArrayOverlay(
-            frame.frameContext.cubeShadowMap, static_cast<float>(i), left, top,
-            0.12f, 0.12f, 0.0f);
-        top -= 0.15f;
-    }
-
-    // Draw Skybox
-    m_pGraphicsManager->DrawCubeMapArrayOverlay(frame.skybox, 0.0f, left, top,
-                                                0.12f, 0.12f, 0.0f);
-    top -= 0.15f;
-
-    // SkyBox Irradiance
-    m_pGraphicsManager->DrawCubeMapArrayOverlay(frame.skybox, 0.0f, left, top,
-                                                0.12f, 0.12f, 1.0f);
-    top -= 0.15f;
-
-    // SkyBox Radiance
-    m_pGraphicsManager->DrawCubeMapArrayOverlay(frame.skybox, 1.0f, left, top,
-                                                0.12f, 0.12f, 1.0f);
-    top -= 0.15f;
-
-    // BRDF LUT
-    m_pGraphicsManager->SetPipelineState(
-        m_pPipelineStateManager->GetPipelineState("Texture Debug Output"),
-        frame);
-
-    auto brdf_lut = m_pGraphicsManager->GetTexture("BRDF_LUT");
-    m_pGraphicsManager->DrawTextureOverlay(brdf_lut, left, top, 0.12f, 0.12f);
-    top -= 0.15f;
-
-    // auto raytrace = m_pGraphicsManager->GetTexture("RAYTRACE");
-    // m_pGraphicsManager->DrawTextureOverlay(raytrace, left, top, 0.12f, 0.12f);
 #endif
 }
