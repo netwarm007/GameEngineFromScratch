@@ -182,7 +182,7 @@ void D3d12RHI::CreateCommandQueues() {
 }
 
 void D3d12RHI::CreateSwapChain() {
-    int width, height;
+    uint32_t width, height;
     m_fQueryFramebufferSize(width, height);
 
     m_ViewPort = {
@@ -263,7 +263,7 @@ void D3d12RHI::CreateRenderTargets() {
             (std::wstring(L"Render Target ") + std::to_wstring(i)).c_str());
     }
 
-    int width, height;
+    uint32_t width, height;
     m_fQueryFramebufferSize(width, height);
 
     auto config = m_fGetGfxConfigHandler();
@@ -304,7 +304,7 @@ void D3d12RHI::CreateRenderTargets() {
 }
 
 void D3d12RHI::CreateDepthStencils() {
-    int width, height;
+    uint32_t width, height;
     m_fQueryFramebufferSize(width, height);
 
     auto config = m_fGetGfxConfigHandler();

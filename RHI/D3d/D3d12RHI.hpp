@@ -17,7 +17,7 @@ namespace My {
 
 class D3d12RHI {
    public:
-    using QueryFrameBufferSizeFunc = std::function<void(int&, int&)>;
+    using QueryFrameBufferSizeFunc = std::function<void(uint32_t&, uint32_t&)>;
     using GetWindowHandlerFunc = std::function<HWND()>;
     using GetGfxConfigFunc = std::function<const GfxConfiguration&()>;
     using DestroyResourceFunc = std::function<void()>;

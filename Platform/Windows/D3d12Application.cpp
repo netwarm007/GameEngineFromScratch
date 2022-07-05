@@ -5,7 +5,7 @@ using namespace My;
 void D3d12Application::CreateMainWindow() {
     WindowsApplication::CreateMainWindow();
 
-    auto getFramebufferSize = [this](int& width, int& height) {
+    auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
         GetFramebufferSize(width, height);
     };
 
