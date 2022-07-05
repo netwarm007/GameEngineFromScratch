@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 
     ImVector<ImWchar> ranges;
     ImFontGlyphRangesBuilder builder;
-    builder.AddText((const char*)u8"屏擎渲帧钮");                        // Add a string (here "Hello world" contains 7 unique characters)
+    builder.AddText((const char*)u8"辐屏擎渲帧钮");                        // Add a string (here "Hello world" contains 7 unique characters)
     builder.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); // Add one of the default ranges
     builder.BuildRanges(&ranges);                          // Build the final result (ordered ranges with all the unique characters submitted)
 

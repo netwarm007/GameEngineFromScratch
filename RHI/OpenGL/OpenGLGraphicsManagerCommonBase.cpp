@@ -519,6 +519,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
     m_Frames[0].skybox.width = width;
     m_Frames[0].skybox.height = height;
     m_Frames[0].skybox.size = 2;
+    m_Frames[0].skybox.mips = pImage->mipmaps.size();
 
     glBindTexture(target, 0);
 

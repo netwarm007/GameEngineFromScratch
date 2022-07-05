@@ -352,6 +352,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     texture_out.height = height;
     texture_out.pixel_format = images[0]->pixel_format;
     texture_out.size = 2;
+    texture_out.mips = std::max(images[16]->mipmaps.size(), (size_t)2);
 
     return texture_out;
 }
