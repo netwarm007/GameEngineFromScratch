@@ -12,13 +12,42 @@ DebugOverlaySubPass::~DebugOverlaySubPass() {
     }
 }
 
+static void TexturePreviewer(const TextureBase& texture) {
+    constexpr uint32_t texture_preview_width = 64, texture_preview_height = 64;
+	ImGuiIO& io = ImGui::GetIO();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+
+    ImGui::Image((ImTextureID)texture.handler, ImVec2(texture_preview_width, texture_preview_height));
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        float focus_sz = 32.0f;
+        float focus_x = io.MousePos.x - pos.x - focus_sz * 0.5f;
+        if (focus_x < 0.0f)
+            focus_x = 0.0f;
+        else if (focus_x > texture_preview_width - focus_sz)
+            focus_x = texture_preview_width - focus_sz;
+        float focus_y = io.MousePos.y - pos.y - focus_sz * 0.5f;
+        if (focus_y < 0.0f)
+            focus_y = 0.0f;
+        else if (focus_y > texture_preview_height - focus_sz)
+            focus_y = texture_preview_height - focus_sz;
+        ImGui::Text("Min: (%.2f, %.2f)", focus_x, focus_y);
+        ImGui::Text("Max: (%.2f, %.2f)", focus_x + focus_sz, focus_y + focus_sz);
+        ImVec2 uv0 = ImVec2((focus_x) / texture_preview_width, (focus_y) / texture_preview_height);
+        ImVec2 uv1 = ImVec2((focus_x + focus_sz) / texture_preview_width, (focus_y + focus_sz) / texture_preview_height);
+        ImGui::Image((ImTextureID)texture.handler, ImVec2(128, 128), uv0, uv1, ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
+        ImGui::EndTooltip();
+    }
+}
+
 void DebugOverlaySubPass::Draw(Frame& frame) {
     if (ImGui::GetCurrentContext()) {
         size_t texture_view_index = 0;
 
         ImGui::Begin((const char*)u8"调试窗口");  // Create a debug window
 
-        if (ImGui::CollapsingHeader((const char*)u8"贴图")) {
+        if (ImGui::CollapsingHeader((const char*)u8"贴图", true)) {
             ImGui::Text(
                 (const char*)u8"阴影贴图");
 
@@ -31,9 +60,12 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
                     texture_debug_view = m_TextureViews[texture_view_index];
                 }
                 
-                ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
+                TexturePreviewer(texture_debug_view);
+                ImGui::SameLine();
                 ++texture_view_index;
             }
+
+            ImGui::Spacing();
 
             for (int32_t i = 0; i < frame.frameContext.shadowMap.size; i++) {
                 Texture2D texture_debug_view;
@@ -44,9 +76,12 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
                     texture_debug_view = m_TextureViews[texture_view_index];
                 }
 
-                ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
+                TexturePreviewer(texture_debug_view);
+                ImGui::SameLine();
                 ++texture_view_index;
             }
+
+            ImGui::Spacing();
 
             for (int32_t i = 0; i < frame.frameContext.cubeShadowMap.size; i++) {
                 Texture2D texture_debug_view;
@@ -57,9 +92,12 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
                     texture_debug_view = m_TextureViews[texture_view_index];
                 }
 
-                ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
+                TexturePreviewer(texture_debug_view);
+                ImGui::SameLine();
                 ++texture_view_index;
             }
+
+            ImGui::Separator();
 
             // Draw Skybox
             {
@@ -67,6 +105,7 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
                     (const char*)u8"天空盒");
 
                 auto start_index = texture_view_index;
+
                 for (int32_t i = 0; i < 6; i++) {
                     Texture2D texture_debug_view;
 
@@ -75,20 +114,42 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
                         m_TextureViews.push_back(texture_debug_view);
                     } 
 
-                    texture_debug_view = m_TextureViews[start_index + i];
-                    ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(64, 64));
-                    if (!(i % 2)) ImGui::SameLine();
                     ++texture_view_index;
                 }
 
+                ImGui::BeginTable("skybox", 4);
+                // +Y
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(1);
+                TexturePreviewer(m_TextureViews[start_index + 2]);
+                // -X
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                TexturePreviewer(m_TextureViews[start_index + 1]);
+                // +Z
+                ImGui::TableSetColumnIndex(1);
+                TexturePreviewer(m_TextureViews[start_index + 4]);
+                // +X
+                ImGui::TableSetColumnIndex(2);
+                TexturePreviewer(m_TextureViews[start_index + 0]);
+                // -Z
+                ImGui::TableSetColumnIndex(3);
+                TexturePreviewer(m_TextureViews[start_index + 5]);
+                // -Y
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(1);
+                TexturePreviewer(m_TextureViews[start_index + 3]);
+
+                ImGui::EndTable();
             }
 
+            ImGui::Separator();
 
             // BRDF LUT
             ImGui::Text(
                 (const char*)u8"BRDF LUT");
 
-            ImGui::Image((ImTextureID)frame.brdfLUT.handler, ImVec2(128, 128));
+            TexturePreviewer(frame.brdfLUT);
         }
         ImGui::End(); // finish the debug window
     }
