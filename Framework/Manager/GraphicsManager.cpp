@@ -365,34 +365,31 @@ void GraphicsManager::BeginScene(const Scene& scene) {
         pPass->EndPass(m_Frames[0]);
     }
 
-    // now, copy the frame structures and initialize shadow maps
-    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        m_Frames[i] = m_Frames[0];
-        m_Frames[i].frameIndex = i;
+    // generate shadow map array
+    if (!m_Frames[0].frameContext.shadowMap.handler) {
+        m_Frames[0].frameContext.shadowMap.width = GfxConfiguration::kShadowMapWidth;
+        m_Frames[0].frameContext.shadowMap.height = GfxConfiguration::kShadowMapHeight;
+        m_Frames[0].frameContext.shadowMap.size = GfxConfiguration::kMaxShadowMapCount;
+        m_Frames[0].frameContext.shadowMap.pixel_format = PIXEL_FORMAT::D32;
+        GenerateTextureArray(m_Frames[0].frameContext.shadowMap);
+    }
 
-        // generate shadow map array
-        if (!m_Frames[i].frameContext.shadowMap.handler) {
-            m_Frames[i].frameContext.shadowMap.width = GfxConfiguration::kShadowMapWidth;
-            m_Frames[i].frameContext.shadowMap.height = GfxConfiguration::kShadowMapHeight;
-            m_Frames[i].frameContext.shadowMap.size = GfxConfiguration::kMaxShadowMapCount;
-            GenerateShadowMapArray(m_Frames[i].frameContext.shadowMap);
-        }
+    // generate global shadow map array
+    if (!m_Frames[0].frameContext.globalShadowMap.handler) {
+        m_Frames[0].frameContext.globalShadowMap.width = GfxConfiguration::kShadowMapWidth;
+        m_Frames[0].frameContext.globalShadowMap.height = GfxConfiguration::kShadowMapHeight;
+        m_Frames[0].frameContext.globalShadowMap.size = GfxConfiguration::kMaxShadowMapCount;
+        m_Frames[0].frameContext.globalShadowMap.pixel_format = PIXEL_FORMAT::D32;
+        GenerateTextureArray(m_Frames[0].frameContext.globalShadowMap);
+    }
 
-        // generate global shadow map array
-        if (!m_Frames[i].frameContext.globalShadowMap.handler) {
-            m_Frames[i].frameContext.globalShadowMap.width = GfxConfiguration::kShadowMapWidth;
-            m_Frames[i].frameContext.globalShadowMap.height = GfxConfiguration::kShadowMapHeight;
-            m_Frames[i].frameContext.globalShadowMap.size = GfxConfiguration::kMaxShadowMapCount;
-            GenerateShadowMapArray(m_Frames[i].frameContext.globalShadowMap);
-        }
-
-        // generate cube shadow map array
-        if (m_Frames[i].frameContext.cubeShadowMap.handler) {
-            m_Frames[i].frameContext.cubeShadowMap.width = GfxConfiguration::kShadowMapWidth;
-            m_Frames[i].frameContext.cubeShadowMap.height = GfxConfiguration::kShadowMapHeight;
-            m_Frames[i].frameContext.cubeShadowMap.size = GfxConfiguration::kMaxShadowMapCount;
-            GenerateCubeShadowMapArray(m_Frames[i].frameContext.cubeShadowMap);
-        }
+    // generate cube shadow map array
+    if (m_Frames[0].frameContext.cubeShadowMap.handler) {
+        m_Frames[0].frameContext.cubeShadowMap.width = GfxConfiguration::kShadowMapWidth;
+        m_Frames[0].frameContext.cubeShadowMap.height = GfxConfiguration::kShadowMapHeight;
+        m_Frames[0].frameContext.cubeShadowMap.size = GfxConfiguration::kMaxShadowMapCount;
+        m_Frames[0].frameContext.cubeShadowMap.pixel_format = PIXEL_FORMAT::D32;
+        GenerateCubemapArray(m_Frames[0].frameContext.cubeShadowMap);
     }
 
     if (scene.Geometries.size()) {
@@ -400,6 +397,12 @@ void GraphicsManager::BeginScene(const Scene& scene) {
     }
     if (scene.SkyBox) {
         initializeSkyBox(scene);
+    }
+
+    // now, copy the frame structures and initialize shadow maps
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+        m_Frames[i] = m_Frames[0];
+        m_Frames[i].frameIndex = i;
     }
 }
 

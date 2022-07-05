@@ -42,14 +42,15 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void BeginCompute() override {}
     void EndCompute() override {}
 
-    void Generate2DTexture(Texture2D& texture) override {}
+    void GenerateTexture(Texture2D& texture) override {}
 
     void ReleaseTexture(TextureBase& texture) override {}
 
-    void GenerateCubeShadowMapArray(TextureCubeArray& texture_array) override {}
+    void GenerateCubemapArray(TextureCubeArray& texture_array) override {}
 
-    void GenerateShadowMapArray(Texture2DArray& texture_array) override {}
+    void GenerateTextureArray(Texture2DArray& texture_array) override {}
 
+    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t layer) override {}
 
     void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index,

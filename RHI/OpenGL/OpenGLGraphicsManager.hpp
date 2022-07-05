@@ -7,10 +7,16 @@ class OpenGLGraphicsManager : public OpenGLGraphicsManagerCommonBase {
     int Initialize() final;
     void Finalize() final;
 
+    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t layer) final;
+
    private:
-    void getOpenGLTextureFormat(const Image& img, uint32_t& format,
-                                uint32_t& internal_format,
-                                uint32_t& type) final;
+    void getOpenGLTextureFormat(const PIXEL_FORMAT pixel_format, uint32_t& format,
+                                        uint32_t& internal_format,
+                                        uint32_t& type) final;
+
+    void getOpenGLTextureFormat(const COMPRESSED_FORMAT compressed_format, uint32_t& format,
+                                        uint32_t& internal_format,
+                                        uint32_t& type) final;
 
     void BeginFrame(const Frame& frame) final;
     void EndFrame(const Frame& frame) final;

@@ -11,11 +11,8 @@
 
 using namespace My;
 
-static MTLPixelFormat getMtlPixelFormat(const Image& img) {
-    MTLPixelFormat format;
-
-    if (img.compressed) {
-        switch (img.compress_format) {
+static MTLPixelFormat getMtlPixelFormat(const COMPRESSED_FORMAT compressed_format) {
+        switch (compressed_format) {
             case COMPRESSED_FORMAT::DXT1:
             case COMPRESSED_FORMAT::BC1:
                 format = MTLPixelFormatBC1_RGBA;
@@ -86,34 +83,51 @@ static MTLPixelFormat getMtlPixelFormat(const Image& img) {
                 std::cerr << img << std::endl;
                 assert(0);
         }
-    } else {
-        switch (img.bitcount) {
-            case 8:
+}
+
+static MTLPixelFormat getMtlPixelFormat(const PIXEL_FORMAT pixel_format) {
+        switch (pixel_format) {
+            case PIXEL_FORMAT::R8:
                 format = MTLPixelFormatR8Unorm;
                 break;
-            case 16:
+            case PIXEL_FORMAT::RG8:
                 format = MTLPixelFormatRG8Unorm;
                 break;
-            case 32:
+            case PIXEL_FORMAT::RGBA8:
                 format = MTLPixelFormatRGBA8Unorm;
                 break;
-            case 64:
+            case PIXEL_FORMAT::RGBA16:
                 if (img.is_float) {
                     format = MTLPixelFormatRGBA16Float;
                 } else {
                     format = MTLPixelFormatRGBA16Unorm;
                 }
                 break;
-            case 128:
+            case PIXEL_FORMAT::RGBA32:
                 if (img.is_float) {
                     format = MTLPixelFormatRGBA32Float;
                 } else {
                     format = MTLPixelFormatRGBA32Uint;
                 }
                 break;
+            case PIXEL_FORMAT::D24R8:
+                format = MTLPixelFormatDepth24Float_Stencil8;
+                break;
+            case PIXEL_FORMAT::D32:
+                format = MTLPixelFormatDepth32Float;
+                break;
             default:
                 assert(0);
         }
+}
+
+static MTLPixelFormat getMtlPixelFormat(const Image& img) {
+    MTLPixelFormat format;
+
+    if (img.compressed) {
+        format = getMtlPixelFormat(img.compressed_format);
+    } else {
+        format = getMtlPixelFormat(img.pixel_format);
     }
 
     return format;
@@ -583,19 +597,18 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [_renderEncoder popDebugGroup];
 }
 
-- (id<MTLTexture>)generateShadowMapArray:(const uint32_t)width
-                                  height:(const uint32_t)height
-                                   count:(const uint32_t)count {
+- (void)generateTextureArray:(Texture2DArray &)texture_array {
     id<MTLTexture> texture;
+    MTLPixelFormat format = getMtlPixelFormat(texture_array.pixel_format);
 
     @autoreleasepool {
         MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
 
         textureDesc.textureType = MTLTextureType2DArray;
-        textureDesc.arrayLength = count;
-        textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
-        textureDesc.width = width;
-        textureDesc.height = height;
+        textureDesc.arrayLength = texture_array.size;
+        textureDesc.pixelFormat = format;
+        textureDesc.width = texture_array.width;
+        textureDesc.height = texture_array.height;
         textureDesc.storageMode = MTLStorageModePrivate;
         textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
@@ -603,22 +616,22 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         texture = [_device newTextureWithDescriptor:textureDesc];
     }
 
-    return texture;
+    texture_array.handler = reinterpret_cast<TextureHandler>(texture);
+    texture_array.format = format;
 }
 
-- (id<MTLTexture>)generateCubeShadowMapArray:(const uint32_t)width
-                                      height:(const uint32_t)height
-                                       count:(const uint32_t)count {
+- (void)generateCubemapArray:(TextureCubeArray &)texture_array {
     id<MTLTexture> texture;
+    MTLPixelFormat format = getMtlPixelFormat(texture_array.pixel_format);
 
     @autoreleasepool {
         MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
 
         textureDesc.textureType = MTLTextureTypeCubeArray;
-        textureDesc.arrayLength = count;
-        textureDesc.pixelFormat = MTLPixelFormatDepth32Float;
-        textureDesc.width = width;
-        textureDesc.height = height;
+        textureDesc.arrayLength = texture_array.size;
+        textureDesc.pixelFormat = format;
+        textureDesc.width = texture_array.width;
+        textureDesc.height = texture_array.height;
         textureDesc.storageMode = MTLStorageModePrivate;
         textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
@@ -626,7 +639,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         texture = [_device newTextureWithDescriptor:textureDesc];
     }
 
-    return texture;
+    texture_array.handler = reinterpret_cast<TextureHandler>(texture);
+    texture_array.format = format;
 }
 
 - (void)beginShadowMap:(const int32_t)light_index

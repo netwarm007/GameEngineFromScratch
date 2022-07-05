@@ -67,7 +67,9 @@ enum class PIXEL_FORMAT : uint16_t {
     RGB32,
     RGBA32,
     R10G10B10A2,
-    R5G6B5
+    R5G6B5,
+    D24R8,
+    D32
 };
 
 std::ostream& operator<<(std::ostream& out, COMPRESSED_FORMAT format);

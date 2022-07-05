@@ -6,31 +6,76 @@
 using namespace My;
 using namespace std;
 
+DebugOverlaySubPass::~DebugOverlaySubPass() {
+    for (auto& texture_debug_view : m_TextureViews) {
+        m_pGraphicsManager->ReleaseTexture(texture_debug_view);
+    }
+}
+
 void DebugOverlaySubPass::Draw(Frame& frame) {
-#ifdef DEBUG
     if (ImGui::GetCurrentContext()) {
+        size_t texture_view_index = 0;
+
         ImGui::Begin((const char*)u8"调试窗口");  // Create a debug window
 
         ImGui::Text(
             (const char*)u8"阴影贴图");
 
         for (int32_t i = 0; i < frame.frameContext.globalShadowMap.size; i++) {
-            ImGui::Image((ImTextureID)frame.frameContext.globalShadowMap.handler, ImVec2(128, 128));
+            Texture2D texture_debug_view;
+            if (texture_view_index >= m_TextureViews.size()) {
+                m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.globalShadowMap, i);
+                m_TextureViews.push_back(texture_debug_view);
+            } else {
+                texture_debug_view = m_TextureViews[texture_view_index];
+            }
+            
+            ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
+            ++texture_view_index;
         }
 
         for (int32_t i = 0; i < frame.frameContext.shadowMap.size; i++) {
-            ImGui::Image((ImTextureID)frame.frameContext.shadowMap.handler, ImVec2(128, 128));
+            Texture2D texture_debug_view;
+            if (texture_view_index >= m_TextureViews.size()) {
+                m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.shadowMap, i);
+                m_TextureViews.push_back(texture_debug_view);
+            } else {
+                texture_debug_view = m_TextureViews[texture_view_index];
+            }
+
+            ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
+            ++texture_view_index;
         }
 
         for (int32_t i = 0; i < frame.frameContext.cubeShadowMap.size; i++) {
-            ImGui::Image((ImTextureID)frame.frameContext.cubeShadowMap.handler, ImVec2(128, 128));
+            Texture2D texture_debug_view;
+            if (texture_view_index >= m_TextureViews.size()) {
+                m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.cubeShadowMap, i);
+                m_TextureViews.push_back(texture_debug_view);
+            } else {
+                texture_debug_view = m_TextureViews[texture_view_index];
+            }
+
+            ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
+            ++texture_view_index;
         }
 
         // Draw Skybox
-        ImGui::Text(
-            (const char*)u8"天空盒");
+        {
+            ImGui::Text(
+                (const char*)u8"天空盒");
 
-        ImGui::Image((ImTextureID)frame.skybox.handler, ImVec2(128, 128));
+            Texture2D texture_debug_view;
+            if (texture_view_index >= m_TextureViews.size()) {
+                m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, 0);
+                m_TextureViews.push_back(texture_debug_view);
+            } else {
+                texture_debug_view = m_TextureViews[texture_view_index];
+            }
+
+            ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
+            ++texture_view_index;
+        }
 
         // BRDF LUT
         ImGui::Text(
@@ -40,5 +85,4 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
 
         ImGui::End(); // finish the debug window
     }
-#endif
 }

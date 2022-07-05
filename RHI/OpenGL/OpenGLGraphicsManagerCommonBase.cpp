@@ -298,11 +298,12 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                     pGeometryNode->GetMaterialRef(material_index);
                 const auto material = scene.GetMaterial(material_key);
                 if (material) {
-                    function<uint32_t(const string, const shared_ptr<Image>&)>
+                    function<Texture2D(const string, const shared_ptr<Image>&)>
                         upload_texture = [this](
                                              const string& texture_key,
                                              const shared_ptr<Image>& texture) {
-                            uint32_t texture_id;
+                            GLuint texture_id;
+                            Texture2D texture_out;
 
                             glGenTextures(1, &texture_id);
                             glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -334,7 +335,13 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
 
                             glBindTexture(GL_TEXTURE_2D, 0);
 
-                            return texture_id;
+                            texture_out.handler = static_cast<TextureHandler>(texture_id);
+                            texture_out.format = internal_format;
+                            texture_out.pixel_format = texture->pixel_format;
+                            texture_out.width = texture->Width;
+                            texture_out.height = texture->Height;
+
+                            return texture_out;
                         };
 
                     // base color / albedo
@@ -343,12 +350,8 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& texture_key = color.ValueMap->GetName();
                         const auto& image = color.ValueMap->GetTextureImage();
                         if (image) {
-                            uint32_t texture_id =
+                            dbc->material.diffuseMap =
                                 upload_texture(texture_key, image);
-                            dbc->material.diffuseMap.handler =
-                                static_cast<TextureHandler>(texture_id);
-                            dbc->material.diffuseMap.width = image->Width;
-                            dbc->material.diffuseMap.height = image->Height;
                         }
                     }
 
@@ -358,12 +361,8 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& texture_key = normal.ValueMap->GetName();
                         const auto& image = normal.ValueMap->GetTextureImage();
                         if (image) {
-                            uint32_t texture_id =
+                            dbc->material.normalMap =
                                 upload_texture(texture_key, image);
-                            dbc->material.normalMap.handler =
-                                static_cast<TextureHandler>(texture_id);
-                            dbc->material.normalMap.width = image->Width;
-                            dbc->material.normalMap.height = image->Height;
                         }
                     }
 
@@ -374,12 +373,8 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& image =
                             metallic.ValueMap->GetTextureImage();
                         if (image) {
-                            uint32_t texture_id =
+                            dbc->material.metallicMap =
                                 upload_texture(texture_key, image);
-                            dbc->material.metallicMap.handler =
-                                static_cast<TextureHandler>(texture_id);
-                            dbc->material.metallicMap.width = image->Width;
-                            dbc->material.metallicMap.height = image->Height;
                         }
                     }
 
@@ -390,12 +385,8 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& image =
                             roughness.ValueMap->GetTextureImage();
                         if (image) {
-                            uint32_t texture_id =
+                            dbc->material.roughnessMap =
                                 upload_texture(texture_key, image);
-                            dbc->material.roughnessMap.handler =
-                                static_cast<TextureHandler>(texture_id);
-                            dbc->material.roughnessMap.width = image->Width;
-                            dbc->material.roughnessMap.height = image->Height;
                         }
                     }
 
@@ -405,12 +396,8 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& texture_key = ao.ValueMap->GetName();
                         const auto& image = ao.ValueMap->GetTextureImage();
                         if (image) {
-                            uint32_t texture_id =
+                            dbc->material.aoMap =
                                 upload_texture(texture_key, image);
-                            dbc->material.aoMap.handler =
-                                static_cast<TextureHandler>(texture_id);
-                            dbc->material.aoMap.width = image->Width;
-                            dbc->material.aoMap.height = image->Height;
                         }
                     }
 
@@ -421,10 +408,8 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                         const auto& image =
                             heightmap.ValueMap->GetTextureImage();
                         if (image) {
-                            uint32_t texture_id =
+                            dbc->material.heightMap =
                                 upload_texture(texture_key, image);
-                            dbc->material.heightMap.handler =
-                                static_cast<TextureHandler>(texture_id);
                         }
                     }
                 }
@@ -469,11 +454,11 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
 
     assert(scene.SkyBox);
 
+    uint32_t format, internal_format, type;
     // skybox, irradiance map
     for (uint32_t i = 0; i < 12; i++) {
         auto& texture = scene.SkyBox->GetTexture(i);
         const auto& pImage = texture.GetTextureImage();
-        uint32_t format, internal_format, type;
         getOpenGLTextureFormat(*pImage, format, internal_format, type);
 
         if (i == 0)  // do this only once
@@ -503,7 +488,6 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
     for (uint32_t i = 12; i < 18; i++) {
         auto& texture = scene.SkyBox->GetTexture(i);
         const auto& pImage = texture.GetTextureImage();
-        uint32_t format, internal_format, type;
         getOpenGLTextureFormat(*pImage, format, internal_format, type);
 
         int32_t zoffset = (i % 6) + 6;
@@ -524,15 +508,17 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
         }
     }
 
-    auto width = scene.SkyBox->GetTexture(0).GetTextureImage()->Width;
-    auto height = scene.SkyBox->GetTexture(0).GetTextureImage()->Height;
+    auto& texture = scene.SkyBox->GetTexture(0);
+    const auto& pImage = texture.GetTextureImage();
+    auto width = pImage->Width;
+    auto height = pImage->Height;
 
-    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        m_Frames[i].skybox.handler = static_cast<TextureHandler>(texture_id);
-        m_Frames[i].skybox.width = width;
-        m_Frames[i].skybox.height = height;
-        m_Frames[i].skybox.size = 2;
-    }
+    m_Frames[0].skybox.handler = static_cast<TextureHandler>(texture_id);
+    m_Frames[0].skybox.format = internal_format;
+    m_Frames[0].skybox.pixel_format = pImage->pixel_format;
+    m_Frames[0].skybox.width = width;
+    m_Frames[0].skybox.height = height;
+    m_Frames[0].skybox.size = 2;
 
     glBindTexture(target, 0);
 
@@ -878,11 +864,13 @@ void OpenGLGraphicsManagerCommonBase::DrawBatch(const Frame& frame) {
     glBindVertexArray(0);
 }
 
-void OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
+void OpenGLGraphicsManagerCommonBase::GenerateCubemapArray(
     TextureCubeArray& texture_array) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
     uint32_t shadowMap;
+    GLenum [[maybe_unused]] format, internal_format, type; 
+    getOpenGLTextureFormat(texture_array.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &shadowMap);
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, shadowMap);
@@ -896,20 +884,23 @@ void OpenGLGraphicsManagerCommonBase::GenerateCubeShadowMapArray(
                     GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R,
                     GL_CLAMP_TO_EDGE);
-    glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, GL_DEPTH_COMPONENT24,
+    glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, internal_format,
                    texture_array.width, texture_array.height,
                    texture_array.size * 6);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
 
     texture_array.handler = static_cast<TextureHandler>(shadowMap);
+    texture_array.format = static_cast<TextureFormat>(internal_format);
 }
 
-void OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
+void OpenGLGraphicsManagerCommonBase::GenerateTextureArray(
     Texture2DArray& texture_array) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
     uint32_t shadowMap;
+    GLenum [[maybe_unused]] format, internal_format, type; 
+    getOpenGLTextureFormat(texture_array.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &shadowMap);
     glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMap);
@@ -917,13 +908,14 @@ void OpenGLGraphicsManagerCommonBase::GenerateShadowMapArray(
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24,
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internal_format,
                    texture_array.width, texture_array.height,
                    texture_array.size);
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
     texture_array.handler = static_cast<TextureHandler>(shadowMap);
+    texture_array.format = static_cast<TextureFormat>(internal_format);
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
@@ -1050,10 +1042,12 @@ void OpenGLGraphicsManagerCommonBase::DrawSkyBox(
     glBindVertexArray(0);
 }
 
-void OpenGLGraphicsManagerCommonBase::Generate2DTexture(Texture2D& texture) {
+void OpenGLGraphicsManagerCommonBase::GenerateTexture(Texture2D& texture) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
     uint32_t texture_id;
+    GLenum [[maybe_unused]] format, internal_format, type; 
+    getOpenGLTextureFormat(texture.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &texture_id);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -1061,9 +1055,10 @@ void OpenGLGraphicsManagerCommonBase::Generate2DTexture(Texture2D& texture) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RG16F, texture.width, texture.height);
+    glTexStorage2D(GL_TEXTURE_2D, 1, internal_format, texture.width, texture.height);
 
     texture.handler = static_cast<TextureHandler>(texture_id);
+    texture.format = static_cast<TextureHandler>(GL_RG16F);
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(
@@ -1112,6 +1107,9 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context) {
 void OpenGLGraphicsManagerCommonBase::GenerateTextureForWrite(
     Texture2D& texture) {
     uint32_t tex_output;
+    GLenum [[maybe_unused]] format, internal_format, type; 
+    getOpenGLTextureFormat(texture.pixel_format, format, internal_format, type);
+
     glGenTextures(1, &tex_output);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, tex_output);
@@ -1119,7 +1117,7 @@ void OpenGLGraphicsManagerCommonBase::GenerateTextureForWrite(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, texture.width, texture.height, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, texture.width, texture.height, 0,
                  GL_RG, GL_FLOAT, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -1197,4 +1195,16 @@ void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad() {
 
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(2, buffer_id);
+}
+
+void OpenGLGraphicsManagerCommonBase::getOpenGLTextureFormat(const Image& img,
+                                                   uint32_t& format,
+                                                   uint32_t& internal_format,
+                                                   uint32_t& type) {
+    if (img.compressed) {
+        getOpenGLTextureFormat(img.compress_format, format,
+                                         internal_format, type);
+    } else {
+        getOpenGLTextureFormat(img.pixel_format, format, internal_format, type);
+    }
 }

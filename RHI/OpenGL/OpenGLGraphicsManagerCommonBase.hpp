@@ -20,15 +20,21 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                           const Frame& frame) final;
     void DrawBatch(const Frame& frame) final;
 
-    void Generate2DTexture(Texture2D& texture) final;
+    void GenerateTexture(Texture2D& texture) final;
 
-    void GenerateCubeShadowMapArray(TextureCubeArray& texture_array) final;
+    void GenerateCubemapArray(TextureCubeArray& texture_array) final;
 
-    void GenerateShadowMapArray(Texture2DArray& texture_array) final;
+    void GenerateTextureArray(Texture2DArray& texture_array) final;
 
-    void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
+    void CreateTextureView(Texture2D& texture_view,
+                           const TextureArrayBase& texture_array,
+                           const uint32_t layer) override {}
+
+    void BeginShadowMap(const int32_t light_index,
+                        const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;
-    void EndShadowMap(const TextureBase* pShadowmap, const int32_t layer_index, const Frame& frame) final;
+    void EndShadowMap(const TextureBase* pShadowmap, const int32_t layer_index,
+                      const Frame& frame) final;
     void SetShadowMaps(const Frame& frame) final;
     void ReleaseTexture(TextureBase& texture) final;
 
@@ -42,7 +48,8 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
 
     void GenerateTextureForWrite(Texture2D& texture) final;
 
-    void BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) final;
+    void BindTextureForWrite(Texture2D& texture,
+                             const uint32_t slot_index) final;
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
@@ -78,6 +85,16 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
 
     virtual void getOpenGLTextureFormat(const Image& img, uint32_t& format,
                                         uint32_t& internal_format,
+                                        uint32_t& type);
+
+    virtual void getOpenGLTextureFormat(const PIXEL_FORMAT pixel_format,
+                                        uint32_t& format,
+                                        uint32_t& internal_format,
+                                        uint32_t& type) = 0;
+
+    virtual void getOpenGLTextureFormat(const COMPRESSED_FORMAT compressed_format,
+                                        uint32_t& format,
+                                        uint32_t& internal_format,
                                         uint32_t& type) = 0;
 
    private:
@@ -98,7 +115,6 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
         uint32_t type{0};
         int32_t count{0};
     };
-
 
     std::vector<uint32_t> m_Buffers;
 

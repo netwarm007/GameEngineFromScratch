@@ -18,9 +18,9 @@ class Metal2GraphicsManager : public GraphicsManager {
 
     void DrawBatch(const Frame& frame) final;
 
-    void GenerateCubeShadowMapArray(TextureCubeArray& texture_array) final;
+    void GenerateCubemapArray(TextureCubeArray& texture_array) final;
 
-    void GenerateShadowMapArray(Texture2DArray& texture_array) final;
+    void GenerateTextureArray(Texture2DArray& texture_array) final;
 
     void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;

@@ -61,13 +61,9 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (_Nonnull id<MTLTexture>)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>> &)images;
 
-- (_Nonnull id<MTLTexture>)generateCubeShadowMapArray:(const uint32_t)width
-                               height:(const uint32_t)height
-                                count:(const uint32_t)count;
+- (_Nonnull id<MTLTexture>)generateCubemapArray:(TextureCubeArray &)texture_array;
 
-- (_Nonnull id<MTLTexture>)generateShadowMapArray:(const uint32_t)width
-                           height:(const uint32_t)height
-                            count:(const uint32_t)count;
+- (_Nonnull id<MTLTexture>)generateTextureArray:(TextureArray &)texture_array;
 
 - (void)beginShadowMap:(const int32_t)light_index
              shadowmap:(const _Nonnull id<MTLTexture>)shadowmap

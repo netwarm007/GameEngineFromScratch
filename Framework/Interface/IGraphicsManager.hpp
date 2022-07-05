@@ -29,11 +29,13 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
 
     virtual void CreateTexture(SceneObjectTexture & texture) = 0;
 
-    virtual void Generate2DTexture(Texture2D& texture) = 0;
+    virtual void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t layer) = 0;
 
-    virtual void GenerateCubeShadowMapArray(TextureCubeArray& texture_array) = 0;
+    virtual void GenerateTexture(Texture2D& texture) = 0;
 
-    virtual void GenerateShadowMapArray(Texture2DArray& texture_array) = 0;
+    virtual void GenerateCubemapArray(TextureCubeArray& texture_array) = 0;
+
+    virtual void GenerateTextureArray(Texture2DArray& texture_array) = 0;
 
     virtual void ReleaseTexture(TextureBase& texture) = 0;
 

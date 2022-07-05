@@ -244,17 +244,12 @@ void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState
 
 void Metal2GraphicsManager::DrawBatch(const Frame& frame) { [m_pRenderer drawBatch:frame]; }
 
-void Metal2GraphicsManager::GenerateCubeShadowMapArray(TextureCubeArray& texture_array) {
-    texture_array.handler =
-        reinterpret_cast<TextureHandler>([m_pRenderer generateCubeShadowMapArray:texture_array.width
-                                                                          height:texture_array.height
-                                                                           count:texture_array.size]);
+void Metal2GraphicsManager::GenerateCubemapArray(TextureCubeArray& texture_array) {
+    [m_pRenderer generateCubemapArray:texture_array];
 }
 
-void Metal2GraphicsManager::GenerateShadowMapArray(Texture2DArray& texture_array) {
-    texture_array.handler = reinterpret_cast<TextureHandler>([m_pRenderer generateShadowMapArray:texture_array.width
-                                                                                   height:texture_array.height
-                                                                                    count:texture_array.size]);
+void Metal2GraphicsManager::GenerateTextureArray(Texture2DArray& texture_array) {
+    [m_pRenderer generateTextureArray:texture_array];
 }
 
 void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,

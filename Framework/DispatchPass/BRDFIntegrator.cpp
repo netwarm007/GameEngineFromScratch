@@ -18,6 +18,7 @@ void BRDFIntegrator::Dispatch(Frame& frame) {
     if (!frame.brdfLUT.handler) {
         frame.brdfLUT.width = width;
         frame.brdfLUT.height = height;
+        frame.brdfLUT.pixel_format = PIXEL_FORMAT::RG32;
         m_pGraphicsManager->GenerateTextureForWrite(frame.brdfLUT);
     }
     m_pGraphicsManager->BindTextureForWrite(frame.brdfLUT, 0);

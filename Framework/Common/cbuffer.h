@@ -129,27 +129,34 @@ struct a2v_cube {
 };
 
 #ifdef __cplusplus
+#include <Image.hpp>
 using TextureHandler = intptr_t;
+using TextureFormat = intptr_t;
 
 struct TextureBase {
     TextureHandler handler = 0;
+    TextureFormat format = 0;
+    PIXEL_FORMAT pixel_format;
+    
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t mips = 1;
 };
 
-struct Texture2D : TextureBase {
-};
-
-struct Texture2DArray : Texture2D {
+struct TextureArrayBase : virtual TextureBase {
     uint32_t size = 0;
 };
 
-struct TextureCube : TextureBase {
+struct Texture2D : virtual TextureBase {
 };
 
-struct TextureCubeArray : TextureCube {
-    uint32_t size = 0;
+struct TextureCube : virtual TextureBase {
+};
+
+struct Texture2DArray : Texture2D, TextureArrayBase {
+};
+
+struct TextureCubeArray : TextureCube, TextureArrayBase {
 };
 
 struct material_textures {

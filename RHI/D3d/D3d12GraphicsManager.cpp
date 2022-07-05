@@ -530,11 +530,11 @@ void D3d12GraphicsManager::Present() {
 
 void D3d12GraphicsManager::DrawSkyBox(const Frame& frame) {}
 
-void D3d12GraphicsManager::GenerateCubeShadowMapArray(TextureCubeArray& texture_array) {
+void D3d12GraphicsManager::GenerateCubemapArray(TextureCubeArray& texture_array) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
 }
 
-void D3d12GraphicsManager::GenerateShadowMapArray(Texture2DArray& texture_array) {
+void D3d12GraphicsManager::GenerateTextureArray(Texture2DArray& texture_array) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
 }
 

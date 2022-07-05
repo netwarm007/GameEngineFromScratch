@@ -159,103 +159,152 @@ void OpenGLGraphicsManager::Finalize() {
     OpenGLGraphicsManagerCommonBase::Finalize();
 }
 
-void OpenGLGraphicsManager::getOpenGLTextureFormat(const Image& img,
-                                                   uint32_t& format,
-                                                   uint32_t& internal_format,
-                                                   uint32_t& type) {
-    if (img.compressed) {
-        format = GL_COMPRESSED_RGB;
+void OpenGLGraphicsManager::getOpenGLTextureFormat(
+    COMPRESSED_FORMAT compressed_format, GLenum& format,
+    GLenum& internal_format, GLenum& type) {
+    format = GL_COMPRESSED_RGB;
 
-        switch (img.compress_format) {
-            case COMPRESSED_FORMAT::BC1:
-            case COMPRESSED_FORMAT::DXT1:
-                internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-                break;
-            case COMPRESSED_FORMAT::BC2:
-            case COMPRESSED_FORMAT::DXT3:
-                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-                break;
-            case COMPRESSED_FORMAT::BC3:
-            case COMPRESSED_FORMAT::DXT5:
-                internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-                break;
-            case COMPRESSED_FORMAT::BC4:
-                internal_format = GL_COMPRESSED_RED_RGTC1;
-                break;
-            case COMPRESSED_FORMAT::BC5:
-                internal_format = GL_COMPRESSED_RG_RGTC2;
-                break;
-            case COMPRESSED_FORMAT::BC6H:
-                internal_format = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB;
-                break;
-            case COMPRESSED_FORMAT::BC7:
-                internal_format = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_4x4:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
-                break;
-            case COMPRESSED_FORMAT::ASTC_5x4:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_5x4_KHR;
-                break;
-            case COMPRESSED_FORMAT::ASTC_5x5:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_5x5_KHR;
-                break;
-            case COMPRESSED_FORMAT::ASTC_6x5:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_6x5_KHR;
-                break;
-            case COMPRESSED_FORMAT::ASTC_6x6:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_6x6_KHR;
-                break;
-            case COMPRESSED_FORMAT::ASTC_8x5:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_8x5_KHR;
-                break;
-            case COMPRESSED_FORMAT::ASTC_8x6:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_8x6_KHR;
-                break;
-            case COMPRESSED_FORMAT::ASTC_8x8:
-                internal_format = GL_COMPRESSED_RGBA_ASTC_8x8_KHR;
-                break;
-            default:
-                assert(0);
-        }
+    switch (compressed_format) {
+        case COMPRESSED_FORMAT::BC1:
+        case COMPRESSED_FORMAT::DXT1:
+            internal_format = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::BC2:
+        case COMPRESSED_FORMAT::DXT3:
+            internal_format = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::BC3:
+        case COMPRESSED_FORMAT::DXT5:
+            internal_format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::BC4:
+            internal_format = GL_COMPRESSED_RED_RGTC1;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::BC5:
+            internal_format = GL_COMPRESSED_RG_RGTC2;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::BC6H:
+            internal_format = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_ARB;
+            type = GL_HALF_FLOAT;
+            break;
+        case COMPRESSED_FORMAT::BC7:
+            internal_format = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_4x4:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_5x4:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_5x4_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_5x5:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_5x5_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_6x5:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_6x5_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_6x6:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_6x6_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_8x5:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_8x5_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_8x6:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_8x6_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        case COMPRESSED_FORMAT::ASTC_8x8:
+            internal_format = GL_COMPRESSED_RGBA_ASTC_8x8_KHR;
+            type = GL_UNSIGNED_BYTE;
+            break;
+        default:
+            assert(0);
+    }
+}
 
-        type = GL_UNSIGNED_BYTE;
-    } else {
-        if (img.bitcount == 8) {
+void OpenGLGraphicsManager::getOpenGLTextureFormat(PIXEL_FORMAT pixel_format,
+                                               GLenum& format,
+                                               GLenum& internal_format,
+                                               GLenum& type) {
+    switch (pixel_format) {
+        case PIXEL_FORMAT::R8:
             format = GL_RED;
             internal_format = GL_R8;
             type = GL_UNSIGNED_BYTE;
-        } else if (img.bitcount == 16) {
-            format = GL_RED;
-            internal_format = GL_R16;
-            type = GL_UNSIGNED_SHORT;
-        } else if (img.bitcount == 24) {
+            break;
+        case PIXEL_FORMAT::RGB8:
             format = GL_RGB;
             internal_format = GL_RGB8;
             type = GL_UNSIGNED_BYTE;
-        } else if (img.bitcount == 64) {
-            format = GL_RGBA;
-            if (img.is_float) {
-                internal_format = GL_RGBA16F;
-                type = GL_HALF_FLOAT;
-            } else {
-                internal_format = GL_RGBA16;
-                type = GL_UNSIGNED_SHORT;
-            }
-        } else if (img.bitcount == 128) {
-            format = GL_RGBA;
-            if (img.is_float) {
-                internal_format = GL_RGBA32F;
-                type = GL_FLOAT;
-            } else {
-                internal_format = GL_RGBA;
-                type = GL_UNSIGNED_INT;
-            }
-        } else {
+            break;
+        case PIXEL_FORMAT::RGBA8:
             format = GL_RGBA;
             internal_format = GL_RGBA8;
             type = GL_UNSIGNED_BYTE;
-        }
+            break;
+        case PIXEL_FORMAT::R16:
+            format = GL_RED;
+            internal_format = GL_R16F;
+            type = GL_HALF_FLOAT;
+            break;
+        case PIXEL_FORMAT::RG16:
+            format = GL_RG;
+            internal_format = GL_RG16F;
+            type = GL_HALF_FLOAT;
+            break;
+        case PIXEL_FORMAT::RGB16:
+            format = GL_RGBA;
+            internal_format = GL_RGB16F;
+            type = GL_HALF_FLOAT;
+            break;
+        case PIXEL_FORMAT::RGBA16:
+            format = GL_RGBA;
+            internal_format = GL_RGBA16F;
+            type = GL_HALF_FLOAT;
+            break;
+        case PIXEL_FORMAT::R32:
+            format = GL_RED;
+            internal_format = GL_R32F;
+            type = GL_FLOAT;
+            break;
+        case PIXEL_FORMAT::RG32:
+            format = GL_RG;
+            internal_format = GL_RG32F;
+            type = GL_FLOAT;
+            break;
+        case PIXEL_FORMAT::RGB32:
+            format = GL_RGBA;
+            internal_format = GL_RGB32F;
+            type = GL_FLOAT;
+            break;
+        case PIXEL_FORMAT::RGBA32:
+            format = GL_RGBA;
+            internal_format = GL_RGBA32F;
+            type = GL_FLOAT;
+            break;
+        case PIXEL_FORMAT::D24R8:
+            format = GL_DEPTH;
+            internal_format = GL_DEPTH24_STENCIL8;
+            type = GL_FLOAT;
+            break;
+        case PIXEL_FORMAT::D32:
+            format = GL_DEPTH;
+            internal_format = GL_DEPTH_COMPONENT32;
+            type = GL_FLOAT;
+            break;
+        default:
+            assert(0);
     }
 }
 
@@ -270,4 +319,21 @@ void OpenGLGraphicsManager::BeginFrame(const Frame& frame) {
 void OpenGLGraphicsManager::EndFrame(const Frame& frame) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     OpenGLGraphicsManagerCommonBase::EndFrame(frame);
+}
+
+void OpenGLGraphicsManager::CreateTextureView(
+    Texture2D& texture_view, const TextureArrayBase& texture_array,
+    const uint32_t layer) {
+    GLuint tex_view = 0;
+
+    if (GLVersion.major >= 4 && GLVersion.minor >= 3) {
+        glGenTextures(1, &tex_view);
+        glTextureView(tex_view, GL_TEXTURE_2D, (GLuint)texture_array.handler,
+                      (GLint)texture_array.format, 0, 1, layer, 1);
+    }
+
+    texture_view.handler = tex_view;
+    texture_view.format = texture_array.format;
+    texture_view.width = texture_array.width;
+    texture_view.height = texture_array.height;
 }
