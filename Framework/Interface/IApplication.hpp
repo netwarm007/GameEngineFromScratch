@@ -19,6 +19,6 @@ _Interface_ IApplication {
 
     [[nodiscard]] virtual const GfxConfiguration& GetConfiguration() const = 0;
 
-    virtual void GetFramebufferSize(int& width, int& height) = 0;
+    virtual void GetFramebufferSize(uint32_t& width, uint32_t& height) = 0;
 };
 }  // namespace My

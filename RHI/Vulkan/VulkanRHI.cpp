@@ -525,7 +525,7 @@ static vk::Extent2D chooseSwapExtent(
 }
 
 void VulkanRHI::createSwapChain() {
-    int width, height;
+    uint32_t width, height;
 
     m_fQueryFramebufferSize(width, height);
 

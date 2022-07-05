@@ -43,7 +43,7 @@ void VulkanApplication::CreateMainWindow() {
     CocoaMetalApplication::CreateMainWindow();
 
     // 设置回调函数
-    auto getFramebufferSize = [this](int& width, int& height) {
+    auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
         GetFramebufferSize(width, height);
     };
 

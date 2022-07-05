@@ -104,5 +104,9 @@ class GraphicsManager : _implements_ IGraphicsManager {
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
     
     std::map<std::string, material_textures> material_map;
+
+    std::vector<TextureBase> m_Textures;
+    uint32_t m_canvasWidth;
+    uint32_t m_canvasHeight;
 };
 }  // namespace My

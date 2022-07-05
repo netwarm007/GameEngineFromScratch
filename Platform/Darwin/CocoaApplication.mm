@@ -57,13 +57,13 @@ void CocoaApplication::CreateMainWindow() {
     }
 }
 
-void CocoaApplication::GetFramebufferSize(int& width, int& height) {
+void CocoaApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
     @autoreleasepool {
         const NSRect contentRect = [[m_pWindow contentView] frame];
         const NSRect fbRect = [[m_pWindow contentView] convertRectToBacking:contentRect];
 
-        width = static_cast<int>(fbRect.size.width);
-        height = static_cast<int>(fbRect.size.height);
+        width = static_cast<uint32_t>(fbRect.size.width);
+        height = static_cast<uint32_t>(fbRect.size.height);
     }
 }
 

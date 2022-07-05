@@ -36,7 +36,7 @@ class BaseApplication : _implements_ IApplication {
         return m_Config;
     }
 
-    void GetFramebufferSize(int& width, int& height) override {}
+    void GetFramebufferSize(uint32_t& width, uint32_t& height) override {}
 
     void CreateMainWindow() override {}
     void* GetMainWindowHandler() override { return nullptr; }

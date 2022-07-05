@@ -18,7 +18,7 @@ class WindowsApplication : public BaseApplication {
 
     void CreateMainWindow() override;
 
-    void GetFramebufferSize(int& width, int& height) override;
+    void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
     virtual void onWindowResize(int new_width, int new_height) {}

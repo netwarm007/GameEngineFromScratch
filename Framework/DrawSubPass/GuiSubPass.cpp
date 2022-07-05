@@ -7,7 +7,6 @@ using namespace My;
 
 void GuiSubPass::Draw(Frame& frame) {
     static std::deque<float> fps_data;
-    static float max_fps = 0.0f;
 
     if (ImGui::GetCurrentContext()) {
         ImGui::Begin((const char*)u8"你好，引擎！");  // Create a window called "Hello, Engine!" and append into it.
@@ -23,13 +22,12 @@ void GuiSubPass::Draw(Frame& frame) {
         
         fps_data.push_back(fps);
         if (fps_data.size() > 100) fps_data.pop_front();
-        if (fps > max_fps) max_fps = fps;
 
         auto getData = [](void* data, int index)->float {
             return ((decltype(fps_data)*)data)->at(index);
         };
 
-        ImGui::PlotLines((const char*)u8"帧率", getData, (void *)&fps_data, fps_data.size(), 0, "FPS", 0, max_fps);
+        ImGui::PlotLines((const char*)u8"帧率", getData, (void *)&fps_data, fps_data.size(), 0, "FPS", 0.0f);
 
         ImGui::End();
     }

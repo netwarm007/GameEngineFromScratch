@@ -180,7 +180,7 @@ void XcbApplication::Tick() {
     BaseApplication::Tick();
 }
 
-void XcbApplication::GetFramebufferSize(int& width, int& height) {
+void XcbApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
     auto geom = xcb_get_geometry_reply(
         m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
 

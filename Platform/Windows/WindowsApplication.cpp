@@ -249,7 +249,7 @@ LRESULT CALLBACK WindowsApplication::m_fWindowProc(HWND hWnd, UINT message,
     return result;
 }
 
-void WindowsApplication::GetFramebufferSize(int& width, int& height) {
+void WindowsApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
     RECT rect;
     GetClientRect(m_hWnd, &rect);
 

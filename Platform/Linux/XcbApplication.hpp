@@ -19,7 +19,7 @@ class XcbApplication : public BaseApplication {
 
     void CreateMainWindow() override;
 
-    void GetFramebufferSize(int& width, int& height) override;
+    void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
     Display *m_pDisplay;

@@ -21,6 +21,9 @@ GraphicsManager::GraphicsManager() {
 int GraphicsManager::Initialize() {
     int result = 0;
 
+    const GfxConfiguration& conf = m_pApp->GetConfiguration();
+    m_pApp->GetFramebufferSize(m_canvasWidth, m_canvasHeight);
+
     auto pPipelineStateMgr =
         dynamic_cast<BaseApplication*>(m_pApp)->GetPipelineStateManager();
 
@@ -38,6 +41,7 @@ int GraphicsManager::Initialize() {
     }
 
     InitConstants();
+
     return result;
 }
 
@@ -87,6 +91,8 @@ void GraphicsManager::Tick() {
 void GraphicsManager::ResizeCanvas(int32_t width, int32_t height) {
     cerr << "[GraphicsManager] Resize Canvas to " << width << "x" << height
          << endl;
+    m_canvasWidth = width;
+    m_canvasHeight = height;
 }
 
 void GraphicsManager::UpdateConstants() {
@@ -407,6 +413,9 @@ void GraphicsManager::BeginScene(const Scene& scene) {
 }
 
 void GraphicsManager::EndScene() {
+    for (auto& texture : m_Textures) {
+        ReleaseTexture(texture);
+    }
 }
 
 void GraphicsManager::BeginFrame(const Frame& frame) {

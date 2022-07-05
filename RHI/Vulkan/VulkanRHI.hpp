@@ -12,7 +12,7 @@
 namespace My {
 
 class VulkanRHI {
-    using QueryFrameBufferSizeFunc = std::function<void(int&, int&)>;
+    using QueryFrameBufferSizeFunc = std::function<void(uint32_t&, uint32_t&)>;
     using CreateSurfaceFunc =
         std::function<void(const vk::Instance&, vk::SurfaceKHR&)>;
 
