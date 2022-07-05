@@ -1,42 +1,36 @@
 #include "GuiSubPass.hpp"
 #include "imgui/imgui.h"
 
-#include <climits>
-#include <cstdlib>
-#include <cstdio>
+#include <deque>
 
 using namespace My;
 
 void GuiSubPass::Draw(Frame& frame) {
+    static std::deque<float> fps_data;
+    static float max_fps = 0.0f;
+
     if (ImGui::GetCurrentContext()) {
-        {
-            static float f = 0.0f;
-            static int counter = 0;
+        ImGui::Begin((const char*)u8"你好，引擎！");  // Create a window called "Hello, Engine!" and append into it.
 
-            ImGui::Begin((const char*)u8"你好，引擎！");  // Create a window called "Hello,
-                                            // world!" and append into it.
+        ImGui::ColorEdit3(
+            (const char*)u8"清屏色",
+            (float*)frame.clearColor);  // Edit 3 floats representing a color
 
-            ImGui::Text(
-                (const char*)u8"这里有一些重要信息。");  // Display some text (you can use
-                                               // a format strings too)
-            ImGui::SliderFloat(
-                (const char*)u8"浮点数", &f, 0.0f,
-                1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3(
-                (const char*)u8"清屏色",
-                (float*)frame.clearColor);  // Edit 3 floats representing a color
+        float fps = ImGui::GetIO().Framerate;
+        ImGui::Text((const char*)u8"平均渲染时间 %.3f 毫秒/帧 (%.1f FPS)",
+                    1000.0f / fps,
+                    fps);
+        
+        fps_data.push_back(fps);
+        if (fps_data.size() > 100) fps_data.pop_front();
+        if (fps > max_fps) max_fps = fps;
 
-            if (ImGui::Button(
-                    (const char*)u8"按钮"))  // Buttons return true when clicked (most
-                                // widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text((const char*)u8"按压次数 = %d", counter);
+        auto getData = [](void* data, int index)->float {
+            return ((decltype(fps_data)*)data)->at(index);
+        };
 
-            ImGui::Text((const char*)u8"平均渲染时间 %.3f 毫秒/帧 (%.1f FPS)",
-                        1000.0f / ImGui::GetIO().Framerate,
-                        ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
+        ImGui::PlotLines((const char*)u8"帧率", getData, (void *)&fps_data, fps_data.size(), 0, "FPS", 0, max_fps);
+
+        ImGui::End();
     }
 }
