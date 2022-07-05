@@ -59,11 +59,13 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (_Nonnull id<MTLTexture>)createTexture:(const My::Image &)image;
 
-- (_Nonnull id<MTLTexture>)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>> &)images;
+- (TextureCubeArray)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>> &)images;
 
-- (_Nonnull id<MTLTexture>)generateCubemapArray:(TextureCubeArray &)texture_array;
+- (void)generateCubemapArray:(TextureCubeArray &)texture_array;
 
-- (_Nonnull id<MTLTexture>)generateTextureArray:(TextureArray &)texture_array;
+- (void)generateTextureArray:(Texture2DArray &)texture_array;
+
+- (void)createTextureView:(Texture2D &)texture_view texture_array:(const TextureArrayBase &)texture_array layer:(const uint32_t)layer;
 
 - (void)beginShadowMap:(const int32_t)light_index
              shadowmap:(const _Nonnull id<MTLTexture>)shadowmap
@@ -78,8 +80,7 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)releaseTexture:(_Nonnull id<MTLTexture>)texture;
 
-- (_Nonnull id<MTLTexture>)generateTextureForWrite:(const uint32_t)width
-                            height:(const uint32_t)height;
+- (void)generateTextureForWrite:(Texture2D &)texture;
 
 - (void)bindTextureForWrite:(const _Nonnull id<MTLTexture>)texture atIndex:(const uint32_t)atIndex;
 

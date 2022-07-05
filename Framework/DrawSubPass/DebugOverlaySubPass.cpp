@@ -65,16 +65,22 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
             ImGui::Text(
                 (const char*)u8"天空盒");
 
+            static int layer = 0;
+            ImGui::SliderInt((const char*)u8"层级", &layer, 0, 11);
+
+            auto start_index = texture_view_index;
             Texture2D texture_debug_view;
-            if (texture_view_index >= m_TextureViews.size()) {
-                m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, 0);
-                m_TextureViews.push_back(texture_debug_view);
-            } else {
-                texture_debug_view = m_TextureViews[texture_view_index];
+            for (int32_t i = 0; i < 12; i++) {
+                if (texture_view_index >= m_TextureViews.size()) {
+                    m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, i);
+                    m_TextureViews.push_back(texture_debug_view);
+                } 
+
+                ++texture_view_index;
             }
 
+            texture_debug_view = m_TextureViews[start_index + layer];
             ImGui::Image((ImTextureID)texture_debug_view.handler, ImVec2(128, 128));
-            ++texture_view_index;
         }
 
         // BRDF LUT

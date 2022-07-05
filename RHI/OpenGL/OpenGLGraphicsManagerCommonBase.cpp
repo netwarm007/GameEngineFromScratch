@@ -869,7 +869,7 @@ void OpenGLGraphicsManagerCommonBase::GenerateCubemapArray(
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
     uint32_t shadowMap;
-    GLenum [[maybe_unused]] format, internal_format, type; 
+    GLenum format, internal_format, type; 
     getOpenGLTextureFormat(texture_array.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &shadowMap);
@@ -899,7 +899,7 @@ void OpenGLGraphicsManagerCommonBase::GenerateTextureArray(
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
     uint32_t shadowMap;
-    GLenum [[maybe_unused]] format, internal_format, type; 
+    GLenum format, internal_format, type; 
     getOpenGLTextureFormat(texture_array.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &shadowMap);
@@ -1046,7 +1046,7 @@ void OpenGLGraphicsManagerCommonBase::GenerateTexture(Texture2D& texture) {
     // Depth texture. Slower than a depth buffer, but you can sample it later in
     // your shader
     uint32_t texture_id;
-    GLenum [[maybe_unused]] format, internal_format, type; 
+    GLenum format, internal_format, type; 
     getOpenGLTextureFormat(texture.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &texture_id);
@@ -1107,7 +1107,7 @@ void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context) {
 void OpenGLGraphicsManagerCommonBase::GenerateTextureForWrite(
     Texture2D& texture) {
     uint32_t tex_output;
-    GLenum [[maybe_unused]] format, internal_format, type; 
+    GLenum format, internal_format, type; 
     getOpenGLTextureFormat(texture.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &tex_output);

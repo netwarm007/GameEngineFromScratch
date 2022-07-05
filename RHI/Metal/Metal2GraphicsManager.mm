@@ -1,9 +1,8 @@
 #import <Metal/Metal.h>
 
 #include "Metal2Renderer.h"
-#include "Metal2GraphicsManager.h"
-
 #include "MetalView.h"
+#include "Metal2GraphicsManager.h"
 
 using namespace My;
 using namespace std;
@@ -202,14 +201,7 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
             images.push_back(pImage);
         }
 
-        auto texture = [m_pRenderer createSkyBox:images];
-
-        for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-            m_Frames[i].skybox.handler = reinterpret_cast<TextureHandler>(texture);
-            m_Frames[i].skybox.width = images[0]->Width;
-            m_Frames[i].skybox.height = images[0]->Height;
-            m_Frames[i].skybox.size = 2;
-        }
+        m_Frames[0].skybox = [m_pRenderer createSkyBox:images];
     }
 }
 
@@ -278,8 +270,7 @@ void Metal2GraphicsManager::ReleaseTexture(TextureBase& texture) {
 void Metal2GraphicsManager::DrawSkyBox(const Frame& frame) { [m_pRenderer drawSkyBox:frame]; }
 
 void Metal2GraphicsManager::GenerateTextureForWrite(Texture2D& texture) {
-    texture.handler =
-        reinterpret_cast<TextureHandler>([m_pRenderer generateTextureForWrite:texture.width height:texture.height]);
+    [m_pRenderer generateTextureForWrite:texture];
 }
 
 void Metal2GraphicsManager::BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) {
@@ -290,4 +281,10 @@ void Metal2GraphicsManager::BindTextureForWrite(Texture2D& texture, const uint32
 void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height,
                                      const uint32_t depth) {
     [m_pRenderer dispatch:width height:height depth:depth];
+}
+
+void Metal2GraphicsManager::CreateTextureView(Texture2D& texture_view,
+                                              const TextureArrayBase& texture_array,
+                                              const uint32_t layer) {
+    [m_pRenderer createTextureView:texture_view texture_array:texture_array layer:layer];
 }

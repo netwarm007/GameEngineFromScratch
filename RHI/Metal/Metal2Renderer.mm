@@ -1,8 +1,9 @@
 #import <MetalKit/MetalKit.h>
 #import <simd/simd.h>
 
-#import "Metal2GraphicsManager.h"
 #import "Metal2Renderer.h"
+
+#import "Metal2GraphicsManager.h"
 
 #include <stack>
 #include "IApplication.hpp"
@@ -12,120 +13,119 @@
 using namespace My;
 
 static MTLPixelFormat getMtlPixelFormat(const COMPRESSED_FORMAT compressed_format) {
-        switch (compressed_format) {
-            case COMPRESSED_FORMAT::DXT1:
-            case COMPRESSED_FORMAT::BC1:
-                format = MTLPixelFormatBC1_RGBA;
-                break;
-            case COMPRESSED_FORMAT::DXT3:
-            case COMPRESSED_FORMAT::BC2:
-                format = MTLPixelFormatBC2_RGBA;
-                break;
-            case COMPRESSED_FORMAT::DXT5:
-            case COMPRESSED_FORMAT::BC3:
-                format = MTLPixelFormatBC3_RGBA;
-                break;
-            case COMPRESSED_FORMAT::BC4:
-                format = MTLPixelFormatBC4_RUnorm;
-                break;
-            case COMPRESSED_FORMAT::BC5:
-                format = MTLPixelFormatBC5_RGUnorm;
-                break;
-            case COMPRESSED_FORMAT::BC6H:
-                format = MTLPixelFormatBC6H_RGBUfloat;
-                break;
-            case COMPRESSED_FORMAT::BC7:
-                format = MTLPixelFormatBC7_RGBAUnorm;
-                break;
-            case COMPRESSED_FORMAT::ASTC_4x4:
-                format = MTLPixelFormatASTC_4x4_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_5x4:
-                format = MTLPixelFormatASTC_5x4_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_5x5:
-                format = MTLPixelFormatASTC_5x5_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_6x5:
-                format = MTLPixelFormatASTC_6x5_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_6x6:
-                format = MTLPixelFormatASTC_6x6_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_8x5:
-                format = MTLPixelFormatASTC_8x5_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_8x6:
-                format = MTLPixelFormatASTC_8x6_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_8x8:
-                format = MTLPixelFormatASTC_8x8_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_10x5:
-                format = MTLPixelFormatASTC_10x5_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_10x6:
-                format = MTLPixelFormatASTC_10x6_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_10x8:
-                format = MTLPixelFormatASTC_10x8_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_10x10:
-                format = MTLPixelFormatASTC_10x10_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_12x10:
-                format = MTLPixelFormatASTC_12x10_sRGB;
-                break;
-            case COMPRESSED_FORMAT::ASTC_12x12:
-                format = MTLPixelFormatASTC_12x12_sRGB;
-                break;
-            default:
-                std::cerr << img << std::endl;
-                assert(0);
-        }
+    MTLPixelFormat format;
+
+    switch (compressed_format) {
+        case COMPRESSED_FORMAT::DXT1:
+        case COMPRESSED_FORMAT::BC1:
+            format = MTLPixelFormatBC1_RGBA;
+            break;
+        case COMPRESSED_FORMAT::DXT3:
+        case COMPRESSED_FORMAT::BC2:
+            format = MTLPixelFormatBC2_RGBA;
+            break;
+        case COMPRESSED_FORMAT::DXT5:
+        case COMPRESSED_FORMAT::BC3:
+            format = MTLPixelFormatBC3_RGBA;
+            break;
+        case COMPRESSED_FORMAT::BC4:
+            format = MTLPixelFormatBC4_RUnorm;
+            break;
+        case COMPRESSED_FORMAT::BC5:
+            format = MTLPixelFormatBC5_RGUnorm;
+            break;
+        case COMPRESSED_FORMAT::BC6H:
+            format = MTLPixelFormatBC6H_RGBUfloat;
+            break;
+        case COMPRESSED_FORMAT::BC7:
+            format = MTLPixelFormatBC7_RGBAUnorm;
+            break;
+        case COMPRESSED_FORMAT::ASTC_4x4:
+            format = MTLPixelFormatASTC_4x4_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_5x4:
+            format = MTLPixelFormatASTC_5x4_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_5x5:
+            format = MTLPixelFormatASTC_5x5_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_6x5:
+            format = MTLPixelFormatASTC_6x5_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_6x6:
+            format = MTLPixelFormatASTC_6x6_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_8x5:
+            format = MTLPixelFormatASTC_8x5_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_8x6:
+            format = MTLPixelFormatASTC_8x6_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_8x8:
+            format = MTLPixelFormatASTC_8x8_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_10x5:
+            format = MTLPixelFormatASTC_10x5_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_10x6:
+            format = MTLPixelFormatASTC_10x6_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_10x8:
+            format = MTLPixelFormatASTC_10x8_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_10x10:
+            format = MTLPixelFormatASTC_10x10_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_12x10:
+            format = MTLPixelFormatASTC_12x10_sRGB;
+            break;
+        case COMPRESSED_FORMAT::ASTC_12x12:
+            format = MTLPixelFormatASTC_12x12_sRGB;
+            break;
+        default:
+            assert(0);
+    }
+
+    return format;
 }
 
 static MTLPixelFormat getMtlPixelFormat(const PIXEL_FORMAT pixel_format) {
-        switch (pixel_format) {
-            case PIXEL_FORMAT::R8:
-                format = MTLPixelFormatR8Unorm;
-                break;
-            case PIXEL_FORMAT::RG8:
-                format = MTLPixelFormatRG8Unorm;
-                break;
-            case PIXEL_FORMAT::RGBA8:
-                format = MTLPixelFormatRGBA8Unorm;
-                break;
-            case PIXEL_FORMAT::RGBA16:
-                if (img.is_float) {
-                    format = MTLPixelFormatRGBA16Float;
-                } else {
-                    format = MTLPixelFormatRGBA16Unorm;
-                }
-                break;
-            case PIXEL_FORMAT::RGBA32:
-                if (img.is_float) {
-                    format = MTLPixelFormatRGBA32Float;
-                } else {
-                    format = MTLPixelFormatRGBA32Uint;
-                }
-                break;
-            case PIXEL_FORMAT::D24R8:
-                format = MTLPixelFormatDepth24Float_Stencil8;
-                break;
-            case PIXEL_FORMAT::D32:
-                format = MTLPixelFormatDepth32Float;
-                break;
-            default:
-                assert(0);
-        }
+    MTLPixelFormat format;
+
+    switch (pixel_format) {
+        case PIXEL_FORMAT::R8:
+            format = MTLPixelFormatR8Unorm;
+            break;
+        case PIXEL_FORMAT::RG8:
+            format = MTLPixelFormatRG8Unorm;
+            break;
+        case PIXEL_FORMAT::RGBA8:
+            format = MTLPixelFormatRGBA8Unorm;
+            break;
+        case PIXEL_FORMAT::RGBA16:
+            format = MTLPixelFormatRGBA16Float;
+            break;
+        case PIXEL_FORMAT::RGBA32:
+            format = MTLPixelFormatRGBA32Float;
+            break;
+        case PIXEL_FORMAT::D32:
+            format = MTLPixelFormatDepth32Float;
+            break;
+        case PIXEL_FORMAT::RG32:
+            format = MTLPixelFormatRG32Float;
+            break;
+        default:
+            assert(0);
+    }
+
+    return format;
 }
 
 static MTLPixelFormat getMtlPixelFormat(const Image& img) {
     MTLPixelFormat format;
 
     if (img.compressed) {
-        format = getMtlPixelFormat(img.compressed_format);
+        format = getMtlPixelFormat(img.compress_format);
     } else {
         format = getMtlPixelFormat(img.pixel_format);
     }
@@ -271,20 +271,25 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     return texture;
 }
 
-- (id<MTLTexture>)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
+- (TextureCubeArray)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
 {
+    TextureCubeArray texture_out;
     id<MTLTexture> texture;
 
     assert(images.size() == 18);  // 6 sky-cube + 6 irrandiance + 6 radiance
+
+    MTLPixelFormat format = getMtlPixelFormat(*images[0]);
+    auto width = images[0]->Width;
+    auto height = images[0]->Height;
 
     @autoreleasepool {
         MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
 
         textureDesc.textureType = MTLTextureTypeCubeArray;
         textureDesc.arrayLength = 2;
-        textureDesc.pixelFormat = getMtlPixelFormat(*images[0]);
-        textureDesc.width = images[0]->Width;
-        textureDesc.height = images[0]->Height;
+        textureDesc.pixelFormat = format;
+        textureDesc.width = width;
+        textureDesc.height = height;
         textureDesc.mipmapLevelCount = std::max(images[16]->mipmaps.size(), (size_t)2);
 
         // create the texture obj
@@ -341,7 +346,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         }
     }
 
-    return texture;
+    texture_out.handler = reinterpret_cast<TextureHandler>(texture);
+    texture_out.format = format;
+    texture_out.width = width;
+    texture_out.height = height;
+    texture_out.pixel_format = images[0]->pixel_format;
+    texture_out.size = 2;
+
+    return texture_out;
 }
 
 /// Called whenever view changes orientation or layout is changed
@@ -597,7 +609,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [_renderEncoder popDebugGroup];
 }
 
-- (void)generateTextureArray:(Texture2DArray &)texture_array {
+- (void)generateTextureArray:(Texture2DArray&)texture_array {
     id<MTLTexture> texture;
     MTLPixelFormat format = getMtlPixelFormat(texture_array.pixel_format);
 
@@ -620,7 +632,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     texture_array.format = format;
 }
 
-- (void)generateCubemapArray:(TextureCubeArray &)texture_array {
+- (void)generateCubemapArray:(TextureCubeArray&)texture_array {
     id<MTLTexture> texture;
     MTLPixelFormat format = getMtlPixelFormat(texture_array.pixel_format);
 
@@ -689,15 +701,19 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 - (void)setShadowMaps:(const Frame&)frame {
     if (frame.frameContext.shadowMap.handler) {
-        [_renderEncoder setFragmentTexture:(id<MTLTexture>)frame.frameContext.shadowMap.handler atIndex:7];
+        [_renderEncoder setFragmentTexture:(id<MTLTexture>)frame.frameContext.shadowMap.handler
+                                   atIndex:7];
     }
 
     if (frame.frameContext.globalShadowMap.handler) {
-        [_renderEncoder setFragmentTexture:(id<MTLTexture>)frame.frameContext.globalShadowMap.handler atIndex:8];
+        [_renderEncoder
+            setFragmentTexture:(id<MTLTexture>)frame.frameContext.globalShadowMap.handler
+                       atIndex:8];
     }
 
     if (frame.frameContext.cubeShadowMap.handler) {
-        [_renderEncoder setFragmentTexture:(id<MTLTexture>)frame.frameContext.cubeShadowMap.handler atIndex:9];
+        [_renderEncoder setFragmentTexture:(id<MTLTexture>)frame.frameContext.cubeShadowMap.handler
+                                   atIndex:9];
     }
 }
 
@@ -705,22 +721,24 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [texture release];
 }
 
-- (id<MTLTexture>)generateTextureForWrite:(const uint32_t)width height:(const uint32_t)height {
-    id<MTLTexture> texture;
+- (void)generateTextureForWrite:(Texture2D &)texture {
+    id<MTLTexture> texture_out;
+    MTLPixelFormat format = getMtlPixelFormat(texture.pixel_format);
 
     @autoreleasepool {
         MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
 
-        textureDesc.pixelFormat = MTLPixelFormatRG32Float;
-        textureDesc.width = width;
-        textureDesc.height = height;
+        textureDesc.pixelFormat = format;
+        textureDesc.width = texture.width;
+        textureDesc.height = texture.height;
         textureDesc.usage = MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
 
         // create the texture obj
-        texture = [_device newTextureWithDescriptor:textureDesc];
+        texture_out = [_device newTextureWithDescriptor:textureDesc];
     }
 
-    return texture;
+    texture.handler = reinterpret_cast<TextureHandler>(texture_out);
+    texture.format = format;
 }
 
 - (void)bindTextureForWrite:(const id<MTLTexture>)texture atIndex:(const uint32_t)atIndex {
@@ -747,6 +765,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 - (void)present {
     [_mtkView setNeedsDisplay:YES];
+}
+
+- (void)createTextureView:(Texture2D &)texture_view texture_array:(const TextureArrayBase &)texture_array layer:(const uint32_t)layer {
+    id<MTLTexture> texture = (id<MTLTexture>)texture_array.handler;
+    texture_view.handler = (TextureHandler)[texture newTextureViewWithPixelFormat:(MTLPixelFormat)texture_array.format textureType:MTLTextureType2D levels:{0,1} slices:{layer,1}];
+    texture_view.format = texture_array.format;
+    texture_view.width = texture_array.width;
+    texture_view.height = texture_array.height;
 }
 
 @end
