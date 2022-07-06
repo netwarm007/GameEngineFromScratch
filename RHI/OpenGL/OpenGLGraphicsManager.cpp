@@ -264,7 +264,7 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(PIXEL_FORMAT pixel_format,
             type = GL_HALF_FLOAT;
             break;
         case PIXEL_FORMAT::RGB16:
-            format = GL_RGBA;
+            format = GL_RGB;
             internal_format = GL_RGB16F;
             type = GL_HALF_FLOAT;
             break;
@@ -284,7 +284,7 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(PIXEL_FORMAT pixel_format,
             type = GL_FLOAT;
             break;
         case PIXEL_FORMAT::RGB32:
-            format = GL_RGBA;
+            format = GL_RGB;
             internal_format = GL_RGB32F;
             type = GL_FLOAT;
             break;
