@@ -52,12 +52,6 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     // skybox
     virtual void DrawSkyBox(const Frame& frame) = 0;
 
-    virtual void BeginRenderToTexture(int32_t & context, const int32_t texture,
-                                      const uint32_t width,
-                                      const uint32_t height) = 0;
-
-    virtual void EndRenderToTexture(int32_t & context) = 0;
-
     virtual void GenerateTextureForWrite(Texture2D& texture) = 0;
 
     virtual void BindTextureForWrite(Texture2D& texture,

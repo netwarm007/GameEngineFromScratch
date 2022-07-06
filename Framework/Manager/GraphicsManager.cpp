@@ -190,10 +190,11 @@ void GraphicsManager::CalculateCameraMatrix() {
             farClipDistance = pCamera->GetFarClipDistance();
         }
 
+
+        float screenAspect = (float)m_canvasWidth / (float)m_canvasHeight;
+
         assert(m_pApp);
         const GfxConfiguration& conf = m_pApp->GetConfiguration();
-
-        float screenAspect = (float)conf.screenWidth / (float)conf.screenHeight;
 
         // Build the perspective projection matrix.
         if (conf.fixOpenGLPerspectiveMatrix) {

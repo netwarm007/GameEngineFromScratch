@@ -603,8 +603,7 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
 void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame) {
     GraphicsManager::BeginFrame(frame);
     // Set viewport
-    const GfxConfiguration& conf = m_pApp->GetConfiguration();
-    glViewport(0, 0, conf.screenWidth, conf.screenHeight);
+    glViewport(0, 0, m_canvasWidth, m_canvasHeight);
 
     // Set the color to clear the screen to.
     glClearColor(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2],
@@ -987,8 +986,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(
 
     glDeleteFramebuffers(1, &m_ShadowMapFramebufferName);
 
-    const GfxConfiguration& conf = m_pApp->GetConfiguration();
-    glViewport(0, 0, conf.screenWidth, conf.screenHeight);
+    glViewport(0, 0, m_canvasWidth, m_canvasHeight);
 }
 
 void OpenGLGraphicsManagerCommonBase::SetShadowMaps(const Frame& frame) {
@@ -1062,49 +1060,6 @@ void OpenGLGraphicsManagerCommonBase::GenerateTexture(Texture2D& texture) {
     texture.format = static_cast<TextureHandler>(GL_RG16F);
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginRenderToTexture(
-    int32_t& context, const int32_t texture, const uint32_t width,
-    const uint32_t height) {
-    uint32_t framebuffer;
-    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth
-    // buffer.
-    glGenFramebuffers(1, &framebuffer);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-#if defined(OS_WEBASSEMBLY)
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                           (uint32_t)texture, 0);
-#else
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                         (uint32_t)texture, 0);
-#endif
-
-    // Always check that our framebuffer is ok
-    auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-        assert(0);
-    }
-
-    context = (int32_t)framebuffer;
-
-    uint32_t buf[] = {GL_COLOR_ATTACHMENT0};
-    glDrawBuffers(1, buf);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, width, height);
-}
-
-void OpenGLGraphicsManagerCommonBase::EndRenderToTexture(int32_t& context) {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    auto framebuffer = (uint32_t)context;
-    glDeleteFramebuffers(1, &framebuffer);
-    context = 0;
-
-    const GfxConfiguration& conf = m_pApp->GetConfiguration();
-    glViewport(0, 0, conf.screenWidth, conf.screenHeight);
-}
-
 void OpenGLGraphicsManagerCommonBase::GenerateTextureForWrite(
     Texture2D& texture) {
     uint32_t tex_output;
@@ -1148,12 +1103,6 @@ void OpenGLGraphicsManagerCommonBase::Dispatch(const uint32_t width,
 
     glBindImageTexture(0, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RG32F);
 #endif
-}
-
-void OpenGLGraphicsManagerCommonBase::ResizeCanvas(int32_t width,
-                                                   int32_t height) {
-    // Reset View
-    glViewport(0, 0, (GLint)width, (GLint)height);
 }
 
 void OpenGLGraphicsManagerCommonBase::DrawFullScreenQuad() {

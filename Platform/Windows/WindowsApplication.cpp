@@ -93,6 +93,12 @@ void WindowsApplication::Tick() {
     BaseApplication::Tick();
 }
 
+void WindowsApplication::onWindowResize(int new_width, int new_height) {
+    if (m_pGraphicsManager) {
+        m_pGraphicsManager->ResizeCanvas(new_width, new_height);
+    }
+}
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
                                                              UINT msg,
                                                              WPARAM wParam,

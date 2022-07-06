@@ -63,10 +63,6 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void DrawSkyBox(const Frame& frame) override {}
 
     void CreateTexture(SceneObjectTexture& texture) override {}
-    void BeginRenderToTexture(int32_t& context, const int32_t texture,
-                              const uint32_t width,
-                              const uint32_t height) override {}
-    void EndRenderToTexture(int32_t& context) override {}
 
     void GenerateTextureForWrite(Texture2D& texture) override {}
 

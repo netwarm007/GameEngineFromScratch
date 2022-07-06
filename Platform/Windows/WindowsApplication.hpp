@@ -21,7 +21,7 @@ class WindowsApplication : public BaseApplication {
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
-    virtual void onWindowResize(int new_width, int new_height) {}
+    virtual void onWindowResize(int new_width, int new_height);
 
    private:
     // the WindowProc function prototype

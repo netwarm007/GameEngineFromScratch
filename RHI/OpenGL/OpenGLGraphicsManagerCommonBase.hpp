@@ -14,8 +14,6 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
     // overrides
     void Present() final;
 
-    void ResizeCanvas(int32_t width, int32_t height) final;
-
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
                           const Frame& frame) final;
     void DrawBatch(const Frame& frame) final;
@@ -41,11 +39,6 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
 
     // skybox
     void DrawSkyBox(const Frame& frame) final;
-
-    void BeginRenderToTexture(int32_t& context, const int32_t texture,
-                              const uint32_t width,
-                              const uint32_t height) final;
-    void EndRenderToTexture(int32_t& context) final;
 
     void GenerateTextureForWrite(Texture2D& texture) final;
 
