@@ -323,13 +323,13 @@ void OpenGLGraphicsManager::EndFrame(const Frame& frame) {
 
 void OpenGLGraphicsManager::CreateTextureView(
     Texture2D& texture_view, const TextureArrayBase& texture_array,
-    const uint32_t layer) {
+    const uint32_t slice, const uint32_t mip) {
     GLuint tex_view = 0;
 
     if (GLVersion.major >= 4 && GLVersion.minor >= 3) {
         glGenTextures(1, &tex_view);
         glTextureView(tex_view, GL_TEXTURE_2D, (GLuint)texture_array.handler,
-                      (GLint)texture_array.format, 0, 1, layer, 1);
+                      (GLint)texture_array.format, mip, 1, slice, 1);
     }
 
     texture_view.handler = tex_view;

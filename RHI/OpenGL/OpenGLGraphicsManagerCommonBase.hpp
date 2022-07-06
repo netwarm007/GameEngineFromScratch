@@ -28,7 +28,8 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
 
     void CreateTextureView(Texture2D& texture_view,
                            const TextureArrayBase& texture_array,
-                           const uint32_t layer) override {}
+                           const uint32_t slice,
+                           const uint32_t mip) override {}
 
     void BeginShadowMap(const int32_t light_index,
                         const TextureBase* pShadowmap,

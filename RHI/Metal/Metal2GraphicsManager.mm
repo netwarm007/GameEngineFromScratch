@@ -285,6 +285,7 @@ void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height
 
 void Metal2GraphicsManager::CreateTextureView(Texture2D& texture_view,
                                               const TextureArrayBase& texture_array,
-                                              const uint32_t layer) {
-    [m_pRenderer createTextureView:texture_view texture_array:texture_array layer:layer];
+                                              const uint32_t slice,
+                                              const uint32_t mip) {
+    [m_pRenderer createTextureView:texture_view texture_array:texture_array slice:slice mip:mip];
 }

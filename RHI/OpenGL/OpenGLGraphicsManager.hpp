@@ -7,7 +7,7 @@ class OpenGLGraphicsManager : public OpenGLGraphicsManagerCommonBase {
     int Initialize() final;
     void Finalize() final;
 
-    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t layer) final;
+    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t slice, const uint32_t mip) final;
 
    private:
     void getOpenGLTextureFormat(const PIXEL_FORMAT pixel_format, uint32_t& format,

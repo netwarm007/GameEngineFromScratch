@@ -65,7 +65,7 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)generateTextureArray:(Texture2DArray &)texture_array;
 
-- (void)createTextureView:(Texture2D &)texture_view texture_array:(const TextureArrayBase &)texture_array layer:(const uint32_t)layer;
+- (void)createTextureView:(Texture2D &)texture_view texture_array:(const TextureArrayBase &)texture_array slice:(const uint32_t)slice mip:(const uint32_t)mip;
 
 - (void)beginShadowMap:(const int32_t)light_index
              shadowmap:(const _Nonnull id<MTLTexture>)shadowmap

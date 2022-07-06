@@ -50,7 +50,7 @@ class GraphicsManager : _implements_ IGraphicsManager {
 
     void GenerateTextureArray(Texture2DArray& texture_array) override {}
 
-    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t layer) override {}
+    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t slice, const uint32_t mip) override {}
 
     void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index,

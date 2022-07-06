@@ -55,7 +55,7 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
             for (int32_t i = 0; i < frame.frameContext.globalShadowMap.size; i++) {
                 Texture2D texture_debug_view;
                 if (texture_view_index >= m_TextureViews.size()) {
-                    m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.globalShadowMap, i);
+                    m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.globalShadowMap, i, 0);
                     m_TextureViews.push_back(texture_debug_view);
                 } else {
                     texture_debug_view = m_TextureViews[texture_view_index];
@@ -71,7 +71,7 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
             for (int32_t i = 0; i < frame.frameContext.shadowMap.size; i++) {
                 Texture2D texture_debug_view;
                 if (texture_view_index >= m_TextureViews.size()) {
-                    m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.shadowMap, i);
+                    m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.shadowMap, i, 0);
                     m_TextureViews.push_back(texture_debug_view);
                 } else {
                     texture_debug_view = m_TextureViews[texture_view_index];
@@ -87,7 +87,7 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
             for (int32_t i = 0; i < frame.frameContext.cubeShadowMap.size; i++) {
                 Texture2D texture_debug_view;
                 if (texture_view_index >= m_TextureViews.size()) {
-                    m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.cubeShadowMap, i);
+                    m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.frameContext.cubeShadowMap, i, 0);
                     m_TextureViews.push_back(texture_debug_view);
                 } else {
                     texture_debug_view = m_TextureViews[texture_view_index];
@@ -111,7 +111,7 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
                     Texture2D texture_debug_view;
 
                     if (texture_view_index >= m_TextureViews.size()) {
-                        m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, i);
+                        m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, i, 0);
                         m_TextureViews.push_back(texture_debug_view);
                     } 
 
@@ -153,11 +153,11 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
 
                 auto start_index = texture_view_index;
 
-                for (int32_t i = 6; i < 12; i++) {
+                for (int32_t i = 0; i < 6; i++) {
                     Texture2D texture_debug_view;
 
                     if (texture_view_index >= m_TextureViews.size()) {
-                        m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, i);
+                        m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, i, 1);
                         m_TextureViews.push_back(texture_debug_view);
                     } 
 
@@ -197,12 +197,11 @@ void DebugOverlaySubPass::Draw(Frame& frame) {
 
                 auto start_index = texture_view_index;
 
-                int32_t start_layer = 6 * frame.skybox.mips;
-                for (int32_t i = start_layer; i < start_layer + 6; i++) {
+                for (int32_t i = 6; i < 12; i++) {
                     Texture2D texture_debug_view;
 
                     if (texture_view_index >= m_TextureViews.size()) {
-                        m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, i);
+                        m_pGraphicsManager->CreateTextureView(texture_debug_view, frame.skybox, i, 0);
                         m_TextureViews.push_back(texture_debug_view);
                     } 
 

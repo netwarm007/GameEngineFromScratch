@@ -768,9 +768,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [_mtkView setNeedsDisplay:YES];
 }
 
-- (void)createTextureView:(Texture2D &)texture_view texture_array:(const TextureArrayBase &)texture_array layer:(const uint32_t)layer {
+- (void)createTextureView:(Texture2D &)texture_view texture_array:(const TextureArrayBase &)texture_array slice:(const uint32_t)slice mip:(const uint32_t)mip {
     id<MTLTexture> texture = (id<MTLTexture>)texture_array.handler;
-    texture_view.handler = (TextureHandler)[texture newTextureViewWithPixelFormat:(MTLPixelFormat)texture_array.format textureType:MTLTextureType2D levels:{0,1} slices:{layer,1}];
+    texture_view.handler = (TextureHandler)[texture newTextureViewWithPixelFormat:(MTLPixelFormat)texture_array.format textureType:MTLTextureType2D levels:{mip,1} slices:{slice,1}];
     texture_view.format = texture_array.format;
     texture_view.width = texture_array.width;
     texture_view.height = texture_array.height;
