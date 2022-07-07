@@ -368,10 +368,18 @@ void GraphicsManager::CalculateLights() {
 
                     float sm_half_dist = min(farClipDistance * 0.25f, 800.0f);
 
-                    BuildOrthographicMatrix(projection, -sm_half_dist,
-                                            sm_half_dist, sm_half_dist,
-                                            -sm_half_dist, nearClipDistance,
-                                            farClipDistance + sm_half_dist);
+                    if (conf.fixOpenGLPerspectiveMatrix) {
+                        BuildOpenglOrthographicRHMatrix(projection, -sm_half_dist,
+                                                sm_half_dist, sm_half_dist,
+                                                -sm_half_dist, nearClipDistance,
+                                                farClipDistance + sm_half_dist);
+                    } else {
+                        BuildOrthographicRHMatrix(projection, -sm_half_dist,
+                                                sm_half_dist, sm_half_dist,
+                                                -sm_half_dist, nearClipDistance,
+                                                farClipDistance + sm_half_dist);
+
+                    }
 
                     // notify shader about the infinity light by setting 4th
                     // field to 0
