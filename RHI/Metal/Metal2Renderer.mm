@@ -386,7 +386,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         [NSString stringWithFormat:@"Per Frame Command Buffer %d", frame.frameIndex];
 }
 
-- (void)endFrame:(const Frame&)frame {
+- (void)endFrame:(Frame&)frame {
     @autoreleasepool {
         MTLRenderPassDescriptor* renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
         renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
@@ -417,25 +417,52 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     }
 }
 
-- (void)beginPass:(const Frame&)frame {
-    // Obtain a renderPassDescriptor generated from the view's drawable textures
-    MTLRenderPassDescriptor* renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+- (void)beginPass:(Frame&)frame {
+    MTLRenderPassDescriptor* renderPassDescriptor;
+
+    if (frame.renderToTexture) {
+        renderPassDescriptor = [MTLRenderPassDescriptor new];
+        if (frame.enableMSAA) {
+            renderPassDescriptor.colorAttachments[0].texture =
+                (id<MTLTexture>)frame.colorTextures[1].handler;
+            renderPassDescriptor.depthAttachment.texture =
+                (id<MTLTexture>)frame.depthTexture.handler;
+        }
+    } else {
+        // Obtain a renderPassDescriptor generated from the view's drawable textures
+        renderPassDescriptor = _mtkView.currentRenderPassDescriptor;
+    }
 
     if (renderPassDescriptor != nil) {
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(
             frame.clearColor[0], frame.clearColor[1], frame.clearColor[2], frame.clearColor[3]);
-        renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+        if (frame.clearRT) {
+            renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+            renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+        }
+        renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
         renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
         _renderEncoder = [_commandBuffers[frame.frameIndex]
             renderCommandEncoderWithDescriptor:renderPassDescriptor];
-        _renderEncoder.label = @"MyRenderEncoder";
+        _renderEncoder.label = @"Render Pass Render Encoder";
     }
 
     [renderPassDescriptor release];
+
+    [_renderEncoder pushDebugGroup:@"Begin Pass"];
+
+    MTLViewport viewport{0.0,
+                         0.0,
+                         static_cast<double>(frame.colorTextures[0].width),
+                         static_cast<double>(frame.colorTextures[0].height),
+                         0.0,
+                         1.0};
+    [_renderEncoder setViewport:viewport];
 }
 
-- (void)endPass:(const Frame&)frame {
+- (void)endPass:(Frame&)frame {
+    [_renderEncoder popDebugGroup];
     [_renderEncoder endEncoding];
     [_renderEncoder release];
 }
@@ -722,7 +749,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [texture release];
 }
 
-- (void)generateTextureForWrite:(Texture2D &)texture {
+- (void)generateTextureForWrite:(Texture2D&)texture {
     id<MTLTexture> texture_out;
     MTLPixelFormat format = getMtlPixelFormat(texture.pixel_format);
 
@@ -768,12 +795,40 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [_mtkView setNeedsDisplay:YES];
 }
 
-- (void)createTextureView:(Texture2D &)texture_view texture_array:(const TextureArrayBase &)texture_array slice:(const uint32_t)slice mip:(const uint32_t)mip {
+- (void)createTextureView:(Texture2D&)texture_view
+            texture_array:(const TextureArrayBase&)texture_array
+                    slice:(const uint32_t)slice
+                      mip:(const uint32_t)mip {
     id<MTLTexture> texture = (id<MTLTexture>)texture_array.handler;
-    texture_view.handler = (TextureHandler)[texture newTextureViewWithPixelFormat:(MTLPixelFormat)texture_array.format textureType:MTLTextureType2D levels:{mip,1} slices:{slice,1}];
+    texture_view.handler =
+        (TextureHandler)[texture newTextureViewWithPixelFormat:(MTLPixelFormat)texture_array.format
+                                                   textureType:MTLTextureType2D
+                                                        levels:{mip, 1}
+                                                        slices:{slice, 1}];
     texture_view.format = texture_array.format;
     texture_view.width = texture_array.width;
     texture_view.height = texture_array.height;
+}
+
+- (void)generateTexture:(Texture2D&)texture {
+    id<MTLTexture> texture_out;
+    MTLPixelFormat format = getMtlPixelFormat(texture.pixel_format);
+
+    @autoreleasepool {
+        MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
+        textureDesc.textureType = MTLTextureType2D;
+        textureDesc.width = texture.width;
+        textureDesc.height = texture.height;
+        textureDesc.pixelFormat = format;
+        textureDesc.storageMode = MTLStorageModePrivate;
+        textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+
+        // create the texture obj
+        texture_out = [_device newTextureWithDescriptor:textureDesc];
+    }
+
+    texture.handler = reinterpret_cast<TextureHandler>(texture_out);
+    texture.format = format;
 }
 
 @end

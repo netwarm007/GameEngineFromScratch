@@ -57,9 +57,9 @@ void GuiSubPass::Draw(Frame& frame) {
             ImGui::Begin("Viewer");
             auto rect = ImGui::GetContentRegionAvail();
             if (frame.enableMSAA) {
-                m_pGraphicsManager->MSAAResolve(frame.colorTextures[0], frame.colorTextures[1]);
+                //m_pGraphicsManager->MSAAResolve(frame.colorTextures[0], frame.colorTextures[1]);
             }
-            TexturePreviewer(frame.colorTextures[0], rect, {0.0f, 1.0f}, {1.0f, 0.0f});
+            TexturePreviewer(frame.colorTextures[1], rect, {0.0f, 1.0f}, {1.0f, 0.0f});
             m_pGraphicsManager->ResizeCanvas(rect.x, rect.y);
             ImGui::End();
         }

@@ -80,6 +80,8 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)releaseTexture:(_Nonnull id<MTLTexture>)texture;
 
+- (void)generateTexture:(Texture2D&)texture;
+
 - (void)generateTextureForWrite:(Texture2D &)texture;
 
 - (void)bindTextureForWrite:(const _Nonnull id<MTLTexture>)texture atIndex:(const uint32_t)atIndex;

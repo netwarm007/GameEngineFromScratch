@@ -103,15 +103,21 @@ void GraphicsManager::createFramebuffers() {
     auto conf = m_pApp->GetConfiguration();
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        for (auto& texture : m_Frames[i].colorTextures) {
-            if (texture.handler) ReleaseTexture(texture);
+        for (int32_t j = 0; j < m_Frames[i].colorTextures.size(); j++) {
+            if (j == 0) {
+                ReleaseTexture(m_Frames[i].colorTextures[0]);
+            } else {
+                if (i == 0) {
+                    ReleaseTexture(m_Frames[0].colorTextures[j]);
+                }
+            }
         }
 
         m_Frames[i].colorTextures.clear();
+    }
 
-        if (m_Frames[i].depthTexture.handler) {
-            ReleaseTexture(m_Frames[i].depthTexture);
-        }
+    if (m_Frames[0].depthTexture.handler) {
+        ReleaseTexture(m_Frames[0].depthTexture);
     }
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {

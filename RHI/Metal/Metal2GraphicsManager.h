@@ -18,18 +18,21 @@ class Metal2GraphicsManager : public GraphicsManager {
 
     void DrawBatch(const Frame& frame) final;
 
+    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t slice, const uint32_t mip) final; 
+
+    void GenerateTexture(Texture2D& texture) final;
+
     void GenerateCubemapArray(TextureCubeArray& texture_array) final;
 
     void GenerateTextureArray(Texture2DArray& texture_array) final;
 
-    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t slice, const uint32_t mip) final; 
+    void ReleaseTexture(TextureBase& texture) final;
 
     void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;
     void EndShadowMap(const TextureBase* pShadowmap,
                       const int32_t layer_index, const Frame& frame) final;
     void SetShadowMaps(const Frame& frame) final;
-    void ReleaseTexture(TextureBase& texture) final;
 
     // skybox
     void DrawSkyBox(const Frame& frame) final;
@@ -39,6 +42,8 @@ class Metal2GraphicsManager : public GraphicsManager {
     void BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) final;
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
+
+    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) final;
 
    protected:
     void BeginFrame(Frame& frame) final;
