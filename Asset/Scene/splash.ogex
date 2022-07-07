@@ -10421,6 +10421,11 @@ Material $material1
 	{
 		string {"Materials/Red_Bricks_2.pvr"}
 	}
+
+	Texture (attrib = "height")
+	{
+		string {"Textures/redbricks2b-height4b.png"}
+	}
 }
 
 Material $material2

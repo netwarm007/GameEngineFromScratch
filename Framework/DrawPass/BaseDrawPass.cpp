@@ -9,3 +9,9 @@ void BaseDrawPass::Draw(Frame& frame) {
         pSubPass->EndSubPass();
     }
 }
+    
+void BaseDrawPass::BeginPass(Frame& frame) { 
+    frame.renderToTexture = m_bRenderToTexture;
+
+    m_pGraphicsManager->BeginPass(frame); 
+}

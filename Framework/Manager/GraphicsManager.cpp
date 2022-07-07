@@ -5,9 +5,11 @@
 
 #include "BRDFIntegrator.hpp"
 #include "BaseApplication.hpp"
-#include "ForwardGeometryPass.hpp"
 #include "SceneManager.hpp"
+
+#include "ForwardGeometryPass.hpp"
 #include "ShadowMapPass.hpp"
+#include "OverlayPass.hpp"
 
 #include "imgui.h"
 
@@ -36,11 +38,19 @@ int GraphicsManager::Initialize() {
         // pPipelineStateMgr));
         m_DrawPasses.push_back(
             make_shared<ShadowMapPass>(this, pPipelineStateMgr));
+
+        auto forward_pass = make_shared<ForwardGeometryPass>(this, pPipelineStateMgr);
+
+        forward_pass->EnableRenderToTexture();
+
+        m_DrawPasses.push_back(forward_pass);
         m_DrawPasses.push_back(
-            make_shared<ForwardGeometryPass>(this, pPipelineStateMgr));
+            make_shared<OverlayPass>(this, pPipelineStateMgr));
     }
 
     InitConstants();
+
+    m_bInitialize = true;
 
     return result;
 }
@@ -88,11 +98,74 @@ void GraphicsManager::Tick() {
     }
 }
 
+void GraphicsManager::createFramebuffers() {
+    assert(m_pApp);
+    auto conf = m_pApp->GetConfiguration();
+
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+        for (auto& texture : m_Frames[i].colorTextures) {
+            if (texture.handler) ReleaseTexture(texture);
+        }
+
+        m_Frames[i].colorTextures.clear();
+
+        if (m_Frames[i].depthTexture.handler) {
+            ReleaseTexture(m_Frames[i].depthTexture);
+        }
+    }
+
+    for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+        Texture2D color_texture;
+        color_texture.width = m_canvasWidth;
+        color_texture.height = m_canvasHeight;
+        color_texture.mips = 1;
+        color_texture.pixel_format = PIXEL_FORMAT::RGBA8;
+        color_texture.samples = 1;
+
+        GenerateTexture(color_texture);
+
+        m_Frames[i].colorTextures.push_back(color_texture);
+
+        if (i == 0) {
+            // Generate msaa intermediate RT
+            if (conf.msaaSamples > 1) {
+                color_texture.samples = conf.msaaSamples;
+                GenerateTexture(color_texture);
+                m_Frames[0].colorTextures.push_back(color_texture);
+                m_Frames[0].enableMSAA = true;
+            }
+
+            // Generate depth RT
+            Texture2D depth_buffer;
+            depth_buffer.width = m_canvasWidth;
+            depth_buffer.height = m_canvasHeight;
+            depth_buffer.mips = 1;
+            depth_buffer.pixel_format = PIXEL_FORMAT::D32;
+            depth_buffer.samples = conf.msaaSamples;
+
+            GenerateTexture(depth_buffer);
+
+            m_Frames[0].depthTexture = depth_buffer;
+        } else {
+            m_Frames[i].colorTextures.push_back(m_Frames[0].colorTextures[1]);
+            m_Frames[i].depthTexture = m_Frames[0].depthTexture;
+            m_Frames[i].enableMSAA = m_Frames[0].enableMSAA;
+        }
+    }
+}
+
 void GraphicsManager::ResizeCanvas(int32_t width, int32_t height) {
-    cerr << "[GraphicsManager] Resize Canvas to " << width << "x" << height
-         << endl;
-    m_canvasWidth = width;
-    m_canvasHeight = height;
+    if (m_canvasWidth != width || m_canvasHeight != height) {
+        cerr << "[GraphicsManager] Resize Canvas to " << width << "x" << height
+            << endl;
+        m_canvasWidth = width;
+        m_canvasHeight = height;
+
+        if (m_bInitialize) {
+            // resize frame buffers (for offline-rendering)
+            createFramebuffers();
+        }
+    }
 }
 
 void GraphicsManager::UpdateConstants() {
@@ -391,7 +464,7 @@ void GraphicsManager::BeginScene(const Scene& scene) {
     }
 
     // generate cube shadow map array
-    if (m_Frames[0].frameContext.cubeShadowMap.handler) {
+    if (!m_Frames[0].frameContext.cubeShadowMap.handler) {
         m_Frames[0].frameContext.cubeShadowMap.width = GfxConfiguration::kShadowMapWidth;
         m_Frames[0].frameContext.cubeShadowMap.height = GfxConfiguration::kShadowMapHeight;
         m_Frames[0].frameContext.cubeShadowMap.size = GfxConfiguration::kMaxShadowMapCount;
@@ -411,16 +484,22 @@ void GraphicsManager::BeginScene(const Scene& scene) {
         m_Frames[i] = m_Frames[0];
         m_Frames[i].frameIndex = i;
     }
+
+    // generate frame buffers (for offline-rendering)
+    // please note we must put this after the copy above to avoid overwritten
+    createFramebuffers();
 }
 
 void GraphicsManager::EndScene() {
     for (auto& texture : m_Textures) {
         ReleaseTexture(texture);
     }
-}
 
-void GraphicsManager::BeginFrame(const Frame& frame) {
-}
+    for (auto& frame : m_Frames) {
+        for (auto& texture : frame.colorTextures) {
+            ReleaseTexture(texture);
+        }
 
-void GraphicsManager::EndFrame(const Frame&) {
+        ReleaseTexture(frame.depthTexture);
+    }
 }

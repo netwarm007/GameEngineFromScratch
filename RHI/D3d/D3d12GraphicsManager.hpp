@@ -53,11 +53,11 @@ class D3d12GraphicsManager : public GraphicsManager {
    protected:
     void EndScene() final;
 
-    void BeginFrame(const Frame& frame) final;
-    void EndFrame(const Frame& frame) final;
+    void BeginFrame(Frame& frame) final;
+    void EndFrame(Frame& frame) final;
 
-    void BeginPass(const Frame& frame) final;
-    void EndPass(const Frame& frame) final;
+    void BeginPass(Frame& frame) final;
+    void EndPass(Frame& frame) final;
 
     void BeginCompute() final;
     void EndCompute() final;

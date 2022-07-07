@@ -205,7 +205,7 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
     }
 }
 
-void Metal2GraphicsManager::BeginFrame(const Frame& frame) {
+void Metal2GraphicsManager::BeginFrame(Frame& frame) {
     GraphicsManager::BeginFrame(frame);
 
     [m_pRenderer beginFrame:frame];

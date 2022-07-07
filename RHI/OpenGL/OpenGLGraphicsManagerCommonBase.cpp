@@ -600,22 +600,14 @@ void OpenGLGraphicsManagerCommonBase::EndScene() {
     GraphicsManager::EndScene();
 }
 
-void OpenGLGraphicsManagerCommonBase::BeginFrame(const Frame& frame) {
+void OpenGLGraphicsManagerCommonBase::BeginFrame(Frame& frame) {
     GraphicsManager::BeginFrame(frame);
-    // Set viewport
-    glViewport(0, 0, m_canvasWidth, m_canvasHeight);
-
-    // Set the color to clear the screen to.
-    glClearColor(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2],
-                 frame.clearColor[3]);
-    // Clear the screen and depth buffer.
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     SetPerFrameConstants(frame.frameContext);
     SetLightInfo(frame.lightInfo);
 }
 
-void OpenGLGraphicsManagerCommonBase::EndFrame(const Frame& frame) {
+void OpenGLGraphicsManagerCommonBase::EndFrame(Frame& frame) {
     m_nFrameIndex =
         ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
 
@@ -923,9 +915,9 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
     const int32_t layer_index, const Frame& frame) {
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth
     // buffer.
-    glGenFramebuffers(1, &m_ShadowMapFramebufferName);
+    glGenFramebuffers(1, &m_ShadowmapFramebuffer);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowMapFramebufferName);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_ShadowmapFramebuffer);
 
     if (frame.lightInfo.lights[light_index].lightType == LightType::Omni) {
 #if defined(OS_WEBASSEMBLY)
@@ -952,6 +944,9 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
     glViewport(0, 0, pShadowmap->width, pShadowmap->height);
 
     glDrawBuffers(0, nullptr);  // No color buffer is drawn to.
+
+    glDepthMask(GL_TRUE);
+
     // make sure omni light shadowmap arrays get cleared only
     // once, because glClear will clear all cubemaps in the array
     if (frame.lightInfo.lights[light_index].lightType != LightType::Omni ||
@@ -984,7 +979,7 @@ void OpenGLGraphicsManagerCommonBase::EndShadowMap(
     const TextureBase* pShadowmap, int32_t layer_index, const Frame&) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glDeleteFramebuffers(1, &m_ShadowMapFramebufferName);
+    glDeleteFramebuffers(1, &m_ShadowmapFramebuffer);
 
     glViewport(0, 0, m_canvasWidth, m_canvasHeight);
 }
@@ -1049,15 +1044,26 @@ void OpenGLGraphicsManagerCommonBase::GenerateTexture(Texture2D& texture) {
     getOpenGLTextureFormat(texture.pixel_format, format, internal_format, type);
 
     glGenTextures(1, &texture_id);
-    glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexStorage2D(GL_TEXTURE_2D, 1, internal_format, texture.width, texture.height);
+    if (texture.samples > 1) {
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture_id);
+        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, texture.samples, internal_format, texture.width, texture.height, GL_TRUE);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, texture_id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexStorage2D(GL_TEXTURE_2D, 1, internal_format, texture.width, texture.height);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     texture.handler = static_cast<TextureHandler>(texture_id);
-    texture.format = static_cast<TextureHandler>(GL_RG16F);
+    texture.format = static_cast<TextureHandler>(internal_format);
 }
 
 void OpenGLGraphicsManagerCommonBase::GenerateTextureForWrite(
@@ -1157,4 +1163,32 @@ void OpenGLGraphicsManagerCommonBase::getOpenGLTextureFormat(const Image& img,
     } else {
         getOpenGLTextureFormat(img.pixel_format, format, internal_format, type);
     }
+}
+
+void OpenGLGraphicsManagerCommonBase::MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) {
+    assert(source.samples > 1);
+    if (target) {
+        assert(target->get().samples == 1);
+    }
+
+    GLuint fbos[2];
+    glGenFramebuffers(2, fbos);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos[0]);
+    glFramebufferTexture(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                        (GLuint)source.handler, 0);
+
+    if (target) {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos[1]);
+        glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                            (GLuint)target->get().handler, 0);
+        glBlitFramebuffer(0, 0, source.width, source.height, 0, 0, target->get().width, target->get().height, GL_COLOR_BUFFER_BIT, GL_NEAREST);   
+    } else {
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(0, 0, source.width, source.height, 0, 0, m_canvasWidth, m_canvasHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);   
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glDeleteFramebuffers(2, fbos);
 }

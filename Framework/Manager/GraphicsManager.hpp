@@ -36,8 +36,8 @@ class GraphicsManager : _implements_ IGraphicsManager {
 
     void DrawBatch(const Frame& frame) override {}
 
-    void BeginPass(const Frame& frame) override {}
-    void EndPass(const Frame& frame) override {}
+    void BeginPass(Frame& frame) override {}
+    void EndPass(Frame& frame) override {}
 
     void BeginCompute() override {}
     void EndCompute() override {}
@@ -71,14 +71,16 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) override {}
 
-    virtual void DrawFullScreenQuad() override {}
+    void DrawFullScreenQuad() override {}
+
+    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) override {}
 
    protected:
     virtual void BeginScene(const Scene& scene);
     virtual void EndScene();
 
-    virtual void BeginFrame(const Frame& frame);
-    virtual void EndFrame(const Frame& frame);
+    virtual void BeginFrame(Frame& frame) {}
+    virtual void EndFrame(Frame& frame) {}
 
     virtual void initializeGeometries(const Scene& scene) {}
     virtual void initializeSkyBox(const Scene& scene) {}
@@ -104,5 +106,11 @@ class GraphicsManager : _implements_ IGraphicsManager {
     std::vector<TextureBase> m_Textures;
     uint32_t m_canvasWidth;
     uint32_t m_canvasHeight;
+
+   private:
+    void createFramebuffers();
+
+   private:
+    bool m_bInitialize = false;
 };
 }  // namespace My

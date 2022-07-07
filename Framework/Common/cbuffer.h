@@ -141,6 +141,7 @@ struct TextureBase {
     uint32_t width = 0;
     uint32_t height = 0;
     uint32_t mips = 1;
+    uint32_t samples = 1;
 };
 
 struct TextureArrayBase : virtual TextureBase {

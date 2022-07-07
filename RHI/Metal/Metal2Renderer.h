@@ -36,13 +36,13 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)createIndexBuffer:(const My::SceneObjectIndexArray &)index_array;
 
-- (void)beginFrame:(const My::Frame &)frame;
+- (void)beginFrame:(My::Frame &)frame;
 
-- (void)endFrame:(const My::Frame &)frame;
+- (void)endFrame:(My::Frame &)frame;
 
-- (void)beginPass:(const My::Frame &)frame;
+- (void)beginPass:(My::Frame &)frame;
 
-- (void)endPass:(const My::Frame &)frame;
+- (void)endPass:(My::Frame &)frame;
 
 - (void)drawSkyBox:(const Frame&)frame;
 

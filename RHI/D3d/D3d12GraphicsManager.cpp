@@ -465,7 +465,7 @@ void D3d12GraphicsManager::EndScene() {
     GraphicsManager::EndScene();
 }
 
-void D3d12GraphicsManager::BeginFrame(const Frame& frame) {
+void D3d12GraphicsManager::BeginFrame(Frame& frame) {
     GraphicsManager::BeginFrame(frame);
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -476,19 +476,19 @@ void D3d12GraphicsManager::BeginFrame(const Frame& frame) {
     assert(frame.frameIndex == m_nFrameIndex);
 }
 
-void D3d12GraphicsManager::EndFrame(const Frame& frame) {
+void D3d12GraphicsManager::EndFrame(Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     rhi.EndFrame();
     rhi.DrawGUI(m_pCbvSrvUavHeapImGui);
     GraphicsManager::EndFrame(frame);
 }
 
-void D3d12GraphicsManager::BeginPass(const Frame& frame) {
+void D3d12GraphicsManager::BeginPass(Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     rhi.BeginPass(frame.clearColor);
 }
 
-void D3d12GraphicsManager::EndPass(const Frame& frame) {
+void D3d12GraphicsManager::EndPass(Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     rhi.EndPass();
 }

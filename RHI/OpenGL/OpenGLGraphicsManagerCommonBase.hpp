@@ -50,11 +50,13 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
 
     void DrawFullScreenQuad() final;
 
+    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) final;
+
    protected:
     void EndScene() final;
 
-    void BeginFrame(const Frame& frame) override;
-    void EndFrame(const Frame& frame) override;
+    void BeginFrame(Frame& frame) override;
+    void EndFrame(Frame& frame) override;
 
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;
@@ -92,7 +94,7 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
                                         uint32_t& type) = 0;
 
    private:
-    uint32_t m_ShadowMapFramebufferName;
+    uint32_t m_ShadowmapFramebuffer;
     uint32_t m_CurrentShader;
     uint32_t m_uboDrawFrameConstant[GfxConfiguration::kMaxInFlightFrameCount] =
         {0};

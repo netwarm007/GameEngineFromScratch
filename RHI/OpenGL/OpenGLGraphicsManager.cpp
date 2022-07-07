@@ -144,6 +144,10 @@ int OpenGLGraphicsManager::Initialize() {
             glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0,
                                   nullptr, GL_TRUE);
         }
+
+        if (config.msaaSamples > 1) {
+            glEnable(GL_MULTISAMPLE);
+        }
     }
 
     char version[20];
@@ -308,7 +312,7 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(PIXEL_FORMAT pixel_format,
     }
 }
 
-void OpenGLGraphicsManager::BeginFrame(const Frame& frame) {
+void OpenGLGraphicsManager::BeginFrame(Frame& frame) {
     OpenGLGraphicsManagerCommonBase::BeginFrame(frame);
     ImGui_ImplOpenGL3_NewFrame();
 #ifdef OS_WINDOWS
@@ -316,7 +320,7 @@ void OpenGLGraphicsManager::BeginFrame(const Frame& frame) {
 #endif
 }
 
-void OpenGLGraphicsManager::EndFrame(const Frame& frame) {
+void OpenGLGraphicsManager::EndFrame(Frame& frame) {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     OpenGLGraphicsManagerCommonBase::EndFrame(frame);
 }
@@ -337,3 +341,66 @@ void OpenGLGraphicsManager::CreateTextureView(
     texture_view.width = texture_array.width;
     texture_view.height = texture_array.height;
 }
+
+void OpenGLGraphicsManager::BeginPass(Frame& frame) {
+    if (frame.renderToTexture) {
+        GLuint frame_buffer;
+        // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth
+        // buffer.
+        glGenFramebuffers(1, &frame_buffer);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+
+        if (frame.enableMSAA) {
+            if (frame.colorTextures[1].handler) {
+                //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                //                    (GLuint)frame.colorTextures[1].handler, 0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE,
+                                      (GLuint)frame.colorTextures[1].handler, 0);
+            }
+        } else {
+            if (frame.colorTextures[0].handler) {
+                glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                                    (GLuint)frame.colorTextures[0].handler, 0);
+            }
+        }
+
+        if (frame.depthTexture.handler) {
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                (GLuint)frame.depthTexture.handler, 0);
+
+        }
+
+        // Always check that our framebuffer is ok
+        auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            assert(0);
+        }
+
+        frame.frameBuffer = frame_buffer;
+    } else {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    // Set viewport
+    glViewport(0, 0, m_canvasWidth, m_canvasHeight);
+
+    // Set the color to clear the screen to.
+    glClearColor(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2],
+                 frame.clearColor[3]);
+
+    // Clear the screen and depth buffer.
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void OpenGLGraphicsManager::EndPass(Frame& frame) {
+    if (frame.renderToTexture) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        GLuint frame_buffer = (GLuint)frame.frameBuffer;
+        glDeleteFramebuffers(1, &frame_buffer);
+
+        frame.frameBuffer = 0;
+    }
+}
+

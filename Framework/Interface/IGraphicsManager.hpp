@@ -2,6 +2,7 @@
 #include "IRuntimeModule.hpp"
 
 #include <memory>
+#include <optional>
 #include "FrameStructure.hpp"
 #include "IPipelineStateManager.hpp"
 
@@ -21,8 +22,8 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
 
     virtual void DrawBatch(const Frame& frame) = 0;
 
-    virtual void BeginPass(const Frame& frame) = 0;
-    virtual void EndPass(const Frame& frame) = 0;
+    virtual void BeginPass(Frame& frame) = 0;
+    virtual void EndPass(Frame& frame) = 0;
 
     virtual void BeginCompute() = 0;
     virtual void EndCompute() = 0;
@@ -61,5 +62,7 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
                           const uint32_t depth) = 0;
 
     virtual void DrawFullScreenQuad() = 0;
+
+    virtual void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) = 0;
 };
 }  // namespace My

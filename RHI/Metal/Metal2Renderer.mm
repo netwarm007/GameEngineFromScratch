@@ -366,7 +366,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 #endif
 }
 
-- (void)beginFrame:(const My::Frame&)frame {
+- (void)beginFrame:(My::Frame&)frame {
     @autoreleasepool {
         // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the
         // Metal pipeline (App, Metal, Drivers, GPU, etc)
