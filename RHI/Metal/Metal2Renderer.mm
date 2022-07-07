@@ -416,6 +416,13 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         if (frame.enableMSAA) {
             renderPassDescriptor.colorAttachments[0].texture =
                 (id<MTLTexture>)frame.colorTextures[1].handler;
+            renderPassDescriptor.colorAttachments[0].resolveTexture =
+                (id<MTLTexture>)frame.colorTextures[0].handler;
+            renderPassDescriptor.depthAttachment.texture =
+                (id<MTLTexture>)frame.depthTexture.handler;
+        } else {
+            renderPassDescriptor.colorAttachments[0].texture =
+                (id<MTLTexture>)frame.colorTextures[0].handler;
             renderPassDescriptor.depthAttachment.texture =
                 (id<MTLTexture>)frame.depthTexture.handler;
         }
@@ -430,8 +437,15 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         if (frame.clearRT) {
             renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
             renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
+        } else {
+            renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
+            renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionDontCare;
         }
-        renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+        if (frame.enableMSAA) {
+            renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionMultisampleResolve;
+        } else {
+            renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+        }
         renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
 
         _renderEncoder = [_commandBuffers[frame.frameIndex]
@@ -491,8 +505,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
                     assert(0);
             }
 
-            //[_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
             [_renderEncoder setFrontFacingWinding:MTLWindingClockwise];
+
             [_renderEncoder setRenderPipelineState:pipelineState.mtlRenderPipelineState];
             [_renderEncoder setDepthStencilState:pipelineState.depthState];
 
@@ -808,12 +822,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     @autoreleasepool {
         MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor new];
-        textureDesc.textureType = MTLTextureType2D;
         textureDesc.width = texture.width;
         textureDesc.height = texture.height;
         textureDesc.pixelFormat = format;
         textureDesc.storageMode = MTLStorageModePrivate;
         textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+        if (texture.samples > 1) {
+            textureDesc.textureType = MTLTextureType2DMultisample;
+            textureDesc.sampleCount = texture.samples;
+        } else {
+            textureDesc.textureType = MTLTextureType2D;
+        }
 
         // create the texture obj
         texture_out = [_device newTextureWithDescriptor:textureDesc];

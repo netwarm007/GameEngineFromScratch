@@ -293,11 +293,3 @@ void Metal2GraphicsManager::CreateTextureView(Texture2D& texture_view,
 void Metal2GraphicsManager::GenerateTexture(Texture2D& texture) {
     [m_pRenderer generateTexture:texture];
 }
-
-void Metal2GraphicsManager::MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) {
-    id<MTLTexture> source_texture = (id<MTLTexture>)source.handler;
-    id<MTLTexture> target_texture;
-    if (target) {
-        target_texture = (id<MTLTexture>)target->get().handler;
-    }
-}

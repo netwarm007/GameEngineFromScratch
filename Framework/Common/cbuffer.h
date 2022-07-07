@@ -56,7 +56,8 @@ unistruct PerFrameConstants REGISTER(b10) {
     Matrix4X4f projectionMatrix;  // 64 bytes
     Vector4f camPos;              // 16 bytes
     int32_t numLights;            // 4 bytes
-};                                // totle 148 bytes
+    int32_t clip_space_type;      // 0 : OpenGL, 1 : others
+};                                // totle 152 bytes
 
 unistruct PerBatchConstants REGISTER(b11) {
     Matrix4X4f modelMatrix;  // 64 bytes

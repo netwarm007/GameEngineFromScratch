@@ -299,6 +299,12 @@ void GraphicsManager::CalculateLights() {
 
     const GfxConfiguration& conf = m_pApp->GetConfiguration();
 
+    if (conf.fixOpenGLPerspectiveMatrix) {
+        frameContext.clip_space_type = 0;
+    } else {
+        frameContext.clip_space_type = 1;
+    }
+
     if (pSceneManager) {
         auto& scene = pSceneManager->GetSceneForRendering();
         for (const auto& LightNode : scene->LightNodes) {

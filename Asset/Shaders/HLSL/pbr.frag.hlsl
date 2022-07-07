@@ -40,7 +40,7 @@
     float NdotL = max(dot(N, L), 0.0f);
 
     // shadow test
-    float visibility = shadow_test(_entryPointOutput.v_world, light, NdotL);
+    float visibility = shadow_test(_entryPointOutput.v_world, light, NdotL, clip_space_type);
 
     float lightToSurfDist = length(L);
     float lightToSurfAngle = acos(dot(-L, light.lightDirection.xyz));

@@ -89,16 +89,28 @@ float apply_atten_curve(float dist, int atten_curve_type, float4 atten_params[2]
     return atten;
 }
 
-float shadow_test(float4 p, Light light, float cosTheta) {
+float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
     float4 v_light_space = mul(mul(p, light.lightViewMatrix), light.lightProjectionMatrix);
     v_light_space /= v_light_space.w.xxxx;
 
-    const float4x4 depth_bias = float4x4 (
-        float4(0.5f, 0.0f, 0.0f, 0.0f),
-        float4(0.0f, 0.5f, 0.0f, 0.0f),
-        float4(0.0f, 0.0f, 0.5f, 0.0f),
-        float4(0.5f, 0.5f, 0.5f, 1.0f)
-    );
+    float4x4 depth_bias; 
+    if (clip_space_type == 0) {
+        // for OpenGL clip space
+        depth_bias = float4x4 (
+            float4(0.5f, 0.0f, 0.0f, 0.0f),
+            float4(0.0f, 0.5f, 0.0f, 0.0f),
+            float4(0.0f, 0.0f, 0.5f, 0.0f),
+            float4(0.5f, 0.5f, 0.5f, 1.0f)
+        );
+    } else {
+        // for others
+        depth_bias = float4x4 (
+            float4(0.5f, 0.0f, 0.0f, 0.0f),
+            float4(0.0f, 0.5f, 0.0f, 0.0f),
+            float4(0.0f, 0.0f, 1.0f, 0.0f),
+            float4(0.5f, 0.5f, 0.0f, 1.0f)
+        );
+    }
 
     const float4x2 poissonDisk = float4x2 (
         float2( -0.94201624f, -0.39906216f ),

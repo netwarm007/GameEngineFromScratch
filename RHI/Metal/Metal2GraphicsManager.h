@@ -43,8 +43,6 @@ class Metal2GraphicsManager : public GraphicsManager {
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
 
-    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) final;
-
    protected:
     void BeginFrame(Frame& frame) final;
     void EndFrame(Frame& frame) final;
