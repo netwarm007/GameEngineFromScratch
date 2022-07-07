@@ -297,6 +297,8 @@ void GraphicsManager::CalculateLights() {
     auto pSceneManager =
         dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
 
+    const GfxConfiguration& conf = m_pApp->GetConfiguration();
+
     if (pSceneManager) {
         auto& scene = pSceneManager->GetSceneForRendering();
         for (const auto& LightNode : scene->LightNodes) {
@@ -405,9 +407,15 @@ void GraphicsManager::CalculateLights() {
                         float screenAspect = 1.0f;
 
                         // Build the perspective projection matrix.
-                        BuildPerspectiveFovRHMatrix(
-                            projection, fieldOfView, screenAspect,
-                            nearClipDistance, farClipDistance);
+                        if (conf.fixOpenGLPerspectiveMatrix) {
+                            BuildOpenglPerspectiveFovRHMatrix(
+                                projection, fieldOfView, screenAspect,
+                                nearClipDistance, farClipDistance);
+                        } else {
+                            BuildPerspectiveFovRHMatrix(projection,
+                                                        fieldOfView, screenAspect,
+                                                        nearClipDistance, farClipDistance);
+                        }
                     } else if (pLight->GetType() ==
                                SceneObjectType::kSceneObjectTypeLightArea) {
                         light.lightType = LightType::Area;
@@ -427,9 +435,15 @@ void GraphicsManager::CalculateLights() {
                         float screenAspect = 1.0f;
 
                         // Build the perspective projection matrix.
-                        BuildPerspectiveFovRHMatrix(
-                            projection, fieldOfView, screenAspect,
-                            nearClipDistance, farClipDistance);
+                        if (conf.fixOpenGLPerspectiveMatrix) {
+                            BuildOpenglPerspectiveFovRHMatrix(
+                                projection, fieldOfView, screenAspect,
+                                nearClipDistance, farClipDistance);
+                        } else {
+                            BuildPerspectiveFovRHMatrix(projection,
+                                                        fieldOfView, screenAspect,
+                                                        nearClipDistance, farClipDistance);
+                        }
                     }
                 }
 

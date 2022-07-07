@@ -59,7 +59,7 @@ void GuiSubPass::Draw(Frame& frame) {
             if (frame.enableMSAA) {
                 //m_pGraphicsManager->MSAAResolve(frame.colorTextures[0], frame.colorTextures[1]);
             }
-            TexturePreviewer(frame.colorTextures[0], rect);
+            TexturePreviewer(frame.colorTextures[1], rect);
             m_pGraphicsManager->ResizeCanvas(rect.x, rect.y);
             ImGui::End();
         }

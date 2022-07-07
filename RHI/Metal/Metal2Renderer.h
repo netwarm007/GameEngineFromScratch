@@ -30,8 +30,6 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)setLightInfo:(const LightInfo &)lightInfo frameIndex:(const int32_t)index;
 
-- (void)updateDrawableSize:(CGSize)size;
-
 - (void)createVertexBuffer:(const My::SceneObjectVertexArray &)v_property_array;
 
 - (void)createIndexBuffer:(const My::SceneObjectIndexArray &)index_array;

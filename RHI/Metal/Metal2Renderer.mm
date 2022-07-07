@@ -357,15 +357,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     return texture_out;
 }
 
-/// Called whenever view changes orientation or layout is changed
-- (void)updateDrawableSize:(CGSize)size {
-#if 0
-    MTLViewport viewport {0.0, 0.0,
-        static_cast<double>(size.width), static_cast<double>(size.height), 0.0, 1.0};
-    [_renderEncoder setViewport:viewport];
-#endif
-}
-
 - (void)beginFrame:(My::Frame&)frame {
     @autoreleasepool {
         // Wait to ensure only GEFSMaxBuffersInFlight are getting processed by any stage in the
@@ -500,7 +491,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
                     assert(0);
             }
 
-            [_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+            //[_renderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+            [_renderEncoder setFrontFacingWinding:MTLWindingClockwise];
             [_renderEncoder setRenderPipelineState:pipelineState.mtlRenderPipelineState];
             [_renderEncoder setDepthStencilState:pipelineState.depthState];
 
@@ -706,9 +698,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
     MTLViewport viewport{0.0,
-                         static_cast<double>(shadowmap.height),
+                         0.0,
                          static_cast<double>(shadowmap.width),
-                         -static_cast<double>(shadowmap.height),
+                         static_cast<double>(shadowmap.height),
                          0.0,
                          1.0};
     [_renderEncoder setViewport:viewport];
