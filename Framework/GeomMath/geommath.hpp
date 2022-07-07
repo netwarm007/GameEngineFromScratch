@@ -836,7 +836,22 @@ inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix) {
 #endif
 }
 
-inline void BuildOrthographicMatrix(Matrix4X4f& matrix, const float left,
+inline void BuildOrthographicRHMatrix(Matrix4X4f& matrix, const float left,
+                                    const float right, const float top,
+                                    const float bottom, const float near_plane,
+                                    const float far_plane) {
+    const float width = right - left;
+    const float height = top - bottom;
+    const float depth = far_plane - near_plane;
+
+    matrix = {{{2.0f / width, 0.0f, 0.0f, 0.0f},
+               {0.0f, 2.0f / height, 0.0f, 0.0f},
+               {0.0f, 0.0f, -1.0f / depth, 0.0f},
+               {-(right + left) / width, -(top + bottom) / height,
+                -0.5f * (far_plane + near_plane) / depth + 0.5f, 1.0f}}};
+}
+
+inline void BuildOpenglOrthographicRHMatrix(Matrix4X4f& matrix, const float left,
                                     const float right, const float top,
                                     const float bottom, const float near_plane,
                                     const float far_plane) {
