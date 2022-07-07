@@ -86,7 +86,6 @@ class TestGraphicsManager : public TGraphicsManager {
         static bool show_demo_window = true;
         auto& frame = m_Frames[m_nFrameIndex];
         BeginPass(frame);
-        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
         if (show_demo_window) {
             ImGui::ShowDemoWindow(&show_demo_window);
