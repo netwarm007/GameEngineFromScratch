@@ -100,7 +100,7 @@ void GuiSubPass::Draw(Frame& frame) {
 
             ImGui::Begin((const char*)u8"调试窗口");  // Create a debug window
 
-            ImGui::SetNextItemOpen(true);
+            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             if (ImGui::CollapsingHeader((const char*)u8"运行状态与基本参数")) {
                 ImGui::ColorEdit3(
                     (const char*)u8"清屏色",
@@ -122,7 +122,7 @@ void GuiSubPass::Draw(Frame& frame) {
             }
 
 
-            ImGui::SetNextItemOpen(true);
+            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             if (ImGui::CollapsingHeader((const char*)u8"全局贴图")) {
                 ImGui::Text(
                     (const char*)u8"阴影贴图");
