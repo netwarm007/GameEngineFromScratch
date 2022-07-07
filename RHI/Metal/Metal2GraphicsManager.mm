@@ -211,7 +211,7 @@ void Metal2GraphicsManager::BeginFrame(Frame& frame) {
     [m_pRenderer beginFrame:frame];
 }
 
-void Metal2GraphicsManager::EndFrame(const Frame& frame) {
+void Metal2GraphicsManager::EndFrame(Frame& frame) {
     [m_pRenderer endFrame:frame];
 
     m_nFrameIndex = ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
@@ -219,9 +219,9 @@ void Metal2GraphicsManager::EndFrame(const Frame& frame) {
     GraphicsManager::EndFrame(frame);
 }
 
-void Metal2GraphicsManager::BeginPass(const Frame& frame) { [m_pRenderer beginPass:frame]; }
+void Metal2GraphicsManager::BeginPass(Frame& frame) { [m_pRenderer beginPass:frame]; }
 
-void Metal2GraphicsManager::EndPass(const Frame& frame) { [m_pRenderer endPass:frame]; }
+void Metal2GraphicsManager::EndPass(Frame& frame) { [m_pRenderer endPass:frame]; }
 
 void Metal2GraphicsManager::BeginCompute() { [m_pRenderer beginCompute]; }
 
