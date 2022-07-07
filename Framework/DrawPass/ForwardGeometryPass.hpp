@@ -18,6 +18,7 @@ class ForwardGeometryPass : public BaseDrawPass {
 #if !defined(OS_WEBASSEMBLY)
         // m_DrawSubPasses.push_back(std::make_shared<TerrainSubPass>(m_pGraphicsManager));
 #endif
+        m_bClearRT = true;
     }
 };
 }  // namespace My

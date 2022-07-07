@@ -12,6 +12,7 @@ void BaseDrawPass::Draw(Frame& frame) {
     
 void BaseDrawPass::BeginPass(Frame& frame) { 
     frame.renderToTexture = m_bRenderToTexture;
+    frame.clearRT = m_bClearRT;
 
     m_pGraphicsManager->BeginPass(frame); 
 }

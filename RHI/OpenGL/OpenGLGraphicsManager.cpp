@@ -385,12 +385,14 @@ void OpenGLGraphicsManager::BeginPass(Frame& frame) {
     // Set viewport
     glViewport(0, 0, m_canvasWidth, m_canvasHeight);
 
-    // Set the color to clear the screen to.
-    glClearColor(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2],
-                 frame.clearColor[3]);
+    if (frame.clearRT) {
+        // Set the color to clear the screen to.
+        glClearColor(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2],
+                    frame.clearColor[3]);
 
-    // Clear the screen and depth buffer.
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Clear the screen and depth buffer.
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 }
 
 void OpenGLGraphicsManager::EndPass(Frame& frame) {

@@ -25,5 +25,6 @@ class BaseDrawPass : _implements_ IDrawPass {
     IGraphicsManager* m_pGraphicsManager;
     IPipelineStateManager* m_pPipelineStateManager;
     bool m_bRenderToTexture = false;
+    bool m_bClearRT = false;
 };
 }  // namespace My
