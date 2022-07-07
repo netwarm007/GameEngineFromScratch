@@ -65,7 +65,7 @@ if(APPLE)
 
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
         COMMENT "SPIR-V --> Metal"
-        COMMAND ${SPIRV_CROSS} --msl --msl-version 020101 --msl-decoration-binding --remove-unused-variables --output ${METAL_SOURCE_DIR}/${part1}.${part2}.metal ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
+        COMMAND ${SPIRV_CROSS} --msl --msl-version 020101 --msl-decoration-binding --flip-vert-y --remove-unused-variables --output ${METAL_SOURCE_DIR}/${part1}.${part2}.metal ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS HLSL/${part1}.${part2}.hlsl
     )
