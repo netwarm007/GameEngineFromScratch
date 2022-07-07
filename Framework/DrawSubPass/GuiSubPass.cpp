@@ -11,7 +11,7 @@ GuiSubPass::~GuiSubPass() {
     }
 }
 
-static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64}, ImVec2 uv0 = {0.0f, 0.0f}, ImVec2 uv1 = {1.0f, 1.0f}) {
+static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64}, ImVec2 uv0 = {0.0f, 1.0f}, ImVec2 uv1 = {1.0f, 0.0f}) {
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
@@ -59,7 +59,7 @@ void GuiSubPass::Draw(Frame& frame) {
             if (frame.enableMSAA) {
                 //m_pGraphicsManager->MSAAResolve(frame.colorTextures[0], frame.colorTextures[1]);
             }
-            TexturePreviewer(frame.colorTextures[1], rect, {0.0f, 1.0f}, {1.0f, 0.0f});
+            TexturePreviewer(frame.colorTextures[0], rect);
             m_pGraphicsManager->ResizeCanvas(rect.x, rect.y);
             ImGui::End();
         }
@@ -217,10 +217,10 @@ void GuiSubPass::Draw(Frame& frame) {
 
                     if (ImGui::BeginTabItem((const char*)u8"天空盒")) {
                         ImGui::BeginTable("skybox", 4);
-                        // +Y
+                        // -Y
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(1);
-                        TexturePreviewer(m_TextureViews[start_index + 2]);
+                        TexturePreviewer(m_TextureViews[start_index + 3]);
                         // -X
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
@@ -234,10 +234,10 @@ void GuiSubPass::Draw(Frame& frame) {
                         // -Z
                         ImGui::TableSetColumnIndex(3);
                         TexturePreviewer(m_TextureViews[start_index + 5]);
-                        // -Y
+                        // +Y
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(1);
-                        TexturePreviewer(m_TextureViews[start_index + 3]);
+                        TexturePreviewer(m_TextureViews[start_index + 2]);
 
                         ImGui::EndTable();
 
@@ -251,10 +251,10 @@ void GuiSubPass::Draw(Frame& frame) {
 
 
                         ImGui::BeginTable("irradiance", 4);
-                        // +Y
+                        // -Y
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(1);
-                        TexturePreviewer(m_TextureViews[start_index + 2]);
+                        TexturePreviewer(m_TextureViews[start_index + 3]);
                         // -X
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
@@ -268,10 +268,10 @@ void GuiSubPass::Draw(Frame& frame) {
                         // -Z
                         ImGui::TableSetColumnIndex(3);
                         TexturePreviewer(m_TextureViews[start_index + 5]);
-                        // -Y
+                        // +Y
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(1);
-                        TexturePreviewer(m_TextureViews[start_index + 3]);
+                        TexturePreviewer(m_TextureViews[start_index + 2]);
 
                         ImGui::EndTable();
 
@@ -283,10 +283,10 @@ void GuiSubPass::Draw(Frame& frame) {
                     // Draw Radiance
                     if (ImGui::BeginTabItem((const char*)u8"辐射度")) {
                         ImGui::BeginTable("radiance", 4);
-                        // +Y
+                        // -Y
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(1);
-                        TexturePreviewer(m_TextureViews[start_index + 2]);
+                        TexturePreviewer(m_TextureViews[start_index + 3]);
                         // -X
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(0);
@@ -300,10 +300,10 @@ void GuiSubPass::Draw(Frame& frame) {
                         // -Z
                         ImGui::TableSetColumnIndex(3);
                         TexturePreviewer(m_TextureViews[start_index + 5]);
-                        // -Y
+                        // +Y
                         ImGui::TableNextRow();
                         ImGui::TableSetColumnIndex(1);
-                        TexturePreviewer(m_TextureViews[start_index + 3]);
+                        TexturePreviewer(m_TextureViews[start_index + 2]);
 
                         ImGui::EndTable();
 
