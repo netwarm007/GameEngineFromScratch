@@ -55,3 +55,6 @@
 [submodule "External/src/astc-encoder"]
 	path = External/src/astc-encoder
 	url = https://github.com/ARM-software/astc-encoder.git
+[submodule "External/src/imgui-node-editor"]
+	path = External/src/imgui-node-editor
+	url = git@github.com:thedmd/imgui-node-editor.git
