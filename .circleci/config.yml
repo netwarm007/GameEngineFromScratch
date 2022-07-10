@@ -310,7 +310,7 @@ jobs:
   build_android:
     working_directory: ~/project
     docker:
-      - image: tim03/android-sdk-ndk
+      - image: cimg/android:2022.06-ndk
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
@@ -319,6 +319,25 @@ jobs:
           command: |
             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
             sudo apt install -y git-lfs
+      - run:
+          name: Install cmake
+          command: |
+            wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+            echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+sudo apt-get update
+            sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
+sudo apt-get install kitware-archive-keyring
+            sudo apt install -y cmake
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo apt install -y ninja-build bison flex libncurses5
+      - run:
+          name: Install LLVM 13
+          command: |
+            wget https://apt.llvm.org/llvm.sh
+            chmod +x llvm.sh
+            sudo ./llvm.sh 13
       - restore_cache:
           keys:
             - source-android-{{ .Branch }}-{{ .Revision }}
@@ -350,8 +369,8 @@ jobs:
       - run:
           name: Setup Emulator
           command: |
-                   sdkmanager "system-images;android-24;default;armeabi-v7a"
-                   echo "no" | avdmanager create avd -n test -k "system-images;android-24;default;armeabi-v7a"
+                   sdkmanager "system-images;android-24;default;arm64-v8a"
+                   echo "no" | avdmanager create avd -n test -k "system-images;android-24;default;arm64-v8a"
           working_directory: Game/Billiard
       - run:
           name: Download Dependencies
@@ -368,6 +387,9 @@ jobs:
                    ./scripts/build_crossguid-android.sh
                    ./scripts/build_opengex-android.sh
                    ./scripts/build_bullet-android.sh
+                   ./scripts/build_zlib-android.sh
+                   ./scripts/build_glslang.sh
+                   ./scripts/build_spirvcross.sh
       - run:
           name: Build
           command: |
@@ -383,65 +405,66 @@ jobs:
           name: Deploy Assets
           command: |
                    adb wait-for-device
-                   adb push ../../Asset/Scene/Example.ogex /data/local/tmp/Scene/Example.ogex
                    adb push ../../Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
                    adb push ../../Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
                    adb push ../../Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
                    adb push ../../Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
+                   adb push ../../Asset/hdr/PaperMill_posx.dds /data/local/tmp/Textures/PaperMill_posx.dds
+                   adb push ../../Asset/hdr/PaperMill_E_3k.hdr /data/local/tmp/Textures/PaperMile_E_3k.hdr
           working_directory: Game/Billiard
       - run:
           name: Run Geom Math Library Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/GeomMathTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/GeomMathTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/GeomMathTest
                    adb shell "cd /data/local/tmp && ./GeomMathTest"
           working_directory: Game/Billiard
       - run:
           name: Run Color Space Conversion Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/ColorSpaceConversionTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/ColorSpaceConversionTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/ColorSpaceConversionTest
                    adb shell "cd /data/local/tmp && ./ColorSpaceConversionTest"
           working_directory: Game/Billiard
       - run:
           name: Run Asset Loader Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/AssetLoaderTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/AssetLoaderTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/AssetLoaderTest
                    adb shell "cd /data/local/tmp && ./AssetLoaderTest"
           working_directory: Game/Billiard
       - run:
           name: Run JPEG decoder Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/JpegParserTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/JpegParserTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/JpegParserTest
                    adb shell "cd /data/local/tmp && ./JpegParserTest"
           working_directory: Game/Billiard
       - run:
           name: Run PNG decoder Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/PngParserTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/PngParserTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/PngParserTest
                    adb shell "cd /data/local/tmp && ./PngParserTest"
           working_directory: Game/Billiard
       - run:
           name: Run OGEX parser Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/OgexParserTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/OgexParserTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/OgexParserTest
                    adb shell "cd /data/local/tmp && ./OgexParserTest"
           working_directory: Game/Billiard
       - run:
           name: Run Scene Loading Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/SceneLoadingTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/SceneLoadingTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/SceneLoadingTest
                    adb shell "cd /data/local/tmp && ./SceneLoadingTest"
           working_directory: Game/Billiard
       - run:
           name: Run Bullet Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/BulletTest /data/local/tmp/
+                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/BulletTest /data/local/tmp/
                    adb shell chmod +x /data/local/tmp/BulletTest
                    adb shell "cd /data/local/tmp && ./BulletTest"
           working_directory: Game/Billiard
@@ -469,9 +492,10 @@ workflows:
   version: 2
   build-and-test: #for branch
     jobs:
-      # - build_windows
+      #- build_windows
       - build_linux
       - build_macos
+      - build_android
   build-and-test-and-release: #for tags
     jobs:
       - build_windows:
