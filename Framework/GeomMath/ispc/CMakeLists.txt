@@ -7,7 +7,7 @@ foreach(FUNC IN LISTS FUNCTIONS)
     IF(${CMAKE_SYSTEM_NAME} MATCHES Android)
         add_custom_command(OUTPUT ${FUNC}.o
             COMMAND ${CMAKE_COMMAND} -E env "PATH=${ISPC_COMPILER_PATH}" ${ISPC_COMPILER} ${ISPC_OPTIONS} --emit-llvm -o ${FUNC}.bc ${CMAKE_CURRENT_SOURCE_DIR}/${FUNC}.ispc
-            COMMAND ${CMAKE_COMMAND} -E env "PATH=${LLVM_COMPILER_PATH}" llc -O3 -float-abi=soft -march=arm -mcpu=cortex-a9 -thread-model=posix -filetype=obj -o=${FUNC}.o ${FUNC}.bc
+            COMMAND llc -O3 -float-abi=soft -march=arm -mcpu=cortex-a9 -thread-model=posix -filetype=obj -o=${FUNC}.o ${FUNC}.bc
             MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${FUNC}.ispc
             COMMENT "Building ${FUNC}"
             )

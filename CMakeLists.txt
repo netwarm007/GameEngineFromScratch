@@ -45,6 +45,7 @@ endif(MSVC)
 if(ANDROID)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-command-line-argument")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument")
+    include_directories($ENV{ANDROID_NDK_ROOT}/sources/third_party/vulkan/src/include)
 endif(ANDROID)
 
 if(WA)
@@ -103,10 +104,14 @@ find_library(XG_LIBRARY xg PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROO
 find_library(OPENDDL_LIBRARY OpenDDL PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
 find_library(OPENGEX_LIBRARY OpenGEX PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
 find_library(ZLIB_LIBRARY NAMES z zlib zlibd PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+if(NOT ${CMAKE_CROSSCOMPILING})
 find_library(ISPCTEXCOMP_LIBRARY ispc_texcomp PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+endif(NOT ${CMAKE_CROSSCOMPILING})
 
 find_package(SDL2)
+if (NOT ANDROID)
 find_package(Vulkan)
+endif(NOT ANDROID)
 
 if(Vulkan_FOUND)
 set(HAS_VULKAN 1)
@@ -140,7 +145,9 @@ add_subdirectory(Test)
 add_subdirectory(Game)
 add_subdirectory(Viewer)
 add_subdirectory(Asset)
+if(NOT ${CMAKE_CROSSCOMPILING})
 add_subdirectory(Utility)
+endif(NOT ${CMAKE_CROSSCOMPILING})
 
 # ------------------------- Begin Generic CMake Variable Logging ------------------
 

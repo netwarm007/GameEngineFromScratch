@@ -1,4 +1,4 @@
-#include "AndroidApplication.hpp"
+#include "OpenGLESApplication.hpp"
 
 #include <dlfcn.h>
 #include <unistd.h>
@@ -174,10 +174,12 @@ void android_main(struct android_app* state) {
 
     LOGI("STDOUT/STDERR > Log redirection thread started");
 
-    state->userData = g_pApp;
+    OpenGLESApplication app;
+
+    state->userData = &app;
     state->onAppCmd = engine_handle_cmd;
     state->onInputEvent = engine_handle_input;
-    AndroidApplication* engine = dynamic_cast<AndroidApplication*>(g_pApp);
+    AndroidApplication* engine = &app;
     engine->m_pApp = state;
 
     // Prepare to monitor accelerometer
@@ -193,7 +195,7 @@ void android_main(struct android_app* state) {
     }
 
     // loop waiting for stuff to do.
-    while (!g_pApp->IsQuit()) {
+    while (!engine->IsQuit()) {
         // Read all pending events.
         int ident;
         int events;

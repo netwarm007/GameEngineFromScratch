@@ -16,14 +16,3 @@ target_link_libraries(PlatformInterface
         EGL
         GLESv3
         log)
-
-add_library(MyGameEngine 
-        AndroidApplicationConfig.cpp
-)
-target_link_libraries(MyGameEngine
-        OpenGLRHI
-        PlatformInterface
-        Common 
-)
-target_include_directories(MyGameEngine PRIVATE
-    ${ANDROID_NDK}/sources/android/native_app_glue)

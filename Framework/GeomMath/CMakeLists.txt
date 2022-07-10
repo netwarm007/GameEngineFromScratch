@@ -45,8 +45,8 @@ ENDIF(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
 
 # override ISPC_OPTIONS if build for android
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Android")
-    SET(LLVM_COMPILER_PATH ${ISPC_COMPILER_PATH})
     SET(ISPC_COMPILER_PATH ${PROJECT_SOURCE_DIR}/External/Android/bin/)
+    SET(ISPC_COMPILER ispc)
     SET(ISPC_OPTIONS --arch=arm --cpu=cortex-a9 --target=neon-i32x4)
 ENDIF()
 

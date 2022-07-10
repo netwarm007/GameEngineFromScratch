@@ -16,11 +16,11 @@ android {
 
     defaultConfig {
         applicationId = 'com.chenwenli.game_engine_from_scratch'
-        minSdkVersion 18
+        minSdkVersion 24
         targetSdkVersion  27
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=gnustl_static'
+                arguments '-DANDROID_STL=c++_static'
             }
         }
         ndk{
@@ -37,6 +37,7 @@ android {
     }
     externalNativeBuild {
         cmake {
+            version "3.23.2"
             path '../../../CMakeLists.txt'
         }
     }
