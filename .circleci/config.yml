@@ -405,20 +405,13 @@ jobs:
           name: Deploy Assets
           command: |
                    adb wait-for-device
-<<<<<<< HEAD
-                   adb push ../../Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
-                   adb push ../../Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
-                   adb push ../../Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
-                   adb push ../../Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
-                   adb push ../../Asset/hdr/PaperMill_posx.dds /data/local/tmp/Textures/PaperMill_posx.dds
-                   adb push ../../Asset/hdr/PaperMill_E_3k.hdr /data/local/tmp/Textures/PaperMile_E_3k.hdr
-=======
                    adb push Asset/Scene/Example.ogex /data/local/tmp/Scene/Example.ogex
                    adb push Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
                    adb push Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
                    adb push Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
                    adb push Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
->>>>>>> 6c5276858353a7b07951d2e7b0bc3e4005208b88
+                   adb push Asset/hdr/PaperMill_posx.dds /data/local/tmp/Textures/PaperMill_posx.dds
+                   adb push Asset/hdr/PaperMill_E_3k.hdr /data/local/tmp/Textures/PaperMile_E_3k.hdr
           working_directory: Game/Billiard
       - run:
           name: Run Geom Math Library Test
