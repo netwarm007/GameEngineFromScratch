@@ -14,7 +14,7 @@ jobs:
           command: |
             $machinePath = [Environment]::GetEnvironmentVariable('Path', 'MACHINE')
             $newMachineEnvironmentPath = $machinePath
-            
+
             # install chocolatey
             $chocolateyPath = "$env:AllUsersProfile\chocolatey\bin"
             if(Get-Command "choco" -ErrorAction SilentlyContinue)
@@ -35,7 +35,7 @@ jobs:
                 echo "$chocolateyPath already present in Path environment variable"
               }
             }
-            
+
             # install cmake
             $cmakePath = "${env:ProgramFiles(x86)}\CMake\bin"
             if(Get-Command "cmake" -ErrorAction SilentlyContinue)
@@ -107,8 +107,8 @@ jobs:
       - run:
           name: git gc
           command: |
-             git gc
-             git lfs prune
+            git gc
+            git lfs prune
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -139,10 +139,10 @@ jobs:
       - run:
           name: Package
           command: |
-             cmake --build ./build --target package
+            cmake --build ./build --target package
       - persist_to_workspace:
           root: build
-          paths: 
+          paths:
             - GEFS-0.1.0-win64.exe
       - store_artifacts:
           path: build/GEFS-0.1.0-win64.exe
@@ -154,17 +154,17 @@ jobs:
       image: ubuntu-2204:2022.04.1 # recommended linux image
     resource_class: large
     steps:
-      - run: 
+      - run:
           name: Install Dependencies
           command: |
-             sudo apt update 
-             sudo apt install -y curl clang cmake ninja-build git uuid-dev 
-             sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
-             sudo apt install -y flex bison
-             curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-             sudo apt install -y git-lfs
+            sudo apt update 
+            sudo apt install -y curl clang cmake ninja-build git uuid-dev 
+            sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
+            sudo apt install -y flex bison
+            curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+            sudo apt install -y git-lfs
           environment:
-             DEBIAN_FRONTEND: noninteractive
+            DEBIAN_FRONTEND: noninteractive
       - restore_cache:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
@@ -185,8 +185,8 @@ jobs:
       - run:
           name: git gc
           command: |
-             git gc
-             git lfs prune
+            git gc
+            git lfs prune
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -194,17 +194,17 @@ jobs:
       - run:
           name: "Build Dependencies"
           command: |
-             ./scripts/build_imgui.sh
-             ./scripts/build_crossguid.sh
-             ./scripts/build_opengex.sh
-             ./scripts/build_bullet.sh
-             ./scripts/build_glslangValidator.sh
-             ./scripts/build_spirvcross.sh
-             ./scripts/build_libispc-texcomp.sh
+            ./scripts/build_imgui.sh
+            ./scripts/build_crossguid.sh
+            ./scripts/build_opengex.sh
+            ./scripts/build_bullet.sh
+            ./scripts/build_glslangValidator.sh
+            ./scripts/build_spirvcross.sh
+            ./scripts/build_libispc-texcomp.sh
       - run:
           name: "Build Engine"
           command: |
-             ./scripts/build-ninja.sh
+            ./scripts/build-ninja.sh
       - run:
           name: "Cook Asset"
           command: |
@@ -212,14 +212,14 @@ jobs:
       - run:
           name: Test
           command: |
-             cmake --build ./build --target test
+            cmake --build ./build --target test
       - run:
           name: Package
           command: |
-             cmake --build ./build --target package
+            cmake --build ./build --target package
       - persist_to_workspace:
           root: build
-          paths: 
+          paths:
             - GEFS-0.1.0-Linux.sh
             - GEFS-0.1.0-Linux.tar.gz
             - GEFS-0.1.0-Linux.tar.Z
@@ -253,37 +253,37 @@ jobs:
       - run:
           name: git gc
           command: |
-             git gc
-             git lfs prune
+            git gc
+            git lfs prune
       - save_cache:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
-      - run: 
+      - run:
           name: Install Dependencies via MacPorts
           command: |
-             curl -L -o $(pwd)/MacPorts-2.7.2-12-Monterey.pkg https://github.com/macports/macports-base/releases/download/v2.7.2/MacPorts-2.7.2-12-Monterey.pkg
-             sudo installer -package $(pwd)/MacPorts-2.7.2-12-Monterey.pkg -target /
-             rm $(pwd)/MacPorts-2.7.2-12-Monterey.pkg
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             sudo -E port -q install cmake ninja flex bison
+            curl -L -o $(pwd)/MacPorts-2.7.2-12-Monterey.pkg https://github.com/macports/macports-base/releases/download/v2.7.2/MacPorts-2.7.2-12-Monterey.pkg
+            sudo installer -package $(pwd)/MacPorts-2.7.2-12-Monterey.pkg -target /
+            rm $(pwd)/MacPorts-2.7.2-12-Monterey.pkg
+            export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+            sudo -E port -q install cmake ninja flex bison
       - run:
           name: "Build Dependencies"
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             ./scripts/build_imgui.sh
-             ./scripts/build_crossguid.sh
-             ./scripts/build_opengex.sh
-             ./scripts/build_zlib.sh
-             ./scripts/build_bullet.sh
-             ./scripts/build_glslangValidator.sh
-             ./scripts/build_spirvcross.sh
-             ./scripts/build_libispc-texcomp.sh
+            export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+            ./scripts/build_imgui.sh
+            ./scripts/build_crossguid.sh
+            ./scripts/build_opengex.sh
+            ./scripts/build_zlib.sh
+            ./scripts/build_bullet.sh
+            ./scripts/build_glslangValidator.sh
+            ./scripts/build_spirvcross.sh
+            ./scripts/build_libispc-texcomp.sh
       - run:
           name: "Build Engine"
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             ./scripts/build-ninja.sh
+            export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+            ./scripts/build-ninja.sh
       - run:
           name: "Cook Asset"
           command: |
@@ -291,16 +291,16 @@ jobs:
       - run:
           name: Test
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             cmake --build ./build --target test
+            export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+            cmake --build ./build --target test
       - run:
           name: Package
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             cmake --build ./build --target package
+            export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
+            cmake --build ./build --target package
       - persist_to_workspace:
           root: build
-          paths: 
+          paths:
             - GEFS-0.1.0-Darwin.sh
             - GEFS-0.1.0-Darwin.tar.gz
       - store_artifacts:
@@ -339,111 +339,113 @@ jobs:
       - run:
           name: git gc
           command: |
-             git gc
-             git lfs prune
+            git gc
+            git lfs prune
       - save_cache:
           key: source-android-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
       - restore_cache:
-          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
+          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{
+            checksum  "Game/Billiard/app/build.gradle" }}
       - run:
           name: Setup Emulator
           command: |
-                   sdkmanager "system-images;android-24;default;armeabi-v7a"
-                   echo "no" | avdmanager create avd -n test -k "system-images;android-24;default;armeabi-v7a"
+            sdkmanager "system-images;android-24;default;armeabi-v7a"
+            echo "no" | avdmanager create avd -n test -k "system-images;android-24;default;armeabi-v7a"
           working_directory: Game/Billiard
       - run:
           name: Download Dependencies
           command: |
-                   ./gradlew androidDependencies
+            ./gradlew androidDependencies
           working_directory: Game/Billiard
       - save_cache:
           paths:
             - Game/Billiard/.gradle
-          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
+          key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{
+            checksum  "Game/Billiard/app/build.gradle" }}
       - run:
           name: Build External Dependencies
           command: |
-                   ./scripts/build_crossguid-android.sh
-                   ./scripts/build_opengex-android.sh
-                   ./scripts/build_bullet-android.sh
+            ./scripts/build_crossguid-android.sh
+            ./scripts/build_opengex-android.sh
+            ./scripts/build_bullet-android.sh
       - run:
           name: Build
           command: |
-                   ./gradlew build
+            ./gradlew build
           working_directory: Game/Billiard
       - run:
-          name: Launch Emulator 
+          name: Launch Emulator
           command: |
-                   emulator @test -no-audio -no-window -no-boot-anim -accel on
+            emulator @test -no-audio -no-window -no-boot-anim -accel on
           background: true
           working_directory: Game/Billiard
       - run:
           name: Deploy Assets
           command: |
-                   adb wait-for-device
-                   adb push ../../Asset/Scene/Example.ogex /data/local/tmp/Scene/Example.ogex
-                   adb push ../../Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
-                   adb push ../../Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
-                   adb push ../../Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
-                   adb push ../../Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
+            adb wait-for-device
+            adb push ../../Asset/Scene/Example.ogex /data/local/tmp/Scene/Example.ogex
+            adb push ../../Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
+            adb push ../../Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
+            adb push ../../Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
+            adb push ../../Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
           working_directory: Game/Billiard
       - run:
           name: Run Geom Math Library Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/GeomMathTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/GeomMathTest
-                   adb shell "cd /data/local/tmp && ./GeomMathTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/GeomMathTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/GeomMathTest
+            adb shell "cd /data/local/tmp && ./GeomMathTest"
           working_directory: Game/Billiard
       - run:
           name: Run Color Space Conversion Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/ColorSpaceConversionTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/ColorSpaceConversionTest
-                   adb shell "cd /data/local/tmp && ./ColorSpaceConversionTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/ColorSpaceConversionTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/ColorSpaceConversionTest
+            adb shell "cd /data/local/tmp && ./ColorSpaceConversionTest"
           working_directory: Game/Billiard
       - run:
           name: Run Asset Loader Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/AssetLoaderTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/AssetLoaderTest
-                   adb shell "cd /data/local/tmp && ./AssetLoaderTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/AssetLoaderTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/AssetLoaderTest
+            adb shell "cd /data/local/tmp && ./AssetLoaderTest"
           working_directory: Game/Billiard
       - run:
           name: Run JPEG decoder Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/JpegParserTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/JpegParserTest
-                   adb shell "cd /data/local/tmp && ./JpegParserTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/JpegParserTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/JpegParserTest
+            adb shell "cd /data/local/tmp && ./JpegParserTest"
           working_directory: Game/Billiard
       - run:
           name: Run PNG decoder Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/PngParserTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/PngParserTest
-                   adb shell "cd /data/local/tmp && ./PngParserTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/PngParserTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/PngParserTest
+            adb shell "cd /data/local/tmp && ./PngParserTest"
           working_directory: Game/Billiard
       - run:
           name: Run OGEX parser Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/OgexParserTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/OgexParserTest
-                   adb shell "cd /data/local/tmp && ./OgexParserTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/OgexParserTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/OgexParserTest
+            adb shell "cd /data/local/tmp && ./OgexParserTest"
           working_directory: Game/Billiard
       - run:
           name: Run Scene Loading Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/SceneLoadingTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/SceneLoadingTest
-                   adb shell "cd /data/local/tmp && ./SceneLoadingTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/SceneLoadingTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/SceneLoadingTest
+            adb shell "cd /data/local/tmp && ./SceneLoadingTest"
           working_directory: Game/Billiard
       - run:
           name: Run Bullet Test
           command: |
-                   adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/BulletTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/BulletTest
-                   adb shell "cd /data/local/tmp && ./BulletTest"
+            adb push app/build/intermediates/cmake/debug/obj/armeabi-v7a/BulletTest /data/local/tmp/
+            adb shell chmod +x /data/local/tmp/BulletTest
+            adb shell "cd /data/local/tmp && ./BulletTest"
           working_directory: Game/Billiard
       - store_artifacts:
           path: Game/Billiard/app/build/reports
@@ -454,6 +456,8 @@ jobs:
       - store_artifacts:
           path: Game/Billiard/app/build/outputs/apk
           destination: apk
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
   publish_github_release:
     docker:
       - image: cibuilds/github:0.10
@@ -501,4 +505,3 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\d+$/
-
