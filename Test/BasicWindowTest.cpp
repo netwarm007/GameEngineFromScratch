@@ -7,6 +7,8 @@
 #include "CocoaApplication.h"
 #elif defined(OS_WINDOWS)
 #include "WindowsApplication.hpp"
+#elif defined(OS_ANDROID)
+#include "AndroidApplication.hpp"
 #else
 #include "XcbApplication.hpp"
 #endif
@@ -17,6 +19,8 @@ GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600, "Basic Window Test");
 BaseApplication* g_pApp = new CocoaApplication(config);
 #elif defined(OS_WINDOWS)
 BaseApplication* g_pApp = new WindowsApplication(config);
+#elif defined(OS_ANDROID)
+BaseApplication* g_pApp = new AndroidApplication(config);
 #else
 BaseApplication* g_pApp = new XcbApplication(config);
 #endif

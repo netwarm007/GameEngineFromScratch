@@ -7,7 +7,6 @@ namespace My {
 class AndroidAssetLoader : public AssetLoader {
    public:
     using AssetLoader::AssetLoader;
-    int Initialize();
     AssetFilePtr OpenFile(const char* name, AssetOpenMode mode);
     void CloseFile(AssetFilePtr& fp);
     void SetPlatformAssetManager(AAssetManager* assetManager);
