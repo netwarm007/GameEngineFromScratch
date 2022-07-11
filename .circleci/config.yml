@@ -344,12 +344,6 @@ jobs:
             - source-android-{{ .Branch }}-{{ .Revision }}
             - source-android-{{ .Branch }}-
             - source-android-
-      - run:
-          name: restore repo
-          command: |
-            if [ -d ".git" ]; then
-              echo "yes" | git restore .
-            fi
       - checkout
       - run:
           name: init submodules
