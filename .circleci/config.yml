@@ -348,7 +348,7 @@ jobs:
           name: restore repo
           command: |
             if [ -d ".git" ]; then
-              git restore .
+              echo "yes" | git restore .
             fi
       - checkout
       - run:
