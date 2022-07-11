@@ -339,6 +339,11 @@ jobs:
             chmod +x llvm.sh
             sudo ./llvm.sh 13
             rm ./llvm.sh
+      - restore_cache:
+          keys:
+            - source-android-{{ .Branch }}-{{ .Revision }}
+            - source-android-{{ .Branch }}-
+            - source-android-
       - run:
           name: restore repo
           command: |
