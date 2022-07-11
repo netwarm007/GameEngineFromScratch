@@ -389,7 +389,7 @@ jobs:
                    ./scripts/build_opengex-android.sh
                    ./scripts/build_bullet-android.sh
                    ./scripts/build_zlib-android.sh
-                   ./scripts/build_glslang.sh
+                   ./scripts/build_glslangValidator.sh
                    ./scripts/build_spirvcross.sh
       - run:
           name: Build
