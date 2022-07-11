@@ -308,7 +308,7 @@ jobs:
       - store_artifacts:
           path: build/GEFS-0.1.0-Darwin.tar.gz
   build_android:
-    working_directory: ~
+    working_directory: ~/project
     docker:
       - image: cimg/android:2022.06-ndk
     environment:
@@ -338,7 +338,7 @@ jobs:
             wget https://apt.llvm.org/llvm.sh
             chmod +x llvm.sh
             sudo ./llvm.sh 13
-      working_directory: ~/project
+            rm ./llvm.sh
       - restore_cache:
           keys:
             - source-android-{{ .Branch }}-{{ .Revision }}
