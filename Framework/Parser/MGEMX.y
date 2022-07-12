@@ -10,7 +10,7 @@
 
 %}
 
-%require "3.7.4"
+%require "3.5.1"
 %language "C++"
 %defines "MGEMX.parser.generated.hpp"
 %output  "MGEMX.parser.generated.cpp"

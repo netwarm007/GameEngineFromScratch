@@ -1,10 +1,13 @@
 SET(GEOMMATH_LIB_FILE ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}GeomMath${CMAKE_STATIC_LIBRARY_SUFFIX})
+
 IF(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
     SET(ISPC_COMPILER_PATH ${PROJECT_SOURCE_DIR}/External/Windows/bin/)
     SET(ISPC_COMPILER ispc.exe)
+
     IF(NOT ${CMAKE_CROSSCOMPILING})
         if(${MSVC})
             SET(CMAKE_AR lib)
+
             if(${ARCH_BIT} MATCHES 64)
                 SET(ISPC_OPTIONS --arch=x86-64 --target=host)
                 SET(ISPC_LIBRARIAN_OPTIONS /MACHINE:X64 /OUT:${GEOMMATH_LIB_FILE})
@@ -18,6 +21,7 @@ IF(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
             else()
                 SET(ISPC_OPTIONS --arch=x86 --target=host)
             endif()
+
             SET(ISPC_LIBRARIAN_OPTIONS -rcv ${GEOMMATH_LIB_FILE})
         endif(${MSVC})
     ELSE()
@@ -45,9 +49,26 @@ ENDIF(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
 
 # override ISPC_OPTIONS if build for android
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Android")
-    SET(LLVM_COMPILER_PATH ${ISPC_COMPILER_PATH})
-    SET(ISPC_COMPILER_PATH ${PROJECT_SOURCE_DIR}/External/Android/bin/)
-    SET(ISPC_OPTIONS --arch=arm --cpu=cortex-a9 --target=neon-i32x4)
+    SET(ISPC_COMPILER_PATH ${PROJECT_SOURCE_DIR}/External/${CMAKE_HOST_SYSTEM_NAME}/bin/)
+    SET(ISPC_COMPILER ispc)
+
+    if(${CMAKE_ANDROID_ARCH} MATCHES "arm64")
+        SET(ISPC_OPTIONS --arch=aarch64 --device=cortex-a35 --target=neon-i32x4)
+    endif(${CMAKE_ANDROID_ARCH} MATCHES "arm64")
+
+    if(${CMAKE_ANDROID_ARCH} MATCHES "x86_64")
+        SET(ISPC_OPTIONS --arch=x86-64 --target=sse4-i32x4)
+    endif(${CMAKE_ANDROID_ARCH} MATCHES "x86_64")
+
+    SET(LLVM_COMPILER llc-13)
+
+    if(${CMAKE_ANDROID_ARCH} MATCHES "arm64")
+        SET(LLVM_OPTIONS -O3 -float-abi=soft -march=aarch64 -mcpu=cortex-a35 -thread-model=posix)
+    endif(${CMAKE_ANDROID_ARCH} MATCHES "arm64")
+
+    if(${CMAKE_ANDROID_ARCH} MATCHES "x86_64")
+        SET(LLVM_OPTIONS -O3 -float-abi=soft -march=x86-64 -thread-model=posix)
+    endif(${CMAKE_ANDROID_ARCH} MATCHES "x86_64")
 ENDIF()
 
 # common options for ispc
@@ -63,7 +84,7 @@ ELSE(WA)
     add_dependencies(GeomMath IspcGeomMathLib)
 
     set_target_properties(GeomMath
-            PROPERTIES
-            IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
-            )
+        PROPERTIES
+        IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
+    )
 ENDIF(WA)
