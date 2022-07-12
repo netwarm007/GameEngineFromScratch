@@ -361,12 +361,6 @@ jobs:
       - restore_cache:
           key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
       - run:
-          name: Setup Emulator
-          command: |
-                   sdkmanager "system-images;android-24;default;arm64-v8a"
-                   echo "no" | avdmanager create avd -n test -k "system-images;android-24;default;arm64-v8a"
-          working_directory: Game/Billiard
-      - run:
           name: Download Dependencies
           command: |
                    ./gradlew androidDependencies
@@ -388,80 +382,6 @@ jobs:
           name: Build
           command: |
                    ./gradlew build
-          working_directory: Game/Billiard
-      - run:
-          name: Launch Emulator 
-          command: |
-                   emulator @test -no-audio -no-window -no-boot-anim -accel on
-          background: true
-          working_directory: Game/Billiard
-      - run:
-          name: Deploy Assets
-          command: |
-                   adb wait-for-device
-                   adb push Asset/Scene/Example.ogex /data/local/tmp/Scene/Example.ogex
-                   adb push Asset/Scene/splash.ogex /data/local/tmp/Scene/splash.ogex
-                   adb push Asset/Textures/huff_simple0.jpg /data/local/tmp/Textures/huff_simple0.jpg
-                   adb push Asset/Textures/eye.png /data/local/tmp/Textures/eye.png
-                   adb push Asset/Textures/interior_lod0.tga /data/local/tmp/Textures/interior_lod0.tga
-                   adb push Asset/hdr/PaperMill_posx.dds /data/local/tmp/Textures/PaperMill_posx.dds
-                   adb push Asset/hdr/PaperMill_E_3k.hdr /data/local/tmp/Textures/PaperMile_E_3k.hdr
-          working_directory: Game/Billiard
-      - run:
-          name: Run Geom Math Library Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/GeomMathTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/GeomMathTest
-                   adb shell "cd /data/local/tmp && ./GeomMathTest"
-          working_directory: Game/Billiard
-      - run:
-          name: Run Color Space Conversion Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/ColorSpaceConversionTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/ColorSpaceConversionTest
-                   adb shell "cd /data/local/tmp && ./ColorSpaceConversionTest"
-          working_directory: Game/Billiard
-      - run:
-          name: Run Asset Loader Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/AssetLoaderTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/AssetLoaderTest
-                   adb shell "cd /data/local/tmp && ./AssetLoaderTest"
-          working_directory: Game/Billiard
-      - run:
-          name: Run JPEG decoder Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/JpegParserTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/JpegParserTest
-                   adb shell "cd /data/local/tmp && ./JpegParserTest"
-          working_directory: Game/Billiard
-      - run:
-          name: Run PNG decoder Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/PngParserTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/PngParserTest
-                   adb shell "cd /data/local/tmp && ./PngParserTest"
-          working_directory: Game/Billiard
-      - run:
-          name: Run OGEX parser Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/OgexParserTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/OgexParserTest
-                   adb shell "cd /data/local/tmp && ./OgexParserTest"
-          working_directory: Game/Billiard
-      - run:
-          name: Run Scene Loading Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/SceneLoadingTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/SceneLoadingTest
-                   adb shell "cd /data/local/tmp && ./SceneLoadingTest"
-          working_directory: Game/Billiard
-      - run:
-          name: Run Bullet Test
-          command: |
-                   adb push app/build/intermediates/cmake/debug/obj/arm64-v8a/BulletTest /data/local/tmp/
-                   adb shell chmod +x /data/local/tmp/BulletTest
-                   adb shell "cd /data/local/tmp && ./BulletTest"
           working_directory: Game/Billiard
       - store_artifacts:
           path: Game/Billiard/app/build/reports
