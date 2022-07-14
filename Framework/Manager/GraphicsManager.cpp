@@ -161,7 +161,7 @@ void GraphicsManager::createFramebuffers() {
 }
 
 void GraphicsManager::ResizeCanvas(int32_t width, int32_t height) {
-    if (m_canvasWidth != width || m_canvasHeight != height) {
+    if (width > 0 && height > 0 && (m_canvasWidth != width || m_canvasHeight != height)) {
         cerr << "[GraphicsManager] Resize Canvas to " << width << "x" << height
             << endl;
         m_canvasWidth = width;
