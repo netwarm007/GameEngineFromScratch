@@ -311,6 +311,7 @@ jobs:
     working_directory: ~/project
     docker:
       - image: cimg/android:2022.06-ndk
+    resource_class: xlarge
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
