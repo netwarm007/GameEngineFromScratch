@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <AL/alut.h>
 
+#include "AssetLoader.hpp"
+
 #define NUM_BUFFERS 1
 #define NUM_SOURCES 1
 #define NUM_ENVIRONMENTS 1
@@ -38,7 +40,9 @@ void init(void)
         printf("init() - No errors yet.\n");
     }
 
-    buffer[0] = alutCreateBufferFromFile("test.wave");
+    My::AssetLoader assetLoader;
+    auto audioFilePath = assetLoader.GetFileRealPath("Audio/test.wave");
+    buffer[0] = alutCreateBufferFromFile(audioFilePath.c_str());
 
     alGetError();
     
@@ -85,6 +89,8 @@ int main(int argc, char** argv)
 
     char c;
     c = getchar();
+
+    alutExit();
 
     return 0;
 }
