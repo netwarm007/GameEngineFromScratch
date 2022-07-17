@@ -2,8 +2,8 @@
 #include <cstdlib>
 
 #define AL_LIBTYPE_STATIC
-#include "al.h"
-#include "alc.h"
+#include "AL/al.h"
+#include "AL/alc.h"
 
 #include "AssetLoader.hpp"
 #include "WAVE.hpp"
@@ -131,6 +131,9 @@ int main(int argc, char** argv)
 
     char c;
     c = getchar();
+
+    alDeleteSources(NUM_SOURCES, source);
+    alDeleteBuffers(NUM_BUFFERS, buffer);
 
     alcDestroyContext(context);
     alcCloseDevice(device);

@@ -1,4 +1,5 @@
-#pragma onece
+#pragma once
+#include <cassert>
 #include <cstdint>
 #include "IAudioClipParser.hpp"
 
