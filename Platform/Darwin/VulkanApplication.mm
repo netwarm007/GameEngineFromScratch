@@ -91,5 +91,5 @@ void VulkanApplication::CreateMainWindow() {
 void VulkanApplication::Finalize() {
     m_Rhi.destroyAll();
 
-    VulkanApplication::Finalize();
+    CocoaMetalApplication::Finalize();
 }

@@ -193,8 +193,11 @@ void VulkanRHI::destroyAll() {
     m_vkDevice.destroyImage(m_vkTextureImage);
     m_vkDevice.freeMemory(m_vkTextureImageMemory);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_vkUniformBuffers.size(); i++) {
         m_vkDevice.destroyBuffer(m_vkUniformBuffers[i]);
+    }
+
+    for (size_t i = 0; i < m_vkUniformBuffersMemory.size(); i++) {
         m_vkDevice.freeMemory(m_vkUniformBuffersMemory[i]);
     }
 
@@ -211,9 +214,15 @@ void VulkanRHI::destroyAll() {
     m_vkDevice.destroyShaderModule(m_vkFragShaderModule);
     m_vkDevice.destroyShaderModule(m_vkVertShaderModule);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < m_vkImageAvailableSemaphores.size(); i++) {
         m_vkDevice.destroySemaphore(m_vkImageAvailableSemaphores[i]);
+    }
+
+    for (size_t i = 0; i < m_vkRenderFinishedSemaphores.size(); i++) {
         m_vkDevice.destroySemaphore(m_vkRenderFinishedSemaphores[i]);
+    }
+
+    for (size_t i = 0; i < m_vkInFlightFences.size(); i++) {
         m_vkDevice.destroyFence(m_vkInFlightFences[i]);
     }
 
