@@ -62,52 +62,48 @@ class WaveParser : _implements_ AudioClipParser {
                 pChunkHeader->ChunkMarker[3] == ' ') {
                 const auto* pFormatChunkHeader =
                     reinterpret_cast<const WAVE_FORMAT_CHUNKHEADER*>(pData);
-                assert(pFormatChunkHeader->ChunkSize == 16);
 
                 audio_clip.channel_num = pFormatChunkHeader->ChannelNum;
                 audio_clip.sample_rate = pFormatChunkHeader->SampleRate;
                 audio_clip.block_size = pFormatChunkHeader->BlockSize;
                 audio_clip.bits_per_sample = pFormatChunkHeader->BitsPerSample;
 
-                switch (audio_clip.channel_num)
-                {
-                case 1:
-                    switch (audio_clip.bits_per_sample)
-                    {
-                    case 8:
-                        audio_clip.format = AudioClipFormat::MONO_8;
+                switch (audio_clip.channel_num) {
+                    case 1:
+                        switch (audio_clip.bits_per_sample) {
+                            case 8:
+                                audio_clip.format = AudioClipFormat::MONO_8;
+                                break;
+
+                            case 16:
+                                audio_clip.format = AudioClipFormat::MONO_16;
+                                break;
+
+                            default:
+                                assert(0);
+                                break;
+                        }
                         break;
-                    
-                    case 16:
-                        audio_clip.format = AudioClipFormat::MONO_16;
+
+                    case 2:
+                        switch (audio_clip.bits_per_sample) {
+                            case 8:
+                                audio_clip.format = AudioClipFormat::STEREO_8;
+                                break;
+
+                            case 16:
+                                audio_clip.format = AudioClipFormat::STEREO_16;
+                                break;
+
+                            default:
+                                assert(0);
+                                break;
+                        }
                         break;
 
                     default:
                         assert(0);
                         break;
-                    }
-                    break;
-                
-                case 2:
-                    switch (audio_clip.bits_per_sample)
-                    {
-                    case 8:
-                        audio_clip.format = AudioClipFormat::STEREO_8;
-                        break;
-                    
-                    case 16:
-                        audio_clip.format = AudioClipFormat::STEREO_16;
-                        break;
-
-                    default:
-                        assert(0);
-                        break;
-                    }
-                    break;
-                
-                default:
-                    assert(0);
-                    break;
                 }
             } else if (pChunkHeader->ChunkMarker[0] == 'd' &&
                        pChunkHeader->ChunkMarker[1] == 'a' &&

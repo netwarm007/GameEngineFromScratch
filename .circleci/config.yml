@@ -147,9 +147,6 @@ jobs:
       - store_artifacts:
           path: build/GEFS-0.1.0-win64.exe
   build_linux:
-    #docker:
-    #  - image: ubuntu:20.04
-    #resource_class: xlarge
     machine:
       image: ubuntu-2204:2022.04.1 # recommended linux image
     resource_class: large
@@ -201,6 +198,7 @@ jobs:
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
              ./scripts/build_libispc-texcomp.sh
+             ./scripts/build_openal.sh
       - run:
           name: "Build Engine"
           command: |
@@ -279,6 +277,7 @@ jobs:
              ./scripts/build_glslangValidator.sh
              ./scripts/build_spirvcross.sh
              ./scripts/build_libispc-texcomp.sh
+             ./scripts/build_openal.sh
       - run:
           name: "Build Engine"
           command: |
@@ -379,6 +378,7 @@ jobs:
                    ./scripts/build_zlib-android.sh
                    ./scripts/build_glslangValidator.sh
                    ./scripts/build_spirvcross.sh
+                   ./scripts/build_openal.sh
       - run:
           name: Build
           command: |

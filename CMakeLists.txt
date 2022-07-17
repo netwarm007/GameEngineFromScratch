@@ -115,7 +115,7 @@ if(NOT ANDROID)
     find_package(Vulkan)
 endif(NOT ANDROID)
 
-find_package(OpenAL)
+find_package(OpenAL CONFIG PATHS ${MYGE_EXTERNAL_LIBRARY_PATH} NO_CMAKE_FIND_ROOT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
 
 if(Vulkan_FOUND)
     set(HAS_VULKAN 1)

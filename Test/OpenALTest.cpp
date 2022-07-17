@@ -1,8 +1,9 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "AL/al.h"
-#include "AL/alc.h"
+#define AL_LIBTYPE_STATIC
+#include "al.h"
+#include "alc.h"
 
 #include "AssetLoader.hpp"
 #include "WAVE.hpp"
@@ -42,7 +43,7 @@ static void getOpenALFormat(ALenum& out_format, My::AudioClipFormat in_format) {
     }
 }
 
-static void init(void)
+static void test(const char* filename)
 {
     alListenerfv(AL_POSITION, listenerPos);
     alListenerfv(AL_VELOCITY, listenerVel);
@@ -58,7 +59,7 @@ static void init(void)
 
     My::AssetLoader assetLoader;
     My::WaveParser waveParser;
-    auto audioData = assetLoader.SyncOpenAndReadBinary("Audio/test.wave");
+    auto audioData = assetLoader.SyncOpenAndReadBinary(filename);
     auto audioClip = waveParser.Parse(audioData);
 
     ALenum format;
@@ -107,7 +108,11 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    init();
+    if (argc > 1) {
+        test(argv[1]);
+    } else {
+        test("Audio/test.wav");
+    }
 
     alGetError();
     alSourcePlay(source[0]);
