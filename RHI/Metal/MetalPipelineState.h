@@ -7,8 +7,8 @@ struct MetalPipelineState : public PipelineState {
     MetalPipelineState(PipelineState& rhs) : PipelineState(rhs) {}
     MetalPipelineState(PipelineState&& rhs) : PipelineState(std::move(rhs)) {}
 
-    id<MTLRenderPipelineState> mtlRenderPipelineState;
-    id<MTLComputePipelineState> mtlComputePipelineState;
-    id<MTLDepthStencilState> depthState;
+    id<MTLRenderPipelineState> mtlRenderPipelineState = Nil;
+    id<MTLComputePipelineState> mtlComputePipelineState = Nil;
+    id<MTLDepthStencilState> depthState = Nil;
 };
 }  // namespace My
