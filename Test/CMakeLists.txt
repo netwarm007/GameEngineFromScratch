@@ -6,7 +6,6 @@ set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
     BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
     RasterizationTest SceneObjectTest
     ASTNodeTest MGEMXParserTest CodeGeneratorTest
-    OpenALTest
 )
 
 foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
@@ -15,7 +14,8 @@ foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach(TEST_CASE)
 
-target_link_libraries(OpenALTest ${OPENAL_LIBRARY})
+add_executable(OpenALTest OpenALTest.cpp)
+target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY})
 
 target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
