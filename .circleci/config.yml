@@ -377,9 +377,9 @@ jobs:
                    ./scripts/build_opengex-android.sh
                    ./scripts/build_bullet-android.sh
                    ./scripts/build_zlib-android.sh
+                   ./scripts/build_openal-android.sh
                    ./scripts/build_glslangValidator.sh
                    ./scripts/build_spirvcross.sh
-                   ./scripts/build_openal.sh
       - run:
           name: Build
           command: |
