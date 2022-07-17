@@ -17,7 +17,7 @@ int main(int argc, const char** argv) {
             buf = assetLoader.SyncOpenAndReadBinary(argv[1]);
         } else {
             buf = assetLoader.SyncOpenAndReadBinary(
-                "Audio/test.wave");
+                "Audio/test.wav");
         }
 
         WaveParser wave_parser;
