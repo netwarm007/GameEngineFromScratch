@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
-#include <AL/alut.h>
+
+#include "AL/alut.h"
 
 #include "AssetLoader.hpp"
 
