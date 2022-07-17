@@ -1,4 +1,5 @@
 add_library(Common
+        AudioClip.cpp
         Image.cpp
 )
 

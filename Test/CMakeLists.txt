@@ -1,6 +1,7 @@
 set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
                OgexParserTest JpegParserTest PngParserTest DdsParserTest HdrParserTest TgaParserTest
                AstcParserTest PvrParserTest
+               WaveParserTest
                SceneLoadingTest AnimationTest
                BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
                RasterizationTest SceneObjectTest
