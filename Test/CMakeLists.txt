@@ -15,7 +15,7 @@ foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach(TEST_CASE)
 
-target_link_libraries(OpenALTest ${ALUT_LIBRARY} ${OPENAL_LIBRARY})
+target_link_libraries(OpenALTest ${OPENAL_LIBRARY})
 
 target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)

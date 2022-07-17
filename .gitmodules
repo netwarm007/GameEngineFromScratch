@@ -58,6 +58,3 @@
 [submodule "External/src/imgui-node-editor"]
 	path = External/src/imgui-node-editor
 	url = git@github.com:thedmd/imgui-node-editor.git
-[submodule "External/src/freealut"]
-	path = External/src/freealut
-	url = https://github.com/vancegroup/freealut

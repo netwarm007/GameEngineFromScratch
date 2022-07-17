@@ -1,9 +1,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "AL/alut.h"
+#include "AL/al.h"
+#include "AL/alc.h"
 
 #include "AssetLoader.hpp"
+#include "WAVE.hpp"
 
 #define NUM_BUFFERS 1
 #define NUM_SOURCES 1
@@ -21,13 +23,30 @@ ALuint buffer[NUM_BUFFERS];
 ALuint source[NUM_SOURCES];
 ALuint environemnt[NUM_ENVIRONMENTS];
 
-void init(void)
+static void getOpenALFormat(ALenum& out_format, My::AudioClipFormat in_format) {
+    switch(in_format) {
+        case My::AudioClipFormat::MONO_8:
+            out_format = AL_FORMAT_MONO8;
+            break;
+        case My::AudioClipFormat::MONO_16:
+            out_format = AL_FORMAT_MONO16;
+            break;
+        case My::AudioClipFormat::STEREO_8:
+            out_format = AL_FORMAT_STEREO8;
+            break;
+        case My::AudioClipFormat::STEREO_16:
+            out_format = AL_FORMAT_STEREO16;
+            break;
+        default:
+            assert(0);
+    }
+}
+
+static void init(void)
 {
     alListenerfv(AL_POSITION, listenerPos);
     alListenerfv(AL_VELOCITY, listenerVel);
     alListenerfv(AL_ORIENTATION, listenerOri);
-
-    alGetError();
 
     alGenBuffers(NUM_BUFFERS, buffer);
 
@@ -36,17 +55,18 @@ void init(void)
         printf("- Error creating buffers !!\n");
         exit(1);
     }
-    else
-    {
-        printf("init() - No errors yet.\n");
-    }
 
     My::AssetLoader assetLoader;
-    auto audioFilePath = assetLoader.GetFileRealPath("Audio/test.wave");
-    buffer[0] = alutCreateBufferFromFile(audioFilePath.c_str());
+    My::WaveParser waveParser;
+    auto audioData = assetLoader.SyncOpenAndReadBinary("Audio/test.wave");
+    auto audioClip = waveParser.Parse(audioData);
 
-    alGetError();
-    
+    ALenum format;
+
+    getOpenALFormat(format, audioClip.format);
+
+    alBufferData(buffer[0], format, audioClip.data, (ALsizei) audioClip.data_length, (ALsizei) audioClip.sample_rate);
+
     alGenSources(NUM_SOURCES, source);
 
     if(alGetError() != AL_NO_ERROR)
@@ -69,7 +89,23 @@ void init(void)
 
 int main(int argc, char** argv)
 {
-    alutInit(&argc, argv);
+    ALCdevice *device;
+    ALCcontext *context;
+
+    device = alcOpenDevice(NULL);
+    assert(device);
+
+    context = alcCreateContext(device, NULL);
+    assert(context);
+
+    if (!alcMakeContextCurrent(context))
+    {
+        alcDestroyContext(context);
+        alcCloseDevice(device);
+        assert(0);
+
+        return -1;
+    }
 
     init();
 
@@ -91,7 +127,8 @@ int main(int argc, char** argv)
     char c;
     c = getchar();
 
-    alutExit();
+    alcDestroyContext(context);
+    alcCloseDevice(device);
 
     return 0;
 }
