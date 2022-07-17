@@ -453,17 +453,18 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         _renderEncoder.label = @"Render Pass Render Encoder";
     }
 
-    [renderPassDescriptor release];
-
     [_renderEncoder pushDebugGroup:@"Begin Pass"];
 
-    MTLViewport viewport{0.0,
-                         0.0,
-                         static_cast<double>(frame.colorTextures[0].width),
-                         static_cast<double>(frame.colorTextures[0].height),
-                         0.0,
-                         1.0};
+    MTLViewport viewport{
+        0.0,
+        0.0,
+        static_cast<double>([renderPassDescriptor.colorAttachments[0].texture width]),
+        static_cast<double>([renderPassDescriptor.colorAttachments[0].texture height]),
+        0.0,
+        1.0};
     [_renderEncoder setViewport:viewport];
+
+    [renderPassDescriptor release];
 }
 
 - (void)endPass:(Frame&)frame {
@@ -711,12 +712,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     [_renderEncoder pushDebugGroup:@"BeginShadowMap"];
 
-    MTLViewport viewport{0.0,
-                         0.0,
-                         static_cast<double>(shadowmap.width),
-                         static_cast<double>(shadowmap.height),
-                         0.0,
-                         1.0};
+    MTLViewport viewport{
+        0.0, 0.0, static_cast<double>(shadowmap.width), static_cast<double>(shadowmap.height),
+        0.0, 1.0};
     [_renderEncoder setViewport:viewport];
 
     shadow_map_constants.light_index = light_index;

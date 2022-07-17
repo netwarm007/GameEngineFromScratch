@@ -68,11 +68,12 @@ void CocoaApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
 }
 
 void CocoaApplication::Finalize() {
+    [m_pWindow release];
+
     if (ImGui::GetCurrentContext()) {
         ImGui_ImplOSX_Shutdown();
     }
 
-    [m_pWindow release];
     BaseApplication::Finalize();
 }
 
