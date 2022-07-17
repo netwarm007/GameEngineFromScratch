@@ -124,6 +124,7 @@ jobs:
             scripts/build_glslangValidator
             scripts/build_spirvcross
             scripts/build_libispc-texcomp
+            scripts/build_openal
       - run:
           name: "Build Engine"
           command: |
