@@ -310,7 +310,7 @@ jobs:
   build_android:
     working_directory: ~/project
     docker:
-      - image: cimg/android:2022.06-ndk
+      - image: cimg/android:2022.09-ndk
     resource_class: large
     environment:
       JVM_OPTS: -Xmx3200m
@@ -328,7 +328,7 @@ jobs:
             sudo apt-get update
             sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
             sudo apt-get install kitware-archive-keyring
-            sudo apt install -y cmake=3.23.2-0kitware1ubuntu20.04.1
+            sudo apt install -y cmake
       - run:
           name: Install Dependencies
           command: |
