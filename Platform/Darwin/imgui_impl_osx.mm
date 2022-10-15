@@ -25,12 +25,14 @@
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
 //  2022-XX-XX: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2022-10-06: Fixed mouse inputs on flipped views.
+//  2022-09-26: Inputs: Renamed ImGuiKey_ModXXX introduced in 1.87 to ImGuiMod_XXX (old names still supported).
 //  2022-05-03: Inputs: Removed ImGui_ImplOSX_HandleEvent() from backend API in favor of backend automatically handling event capture.
 //  2022-04-27: Misc: Store backend data in a per-context struct, allowing to use this backend with multiple contexts.
 //  2022-03-22: Inputs: Monitor NSKeyUp events to catch missing keyUp for key when user press Cmd + key
 //  2022-02-07: Inputs: Forward keyDown/keyUp events to OS when unused by dear imgui.
-//  2022-01-31: Fix building with old Xcode versions that are missing gamepad features.
-//  2022-01-26: Inputs: replaced short-lived io.AddKeyModsEvent() (added two weeks ago)with io.AddKeyEvent() using ImGuiKey_ModXXX flags. Sorry for the confusion.
+//  2022-01-31: Fixed building with old Xcode versions that are missing gamepad features.
+//  2022-01-26: Inputs: replaced short-lived io.AddKeyModsEvent() (added two weeks ago) with io.AddKeyEvent() using ImGuiKey_ModXXX flags. Sorry for the confusion.
 //  2021-01-20: Inputs: calling new io.AddKeyAnalogEvent() for gamepad support, instead of writing directly to io.NavInputs[].
 //  2022-01-17: Inputs: calling new io.AddMousePosEvent(), io.AddMouseButtonEvent(), io.AddMouseWheelEvent() API (1.87+).
 //  2022-01-12: Inputs: Added basic Platform IME support, hooking the io.SetPlatformImeDataFn() function.
@@ -63,23 +65,23 @@
 // Data
 struct ImGui_ImplOSX_Data
 {
-    CFTimeInterval          Time;
-    NSCursor*               MouseCursors[ImGuiMouseCursor_COUNT];
-    bool                    MouseCursorHidden;
-    ImGuiObserver*          Observer;
-    KeyEventResponder*      KeyEventResponder;
-    NSTextInputContext*     InputContext;
-    id                      Monitor;
-    NSWindow*               Window;
+    CFTimeInterval              Time;
+    NSCursor*                   MouseCursors[ImGuiMouseCursor_COUNT];
+    bool                        MouseCursorHidden;
+    ImGuiObserver*              Observer;
+    KeyEventResponder*          KeyEventResponder;
+    NSTextInputContext*         InputContext;
+    id                          Monitor;
+    NSWindow*                   Window;
 
-    ImGui_ImplOSX_Data()    { memset(this, 0, sizeof(*this)); }
+    ImGui_ImplOSX_Data()        { memset(this, 0, sizeof(*this)); }
 };
 
-static ImGui_ImplOSX_Data*  ImGui_ImplOSX_CreateBackendData()  { return IM_NEW(ImGui_ImplOSX_Data)(); }
-static ImGui_ImplOSX_Data*  ImGui_ImplOSX_GetBackendData()     { return (ImGui_ImplOSX_Data*)ImGui::GetIO().BackendPlatformUserData; }
-static void                 ImGui_ImplOSX_DestroyBackendData() { IM_DELETE(ImGui_ImplOSX_GetBackendData()); }
+static ImGui_ImplOSX_Data*      ImGui_ImplOSX_CreateBackendData()   { return IM_NEW(ImGui_ImplOSX_Data)(); }
+static ImGui_ImplOSX_Data*      ImGui_ImplOSX_GetBackendData()      { return (ImGui_ImplOSX_Data*)ImGui::GetIO().BackendPlatformUserData; }
+static void                     ImGui_ImplOSX_DestroyBackendData()  { IM_DELETE(ImGui_ImplOSX_GetBackendData()); }
 
-static inline CFTimeInterval GetMachAbsoluteTimeInSeconds()    { return static_cast<CFTimeInterval>(static_cast<double>(clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) / 1e9); }
+static inline CFTimeInterval    GetMachAbsoluteTimeInSeconds()      { return (CFTimeInterval)(double)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1e9); }
 
 // Forward Declarations
 static void ImGui_ImplOSX_InitPlatformInterface();
@@ -376,6 +378,18 @@ static ImGuiKey ImGui_ImplOSX_KeyCodeToImGuiKey(int key_code)
     }
 }
 
+#ifdef IMGUI_IMPL_METAL_CPP_EXTENSIONS
+
+IMGUI_IMPL_API bool ImGui_ImplOSX_Init(void* _Nonnull view) {
+    return ImGui_ImplOSX_Init((__bridge NSView*)(view));
+}
+
+IMGUI_IMPL_API void ImGui_ImplOSX_NewFrame(void* _Nullable view) {
+    return ImGui_ImplOSX_NewFrame((__bridge NSView*)(view));
+}
+
+#endif
+
 
 bool ImGui_ImplOSX_Init(NSView* view)
 {
@@ -516,7 +530,7 @@ static void ImGui_ImplOSX_UpdateGamepads()
 {
     ImGuiIO& io = ImGui::GetIO();
     memset(io.NavInputs, 0, sizeof(io.NavInputs));
-    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0) // FIXME: Technically feeding gamepad shouldn't depend on this now that they are regular inputs.
         return;
 
 #if APPLE_HAS_CONTROLLER
@@ -541,10 +555,10 @@ static void ImGui_ImplOSX_UpdateGamepads()
 #if APPLE_HAS_BUTTON_OPTIONS
     MAP_BUTTON(ImGuiKey_GamepadBack,            buttonOptions);
 #endif
-    MAP_BUTTON(ImGuiKey_GamepadFaceDown,        buttonA);              // Xbox A, PS Cross
-    MAP_BUTTON(ImGuiKey_GamepadFaceRight,       buttonB);              // Xbox B, PS Circle
     MAP_BUTTON(ImGuiKey_GamepadFaceLeft,        buttonX);              // Xbox X, PS Square
+    MAP_BUTTON(ImGuiKey_GamepadFaceRight,       buttonB);              // Xbox B, PS Circle
     MAP_BUTTON(ImGuiKey_GamepadFaceUp,          buttonY);              // Xbox Y, PS Triangle
+    MAP_BUTTON(ImGuiKey_GamepadFaceDown,        buttonA);              // Xbox A, PS Cross
     MAP_BUTTON(ImGuiKey_GamepadDpadLeft,        dpad.left);
     MAP_BUTTON(ImGuiKey_GamepadDpadRight,       dpad.right);
     MAP_BUTTON(ImGuiKey_GamepadDpadUp,          dpad.up);
@@ -637,8 +651,10 @@ static bool ImGui_ImplOSX_HandleEvent(NSEvent* event, NSView* view)
         {
             mousePoint = event.locationInWindow;
             mousePoint = [view convertPoint:mousePoint fromView:nil]; // Convert to local coordinates of view
-            CGSize size = view.bounds.size;
-            mousePoint.y = size.height - mousePoint.y;
+            if ([view isFlipped])
+                mousePoint = NSMakePoint(mousePoint.x, mousePoint.y);
+            else
+                mousePoint = NSMakePoint(mousePoint.x, view.bounds.size.height - mousePoint.y);
         }
 
         io.AddMousePosEvent((float)mousePoint.x, (float)mousePoint.y);
@@ -706,10 +722,10 @@ static bool ImGui_ImplOSX_HandleEvent(NSEvent* event, NSView* view)
         unsigned short key_code = [event keyCode];
         NSEventModifierFlags modifier_flags = [event modifierFlags];
 
-        io.AddKeyEvent(ImGuiKey_ModShift, (modifier_flags & NSEventModifierFlagShift)   != 0);
-        io.AddKeyEvent(ImGuiKey_ModCtrl,  (modifier_flags & NSEventModifierFlagControl) != 0);
-        io.AddKeyEvent(ImGuiKey_ModAlt,   (modifier_flags & NSEventModifierFlagOption)  != 0);
-        io.AddKeyEvent(ImGuiKey_ModSuper, (modifier_flags & NSEventModifierFlagCommand) != 0);
+        io.AddKeyEvent(ImGuiMod_Shift, (modifier_flags & NSEventModifierFlagShift)   != 0);
+        io.AddKeyEvent(ImGuiMod_Ctrl,  (modifier_flags & NSEventModifierFlagControl) != 0);
+        io.AddKeyEvent(ImGuiMod_Alt,   (modifier_flags & NSEventModifierFlagOption)  != 0);
+        io.AddKeyEvent(ImGuiMod_Super, (modifier_flags & NSEventModifierFlagCommand) != 0);
 
         ImGuiKey key = ImGui_ImplOSX_KeyCodeToImGuiKey(key_code);
         if (key != ImGuiKey_None)
@@ -1041,7 +1057,6 @@ static void ImGui_ImplOSX_ShutdownPlatformInterface()
 
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     ImGuiViewportDataOSX* data = (ImGuiViewportDataOSX*)main_viewport->PlatformUserData;
-    data->Window = nil;
     IM_DELETE(data);
     main_viewport->PlatformUserData = NULL;
     ImGui::DestroyPlatformWindows();
