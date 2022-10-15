@@ -328,7 +328,7 @@ jobs:
             sudo apt-get update
             sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
             sudo apt-get install kitware-archive-keyring
-            sudo apt install -y cmake
+            sudo apt install -y cmake=3.23.2
       - run:
           name: Install Dependencies
           command: |
