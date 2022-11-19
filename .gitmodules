@@ -61,3 +61,6 @@
 [submodule "External/src/freealut"]
 	path = External/src/freealut
 	url = https://github.com/vancegroup/freealut
+[submodule "openal"]
+	path = External/src/openal
+	url = git@github.com:kcat/openal-soft.git
