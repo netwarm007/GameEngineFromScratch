@@ -147,7 +147,7 @@ void init(void)
 
     My::AssetLoader assetLoader;
     My::WaveParser waveParser;
-    auto audioFile = assetLoader.SyncOpenAndReadBinary("Audio/test.wav");
+    auto audioFile = assetLoader.SyncOpenAndReadBinary("Audio/mixkit-sea-waves-loop-1196.wav");
     auto audioClip = waveParser.Parse(audioFile);
 
     ALenum format;
@@ -204,8 +204,8 @@ int main(int argc, char** argv)
     char c;
     c = getchar();
 
-    alDeleteSources(1, source);
-    alDeleteBuffers(1, buffer);
+    alDeleteSources(NUM_SOURCES, source);
+    alDeleteBuffers(NUM_BUFFERS, buffer);
 
     CloseAL();
 
