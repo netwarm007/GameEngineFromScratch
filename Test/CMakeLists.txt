@@ -15,7 +15,11 @@ foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
 endforeach(TEST_CASE)
 
 add_executable(OpenALTest OpenALTest.cpp)
-target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY})
+if(ANDROID)
+    target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY} OpenSLES)
+else()
+    target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY})
+endif()
 
 target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
 target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
