@@ -105,6 +105,8 @@ build_script:
 
     scripts/build_libispc-texcomp Release
 
+    scripts/build_openal Release
+
     scripts/build Release
 
     scripts/cook_material Release
