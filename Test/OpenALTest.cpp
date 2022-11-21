@@ -154,7 +154,6 @@ void init(void)
 
     getOpenALFormat(format, audioClip.format);
 
-    alGenBuffers(1, &buffer[0]);
     alBufferData(buffer[0], format, audioClip.data, (ALsizei) audioClip.data_length, (ALsizei) audioClip.sample_rate);
 
     /* Check if an error occured, and clean up if so. */
