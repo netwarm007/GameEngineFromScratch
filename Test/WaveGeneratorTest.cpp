@@ -104,7 +104,9 @@ int main(int argc, char** argv) {
         // write format chunk
         std::fwrite(&format_chunk_header, sizeof(format_chunk_header), 1, fp);
 
-        data_chunk_header.ChunkSize = SAMPLE_RATE;
+        data_chunk_header.ChunkSize = SAMPLE_RATE * 8;
+
+        std::fwrite(&data_chunk_header, sizeof(data_chunk_header), 1, fp);
 
         // now generate the wave
         const float oct_frequency[] = {261.6f, 293.6f, 329.6f, 349.2f, 392.0f, 440.0f, 493.8f, 523.2f};
@@ -112,7 +114,6 @@ int main(int argc, char** argv) {
             for (int i = 0; i < SAMPLE_RATE; i++) {
                 buf[i] = 0xFF * std::sin(oct_frequency[oct_index] * 2.0f * M_PI * i / SAMPLE_RATE);
             }
-            std::fwrite(&data_chunk_header, sizeof(data_chunk_header), 1, fp);
             std::fwrite(buf, sizeof(uint8_t), SAMPLE_RATE, fp);
         }
 

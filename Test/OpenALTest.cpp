@@ -24,7 +24,7 @@ ALfloat source0Vel[] = {  0.0f, 0.0f, 0.0f };
 
 ALuint buffer[NUM_BUFFERS];
 ALuint source[NUM_SOURCES];
-ALuint environemnt[NUM_ENVIRONMENTS];
+ALuint environment[NUM_ENVIRONMENTS];
 
 static void getOpenALFormat(ALenum& out_format, My::AudioClipFormat in_format) {
     switch(in_format) {
@@ -147,7 +147,7 @@ void init(void)
 
     My::AssetLoader assetLoader;
     My::WaveParser waveParser;
-    auto audioFile = assetLoader.SyncOpenAndReadBinary("Audio/mixkit-sea-waves-loop-1196.wav");
+    auto audioFile = assetLoader.SyncOpenAndReadBinary("Audio/octave.wav");
     auto audioClip = waveParser.Parse(audioFile);
 
     ALenum format;
@@ -203,6 +203,8 @@ int main(int argc, char** argv)
 
     char c;
     c = getchar();
+
+    alSourceStop(source[0]);
 
     alDeleteSources(NUM_SOURCES, source);
     alDeleteBuffers(NUM_BUFFERS, buffer);
