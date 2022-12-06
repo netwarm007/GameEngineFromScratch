@@ -157,12 +157,11 @@ void QuickHull::IterateHull(Polyhedron& hull, PointSet& point_set) {
         for_each(faces.begin(), faces.end(), [&](const FacePtr& x) {
             for (const auto& edge : x->Edges) {
                 Edge reverse_edge = {edge->second, edge->first};
-                if (edges_on_hole.find(*edge) != edges_on_hole.end()) {
+                if (edges_on_hole.contains(*edge)) {
                     // this edge is shared by faces going to be removed
                     // so it is not on the border of hole, remove it
                     edges_on_hole.erase(*edge);
-                } else if (edges_on_hole.find(reverse_edge) !=
-                           edges_on_hole.end()) {
+                } else if (edges_on_hole.contains(reverse_edge)) {
                     // this edge is shared by faces going to be removed
                     // so it is not on the border of hole, remove it
                     edges_on_hole.erase(reverse_edge);

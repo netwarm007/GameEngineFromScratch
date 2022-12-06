@@ -47,11 +47,11 @@ bool PipelineStateManager::RegisterPipelineState(PipelineState& pipelineState) {
 
 void PipelineStateManager::UnregisterPipelineState(
     PipelineState& pipelineState) {
-    const auto& it = m_pipelineStates.find(pipelineState.pipelineStateName);
-    if (it != m_pipelineStates.end()) {
-        DestroyPipelineState(*it->second);
+    if (m_pipelineStates.contains(pipelineState.pipelineStateName)) {
+        m_pipelineStates.erase(pipelineState.pipelineStateName);
     }
-    m_pipelineStates.erase(it);
+
+    DestroyPipelineState(pipelineState);
 }
 
 void PipelineStateManager::Clear() {

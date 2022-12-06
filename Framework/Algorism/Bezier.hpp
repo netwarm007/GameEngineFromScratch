@@ -77,8 +77,10 @@ class Bezier : public CurveBase, public Curve<TVAL, TPARAM> {
         }
 
         TVAL c1, c2;
-        c1 = m_OutgoingControlPoints.find(t1)->second;
-        c2 = m_IncomingControlPoints.find(t2)->second;
+        assert(m_OutgoingControlPoints.contains(t1));
+        assert(m_IncomingControlPoints.contains(t2));
+        c1 = m_OutgoingControlPoints.at(t1);
+        c2 = m_IncomingControlPoints.at(t2);
 
         typename NewtonRapson<TVAL, TPARAM>::nr_f f = [t2, t1, c2, c1,
                                                        t](TPARAM s) {
@@ -110,8 +112,10 @@ class Bezier : public CurveBase, public Curve<TVAL, TPARAM> {
             auto t2 = Curve<TVAL, TPARAM>::m_Knots[index];
 
             TVAL c1, c2;
-            c1 = m_OutgoingControlPoints.find(t1)->second;
-            c2 = m_IncomingControlPoints.find(t2)->second;
+            assert(m_OutgoingControlPoints.contains(t1));
+            assert(m_IncomingControlPoints.contains(t2));
+            c1 = m_OutgoingControlPoints.at(t1);
+            c2 = m_IncomingControlPoints.at(t2);
 
             return (t2 - 3.0f * c2 + 3.0f * c1 - t1) * pow(s, 3.0f) +
                    3.0f * (c2 - 2.0f * c1 + t1) * pow(s, 2.0f) +
