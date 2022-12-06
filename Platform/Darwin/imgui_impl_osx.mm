@@ -1057,7 +1057,9 @@ static void ImGui_ImplOSX_ShutdownPlatformInterface()
 
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     ImGuiViewportDataOSX* data = (ImGuiViewportDataOSX*)main_viewport->PlatformUserData;
+    data->Window = NULL;
     IM_DELETE(data);
     main_viewport->PlatformUserData = NULL;
+
     ImGui::DestroyPlatformWindows();
 }
