@@ -29,10 +29,8 @@ class Box : public Geometry, _implements_ Intersectable<T> {
         return m_vHalfExtents + m_fMargin;
     }
 
-    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin) const override {
-        bool result = false;
-
-        return result;
+    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
+        return false;
     }
 
    protected:
