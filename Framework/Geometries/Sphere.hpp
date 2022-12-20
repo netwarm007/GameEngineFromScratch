@@ -52,16 +52,18 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
             T t1 = (-b - sroot) * 0.5;
             T t2 = (-b + sroot) * 0.5;
 
-            if (t1 >= tmin)
+            if (t1 >= tmin) {
                 t = t1;
-            else if (t2 >= tmin)
+                result = true;
+            }
+            else if (t2 >= tmin) {
                 t = t2;
+                result = true;
+            }
 
             if (t < h.getT()) {
                 h.set(t, m_color);
             }
-
-            result = true;
 
         } else
             result = false;
