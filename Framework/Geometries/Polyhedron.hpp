@@ -12,7 +12,7 @@ struct Polyhedron : public Geometry {
     // the given transform trans.
     void GetAabb(const Matrix4X4<T>& trans, Vector3<T>& aabbMin,
                  Vector3<T>& aabbMax) const final {
-        aabbMin = Vector3f(std::numeric_limits<T>::max());
+        aabbMin = Vector3f((std::numeric_limits<T>::max)()); // Windows: Work around of warning C4003: not enough arguments for function-like macro invocation 'max'
         aabbMax = Vector3f(std::numeric_limits<T>::lowest());
 
         for (const auto& pFace : Faces) {

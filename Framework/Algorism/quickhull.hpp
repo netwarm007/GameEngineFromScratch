@@ -32,11 +32,11 @@ class QuickHull {
         }
 
         PointPtr<T> ExtremePointXMin =
-            std::make_shared<Point<T>>(std::numeric_limits<T>::max());
+            std::make_shared<Point<T>>((std::numeric_limits<T>::max)()); // Windows: Work around of warning C4003: not enough arguments for function-like macro invocation 'max'
         PointPtr<T> ExtremePointYMin =
-            std::make_shared<Point<T>>(std::numeric_limits<T>::max());
+            std::make_shared<Point<T>>((std::numeric_limits<T>::max)());
         PointPtr<T> ExtremePointZMin =
-            std::make_shared<Point<T>>(std::numeric_limits<T>::max());
+            std::make_shared<Point<T>>((std::numeric_limits<T>::max)());
         PointPtr<T> ExtremePointXMax =
             std::make_shared<Point<T>>(std::numeric_limits<T>::lowest());
         PointPtr<T> ExtremePointYMax =
