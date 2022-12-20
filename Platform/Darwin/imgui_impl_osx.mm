@@ -1,6 +1,7 @@
 // dear imgui: Platform Backend for OSX / Cocoa
 // This needs to be used along with a Renderer (e.g. OpenGL2, OpenGL3, Vulkan, Metal..)
-// [ALPHA] Early backend, not well tested. If you want a portable application, prefer using the GLFW or SDL platform Backends on Mac.
+// - Not well tested. If you want a portable application, prefer using the GLFW or SDL platform Backends on Mac.
+// - Requires linking with the GameController framework ("-framework GameController").
 
 // Implemented features:
 //  [X] Platform: Mouse cursor shape and visibility. Disable with 'io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange'.
@@ -25,6 +26,7 @@
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
 //  2022-XX-XX: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2022-11-02: Fixed mouse coordinates before clicking the host window.
 //  2022-10-06: Fixed mouse inputs on flipped views.
 //  2022-09-26: Inputs: Renamed ImGuiKey_ModXXX introduced in 1.87 to ImGuiMod_XXX (old names still supported).
 //  2022-05-03: Inputs: Removed ImGui_ImplOSX_HandleEvent() from backend API in favor of backend automatically handling event capture.
@@ -650,6 +652,8 @@ static bool ImGui_ImplOSX_HandleEvent(NSEvent* event, NSView* view)
         else
         {
             mousePoint = event.locationInWindow;
+            if (event.window == nil)
+                mousePoint = [[view window] convertPointFromScreen:mousePoint];
             mousePoint = [view convertPoint:mousePoint fromView:nil]; // Convert to local coordinates of view
             if ([view isFlipped])
                 mousePoint = NSMakePoint(mousePoint.x, mousePoint.y);
