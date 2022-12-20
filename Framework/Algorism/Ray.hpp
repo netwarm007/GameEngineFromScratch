@@ -9,7 +9,7 @@ class Ray {
    public:
     // CONSTRUCTOR & DESTRUCTOR
     Ray() {}
-    Ray(const Vector3<T> &dir, const Vector3<T> &orig) {
+    Ray(const Vector3<T> &orig, const Vector3<T> &dir) {
         direction = dir;
         Normalize(direction);
         origin = orig;
