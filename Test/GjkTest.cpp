@@ -9,6 +9,8 @@ using namespace My;
 using namespace std;
 using namespace std::placeholders;
 
+using TestDataType = float;
+
 int main(int argc, char** argv) {
     int point_num = 100;
 
@@ -16,19 +18,19 @@ int main(int argc, char** argv) {
         point_num = atoi(argv[1]);
     }
 
-    Polyhedron A, B;
+    Polyhedron<TestDataType> A, B;
     {
         cout << "Generate Polyhedron A" << endl;
         default_random_engine generator;
         generator.seed(1);
-        uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+        uniform_real_distribution<TestDataType> distribution(-1.0, 1.0);
         auto dice = std::bind(distribution, generator);
 
-        ConvexHull convex_hull;
+        ConvexHull<TestDataType> convex_hull;
         cout << "Points Generated:" << endl;
         for (auto i = 0; i < point_num; i++) {
-            PointPtr point_ptr =
-                make_shared<Point>(Point{dice(), dice(), dice()});
+            PointPtrf point_ptr =
+                make_shared<Point<TestDataType>>(Point<TestDataType>{dice(), dice(), dice()});
             convex_hull.AddPoint(std::move(point_ptr));
         }
 
@@ -43,13 +45,13 @@ int main(int argc, char** argv) {
         cout << "Generate Polyhedron B" << endl;
         default_random_engine generator;
         generator.seed(200);
-        uniform_real_distribution<float> distribution(0.6f, 1.7f);
+        uniform_real_distribution<TestDataType> distribution(0.6, 1.7);
         auto dice = std::bind(distribution, generator);
 
-        ConvexHull convex_hull;
+        ConvexHull<TestDataType> convex_hull;
         for (auto i = 0; i < point_num; i++) {
-            PointPtr point_ptr =
-                make_shared<Point>(Point{dice(), dice(), dice()});
+            PointPtr<TestDataType> point_ptr =
+                make_shared<Point<TestDataType>>(Point<TestDataType>{dice(), dice(), dice()});
             convex_hull.AddPoint(std::move(point_ptr));
         }
 
@@ -60,13 +62,13 @@ int main(int argc, char** argv) {
         cerr << "num of faces generated: " << B.Faces.size() << endl;
     }
 
-    SupportFunction support_function_A = [=](auto&& arg1) {
+    SupportFunction<TestDataType> support_function_A = [=](auto&& arg1) {
         return ConvexPolyhedronSupportFunction(A, arg1);
     };
-    SupportFunction support_function_B = [=](auto&& arg1) {
+    SupportFunction<TestDataType> support_function_B = [=](auto&& arg1) {
         return ConvexPolyhedronSupportFunction(B, arg1);
     };
-    PointList simplex;
+    PointListf simplex;
     Vector3f direction({1.0f, 0.0f, 0.0f});
     int intersected;
     while ((intersected = GjkIntersection(

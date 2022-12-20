@@ -54,7 +54,7 @@ class SceneObjectMesh : public BaseSceneObject {
     };
     const PrimitiveType& GetPrimitiveType() { return m_PrimitiveType; };
     [[nodiscard]] BoundingBox GetBoundingBox() const;
-    [[nodiscard]] ConvexHull GetConvexHull() const;
+    [[nodiscard]] ConvexHull<float> GetConvexHull() const;
 
     friend std::ostream& operator<<(std::ostream& out,
                                     const SceneObjectMesh& obj);

@@ -5,7 +5,8 @@
 namespace My {
 class SceneObjectGeometry : public BaseSceneObject {
    protected:
-    std::vector<std::shared_ptr<SceneObjectMesh>> m_Mesh;
+    using MeshType = SceneObjectMesh;
+    std::vector<std::shared_ptr<MeshType>> m_Mesh;
     bool m_bVisible;
     bool m_bShadow;
     bool m_bMotionBlur;
@@ -38,19 +39,19 @@ class SceneObjectGeometry : public BaseSceneObject {
     }
 
     void AddMesh(std::shared_ptr<SceneObjectMesh>&& mesh) {
-        m_Mesh.push_back(std::forward<std::shared_ptr<SceneObjectMesh>>(mesh));
+        m_Mesh.push_back(std::forward<std::shared_ptr<MeshType>>(mesh));
     }
-    std::weak_ptr<SceneObjectMesh> GetMesh() {
+    std::weak_ptr<MeshType> GetMesh() {
         return (m_Mesh.empty() ? nullptr : m_Mesh[0]);
     }
-    std::weak_ptr<SceneObjectMesh> GetMeshLOD(size_t lod) {
+    std::weak_ptr<MeshType> GetMeshLOD(size_t lod) {
         return (lod < m_Mesh.size() ? m_Mesh[lod] : nullptr);
     }
     [[nodiscard]] BoundingBox GetBoundingBox() const {
         return m_Mesh.empty() ? BoundingBox() : m_Mesh[0]->GetBoundingBox();
     }
-    [[nodiscard]] ConvexHull GetConvexHull() const {
-        return m_Mesh.empty() ? ConvexHull() : m_Mesh[0]->GetConvexHull();
+    [[nodiscard]] ConvexHull<float> GetConvexHull() const {
+        return m_Mesh.empty() ? ConvexHull<float>() : m_Mesh[0]->GetConvexHull();
     }
 
     friend std::ostream& operator<<(std::ostream& out,

@@ -40,7 +40,7 @@ bool OpenGLGraphicsManagerCommonBase::setShaderParameter(
     char uniformName[256];
 
     for (int32_t i = 0; i < count; i++) {
-        sprintf(uniformName, "%s[%d]", paramName, i);
+        snprintf(uniformName, 256, "%s[%d]", paramName, i);
         result &= setShaderParameter(uniformName, *(param + i));
     }
 

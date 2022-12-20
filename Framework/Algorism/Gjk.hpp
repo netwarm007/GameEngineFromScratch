@@ -7,97 +7,100 @@
 #include "geommath.hpp"
 
 namespace My {
-using SupportFunction = std::function<const Point(const Vector3f&)>;
+template <typename T>
+using SupportFunction = std::function<const Point<T>(const Vector3<T>&)>;
 
-inline void NearestPointInTriangleToPoint(const PointList& vertices,
-                                          const Point& point, float& s,
-                                          float& t) {
+template <typename T>
+inline void NearestPointInTriangleToPoint(const PointList<T>& vertices,
+                                          const Point<T>& point, T& s,
+                                          T& t) {
     assert(vertices.size() == 3);
     auto A = vertices[0];
     auto B = vertices[1];
     auto C = vertices[2];
-    Vector3f edge0 = *B - *A;
-    Vector3f edge1 = *C - *A;
-    Vector3f v0 = *A - point;
+    Vector3<T> edge0 = *B - *A;
+    Vector3<T> edge1 = *C - *A;
+    Vector3<T> v0 = *A - point;
 
-    float a, b, c, d, e;
+    T a, b, c, d, e;
     DotProduct(a, edge0, edge0);
     DotProduct(b, edge0, edge1);
     DotProduct(c, edge1, edge1);
     DotProduct(d, edge0, v0);
     DotProduct(e, edge1, v0);
 
-    float det = a * c - b * b;
+    auto det = a * c - b * b;
     s = b * e - c * d;
     t = b * d - a * e;
 
     if (s + t < det) {
-        if (s < 0.0f) {
-            if (t < 0.0f) {
-                if (d < 0.0f) {
-                    s = std::clamp(-d / a, 0.0f, 1.0f);
-                    t = 0.0f;
+        if (s < 0.0) {
+            if (t < 0.0) {
+                if (d < 0.0) {
+                    s = std::clamp(-d / a, static_cast<T>(0.0), static_cast<T>(1.0));
+                    t = 0.0;
                 } else {
-                    s = 0.0f;
-                    t = std::clamp(-e / c, 0.0f, 1.0f);
+                    s = 0.0;
+                    t = std::clamp(-e / c, static_cast<T>(0.0), static_cast<T>(1.0));
                 }
             } else {
-                s = 0.0f;
-                t = std::clamp(-e / c, 0.0f, 1.0f);
+                s = 0.0;
+                t = std::clamp(-e / c, static_cast<T>(0.0), static_cast<T>(1.0));
             }
-        } else if (t < 0.0f) {
-            s = std::clamp(-d / a, 0.0f, 1.0f);
-            t = 0.0f;
+        } else if (t < 0.0) {
+            s = std::clamp(-d / a, static_cast<T>(0.0), static_cast<T>(1.0));
+            t = 0.0;
         } else {
-            float invDet = 1.0f / det;
+            auto invDet = 1.0 / det;
             s *= invDet;
             t *= invDet;
         }
     } else {
-        if (s < 0.0f) {
-            float tmp0 = b + d;
-            float tmp1 = c + e;
+        if (s < 0.0) {
+            auto tmp0 = b + d;
+            auto tmp1 = c + e;
             if (tmp1 > tmp0) {
-                float numer = tmp1 - tmp0;
-                float denom = a - 2.0f * b + c;
-                s = std::clamp(numer / denom, 0.0f, 1.0f);
-                t = 1.0f - s;
+                auto numer = tmp1 - tmp0;
+                auto denom = a - 2.0 * b + c;
+                s = std::clamp(numer / denom, 0.0, 1.0);
+                t = 1.0 - s;
             } else {
-                t = std::clamp(-e / c, 0.0f, 1.0f);
-                s = 0.0f;
+                t = std::clamp(-e / c, static_cast<T>(0.0), static_cast<T>(1.0));
+                s = 0.0;
             }
-        } else if (t < 0.0f) {
+        } else if (t < 0.0) {
             if (a + d > b + e) {
-                float numer = c + e - b - d;
-                float denom = a - 2.0f * b + c;
-                s = std::clamp(numer / denom, 0.0f, 1.0f);
-                t = 1.0f - s;
+                auto numer = c + e - b - d;
+                auto denom = a - 2.0 * b + c;
+                s = std::clamp(numer / denom, 0.0, 1.0);
+                t = 1.0 - s;
             } else {
-                s = std::clamp(-e / c, 0.0f, 1.0f);
-                t = 0.0f;
+                s = std::clamp(-e / c, static_cast<T>(0.0), static_cast<T>(1.0));
+                t = 0.0;
             }
         } else {
-            float numer = c + e - b - d;
-            float denom = a - 2.0f * b + c;
-            s = std::clamp(numer / denom, 0.0f, 1.0f);
-            t = 1.0f - s;
+            auto numer = c + e - b - d;
+            auto denom = a - 2.0 * b + c;
+            s = std::clamp(numer / denom, 0.0, 1.0);
+            t = 1.0 - s;
         }
     }
-}
+};
 
-inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
-                           Vector3f& direction, PointList& simplex) {
-    Point A;
+template <typename T>
+inline int GjkIntersection(const SupportFunction<T>& a, const SupportFunction<T>& b,
+                           Vector3<T>& direction, PointList<T>& simplex) {
+    Point<T> A;
     if (simplex.empty()) {
         // initialize
-        A = a(direction) - b(direction * -1.0f);
-        direction = A * -1.0f;
-        simplex.push_back(std::make_shared<Point>(A));
+        A = a(direction) - b(direction * -1.0);
+        direction = A * -1.0;
+        simplex.push_back(std::make_shared<Point<T>>(A));
     }
 
     A = a(direction) - b(direction * -1.0f);
 
-    float dot_product;
+    T dot_product;
     DotProduct(dot_product, A, direction);
     // A must be further than origin on the direction
     // otherwise we know the minkowski substraction does
@@ -108,10 +111,10 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
     }
 
     // update the simplex
-    simplex.push_back(std::make_shared<Point>(A));
+    simplex.push_back(std::make_shared<Point<T>>(A));
 
     // calculate the nearest point to origin on simplex
-    Point P;
+    Point<T> P;
     switch (simplex.size()) {
         case 0:
             // should never happen or we have wrong assumption
@@ -121,7 +124,7 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
             // the simplex is a vertex.
             // simply returns AO (from the vertex to origin)
             // as next search direction
-            direction = A * -1.0f;
+            direction = A * -1.0;
         } break;
         case 2: {
             // the simplex is a line segment.
@@ -134,16 +137,16 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
             float t;
 
             auto line_seg = *B - *A;
-            DotProduct(t, *A * -1.0f, line_seg);
-            float sqr_length;
+            DotProduct(t, *A * -1.0, line_seg);
+            T sqr_length;
             DotProduct(sqr_length, line_seg, line_seg);
-            t = std::clamp(t / sqr_length, 0.0f, 1.0f);
+            t = std::clamp(t / sqr_length, static_cast<T>(0.0), static_cast<T>(1.0));
 
             // this means P is at A which should never happen
             // because B is reported to be closer to origin than A
-            assert(t > std::numeric_limits<float>::epsilon());
+            assert(t > std::numeric_limits<T>::epsilon());
 
-            if (1.0f - t < std::numeric_limits<float>::epsilon()) {
+            if (1.0 - t < std::numeric_limits<T>::epsilon()) {
                 // this means P is at B
                 // remove A because it is not needed now
                 P = *B;
@@ -153,7 +156,7 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
                 P = *A + (*B - *A) * t;
             }
 
-            direction = P * -1.0f;
+            direction = P * -1.0;
         } break;
         case 3: {
             // the simplex is a triangle.
@@ -162,27 +165,27 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
             // then updte the next search direction
             // to PO
             float s, t;
-            NearestPointInTriangleToPoint(simplex, Point(0.0f), s, t);
+            NearestPointInTriangleToPoint(simplex, Point<T>(0.0), s, t);
 
-            assert(s > std::numeric_limits<float>::epsilon() ||
-                   t > std::numeric_limits<float>::epsilon());
+            assert(s > std::numeric_limits<T>::epsilon() ||
+                   t > std::numeric_limits<T>::epsilon());
 
             auto A = simplex[0];
             auto B = simplex[1];
             auto C = simplex[2];
-            if (s < std::numeric_limits<float>::epsilon()) {
+            if (s < std::numeric_limits<T>::epsilon()) {
                 // P is on edge 1 (AC) so B can be removed
                 simplex.clear();
                 simplex = {A, C};
             }
 
-            if (t < std::numeric_limits<float>::epsilon()) {
+            if (t < std::numeric_limits<T>::epsilon()) {
                 // P is on edge 0 (AB) so C can be removed
                 simplex.clear();
                 simplex = {A, B};
             }
 
-            if (std::abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon()) {
+            if (std::abs(1.0 - (s + t)) < std::numeric_limits<T>::epsilon()) {
                 // P is on edge 3 (BC) so A can be removed
                 simplex.clear();
                 simplex = {B, C};
@@ -190,14 +193,14 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
 
             P = *A + (*B - *A) * s + (*C - *A) * t;
 
-            direction = P * -1.0f;
+            direction = P * -1.0;
         } break;
         case 4: {
-            Polyhedron tetrahedron;
+            Polyhedron<T> tetrahedron;
             tetrahedron.AddTetrahedron(simplex);
-            FacePtr pNextFace = nullptr;
+            FacePtr<T> pNextFace = nullptr;
             for (const auto& pFace : tetrahedron.Faces) {
-                if (isPointAbovePlane(pFace, Point(0.0f))) {
+                if (isPointAbovePlane(pFace, Point<T>(0.0))) {
                     pNextFace = pFace;
                     break;
                 }
@@ -208,30 +211,30 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
                 return 1;
             }
 
-            float s, t;
+            T s, t;
             auto A = pNextFace->Edges[0]->first;
             auto B = pNextFace->Edges[1]->first;
             auto C = pNextFace->Edges[2]->first;
 
-            PointList vertices;
+            PointList<T> vertices;
             vertices.push_back(A);
             vertices.push_back(B);
             vertices.push_back(C);
-            NearestPointInTriangleToPoint(vertices, Point(0.0f), s, t);
+            NearestPointInTriangleToPoint(vertices, Point<T>(0.0), s, t);
 
-            if (s < std::numeric_limits<float>::epsilon()) {
+            if (s < std::numeric_limits<T>::epsilon()) {
                 // P is on edge 1 (AC) so B can be removed
                 simplex.clear();
                 simplex = {A, C};
             }
 
-            if (t < std::numeric_limits<float>::epsilon()) {
+            if (t < std::numeric_limits<T>::epsilon()) {
                 // P is on edge 0 (AB) so C can be removed
                 simplex.clear();
                 simplex = {A, B};
             }
 
-            if (std::abs(1.0f - (s + t)) < std::numeric_limits<float>::epsilon()) {
+            if (std::abs(1.0 - (s + t)) < std::numeric_limits<T>::epsilon()) {
                 // P is on edge 3 (BC) so A can be removed
                 simplex.clear();
                 simplex = {B, C};
@@ -252,21 +255,22 @@ inline int GjkIntersection(const SupportFunction& a, const SupportFunction& b,
     }
 
     // check if we are at origin
-    if (Length(direction) < std::numeric_limits<float>::epsilon()) {
+    if (Length(direction) < std::numeric_limits<T>::epsilon()) {
         return 1;
     }
 
     return -1;
 }
 
-inline Point ConvexPolyhedronSupportFunction(const Polyhedron& polyhedron,
-                                             const Vector3f& direction) {
-    float max_score = std::numeric_limits<float>::lowest();
-    PointPtr extreme_point;
+template <typename T>
+inline Point<T> ConvexPolyhedronSupportFunction(const Polyhedron<T>& polyhedron,
+                                             const Vector3<T>& direction) {
+    T max_score = std::numeric_limits<T>::lowest();
+    PointPtr<T> extreme_point;
     for (const auto& pFace : polyhedron.Faces) {
-        float score;
+        T score;
         DotProduct(score, pFace->Normal, direction);
-        if (score <= 0.0f) {
+        if (score <= 0.0) {
             // back-facing face, ignore it
             continue;
         }

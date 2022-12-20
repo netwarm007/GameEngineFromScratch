@@ -36,7 +36,7 @@ void MyPhysicsManager::IterateConvexHull() {
                 auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
                 auto pGeometry = _rigidBody->GetCollisionShape();
                 if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron) {
-                    if (dynamic_pointer_cast<ConvexHull>(pGeometry)
+                    if (dynamic_pointer_cast<ConvexHull<float>>(pGeometry)
                             ->Iterate()) {
                         // The geometry convex hull is not fully iterated,
                         // so we break the loop to postpending the process to
@@ -70,7 +70,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node,
 
     switch (geometry.CollisionType()) {
         case SceneObjectCollisionType::kSceneObjectCollisionTypeSphere: {
-            auto collision_box = make_shared<Sphere>(param[0]);
+            auto collision_box = make_shared<Sphere<float>>(param[0]);
 
             const auto trans = node.GetCalculatedTransform();
             auto motionState = make_shared<MotionState>(*trans);

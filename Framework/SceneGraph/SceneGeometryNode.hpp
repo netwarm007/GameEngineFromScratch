@@ -3,6 +3,7 @@
 
 namespace My {
 class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
+    using SceneNodeType = SceneNode<SceneObjectGeometry>;
    protected:
     bool m_bVisible;
     bool m_bShadow;
@@ -12,7 +13,7 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
 
    protected:
     void dump(std::ostream& out) const override {
-        SceneNode::dump(out);
+        SceneNodeType::dump(out);
         out << "Visible: " << m_bVisible << std::endl;
         out << "Shadow: " << m_bShadow << std::endl;
         out << "Motion Blur: " << m_bMotionBlur << std::endl;
@@ -23,7 +24,7 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
     };
 
    public:
-    using SceneNode::SceneNode;
+    using SceneNodeType::SceneNode;
 
     void SetVisibility(bool visible) { m_bVisible = visible; };
     bool Visible() { return m_bVisible; };
@@ -31,7 +32,7 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
     bool CastShadow() { return m_bShadow; };
     void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
     bool MotionBlur() { return m_bMotionBlur; };
-    using SceneNode::AddSceneObjectRef;
+    using SceneNodeType::AddSceneObjectRef;
     void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
     void AddMaterialRef(const std::string&& key) {
         m_Materials.push_back(key);

@@ -7,8 +7,9 @@
 using namespace std;
 
 namespace My {
-Point2DList BresenhamLineInterpolate(const Point2D& start, const Point2D& end) {
-    Point2DList result;
+template <typename T>
+Point2DList<T> BresenhamLineInterpolate(const Point2D<T>& start, const Point2D<T>& end) {
+    Point2DList<T> result;
 
     auto delta_x = end[0] - start[0];
     auto delta_y = end[1] - start[1];
@@ -21,7 +22,7 @@ Point2DList BresenhamLineInterpolate(const Point2D& start, const Point2D& end) {
     int32_t y = static_cast<int32_t>(start[1]);
     for (int32_t x = static_cast<int32_t>(start[0]);
          x <= static_cast<int32_t>(end[0]); x++) {
-        result.push_back(make_shared<Point2D>(Point2D({(float)x, (float)y})));
+        result.push_back(make_shared<Point2D<T>>(Point2D<T>({static_cast<T>(x), static_cast<T>(y)})));
         error += delta_err;
         while (error >= 0.5) {
             y += (delta_y > 0 ? 1 : -1) * 1;

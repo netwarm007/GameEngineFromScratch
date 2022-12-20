@@ -8,6 +8,8 @@
 using namespace std;
 using namespace My;
 
+using TestDataType = float;
+
 int main(int argc, char** argv) {
     int point_num = 30;
 
@@ -16,19 +18,19 @@ int main(int argc, char** argv) {
     }
 
     default_random_engine generator;
-    uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+    uniform_real_distribution<TestDataType> distribution(-1.0, 1.0);
     auto dice = std::bind(distribution, generator);
 
-    QuickHull quick_hull;
-    PointSet point_set;
+    QuickHull<TestDataType> quick_hull;
+    PointSet<TestDataType> point_set;
     cout << "Points Generated:" << endl;
     for (auto i = 0; i < point_num; i++) {
-        PointPtr point_ptr = make_shared<Point>(Point{dice(), dice(), dice()});
+        PointPtr<TestDataType> point_ptr = make_shared<Point<TestDataType>>(Point<TestDataType>{dice(), dice(), dice()});
         cout << *point_ptr;
         point_set.insert(std::move(point_ptr));
     }
 
-    Polyhedron convex_hull;
+    Polyhedron<TestDataType> convex_hull;
     while (quick_hull.Iterate(convex_hull, point_set)) {
         cerr << "num of faces after this iteration: "
              << convex_hull.Faces.size() << endl;

@@ -37,16 +37,16 @@ void visualize(T points, const string& name) {
 
 int main(int argc, char** argv) {
     // raster a line
-    Point2D start_point({0, 0});
-    Point2D end_point({11, 4});
+    Point2Df start_point({0, 0});
+    Point2Df end_point({11, 4});
     auto points = BresenhamLineInterpolate(start_point, end_point);
 
     visualize(points, "Line");
 
     // raster a bottom flat triangle
-    Point2D v1 = {5.0f, 0.0f};
-    Point2D v2 = {0.0f, 8.0f};
-    Point2D v3 = {21.0f, 8.0f};
+    Point2Df v1 = {5.0f, 0.0f};
+    Point2Df v2 = {0.0f, 8.0f};
+    Point2Df v3 = {21.0f, 8.0f};
 
     points = BottomFlatTriangleInterpolation(v1, v2, v3);
 

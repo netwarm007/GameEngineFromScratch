@@ -1,11 +1,9 @@
 #pragma once
 #include "geommath.hpp"
 #include "portable.hpp"
+#include "Color.hpp"
 
 namespace My {
-typedef Vector<float, 3> RGBf;
-typedef Vector<float, 3> YCbCrf;
-
 const Matrix<float, 4, 4> RGB2YCbCr = {{{0.299f, -0.168736f, 0.5f, 0.0f},
                                         {0.587f, -0.331264f, -0.418688f, 0.0f},
                                         {0.114f, 0.5f, -0.081312f, 0.0f},

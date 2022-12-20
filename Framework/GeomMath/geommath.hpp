@@ -168,16 +168,22 @@ struct Vector {
     }
 };
 
-using Vector2f = Vector<float, 2>;
 
-using Vector3f = Vector<float, 3>;
-using Vector3 = Vector<double, 3>;
-using Vector3i16 = Vector<int16_t, 3>;
-using Vector3i32 = Vector<int32_t, 3>;
+template <typename T>
+using Vector2 = Vector<T, 2>;
+using Vector2f = Vector2<float>;
 
-using Vector4f = Vector<float, 4>;
-using R8G8B8A8Unorm = Vector<uint8_t, 4>;
-using Vector4i = Vector<uint8_t, 4>;
+template <typename T>
+using Vector3 = Vector<T, 3>;
+using Vector3f = Vector3<float>;
+using Vector3i16 = Vector3<int16_t>;
+using Vector3i32 = Vector3<int32_t>;
+
+template <typename T>
+using Vector4 = Vector<T, 4>;
+using Vector4f = Vector4<float>;
+using R8G8B8A8Unorm = Vector4<uint8_t>;
+using Vector4i = Vector4<uint8_t>;
 
 template <typename T>
 class Quaternion : public Vector<T, 4> {
@@ -494,6 +500,12 @@ struct Matrix {
         return false;
     }
 };
+
+template <typename T>
+using Matrix3X3 = Matrix<T, 3, 3>;
+
+template <typename T>
+using Matrix4X4 = Matrix<T, 4, 4>;
 
 using Matrix3X3f = Matrix<float, 3, 3>;
 using Matrix4X4f = Matrix<float, 4, 4>;
@@ -1059,30 +1071,63 @@ inline Matrix8X8f IDCT8X8(const Matrix8X8f& matrix) {
     return result;
 }
 
-using Point2D = Vector<float, 2>;
-using Point2DPtr = std::shared_ptr<Point2D>;
-using Point2DList = std::vector<Point2DPtr>;
-using Point = Vector<float, 3>;
-using PointPtr = std::shared_ptr<Point>;
-using PointSet = std::unordered_set<PointPtr>;
-using PointList = std::vector<PointPtr>;
-using Edge = std::pair<PointPtr, PointPtr>;
-inline bool operator==(const Edge& a, const Edge& b) {
+template <typename T>
+using Point2D = Vector<T, 2>;
+using Point2Df = Point2D<float>;
+
+template <typename T>
+using Point2DPtr = std::shared_ptr<Point2D<T>>;
+using Point2DPtrf = Point2DPtr<float>;
+
+template <typename T>
+using Point2DList = std::vector<Point2DPtr<T>>;
+using Point2DListf = Point2DList<float>;
+
+template <typename T>
+using Point = Vector<T, 3>;
+using Pointf = Point<float>;
+
+template <typename T>
+using PointPtr = std::shared_ptr<Point<T>>;
+using PointPtrf = PointPtr<float>;
+
+template <typename T>
+using PointSet = std::unordered_set<PointPtr<T>>;
+using PointSetf = PointSet<float>;
+
+template <typename T>
+using PointList = std::vector<PointPtr<T>>;
+using PointListf = PointList<float>;
+
+template <typename T>
+using Edge = std::pair<PointPtr<T>, PointPtr<T>>;
+template <typename T>
+inline bool operator==(const Edge<T>& a, const Edge<T>& b) {
     return (a.first == b.first && a.second == b.second) ||
            (a.first == b.second && a.second == b.first);
-}
-using EdgePtr = std::shared_ptr<Edge>;
-inline bool operator==(const EdgePtr& a, const EdgePtr& b) {
+};
+
+template <typename T>
+using EdgePtr = std::shared_ptr<Edge<T>>;
+
+template <typename T>
+inline bool operator==(const EdgePtr<T>& a, const EdgePtr<T>& b) {
     return (a->first == b->first && a->second == b->second) ||
            (a->first == b->second && a->second == b->first);
-}
-using EdgeSet = std::unordered_set<EdgePtr>;
-using EdgeList = std::vector<EdgePtr>;
+};
+
+template <typename T>
+using EdgeSet = std::unordered_set<EdgePtr<T>>;
+
+template <typename T>
+using EdgeList = std::vector<EdgePtr<T>>;
+
+template <typename T>
 struct Face {
-    EdgeList Edges;
+    EdgeList<T> Edges;
     Vector3f Normal;
-    [[nodiscard]] PointList GetVertices() const {
-        PointList vertices;
+    [[nodiscard]] PointList<T> GetVertices() const {
+        PointList<T> vertices;
         for (const auto& edge : Edges) {
             vertices.push_back(edge->first);
         }
@@ -1090,12 +1135,19 @@ struct Face {
         return vertices;
     }
 };
-using FacePtr = std::shared_ptr<Face>;
-using FaceSet = std::unordered_set<FacePtr>;
-using FaceList = std::vector<FacePtr>;
 
-inline float PointToPlaneDistance(const PointList& vertices,
-                                  const Point& point) {
+template <typename T>
+using FacePtr = std::shared_ptr<Face<T>>;
+
+template <typename T>
+using FaceSet = std::unordered_set<FacePtr<T>>;
+
+template <typename T>
+using FaceList = std::vector<FacePtr<T>>;
+
+template <typename T>
+inline float PointToPlaneDistance(const PointList<T>& vertices,
+                                  const Point<T>& point) {
     Vector3f normal;
     float distance;
     assert(vertices.size() > 2);
@@ -1109,13 +1161,15 @@ inline float PointToPlaneDistance(const PointList& vertices,
     return distance;
 }
 
-inline bool isPointAbovePlane(const PointList& vertices, const Point& point) {
+template <typename T>
+inline bool isPointAbovePlane(const PointList<T>& vertices, const Point<T>& point) {
     return PointToPlaneDistance(vertices, point) > 0;
 }
 
-inline bool isPointAbovePlane(const FacePtr& pface, const Point& point) {
+template <typename T>
+inline bool isPointAbovePlane(const FacePtr<T>& pface, const Point<T>& point) {
     assert(pface->Edges.size() > 2);
-    PointList vertices = {pface->Edges[0]->first, pface->Edges[1]->first,
+    PointList<T> vertices = {pface->Edges[0]->first, pface->Edges[1]->first,
                           pface->Edges[2]->first};
     return isPointAbovePlane(vertices, point);
 }
