@@ -7,11 +7,13 @@
 #include "Box.hpp"
 #include "Sphere.hpp"
 
+#include <memory>
+#include <random>
 #include <vector>
 
 using float_precision = float;
 
-inline int to_unorm(float_precision f) { return f * 255.999; }
+inline int to_unorm(float_precision f) { return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256; }
 
 using ray = My::Ray<float_precision>;
 using color = My::Vector3<float_precision>;
@@ -25,7 +27,7 @@ My::IntersectableList<float_precision> scene_objects;
 color ray_color(const ray& r) {
     My::Hit<float_precision> hit;
     if (scene_objects.Intersect(r, hit, 0, infinity)) {
-        return hit.getColor();
+        return (hit.getNormal() + vec3({1.0, 1.0, 1.0})) * 0.5;
     }
 
     // background
@@ -34,29 +36,56 @@ color ray_color(const ray& r) {
     return (1.0 - t) * color({1.0, 1.0, 1.0}) + t * color({0.5, 0.7, 1.0});
 }
 
+template <class T>
+inline T random_f() {
+    static std::uniform_real_distribution<T> distribution(0.0,
+                                                                        1.0);
+    static std::mt19937 generator;
+    return distribution(generator);
+}
+
+template <class T>
+class camera {
+   public:
+    camera() {
+        auto aspect_ratio = 16.0 / 9.0;
+        T viewport_height = 2.0;
+        T viewport_width = aspect_ratio * viewport_height;
+        T focal_length = 1.0;
+
+        origin = point3({0, 0, 0});
+        horizontal = vec3({viewport_width, 0, 0});
+        vertical = vec3({0, viewport_height, 0});
+        lower_left_corner =
+            origin - horizontal / 2 - vertical / 2 - vec3({0, 0, focal_length});
+    }
+
+    ray get_ray(T u, T v) const {
+        return ray(origin,
+                   lower_left_corner + u * horizontal + v * vertical - origin);
+    }
+
+   private:
+    point3 origin;
+    point3 lower_left_corner;
+    vec3 horizontal;
+    vec3 vertical;
+};
+
 int main(int argc, char** argv) {
     scene_objects.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        1, point3({0, 0, -2.0}), color({1.0, 0, 0})));
+        0.5, point3({0, 0, -1.0}), color({1.0, 0, 0})));
     scene_objects.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        1, point3({-2.0, 0, -2.0}), color({0.5, 0, 0})));
-    scene_objects.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        1, point3({2.0, 0, -2.0}), color({0.0, 0.5, 0})));
+        100, point3({0, -100.5, -1.0}), color({0, 0.5, 0})));
 
     // Image
     const float_precision aspect_ratio = 16.0 / 9.0;
     const int image_width = 800;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int samples_per_pixel = 100;
 
     // Camera
-    float_precision viewport_height = 2.0;
-    float_precision viewport_width = aspect_ratio * viewport_height;
-    float_precision focal_length = 1.0;
-
-    auto origin = point3({0, 0, 0});
-    auto horizontal = vec3({viewport_width, 0, 0});
-    auto vertical = vec3({0, viewport_height, 0});
-    auto lower_left_corner =
-        origin - horizontal / 2 - vertical / 2 - vec3({0, 0, focal_length});
+    camera<float_precision> cam;
 
     // Image
     image img;
@@ -74,11 +103,15 @@ int main(int argc, char** argv) {
     // Render
     for (auto j = 0; j < img.Height; j++) {
         for (auto i = 0; i < img.Width; i++) {
-            auto u = double(i) / (img.Width - 1);
-            auto v = double(j) / (img.Height - 1);
-            ray r(origin,
-                  lower_left_corner + u * horizontal + v * vertical - origin);
-            color pixel_color = ray_color(r);
+            color pixel_color(0);
+            for (auto s = 0; s < samples_per_pixel; s++) {
+                auto u = (i + random_f<float_precision>()) / (img.Width - 1);
+                auto v = (j + random_f<float_precision>()) / (img.Height - 1);
+                auto r = cam.get_ray(u, v);
+                pixel_color += ray_color(r);
+            }
+
+            pixel_color = pixel_color * (1.0 / samples_per_pixel);
 
             img.SetR(i, j, to_unorm(pixel_color[0]));
             img.SetG(i, j, to_unorm(pixel_color[1]));

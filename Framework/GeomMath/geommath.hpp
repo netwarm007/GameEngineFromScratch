@@ -1173,4 +1173,16 @@ inline bool isPointAbovePlane(const FacePtr<T>& pface, const Point<T>& point) {
                           pface->Edges[2]->first};
     return isPointAbovePlane(vertices, point);
 }
+
+template <typename T>
+inline T degrees_to_radians(T degrees) {
+    return degrees * PI / 180.0; 
+}
+
+template <class T>
+inline T clamp(T x, T min, T max) {
+    if (x < min) return min;
+    if (x > max) return max;
+    return x;
+}
 }  // namespace My
