@@ -4,6 +4,9 @@
 #include "Image.hpp"
 #include "Encoder/PPM.hpp"
 
+#include "Box.hpp"
+#include "Sphere.hpp"
+
 using float_precision = float;
 
 inline int to_unorm(float_precision f) { return f * 255.999; }
@@ -14,13 +17,25 @@ using point3 = My::Vector3<float_precision>;
 using vec3 = My::Vector3<float_precision>;
 using image = My::Image;
 
+My::Box<float_precision> box({0.5, 0.5, 0.5}, {-0.5, 0.5, -2.5});
+My::Sphere<float_precision> sphere(1, {0, 0, -2.0});
+
 color ray_color(const ray& r) {
+    My::Hit<float_precision> hit;
+    if (box.Intersect(r, hit, 0)) {
+        return hit.getColor();
+    }
+    if (sphere.Intersect(r, hit, 0)) {
+        return hit.getColor();
+    }
     auto unit_direction = r.getDirection(); 
     auto t = 0.5 * (unit_direction[1] + 1.0);
     return (1.0 - t) * color({1.0, 1.0, 1.0}) + t * color({0.5, 0.7, 1.0});
 }
 
 int main(int argc, char** argv) {
+    sphere.SetColor({1.0, 0, 0});
+
     // Image
     const float_precision aspect_ratio = 16.0 / 9.0;
     const int image_width = 800;

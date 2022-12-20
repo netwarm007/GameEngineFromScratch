@@ -9,6 +9,6 @@ Ability Intersectable {
    public:
     virtual ~Intersectable() = default;
     using ParamType = const T;
-    virtual bool Intersect(const Ray<T> &r, Hit &h, T tmin) const = 0;
+    virtual bool Intersect(const Ray<T> &r, Hit<T> &h, T tmin) const = 0;
 };
 }  // namespace My

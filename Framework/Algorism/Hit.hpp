@@ -2,23 +2,25 @@
 #include "geommath.hpp"
 
 namespace My {
+template <typename T>
 class Hit {
 public:
   // CONSTRUCTOR & DESTRUCTOR
-  Hit(float _t, Vector3f c) { t = _t; color = c; }
+  Hit() : t(std::numeric_limits<T>::infinity()), color({0.0, 0.0, 0.0}) {}
+  Hit(T _t, Vector3<T> c) { t = _t; color = c; }
   ~Hit() {}
 
   // ACCESSORS
-  float getT() const { return t; }
-  Vector3f getColor() const { return color; }
+  T getT() const { return t; }
+  Vector3<T> getColor() const { return color; }
   
   // MODIFIER
-  void set(float _t, Vector3f c) { t = _t; color = c; }
+  void set(T _t, Vector3<T> c) { t = _t; color = c; }
 
 private: 
 
   // REPRESENTATION
-  float t;
-  Vector3f color;
+  T t;
+  Vector3<T> color;
 };
 }

@@ -28,7 +28,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
     [[nodiscard]] T GetRadius() const { return m_fRadius; };
     [[nodiscard]] Vector3<T> GetCenter() const { return m_center; };
 
-    bool Intersect(const Ray<T>& r, Hit& h, T tmin) const override {
+    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin) const override {
         bool result = false;
 
         // Ray: R(t) = O + V dot t
@@ -38,19 +38,19 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         Vector3f V = r.getDirection();
         Vector3f O = r.getOrigin();
         Vector3f tmp = O - m_center;
-        float dist = Length(tmp);
+        T dist = Length(tmp);
 
-        float b = 2 * V.Dot3(tmp);
-        float c = dist * dist - m_fRadius * m_fRadius;
-        float disc = b * b - 4 * c;
+        T b = 2 * V.Dot3(tmp);
+        T c = dist * dist - m_fRadius * m_fRadius;
+        T disc = b * b - 4 * c;
 
-        float t = INFINITY;
+        T t = std::numeric_limits<T>::infinity();
 
         if (disc > 0) {
-            float sroot = sqrt(disc);
+            T sroot = sqrt(disc);
 
-            float t1 = (-b - sroot) * 0.5;
-            float t2 = (-b + sroot) * 0.5;
+            T t1 = (-b - sroot) * 0.5;
+            T t2 = (-b + sroot) * 0.5;
 
             if (t1 >= tmin)
                 t = t1;
@@ -70,7 +70,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
     }
 
    protected:
-    float m_fRadius;
-    Vector3f m_center;
+    T m_fRadius;
+    Point<T> m_center;
 };
 }  // namespace My
