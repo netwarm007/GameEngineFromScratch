@@ -32,9 +32,9 @@ color ray_color(const ray& r, int depth) {
         return color({0, 0, 0});
     }
 
-    if (world.Intersect(r, hit, 10.0 * epsilon, infinity)) {
+    if (world.Intersect(r, hit, 0.001, infinity)) {
         auto p = r.pointAtParameter(hit.getT());
-        point3 target = p + hit.getNormal() + My::random_in_unit_sphere<float_precision, 3>();
+        point3 target = p + hit.getNormal() + My::random_unit_vector<float_precision, 3>();
         return 0.5 * ray_color(ray(p, target - p), depth - 1);
     }
 
