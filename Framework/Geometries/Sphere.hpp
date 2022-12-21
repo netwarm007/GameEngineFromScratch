@@ -65,7 +65,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         Normalize(normal);
 
         // set the hit result
-        h.set(t, normal, m_ptrMat);
+        h.set(t, normal, DotProduct(r.getDirection(), normal) < 0, m_ptrMat);
 
         return true;
     }
