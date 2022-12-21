@@ -51,34 +51,29 @@ void IDCT8X8(const float G[64], float g[64]);
 void Absolute(float* result, const float* a, const size_t count);
 void Pow(const float* v, const size_t count, const float exponent,
          float* result);
+void Sqrt(const float* v, const size_t count, float* result);
 #ifdef USE_ISPC
 } /* end extern C */
 #endif
 } /* namespace */
 
 #ifndef PI
-#define PI 3.14159265358979323846f
+#define PI 3.14159265358979323846
 #endif
 
 #ifndef TWO_PI
-#define TWO_PI 3.14159265358979323846f * 2.0f
+#define TWO_PI 3.14159265358979323846 * 2.0
 #endif
 
 namespace My {
-using Scalar = float;
-
-#ifdef max
-#undef max
-#endif
-#ifdef min
-#undef min
-#endif
+template <class T>
+concept Scalar = std::floating_point<T> || std::integral<T>;
 
 template <typename T>
 constexpr float normalize(T value) {
     return value < 0
-               ? -static_cast<float>(value) / std::numeric_limits<T>::min()
-               : static_cast<float>(value) / std::numeric_limits<T>::max();
+               ? -static_cast<float>(value) / (std::numeric_limits<T>::min)()
+               : static_cast<float>(value) / (std::numeric_limits<T>::max)();
 }
 
 template <typename T, int N>
@@ -145,7 +140,7 @@ struct Vector {
         return *this;
     }
 
-    Vector& operator/=(const Scalar scalar) {
+    Vector& operator/=(const Scalar auto scalar) {
         *this = *this / scalar;
         return *this;
     }
@@ -167,7 +162,6 @@ struct Vector {
         return result;
     }
 };
-
 
 template <typename T>
 using Vector2 = Vector<T, 2>;
@@ -227,7 +221,7 @@ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
 }
 
 template <typename T, int N>
-Vector<T, N> operator+(const Vector<T, N>& vec, const T scalar) {
+Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result(scalar);
     VectorAdd(result, vec, result);
 
@@ -253,7 +247,7 @@ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
 }
 
 template <typename T, int N>
-Vector<T, N> operator-(const Vector<T, N>& vec, const T scalar) {
+Vector<T, N> operator-(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result(scalar);
     VectorSub(result, vec, result);
 
@@ -314,7 +308,7 @@ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
 
 template <typename T, int N>
 inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const T scalar) {
+                         const Scalar auto scalar) {
     Vector<T, N> v(scalar);
 #ifdef USE_ISPC
     ispc::MulByElement(a, v, result, N);
@@ -324,7 +318,7 @@ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
 }
 
 template <typename T, int N>
-Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar scalar) {
+Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -332,7 +326,7 @@ Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar scalar) {
 }
 
 template <typename T, int N>
-Vector<T, N> operator*(const Scalar scalar, const Vector<T, N>& vec) {
+Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -359,7 +353,7 @@ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
 
 template <typename T, int N>
 inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const T scalar) {
+                         const Scalar auto scalar) {
     Vector<T, N> v(scalar);
 #ifdef USE_ISPC
     ispc::DivByElement(a, v, result, N);
@@ -369,7 +363,7 @@ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
 }
 
 template <typename T, int N>
-Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar scalar) {
+Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
 
@@ -377,7 +371,7 @@ Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar scalar) {
 }
 
 template <typename T, int N>
-Vector<T, N> operator/(const Scalar scalar, const Vector<T, N>& vec) {
+Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
 
@@ -392,18 +386,32 @@ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <typename T>
-inline T pow(const T base, const Scalar exponent) {
+inline constexpr Scalar auto pow(const Scalar auto base, const Scalar auto exponent) {
     return std::pow(base, exponent);
 }
 
-template <typename T, int N>
-Vector<T, N> pow(const Vector<T, N>& vec, const Scalar exponent) {
+template <typename T, std::integral auto N>
+Vector<T, N> pow(const Vector<T, N>& vec, const Scalar auto exponent) {
     Vector<T, N> result;
 #ifdef USE_ISPC
     ispc::Pow(vec, N, exponent, result);
 #else
     Dummy::Pow(vec, N, exponent, result);
+#endif
+    return result;
+}
+
+inline constexpr Scalar auto sqrt(const Scalar auto base) {
+    return std::sqrt(base);
+}
+
+template <typename T, std::integral auto N>
+Vector<T, N> sqrt(const Vector<T, N>& vec) {
+    Vector<T, N> result;
+#ifdef USE_ISPC
+    ispc::Sqrt(vec, N, result);
+#else
+    Dummy::Sqrt(vec, N, result);
 #endif
     return result;
 }
@@ -425,29 +433,35 @@ Vector<T, N> fabs(const Vector<T, N>& vec) {
 }
 
 template <typename T, int N>
-inline T Length(const Vector<T, N>& vec) {
+inline T LengthSquared(const Vector<T, N>& vec) {
     T result;
     DotProduct(result, vec, vec);
-    return static_cast<T>(std::sqrt(result));
+    return result;
 }
 
 template <typename T, int N>
-inline bool operator>=(Vector<T, N>&& vec, Scalar scalar) {
+inline T Length(const Vector<T, N>& vec) {
+    auto length_squared = LengthSquared(vec);
+    return static_cast<T>(std::sqrt(length_squared));
+}
+
+template <typename T, int N>
+inline bool operator>=(Vector<T, N>&& vec, Scalar auto scalar) {
     return Length(vec) >= scalar;
 }
 
 template <typename T, int N>
-inline bool operator>(Vector<T, N>&& vec, Scalar scalar) {
+inline bool operator>(Vector<T, N>&& vec, Scalar auto scalar) {
     return Length(vec) > scalar;
 }
 
 template <typename T, int N>
-inline bool operator<=(Vector<T, N>&& vec, Scalar scalar) {
+inline bool operator<=(Vector<T, N>&& vec, Scalar auto scalar) {
     return Length(vec) <= scalar;
 }
 
 template <typename T, int N>
-inline bool operator<(Vector<T, N>&& vec, Scalar scalar) {
+inline bool operator<(Vector<T, N>&& vec, Scalar auto scalar) {
     return Length(vec) < scalar;
 }
 
@@ -608,7 +622,7 @@ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix1,
 
 template <typename T, int ROWS, int COLS>
 Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix,
-                                const Scalar scalar) {
+                                const Scalar auto scalar) {
     Matrix<T, ROWS, COLS> result;
 
     for (int i = 0; i < ROWS; i++) {
@@ -619,7 +633,7 @@ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix,
 }
 
 template <typename T, int ROWS, int COLS>
-Matrix<T, ROWS, COLS> operator*(const Scalar scalar,
+Matrix<T, ROWS, COLS> operator*(const Scalar auto scalar,
                                 const Matrix<T, ROWS, COLS>& matrix) {
     return matrix * scalar;
 }
@@ -849,9 +863,10 @@ inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix) {
 }
 
 inline void BuildOrthographicRHMatrix(Matrix4X4f& matrix, const float left,
-                                    const float right, const float top,
-                                    const float bottom, const float near_plane,
-                                    const float far_plane) {
+                                      const float right, const float top,
+                                      const float bottom,
+                                      const float near_plane,
+                                      const float far_plane) {
     const float width = right - left;
     const float height = top - bottom;
     const float depth = far_plane - near_plane;
@@ -863,10 +878,11 @@ inline void BuildOrthographicRHMatrix(Matrix4X4f& matrix, const float left,
                 -0.5f * (far_plane + near_plane) / depth + 0.5f, 1.0f}}};
 }
 
-inline void BuildOpenglOrthographicRHMatrix(Matrix4X4f& matrix, const float left,
-                                    const float right, const float top,
-                                    const float bottom, const float near_plane,
-                                    const float far_plane) {
+inline void BuildOpenglOrthographicRHMatrix(Matrix4X4f& matrix,
+                                            const float left, const float right,
+                                            const float top, const float bottom,
+                                            const float near_plane,
+                                            const float far_plane) {
     const float width = right - left;
     const float height = top - bottom;
     const float depth = far_plane - near_plane;
@@ -1162,7 +1178,8 @@ inline float PointToPlaneDistance(const PointList<T>& vertices,
 }
 
 template <typename T>
-inline bool isPointAbovePlane(const PointList<T>& vertices, const Point<T>& point) {
+inline bool isPointAbovePlane(const PointList<T>& vertices,
+                              const Point<T>& point) {
     return PointToPlaneDistance(vertices, point) > 0;
 }
 
@@ -1170,13 +1187,13 @@ template <typename T>
 inline bool isPointAbovePlane(const FacePtr<T>& pface, const Point<T>& point) {
     assert(pface->Edges.size() > 2);
     PointList<T> vertices = {pface->Edges[0]->first, pface->Edges[1]->first,
-                          pface->Edges[2]->first};
+                             pface->Edges[2]->first};
     return isPointAbovePlane(vertices, point);
 }
 
 template <typename T>
 inline T degrees_to_radians(T degrees) {
-    return degrees * PI / 180.0; 
+    return degrees * PI / 180.0;
 }
 
 template <class T>
@@ -1185,4 +1202,5 @@ inline T clamp(T x, T min, T max) {
     if (x > max) return max;
     return x;
 }
+
 }  // namespace My

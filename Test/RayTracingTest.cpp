@@ -2,13 +2,13 @@
 #include "Image.hpp"
 #include "Ray.hpp"
 #include "geommath.hpp"
+#include "random.hpp"
 #include "portable.hpp"
 
 #include "Box.hpp"
 #include "Sphere.hpp"
 
 #include <memory>
-#include <random>
 #include <vector>
 
 using float_precision = float;
@@ -21,27 +21,27 @@ using point3 = My::Vector3<float_precision>;
 using vec3 = My::Vector3<float_precision>;
 using image = My::Image;
 constexpr auto infinity = std::numeric_limits<float_precision>::infinity();
+constexpr auto epsilon  = std::numeric_limits<float_precision>::epsilon();
 
-My::IntersectableList<float_precision> scene_objects;
+My::IntersectableList<float_precision> world;
 
-color ray_color(const ray& r) {
+color ray_color(const ray& r, int depth) {
     My::Hit<float_precision> hit;
-    if (scene_objects.Intersect(r, hit, 0, infinity)) {
-        return (hit.getNormal() + vec3({1.0, 1.0, 1.0})) * 0.5;
+
+    if (depth <= 0) {
+        return color({0, 0, 0});
+    }
+
+    if (world.Intersect(r, hit, 10.0 * epsilon, infinity)) {
+        auto p = r.pointAtParameter(hit.getT());
+        point3 target = p + hit.getNormal() + My::random_in_unit_sphere<float_precision, 3>();
+        return 0.5 * ray_color(ray(p, target - p), depth - 1);
     }
 
     // background
     auto unit_direction = r.getDirection();
     auto t = 0.5 * (unit_direction[1] + 1.0);
     return (1.0 - t) * color({1.0, 1.0, 1.0}) + t * color({0.5, 0.7, 1.0});
-}
-
-template <class T>
-inline T random_f() {
-    static std::uniform_real_distribution<T> distribution(0.0,
-                                                                        1.0);
-    static std::mt19937 generator;
-    return distribution(generator);
 }
 
 template <class T>
@@ -57,7 +57,7 @@ class camera {
         horizontal = vec3({viewport_width, 0, 0});
         vertical = vec3({0, viewport_height, 0});
         lower_left_corner =
-            origin - horizontal / 2 - vertical / 2 - vec3({0, 0, focal_length});
+            origin - horizontal / 2.0 - vertical / 2.0 - vec3({0, 0, focal_length});
     }
 
     ray get_ray(T u, T v) const {
@@ -73,16 +73,17 @@ class camera {
 };
 
 int main(int argc, char** argv) {
-    scene_objects.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         0.5, point3({0, 0, -1.0}), color({1.0, 0, 0})));
-    scene_objects.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         100, point3({0, -100.5, -1.0}), color({0, 0.5, 0})));
 
     // Image
     const float_precision aspect_ratio = 16.0 / 9.0;
     const int image_width = 800;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
+    const int samples_per_pixel = 64;
+    const int max_depth = 16;
 
     // Camera
     camera<float_precision> cam;
@@ -102,22 +103,28 @@ int main(int argc, char** argv) {
 
     // Render
     for (auto j = 0; j < img.Height; j++) {
+        std::cerr << "\rScanlines remaining: " << img.Height - j << ' ' << std::flush;
         for (auto i = 0; i < img.Width; i++) {
             color pixel_color(0);
             for (auto s = 0; s < samples_per_pixel; s++) {
-                auto u = (i + random_f<float_precision>()) / (img.Width - 1);
-                auto v = (j + random_f<float_precision>()) / (img.Height - 1);
+                auto u = (i + My::random_f<float_precision>()) / (img.Width - 1);
+                auto v = (j + My::random_f<float_precision>()) / (img.Height - 1);
                 auto r = cam.get_ray(u, v);
-                pixel_color += ray_color(r);
+                pixel_color += ray_color(r, max_depth);
             }
 
             pixel_color = pixel_color * (1.0 / samples_per_pixel);
+            
+            // Gamma-correction for gamma = 2.0
+            pixel_color = My::sqrt(pixel_color);
 
             img.SetR(i, j, to_unorm(pixel_color[0]));
             img.SetG(i, j, to_unorm(pixel_color[1]));
             img.SetB(i, j, to_unorm(pixel_color[2]));
         }
     }
+
+    std::cerr << "\r";
 
     My::PpmEncoder encoder;
     encoder.Encode(img);

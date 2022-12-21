@@ -1,6 +1,6 @@
 set(FUNCTIONS CrossProduct MulByElement Transpose Normalize
               Transform AddByElement SubByElement MatrixUtil
-              InverseMatrix DCT Absolute Pow DivByElement 
+              InverseMatrix DCT Absolute Pow Sqrt DivByElement 
         )
 
 foreach(FUNC IN LISTS FUNCTIONS)

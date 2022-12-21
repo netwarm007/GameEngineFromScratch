@@ -262,6 +262,6 @@ ostream& operator<<(ostream& out, const SceneObjectAnimationClip& obj) {
 }
 
 float DefaultAttenFunc(float intensity, float distance) {
-    return intensity / pow(1 + distance, 2.0f);
+    return intensity / std::pow(1 + distance, 2.0f);
 }
 }  // namespace My
