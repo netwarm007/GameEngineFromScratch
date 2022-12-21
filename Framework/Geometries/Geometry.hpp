@@ -4,6 +4,8 @@
 #include "aabb.hpp"
 #include "portable.hpp"
 
+class material;
+
 namespace My {
 ENUM(GeometryType){kBox,   kCapsule,    kCone,   kCylinder,
                    kPlane, kPolyhydron, kSphere, kTriangle};
@@ -38,13 +40,17 @@ class Geometry {
         return m_kGeometryType;
     }
 
-    void SetColor(Vector3f color) {
-        m_color = color;
+    void SetMaterial(std::shared_ptr<material> m) {
+        m_ptrMat = m;
+    }
+
+    auto GetMaterial() {
+        return m_ptrMat;
     }
 
    protected:
     GeometryType m_kGeometryType;
     float m_fMargin = std::numeric_limits<float>::epsilon();
-    Vector3f m_color = { 0, 0, 0 };
+    std::shared_ptr<material> m_ptrMat;
 };
 }  // namespace My

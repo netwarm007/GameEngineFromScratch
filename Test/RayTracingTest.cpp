@@ -2,10 +2,9 @@
 #include "Image.hpp"
 #include "Ray.hpp"
 #include "geommath.hpp"
-#include "random.hpp"
 #include "portable.hpp"
+#include "random.hpp"
 
-#include "Box.hpp"
 #include "Sphere.hpp"
 
 #include <memory>
@@ -13,34 +12,84 @@
 
 using float_precision = float;
 
-inline int to_unorm(float_precision f) { return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256; }
+inline int to_unorm(float_precision f) {
+    return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256;
+}
 
 using ray = My::Ray<float_precision>;
 using color = My::Vector3<float_precision>;
 using point3 = My::Vector3<float_precision>;
 using vec3 = My::Vector3<float_precision>;
 using image = My::Image;
+using hit_record = My::Hit<float_precision>;
 constexpr auto infinity = std::numeric_limits<float_precision>::infinity();
-constexpr auto epsilon  = std::numeric_limits<float_precision>::epsilon();
+constexpr auto epsilon = std::numeric_limits<float_precision>::epsilon();
 
 My::IntersectableList<float_precision> world;
 
+// Material
+class material {
+   public:
+    virtual bool scatter(const ray& r_in, const hit_record hit,
+                         color& attenuation, ray& scattered) const = 0;
+};
+
+class lambertian : public material {
+   public:
+    lambertian(const color& a) : albedo(a) {}
+
+    bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
+                 ray& scattered) const override {
+        auto scatter_direction =
+            hit.getNormal() + My::random_unit_vector<float_precision, 3>();
+
+        if (My::isNearZero(scatter_direction)) {
+            scatter_direction = hit.getNormal();
+        }
+
+        scattered = ray(r_in.pointAtParameter(hit.getT()), scatter_direction);
+        attenuation = albedo;
+        return true;
+    }
+
+   public:
+    color albedo;
+};
+
+class metal : public material {
+   public:
+    metal(const color& a) : albedo(a) {}
+
+    bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
+                 ray& scattered) const override {
+        vec3 reflected = My::Reflect(r_in.getDirection(), hit.getNormal());
+        scattered = ray(r_in.pointAtParameter(hit.getT()), reflected);
+        attenuation = albedo;
+        return My::DotProduct(scattered.getDirection(), hit.getNormal()) > 0;
+    }
+
+   public:
+    color albedo;
+};
+
+// Utilities
 color ray_color(const ray& r, int depth) {
-    My::Hit<float_precision> hit;
+    hit_record hit;
 
     if (depth <= 0) {
         return color({0, 0, 0});
     }
 
     if (world.Intersect(r, hit, 0.001, infinity)) {
+        ray scattered;
+        color attenuation;
         auto p = r.pointAtParameter(hit.getT());
-        // true lambertian
-        point3 target = p + hit.getNormal() + My::random_unit_vector<float_precision, 3>();
 
-        // alternative
-        // point3 target = p + My::random_in_hemisphere<float_precision, 3>(hit.getNormal());
+        if (hit.getMaterial()->scatter(r, hit, attenuation, scattered)) {
+            return attenuation * ray_color(scattered, depth - 1);
+        }
 
-        return 0.5 * ray_color(ray(p, target - p), depth - 1);
+        return color({0, 0, 0});
     }
 
     // background
@@ -49,6 +98,7 @@ color ray_color(const ray& r, int depth) {
     return (1.0 - t) * color({1.0, 1.0, 1.0}) + t * color({0.5, 0.7, 1.0});
 }
 
+// Camera
 template <class T>
 class camera {
    public:
@@ -61,8 +111,8 @@ class camera {
         origin = point3({0, 0, 0});
         horizontal = vec3({viewport_width, 0, 0});
         vertical = vec3({0, viewport_height, 0});
-        lower_left_corner =
-            origin - horizontal / 2.0 - vertical / 2.0 - vec3({0, 0, focal_length});
+        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 -
+                            vec3({0, 0, focal_length});
     }
 
     ray get_ray(T u, T v) const {
@@ -77,11 +127,26 @@ class camera {
     vec3 vertical;
 };
 
+// Main
 int main(int argc, char** argv) {
+    // World
+    auto material_ground = std::make_shared<lambertian>(color({0.8, 0.8, 0.0}));
+    auto material_center = std::make_shared<lambertian>(color({0.7, 0.3, 0.3}));
+    auto material_left   = std::make_shared<metal>(color({0.8, 0.8, 0.8}));
+    auto material_right  = std::make_shared<metal>(color({0.8, 0.6, 0.2}));
+
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        0.5, point3({0, 0, -1.0}), color({1.0, 0, 0})));
+        100, point3({0, -100.5, -1.0}),
+        material_ground));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        100, point3({0, -100.5, -1.0}), color({0, 0.5, 0})));
+        0.5, point3({0, 0, -1.0}),
+        material_center));
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+        0.5, point3({-1.0, 0, -1.0}),
+        material_left));
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+        0.5, point3({1.0, 0, -1.0}),
+        material_right));
 
     // Image
     const float_precision aspect_ratio = 16.0 / 9.0;
@@ -108,18 +173,21 @@ int main(int argc, char** argv) {
 
     // Render
     for (auto j = 0; j < img.Height; j++) {
-        std::cerr << "\rScanlines remaining: " << img.Height - j << ' ' << std::flush;
+        std::cerr << "\rScanlines remaining: " << img.Height - j << ' '
+                  << std::flush;
         for (auto i = 0; i < img.Width; i++) {
             color pixel_color(0);
             for (auto s = 0; s < samples_per_pixel; s++) {
-                auto u = (i + My::random_f<float_precision>()) / (img.Width - 1);
-                auto v = (j + My::random_f<float_precision>()) / (img.Height - 1);
+                auto u =
+                    (i + My::random_f<float_precision>()) / (img.Width - 1);
+                auto v =
+                    (j + My::random_f<float_precision>()) / (img.Height - 1);
                 auto r = cam.get_ray(u, v);
                 pixel_color += ray_color(r, max_depth);
             }
 
             pixel_color = pixel_color * (1.0 / samples_per_pixel);
-            
+
             // Gamma-correction for gamma = 2.0
             pixel_color = My::sqrt(pixel_color);
 
