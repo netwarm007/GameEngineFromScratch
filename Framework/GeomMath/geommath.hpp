@@ -69,6 +69,9 @@ namespace My {
 template <class T>
 concept Scalar = std::floating_point<T> || std::integral<T>;
 
+template <class T>
+concept Dimension = std::integral<T>;
+
 template <typename T>
 constexpr float normalize(T value) {
     return value < 0
@@ -76,7 +79,7 @@ constexpr float normalize(T value) {
                : static_cast<float>(value) / (std::numeric_limits<T>::max)();
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 struct Vector {
     T data[N];
 
@@ -113,6 +116,16 @@ struct Vector {
         for (auto val : list) {
             data[i++] = val;
         }
+    }
+
+    Vector operator - () {
+        Vector result;
+
+        for (Scalar auto i = 0; i < N; i++) {
+            result[i] = -data[i];
+        }
+
+        return result;
     }
 
     Vector& operator=(const T* pf) {
@@ -189,7 +202,7 @@ class Quaternion : public Vector<T, 4> {
     }
 };
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 std::ostream& operator<<(std::ostream& out, Vector<T, N> vector) {
     out.precision(4);
     out.setf(std::ios::fixed);
@@ -202,7 +215,7 @@ std::ostream& operator<<(std::ostream& out, Vector<T, N> vector) {
     return out;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1,
                const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
@@ -212,7 +225,7 @@ void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1,
 #endif
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorAdd(result, vec1, vec2);
@@ -220,7 +233,7 @@ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result(scalar);
     VectorAdd(result, vec, result);
@@ -228,7 +241,7 @@ Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1,
                const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
@@ -238,7 +251,7 @@ void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1,
 #endif
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorSub(result, vec1, vec2);
@@ -246,7 +259,7 @@ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator-(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result(scalar);
     VectorSub(result, vec, result);
@@ -289,14 +302,14 @@ inline void DotProduct(T& result, const T* a, const T* b, const size_t count) {
     delete[] _result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void DotProduct(T& result, const Vector<T, N>& vec1,
                        const Vector<T, N>& vec2) {
     DotProduct(result, static_cast<const T*>(vec1), static_cast<const T*>(vec2),
                N);
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Vector<T, N>& b) {
 #ifdef USE_ISPC
@@ -306,7 +319,7 @@ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Scalar auto scalar) {
     Vector<T, N> v(scalar);
@@ -317,7 +330,7 @@ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
@@ -325,7 +338,7 @@ Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
@@ -333,7 +346,7 @@ Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     MulByElement(result, vec1, vec2);
@@ -341,7 +354,7 @@ Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Vector<T, N>& b) {
 #ifdef USE_ISPC
@@ -351,7 +364,7 @@ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Scalar auto scalar) {
     Vector<T, N> v(scalar);
@@ -362,7 +375,7 @@ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
@@ -370,7 +383,7 @@ Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
@@ -378,7 +391,7 @@ Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     DivByElement(result, vec1, vec2);
@@ -390,7 +403,7 @@ inline constexpr Scalar auto pow(const Scalar auto base, const Scalar auto expon
     return std::pow(base, exponent);
 }
 
-template <typename T, std::integral auto N>
+template <typename T, Dimension auto N>
 Vector<T, N> pow(const Vector<T, N>& vec, const Scalar auto exponent) {
     Vector<T, N> result;
 #ifdef USE_ISPC
@@ -405,7 +418,7 @@ inline constexpr Scalar auto sqrt(const Scalar auto base) {
     return std::sqrt(base);
 }
 
-template <typename T, std::integral auto N>
+template <typename T, Dimension auto N>
 Vector<T, N> sqrt(const Vector<T, N>& vec) {
     Vector<T, N> result;
 #ifdef USE_ISPC
@@ -417,11 +430,11 @@ Vector<T, N> sqrt(const Vector<T, N>& vec) {
 }
 
 template <typename T>
-inline T fabs(const T data) {
+inline constexpr T fabs(const T data) {
     return std::fabs(data);
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 Vector<T, N> fabs(const Vector<T, N>& vec) {
     Vector<T, N> result;
 #ifdef USE_ISPC
@@ -432,40 +445,40 @@ Vector<T, N> fabs(const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline T LengthSquared(const Vector<T, N>& vec) {
     T result;
     DotProduct(result, vec, vec);
     return result;
 }
 
-template <typename T, int N>
-inline T Length(const Vector<T, N>& vec) {
+template <typename T, Dimension auto N>
+inline constexpr T Length(const Vector<T, N>& vec) {
     auto length_squared = LengthSquared(vec);
     return static_cast<T>(std::sqrt(length_squared));
 }
 
-template <typename T, int N>
-inline bool operator>=(Vector<T, N>&& vec, Scalar auto scalar) {
+template <typename T, Dimension auto N>
+inline bool operator>=(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) >= scalar;
 }
 
-template <typename T, int N>
-inline bool operator>(Vector<T, N>&& vec, Scalar auto scalar) {
+template <typename T, Dimension auto N>
+inline bool operator>(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) > scalar;
 }
 
-template <typename T, int N>
-inline bool operator<=(Vector<T, N>&& vec, Scalar auto scalar) {
+template <typename T, Dimension auto N>
+inline bool operator<=(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) <= scalar;
 }
 
-template <typename T, int N>
-inline bool operator<(Vector<T, N>&& vec, Scalar auto scalar) {
+template <typename T, Dimension auto N>
+inline bool operator<(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) < scalar;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void Normalize(Vector<T, N>& a) {
     T length;
     DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), N);
@@ -489,7 +502,7 @@ struct Matrix {
         return data[row_index];
     }
 
-    operator T*() { return &data[0][0]; };
+    operator T*() { return (T*)&data; };
     operator const T*() const { return static_cast<const T*>(&data[0][0]); };
 
     Matrix& operator=(const T* _data) {

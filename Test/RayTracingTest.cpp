@@ -34,7 +34,12 @@ color ray_color(const ray& r, int depth) {
 
     if (world.Intersect(r, hit, 0.001, infinity)) {
         auto p = r.pointAtParameter(hit.getT());
+        // true lambertian
         point3 target = p + hit.getNormal() + My::random_unit_vector<float_precision, 3>();
+
+        // alternative
+        // point3 target = p + My::random_in_hemisphere<float_precision, 3>(hit.getNormal());
+
         return 0.5 * ray_color(ray(p, target - p), depth - 1);
     }
 
