@@ -58,18 +58,19 @@ class lambertian : public material {
 
 class metal : public material {
    public:
-    metal(const color& a) : albedo(a) {}
+    metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
 
     bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
                  ray& scattered) const override {
         vec3 reflected = My::Reflect(r_in.getDirection(), hit.getNormal());
-        scattered = ray(r_in.pointAtParameter(hit.getT()), reflected);
+        scattered = ray(r_in.pointAtParameter(hit.getT()), reflected + fuzz * My::random_in_unit_sphere<float_precision, 3>());
         attenuation = albedo;
         return My::DotProduct(scattered.getDirection(), hit.getNormal()) > 0;
     }
 
    public:
     color albedo;
+    float_precision fuzz;
 };
 
 // Utilities
@@ -132,8 +133,8 @@ int main(int argc, char** argv) {
     // World
     auto material_ground = std::make_shared<lambertian>(color({0.8, 0.8, 0.0}));
     auto material_center = std::make_shared<lambertian>(color({0.7, 0.3, 0.3}));
-    auto material_left   = std::make_shared<metal>(color({0.8, 0.8, 0.8}));
-    auto material_right  = std::make_shared<metal>(color({0.8, 0.6, 0.2}));
+    auto material_left   = std::make_shared<metal>(color({0.8, 0.8, 0.8}), 0.3);
+    auto material_right  = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 1.0);
 
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         100, point3({0, -100.5, -1.0}),
