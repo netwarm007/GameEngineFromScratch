@@ -10,6 +10,7 @@
 #include <future>
 #include <memory>
 #include <queue>
+#include <thread>
 
 using float_precision = float;
 
@@ -25,8 +26,6 @@ using image = My::Image;
 using hit_record = My::Hit<float_precision>;
 constexpr auto infinity = std::numeric_limits<float_precision>::infinity();
 constexpr auto epsilon = std::numeric_limits<float_precision>::epsilon();
-
-My::IntersectableList<float_precision> world;
 
 // Material
 class material {
@@ -117,7 +116,7 @@ class dielectric : public material {
 };
 
 // Utilities
-color ray_color(const ray& r, int depth) {
+color ray_color(const ray& r, int depth, My::IntersectableList<float_precision>& world) {
     hit_record hit;
 
     if (depth <= 0) {
@@ -130,7 +129,7 @@ color ray_color(const ray& r, int depth) {
         auto p = r.pointAtParameter(hit.getT());
 
         if (hit.getMaterial()->scatter(r, hit, attenuation, scattered)) {
-            return attenuation * ray_color(scattered, depth - 1);
+            return attenuation * ray_color(scattered, depth - 1, world);
         }
 
         return color({0, 0, 0});
@@ -191,42 +190,79 @@ class camera {
     T    lens_radius;
 };
 
+// World
+auto random_scene() {
+    My::IntersectableList<float_precision> world;
+
+    auto material_ground = std::make_shared<lambertian>(color({0.5, 0.5, 0.5}));
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+        1000, point3({0, -1000, -1.0}), material_ground));
+
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
+            auto choose_mat = My::random_f<float_precision>();
+            point3 center({a + (float_precision)0.9 * My::random_f<float_precision>(), (float_precision)0.2, b + (float_precision)0.9 * My::random_f<float_precision>()});
+
+            if (Length(center - point3({4, 0.2, 0})) > 0.9) {
+                std::shared_ptr<material> sphere_material;
+
+                if (choose_mat < 0.8) {
+                    // diffuse
+                    color albedo = My::random_v<float_precision, 3>() * My::random_v<float_precision, 3>();
+                    sphere_material = std::make_shared<lambertian>(albedo);
+                    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(0.2, center, sphere_material));
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = My::random_v<float_precision, 3>(0.5, 1);
+                    auto fuzz = My::random_f<float_precision>(0, 0.5);
+                    sphere_material = std::make_shared<metal>(albedo, fuzz);
+                    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(0.2, center, sphere_material));
+                } else {
+                    // glass
+                    sphere_material = std::make_shared<dielectric>(1.5);
+                    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(0.2, center, sphere_material));
+                }
+            }
+        }
+    }
+
+    auto material_1 = std::make_shared<dielectric>(1.5);
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+        1.0, point3({0, 1, 0}), material_1));
+
+    auto material_2 = std::make_shared<lambertian>(color({0.4, 0.2, 0.1}));
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+        1.0, point3({-4, 1, 0}), material_2));
+
+    auto material_3 = std::make_shared<metal>(color({0.7, 0.6, 0.5}), 0.1);
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+        1.0, point3({4, 1, 0}), material_3));
+
+    return world;
+}
+
 // Main
 int main(int argc, char** argv) {
-    // World
-    auto material_ground = std::make_shared<lambertian>(color({0.8, 0.8, 0.0}));
-    auto material_center = std::make_shared<lambertian>(color({0.1, 0.2, 0.5}));
-    auto material_left = std::make_shared<dielectric>(1.5);
-    auto material_right = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 0.0);
-
-    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        100, point3({0, -100.5, -1.0}), material_ground));
-    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        0.5, point3({0, 0, -1.0}), material_center));
-    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        0.5, point3({-1.0, 0, -1.0}), material_left));
-    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-       -0.45, point3({-1.0, 0, -1.0}), material_left));
-    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        0.5, point3({1.0, 0, -1.0}), material_right));
-
     // Image
     const float_precision aspect_ratio = 16.0 / 9.0;
     const int image_width = 800;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 100;
+    const int samples_per_pixel = 500;
     const int max_depth = 50;
 
+    // World
+    auto world = random_scene();
+
     // Camera
-    point3 lookfrom({3, 3, 2});
-    point3 lookat({0, 0, -1});
+    point3 lookfrom({13, 2, 3});
+    point3 lookat({0, 0, 0});
     vec3 vup({0, 1, 0});
-    auto dist_to_focus = My::Length(lookfrom - lookat);
-    auto aperture = 2.0;
+    auto dist_to_focus = 10.0;
+    auto aperture = 0.1;
 
     camera<float_precision> cam(lookfrom, lookat, vup, (float_precision)20.0, aspect_ratio, aperture, dist_to_focus);
 
-    // Image
+    // Canvas
     image img;
     img.Width = image_width;
     img.Height = image_height;
@@ -240,10 +276,13 @@ int main(int argc, char** argv) {
     img.data = new uint8_t[img.data_size];
 
     // Render
+    int concurrency = std::thread::hardware_concurrency();
+    std::cerr << "Concurrent ray tracing with (" << concurrency << ") threads." << std::endl;
+
     std::queue<std::future<void>> raytrace_tasks;
     for (auto j = 0; j < img.Height; j++) {
-        std::cerr << "\rScanlines launched: " << j << ' ' << std::flush;
-        raytrace_tasks.emplace(std::async(std::launch::async| std::launch::deferred, [j, cam, &img] {
+        std::cerr << "\rScanlines remaining: " << img.Height - j << ' ' << std::flush;
+        raytrace_tasks.emplace(std::async(std::launch::async, [j, cam, &img, &world] {
             for (auto i = 0; i < img.Width; i++) {
                 color pixel_color(0);
                 for (auto s = 0; s < samples_per_pixel; s++) {
@@ -253,7 +292,7 @@ int main(int argc, char** argv) {
                              (img.Height - 1);
 
                     auto r = cam.get_ray(u, v);
-                    pixel_color += ray_color(r, max_depth);
+                    pixel_color += ray_color(r, max_depth, world);
                 }
 
                 pixel_color = pixel_color * (1.0 / samples_per_pixel);
@@ -266,14 +305,15 @@ int main(int argc, char** argv) {
                 img.SetB(i, j, to_unorm(pixel_color[2]));
             }
         }));
+
+        if (raytrace_tasks.size() >= concurrency) {
+            while (raytrace_tasks.size() > 0) {
+                raytrace_tasks.front().wait();
+                raytrace_tasks.pop();
+            }
+        }
     }
 
-    while (raytrace_tasks.size() > 0) {
-        std::cerr << "\rScanlines remaining: " << raytrace_tasks.size() << ' '
-                  << std::flush;
-        raytrace_tasks.front().wait();
-        raytrace_tasks.pop();
-    }
 
     std::cerr << "\r";
 
