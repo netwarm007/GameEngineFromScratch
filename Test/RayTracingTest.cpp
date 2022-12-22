@@ -7,10 +7,13 @@
 
 #include "Sphere.hpp"
 
+#include <chrono>
 #include <future>
+#include <list>
 #include <memory>
-#include <queue>
 #include <thread>
+
+using namespace std::chrono_literals;
 
 using float_precision = float;
 
@@ -116,7 +119,8 @@ class dielectric : public material {
 };
 
 // Utilities
-color ray_color(const ray& r, int depth, My::IntersectableList<float_precision>& world) {
+color ray_color(const ray& r, int depth,
+                My::IntersectableList<float_precision>& world) {
     hit_record hit;
 
     if (depth <= 0) {
@@ -145,17 +149,10 @@ color ray_color(const ray& r, int depth, My::IntersectableList<float_precision>&
 template <class T>
 class camera {
    public:
-    camera(
-        My::Point<T>    lookfrom,
-        My::Point<T>    lookat,
-        My::Vector3<T>  vup,
-        T vfov, 
-        T aspect_ratio,
-        T aperture,
-        T focus_dist
-        ) {
+    camera(My::Point<T> lookfrom, My::Point<T> lookat, My::Vector3<T> vup,
+           T vfov, T aspect_ratio, T aperture, T focus_dist) {
         auto theta = My::degrees_to_radians(vfov);
-        auto h = std::tan(theta/2);
+        auto h = std::tan(theta / 2);
         T viewport_height = 2.0 * h;
         T viewport_width = aspect_ratio * viewport_height;
 
@@ -168,7 +165,8 @@ class camera {
         origin = lookfrom;
         horizontal = focus_dist * viewport_width * u;
         vertical = focus_dist * viewport_height * v;
-        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - focus_dist * w;
+        lower_left_corner =
+            origin - horizontal / 2.0 - vertical / 2.0 - focus_dist * w;
 
         lens_radius = aperture / 2;
     }
@@ -176,9 +174,9 @@ class camera {
     ray get_ray(T s, T t) const {
         My::Vector3<T> rd = lens_radius * My::random_in_unit_disk<T>();
         My::Vector3<T> offset = u * rd[0] + v * rd[1];
-        
-        return ray(origin + offset,
-                   lower_left_corner + s * horizontal + t * vertical - origin - offset);
+
+        return ray(origin + offset, lower_left_corner + s * horizontal +
+                                        t * vertical - origin - offset);
     }
 
    private:
@@ -187,7 +185,7 @@ class camera {
     My::Vector3<T> horizontal;
     My::Vector3<T> vertical;
     My::Vector3<T> u, v, w;
-    T    lens_radius;
+    T lens_radius;
 };
 
 // World
@@ -201,26 +199,36 @@ auto random_scene() {
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = My::random_f<float_precision>();
-            point3 center({a + (float_precision)0.9 * My::random_f<float_precision>(), (float_precision)0.2, b + (float_precision)0.9 * My::random_f<float_precision>()});
+            point3 center(
+                {a + (float_precision)0.9 * My::random_f<float_precision>(),
+                 (float_precision)0.2,
+                 b + (float_precision)0.9 * My::random_f<float_precision>()});
 
             if (Length(center - point3({4, 0.2, 0})) > 0.9) {
                 std::shared_ptr<material> sphere_material;
 
                 if (choose_mat < 0.8) {
                     // diffuse
-                    color albedo = My::random_v<float_precision, 3>() * My::random_v<float_precision, 3>();
+                    color albedo = My::random_v<float_precision, 3>() *
+                                   My::random_v<float_precision, 3>();
                     sphere_material = std::make_shared<lambertian>(albedo);
-                    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(0.2, center, sphere_material));
+                    world.emplace_back(
+                        std::make_shared<My::Sphere<float_precision>>(
+                            0.2, center, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = My::random_v<float_precision, 3>(0.5, 1);
                     auto fuzz = My::random_f<float_precision>(0, 0.5);
                     sphere_material = std::make_shared<metal>(albedo, fuzz);
-                    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(0.2, center, sphere_material));
+                    world.emplace_back(
+                        std::make_shared<My::Sphere<float_precision>>(
+                            0.2, center, sphere_material));
                 } else {
                     // glass
                     sphere_material = std::make_shared<dielectric>(1.5);
-                    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(0.2, center, sphere_material));
+                    world.emplace_back(
+                        std::make_shared<My::Sphere<float_precision>>(
+                            0.2, center, sphere_material));
                 }
             }
         }
@@ -260,7 +268,8 @@ int main(int argc, char** argv) {
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    camera<float_precision> cam(lookfrom, lookat, vup, (float_precision)20.0, aspect_ratio, aperture, dist_to_focus);
+    camera<float_precision> cam(lookfrom, lookat, vup, (float_precision)20.0,
+                                aspect_ratio, aperture, dist_to_focus);
 
     // Canvas
     image img;
@@ -277,43 +286,47 @@ int main(int argc, char** argv) {
 
     // Render
     int concurrency = std::thread::hardware_concurrency();
-    std::cerr << "Concurrent ray tracing with (" << concurrency << ") threads." << std::endl;
+    std::cerr << "Concurrent ray tracing with (" << concurrency << ") threads."
+              << std::endl;
 
-    std::queue<std::future<void>> raytrace_tasks;
+    std::list<std::future<int>> raytrace_tasks;
+
     for (auto j = 0; j < img.Height; j++) {
-        std::cerr << "\rScanlines remaining: " << img.Height - j << ' ' << std::flush;
-        raytrace_tasks.emplace(std::async(std::launch::async, [j, cam, &img, &world] {
-            for (auto i = 0; i < img.Width; i++) {
-                color pixel_color(0);
-                for (auto s = 0; s < samples_per_pixel; s++) {
-                    auto u =
-                        (i + My::random_f<float_precision>()) / (img.Width - 1);
-                    auto v = (j + My::random_f<float_precision>()) /
-                             (img.Height - 1);
+        while (raytrace_tasks.size() >= concurrency) {
+            // wait for at least one task finish
+            raytrace_tasks.remove_if([](std::future<int>& task) {
+                return task.wait_for(1ms) == std::future_status::ready;
+            });
+        }
+        std::cerr << "\rScanlines remaining: " << img.Height - j - 1 << ' '
+                  << std::flush;
+        raytrace_tasks.emplace_back(
+            std::async(std::launch::async, [j, cam, &img, &world] {
+                for (auto i = 0; i < img.Width; i++) {
+                    color pixel_color(0);
+                    for (auto s = 0; s < samples_per_pixel; s++) {
+                        auto u = (i + My::random_f<float_precision>()) /
+                                 (img.Width - 1);
+                        auto v = (j + My::random_f<float_precision>()) /
+                                 (img.Height - 1);
 
-                    auto r = cam.get_ray(u, v);
-                    pixel_color += ray_color(r, max_depth, world);
+                        auto r = cam.get_ray(u, v);
+                        pixel_color += ray_color(r, max_depth, world);
+                    }
+
+                    pixel_color = pixel_color * (1.0 / samples_per_pixel);
+
+                    // Gamma-correction for gamma = 2.0
+                    pixel_color = My::sqrt(pixel_color);
+
+                    img.SetR(i, j, to_unorm(pixel_color[0]));
+                    img.SetG(i, j, to_unorm(pixel_color[1]));
+                    img.SetB(i, j, to_unorm(pixel_color[2]));
                 }
 
-                pixel_color = pixel_color * (1.0 / samples_per_pixel);
-
-                // Gamma-correction for gamma = 2.0
-                pixel_color = My::sqrt(pixel_color);
-
-                img.SetR(i, j, to_unorm(pixel_color[0]));
-                img.SetG(i, j, to_unorm(pixel_color[1]));
-                img.SetB(i, j, to_unorm(pixel_color[2]));
-            }
-        }));
-
-        if (raytrace_tasks.size() >= concurrency) {
-            while (raytrace_tasks.size() > 0) {
-                raytrace_tasks.front().wait();
-                raytrace_tasks.pop();
-            }
-        }
+                return 0;
+            }));
     }
-
 
     std::cerr << "\r";
 
