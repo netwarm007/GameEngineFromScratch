@@ -3,21 +3,21 @@
 
 namespace My {
 template <class T>
-inline T random_f() {
+T random_f() {
     static std::uniform_real_distribution<T> distribution(0.0, 1.0);
     static std::mt19937 generator;
     return distribution(generator);
 }
 
 template <class T>
-inline T random_f(T min, T max) {
+T random_f(T min, T max) {
     static std::uniform_real_distribution<T> distribution(min, max);
     static std::mt19937 generator;
     return distribution(generator);
 }
 
 template <class T, Scalar auto N>
-inline Vector<T, N> random_v() {
+Vector<T, N> random_v() {
     auto vec = Vector<T, N>();
     for (int i = 0; i < N; i++) {
         vec[i] = random_f<T>();
@@ -27,7 +27,7 @@ inline Vector<T, N> random_v() {
 }
 
 template <class T, Scalar auto N>
-inline Vector<T, N> random_v(T min, T max) {
+Vector<T, N> random_v(T min, T max) {
     auto vec = Vector<T, N>();
     for (int i = 0; i < N; i++) {
         vec[i] = random_f<T>(min, max);
@@ -37,7 +37,7 @@ inline Vector<T, N> random_v(T min, T max) {
 }
 
 template <class T, Scalar auto N>
-inline Vector<T, N> random_in_unit_sphere() {
+Vector<T, N> random_in_unit_sphere() {
     while (true) {
         auto p = random_v<T, N>(T(-1), T(1));
         if (LengthSquared(p) >= 1) continue;
@@ -46,14 +46,14 @@ inline Vector<T, N> random_in_unit_sphere() {
 }
 
 template <class T, Scalar auto N>
-inline Vector<T, N> random_unit_vector() {
+Vector<T, N> random_unit_vector() {
     auto p = random_in_unit_sphere<T, N>();
     Normalize(p);
     return p;
 }
 
 template <class T, Scalar auto N>
-inline Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal) {
+Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal) {
     auto p = random_in_unit_sphere<T, N>();
     T result;
     DotProduct<T, N>(result, p, normal);
@@ -61,6 +61,15 @@ inline Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal) {
         return p;
     } else {
         return -p;
+    }
+}
+
+template <class T>
+Vector3<T> random_in_unit_disk() {
+    while (true) {
+        auto p = Vector3<T>({random_f(T(-1.0), T(1.0)), random_f(T(-1.0), T(1.0)), 0});
+        if (LengthSquared(p) >= 1) continue;
+        return p;
     }
 }
 }  // namespace My

@@ -9,7 +9,7 @@
 
 #include <future>
 #include <memory>
-#include <vector>
+#include <queue>
 
 using float_precision = float;
 
@@ -147,38 +147,48 @@ template <class T>
 class camera {
    public:
     camera(
-        point3  lookfrom,
-        point3  lookat,
-        vec3    vup,
+        My::Point<T>    lookfrom,
+        My::Point<T>    lookat,
+        My::Vector3<T>  vup,
         T vfov, 
-        T aspect_ratio) {
+        T aspect_ratio,
+        T aperture,
+        T focus_dist
+        ) {
         auto theta = My::degrees_to_radians(vfov);
         auto h = std::tan(theta/2);
         T viewport_height = 2.0 * h;
         T viewport_width = aspect_ratio * viewport_height;
 
-        auto w = lookfrom - lookat;
+        w = lookfrom - lookat;
         My::Normalize(w);
-        auto u = My::CrossProduct(vup, w);
+        u = My::CrossProduct(vup, w);
         My::Normalize(u);
-        auto v = My::CrossProduct(w, u);
+        v = My::CrossProduct(w, u);
 
         origin = lookfrom;
-        horizontal = viewport_width * u;
-        vertical = viewport_height * v;
-        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - w;
+        horizontal = focus_dist * viewport_width * u;
+        vertical = focus_dist * viewport_height * v;
+        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - focus_dist * w;
+
+        lens_radius = aperture / 2;
     }
 
     ray get_ray(T s, T t) const {
-        return ray(origin,
-                   lower_left_corner + s * horizontal + t * vertical - origin);
+        My::Vector3<T> rd = lens_radius * My::random_in_unit_disk<T>();
+        My::Vector3<T> offset = u * rd[0] + v * rd[1];
+        
+        return ray(origin + offset,
+                   lower_left_corner + s * horizontal + t * vertical - origin - offset);
     }
 
    private:
-    point3 origin;
-    point3 lower_left_corner;
-    vec3 horizontal;
-    vec3 vertical;
+    My::Point<T> origin;
+    My::Point<T> lower_left_corner;
+    My::Vector3<T> horizontal;
+    My::Vector3<T> vertical;
+    My::Vector3<T> u, v, w;
+    T    lens_radius;
 };
 
 // Main
@@ -208,7 +218,13 @@ int main(int argc, char** argv) {
     const int max_depth = 50;
 
     // Camera
-    camera<float_precision> cam(point3({-2, 2, 1}), point3({0, 0, -1}), vec3({0, 1, 0}), 20.0, aspect_ratio);
+    point3 lookfrom({3, 3, 2});
+    point3 lookat({0, 0, -1});
+    vec3 vup({0, 1, 0});
+    auto dist_to_focus = My::Length(lookfrom - lookat);
+    auto aperture = 2.0;
+
+    camera<float_precision> cam(lookfrom, lookat, vup, (float_precision)20.0, aspect_ratio, aperture, dist_to_focus);
 
     // Image
     image img;
@@ -224,10 +240,10 @@ int main(int argc, char** argv) {
     img.data = new uint8_t[img.data_size];
 
     // Render
-    std::future<void> raytrace_tasks[img.Height];
+    std::queue<std::future<void>> raytrace_tasks;
     for (auto j = 0; j < img.Height; j++) {
         std::cerr << "\rScanlines launched: " << j << ' ' << std::flush;
-        raytrace_tasks[j] = std::async(std::launch::async| std::launch::deferred, [j, cam, &img] {
+        raytrace_tasks.emplace(std::async(std::launch::async| std::launch::deferred, [j, cam, &img] {
             for (auto i = 0; i < img.Width; i++) {
                 color pixel_color(0);
                 for (auto s = 0; s < samples_per_pixel; s++) {
@@ -249,13 +265,14 @@ int main(int argc, char** argv) {
                 img.SetG(i, j, to_unorm(pixel_color[1]));
                 img.SetB(i, j, to_unorm(pixel_color[2]));
             }
-        });
+        }));
     }
 
-    for (auto j = 0; j < img.Height; j++) {
-        std::cerr << "\rScanlines remaining: " << img.Height - j << ' '
+    while (raytrace_tasks.size() > 0) {
+        std::cerr << "\rScanlines remaining: " << raytrace_tasks.size() << ' '
                   << std::flush;
-        raytrace_tasks[j].wait();
+        raytrace_tasks.front().wait();
+        raytrace_tasks.pop();
     }
 
     std::cerr << "\r";
