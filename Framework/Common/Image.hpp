@@ -453,8 +453,10 @@ struct Image {
         }
         // the data
         // flip y so that (0,0) is bottom left corner
-        for (uint32_t y = Height - 1; y >= 0; y--) {
-            for (uint32_t x = 0; x < Width; x++) {
+        assert(Height <= (std::numeric_limits<int32_t>::max()));
+        assert(Width <= (std::numeric_limits<int32_t>::max()));
+        for (int32_t y = Height - 1; y >= 0; y--) {
+            for (int32_t x = 0; x < Width; x++) {
                 // note reversed order: b, g, r
                 fprintf(file, "%c", GetA(x, y));
                 fprintf(file, "%c", GetB(x, y));

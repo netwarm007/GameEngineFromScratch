@@ -328,10 +328,20 @@ int main(int argc, char** argv) {
             }));
     }
 
+    while (!raytrace_tasks.empty()) {
+        // wait for at least one task finish
+        raytrace_tasks.remove_if([](std::future<int>& task) {
+            return task.wait_for(1s) == std::future_status::ready;
+        });
+    }
+
     std::cerr << "\r";
 
+#if 0
     My::PpmEncoder encoder;
     encoder.Encode(img);
+#endif
+    img.SaveTGA("raytraced.tga");
 
     return 0;
 }
