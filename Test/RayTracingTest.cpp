@@ -7,6 +7,7 @@
 
 #include "Sphere.hpp"
 
+#include <future>
 #include <memory>
 #include <vector>
 
@@ -91,11 +92,12 @@ class dielectric : public material {
         bool cannot_refract = refraction_ratio * sin_theta > 1.0;
 
         vec3 direction;
-        if ((cannot_refract) || (schlick_reflectance_approximation(cos_theta, refraction_ratio) > My::random_f<float_precision>())) {
+        if ((cannot_refract) ||
+            (schlick_reflectance_approximation(cos_theta, refraction_ratio) >
+             My::random_f<float_precision>())) {
             direction = My::Reflect(v, n);
         } else {
-            direction =
-                My::Refract(v, n, refraction_ratio);
+            direction = My::Refract(v, n, refraction_ratio);
         }
         scattered = ray(r_in.pointAtParameter(hit.getT()), direction);
 
@@ -106,7 +108,8 @@ class dielectric : public material {
     double ir;  // Index of Refraction
 
    private:
-    static float_precision schlick_reflectance_approximation(float_precision cosine, float_precision ref_idx) {
+    static float_precision schlick_reflectance_approximation(
+        float_precision cosine, float_precision ref_idx) {
         auto r0 = (1 - ref_idx) / (1 + ref_idx);
         r0 = r0 * r0;
         return r0 + (1 - r0) * pow((1 - cosine), 5);
@@ -189,8 +192,8 @@ int main(int argc, char** argv) {
     const float_precision aspect_ratio = 16.0 / 9.0;
     const int image_width = 800;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 64;
-    const int max_depth = 16;
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
 
     // Camera
     camera<float_precision> cam;
@@ -209,29 +212,38 @@ int main(int argc, char** argv) {
     img.data = new uint8_t[img.data_size];
 
     // Render
+    std::future<void> raytrace_tasks[img.Height];
+    for (auto j = 0; j < img.Height; j++) {
+        std::cerr << "\rScanlines launched: " << j << ' ' << std::flush;
+        raytrace_tasks[j] = std::async([j, cam, &img] {
+            for (auto i = 0; i < img.Width; i++) {
+                color pixel_color(0);
+                for (auto s = 0; s < samples_per_pixel; s++) {
+                    auto u =
+                        (i + My::random_f<float_precision>()) / (img.Width - 1);
+                    auto v = (j + My::random_f<float_precision>()) /
+                             (img.Height - 1);
+
+                    auto r = cam.get_ray(u, v);
+                    pixel_color += ray_color(r, max_depth);
+                }
+
+                pixel_color = pixel_color * (1.0 / samples_per_pixel);
+
+                // Gamma-correction for gamma = 2.0
+                pixel_color = My::sqrt(pixel_color);
+
+                img.SetR(i, j, to_unorm(pixel_color[0]));
+                img.SetG(i, j, to_unorm(pixel_color[1]));
+                img.SetB(i, j, to_unorm(pixel_color[2]));
+            }
+        });
+    }
+
     for (auto j = 0; j < img.Height; j++) {
         std::cerr << "\rScanlines remaining: " << img.Height - j << ' '
                   << std::flush;
-        for (auto i = 0; i < img.Width; i++) {
-            color pixel_color(0);
-            for (auto s = 0; s < samples_per_pixel; s++) {
-                auto u =
-                    (i + My::random_f<float_precision>()) / (img.Width - 1);
-                auto v =
-                    (j + My::random_f<float_precision>()) / (img.Height - 1);
-                auto r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, max_depth);
-            }
-
-            pixel_color = pixel_color * (1.0 / samples_per_pixel);
-
-            // Gamma-correction for gamma = 2.0
-            pixel_color = My::sqrt(pixel_color);
-
-            img.SetR(i, j, to_unorm(pixel_color[0]));
-            img.SetG(i, j, to_unorm(pixel_color[1]));
-            img.SetB(i, j, to_unorm(pixel_color[2]));
-        }
+        raytrace_tasks[j].wait();
     }
 
     std::cerr << "\r";
