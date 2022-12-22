@@ -61,11 +61,12 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         }
 
         // calculate normal
-        auto normal = r.pointAtParameter(t) - m_center;
-        Normalize(normal);
+        auto normal = (r.pointAtParameter(t) - m_center) / m_fRadius;
+        bool front_face = DotProduct(r.getDirection(), normal) < 0;
+        if (!front_face) normal = -normal;
 
         // set the hit result
-        h.set(t, normal, DotProduct(r.getDirection(), normal) < 0, m_ptrMat);
+        h.set(t, normal, front_face, m_ptrMat);
 
         return true;
     }

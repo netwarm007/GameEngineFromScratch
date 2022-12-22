@@ -86,7 +86,7 @@ class dielectric : public material {
         attenuation = color({1.0, 1.0, 1.0});
         float_precision refraction_ratio = hit.isFrontFace() ? (1.0 / ir) : ir;
         auto v = r_in.getDirection();
-        auto n = hit.isFrontFace() ? hit.getNormal() : -hit.getNormal();
+        auto n = hit.getNormal();
         auto cos_theta = fmin(DotProduct(-v, n), 1.0);
         auto sin_theta = sqrt(1.0 - cos_theta * cos_theta);
         bool cannot_refract = refraction_ratio * sin_theta > 1.0;
@@ -146,22 +146,32 @@ color ray_color(const ray& r, int depth) {
 template <class T>
 class camera {
    public:
-    camera() {
-        auto aspect_ratio = 16.0 / 9.0;
-        T viewport_height = 2.0;
+    camera(
+        point3  lookfrom,
+        point3  lookat,
+        vec3    vup,
+        T vfov, 
+        T aspect_ratio) {
+        auto theta = My::degrees_to_radians(vfov);
+        auto h = std::tan(theta/2);
+        T viewport_height = 2.0 * h;
         T viewport_width = aspect_ratio * viewport_height;
-        T focal_length = 1.0;
 
-        origin = point3({0, 0, 0});
-        horizontal = vec3({viewport_width, 0, 0});
-        vertical = vec3({0, viewport_height, 0});
-        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 -
-                            vec3({0, 0, focal_length});
+        auto w = lookfrom - lookat;
+        My::Normalize(w);
+        auto u = My::CrossProduct(vup, w);
+        My::Normalize(u);
+        auto v = My::CrossProduct(w, u);
+
+        origin = lookfrom;
+        horizontal = viewport_width * u;
+        vertical = viewport_height * v;
+        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - w;
     }
 
-    ray get_ray(T u, T v) const {
+    ray get_ray(T s, T t) const {
         return ray(origin,
-                   lower_left_corner + u * horizontal + v * vertical - origin);
+                   lower_left_corner + s * horizontal + t * vertical - origin);
     }
 
    private:
@@ -177,7 +187,7 @@ int main(int argc, char** argv) {
     auto material_ground = std::make_shared<lambertian>(color({0.8, 0.8, 0.0}));
     auto material_center = std::make_shared<lambertian>(color({0.1, 0.2, 0.5}));
     auto material_left = std::make_shared<dielectric>(1.5);
-    auto material_right = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 1.0);
+    auto material_right = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 0.0);
 
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         100, point3({0, -100.5, -1.0}), material_ground));
@@ -185,6 +195,8 @@ int main(int argc, char** argv) {
         0.5, point3({0, 0, -1.0}), material_center));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         0.5, point3({-1.0, 0, -1.0}), material_left));
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+       -0.45, point3({-1.0, 0, -1.0}), material_left));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         0.5, point3({1.0, 0, -1.0}), material_right));
 
@@ -196,7 +208,7 @@ int main(int argc, char** argv) {
     const int max_depth = 50;
 
     // Camera
-    camera<float_precision> cam;
+    camera<float_precision> cam(point3({-2, 2, 1}), point3({0, 0, -1}), vec3({0, 1, 0}), 20.0, aspect_ratio);
 
     // Image
     image img;
@@ -215,7 +227,7 @@ int main(int argc, char** argv) {
     std::future<void> raytrace_tasks[img.Height];
     for (auto j = 0; j < img.Height; j++) {
         std::cerr << "\rScanlines launched: " << j << ' ' << std::flush;
-        raytrace_tasks[j] = std::async([j, cam, &img] {
+        raytrace_tasks[j] = std::async(std::launch::async| std::launch::deferred, [j, cam, &img] {
             for (auto i = 0; i < img.Width; i++) {
                 color pixel_color(0);
                 for (auto s = 0; s < samples_per_pixel; s++) {
