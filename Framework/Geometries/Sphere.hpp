@@ -66,7 +66,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         if (!front_face) normal = -normal;
 
         // set the hit result
-        h.set(t, normal, front_face, m_ptrMat);
+        h.set(t, r.pointAtParameter(t), normal, front_face, m_ptrMat);
 
         return true;
     }

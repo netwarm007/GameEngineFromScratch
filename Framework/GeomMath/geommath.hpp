@@ -296,38 +296,31 @@ inline auto CrossProduct(const Vector<T, 3>& vec1,
     return result;
 }
 
-template <class T>
-inline void DotProduct(T& result, const T* a, const T* b, const size_t count) {
-    T* _result = new T[count];
+template <class T, Dimension auto N>
+inline T DotProduct(const Vector<T, N>& vec1,
+                       const Vector<T, N>& vec2) {
+    T result;
 
-    result = static_cast<T>(0);
+    DotProduct(result, vec1, vec2);
 
-#ifdef USE_ISPC
-    ispc::MulByElement(a, b, _result, count);
-#else
-    Dummy::MulByElement(a, b, _result, count);
-#endif
-
-    for (size_t i = 0; i < count; i++) {
-        result += _result[i];
-    }
-
-    delete[] _result;
+    return result;
 }
 
 template <class T, Dimension auto N>
 inline void DotProduct(T& result, const Vector<T, N>& vec1,
                        const Vector<T, N>& vec2) {
-    DotProduct(result, static_cast<const T*>(vec1), static_cast<const T*>(vec2),
-               N);
-}
+    Vector<T, N> _result;
 
-template <class T, Dimension auto N>
-inline T DotProduct(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
-    T result;
-    DotProduct(result, static_cast<const T*>(vec1), static_cast<const T*>(vec2),
-               N);
-    return result;
+#ifdef USE_ISPC
+    ispc::MulByElement(vec1, vec2, _result, N);
+#else
+    Dummy::MulByElement(vec1, vec2, _resultm N);
+#endif
+
+    result = 0;
+    for (size_t i = 0; i < N; i++) {
+        result += _result[i];
+    }
 }
 
 template <class T, Dimension auto N>

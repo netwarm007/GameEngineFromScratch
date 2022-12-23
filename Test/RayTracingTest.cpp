@@ -33,7 +33,7 @@ constexpr auto epsilon = std::numeric_limits<float_precision>::epsilon();
 // Material
 class material {
    public:
-    virtual bool scatter(const ray& r_in, const hit_record hit,
+    virtual bool scatter(const ray& r_in, const hit_record& hit,
                          color& attenuation, ray& scattered) const = 0;
 };
 
@@ -41,7 +41,7 @@ class lambertian : public material {
    public:
     lambertian(const color& a) : albedo(a) {}
 
-    bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
+    bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
                  ray& scattered) const override {
         auto scatter_direction =
             hit.getNormal() + My::random_unit_vector<float_precision, 3>();
@@ -50,7 +50,7 @@ class lambertian : public material {
             scatter_direction = hit.getNormal();
         }
 
-        scattered = ray(r_in.pointAtParameter(hit.getT()), scatter_direction);
+        scattered = ray(hit.getP(), scatter_direction);
         attenuation = albedo;
         return true;
     }
@@ -63,11 +63,11 @@ class metal : public material {
    public:
     metal(const color& a, double f) : albedo(a), fuzz(f < 1 ? f : 1) {}
 
-    bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
+    bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
                  ray& scattered) const override {
         vec3 reflected = My::Reflect(r_in.getDirection(), hit.getNormal());
         scattered = ray(
-            r_in.pointAtParameter(hit.getT()),
+            hit.getP(),
             reflected + fuzz * My::random_in_unit_sphere<float_precision, 3>());
         attenuation = albedo;
         return My::DotProduct(scattered.getDirection(), hit.getNormal()) >
@@ -83,7 +83,7 @@ class dielectric : public material {
    public:
     dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
-    bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
+    bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
                  ray& scattered) const override {
         attenuation = color({1.0, 1.0, 1.0});
         float_precision refraction_ratio = hit.isFrontFace() ? (1.0 / ir) : ir;
@@ -101,7 +101,7 @@ class dielectric : public material {
         } else {
             direction = My::Refract(v, n, refraction_ratio);
         }
-        scattered = ray(r_in.pointAtParameter(hit.getT()), direction);
+        scattered = ray(hit.getP(), direction);
 
         return true;
     }
@@ -119,30 +119,33 @@ class dielectric : public material {
 };
 
 // Utilities
+const color white ({1.0, 1.0, 1.0});
+const color black ({0.0, 0.0, 0.0});
+const color bg_color ({0.5, 0.7, 1.0});
+
 color ray_color(const ray& r, int depth,
                 My::IntersectableList<float_precision>& world) {
     hit_record hit;
 
     if (depth <= 0) {
-        return color({0, 0, 0});
+        return black;
     }
 
     if (world.Intersect(r, hit, 0.001, infinity)) {
         ray scattered;
         color attenuation;
-        auto p = r.pointAtParameter(hit.getT());
 
         if (hit.getMaterial()->scatter(r, hit, attenuation, scattered)) {
             return attenuation * ray_color(scattered, depth - 1, world);
         }
 
-        return color({0, 0, 0});
+        return black;
     }
 
     // background
-    auto unit_direction = r.getDirection();
+    auto& unit_direction = r.getDirection();
     auto t = 0.5 * (unit_direction[1] + 1.0);
-    return (1.0 - t) * color({1.0, 1.0, 1.0}) + t * color({0.5, 0.7, 1.0});
+    return (1.0 - t) * white + t * bg_color;
 }
 
 // Camera
@@ -254,9 +257,9 @@ auto random_scene() {
 int main(int argc, char** argv) {
     // Image
     const float_precision aspect_ratio = 16.0 / 9.0;
-    const int image_width = 800;
+    const int image_width = 320;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 500;
+    const int samples_per_pixel = 100;
     const int max_depth = 50;
 
     // World
@@ -286,8 +289,7 @@ int main(int argc, char** argv) {
     img.data = new uint8_t[img.data_size];
 
     // Render
-    int concurrency = std::thread::hardware_concurrency() - 1;
-    if (concurrency <= 0) concurrency = 1;
+    int concurrency = std::thread::hardware_concurrency();
     std::cerr << "Concurrent ray tracing with (" << concurrency << ") threads."
               << std::endl;
 
@@ -340,11 +342,11 @@ int main(int argc, char** argv) {
 
     std::cerr << "\r";
 
-#if 0
     My::PpmEncoder encoder;
     encoder.Encode(img);
-#endif
+#if 0
     img.SaveTGA("raytraced.tga");
+#endif
 
     return 0;
 }

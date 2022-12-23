@@ -425,8 +425,6 @@ struct Image {
     void SaveTGA(const char* filename) const {
         assert(filename != NULL);
         // must end in .tga
-        assert(const char* ext = &filename[strlen(filename) - 4];
-        !strcmp(ext, ".tga"));
         if (compressed) {
             fprintf(stderr, "SaveTGA is called but the image is compressed.\n");
             return;
