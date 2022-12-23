@@ -72,14 +72,14 @@ concept Scalar = std::floating_point<T> || std::integral<T>;
 template <class T>
 concept Dimension = std::integral<T>;
 
-template <typename T>
+template <class T>
 constexpr float normalize(T value) {
     return value < 0
                ? -static_cast<float>(value) / (std::numeric_limits<T>::min)()
                : static_cast<float>(value) / (std::numeric_limits<T>::max)();
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 struct Vector {
     T data[N];
 
@@ -176,23 +176,23 @@ struct Vector {
     }
 };
 
-template <typename T>
+template <class T>
 using Vector2 = Vector<T, 2>;
 using Vector2f = Vector2<float>;
 
-template <typename T>
+template <class T>
 using Vector3 = Vector<T, 3>;
 using Vector3f = Vector3<float>;
 using Vector3i16 = Vector3<int16_t>;
 using Vector3i32 = Vector3<int32_t>;
 
-template <typename T>
+template <class T>
 using Vector4 = Vector<T, 4>;
 using Vector4f = Vector4<float>;
 using R8G8B8A8Unorm = Vector4<uint8_t>;
 using Vector4i = Vector4<uint8_t>;
 
-template <typename T>
+template <class T>
 class Quaternion : public Vector<T, 4> {
    public:
     using Vector<T, 4>::Vector;
@@ -202,7 +202,7 @@ class Quaternion : public Vector<T, 4> {
     }
 };
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 std::ostream& operator<<(std::ostream& out, Vector<T, N> vector) {
     out.precision(4);
     out.setf(std::ios::fixed);
@@ -215,7 +215,7 @@ std::ostream& operator<<(std::ostream& out, Vector<T, N> vector) {
     return out;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1,
                const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
@@ -225,7 +225,7 @@ void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1,
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorAdd(result, vec1, vec2);
@@ -233,7 +233,7 @@ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result(scalar);
     VectorAdd(result, vec, result);
@@ -241,7 +241,7 @@ Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1,
                const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
@@ -251,7 +251,7 @@ void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1,
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorSub(result, vec1, vec2);
@@ -259,7 +259,7 @@ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator-(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result(scalar);
     VectorSub(result, vec, result);
@@ -267,13 +267,13 @@ Vector<T, N> operator-(const Vector<T, N>& vec, const Scalar auto scalar) {
     return result;
 }
 
-template <typename T>
+template <class T>
 inline void CrossProduct(T& result, const Vector<T, 2>& vec1,
                          const Vector<T, 2>& vec2) {
     result = vec1[0] * vec2[1] - vec1[1] * vec2[0];
 }
 
-template <typename T>
+template <class T>
 inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1,
                          const Vector<T, 3>& vec2) {
 #ifdef USE_ISPC
@@ -281,6 +281,19 @@ inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1,
 #else
     Dummy::CrossProduct(vec1, vec2, result);
 #endif
+}
+
+template <class T>
+inline auto CrossProduct(const Vector<T, 3>& vec1,
+                         const Vector<T, 3>& vec2) {
+    Vector<T, 3> result; 
+#ifdef USE_ISPC
+    ispc::CrossProduct(vec1, vec2, result);
+#else
+    Dummy::CrossProduct(vec1, vec2, result);
+#endif
+
+    return result;
 }
 
 template <typename T, int N>
@@ -301,14 +314,14 @@ inline void DotProduct(T& result, const Vector<T, N>& vec1,
     }
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline T DotProduct(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     T result;
     DotProduct(result, vec1, vec2);
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Vector<T, N>& b) {
 #ifdef USE_ISPC
@@ -318,7 +331,7 @@ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Scalar auto scalar) {
     Vector<T, N> v(scalar);
@@ -329,7 +342,7 @@ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
@@ -337,7 +350,7 @@ Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
@@ -345,7 +358,7 @@ Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     MulByElement(result, vec1, vec2);
@@ -353,7 +366,7 @@ Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Vector<T, N>& b) {
 #ifdef USE_ISPC
@@ -363,7 +376,7 @@ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Scalar auto scalar) {
     Vector<T, N> v(scalar);
@@ -374,7 +387,7 @@ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
@@ -382,7 +395,7 @@ Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
@@ -390,7 +403,7 @@ Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     DivByElement(result, vec1, vec2);
@@ -403,7 +416,7 @@ inline constexpr Scalar auto pow(const Scalar auto base,
     return std::pow(base, exponent);
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> pow(const Vector<T, N>& vec, const Scalar auto exponent) {
     Vector<T, N> result;
 #ifdef USE_ISPC
@@ -418,7 +431,7 @@ inline constexpr Scalar auto sqrt(const Scalar auto base) {
     return std::sqrt(base);
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> sqrt(const Vector<T, N>& vec) {
     Vector<T, N> result;
 #ifdef USE_ISPC
@@ -429,12 +442,12 @@ Vector<T, N> sqrt(const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T>
+template <class T>
 inline constexpr T fabs(const T data) {
     return std::fabs(data);
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 Vector<T, N> fabs(const Vector<T, N>& vec) {
     Vector<T, N> result;
 #ifdef USE_ISPC
@@ -445,40 +458,40 @@ Vector<T, N> fabs(const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline T LengthSquared(const Vector<T, N>& vec) {
     T result;
     DotProduct(result, vec, vec);
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline constexpr T Length(const Vector<T, N>& vec) {
     auto length_squared = LengthSquared(vec);
     return static_cast<T>(std::sqrt(length_squared));
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline bool operator>=(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) >= scalar;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline bool operator>(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) > scalar;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline bool operator<=(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) <= scalar;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline bool operator<(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) < scalar;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline void Normalize(Vector<T, N>& a) {
     T length = Length(a);
 #ifdef USE_ISPC
@@ -488,7 +501,7 @@ inline void Normalize(Vector<T, N>& a) {
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline bool isNearZero(const Vector<T, N>& vec) {
     bool result = true;
     const auto s = 1e-8;
@@ -502,12 +515,12 @@ inline bool isNearZero(const Vector<T, N>& vec) {
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline Vector<T, N> Reflect(const Vector<T, N>& v, const Vector<T, N>& n) {
     return v - 2 * DotProduct(v, n) * n;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
                             T etai_over_etat) {
     auto cos_theta = fmin(DotProduct(-v, n), 1.0);
@@ -520,7 +533,7 @@ inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
 ///////////////////////////
 // Matrix
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 struct Matrix {
     Vector<T, COLS> data[ROWS];
 
@@ -558,10 +571,10 @@ struct Matrix {
     }
 };
 
-template <typename T>
+template <class T>
 using Matrix3X3 = Matrix<T, 3, 3>;
 
-template <typename T>
+template <class T>
 using Matrix4X4 = Matrix<T, 4, 4>;
 
 using Matrix3X3f = Matrix<float, 3, 3>;
@@ -569,7 +582,7 @@ using Matrix4X4f = Matrix<float, 4, 4>;
 using Matrix8X8i = Matrix<int32_t, 8, 8>;
 using Matrix8X8f = Matrix<float, 8, 8>;
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix) {
     out << std::endl;
     for (Dimension auto i = 0; i < ROWS; i++) {
@@ -580,7 +593,7 @@ std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix) {
     return out;
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 void MatrixAdd(Matrix<T, ROWS, COLS>& result,
                const Matrix<T, ROWS, COLS>& matrix1,
                const Matrix<T, ROWS, COLS>& matrix2) {
@@ -591,7 +604,7 @@ void MatrixAdd(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>& matrix1,
                                 const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
@@ -600,7 +613,7 @@ Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>& matrix1,
     return result;
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 void MatrixSub(Matrix<T, ROWS, COLS>& result,
                const Matrix<T, ROWS, COLS>& matrix1,
                const Matrix<T, ROWS, COLS>& matrix2) {
@@ -611,7 +624,7 @@ void MatrixSub(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 void MatrixMulByElement(Matrix<T, ROWS, COLS>& result,
                         const Matrix<T, ROWS, COLS>& matrix1,
                         const Matrix<T, ROWS, COLS>& matrix2) {
@@ -633,7 +646,7 @@ void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>& matrix1,
                                 const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
@@ -642,7 +655,7 @@ Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>& matrix1,
     return result;
 }
 
-template <typename T, Dimension auto Da, Dimension auto Db, Dimension auto Dc>
+template <class T, Dimension auto Da, Dimension auto Db, Dimension auto Dc>
 void MatrixMultiply(Matrix<T, Da, Dc>& result, const Matrix<T, Da, Db>& matrix1,
                     const Matrix<T, Dc, Db>& matrix2) {
     Matrix<T, Dc, Db> matrix2_transpose;
@@ -654,7 +667,7 @@ void MatrixMultiply(Matrix<T, Da, Dc>& result, const Matrix<T, Da, Db>& matrix1,
     }
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix1,
                                 const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
@@ -663,7 +676,7 @@ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix1,
     return result;
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix,
                                 const Scalar auto scalar) {
     Matrix<T, ROWS, COLS> result;
@@ -675,13 +688,13 @@ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix,
     return result;
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator*(const Scalar auto scalar,
                                 const Matrix<T, ROWS, COLS>& matrix) {
     return matrix * scalar;
 }
 
-template <typename T, Dimension auto ROWS1, Dimension auto COLS1,
+template <class T, Dimension auto ROWS1, Dimension auto COLS1,
           Dimension auto ROWS2, Dimension auto COLS2>
 void Shrink(Matrix<T, ROWS1, COLS1>& matrix1,
             const Matrix<T, ROWS2, COLS2>& matrix2) {
@@ -698,7 +711,7 @@ void Shrink(Matrix<T, ROWS1, COLS1>& matrix1,
     }
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 void Absolute(Matrix<T, ROWS, COLS>& result,
               const Matrix<T, ROWS, COLS>& matrix) {
 #ifdef USE_ISPC
@@ -708,7 +721,7 @@ void Absolute(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix) {
     bool result = true;
     for (Dimension auto i = 0; i < ROWS; i++) {
@@ -722,19 +735,19 @@ inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix) {
     return result;
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 inline bool operator==(const Matrix<T, ROWS, COLS>& matrix1,
                        const Matrix<T, ROWS, COLS>& matrix2) {
     return AlmostZero(matrix1 - matrix2);
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 inline bool operator!=(const Matrix<T, ROWS, COLS>& matrix1,
                        const Matrix<T, ROWS, COLS>& matrix2) {
     return !(matrix1 == matrix2);
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 inline void Transpose(Matrix<T, ROWS, COLS>& result,
                       const Matrix<T, ROWS, COLS>& matrix1) {
 #ifdef USE_ISPC
@@ -744,7 +757,7 @@ inline void Transpose(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline T Trace(const Matrix<T, N, N>& matrix) {
     T result = (T)0;
 
@@ -755,7 +768,7 @@ inline T Trace(const Matrix<T, N, N>& matrix) {
     return result;
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& source,
                         const Matrix<T, ROWS, COLS>& matrix) {
     static_assert(
@@ -774,7 +787,7 @@ inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& source,
     DotProduct(result[2], source, basis[2]);
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 inline void GetOrigin(Vector<T, 3>& result,
                       const Matrix<T, ROWS, COLS>& matrix) {
     static_assert(
@@ -826,7 +839,7 @@ inline void Transform(Vector4f& vector, const Matrix4X4f& matrix) {
 #endif
 }
 
-template <typename T, Dimension auto ROWS, Dimension auto COLS>
+template <class T, Dimension auto ROWS, Dimension auto COLS>
 inline void ExchangeYandZ(Matrix<T, ROWS, COLS>& matrix) {
 #ifdef USE_ISPC
     ispc::MatrixExchangeYandZ(matrix, ROWS, COLS);
@@ -897,7 +910,7 @@ inline void BuildViewRHMatrix(Matrix4X4f& result, const Vector3f position,
     result = tmp;
 }
 
-template <typename T, Dimension auto N>
+template <class T, Dimension auto N>
 inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix) {
 #ifdef USE_ISPC
     ispc::BuildIdentityMatrix(matrix, N);
@@ -1057,7 +1070,7 @@ inline void MatrixRotationAxis(Matrix4X4f& matrix, const Vector3f& axis,
     matrix = rotation;
 }
 
-template <typename T>
+template <class T>
 inline void MatrixRotationQuaternion(Matrix4X4f& matrix, Quaternion<T> q) {
     Matrix4X4f rotation = {
         {{1.0f - 2.0f * q[1] * q[1] - 2.0f * q[2] * q[2],
@@ -1131,58 +1144,58 @@ inline Matrix8X8f IDCT8X8(const Matrix8X8f& matrix) {
     return result;
 }
 
-template <typename T>
+template <class T>
 using Point2D = Vector<T, 2>;
 using Point2Df = Point2D<float>;
 
-template <typename T>
+template <class T>
 using Point2DPtr = std::shared_ptr<Point2D<T>>;
 using Point2DPtrf = Point2DPtr<float>;
 
-template <typename T>
+template <class T>
 using Point2DList = std::vector<Point2DPtr<T>>;
 using Point2DListf = Point2DList<float>;
 
-template <typename T>
+template <class T>
 using Point = Vector<T, 3>;
 using Pointf = Point<float>;
 
-template <typename T>
+template <class T>
 using PointPtr = std::shared_ptr<Point<T>>;
 using PointPtrf = PointPtr<float>;
 
-template <typename T>
+template <class T>
 using PointSet = std::unordered_set<PointPtr<T>>;
 using PointSetf = PointSet<float>;
 
-template <typename T>
+template <class T>
 using PointList = std::vector<PointPtr<T>>;
 using PointListf = PointList<float>;
 
-template <typename T>
+template <class T>
 using Edge = std::pair<PointPtr<T>, PointPtr<T>>;
-template <typename T>
+template <class T>
 inline bool operator==(const Edge<T>& a, const Edge<T>& b) {
     return (a.first == b.first && a.second == b.second) ||
            (a.first == b.second && a.second == b.first);
 };
 
-template <typename T>
+template <class T>
 using EdgePtr = std::shared_ptr<Edge<T>>;
 
-template <typename T>
+template <class T>
 inline bool operator==(const EdgePtr<T>& a, const EdgePtr<T>& b) {
     return (a->first == b->first && a->second == b->second) ||
            (a->first == b->second && a->second == b->first);
 };
 
-template <typename T>
+template <class T>
 using EdgeSet = std::unordered_set<EdgePtr<T>>;
 
-template <typename T>
+template <class T>
 using EdgeList = std::vector<EdgePtr<T>>;
 
-template <typename T>
+template <class T>
 struct Face {
     EdgeList<T> Edges;
     Vector3f Normal;
@@ -1196,16 +1209,16 @@ struct Face {
     }
 };
 
-template <typename T>
+template <class T>
 using FacePtr = std::shared_ptr<Face<T>>;
 
-template <typename T>
+template <class T>
 using FaceSet = std::unordered_set<FacePtr<T>>;
 
-template <typename T>
+template <class T>
 using FaceList = std::vector<FacePtr<T>>;
 
-template <typename T>
+template <class T>
 inline float PointToPlaneDistance(const PointList<T>& vertices,
                                   const Point<T>& point) {
     Vector3f normal;
@@ -1221,13 +1234,13 @@ inline float PointToPlaneDistance(const PointList<T>& vertices,
     return distance;
 }
 
-template <typename T>
+template <class T>
 inline bool isPointAbovePlane(const PointList<T>& vertices,
                               const Point<T>& point) {
     return PointToPlaneDistance(vertices, point) > 0;
 }
 
-template <typename T>
+template <class T>
 inline bool isPointAbovePlane(const FacePtr<T>& pface, const Point<T>& point) {
     assert(pface->Edges.size() > 2);
     PointList<T> vertices = {pface->Edges[0]->first, pface->Edges[1]->first,
@@ -1235,7 +1248,7 @@ inline bool isPointAbovePlane(const FacePtr<T>& pface, const Point<T>& point) {
     return isPointAbovePlane(vertices, point);
 }
 
-template <typename T>
+template <class T>
 inline T degrees_to_radians(T degrees) {
     return degrees * PI / 180.0;
 }

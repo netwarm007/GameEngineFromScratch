@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 #include <future>
+#include <list>
 
 using namespace std::chrono_literals;
 
@@ -110,7 +111,8 @@ class dielectric : public material {
     double ir;  // Index of Refraction
 
    private:
-    static float_precision schlick_reflectance_approximation(float_precision cosine, float_precision ref_idx) {
+    static float_precision schlick_reflectance_approximation(
+        float_precision cosine, float_precision ref_idx) {
         auto r0 = (1 - ref_idx) / (1 + ref_idx);
         r0 = r0 * r0;
         return r0 + (1 - r0) * pow((1 - cosine), 5);
@@ -147,29 +149,49 @@ color ray_color(const ray& r, int depth) {
 template <class T>
 class camera {
    public:
-    camera() {
-        auto aspect_ratio = 16.0 / 9.0;
-        T viewport_height = 2.0;
+    camera(
+        My::Point<T>    lookfrom,
+        My::Point<T>    lookat,
+        My::Vector3<T>  vup,
+        T vfov, 
+        T aspect_ratio,
+        T aperture,
+        T focus_dist
+        ) {
+        auto theta = My::degrees_to_radians(vfov);
+        auto h = std::tan(theta/2);
+        T viewport_height = 2.0 * h;
         T viewport_width = aspect_ratio * viewport_height;
-        T focal_length = 1.0;
 
-        origin = point3({0, 0, 0});
-        horizontal = vec3({viewport_width, 0, 0});
-        vertical = vec3({0, viewport_height, 0});
-        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 -
-                            vec3({0, 0, focal_length});
+        w = lookfrom - lookat;
+        My::Normalize(w);
+        u = My::CrossProduct(vup, w);
+        My::Normalize(u);
+        v = My::CrossProduct(w, u);
+
+        origin = lookfrom;
+        horizontal = focus_dist * viewport_width * u;
+        vertical = focus_dist * viewport_height * v;
+        lower_left_corner = origin - horizontal / 2.0 - vertical / 2.0 - focus_dist * w;
+
+        lens_radius = aperture / 2;
     }
 
-    ray get_ray(T u, T v) const {
-        return ray(origin,
-                   lower_left_corner + u * horizontal + v * vertical - origin);
+    ray get_ray(T s, T t) const {
+        My::Vector3<T> rd = lens_radius * My::random_in_unit_disk<T>();
+        My::Vector3<T> offset = u * rd[0] + v * rd[1];
+        
+        return ray(origin + offset,
+                   lower_left_corner + s * horizontal + t * vertical - origin - offset);
     }
 
    private:
-    point3 origin;
-    point3 lower_left_corner;
-    vec3 horizontal;
-    vec3 vertical;
+    My::Point<T> origin;
+    My::Point<T> lower_left_corner;
+    My::Vector3<T> horizontal;
+    My::Vector3<T> vertical;
+    My::Vector3<T> u, v, w;
+    T    lens_radius;
 };
 
 // Main
@@ -178,7 +200,7 @@ int main(int argc, char** argv) {
     auto material_ground = std::make_shared<lambertian>(color({0.8, 0.8, 0.0}));
     auto material_center = std::make_shared<lambertian>(color({0.1, 0.2, 0.5}));
     auto material_left = std::make_shared<dielectric>(1.5);
-    auto material_right = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 1.0);
+    auto material_right = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 0.0);
 
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         100, point3({0, -100.5, -1.0}), material_ground));
@@ -195,11 +217,17 @@ int main(int argc, char** argv) {
     const float_precision aspect_ratio = 16.0 / 9.0;
     const int image_width = 800;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 64;
-    const int max_depth = 16;
+    const int samples_per_pixel = 100;
+    const int max_depth = 50;
 
     // Camera
-    camera<float_precision> cam;
+    point3 lookfrom({3, 3, 2});
+    point3 lookat({0, 0, -1});
+    vec3 vup({0, 1, 0});
+    auto dist_to_focus = My::Length(lookfrom - lookat);
+    auto aperture = 2.0;
+
+    camera<float_precision> cam(lookfrom, lookat, vup, (float_precision)20.0, aspect_ratio, aperture, dist_to_focus);
 
     // Image
     image img;
