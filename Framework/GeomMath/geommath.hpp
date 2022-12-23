@@ -86,7 +86,7 @@ struct Vector {
     Vector() { std::memset(data, 0x00, sizeof(T) * N); }
 
     explicit Vector(const T val) {
-        for (int i = 0; i < N; i++) {
+        for (Dimension auto i = 0; i < N; i++) {
             data[i] = val;
         }
     }
@@ -104,7 +104,7 @@ struct Vector {
     operator const T*() const { return reinterpret_cast<const T*>(this); }
 
     void Set(const T val) {
-        for (int i = 0; i < N; i++) {
+        for (Dimension auto i = 0; i < N; i++) {
             data[i] = val;
         }
     }
@@ -302,6 +302,14 @@ inline void DotProduct(T& result, const Vector<T, N>& vec1,
 }
 
 template <typename T, Dimension auto N>
+inline T DotProduct(const Vector<T, N>& vec1,
+                       const Vector<T, N>& vec2) {
+    T result;
+    DotProduct(result, vec1, vec2);
+    return result;
+}
+
+template <typename T, Dimension auto N>
 inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Vector<T, N>& b) {
 #ifdef USE_ISPC
@@ -480,15 +488,35 @@ inline void Normalize(Vector<T, N>& a) {
 #endif
 }
 
+template <typename T, Dimension auto N>
+inline bool isNearZero(const Vector<T, N>& vec) {
+    bool result = true;
+    const auto s = 1e-8;
+
+    for (Dimension auto i = 0; i < N; i++) {
+        if (fabs(vec[i]) >= s) {
+            result = false;
+        }
+    }
+
+    return result;
+}
+
+template <typename T, Dimension auto N>
+inline Vector<T, N> Reflect(const Vector<T, N>& v, const Vector<T, N>& n) {
+    return v - 2 * DotProduct(v, n) * n;
+}
+
+///////////////////////////
 // Matrix
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 struct Matrix {
     Vector<T, COLS> data[ROWS];
 
-    Vector<T, COLS>& operator[](int row_index) { return data[row_index]; }
+    Vector<T, COLS>& operator[](Dimension auto row_index) { return data[row_index]; }
 
-    const Vector<T, COLS>& operator[](int row_index) const {
+    const Vector<T, COLS>& operator[](Dimension auto row_index) const {
         return data[row_index];
     }
 
@@ -529,10 +557,10 @@ using Matrix4X4f = Matrix<float, 4, 4>;
 using Matrix8X8i = Matrix<int32_t, 8, 8>;
 using Matrix8X8f = Matrix<float, 8, 8>;
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix) {
     out << std::endl;
-    for (int i = 0; i < ROWS; i++) {
+    for (Dimension auto i = 0; i < ROWS; i++) {
         out << matrix[i];
     }
     out << std::endl;
@@ -540,7 +568,7 @@ std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix) {
     return out;
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 void MatrixAdd(Matrix<T, ROWS, COLS>& result,
                const Matrix<T, ROWS, COLS>& matrix1,
                const Matrix<T, ROWS, COLS>& matrix2) {
@@ -551,7 +579,7 @@ void MatrixAdd(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>& matrix1,
                                 const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
@@ -560,7 +588,7 @@ Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>& matrix1,
     return result;
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 void MatrixSub(Matrix<T, ROWS, COLS>& result,
                const Matrix<T, ROWS, COLS>& matrix1,
                const Matrix<T, ROWS, COLS>& matrix2) {
@@ -571,7 +599,7 @@ void MatrixSub(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 void MatrixMulByElement(Matrix<T, ROWS, COLS>& result,
                         const Matrix<T, ROWS, COLS>& matrix1,
                         const Matrix<T, ROWS, COLS>& matrix2) {
@@ -582,7 +610,7 @@ void MatrixMulByElement(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <int ROWS, int COLS>
+template <Dimension auto ROWS, Dimension auto COLS>
 void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result,
                            const Matrix<int32_t, ROWS, COLS>& matrix1,
                            const Matrix<int32_t, ROWS, COLS>& matrix2) {
@@ -593,7 +621,7 @@ void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>& matrix1,
                                 const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
@@ -602,19 +630,19 @@ Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>& matrix1,
     return result;
 }
 
-template <typename T, int Da, int Db, int Dc>
+template <typename T, Dimension auto Da, Dimension auto Db, Dimension auto Dc>
 void MatrixMultiply(Matrix<T, Da, Dc>& result, const Matrix<T, Da, Db>& matrix1,
                     const Matrix<T, Dc, Db>& matrix2) {
     Matrix<T, Dc, Db> matrix2_transpose;
     Transpose(matrix2_transpose, matrix2);
-    for (int i = 0; i < Da; i++) {
-        for (int j = 0; j < Dc; j++) {
+    for (Dimension auto i = 0; i < Da; i++) {
+        for (Dimension auto j = 0; j < Dc; j++) {
             DotProduct(result[i][j], matrix1[i], matrix2_transpose[j]);
         }
     }
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix1,
                                 const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
@@ -623,25 +651,25 @@ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix1,
     return result;
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix,
                                 const Scalar auto scalar) {
     Matrix<T, ROWS, COLS> result;
 
-    for (int i = 0; i < ROWS; i++) {
+    for (Dimension auto i = 0; i < ROWS; i++) {
         result[i] = matrix[i] * scalar;
     }
 
     return result;
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 Matrix<T, ROWS, COLS> operator*(const Scalar auto scalar,
                                 const Matrix<T, ROWS, COLS>& matrix) {
     return matrix * scalar;
 }
 
-template <typename T, int ROWS1, int COLS1, int ROWS2, int COLS2>
+template <typename T, Dimension auto ROWS1, Dimension auto COLS1, Dimension auto ROWS2, Dimension auto COLS2>
 void Shrink(Matrix<T, ROWS1, COLS1>& matrix1,
             const Matrix<T, ROWS2, COLS2>& matrix2) {
     static_assert(
@@ -652,12 +680,12 @@ void Shrink(Matrix<T, ROWS1, COLS1>& matrix1,
         "[Error] Target matrix COLS must smaller than source matrix COLS!");
 
     const size_t size = sizeof(T) * COLS1;
-    for (int i = 0; i < ROWS1; i++) {
+    for (Dimension auto i = 0; i < ROWS1; i++) {
         std::memcpy(matrix1[i], matrix2[i], size);
     }
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 void Absolute(Matrix<T, ROWS, COLS>& result,
               const Matrix<T, ROWS, COLS>& matrix) {
 #ifdef USE_ISPC
@@ -667,11 +695,11 @@ void Absolute(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix) {
     bool result = true;
-    for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS; j++) {
+    for (Dimension auto i = 0; i < ROWS; i++) {
+        for (Dimension auto j = 0; j < COLS; j++) {
             if (std::abs(matrix[i][j]) > std::numeric_limits<T>::epsilon()) {
                 result = false;
             }
@@ -681,19 +709,19 @@ inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix) {
     return result;
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 inline bool operator==(const Matrix<T, ROWS, COLS>& matrix1,
                        const Matrix<T, ROWS, COLS>& matrix2) {
     return AlmostZero(matrix1 - matrix2);
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 inline bool operator!=(const Matrix<T, ROWS, COLS>& matrix1,
                        const Matrix<T, ROWS, COLS>& matrix2) {
     return !(matrix1 == matrix2);
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 inline void Transpose(Matrix<T, ROWS, COLS>& result,
                       const Matrix<T, ROWS, COLS>& matrix1) {
 #ifdef USE_ISPC
@@ -703,18 +731,18 @@ inline void Transpose(Matrix<T, ROWS, COLS>& result,
 #endif
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline T Trace(const Matrix<T, N, N>& matrix) {
     T result = (T)0;
 
-    for (int i = 0; i < N; i++) {
+    for (Dimension auto i = 0; i < N; i++) {
         result += matrix[i][i];
     }
 
     return result;
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& source,
                         const Matrix<T, ROWS, COLS>& matrix) {
     static_assert(
@@ -733,7 +761,7 @@ inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& source,
     DotProduct(result[2], source, basis[2]);
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 inline void GetOrigin(Vector<T, 3>& result,
                       const Matrix<T, ROWS, COLS>& matrix) {
     static_assert(
@@ -785,7 +813,7 @@ inline void Transform(Vector4f& vector, const Matrix4X4f& matrix) {
 #endif
 }
 
-template <typename T, int ROWS, int COLS>
+template <typename T, Dimension auto ROWS, Dimension auto COLS>
 inline void ExchangeYandZ(Matrix<T, ROWS, COLS>& matrix) {
 #ifdef USE_ISPC
     ispc::MatrixExchangeYandZ(matrix, ROWS, COLS);
@@ -856,7 +884,7 @@ inline void BuildViewRHMatrix(Matrix4X4f& result, const Vector3f position,
     result = tmp;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix) {
 #ifdef USE_ISPC
     ispc::BuildIdentityMatrix(matrix, N);

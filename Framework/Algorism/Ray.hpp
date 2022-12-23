@@ -17,8 +17,8 @@ class Ray {
     Ray(const Ray &r) { *this = r; }
 
     // ACCESSORS
-    const Vector3<T> &getOrigin() const { return origin; }
-    const Vector3<T> &getDirection() const { return direction; }
+    const auto getOrigin() const { return origin; }
+    const auto getDirection() const { return direction; }
     Point<T> pointAtParameter(T t) const { return origin + direction * t; }
 
    private:

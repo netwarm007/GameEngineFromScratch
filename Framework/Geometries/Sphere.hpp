@@ -8,17 +8,18 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
    public:
     Sphere() = delete;
     explicit Sphere(const T radius)
-        : Geometry(GeometryType::kSphere), m_fRadius(radius){}
+        : Geometry(GeometryType::kSphere), m_fRadius(radius) {}
 
     explicit Sphere(const T radius, const Point<T> center)
         : Geometry(GeometryType::kSphere),
           m_fRadius(radius),
-          m_center(center){}
+          m_center(center) {}
 
-    explicit Sphere(const T radius, const Point<T> center, const Vector3f color)
-        : Geometry(GeometryType::kSphere),
-          m_fRadius(radius),
-          m_center(center){ m_color = color; }
+    explicit Sphere(const T radius, const Point<T> center,
+                    const std::shared_ptr<material> m)
+        : Geometry(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
+        m_ptrMat = m;
+    }
 
     void GetAabb(const Matrix4X4<T>& trans, Vector3<T>& aabbMin,
                  Vector3<T>& aabbMax) const final {
@@ -64,7 +65,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         Normalize(normal);
 
         // set the hit result
-        h.set(t, normal, m_color);
+        h.set(t, normal, m_ptrMat);
 
         return true;
     }
