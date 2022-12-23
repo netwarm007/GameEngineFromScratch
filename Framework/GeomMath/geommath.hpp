@@ -276,30 +276,20 @@ inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1,
 #endif
 }
 
-template <typename T>
-inline void DotProduct(T& result, const T* a, const T* b, const size_t count) {
-    T* _result = new T[count];
-
-    result = static_cast<T>(0);
-
-#ifdef USE_ISPC
-    ispc::MulByElement(a, b, _result, count);
-#else
-    Dummy::MulByElement(a, b, _result, count);
-#endif
-
-    for (size_t i = 0; i < count; i++) {
-        result += _result[i];
-    }
-
-    delete[] _result;
-}
-
 template <typename T, int N>
 inline void DotProduct(T& result, const Vector<T, N>& vec1,
                        const Vector<T, N>& vec2) {
-    DotProduct(result, static_cast<const T*>(vec1), static_cast<const T*>(vec2),
-               N);
+    Vector<T, N> _result;
+
+#ifdef USE_ISPC
+    ispc::MulByElement(vec1, vec2, _result, N);
+#else
+    Dummy::MulByElement(vec1, vec2, _result, N);
+#endif
+
+    for (size_t i = 0; i < N; i++) {
+        result += _result[i];
+    }
 }
 
 template <typename T, int N>
@@ -453,9 +443,7 @@ inline bool operator<(Vector<T, N>&& vec, Scalar scalar) {
 
 template <typename T, int N>
 inline void Normalize(Vector<T, N>& a) {
-    T length;
-    DotProduct(length, static_cast<T*>(a), static_cast<T*>(a), N);
-    length = std::sqrt(length);
+    T length = Length(a);
 #ifdef USE_ISPC
     ispc::Normalize(N, a, length);
 #else
