@@ -294,6 +294,8 @@ inline void DotProduct(T& result, const Vector<T, N>& vec1,
     Dummy::MulByElement(vec1, vec2, _result, N);
 #endif
 
+    result = 0;
+
     for (size_t i = 0; i < N; i++) {
         result += _result[i];
     }
