@@ -9,7 +9,7 @@ class Ray {
    public:
     // CONSTRUCTOR & DESTRUCTOR
     Ray() {}
-    Ray(const Vector3<T> &dir, const Vector3<T> &orig) {
+    Ray(const Vector3<T> &orig, const Vector3<T> &dir) {
         direction = dir;
         Normalize(direction);
         origin = orig;
@@ -19,12 +19,12 @@ class Ray {
     // ACCESSORS
     const Vector3<T> &getOrigin() const { return origin; }
     const Vector3<T> &getDirection() const { return direction; }
-    Vector3<T> pointAtParameter(T t) const { return origin + direction * t; }
+    Point<T> pointAtParameter(T t) const { return origin + direction * t; }
 
    private:
     // REPRESENTATION
     Vector3<T> direction;
-    Vector3<T> origin;
+    Point<T> origin;
 };
 
 template <typename T>

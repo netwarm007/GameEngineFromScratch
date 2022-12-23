@@ -36,7 +36,11 @@ class Geometry {
 
     [[nodiscard]] GeometryType GetGeometryType() const {
         return m_kGeometryType;
-    };
+    }
+
+    void SetColor(Vector3f color) {
+        m_color = color;
+    }
 
    protected:
     GeometryType m_kGeometryType;

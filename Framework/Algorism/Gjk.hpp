@@ -98,7 +98,7 @@ inline int GjkIntersection(const SupportFunction<T>& a, const SupportFunction<T>
         simplex.push_back(std::make_shared<Point<T>>(A));
     }
 
-    A = a(direction) - b(direction * -1.0f);
+    A = a(direction) - b(direction * -1.0);
 
     T dot_product;
     DotProduct(dot_product, A, direction);

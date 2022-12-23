@@ -114,7 +114,7 @@ struct Image {
         if (data) delete[] data;
     }
 
-    uint8_t GetR(uint32_t x, uint32_t y) const {
+    int GetR(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -126,7 +126,7 @@ struct Image {
             case PIXEL_FORMAT::RGBA8:
                 return *(data + y * pitch + x * (bitcount >> 3));
             case PIXEL_FORMAT::R5G6B5:
-                return *(data + y * pitch + x * (bitcount >> 3)) & 0xF8;
+                return (*(data + y * pitch + x * (bitcount >> 3)) & 0xF8) >> 3;
             case PIXEL_FORMAT::R16:
             case PIXEL_FORMAT::RG16:
             case PIXEL_FORMAT::RGB16:
@@ -147,7 +147,7 @@ struct Image {
         return 0;
     }
 
-    uint8_t GetG(uint32_t x, uint32_t y) const {
+    int GetG(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -182,7 +182,7 @@ struct Image {
         return 0;
     }
 
-    uint8_t GetB(uint32_t x, uint32_t y) const {
+    int GetB(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -215,7 +215,7 @@ struct Image {
         return 0;
     }
 
-    uint8_t GetA(uint32_t x, uint32_t y) const {
+    int GetA(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0xFF;
 
         switch (pixel_format) {
@@ -245,13 +245,182 @@ struct Image {
         return 0;
     }
 
-    uint8_t GetX(int32_t x, int32_t y) const { return GetR(x, y); }
+    void SetR(uint32_t x, uint32_t y, int value) {
+        if (x >= Width || y >= Height) return;
 
-    uint8_t GetY(int32_t x, int32_t y) const { return GetG(x, y); }
+        switch (pixel_format) {
+            case PIXEL_FORMAT::UNKNOWN:
+                break;
+            case PIXEL_FORMAT::R8:
+            case PIXEL_FORMAT::RG8:
+            case PIXEL_FORMAT::RGB8:
+            case PIXEL_FORMAT::RGBA8:
+                *(data + y * pitch + x * (bitcount >> 3)) = value & 0xFF;
+                break;
+            case PIXEL_FORMAT::R5G6B5:
+                *(data + y * pitch + x * (bitcount >> 3)) |= (value << 3) & 0xF8;
+                break;
+            case PIXEL_FORMAT::R16:
+            case PIXEL_FORMAT::RG16:
+            case PIXEL_FORMAT::RGB16:
+            case PIXEL_FORMAT::RGBA16:
+                *(data + y * pitch + x * (bitcount >> 3)) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 1) = (value & 0xFF'00) >> 8;
+                break;
+            case PIXEL_FORMAT::R32:
+            case PIXEL_FORMAT::RG32:
+            case PIXEL_FORMAT::RGB32:
+            case PIXEL_FORMAT::RGBA32:
+                *(data + y * pitch + x * (bitcount >> 3)) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 1) = (value & 0xFF'00) >> 8;
+                *(data + y * pitch + x * (bitcount >> 3) + 2) = (value & 0xFF'00'00) >> 16;
+                *(data + y * pitch + x * (bitcount >> 3) + 3) = value & 0xFF'00'00'00 >> 24;
+                break;
+            case PIXEL_FORMAT::R10G10B10A2:
+                // not supported
+                break;
+            default:
+                assert(0);
+        }
 
-    uint8_t GetZ(int32_t x, int32_t y) const { return GetB(x, y); }
+        return;
+    }
 
-    uint8_t GetW(int32_t x, int32_t y) const { return GetA(x, y); }
+    void SetG(uint32_t x, uint32_t y, int value) {
+        if (x >= Width || y >= Height) return;
+
+        switch (pixel_format) {
+            case PIXEL_FORMAT::UNKNOWN:
+            case PIXEL_FORMAT::R8:
+                break;
+            case PIXEL_FORMAT::RG8:
+            case PIXEL_FORMAT::RGB8:
+            case PIXEL_FORMAT::RGBA8:
+                *(data + y * pitch + x * (bitcount >> 3) + 1) = value & 0xFF;
+                break;
+            case PIXEL_FORMAT::R5G6B5:
+                *(data + y * pitch + x * (bitcount >> 3)) |= (value & 0x38) >> 3;
+                *(data + y * pitch + x * (bitcount >> 3) + 1) |= (value & 0x07);
+                break;
+            case PIXEL_FORMAT::R16:
+                break;
+            case PIXEL_FORMAT::RG16:
+            case PIXEL_FORMAT::RGB16:
+            case PIXEL_FORMAT::RGBA16:
+                *(data + y * pitch + x * (bitcount >> 3) + 2) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 3) = (value & 0xFF'00) >> 8;
+                break;
+            case PIXEL_FORMAT::R32:
+                break;
+            case PIXEL_FORMAT::RG32:
+            case PIXEL_FORMAT::RGB32:
+            case PIXEL_FORMAT::RGBA32:
+                *(data + y * pitch + x * (bitcount >> 3) + 4) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 5) = (value & 0xFF'00) >> 8;
+                *(data + y * pitch + x * (bitcount >> 3) + 6) = (value & 0xFF'00'00) >> 16;
+                *(data + y * pitch + x * (bitcount >> 3) + 7) = value & 0xFF'00'00'00 >> 24;
+                break;
+            case PIXEL_FORMAT::R10G10B10A2:
+                // not supported
+                break;
+            default:
+                assert(0);
+        }
+
+        return;
+    }
+
+    void SetB(uint32_t x, uint32_t y, int value) {
+        if (x >= Width || y >= Height) return;
+
+        switch (pixel_format) {
+            case PIXEL_FORMAT::UNKNOWN:
+            case PIXEL_FORMAT::R8:
+            case PIXEL_FORMAT::RG8:
+                break;
+            case PIXEL_FORMAT::RGB8:
+            case PIXEL_FORMAT::RGBA8:
+                *(data + y * pitch + x * (bitcount >> 3) + 2) = value & 0xFF;
+                break;
+            case PIXEL_FORMAT::R5G6B5:
+                *(data + y * pitch + x * (bitcount >> 3) + 2) |= (value & 0x1F);
+                break;
+            case PIXEL_FORMAT::R16:
+            case PIXEL_FORMAT::RG16:
+                break;
+            case PIXEL_FORMAT::RGB16:
+            case PIXEL_FORMAT::RGBA16:
+                *(data + y * pitch + x * (bitcount >> 3) + 4) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 5) = (value & 0xFF'00) >> 8;
+                break;
+            case PIXEL_FORMAT::R32:
+            case PIXEL_FORMAT::RG32:
+                break;
+            case PIXEL_FORMAT::RGB32:
+            case PIXEL_FORMAT::RGBA32:
+                *(data + y * pitch + x * (bitcount >> 3) + 8) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 9) = (value & 0xFF'00) >> 8;
+                *(data + y * pitch + x * (bitcount >> 3) + 0xA) = (value & 0xFF'00'00) >> 16;
+                *(data + y * pitch + x * (bitcount >> 3) + 0xB) = value & 0xFF'00'00'00 >> 24;
+                break;
+            case PIXEL_FORMAT::R10G10B10A2:
+                // not supported
+                break;
+            default:
+                assert(0);
+        }
+
+        return;
+    }
+
+    void SetA(uint32_t x, uint32_t y, int value) {
+        if (x >= Width || y >= Height) return;
+
+        switch (pixel_format) {
+            case PIXEL_FORMAT::UNKNOWN:
+            case PIXEL_FORMAT::R8:
+            case PIXEL_FORMAT::RG8:
+            case PIXEL_FORMAT::RGB8:
+                break;
+            case PIXEL_FORMAT::RGBA8:
+                *(data + y * pitch + x * (bitcount >> 3) + 3) = value & 0xFF;
+                break;
+            case PIXEL_FORMAT::R5G6B5:
+            case PIXEL_FORMAT::R16:
+            case PIXEL_FORMAT::RG16:
+            case PIXEL_FORMAT::RGB16:
+                break;
+            case PIXEL_FORMAT::RGBA16:
+                *(data + y * pitch + x * (bitcount >> 3) + 6) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 7) = (value & 0xFF'00) >> 8;
+                break;
+            case PIXEL_FORMAT::R32:
+            case PIXEL_FORMAT::RG32:
+            case PIXEL_FORMAT::RGB32:
+                break;
+            case PIXEL_FORMAT::RGBA32:
+                *(data + y * pitch + x * (bitcount >> 3) + 0xC) = value & 0xFF;
+                *(data + y * pitch + x * (bitcount >> 3) + 0xD) = (value & 0xFF'00) >> 8;
+                *(data + y * pitch + x * (bitcount >> 3) + 0xE) = (value & 0xFF'00'00) >> 16;
+                *(data + y * pitch + x * (bitcount >> 3) + 0xF) = value & 0xFF'00'00'00 >> 24;
+                break;
+            case PIXEL_FORMAT::R10G10B10A2:
+                // not supported
+                break;
+            default:
+                assert(0);
+        }
+
+        return;
+    }
+
+    uint8_t GetX(uint32_t x, uint32_t y) const { return GetR(x, y); }
+
+    uint8_t GetY(uint32_t x, uint32_t y) const { return GetG(x, y); }
+
+    uint8_t GetZ(uint32_t x, uint32_t y) const { return GetB(x, y); }
+
+    uint8_t GetW(uint32_t x, uint32_t y) const { return GetA(x, y); }
 
     void SaveTGA(const char* filename) const {
         assert(filename != NULL);

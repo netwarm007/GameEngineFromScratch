@@ -8,12 +8,17 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
    public:
     Sphere() = delete;
     explicit Sphere(const T radius)
-        : Geometry(GeometryType::kSphere), m_fRadius(radius){};
+        : Geometry(GeometryType::kSphere), m_fRadius(radius){}
 
-    explicit Sphere(const T radius, const Vector3<T> center)
+    explicit Sphere(const T radius, const Point<T> center)
         : Geometry(GeometryType::kSphere),
           m_fRadius(radius),
-          m_center(center){};
+          m_center(center){}
+
+    explicit Sphere(const T radius, const Point<T> center, const Vector3f color)
+        : Geometry(GeometryType::kSphere),
+          m_fRadius(radius),
+          m_center(center){ m_color = color; }
 
     void GetAabb(const Matrix4X4<T>& trans, Vector3<T>& aabbMin,
                  Vector3<T>& aabbMax) const final {
@@ -25,12 +30,10 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         aabbMax = center + extent;
     }
 
-    [[nodiscard]] T GetRadius() const { return m_fRadius; };
-    [[nodiscard]] Vector3<T> GetCenter() const { return m_center; };
+    [[nodiscard]] T GetRadius() const { return m_fRadius; }
+    [[nodiscard]] Vector3<T> GetCenter() const { return m_center; }
 
-    bool Intersect(const Ray<T>& r, Hit& h, T tmin) const override {
-        bool result = false;
-
+    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
         // Ray: R(t) = O + V dot t
         // Sphere: || X - C || = r
         // Intersect equation: at^2  + bt + c = 0; a = V dot V; b = 2V dot (O -
@@ -38,39 +41,36 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         Vector3f V = r.getDirection();
         Vector3f O = r.getOrigin();
         Vector3f tmp = O - m_center;
-        float dist = Length(tmp);
+        T dist = Length(tmp);
 
-        float b = 2 * V.Dot3(tmp);
-        float c = dist * dist - m_fRadius * m_fRadius;
-        float disc = b * b - 4 * c;
+        T half_b = V.Dot3(tmp);
+        T c = dist * dist - m_fRadius * m_fRadius;
+        T disc = half_b * half_b - c;
 
-        float t = INFINITY;
+        if (disc < 0) return false;
 
-        if (disc > 0) {
-            float sroot = sqrt(disc);
+        T sroot = sqrt(disc);
 
-            float t1 = (-b - sroot) * 0.5;
-            float t2 = (-b + sroot) * 0.5;
-
-            if (t1 >= tmin)
-                t = t1;
-            else if (t2 >= tmin)
-                t = t2;
-
-            if (t < h.getT()) {
-                h.set(t, m_color);
+        T t = -half_b - sroot;
+        if (t < tmin || tmax < t) {
+            t = -half_b + sroot;
+            if (t < tmin || tmax < t) {
+                return false;
             }
+        }
 
-            result = true;
+        // calculate normal
+        auto normal = r.pointAtParameter(t) - m_center;
+        Normalize(normal);
 
-        } else
-            result = false;
+        // set the hit result
+        h.set(t, normal, m_color);
 
-        return result;
+        return true;
     }
 
    protected:
-    float m_fRadius;
-    Vector3f m_center;
+    T m_fRadius;
+    Point<T> m_center;
 };
 }  // namespace My
