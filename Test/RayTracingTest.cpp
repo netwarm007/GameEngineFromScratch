@@ -67,14 +67,54 @@ class metal : public material {
     bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
                  ray& scattered) const override {
         vec3 reflected = My::Reflect(r_in.getDirection(), hit.getNormal());
-        scattered = ray(r_in.pointAtParameter(hit.getT()), reflected + fuzz * My::random_in_unit_sphere<float_precision, 3>());
+        scattered = ray(
+            r_in.pointAtParameter(hit.getT()),
+            reflected + fuzz * My::random_in_unit_sphere<float_precision, 3>());
         attenuation = albedo;
-        return My::DotProduct(scattered.getDirection(), hit.getNormal()) > 0;
+        return My::DotProduct(scattered.getDirection(), hit.getNormal()) >
+               0;  // absorb scarted rays below the surface
     }
 
    public:
     color albedo;
     float_precision fuzz;
+};
+
+class dielectric : public material {
+   public:
+    dielectric(double index_of_refraction) : ir(index_of_refraction) {}
+
+    bool scatter(const ray& r_in, const hit_record hit, color& attenuation,
+                 ray& scattered) const override {
+        attenuation = color({1.0, 1.0, 1.0});
+        float_precision refraction_ratio = hit.isFrontFace() ? (1.0 / ir) : ir;
+        auto v = r_in.getDirection();
+        auto n = hit.isFrontFace() ? hit.getNormal() : -hit.getNormal();
+        auto cos_theta = fmin(DotProduct(-v, n), 1.0);
+        auto sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+        bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+
+        vec3 direction;
+        if ((cannot_refract) || (schlick_reflectance_approximation(cos_theta, refraction_ratio) > My::random_f<float_precision>())) {
+            direction = My::Reflect(v, n);
+        } else {
+            direction =
+                My::Refract(v, n, refraction_ratio);
+        }
+        scattered = ray(r_in.pointAtParameter(hit.getT()), direction);
+
+        return true;
+    }
+
+   public:
+    double ir;  // Index of Refraction
+
+   private:
+    static float_precision schlick_reflectance_approximation(float_precision cosine, float_precision ref_idx) {
+        auto r0 = (1 - ref_idx) / (1 + ref_idx);
+        r0 = r0 * r0;
+        return r0 + (1 - r0) * pow((1 - cosine), 5);
+    }
 };
 
 // Utilities
@@ -136,22 +176,18 @@ class camera {
 int main(int argc, char** argv) {
     // World
     auto material_ground = std::make_shared<lambertian>(color({0.8, 0.8, 0.0}));
-    auto material_center = std::make_shared<lambertian>(color({0.7, 0.3, 0.3}));
-    auto material_left   = std::make_shared<metal>(color({0.8, 0.8, 0.8}), 0.3);
-    auto material_right  = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 1.0);
+    auto material_center = std::make_shared<lambertian>(color({0.1, 0.2, 0.5}));
+    auto material_left = std::make_shared<dielectric>(1.5);
+    auto material_right = std::make_shared<metal>(color({0.8, 0.6, 0.2}), 1.0);
 
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        100, point3({0, -100.5, -1.0}),
-        material_ground));
+        100, point3({0, -100.5, -1.0}), material_ground));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        0.5, point3({0, 0, -1.0}),
-        material_center));
+        0.5, point3({0, 0, -1.0}), material_center));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        0.5, point3({-1.0, 0, -1.0}),
-        material_left));
+        0.5, point3({-1.0, 0, -1.0}), material_left));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        0.5, point3({1.0, 0, -1.0}),
-        material_right));
+        0.5, point3({1.0, 0, -1.0}), material_right));
 
     // Image
     const float_precision aspect_ratio = 16.0 / 9.0;

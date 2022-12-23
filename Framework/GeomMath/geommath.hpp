@@ -118,7 +118,7 @@ struct Vector {
         }
     }
 
-    Vector operator - () {
+    Vector operator-() const {
         Vector result;
 
         for (Scalar auto i = 0; i < N; i++) {
@@ -302,8 +302,7 @@ inline void DotProduct(T& result, const Vector<T, N>& vec1,
 }
 
 template <typename T, Dimension auto N>
-inline T DotProduct(const Vector<T, N>& vec1,
-                       const Vector<T, N>& vec2) {
+inline T DotProduct(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     T result;
     DotProduct(result, vec1, vec2);
     return result;
@@ -399,7 +398,8 @@ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-inline constexpr Scalar auto pow(const Scalar auto base, const Scalar auto exponent) {
+inline constexpr Scalar auto pow(const Scalar auto base,
+                                 const Scalar auto exponent) {
     return std::pow(base, exponent);
 }
 
@@ -507,6 +507,16 @@ inline Vector<T, N> Reflect(const Vector<T, N>& v, const Vector<T, N>& n) {
     return v - 2 * DotProduct(v, n) * n;
 }
 
+template <typename T, Dimension auto N>
+inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
+                            T etai_over_etat) {
+    auto cos_theta = fmin(DotProduct(-v, n), 1.0);
+
+    auto r_out_perp = etai_over_etat * (v + cos_theta * n);
+    auto r_out_parallel = -sqrt(fabs(1.0 - LengthSquared(r_out_perp))) * n;
+    return r_out_perp + r_out_parallel;
+}
+
 ///////////////////////////
 // Matrix
 
@@ -514,7 +524,9 @@ template <typename T, Dimension auto ROWS, Dimension auto COLS>
 struct Matrix {
     Vector<T, COLS> data[ROWS];
 
-    Vector<T, COLS>& operator[](Dimension auto row_index) { return data[row_index]; }
+    Vector<T, COLS>& operator[](Dimension auto row_index) {
+        return data[row_index];
+    }
 
     const Vector<T, COLS>& operator[](Dimension auto row_index) const {
         return data[row_index];
@@ -669,7 +681,8 @@ Matrix<T, ROWS, COLS> operator*(const Scalar auto scalar,
     return matrix * scalar;
 }
 
-template <typename T, Dimension auto ROWS1, Dimension auto COLS1, Dimension auto ROWS2, Dimension auto COLS2>
+template <typename T, Dimension auto ROWS1, Dimension auto COLS1,
+          Dimension auto ROWS2, Dimension auto COLS2>
 void Shrink(Matrix<T, ROWS1, COLS1>& matrix1,
             const Matrix<T, ROWS2, COLS2>& matrix2) {
     static_assert(
