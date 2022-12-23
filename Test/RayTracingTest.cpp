@@ -8,8 +8,12 @@
 #include "Box.hpp"
 #include "Sphere.hpp"
 
+#include <chrono>
 #include <memory>
 #include <vector>
+#include <future>
+
+using namespace std::chrono_literals;
 
 using float_precision = float;
 
@@ -107,26 +111,54 @@ int main(int argc, char** argv) {
     img.data = new uint8_t[img.data_size];
 
     // Render
+    int concurrency = std::thread::hardware_concurrency();
+    std::cerr << "Concurrent ray tracing with (" << concurrency << ") threads."
+              << std::endl;
+
+    std::list<std::future<int>> raytrace_tasks;
+
+    auto f_raytrace = [samples_per_pixel, max_depth, &cam, &img](int x, int y) -> int {
+        color pixel_color(0);
+        for (auto s = 0; s < samples_per_pixel; s++) {
+            auto u = (x + My::random_f<float_precision>()) / (img.Width - 1);
+            auto v = (y + My::random_f<float_precision>()) / (img.Height - 1);
+
+            auto r = cam.get_ray(u, v);
+            pixel_color += ray_color(r, max_depth);
+        }
+
+        pixel_color = pixel_color * (1.0 / samples_per_pixel);
+
+        // Gamma-correction for gamma = 2.0
+        pixel_color = My::sqrt(pixel_color);
+
+        img.SetR(x, y, to_unorm(pixel_color[0]));
+        img.SetG(x, y, to_unorm(pixel_color[1]));
+        img.SetB(x, y, to_unorm(pixel_color[2]));
+
+        return 0;
+    };
+
     for (auto j = 0; j < img.Height; j++) {
         std::cerr << "\rScanlines remaining: " << img.Height - j << ' ' << std::flush;
         for (auto i = 0; i < img.Width; i++) {
-            color pixel_color(0);
-            for (auto s = 0; s < samples_per_pixel; s++) {
-                auto u = (i + My::random_f<float_precision>()) / (img.Width - 1);
-                auto v = (j + My::random_f<float_precision>()) / (img.Height - 1);
-                auto r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, max_depth);
+            while (raytrace_tasks.size() >= concurrency) {
+                // wait for at least one task finish
+                raytrace_tasks.remove_if([](std::future<int>& task) {
+                    return task.wait_for(1ms) == std::future_status::ready;
+                });
             }
-
-            pixel_color = pixel_color * (1.0 / samples_per_pixel);
-            
-            // Gamma-correction for gamma = 2.0
-            pixel_color = My::sqrt(pixel_color);
-
-            img.SetR(i, j, to_unorm(pixel_color[0]));
-            img.SetG(i, j, to_unorm(pixel_color[1]));
-            img.SetB(i, j, to_unorm(pixel_color[2]));
+            color pixel_color(0);
+            raytrace_tasks.emplace_back(std::async(std::launch::async, 
+                f_raytrace, i, j));
         }
+    }
+
+    while (!raytrace_tasks.empty()) {
+        // wait for at least one task finish
+        raytrace_tasks.remove_if([](std::future<int>& task) {
+            return task.wait_for(1s) == std::future_status::ready;
+        });
     }
 
     std::cerr << "\r";
