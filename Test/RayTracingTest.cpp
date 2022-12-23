@@ -187,6 +187,8 @@ int main(int argc, char** argv) {
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         0.5, point3({-1.0, 0, -1.0}), material_left));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
+       -0.45, point3({-1.0, 0, -1.0}), material_left));
+    world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         0.5, point3({1.0, 0, -1.0}), material_right));
 
     // Image

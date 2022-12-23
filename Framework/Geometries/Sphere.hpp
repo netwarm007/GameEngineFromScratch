@@ -61,8 +61,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         }
 
         // calculate normal
-        auto normal = r.pointAtParameter(t) - m_center;
-        Normalize(normal);
+        auto normal = (r.pointAtParameter(t) - m_center) / m_fRadius;
 
         // set the hit result
         h.set(t, normal, DotProduct(r.getDirection(), normal) < 0, m_ptrMat);
