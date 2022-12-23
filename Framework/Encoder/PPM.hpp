@@ -9,8 +9,6 @@ namespace My {
 
             std::cout << "P3\n" << img.Width << ' ' << img.Height << "\n255\n";
 
-            auto byte_count = img.bitcount >> 3;
-
             for (int y = img.Height - 1; y >= 0; y--) {
                 for (int x = 0; x < img.Width; x++) {
                     std::cout << img.GetR(x, y) << ' ' << img.GetG(x, y) << ' ' << img.GetB(x, y) << '\n';

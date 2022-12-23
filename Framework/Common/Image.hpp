@@ -425,8 +425,6 @@ struct Image {
     void SaveTGA(const char* filename) const {
         assert(filename != NULL);
         // must end in .tga
-        const char* ext = &filename[strlen(filename) - 4];
-        assert(!strcmp(ext, ".tga"));
         if (compressed) {
             fprintf(stderr, "SaveTGA is called but the image is compressed.\n");
             return;
@@ -453,8 +451,8 @@ struct Image {
         }
         // the data
         // flip y so that (0,0) is bottom left corner
-        for (uint32_t y = Height - 1; y >= 0; y--) {
-            for (uint32_t x = 0; x < Width; x++) {
+        for (int32_t y = Height - 1; y >= 0; y--) {
+            for (int32_t x = 0; x < Width; x++) {
                 // note reversed order: b, g, r
                 fprintf(file, "%c", GetA(x, y));
                 fprintf(file, "%c", GetB(x, y));

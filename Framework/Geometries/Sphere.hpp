@@ -39,8 +39,8 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         // Sphere: || X - C || = r
         // Intersect equation: at^2  + bt + c = 0; a = V dot V; b = 2V dot (O -
         // C); C = ||O - C||^2 - r^2 Intersect condition: b^2 - 4ac > 0
-        Vector3f V = r.getDirection();
-        Vector3f O = r.getOrigin();
+        const Vector3f& V = r.getDirection();
+        const Vector3f& O = r.getOrigin();
         Vector3f tmp = O - m_center;
         T dist = Length(tmp);
 
@@ -61,10 +61,12 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         }
 
         // calculate normal
-        auto normal = (r.pointAtParameter(t) - m_center) / m_fRadius;
+        auto p = r.pointAtParameter(t);
+        auto normal = (p - m_center) / m_fRadius;
+        bool front_face = DotProduct(V, normal) < 0;
 
         // set the hit result
-        h.set(t, normal, DotProduct(r.getDirection(), normal) < 0, m_ptrMat);
+        h.set(t, p, normal, front_face, m_ptrMat);
 
         return true;
     }

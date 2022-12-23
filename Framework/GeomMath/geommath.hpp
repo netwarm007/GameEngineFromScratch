@@ -169,7 +169,7 @@ struct Vector {
         return data[index];
     }
 
-    T Dot3(const Vector& v) {
+    T Dot3(const Vector& v) const {
         T result;
         DotProduct(result, *this, v);
         return result;
