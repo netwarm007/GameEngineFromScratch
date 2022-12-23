@@ -249,6 +249,7 @@ auto random_scene() {
     return world;
 }
 
+// Raytrace
 // Main
 int main(int argc, char** argv) {
     // Image
@@ -285,47 +286,49 @@ int main(int argc, char** argv) {
     img.data = new uint8_t[img.data_size];
 
     // Render
-    int concurrency = std::thread::hardware_concurrency();
+    int concurrency = std::thread::hardware_concurrency() - 1;
+    if (concurrency <= 0) concurrency = 1;
     std::cerr << "Concurrent ray tracing with (" << concurrency << ") threads."
               << std::endl;
 
     std::list<std::future<int>> raytrace_tasks;
 
-    for (auto j = 0; j < img.Height; j++) {
-        while (raytrace_tasks.size() >= concurrency) {
-            // wait for at least one task finish
-            raytrace_tasks.remove_if([](std::future<int>& task) {
-                return task.wait_for(1ms) == std::future_status::ready;
-            });
+    auto f_raytrace = [samples_per_pixel, max_depth, &cam, &world, &img](int x, int y) -> int {
+        color pixel_color(0);
+        for (auto s = 0; s < samples_per_pixel; s++) {
+            auto u = (x + My::random_f<float_precision>()) / (img.Width - 1);
+            auto v = (y + My::random_f<float_precision>()) / (img.Height - 1);
+
+            auto r = cam.get_ray(u, v);
+            pixel_color += ray_color(r, max_depth, world);
         }
-        std::cerr << "\rScanlines remaining: " << img.Height - j - 1 << ' '
+
+        pixel_color = pixel_color * (1.0 / samples_per_pixel);
+
+        // Gamma-correction for gamma = 2.0
+        pixel_color = My::sqrt(pixel_color);
+
+        img.SetR(x, y, to_unorm(pixel_color[0]));
+        img.SetG(x, y, to_unorm(pixel_color[1]));
+        img.SetB(x, y, to_unorm(pixel_color[2]));
+
+        return 0;
+    };
+
+    for (auto j = 0; j < img.Height; j++) {
+        std::cerr << "\rScanlines remaining: " << img.Height - j << ' '
                   << std::flush;
-        raytrace_tasks.emplace_back(
-            std::async(std::launch::async, [j, cam, &img, &world] {
-                for (auto i = 0; i < img.Width; i++) {
-                    color pixel_color(0);
-                    for (auto s = 0; s < samples_per_pixel; s++) {
-                        auto u = (i + My::random_f<float_precision>()) /
-                                 (img.Width - 1);
-                        auto v = (j + My::random_f<float_precision>()) /
-                                 (img.Height - 1);
-
-                        auto r = cam.get_ray(u, v);
-                        pixel_color += ray_color(r, max_depth, world);
-                    }
-
-                    pixel_color = pixel_color * (1.0 / samples_per_pixel);
-
-                    // Gamma-correction for gamma = 2.0
-                    pixel_color = My::sqrt(pixel_color);
-
-                    img.SetR(i, j, to_unorm(pixel_color[0]));
-                    img.SetG(i, j, to_unorm(pixel_color[1]));
-                    img.SetB(i, j, to_unorm(pixel_color[2]));
-                }
-
-                return 0;
-            }));
+        for (auto i = 0; i < img.Width; i++) {
+            while (raytrace_tasks.size() >= concurrency) {
+                // wait for at least one task finish
+                raytrace_tasks.remove_if([](std::future<int>& task) {
+                    return task.wait_for(1ms) == std::future_status::ready;
+                });
+            }
+            color pixel_color(0);
+            raytrace_tasks.emplace_back(std::async(std::launch::async, 
+                f_raytrace, i, j));
+        }
     }
 
     while (!raytrace_tasks.empty()) {
