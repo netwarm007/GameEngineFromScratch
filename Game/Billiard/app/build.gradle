@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion = 30
+    compileSdkVersion = 33
 
     task copyAsset(type: Copy) {
         from "$rootDir/../../Asset"
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = 'com.chenwenli.game_engine_from_scratch'
-        minSdkVersion 24
+        minSdkVersion 25
         targetSdkVersion 30
         externalNativeBuild {
             cmake {
