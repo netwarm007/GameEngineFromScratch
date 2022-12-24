@@ -1,5 +1,6 @@
 SET(GEOMMATH_LIB_FILE ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}GeomMath${CMAKE_STATIC_LIBRARY_SUFFIX})
 
+if(USE_ISPC)
 IF(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
     SET(ISPC_COMPILER_PATH ${PROJECT_SOURCE_DIR}/External/Windows/bin/)
     SET(ISPC_COMPILER ispc.exe)
@@ -73,18 +74,22 @@ ENDIF()
 
 # common options for ispc
 SET(ISPC_OPTIONS ${ISPC_OPTIONS} -O2 --pic)
+endif(USE_ISPC)
 
-add_subdirectory(cpp)
+if(USE_ISPC)
 add_subdirectory(ispc)
+else()
+add_subdirectory(cpp)
+endif(USE_ISPC)
 
-IF(WA)
-    add_library(GeomMath ALIAS MyGeomMathLib)
-ELSE(WA)
-    add_library(GeomMath STATIC IMPORTED GLOBAL)
-    add_dependencies(GeomMath IspcGeomMathLib)
+if(USE_ISPC)
+add_library(GeomMath STATIC IMPORTED GLOBAL)
+add_dependencies(GeomMath IspcGeomMathLib)
 
-    set_target_properties(GeomMath
-        PROPERTIES
-        IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
-    )
-ENDIF(WA)
+set_target_properties(GeomMath
+    PROPERTIES
+    IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
+)
+else()
+add_library(GeomMath ALIAS MyGeomMathLib)
+endif(USE_ISPC)

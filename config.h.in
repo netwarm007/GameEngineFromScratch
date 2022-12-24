@@ -13,4 +13,3 @@
 #cmakedefine D3D12_RHI_DEBUG
 #cmakedefine HAS_VULKAN
 #cmakedefine HAS_SDL2
-

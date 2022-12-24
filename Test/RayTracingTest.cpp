@@ -198,7 +198,6 @@ auto random_scene() {
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
         1000, point3({0, -1000, -1.0}), material_ground));
 
-#if 0
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             auto choose_mat = My::random_f<float_precision>();
@@ -236,7 +235,6 @@ auto random_scene() {
             }
         }
     }
-#endif
 
     auto material_1 = std::make_shared<dielectric>(1.5);
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(

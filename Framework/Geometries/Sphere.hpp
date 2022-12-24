@@ -44,7 +44,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         Vector3f tmp = O - m_center;
         T dist = Length(tmp);
 
-        T half_b = V.Dot3(tmp);
+        T half_b = DotProduct(V, tmp);
         T c = dist * dist - m_fRadius * m_fRadius;
         T disc = half_b * half_b - c;
 

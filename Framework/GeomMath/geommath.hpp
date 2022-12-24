@@ -168,12 +168,6 @@ struct Vector {
     [[nodiscard]] const T& operator[](size_t index) const {
         return data[index];
     }
-
-    T Dot3(const Vector& v) const {
-        T result;
-        DotProduct(result, *this, v);
-        return result;
-    }
 };
 
 template <class T>
@@ -296,7 +290,7 @@ inline auto CrossProduct(const Vector<T, 3>& vec1,
     return result;
 }
 
-template <typename T, int N>
+template <typename T, Dimension auto N>
 inline void DotProduct(T& result, const Vector<T, N>& vec1,
                        const Vector<T, N>& vec2) {
     Vector<T, N> _result;

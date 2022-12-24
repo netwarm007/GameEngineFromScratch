@@ -2,17 +2,17 @@
 #include "geommath.hpp"
 
 namespace My {
+static std::mt19937 generator;
+
 template <class T>
 T random_f() {
     static std::uniform_real_distribution<T> distribution(0.0, 1.0);
-    static std::mt19937 generator;
     return distribution(generator);
 }
 
 template <class T>
 T random_f(T min, T max) {
-    static std::uniform_real_distribution<T> distribution(min, max);
-    static std::mt19937 generator;
+    std::uniform_real_distribution<T> distribution(min, max);
     return distribution(generator);
 }
 

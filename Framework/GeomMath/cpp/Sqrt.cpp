@@ -4,7 +4,7 @@
 using namespace std;
 
 namespace Dummy {
-void Pow(const float* v, const size_t count, float* result) {
+void Sqrt(const float* v, const size_t count, float* result) {
     for (size_t i = 0; i < count; i++) {
         result[i] = sqrt(v[i]);
     }

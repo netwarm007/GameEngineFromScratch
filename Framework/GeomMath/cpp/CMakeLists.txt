@@ -12,4 +12,5 @@ DCT.cpp
 Absolute.cpp
 Pow.cpp 
 DivByElement.cpp
+Sqrt.cpp
 )
