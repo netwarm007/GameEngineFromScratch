@@ -3,17 +3,20 @@
 
 namespace My {
 template <typename T>
-struct Polyhedron : public Geometry {
+struct Polyhedron : public Geometry<T> {
     FaceSet<T> Faces;
 
-    Polyhedron() : Geometry(GeometryType::kPolyhydron) {}
+    Polyhedron() : Geometry<T>(GeometryType::kPolyhydron) {}
+
+    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override { return false; }
 
     // GetAabb returns the axis aligned bounding box in the coordinate frame of
     // the given transform trans.
-    void GetAabb(const Matrix4X4<T>& trans, Vector3<T>& aabbMin,
-                 Vector3<T>& aabbMax) const final {
-        aabbMin = Vector3f((std::numeric_limits<T>::max)()); // Windows: Work around of warning C4003: not enough arguments for function-like macro invocation 'max'
-        aabbMax = Vector3f(std::numeric_limits<T>::lowest());
+    bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
+        Vector3<T> aabbMin = Vector3<T>((std::numeric_limits<T>::max)()); // Windows: Work around of warning C4003: not enough arguments for function-like macro invocation 'max'
+        Vector3<T> aabbMax = Vector3<T>(std::numeric_limits<T>::lowest());
+
+        if (Faces.empty()) return false;
 
         for (const auto& pFace : Faces) {
             for (const auto& pEdge : pFace->Edges) {
@@ -33,8 +36,10 @@ struct Polyhedron : public Geometry {
             }
         }
 
-        Vector3f halfExtents = (aabbMax - aabbMin) * 0.5f;
-        TransformAabb(halfExtents, m_fMargin, trans, aabbMin, aabbMax);
+        Vector3<T> halfExtents = (aabbMax - aabbMin) * 0.5f;
+        TransformAabb(halfExtents, Geometry<T>::m_fMargin, trans, aabb);
+
+        return true;
     }
 
     void AddFace(PointList<T> vertices, const PointPtr<T>& inner_point) {

@@ -33,10 +33,10 @@ void MyPhysicsManager::IterateConvexHull() {
         if (pGeometryNode) {
             void* rigidBody = pGeometryNode->RigidBody();
             if (rigidBody) {
-                auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+                auto* _rigidBody = reinterpret_cast<RigidBody<float_precision>*>(rigidBody);
                 auto pGeometry = _rigidBody->GetCollisionShape();
                 if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron) {
-                    if (dynamic_pointer_cast<ConvexHull<float>>(pGeometry)
+                    if (dynamic_pointer_cast<ConvexHull<float_precision>>(pGeometry)
                             ->Iterate()) {
                         // The geometry convex hull is not fully iterated,
                         // so we break the loop to postpending the process to
@@ -66,7 +66,7 @@ void MyPhysicsManager::Tick() {
 void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node,
                                        const SceneObjectGeometry& geometry) {
     const float* param = geometry.CollisionParameters();
-    RigidBody* rigidBody = nullptr;
+    RigidBody<float_precision>* rigidBody = nullptr;
 
     switch (geometry.CollisionType()) {
         case SceneObjectCollisionType::kSceneObjectCollisionTypeSphere: {
@@ -74,23 +74,23 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node,
 
             const auto trans = node.GetCalculatedTransform();
             auto motionState = make_shared<MotionState>(*trans);
-            rigidBody = new RigidBody(collision_box, motionState);
+            rigidBody = new RigidBody<float_precision>(collision_box, motionState);
         } break;
         case SceneObjectCollisionType::kSceneObjectCollisionTypeBox: {
             auto collision_box =
-                make_shared<Box<float>>(Vector3f({param[0], param[1], param[2]}));
+                make_shared<Box<float_precision>>(Vector3<float_precision>({param[0], param[1], param[2]}));
 
             const auto trans = node.GetCalculatedTransform();
             auto motionState = make_shared<MotionState>(*trans);
-            rigidBody = new RigidBody(collision_box, motionState);
+            rigidBody = new RigidBody<float_precision>(collision_box, motionState);
         } break;
         case SceneObjectCollisionType::kSceneObjectCollisionTypePlane: {
-            auto collision_box = make_shared<Plane>(
+            auto collision_box = make_shared<Plane<float_precision>>(
                 Vector3f({param[0], param[1], param[2]}), param[3]);
 
             const auto trans = node.GetCalculatedTransform();
             auto motionState = make_shared<MotionState>(*trans);
-            rigidBody = new RigidBody(collision_box, motionState);
+            rigidBody = new RigidBody<float_precision>(collision_box, motionState);
         } break;
         default: {
             /*
@@ -117,12 +117,12 @@ void MyPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node) {
     const auto trans = node.GetCalculatedTransform();
     auto rigidBody = node.RigidBody();
     auto motionState =
-        reinterpret_cast<RigidBody*>(rigidBody)->GetMotionState();
+        reinterpret_cast<RigidBody<float_precision>*>(rigidBody)->GetMotionState();
     motionState->SetTransition(*trans);
 }
 
 void MyPhysicsManager::DeleteRigidBody(SceneGeometryNode& node) {
-    auto* rigidBody = reinterpret_cast<RigidBody*>(node.UnlinkRigidBody());
+    auto* rigidBody = reinterpret_cast<RigidBody<float_precision>*>(node.UnlinkRigidBody());
     delete rigidBody;
 }
 
@@ -161,7 +161,7 @@ void MyPhysicsManager::ClearRigidBodies() {
 }
 
 Matrix4X4f MyPhysicsManager::GetRigidBodyTransform(void* rigidBody) {
-    auto* _rigidBody = reinterpret_cast<RigidBody*>(rigidBody);
+    auto* _rigidBody = reinterpret_cast<RigidBody<float_precision>*>(rigidBody);
     auto motionState = _rigidBody->GetMotionState();
     return motionState->GetTransition();
 }

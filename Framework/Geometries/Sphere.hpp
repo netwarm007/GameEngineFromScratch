@@ -1,34 +1,35 @@
 #pragma once
 #include "Geometry.hpp"
-#include "Intersectable.hpp"
 
 namespace My {
 template <typename T>
-class Sphere : public Geometry, _implements_ Intersectable<T> {
+class Sphere : public Geometry<T> {
    public:
     Sphere() = delete;
     explicit Sphere(const T radius)
-        : Geometry(GeometryType::kSphere), m_fRadius(radius) {}
+        : Geometry<T>(GeometryType::kSphere), m_fRadius(radius) {}
 
     explicit Sphere(const T radius, const Point<T> center)
-        : Geometry(GeometryType::kSphere),
+        : Geometry<T>(GeometryType::kSphere),
           m_fRadius(radius),
           m_center(center) {}
 
     explicit Sphere(const T radius, const Point<T> center,
                     const std::shared_ptr<material> m)
-        : Geometry(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
-        m_ptrMat = m;
+        : Geometry<T>(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
+        Geometry<T>::m_ptrMat = m;
     }
 
-    void GetAabb(const Matrix4X4<T>& trans, Vector3<T>& aabbMin,
-                 Vector3<T>& aabbMax) const final {
-        Vector3f center;
+    bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
+        if (m_fRadius == 0.0) return false;
+
+        Vector3<T> center;
         GetOrigin(center, trans);
         center += m_center;
-        Vector3f extent({m_fMargin, m_fMargin, m_fMargin});
-        aabbMin = center - extent;
-        aabbMax = center + extent;
+        Vector3<T> extent({m_fRadius + Geometry<T>::m_fMargin, m_fRadius + Geometry<T>::m_fMargin, m_fRadius + Geometry<T>::m_fMargin});
+        aabb = AaBb(center - extent, center + extent);
+
+        return true;
     }
 
     [[nodiscard]] T GetRadius() const { return m_fRadius; }
@@ -39,9 +40,9 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         // Sphere: || X - C || = r
         // Intersect equation: at^2  + bt + c = 0; a = V dot V; b = 2V dot (O -
         // C); C = ||O - C||^2 - r^2 Intersect condition: b^2 - 4ac > 0
-        const Vector3f& V = r.getDirection();
-        const Vector3f& O = r.getOrigin();
-        Vector3f tmp = O - m_center;
+        const Vector3<T>& V = r.getDirection();
+        const Vector3<T>& O = r.getOrigin();
+        Vector3<T> tmp = O - m_center;
         T dist = Length(tmp);
 
         T half_b = DotProduct(V, tmp);
@@ -66,7 +67,7 @@ class Sphere : public Geometry, _implements_ Intersectable<T> {
         bool front_face = DotProduct(V, normal) < 0;
 
         // set the hit result
-        h.set(t, p, normal, front_face, m_ptrMat);
+        h.set(t, p, normal, front_face, Geometry<T>::m_ptrMat);
 
         return true;
     }

@@ -909,6 +909,25 @@ inline void BuildViewRHMatrix(Matrix4X4f& result, const Vector3f position,
     result = tmp;
 }
 
+template <class T>
+inline auto BuildIdentityMatrix3X3() {
+    return Matrix<T, 3, 3>({{
+        {1.0, 0.0, 0.0},
+        {0.0, 1.0, 0.0},
+        {0.0, 0.0, 1.0}
+    }});
+}
+
+template <class T>
+inline auto BuildIdentityMatrix4X4() {
+    return Matrix<T, 4, 4> ({{
+        {1.0, 0.0, 0.0, 0.0},
+        {0.0, 1.0, 0.0, 0.0},
+        {0.0, 0.0, 1.0, 0.0},
+        {0.0, 0.0, 0.0, 1.0}
+    }});
+}
+
 template <class T, Dimension auto N>
 inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix) {
 #ifdef USE_ISPC
