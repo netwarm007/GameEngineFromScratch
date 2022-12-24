@@ -7,7 +7,6 @@ set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
     RasterizationTest SceneObjectTest
     ASTNodeTest MGEMXParserTest CodeGeneratorTest
     WaveGeneratorTest PPMEncoderTest
-    RayTracingTest
 )
 
 foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
@@ -15,6 +14,9 @@ foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
     target_link_libraries(${TEST_CASE} Framework PlatformInterface)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach(TEST_CASE)
+
+add_executable(RayTracingTest RayTracingTest.cpp)
+target_link_libraries(RayTracingTest Framework)
 
 add_executable(OpenALTest OpenALTest.cpp)
 if(ANDROID)

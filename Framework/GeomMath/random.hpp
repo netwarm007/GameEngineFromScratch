@@ -65,6 +65,20 @@ Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal) {
 }
 
 template <class T>
+Vector3<T> random_in_hemisphere_cosine_weighted(const Vector3<T>& normal) {
+    auto uv = random_v<T, 2>();
+    T phi = 2.0 * PI * uv[0];
+
+    T cos_phi = std::cos(phi);
+    T sin_phi = std::sin(phi);
+
+    T cos_theta = sqrt(uv[1]);
+    T sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+    return Vector3<T>(sin_theta * cos_phi, cos_theta, sin_theta * sin_phi);
+}
+
+template <class T>
 Vector3<T> random_in_unit_disk() {
     while (true) {
         auto p = Vector3<T>({random_f(T(-1.0), T(1.0)), random_f(T(-1.0), T(1.0)), 0});
