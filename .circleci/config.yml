@@ -413,7 +413,7 @@ workflows:
       #- build_windows
       - build_linux
       - build_macos
-      - build_android
+      #- build_android
   build-and-test-and-release: #for tags
     jobs:
       - build_windows:
