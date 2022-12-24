@@ -290,7 +290,12 @@ inline auto CrossProduct(const Vector<T, 3>& vec1,
     return result;
 }
 
-template <typename T, Dimension auto N>
+template <class T>
+inline void DotProduct(T& result, const Vector3<T>& vec1, const Vector3<T>& vec2) {
+    result = vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
+}
+
+template <class T, Dimension auto N>
 inline void DotProduct(T& result, const Vector<T, N>& vec1,
                        const Vector<T, N>& vec2) {
     Vector<T, N> _result;
