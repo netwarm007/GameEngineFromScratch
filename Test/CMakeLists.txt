@@ -7,6 +7,8 @@ set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
     RasterizationTest SceneObjectTest
     ASTNodeTest MGEMXParserTest CodeGeneratorTest
     WaveGeneratorTest PPMEncoderTest
+    RandomTest
+    BVHTest
 )
 
 foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)

@@ -1,9 +1,8 @@
 #pragma once
 #include <limits>
 
-#include "aabb.hpp"
 #include "portable.hpp"
-#include "Intersectable.hpp"
+#include "Hitable.hpp"
 
 class material;
 
@@ -12,10 +11,10 @@ ENUM(GeometryType){kBox,   kCapsule,    kCone,   kCylinder,
                    kPlane, kPolyhydron, kSphere, kTriangle};
 
 template <class T>
-class Geometry : _implements_ Intersectable<T> {
+class Geometry : _implements_ Hitable<T> {
    public:
     explicit Geometry(GeometryType geometry_type)
-        : m_kGeometryType(geometry_type){};
+        : m_kGeometryType(geometry_type){ Hitable<T>::type = HitableType::kGeometry; }
     Geometry() = delete;
     virtual ~Geometry() = default;
 
@@ -29,6 +28,11 @@ class Geometry : _implements_ Intersectable<T> {
 
     auto GetMaterial() {
         return m_ptrMat;
+    }
+
+   protected:
+    std::ostream& dump(std::ostream& out) const override {
+        return out;
     }
 
    protected:

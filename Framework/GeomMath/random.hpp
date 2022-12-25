@@ -1,3 +1,5 @@
+#pragma once
+#include <concepts>
 #include <random>
 #include "geommath.hpp"
 
@@ -14,6 +16,11 @@ template <class T>
 T random_f(T min, T max) {
     std::uniform_real_distribution<T> distribution(min, max);
     return distribution(generator);
+}
+
+template <class T> requires std::integral<T>
+T random_int(T min, T max) {
+    return static_cast<T>(random_f<double>(static_cast<double>(min), static_cast<double>(max) + 1.0));
 }
 
 template <class T, Scalar auto N>
