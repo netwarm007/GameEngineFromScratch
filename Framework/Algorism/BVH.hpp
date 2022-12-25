@@ -73,7 +73,7 @@ class BVHNode : _implements_ Hitable<T> {
             std::cerr << "No bounding box in bvh_node constructor.\n";
         }
 
-        return box_a.min()[axis] < box_b.min()[axis];
+        return box_a.min_point()[axis] < box_b.min_point()[axis];
     }
 
     std::ostream& dump(std::ostream& out) const override {

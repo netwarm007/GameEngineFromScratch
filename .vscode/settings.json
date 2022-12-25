@@ -127,7 +127,13 @@
         "barrier": "cpp",
         "numbers": "cpp",
         "span": "cpp",
-        "__bits": "cpp"
+        "__bits": "cpp",
+        "execution": "cpp",
+        "format": "cpp",
+        "ranges": "cpp",
+        "core": "cpp",
+        "__undef_macros": "cpp",
+        "simd": "cpp"
     },
     "git.ignoreLimitWarning": true,
     "cmake.configureOnOpen": false,
