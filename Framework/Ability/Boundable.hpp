@@ -25,8 +25,8 @@ Ability Boundable {
 
         GetAabb(tran, aabb);
 
-        radius = Length(aabb.max() - aabb.min()) * 0.5;
-        center = (aabb.min() + aabb.max()) * 0.5;
+        radius = Length(aabb.max_point() - aabb.min_point()) * 0.5;
+        center = (aabb.min_point() + aabb.max_point()) * 0.5;
     }
 
     // GetAngularMotionDisc returns the maximum radius needed for Conservative
@@ -48,12 +48,12 @@ Ability Boundable {
         // start with static aabb
         GetAabb(curTrans, temporalAabb);
 
-        T temporalAabbMaxx = temporalAabb.max()[0];
-        T temporalAabbMaxy = temporalAabb.max()[1];
-        T temporalAabbMaxz = temporalAabb.max()[2];
-        T temporalAabbMinx = temporalAabb.min()[0];
-        T temporalAabbMiny = temporalAabb.min()[1];
-        T temporalAabbMinz = temporalAabb.min()[2];
+        T temporalAabbMaxx = temporalAabb.max_point()[0];
+        T temporalAabbMaxy = temporalAabb.max_point()[1];
+        T temporalAabbMaxz = temporalAabb.max_point()[2];
+        T temporalAabbMinx = temporalAabb.min_point()[0];
+        T temporalAabbMiny = temporalAabb.min_point()[1];
+        T temporalAabbMinz = temporalAabb.min_point()[2];
 
         // add linear motion
         Vector3<T> linMotion = linvel * timeStep;
