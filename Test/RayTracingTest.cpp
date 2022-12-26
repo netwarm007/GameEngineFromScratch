@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
     img.compressed = false;
     img.compress_format = My::COMPRESSED_FORMAT::NONE;
     img.data_size = img.Width * img.Height * (img.bitcount >> 3);
-    img.data = new uint8_t[img.data_size](0);
+    img.data = new uint8_t[img.data_size];
 
     // Render
     int concurrency = std::thread::hardware_concurrency();
