@@ -1,5 +1,6 @@
 add_library(MyGeomMathLib
 CrossProduct.cpp 
+DotProduct.cpp
 MulByElement.cpp
 Transpose.cpp
 Normalize.cpp

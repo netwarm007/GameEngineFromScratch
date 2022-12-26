@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-option(USE_ISPC "Use ISPC for geometry math" OFF)
+option(USE_ISPC "Use ISPC for geometry math" ON)
 option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
 
 IF(UNIX)

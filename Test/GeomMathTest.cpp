@@ -1,5 +1,6 @@
 #include <cassert>
 #include <iostream>
+#include <chrono>
 
 #include "MatrixComposeDecompose.hpp"
 #include "geommath.hpp"
@@ -33,6 +34,10 @@ void vector_test() {
     MulByElement(c, a, b);
     cout << "Element Product of vec 1 and vec 2: ";
     cout << c;
+
+    DivByElement(a, c, b);
+    cout << "Element Division of aboud product and vec 2: (should equal vec1) ";
+    cout << a;
 
     Vector4f e {-3.0f, 3.0f, 6.0f, 1.0f};
     Vector4f f {2.0f, 0.0f, -0.7f, 0.0f};
@@ -217,11 +222,77 @@ void matrix_test() {
     cout << "DCT-IDCT error: " << pixel_error;
 }
 
+void performance_test() {
+    Vector3f a {1.0f, 2.0f, 3.0f};
+    Vector3f b {5.0f, 6.0f, 7.0f};
+    Vector3f result_v;
+    float result = 0;
+    Vector3f sum(0);
+    const int64_t iterations = 10'000'000;
+
+    std::chrono::high_resolution_clock performance_test_clock;
+
+    // Dot Product
+#ifdef USE_ISPC
+{
+    auto t0 = performance_test_clock.now();
+    for (int32_t i = 0; i < iterations; i++) {
+     ispc::MulByElement(a, b, result_v, 3);
+     result += result_v[0] + result_v[1] + result_v[2];
+    }
+    auto t1 = performance_test_clock.now();
+
+     fprintf(stderr, "Time needed for %I64d times of Dot Production using ISPC: %I64d\n", iterations, (t1 - t0).count());     
+}
+#endif
+ 
+{
+    auto t0 = performance_test_clock.now();
+    for (int32_t i = 0; i < iterations; i++) {
+          result += a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    }
+    auto t1 = performance_test_clock.now();
+
+     fprintf(stderr, "Time needed for %I64d times of Dot Production using C++: %I64d\n", iterations, (t1 - t0).count());     
+}
+
+     // Cross Product
+#ifdef USE_ISPC
+{
+    auto t0 = performance_test_clock.now();
+    for (int32_t i = 0; i < iterations; i++) {
+     ispc::CrossProduct(a, b, result_v);
+     sum += result_v;
+    }
+    auto t1 = performance_test_clock.now();
+
+     fprintf(stderr, "Time needed for %I64d times of Cross Production using ISPC: %I64d\n", iterations, (t1 - t0).count());     
+}
+#endif
+ 
+{
+    auto t0 = performance_test_clock.now();
+    for (int32_t i = 0; i < iterations; i++) {
+          result_v[0] = a[1] * b[2] - a[2] * b[1];
+          result_v[1] = a[2] * b[0] - a[0] * b[2];
+          result_v[2] = a[0] * b[1] - a[1] * b[0];
+          sum += result_v;
+    }
+    auto t1 = performance_test_clock.now();
+
+     fprintf(stderr, "Time needed for %I64d times of Cross Production using C++: %I64d\n", iterations, (t1 - t0).count());     
+     fprintf(stdout, "%f", result);
+     cout << sum << '\r ';
+}
+
+}
+
 int main() {
     cout << fixed;
 
     vector_test();
     matrix_test();
+    performance_test();
 
     return 0;
 }

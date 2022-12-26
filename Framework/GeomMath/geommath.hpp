@@ -21,6 +21,8 @@ extern "C" {
 #else
 namespace Dummy { /* namespace */
 #endif
+void DotProduct(const float* a, const float* b, float* result,
+                  const size_t count);
 void CrossProduct(const float a[3], const float b[3], float result[3]);
 void AddByElement(const float* a, const float* b, float* result,
                   const size_t count);
@@ -298,19 +300,13 @@ inline void DotProduct(T& result, const Vector3<T>& vec1, const Vector3<T>& vec2
 template <class T, Dimension auto N>
 inline void DotProduct(T& result, const Vector<T, N>& vec1,
                        const Vector<T, N>& vec2) {
-    Vector<T, N> _result;
-
 #ifdef USE_ISPC
-    ispc::MulByElement(vec1, vec2, _result, N);
+    ispc::DotProduct(vec1, vec2, &result,
+                  N);
 #else
-    Dummy::MulByElement(vec1, vec2, _result, N);
+    Dummy::DotProduct(vec1, vec2, &result,
+                  N);
 #endif
-
-    result = 0;
-
-    for (size_t i = 0; i < N; i++) {
-        result += _result[i];
-    }
 }
 
 template <class T, Dimension auto N>

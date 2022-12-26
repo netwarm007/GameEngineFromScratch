@@ -1,4 +1,4 @@
-set(FUNCTIONS CrossProduct MulByElement Transpose Normalize
+set(FUNCTIONS DotProduct CrossProduct MulByElement Transpose Normalize
               Transform AddByElement SubByElement MatrixUtil
               InverseMatrix DCT Absolute Pow Sqrt DivByElement 
         )

@@ -4,16 +4,16 @@
 #include "geommath.hpp"
 
 namespace My {
-static std::mt19937 generator;
-
 template <class T>
 T random_f() {
-    static std::uniform_real_distribution<T> distribution(0.0, 1.0);
+    thread_local std::mt19937 generator;
+    thread_local std::uniform_real_distribution<T> distribution(0.0, 1.0);
     return distribution(generator);
 }
 
 template <class T>
 T random_f(T min, T max) {
+    thread_local std::mt19937 generator;
     std::uniform_real_distribution<T> distribution(min, max);
     return distribution(generator);
 }
