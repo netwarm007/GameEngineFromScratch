@@ -242,7 +242,7 @@ void performance_test() {
     }
     auto t1 = performance_test_clock.now();
 
-     fprintf(stderr, "Time needed for %I64d times of Dot Production using ISPC: %I64d\n", iterations, (t1 - t0).count());     
+     fprintf(stderr, "Time needed for %lld times of Dot Production using ISPC: %lld\n", iterations, (t1 - t0).count());     
 }
 #endif
  
@@ -253,7 +253,7 @@ void performance_test() {
     }
     auto t1 = performance_test_clock.now();
 
-     fprintf(stderr, "Time needed for %I64d times of Dot Production using C++: %I64d\n", iterations, (t1 - t0).count());     
+     fprintf(stderr, "Time needed for %lld times of Dot Production using C++: %lld\n", iterations, (t1 - t0).count());     
 }
 
      // Cross Product
@@ -280,9 +280,9 @@ void performance_test() {
     }
     auto t1 = performance_test_clock.now();
 
-     fprintf(stderr, "Time needed for %I64d times of Cross Production using C++: %I64d\n", iterations, (t1 - t0).count());     
+     fprintf(stderr, "Time needed for %lld times of Cross Production using C++: %lld\n", iterations, (t1 - t0).count());     
      fprintf(stdout, "%f", result);
-     cout << sum << '\r ';
+     cout << sum << "\r ";
 }
 
 }
