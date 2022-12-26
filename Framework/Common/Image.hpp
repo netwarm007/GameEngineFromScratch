@@ -424,40 +424,51 @@ struct Image {
 
     void SaveTGA(const char* filename) const {
         assert(filename != NULL);
+        assert((pixel_format == PIXEL_FORMAT::RGBA8) || (pixel_format == PIXEL_FORMAT::RGB8));
 
         if (compressed) {
             fprintf(stderr, "SaveTGA is called but the image is compressed.\n");
             return;
         }
+
         FILE* file = fopen(filename, "wb");
+
         // misc header information
         for (int i = 0; i < 18; i++) {
             if (i == 2)
                 fprintf(file, "%c", 2);
             else if (i == 12)
-                fprintf(file, "%c", Width % 256);
+                fprintf(file, "%c", Width & 0xFF);
             else if (i == 13)
-                fprintf(file, "%c", Width / 256);
+                fprintf(file, "%c", (Width & 0xFF00) >> 8);
             else if (i == 14)
-                fprintf(file, "%c", Height % 256);
+                fprintf(file, "%c", Height & 0xFF);
             else if (i == 15)
-                fprintf(file, "%c", Height / 256);
-            else if (i == 16)
-                fprintf(file, "%c", 32);
-            else if (i == 17)
-                fprintf(file, "%c", 0x28);
+                fprintf(file, "%c", (Height & 0xFF00) >> 8);
+            else if (i == 16) {
+                fprintf(file, "%c", bitcount);
+            }
+            else if (i == 17) {
+                switch (bitcount) {
+                    case 24: fprintf(file, "%c", 0x00);
+                             break;
+                    case 32: fprintf(file, "%c", 0x08);
+                             break;
+                    default: assert(0);
+                } 
+            }
             else
                 fprintf(file, "%c", 0);
         }
         // the data
-        // flip y so that (0,0) is bottom left corner
-        for (int32_t y = Height - 1; y >= 0; y--) {
-            for (int32_t x = 0; x < Width; x++) {
+        for (uint32_t y = 0; y < Height; y++) {
+            for (uint32_t x = 0; x < Width; x++) {
                 // note reversed order: b, g, r
-                fprintf(file, "%c", GetA(x, y));
-                fprintf(file, "%c", GetB(x, y));
-                fprintf(file, "%c", GetG(x, y));
-                fprintf(file, "%c", GetR(x, y));
+                fputc(GetB(x, y) & 0xFF, file);
+                fputc(GetG(x, y) & 0xFF, file);
+                fputc(GetR(x, y) & 0xFF, file);
+                if (pixel_format == PIXEL_FORMAT::RGBA8)
+                    fputc(GetA(x, y) & 0xFF, file);
             }
         }
         fclose(file);

@@ -9,6 +9,7 @@ set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
     WaveGeneratorTest PPMEncoderTest
     RandomTest
     BVHTest
+    TgaEncoderTest
 )
 
 foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
@@ -18,7 +19,11 @@ foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
 endforeach(TEST_CASE)
 
 add_executable(RayTracingTest RayTracingTest.cpp)
+if(OPENMP_CXX_FOUND)
+target_link_libraries(RayTracingTest Framework OpenMP::OpenMP_CXX)
+else()
 target_link_libraries(RayTracingTest Framework)
+endif()
 
 add_executable(OpenALTest OpenALTest.cpp)
 if(ANDROID)

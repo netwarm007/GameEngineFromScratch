@@ -1,6 +1,8 @@
 #pragma once
 #include "IImageEncoder.hpp"
 
+#include <cstdio>
+
 namespace My {
     class PpmEncoder : _implements_ ImageEncoder {
         public:
@@ -11,7 +13,7 @@ namespace My {
 
             for (int y = img.Height - 1; y >= 0; y--) {
                 for (int x = 0; x < img.Width; x++) {
-                    std::cout << img.GetR(x, y) << ' ' << img.GetG(x, y) << ' ' << img.GetB(x, y) << '\n';
+                    fprintf(stdout, "%d %d %d\n", img.GetR(x, y), img.GetG(x, y), img.GetB(x, y));
                 }
             }
 

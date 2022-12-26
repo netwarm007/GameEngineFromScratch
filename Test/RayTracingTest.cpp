@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
     img.compressed = false;
     img.compress_format = My::COMPRESSED_FORMAT::NONE;
     img.data_size = img.Width * img.Height * (img.bitcount >> 3);
-    img.data = new uint8_t[img.data_size];
+    img.data = new uint8_t[img.data_size](0);
 
     // Render
     int concurrency = std::thread::hardware_concurrency();
@@ -158,8 +158,9 @@ int main(int argc, char** argv) {
 
         pixel_color = pixel_color * (1.0 / samples_per_pixel);
 
-        // Gamma-correction for gamma = 2.0
-        pixel_color = My::sqrt(pixel_color);
+        // Gamma-correction for gamma = 2.2
+        const auto gamma = 2.2;
+        pixel_color = My::pow(pixel_color, 1.0 / gamma);
 
         img.SetR(x, y, to_unorm(pixel_color[0]));
         img.SetG(x, y, to_unorm(pixel_color[1]));
@@ -193,11 +194,12 @@ int main(int argc, char** argv) {
 
     std::cerr << "\r";
 
+#if 0
     My::PpmEncoder encoder;
     encoder.Encode(img);
-#if 0
-    img.SaveTGA("raytraced.tga");
 #endif
+    My::adjust_image(img);
+    img.SaveTGA("raytraced.tga");
 
     return 0;
 }
