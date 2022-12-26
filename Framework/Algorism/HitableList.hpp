@@ -23,8 +23,7 @@ class HitableList : public Hitable<T> {
         auto closest_so_far = tmax;
 
         for (const auto& hitable : m_Hitables) {
-            if (hitable->Intersect(r, temp_hit, tmin, closest_so_far) &&
-                hitable->Intersect(r, temp_hit, tmin, closest_so_far)) {
+            if (hitable->Intersect(r, temp_hit, tmin, closest_so_far)) {
                 hit_anything = true;
                 closest_so_far = temp_hit.getT();
                 h = temp_hit;

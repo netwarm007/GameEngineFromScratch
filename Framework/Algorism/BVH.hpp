@@ -53,7 +53,7 @@ class BVHNode : _implements_ Hitable<T> {
         if (!bounding_box.Intersect(r, h, tmin, tmax)) return false;
 
         bool hit_left = left->Intersect(r, h, tmin, tmax);
-        bool hit_right = right->Intersect(r, h, tmin, tmax);
+        bool hit_right = right->Intersect(r, h, tmin, hit_left ? h.getT() : tmax);
 
         return hit_left || hit_right;
     }
