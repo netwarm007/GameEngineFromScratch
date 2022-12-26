@@ -1,4 +1,4 @@
-add_library(MyGeomMathLib
+add_library(GeomMath
 CrossProduct.cpp 
 DotProduct.cpp
 MulByElement.cpp

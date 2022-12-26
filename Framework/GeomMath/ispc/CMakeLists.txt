@@ -1,43 +1,17 @@
-set(FUNCTIONS DotProduct CrossProduct MulByElement Transpose Normalize
-              Transform AddByElement SubByElement MatrixUtil
-              InverseMatrix DCT Absolute Pow Sqrt DivByElement 
-        )
-
-foreach(FUNC IN LISTS FUNCTIONS)
-    IF(${CMAKE_SYSTEM_NAME} MATCHES Android)
-        add_custom_command(OUTPUT ${FUNC}.o
-            COMMAND ${CMAKE_COMMAND} -E env "PATH=${ISPC_COMPILER_PATH}" ${ISPC_COMPILER} ${ISPC_OPTIONS} -o ${FUNC}.o ${CMAKE_CURRENT_SOURCE_DIR}/${FUNC}.ispc
-            #COMMAND ${CMAKE_COMMAND} -E env "PATH=${ISPC_COMPILER_PATH}" ${ISPC_COMPILER} ${ISPC_OPTIONS} --emit-llvm -o ${FUNC}.bc ${CMAKE_CURRENT_SOURCE_DIR}/${FUNC}.ispc
-            #COMMAND ${LLVM_COMPILER} ${LLVM_OPTIONS} -filetype=obj -o=${FUNC}.o ${FUNC}.bc
-            MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${FUNC}.ispc
-            COMMENT "Building ${FUNC}"
-            )
-    ELSE()
-        add_custom_command(OUTPUT ${FUNC}.o
-            COMMAND ${CMAKE_COMMAND} -E env "PATH=${ISPC_COMPILER_PATH}" ${ISPC_COMPILER} ${ISPC_OPTIONS} -o ${FUNC}.o ${CMAKE_CURRENT_SOURCE_DIR}/${FUNC}.ispc
-            MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/${FUNC}.ispc
-            COMMENT "Building ${FUNC}"
-            )
-    ENDIF(${CMAKE_SYSTEM_NAME} MATCHES Android)
-
-    list(APPEND OBJECTS ${FUNC}.o)
-
-endforeach(FUNC)
-
-IF(${WIN32})
-add_custom_command(OUTPUT ${GEOMMATH_LIB_FILE}
-        COMMAND ${CMAKE_AR} ${ISPC_LIBRARIAN_OPTIONS} ${OBJECTS}
-        DEPENDS ${OBJECTS}
-        )
-ELSE()
-add_custom_command(OUTPUT ${GEOMMATH_LIB_FILE}
-        COMMAND ${CMAKE_AR} ${ISPC_LIBRARIAN_OPTIONS} ${OBJECTS}
-        COMMAND ${CMAKE_RANLIB} ${GEOMMATH_LIB_FILE}
-        DEPENDS ${OBJECTS}
-        )
-ENDIF(${WIN32})
-
-add_custom_target(IspcGeomMathLib
-                   DEPENDS ${GEOMMATH_LIB_FILE}
-        )
-
+add_library(GeomMath
+CrossProduct.ispc 
+DotProduct.ispc
+MulByElement.ispc
+Transpose.ispc
+Normalize.ispc
+Transform.ispc
+AddByElement.ispc
+SubByElement.ispc
+MatrixUtil.ispc
+InverseMatrix.ispc
+DCT.ispc
+Absolute.ispc
+Pow.ispc 
+DivByElement.ispc
+Sqrt.ispc
+)

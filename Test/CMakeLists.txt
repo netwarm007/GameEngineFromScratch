@@ -25,6 +25,11 @@ else()
 target_link_libraries(RayTracingTest Framework)
 endif()
 
+# CUDA
+if(USE_CUDA)
+    add_executable(RayTracingCUDATest RayTracingCUDATest.cu)
+endif()
+
 add_executable(OpenALTest OpenALTest.cpp)
 if(ANDROID)
     target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY} OpenSLES)
