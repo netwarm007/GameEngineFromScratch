@@ -2,7 +2,7 @@ version: 0.1.0-{build}
 image: Visual Studio 2022
 clone_depth: 50
 environment:
-  VULKAN_SDK: C:/VulkanSDK/1.3.216.0
+  VULKAN_SDK: C:\VulkanSDK\1.3.216.0
 cache:
   - VulkanSDK.exe
 init:
@@ -87,11 +87,10 @@ init:
       choco install vulkan-sdk -y
       refreshenv
 
-      Start-Process -FilePath "${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat" -ArgumentList @("x86_amd64") -NoNewWindow;
-      Get-ChildItem env:* | Sort-Object name
-
 build_script:
 - cmd: >-
+    call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+
     scripts/build_imgui Release
 
     scripts/build_crossguid Release
