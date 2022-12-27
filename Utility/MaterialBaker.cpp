@@ -310,15 +310,15 @@ int main(int argc, char** argv) {
                 for (int32_t y = 0; y < surf.height; y++) {
                     for (int32_t x = 0; x < surf.width; x++) {
                         *(surf.ptr + y * surf.stride + x * channels) =
-                            metallic_texture->GetX(
+                            metallic_texture->GetR(
                                 std::floor(x * metallic_ratio_x),
                                 std::floor(y * metallic_ratio_y));
                         *(surf.ptr + y * surf.stride + x * channels + 1) =
-                            roughness_texture->GetX(
+                            roughness_texture->GetR(
                                 std::floor(x * roughness_ratio_x),
                                 std::floor(y * roughness_ratio_y));
                         *(surf.ptr + y * surf.stride + x * channels + 2) =
-                            ao_texture->GetX(std::floor(x * ao_ratio_x),
+                            ao_texture->GetR(std::floor(x * ao_ratio_x),
                                              std::floor(y * ao_ratio_y));
                         *(surf.ptr + y * surf.stride + x * channels + 3) = 0;
                     }
@@ -351,9 +351,9 @@ int main(int argc, char** argv) {
                 for (int32_t y = 0; y < surf.height; y++) {
                     for (int32_t x = 0; x < surf.width; x++) {
                         *(surf.ptr + y * surf.stride + x * channels) =
-                            normal_texture->GetX(x, y);
+                            normal_texture->GetR(x, y);
                         *(surf.ptr + y * surf.stride + x * channels + 1) =
-                            normal_texture->GetY(x, y);
+                            normal_texture->GetG(x, y);
                     }
                 }
 

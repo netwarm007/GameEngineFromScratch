@@ -119,7 +119,7 @@ struct Image {
         if (data) delete[] data;
     }
 
-    float GetR(uint32_t x, uint32_t y) const {
+    float GetX(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -151,7 +151,7 @@ struct Image {
         return 0;
     }
 
-    float GetG(uint32_t x, uint32_t y) const {
+    float GetY(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -187,7 +187,7 @@ struct Image {
         return 0;
     }
 
-    float GetB(uint32_t x, uint32_t y) const {
+    float GetZ(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -222,7 +222,7 @@ struct Image {
         return 0;
     }
 
-    float GetA(uint32_t x, uint32_t y) const {
+    float GetW(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0xFF;
 
         switch (pixel_format) {
@@ -424,13 +424,13 @@ struct Image {
         return;
     }
 
-    uint8_t GetX(uint32_t x, uint32_t y) const { return GetR(x, y); }
+    uint8_t GetR(uint32_t x, uint32_t y) const { return to_unorm(GetX(x, y)); }
 
-    uint8_t GetY(uint32_t x, uint32_t y) const { return GetG(x, y); }
+    uint8_t GetG(uint32_t x, uint32_t y) const { return to_unorm(GetY(x, y)); }
 
-    uint8_t GetZ(uint32_t x, uint32_t y) const { return GetB(x, y); }
+    uint8_t GetB(uint32_t x, uint32_t y) const { return to_unorm(GetZ(x, y)); }
 
-    uint8_t GetW(uint32_t x, uint32_t y) const { return GetA(x, y); }
+    uint8_t GetA(uint32_t x, uint32_t y) const { return to_unorm(GetW(x, y)); }
 
     void SaveTGA(const char* filename) const {
         assert(filename != NULL);
@@ -467,10 +467,10 @@ struct Image {
         for (uint32_t y = 0; y < Height; y++) {
             for (uint32_t x = 0; x < Width; x++) {
                 // note reversed order: b, g, r
-                fputc(to_unorm(GetB(x, y)), file);
-                fputc(to_unorm(GetG(x, y)), file);
-                fputc(to_unorm(GetR(x, y)), file);
-                fputc(to_unorm(GetA(x, y)), file);
+                fputc(GetB(x, y), file);
+                fputc(GetG(x, y), file);
+                fputc(GetR(x, y), file);
+                fputc(GetA(x, y), file);
             }
         }
         fclose(file);
