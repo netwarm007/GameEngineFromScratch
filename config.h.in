@@ -1,4 +1,5 @@
 #cmakedefine USE_ISPC
+#cmakedefine USE_CUDA
 #cmakedefine OS_WINDOWS
 #cmakedefine OS_LINUX
 #cmakedefine OS_BSD

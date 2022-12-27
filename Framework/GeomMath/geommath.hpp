@@ -14,13 +14,11 @@
 #include <vector>
 
 #include "config.h"
+#include "portable.hpp"
 
 #ifdef USE_ISPC
 namespace ispc { /* namespace */
 extern "C" {
-#else
-namespace Dummy { /* namespace */
-#endif
 void DotProduct(const float* a, const float* b, float* result,
                   const size_t count);
 void CrossProduct(const float a[3], const float b[3], float result[3]);
@@ -54,10 +52,9 @@ void Absolute(float* result, const float* a, const size_t count);
 void Pow(const float* v, const size_t count, const float exponent,
          float* result);
 void Sqrt(const float* v, const size_t count, float* result);
-#ifdef USE_ISPC
 } /* end extern C */
-#endif
 } /* namespace */
+#endif
 
 #ifndef PI
 #define PI 3.14159265358979323846
@@ -85,15 +82,15 @@ template <class T, Dimension auto N>
 struct Vector {
     T data[N];
 
-    Vector() { std::memset(data, 0x00, sizeof(T) * N); }
+    __host__ __device__ Vector() { std::memset(data, 0x00, sizeof(T) * N); }
 
-    explicit Vector(const T val) {
+    __host__ __device__ explicit Vector(const T val) {
         for (Dimension auto i = 0; i < N; i++) {
             data[i] = val;
         }
     }
 
-    Vector(std::initializer_list<const T> list) : Vector() {
+    __host__ __device__ Vector(std::initializer_list<const T> list) : Vector() {
         size_t i = 0;
         assert(list.size() <= N);
         for (auto val : list) {
@@ -101,26 +98,26 @@ struct Vector {
         }
     }
 
-    operator T*() { return reinterpret_cast<T*>(this); };
+    __host__ __device__ operator T*() { return reinterpret_cast<T*>(this); };
 
-    operator const T*() const { return reinterpret_cast<const T*>(this); }
+    __host__ __device__ operator const T*() const { return reinterpret_cast<const T*>(this); }
 
-    void Set(const T val) {
+    __host__ __device__ void Set(const T val) {
         for (Dimension auto i = 0; i < N; i++) {
             data[i] = val;
         }
     }
 
-    void Set(const T* pval) { std::memcpy(data, pval, sizeof(T) * N); }
+    __host__ __device__ void Set(const T* pval) { std::memcpy(data, pval, sizeof(T) * N); }
 
-    void Set(std::initializer_list<const T> list) {
+    __host__ __device__ void Set(std::initializer_list<const T> list) {
         size_t i = 0;
         for (auto val : list) {
             data[i++] = val;
         }
     }
 
-    Vector operator-() const {
+    __host__ __device__ Vector operator-() const {
         Vector result;
 
         for (Scalar auto i = 0; i < N; i++) {
@@ -130,44 +127,44 @@ struct Vector {
         return result;
     }
 
-    Vector& operator=(const T* pf) {
+    __host__ __device__ Vector& operator=(const T* pf) {
         Set(pf);
         return *this;
     }
 
-    Vector& operator=(const T f) {
+    __host__ __device__ Vector& operator=(const T f) {
         Set(f);
         return *this;
     }
 
-    Vector& operator=(const Vector& v) {
+    __host__ __device__ Vector& operator=(const Vector& v) {
         std::memcpy(this, &v, sizeof(v));
         return *this;
     }
 
-    Vector& operator+=(const Vector& v) {
+    __host__ __device__ Vector& operator+=(const Vector& v) {
         *this = *this + v;
         return *this;
     }
 
-    Vector& operator-=(const Vector& v) {
+    __host__ __device__ Vector& operator-=(const Vector& v) {
         *this = *this - v;
         return *this;
     }
 
-    Vector& operator/=(const Scalar auto scalar) {
+    __host__ __device__ Vector& operator/=(const Scalar auto scalar) {
         *this = *this / scalar;
         return *this;
     }
 
-    Vector& operator/=(const Vector& v) {
+    __host__ __device__ Vector& operator/=(const Vector& v) {
         *this = *this / v;
         return *this;
     }
 
-    T& operator[](size_t index) { return data[index]; }
+    __host__ __device__ T& operator[](size_t index) { return data[index]; }
 
-    [[nodiscard]] const T& operator[](size_t index) const {
+    __host__ __device__ [[nodiscard]] const T& operator[](size_t index) const {
         return data[index];
     }
 };
@@ -212,17 +209,19 @@ std::ostream& operator<<(std::ostream& out, Vector<T, N> vector) {
 }
 
 template <class T, Dimension auto N>
-void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1,
+__host__ __device__ void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1,
                const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
     ispc::AddByElement(vec1, vec2, result, N);
 #else
-    Dummy::AddByElement(vec1, vec2, result, N);
+    for (size_t i = 0; i < N; i++) {
+        result[i] = vec1[i] + vec2[i];
+    }
 #endif
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorAdd(result, vec1, vec2);
 
@@ -230,7 +229,7 @@ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
+__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result(scalar);
     VectorAdd(result, vec, result);
 
@@ -238,17 +237,19 @@ Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
 }
 
 template <class T, Dimension auto N>
-void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1,
+__host__ __device__ void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1,
                const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
     ispc::SubByElement(vec1, vec2, result, N);
 #else
-    Dummy::SubByElement(vec1, vec2, result, N);
+    for (size_t i = 0; i < N; i++) {
+        result[i] = vec1[i] - vec2[i];
+    }
 #endif
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorSub(result, vec1, vec2);
 
@@ -256,81 +257,80 @@ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
 }
 
 template <class T>
-inline void CrossProduct(T& result, const Vector<T, 2>& vec1,
+__host__ __device__ inline void CrossProduct(T& result, const Vector<T, 2>& vec1,
                          const Vector<T, 2>& vec2) {
     result = vec1[0] * vec2[1] - vec1[1] * vec2[0];
 }
 
 template <class T>
-inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1,
+__host__ __device__ inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1,
                          const Vector<T, 3>& vec2) {
 #ifdef USE_ISPC
     ispc::CrossProduct(vec1, vec2, result);
 #else
-    Dummy::CrossProduct(vec1, vec2, result);
+    result[0] = vec1[1] * vec2[2] - vec1[2] * vec2[1];
+    result[1] = vec1[2] * vec2[0] - vec1[0] * vec2[2];
+    result[2] = vec1[0] * vec2[1] - vec1[1] * vec2[0];
 #endif
 }
 
 template <class T>
-inline auto CrossProduct(const Vector<T, 3>& vec1,
+__host__ __device__ inline auto CrossProduct(const Vector<T, 3>& vec1,
                          const Vector<T, 3>& vec2) {
     Vector<T, 3> result; 
-#ifdef USE_ISPC
-    ispc::CrossProduct(vec1, vec2, result);
-#else
-    Dummy::CrossProduct(vec1, vec2, result);
-#endif
+
+    CrossProduct(result, vec1, vec2);
 
     return result;
 }
 
 template <class T>
-inline void DotProduct(T& result, const Vector3<T>& vec1, const Vector3<T>& vec2) {
+__host__ __device__ inline void DotProduct(T& result, const Vector3<T>& vec1, const Vector3<T>& vec2) {
     result = vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }
 
 template <class T, Dimension auto N>
-inline void DotProduct(T& result, const Vector<T, N>& vec1,
+__host__ __device__ inline void DotProduct(T& result, const Vector<T, N>& vec1,
                        const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
     ispc::DotProduct(vec1, vec2, &result,
                   N);
 #else
-    Dummy::DotProduct(vec1, vec2, &result,
-                  N);
+    for (int i = 0; i < N; i++) {
+        result += vec1[i] * vec2[i];
+    }
 #endif
 }
 
 template <class T, Dimension auto N>
-inline T DotProduct(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ inline T DotProduct(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     T result;
     DotProduct(result, vec1, vec2);
     return result;
 }
 
 template <class T, Dimension auto N>
-inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
+__host__ __device__ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Vector<T, N>& b) {
 #ifdef USE_ISPC
     ispc::MulByElement(a, b, result, N);
 #else
-    Dummy::MulByElement(a, b, result, N);
+    for (size_t i = 0; i < N; i++) {
+        result[i] = a[i] * b[i];
+    }
 #endif
 }
 
 template <class T, Dimension auto N>
-inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
+__host__ __device__ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Scalar auto scalar) {
     Vector<T, N> v(scalar);
-#ifdef USE_ISPC
-    ispc::MulByElement(a, v, result, N);
-#else
-    Dummy::MulByElement(a, v, result, N);
-#endif
+
+    MulByElement(result, a, v);
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
+__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -338,7 +338,7 @@ Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
+__host__ __device__ Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -346,7 +346,7 @@ Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     MulByElement(result, vec1, vec2);
 
@@ -354,28 +354,27 @@ Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
 }
 
 template <class T, Dimension auto N>
-inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
+__host__ __device__ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
                          const Vector<T, N>& b) {
 #ifdef USE_ISPC
     ispc::DivByElement(a, b, result, N);
 #else
-    Dummy::DivByElement(a, b, result, N);
+    for (size_t i = 0; i < N; i++) {
+        result[i] = a[i] / b[i];
+    }
 #endif
 }
 
 template <class T, Dimension auto N>
-inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const Scalar auto scalar) {
+__host__ __device__ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
+                         const T scalar) {
     Vector<T, N> v(scalar);
-#ifdef USE_ISPC
-    ispc::DivByElement(a, v, result, N);
-#else
-    Dummy::DivByElement(a, v, result, N);
-#endif
+
+    DivByElement(result, a, v);
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
+__host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
 
@@ -383,7 +382,7 @@ Vector<T, N> operator/(const Vector<T, N>& vec, const Scalar auto scalar) {
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
+__host__ __device__ Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
 
@@ -391,7 +390,7 @@ Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     Vector<T, N> result;
     DivByElement(result, vec1, vec2);
 
@@ -409,7 +408,9 @@ Vector<T, N> pow(const Vector<T, N>& vec, const Scalar auto exponent) {
 #ifdef USE_ISPC
     ispc::Pow(vec, N, exponent, result);
 #else
-    Dummy::Pow(vec, N, exponent, result);
+    for (size_t i = 0; i < N; i++) {
+        result[i] = pow(vec[i], exponent);
+    }
 #endif
     return result;
 }
@@ -424,7 +425,9 @@ Vector<T, N> sqrt(const Vector<T, N>& vec) {
 #ifdef USE_ISPC
     ispc::Sqrt(vec, N, result);
 #else
-    Dummy::Sqrt(vec, N, result);
+    for (size_t i = 0; i < N; i++) {
+        result[i] = sqrt(vec[i]);
+    }
 #endif
     return result;
 }
@@ -440,36 +443,38 @@ Vector<T, N> fabs(const Vector<T, N>& vec) {
 #ifdef USE_ISPC
     ispc::Absolute(result, vec, N);
 #else
-    Dummy::Absolute(result, vec, N);
+    for (size_t i = 0; i < N; i++) {
+        result[i] = fabs(vec[i]);
+    }
 #endif
     return result;
 }
 
 template <class T, Dimension auto N>
-inline T LengthSquared(const Vector<T, N>& vec) {
+__host__ __device__ inline T LengthSquared(const Vector<T, N>& vec) {
     T result;
     DotProduct(result, vec, vec);
     return result;
 }
 
 template <class T, Dimension auto N>
-inline constexpr T Length(const Vector<T, N>& vec) {
+__host__ __device__ inline constexpr T Length(const Vector<T, N>& vec) {
     auto length_squared = LengthSquared(vec);
     return static_cast<T>(std::sqrt(length_squared));
 }
 
 template <class T, Dimension auto N>
-inline bool operator>=(const Vector<T, N>&& vec, const Scalar auto scalar) {
+__host__ __device__ inline bool operator>=(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) >= scalar;
 }
 
 template <class T, Dimension auto N>
-inline bool operator>(const Vector<T, N>&& vec, const Scalar auto scalar) {
+__host__ __device__ inline bool operator>(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) > scalar;
 }
 
 template <class T, Dimension auto N>
-inline bool operator<=(const Vector<T, N>&& vec, const Scalar auto scalar) {
+__host__ __device__ inline bool operator<=(const Vector<T, N>&& vec, const Scalar auto scalar) {
     return Length(vec) <= scalar;
 }
 
@@ -479,17 +484,21 @@ inline bool operator<(const Vector<T, N>&& vec, const Scalar auto scalar) {
 }
 
 template <class T, Dimension auto N>
-inline void Normalize(Vector<T, N>& a) {
+__host__ __device__ inline void Normalize(Vector<T, N>& a) {
     T length = Length(a);
 #ifdef USE_ISPC
     ispc::Normalize(N, a, length);
 #else
-    Dummy::Normalize(N, a, length);
+    if (!length) return;
+    const T one_over_length = 1.0 / length;
+    for (size_t index = 0; index < N; index++) {
+        a[index] = static_cast<T>(a[index] * one_over_length);
+    }
 #endif
 }
 
 template <class T, Dimension auto N>
-inline bool isNearZero(const Vector<T, N>& vec) {
+__host__ __device__ inline bool isNearZero(const Vector<T, N>& vec) {
     bool result = true;
     const auto s = 1e-8;
 
@@ -503,12 +512,12 @@ inline bool isNearZero(const Vector<T, N>& vec) {
 }
 
 template <class T, Dimension auto N>
-inline Vector<T, N> Reflect(const Vector<T, N>& v, const Vector<T, N>& n) {
+__host__ __device__ inline Vector<T, N> Reflect(const Vector<T, N>& v, const Vector<T, N>& n) {
     return v - 2 * DotProduct(v, n) * n;
 }
 
 template <class T, Dimension auto N>
-inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
+__host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
                             T etai_over_etat) {
     auto cos_theta = fmin(DotProduct(-v, n), 1.0);
 
@@ -587,7 +596,9 @@ void MatrixAdd(Matrix<T, ROWS, COLS>& result,
 #ifdef USE_ISPC
     ispc::AddByElement(matrix1, matrix2, result, ROWS * COLS);
 #else
-    Dummy::AddByElement(matrix1, matrix2, result, ROWS * COLS);
+    for (size_t i = 0; i < ROWS * COLS; i++) {
+        result[i] = matrix1[i] + matrix2[i];
+    }
 #endif
 }
 
@@ -607,7 +618,9 @@ void MatrixSub(Matrix<T, ROWS, COLS>& result,
 #ifdef USE_ISPC
     ispc::SubByElement(matrix1, matrix2, result, ROWS * COLS);
 #else
-    Dummy::SubByElement(matrix1, matrix2, result, ROWS * COLS);
+    for (size_t i = 0; i < ROWS * COLS; i++) {
+        result[i] = matrix1[i] - matrix2[i];
+    }
 #endif
 }
 
@@ -618,7 +631,9 @@ void MatrixMulByElement(Matrix<T, ROWS, COLS>& result,
 #ifdef USE_ISPC
     ispc::MulByElement(matrix1, matrix2, result, ROWS * COLS);
 #else
-    Dummy::MulByElement(matrix1, matrix2, result, ROWS * COLS);
+    for (size_t i = 0; i < ROWS * COLS; i++) {
+        result[i] = matrix1[i] * matrix2[i];
+    }
 #endif
 }
 
@@ -629,7 +644,9 @@ void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result,
 #ifdef USE_ISPC
     ispc::MulByElementi32(matrix1, matrix2, result, ROWS * COLS);
 #else
-    Dummy::MulByElementi32(matrix1, matrix2, result, ROWS * COLS);
+    for (size_t i = 0; i < ROWS * COLS; i++) {
+        result[i] = matrix1[i] * matrix2[i];
+    }
 #endif
 }
 
@@ -704,7 +721,9 @@ void Absolute(Matrix<T, ROWS, COLS>& result,
 #ifdef USE_ISPC
     ispc::Absolute(result, matrix, ROWS * COLS);
 #else
-    Dummy::Absolute(result, matrix, ROWS * COLS);
+    for (size_t i = 0; i < ROWS * COLS; i++) {
+        result[i] = fabs(matrix[i]);
+    }
 #endif
 }
 
@@ -740,7 +759,11 @@ inline void Transpose(Matrix<T, ROWS, COLS>& result,
 #ifdef USE_ISPC
     ispc::Transpose(matrix1, result, ROWS, COLS);
 #else
-    Dummy::Transpose(matrix1, result, ROWS, COLS);
+    for (uint32_t i = 0; i < ROWS; i++) {
+        for (uint32_t j = 0; j < COLS; j++) {
+            result[j * ROWS + i] = matrix1[i * COLS + j];
+        }
+    }
 #endif
 }
 
@@ -756,7 +779,7 @@ inline T Trace(const Matrix<T, N, N>& matrix) {
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& source,
+__host__ __device__ inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& source,
                         const Matrix<T, ROWS, COLS>& matrix) {
     static_assert(
         ROWS >= 3,
@@ -809,21 +832,31 @@ inline void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw,
 }
 
 inline void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix) {
-    Vector4f tmp({vector[0], vector[1], vector[2], 1.0f});
+    Vector4f tmp;
 #ifdef USE_ISPC
     ispc::Transform(tmp, matrix);
 #else
-    Dummy::Transform(tmp, matrix);
+    for (int index = 0; index < 4; index++) {
+        tmp[index] =
+            (vector[0] * matrix[0][index]) + (vector[1] * matrix[1][index]) +
+            (vector[2] * matrix[2][index]) + (1.0f * matrix[2][index]);
+    }
 #endif
     vector = tmp;
 }
 
 inline void Transform(Vector4f& vector, const Matrix4X4f& matrix) {
+    Vector4f tmp;
 #ifdef USE_ISPC
     ispc::Transform(vector, matrix);
 #else
-    Dummy::Transform(vector, matrix);
+    for (int index = 0; index < 4; index++) {
+        tmp[index] =
+            (vector[0] * matrix[0][index]) + (vector[1] * matrix[1][index]) +
+            (vector[2] * matrix[2][index]) + (vector[3] * matrix[2][index]);
+    }
 #endif
+    vector = tmp;
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
@@ -831,7 +864,9 @@ inline void ExchangeYandZ(Matrix<T, ROWS, COLS>& matrix) {
 #ifdef USE_ISPC
     ispc::MatrixExchangeYandZ(matrix, ROWS, COLS);
 #else
-    Dummy::MatrixExchangeYandZ(matrix, ROWS, COLS);
+    for (int32_t row_index = 0; row_index < ROWS; row_index++) {
+        std::swap<T>(matrix[row_index][1], matrix[row_index][2]);
+    }
 #endif
 }
 
@@ -921,7 +956,11 @@ inline void BuildIdentityMatrix(Matrix<T, N, N>& matrix) {
 #ifdef USE_ISPC
     ispc::BuildIdentityMatrix(matrix, N);
 #else
-    Dummy::BuildIdentityMatrix(matrix, N);
+    memset(&matrix[0][0], 0x00, sizeof(float) * N);
+
+    for (int32_t i = 0; i < N; i++) {
+        matrix[i][i] = 1.0f;
+    }
 #endif
 }
 
@@ -1114,11 +1153,69 @@ inline void MatrixScale(Matrix4X4f& matrix, const Vector4f& v) {
     MatrixScale(matrix, v[0] / v[3], v[1] / v[3], v[2] / v[3]);
 }
 
+__host__ __device__ static float invf3X3(int i, int j, const float matrix[9]) {
+    int pre_i = ((i == 0) ? 2 : i - 1);
+    int next_i = ((i + 1 == 3) ? 0 : i + 1);
+    int pre_j = ((j == 0) ? 2 : j - 1);
+    int next_j = ((j + 1 == 3) ? 0 : j + 1);
+
+#define e(a, b) matrix[(a)*3 + (b)]
+    float inv = +e(next_i, next_j) * e(pre_i, pre_j) -
+                e(next_i, pre_j) * e(pre_i, next_j);
+
+    return inv;
+#undef e
+}
+
+__host__ __device__ static float invf4X4(int i, int j, const float matrix[16]) {
+    int pre_i = ((i == 0) ? 3 : i - 1);
+    int next_i = ((i + 1 == 4) ? 0 : i + 1);
+    int next_next_i = ((i + 2 >= 4) ? i - 2 : i + 2);
+    int pre_j = ((j == 0) ? 3 : j - 1);
+    int next_j = ((j + 1 == 4) ? 0 : j + 1);
+    int next_next_j = ((j + 2 >= 4) ? j - 2 : j + 2);
+    int o = i - j < 0 ? j - i : i - j;
+
+#define e(a, b) matrix[(a)*4 + (b)]
+    float inv =
+        +e(next_i, next_j) * e(next_next_i, next_next_j) * e(pre_i, pre_j) +
+        e(next_i, next_next_j) * e(next_next_i, pre_j) * e(pre_i, next_j) +
+        e(next_i, pre_j) * e(next_next_i, next_j) * e(pre_i, next_next_j) -
+        e(next_i, next_j) * e(next_next_i, pre_j) * e(pre_i, next_next_j) -
+        e(next_i, next_next_j) * e(next_next_i, next_j) * e(pre_i, pre_j) -
+        e(next_i, pre_j) * e(next_next_i, next_next_j) * e(pre_i, next_j);
+
+    return (o & 0x1) ? -inv : inv;
+#undef e
+}
+
 inline bool InverseMatrix3X3f(Matrix3X3f& matrix) {
 #ifdef USE_ISPC
     return ispc::InverseMatrix3X3f(matrix);
 #else
-    return Dummy::InverseMatrix3X3f(matrix);
+    float inv[9];
+    double D = 0;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            inv[j * 3 + i] = invf3X3(i, j, matrix);
+        }
+    }
+
+    for (int k = 0; k < 3; k++) {
+        float s = ((float *)matrix)[k] * inv[k * 3];
+        D += s;
+    }
+
+    if (D == 0) return false;
+
+    D = 1.0 / D;
+
+    for (int i = 0; i < 9; i++) {
+        ((float *)matrix)[i] = static_cast<float>(inv[i] * D);
+    }
+
+    return true;
 #endif
 }
 
@@ -1126,16 +1223,63 @@ inline bool InverseMatrix4X4f(Matrix4X4f& matrix) {
 #ifdef USE_ISPC
     return ispc::InverseMatrix4X4f(matrix);
 #else
-    return Dummy::InverseMatrix4X4f(matrix);
+    float inv[16];
+    double D = 0;
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            inv[j * 4 + i] = invf4X4(i, j, matrix);
+        }
+    }
+
+    for (int k = 0; k < 4; k++) {
+        float s = ((float *)matrix)[k] * inv[k * 4];
+        D += s;
+    }
+
+    if (D == 0) return false;
+
+    D = 1.0 / D;
+
+    for (int i = 0; i < 16; i++) {
+        ((float *)matrix)[i] = static_cast<float>(inv[i] * D);
+    }
+
 #endif
 }
+
+__host__ __device__ inline float normalizing_scale_factor(float a) {
+    return static_cast<float>((a == 0) ? 1.0f / sqrt(2.0f) : 1.0f);
+}
+
+constexpr float PI_over_sixteen = PI / 16.0;
+constexpr float one_over_four = 1.0f / 4.0f;
 
 inline Matrix8X8f DCT8X8(const Matrix8X8f& matrix) {
     Matrix8X8f result;
 #ifdef USE_ISPC
     ispc::DCT8X8(matrix, result);
 #else
-    Dummy::DCT8X8(matrix, result);
+    for (int u = 0; u < 8; u++) {
+        for (int v = 0; v < 8; v++) {
+            result[u][v] = 0;
+
+            for (int x = 0; x < 8; x++) {
+                for (int y = 0; y < 8; y++) {
+                    float scale_factor =
+                        one_over_four *
+                        normalizing_scale_factor(static_cast<float>(u)) *
+                        normalizing_scale_factor(static_cast<float>(v));
+                    auto normial = static_cast<float>(
+                        matrix[x][y] *
+                        cos((2.0f * x + 1.0f) * u * PI_over_sixteen) *
+                        cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
+
+                    result[u][v] += scale_factor * normial;
+                }
+            }
+        }
+    }
 #endif
     return result;
 }
@@ -1145,7 +1289,29 @@ inline Matrix8X8f IDCT8X8(const Matrix8X8f& matrix) {
 #ifdef USE_ISPC
     ispc::IDCT8X8(matrix, result);
 #else
-    Dummy::IDCT8X8(matrix, result);
+    const float PI_over_sixteen = PI / 16.0;
+    const float one_over_four = 1.0f / 4.0f;
+
+    for (int x = 0; x < 8; x++) {
+        for (int y = 0; y < 8; y++) {
+            result[x][y] = 0;
+
+            for (int u = 0; u < 8; u++) {
+                for (int v = 0; v < 8; v++) {
+                    float scale_factor =
+                        one_over_four *
+                        normalizing_scale_factor(static_cast<float>(u)) *
+                        normalizing_scale_factor(static_cast<float>(v));
+                    auto normial = static_cast<float>(
+                        matrix[u][v] *
+                        cos((2.0f * x + 1.0f) * u * PI_over_sixteen) *
+                        cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
+
+                    result[x][y] += scale_factor * normial;
+                }
+            }
+        }
+    }
 #endif
     return result;
 }

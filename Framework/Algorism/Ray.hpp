@@ -8,18 +8,19 @@ template <typename T>
 class Ray {
    public:
     // CONSTRUCTOR & DESTRUCTOR
-    Ray() {}
-    Ray(const Vector3<T> &orig, const Vector3<T> &dir) {
+    __device__ Ray() {}
+    __device__ Ray(const Vector3<T> &orig, const Vector3<T> &dir) {
         direction = dir;
         Normalize(direction);
         origin = orig;
     }
-    Ray(const Ray &r) { *this = r; }
+
+    __device__ Ray(const Ray &r) { *this = r; }
 
     // ACCESSORS
-    const auto getOrigin() const { return origin; }
-    const auto getDirection() const { return direction; }
-    Point<T> pointAtParameter(T t) const { return origin + direction * t; }
+    __device__ const auto getOrigin() const { return origin; }
+    __device__ const auto getDirection() const { return direction; }
+    __device__ Point<T> pointAtParameter(T t) const { return origin + direction * t; }
 
    private:
     // REPRESENTATION

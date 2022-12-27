@@ -28,6 +28,8 @@ endif()
 # CUDA
 if(USE_CUDA)
     add_executable(RayTracingCUDATest RayTracingCUDATest.cu)
+    set_property(TARGET RayTracingCUDATest PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+    target_link_libraries(RayTracingTest Framework)
 endif()
 
 add_executable(OpenALTest OpenALTest.cpp)

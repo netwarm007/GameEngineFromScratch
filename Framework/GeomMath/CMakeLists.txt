@@ -1,5 +1,3 @@
 if(USE_ISPC)
 add_subdirectory(ispc)
-else()
-add_subdirectory(cpp)
-endif(USE_ISPC)
+endif()

@@ -10,6 +10,7 @@ add_subdirectory(SceneGraph)
 
 add_library(Framework INTERFACE)
 
+if(USE_ISPC)
 target_link_libraries(Framework INTERFACE
         Manager
         CodeGen
@@ -21,3 +22,15 @@ target_link_libraries(Framework INTERFACE
         GeomMath
         Common
 )
+else()
+target_link_libraries(Framework INTERFACE
+        Manager
+        CodeGen
+        DrawPass
+        DrawSubPass
+        DispatchPass
+        Parser
+        SceneGraph
+        Common
+)
+endif()

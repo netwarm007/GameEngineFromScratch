@@ -9,6 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
+option(USE_ISPC "Use ISPC for geometry math" ON)
+option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
+
 # CUDA
 include(CheckLanguage)
 check_language(CUDA)
@@ -22,15 +25,13 @@ if(CMAKE_CUDA_COMPILER)
         set(CMAKE_CUDA_STANDARD 20)
         set(CMAKE_CUDA_STANDARD_REQUIRED ON)
         set(USE_CUDA ON)
+        set(USE_ISPC OFF)
     else()
         message(STATUS "Need CUDA Toolkit 12.0+")
     endif()
 else()
     message(STATUS "No CUDA support")
 endif()
-
-option(USE_ISPC "Use ISPC for geometry math" ON)
-option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
 
 IF(UNIX)
     IF(APPLE)
