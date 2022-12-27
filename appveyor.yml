@@ -86,6 +86,12 @@ init:
       # install vulkan SDK
       choco install vulkan-sdk -y
       refreshenv
+- cmd: >-
+    appveyor DownloadFile https://developer.download.nvidia.com/compute/cuda/12.0.0/local_installers/cuda_12.0.0_527.41_windows.exe -FileName cuda.exe
+
+    cuda.exe -s nvcc_12.0 curand_dev_12.0 nvrtc_dev_12.0
+
+    set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.0\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.0\libnvvp;%PATH%
 
 build_script:
 - cmd: >-
