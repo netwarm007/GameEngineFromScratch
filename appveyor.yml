@@ -109,7 +109,7 @@ build_script:
 
     scripts/build_openal Release
 
-    scripts/build-ninja Release
+    scripts/build Release
 
     scripts/cook_material Release
 
