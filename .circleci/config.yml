@@ -410,7 +410,7 @@ workflows:
   version: 2
   build-and-test: #for branch
     jobs:
-      #- build_windows
+      - build_windows
       - build_linux
       - build_macos
       #- build_android

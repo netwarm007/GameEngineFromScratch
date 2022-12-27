@@ -87,6 +87,9 @@ init:
       choco install vulkan-sdk -y
       refreshenv
 
+      Invoke-BatchFile "${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat" x86_amd64
+      Get-ChildItem env:* | Sort-Object name
+
 build_script:
 - cmd: >-
     scripts/build_imgui Release

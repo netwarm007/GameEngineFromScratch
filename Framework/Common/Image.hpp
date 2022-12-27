@@ -5,8 +5,13 @@
 
 #include "config.h"
 #include "geommath.hpp"
+#include "half_float.hpp"
 
 namespace My {
+inline int to_unorm(Scalar auto f) {
+    return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256;
+}
+
 enum class COMPRESSED_FORMAT : uint16_t {
     NONE,
     DXT1,
@@ -114,7 +119,7 @@ struct Image {
         if (data) delete[] data;
     }
 
-    int GetR(uint32_t x, uint32_t y) const {
+    float GetR(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -124,22 +129,21 @@ struct Image {
             case PIXEL_FORMAT::RG8:
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3));
+                return *(data + y * pitch + x * (bitcount >> 3)) / 256.0;
             case PIXEL_FORMAT::R5G6B5:
-                return (*(data + y * pitch + x * (bitcount >> 3)) & 0xF8) >> 3;
+                return ((*(data + y * pitch + x * (bitcount >> 3)) & 0xF8) >> 3) / 32.0;
             case PIXEL_FORMAT::R16:
             case PIXEL_FORMAT::RG16:
             case PIXEL_FORMAT::RGB16:
             case PIXEL_FORMAT::RGBA16:
-                return *(data + y * pitch + x * (bitcount >> 3) + 1);
+                return float32(*(uint16_t *)(data + y * pitch + x * (bitcount >> 3)));
             case PIXEL_FORMAT::R32:
             case PIXEL_FORMAT::RG32:
             case PIXEL_FORMAT::RGB32:
             case PIXEL_FORMAT::RGBA32:
-                return *(data + y * pitch + x * (bitcount >> 3) + 3);
+                return *(float *)(data + y * pitch + x * (bitcount >> 3));
             case PIXEL_FORMAT::R10G10B10A2:
-                // not supported
-                return 0;
+                return (*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 22) / 1024.0;
             default:
                 assert(0);
         }
@@ -147,7 +151,7 @@ struct Image {
         return 0;
     }
 
-    int GetG(uint32_t x, uint32_t y) const {
+    float GetG(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -155,26 +159,27 @@ struct Image {
             case PIXEL_FORMAT::R8:
             case PIXEL_FORMAT::R16:
             case PIXEL_FORMAT::R32:
-                return GetR(x, y);
+                return 0;
             case PIXEL_FORMAT::RG8:
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3) + 1);
+                return *(data + y * pitch + x * (bitcount >> 3) + 1) / 256.0;
             case PIXEL_FORMAT::RG16:
             case PIXEL_FORMAT::RGB16:
             case PIXEL_FORMAT::RGBA16:
+                return float32(*(uint16_t *)(data + y * pitch + x * (bitcount >> 3) + 2));
             case PIXEL_FORMAT::RG32:
             case PIXEL_FORMAT::RGB32:
             case PIXEL_FORMAT::RGBA32:
+                return *(float *)(data + y * pitch + x * (bitcount >> 3) + 4);
             case PIXEL_FORMAT::R10G10B10A2:
-                // not supported
-                return 0;
+                return ((*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 12) & 0x3FF) / 1024.0;
             case PIXEL_FORMAT::R5G6B5:
-                return ((*(data + y * pitch + x * (bitcount >> 3)) & 0x07)
+                return (((*(data + y * pitch + x * (bitcount >> 3)) & 0x07)
                         << 3) +
                        ((*(data + y * pitch + x * (bitcount >> 3) + 1) &
                          0xE0) >>
-                        5);
+                        5)) / 64.0;
             default:
                 assert(0);
         }
@@ -182,7 +187,7 @@ struct Image {
         return 0;
     }
 
-    int GetB(uint32_t x, uint32_t y) const {
+    float GetB(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0;
 
         switch (pixel_format) {
@@ -190,22 +195,24 @@ struct Image {
             case PIXEL_FORMAT::R8:
             case PIXEL_FORMAT::R16:
             case PIXEL_FORMAT::R32:
-                return GetR(x, y);
+                return 0;
             case PIXEL_FORMAT::RG8:
-                return GetG(x, y);
+                return 0;
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3) + 2);
-                break;
+                return *(data + y * pitch + x * (bitcount >> 3) + 2) / 256.0;
             case PIXEL_FORMAT::RG16:
+                return 0;
             case PIXEL_FORMAT::RGB16:
             case PIXEL_FORMAT::RGBA16:
+                return float32(*(uint16_t *)(data + y * pitch + x * (bitcount >> 3) + 4));
             case PIXEL_FORMAT::RG32:
+                return 0;
             case PIXEL_FORMAT::RGB32:
             case PIXEL_FORMAT::RGBA32:
+                return *(float *)(data + y * pitch + x * (bitcount >> 3) + 8);
             case PIXEL_FORMAT::R10G10B10A2:
-                // not supported
-                return 0;
+                return ((*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 2) & 0x3FF) / 1024.0;
             case PIXEL_FORMAT::R5G6B5:
                 return (*(data + y * pitch + x * (bitcount >> 3) + 1) & 0x1F);
             default:
@@ -215,7 +222,7 @@ struct Image {
         return 0;
     }
 
-    int GetA(uint32_t x, uint32_t y) const {
+    float GetA(uint32_t x, uint32_t y) const {
         if (x >= Width || y >= Height) return 0xFF;
 
         switch (pixel_format) {
@@ -226,18 +233,21 @@ struct Image {
             case PIXEL_FORMAT::RG8:
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::R5G6B5:
-                return 0xFF;
+                return 1.0;
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3) + 3);
+                return *(data + y * pitch + x * (bitcount >> 3) + 3) / 256.0;
             case PIXEL_FORMAT::RG16:
             case PIXEL_FORMAT::RGB16:
+                return 1.0;
             case PIXEL_FORMAT::RGBA16:
+                return float32(*(uint16_t *)(data + y * pitch + x * (bitcount >> 3) + 6));
             case PIXEL_FORMAT::RG32:
             case PIXEL_FORMAT::RGB32:
+                return 1.0;
             case PIXEL_FORMAT::RGBA32:
+                return *(float *)(data + y * pitch + x * (bitcount >> 3) + 12);
             case PIXEL_FORMAT::R10G10B10A2:
-                // not supported
-                return 0xFF;
+                return (*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) & 0x3) / 4.0;
             default:
                 assert(0);
         }
@@ -424,7 +434,6 @@ struct Image {
 
     void SaveTGA(const char* filename) const {
         assert(filename != NULL);
-        assert((pixel_format == PIXEL_FORMAT::RGBA8) || (pixel_format == PIXEL_FORMAT::RGB8));
 
         if (compressed) {
             fprintf(stderr, "SaveTGA is called but the image is compressed.\n");
@@ -446,16 +455,10 @@ struct Image {
             else if (i == 15)
                 fprintf(file, "%c", (Height & 0xFF00) >> 8);
             else if (i == 16) {
-                fprintf(file, "%c", bitcount);
+                fprintf(file, "%c", 32);
             }
             else if (i == 17) {
-                switch (bitcount) {
-                    case 24: fprintf(file, "%c", 0x00);
-                             break;
-                    case 32: fprintf(file, "%c", 0x08);
-                             break;
-                    default: assert(0);
-                } 
+                fprintf(file, "%c", 0x08);
             }
             else
                 fprintf(file, "%c", 0);
@@ -464,11 +467,10 @@ struct Image {
         for (uint32_t y = 0; y < Height; y++) {
             for (uint32_t x = 0; x < Width; x++) {
                 // note reversed order: b, g, r
-                fputc(GetB(x, y) & 0xFF, file);
-                fputc(GetG(x, y) & 0xFF, file);
-                fputc(GetR(x, y) & 0xFF, file);
-                if (pixel_format == PIXEL_FORMAT::RGBA8)
-                    fputc(GetA(x, y) & 0xFF, file);
+                fputc(to_unorm(GetB(x, y)), file);
+                fputc(to_unorm(GetG(x, y)), file);
+                fputc(to_unorm(GetR(x, y)), file);
+                fputc(to_unorm(GetA(x, y)), file);
             }
         }
         fclose(file);

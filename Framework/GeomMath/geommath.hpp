@@ -255,14 +255,6 @@ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
     return result;
 }
 
-template <class T, Dimension auto N>
-Vector<T, N> operator-(const Vector<T, N>& vec, const Scalar auto scalar) {
-    Vector<T, N> result(scalar);
-    VectorSub(result, vec, result);
-
-    return result;
-}
-
 template <class T>
 inline void CrossProduct(T& result, const Vector<T, 2>& vec1,
                          const Vector<T, 2>& vec2) {
