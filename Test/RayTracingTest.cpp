@@ -57,8 +57,8 @@ color ray_color(const ray& r, int depth,
 
     // background
     auto& unit_direction = r.getDirection();
-    auto t = 0.5 * (unit_direction[1] + 1.0);
-    return (1.0 - t) * white + t * bg_color;
+    float_precision t = 0.5 * (unit_direction[1] + 1.0);
+    return ((float_precision)1.0 - t) * white + t * bg_color;
 }
 
 // Camera
@@ -159,11 +159,11 @@ int main(int argc, char** argv) {
             pixel_color += ray_color(r, max_depth, world_bvh);
         }
 
-        pixel_color = pixel_color * (1.0 / samples_per_pixel);
+        pixel_color = pixel_color * ((float_precision)1.0 / samples_per_pixel);
 
         // Gamma-correction for gamma = 2.2
-        const auto gamma = 2.2;
-        pixel_color = My::pow(pixel_color, 1.0 / gamma);
+        const float_precision gamma = 2.2;
+        pixel_color = My::pow(pixel_color, (float_precision)1.0 / gamma);
 
         img.SetR(x, y, to_unorm(pixel_color[0]));
         img.SetG(x, y, to_unorm(pixel_color[1]));

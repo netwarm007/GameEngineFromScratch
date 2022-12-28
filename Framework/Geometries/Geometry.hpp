@@ -8,7 +8,7 @@ namespace My {
 ENUM(GeometryType){kBox,   kCapsule,    kCone,   kCylinder,
                    kPlane, kPolyhydron, kSphere, kTriangle};
 
-template <class T, class MaterialPtr>
+template <class T>
 class Geometry : _implements_ Hitable<T> {
    public:
     __device__ explicit Geometry(GeometryType geometry_type)
@@ -20,14 +20,6 @@ class Geometry : _implements_ Hitable<T> {
         return m_kGeometryType;
     }
 
-    void SetMaterial(MaterialPtr m) {
-        m_ptrMat = m;
-    }
-
-    auto GetMaterial() {
-        return m_ptrMat;
-    }
-
    protected:
     std::ostream& dump(std::ostream& out) const override {
         return out;
@@ -36,6 +28,5 @@ class Geometry : _implements_ Hitable<T> {
    protected:
     GeometryType m_kGeometryType;
     T m_fMargin = std::numeric_limits<T>::epsilon();
-    MaterialPtr m_ptrMat;
 };
 }  // namespace My

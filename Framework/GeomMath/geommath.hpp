@@ -1152,6 +1152,7 @@ inline void MatrixScale(Matrix4X4f& matrix, const Vector4f& v) {
     MatrixScale(matrix, v[0] / v[3], v[1] / v[3], v[2] / v[3]);
 }
 
+#ifndef USE_ISPC
 __host__ __device__ static float invf3X3(int i, int j, const float matrix[9]) {
     int pre_i = ((i == 0) ? 2 : i - 1);
     int next_i = ((i + 1 == 3) ? 0 : i + 1);
@@ -1187,6 +1188,7 @@ __host__ __device__ static float invf4X4(int i, int j, const float matrix[16]) {
     return (o & 0x1) ? -inv : inv;
 #undef e
 }
+#endif
 
 inline bool InverseMatrix3X3f(Matrix3X3f& matrix) {
 #ifdef USE_ISPC

@@ -70,7 +70,7 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node,
 
     switch (geometry.CollisionType()) {
         case SceneObjectCollisionType::kSceneObjectCollisionTypeSphere: {
-            auto collision_box = make_shared<Sphere<float>>(param[0]);
+            auto collision_box = make_shared<Sphere<float, void*>>(param[0]);
 
             const auto trans = node.GetCalculatedTransform();
             auto motionState = make_shared<MotionState>(*trans);

@@ -1,22 +1,23 @@
 #pragma once
 #include "Geometry.hpp"
+#include "MaterialContainer.hpp"
 
 namespace My {
 template <class T, class MaterialPtr>
-class Sphere : public Geometry<T, MaterialPtr> {
+class Sphere : public Geometry<T>, _implements_ MaterialContainer<MaterialPtr> {
    public:
     Sphere() = delete;
     __device__ explicit Sphere(const T radius)
-        : Geometry<T, MaterialPtr>(GeometryType::kSphere), m_fRadius(radius) {}
+        : Geometry<T>(GeometryType::kSphere), m_fRadius(radius) {}
 
     __device__ explicit Sphere(const T radius, const Point<T> center)
-        : Geometry<T, MaterialPtr>(GeometryType::kSphere),
+        : Geometry<T>(GeometryType::kSphere),
           m_fRadius(radius),
           m_center(center) {}
 
     __device__ explicit Sphere(const T radius, const Point<T> center,
                     const MaterialPtr m)
-        : Geometry<T, MaterialPtr>(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
+        : Geometry<T>(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
         this->m_ptrMat = m;
     }
 

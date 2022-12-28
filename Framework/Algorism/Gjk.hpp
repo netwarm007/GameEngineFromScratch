@@ -93,12 +93,12 @@ inline int GjkIntersection(const SupportFunction<T>& a, const SupportFunction<T>
     Point<T> A;
     if (simplex.empty()) {
         // initialize
-        A = a(direction) - b(direction * -1.0);
-        direction = A * -1.0;
+        A = a(direction) - b(direction * (T)-1.0);
+        direction = A * (T)-1.0;
         simplex.push_back(std::make_shared<Point<T>>(A));
     }
 
-    A = a(direction) - b(direction * -1.0);
+    A = a(direction) - b(direction * (T)-1.0);
 
     T dot_product;
     DotProduct(dot_product, A, direction);
@@ -124,7 +124,7 @@ inline int GjkIntersection(const SupportFunction<T>& a, const SupportFunction<T>
             // the simplex is a vertex.
             // simply returns AO (from the vertex to origin)
             // as next search direction
-            direction = A * -1.0;
+            direction = A * (T)-1.0;
         } break;
         case 2: {
             // the simplex is a line segment.
@@ -137,7 +137,7 @@ inline int GjkIntersection(const SupportFunction<T>& a, const SupportFunction<T>
             float t;
 
             auto line_seg = *B - *A;
-            DotProduct(t, *A * -1.0, line_seg);
+            DotProduct(t, *A * (T)-1.0, line_seg);
             T sqr_length;
             DotProduct(sqr_length, line_seg, line_seg);
             t = std::clamp(t / sqr_length, static_cast<T>(0.0), static_cast<T>(1.0));
@@ -156,7 +156,7 @@ inline int GjkIntersection(const SupportFunction<T>& a, const SupportFunction<T>
                 P = *A + (*B - *A) * t;
             }
 
-            direction = P * -1.0;
+            direction = P * (T)-1.0;
         } break;
         case 3: {
             // the simplex is a triangle.
@@ -193,7 +193,7 @@ inline int GjkIntersection(const SupportFunction<T>& a, const SupportFunction<T>
 
             P = *A + (*B - *A) * s + (*C - *A) * t;
 
-            direction = P * -1.0;
+            direction = P * (T)-1.0;
         } break;
         case 4: {
             Polyhedron<T> tetrahedron;
