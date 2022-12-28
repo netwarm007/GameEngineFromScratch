@@ -5,6 +5,7 @@
 #include "portable.hpp"
 #include "random.hpp"
 #include "BVH.hpp"
+#include "RayTracingCamera.hpp"
 
 #include "TestMaterial.hpp"
 #include "TestScene.hpp"
@@ -25,6 +26,7 @@ inline int to_unorm(float_precision f) {
 
 using image = My::Image;
 using bvh = My::BVHNode<float_precision>;
+using camera = My::RayTracingCamera<float_precision>;
 constexpr auto infinity = std::numeric_limits<float_precision>::infinity();
 constexpr auto epsilon = std::numeric_limits<float_precision>::epsilon();
 
@@ -61,49 +63,6 @@ color ray_color(const ray& r, int depth,
     return ((float_precision)1.0 - t) * white + t * bg_color;
 }
 
-// Camera
-template <class T>
-class camera {
-   public:
-    camera(My::Point<T> lookfrom, My::Point<T> lookat, My::Vector3<T> vup,
-           T vfov, T aspect_ratio, T aperture, T focus_dist) {
-        auto theta = My::degrees_to_radians(vfov);
-        auto h = std::tan(theta / 2);
-        T viewport_height = 2.0 * h;
-        T viewport_width = aspect_ratio * viewport_height;
-
-        w = lookfrom - lookat;
-        My::Normalize(w);
-        u = My::CrossProduct(vup, w);
-        My::Normalize(u);
-        v = My::CrossProduct(w, u);
-
-        origin = lookfrom;
-        horizontal = focus_dist * viewport_width * u;
-        vertical = focus_dist * viewport_height * v;
-        lower_left_corner =
-            origin - horizontal / (T)2.0 - vertical / (T)2.0 - focus_dist * w;
-
-        lens_radius = aperture / 2;
-    }
-
-    ray get_ray(T s, T t) const {
-        My::Vector3<T> rd = lens_radius * My::random_in_unit_disk<T>();
-        My::Vector3<T> offset = u * rd[0] + v * rd[1];
-
-        return ray(origin + offset, lower_left_corner + s * horizontal +
-                                        t * vertical - origin - offset);
-    }
-
-   private:
-    My::Point<T> origin;
-    My::Point<T> lower_left_corner;
-    My::Vector3<T> horizontal;
-    My::Vector3<T> vertical;
-    My::Vector3<T> u, v, w;
-    T lens_radius;
-};
-
 // Raytrace
 // Main
 int main(int argc, char** argv) {
@@ -125,7 +84,7 @@ int main(int argc, char** argv) {
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    camera<float_precision> cam(lookfrom, lookat, vup, (float_precision)20.0,
+    camera cam(lookfrom, lookat, vup, (float_precision)20.0,
                                 aspect_ratio, aperture, dist_to_focus);
 
     // Canvas

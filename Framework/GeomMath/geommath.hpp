@@ -1422,7 +1422,7 @@ inline bool isPointAbovePlane(const FacePtr<T>& pface, const Point<T>& point) {
 }
 
 template <class T>
-inline T degrees_to_radians(T degrees) {
+__device__ inline T degrees_to_radians(T degrees) {
     return degrees * PI / 180.0;
 }
 
