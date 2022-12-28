@@ -19,7 +19,7 @@ Ability Boundable {
     // the given transform trans.
     virtual bool GetAabb(const Matrix4X4<T>& trans, AaBb<T,3>& aabb) const = 0;
 
-    virtual void GetBoundingSphere(Vector3<T> & center, T radius) const {
+    virtual void GetBoundingSphere(Vector3<T> & center, T& radius) const {
         Matrix4X4<T> tran = BuildIdentityMatrix4X4<T>();
         AaBb<T, 3> aabb;
 

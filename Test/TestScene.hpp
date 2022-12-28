@@ -10,7 +10,7 @@ auto random_scene() {
 
     auto material_ground = std::make_shared<lambertian>(color({0.5, 0.5, 0.5}));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        1000, point3({0, -1000, -1.0}), material_ground));
+        (float_precision)1000.0, point3({0, -1000, -1.0}), material_ground));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
@@ -30,7 +30,7 @@ auto random_scene() {
                     sphere_material = std::make_shared<lambertian>(albedo);
                     world.emplace_back(
                         std::make_shared<My::Sphere<float_precision>>(
-                            0.2, center, sphere_material));
+                            (float_precision)0.2, center, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = My::random_v<float_precision, 3>(0.5, 1);
@@ -38,13 +38,13 @@ auto random_scene() {
                     sphere_material = std::make_shared<metal>(albedo, fuzz);
                     world.emplace_back(
                         std::make_shared<My::Sphere<float_precision>>(
-                            0.2, center, sphere_material));
+                            (float_precision)0.2, center, sphere_material));
                 } else {
                     // glass
-                    sphere_material = std::make_shared<dielectric>(1.5);
+                    sphere_material = std::make_shared<dielectric>((float_precision)1.5);
                     world.emplace_back(
                         std::make_shared<My::Sphere<float_precision>>(
-                            0.2, center, sphere_material));
+                            (float_precision)0.2, center, sphere_material));
                 }
             }
         }
@@ -52,15 +52,15 @@ auto random_scene() {
 
     auto material_1 = std::make_shared<dielectric>(1.5);
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        1.0, point3({0, 1, 0}), material_1));
+        (float_precision)1.0, point3({0, 1, 0}), material_1));
 
     auto material_2 = std::make_shared<lambertian>(color({0.4, 0.2, 0.1}));
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        1.0, point3({-4, 1, 0}), material_2));
+        (float_precision)1.0, point3({-4, 1, 0}), material_2));
 
     auto material_3 = std::make_shared<metal>(color({0.7, 0.6, 0.5}), 0.1);
     world.emplace_back(std::make_shared<My::Sphere<float_precision>>(
-        1.0, point3({4, 1, 0}), material_3));
+        (float_precision)1.0, point3({4, 1, 0}), material_3));
 
     return world;
 }

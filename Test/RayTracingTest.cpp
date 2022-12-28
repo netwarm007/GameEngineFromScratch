@@ -79,7 +79,7 @@ class camera {
         horizontal = focus_dist * viewport_width * u;
         vertical = focus_dist * viewport_height * v;
         lower_left_corner =
-            origin - horizontal / 2.0 - vertical / 2.0 - focus_dist * w;
+            origin - horizontal / (T)2.0 - vertical / (T)2.0 - focus_dist * w;
 
         lens_radius = aperture / 2;
     }
