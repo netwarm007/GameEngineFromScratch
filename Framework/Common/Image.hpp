@@ -8,7 +8,8 @@
 #include "half_float.hpp"
 
 namespace My {
-inline int to_unorm(Scalar auto f) {
+template <class T>
+inline int to_unorm(T f) {
     return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256;
 }
 

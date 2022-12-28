@@ -4,16 +4,14 @@
 #include "portable.hpp"
 #include "Hitable.hpp"
 
-class material;
-
 namespace My {
 ENUM(GeometryType){kBox,   kCapsule,    kCone,   kCylinder,
                    kPlane, kPolyhydron, kSphere, kTriangle};
 
-template <class T>
+template <class T, class MaterialPtr>
 class Geometry : _implements_ Hitable<T> {
    public:
-    explicit Geometry(GeometryType geometry_type)
+    __device__ explicit Geometry(GeometryType geometry_type)
         : m_kGeometryType(geometry_type){ Hitable<T>::type = HitableType::kGeometry; }
     Geometry() = delete;
     virtual ~Geometry() = default;
@@ -22,7 +20,7 @@ class Geometry : _implements_ Hitable<T> {
         return m_kGeometryType;
     }
 
-    void SetMaterial(std::shared_ptr<material> m) {
+    void SetMaterial(MaterialPtr m) {
         m_ptrMat = m;
     }
 
@@ -38,6 +36,6 @@ class Geometry : _implements_ Hitable<T> {
    protected:
     GeometryType m_kGeometryType;
     T m_fMargin = std::numeric_limits<T>::epsilon();
-    std::shared_ptr<material> m_ptrMat;
+    MaterialPtr m_ptrMat;
 };
 }  // namespace My

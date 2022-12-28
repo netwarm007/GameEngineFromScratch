@@ -31,4 +31,5 @@ const std::map<HitableType, std::string> Hitable<T>::HitableTypeNames = {{Hitabl
                                     {HitableType::kGeometry, "Geomery"},
                                     {HitableType::kList, "List"},
                                     {HitableType::kBVH, "BVH"}};
+
 }  // namespace My

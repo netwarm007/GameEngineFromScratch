@@ -2,20 +2,19 @@
 #include "Ray.hpp"
 #include "Hit.hpp"
 #include "geommath.hpp"
-
-#include <climits>
+#include "random.hpp"
 
 using float_precision = float;
 using ray = My::Ray<float_precision>;
 using color = My::Vector3<float_precision>;
-using point3 = My::Vector3<float_precision>;
+using point3 = My::Point<float_precision>;
 using vec3 = My::Vector3<float_precision>;
 using hit_record = My::Hit<float_precision>;
 
 // Material
 class material {
    public:
-    virtual bool scatter(const ray& r_in, const hit_record& hit,
+    __device__ virtual bool scatter(const ray& r_in, const hit_record& hit,
                          color& attenuation, ray& scattered) const = 0;
 };
 
@@ -23,7 +22,7 @@ class lambertian : public material {
    public:
     lambertian(const color& a) : albedo(a) {}
 
-    bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
+    __device__ bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
                  ray& scattered) const override {
         auto scatter_direction =
             hit.getNormal() + My::random_unit_vector<float_precision, 3>();
@@ -45,7 +44,7 @@ class metal : public material {
    public:
     metal(const color& a, float_precision f) : albedo(a), fuzz(f < 1 ? f : 1) {}
 
-    bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
+    __device__ bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
                  ray& scattered) const override {
         vec3 reflected = My::Reflect(r_in.getDirection(), hit.getNormal());
         scattered = ray(
@@ -65,14 +64,14 @@ class dielectric : public material {
    public:
     dielectric(float_precision index_of_refraction) : ir(index_of_refraction) {}
 
-    bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
+    __device__ bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
                  ray& scattered) const override {
         attenuation = color({1.0, 1.0, 1.0});
         float_precision refraction_ratio = hit.isFrontFace() ? (1.0 / ir) : ir;
         auto v = r_in.getDirection();
         auto n = hit.isFrontFace() ? hit.getNormal() : -hit.getNormal();
-        auto cos_theta = fmin(DotProduct(-v, n), 1.0);
-        auto sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+        float_precision cos_theta = fmin(DotProduct(-v, n), 1.0);
+        float_precision sin_theta = sqrt(1.0 - cos_theta * cos_theta);
         bool cannot_refract = refraction_ratio * sin_theta > 1.0;
 
         vec3 direction;

@@ -17,7 +17,7 @@ Ability Boundable {
     
     // GetAabb returns the axis aligned bounding box in the coordinate frame of
     // the given transform trans.
-    virtual bool GetAabb(const Matrix4X4<T>& trans, AaBb<T,3>& aabb) const = 0;
+    __device__ virtual bool GetAabb(const Matrix4X4<T>& trans, AaBb<T,3>& aabb) const = 0;
 
     virtual void GetBoundingSphere(Vector3<T> & center, T& radius) const {
         Matrix4X4<T> tran = BuildIdentityMatrix4X4<T>();
@@ -25,8 +25,8 @@ Ability Boundable {
 
         GetAabb(tran, aabb);
 
-        radius = Length(aabb.max_point() - aabb.min_point()) * 0.5;
-        center = (aabb.min_point() + aabb.max_point()) * 0.5;
+        radius = Length(aabb.max_point() - aabb.min_point()) * (T)0.5;
+        center = (aabb.min_point() + aabb.max_point()) * (T)0.5;
     }
 
     // GetAngularMotionDisc returns the maximum radius needed for Conservative

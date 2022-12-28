@@ -8,16 +8,16 @@ namespace My {
 template <class T, Dimension auto N>
 class AaBb : _implements_ Intersectable<T> {
    public:
-    AaBb() {}
-    AaBb(const Vector<T, N>& a, const Vector<T, N>& b) {
+    __device__ AaBb() {}
+    __device__ AaBb(const Vector<T, N>& a, const Vector<T, N>& b) {
         minimum = a;
         maximum = b;
     }
 
-    Vector<T, N> min_point() const { return minimum; }
-    Vector<T, N> max_point() const { return maximum; }
+    __device__ Vector<T, N> min_point() const { return minimum; }
+    __device__ Vector<T, N> max_point() const { return maximum; }
 
-    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
+    __device__ bool Intersect(const Ray<T>& r, Hit<T>&, T tmin, T tmax) const override {
         for (Dimension auto a = 0; a < 3; a++) {
             auto invD = 1.0 / r.getDirection()[a];
             auto t0 = (this->min_point()[a] - r.getOrigin()[a]) * invD;
@@ -55,7 +55,7 @@ inline void TransformAabb(const Vector3<T>& halfExtents, T margin,
 };
 
 template <class T>
-inline auto SurroundingBox(AaBb<T, 3> box0, AaBb<T, 3> box1) {
+__device__ auto SurroundingBox(AaBb<T, 3> box0, AaBb<T, 3> box1) {
     Vector3<T> small_corner ({
         std::fmin(box0.min_point()[0], box1.min_point()[0]),
         std::fmin(box0.min_point()[1], box1.min_point()[1]),

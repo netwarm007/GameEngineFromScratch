@@ -23,7 +23,7 @@ T random_int(T min, T max) {
     return static_cast<T>(random_f<double>(static_cast<double>(min), static_cast<double>(max) + 1.0));
 }
 
-template <class T, Scalar auto N>
+template <class T, Dimension auto N>
 Vector<T, N> random_v() {
     auto vec = Vector<T, N>();
     for (int i = 0; i < N; i++) {
@@ -33,7 +33,7 @@ Vector<T, N> random_v() {
     return vec;
 }
 
-template <class T, Scalar auto N>
+template <class T, Dimension auto N>
 Vector<T, N> random_v(T min, T max) {
     auto vec = Vector<T, N>();
     for (int i = 0; i < N; i++) {
@@ -43,7 +43,7 @@ Vector<T, N> random_v(T min, T max) {
     return vec;
 }
 
-template <class T, Scalar auto N>
+template <class T, Dimension auto N>
 Vector<T, N> random_in_unit_sphere() {
     while (true) {
         auto p = random_v<T, N>(T(-1), T(1));
@@ -52,14 +52,14 @@ Vector<T, N> random_in_unit_sphere() {
     }
 }
 
-template <class T, Scalar auto N>
+template <class T, Dimension auto N>
 Vector<T, N> random_unit_vector() {
     auto p = random_in_unit_sphere<T, N>();
     Normalize(p);
     return p;
 }
 
-template <class T, Scalar auto N>
+template <class T, Dimension auto N>
 Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal) {
     auto p = random_in_unit_sphere<T, N>();
     T result;

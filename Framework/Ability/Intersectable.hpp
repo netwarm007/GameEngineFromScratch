@@ -10,7 +10,7 @@ Ability Intersectable {
     virtual ~Intersectable() = default;
     using ParamType = T;
 
-    virtual bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax)
+    __device__ virtual bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax)
         const = 0;
 };
 }  // namespace My

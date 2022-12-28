@@ -66,9 +66,6 @@ void Sqrt(const float* v, const size_t count, float* result);
 
 namespace My {
 template <class T>
-concept Scalar = std::floating_point<T> || std::integral<T>;
-
-template <class T>
 concept Dimension = std::integral<T>;
 
 template <class T>
@@ -120,7 +117,7 @@ struct Vector {
     __host__ __device__ Vector operator-() const {
         Vector result;
 
-        for (Scalar auto i = 0; i < N; i++) {
+        for (Dimension auto i = 0; i < N; i++) {
             result[i] = -data[i];
         }
 
@@ -152,7 +149,7 @@ struct Vector {
         return *this;
     }
 
-    __host__ __device__ Vector& operator/=(const Scalar auto scalar) {
+    __host__ __device__ Vector& operator/=(const T scalar) {
         *this = *this / scalar;
         return *this;
     }
@@ -229,7 +226,7 @@ __host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vecto
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec, const Scalar auto scalar) {
+__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec, const T scalar) {
     Vector<T, N> result(scalar);
     VectorAdd(result, vec, result);
 
@@ -323,14 +320,14 @@ __host__ __device__ inline void MulByElement(Vector<T, N>& result, const Vector<
 
 template <class T, Dimension auto N>
 __host__ __device__ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const Scalar auto scalar) {
+                         const T scalar) {
     Vector<T, N> v(scalar);
 
     MulByElement(result, a, v);
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar auto scalar) {
+__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec, const T scalar) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -338,7 +335,7 @@ __host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec, const Scalar
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator*(const Scalar auto scalar, const Vector<T, N>& vec) {
+__host__ __device__ Vector<T, N> operator*(const T scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -382,7 +379,7 @@ __host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec, const T scal
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator/(const Scalar auto scalar, const Vector<T, N>& vec) {
+__host__ __device__ Vector<T, N> operator/(const T scalar, const Vector<T, N>& vec) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
 
@@ -397,13 +394,14 @@ __host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vecto
     return result;
 }
 
-inline constexpr Scalar auto pow(const Scalar auto base,
-                                 const Scalar auto exponent) {
+template <class T>
+inline constexpr T pow(const T base,
+                                 const T exponent) {
     return std::pow(base, exponent);
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> pow(const Vector<T, N>& vec, const Scalar auto exponent) {
+Vector<T, N> pow(const Vector<T, N>& vec, const T exponent) {
     Vector<T, N> result;
 #ifdef USE_ISPC
     ispc::Pow(vec, N, exponent, result);
@@ -415,7 +413,8 @@ Vector<T, N> pow(const Vector<T, N>& vec, const Scalar auto exponent) {
     return result;
 }
 
-inline constexpr Scalar auto sqrt(const Scalar auto base) {
+template <class T>
+inline constexpr T sqrt(const T base) {
     return std::sqrt(base);
 }
 
@@ -464,22 +463,22 @@ __host__ __device__ inline constexpr T Length(const Vector<T, N>& vec) {
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline bool operator>=(const Vector<T, N>&& vec, const Scalar auto scalar) {
+__host__ __device__ inline bool operator>=(const Vector<T, N>&& vec, const T scalar) {
     return Length(vec) >= scalar;
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline bool operator>(const Vector<T, N>&& vec, const Scalar auto scalar) {
+__host__ __device__ inline bool operator>(const Vector<T, N>&& vec, const T scalar) {
     return Length(vec) > scalar;
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline bool operator<=(const Vector<T, N>&& vec, const Scalar auto scalar) {
+__host__ __device__ inline bool operator<=(const Vector<T, N>&& vec, const T scalar) {
     return Length(vec) <= scalar;
 }
 
 template <class T, Dimension auto N>
-inline bool operator<(const Vector<T, N>&& vec, const Scalar auto scalar) {
+inline bool operator<(const Vector<T, N>&& vec, const T scalar) {
     return Length(vec) < scalar;
 }
 
@@ -519,10 +518,10 @@ __host__ __device__ inline Vector<T, N> Reflect(const Vector<T, N>& v, const Vec
 template <class T, Dimension auto N>
 __host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
                             T etai_over_etat) {
-    auto cos_theta = fmin(DotProduct(-v, n), 1.0);
+    T cos_theta = fmin(DotProduct(-v, n), 1.0);
 
-    auto r_out_perp = etai_over_etat * (v + cos_theta * n);
-    auto r_out_parallel = -sqrt(fabs(1.0 - LengthSquared(r_out_perp))) * n;
+    Vector<T, N> r_out_perp = etai_over_etat * (v + cos_theta * n);
+    Vector<T, N> r_out_parallel = - (T)sqrt(fabs(1.0 - LengthSquared(r_out_perp))) * n;
     return r_out_perp + r_out_parallel;
 }
 
@@ -682,7 +681,7 @@ __host__ __device__ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>&
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
 __host__ __device__ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix,
-                                const Scalar auto scalar) {
+                                const T scalar) {
     Matrix<T, ROWS, COLS> result;
 
     for (Dimension auto i = 0; i < ROWS; i++) {
@@ -693,7 +692,7 @@ __host__ __device__ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>&
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ Matrix<T, ROWS, COLS> operator*(const Scalar auto scalar,
+__host__ __device__ Matrix<T, ROWS, COLS> operator*(const T scalar,
                                 const Matrix<T, ROWS, COLS>& matrix) {
     return matrix * scalar;
 }

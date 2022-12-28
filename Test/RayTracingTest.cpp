@@ -45,7 +45,10 @@ color ray_color(const ray& r, int depth,
         ray scattered;
         color attenuation;
 
-        if (hit.getMaterial()->scatter(r, hit, attenuation, scattered)) {
+        intptr_t pAppDataPtr = hit.getAppDataPtr();
+        std::shared_ptr<material> pMat = *(std::shared_ptr<material>*)pAppDataPtr;
+
+        if (pMat->scatter(r, hit, attenuation, scattered)) {
             return attenuation * ray_color(scattered, depth - 1, world);
         }
 

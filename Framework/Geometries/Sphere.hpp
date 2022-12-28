@@ -2,31 +2,31 @@
 #include "Geometry.hpp"
 
 namespace My {
-template <typename T>
-class Sphere : public Geometry<T> {
+template <class T, class MaterialPtr>
+class Sphere : public Geometry<T, MaterialPtr> {
    public:
     Sphere() = delete;
-    explicit Sphere(const T radius)
-        : Geometry<T>(GeometryType::kSphere), m_fRadius(radius) {}
+    __device__ explicit Sphere(const T radius)
+        : Geometry<T, MaterialPtr>(GeometryType::kSphere), m_fRadius(radius) {}
 
-    explicit Sphere(const T radius, const Point<T> center)
-        : Geometry<T>(GeometryType::kSphere),
+    __device__ explicit Sphere(const T radius, const Point<T> center)
+        : Geometry<T, MaterialPtr>(GeometryType::kSphere),
           m_fRadius(radius),
           m_center(center) {}
 
-    explicit Sphere(const T radius, const Point<T> center,
-                    const std::shared_ptr<material> m)
-        : Geometry<T>(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
-        Geometry<T>::m_ptrMat = m;
+    __device__ explicit Sphere(const T radius, const Point<T> center,
+                    const MaterialPtr m)
+        : Geometry<T, MaterialPtr>(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
+        this->m_ptrMat = m;
     }
 
-    bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
+    __device__ bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
         if (m_fRadius == 0.0) return false;
 
         Vector3<T> center;
         GetOrigin(center, trans);
         center += m_center;
-        Vector3<T> extent({m_fRadius + Geometry<T>::m_fMargin, m_fRadius + Geometry<T>::m_fMargin, m_fRadius + Geometry<T>::m_fMargin});
+        Vector3<T> extent({m_fRadius + this->m_fMargin, m_fRadius + this->m_fMargin, m_fRadius + this->m_fMargin});
         aabb = AaBb(center - extent, center + extent);
 
         return true;
@@ -35,7 +35,7 @@ class Sphere : public Geometry<T> {
     [[nodiscard]] T GetRadius() const { return m_fRadius; }
     [[nodiscard]] Vector3<T> GetCenter() const { return m_center; }
 
-    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
+    __device__ bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
         // Ray: R(t) = O + V dot t
         // Sphere: || X - C || = r
         // Intersect equation: at^2  + bt + c = 0; a = V dot V; b = 2V dot (O -
@@ -67,7 +67,7 @@ class Sphere : public Geometry<T> {
         bool front_face = DotProduct(V, normal) < 0;
 
         // set the hit result
-        h.set(t, p, normal, front_face, Geometry<T>::m_ptrMat);
+        h.set(t, p, normal, front_face, (intptr_t)&this->m_ptrMat);
 
         return true;
     }

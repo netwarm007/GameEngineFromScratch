@@ -2,7 +2,7 @@
 #include "Geometry.hpp"
 
 namespace My {
-template <typename T>
+template <class T>
 struct Polyhedron : public Geometry<T> {
     FaceSet<T> Faces;
 
