@@ -16,7 +16,7 @@ class Sphere : public Geometry<T>, _implements_ MaterialContainer<MaterialPtr> {
           m_center(center) {}
 
     __device__ explicit Sphere(const T radius, const Point<T> center,
-                    const MaterialPtr m)
+                    MaterialPtr m)
         : Geometry<T>(GeometryType::kSphere), m_fRadius(radius), m_center(center) {
         this->m_ptrMat = m;
     }
@@ -68,7 +68,7 @@ class Sphere : public Geometry<T>, _implements_ MaterialContainer<MaterialPtr> {
         bool front_face = DotProduct(V, normal) < 0;
 
         // set the hit result
-        h.set(t, p, normal, front_face, (intptr_t)&this->m_ptrMat);
+        h.set(t, p, normal, front_face, &this->m_ptrMat);
 
         return true;
     }

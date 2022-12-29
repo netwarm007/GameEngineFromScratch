@@ -1,11 +1,15 @@
 #pragma once
 #include <concepts>
-#include <random>
 #include "geommath.hpp"
+
+#ifdef __CUDACC__
+#include <curand_kernel.h>
+#else
+#include <random>
+#endif
 
 namespace My {
 #ifdef __CUDACC__
-#include <curand_kernel.h>
 
 template <class T>
 __device__ T random_f(curandState *local_rand_state) {

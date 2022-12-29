@@ -47,8 +47,7 @@ color ray_color(const ray& r, int depth,
         ray scattered;
         color attenuation;
 
-        intptr_t pAppDataPtr = hit.getAppDataPtr();
-        std::shared_ptr<material> pMat = *(std::shared_ptr<material>*)pAppDataPtr;
+        const std::shared_ptr<material> pMat = *reinterpret_cast<const std::shared_ptr<material>*>(hit.getMaterial());
 
         if (pMat->scatter(r, hit, attenuation, scattered)) {
             return attenuation * ray_color(scattered, depth - 1, world);
@@ -68,7 +67,7 @@ color ray_color(const ray& r, int depth,
 int main(int argc, char** argv) {
     // Render Settings
     const float_precision aspect_ratio = 16.0 / 9.0;
-    const int image_width = 1920;
+    const int image_width = 400;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
     const int samples_per_pixel = 500;
     const int max_depth = 50;

@@ -8,11 +8,11 @@ Ability MaterialContainer {
     virtual ~MaterialContainer() = default;
     using MaterialPtrType = MaterialPtr;
 
-    void SetMaterial(MaterialPtr m) {
+    __device__ void SetMaterial(MaterialPtr m) {
         m_ptrMat = m;
     }
 
-    auto GetMaterial() {
+    __device__ MaterialPtr GetMaterial() {
         return m_ptrMat;
     }
 

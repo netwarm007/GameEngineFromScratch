@@ -401,7 +401,7 @@ inline constexpr T pow(const T base,
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> pow(const Vector<T, N>& vec, const T exponent) {
+__device__ Vector<T, N> pow(const Vector<T, N>& vec, const T exponent) {
     Vector<T, N> result;
 #ifdef USE_ISPC
     ispc::Pow(vec, N, exponent, result);
@@ -414,12 +414,12 @@ Vector<T, N> pow(const Vector<T, N>& vec, const T exponent) {
 }
 
 template <class T>
-inline constexpr T sqrt(const T base) {
+__device__ inline constexpr T sqrt(const T base) {
     return std::sqrt(base);
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> sqrt(const Vector<T, N>& vec) {
+__device__ Vector<T, N> sqrt(const Vector<T, N>& vec) {
     Vector<T, N> result;
 #ifdef USE_ISPC
     ispc::Sqrt(vec, N, result);
@@ -432,12 +432,12 @@ Vector<T, N> sqrt(const Vector<T, N>& vec) {
 }
 
 template <class T>
-inline constexpr T fabs(const T data) {
+__device__ inline constexpr T fabs(const T data) {
     return std::fabs(data);
 }
 
 template <class T, Dimension auto N>
-Vector<T, N> fabs(const Vector<T, N>& vec) {
+__device__ Vector<T, N> fabs(const Vector<T, N>& vec) {
     Vector<T, N> result;
 #ifdef USE_ISPC
     ispc::Absolute(result, vec, N);

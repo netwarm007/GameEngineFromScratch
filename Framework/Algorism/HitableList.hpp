@@ -14,7 +14,7 @@ struct SimpleList {
 
     __device__ SimpleList() : data(nullptr), ele_num(0), max_ele_num(0) {}
 
-    ~SimpleList() { delete[] data; }
+    ~SimpleList() { if (data) delete[] data; }
 
     __device__ void push_back (value_type&& value) {
         if (ele_num + 1 > max_ele_num) {
@@ -55,7 +55,7 @@ class HitableList : public Hitable<T> {
         m_Hitables.push_back(std::forward<ValueType>(value));
     }
 
-    constexpr reference back() { return m_Hitables.back(); }
+    __device__ constexpr reference back() { return m_Hitables.back(); }
 
     __device__ bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
         Hit<T> temp_hit;
@@ -88,15 +88,15 @@ class HitableList : public Hitable<T> {
         return true;
     }
 
-    size_t size() const {
+    __device__ size_t size() const {
         return m_Hitables.size();
     }
 
-    auto operator[](size_t index) {
+    __device__ auto operator[](size_t index) {
         return m_Hitables[index];
     }
 
-    auto begin() {
+    __device__ auto begin() {
         return m_Hitables.begin();
     }
 
