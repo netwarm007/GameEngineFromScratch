@@ -20,7 +20,7 @@
 namespace ispc { /* namespace */
 extern "C" {
 void DotProduct(const float* a, const float* b, float* result,
-                  const size_t count);
+                const size_t count);
 void CrossProduct(const float a[3], const float b[3], float result[3]);
 void AddByElement(const float* a, const float* b, float* result,
                   const size_t count);
@@ -53,7 +53,7 @@ void Pow(const float* v, const size_t count, const float exponent,
          float* result);
 void Sqrt(const float* v, const size_t count, float* result);
 } /* end extern C */
-} /* namespace */
+}  // namespace ispc
 #endif
 
 #ifndef PI
@@ -97,7 +97,9 @@ struct Vector {
 
     __host__ __device__ operator T*() { return reinterpret_cast<T*>(this); };
 
-    __host__ __device__ operator const T*() const { return reinterpret_cast<const T*>(this); }
+    __host__ __device__ operator const T*() const {
+        return reinterpret_cast<const T*>(this);
+    }
 
     __host__ __device__ void Set(const T val) {
         for (Dimension auto i = 0; i < N; i++) {
@@ -105,7 +107,9 @@ struct Vector {
         }
     }
 
-    __host__ __device__ void Set(const T* pval) { std::memcpy(data, pval, sizeof(T) * N); }
+    __host__ __device__ void Set(const T* pval) {
+        std::memcpy(data, pval, sizeof(T) * N);
+    }
 
     __host__ __device__ void Set(std::initializer_list<const T> list) {
         size_t i = 0;
@@ -206,8 +210,9 @@ std::ostream& operator<<(std::ostream& out, Vector<T, N> vector) {
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec1,
-               const Vector<T, N>& vec2) {
+__host__ __device__ void VectorAdd(Vector<T, N>& result,
+                                   const Vector<T, N>& vec1,
+                                   const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
     ispc::AddByElement(vec1, vec2, result, N);
 #else
@@ -218,7 +223,8 @@ __host__ __device__ void VectorAdd(Vector<T, N>& result, const Vector<T, N>& vec
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec1,
+                                           const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorAdd(result, vec1, vec2);
 
@@ -226,7 +232,8 @@ __host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec1, const Vecto
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec, const T scalar) {
+__host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec,
+                                           const T scalar) {
     Vector<T, N> result(scalar);
     VectorAdd(result, vec, result);
 
@@ -234,8 +241,9 @@ __host__ __device__ Vector<T, N> operator+(const Vector<T, N>& vec, const T scal
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec1,
-               const Vector<T, N>& vec2) {
+__host__ __device__ void VectorSub(Vector<T, N>& result,
+                                   const Vector<T, N>& vec1,
+                                   const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
     ispc::SubByElement(vec1, vec2, result, N);
 #else
@@ -246,7 +254,8 @@ __host__ __device__ void VectorSub(Vector<T, N>& result, const Vector<T, N>& vec
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator-(const Vector<T, N>& vec1,
+                                           const Vector<T, N>& vec2) {
     Vector<T, N> result;
     VectorSub(result, vec1, vec2);
 
@@ -254,14 +263,16 @@ __host__ __device__ Vector<T, N> operator-(const Vector<T, N>& vec1, const Vecto
 }
 
 template <class T>
-__host__ __device__ inline void CrossProduct(T& result, const Vector<T, 2>& vec1,
-                         const Vector<T, 2>& vec2) {
+__host__ __device__ inline void CrossProduct(T& result,
+                                             const Vector<T, 2>& vec1,
+                                             const Vector<T, 2>& vec2) {
     result = vec1[0] * vec2[1] - vec1[1] * vec2[0];
 }
 
 template <class T>
-__host__ __device__ inline void CrossProduct(Vector<T, 3>& result, const Vector<T, 3>& vec1,
-                         const Vector<T, 3>& vec2) {
+__host__ __device__ inline void CrossProduct(Vector<T, 3>& result,
+                                             const Vector<T, 3>& vec1,
+                                             const Vector<T, 3>& vec2) {
 #ifdef USE_ISPC
     ispc::CrossProduct(vec1, vec2, result);
 #else
@@ -273,8 +284,8 @@ __host__ __device__ inline void CrossProduct(Vector<T, 3>& result, const Vector<
 
 template <class T>
 __host__ __device__ inline auto CrossProduct(const Vector<T, 3>& vec1,
-                         const Vector<T, 3>& vec2) {
-    Vector<T, 3> result; 
+                                             const Vector<T, 3>& vec2) {
+    Vector<T, 3> result;
 
     CrossProduct(result, vec1, vec2);
 
@@ -282,16 +293,16 @@ __host__ __device__ inline auto CrossProduct(const Vector<T, 3>& vec1,
 }
 
 template <class T>
-__host__ __device__ inline void DotProduct(T& result, const Vector3<T>& vec1, const Vector3<T>& vec2) {
+__host__ __device__ inline void DotProduct(T& result, const Vector3<T>& vec1,
+                                           const Vector3<T>& vec2) {
     result = vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
 }
 
 template <class T, Dimension auto N>
 __host__ __device__ inline void DotProduct(T& result, const Vector<T, N>& vec1,
-                       const Vector<T, N>& vec2) {
+                                           const Vector<T, N>& vec2) {
 #ifdef USE_ISPC
-    ispc::DotProduct(vec1, vec2, &result,
-                  N);
+    ispc::DotProduct(vec1, vec2, &result, N);
 #else
     for (int i = 0; i < N; i++) {
         result += vec1[i] * vec2[i];
@@ -300,15 +311,17 @@ __host__ __device__ inline void DotProduct(T& result, const Vector<T, N>& vec1,
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline T DotProduct(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ inline T DotProduct(const Vector<T, N>& vec1,
+                                        const Vector<T, N>& vec2) {
     T result;
     DotProduct(result, vec1, vec2);
     return result;
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const Vector<T, N>& b) {
+__host__ __device__ inline void MulByElement(Vector<T, N>& result,
+                                             const Vector<T, N>& a,
+                                             const Vector<T, N>& b) {
 #ifdef USE_ISPC
     ispc::MulByElement(a, b, result, N);
 #else
@@ -319,15 +332,17 @@ __host__ __device__ inline void MulByElement(Vector<T, N>& result, const Vector<
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline void MulByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const T scalar) {
+__host__ __device__ inline void MulByElement(Vector<T, N>& result,
+                                             const Vector<T, N>& a,
+                                             const T scalar) {
     Vector<T, N> v(scalar);
 
     MulByElement(result, a, v);
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec, const T scalar) {
+__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec,
+                                           const T scalar) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -335,7 +350,8 @@ __host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec, const T scal
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator*(const T scalar, const Vector<T, N>& vec) {
+__host__ __device__ Vector<T, N> operator*(const T scalar,
+                                           const Vector<T, N>& vec) {
     Vector<T, N> result;
     MulByElement(result, vec, scalar);
 
@@ -343,7 +359,8 @@ __host__ __device__ Vector<T, N> operator*(const T scalar, const Vector<T, N>& v
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec1,
+                                           const Vector<T, N>& vec2) {
     Vector<T, N> result;
     MulByElement(result, vec1, vec2);
 
@@ -351,8 +368,9 @@ __host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec1, const Vecto
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const Vector<T, N>& b) {
+__host__ __device__ inline void DivByElement(Vector<T, N>& result,
+                                             const Vector<T, N>& a,
+                                             const Vector<T, N>& b) {
 #ifdef USE_ISPC
     ispc::DivByElement(a, b, result, N);
 #else
@@ -363,15 +381,18 @@ __host__ __device__ inline void DivByElement(Vector<T, N>& result, const Vector<
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline void DivByElement(Vector<T, N>& result, const Vector<T, N>& a,
-                         const T scalar) {
+__host__ __device__ inline void DivByElement(Vector<T, N>& result,
+                                             const Vector<T, N>& a,
+                                             const T scalar) {
     Vector<T, N> v(scalar);
 
     DivByElement(result, a, v);
 }
 
-template <class T, Dimension auto N> requires std::floating_point<T>
-__host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec, const T scalar) {
+template <class T, Dimension auto N>
+    requires std::floating_point<T>
+__host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec,
+                                           const T scalar) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
 
@@ -379,7 +400,8 @@ __host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec, const T scal
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator/(const T scalar, const Vector<T, N>& vec) {
+__host__ __device__ Vector<T, N> operator/(const T scalar,
+                                           const Vector<T, N>& vec) {
     Vector<T, N> result;
     DivByElement(result, vec, scalar);
 
@@ -387,7 +409,8 @@ __host__ __device__ Vector<T, N> operator/(const T scalar, const Vector<T, N>& v
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vector<T, N>& vec2) {
+__host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec1,
+                                           const Vector<T, N>& vec2) {
     Vector<T, N> result;
     DivByElement(result, vec1, vec2);
 
@@ -395,8 +418,7 @@ __host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vecto
 }
 
 template <class T>
-__device__ inline constexpr T pow(const T base,
-                                 const T exponent) {
+__device__ inline constexpr T pow(const T base, const T exponent) {
     return std::pow(base, exponent);
 }
 
@@ -463,17 +485,20 @@ __host__ __device__ inline constexpr T Length(const Vector<T, N>& vec) {
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline bool operator>=(const Vector<T, N>&& vec, const T scalar) {
+__host__ __device__ inline bool operator>=(const Vector<T, N>&& vec,
+                                           const T scalar) {
     return Length(vec) >= scalar;
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline bool operator>(const Vector<T, N>&& vec, const T scalar) {
+__host__ __device__ inline bool operator>(const Vector<T, N>&& vec,
+                                          const T scalar) {
     return Length(vec) > scalar;
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline bool operator<=(const Vector<T, N>&& vec, const T scalar) {
+__host__ __device__ inline bool operator<=(const Vector<T, N>&& vec,
+                                           const T scalar) {
     return Length(vec) <= scalar;
 }
 
@@ -511,17 +536,20 @@ __host__ __device__ inline bool isNearZero(const Vector<T, N>& vec) {
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline Vector<T, N> Reflect(const Vector<T, N>& v, const Vector<T, N>& n) {
+__host__ __device__ inline Vector<T, N> Reflect(const Vector<T, N>& v,
+                                                const Vector<T, N>& n) {
     return v - 2 * DotProduct(v, n) * n;
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
-                            T etai_over_etat) {
+__host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v,
+                                                const Vector<T, N>& n,
+                                                T etai_over_etat) {
     T cos_theta = fmin(DotProduct(-v, n), 1.0);
 
     Vector<T, N> r_out_perp = etai_over_etat * (v + cos_theta * n);
-    Vector<T, N> r_out_parallel = - (T)sqrt(fabs(1.0 - LengthSquared(r_out_perp))) * n;
+    Vector<T, N> r_out_parallel =
+        -(T)sqrt(fabs(1.0 - LengthSquared(r_out_perp))) * n;
     return r_out_perp + r_out_parallel;
 }
 
@@ -536,12 +564,15 @@ struct Matrix {
         return data[row_index];
     }
 
-    __host__ __device__ const Vector<T, COLS>& operator[](Dimension auto row_index) const {
+    __host__ __device__ const Vector<T, COLS>& operator[](
+        Dimension auto row_index) const {
         return data[row_index];
     }
 
     __host__ __device__ operator T*() { return (T*)&data; };
-    __host__ __device__ operator const T*() const { return static_cast<const T*>(&data[0][0]); };
+    __host__ __device__ operator const T*() const {
+        return static_cast<const T*>(&data[0][0]);
+    };
 
     __host__ __device__ Matrix& operator=(const T* _data) {
         std::memcpy(data, _data, sizeof(T) * COLS * ROWS);
@@ -590,20 +621,21 @@ std::ostream& operator<<(std::ostream& out, Matrix<T, ROWS, COLS> matrix) {
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
 __host__ __device__ void MatrixAdd(Matrix<T, ROWS, COLS>& result,
-               const Matrix<T, ROWS, COLS>& matrix1,
-               const Matrix<T, ROWS, COLS>& matrix2) {
+                                   const Matrix<T, ROWS, COLS>& matrix1,
+                                   const Matrix<T, ROWS, COLS>& matrix2) {
 #ifdef USE_ISPC
     ispc::AddByElement(matrix1, matrix2, result, ROWS * COLS);
 #else
-    for (size_t i = 0; i < ROWS * COLS; i++) {
+    for (Dimension auto i = 0; i < ROWS; i++) {
         result[i] = matrix1[i] + matrix2[i];
     }
 #endif
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>& matrix1,
-                                const Matrix<T, ROWS, COLS>& matrix2) {
+__host__ __device__ Matrix<T, ROWS, COLS> operator+(
+    const Matrix<T, ROWS, COLS>& matrix1,
+    const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
     MatrixAdd(result, matrix1, matrix2);
 
@@ -612,46 +644,48 @@ __host__ __device__ Matrix<T, ROWS, COLS> operator+(const Matrix<T, ROWS, COLS>&
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
 __host__ __device__ void MatrixSub(Matrix<T, ROWS, COLS>& result,
-               const Matrix<T, ROWS, COLS>& matrix1,
-               const Matrix<T, ROWS, COLS>& matrix2) {
+                                   const Matrix<T, ROWS, COLS>& matrix1,
+                                   const Matrix<T, ROWS, COLS>& matrix2) {
 #ifdef USE_ISPC
     ispc::SubByElement(matrix1, matrix2, result, ROWS * COLS);
 #else
-    for (size_t i = 0; i < ROWS * COLS; i++) {
+    for (Dimension auto i = 0; i < ROWS; i++) {
         result[i] = matrix1[i] - matrix2[i];
     }
 #endif
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ void MatrixMulByElement(Matrix<T, ROWS, COLS>& result,
-                        const Matrix<T, ROWS, COLS>& matrix1,
-                        const Matrix<T, ROWS, COLS>& matrix2) {
+__host__ __device__ void MatrixMulByElement(
+    Matrix<T, ROWS, COLS>& result, const Matrix<T, ROWS, COLS>& matrix1,
+    const Matrix<T, ROWS, COLS>& matrix2) {
 #ifdef USE_ISPC
     ispc::MulByElement(matrix1, matrix2, result, ROWS * COLS);
 #else
-    for (size_t i = 0; i < ROWS * COLS; i++) {
+    for (Dimension auto i = 0; i < ROWS; i++) {
         result[i] = matrix1[i] * matrix2[i];
     }
 #endif
 }
 
 template <Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ void MatrixMulByElementi32(Matrix<int32_t, ROWS, COLS>& result,
-                           const Matrix<int32_t, ROWS, COLS>& matrix1,
-                           const Matrix<int32_t, ROWS, COLS>& matrix2) {
+__host__ __device__ void MatrixMulByElementi32(
+    Matrix<int32_t, ROWS, COLS>& result,
+    const Matrix<int32_t, ROWS, COLS>& matrix1,
+    const Matrix<int32_t, ROWS, COLS>& matrix2) {
 #ifdef USE_ISPC
     ispc::MulByElementi32(matrix1, matrix2, result, ROWS * COLS);
 #else
-    for (size_t i = 0; i < ROWS * COLS; i++) {
+    for (Dimension auto i = 0; i < ROWS; i++) {
         result[i] = matrix1[i] * matrix2[i];
     }
 #endif
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>& matrix1,
-                                const Matrix<T, ROWS, COLS>& matrix2) {
+__host__ __device__ Matrix<T, ROWS, COLS> operator-(
+    const Matrix<T, ROWS, COLS>& matrix1,
+    const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
     MatrixSub(result, matrix1, matrix2);
 
@@ -659,9 +693,10 @@ __host__ __device__ Matrix<T, ROWS, COLS> operator-(const Matrix<T, ROWS, COLS>&
 }
 
 template <class T, Dimension auto Da, Dimension auto Db, Dimension auto Dc>
-__host__ __device__ void MatrixMultiply(Matrix<T, Da, Dc>& result, const Matrix<T, Da, Db>& matrix1,
-                    const Matrix<T, Dc, Db>& matrix2) {
-    Matrix<T, Dc, Db> matrix2_transpose;
+__host__ __device__ void MatrixMultiply(Matrix<T, Da, Dc>& result,
+                                        const Matrix<T, Da, Db>& matrix1,
+                                        const Matrix<T, Dc, Db>& matrix2) {
+    Matrix<T, Db, Dc> matrix2_transpose;
     Transpose(matrix2_transpose, matrix2);
     for (Dimension auto i = 0; i < Da; i++) {
         for (Dimension auto j = 0; j < Dc; j++) {
@@ -671,8 +706,9 @@ __host__ __device__ void MatrixMultiply(Matrix<T, Da, Dc>& result, const Matrix<
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix1,
-                                const Matrix<T, ROWS, COLS>& matrix2) {
+__host__ __device__ Matrix<T, ROWS, COLS> operator*(
+    const Matrix<T, ROWS, COLS>& matrix1,
+    const Matrix<T, ROWS, COLS>& matrix2) {
     Matrix<T, ROWS, COLS> result;
     MatrixMultiply(result, matrix1, matrix2);
 
@@ -680,8 +716,8 @@ __host__ __device__ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>&
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>& matrix,
-                                const T scalar) {
+__host__ __device__ Matrix<T, ROWS, COLS> operator*(
+    const Matrix<T, ROWS, COLS>& matrix, const T scalar) {
     Matrix<T, ROWS, COLS> result;
 
     for (Dimension auto i = 0; i < ROWS; i++) {
@@ -692,8 +728,8 @@ __host__ __device__ Matrix<T, ROWS, COLS> operator*(const Matrix<T, ROWS, COLS>&
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ Matrix<T, ROWS, COLS> operator*(const T scalar,
-                                const Matrix<T, ROWS, COLS>& matrix) {
+__host__ __device__ Matrix<T, ROWS, COLS> operator*(
+    const T scalar, const Matrix<T, ROWS, COLS>& matrix) {
     return matrix * scalar;
 }
 
@@ -716,18 +752,19 @@ void Shrink(Matrix<T, ROWS1, COLS1>& matrix1,
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
 __host__ __device__ void Absolute(Matrix<T, ROWS, COLS>& result,
-              const Matrix<T, ROWS, COLS>& matrix) {
+                                  const Matrix<T, ROWS, COLS>& matrix) {
 #ifdef USE_ISPC
     ispc::Absolute(result, matrix, ROWS * COLS);
 #else
-    for (size_t i = 0; i < ROWS * COLS; i++) {
+    for (size_t i = 0; i < ROWS; i++) {
         result[i] = fabs(matrix[i]);
     }
 #endif
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix) {
+__host__ __device__ inline bool AlmostZero(
+    const Matrix<T, ROWS, COLS>& matrix) {
     bool result = true;
     for (Dimension auto i = 0; i < ROWS; i++) {
         for (Dimension auto j = 0; j < COLS; j++) {
@@ -741,26 +778,28 @@ __host__ __device__ inline bool AlmostZero(const Matrix<T, ROWS, COLS>& matrix) 
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ inline bool operator==(const Matrix<T, ROWS, COLS>& matrix1,
-                       const Matrix<T, ROWS, COLS>& matrix2) {
+__host__ __device__ inline bool operator==(
+    const Matrix<T, ROWS, COLS>& matrix1,
+    const Matrix<T, ROWS, COLS>& matrix2) {
     return AlmostZero(matrix1 - matrix2);
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ inline bool operator!=(const Matrix<T, ROWS, COLS>& matrix1,
-                       const Matrix<T, ROWS, COLS>& matrix2) {
+__host__ __device__ inline bool operator!=(
+    const Matrix<T, ROWS, COLS>& matrix1,
+    const Matrix<T, ROWS, COLS>& matrix2) {
     return !(matrix1 == matrix2);
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ inline void Transpose(Matrix<T, ROWS, COLS>& result,
-                      const Matrix<T, ROWS, COLS>& matrix1) {
+__host__ __device__ void Transpose(Matrix<T, COLS, ROWS>& result,
+                                   const Matrix<T, ROWS, COLS>& matrix) {
 #ifdef USE_ISPC
-    ispc::Transpose(matrix1, result, ROWS, COLS);
+    ispc::Transpose(matrix, result, ROWS, COLS);
 #else
     for (uint32_t i = 0; i < ROWS; i++) {
         for (uint32_t j = 0; j < COLS; j++) {
-            result[j * ROWS + i] = matrix1[i * COLS + j];
+            result[j][i] = matrix[i][j];
         }
     }
 #endif
@@ -778,8 +817,9 @@ __host__ __device__ inline T Trace(const Matrix<T, N, N>& matrix) {
 }
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
-__host__ __device__ inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& source,
-                        const Matrix<T, ROWS, COLS>& matrix) {
+__host__ __device__ inline void DotProduct3(
+    Vector<T, 3>& result, Vector<T, 3>& source,
+    const Matrix<T, ROWS, COLS>& matrix) {
     static_assert(
         ROWS >= 3,
         "[Error] Only 3x3 and above matrix can be passed to this method!");
@@ -798,7 +838,7 @@ __host__ __device__ inline void DotProduct3(Vector<T, 3>& result, Vector<T, 3>& 
 
 template <class T, Dimension auto ROWS, Dimension auto COLS>
 __host__ __device__ inline void GetOrigin(Vector<T, 3>& result,
-                      const Matrix<T, ROWS, COLS>& matrix) {
+                                          const Matrix<T, ROWS, COLS>& matrix) {
     static_assert(
         ROWS >= 3,
         "[Error] Only 3x3 and above matrix can be passed to this method!");
@@ -830,21 +870,23 @@ inline void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw,
                {0.0f, 0.0f, 0.0f, 1.0f}}};
 }
 
-__host__ __device__ inline void TransformCoord(Vector3f& vector, const Matrix4X4f& matrix) {
+__host__ __device__ inline void TransformCoord(Vector3f& vector,
+                                               const Matrix4X4f& matrix) {
     Vector4f tmp;
 #ifdef USE_ISPC
     ispc::Transform(tmp, matrix);
 #else
     for (int index = 0; index < 4; index++) {
-        tmp[index] =
-            (vector[0] * matrix[0][index]) + (vector[1] * matrix[1][index]) +
-            (vector[2] * matrix[2][index]) + (1.0f * matrix[2][index]);
+        tmp[index] = (vector[0] * matrix[0][index]) +
+                     (vector[1] * matrix[1][index]) +
+                     (vector[2] * matrix[2][index]) + (1.0f * matrix[2][index]);
     }
 #endif
     vector = tmp;
 }
 
-__host__ __device__ inline void Transform(Vector4f& vector, const Matrix4X4f& matrix) {
+__host__ __device__ inline void Transform(Vector4f& vector,
+                                          const Matrix4X4f& matrix) {
     Vector4f tmp;
 #ifdef USE_ISPC
     ispc::Transform(vector, matrix);
@@ -933,21 +975,16 @@ inline void BuildViewRHMatrix(Matrix4X4f& result, const Vector3f position,
 
 template <class T>
 __host__ __device__ inline auto BuildIdentityMatrix3X3() {
-    return Matrix<T, 3, 3>({{
-        {1.0, 0.0, 0.0},
-        {0.0, 1.0, 0.0},
-        {0.0, 0.0, 1.0}
-    }});
+    return Matrix<T, 3, 3>(
+        {{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}});
 }
 
 template <class T>
 __host__ __device__ inline auto BuildIdentityMatrix4X4() {
-    return Matrix<T, 4, 4> ({{
-        {1.0, 0.0, 0.0, 0.0},
-        {0.0, 1.0, 0.0, 0.0},
-        {0.0, 0.0, 1.0, 0.0},
-        {0.0, 0.0, 0.0, 1.0}
-    }});
+    return Matrix<T, 4, 4>({{{1.0, 0.0, 0.0, 0.0},
+                             {0.0, 1.0, 0.0, 0.0},
+                             {0.0, 0.0, 1.0, 0.0},
+                             {0.0, 0.0, 0.0, 1.0}}});
 }
 
 template <class T, Dimension auto N>
@@ -1204,7 +1241,7 @@ inline bool InverseMatrix3X3f(Matrix3X3f& matrix) {
     }
 
     for (int k = 0; k < 3; k++) {
-        float s = ((float *)matrix)[k] * inv[k * 3];
+        float s = ((float*)matrix)[k] * inv[k * 3];
         D += s;
     }
 
@@ -1213,7 +1250,7 @@ inline bool InverseMatrix3X3f(Matrix3X3f& matrix) {
     D = 1.0 / D;
 
     for (int i = 0; i < 9; i++) {
-        ((float *)matrix)[i] = static_cast<float>(inv[i] * D);
+        ((float*)matrix)[i] = static_cast<float>(inv[i] * D);
     }
 
     return true;
@@ -1234,7 +1271,7 @@ inline bool InverseMatrix4X4f(Matrix4X4f& matrix) {
     }
 
     for (int k = 0; k < 4; k++) {
-        float s = ((float *)matrix)[k] * inv[k * 4];
+        float s = ((float*)matrix)[k] * inv[k * 4];
         D += s;
     }
 
@@ -1243,7 +1280,7 @@ inline bool InverseMatrix4X4f(Matrix4X4f& matrix) {
     D = 1.0 / D;
 
     for (int i = 0; i < 16; i++) {
-        ((float *)matrix)[i] = static_cast<float>(inv[i] * D);
+        ((float*)matrix)[i] = static_cast<float>(inv[i] * D);
     }
 
     return true;
