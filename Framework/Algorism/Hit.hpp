@@ -1,6 +1,8 @@
 #pragma once
 #include "geommath.hpp"
 
+#include <cfloat>
+
 namespace My {
 template <class T>
 class Hit {

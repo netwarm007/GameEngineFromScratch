@@ -266,7 +266,7 @@ void performance_test() {
     }
     auto t1 = performance_test_clock.now();
 
-     fprintf(stderr, "Time needed for %I64d times of Cross Production using ISPC: %I64d\n", iterations, (t1 - t0).count());     
+     fprintf(stderr, "Time needed for %lld times of Cross Production using ISPC: %lld\n", iterations, (t1 - t0).count());     
 }
 #endif
  
