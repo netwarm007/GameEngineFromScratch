@@ -6,8 +6,9 @@ namespace My {
 template <class T>
 Ability Boundable {
    public:
-    virtual ~Boundable() = default;
     using ParamType = T;
+
+    __device__ virtual ~Boundable() {}
 
     // GetAabb returns the axis aligned bounding box
     bool GetAabb(AaBb<T,3>& aabb) const {

@@ -7,6 +7,7 @@ template <class T, class MaterialPtr>
 class Sphere : public Geometry<T>, _implements_ MaterialContainer<MaterialPtr> {
    public:
     Sphere() = delete;
+    __device__ ~Sphere() {}
     __device__ explicit Sphere(const T radius)
         : Geometry<T>(GeometryType::kSphere), m_fRadius(radius) {}
 

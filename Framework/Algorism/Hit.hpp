@@ -6,7 +6,7 @@ template <class T>
 class Hit {
 public:
   // CONSTRUCTOR & DESTRUCTOR
-  __device__ Hit() : t(std::numeric_limits<T>::infinity()) {}
+  __device__ Hit() : t(FLT_MAX) {}
 
   // ACCESSORS
   __device__ T getT() const { return t; }

@@ -23,7 +23,9 @@ class AaBb : _implements_ Intersectable<T> {
             auto t0 = (this->min_point()[a] - r.getOrigin()[a]) * invD;
             auto t1 = (this->max_point()[a] - r.getOrigin()[a]) * invD;
             if (invD < 0.0f) {
-                std::swap(t0, t1);
+                auto tmp = t0;
+                t0 = t1;
+                t1 = tmp;
             }
             tmin = t0 > tmin ? t0 : tmin;
             tmax = t1 < tmax ? t1 : tmax;

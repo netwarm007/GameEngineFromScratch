@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-option(USE_ISPC "Use ISPC for geometry math" ON)
+option(USE_ISPC "Use ISPC for geometry math" OFF)
 option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
 
 # CUDA
@@ -24,7 +24,7 @@ if(CMAKE_CUDA_COMPILER)
         endif()
         set(CMAKE_CUDA_STANDARD 20)
         set(CMAKE_CUDA_STANDARD_REQUIRED ON)
-        set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr")
+        set(CMAKE_CUDA_FLAGS "")
         set(USE_CUDA ON)
         set(USE_ISPC OFF)
     else()

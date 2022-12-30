@@ -1,6 +1,4 @@
 #pragma once
-#include <limits>
-
 #include "portable.hpp"
 #include "Hitable.hpp"
 
@@ -14,7 +12,6 @@ class Geometry : _implements_ Hitable<T> {
     __device__ explicit Geometry(GeometryType geometry_type)
         : m_kGeometryType(geometry_type){ Hitable<T>::type = HitableType::kGeometry; }
     Geometry() = delete;
-    virtual ~Geometry() = default;
 
     [[nodiscard]] GeometryType GetGeometryType() const {
         return m_kGeometryType;
@@ -27,6 +24,6 @@ class Geometry : _implements_ Hitable<T> {
 
    protected:
     GeometryType m_kGeometryType;
-    T m_fMargin = std::numeric_limits<T>::epsilon();
+    T m_fMargin = 0.0001;
 };
 }  // namespace My

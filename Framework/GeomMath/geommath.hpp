@@ -395,7 +395,7 @@ __host__ __device__ Vector<T, N> operator/(const Vector<T, N>& vec1, const Vecto
 }
 
 template <class T>
-inline constexpr T pow(const T base,
+__device__ inline constexpr T pow(const T base,
                                  const T exponent) {
     return std::pow(base, exponent);
 }
@@ -414,7 +414,7 @@ __device__ Vector<T, N> pow(const Vector<T, N>& vec, const T exponent) {
 }
 
 template <class T>
-__device__ inline constexpr T sqrt(const T base) {
+__host__ __device__ inline constexpr T sqrt(const T base) {
     return std::sqrt(base);
 }
 
@@ -1245,6 +1245,8 @@ inline bool InverseMatrix4X4f(Matrix4X4f& matrix) {
     for (int i = 0; i < 16; i++) {
         ((float *)matrix)[i] = static_cast<float>(inv[i] * D);
     }
+
+    return true;
 
 #endif
 }

@@ -5,7 +5,7 @@ namespace My {
 template <class MaterialPtr>
 Ability MaterialContainer {
    public:
-    virtual ~MaterialContainer() = default;
+    __device__ virtual ~MaterialContainer() {}
     using MaterialPtrType = MaterialPtr;
 
     __device__ void SetMaterial(MaterialPtr m) {

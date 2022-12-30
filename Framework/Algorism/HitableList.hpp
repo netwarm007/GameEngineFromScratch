@@ -1,63 +1,62 @@
 #pragma once
+#include <vector>
 #include "Hitable.hpp"
 
 namespace My {
 template <class T>
-struct SimpleList {
-    using value_type = T;
-    using reference  = T&;
-    using const_reference  = const T&;
-
-    value_type* data;
-    size_t ele_num;
-    size_t max_ele_num;
-
-    __device__ SimpleList() : data(nullptr), ele_num(0), max_ele_num(0) {}
-
-    ~SimpleList() { if (data) delete[] data; }
-
-    __device__ void push_back (value_type&& value) {
-        if (ele_num + 1 > max_ele_num) {
-            max_ele_num += 4;
-            value_type* new_data = new value_type[max_ele_num];
-            if (data) {
-                memcpy(new_data, data, sizeof(value_type) * ele_num);
+class SimpleHitableList {
+   public:
+    __device__ SimpleHitableList(Hitable<T>** list, size_t list_size)
+        : m_list(list), m_list_size(list_size) {
+    }
+    __device__ ~SimpleHitableList() {
+        if (m_list) {
+            for (int i = 0; i < m_list_size; i++) {
+                delete m_list[i];
             }
-            delete[] data;
-            data = new_data;
+
+            delete m_list;
+        }
+    }
+
+    __device__ bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin,
+                              T tmax) const {
+        Hit<T> temp_hit;
+        bool hit_anything = false;
+        auto closest_so_far = tmax;
+
+        for (int i = 0; i < m_list_size; i++) {
+            if ((i < m_list_size) && m_list[i]->Intersect(r, temp_hit, tmin, closest_so_far)) {
+                hit_anything = true;
+                closest_so_far = temp_hit.getT();
+                h = temp_hit;
+            }
         }
 
-        data[ele_num++] = value;
+        return hit_anything;
     }
 
-    __device__ constexpr reference back() {
-        if (ele_num == 0) return nullptr;
-        return data[ele_num - 1];
-    }
+    __device__ size_t size() const { return m_list_size; }
 
-    __device__ constexpr size_t size() const { return ele_num; }
+    __device__ Hitable<T>* operator[](size_t index) { return m_list[index]; }
 
-    __device__ constexpr bool empty() const noexcept { return ele_num == 0; }
-
-    __device__ constexpr reference operator[](size_t pos) { return data[pos]; }
-    __device__ constexpr const_reference operator[](size_t pos) const { return data[pos]; }
+   private:
+    Hitable<T>** m_list = nullptr;
+    size_t m_list_size = 0;
 };
 
-template <class T, class ValueType = std::shared_ptr<Hitable<T>>, class ContainerType = std::vector<ValueType>>
+template <class T>
 class HitableList : public Hitable<T> {
    public:
-    using value_type = ValueType;
-    using reference  = ValueType&;
+    HitableList() { Hitable<T>::type = HitableType::kList; }
 
-    __device__ HitableList() { Hitable<T>::type = HitableType::kList; }
-
-    __device__ void add(ValueType&& value) {
-        m_Hitables.push_back(std::forward<ValueType>(value));
+    void add(std::shared_ptr<Hitable<T>>&& value) {
+        m_Hitables.push_back(std::forward<std::shared_ptr<Hitable<T>>>(value));
     }
 
-    __device__ constexpr reference back() { return m_Hitables.back(); }
+    constexpr auto back() { return m_Hitables.back(); }
 
-    __device__ bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
+    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
         Hit<T> temp_hit;
         bool hit_anything = false;
         auto closest_so_far = tmax;
@@ -73,7 +72,7 @@ class HitableList : public Hitable<T> {
         return hit_anything;
     }
 
-    __device__ bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
+    bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
         if (m_Hitables.empty()) return false;
 
         AaBb<T, 3> temp_box;
@@ -88,24 +87,16 @@ class HitableList : public Hitable<T> {
         return true;
     }
 
-    __device__ size_t size() const {
-        return m_Hitables.size();
-    }
+    size_t size() const { return m_Hitables.size(); }
 
-    __device__ auto operator[](size_t index) {
-        return m_Hitables[index];
-    }
+    auto operator[](size_t index) { return m_Hitables[index]; }
 
-    __device__ auto begin() {
-        return m_Hitables.begin();
-    }
+    auto begin() { return m_Hitables.begin(); }
 
    private:
-    std::ostream& dump(std::ostream& out) const override {
-        return out;
-    }
+    std::ostream& dump(std::ostream& out) const override { return out; }
 
    private:
-    ContainerType m_Hitables;
+    std::vector<std::shared_ptr<Hitable<T>>> m_Hitables;
 };
 }  // namespace My
