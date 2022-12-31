@@ -1,6 +1,5 @@
 #pragma once
 #include "Geometry.hpp"
-#include "Intersectable.hpp"
 
 namespace My {
 template <typename T>

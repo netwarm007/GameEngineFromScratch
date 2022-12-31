@@ -3,6 +3,7 @@
 #include "Hitable.hpp"
 
 namespace My {
+#ifdef __CUDACC__
 template <class T>
 class SimpleHitableList {
    public:
@@ -36,6 +37,21 @@ class SimpleHitableList {
         return hit_anything;
     }
 
+    __device__ bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const {
+        if (m_list_size == 0) return false;
+
+        AaBb<T, 3> temp_box;
+        bool first_box = true;
+
+        for (int i = 0; i < m_list_size; i++) {
+            if (!m_list[i]->GetAabb(trans, temp_box)) return false;
+            aabb = first_box ? temp_box : SurroundingBox(aabb, temp_box);
+            first_box = false;
+        }
+
+        return true;
+    }
+
     __device__ size_t size() const { return m_list_size; }
 
     __device__ Hitable<T>* operator[](size_t index) { return m_list[index]; }
@@ -45,10 +61,12 @@ class SimpleHitableList {
     size_t m_list_size = 0;
 };
 
+#else
+
 template <class T>
 class HitableList : public Hitable<T> {
    public:
-    HitableList() { Hitable<T>::type = HitableType::kList; }
+    HitableList() : Hitable<T>(HitableType::kList) {}
 
     void add(std::shared_ptr<Hitable<T>>&& value) {
         m_Hitables.push_back(std::forward<std::shared_ptr<Hitable<T>>>(value));
@@ -99,4 +117,6 @@ class HitableList : public Hitable<T> {
    private:
     std::vector<std::shared_ptr<Hitable<T>>> m_Hitables;
 };
+
+#endif // CUDACC
 }  // namespace My

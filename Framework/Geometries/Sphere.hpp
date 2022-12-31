@@ -22,6 +22,15 @@ class Sphere : public Geometry<T>, _implements_ MaterialContainer<MaterialPtr> {
         this->m_ptrMat = m;
     }
 
+    __device__ bool GetAabb(AaBb<T, 3>& aabb) const final {
+        if (m_fRadius == 0.0) return false;
+
+        Vector3<T> extent({m_fRadius + this->m_fMargin, m_fRadius + this->m_fMargin, m_fRadius + this->m_fMargin});
+        aabb = AaBb(m_center - extent, m_center + extent);
+
+        return true;
+    }
+
     __device__ bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
         if (m_fRadius == 0.0) return false;
 
@@ -51,7 +60,9 @@ class Sphere : public Geometry<T>, _implements_ MaterialContainer<MaterialPtr> {
         T c = dist * dist - m_fRadius * m_fRadius;
         T disc = half_b * half_b - c;
 
-        if (disc < 0) return false;
+        if (disc < 0) {
+            return false;
+        }
 
         T sroot = sqrt(disc);
 

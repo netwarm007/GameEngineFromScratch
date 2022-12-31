@@ -24,7 +24,7 @@ __device__ T random_f(T min, T max, curandState *local_rand_state) {
 
 template <class T> requires std::integral<T>
 __device__ T random_int(T min, T max, curandState *local_rand_state) {
-    return static_cast<T>(random_f<double>(static_cast<double>(min), static_cast<double>(max) + 1.0, local_rand_state));
+    return static_cast<T>(random_f<T>(static_cast<T>(min), static_cast<T>(max), local_rand_state));
 }
 
 template <class T, Dimension auto N>

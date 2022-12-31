@@ -96,7 +96,7 @@ class dielectric : public material {
         float_precision refraction_ratio = hit.isFrontFace() ? (1.0 / ir) : ir;
         auto v = r_in.getDirection();
         auto n = hit.isFrontFace() ? hit.getNormal() : -hit.getNormal();
-        float_precision cos_theta = fmin(DotProduct(-v, n), 1.0);
+        float_precision cos_theta = fminf(DotProduct(-v, n), 1.0);
         float_precision sin_theta = sqrt(1.0 - cos_theta * cos_theta);
         bool cannot_refract = refraction_ratio * sin_theta > 1.0;
 

@@ -1,11 +1,18 @@
 #pragma once
 #include "Ability.hpp"
+#include "portable.hpp"
 
 namespace My {
 template <class MaterialPtr>
 Ability MaterialContainer {
+   protected:
+    __device__ virtual ~MaterialContainer() {
+#ifdef __CUDACC__
+        if (m_ptrMat) delete m_ptrMat;
+#endif
+    }
+
    public:
-    __device__ virtual ~MaterialContainer() {}
     using MaterialPtrType = MaterialPtr;
 
     __device__ void SetMaterial(MaterialPtr m) {

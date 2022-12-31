@@ -1,12 +1,12 @@
 #pragma once
 #include "geommath.hpp"
-#include "Intersectable.hpp"
+#include "Ray.hpp"
 #include <cmath>
 #include <utility>
 
 namespace My {
 template <class T, Dimension auto N>
-class AaBb : _implements_ Intersectable<T> {
+class AaBb {
    public:
     __device__ AaBb() {}
     __device__ AaBb(const Vector<T, N>& a, const Vector<T, N>& b) {
@@ -17,8 +17,8 @@ class AaBb : _implements_ Intersectable<T> {
     __device__ Vector<T, N> min_point() const { return minimum; }
     __device__ Vector<T, N> max_point() const { return maximum; }
 
-    __device__ bool Intersect(const Ray<T>& r, Hit<T>&, T tmin, T tmax) const override {
-        for (Dimension auto a = 0; a < 3; a++) {
+    __device__ bool Intersect(const Ray<T>& r, T tmin, T tmax) const {
+        for (int a = 0; a < 3; a++) {
             auto invD = 1.0 / r.getDirection()[a];
             auto t0 = (this->min_point()[a] - r.getOrigin()[a]) * invD;
             auto t1 = (this->max_point()[a] - r.getOrigin()[a]) * invD;

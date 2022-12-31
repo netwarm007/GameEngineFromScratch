@@ -10,7 +10,9 @@ template <class T>
 class Geometry : _implements_ Hitable<T> {
    public:
     __device__ explicit Geometry(GeometryType geometry_type)
-        : m_kGeometryType(geometry_type){ Hitable<T>::type = HitableType::kGeometry; }
+        : Hitable<T>(HitableType::kGeometry) {
+        m_kGeometryType = geometry_type;
+     }
     Geometry() = delete;
 
     [[nodiscard]] GeometryType GetGeometryType() const {

@@ -440,6 +440,11 @@ __host__ __device__ inline constexpr T sqrt(const T base) {
     return std::sqrt(base);
 }
 
+template <class T>
+__host__ __device__ inline constexpr T fmin(T a, T b) {
+    return std::fmin(a, b);
+}
+
 template <class T, Dimension auto N>
 __device__ Vector<T, N> sqrt(const Vector<T, N>& vec) {
     Vector<T, N> result;
@@ -542,10 +547,9 @@ __host__ __device__ inline Vector<T, N> Reflect(const Vector<T, N>& v,
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v,
-                                                const Vector<T, N>& n,
-                                                T etai_over_etat) {
-    T cos_theta = fmin(DotProduct(-v, n), 1.0);
+__host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
+                            T etai_over_etat) {
+    T cos_theta = fmin((T)DotProduct(-v, n), (T)1.0);
 
     Vector<T, N> r_out_perp = etai_over_etat * (v + cos_theta * n);
     Vector<T, N> r_out_parallel =
@@ -974,17 +978,22 @@ inline void BuildViewRHMatrix(Matrix4X4f& result, const Vector3f position,
 }
 
 template <class T>
-__host__ __device__ inline auto BuildIdentityMatrix3X3() {
-    return Matrix<T, 3, 3>(
-        {{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}});
+__host__ __device__ constexpr auto BuildIdentityMatrix3X3() {
+    return Matrix<T, 3, 3>({{
+        {1.0, 0.0, 0.0},
+        {0.0, 1.0, 0.0},
+        {0.0, 0.0, 1.0}
+    }});
 }
 
 template <class T>
-__host__ __device__ inline auto BuildIdentityMatrix4X4() {
-    return Matrix<T, 4, 4>({{{1.0, 0.0, 0.0, 0.0},
-                             {0.0, 1.0, 0.0, 0.0},
-                             {0.0, 0.0, 1.0, 0.0},
-                             {0.0, 0.0, 0.0, 1.0}}});
+__host__ __device__ constexpr auto BuildIdentityMatrix4X4() {
+    return Matrix<T, 4, 4> ({{
+        {1.0, 0.0, 0.0, 0.0},
+        {0.0, 1.0, 0.0, 0.0},
+        {0.0, 0.0, 1.0, 0.0},
+        {0.0, 0.0, 0.0, 1.0}
+    }});
 }
 
 template <class T, Dimension auto N>
