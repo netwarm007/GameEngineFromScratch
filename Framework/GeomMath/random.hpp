@@ -86,7 +86,7 @@ __device__ Vector3<T> random_in_hemisphere_cosine_weighted(const Vector3<T>& nor
     T cos_theta = sqrt(uv[1]);
     T sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
-    return Vector3<T>(sin_theta * cos_phi, cos_theta, sin_theta * sin_phi);
+    return Vector3<T>({sin_theta * cos_phi, cos_theta, sin_theta * sin_phi}) + normal - Vector3<T>({0, 1, 0});
 }
 
 template <class T>
@@ -176,7 +176,7 @@ Vector3<T> random_in_hemisphere_cosine_weighted(const Vector3<T>& normal) {
     T cos_theta = sqrt(uv[1]);
     T sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
-    return Vector3<T>(sin_theta * cos_phi, cos_theta, sin_theta * sin_phi);
+    return Vector3<T>({sin_theta * cos_phi, cos_theta, sin_theta * sin_phi}) + normal - Vector3<T>({0, 1, 0});
 }
 
 template <class T>

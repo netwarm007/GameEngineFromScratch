@@ -58,7 +58,7 @@ auto random_scene() {
     world.add(std::make_shared<My::Sphere<float_precision, std::shared_ptr<material>>>(
         (float_precision)1.0, point3({-4, 1, 0}), material_2));
 
-    auto material_3 = std::make_shared<metal>(color({0.7, 0.6, 0.5}), (float_precision)0.1);
+    auto material_3 = std::make_shared<metal>(color({0.7, 0.6, 0.5}), (float_precision)0.0);
     world.add(std::make_shared<My::Sphere<float_precision, std::shared_ptr<material>>>(
         (float_precision)1.0, point3({4, 1, 0}), material_3));
 
