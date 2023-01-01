@@ -7,6 +7,7 @@
 #include "BVH.hpp"
 #include "RayTracingCamera.hpp"
 
+#define float_precision double
 #include "TestMaterial.hpp"
 #include "TestScene.hpp"
 
@@ -17,8 +18,6 @@
 #include <thread>
 
 using namespace std::chrono_literals;
-
-using float_precision = float;
 
 inline int to_unorm(float_precision f) {
     return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256;

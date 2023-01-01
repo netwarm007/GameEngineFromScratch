@@ -27,7 +27,7 @@ class SimpleHitableList {
         auto closest_so_far = tmax;
 
         for (int i = 0; i < m_list_size; i++) {
-            if ((i < m_list_size) && m_list[i]->Intersect(r, temp_hit, tmin, closest_so_far)) {
+            if (m_list[i]->Intersect(r, temp_hit, tmin, closest_so_far)) {
                 hit_anything = true;
                 closest_so_far = temp_hit.getT();
                 h = temp_hit;

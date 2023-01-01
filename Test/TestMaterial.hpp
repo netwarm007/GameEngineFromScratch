@@ -4,7 +4,10 @@
 #include "geommath.hpp"
 #include "random.hpp"
 
-using float_precision = float;
+#ifndef float_precision
+#define float_precision float
+#endif
+
 using ray = My::Ray<float_precision>;
 using color = My::Vector3<float_precision>;
 using point3 = My::Point<float_precision>;

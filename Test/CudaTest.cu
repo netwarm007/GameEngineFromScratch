@@ -2,6 +2,7 @@
 #include "geommath.hpp"
 #include "BVH.hpp"
 #include "Sphere.hpp"
+
 #include "TestMaterial.hpp"
 
 using color = My::Vector3<float>;

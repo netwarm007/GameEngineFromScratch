@@ -133,7 +133,8 @@
         "ranges": "cpp",
         "core": "cpp",
         "__undef_macros": "cpp",
-        "simd": "cpp"
+        "simd": "cpp",
+        "parentbad": "cpp"
     },
     "git.ignoreLimitWarning": true,
     "cmake.configureOnOpen": false,

@@ -41,8 +41,8 @@ class Hitable {
     // Advancement to handle
     // time-of-impact with rotations.
     [[nodiscard]] virtual float GetAngularMotionDisc() const {
-        Vector3f center;
-        float disc = 0.0f;
+        Vector3<T> center;
+        T disc = 0.0;
         GetBoundingSphere(center, disc);
         disc += Length(center);
         return disc;
