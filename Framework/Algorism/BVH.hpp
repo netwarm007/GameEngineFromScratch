@@ -24,7 +24,7 @@ class SimpleBVHNode : _implements_ Hitable<T> {
             int end;
         };
 
-        printf("Constructing BVH\n");
+        //printf("Constructing BVH\n");
 
         int stack_length = logf(end - start) / logf(2.0f) * 2.0f + 1.0f;
 
@@ -38,7 +38,7 @@ class SimpleBVHNode : _implements_ Hitable<T> {
         pStackTop++;
 
         while (pStackTop > pStack) {
-            printf("layer %d\n", (int)(pStackTop - pStack));
+            //printf("layer %d\n", (int)(pStackTop - pStack));
             pStackTop--;
 
             SimpleBVHNode* cur_node = pStackTop->root;
@@ -53,14 +53,14 @@ class SimpleBVHNode : _implements_ Hitable<T> {
                 }
 
                 cur_node->bounding_box = SurroundingBox(box_left, box_right);
-                printf(
-                    "Constructed Bounding Box: {(%f, %f, %f) - (%f, %f, %f)}\n",
-                    cur_node->bounding_box.min_point()[0],
-                    cur_node->bounding_box.min_point()[1],
-                    cur_node->bounding_box.min_point()[2],
-                    cur_node->bounding_box.max_point()[0],
-                    cur_node->bounding_box.max_point()[1],
-                    cur_node->bounding_box.max_point()[2]);
+                //printf(
+                //    "Constructed Bounding Box: {(%f, %f, %f) - (%f, %f, %f)}\n",
+                //    cur_node->bounding_box.min_point()[0],
+                //    cur_node->bounding_box.min_point()[1],
+                //    cur_node->bounding_box.min_point()[2],
+                //    cur_node->bounding_box.max_point()[0],
+                //    cur_node->bounding_box.max_point()[1],
+                //    cur_node->bounding_box.max_point()[2]);
 
                     continue;
             }
@@ -72,7 +72,7 @@ class SimpleBVHNode : _implements_ Hitable<T> {
             int object_span = pStackTop->end - pStackTop->start;
 
             if (object_span == 1) {
-                printf("leaf node type 1\n");
+                //printf("leaf node type 1\n");
                 pStackTop->root->left = pStackTop->root->right =
                     list[pStackTop->start];
 
@@ -80,33 +80,33 @@ class SimpleBVHNode : _implements_ Hitable<T> {
             } else if (object_span == 2) {
                 if (comparator(list[pStackTop->start],
                                list[pStackTop->start + 1])) {
-                    printf("leaf node type 2\n");
+                    //printf("leaf node type 2\n");
                     pStackTop->root->left = list[pStackTop->start];
                     pStackTop->root->right = list[pStackTop->start + 1];
                 } else {
-                    printf("leaf node type 3\n");
+                    //printf("leaf node type 3\n");
                     pStackTop->root->left = list[pStackTop->start + 1];
                     pStackTop->root->right = list[pStackTop->start];
                 }
 
                 pStackTop++;  // to enter the bounding box calculation.
             } else {
-                printf("non-leaf node.\n");
-                printf("sort against axis %d\n", axis);
+                //printf("non-leaf node.\n");
+                //printf("sort against axis %d\n", axis);
                 thrust::sort(&list[pStackTop->start], &list[pStackTop->end],
                              comparator);
 
                 int start = pStackTop->start;
                 int end = pStackTop->end;
                 int mid = pStackTop->start + (object_span >> 1);
-                printf("start = %d, mid = %d, end = %d, object_span = %d\n",
-                       pStackTop->start, mid, pStackTop->end, object_span);
+                //printf("start = %d, mid = %d, end = %d, object_span = %d\n",
+                //       pStackTop->start, mid, pStackTop->end, object_span);
 
                 // push self
                 pStackTop++;
 
                 // push right
-                printf("push right: [%d %d)\n", mid, end);
+                //printf("push right: [%d %d)\n", mid, end);
                 pStackTop->root = new SimpleBVHNode();
                 pStackTop->start = mid;
                 pStackTop->end = end;
@@ -116,7 +116,7 @@ class SimpleBVHNode : _implements_ Hitable<T> {
                 assert(pStackTop - pStack <= stack_length);
 
                 // push left
-                printf("push left: [%d %d)\n", start, mid);
+                //printf("push left: [%d %d)\n", start, mid);
                 pStackTop->root = new SimpleBVHNode();
                 pStackTop->start = start;
                 pStackTop->end = mid;
