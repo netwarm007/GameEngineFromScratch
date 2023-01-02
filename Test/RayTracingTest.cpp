@@ -49,6 +49,7 @@ color ray_color(const ray& r, int depth,
         const std::shared_ptr<material> pMat = *reinterpret_cast<const std::shared_ptr<material>*>(hit.getMaterial());
 
         if (pMat->scatter(r, hit, attenuation, scattered)) {
+            if (My::LengthSquared(attenuation) < 0.0002f) return black; // roughly squre of (1.0 / 256)
             return attenuation * ray_color(scattered, depth - 1, world);
         }
 
@@ -158,7 +159,6 @@ int main(int argc, char** argv) {
     My::PpmEncoder encoder;
     encoder.Encode(img);
 #endif
-    My::adjust_image(img);
     img.SaveTGA("raytraced.tga");
 
     return 0;
