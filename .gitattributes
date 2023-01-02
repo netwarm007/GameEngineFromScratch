@@ -4,6 +4,7 @@
 # to native line endings on checkout.
 *.c text
 *.cpp text
+*.cu text
 *.h text
 *.hpp text
 *.ispc text

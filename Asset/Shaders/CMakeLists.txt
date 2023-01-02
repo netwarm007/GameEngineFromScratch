@@ -133,3 +133,10 @@ IF(WIN32)
         endif ()
     endforeach(SHADER)
 ENDIF(WIN32)
+
+if(USE_CUDA)
+add_custom_command(OUTPUT draw_solid_color.optixir 
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CUDA_SOURCE_DIR}
+    COMMAND nvcc -v --std c++20 -o ${CUDA_SOURCE_DIR}/draw_solid_color.optixir --optix-ir ${CMAKE_CURRENT_SOURCE_DIR}/CUDA/draw_solid_color.cu -I ${OPTIX76_INCLUDE_DIR} -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_SOURCE_DIR}/Framework/GeomMath/ -I ${PROJECT_SOURCE_DIR}/Framework/Common/
+)
+endif()
