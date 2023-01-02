@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
         return 0;
     };
 
+    auto start = std::chrono::steady_clock::now();
     for (auto j = 0; j < img.Height; j++) {
         std::cerr << "\rScanlines remaining: " << img.Height - j << ' '
                   << std::flush;
@@ -152,8 +153,12 @@ int main(int argc, char** argv) {
             return task.wait_for(1s) == std::future_status::ready;
         });
     }
+    auto end = std::chrono::steady_clock::now();
+
+    std::chrono::duration<double> diff = end - start;
 
     std::cerr << "\r";
+    std::cout << "Rendering time: " << diff.count() << " s\n";
 
 #if 0
     My::PpmEncoder encoder;
