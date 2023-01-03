@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "OptixTest.h"
+#include "OptixTest.hpp"
 #include "AssetLoader.hpp"
 #include "Image.hpp"
 
@@ -19,8 +19,9 @@ struct SbtRecord
     T data;
 };
 
-typedef SbtRecord<RayGenData> RayGenSbtRecord;
-typedef SbtRecord<int>        MissSbtRecord;
+using RayGenSbtRecord   =   SbtRecord<RayGenData>;
+using MissSbtRecord     =   SbtRecord<MissData>;
+using HitGroupSbtRecord =   SbtRecord<HitGroupData>;
 
 // help functions 
 #define checkCudaErrors(val) check_cuda((val), #val, __FILE__, __LINE__)
@@ -95,9 +96,86 @@ int main() {
         options.logCallbackLevel          = 4;
         checkOptiXErrors(optixDeviceContextCreate(cuCtx, &options, &context));
     }
+
+    // accel handling
+    OptixTraversableHandle  gas_handle;
+    CUdeviceptr             d_gas_output_buffer;
+    {
+        OptixAccelBuildOptions  accel_options = {};
+        accel_options.buildFlags    =   OPTIX_BUILD_FLAG_ALLOW_COMPACTION | OPTIX_BUILD_FLAG_ALLOW_RANDOM_VERTEX_ACCESS;
+        accel_options.operation     =   OPTIX_BUILD_OPERATION_BUILD;
+
+        float3  sphereVertex    =   make_float3(0.0f, 0.0f, 0.0f);
+        float   sphereRadius    =   1.5f;
+
+        CUdeviceptr d_vertex_buffer;
+        checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_vertex_buffer), sizeof(float3)));
+        checkCudaErrors(cudaMemcpy(reinterpret_cast<void **>(d_vertex_buffer), &sphereVertex, sizeof(float3), cudaMemcpyHostToDevice));
+
+        CUdeviceptr d_radius_buffer;
+        checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_radius_buffer), sizeof(float)));
+        checkCudaErrors(cudaMemcpy(reinterpret_cast<void *>(d_radius_buffer), &sphereRadius, sizeof(float), cudaMemcpyHostToDevice));
+
+        OptixBuildInput sphere_input = {};
+
+        sphere_input.type                       = OPTIX_BUILD_INPUT_TYPE_SPHERES;
+        sphere_input.sphereArray.vertexBuffers  = &d_vertex_buffer;
+        sphere_input.sphereArray.numVertices    = 1;
+        sphere_input.sphereArray.radiusBuffers  = &d_radius_buffer;
+
+        uint32_t sphere_input_flags[1]          = {OPTIX_GEOMETRY_FLAG_NONE};
+        sphere_input.sphereArray.flags          = sphere_input_flags;
+        sphere_input.sphereArray.numSbtRecords  = 1;
+
+        OptixAccelBufferSizes   gas_buffer_sizes;
+        checkOptiXErrors(optixAccelComputeMemoryUsage(context, &accel_options, &sphere_input, 1, &gas_buffer_sizes));
+        CUdeviceptr d_temp_buffer_gas;
+        checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_temp_buffer_gas), gas_buffer_sizes.tempSizeInBytes));
+
+        // non-compacted output
+        CUdeviceptr d_buffer_temp_output_gas_and_compacted_size;
+        size_t      compactedSizeOffset = My::roundUp<size_t>(gas_buffer_sizes.outputSizeInBytes, 8ull);
+        checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_buffer_temp_output_gas_and_compacted_size), compactedSizeOffset + 8));
+
+        OptixAccelEmitDesc emitProperty = {};
+        emitProperty.type               = OPTIX_PROPERTY_TYPE_COMPACTED_SIZE;
+        emitProperty.result             = (CUdeviceptr)((char*)d_buffer_temp_output_gas_and_compacted_size + compactedSizeOffset);
+
+        checkOptiXErrors(optixAccelBuild(context,
+                                        0,
+                                        &accel_options,
+                                        &sphere_input,
+                                        1,
+                                        d_temp_buffer_gas, gas_buffer_sizes.tempSizeInBytes,
+                                        d_buffer_temp_output_gas_and_compacted_size, gas_buffer_sizes.outputSizeInBytes,
+                                        &gas_handle,
+                                        &emitProperty,
+                                        1));
+
+        d_gas_output_buffer = d_buffer_temp_output_gas_and_compacted_size;
+
+        checkCudaErrors(cudaFree((void *)d_temp_buffer_gas));
+        checkCudaErrors(cudaFree((void *)d_vertex_buffer));
+        checkCudaErrors(cudaFree((void *)d_radius_buffer));
+
+        size_t compacted_gas_size;
+        checkCudaErrors(cudaMemcpy(&compacted_gas_size, (void *)emitProperty.result, sizeof(size_t), cudaMemcpyDeviceToHost));
+
+        if(compacted_gas_size < gas_buffer_sizes.outputSizeInBytes) {
+            checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_gas_output_buffer), compacted_gas_size));
+
+            // use handle as input and output
+            checkOptiXErrors(optixAccelCompact(context, 0, gas_handle, d_gas_output_buffer, compacted_gas_size, &gas_handle));
+
+            checkCudaErrors(cudaFree((void *)d_buffer_temp_output_gas_and_compacted_size));
+        } else {
+            d_gas_output_buffer = d_buffer_temp_output_gas_and_compacted_size;
+        }
+    }
     
     // Create module
     OptixModule module = nullptr;
+    OptixModule sphere_module = nullptr;
     OptixPipelineCompileOptions pipeline_compile_options = {};
     {
         OptixModuleCompileOptions module_compile_options = {};
@@ -106,14 +184,15 @@ int main() {
         module_compile_options.debugLevel   = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
 #endif
         pipeline_compile_options.usesMotionBlur         = false;
-        pipeline_compile_options.traversableGraphFlags  = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_LEVEL_INSTANCING;
-        pipeline_compile_options.numPayloadValues       = 2;
-        pipeline_compile_options.numAttributeValues     = 2;
+        pipeline_compile_options.traversableGraphFlags  = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
+        pipeline_compile_options.numPayloadValues       = 3;
+        pipeline_compile_options.numAttributeValues     = 1;
         pipeline_compile_options.exceptionFlags         = OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
         pipeline_compile_options.pipelineLaunchParamsVariableName = "params";
+        pipeline_compile_options.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE;
 
         My::AssetLoader assetLoader;
-        auto shader = assetLoader.SyncOpenAndReadBinary("Shaders/CUDA/draw_solid_color.optixir");
+        auto shader = assetLoader.SyncOpenAndReadBinary("Shaders/CUDA/OptixTest.shader.optixir");
 
         checkOptiXErrorsLog(optixModuleCreateFromPTX(
             context,
@@ -124,18 +203,27 @@ int main() {
             LOG, &LOG_SIZE,
             &module
         ));
+
+        OptixBuiltinISOptions builtin_is_options = {};
+
+        builtin_is_options.usesMotionBlur       = false;
+        builtin_is_options.builtinISModuleType  = OPTIX_PRIMITIVE_TYPE_SPHERE;
+        checkOptiXErrors(optixBuiltinISModuleGet(context, &module_compile_options, &pipeline_compile_options,
+                                                &builtin_is_options, &sphere_module));
     }
 
-    // Create program groups, including NULL miss and hitgroups
-    OptixProgramGroup raygen_prog_group     = nullptr;
-    OptixProgramGroup miss_prog_group       = nullptr;
+    // Create program groups
+    OptixProgramGroup raygen_prog_group         = nullptr;
+    OptixProgramGroup miss_prog_group           = nullptr;
+    OptixProgramGroup hitgroup_prog_group       = nullptr;
     {
         OptixProgramGroupOptions program_group_options  = {};
 
+        // ray gen group
         OptixProgramGroupDesc    raygen_prog_group_desc = {};
         raygen_prog_group_desc.kind                     = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
         raygen_prog_group_desc.raygen.module            = module;
-        raygen_prog_group_desc.raygen.entryFunctionName = "__raygen__draw_solid_color";
+        raygen_prog_group_desc.raygen.entryFunctionName = "__raygen__rg";
         checkOptiXErrorsLog(optixProgramGroupCreate(
             context,
             &raygen_prog_group_desc,
@@ -145,9 +233,12 @@ int main() {
             &raygen_prog_group
         ));
 
-        // Leave miss group's module and entryfunc name null
+        // miss group
         OptixProgramGroupDesc miss_prog_group_desc  = {};
         miss_prog_group_desc.kind                   = OPTIX_PROGRAM_GROUP_KIND_MISS;
+        miss_prog_group_desc.miss.module            = module;
+        miss_prog_group_desc.miss.entryFunctionName = "__miss__ms";
+
         checkOptiXErrorsLog(optixProgramGroupCreate(
             context,
             &miss_prog_group_desc,
@@ -156,19 +247,35 @@ int main() {
             LOG, &LOG_SIZE,
             &miss_prog_group
         )); 
+
+        // hit group
+        OptixProgramGroupDesc hitgroup_prog_group_desc          = {};
+        hitgroup_prog_group_desc.kind                           = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+        hitgroup_prog_group_desc.hitgroup.moduleCH              = module;
+        hitgroup_prog_group_desc.hitgroup.entryFunctionNameCH   = "__closesthit__ch";
+        hitgroup_prog_group_desc.hitgroup.moduleAH              = nullptr;
+        hitgroup_prog_group_desc.hitgroup.moduleIS              = sphere_module;
+        hitgroup_prog_group_desc.hitgroup.entryFunctionNameIS   = nullptr;
+
+        checkOptiXErrorsLog(optixProgramGroupCreate(
+            context,
+            &hitgroup_prog_group_desc,
+            1,
+            &program_group_options,
+            LOG, &LOG_SIZE,
+            &hitgroup_prog_group
+        ));
     }
 
     // Link pipeline
     OptixPipeline pipeline = nullptr;
     {
-        const uint32_t      max_trace_depth = 0;
-        OptixProgramGroup   program_groups[] = { raygen_prog_group };
+        const uint32_t      max_trace_depth = 1;
+        OptixProgramGroup   program_groups[] = { raygen_prog_group, miss_prog_group, hitgroup_prog_group };
 
         OptixPipelineLinkOptions pipeline_link_options = {};
         pipeline_link_options.maxTraceDepth     = max_trace_depth;
-#ifdef _DEBUG
         pipeline_link_options.debugLevel        = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
-#endif
         checkOptiXErrorsLog(optixPipelineCreate(
             context,
             &pipeline_compile_options,
@@ -188,15 +295,15 @@ int main() {
         uint32_t direct_callable_stack_size_from_state;
         uint32_t continuation_stack_size;
         checkOptiXErrors(optixUtilComputeStackSizes(&stack_sizes, max_trace_depth,
-                                                    0,
-                                                    0,
+                                                    0, // maxCCDepth
+                                                    0, // maxDCDepth
                                                     &direct_callable_stack_size_from_traversal,
                                                     &direct_callable_stack_size_from_state,
                                                     &continuation_stack_size));
         checkOptiXErrors(optixPipelineSetStackSize(pipeline, direct_callable_stack_size_from_traversal,
                                                     direct_callable_stack_size_from_state,
                                                     continuation_stack_size,
-                                                    2));
+                                                    1 /* maxTraversableDepth */ ));
     }
 
     // Set up shader binding table
@@ -207,7 +314,7 @@ int main() {
         checkCudaErrors(cudaMalloc(reinterpret_cast<void**>(&raygen_record), raygen_record_size));
         RayGenSbtRecord rg_sbt;
         checkOptiXErrors(optixSbtRecordPackHeader(raygen_prog_group, &rg_sbt));
-        rg_sbt.data = {0.5f, 0.7f, 1.0f};
+        rg_sbt.data = {1.0f, 1.0f, 1.0f};
         checkCudaErrors(cudaMemcpy(
             reinterpret_cast<void*>(raygen_record),
             &rg_sbt,
@@ -218,7 +325,8 @@ int main() {
         CUdeviceptr miss_record;
         size_t      miss_record_size = sizeof(MissSbtRecord);
         checkCudaErrors(cudaMalloc(reinterpret_cast<void**>(&miss_record), miss_record_size));
-        RayGenSbtRecord ms_sbt;
+        MissSbtRecord ms_sbt;
+        ms_sbt.data.bg_color = {0.5f, 0.7f, 1.0f};
         checkOptiXErrors(optixSbtRecordPackHeader(miss_prog_group, &ms_sbt));
         checkCudaErrors(cudaMemcpy(
             reinterpret_cast<void**>(miss_record),
@@ -227,10 +335,25 @@ int main() {
             cudaMemcpyHostToDevice
         ));
 
-        sbt.raygenRecord            = raygen_record;
-        sbt.missRecordBase          = miss_record;
-        sbt.missRecordStrideInBytes = sizeof(MissSbtRecord);
-        sbt.missRecordCount         = 1;
+        CUdeviceptr hitgroup_record;
+        size_t      hitgroup_record_size = sizeof(HitGroupSbtRecord);
+        checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&hitgroup_record), hitgroup_record_size));
+        HitGroupSbtRecord hg_sbt;
+        checkOptiXErrors(optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt));
+        checkCudaErrors(cudaMemcpy(
+            reinterpret_cast<void *>(hitgroup_record),
+            &hg_sbt,
+            hitgroup_record_size,
+            cudaMemcpyHostToDevice
+        ));
+
+        sbt.raygenRecord                = raygen_record;
+        sbt.missRecordBase              = miss_record;
+        sbt.missRecordStrideInBytes     = sizeof(MissSbtRecord);
+        sbt.missRecordCount             = 1;
+        sbt.hitgroupRecordBase          = hitgroup_record;
+        sbt.hitgroupRecordStrideInBytes = sizeof(HitGroupSbtRecord);
+        sbt.hitgroupRecordCount         = 1;
     }
 
     // Render Settings
@@ -290,6 +413,7 @@ int main() {
         checkCudaErrors(cudaStreamCreate(&stream));
 
         Params params;
+        params.handle       = gas_handle;
         params.image        = d_img;
         params.cam          = d_camera;
         params.rand_state   = d_rand_state;
@@ -325,13 +449,18 @@ int main() {
             checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_img)));
             checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_camera)));
             checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_param)));
-            checkCudaErrors(cudaFree(reinterpret_cast<void**>(sbt.raygenRecord)));
-            checkCudaErrors(cudaFree(reinterpret_cast<void**>(sbt.missRecordBase)));
+
+            checkCudaErrors(cudaFree(reinterpret_cast<void*>(sbt.raygenRecord)));
+            checkCudaErrors(cudaFree(reinterpret_cast<void*>(sbt.missRecordBase)));
+            checkCudaErrors(cudaFree(reinterpret_cast<void*>(sbt.hitgroupRecordBase)));
+            checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_gas_output_buffer)));
 
             checkOptiXErrors(optixPipelineDestroy(pipeline));
+            checkOptiXErrors(optixProgramGroupDestroy(hitgroup_prog_group));
             checkOptiXErrors(optixProgramGroupDestroy(miss_prog_group));
             checkOptiXErrors(optixProgramGroupDestroy(raygen_prog_group));
             checkOptiXErrors(optixModuleDestroy(module));
+            checkOptiXErrors(optixModuleDestroy(sphere_module));
 
             checkOptiXErrors(optixDeviceContextDestroy(context));
         }

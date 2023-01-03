@@ -39,20 +39,20 @@ if(USE_CUDA)
 
     find_package(OptiX76)
     if (OptiX76_FOUND)
-        add_executable(OptixTest OptixTest.cu ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/draw_solid_color.optixir)
+        add_executable(OptixTest OptixTest.cu ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/OptixTest.shader.optixir)
         target_include_directories(OptixTest PUBLIC ${OPTIX76_INCLUDE_DIR})
         target_link_libraries(OptixTest Framework PlatformInterface)
 
-        add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/draw_solid_color.optixir 
+        add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/OptixTest.shader.optixir 
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA
-            COMMAND nvcc --std c++20 -o ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/draw_solid_color.optixir --optix-ir ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/draw_solid_color.cu
+            COMMAND nvcc -G --std c++20 -o ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/OptixTest.shader.optixir --optix-ir ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/OptixTest.shader.cu
                     -I ${OPTIX76_INCLUDE_DIR} 
                     -I ${PROJECT_SOURCE_DIR} 
                     -I ${PROJECT_SOURCE_DIR}/Framework/GeomMath/ 
                     -I ${PROJECT_SOURCE_DIR}/Framework/Common/ 
                     -I ${PROJECT_SOURCE_DIR}/Framework/Algorism/ 
                     -I ${PROJECT_SOURCE_DIR}/Test/ 
-            DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/draw_solid_color.cu
+            DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/OptixTest.shader.cu
         )
     endif()
 endif()

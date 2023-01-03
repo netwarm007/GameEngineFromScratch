@@ -519,7 +519,7 @@ __host__ __device__ inline void Normalize(Vector<T, N>& a) {
     ispc::Normalize(N, a, length);
 #else
     if (!length) return;
-    const T one_over_length = 1.0 / length;
+    const T one_over_length = (T)1.0 / length;
     for (size_t index = 0; index < N; index++) {
         a[index] = static_cast<T>(a[index] * one_over_length);
     }
@@ -1475,16 +1475,18 @@ __host__ __device__ inline T degrees_to_radians(T degrees) {
 }
 
 template <class T>
-__device__ inline T clamp(T x, T min_x, T max_x) {
+__device__ __host__ inline T clamp(T x, T min_x, T max_x) {
     if (x < min_x) return min_x;
     if (x > max_x) return max_x;
     return x;
 }
 
 template <class T>
-__device__ inline Vector3<T> clamp(const Vector3<T>& v, const T a, const T b)
-{
+__device__ __host__ inline Vector3<T> clamp(const Vector3<T>& v, const T a, const T b) {
     return Vector3<T>({clamp(v[0], a, b), clamp(v[1], a, b), clamp(v[2], a, b)});
 }
 
+__device__ __host__ inline auto roundUp(std::integral auto x, std::integral auto y) {
+    return ((x + y - 1) / y) * y;
+}
 }  // namespace My
