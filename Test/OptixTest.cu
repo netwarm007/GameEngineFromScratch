@@ -157,7 +157,9 @@ int main() {
 
         OptixPipelineLinkOptions pipeline_link_options = {};
         pipeline_link_options.maxTraceDepth     = max_trace_depth;
+#ifdef _DEBUG
         pipeline_link_options.debugLevel        = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
+#endif
         checkOptiXErrorsLog(optixPipelineCreate(
             context,
             &pipeline_compile_options,
@@ -231,9 +233,9 @@ int main() {
     My::Image img;
     img.Width = image_width;
     img.Height = image_height;
-    img.bitcount = 32;
-    img.bitdepth = 8;
-    img.pixel_format = My::PIXEL_FORMAT::RGBA8;
+    img.bitcount = 96; 
+    img.bitdepth = 32;
+    img.pixel_format = My::PIXEL_FORMAT::RGB32;
     img.pitch = (img.bitcount >> 3) * img.Width;
     img.compressed = false;
     img.compress_format = My::COMPRESSED_FORMAT::NONE;
@@ -247,7 +249,7 @@ int main() {
         checkCudaErrors(cudaStreamCreate(&stream));
 
         Params params;
-        params.image        = reinterpret_cast<uchar4*>(img.data);
+        params.image        = reinterpret_cast<decltype(params.image)>(img.data);
         params.image_width  = image_width;
 
         CUdeviceptr d_param;

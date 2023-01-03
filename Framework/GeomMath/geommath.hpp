@@ -1475,10 +1475,16 @@ __device__ inline T degrees_to_radians(T degrees) {
 }
 
 template <class T>
-inline T clamp(T x, T min, T max) {
-    if (x < min) return min;
-    if (x > max) return max;
+__device__ inline T clamp(T x, T min_x, T max_x) {
+    if (x < min_x) return min_x;
+    if (x > max_x) return max_x;
     return x;
+}
+
+template <class T>
+__device__ inline Vector3<T> clamp(const Vector3<T>& v, const T a, const T b)
+{
+    return Vector3<T>({clamp(v[0], a, b), clamp(v[1], a, b), clamp(v[2], a, b)});
 }
 
 }  // namespace My

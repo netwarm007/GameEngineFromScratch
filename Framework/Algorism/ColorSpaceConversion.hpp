@@ -31,4 +31,24 @@ inline RGBf ConvertYCbCr2RGB(const YCbCrf& ycbcr) {
                  std::clamp<float>(result[1] + 0.5f, 0.0f, 255.0f),
                  std::clamp<float>(result[2] + 0.5f, 0.0f, 255.0f)});
 }
+
+inline __device__ RGBf Linear2SRGB( const RGBf& c ) {
+    float invGamma = 1.0f / 2.4f;
+    RGBf powed    = pow(c, invGamma);
+    return RGBf({
+        c[0] < 0.0031308f ? 12.92f * c[0] : 1.055f * powed[0] - 0.055f,
+        c[1] < 0.0031308f ? 12.92f * c[1] : 1.055f * powed[1] - 0.055f,
+        c[2] < 0.0031308f ? 12.92f * c[2] : 1.055f * powed[2] - 0.055f});
+}
+
+template <class T>
+inline __device__ RGB<T> Linear2SRGB( const RGB<T>& c ) {
+    T invGamma = (T)1.0 / (T)2.4;
+    RGB<T> powed    = pow(c, invGamma);
+    return RGB<T>({
+        c[0] < (T)0.0031308 ? (T)12.92 * c[0] : (T)1.055 * powed[0] - (T)0.055,
+        c[1] < (T)0.0031308 ? (T)12.92 * c[1] : (T)1.055 * powed[1] - (T)0.055,
+        c[2] < (T)0.0031308 ? (T)12.92 * c[2] : (T)1.055 * powed[2] - (T)0.055});
+}
+
 }  // namespace My

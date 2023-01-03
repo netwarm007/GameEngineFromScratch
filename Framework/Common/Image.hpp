@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <vector>
@@ -9,8 +10,9 @@
 
 namespace My {
 template <class T>
-inline int to_unorm(T f) {
-    return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256;
+inline uint8_t to_unorm(T f) {
+    f = (f < (T)0.0) ? (T)0.0 : ((f > (T)1.0) ? (T)1.0 : f);
+    return (uint8_t)(std::min)((int)0xFF,(int)(f * T(256.0)));
 }
 
 enum class COMPRESSED_FORMAT : uint16_t {
@@ -130,7 +132,7 @@ struct Image {
             case PIXEL_FORMAT::RG8:
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3)) / 256.0;
+                return *(data + y * pitch + x * (bitcount >> 3)) / 255.0;
             case PIXEL_FORMAT::R5G6B5:
                 return ((*(data + y * pitch + x * (bitcount >> 3)) & 0xF8) >> 3) / 32.0;
             case PIXEL_FORMAT::R16:
@@ -144,7 +146,7 @@ struct Image {
             case PIXEL_FORMAT::RGBA32:
                 return *(float *)(data + y * pitch + x * (bitcount >> 3));
             case PIXEL_FORMAT::R10G10B10A2:
-                return (*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 22) / 1024.0;
+                return (*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 22) / 1023.0;
             default:
                 assert(0);
         }
@@ -164,7 +166,7 @@ struct Image {
             case PIXEL_FORMAT::RG8:
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3) + 1) / 256.0;
+                return *(data + y * pitch + x * (bitcount >> 3) + 1) / 255.0;
             case PIXEL_FORMAT::RG16:
             case PIXEL_FORMAT::RGB16:
             case PIXEL_FORMAT::RGBA16:
@@ -174,7 +176,7 @@ struct Image {
             case PIXEL_FORMAT::RGBA32:
                 return *(float *)(data + y * pitch + x * (bitcount >> 3) + 4);
             case PIXEL_FORMAT::R10G10B10A2:
-                return ((*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 12) & 0x3FF) / 1024.0;
+                return ((*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 12) & 0x3FF) / 1023.0;
             case PIXEL_FORMAT::R5G6B5:
                 return (((*(data + y * pitch + x * (bitcount >> 3)) & 0x07)
                         << 3) +
@@ -201,7 +203,7 @@ struct Image {
                 return 0;
             case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3) + 2) / 256.0;
+                return *(data + y * pitch + x * (bitcount >> 3) + 2) / 255.0;
             case PIXEL_FORMAT::RG16:
                 return 0;
             case PIXEL_FORMAT::RGB16:
@@ -213,7 +215,7 @@ struct Image {
             case PIXEL_FORMAT::RGBA32:
                 return *(float *)(data + y * pitch + x * (bitcount >> 3) + 8);
             case PIXEL_FORMAT::R10G10B10A2:
-                return ((*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 2) & 0x3FF) / 1024.0;
+                return ((*(uint32_t *)(data + y * pitch + x * (bitcount >> 3)) >> 2) & 0x3FF) / 1023.0;
             case PIXEL_FORMAT::R5G6B5:
                 return (*(data + y * pitch + x * (bitcount >> 3) + 1) & 0x1F);
             default:
@@ -236,7 +238,7 @@ struct Image {
             case PIXEL_FORMAT::R5G6B5:
                 return 1.0;
             case PIXEL_FORMAT::RGBA8:
-                return *(data + y * pitch + x * (bitcount >> 3) + 3) / 256.0;
+                return *(data + y * pitch + x * (bitcount >> 3) + 3) / 255.0;
             case PIXEL_FORMAT::RG16:
             case PIXEL_FORMAT::RGB16:
                 return 1.0;

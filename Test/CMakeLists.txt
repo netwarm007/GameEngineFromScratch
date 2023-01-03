@@ -45,7 +45,14 @@ if(USE_CUDA)
 
         add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/draw_solid_color.optixir 
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA
-            COMMAND nvcc --std c++20 -o ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/draw_solid_color.optixir --optix-ir ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/draw_solid_color.cu -I ${OPTIX76_INCLUDE_DIR} -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_SOURCE_DIR}/Framework/GeomMath/ -I ${PROJECT_SOURCE_DIR}/Framework/Common/ -I ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMAND nvcc -G --std c++20 -o ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/draw_solid_color.optixir --optix-ir ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/draw_solid_color.cu
+                    -I ${OPTIX76_INCLUDE_DIR} 
+                    -I ${PROJECT_SOURCE_DIR} 
+                    -I ${PROJECT_SOURCE_DIR}/Framework/GeomMath/ 
+                    -I ${PROJECT_SOURCE_DIR}/Framework/Common/ 
+                    -I ${PROJECT_SOURCE_DIR}/Framework/Algorism/ 
+                    -I ${PROJECT_SOURCE_DIR}/Test/ 
+            DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/draw_solid_color.cu
         )
     endif()
 endif()

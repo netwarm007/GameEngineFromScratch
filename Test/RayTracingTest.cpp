@@ -10,6 +10,7 @@
 #define float_precision double
 #include "TestMaterial.hpp"
 #include "TestScene.hpp"
+#include "ColorSpaceConversion.hpp"
 
 #include <chrono>
 #include <future>
@@ -18,10 +19,6 @@
 #include <thread>
 
 using namespace std::chrono_literals;
-
-inline int to_unorm(float_precision f) {
-    return My::clamp(f, decltype(f)(0.0), decltype(f)(0.999)) * 256;
-}
 
 using image = My::Image;
 using bvh = My::BVHNode<float_precision>;
@@ -119,13 +116,12 @@ int main(int argc, char** argv) {
 
         pixel_color = pixel_color * ((float_precision)1.0 / samples_per_pixel);
 
-        // Gamma-correction for gamma = 2.2
-        const float_precision gamma = 2.2;
-        pixel_color = My::pow(pixel_color, (float_precision)1.0 / gamma);
+        // Gamma-correction for gamma = 2.4
+        My::RGB8 pixel_color_unorm = My::QuantizeUnsigned8Bits(My::Linear2SRGB(pixel_color));
 
-        img.SetR(x, y, to_unorm(pixel_color[0]));
-        img.SetG(x, y, to_unorm(pixel_color[1]));
-        img.SetB(x, y, to_unorm(pixel_color[2]));
+        img.SetR(x, y, pixel_color_unorm[0]);
+        img.SetG(x, y, pixel_color_unorm[1]);
+        img.SetB(x, y, pixel_color_unorm[2]);
 
         return 0;
     };
