@@ -6,7 +6,7 @@ namespace My {
 template <class T>
 class RayTracingCamera {
    public:
-    __device__ RayTracingCamera(Point<T> lookfrom, Point<T> lookat, Vector3<T> vup,
+    __host__ __device__ RayTracingCamera(Point<T> lookfrom, Point<T> lookat, Vector3<T> vup,
            T vfov, T aspect_ratio, T aperture, T focus_dist) {
         auto theta = degrees_to_radians(vfov);
         auto h = std::tan(theta / (T)2.0);

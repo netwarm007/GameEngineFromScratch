@@ -72,6 +72,15 @@ static void context_log_cb( unsigned int level, const char* tag, const char* mes
     << message << "\n";
 }
 
+__global__ void rand_init(curandState *rand_state, const unsigned int max_x, const unsigned int max_y) {
+    // Each thread in a block gets unique seed
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int j = threadIdx.y + blockIdx.y * blockDim.y;
+    if((i >= max_x) || (j >= max_y)) return;
+    unsigned int pixel_index = j * max_x + i;
+    curand_init(2023 + pixel_index, 0, 0, &rand_state[pixel_index]);
+}
+
 int main() {
     // Initialize CUDA and create OptiX context
     OptixDeviceContext context = nullptr;
@@ -198,7 +207,7 @@ int main() {
         checkCudaErrors(cudaMalloc(reinterpret_cast<void**>(&raygen_record), raygen_record_size));
         RayGenSbtRecord rg_sbt;
         checkOptiXErrors(optixSbtRecordPackHeader(raygen_prog_group, &rg_sbt));
-        rg_sbt.data = {0.462f, 0.725f, 0.f};
+        rg_sbt.data = {0.5f, 0.7f, 1.0f};
         checkCudaErrors(cudaMemcpy(
             reinterpret_cast<void*>(raygen_record),
             &rg_sbt,
@@ -225,32 +234,65 @@ int main() {
     }
 
     // Render Settings
-    const float aspect_ratio = 16.0 / 9.0;
-    const int image_width = 1920;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-
-    // Canvas
     My::Image img;
-    img.Width = image_width;
-    img.Height = image_height;
-    img.bitcount = 96; 
-    img.bitdepth = 32;
-    img.pixel_format = My::PIXEL_FORMAT::RGB32;
-    img.pitch = (img.bitcount >> 3) * img.Width;
-    img.compressed = false;
-    img.compress_format = My::COMPRESSED_FORMAT::NONE;
-    img.data_size = img.Width * img.Height * (img.bitcount >> 3);
+    My::Image* d_img;
+    My::RayTracingCamera<float>* d_camera;
+    curandState* d_rand_state;
+    {
+        const float aspect_ratio = 16.0 / 9.0;
+        const int image_width = 1920;
+        const int image_height = static_cast<int>(image_width / aspect_ratio);
 
-    checkCudaErrors(cudaMallocManaged((void **)&img.data, img.data_size));
+        // Canvas
+        img.Width = image_width;
+        img.Height = image_height;
+        img.bitcount = 96; 
+        img.bitdepth = 32;
+        img.pixel_format = My::PIXEL_FORMAT::RGB32;
+        img.pitch = (img.bitcount >> 3) * img.Width;
+        img.compressed = false;
+        img.compress_format = My::COMPRESSED_FORMAT::NONE;
+        img.data_size = img.Width * img.Height * (img.bitcount >> 3);
+        auto num_pixels = image_width * image_height;
 
+        checkCudaErrors(cudaMallocManaged((void **)&img.data, img.data_size));
+
+        checkCudaErrors(cudaMalloc((void **)&d_img, sizeof(My::Image)));
+        checkCudaErrors(cudaMemcpy((void *)d_img, &img, sizeof(My::Image), cudaMemcpyHostToDevice));
+
+        My::Point<float> lookfrom{0, 0, 5};
+        My::Point<float> lookat{0, 0, 0};
+        My::Vector3f vup{0, 1, 0};
+        auto dist_to_focus = 5.0f;
+        auto aperture = 0.0f;
+
+        My::RayTracingCamera<float> camera (lookfrom, lookat, vup, 75.0f, aspect_ratio,
+                                aperture, dist_to_focus);
+
+        checkCudaErrors(cudaMalloc((void **)&d_camera, sizeof(My::RayTracingCamera<float>)));
+        checkCudaErrors(cudaMemcpy((void **)d_camera, &camera, sizeof(My::RayTracingCamera<float>), cudaMemcpyHostToDevice)); 
+
+        int tile_width = 8;
+        int tile_height = 8;
+
+        dim3 blocks((image_width + tile_width - 1) / tile_width, (image_height + tile_height - 1) / tile_height);
+        dim3 threads(tile_width, tile_height);
+
+        checkCudaErrors(cudaMalloc((void **)&d_rand_state, num_pixels * sizeof(curandState)));
+
+        rand_init<<<blocks, threads>>>(d_rand_state, image_width, image_height);
+        checkCudaErrors(cudaGetLastError());
+        checkCudaErrors(cudaDeviceSynchronize());
+    }
     // launch
     {
         CUstream stream;
         checkCudaErrors(cudaStreamCreate(&stream));
 
         Params params;
-        params.image        = reinterpret_cast<decltype(params.image)>(img.data);
-        params.image_width  = image_width;
+        params.image        = d_img;
+        params.cam          = d_camera;
+        params.rand_state   = d_rand_state;
 
         CUdeviceptr d_param;
         checkCudaErrors(cudaMalloc(reinterpret_cast<void**>(&d_param), sizeof(Params)));
@@ -265,7 +307,7 @@ int main() {
         cudaEventCreate(&stop);
 
         cudaEventRecord(start);
-        checkOptiXErrors(optixLaunch(pipeline, stream, d_param, sizeof(Params), &sbt, image_width, image_height, 1));
+        checkOptiXErrors(optixLaunch(pipeline, stream, d_param, sizeof(Params), &sbt, img.Width, img.Height, 1));
         cudaEventRecord(stop);
 
         checkCudaErrors(cudaDeviceSynchronize());
@@ -279,6 +321,9 @@ int main() {
 
         // clean up
         {
+            checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_rand_state)));
+            checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_img)));
+            checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_camera)));
             checkCudaErrors(cudaFree(reinterpret_cast<void*>(d_param)));
             checkCudaErrors(cudaFree(reinterpret_cast<void**>(sbt.raygenRecord)));
             checkCudaErrors(cudaFree(reinterpret_cast<void**>(sbt.missRecordBase)));

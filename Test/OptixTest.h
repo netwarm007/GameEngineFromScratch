@@ -1,9 +1,13 @@
-#include "Color.hpp"
+#include <curand_kernel.h>
+#include "geommath.hpp"
+#include "RayTracingCamera.hpp"
+#include "Image.hpp"
 
 struct Params
 {
-    My::RGBf* image;
-    unsigned int image_width;
+    My::Image*                      image;
+    My::RayTracingCamera<float>*    cam;
+    curandState*                    rand_state;
 };
 
 struct RayGenData
