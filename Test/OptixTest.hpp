@@ -12,7 +12,7 @@ struct Params{
 };
 
 struct RayGenData{
-    float r,g,b;
+    int num_of_samples;
 };
 
 struct MissData {

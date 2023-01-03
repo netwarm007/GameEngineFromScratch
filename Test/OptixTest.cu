@@ -314,7 +314,7 @@ int main() {
         checkCudaErrors(cudaMalloc(reinterpret_cast<void**>(&raygen_record), raygen_record_size));
         RayGenSbtRecord rg_sbt;
         checkOptiXErrors(optixSbtRecordPackHeader(raygen_prog_group, &rg_sbt));
-        rg_sbt.data = {1.0f, 1.0f, 1.0f};
+        rg_sbt.data.num_of_samples = 512;
         checkCudaErrors(cudaMemcpy(
             reinterpret_cast<void*>(raygen_record),
             &rg_sbt,

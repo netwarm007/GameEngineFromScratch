@@ -77,20 +77,29 @@ __global__ void __raygen__rg() {
 
     curandState* local_rand_state = &params.rand_state[pixel_index];
 
-    float u = float(i + curand_uniform(local_rand_state)) / params.image->Width;
-    float v = float(j + curand_uniform(local_rand_state)) / params.image->Height;
-    ray r = params.cam->get_ray(u, v, local_rand_state);
+    int num_of_samples = rtData->num_of_samples;
+    vec3 col = {0.f, 0.f, 0.f};
 
-    vec3 attenuation = {1.0f, 1.0f, 1.0f};
-    trace( params.handle,
-            r.getOrigin(),
-            r.getDirection(),
-            0.00f,  // tmin
-            FLT_MAX,  // tmax
-            attenuation);
+    for (int s = 0; s < num_of_samples; s++) {
+        float u = float(i + curand_uniform(local_rand_state)) / params.image->Width;
+        float v = float(j + curand_uniform(local_rand_state)) / params.image->Height;
+        ray r = params.cam->get_ray(u, v, local_rand_state);
+
+        vec3 attenuation = {1.0f, 1.0f, 1.0f};
+        trace( params.handle,
+                r.getOrigin(),
+                r.getDirection(),
+                0.00f,  // tmin
+                FLT_MAX,  // tmax
+                attenuation);
+
+        col += attenuation;
+    }
+
+    col = col / (float)num_of_samples;
 
     vec3* pOutputBuffer = reinterpret_cast<vec3*>(params.image->data);
-    pOutputBuffer[pixel_index] = attenuation;
+    pOutputBuffer[pixel_index] = My::Linear2SRGB(col);
 }
 
 extern "C"

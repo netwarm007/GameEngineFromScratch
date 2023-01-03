@@ -93,7 +93,7 @@ template <class T>
 __device__ Vector3<T> random_in_unit_disk(curandState *local_rand_state) {
     while (true) {
         auto p = Vector3<T>({random_f(T(-1.0), T(1.0), local_rand_state), random_f(T(-1.0), T(1.0), local_rand_state), 0});
-        if (LengthSquared(p) >= 1) continue;
+        if (LengthSquared(p) >= (T)1.0) continue;
         return p;
     }
 }
