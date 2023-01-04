@@ -12,23 +12,23 @@ namespace My {
 #ifdef __CUDACC__
 
 template <class T>
-__device__ T random_f(curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ T random_f(curandStateMRG32k3a_t *local_rand_state) {
     return curand_uniform(local_rand_state);
 }
 
 template <class T>
-__device__ T random_f(T min, T max, curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ T random_f(T min, T max, curandStateMRG32k3a_t *local_rand_state) {
     T scale = max - min;
     return min + scale * curand_uniform(local_rand_state);
 }
 
 template <class T> requires std::integral<T>
-__device__ T random_int(T min, T max, curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ T random_int(T min, T max, curandStateMRG32k3a_t *local_rand_state) {
     return static_cast<T>(random_f<T>(static_cast<T>(min), static_cast<T>(max), local_rand_state));
 }
 
 template <class T, Dimension auto N>
-__device__ Vector<T, N> random_v(curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ Vector<T, N> random_v(curandStateMRG32k3a_t *local_rand_state) {
     auto vec = Vector<T, N>();
     for (int i = 0; i < N; i++) {
         vec[i] = random_f<T>(local_rand_state);
@@ -38,7 +38,7 @@ __device__ Vector<T, N> random_v(curandStateMRG32k3a_t *local_rand_state) {
 }
 
 template <class T, Dimension auto N>
-__device__ Vector<T, N> random_v(T min, T max, curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ Vector<T, N> random_v(T min, T max, curandStateMRG32k3a_t *local_rand_state) {
     auto vec = Vector<T, N>();
     for (int i = 0; i < N; i++) {
         vec[i] = random_f<T>(min, max, local_rand_state);
@@ -48,7 +48,7 @@ __device__ Vector<T, N> random_v(T min, T max, curandStateMRG32k3a_t *local_rand
 }
 
 template <class T, Dimension auto N>
-__device__ Vector<T, N> random_in_unit_sphere(curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ Vector<T, N> random_in_unit_sphere(curandStateMRG32k3a_t *local_rand_state) {
     while (true) {
         auto p = random_v<T, N>(T(-1), T(1), local_rand_state);
         if (LengthSquared(p) >= 1) continue;
@@ -57,14 +57,14 @@ __device__ Vector<T, N> random_in_unit_sphere(curandStateMRG32k3a_t *local_rand_
 }
 
 template <class T, Dimension auto N>
-__device__ Vector<T, N> random_unit_vector(curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ Vector<T, N> random_unit_vector(curandStateMRG32k3a_t *local_rand_state) {
     auto p = random_in_unit_sphere<T, N>(local_rand_state);
     Normalize(p);
     return p;
 }
 
 template <class T, Dimension auto N>
-__device__ Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal, curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal, curandStateMRG32k3a_t *local_rand_state) {
     auto p = random_in_unit_sphere<T, N>(local_rand_state);
     T result;
     DotProduct<T, N>(result, p, normal);
@@ -76,7 +76,7 @@ __device__ Vector<T, N> random_in_hemisphere(const Vector<T, N>& normal, curandS
 }
 
 template <class T>
-__device__ Vector3<T> random_in_hemisphere_cosine_weighted(const Vector3<T>& normal, curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ Vector3<T> random_in_hemisphere_cosine_weighted(const Vector3<T>& normal, curandStateMRG32k3a_t *local_rand_state) {
     auto uv = random_v<T, 2>(local_rand_state);
     T phi = 2.0 * PI * uv[0];
 
@@ -90,7 +90,7 @@ __device__ Vector3<T> random_in_hemisphere_cosine_weighted(const Vector3<T>& nor
 }
 
 template <class T>
-__device__ Vector3<T> random_in_unit_disk(curandStateMRG32k3a_t *local_rand_state) {
+__device__ __inline__ Vector3<T> random_in_unit_disk(curandStateMRG32k3a_t *local_rand_state) {
     while (true) {
         auto p = Vector3<T>({random_f(T(-1.0), T(1.0), local_rand_state), random_f(T(-1.0), T(1.0), local_rand_state), 0});
         if (LengthSquared(p) >= (T)1.0) continue;

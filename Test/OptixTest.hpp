@@ -7,7 +7,7 @@
 struct Params{
     My::Image*                      image;
     My::RayTracingCamera<float>*    cam;
-    curandState*                    rand_state;
+    curandStateMRG32k3a*                    rand_state;
     OptixTraversableHandle          handle;
 };
 

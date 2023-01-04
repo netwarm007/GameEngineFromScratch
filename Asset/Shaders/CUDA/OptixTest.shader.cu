@@ -75,7 +75,7 @@ __global__ void __raygen__rg() {
     unsigned int j = launch_index.y;
     unsigned int pixel_index = j * params.image->Width + i;
 
-    curandState* local_rand_state = &params.rand_state[pixel_index];
+    curandStateMRG32k3a* local_rand_state = &params.rand_state[pixel_index];
 
     int num_of_samples = rtData->num_of_samples;
     vec3 col = {0.f, 0.f, 0.f};

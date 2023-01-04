@@ -22,13 +22,13 @@ void check_cuda(cudaError_t result, char const *const func,
     }
 }
 
-__global__ void rand_init(curandState *rand_state) {
+__global__ void rand_init(curandStateMRG32k3a *rand_state) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
         curand_init(2023, 0, 0, rand_state);
     }
 }
 
-__global__ void test(curandState *local_rand_state) {
+__global__ void test(curandStateMRG32k3a *local_rand_state) {
     const int scene_obj_num = 1;
     My::Hitable<float>** pList = new My::Hitable<float>*[scene_obj_num];
     for (int i = 0; i < scene_obj_num; i++) {
@@ -42,9 +42,9 @@ __global__ void test(curandState *local_rand_state) {
 }
 
 int main() {
-    curandState *d_rand_state_1;
+    curandStateMRG32k3a *d_rand_state_1;
 
-    checkCudaErrors(cudaMalloc((void **)&d_rand_state_1, sizeof(curandState)));
+    checkCudaErrors(cudaMalloc((void **)&d_rand_state_1, sizeof(curandStateMRG32k3a)));
 
     rand_init<<<1, 1>>>(d_rand_state_1);
 

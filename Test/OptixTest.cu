@@ -73,7 +73,7 @@ static void context_log_cb( unsigned int level, const char* tag, const char* mes
     << message << "\n";
 }
 
-__global__ void rand_init(curandState *rand_state, const unsigned int max_x, const unsigned int max_y) {
+__global__ void rand_init(curandStateMRG32k3a *rand_state, const unsigned int max_x, const unsigned int max_y) {
     // Each thread in a block gets unique seed
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int j = threadIdx.y + blockIdx.y * blockDim.y;
@@ -360,7 +360,7 @@ int main() {
     My::Image img;
     My::Image* d_img;
     My::RayTracingCamera<float>* d_camera;
-    curandState* d_rand_state;
+    curandStateMRG32k3a* d_rand_state;
     {
         const float aspect_ratio = 16.0 / 9.0;
         const int image_width = 1920;
@@ -401,7 +401,7 @@ int main() {
         dim3 blocks((image_width + tile_width - 1) / tile_width, (image_height + tile_height - 1) / tile_height);
         dim3 threads(tile_width, tile_height);
 
-        checkCudaErrors(cudaMalloc((void **)&d_rand_state, num_pixels * sizeof(curandState)));
+        checkCudaErrors(cudaMalloc((void **)&d_rand_state, num_pixels * sizeof(curandStateMRG32k3a)));
 
         rand_init<<<blocks, threads>>>(d_rand_state, image_width, image_height);
         checkCudaErrors(cudaGetLastError());
