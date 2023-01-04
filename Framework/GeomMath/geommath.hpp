@@ -368,6 +368,13 @@ __host__ __device__ Vector<T, N> operator*(const Vector<T, N>& vec1,
 }
 
 template <class T, Dimension auto N>
+__host__ __device__ Vector<T, N>& operator*=(Vector<T, N>& vec1,
+                                             const Vector<T, N>& vec2) {
+    vec1 = vec1 * vec2;
+    return vec1;
+}
+
+template <class T, Dimension auto N>
 __host__ __device__ inline void DivByElement(Vector<T, N>& result,
                                              const Vector<T, N>& a,
                                              const Vector<T, N>& b) {
@@ -529,7 +536,7 @@ __host__ __device__ inline void Normalize(Vector<T, N>& a) {
 template <class T, Dimension auto N>
 __host__ __device__ inline bool isNearZero(const Vector<T, N>& vec) {
     bool result = true;
-    const auto s = 1e-8;
+    const auto s = (T)1e-8;
 
     for (Dimension auto i = 0; i < N; i++) {
         if (fabs(vec[i]) >= s) {
@@ -553,7 +560,7 @@ __host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v, const Vec
 
     Vector<T, N> r_out_perp = etai_over_etat * (v + cos_theta * n);
     Vector<T, N> r_out_parallel =
-        -(T)sqrt(fabs(1.0 - LengthSquared(r_out_perp))) * n;
+        -(T)sqrt(fabs((T)1.0 - LengthSquared(r_out_perp))) * n;
     return r_out_perp + r_out_parallel;
 }
 
