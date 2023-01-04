@@ -19,7 +19,7 @@ class material {
    public:
 #ifdef __CUDACC__
     __device__ virtual bool scatter(const ray& r_in, const hit_record& hit,
-                         color& attenuation, ray& scattered, curandState *local_rand_state) const = 0;
+                         color& attenuation, ray& scattered, curandStateMRG32k3a_t *local_rand_state) const = 0;
 #else
     virtual bool scatter(const ray& r_in, const hit_record& hit,
                          color& attenuation, ray& scattered) const = 0;
@@ -32,7 +32,7 @@ class lambertian : public material {
 
 #ifdef __CUDACC__
     __device__ bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
-                 ray& scattered, curandState *local_rand_state) const override {
+                 ray& scattered, curandStateMRG32k3a_t *local_rand_state) const override {
         auto scatter_direction =
             hit.getNormal() + My::random_unit_vector<float_precision, 3>(local_rand_state);
 #else
@@ -61,7 +61,7 @@ class metal : public material {
 
 #ifdef __CUDACC__
     __device__ bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
-                 ray& scattered, curandState *local_rand_state) const override {
+                 ray& scattered, curandStateMRG32k3a_t *local_rand_state) const override {
         vec3 reflected = My::Reflect(r_in.getDirection(), hit.getNormal());
         scattered = ray(
             hit.getP(),
@@ -90,7 +90,7 @@ class dielectric : public material {
 
 #ifdef __CUDACC__
     __device__ bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
-                 ray& scattered, curandState *local_rand_state) const override {
+                 ray& scattered, curandStateMRG32k3a_t *local_rand_state) const override {
 #else
     bool scatter(const ray& r_in, const hit_record& hit, color& attenuation,
                  ray& scattered) const override {

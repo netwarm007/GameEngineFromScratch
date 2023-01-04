@@ -16,7 +16,7 @@ class SimpleBVHNode : _implements_ Hitable<T> {
    public:
     __device__ SimpleBVHNode() : Hitable<T>(HitableType::kBVH) {}
     __device__ SimpleBVHNode(Hitable<T>** list, int start, int end,
-                             curandState* local_rand_state)
+                             curandStateMRG32k3a_t* local_rand_state)
         : Hitable<T>(HitableType::kBVH) {
         struct stack_element_type {
             SimpleBVHNode* root;

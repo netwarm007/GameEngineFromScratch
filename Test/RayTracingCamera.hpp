@@ -29,7 +29,7 @@ class RayTracingCamera {
     }
 
 #ifdef __CUDACC__
-    __device__ Ray<T> get_ray(T s, T t, curandState *local_rand_state) const {
+    __device__ Ray<T> get_ray(T s, T t, curandStateMRG32k3a_t *local_rand_state) const {
         Vector3<T> rd = lens_radius * random_in_unit_disk<T>(local_rand_state);
 #else
     Ray<T> get_ray(T s, T t) const {
