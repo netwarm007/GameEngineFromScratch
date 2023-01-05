@@ -35,7 +35,6 @@ static __forceinline__ __device__ void trace(
         float                  tmax,
         MyTracePayload&        prd ) {
     unsigned int p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10;
-#if 0 // we actually do not need pass-in anything, the payload is used only as a return value.
     p0 = __float_as_uint(prd.attenuation[0]);
     p1 = __float_as_uint(prd.attenuation[1]);
     p2 = __float_as_uint(prd.attenuation[2]);
@@ -47,7 +46,6 @@ static __forceinline__ __device__ void trace(
     p8 = __float_as_uint(prd.scatter_ray_direction[2]);
     p9 = prd.max_depth;
     p10 = (prd.done) ? 1 : 0;
-#endif
     optixTrace(
             handle,
             _f(ray_origin),
@@ -145,7 +143,13 @@ __global__ void __raygen__rg() {
         ray r = params.cam->get_ray(u, v, local_rand_state);
 
         vec3 attenuation = {1.f, 1.f, 1.f};
-        MyTracePayload payload(attenuation, r.getOrigin(), r.getDirection(), true, params.max_depth); 
+        MyTracePayload payload;
+        payload.attenuation = attenuation;
+        payload.scatter_ray_origin = r.getOrigin(); 
+        payload.scatter_ray_direction = r.getDirection(); 
+        payload.max_depth = params.max_depth; 
+        payload.done = false; 
+
         do {
             trace( params.handle,
                     payload.scatter_ray_origin,
@@ -154,7 +158,7 @@ __global__ void __raygen__rg() {
                     FLT_MAX,  // tmax
                     payload);
 
-            attenuation *= payload.attenuation;
+            attenuation = attenuation * payload.attenuation;
         } while (!payload.done);
 
         col += attenuation;
@@ -182,6 +186,7 @@ __global__ void __closesthit__ch() {
     auto payload = getPayload();
     if(payload.max_depth < 0) {
         setPayload({0.f, 0.f, 0.f}, false);
+        return;
     }
 
     uint3 launch_index = optixGetLaunchIndex();
@@ -202,7 +207,7 @@ __global__ void __closesthit__ch() {
 
     float4 q;
     // sphere center (q.x, q.y, q.z), sphere radius q.w
-    optixGetSphereData(gas, prim_idx, sbtGASIndex, 0.f, &q);
+    optixGetSphereData(gas, prim_idx, 0, 0.f, &q);
 
     vec3 world_raypos = ray_orig + t_hit * ray_dir;
     vec3 obj_raypos   = _V(optixTransformPointFromWorldToObjectSpace(_f(world_raypos)));
@@ -213,28 +218,26 @@ __global__ void __closesthit__ch() {
     ray scattered;
     ray r_in(ray_orig, ray_dir);
     hit_record rec;
-    rec.set(t_hit, world_raypos, world_normal, My::DotProduct(ray_dir, world_normal) < 0, nullptr);
+    rec.set(t_hit, world_raypos, world_normal, optixIsFrontFaceHit(), nullptr);
     color attenuation;
-    HitGroupData* hg_data = reinterpret_cast<HitGroupData*>(optixGetSbtDataPointer());
+    HitGroupData* hg_data = reinterpret_cast<HitGroupData*>(optixGetSbtDataPointer() + sbtGASIndex * sizeof(HitGroupSbtRecord));
     bool b_scattered;
     switch(hg_data->material_type) {
         case Material::MAT_DIFFUSE:
         {
             b_scattered = lambertian::scatter_static(r_in, rec, attenuation, scattered, local_rand_state, hg_data->base_color);
-            break;
         }
+        break;
         case Material::MAT_METAL:
         {
             b_scattered = metal::scatter_static(r_in, rec, attenuation, scattered, local_rand_state, hg_data->base_color, hg_data->fuzz);
-            break;
         }
+        break;
         case Material::MAT_DIELECTRIC:
         {
             b_scattered = dielectric::scatter_static(r_in, rec, attenuation, scattered, local_rand_state, hg_data->ir);
-            break;
         }
-        default: setPayload({0.8f, 0.3f, 0.9f}, r_in, false, payload.max_depth - 1);
-            return;
+        break;
     }
 
     setPayload(attenuation, scattered, b_scattered, payload.max_depth - 1);

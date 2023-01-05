@@ -27,3 +27,14 @@ struct HitGroupData {
     float    fuzz;
     float    ir;
 };
+
+template <typename T>
+struct SbtRecord
+{
+    __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT_RECORD_HEADER_SIZE];
+    T data;
+};
+
+using RayGenSbtRecord   =   SbtRecord<RayGenData>;
+using MissSbtRecord     =   SbtRecord<MissData>;
+using HitGroupSbtRecord =   SbtRecord<HitGroupData>;
