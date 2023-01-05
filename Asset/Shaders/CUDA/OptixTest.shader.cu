@@ -207,7 +207,7 @@ __global__ void __closesthit__ch() {
 
     float4 q;
     // sphere center (q.x, q.y, q.z), sphere radius q.w
-    optixGetSphereData(gas, prim_idx, 0, 0.f, &q);
+    optixGetSphereData(gas, prim_idx, 0, 0.f, &q); // don't know why but set sbtGASIndex cause all-zero q when sbtGASIndex = 2
 
     vec3 world_raypos = ray_orig + t_hit * ray_dir;
     vec3 obj_raypos   = _V(optixTransformPointFromWorldToObjectSpace(_f(world_raypos)));

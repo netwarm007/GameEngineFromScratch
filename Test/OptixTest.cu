@@ -8,12 +8,17 @@
 #include <iomanip>
 #include <iostream>
 #include <array>
+#include <random>
 
 #include "OptixTest.hpp"
 #include "AssetLoader.hpp"
 #include "Image.hpp"
 
 // help functions 
+std::mt19937 generator;
+std::uniform_real_distribution<float> distribution(0.0, 1.0);
+#define RND distribution(generator)
+
 #define checkCudaErrors(val) check_cuda((val), #val, __FILE__, __LINE__)
 inline void check_cuda(cudaError_t result, char const *const func,
                 const char *const file, int const line) {
@@ -88,15 +93,46 @@ int main() {
     }
 
     // accel handling
+    constexpr int scene_obj_num = 22 * 22 + 1 + 3;
     OptixTraversableHandle  gas_handle;
     CUdeviceptr             d_gas_output_buffer;
     {
-        constexpr int obj_count = 4;
-        std::array<float3, obj_count>  sphereVertex   =   { make_float3(0, -100.5, -1), make_float3(0, 0, -1), make_float3(-1, 0, -1), make_float3(1, 0, -1)};
+        std::array<float3, scene_obj_num>  sphereVertex;
+        std::array<float,  scene_obj_num>  sphereRadius;
+        std::array<uint16_t, scene_obj_num> g_mat_indices;
+
+        int index = 0;
+        // ground
+        g_mat_indices[index]    = index; 
+        sphereVertex[index]     = make_float3(0, -1000, -1);
+        sphereRadius[index++]   = 1000.f;
+
+        // random spheres
+        for (int a = -11; a < 11; a++) {
+            for (int b = -11; b < 11; b++) {
+                g_mat_indices[index]    = index; 
+                sphereVertex[index]     = make_float3(a + RND, 0.2f, b + RND);
+                sphereRadius[index++]   = 0.2f;
+            }
+        }
+
+        // three big balls
+        g_mat_indices[index]    = index; 
+        sphereVertex[index]     = make_float3(0, 1, 0);
+        sphereRadius[index++]   = 1.0f;
+
+        g_mat_indices[index]    = index; 
+        sphereVertex[index]     = make_float3(-4, 1, 0);
+        sphereRadius[index++]   = 1.0f;
+
+        g_mat_indices[index]    = index; 
+        sphereVertex[index]     = make_float3(4, 1, 0);
+        sphereRadius[index++]   = 1.0f;
+
+        assert(index == scene_obj_num);
+
         size_t sphereVertexSize = sizeof(sphereVertex[0]) * sphereVertex.size();
-        std::array<float,  obj_count>  sphereRadius   =   { 100.f, .5f, .5f, .5f };
         size_t sphereRadiusSize = sizeof(sphereRadius[0]) * sphereRadius.size();
-        const std::array<uint16_t, obj_count> g_mat_indices = { 0, 1, 2, 3 };
 
         CUdeviceptr d_vertex_buffer;
         checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_vertex_buffer), sphereVertexSize));
@@ -107,7 +143,7 @@ int main() {
         checkCudaErrors(cudaMemcpy(reinterpret_cast<void *>(d_radius_buffer), sphereRadius.data(), sphereRadiusSize, cudaMemcpyHostToDevice));
 
         CUdeviceptr d_mat_indices;
-        const size_t mat_indices_size_in_bytes = g_mat_indices.size() * sizeof(uint32_t);
+        const size_t mat_indices_size_in_bytes = g_mat_indices.size() * sizeof(uint16_t);
         checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_mat_indices), mat_indices_size_in_bytes));
         checkCudaErrors(cudaMemcpy(
             reinterpret_cast<void *>(d_mat_indices),
@@ -116,12 +152,8 @@ int main() {
             cudaMemcpyHostToDevice
         ));
 
-        uint32_t sphere_input_flags[obj_count]          = {
-            OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT,
-            OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT,
-            OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT,
-            OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT
-        };
+        std::array<uint32_t, scene_obj_num> sphere_input_flags;
+        sphere_input_flags.fill(OPTIX_GEOMETRY_FLAG_DISABLE_ANYHIT);
 
         OptixBuildInput sphere_input = {};
 
@@ -130,8 +162,8 @@ int main() {
         sphere_input.sphereArray.numVertices    = sphereVertex.size();
         sphere_input.sphereArray.radiusBuffers  = &d_radius_buffer;
 
-        sphere_input.sphereArray.flags          = sphere_input_flags;
-        sphere_input.sphereArray.numSbtRecords  = obj_count;
+        sphere_input.sphereArray.flags          = sphere_input_flags.data();
+        sphere_input.sphereArray.numSbtRecords  = scene_obj_num;
         sphere_input.sphereArray.sbtIndexOffsetBuffer       = d_mat_indices;
         sphere_input.sphereArray.sbtIndexOffsetSizeInBytes  = sizeof(uint16_t);
         sphere_input.sphereArray.sbtIndexOffsetStrideInBytes= sizeof(uint16_t);
@@ -360,31 +392,64 @@ int main() {
         ));
 
         // Hit SBT
-        constexpr int material_count = 4;
+        constexpr int material_count = scene_obj_num;
         CUdeviceptr d_hitgroup_record;
         size_t      hitgroup_record_size = sizeof(HitGroupSbtRecord);
         checkCudaErrors(cudaMalloc(reinterpret_cast<void **>(&d_hitgroup_record), hitgroup_record_size * material_count));
-        HitGroupSbtRecord hg_sbt[material_count] = {};
+        std::array<HitGroupSbtRecord, material_count> hg_sbt;
 
-        checkOptiXErrors(optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[0]));
-        hg_sbt[0].data.material_type = Material::MAT_DIFFUSE;
-        hg_sbt[0].data.base_color    = {0.8f, 0.8f, 0.0f};
-        
-        checkOptiXErrors(optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[1]));
-        hg_sbt[1].data.material_type = Material::MAT_DIFFUSE;
-        hg_sbt[1].data.base_color    = {0.1f, 0.2f, 0.5f};
-        
-        checkOptiXErrors(optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[2]));
-        hg_sbt[2].data.material_type = Material::MAT_DIFFUSE;
-        hg_sbt[2].data.base_color    = {0.5f, 0.5f, 0.5f};
-        
-        checkOptiXErrors(optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[3]));
-        hg_sbt[3].data.material_type = Material::MAT_DIELECTRIC;
-        hg_sbt[3].data.ir            = 1.5f;
-        
+        int index = 0;
+        // ground
+        checkOptiXErrors(
+            optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
+        hg_sbt[index].data.material_type = Material::MAT_DIFFUSE;
+        hg_sbt[index++].data.base_color = {0.5f, 0.5f, 0.5f};
+
+        // random spheres
+        for (int a = -11; a < 11; a++) {
+            for (int b = -11; b < 11; b++) {
+                float choose_mat = RND;
+                if (choose_mat < 0.8f) {
+					checkOptiXErrors(
+						optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
+                    hg_sbt[index].data.material_type = Material::MAT_DIFFUSE;
+                    hg_sbt[index++].data.base_color = {RND * RND, RND * RND, RND * RND};
+                } else if (choose_mat < 0.95f) {
+					checkOptiXErrors(
+						optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
+                    hg_sbt[index].data.material_type = Material::MAT_METAL;
+                    hg_sbt[index].data.base_color = {0.5f * (1.0f + RND), 0.5f * (1.0f + RND), 0.5f * (1.0f + RND)};
+                    hg_sbt[index++].data.fuzz = 0.5f * (1.0f + RND);
+                } else {
+					checkOptiXErrors(
+						optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
+                    hg_sbt[index].data.material_type = Material::MAT_DIELECTRIC;
+                    hg_sbt[index++].data.ir = 1.5f;
+                }
+            }
+        }
+
+		checkOptiXErrors(
+			optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
+        hg_sbt[index].data.material_type = Material::MAT_DIELECTRIC;
+        hg_sbt[index++].data.base_color = 1.5f;
+
+		checkOptiXErrors(
+			optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
+        hg_sbt[index].data.material_type = Material::MAT_DIFFUSE;
+        hg_sbt[index++].data.base_color = {0.4f, 0.2f, 0.1f};
+
+		checkOptiXErrors(
+			optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
+        hg_sbt[index].data.material_type = Material::MAT_METAL;
+        hg_sbt[index].data.base_color = {0.7f, 0.6f, 0.5f};
+        hg_sbt[index++].data.fuzz = 0.0f;
+
+        assert(index == material_count);
+
         checkCudaErrors(cudaMemcpy(
             reinterpret_cast<void *>(d_hitgroup_record),
-            &hg_sbt,
+            hg_sbt.data(),
             hitgroup_record_size * material_count,
             cudaMemcpyHostToDevice
         ));
@@ -425,13 +490,13 @@ int main() {
         checkCudaErrors(cudaMalloc((void **)&d_img, sizeof(My::Image)));
         checkCudaErrors(cudaMemcpy((void *)d_img, &img, sizeof(My::Image), cudaMemcpyHostToDevice));
 
-        My::Point<float> lookfrom{0, 0, 0};
-        My::Point<float> lookat{0, 0, -1};
-        My::Vector3f vup{0, 1, 0};
-        auto dist_to_focus = 1.0f;
-        auto aperture = 0.0f;
+        point3 lookfrom{13, 2, 3};
+        point3 lookat{0, 0, 0};
+        vec3 vup{0, 1, 0};
+        auto dist_to_focus = 10.0f;
+        auto aperture = 0.1f;
 
-        My::RayTracingCamera<float> camera (lookfrom, lookat, vup, 90.0f, aspect_ratio,
+        My::RayTracingCamera<float> camera (lookfrom, lookat, vup, 20.0f, aspect_ratio,
                                 aperture, dist_to_focus);
 
         checkCudaErrors(cudaMalloc((void **)&d_camera, sizeof(My::RayTracingCamera<float>)));
