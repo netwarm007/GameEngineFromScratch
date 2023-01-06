@@ -176,7 +176,7 @@ __global__ void __miss__ms() {
 
     vec3 unit_direction = _V(optixGetWorldRayDirection());
     float t = 0.5f * (unit_direction[1] + 1.0f);
-    vec3 c = (1.0f - t) * color({0, 0, 0}) + t * (missData->bg_color);
+    vec3 c = (1.0f - t) * color({1, 1, 1}) + t * (missData->bg_color);
 
     setPayload(c, false);
 }
@@ -184,7 +184,7 @@ __global__ void __miss__ms() {
 extern "C"
 __global__ void __closesthit__ch() {
     auto payload = getPayload();
-    if(payload.max_depth < 0) {
+    if(payload.max_depth <= 0) {
         setPayload({0.f, 0.f, 0.f}, false);
         return;
     }

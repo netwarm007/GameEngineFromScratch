@@ -45,7 +45,7 @@ if(USE_CUDA)
 
         add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/OptixTest.shader.optixir 
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA
-            COMMAND nvcc -G -O0 --std c++20 -o ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/OptixTest.shader.optixir --optix-ir ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/OptixTest.shader.cu
+            COMMAND nvcc --std c++20 -o ${PROJECT_BINARY_DIR}/Asset/Shaders/CUDA/OptixTest.shader.optixir --optix-ir ${PROJECT_SOURCE_DIR}/Asset/Shaders/CUDA/OptixTest.shader.cu
                     -I ${OPTIX76_INCLUDE_DIR} 
                     -I ${PROJECT_SOURCE_DIR} 
                     -I ${PROJECT_SOURCE_DIR}/Framework/GeomMath/ 

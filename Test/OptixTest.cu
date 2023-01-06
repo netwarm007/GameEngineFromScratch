@@ -111,7 +111,7 @@ int main() {
         for (int a = -11; a < 11; a++) {
             for (int b = -11; b < 11; b++) {
                 g_mat_indices[index]    = index; 
-                sphereVertex[index]     = make_float3(a + RND, 0.2f, b + RND);
+                sphereVertex[index]     = make_float3(a + 0.9 * RND, 0.2f, b + 0.9 * RND);
                 sphereRadius[index++]   = 0.2f;
             }
         }
@@ -419,7 +419,7 @@ int main() {
 						optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
                     hg_sbt[index].data.material_type = Material::MAT_METAL;
                     hg_sbt[index].data.base_color = {0.5f * (1.0f + RND), 0.5f * (1.0f + RND), 0.5f * (1.0f + RND)};
-                    hg_sbt[index++].data.fuzz = 0.5f * (1.0f + RND);
+                    hg_sbt[index++].data.fuzz = 0.5f * RND;
                 } else {
 					checkOptiXErrors(
 						optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
@@ -432,7 +432,7 @@ int main() {
 		checkOptiXErrors(
 			optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
         hg_sbt[index].data.material_type = Material::MAT_DIELECTRIC;
-        hg_sbt[index++].data.base_color = 1.5f;
+        hg_sbt[index++].data.ir = 1.5f;
 
 		checkOptiXErrors(
 			optixSbtRecordPackHeader(hitgroup_prog_group, &hg_sbt[index]));
