@@ -25,7 +25,8 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
-//  2022-XX-XX: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2023-XX-XX: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2023-02-01: Fixed scroll wheel scaling for devices emitting events with hasPreciseScrollingDeltas==false (e.g. non-Apple mices).
 //  2022-11-02: Fixed mouse coordinates before clicking the host window.
 //  2022-10-06: Fixed mouse inputs on flipped views.
 //  2022-09-26: Inputs: Renamed ImGuiKey_ModXXX introduced in 1.87 to ImGuiMod_XXX (old names still supported).
@@ -692,18 +693,18 @@ static bool ImGui_ImplOSX_HandleEvent(NSEvent* event, NSView* view)
             wheel_dy = [event scrollingDeltaY];
             if ([event hasPreciseScrollingDeltas])
             {
-                wheel_dx *= 0.1;
-                wheel_dy *= 0.1;
+                wheel_dx *= 0.01;
+                wheel_dy *= 0.01;
             }
         }
         else
         #endif // MAC_OS_X_VERSION_MAX_ALLOWED
         {
-            wheel_dx = [event deltaX];
-            wheel_dy = [event deltaY];
+            wheel_dx = [event deltaX] * 0.1;
+            wheel_dy = [event deltaY] * 0.1;
         }
         if (wheel_dx != 0.0 || wheel_dy != 0.0)
-            io.AddMouseWheelEvent((float)wheel_dx * 0.1f, (float)wheel_dy * 0.1f);
+            io.AddMouseWheelEvent((float)wheel_dx, (float)wheel_dy);
 
         return io.WantCaptureMouse;
     }
@@ -816,7 +817,7 @@ struct ImGuiViewportDataOSX
 
 static void ConvertNSRect(NSScreen* screen, NSRect* r)
 {
-    r->origin.y = CGDisplayPixelsHigh(kCGDirectMainDisplay) - r->origin.y - r->size.height;
+    r->origin.y = screen.frame.size.height - r->origin.y - r->size.height;
 }
 
 static void ImGui_ImplOSX_CreateWindow(ImGuiViewport* viewport)
@@ -924,7 +925,7 @@ static ImVec2 ImGui_ImplOSX_GetWindowSize(ImGuiViewport* viewport)
 
     NSWindow* window = data->Window;
     NSSize size = window.contentLayoutRect.size;
-    return ImVec2(size.width, size.width);
+    return ImVec2(size.width, size.height);
 }
 
 static void ImGui_ImplOSX_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)

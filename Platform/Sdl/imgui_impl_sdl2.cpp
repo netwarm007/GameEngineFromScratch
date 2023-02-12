@@ -10,8 +10,8 @@
 //  [X] Platform: Mouse cursor shape and visibility. Disable with 'io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange'.
 //  [X] Platform: Multi-viewport support (multiple windows). Enable with 'io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable'.
 // Missing features:
-//  [ ] Platform: SDL2 handling of IME under Windows appears to be broken and it explicitly disable the regular Windows IME. You can restore Windows IME by compiling SDL with SDL_DISABLE_WINDOWS_IME.
 //  [ ] Platform: Multi-viewport + Minimized windows seems to break mouse wheel events (at least under Windows).
+//  [x] Platform: Basic IME support. App needs to call 'SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");' before SDL_CreateWindow()!.
 
 // You can use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
 // Prefer including the entire imgui/ repository into your project (either as a copy or as a submodule), and only build the backends you need.
@@ -20,7 +20,13 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
-//  2022-XX-XX: Platform: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2023-XX-XX: Platform: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2023-02-07: Implement IME handler (io.SetPlatformImeDataFn will call SDL_SetTextInputRect()/SDL_StartTextInput()).
+//  2023-02-07: *BREAKING CHANGE* Renamed this backend file from imgui_impl_sdl.cpp/.h to imgui_impl_sdl2.cpp/.h in prevision for the future release of SDL3.
+//  2023-02-02: Avoid calling SDL_SetCursor() when cursor has not changed, as the function is surprisingly costly on Mac with latest SDL (may be fixed in next SDL version).
+//  2023-02-02: Added support for SDL 2.0.18+ preciseX/preciseY mouse wheel data for smooth scrolling + Scaling X value on Emscripten (bug?). (#4019, #6096)
+//  2023-02-02: Removed SDL_MOUSEWHEEL value clamping, as values seem correct in latest Emscripten. (#4019)
+//  2023-02-01: Flipping SDL_MOUSEWHEEL 'wheel.x' value to match other backends and offer consistent horizontal scrolling direction. (#4019, #6096, #1463)
 //  2022-10-11: Using 'nullptr' instead of 'NULL' as per our switch to C++11.
 //  2022-09-26: Inputs: Disable SDL 2.0.22 new "auto capture" (SDL_HINT_MOUSE_AUTO_CAPTURE) which prevents drag and drop across windows for multi-viewport support + don't capture when drag and dropping. (#5710)
 //  2022-09-26: Inputs: Renamed ImGuiKey_ModXXX introduced in 1.87 to ImGuiMod_XXX (old names still supported).
@@ -67,7 +73,7 @@
 //  2016-10-15: Misc: Added a void* user_data parameter to Clipboard function handlers.
 
 #include "imgui.h"
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_sdl2.h"
 
 // SDL
 // (the multi-viewports feature requires SDL features supported from SDL 2.0.4+. SDL 2.0.5+ is highly recommended)
@@ -100,6 +106,7 @@ struct ImGui_ImplSDL2_Data
     Uint32          MouseWindowID;
     int             MouseButtonsDown;
     SDL_Cursor*     MouseCursors[ImGuiMouseCursor_COUNT];
+    SDL_Cursor*     LastMouseCursor;
     int             PendingMouseLeaveFrame;
     char*           ClipboardTextData;
     bool            MouseCanUseGlobalState;
@@ -136,6 +143,25 @@ static const char* ImGui_ImplSDL2_GetClipboardText(void*)
 static void ImGui_ImplSDL2_SetClipboardText(void*, const char* text)
 {
     SDL_SetClipboardText(text);
+}
+
+// Note: native IME will only display if user calls SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1") _before_ SDL_CreateWindow().
+static void ImGui_ImplSDL2_SetPlatformImeData(ImGuiViewport*, ImGuiPlatformImeData* data)
+{
+    if (data->WantVisible)
+    {
+        SDL_Rect r;
+        r.x = (int)data->InputPos.x;
+        r.y = (int)data->InputPos.y;
+        r.w = 1;
+        r.h = (int)data->InputLineHeight;
+        SDL_SetTextInputRect(&r);
+        SDL_StartTextInput();
+    }
+    else
+    {
+        SDL_StopTextInput();
+    }
 }
 
 static ImGuiKey ImGui_ImplSDL2_KeycodeToImGuiKey(int keycode)
@@ -287,8 +313,17 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
         }
         case SDL_MOUSEWHEEL:
         {
-            float wheel_x = (event->wheel.x > 0) ? 1.0f : (event->wheel.x < 0) ? -1.0f : 0.0f;
-            float wheel_y = (event->wheel.y > 0) ? 1.0f : (event->wheel.y < 0) ? -1.0f : 0.0f;
+            //IMGUI_DEBUG_LOG("wheel %.2f %.2f, precise %.2f %.2f\n", (float)event->wheel.x, (float)event->wheel.y, event->wheel.preciseX, event->wheel.preciseY);
+#if SDL_VERSION_ATLEAST(2,0,18) // If this fails to compile on Emscripten: update to latest Emscripten!
+            float wheel_x = -event->wheel.preciseX;
+            float wheel_y = event->wheel.preciseY;
+#else
+            float wheel_x = -(float)event->wheel.x;
+            float wheel_y = (float)event->wheel.y;
+#endif
+#ifdef __EMSCRIPTEN__
+            wheel_x /= 100.0f;
+#endif
             io.AddMouseWheelEvent(wheel_x, wheel_y);
             return true;
         }
@@ -376,7 +411,7 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     // Setup backend capabilities flags
     ImGui_ImplSDL2_Data* bd = IM_NEW(ImGui_ImplSDL2_Data)();
     io.BackendPlatformUserData = (void*)bd;
-    io.BackendPlatformName = "imgui_impl_sdl";
+    io.BackendPlatformName = "imgui_impl_sdl2";
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;           // We can honor GetMouseCursor() values (optional)
     io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;            // We can honor io.WantSetMousePos requests (optional, rarely used)
     if (mouse_can_use_global_state)
@@ -397,6 +432,7 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     io.SetClipboardTextFn = ImGui_ImplSDL2_SetClipboardText;
     io.GetClipboardTextFn = ImGui_ImplSDL2_GetClipboardText;
     io.ClipboardUserData = nullptr;
+    io.SetPlatformImeDataFn = ImGui_ImplSDL2_SetPlatformImeData;
 
     // Load mouse cursors
     bd->MouseCursors[ImGuiMouseCursor_Arrow] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
@@ -418,7 +454,7 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     SDL_VERSION(&info.version);
     if (SDL_GetWindowWMInfo(window, &info))
     {
-#ifdef _WIN32
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
         main_viewport->PlatformHandleRaw = (void*)info.info.win.window;
 #elif defined(__APPLE__) && defined(SDL_VIDEO_DRIVER_COCOA)
         main_viewport->PlatformHandleRaw = (void*)info.info.cocoa.window;
@@ -432,6 +468,13 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     // you can ignore SDL_MOUSEBUTTONDOWN events coming right after a SDL_WINDOWEVENT_FOCUS_GAINED)
 #ifdef SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH
     SDL_SetHint(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
+#endif
+
+    // From 2.0.18: Enable native IME.
+    // IMPORTANT: This is used at the time of SDL_CreateWindow() so this will only affects secondary windows, if any.
+    // For the main window to be affected, your application needs to call this manually before calling SDL_CreateWindow().
+#ifdef SDL_HINT_IME_SHOW_UI
+    SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 #endif
 
     // From 2.0.22: Disable auto-capture, this is preventing drag and drop across multiple windows (see #5710)
@@ -497,6 +540,7 @@ void ImGui_ImplSDL2_Shutdown()
         SDL_free(bd->ClipboardTextData);
     for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
         SDL_FreeCursor(bd->MouseCursors[cursor_n]);
+    bd->LastMouseCursor = NULL;
 
     io.BackendPlatformName = nullptr;
     io.BackendPlatformUserData = nullptr;
@@ -583,7 +627,12 @@ static void ImGui_ImplSDL2_UpdateMouseCursor()
     else
     {
         // Show OS mouse cursor
-        SDL_SetCursor(bd->MouseCursors[imgui_cursor] ? bd->MouseCursors[imgui_cursor] : bd->MouseCursors[ImGuiMouseCursor_Arrow]);
+        SDL_Cursor* expected_cursor = bd->MouseCursors[imgui_cursor] ? bd->MouseCursors[imgui_cursor] : bd->MouseCursors[ImGuiMouseCursor_Arrow];
+        if (bd->LastMouseCursor != expected_cursor)
+        {
+            SDL_SetCursor(expected_cursor); // SDL function doesn't have an early out (see #6113)
+            bd->LastMouseCursor = expected_cursor;
+        }
         SDL_ShowCursor(SDL_TRUE);
     }
 }
@@ -777,7 +826,7 @@ static void ImGui_ImplSDL2_CreateWindow(ImGuiViewport* viewport)
     SDL_VERSION(&info.version);
     if (SDL_GetWindowWMInfo(vd->Window, &info))
     {
-#if defined(_WIN32)
+#if defined(SDL_VIDEO_DRIVER_WINDOWS)
         viewport->PlatformHandleRaw = info.info.win.window;
 #elif defined(__APPLE__) && defined(SDL_VIDEO_DRIVER_COCOA)
         viewport->PlatformHandleRaw = (void*)info.info.cocoa.window;

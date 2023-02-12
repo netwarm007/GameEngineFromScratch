@@ -13,7 +13,7 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
-//  2022-XX-XX: Metal: Added support for multiple windows via the ImGuiPlatformIO interface.
+//  2023-XX-XX: Metal: Added support for multiple windows via the ImGuiPlatformIO interface.
 //  2022-08-23: Metal: Update deprecated property 'sampleCount'->'rasterSampleCount'.
 //  2022-07-05: Metal: Add dispatch synchronization.
 //  2022-06-30: Metal: Use __bridge for ARC based systems.
@@ -415,7 +415,7 @@ static void ImGui_ImplMetal_CreateWindow(ImGuiViewport* viewport)
     void* handle = viewport->PlatformHandleRaw ? viewport->PlatformHandleRaw : viewport->PlatformHandle;
     IM_ASSERT(handle != nullptr);
 
-    id<MTLDevice> device = [bd->SharedMetalContext.depthStencilState device];
+    id<MTLDevice> device = bd->SharedMetalContext.device;
     CAMetalLayer* layer = [CAMetalLayer layer];
     layer.device = device;
     layer.framebufferOnly = YES;
