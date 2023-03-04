@@ -8,6 +8,9 @@ if(OS_MACOS OR OS_WINDOWS)
 endif(OS_MACOS OR OS_WINDOWS)
 
 if(OS_WINDOWS)
+    add_executable(D2dRHITest D2dRHITest.cpp)
+    target_link_libraries(D2dRHITest Framework D2dRHI PlatformInterface)
+
     execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/tinyobjloader)
     add_executable(D3d12RHITest D3d12RHITest.cpp)
     target_include_directories(D3d12RHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)

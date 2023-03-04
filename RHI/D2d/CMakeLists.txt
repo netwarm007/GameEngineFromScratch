@@ -1,5 +1,5 @@
 add_library(D2dRHI
-    D2dGraphicsManager.cpp
+    D2dRHI.cpp
 )
 
 target_link_libraries(D2dRHI
