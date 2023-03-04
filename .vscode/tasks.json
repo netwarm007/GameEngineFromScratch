@@ -28,9 +28,9 @@
         {
             "label": "Build Engine (Debug)",
             "type": "shell",
-            "command": "./scripts/build-ninja.sh Debug",
+            "command": "./scripts/build.sh Debug",
             "windows": {
-                "command": "scripts\\build-ninja.bat Debug"
+                "command": "scripts\\build.bat Debug"
             },
             "problemMatcher": [
                 "$msCompile"
@@ -43,17 +43,14 @@
         {
             "label": "Build Engine (Release)",
             "type": "shell",
-            "command": "./scripts/build-ninja.sh Release",
+            "command": "./scripts/build.sh Release",
             "windows": {
-                "command": "scripts\\build-ninja.bat Release"
+                "command": "scripts\\build.bat Release"
             },
             "problemMatcher": [
                 "$msCompile"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "group": "build"
         },
         {
             "type": "cppbuild",
@@ -74,6 +71,20 @@
             ],
             "group": "build",
             "detail": "调试器生成的任务。"
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: clean rebuild",
+            "command": "cleanRebuild",
+            "targets": [
+                "ALL_BUILD"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "CMake template clean rebuild task"
         }
     ]
 }
