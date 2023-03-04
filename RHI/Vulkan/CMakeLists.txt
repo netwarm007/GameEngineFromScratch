@@ -1,8 +1,10 @@
 add_library(VulkanRHI
     VulkanRHI.cpp
+    VulkanPipelineStateManager.cpp
+    VulkanGraphicsManager.cpp
 )
 
-target_link_libraries(VulkanRHI GeomMath ${Vulkan_LIBRARIES})
+target_link_libraries(VulkanRHI ${Vulkan_LIBRARIES})
 
 if(OS_MACOS)
 target_link_libraries(VulkanRHI

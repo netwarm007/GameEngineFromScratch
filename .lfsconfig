@@ -1,2 +1,2 @@
-[remote "gitee"]
-	lfsurl = https://lfs.chenwenli.com
+[lfs]
+	url = https://lfs.chenwenli.com

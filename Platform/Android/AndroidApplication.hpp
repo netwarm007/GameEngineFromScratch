@@ -9,7 +9,7 @@ namespace My {
 class AndroidApplication : public BaseApplication {
    public:
     using BaseApplication::BaseApplication;
-    virtual int Initialize();
+    int Initialize() override;
 
     void* GetMainWindowHandler() override { return m_pApp; }
 

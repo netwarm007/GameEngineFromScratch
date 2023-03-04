@@ -2,7 +2,7 @@ add_library(PlatformInterfaceSDL2
     SdlApplication.cpp
     OpenGLApplication.cpp
     AssetLoader.cpp
-    imgui_impl_sdl.cpp
+    imgui_impl_sdl2.cpp
 )
 
 IF(APPLE)

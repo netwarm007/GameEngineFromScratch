@@ -15,7 +15,7 @@
 	url = https://github.com/netwarm007/OpenGEX.git
 [submodule "crossguid"]
 	path = External/src/crossguid
-	url = https://github.com/netwarm007/crossguid
+	url = https://github.com/netwarm007/crossguid.git
 [submodule "bullet"]
 	path = External/src/bullet
 	url = https://github.com/netwarm007/bullet3.git
@@ -52,6 +52,12 @@
 [submodule "ISPCTextureCompressor"]
 	path = External/src/ISPCTextureCompressor
 	url = https://github.com/netwarm007/ISPCTextureCompressor.git
-[submodule "External/src/astc-encoder"]
+[submodule "astc-encoder"]
 	path = External/src/astc-encoder
 	url = https://github.com/ARM-software/astc-encoder.git
+[submodule "imgui-node-editor"]
+	path = External/src/imgui-node-editor
+	url = https://github.com/thedmd/imgui-node-editor.git
+[submodule "openal"]
+	path = External/src/openal
+	url = https://github.com/kcat/openal-soft.git

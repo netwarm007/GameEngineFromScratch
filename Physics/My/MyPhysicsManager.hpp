@@ -4,6 +4,8 @@
 namespace My {
 class MyPhysicsManager : public PhysicsManager {
    public:
+    using float_precision = float;
+
     MyPhysicsManager() = default;
     ~MyPhysicsManager() override = default;
 

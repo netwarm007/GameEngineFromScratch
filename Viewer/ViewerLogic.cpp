@@ -10,7 +10,8 @@ using namespace std;
 int ViewerLogic::Initialize() {
     int result;
 
-    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
 
     cout << "[ViewerLogic] Viewer Logic Initialize" << endl;
 
@@ -31,7 +32,8 @@ void ViewerLogic::Finalize() { cout << "[ViewerLogic] Finalize" << endl; }
 void ViewerLogic::Tick() {}
 
 void ViewerLogic::OnLeftKeyDown() {
-    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
 
     auto& scene = pSceneManager->GetSceneForRendering();
     if (scene) {
@@ -50,7 +52,8 @@ void ViewerLogic::OnLeftKeyDown() {
 }
 
 void ViewerLogic::OnRightKeyDown() {
-    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
 
     auto& scene = pSceneManager->GetSceneForRendering();
     if (scene) {
@@ -69,7 +72,8 @@ void ViewerLogic::OnRightKeyDown() {
 }
 
 void ViewerLogic::OnUpKeyDown() {
-    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
 
     auto& scene = pSceneManager->GetSceneForRendering();
     if (scene) {
@@ -88,7 +92,8 @@ void ViewerLogic::OnUpKeyDown() {
 }
 
 void ViewerLogic::OnDownKeyDown() {
-    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
 
     auto& scene = pSceneManager->GetSceneForRendering();
     if (scene) {
@@ -107,15 +112,16 @@ void ViewerLogic::OnDownKeyDown() {
 }
 
 void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
-    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    auto pSceneManager =
+        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
 
     if (id == 1) {
         auto& scene = pSceneManager->GetSceneForRendering();
         if (scene) {
             auto pCameraNode = scene->GetFirstCameraNode();
             if (pCameraNode) {
-                // pCameraNode->RotateBy(deltaY / (2.0 * PI), 0.0f, 0.0f);
-                pCameraNode->RotateBy(0.0f, 0.0f, deltaX / (2.0 * PI));
+                pCameraNode->RotateBy(deltaY / (-1800 * 2.0 * PI), 0.0f, 0.0f);
+                pCameraNode->RotateBy(0.0f, 0.0f, deltaX / (-1800 * 2.0 * PI));
             }
         }
     }

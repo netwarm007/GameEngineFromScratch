@@ -26,6 +26,23 @@
             "MIMode": "lldb"
         },
         {
+            "name": "(Mac OS) Launch VulkanRHITest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Test/VulkanRHITest",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [
+                {
+                    "name": "MVK_CONFIG_FULL_IMAGE_VIEW_SWIZZLE",
+                    "value": "1"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+        {
             "name": "(Windows) Launch Viewer",
             "type": "cppvsdbg",
             "request": "launch",

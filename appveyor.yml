@@ -2,7 +2,7 @@ version: 0.1.0-{build}
 image: Visual Studio 2022
 clone_depth: 50
 environment:
-  VULKAN_SDK: C:/VulkanSDK/1.3.216.0
+  VULKAN_SDK: C:\VulkanSDK\1.3.216.0
 cache:
   - VulkanSDK.exe
 init:
@@ -55,7 +55,6 @@ init:
       }
 
       # install winflexbison3
-      $winflexbison3Path = "${env:ProgramFiles(x86)}\WinFlexBison\bin"
       if(Get-Command "bison" -ErrorAction SilentlyContinue)
       {
         echo "bison is already installed. Skipping installation."
@@ -64,17 +63,6 @@ init:
       {
         echo "bison not present. Installing bison."
         choco install winflexbison3 -y
-
-        if (-not ($machinePath.ToLower().Contains($winflexbison3Path.ToLower())))
-        {
-          echo "Adding $winflexbison3Path to Path environment variable"
-          $env:Path += ";$winflexbison3Path"
-          $newMachineEnvironmentPath = "$winflexbison3Path;$newMachineEnvironmentPath"
-        }
-        else
-        {
-          echo "$winflexbison3Path already present in Path environment variable"
-        }
       }
 
       # update machine environment path
@@ -86,9 +74,16 @@ init:
       # install vulkan SDK
       choco install vulkan-sdk -y
       refreshenv
-
 build_script:
 - cmd: >-
+    call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+
+    appveyor DownloadFile https://developer.download.nvidia.com/compute/cuda/12.0.0/local_installers/cuda_12.0.0_527.41_windows.exe -FileName cuda.exe
+
+    cuda.exe -s nvcc_12.0 curand_dev_12.0 nvrtc_dev_12.0
+
+    set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.0\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.0\libnvvp;%PATH%
+
     scripts/build_imgui Release
 
     scripts/build_crossguid Release
@@ -105,7 +100,9 @@ build_script:
 
     scripts/build_libispc-texcomp Release
 
-    scripts/build Release
+    scripts/build_openal Release
+
+    scripts/build-vs Release
 
     scripts/cook_material Release
 

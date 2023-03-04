@@ -6,7 +6,7 @@
 #include "GraphicsManager.hpp"
 #include "InputManager.hpp"
 
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_sdl2.h"
 
 /*
  * Recurse through the list of arguments to clean up, cleaning up

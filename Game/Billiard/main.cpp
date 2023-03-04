@@ -41,6 +41,8 @@ std::function<void()> loop;
 void main_loop() { loop(); }
 #endif  // defined(OS_WEBASSEMBLY)
 
+#include "imgui.h"
+
 using namespace My;
 
 int main(int argc, char** argv) {
@@ -82,6 +84,32 @@ int main(int argc, char** argv) {
 #ifdef DEBUG
     app.RegisterManagerModule(&debugManager);
 #endif
+
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
+
+    ImVector<ImWchar> ranges;
+    ImFontGlyphRangesBuilder builder;
+    builder.AddText((const char*)u8"辐屏擎渲帧钮");                        // Add a string (here "Hello world" contains 7 unique characters)
+    builder.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); // Add one of the default ranges
+    builder.BuildRanges(&ranges);                          // Build the final result (ordered ranges with all the unique characters submitted)
+
+    io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
+    io.Fonts->Build();
+
+    ImGui::StyleColorsDark();
+
+    ImGuiStyle& im_style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        im_style.WindowRounding = 0.0f;
+        im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
 
     app.CreateMainWindow();
 

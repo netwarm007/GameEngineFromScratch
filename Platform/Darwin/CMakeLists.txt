@@ -8,7 +8,7 @@ set (PlatformSources
         CocoaApplication.mm 
         CocoaMetalApplication.mm
         AppDelegate.m
-        WindowDelegate.m
+        WindowDelegate.mm
         MetalView.mm
         imgui_impl_osx.mm
 )

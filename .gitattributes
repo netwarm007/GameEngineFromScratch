@@ -4,6 +4,7 @@
 # to native line endings on checkout.
 *.c text
 *.cpp text
+*.cu text
 *.h text
 *.hpp text
 *.ispc text
@@ -41,29 +42,19 @@
 *.so filter=lfs diff=lfs merge=lfs -text
 *.ps filter=lfs diff=lfs merge=lfs -text
 *.vs filter=lfs diff=lfs merge=lfs -text
-External/Linux/bin filter=lfs diff=lfs merge=lfs -text
-External/Linux/lib filter=lfs diff=lfs merge=lfs -text
-External/Darwin/bin filter=lfs diff=lfs merge=lfs -text
-External/Darwin/lib filter=lfs diff=lfs merge=lfs -text
-External/FreeBSD/bin filter=lfs diff=lfs merge=lfs -text
-External/Android/bin filter=lfs diff=lfs merge=lfs -text
-Asset/Scene/PlunderbussPete.ogex filter=lfs diff=lfs merge=lfs -text
-Asset/Scene/city.ogex filter=lfs diff=lfs merge=lfs -text
-Asset/Textures filter=lfs diff=lfs merge=lfs -text
-External/Windows/lib filter=lfs diff=lfs merge=lfs -text
-External/Windows/bin filter=lfs diff=lfs merge=lfs -text
+External/Linux/bin/* filter=lfs diff=lfs merge=lfs -text
+External/Linux/lib/* filter=lfs diff=lfs merge=lfs -text
+External/Darwin/bin/* filter=lfs diff=lfs merge=lfs -text
+External/Darwin/lib/* filter=lfs diff=lfs merge=lfs -text
+External/FreeBSD/bin/* filter=lfs diff=lfs merge=lfs -text
+External/Android/bin/* filter=lfs diff=lfs merge=lfs -text
+Asset/Textures/* filter=lfs diff=lfs merge=lfs -text
+Asset/Audio/* filter=lfs diff=lfs merge=lfs -text
+External/Windows/lib/* filter=lfs diff=lfs merge=lfs -text
+External/Windows/bin/* filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.dll filter=lfs diff=lfs merge=lfs -text
 External/Darwin/framework/Chromium[[:space:]]Embedded[[:space:]]Framework.framework/Chromium[[:space:]]Embedded[[:space:]]Framework filter=lfs diff=lfs merge=lfs -text
-External/Linux/bin/ispc filter=lfs diff=lfs merge=lfs -text
-External/Linux/bin/llc filter=lfs diff=lfs merge=lfs -text
-External/Darwin/bin/ispc filter=lfs diff=lfs merge=lfs -text
-External/Darwin/bin/cmft_cli filter=lfs diff=lfs merge=lfs -text
-External/Darwin/bin/glslangValidator filter=lfs diff=lfs merge=lfs -text
-External/Darwin/bin/spirv-remap filter=lfs diff=lfs merge=lfs -text
-External/Android/bin/ispc filter=lfs diff=lfs merge=lfs -text
-External/FreeBSD/bin/ispc filter=lfs diff=lfs merge=lfs -text
-External/Darwin/bin/spirv-cross filter=lfs diff=lfs merge=lfs -text
 *.astc filter=lfs diff=lfs merge=lfs -text
 *.pvr filter=lfs diff=lfs merge=lfs -text
 *.ttf filter=lfs diff=lfs merge=lfs -text

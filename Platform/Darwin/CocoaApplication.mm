@@ -48,7 +48,7 @@ void CocoaApplication::CreateMainWindow() {
                       defer:NO];
     [m_pWindow setTitle:appName];
     [m_pWindow makeKeyAndOrderFront:nil];
-    id winDelegate = [WindowDelegate new];
+    id winDelegate = [[WindowDelegate new] initWithApp:this];
     [m_pWindow setDelegate:winDelegate];
     [winDelegate release];
 
@@ -68,11 +68,12 @@ void CocoaApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
 }
 
 void CocoaApplication::Finalize() {
+    [m_pWindow release];
+
     if (ImGui::GetCurrentContext()) {
         ImGui_ImplOSX_Shutdown();
     }
 
-    [m_pWindow release];
     BaseApplication::Finalize();
 }
 
@@ -165,6 +166,7 @@ void CocoaApplication::Tick() {
                     break;
             }
         }
+
         [NSApp sendEvent:event];
         [NSApp updateWindows];
     }

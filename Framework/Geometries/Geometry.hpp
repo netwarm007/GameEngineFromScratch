@@ -1,46 +1,31 @@
 #pragma once
-#include <limits>
-
-#include "aabb.hpp"
 #include "portable.hpp"
+#include "Hitable.hpp"
 
 namespace My {
 ENUM(GeometryType){kBox,   kCapsule,    kCone,   kCylinder,
                    kPlane, kPolyhydron, kSphere, kTriangle};
 
-class Geometry {
+template <class T>
+class Geometry : _implements_ Hitable<T> {
    public:
-    explicit Geometry(GeometryType geometry_type)
-        : m_kGeometryType(geometry_type){};
+    __device__ explicit Geometry(GeometryType geometry_type)
+        : Hitable<T>(HitableType::kGeometry) {
+        m_kGeometryType = geometry_type;
+     }
     Geometry() = delete;
-    virtual ~Geometry() = default;
-
-    // GetAabb returns the axis aligned bounding box in the coordinate frame of
-    // the given transform trans.
-    virtual void GetAabb(const Matrix4X4f& trans, Vector3f& aabbMin,
-                         Vector3f& aabbMax) const = 0;
-
-    virtual void GetBoundingSphere(Vector3f& center, float& radius) const;
-
-    // GetAngularMotionDisc returns the maximum radius needed for Conservative
-    // Advancement to handle
-    // time-of-impact with rotations.
-    [[nodiscard]] virtual float GetAngularMotionDisc() const;
-
-    // CalculateTemporalAabb calculates the enclosing aabb for the moving object
-    // over interval [0..timeStep) result is conservative
-    void CalculateTemporalAabb(const Matrix4X4f& curTrans,
-                               const Vector3f& linvel, const Vector3f& angvel,
-                               float timeStep, Vector3f& temporalAabbMin,
-                               Vector3f& temporalAabbMax) const;
 
     [[nodiscard]] GeometryType GetGeometryType() const {
         return m_kGeometryType;
-    };
+    }
+
+   protected:
+    std::ostream& dump(std::ostream& out) const override {
+        return out;
+    }
 
    protected:
     GeometryType m_kGeometryType;
-    float m_fMargin = std::numeric_limits<float>::epsilon();
-    Vector3f m_color = { 0, 0, 0 };
+    T m_fMargin = 0.0001;
 };
 }  // namespace My

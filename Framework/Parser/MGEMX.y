@@ -10,7 +10,7 @@
 
 %}
 
-%require "3.7.4"
+%require "3.5.1"
 %language "C++"
 %defines "MGEMX.parser.generated.hpp"
 %output  "MGEMX.parser.generated.cpp"
@@ -160,7 +160,7 @@ namespace My {
 
     void register_type(ASTNode::IDN_TYPE idn, ASTNodeRef ref) {
 
-        if(global_symbol_table.end() != global_symbol_table.find(idn)) {
+        if(global_symbol_table.contains(idn)) {
             // symbol already defined
             std::cerr << "\x1b[41m\x1b[33m";
             std::cerr << "[Error] Redefine of symbol {" << idn << "} !" << std::endl;
@@ -180,7 +180,7 @@ namespace My {
     }
 
     void check_type_def(const char* idn) {
-        if(global_symbol_table.end() == global_symbol_table.find(idn)) {
+        if(global_symbol_table.contains(idn)) {
             // symbol type is not defined yet
             std::cerr << "\x1b[41m\x1b[33m";
             std::cerr << "[Error] type {" << idn << "} has not been defined yet!" << std::endl;

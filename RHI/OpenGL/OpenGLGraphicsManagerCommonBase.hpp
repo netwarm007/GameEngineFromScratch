@@ -61,7 +61,7 @@ class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;
 
-    void drawPoints(const Point* buffer, const size_t count,
+    void drawPoints(const Point<float>* buffer, const size_t count,
                     const Matrix4X4f& trans, const Vector3f& color);
 
     void SetPerFrameConstants(const DrawFrameContext& context);

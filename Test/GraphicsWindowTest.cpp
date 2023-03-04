@@ -8,6 +8,8 @@
 #elif defined(OS_WINDOWS)
 #include "D3d12Application.hpp"
 #include "OpenGLApplication.hpp"
+#elif defined(OS_ANDROID)
+#include "OpenGLESApplication.hpp"
 #else
 #include "OpenGLApplication.hpp"
 #endif
@@ -55,12 +57,21 @@ int main() {
 #endif
 
 #if !defined(OS_MACOS)
+#if defined(OS_ANDROID)
+    {
+        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
+                                "OpenGLES Application Test");
+        OpenGLESApplication app(config);
+        result |= test(app);
+    }
+#else
     {
         GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
                                 "OpenGL Application Test");
         OpenGLApplication app(config);
         result |= test(app);
     }
+#endif
 #endif
 
 #if defined(HAS_VULKAN)

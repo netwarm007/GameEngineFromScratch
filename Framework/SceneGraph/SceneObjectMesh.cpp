@@ -38,8 +38,8 @@ BoundingBox SceneObjectMesh::GetBoundingBox() const {
                         break;
                     }
                     case VertexDataType::kVertexDataTypeDouble3: {
-                        const Vector3* vertex =
-                            reinterpret_cast<const Vector3*>(data) + i;
+                        const Vector3f* vertex =
+                            reinterpret_cast<const Vector3f*>(data) + i;
                         bbmin[0] = static_cast<float>(
                             (bbmin[0] < vertex->data[0]) ? bbmin[0]
                                                          : vertex->data[0]);
@@ -74,8 +74,8 @@ BoundingBox SceneObjectMesh::GetBoundingBox() const {
     return result;
 }
 
-ConvexHull SceneObjectMesh::GetConvexHull() const {
-    ConvexHull hull;
+ConvexHull<float> SceneObjectMesh::GetConvexHull() const {
+    ConvexHull<float> hull;
 
     auto count = m_VertexArray.size();
     for (decltype(count) n = 0; n < count; n++) {
@@ -92,8 +92,8 @@ ConvexHull SceneObjectMesh::GetConvexHull() const {
                         break;
                     }
                     case VertexDataType::kVertexDataTypeDouble3: {
-                        const Vector3* vertex =
-                            reinterpret_cast<const Vector3*>(data) + i;
+                        const Vector3f* vertex =
+                            reinterpret_cast<const Vector3f*>(data) + i;
                         hull.AddPoint(*vertex);
                         break;
                     }

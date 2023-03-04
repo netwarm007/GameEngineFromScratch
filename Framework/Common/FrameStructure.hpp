@@ -26,6 +26,6 @@ struct Frame : global_textures {
     intptr_t frameBuffer;
     bool renderToTexture = false;
     bool enableMSAA = false;
-    bool clearRT = false;
+    bool clearRT = true;
 };
 }  // namespace My

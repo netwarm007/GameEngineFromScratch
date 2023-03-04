@@ -277,7 +277,7 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
 
 void MetalPipelineStateManager::DestroyPipelineState(PipelineState& pipelineState) {
     MetalPipelineState* pState = dynamic_cast<MetalPipelineState*>(&pipelineState);
-    [pState->mtlRenderPipelineState release];
-    [pState->mtlComputePipelineState release];
-    [pState->depthState release];
+    if (pState->mtlRenderPipelineState) [pState->mtlRenderPipelineState release];
+    if (pState->mtlComputePipelineState) [pState->mtlComputePipelineState release];
+    if (pState->depthState) [pState->depthState release];
 }

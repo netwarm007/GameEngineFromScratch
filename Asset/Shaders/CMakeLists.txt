@@ -25,8 +25,13 @@ IF(WIN32)
     set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/Windows/bin/SPIRV-Cross.exe)
     set(DXC            dxc.exe)
 ELSE(WIN32)
-	set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/glslangValidator)
-	set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/spirv-cross)
+    if(CMAKE_CROSSCOMPILING)
+        set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/${CMAKE_HOST_SYSTEM_NAME}/bin/glslangValidator)
+        set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/${CMAKE_HOST_SYSTEM_NAME}/bin/spirv-cross)
+    else()
+        set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/glslangValidator)
+        set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/spirv-cross)
+    endif(CMAKE_CROSSCOMPILING)
 ENDIF(WIN32)
 
 set(VULKAN_SOURCE_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan)
@@ -128,3 +133,10 @@ IF(WIN32)
         endif ()
     endforeach(SHADER)
 ENDIF(WIN32)
+
+if(USE_CUDA)
+add_custom_command(OUTPUT draw_solid_color.optixir 
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CUDA_SOURCE_DIR}
+    COMMAND nvcc -v --std c++20 -o ${CUDA_SOURCE_DIR}/draw_solid_color.optixir --optix-ir ${CMAKE_CURRENT_SOURCE_DIR}/CUDA/draw_solid_color.cu -I ${OPTIX76_INCLUDE_DIR} -I ${PROJECT_SOURCE_DIR} -I ${PROJECT_SOURCE_DIR}/Framework/GeomMath/ -I ${PROJECT_SOURCE_DIR}/Framework/Common/
+)
+endif()

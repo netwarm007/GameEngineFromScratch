@@ -9,6 +9,14 @@
 // YOU SHOULD NOT NEED TO INCLUDE/USE THIS DIRECTLY. THIS IS USED BY imgui_impl_opengl3.cpp ONLY.
 // THE REST OF YOUR APP SHOULD USE A DIFFERENT GL LOADER: ANY GL LOADER OF YOUR CHOICE.
 //
+// IF YOU GET BUILD ERRORS IN THIS FILE (commonly macro redefinitions or function redefinitions):
+// IT LIKELY MEANS THAT YOU ARE BUILDING 'imgui_impl_opengl3.cpp' OR INCUDING 'imgui_impl_opengl3_loader.h'
+// IN THE SAME COMPILATION UNIT AS ONE OF YOUR FILE WHICH IS USING A THIRD-PARTY OPENGL LOADER.
+// (e.g. COULD HAPPEN IF YOU ARE DOING A UNITY/JUMBO BUILD, OR INCLUDING .CPP FILES FROM OTHERS)
+// YOU SHOULD NOT BUILD BOTH IN THE SAME COMPILATION UNIT.
+// BUT IF YOU REALLY WANT TO, you can '#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM' and imgui_impl_opengl3.cpp
+// WILL NOT BE USING OUR LOADER, AND INSTEAD EXPECT ANOTHER/YOUR LOADER TO BE AVAILABLE IN THE COMPILATION UNIT.
+//
 // Regenerate with:
 //   python gl3w_gen.py --output ../imgui/backends/imgui_impl_opengl3_loader.h --ref ../imgui/backends/imgui_impl_opengl3.cpp ./extra_symbols.txt
 //
@@ -164,6 +172,8 @@ typedef khronos_uint8_t GLubyte;
 #define GL_FLOAT                          0x1406
 #define GL_RGBA                           0x1908
 #define GL_FILL                           0x1B02
+#define GL_VENDOR                         0x1F00
+#define GL_RENDERER                       0x1F01
 #define GL_VERSION                        0x1F02
 #define GL_EXTENSIONS                     0x1F03
 #define GL_LINEAR                         0x2601
@@ -675,7 +685,13 @@ static int parse_version(void)
         return GL3W_ERROR_INIT;
     glGetIntegerv(GL_MAJOR_VERSION, &version.major);
     glGetIntegerv(GL_MINOR_VERSION, &version.minor);
-    if (version.major < 3)
+    if (version.major == 0 && version.minor == 0)
+    {
+        // Query GL_VERSION in desktop GL 2.x, the string will start with "<major>.<minor>"
+        const char* gl_version = (const char*)glGetString(GL_VERSION);
+        sscanf(gl_version, "%d.%d", &version.major, &version.minor);
+    }
+    if (version.major < 2)
         return GL3W_ERROR_OPENGL_VERSION;
     return GL3W_OK;
 }
@@ -699,7 +715,7 @@ int imgl3wInit2(GL3WGetProcAddressProc proc)
 
 int imgl3wIsSupported(int major, int minor)
 {
-    if (major < 3)
+    if (major < 2)
         return 0;
     if (version.major == major)
         return version.minor >= minor;

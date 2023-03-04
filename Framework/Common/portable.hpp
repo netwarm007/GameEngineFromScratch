@@ -71,6 +71,11 @@ constexpr uint16_t operator"" _u16(const char* s, size_t) {
 }
 }  // namespace My
 
+#ifndef __CUDACC__
+#define __host__
+#define __device__
+#endif
+
 #ifdef __OBJC__
 #define OBJC_CLASS(name) @class name
 #else

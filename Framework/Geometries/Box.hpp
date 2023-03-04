@@ -2,27 +2,40 @@
 #include "Geometry.hpp"
 
 namespace My {
-class Box : public Geometry {
+template <typename T>
+class Box : public Geometry<T> {
    public:
-    Box() = delete;
-    explicit Box(Vector3f halfExtents)
-        : Geometry(GeometryType::kBox), m_vHalfExtents(halfExtents) {}
+    Box()
+        : Geometry<T>(GeometryType::kBox),
+          m_vHalfExtents({0.5, 0.5, 0.5}),
+          m_vCenter({0, 0, 0}) {}
+    Box(Vector3<T> halfExtents) : Box() { m_vHalfExtents = halfExtents; }
+    Box(Vector3<T> halfExtents, Point<T> center) : Box() { m_vHalfExtents = halfExtents; m_vCenter = center; }
 
-    void GetAabb(const Matrix4X4f& trans, Vector3f& aabbMin,
-                 Vector3f& aabbMax) const final;
+    bool GetAabb(const Matrix4X4<T>& trans, AaBb<T, 3>& aabb) const final {
+        if (isNearZero(m_vHalfExtents)) return false;
 
-    [[nodiscard]] Vector3f GetDimension() const {
-        return m_vHalfExtents * 2.0f;
+        TransformAabb(m_vHalfExtents, Geometry<T>::m_fMargin, trans, aabb);
+        return true;
     }
-    [[nodiscard]] Vector3f GetDimensionWithMargin() const {
-        return m_vHalfExtents * 2.0f + m_fMargin;
+
+    [[nodiscard]] Vector3<T> GetDimension() const {
+        return m_vHalfExtents * 2.0;
     }
-    [[nodiscard]] Vector3f GetHalfExtents() const { return m_vHalfExtents; }
-    [[nodiscard]] Vector3f GetHalfExtentsWithMargin() const {
-        return m_vHalfExtents + m_fMargin;
+    [[nodiscard]] Vector3<T> GetDimensionWithMargin() const {
+        return m_vHalfExtents * 2.0 + Geometry<T>::m_fMargin;
+    }
+    [[nodiscard]] Vector3<T> GetHalfExtents() const { return m_vHalfExtents; }
+    [[nodiscard]] Vector3<T> GetHalfExtentsWithMargin() const {
+        return m_vHalfExtents + Geometry<T>::m_fMargin;
+    }
+
+    bool Intersect(const Ray<T>& r, Hit<T>& h, T tmin, T tmax) const override {
+        return false;
     }
 
    protected:
-    Vector3f m_vHalfExtents;
+    Point<T> m_vCenter;
+    Vector3<T> m_vHalfExtents;
 };
 }  // namespace My

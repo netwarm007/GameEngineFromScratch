@@ -52,9 +52,8 @@ void* MemoryManager::AllocatePage(size_t size) {
 }
 
 void MemoryManager::FreePage(void* p) {
-    auto it = m_mapMemoryAllocationInfo.find(p);
-    if (it != m_mapMemoryAllocationInfo.end()) {
-        m_mapMemoryAllocationInfo.erase(it);
+    if (m_mapMemoryAllocationInfo.contains(p)) {
+        m_mapMemoryAllocationInfo.erase(p);
         free(p);
     }
 }
