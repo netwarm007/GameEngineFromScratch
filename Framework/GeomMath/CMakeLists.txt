@@ -56,9 +56,9 @@ SET(ISPC_OPTIONS ${ISPC_OPTIONS} -O2 --pic)
 add_subdirectory(cpp)
 add_subdirectory(ispc)
 
-IF(WA)
+IF(NOT USE_ISPC)
     add_library(GeomMath ALIAS MyGeomMathLib)
-ELSE(WA)
+ELSE()
     add_library(GeomMath STATIC IMPORTED GLOBAL)
     add_dependencies(GeomMath IspcGeomMathLib)
 
@@ -66,4 +66,4 @@ ELSE(WA)
             PROPERTIES
             IMPORTED_LOCATION ${GEOMMATH_LIB_FILE}
             )
-ENDIF(WA)
+ENDIF()
