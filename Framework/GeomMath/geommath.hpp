@@ -304,6 +304,7 @@ __host__ __device__ inline void DotProduct(T& result, const Vector<T, N>& vec1,
 #ifdef USE_ISPC
     ispc::DotProduct(vec1, vec2, &result, N);
 #else
+    result = static_cast<T>(0);
     for (int i = 0; i < N; i++) {
         result += vec1[i] * vec2[i];
     }
@@ -554,8 +555,9 @@ __host__ __device__ inline Vector<T, N> Reflect(const Vector<T, N>& v,
 }
 
 template <class T, Dimension auto N>
-__host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v, const Vector<T, N>& n,
-                            T etai_over_etat) {
+__host__ __device__ inline Vector<T, N> Refract(const Vector<T, N>& v,
+                                                const Vector<T, N>& n,
+                                                T etai_over_etat) {
     T cos_theta = fmin((T)DotProduct(-v, n), (T)1.0);
 
     Vector<T, N> r_out_perp = etai_over_etat * (v + cos_theta * n);
@@ -905,7 +907,7 @@ __host__ __device__ inline void Transform(Vector4f& vector,
     for (int index = 0; index < 4; index++) {
         tmp[index] =
             (vector[0] * matrix[0][index]) + (vector[1] * matrix[1][index]) +
-            (vector[2] * matrix[2][index]) + (vector[3] * matrix[2][index]);
+            (vector[2] * matrix[2][index]) + (vector[3] * matrix[3][index]);
     }
 #endif
     vector = tmp;
@@ -986,21 +988,16 @@ inline void BuildViewRHMatrix(Matrix4X4f& result, const Vector3f position,
 
 template <class T>
 __host__ __device__ constexpr auto BuildIdentityMatrix3X3() {
-    return Matrix<T, 3, 3>({{
-        {1.0, 0.0, 0.0},
-        {0.0, 1.0, 0.0},
-        {0.0, 0.0, 1.0}
-    }});
+    return Matrix<T, 3, 3>(
+        {{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}});
 }
 
 template <class T>
 __host__ __device__ constexpr auto BuildIdentityMatrix4X4() {
-    return Matrix<T, 4, 4> ({{
-        {1.0, 0.0, 0.0, 0.0},
-        {0.0, 1.0, 0.0, 0.0},
-        {0.0, 0.0, 1.0, 0.0},
-        {0.0, 0.0, 0.0, 1.0}
-    }});
+    return Matrix<T, 4, 4>({{{1.0, 0.0, 0.0, 0.0},
+                             {0.0, 1.0, 0.0, 0.0},
+                             {0.0, 0.0, 1.0, 0.0},
+                             {0.0, 0.0, 0.0, 1.0}}});
 }
 
 template <class T, Dimension auto N>
@@ -1489,11 +1486,14 @@ __device__ __host__ inline T clamp(T x, T min_x, T max_x) {
 }
 
 template <class T>
-__device__ __host__ inline Vector3<T> clamp(const Vector3<T>& v, const T a, const T b) {
-    return Vector3<T>({clamp(v[0], a, b), clamp(v[1], a, b), clamp(v[2], a, b)});
+__device__ __host__ inline Vector3<T> clamp(const Vector3<T>& v, const T a,
+                                            const T b) {
+    return Vector3<T>(
+        {clamp(v[0], a, b), clamp(v[1], a, b), clamp(v[2], a, b)});
 }
 
-__device__ __host__ inline auto roundUp(std::integral auto x, std::integral auto y) {
+__device__ __host__ inline auto roundUp(std::integral auto x,
+                                        std::integral auto y) {
     return ((x + y - 1) / y) * y;
 }
 }  // namespace My
