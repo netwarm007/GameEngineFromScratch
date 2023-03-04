@@ -102,7 +102,7 @@ build_script:
 
     scripts/build_openal Release
 
-    scripts/build Release
+    scripts/build-vs Release
 
     scripts/cook_material Release
 
