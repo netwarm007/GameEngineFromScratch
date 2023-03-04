@@ -261,7 +261,11 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
 
     // 初始化 vk::InstanceCreateInfo
     vk::InstanceCreateInfo instanceCreateInfo(
-        {vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR},
+        {
+#ifdef OS_MACOS
+            vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR
+#endif
+        },
         &applicationInfo, {}, extensions);
 
     m_vkInstance = vk::createInstance(instanceCreateInfo);
