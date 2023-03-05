@@ -35,15 +35,18 @@ int main() {
 
     auto& rhi = app.GetRHI();
 
-    // 创建图形管道
-    rhi.CreateGraphicsResources();
+    // 定义资源
+    ID2D1SolidColorBrush *pLightSlateGrayBrush;
+    ID2D1SolidColorBrush *pCornflowerBlueBrush;
 
-    // 创建画布颜色
-    Vector4f clearColor {0.3f, 0.3f, 0.3f, 1.0f};
+    D2dRHI::CreateResourceFunc createResourceFunc =
+        [&rhi, &pLightSlateGrayBrush, &pCornflowerBlueBrush]() {
+            pLightSlateGrayBrush = rhi.CreateSolidColorBrush({0.3f, 0.3f, 0.3f});
+            pCornflowerBlueBrush = rhi.CreateSolidColorBrush({0.0f, 0.0f, 0.5f});
+        };
 
-    // 创建画笔
-    auto *pLightSlateGrayBrush = rhi.CreateSolidColorBrush({0.3f, 0.3f, 0.3f});
-    auto *pCornflowerBlueBrush = rhi.CreateSolidColorBrush({0.0f, 0.0f, 0.5f});
+    // 登记资源创建回调函数
+    rhi.CreateResourceCB(createResourceFunc);
 
     D2dRHI::DestroyResourceFunc destroyResourceFunc =
         [&pLightSlateGrayBrush, &pCornflowerBlueBrush]() {
@@ -51,7 +54,14 @@ int main() {
             SafeRelease(&pCornflowerBlueBrush);
         };
 
+    // 登记资源销毁回调函数
     rhi.DestroyResourceCB(destroyResourceFunc);
+
+    // 创建图形资源
+    rhi.CreateGraphicsResources();
+
+    // 创建画布颜色
+    Vector4f clearColor {1.0f, 1.0f, 1.0f, 1.0f};
 
     // 主消息循环
     while (!app.IsQuit()) {
@@ -61,6 +71,16 @@ int main() {
         rhi.BeginFrame();
 
         rhi.ClearCanvas(clearColor);
+
+        auto canvasSize = rhi.GetCanvasSize();
+
+        for (int x = 0; x < canvasSize[0]; x += 10) {
+            rhi.DrawLine({static_cast<float>(x), 0.0f}, {static_cast<float>(x), canvasSize[1]}, pLightSlateGrayBrush, 0.5f);
+        }
+
+        for (int y = 0; y < canvasSize[1]; y += 10) {
+            rhi.DrawLine({0.0f, static_cast<float>(y)}, {canvasSize[0], static_cast<float>(y)}, pLightSlateGrayBrush, 0.5f);
+        }
 
         rhi.EndFrame();
     }

@@ -11,6 +11,7 @@ class D2dRHI {
     using QueryFrameBufferSizeFunc = std::function<void(uint32_t&, uint32_t&)>;
     using GetWindowHandlerFunc = std::function<HWND()>;
     using GetGfxConfigFunc = std::function<const GfxConfiguration&()>;
+    using CreateResourceFunc = std::function<void()>;
     using DestroyResourceFunc = std::function<void()>;
 
    public:
@@ -27,18 +28,23 @@ class D2dRHI {
     void SetGetGfxConfigCB(const GetGfxConfigFunc& func) {
         m_fGetGfxConfigHandler = func;
     }
+    void CreateResourceCB(const CreateResourceFunc& func) {
+        m_fCreateResourceHandler = func;
+    }
     void DestroyResourceCB(const DestroyResourceFunc& func) {
         m_fDestroyResourceHandler = func;
     }
 
     HRESULT CreateGraphicsResources();
+    HRESULT RecreateGraphicsResources();
 
     void BeginFrame();
     void EndFrame();
 
-    ID2D1SolidColorBrush* CreateSolidColorBrush(Vector3f color);
-
-    void ClearCanvas(Vector4f color);
+    ID2D1SolidColorBrush* CreateSolidColorBrush(Vector3f color) const;
+    void ClearCanvas(Vector4f color) const;
+    Vector2f GetCanvasSize() const;
+    void DrawLine(My::Point2Df start, My::Point2Df end, ID2D1SolidColorBrush* brush, float line_width) const;
 
     void DestroyAll();
 
@@ -51,6 +57,7 @@ class D2dRHI {
     QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
     GetWindowHandlerFunc m_fGetWindowHandler;
     GetGfxConfigFunc m_fGetGfxConfigHandler;
+    CreateResourceFunc m_fCreateResourceHandler;
     DestroyResourceFunc m_fDestroyResourceHandler;
 };
 }  // namespace My
