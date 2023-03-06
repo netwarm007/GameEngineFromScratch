@@ -4,6 +4,7 @@
 
 #include "GfxConfiguration.hpp"
 #include "geommath.hpp"
+#include "Image.hpp"
 
 namespace My {
 class D2dRHI {
@@ -41,10 +42,12 @@ class D2dRHI {
     void BeginFrame();
     void EndFrame();
 
-    ID2D1SolidColorBrush* CreateSolidColorBrush(Vector3f color) const;
+    ID2D1SolidColorBrush*   CreateSolidColorBrush(Vector3f color) const;
+    ID2D1Bitmap*            CreateBitmap(const My::Image& img) const;
     void ClearCanvas(Vector4f color) const;
     Vector2f GetCanvasSize() const;
-    void DrawLine(My::Point2Df start, My::Point2Df end, ID2D1SolidColorBrush* brush, float line_width) const;
+    void DrawLine(My::Point2Df start, My::Point2Df end, ID2D1SolidColorBrush *brush, float line_width) const;
+    void DrawBitmap(My::Point2Df left_top, My::Point2Df right_bottom, ID2D1Bitmap *bitmap) const;
 
     void DestroyAll();
 

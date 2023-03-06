@@ -100,6 +100,83 @@ void D2dRHI::DrawLine(My::Point2Df start, My::Point2Df end, ID2D1SolidColorBrush
         );
 }
 
+static DXGI_FORMAT getDxgiFormat(const Image& img) {
+    DXGI_FORMAT format;
+
+    if (img.compressed) {
+        switch (img.compress_format) {
+            case COMPRESSED_FORMAT::BC1:
+            case COMPRESSED_FORMAT::DXT1:
+                format = ::DXGI_FORMAT_BC1_UNORM;
+                break;
+            case COMPRESSED_FORMAT::BC2:
+            case COMPRESSED_FORMAT::DXT3:
+                format = ::DXGI_FORMAT_BC2_UNORM;
+                break;
+            case COMPRESSED_FORMAT::BC3:
+            case COMPRESSED_FORMAT::DXT5:
+                format = ::DXGI_FORMAT_BC3_UNORM;
+                break;
+            case COMPRESSED_FORMAT::BC4:
+                format = ::DXGI_FORMAT_BC4_UNORM;
+                break;
+            case COMPRESSED_FORMAT::BC5:
+                format = ::DXGI_FORMAT_BC5_UNORM;
+                break;
+            case COMPRESSED_FORMAT::BC6H:
+                format = ::DXGI_FORMAT_BC6H_UF16;
+                break;
+            case COMPRESSED_FORMAT::BC7:
+                format = ::DXGI_FORMAT_BC7_UNORM;
+                break;
+            default:
+                assert(0);
+        }
+    } else {
+        switch (img.pixel_format) {
+            case PIXEL_FORMAT::R8:
+                format = ::DXGI_FORMAT_R8_UNORM;
+                break;
+            case PIXEL_FORMAT::RG8:
+                format = ::DXGI_FORMAT_R8G8_UNORM;
+                break;
+            case PIXEL_FORMAT::RGBA8:
+                format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
+                break;
+            case PIXEL_FORMAT::RGBA16:
+                format = ::DXGI_FORMAT_R16G16B16A16_FLOAT;
+                break;
+            default:
+                assert(0);
+        }
+    }
+
+    return format;
+}
+
+ID2D1Bitmap* My::D2dRHI::CreateBitmap(const My::Image& img) const {
+    ID2D1Bitmap *bitmap;
+    D2D1_BITMAP_PROPERTIES bitmap_prop;
+    bitmap_prop.dpiX = 150;
+    bitmap_prop.dpiY = 150;
+    bitmap_prop.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
+    bitmap_prop.pixelFormat.format = getDxgiFormat(img);
+
+    m_pRenderTarget->CreateBitmap(D2D1::SizeU(img.Width, img.Height), bitmap_prop, &bitmap);
+    bitmap->CopyFromMemory(nullptr, img.data, img.pitch);
+
+    return bitmap;
+}
+
+void My::D2dRHI::DrawBitmap(My::Point2Df left_top, My::Point2Df right_bottom,
+                           ID2D1Bitmap *bitmap) const {
+    D2D1_RECT_F destinationRectangle = D2D1::RectF(left_top[0], left_top[1], right_bottom[0], right_bottom[1]);
+    m_pRenderTarget->DrawBitmap(
+        bitmap,
+        destinationRectangle
+    );
+}
+
 Vector2f D2dRHI::GetCanvasSize() const {
     auto rtSize = m_pRenderTarget->GetSize();
     return {rtSize.width, rtSize.height};
