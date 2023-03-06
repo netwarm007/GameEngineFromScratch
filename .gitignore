@@ -69,3 +69,5 @@ imgui.ini
 **/*.generated.hpp
 **/*.generated.cpp
 External/*/astcenc
+
+Proprietary
