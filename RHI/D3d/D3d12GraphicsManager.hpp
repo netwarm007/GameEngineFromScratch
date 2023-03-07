@@ -12,6 +12,7 @@
 #include "GraphicsManager.hpp"
 #include "Image.hpp"
 #include "SceneObject.hpp"
+#include "D3d12RHI.hpp"
 
 namespace My {
 class D3d12GraphicsManager : public GraphicsManager {
@@ -85,5 +86,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     };
 
     D3dDrawBatchContext m_dbcSkyBox;
+    std::vector<D3d12RHI::IndexBuffer> m_IndexBuffers;
+    std::vector<D3d12RHI::VertexBuffer> m_VertexBuffers;
 };
 }  // namespace My

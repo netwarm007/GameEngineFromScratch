@@ -86,7 +86,7 @@ class SceneObjectSkyBox : public BaseSceneObject {
     }
 
     public:
-    constexpr static float skyboxVertices[]{
+    constexpr static std::array<float, 24> skyboxVertices {
         1.0f,  1.0f,  1.0f,   // 0
         -1.0f, 1.0f,  1.0f,   // 1
         1.0f,  -1.0f, 1.0f,   // 2
@@ -97,7 +97,7 @@ class SceneObjectSkyBox : public BaseSceneObject {
         -1.0f, -1.0f, -1.0f   // 7
     };
 
-    constexpr static uint16_t skyboxIndices[]{4, 7, 5, 5, 3, 4,
+    constexpr static std::array<uint16_t,36> skyboxIndices {4, 7, 5, 5, 3, 4,
 
                                               6, 7, 4, 4, 1, 6,
 

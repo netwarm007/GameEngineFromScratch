@@ -20,6 +20,14 @@ using namespace std;
 
 D3d12GraphicsManager::~D3d12GraphicsManager() {
     SafeRelease(&m_pCbvSrvUavHeapImGui);
+
+    for (auto& buf : m_VertexBuffers) {
+        SafeRelease(&buf.buffer);
+    }
+
+    for (auto& buf : m_IndexBuffers) {
+        SafeRelease(&buf.buffer);
+    }
 }
 
 int D3d12GraphicsManager::Initialize() {
@@ -64,22 +72,26 @@ void D3d12GraphicsManager::Finalize() {
 size_t D3d12GraphicsManager::CreateVertexBuffer(
     const SceneObjectVertexArray& v_property_array) {
     const void* pData = v_property_array.GetData();
-    auto size = v_property_array.GetDataSize();
-    auto stride = size / v_property_array.GetVertexCount();
+    auto element_size = v_property_array.GetVertexCount();
+    auto stride = v_property_array.GetDataSize() / element_size;
 
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
-    return rhi.CreateVertexBuffer(pData, size, (int32_t)stride);
+    m_VertexBuffers.emplace_back(rhi.CreateVertexBuffer(pData, element_size, (int32_t)stride));
+
+    return m_VertexBuffers.size() - 1;
 }
 
 size_t D3d12GraphicsManager::CreateIndexBuffer(
     const SceneObjectIndexArray& index_array) {
     const void* pData = index_array.GetData();
-    auto size = index_array.GetDataSize();
+    auto element_size = index_array.GetIndexCount();
     int32_t index_size =
-        static_cast<int32_t>(size / index_array.GetIndexCount());
+        static_cast<int32_t>(index_array.GetDataSize() / element_size);
 
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
-    return rhi.CreateIndexBuffer(pData, size, index_size);
+    m_IndexBuffers.emplace_back(rhi.CreateIndexBuffer(pData, element_size, index_size));
+
+    return m_IndexBuffers.size() - 1;
 }
 
 // this is the function that loads and prepares the pso
@@ -439,17 +451,17 @@ void D3d12GraphicsManager::initializeSkyBox(const Scene& scene) {
 
     assert(scene.SkyBox);
 
-    m_dbcSkyBox.property_offset =
-        rhi.CreateVertexBuffer(SceneObjectSkyBox::skyboxVertices,
-                               sizeof(SceneObjectSkyBox::skyboxVertices),
-                               sizeof(SceneObjectSkyBox::skyboxVertices[0]));
+    m_dbcSkyBox.property_offset = m_VertexBuffers.size();
+    m_VertexBuffers.emplace_back(rhi.CreateVertexBuffer(SceneObjectSkyBox::skyboxVertices.data(),
+                            SceneObjectSkyBox::skyboxVertices.size(),
+                            sizeof(SceneObjectSkyBox::skyboxVertices[0])));
     m_dbcSkyBox.property_count = 1;
-    m_dbcSkyBox.index_offset = rhi.CreateIndexBuffer(
-        SceneObjectSkyBox::skyboxIndices,
-        sizeof(SceneObjectSkyBox::skyboxIndices),
-        static_cast<int32_t>(sizeof(SceneObjectSkyBox::skyboxIndices[0])));
-    m_dbcSkyBox.index_count = sizeof(SceneObjectSkyBox::skyboxIndices) /
-                              sizeof(SceneObjectSkyBox::skyboxIndices[0]);
+    m_dbcSkyBox.index_offset = m_IndexBuffers.size();
+    m_IndexBuffers.emplace_back(rhi.CreateIndexBuffer(
+        SceneObjectSkyBox::skyboxIndices.data(),
+        SceneObjectSkyBox::skyboxIndices.size(),
+        static_cast<int32_t>(sizeof(SceneObjectSkyBox::skyboxIndices[0]))));
+    m_dbcSkyBox.index_count = SceneObjectSkyBox::skyboxIndices.size();
 
     // Describe and create a Cubemap.
     auto& texture = scene.SkyBox->GetTexture(0);
@@ -494,13 +506,14 @@ void D3d12GraphicsManager::EndPass(Frame& frame) {
 }
 
 void D3d12GraphicsManager::DrawBatch(const Frame& frame) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+
     for (const auto& pDbc : frame.batchContexts) {
         const D3dDrawBatchContext& dbc =
             dynamic_cast<const D3dDrawBatchContext&>(*pDbc);
-    }
 
-    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
-    rhi.Draw();
+        rhi.Draw(m_VertexBuffers[dbc.property_offset].descriptor, m_IndexBuffers[dbc.index_offset].descriptor, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, dbc.index_count);
+    }
 }
 
 void D3d12GraphicsManager::SetPipelineState(

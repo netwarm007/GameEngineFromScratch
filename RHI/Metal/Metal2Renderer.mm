@@ -566,20 +566,19 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
     [_renderEncoder pushDebugGroup:@"DrawSkyBox"];
 
-    [_renderEncoder setVertexBytes:static_cast<const void*>(My::SceneObjectSkyBox::skyboxVertices)
+    [_renderEncoder setVertexBytes:static_cast<const void*>(My::SceneObjectSkyBox::skyboxVertices.data())
                             length:sizeof(My::SceneObjectSkyBox::skyboxVertices)
                            atIndex:0];
 
     id<MTLBuffer> indexBuffer;
-    indexBuffer = [_device newBufferWithBytes:My::SceneObjectSkyBox::skyboxIndices
+    indexBuffer = [_device newBufferWithBytes:My::SceneObjectSkyBox::skyboxIndices.data()
                                        length:sizeof(My::SceneObjectSkyBox::skyboxIndices)
                                       options:MTLResourceStorageModeShared];
 
     if (indexBuffer != nil) {
         // Draw skybox
         [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                   indexCount:sizeof(My::SceneObjectSkyBox::skyboxIndices) /
-                                              sizeof(My::SceneObjectSkyBox::skyboxIndices[0])
+                                   indexCount:My::SceneObjectSkyBox::skyboxIndices.size())
                                     indexType:MTLIndexTypeUInt16
                                   indexBuffer:indexBuffer
                             indexBufferOffset:0];

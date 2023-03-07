@@ -41,6 +41,7 @@ int main() {
     ID2D1SolidColorBrush *pCornflowerBlueBrush;
     ID2D1Bitmap          *pBitmap;
 
+    // 创建并登记资源创建回调函数
     D2dRHI::CreateResourceFunc createResourceFunc =
         [&rhi, &pLightSlateGrayBrush, &pCornflowerBlueBrush, &pBitmap]() {
             pLightSlateGrayBrush = rhi.CreateSolidColorBrush({0.3f, 0.3f, 0.3f});
@@ -70,9 +71,9 @@ int main() {
             }
         };
 
-    // 登记资源创建回调函数
     rhi.CreateResourceCB(createResourceFunc);
 
+    // 创建并登记资源销毁回调函数
     D2dRHI::DestroyResourceFunc destroyResourceFunc =
         [&pLightSlateGrayBrush, &pCornflowerBlueBrush, &pBitmap]() {
             SafeRelease(&pLightSlateGrayBrush);
@@ -80,7 +81,6 @@ int main() {
             SafeRelease(&pBitmap);
         };
 
-    // 登记资源销毁回调函数
     rhi.DestroyResourceCB(destroyResourceFunc);
 
     // 创建图形资源
