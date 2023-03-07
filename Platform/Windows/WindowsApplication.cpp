@@ -70,6 +70,8 @@ void WindowsApplication::Finalize() {
     }
 
     ReleaseDC(m_hWnd, m_hDc);
+
+    DestroyWindow(m_hWnd);
 }
 
 void WindowsApplication::Tick() {

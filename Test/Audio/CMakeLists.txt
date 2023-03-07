@@ -1,0 +1,6 @@
+add_executable(OpenALTest OpenALTest.cpp)
+if(ANDROID)
+    target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY} OpenSLES)
+else()
+    target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY})
+endif()

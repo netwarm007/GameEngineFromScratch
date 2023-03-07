@@ -1,23 +1,3 @@
-set(FRAMEWORK_TEST_CASES AssetLoaderTest GeomMathTest ColorSpaceConversionTest
-    OgexParserTest JpegParserTest PngParserTest DdsParserTest HdrParserTest TgaParserTest
-    AstcParserTest PvrParserTest
-    WaveParserTest
-    SceneLoadingTest AnimationTest
-    BulletTest NumericalMethodsTest BezierCubic1DTest QuickhullTest GjkTest ChronoTest LinearInterpolateTest QRDecomposeTest PolarDecomposeTest
-    RasterizationTest SceneObjectTest
-    ASTNodeTest MGEMXParserTest CodeGeneratorTest
-    WaveGeneratorTest PPMEncoderTest
-    RandomTest
-    BVHTest
-    TgaEncoderTest
-)
-
-foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
-    add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
-    target_link_libraries(${TEST_CASE} Framework PlatformInterface)
-    add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
-endforeach()
-
 add_executable(RayTracingTest RayTracingTest.cpp)
 target_link_libraries(RayTracingTest Framework)
 
@@ -57,83 +37,11 @@ if(USE_CUDA)
     endif()
 endif()
 
-add_executable(OpenALTest OpenALTest.cpp)
-if(ANDROID)
-    target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY} OpenSLES)
-else()
-    target_link_libraries(OpenALTest Framework PlatformInterface ${OPENAL_LIBRARY})
-endif()
-
-target_include_directories(MGEMXParserTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
-target_include_directories(CodeGeneratorTest PRIVATE ${PROJECT_BINARY_DIR}/Framework/Parser)
-
-if(OS_MACOS OR OS_WINDOWS)
-    if(Vulkan_FOUND)
-        execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/tinyobjloader)
-        add_executable(VulkanRHITest VulkanRHITest.cpp)
-        target_include_directories(VulkanRHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
-        target_link_libraries(VulkanRHITest Framework VulkanRHI PlatformInterface)
-    endif(Vulkan_FOUND)
-endif(OS_MACOS OR OS_WINDOWS)
-
-if(OS_WINDOWS)
-    execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/tinyobjloader)
-    add_executable(D3d12RHITest D3d12RHITest.cpp)
-    target_include_directories(D3d12RHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
-    target_link_libraries(D3d12RHITest Framework D3dRHI PlatformInterface)
-endif(OS_WINDOWS)
-
-set(PLATFORM_TEST_CASES BasicWindowTest)
-
-foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
-    add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
-    target_link_libraries(${TEST_CASE} Framework PlatformInterface)
-endforeach(TEST_CASE)
-
-if(SDL2_FOUND)
-    add_executable(Sdl2WindowTest Sdl2WindowTest.cpp)
-    target_link_libraries(Sdl2WindowTest Framework PlatformInterfaceSDL2)
-endif(SDL2_FOUND)
-
-set(GRAPHICS_TEST_CASES GraphicsWindowTest)
-
-if(OS_WINDOWS OR OS_MACOS)
-    list(APPEND GRAPHICS_TEST_CASES ImGuiTest)
-endif(OS_WINDOWS OR OS_MACOS)
-
-if(Vulkan_FOUND)
-    set(VULKAN_RHI VulkanRHI)
-endif(Vulkan_FOUND)
-
-foreach(TEST_CASE IN LISTS GRAPHICS_TEST_CASES)
-    add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
-
-    if(OS_MACOS)
-        target_link_libraries(${TEST_CASE} Framework PlatformInterface MetalRHI ${VULKAN_RHI})
-    elseif(OS_WINDOWS)
-        target_link_libraries(${TEST_CASE} Framework PlatformInterface D3dRHI OpenGLRHI ${VULKAN_RHI})
-    else()
-        target_link_libraries(${TEST_CASE} Framework PlatformInterface OpenGLRHI ${VULKAN_RHI})
-    endif(OS_MACOS)
-endforeach(TEST_CASE)
-
-if(SDL2_FOUND)
-    add_executable(Sdl2OpenGLWindowTest Sdl2OpenGLWindowTest.cpp)
-    target_link_libraries(Sdl2OpenGLWindowTest Framework PlatformInterfaceSDL2 OpenGLRHI)
-
-    if(OS_LINUX)
-        add_executable(ImGuiTestSDL2 ImGuiTest.cpp)
-        target_link_libraries(ImGuiTestSDL2 Framework PlatformInterfaceSDL2 OpenGLRHI ${VULKAN_RHI})
-    endif(OS_LINUX)
-endif(SDL2_FOUND)
-
 IF(WA)
     set_target_properties(${TEST_CASES}
         PROPERTIES LINK_FLAGS "--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Test.html"
     )
 ENDIF(WA)
-
-target_link_libraries(BulletTest BulletPhysics)
 
 set(TEST_ASSETS
     Asset/Textures/eye.png
@@ -166,3 +74,12 @@ ELSE(WA) # For Windows / MacOS / Linux
         )
     endforeach(TEST_ASSET)
 ENDIF(WA)
+
+add_subdirectory(Algorism)
+add_subdirectory(Audio)
+add_subdirectory(Encoder)
+add_subdirectory(Framework)
+add_subdirectory(Generator)
+add_subdirectory(Parser)
+add_subdirectory(Platform)
+add_subdirectory(RHI)

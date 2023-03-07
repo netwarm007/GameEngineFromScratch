@@ -191,4 +191,8 @@ void OpenGLApplication::CreateMainWindow() {
         assert(wglMakeCurrent(m_hDC, m_RenderContext) &&
                "wglMakeCurrent failed!\n");
     }
+
+    if (GLAD_WGL_EXT_swap_control) {
+        wglSwapIntervalEXT(1);
+    }
 }
