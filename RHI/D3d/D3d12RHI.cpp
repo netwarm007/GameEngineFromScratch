@@ -735,20 +735,9 @@ void D3d12RHI::ResetAllBuffers() {
         SafeRelease(&buf);
     }
 
-    for (auto& buf : m_pVertexBuffers) {
-        SafeRelease(&buf);
-    }
-
-    for (auto& buf : m_pIndexBuffers) {
-        SafeRelease(&buf);
-    }
-
     for (auto& buf : m_pUniformBuffers) {
         SafeRelease(&buf);
     }
-
-    m_VertexBufferViews.clear();
-    m_IndexBufferViews.clear();
 }
 
 void D3d12RHI::DestroyAll() {
@@ -856,30 +845,19 @@ void D3d12RHI::SetRootSignature(ID3D12RootSignature* pRootSignature) {
     m_pCmdList->SetGraphicsRootSignature(pRootSignature);
 }
 
-void D3d12RHI::Draw() {
+void D3d12RHI::Draw(const D3D12_VERTEX_BUFFER_VIEW &vertexBufferView, const D3D12_INDEX_BUFFER_VIEW &indexBufferView, D3D_PRIMITIVE_TOPOLOGY primitive_topology, uint32_t index_count_per_instance) {
     auto config = m_fGetGfxConfigHandler();
 
     auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
     // set which vertex buffer to use
-    D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
-    vertexBufferView.BufferLocation =
-        m_pVertexBuffers[0]->GetGPUVirtualAddress();
-    vertexBufferView.StrideInBytes = (UINT)sizeof(m_Vertices[0]);
-    vertexBufferView.SizeInBytes = m_Vertices.size() * sizeof(m_Vertices[0]);
-
     m_pCmdList->IASetVertexBuffers(0, 1, &vertexBufferView);
 
     // set which index to use
-    D3D12_INDEX_BUFFER_VIEW indexBufferView;
-    indexBufferView.BufferLocation = m_pIndexBuffers[0]->GetGPUVirtualAddress();
-    indexBufferView.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-    indexBufferView.SizeInBytes = (UINT)m_Indices.size() * sizeof(m_Indices[0]);
-
     m_pCmdList->IASetIndexBuffer(&indexBufferView);
 
     // set primitive topology
-    m_pCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    m_pCmdList->IASetPrimitiveTopology(primitive_topology);
 
     // set descriptor heaps
     ID3D12DescriptorHeap* ppHeaps[] = {m_pCbvSrvUavHeaps[m_nCurrentFrame],
@@ -897,7 +875,7 @@ void D3d12RHI::Draw() {
     m_pCmdList->SetGraphicsRootDescriptorTable(1, descriptorHandler);
 
     // draw the vertex buffer to the back buffer
-    m_pCmdList->DrawIndexedInstanced(m_Indices.size(), 1, 0, 0, 0);
+    m_pCmdList->DrawIndexedInstanced(index_count_per_instance, 1, 0, 0, 0);
 
     // 更新常量
     updateUniformBufer();
@@ -976,115 +954,6 @@ void D3d12RHI::msaaResolve() {
     m_pCmdList->ResourceBarrier(2, barrier);
 }
 
-void D3d12RHI::CreateVertexBuffer() {
-    auto bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
-
-    ID3D12Resource* pVertexBufferUploadBuffer;
-
-    // create vertex GPU heap
-    D3D12_HEAP_PROPERTIES prop{};
-    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
-    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    prop.CreationNodeMask = 1;
-    prop.VisibleNodeMask = 1;
-
-    D3D12_RESOURCE_DESC resourceDesc{};
-    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    resourceDesc.Alignment = 0;
-    resourceDesc.Width = bufferSize;
-    resourceDesc.Height = 1;
-    resourceDesc.DepthOrArraySize = 1;
-    resourceDesc.MipLevels = 1;
-    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
-    resourceDesc.SampleDesc.Count = 1;
-    resourceDesc.SampleDesc.Quality = 0;
-    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    ID3D12Resource* pVertexBuffer;
-
-    assert(SUCCEEDED(m_pDev->CreateCommittedResource(
-        &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-        D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
-        IID_PPV_ARGS(&pVertexBuffer))));
-
-    prop.Type = D3D12_HEAP_TYPE_UPLOAD;
-    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    prop.CreationNodeMask = 1;
-    prop.VisibleNodeMask = 1;
-
-    assert(SUCCEEDED(m_pDev->CreateCommittedResource(
-        &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-        IID_PPV_ARGS(&pVertexBufferUploadBuffer))));
-
-    D3D12_SUBRESOURCE_DATA vertexData{};
-    vertexData.pData = m_Vertices.data();
-
-    beginSingleTimeCommands();
-    UpdateSubresources<1>(m_pCopyCommandList, pVertexBuffer,
-                          pVertexBufferUploadBuffer, 0, 0, 1, &vertexData);
-    endSingleTimeCommands();
-
-    SafeRelease(&pVertexBufferUploadBuffer);
-
-    m_pVertexBuffers.push_back(pVertexBuffer);
-}
-
-void D3d12RHI::CreateIndexBuffer() {
-    auto bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
-
-    ID3D12Resource* pIndexBufferUploadBuffer;
-
-    // create index GPU heap
-    D3D12_HEAP_PROPERTIES prop{};
-    prop.Type = D3D12_HEAP_TYPE_DEFAULT;
-    prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    prop.CreationNodeMask = 1;
-    prop.VisibleNodeMask = 1;
-
-    D3D12_RESOURCE_DESC resourceDesc{};
-    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    resourceDesc.Alignment = 0;
-    resourceDesc.Width = bufferSize;
-    resourceDesc.Height = 1;
-    resourceDesc.DepthOrArraySize = 1;
-    resourceDesc.MipLevels = 1;
-    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
-    resourceDesc.SampleDesc.Count = 1;
-    resourceDesc.SampleDesc.Quality = 0;
-    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    ID3D12Resource* pIndexBuffer;
-
-    assert(SUCCEEDED(m_pDev->CreateCommittedResource(
-        &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-        D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pIndexBuffer))));
-
-    prop.Type = D3D12_HEAP_TYPE_UPLOAD;
-
-    assert(SUCCEEDED(m_pDev->CreateCommittedResource(
-        &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-        IID_PPV_ARGS(&pIndexBufferUploadBuffer))));
-
-    D3D12_SUBRESOURCE_DATA indexData{};
-    indexData.pData = m_Indices.data();
-
-    beginSingleTimeCommands();
-    UpdateSubresources<1>(m_pCopyCommandList, pIndexBuffer,
-                          pIndexBufferUploadBuffer, 0, 0, 1, &indexData);
-    endSingleTimeCommands();
-
-    SafeRelease(&pIndexBufferUploadBuffer);
-
-    m_pIndexBuffers.push_back(pIndexBuffer);
-}
-
 void D3d12RHI::CreateUniformBuffers() {
     auto bufferSize = ALIGN(sizeof(UniformBufferObject), 256);
 
@@ -1118,12 +987,6 @@ void D3d12RHI::CreateUniformBuffers() {
     }
 }
 
-void D3d12RHI::setModel(const std::vector<Vertex>& vertices,
-                        const std::vector<uint32_t>& indices) {
-    m_Vertices = vertices;
-    m_Indices = indices;
-}
-
 void D3d12RHI::updateUniformBufer() {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1151,9 +1014,9 @@ void D3d12RHI::updateUniformBufer() {
     m_pUniformBuffers[m_nCurrentFrame]->Unmap(0, &readRange);
 }
 
-size_t D3d12RHI::CreateVertexBuffer(const void* pData, size_t data_size,
+D3d12RHI::VertexBuffer D3d12RHI::CreateVertexBuffer(const void* pData, size_t element_size,
                                     int32_t stride_size) {
-    HRESULT hr;
+    D3d12RHI::VertexBuffer vertexBuffer = {};
 
     ID3D12Resource* pVertexBufferUploadHeap;
 
@@ -1168,7 +1031,7 @@ size_t D3d12RHI::CreateVertexBuffer(const void* pData, size_t data_size,
     D3D12_RESOURCE_DESC resourceDesc{};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = data_size;
+    resourceDesc.Width = element_size * stride_size;
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -1178,16 +1041,12 @@ size_t D3d12RHI::CreateVertexBuffer(const void* pData, size_t data_size,
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    ID3D12Resource* pVertexBuffer;
-
-    if (FAILED(hr = m_pDev->CreateCommittedResource(
+    if (FAILED(m_pDev->CreateCommittedResource(
                    &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
                    D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
-                   IID_PPV_ARGS(&pVertexBuffer)))) {
-        return hr;
+                   IID_PPV_ARGS(&vertexBuffer.buffer)))) {
+        return vertexBuffer;
     }
-
-    m_pVertexBuffers.push_back(pVertexBuffer);
 
     prop.Type = D3D12_HEAP_TYPE_UPLOAD;
     prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -1195,37 +1054,34 @@ size_t D3d12RHI::CreateVertexBuffer(const void* pData, size_t data_size,
     prop.CreationNodeMask = 1;
     prop.VisibleNodeMask = 1;
 
-    if (FAILED(hr = m_pDev->CreateCommittedResource(
+    if (FAILED(m_pDev->CreateCommittedResource(
                    &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
                    D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
                    IID_PPV_ARGS(&pVertexBufferUploadHeap)))) {
-        return hr;
+        return vertexBuffer;
     }
 
     D3D12_SUBRESOURCE_DATA vertexData{};
     vertexData.pData = pData;
 
     beginSingleTimeCommands();
-    UpdateSubresources<1>(m_pCopyCommandList, pVertexBuffer,
+    UpdateSubresources<1>(m_pCopyCommandList, vertexBuffer.buffer,
                           pVertexBufferUploadHeap, 0, 0, 1, &vertexData);
     endSingleTimeCommands();
 
     SafeRelease(&pVertexBufferUploadHeap);
 
     // initialize the vertex buffer view
-    D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
-    vertexBufferView.BufferLocation = pVertexBuffer->GetGPUVirtualAddress();
-    vertexBufferView.StrideInBytes = (UINT)(stride_size);
-    vertexBufferView.SizeInBytes = (UINT)data_size;
-    auto offset = m_VertexBufferViews.size();
-    m_VertexBufferViews.push_back(vertexBufferView);
+    vertexBuffer.descriptor.BufferLocation = vertexBuffer.buffer->GetGPUVirtualAddress();
+    vertexBuffer.descriptor.StrideInBytes = (UINT)(stride_size);
+    vertexBuffer.descriptor.SizeInBytes = (UINT)element_size * stride_size;
 
-    return offset;
+    return vertexBuffer;
 }
 
-size_t D3d12RHI::CreateIndexBuffer(const void* pData, size_t size,
+D3d12RHI::IndexBuffer D3d12RHI::CreateIndexBuffer(const void* pData, size_t element_size,
                                    int32_t index_size) {
-    HRESULT hr;
+    D3d12RHI::IndexBuffer indexBuffer = {};
 
     ID3D12Resource* pIndexBufferUploadHeap;
 
@@ -1240,7 +1096,7 @@ size_t D3d12RHI::CreateIndexBuffer(const void* pData, size_t size,
     D3D12_RESOURCE_DESC resourceDesc{};
     resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
     resourceDesc.Alignment = 0;
-    resourceDesc.Width = size;
+    resourceDesc.Width = element_size * index_size;
     resourceDesc.Height = 1;
     resourceDesc.DepthOrArraySize = 1;
     resourceDesc.MipLevels = 1;
@@ -1250,52 +1106,46 @@ size_t D3d12RHI::CreateIndexBuffer(const void* pData, size_t size,
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    ID3D12Resource* pIndexBuffer;
-
-    if (FAILED(hr = m_pDev->CreateCommittedResource(
+    if (FAILED(m_pDev->CreateCommittedResource(
                    &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
                    D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
-                   IID_PPV_ARGS(&pIndexBuffer)))) {
-        return hr;
+                   IID_PPV_ARGS(&indexBuffer.buffer)))) {
+        return indexBuffer;
     }
-
-    m_pIndexBuffers.push_back(pIndexBuffer);
 
     prop.Type = D3D12_HEAP_TYPE_UPLOAD;
 
-    if (FAILED(hr = m_pDev->CreateCommittedResource(
+    if (FAILED(m_pDev->CreateCommittedResource(
                    &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
                    D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
                    IID_PPV_ARGS(&pIndexBufferUploadHeap)))) {
-        return hr;
+        return indexBuffer;
     }
 
     D3D12_SUBRESOURCE_DATA indexData{};
     indexData.pData = pData;
 
     beginSingleTimeCommands();
-    UpdateSubresources<1>(m_pCopyCommandList, pIndexBuffer,
+    UpdateSubresources<1>(m_pCopyCommandList, indexBuffer.buffer,
                           pIndexBufferUploadHeap, 0, 0, 1, &indexData);
     endSingleTimeCommands();
 
     // initialize the index buffer view
-    D3D12_INDEX_BUFFER_VIEW indexBufferView;
-    indexBufferView.BufferLocation = pIndexBuffer->GetGPUVirtualAddress();
+    indexBuffer.descriptor.BufferLocation = indexBuffer.buffer->GetGPUVirtualAddress();
     switch (index_size) {
         case 2:
-            indexBufferView.Format = ::DXGI_FORMAT_R16_UINT;
+            indexBuffer.descriptor.Format = ::DXGI_FORMAT_R16_UINT;
             break;
         case 4:
-            indexBufferView.Format = ::DXGI_FORMAT_R32_UINT;
+            indexBuffer.descriptor.Format = ::DXGI_FORMAT_R32_UINT;
             break;
         default:
             assert(0);
     }
-    indexBufferView.SizeInBytes = (UINT)size;
-    auto offset = m_IndexBufferViews.size();
-    m_IndexBufferViews.push_back(indexBufferView);
+    indexBuffer.descriptor.SizeInBytes = element_size * index_size;
+    indexBuffer.indexCount = element_size;
 
-    return offset;
+    return indexBuffer;
 }
 
 void D3d12RHI::BeginFrame() {
@@ -1327,4 +1177,10 @@ void D3d12RHI::DrawGUI(ID3D12DescriptorHeap* pCbvRsvHeap) {
                                    ppHeaps);
 
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_pCmdList);
+}
+
+void D3d12RHI::CreateGraphicsResources() {
+    // Create client resource
+    assert(m_fCreateResourceHandler);
+    m_fCreateResourceHandler();
 }

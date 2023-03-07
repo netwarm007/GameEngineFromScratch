@@ -3,6 +3,7 @@
 #include "AssetLoader.hpp"
 #include "D2dApplication.hpp"
 #include "PVR.hpp"
+#include "AssetLoader.hpp"
 
 using namespace My;
 
@@ -38,23 +39,48 @@ int main() {
     // 定义资源
     ID2D1SolidColorBrush *pLightSlateGrayBrush;
     ID2D1SolidColorBrush *pCornflowerBlueBrush;
+    ID2D1Bitmap          *pBitmap;
 
+    // 创建并登记资源创建回调函数
     D2dRHI::CreateResourceFunc createResourceFunc =
-        [&rhi, &pLightSlateGrayBrush, &pCornflowerBlueBrush]() {
+        [&rhi, &pLightSlateGrayBrush, &pCornflowerBlueBrush, &pBitmap]() {
             pLightSlateGrayBrush = rhi.CreateSolidColorBrush({0.3f, 0.3f, 0.3f});
             pCornflowerBlueBrush = rhi.CreateSolidColorBrush({0.0f, 0.0f, 0.5f});
+
+            // 读取贴图
+            {
+                int error = 0;
+
+                AssetLoader assetLoader;
+
+                error = assetLoader.Initialize();
+
+                if (!error) {
+                    Buffer buf;
+                    buf = assetLoader.SyncOpenAndReadBinary(
+                        "Textures/viking_room.pvr");
+
+                    PVR::PvrParser astc_parser;
+
+                    auto img = astc_parser.Parse(buf);
+
+                    pBitmap = rhi.CreateBitmap(img);
+                }
+
+                assetLoader.Finalize();
+            }
         };
 
-    // 登记资源创建回调函数
     rhi.CreateResourceCB(createResourceFunc);
 
+    // 创建并登记资源销毁回调函数
     D2dRHI::DestroyResourceFunc destroyResourceFunc =
-        [&pLightSlateGrayBrush, &pCornflowerBlueBrush]() {
+        [&pLightSlateGrayBrush, &pCornflowerBlueBrush, &pBitmap]() {
             SafeRelease(&pLightSlateGrayBrush);
             SafeRelease(&pCornflowerBlueBrush);
+            SafeRelease(&pBitmap);
         };
 
-    // 登记资源销毁回调函数
     rhi.DestroyResourceCB(destroyResourceFunc);
 
     // 创建图形资源
@@ -81,6 +107,9 @@ int main() {
         for (int y = 0; y < canvasSize[1]; y += 10) {
             rhi.DrawLine({0.0f, static_cast<float>(y)}, {canvasSize[0], static_cast<float>(y)}, pLightSlateGrayBrush, 0.5f);
         }
+
+        auto bmpSize = pBitmap->GetSize();
+        rhi.DrawBitmap({100.0f, 100.0f}, {100.0f + bmpSize.width, 100.0f + bmpSize.height}, pBitmap);
 
         rhi.EndFrame();
     }

@@ -20,13 +20,8 @@ class D3d12RHI {
     using QueryFrameBufferSizeFunc = std::function<void(uint32_t&, uint32_t&)>;
     using GetWindowHandlerFunc = std::function<HWND()>;
     using GetGfxConfigFunc = std::function<const GfxConfiguration&()>;
+    using CreateResourceFunc = std::function<void()>;
     using DestroyResourceFunc = std::function<void()>;
-
-    struct Vertex {
-        Vector3f pos;
-        Vector3f color;
-        Vector2f texCoord;
-    };
 
     struct UniformBufferObject {
         Matrix4X4f model;
@@ -47,6 +42,9 @@ class D3d12RHI {
     }
     void SetGetGfxConfigCB(const GetGfxConfigFunc& func) {
         m_fGetGfxConfigHandler = func;
+    }
+    void CreateResourceCB(const CreateResourceFunc& func) {
+        m_fCreateResourceHandler = func;
     }
     void DestroyResourceCB(const DestroyResourceFunc& func) {
         m_fDestroyResourceHandler = func;
@@ -70,10 +68,6 @@ class D3d12RHI {
 
     void CreateTextureSampler();
 
-    void CreateVertexBuffer();
-
-    void CreateIndexBuffer();
-
     void CreateUniformBuffers();
 
     ID3D12RootSignature* CreateRootSignature(
@@ -90,6 +84,8 @@ class D3d12RHI {
 
     void CreateDescriptorSets(ID3D12Resource** ppResources, size_t count);
 
+    void CreateGraphicsResources();
+
     void ResetAllBuffers();
     void DestroyAll();
 
@@ -97,19 +93,31 @@ class D3d12RHI {
     void BeginPass(const Vector4f& clearColor);
     void SetPipelineState(ID3D12PipelineState* pPipelineState);
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
-    void Draw();
+    void Draw(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
+              const D3D12_INDEX_BUFFER_VIEW& indexBufferView,
+              D3D_PRIMITIVE_TOPOLOGY primitive_topology,
+              uint32_t index_count_per_instance);
     void DrawGUI(ID3D12DescriptorHeap* pCbvSrvHeap);
     void EndPass();
     void EndFrame();
 
     void Present();
 
-    void setModel(const std::vector<Vertex>& vertices,
-                  const std::vector<uint32_t>& indices);
+    struct IndexBuffer {
+        ID3D12Resource* buffer;
+        D3D12_INDEX_BUFFER_VIEW descriptor;
+        uint32_t indexCount;
+    };
 
-    size_t CreateIndexBuffer(const void* pData, size_t size,
-                             int32_t index_size);
-    size_t CreateVertexBuffer(const void* pData, size_t size, int32_t stride);
+    struct VertexBuffer {
+        ID3D12Resource* buffer;
+        D3D12_VERTEX_BUFFER_VIEW descriptor;
+    };
+
+    IndexBuffer CreateIndexBuffer(const void* pData, size_t element_size,
+                                  int32_t stride_size);
+    VertexBuffer CreateVertexBuffer(const void* pData, size_t element_size,
+                                    int32_t stride_size);
 
     ID3D12Device* GetDevice() { return m_pDev; }
 
@@ -172,16 +180,7 @@ class D3d12RHI {
 
     std::vector<ID3D12Resource*> m_pRawBuffers;
 
-    std::vector<ID3D12Resource*> m_pIndexBuffers;
-    std::vector<D3D12_INDEX_BUFFER_VIEW> m_IndexBufferViews;
-
-    std::vector<ID3D12Resource*> m_pVertexBuffers;
-    std::vector<D3D12_VERTEX_BUFFER_VIEW> m_VertexBufferViews;
-
     std::vector<ID3D12Resource*> m_pUniformBuffers;
-
-    std::vector<Vertex> m_Vertices;
-    std::vector<uint32_t> m_Indices;
 
     // Synchronization objects
     HANDLE m_hGraphicsFenceEvent = INVALID_HANDLE_VALUE;
@@ -194,6 +193,7 @@ class D3d12RHI {
     QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
     GetWindowHandlerFunc m_fGetWindowHandler;
     GetGfxConfigFunc m_fGetGfxConfigHandler;
+    CreateResourceFunc m_fCreateResourceHandler;
     DestroyResourceFunc m_fDestroyResourceHandler;
 
     uint32_t m_nCurrentFrame = 0;
