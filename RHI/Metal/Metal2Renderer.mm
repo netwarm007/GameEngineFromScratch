@@ -578,7 +578,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     if (indexBuffer != nil) {
         // Draw skybox
         [_renderEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                   indexCount:My::SceneObjectSkyBox::skyboxIndices.size())
+                                   indexCount:My::SceneObjectSkyBox::skyboxIndices.size()
                                     indexType:MTLIndexTypeUInt16
                                   indexBuffer:indexBuffer
                             indexBufferOffset:0];
