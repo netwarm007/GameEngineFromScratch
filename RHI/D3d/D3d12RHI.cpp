@@ -639,13 +639,13 @@ void D3d12RHI::CreateDescriptorPool(size_t num_descriptors,
     }
 }
 
-void D3d12RHI::CreateDescriptorSets(ID3D12Resource** ppResources,
+void D3d12RHI::CreateDescriptorSets(size_t constantBufferSize, ID3D12Resource** ppResources,
                                     size_t count) {
     for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         // uniform buffer (constant buffer)
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
         cbvDesc.BufferLocation = m_pUniformBuffers[i]->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = ALIGN(sizeof(UniformBufferObject), 256);
+        cbvDesc.SizeInBytes = ALIGN(constantBufferSize, 256);
 
         D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle;
         cbvHandle = m_pCbvSrvUavHeaps[i]->GetCPUDescriptorHandleForHeapStart();
@@ -876,9 +876,6 @@ void D3d12RHI::Draw(const D3D12_VERTEX_BUFFER_VIEW &vertexBufferView, const D3D1
 
     // draw the vertex buffer to the back buffer
     m_pCmdList->DrawIndexedInstanced(index_count_per_instance, 1, 0, 0, 0);
-
-    // 更新常量
-    updateUniformBufer();
 }
 
 void D3d12RHI::EndPass() {
@@ -954,9 +951,7 @@ void D3d12RHI::msaaResolve() {
     m_pCmdList->ResourceBarrier(2, barrier);
 }
 
-void D3d12RHI::CreateUniformBuffers() {
-    auto bufferSize = ALIGN(sizeof(UniformBufferObject), 256);
-
+void D3d12RHI::CreateUniformBuffers(size_t bufferSize) {
     D3D12_HEAP_PROPERTIES prop = {D3D12_HEAP_TYPE_UPLOAD,
                                   D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
                                   D3D12_MEMORY_POOL_UNKNOWN, 1, 1};
@@ -987,29 +982,14 @@ void D3d12RHI::CreateUniformBuffers() {
     }
 }
 
-void D3d12RHI::updateUniformBufer() {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(
-                     currentTime - startTime)
-                     .count();
-
-    UniformBufferObject ubo{};
-    BuildIdentityMatrix(ubo.model);
-    MatrixRotationAxis(ubo.model, {0.0f, 0.0f, 1.0f}, time * PI / 8.0f);
-    BuildViewRHMatrix(ubo.view, {2.0f, 2.0f, 2.0f}, {0.0f, 0.0f, 0.0f},
-                      {0.0f, 0.0f, 1.0f});
-    BuildPerspectiveFovRHMatrix(
-        ubo.proj, PI / 4.0f, m_ViewPort.Width / m_ViewPort.Height, 0.1f, 10.0f);
-
+void D3d12RHI::UpdateUniformBufer(const void* buffer, size_t bufferSize) {
     // 上传数据
-    void* data;
+    void *data;
     D3D12_RANGE readRange = {0, 0};
     assert(SUCCEEDED(
         m_pUniformBuffers[m_nCurrentFrame]->Map(0, &readRange, &data)));
 
-    std::memcpy(data, &ubo, sizeof(ubo));
+    std::memcpy(data, buffer, bufferSize);
 
     m_pUniformBuffers[m_nCurrentFrame]->Unmap(0, &readRange);
 }

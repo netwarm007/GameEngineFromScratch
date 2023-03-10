@@ -23,12 +23,6 @@ class D3d12RHI {
     using CreateResourceFunc = std::function<void()>;
     using DestroyResourceFunc = std::function<void()>;
 
-    struct UniformBufferObject {
-        Matrix4X4f model;
-        Matrix4X4f view;
-        Matrix4X4f proj;
-    };
-
    public:
     D3d12RHI();
     ~D3d12RHI();
@@ -68,7 +62,7 @@ class D3d12RHI {
 
     void CreateTextureSampler();
 
-    void CreateUniformBuffers();
+    void CreateUniformBuffers(size_t bufferSize);
 
     ID3D12RootSignature* CreateRootSignature(
         const D3D12_SHADER_BYTECODE& shader);
@@ -82,7 +76,7 @@ class D3d12RHI {
     void CreateDescriptorPool(size_t num_descriptors,
                               const wchar_t* heap_group_name, size_t num_heaps);
 
-    void CreateDescriptorSets(ID3D12Resource** ppResources, size_t count);
+    void CreateDescriptorSets(size_t perFrameConstantBufferSize, ID3D12Resource** ppResources, size_t count);
 
     void CreateGraphicsResources();
 
@@ -119,6 +113,8 @@ class D3d12RHI {
     VertexBuffer CreateVertexBuffer(const void* pData, size_t element_size,
                                     int32_t stride_size);
 
+    void UpdateUniformBufer(const void *data, size_t bufferSize);
+
     ID3D12Device* GetDevice() { return m_pDev; }
 
    private:
@@ -127,7 +123,6 @@ class D3d12RHI {
     void endSingleTimeCommands();
     void waitOnFrame();
     void moveToNextFrame();
-    void updateUniformBufer();
 
    private:
     DXGI_FORMAT m_eSurfaceFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
