@@ -184,35 +184,11 @@ void VulkanRHI::destroyAll() {
     // 等待图形管道空闲
     m_vkDevice.waitIdle();
 
+    m_fDestroySwapChainCB();
+
     cleanupSwapChain();
 
-    m_vkDevice.destroySampler(m_vkTextureSampler);
-
-    m_vkDevice.destroyImageView(m_vkTextureImageView);
-
-    m_vkDevice.destroyImage(m_vkTextureImage);
-    m_vkDevice.freeMemory(m_vkTextureImageMemory);
-
-    for (size_t i = 0; i < m_vkUniformBuffers.size(); i++) {
-        m_vkDevice.destroyBuffer(m_vkUniformBuffers[i]);
-    }
-
-    for (size_t i = 0; i < m_vkUniformBuffersMemory.size(); i++) {
-        m_vkDevice.freeMemory(m_vkUniformBuffersMemory[i]);
-    }
-
     m_vkDevice.destroyDescriptorPool(m_vkDescriptorPool);
-
-    m_vkDevice.destroyDescriptorSetLayout(m_vkDescriptorSetLayout);
-
-    m_vkDevice.destroyBuffer(m_vkIndexBuffer);
-    m_vkDevice.freeMemory(m_vkIndexBufferMemory);
-
-    m_vkDevice.destroyBuffer(m_vkVertexBuffer);
-    m_vkDevice.freeMemory(m_vkVertexBufferMemory);
-
-    m_vkDevice.destroyShaderModule(m_vkFragShaderModule);
-    m_vkDevice.destroyShaderModule(m_vkVertShaderModule);
 
     for (size_t i = 0; i < m_vkImageAvailableSemaphores.size(); i++) {
         m_vkDevice.destroySemaphore(m_vkImageAvailableSemaphores[i]);
@@ -323,7 +299,7 @@ void VulkanRHI::setupDebugMessenger() {
 }
 
 void VulkanRHI::createSurface(
-    const std::function<void(const vk::Instance&, vk::SurfaceKHR&)>&
+    const CreateSurfaceCBFunc&
         createSurfaceKHR) {
     createSurfaceKHR(m_vkInstance, m_vkSurface);
 }
@@ -540,7 +516,7 @@ static vk::Extent2D chooseSwapExtent(
 void VulkanRHI::createSwapChain() {
     uint32_t width, height;
 
-    m_fQueryFramebufferSize(width, height);
+    m_fQueryFramebufferSizeCB(width, height);
 
     SwapChainSupportDetails swapChainSupport =
         querySwapChainSupport(m_vkPhysicalDevice, m_vkSurface);
@@ -588,9 +564,7 @@ void VulkanRHI::createSwapChain() {
 
     m_vkSwapChainImageFormat = surfaceFormat.format;
     m_vkSwapChainExtent = extent;
-}
 
-void VulkanRHI::createImageViews() {
     m_vkSwapChainImageViews.resize(m_vkSwapChainImages.size());
 
     for (size_t i = 0; i < m_vkSwapChainImages.size(); i++) {
@@ -608,7 +582,7 @@ void VulkanRHI::getDeviceQueues() {
     m_vkTransferQueue = m_vkDevice.getQueue(indices.transferFamily.value(), 0);
 }
 
-void VulkanRHI::createRenderPass() {
+vk::RenderPass VulkanRHI::createRenderPass() {
     vk::AttachmentDescription colorAttachment;
     colorAttachment.format = m_vkSwapChainImageFormat;
     colorAttachment.samples = m_vkMsaaSamples;
@@ -677,52 +651,47 @@ void VulkanRHI::createRenderPass() {
     vk::RenderPassCreateInfo renderPassInfo(vk::RenderPassCreateFlags(),
                                             attachments, subpass, dependency);
 
-    m_vkRenderPass = m_vkDevice.createRenderPass(renderPassInfo);
+    return m_vkDevice.createRenderPass(renderPassInfo);
 }
 
-static vk::ShaderModule createShaderModule(const vk::Device& device,
-                                           const Buffer& code) {
+vk::ShaderModule VulkanRHI::createShaderModule(const Buffer& code) {
     vk::ShaderModuleCreateInfo createInfo;
     createInfo.codeSize = code.GetDataSize();
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.GetData());
 
     vk::ShaderModule shaderModule;
-    shaderModule = device.createShaderModule(createInfo);
+    shaderModule = m_vkDevice.createShaderModule(createInfo);
 
     return shaderModule;
 }
 
-void VulkanRHI::setShaders(const Buffer& vertShaderCode,
-                           const Buffer& fragShaderCode) {
-    m_vkVertShaderModule = createShaderModule(m_vkDevice, vertShaderCode);
-    m_vkFragShaderModule = createShaderModule(m_vkDevice, fragShaderCode);
-}
+void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t shaderCount,
+                                       const vk::VertexInputBindingDescription &bindingDescription, 
+                                       const vk::VertexInputAttributeDescription *attributeDescriptions, size_t attributeCount,
+                                       const vk::DescriptorSetLayout &descriptorSetLayout,
+                                       const vk::RenderPass &renderPass,
+                                       vk::PipelineLayout &pipelineLayout,
+                                       vk::Pipeline &pipeline
+                                       ) {
+    std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
 
-void VulkanRHI::createGraphicsPipeline() {
-    vk::PipelineShaderStageCreateInfo vertShaderStageInfo;
-    vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-    vertShaderStageInfo.module = m_vkVertShaderModule;
-    vertShaderStageInfo.pName = "simple_vert_main";
+    for (size_t i = 0; i < shaderCount; i++) {
+        vk::PipelineShaderStageCreateInfo shaderStageInfo;
+        shaderStageInfo.stage = shaders[i].stage;
+        shaderStageInfo.module = shaders[i].module;
+        shaderStageInfo.pName = shaders[i].entry_point.c_str();
 
-    vk::PipelineShaderStageCreateInfo fragShaderStageInfo;
-    fragShaderStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-    fragShaderStageInfo.module = m_vkFragShaderModule;
-    fragShaderStageInfo.pName = "simple_frag_main";
-
-    std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages = {
-        vertShaderStageInfo, fragShaderStageInfo};
+        shaderStages.push_back(shaderStageInfo);
+    }
 
     // 顶点输入格式
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
 
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.vertexAttributeDescriptionCount =
-        static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+        static_cast<uint32_t>(attributeCount);
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
 
     // IA
     vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
@@ -796,19 +765,19 @@ void VulkanRHI::createGraphicsPipeline() {
 
     // 常量布局
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-    pipelineLayoutInfo.setSetLayouts(m_vkDescriptorSetLayout);
+    pipelineLayoutInfo.setSetLayouts(descriptorSetLayout);
 
-    m_vkPipelineLayout = m_vkDevice.createPipelineLayout(pipelineLayoutInfo);
+    pipelineLayout = m_vkDevice.createPipelineLayout(pipelineLayoutInfo);
 
     // 创建图形渲染管道
     vk::GraphicsPipelineCreateInfo pipelineInfo(
         vk::PipelineCreateFlags(), shaderStages, &vertexInputInfo,
         &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling,
-        &depthStencil, &colorBlending, nullptr, m_vkPipelineLayout,
-        m_vkRenderPass);
+        &depthStencil, &colorBlending, nullptr, pipelineLayout,
+        renderPass);
 
     vk::Result result;
-    std::tie(result, m_vkGraphicPipeline) =
+    std::tie(result, pipeline) =
         m_vkDevice.createGraphicsPipeline(nullptr, pipelineInfo);
 
     switch (result) {
@@ -822,7 +791,7 @@ void VulkanRHI::createGraphicsPipeline() {
     }
 }
 
-void VulkanRHI::createFramebuffers() {
+void VulkanRHI::createFramebuffers(const vk::RenderPass &renderPass) {
     m_vkSwapChainFramebuffers.resize(m_vkSwapChainImageViews.size());
 
     for (size_t i = 0; i < m_vkSwapChainImageViews.size(); i++) {
@@ -830,7 +799,7 @@ void VulkanRHI::createFramebuffers() {
             m_vkColorImageView, m_vkDepthImageView, m_vkSwapChainImageViews[i]};
 
         vk::FramebufferCreateInfo framebufferInfo(
-            {}, m_vkRenderPass, attachments, m_vkSwapChainExtent.width,
+            {}, renderPass, attachments, m_vkSwapChainExtent.width,
             m_vkSwapChainExtent.height, 1);
 
         m_vkSwapChainFramebuffers[i] =
@@ -864,7 +833,13 @@ void VulkanRHI::createCommandBuffers() {
     m_vkCommandBuffers = m_vkDevice.allocateCommandBuffers(allocInfo);
 }
 
-void VulkanRHI::recordCommandBuffer(vk::CommandBuffer& commandBuffer,
+void VulkanRHI::recordCommandBuffer(const vk::RenderPass &renderPass,
+                                    const vk::Pipeline &pipeline,
+                                    const vk::PipelineLayout &pipelineLayout,
+                                    const vk::Buffer &vertexBuffer,
+                                    const vk::Buffer &indexBuffer,
+                                    const vk::CommandBuffer& commandBuffer, 
+                                    uint32_t indicesCount,
                                     uint32_t imageIndex) {
     vk::CommandBufferBeginInfo beginInfo;
 
@@ -876,23 +851,23 @@ void VulkanRHI::recordCommandBuffer(vk::CommandBuffer& commandBuffer,
     clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
     vk::RenderPassBeginInfo renderPassInfo(
-        m_vkRenderPass, m_vkSwapChainFramebuffers[imageIndex],
+        renderPass, m_vkSwapChainFramebuffers[imageIndex],
         vk::Rect2D(vk::Offset2D(0, 0), m_vkSwapChainExtent), clearValues);
 
     commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                               m_vkGraphicPipeline);
+                               pipeline);
 
-    commandBuffer.bindVertexBuffers(0, m_vkVertexBuffer, vk::DeviceSize(0));
+    commandBuffer.bindVertexBuffers(0, vertexBuffer, vk::DeviceSize(0));
 
-    commandBuffer.bindIndexBuffer(m_vkIndexBuffer, 0, vk::IndexType::eUint32);
+    commandBuffer.bindIndexBuffer(indexBuffer, 0, vk::IndexType::eUint32);
 
     commandBuffer.bindDescriptorSets(
-        vk::PipelineBindPoint::eGraphics, m_vkPipelineLayout, 0,
+        vk::PipelineBindPoint::eGraphics, pipelineLayout, 0,
         m_vkDescriptorSets[m_nCurrentFrame], nullptr);
 
-    commandBuffer.drawIndexed(static_cast<uint32_t>(m_Indices.size()), 1, 0, 0,
+    commandBuffer.drawIndexed(indicesCount, 1, 0, 0,
                               0);
 
     commandBuffer.endRenderPass();
@@ -918,7 +893,12 @@ void VulkanRHI::createSyncObjects() {
     }
 }
 
-void VulkanRHI::drawFrame() {
+void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
+                          const vk::Pipeline &pipeline,
+                          const vk::PipelineLayout &pipelineLayout,
+                          const vk::Buffer &vertexBuffer,
+                          const vk::Buffer &indexBuffer,
+                          uint32_t indicesCount) {
     try {
         while (vk::Result::eTimeout ==
                m_vkDevice.waitForFences(m_vkInFlightFences[m_nCurrentFrame],
@@ -938,17 +918,14 @@ void VulkanRHI::drawFrame() {
                 imageIndex = currentBuffer.value;
                 break;
             case vk::Result::eErrorOutOfDateKHR:
-                recreateSwapChain();
+                recreateSwapChain(renderPass);
                 return;
             default:
                 throw std::runtime_error("failed to acquire swap chain image!");
         }
 
         m_vkCommandBuffers[m_nCurrentFrame].reset();
-        recordCommandBuffer(m_vkCommandBuffers[m_nCurrentFrame], imageIndex);
-
-        // 更新常量
-        updateUniformBufer();
+        recordCommandBuffer(renderPass, pipeline, pipelineLayout, vertexBuffer, indexBuffer, m_vkCommandBuffers[m_nCurrentFrame], indicesCount, imageIndex);
 
         // 提交 Command Buffer
         vk::SubmitInfo submitInfo;
@@ -975,7 +952,7 @@ void VulkanRHI::drawFrame() {
                 break;
             case vk::Result::eSuboptimalKHR:
             case vk::Result::eErrorOutOfDateKHR:
-                recreateSwapChain();
+                recreateSwapChain(renderPass);
                 return;
             default:
                 throw std::runtime_error("failed to acquire swap chain image!");
@@ -983,7 +960,7 @@ void VulkanRHI::drawFrame() {
 
         m_nCurrentFrame = (m_nCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     } catch (vk::OutOfDateKHRError& err) {
-        recreateSwapChain();
+        recreateSwapChain(renderPass);
         return;
     }
 }
@@ -1000,32 +977,26 @@ void VulkanRHI::cleanupSwapChain() {
     for (auto& framebuffer : m_vkSwapChainFramebuffers) {
         m_vkDevice.destroyFramebuffer(framebuffer);
     }
-
-    m_vkDevice.destroyPipeline(m_vkGraphicPipeline);
-
-    m_vkDevice.destroyPipelineLayout(m_vkPipelineLayout);
-
-    m_vkDevice.destroyRenderPass(m_vkRenderPass);
+    m_vkSwapChainFramebuffers.clear();
 
     for (auto& imageView : m_vkSwapChainImageViews) {
         m_vkDevice.destroyImageView(imageView);
     }
+    m_vkSwapChainImageViews.clear();
 
     m_vkDevice.destroySwapchainKHR(m_vkSwapChain);
 }
 
-void VulkanRHI::recreateSwapChain() {
+void VulkanRHI::recreateSwapChain(const vk::RenderPass &renderPass) {
     vkDeviceWaitIdle(m_vkDevice);
+
+    m_fDestroySwapChainCB();
 
     cleanupSwapChain();
 
     createSwapChain();
-    createImageViews();
-    createRenderPass();
-    createGraphicsPipeline();
-    createColorResources();
-    createDepthResources();
-    createFramebuffers();
+
+    m_fCreateSwapChainCB();
 }
 
 uint32_t VulkanRHI::findMemoryType(uint32_t typeFilter,
@@ -1081,9 +1052,7 @@ void VulkanRHI::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
     m_vkDevice.bindBufferMemory(buffer, bufferMemory, 0);
 }
 
-void VulkanRHI::createVertexBuffer() {
-    vk::DeviceSize bufferSize = sizeof(m_Vertices[0]) * m_Vertices.size();
-
+void VulkanRHI::createVertexBuffer(void *buffer, vk::DeviceSize bufferSize, VulkanRHI::VertexBuffer &vertexBuffer) {
     // 创建中间缓冲区
     vk::Buffer stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -1095,25 +1064,23 @@ void VulkanRHI::createVertexBuffer() {
     // 上传数据
     void* data;
     data = m_vkDevice.mapMemory(stagingBufferMemory, 0, bufferSize);
-    memcpy(data, m_Vertices.data(), (size_t)bufferSize);
+    memcpy(data, buffer, (size_t)bufferSize);
     m_vkDevice.unmapMemory(stagingBufferMemory);
 
     // 创建设备专有缓冲区
     createBuffer(bufferSize,
                  vk::BufferUsageFlagBits::eTransferDst |
                      vk::BufferUsageFlagBits::eVertexBuffer,
-                 vk::MemoryPropertyFlagBits::eDeviceLocal, m_vkVertexBuffer,
-                 m_vkVertexBufferMemory);
+                 vk::MemoryPropertyFlagBits::eDeviceLocal, vertexBuffer.buffer,
+                 vertexBuffer.heap);
 
-    copyBuffer(stagingBuffer, m_vkVertexBuffer, bufferSize);
+    copyBuffer(stagingBuffer, vertexBuffer.buffer, bufferSize);
 
     m_vkDevice.destroyBuffer(stagingBuffer);
     m_vkDevice.freeMemory(stagingBufferMemory);
 }
 
-void VulkanRHI::createIndexBuffer() {
-    vk::DeviceSize bufferSize = sizeof(m_Indices[0]) * m_Indices.size();
-
+void VulkanRHI::createIndexBuffer(void *buffer, vk::DeviceSize bufferSize, VulkanRHI::IndexBuffer &indexBuffer) {
     // 创建中间缓冲区
     vk::Buffer stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -1125,17 +1092,17 @@ void VulkanRHI::createIndexBuffer() {
     // 上传数据
     void* data;
     data = m_vkDevice.mapMemory(stagingBufferMemory, 0, bufferSize);
-    memcpy(data, m_Indices.data(), (size_t)bufferSize);
+    memcpy(data, buffer, (size_t)bufferSize);
     m_vkDevice.unmapMemory(stagingBufferMemory);
 
     // 创建设备专有缓冲区
     createBuffer(bufferSize,
                  vk::BufferUsageFlagBits::eTransferDst |
                      vk::BufferUsageFlagBits::eIndexBuffer,
-                 vk::MemoryPropertyFlagBits::eDeviceLocal, m_vkIndexBuffer,
-                 m_vkIndexBufferMemory);
+                 vk::MemoryPropertyFlagBits::eDeviceLocal, indexBuffer.buffer,
+                 indexBuffer.heap);
 
-    copyBuffer(stagingBuffer, m_vkIndexBuffer, bufferSize);
+    copyBuffer(stagingBuffer, indexBuffer.buffer, bufferSize);
 
     m_vkDevice.destroyBuffer(stagingBuffer);
     m_vkDevice.freeMemory(stagingBufferMemory);
@@ -1174,7 +1141,7 @@ void VulkanRHI::copyBufferToImage(vk::Buffer srcBuffer, vk::Image image,
     endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanRHI::createDescriptorSetLayout() {
+vk::DescriptorSetLayout VulkanRHI::createDescriptorSetLayout() {
     vk::DescriptorSetLayoutBinding uboLayoutBinding;
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -1195,47 +1162,30 @@ void VulkanRHI::createDescriptorSetLayout() {
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo({}, bindings);
 
-    m_vkDescriptorSetLayout = m_vkDevice.createDescriptorSetLayout(layoutInfo);
+    return m_vkDevice.createDescriptorSetLayout(layoutInfo);
 }
 
-void VulkanRHI::createUniformBuffers() {
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-    m_vkUniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    m_vkUniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+void VulkanRHI::createUniformBuffers(std::vector<VulkanRHI::UniformBuffer> &uniformBuffers, vk::DeviceSize bufferSize) {
+    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
                      vk::MemoryPropertyFlagBits::eHostVisible |
                          vk::MemoryPropertyFlagBits::eHostCoherent,
-                     m_vkUniformBuffers[i], m_vkUniformBuffersMemory[i]);
+                     uniformBuffers[i].buffer, uniformBuffers[i].heap);
+        uniformBuffers[i].size = bufferSize;
     }
 }
 
-void VulkanRHI::updateUniformBufer() {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(
-                     currentTime - startTime)
-                     .count();
-
-    UniformBufferObject ubo{};
-    BuildIdentityMatrix(ubo.model);
-    MatrixRotationAxis(ubo.model, {0.0f, 0.0f, 1.0f}, time * PI / 8.0f);
-    BuildViewRHMatrix(ubo.view, {2.0f, 2.0f, 2.0f}, {0.0f, 0.0f, 0.0f},
-                      {0.0f, 0.0f, 1.0f});
-    BuildPerspectiveFovRHMatrix(
-        ubo.proj, PI / 4.0f,
-        m_vkSwapChainExtent.width / m_vkSwapChainExtent.height, 0.1f, 10.0f);
-    ubo.proj[1][1] *= -1.0f;
+void VulkanRHI::UpdateUniformBuffer(const std::vector<VulkanRHI::UniformBuffer> &uniformBuffers, void *ubo, size_t uboSize) {
+    assert(uniformBuffers[m_nCurrentFrame].size >= uboSize);
 
     // 上传数据
-    void* data;
-    vkMapMemory(m_vkDevice, m_vkUniformBuffersMemory[m_nCurrentFrame], 0,
-                sizeof(ubo), 0, &data);
-    memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(m_vkDevice, m_vkUniformBuffersMemory[m_nCurrentFrame]);
+    void *data;
+    vkMapMemory(m_vkDevice, uniformBuffers[m_nCurrentFrame].heap, 0,
+                uboSize, 0, &data);
+    memcpy(data, ubo, uboSize);
+    vkUnmapMemory(m_vkDevice, uniformBuffers[m_nCurrentFrame].heap);
 }
 
 void VulkanRHI::createDescriptorPool() {
@@ -1251,9 +1201,12 @@ void VulkanRHI::createDescriptorPool() {
     m_vkDescriptorPool = m_vkDevice.createDescriptorPool(poolInfo);
 }
 
-void VulkanRHI::createDescriptorSets() {
+void VulkanRHI::createDescriptorSets(const vk::DescriptorSetLayout &descriptorSetLayout, 
+                                     const std::vector<VulkanRHI::UniformBuffer> &uniformBuffers,
+                                     const std::vector<VulkanRHI::Texture> &textures,
+                                     const  vk::Sampler &textureSampler) {
     std::vector<vk::DescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT,
-                                                 m_vkDescriptorSetLayout);
+                                                 descriptorSetLayout);
     vk::DescriptorSetAllocateInfo allocInfo;
     allocInfo.descriptorPool = m_vkDescriptorPool;
     allocInfo.setSetLayouts(layouts);
@@ -1262,11 +1215,11 @@ void VulkanRHI::createDescriptorSets() {
     m_vkDescriptorSets = m_vkDevice.allocateDescriptorSets(allocInfo);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vk::DescriptorBufferInfo bufferInfo(m_vkUniformBuffers[i], 0,
-                                            sizeof(UniformBufferObject));
+        vk::DescriptorBufferInfo bufferInfo(uniformBuffers[i].buffer, 0,
+                                            uniformBuffers[i].size);
 
         vk::DescriptorImageInfo imageInfo(
-            m_vkTextureSampler, m_vkTextureImageView,
+            textureSampler, textures[0].descriptor,
             vk::ImageLayout::eShaderReadOnlyOptimal);
 
         std::array<vk::WriteDescriptorSet, 2> descriptorWrites;
@@ -1481,7 +1434,8 @@ void VulkanRHI::createImage(
     m_vkDevice.bindImageMemory(vk_image, vk_image_memory, 0);
 }
 
-void VulkanRHI::createTextureImage(Image& image) {
+VulkanRHI::Texture VulkanRHI::createTextureImage(Image& image) {
+    VulkanRHI::Texture texture;
     vk::DeviceSize imageSize = static_cast<VkDeviceSize>(image.data_size);
 
     vk::Buffer stagingBuffer;
@@ -1509,8 +1463,8 @@ void VulkanRHI::createTextureImage(Image& image) {
                     vk::ImageUsageFlagBits::eTransferDst |
                         vk::ImageUsageFlagBits::eSampled,
                     vk::SharingMode::eConcurrent,
-                    vk::MemoryPropertyFlagBits::eDeviceLocal, m_vkTextureImage,
-                    m_vkTextureImageMemory,
+                    vk::MemoryPropertyFlagBits::eDeviceLocal, texture.image,
+                    texture.heap,
                     static_cast<uint32_t>(queueFamilyIndices.size()),
                     queueFamilyIndices.data());
     } else {
@@ -1520,8 +1474,8 @@ void VulkanRHI::createTextureImage(Image& image) {
                     vk::ImageUsageFlagBits::eTransferDst |
                         vk::ImageUsageFlagBits::eSampled,
                     vk::SharingMode::eExclusive,
-                    vk::MemoryPropertyFlagBits::eDeviceLocal, m_vkTextureImage,
-                    m_vkTextureImageMemory,
+                    vk::MemoryPropertyFlagBits::eDeviceLocal, texture.image,
+                    texture.heap,
                     static_cast<uint32_t>(queueFamilyIndices.size()),
                     queueFamilyIndices.data());
     }
@@ -1529,18 +1483,23 @@ void VulkanRHI::createTextureImage(Image& image) {
     vk::Format format;
     getTextureFormat(image, format);
 
-    transitionImageLayout(m_vkTextureImage, format, vk::ImageLayout::eUndefined,
+    transitionImageLayout(texture.image, format, vk::ImageLayout::eUndefined,
                           vk::ImageLayout::eTransferDstOptimal);
 
-    copyBufferToImage(stagingBuffer, m_vkTextureImage, image.Width,
+    copyBufferToImage(stagingBuffer, texture.image, image.Width,
                       image.Height);
 
-    transitionImageLayout(m_vkTextureImage, format,
+    transitionImageLayout(texture.image, format,
                           vk::ImageLayout::eTransferDstOptimal,
                           vk::ImageLayout::eShaderReadOnlyOptimal);
 
     m_vkDevice.destroyBuffer(stagingBuffer);
     m_vkDevice.freeMemory(stagingBufferMemory);
+
+    texture.descriptor = createImageView(texture.image, format,
+                                           vk::ImageAspectFlagBits::eColor);
+
+    return texture;
 }
 
 vk::ImageView VulkanRHI::createImageView(vk::Image image, vk::Format format,
@@ -1561,14 +1520,7 @@ vk::ImageView VulkanRHI::createImageView(vk::Image image, vk::Format format,
     return imageView;
 }
 
-void VulkanRHI::createTextureImageView(Image& image) {
-    vk::Format format;
-    getTextureFormat(image, format);
-    m_vkTextureImageView = createImageView(m_vkTextureImage, format,
-                                           vk::ImageAspectFlagBits::eColor);
-}
-
-void VulkanRHI::createTextureSampler() {
+vk::Sampler VulkanRHI::createTextureSampler() {
     vk::SamplerCreateInfo samplerInfo;
     samplerInfo.magFilter = vk::Filter::eLinear;
     samplerInfo.minFilter = vk::Filter::eLinear;
@@ -1589,7 +1541,7 @@ void VulkanRHI::createTextureSampler() {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    m_vkTextureSampler = m_vkDevice.createSampler(samplerInfo);
+    return m_vkDevice.createSampler(samplerInfo);
 }
 
 vk::CommandBuffer VulkanRHI::beginSingleTimeCommands() {
@@ -1753,8 +1705,7 @@ void VulkanRHI::createColorResources() {
                                          vk::ImageAspectFlagBits::eColor);
 }
 
-void VulkanRHI::setModel(const std::vector<Vertex>& vertices,
-                         const std::vector<uint32_t>& indices) {
-    m_Vertices = vertices;
-    m_Indices = indices;
+void VulkanRHI::CreateSwapChain() {
+    assert(m_fCreateSwapChainCB);
+    m_fCreateSwapChainCB();
 }

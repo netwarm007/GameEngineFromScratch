@@ -89,11 +89,14 @@ void VulkanApplication::CreateMainWindow() {
     // 创建 SwapChain
     m_Rhi.createSwapChain();
 
-    // 创建 Uniform Buffers
-    m_Rhi.createUniformBuffers();
-
     // 创建同步对象
     m_Rhi.createSyncObjects();
+
+    // 创建 Command Pools
+    m_Rhi.createCommandPool();
+
+    // 创建 Command Buffer
+    m_Rhi.createCommandBuffers();
 }
 
 void VulkanApplication::Finalize() {
