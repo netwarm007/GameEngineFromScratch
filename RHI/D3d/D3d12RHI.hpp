@@ -23,6 +23,17 @@ class D3d12RHI {
     using CreateResourceFunc = std::function<void()>;
     using DestroyResourceFunc = std::function<void()>;
 
+    struct IndexBuffer {
+        ID3D12Resource* buffer;
+        D3D12_INDEX_BUFFER_VIEW descriptor;
+        uint32_t indexCount;
+    };
+
+    struct VertexBuffer {
+        ID3D12Resource* buffer;
+        D3D12_VERTEX_BUFFER_VIEW descriptor;
+    };
+
    public:
     D3d12RHI();
     ~D3d12RHI();
@@ -96,17 +107,6 @@ class D3d12RHI {
     void EndFrame();
 
     void Present();
-
-    struct IndexBuffer {
-        ID3D12Resource* buffer;
-        D3D12_INDEX_BUFFER_VIEW descriptor;
-        uint32_t indexCount;
-    };
-
-    struct VertexBuffer {
-        ID3D12Resource* buffer;
-        D3D12_VERTEX_BUFFER_VIEW descriptor;
-    };
 
     IndexBuffer CreateIndexBuffer(const void* pData, size_t element_size,
                                   int32_t stride_size);
