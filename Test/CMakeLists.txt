@@ -1,5 +1,11 @@
 add_executable(RayTracingTest RayTracingTest.cpp)
-target_link_libraries(RayTracingTest Framework)
+if(OS_MACOS)
+    target_link_libraries(RayTracingTest Framework PlatformInterface MetalRHI ${VULKAN_RHI})
+elseif(OS_WINDOWS)
+    target_link_libraries(RayTracingTest Framework PlatformInterface D3dRHI D2dRHI OpenGLRHI ${VULKAN_RHI})
+else()
+    target_link_libraries(RayTracingTest Framework PlatformInterface OpenGLRHI ${VULKAN_RHI})
+endif(OS_MACOS)
 
 # CUDA
 if(USE_CUDA)

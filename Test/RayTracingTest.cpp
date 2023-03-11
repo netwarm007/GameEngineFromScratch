@@ -1,28 +1,136 @@
+#include "Platform/CrossPlatformGfxApp.hpp"
+#include "Platform/TGraphicsManager.hpp"
+
+#include "AssetLoader.hpp"
+
+#include "imgui/imgui.h"
+
+#include "BVH.hpp"
 #include "Encoder/PPM.hpp"
 #include "Image.hpp"
+#include "RayTracingCamera.hpp"
 #include "geommath.hpp"
 #include "portable.hpp"
-#include "BVH.hpp"
-#include "RayTracingCamera.hpp"
 
 #define float_precision float
 #include "TestMaterial.hpp"
 #include "TestScene.hpp"
+
 #include "PathTracing.hpp"
 
 #include <chrono>
+#include <sstream>
+#include <string_view>
+
+std::ostringstream oss;
 
 using image = My::Image;
 using bvh = My::BVHNode<float_precision>;
 using camera = My::RayTracingCamera<float_precision>;
 
+using namespace My;
+
+void gui_loop(BaseApplication& app) {
+    int result;
+
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    AssetLoader assetLoader;
+    auto font_path =
+        assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
+
+    ImVector<ImWchar> ranges;
+    ImFontGlyphRangesBuilder builder;
+    builder.AddText((const char*)u8"屏擎渲帧钮");
+
+    builder.AddRanges(
+        io.Fonts->GetGlyphRangesChineseSimplifiedCommon());  // Add one of the
+                                                             // default ranges
+    builder.BuildRanges(&ranges);  // Build the final result (ordered ranges
+                                   // with all the unique characters submitted)
+
+    io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
+    io.Fonts->Build();
+
+    ImGui::StyleColorsDark();
+
+    ImGuiStyle& im_style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        im_style.WindowRounding = 0.0f;
+        im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // Create Main Window
+    app.CreateMainWindow();
+
+    result = app.Initialize();
+
+    if (result == 0) {
+        while (!app.IsQuit()) {
+            app.Tick();
+        }
+
+        app.Finalize();
+    }
+
+    ImGui::DestroyContext();
+}
+
+class TestGraphicsManager : public TGraphicsManager {
+    void Draw() override {
+        static bool show_demo_window = true;
+        auto& frame = m_Frames[m_nFrameIndex];
+        BeginPass(frame);
+
+        {
+            ImGui::Begin(
+                (const char*)u8"光线追踪（路径追踪）");  // Create a window
+                                                         // called "Hello,
+                                                         // world!" and append
+                                                         // into it.
+            size_t start_pos = 0;
+            size_t end_pos = 0;
+            std::string str(oss.str());
+            do {
+                start_pos = end_pos + 1;
+                end_pos = str.find('\n', start_pos);
+                start_pos = str.rfind('\r', end_pos);
+                if (start_pos == std::string::npos) start_pos = 0;
+                ImGui::Text(str.substr(start_pos, end_pos).c_str());
+            } while (end_pos != std::string::npos);
+
+            ImGui::End();
+        }
+        EndPass(frame);
+    }
+};
+
 // Main
 int main(int argc, char** argv) {
+    GfxConfiguration gui_config(8, 8, 8, 8, 24, 8, 4, 800, 600,
+                                "Ray Tracing Test");
+
+    auto pApp = CreateApplication(gui_config);
+
+    TestGraphicsManager graphicsManager;
+
+    pApp->SetCommandLineParameters(argc, argv);
+    pApp->RegisterManagerModule(&graphicsManager);
+
+    auto gui_task = [pApp]() { gui_loop(*pApp); };
+    auto gui_future = std::async(std::launch::async, gui_task);
+
     // Render Settings
     const float_precision aspect_ratio = 16.0 / 9.0;
     const int image_width = 1920;
     const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const My::raytrace_config config = {.samples_per_pixel =  512, .max_depth =  50};
+    const My::raytrace_config config = {.samples_per_pixel = 512,
+                                        .max_depth = 50};
 
     // World
     auto world = random_scene();
@@ -35,8 +143,8 @@ int main(int argc, char** argv) {
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    camera cam(lookfrom, lookat, vup, (float_precision)20.0,
-                                aspect_ratio, aperture, dist_to_focus);
+    camera cam(lookfrom, lookat, vup, (float_precision)20.0, aspect_ratio,
+               aperture, dist_to_focus);
 
     // Canvas
     image img;
@@ -53,13 +161,17 @@ int main(int argc, char** argv) {
 
     // Render
     auto start = std::chrono::steady_clock::now();
-    My::PathTracing<float_precision>::raytrace(config, world_bvh, cam, img);
+    My::PathTracing<float_precision>::raytrace(config, world_bvh, cam, img,
+                                               oss);
     auto end = std::chrono::steady_clock::now();
 
     std::chrono::duration<double> diff = end - start;
 
-    std::cerr << "\r";
-    std::cout << "Rendering time: " << diff.count() << " s\n";
+    std::cout << "Rendering time: " << diff.count() << " s";
+
+    gui_future.wait();
+
+    delete pApp;
 
 #if 0
     My::PpmEncoder encoder;

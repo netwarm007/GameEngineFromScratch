@@ -11,6 +11,7 @@
 #include <iostream>
 #include <list>
 #include <limits>
+#include <sstream>
 
 using namespace std::chrono_literals;
 
@@ -62,10 +63,10 @@ class PathTracing {
 
    public:
     static void raytrace(const raytrace_config cfg, BVHNode<T> &world_bvh,
-                         const RayTracingCamera<T> &cam, Image &img) {
+                         const RayTracingCamera<T> &cam, Image &img, std::ostringstream &out) {
         int concurrency = std::thread::hardware_concurrency();
 
-        std::cerr << "Concurrent ray tracing with (" << concurrency
+        out << "Concurrent ray tracing with (" << concurrency
                   << ") threads." << std::endl;
 
         std::list<std::future<int>> raytrace_tasks;
@@ -97,7 +98,7 @@ class PathTracing {
         };
 
         for (auto j = 0; j < img.Height; j++) {
-            std::cerr << "\rScanlines remaining: " << img.Height - j << ' '
+            out << "\rScanlines remaining: " << img.Height - j << ' '
                       << std::flush;
             for (auto i = 0; i < img.Width; i++) {
                 while (raytrace_tasks.size() >= concurrency) {
