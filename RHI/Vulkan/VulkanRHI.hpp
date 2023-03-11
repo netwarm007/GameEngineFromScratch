@@ -47,6 +47,11 @@ class VulkanRHI {
     };
 
     struct Shader {
+        Shader(const vk::ShaderModule &&module, vk::ShaderStageFlagBits stage, const char *entry_point) {
+            this->module = module;
+            this->stage = stage;
+            this->entry_point = entry_point;
+        }
         vk::ShaderModule module;
         vk::ShaderStageFlagBits stage;
         std::string entry_point;
