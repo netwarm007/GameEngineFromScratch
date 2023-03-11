@@ -43,6 +43,12 @@ void D3d12Application::CreateMainWindow() {
 
     // 创建Framebuffer描述表
     m_Rhi.CreateFramebuffers();
+
+    // 创建命令清单池
+    m_Rhi.CreateCommandPools();
+
+    // 创建命令列表
+    m_Rhi.CreateCommandLists();
 }
 
 void D3d12Application::onWindowResize(int, int) { m_Rhi.RecreateSwapChain(); }

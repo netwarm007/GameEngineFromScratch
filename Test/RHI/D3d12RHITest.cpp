@@ -168,12 +168,6 @@ int main() {
             pPipelineState = rhi.CreateGraphicsPipeline(psod);
         }
 
-        // 创建命令清单池
-        rhi.CreateCommandPools();
-
-        // 创建命令列表
-        rhi.CreateCommandLists();
-
         // 加载贴图
         {
             auto buf =
@@ -251,9 +245,10 @@ int main() {
     D3d12RHI::DestroyResourceFunc destroyResourceFunc =
         [&pTexture, &pPipelineState, &pRootSignature, &VertexBuffers,
          &IndexBuffers]() {
-            SafeRelease(&pTexture);
             SafeRelease(&pPipelineState);
             SafeRelease(&pRootSignature);
+
+            SafeRelease(&pTexture);
 
             for (auto& buf : VertexBuffers) {
                 SafeRelease(&buf.buffer);
