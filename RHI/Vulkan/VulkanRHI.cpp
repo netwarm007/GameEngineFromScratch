@@ -184,8 +184,6 @@ void VulkanRHI::destroyAll() {
     // 等待图形管道空闲
     m_vkDevice.waitIdle();
 
-    m_fDestroySwapChainCB();
-
     cleanupSwapChain();
 
     m_vkDevice.destroyDescriptorPool(m_vkDescriptorPool);
@@ -571,6 +569,10 @@ void VulkanRHI::createSwapChain() {
         m_vkSwapChainImageViews[i] =
             createImageView(m_vkSwapChainImages[i], m_vkSwapChainImageFormat,
                             vk::ImageAspectFlagBits::eColor);
+    }
+
+    if (m_fCreateSwapChainCB) {
+        m_fCreateSwapChainCB();
     }
 }
 
@@ -966,6 +968,10 @@ void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
 }
 
 void VulkanRHI::cleanupSwapChain() {
+    if (m_fDestroySwapChainCB) {
+        m_fDestroySwapChainCB();
+    }
+
     m_vkDevice.destroyImageView(m_vkColorImageView);
     m_vkDevice.destroyImage(m_vkColorImage);
     m_vkDevice.freeMemory(m_vkColorImageMemory);
@@ -990,13 +996,9 @@ void VulkanRHI::cleanupSwapChain() {
 void VulkanRHI::recreateSwapChain(const vk::RenderPass &renderPass) {
     vkDeviceWaitIdle(m_vkDevice);
 
-    m_fDestroySwapChainCB();
-
     cleanupSwapChain();
 
     createSwapChain();
-
-    m_fCreateSwapChainCB();
 }
 
 uint32_t VulkanRHI::findMemoryType(uint32_t typeFilter,
