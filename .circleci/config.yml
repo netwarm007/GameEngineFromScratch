@@ -88,6 +88,9 @@ jobs:
               [Environment]::SetEnvironmentVariable('Path', $newMachineEnvironmentPath, 'MACHINE')
             }
 
+            # install NSIS for packaging
+            choco install nsis -y
+
             # install vulkan SDK
             choco install vulkan-sdk -y
             refreshenv
