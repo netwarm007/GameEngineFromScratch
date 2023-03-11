@@ -87,22 +87,25 @@ jobs:
             {
               [Environment]::SetEnvironmentVariable('Path', $newMachineEnvironmentPath, 'MACHINE')
             }
-      - restore_cache:
-          keys:
-            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}-
-      - run:
-          name: restore repo
-          command: |
-            if (Test-Path -Path ".git" ) {
-              git restore .
-            }
+
+            # install vulkan SDK
+            choco install vulkan-sdk -y
+            refreshenv
+      #- restore_cache:
+      #    keys:
+      #      - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+      #      - source-{{ arch }}-{{ .Branch }}-
+      #      - source-{{ arch }}-
+      #- run:
+      #    name: restore repo
+      #    command: |
+      #      if (Test-Path -Path ".git" ) {
+      #        git restore .
+      #      }
       - checkout
       - run:
           name: init submodules
           command: |
-            git submodule sync
             git submodule update --init --recursive
       - run:
           name: git gc
@@ -163,17 +166,17 @@ jobs:
              sudo apt install -y git-lfs
           environment:
              DEBIAN_FRONTEND: noninteractive
-      - restore_cache:
-          keys:
-            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}-
-      - run:
-          name: restore repo
-          command: |
-            if [ -d ".git" ]; then
-              git restore .
-            fi
+      #- restore_cache:
+      #    keys:
+      #      - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+      #      - source-{{ arch }}-{{ .Branch }}-
+      #      - source-{{ arch }}-
+      #- run:
+      #    name: restore repo
+      #    command: |
+      #      if [ -d ".git" ]; then
+      #        git restore .
+      #      fi
       - checkout
       - run:
           name: init submodules
@@ -232,17 +235,17 @@ jobs:
     macos:
       xcode: "13.4.0"
     steps:
-      - restore_cache:
-          keys:
-            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}-
-      - run:
-          name: restore repo
-          command: |
-            if [ -d ".git" ]; then
-              git restore .
-            fi
+      #- restore_cache:
+      #    keys:
+      #      - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+      #      - source-{{ arch }}-{{ .Branch }}-
+      #      - source-{{ arch }}-
+      #- run:
+      #    name: restore repo
+      #    command: |
+      #      if [ -d ".git" ]; then
+      #        git restore .
+      #      fi
       - checkout
       - run:
           name: init submodules
@@ -410,7 +413,7 @@ workflows:
   version: 2
   build-and-test: #for branch
     jobs:
-      #- build_windows
+      - build_windows
       - build_linux
       - build_macos
       #- build_android
