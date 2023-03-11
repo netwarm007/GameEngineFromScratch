@@ -1,15 +1,4 @@
-#include "GfxConfiguration.hpp"
-#include "config.h"
-
-#if defined(OS_WEBASSEMBLY)
-#include "Platform/Sdl/OpenGLApplication.hpp"
-#elif defined(OS_MACOS)
-#include "CocoaMetalApplication.h"
-#elif defined(OS_WINDOWS)
-#include "D3d12Application.hpp"
-#else
-#include "Platform/Sdl/OpenGLApplication.hpp"
-#endif
+#include "Platform/CrossPlatformGfxApp.hpp"
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
@@ -137,30 +126,19 @@ class TestGraphicsManager : public TGraphicsManager {
 int main(int argc, char** argv) {
     int result;
 
-#if defined(OS_MACOS)
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                            "ImGUI Test (Cocoa Meta)");
-    CocoaMetalApplication app(config);
-#endif
+                            "ImGUI Test");
 
-#if defined(OS_WINDOWS)
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                            "ImGUI Test (DX12)");
-    D3d12Application app(config);
-#endif
-
-#if defined(OS_LINUX)
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 1, 800, 600,
-                            "ImGUI Test (OpenGL + SDL2)");
-    OpenGLApplication app(config);
-#endif
+    auto pApp = My::CreateApplication(config);
 
     TestGraphicsManager graphicsManager;
 
-    app.SetCommandLineParameters(argc, argv);
-    app.RegisterManagerModule(&graphicsManager);
+    pApp->SetCommandLineParameters(argc, argv);
+    pApp->RegisterManagerModule(&graphicsManager);
 
-    result |= test(app);
+    result |= test(*pApp);
+
+    delete pApp;
 
     return result;
 }

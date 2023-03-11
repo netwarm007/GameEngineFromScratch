@@ -1,22 +1,4 @@
-#include "GfxConfiguration.hpp"
-#include "config.h"
-
-#if defined(OS_WEBASSEMBLY)
-#include "Platform/Sdl/OpenGLApplication.hpp"
-#elif defined(OS_MACOS)
-#include "CocoaMetalApplication.h"
-#elif defined(OS_WINDOWS)
-#include "D3d12Application.hpp"
-#include "OpenGLApplication.hpp"
-#elif defined(OS_ANDROID)
-#include "OpenGLESApplication.hpp"
-#else
-#include "OpenGLApplication.hpp"
-#endif
-
-#if defined(HAS_VULKAN)
-#include "VulkanApplication.hpp"
-#endif
+#include "Platform/CrossPlatformGfxApp.hpp"
 
 using namespace My;
 
@@ -38,50 +20,12 @@ int test(BaseApplication& app) {
 int main() {
     int result;
 
-#if defined(OS_MACOS)
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "Cocoa Metal Application Test");
-        CocoaMetalApplication app(config);
-        result |= test(app);
-    }
-#endif
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600, "Basic Graphics Window Test");
 
-#if defined(OS_WINDOWS)
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "DX12 Application Test");
-        D3d12Application app(config);
-        result |= test(app);
-    }
-#endif
+    auto app = My::CreateApplication(config);
+    result |= test(*app);
 
-#if !defined(OS_MACOS)
-#if defined(OS_ANDROID)
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "OpenGLES Application Test");
-        OpenGLESApplication app(config);
-        result |= test(app);
-    }
-#else
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "OpenGL Application Test");
-        OpenGLApplication app(config);
-        result |= test(app);
-    }
-#endif
-#endif
-
-#if defined(HAS_VULKAN)
-    {
-        GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                                "Vulkan Application Test");
-        VulkanApplication app(config);
-        result |= test(app);
-    }
-#endif
+    delete app;
 
     return result;
 }

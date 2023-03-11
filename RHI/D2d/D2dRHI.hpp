@@ -44,6 +44,7 @@ class D2dRHI {
 
     ID2D1SolidColorBrush*   CreateSolidColorBrush(Vector3f color) const;
     ID2D1Bitmap*            CreateBitmap(const My::Image& img) const;
+    void                    UpdateBitmap(const My::Image& img, ID2D1Bitmap* bmp) const;
     void ClearCanvas(Vector4f color) const;
     Vector2f GetCanvasSize() const;
     void DrawLine(My::Point2Df start, My::Point2Df end, ID2D1SolidColorBrush *brush, float line_width) const;
