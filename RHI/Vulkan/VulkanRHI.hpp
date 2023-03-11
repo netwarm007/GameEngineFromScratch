@@ -18,7 +18,7 @@ class VulkanRHI {
     using QueryFrameBufferSizeCBFunc = std::function<void(uint32_t&, uint32_t&)>;
     using CreateSurfaceCBFunc =
         std::function<void(const vk::Instance&, vk::SurfaceKHR&)>;
-    using GetGfxConfigCBFunc = std::function<const GfxConfiguration&()>;
+    using GetGfxConfigCBFunc = std::function<const GfxConfiguration()>;
     using CreateSwapChainCBFunc = std::function<void()>;
     using DestroySwapChainCBFunc = std::function<void()>;
 

@@ -7,6 +7,12 @@
 
 using namespace My;
 
+#ifdef DEBUG
+#define my_assert(x) assert(x)
+#else
+#define my_assert(x) if(!(x)) {std::cerr << "Assert failed\n"; exit(-1); }
+#endif
+
 static DXGI_FORMAT getDxgiFormat(const Image& img) {
     DXGI_FORMAT format;
 
@@ -37,7 +43,7 @@ static DXGI_FORMAT getDxgiFormat(const Image& img) {
                 format = ::DXGI_FORMAT_BC7_UNORM;
                 break;
             default:
-                assert(0);
+                my_assert(0);
         }
     } else {
         switch (img.pixel_format) {
@@ -54,7 +60,7 @@ static DXGI_FORMAT getDxgiFormat(const Image& img) {
                 format = ::DXGI_FORMAT_R16G16B16A16_FLOAT;
                 break;
             default:
-                assert(0);
+                my_assert(0);
         }
     }
 
@@ -76,7 +82,7 @@ void D3d12RHI::CreateDevice() {
 #endif
 
     m_pFactory;
-    assert(SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))) &&
+    my_assert(SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))) &&
            "CreateDXGIFactory1 failed");
 
     IDXGIAdapter1* pHardwareAdapter;
@@ -87,13 +93,13 @@ void D3d12RHI::CreateDevice() {
         IDXGIAdapter* pWarpAdapter;
         if (FAILED(m_pFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)))) {
             SafeRelease(&m_pFactory);
-            assert(0);
+            my_assert(0);
         }
 
         if (FAILED(D3D12CreateDevice(pWarpAdapter, D3D_FEATURE_LEVEL_12_0,
                                      IID_PPV_ARGS(&m_pDev)))) {
             SafeRelease(&m_pFactory);
-            assert(0);
+            my_assert(0);
         }
     }
 
@@ -104,7 +110,7 @@ void D3d12RHI::CreateDevice() {
         _countof(s_featureLevels), s_featureLevels, D3D_FEATURE_LEVEL_12_0};
 
     D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_12_0;
-    assert(SUCCEEDED(m_pDev->CheckFeatureSupport(
+    my_assert(SUCCEEDED(m_pDev->CheckFeatureSupport(
         D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels))));
     featureLevel = featLevels.MaxSupportedFeatureLevel;
     switch (featureLevel) {
@@ -157,7 +163,7 @@ void D3d12RHI::CreateCommandQueues() {
 
     if (FAILED(m_pDev->CreateCommandQueue(
             &queueDesc, IID_PPV_ARGS(&m_pGraphicsCommandQueue)))) {
-        assert(0);
+        my_assert(0);
     }
 
     m_pGraphicsCommandQueue->SetName(L"Graphics Command Queue");
@@ -166,7 +172,7 @@ void D3d12RHI::CreateCommandQueues() {
 
     if (FAILED(m_pDev->CreateCommandQueue(
             &queueDesc, IID_PPV_ARGS(&m_pComputeCommandQueue)))) {
-        assert(0);
+        my_assert(0);
     }
 
     m_pComputeCommandQueue->SetName(L"Compute Command Queue");
@@ -175,7 +181,7 @@ void D3d12RHI::CreateCommandQueues() {
 
     if (FAILED(m_pDev->CreateCommandQueue(
             &queueDesc, IID_PPV_ARGS(&m_pCopyCommandQueue)))) {
-        assert(0);
+        my_assert(0);
     }
 
     m_pCopyCommandQueue->SetName(L"Copy Command Queue");
@@ -229,34 +235,34 @@ void D3d12RHI::CreateSwapChain() {
             m_pGraphicsCommandQueue,  // Swap chain needs the queue so
                                       // that it can force a flush on it
             hWnd, &scd, NULL, NULL, &pSwapChain))) {
-        assert(0);
+        my_assert(0);
     }
 
     m_pSwapChain = reinterpret_cast<IDXGISwapChain3*>(pSwapChain);
 }
 
 void D3d12RHI::CreateSyncObjects() {
-    assert(SUCCEEDED(m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE,
+    my_assert(SUCCEEDED(m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE,
                                          IID_PPV_ARGS(&m_pGraphicsFence))) &&
            "failed to create fence object");
 
     m_nGraphicsFenceValues.fill(0);
 
     m_hGraphicsFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    assert(m_hGraphicsFenceEvent);
+    my_assert(m_hGraphicsFenceEvent);
 
     m_hComputeFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    assert(m_hComputeFenceEvent);
+    my_assert(m_hComputeFenceEvent);
 
     m_hCopyFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    assert(m_hCopyFenceEvent);
+    my_assert(m_hCopyFenceEvent);
 }
 
 void D3d12RHI::CreateRenderTargets() {
     m_pRenderTargets.resize(GfxConfiguration::kMaxInFlightFrameCount);
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        assert(SUCCEEDED(
+        my_assert(SUCCEEDED(
             m_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i]))));
 
         m_pRenderTargets[i]->SetName(
@@ -292,7 +298,7 @@ void D3d12RHI::CreateRenderTargets() {
         prop.VisibleNodeMask = 1;
 
         ID3D12Resource* pMsaaRT;
-        assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
             &prop, D3D12_HEAP_FLAG_NONE, &textureDesc,
             D3D12_RESOURCE_STATE_RENDER_TARGET, &optimizedClearValue,
             IID_PPV_ARGS(&pMsaaRT))));
@@ -339,7 +345,7 @@ void D3d12RHI::CreateDepthStencils() {
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-    assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
         &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
         D3D12_RESOURCE_STATE_DEPTH_WRITE, &depthOptimizedClearValue,
         IID_PPV_ARGS(&m_pDepthStencilBuffer))));
@@ -361,7 +367,7 @@ void D3d12RHI::CreateFramebuffers() {
     m_nRtvDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(
         D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
+        my_assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
             &rtvHeapDesc, IID_PPV_ARGS(&m_pRtvHeaps[i]))));
 
         m_pRtvHeaps[i]->SetName(
@@ -387,7 +393,7 @@ void D3d12RHI::CreateFramebuffers() {
     dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
     dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-    assert(SUCCEEDED(
+    my_assert(SUCCEEDED(
         m_pDev->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_pDsvHeap))));
     m_pDsvHeap->SetName(L"DSV Descriptor Heap");
 
@@ -402,21 +408,21 @@ void D3d12RHI::CreateCommandPools() {
     m_pGraphicsCommandAllocators.resize(GfxConfiguration::kMaxInFlightFrameCount);
 
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
+        my_assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
             D3D12_COMMAND_LIST_TYPE_DIRECT,
             IID_PPV_ARGS(&m_pGraphicsCommandAllocators[i]))));
         m_pGraphicsCommandAllocators[i]->SetName((std::wstring(L"Graphics Command Allocator") + std::to_wstring(i)).c_str());
     }
 
     // Compute
-    assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
+    my_assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_COMPUTE,
         IID_PPV_ARGS(&m_pComputeCommandAllocator))));
 
     m_pComputeCommandAllocator->SetName(L"Compute Command Allocator");
 
     // Copy
-    assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
+    my_assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_pCopyCommandAllocator))));
 
     m_pCopyCommandAllocator->SetName(L"Copy Command Allocator");
@@ -426,7 +432,7 @@ void D3d12RHI::CreateCommandLists() {
     // Graphics
     m_pGraphicsCommandLists.resize(1);
 
-    assert(SUCCEEDED(m_pDev->CreateCommandList1(
+    my_assert(SUCCEEDED(m_pDev->CreateCommandList1(
         0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE,
         IID_PPV_ARGS(&m_pGraphicsCommandLists[0]))));
 
@@ -435,14 +441,14 @@ void D3d12RHI::CreateCommandLists() {
             .c_str());
 
     // Compute
-    assert(SUCCEEDED(m_pDev->CreateCommandList1(
+    my_assert(SUCCEEDED(m_pDev->CreateCommandList1(
         0, D3D12_COMMAND_LIST_TYPE_COMPUTE, D3D12_COMMAND_LIST_FLAG_NONE,
         IID_PPV_ARGS(&m_pComputeCommandList))));
 
     m_pComputeCommandList->SetName(L"Compute Command List");
 
     // Copy
-    assert(SUCCEEDED(m_pDev->CreateCommandList1(
+    my_assert(SUCCEEDED(m_pDev->CreateCommandList1(
         0, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_LIST_FLAG_NONE,
         IID_PPV_ARGS(&m_pCopyCommandList))));
 
@@ -461,12 +467,12 @@ void D3d12RHI::endSingleTimeCommands() {
     }
 
     ID3D12Fence* pCopyQueueFence;
-    assert(SUCCEEDED(m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE,
+    my_assert(SUCCEEDED(m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE,
                                          IID_PPV_ARGS(&pCopyQueueFence))));
 
-    assert(SUCCEEDED(m_pCopyCommandQueue->Signal(pCopyQueueFence, 1)));
+    my_assert(SUCCEEDED(m_pCopyCommandQueue->Signal(pCopyQueueFence, 1)));
 
-    assert(
+    my_assert(
         SUCCEEDED(pCopyQueueFence->SetEventOnCompletion(1, m_hCopyFenceEvent)));
 
     WaitForSingleObject(m_hCopyFenceEvent, INFINITE);
@@ -499,7 +505,7 @@ ID3D12Resource* D3d12RHI::CreateTextureImage(Image& img) {
     ID3D12Resource* pTextureBuffer;
     ID3D12Resource* pTextureUploadHeap;
 
-    assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
         &prop, D3D12_HEAP_FLAG_NONE, &textureDesc,
         D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
         IID_PPV_ARGS(&pTextureBuffer))));
@@ -524,7 +530,7 @@ ID3D12Resource* D3d12RHI::CreateTextureImage(Image& img) {
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
         &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
         IID_PPV_ARGS(&pTextureUploadHeap))));
@@ -561,7 +567,7 @@ void D3d12RHI::CreateTextureSampler() {
     samplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
     samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-    assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
+    my_assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
         &samplerHeapDesc, IID_PPV_ARGS(&m_pSamplerHeap))));
     m_pSamplerHeap->SetName(L"Sampler Descriptor Heap");
 
@@ -593,7 +599,7 @@ ID3D12RootSignature* D3d12RHI::CreateRootSignature(
     const D3D12_SHADER_BYTECODE& shader) {
     // create the root signature
     ID3D12RootSignature* pRootSignature;
-    assert(SUCCEEDED(m_pDev->CreateRootSignature(
+    my_assert(SUCCEEDED(m_pDev->CreateRootSignature(
         0, shader.pShaderBytecode, shader.BytecodeLength,
         IID_PPV_ARGS(&pRootSignature))));
 
@@ -604,7 +610,7 @@ ID3D12PipelineState* D3d12RHI::CreateGraphicsPipeline(
     D3D12_GRAPHICS_PIPELINE_STATE_DESC& psod) {
     ID3D12PipelineState* pPipelineState;
 
-    assert(SUCCEEDED(m_pDev->CreateGraphicsPipelineState(
+    my_assert(SUCCEEDED(m_pDev->CreateGraphicsPipelineState(
         &psod, IID_PPV_ARGS(&pPipelineState))));
 
     return pPipelineState;
@@ -614,7 +620,7 @@ ID3D12PipelineState* D3d12RHI::CreateComputePipeline(
     D3D12_COMPUTE_PIPELINE_STATE_DESC& psod) {
     ID3D12PipelineState* pPipelineState;
 
-    assert(SUCCEEDED(m_pDev->CreateComputePipelineState(
+    my_assert(SUCCEEDED(m_pDev->CreateComputePipelineState(
         &psod, IID_PPV_ARGS(&pPipelineState))));
 
     return pPipelineState;
@@ -633,7 +639,7 @@ void D3d12RHI::CreateDescriptorPool(size_t num_descriptors,
 
     m_pCbvSrvUavHeaps.resize(num_heaps);
     for (int i = 0; i < num_heaps; i++) {
-        assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
+        my_assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
             &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeaps[i]))));
         m_pCbvSrvUavHeaps[i]->SetName(heap_group_name);
     }
@@ -666,10 +672,10 @@ void D3d12RHI::waitOnFrame() {
         m_hGraphicsFenceEvent != INVALID_HANDLE_VALUE) {
         auto fence_value = m_nGraphicsFenceValues[m_nCurrentFrame];
 
-        assert(SUCCEEDED(
+        my_assert(SUCCEEDED(
             m_pGraphicsCommandQueue->Signal(m_pGraphicsFence, fence_value)));
 
-        assert(SUCCEEDED(m_pGraphicsFence->SetEventOnCompletion(
+        my_assert(SUCCEEDED(m_pGraphicsFence->SetEventOnCompletion(
             fence_value, m_hGraphicsFenceEvent)));
 
         std::ignore =
@@ -682,14 +688,14 @@ void D3d12RHI::waitOnFrame() {
 void D3d12RHI::moveToNextFrame() {
     auto current_fence_value = m_nGraphicsFenceValues[m_nCurrentFrame];
 
-    assert(SUCCEEDED(m_pGraphicsCommandQueue->Signal(m_pGraphicsFence,
+    my_assert(SUCCEEDED(m_pGraphicsCommandQueue->Signal(m_pGraphicsFence,
                                                      current_fence_value)));
 
     m_nCurrentFrame = m_pSwapChain->GetCurrentBackBufferIndex();
 
     if (m_pGraphicsFence->GetCompletedValue() <
         m_nGraphicsFenceValues[m_nCurrentFrame]) {
-        assert(SUCCEEDED(m_pGraphicsFence->SetEventOnCompletion(
+        my_assert(SUCCEEDED(m_pGraphicsFence->SetEventOnCompletion(
             m_nGraphicsFenceValues[m_nCurrentFrame], m_hGraphicsFenceEvent)));
 
         std::ignore =
@@ -901,12 +907,12 @@ void D3d12RHI::Present() {
         m_pGraphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists),
                                                      ppCommandLists);
 
-        assert(SUCCEEDED(m_pGraphicsCommandQueue->Signal(
+        my_assert(SUCCEEDED(m_pGraphicsCommandQueue->Signal(
             m_pGraphicsFence, m_nGraphicsFenceValues[m_nCurrentFrame])));
     }
 
     // swap the back buffer and the front buffer
-    assert(SUCCEEDED(m_pSwapChain->Present(1, 0)));
+    my_assert(SUCCEEDED(m_pSwapChain->Present(1, 0)));
 
     moveToNextFrame();
 }
@@ -973,7 +979,7 @@ void D3d12RHI::CreateUniformBuffers(size_t bufferSize) {
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
         resourceDesc.Width = bufferSize;
 
-        assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
             &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
             D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
             IID_PPV_ARGS(&m_pUniformBuffers[i]))));
@@ -986,7 +992,7 @@ void D3d12RHI::UpdateUniformBufer(const void* buffer, size_t bufferSize) {
     // 上传数据
     void *data;
     D3D12_RANGE readRange = {0, 0};
-    assert(SUCCEEDED(
+    my_assert(SUCCEEDED(
         m_pUniformBuffers[m_nCurrentFrame]->Map(0, &readRange, &data)));
 
     std::memcpy(data, buffer, bufferSize);
@@ -1120,7 +1126,7 @@ D3d12RHI::IndexBuffer D3d12RHI::CreateIndexBuffer(const void* pData, size_t elem
             indexBuffer.descriptor.Format = ::DXGI_FORMAT_R32_UINT;
             break;
         default:
-            assert(0);
+            my_assert(0);
     }
     indexBuffer.descriptor.SizeInBytes = element_size * index_size;
     indexBuffer.indexCount = element_size;
@@ -1161,6 +1167,6 @@ void D3d12RHI::DrawGUI(ID3D12DescriptorHeap* pCbvRsvHeap) {
 
 void D3d12RHI::CreateGraphicsResources() {
     // Create client resource
-    assert(m_fCreateResourceHandler);
+    my_assert(m_fCreateResourceHandler);
     m_fCreateResourceHandler();
 }

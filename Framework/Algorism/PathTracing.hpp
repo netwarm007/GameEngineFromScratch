@@ -63,7 +63,7 @@ class PathTracing {
 
    public:
     static void raytrace(const raytrace_config cfg, BVHNode<T> &world_bvh,
-                         const RayTracingCamera<T> &cam, Image &img, std::ostringstream &out) {
+                         const RayTracingCamera<T> &cam, Image &img, std::ostringstream &out, bool &cancel) {
         int concurrency = std::thread::hardware_concurrency();
 
         out << "Concurrent ray tracing with (" << concurrency
@@ -97,10 +97,10 @@ class PathTracing {
             return 0;
         };
 
-        for (auto j = 0; j < img.Height; j++) {
+        for (auto j = 0; j < img.Height && !cancel; j++) {
             out << "\rScanlines remaining: " << img.Height - j << ' '
                       << std::flush;
-            for (auto i = 0; i < img.Width; i++) {
+            for (auto i = 0; i < img.Width && !cancel; i++) {
                 while (raytrace_tasks.size() >= concurrency) {
                     // wait for at least one task finish
                     raytrace_tasks.remove_if([](std::future<int> &task) {

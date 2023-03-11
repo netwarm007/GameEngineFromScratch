@@ -15,6 +15,12 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 
+#ifdef DEBUG
+#define my_assert(x) assert(x)
+#else
+#define my_assert(x) if(!(x)) {std::cerr << "Assert failed\n"; exit(-1); }
+#endif
+
 using namespace My;
 using namespace std;
 
@@ -41,7 +47,7 @@ int D3d12GraphicsManager::Initialize() {
     cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     cbvSrvUavHeapDesc.NumDescriptors = 1;
 
-    assert(SUCCEEDED(pDev->CreateDescriptorHeap(
+    my_assert(SUCCEEDED(pDev->CreateDescriptorHeap(
         &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeapImGui))));
     m_pCbvSrvUavHeapImGui->SetName(L"ImGui CbvSrvUav Heap");
 
@@ -136,7 +142,7 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
                 rsd.CullMode = D3D12_CULL_MODE_NONE;
                 break;
             default:
-                assert(0);
+                my_assert(0);
         }
 
         const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend{
@@ -209,7 +215,7 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
                     dsd.DepthFunc = D3D12_COMPARISON_FUNC_NEVER;
                     break;
                 default:
-                    assert(0);
+                    my_assert(0);
             }
         }
 
@@ -267,7 +273,7 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
                 psod.InputLayout = {ied_pos_only, _countof(ied_pos_only)};
                 break;
             default:
-                assert(0);
+                my_assert(0);
         }
 
         psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -286,7 +292,7 @@ HRESULT D3d12GraphicsManager::CreatePSO(D3d12PipelineState& pipelineState) {
 
         pipelineState.pipelineState = rhi.CreateGraphicsPipeline(psod);
     } else {
-        assert(pipelineState.pipelineType == PIPELINE_TYPE::COMPUTE);
+        my_assert(pipelineState.pipelineType == PIPELINE_TYPE::COMPUTE);
 
         D3D12_SHADER_BYTECODE computeShaderByteCode;
         computeShaderByteCode.pShaderBytecode =
@@ -327,7 +333,7 @@ void D3d12GraphicsManager::initializeGeometries(const Scene& scene) {
         if (pGeometryNode && pGeometryNode->Visible()) {
             const auto& pGeometry =
                 scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
-            assert(pGeometry);
+            my_assert(pGeometry);
             const auto& pMesh = pGeometry->GetMesh().lock();
             if (!pMesh) continue;
 
@@ -449,7 +455,7 @@ void D3d12GraphicsManager::initializeSkyBox(const Scene& scene) {
 
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
 
-    assert(scene.SkyBox);
+    my_assert(scene.SkyBox);
 
     m_dbcSkyBox.property_offset = m_VertexBuffers.size();
     m_VertexBuffers.emplace_back(rhi.CreateVertexBuffer(SceneObjectSkyBox::skyboxVertices.data(),
@@ -485,7 +491,7 @@ void D3d12GraphicsManager::BeginFrame(Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     rhi.BeginFrame();
 
-    assert(frame.frameIndex == m_nFrameIndex);
+    my_assert(frame.frameIndex == m_nFrameIndex);
 }
 
 void D3d12GraphicsManager::EndFrame(Frame& frame) {

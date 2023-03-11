@@ -23,6 +23,7 @@
 #include <string_view>
 
 std::ostringstream oss;
+bool is_closed = false;
 
 using image = My::Image;
 using bvh = My::BVHNode<float_precision>;
@@ -75,6 +76,8 @@ void gui_loop(BaseApplication& app) {
             app.Tick();
         }
 
+        is_closed = true;
+
         app.Finalize();
     }
 
@@ -126,9 +129,9 @@ int main(int argc, char** argv) {
     auto gui_future = std::async(std::launch::async, gui_task);
 
     // Render Settings
-    const float_precision aspect_ratio = 16.0 / 9.0;
-    const int image_width = 1920;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
+    const int image_width = gui_config.screenWidth;
+    const int image_height = gui_config.screenHeight;
+    const float_precision aspect_ratio = (float_precision)image_width / (float_precision)image_height;
     const My::raytrace_config config = {.samples_per_pixel = 512,
                                         .max_depth = 50};
 
@@ -162,7 +165,7 @@ int main(int argc, char** argv) {
     // Render
     auto start = std::chrono::steady_clock::now();
     My::PathTracing<float_precision>::raytrace(config, world_bvh, cam, img,
-                                               oss);
+                                               oss, is_closed);
     auto end = std::chrono::steady_clock::now();
 
     std::chrono::duration<double> diff = end - start;

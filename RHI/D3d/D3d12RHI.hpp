@@ -19,7 +19,7 @@ class D3d12RHI {
    public:
     using QueryFrameBufferSizeFunc = std::function<void(uint32_t&, uint32_t&)>;
     using GetWindowHandlerFunc = std::function<HWND()>;
-    using GetGfxConfigFunc = std::function<const GfxConfiguration&()>;
+    using GetGfxConfigFunc = std::function<const GfxConfiguration()>;
     using CreateResourceFunc = std::function<void()>;
     using DestroyResourceFunc = std::function<void()>;
 
