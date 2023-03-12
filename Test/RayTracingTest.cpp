@@ -24,6 +24,7 @@
 
 std::ostringstream oss;
 bool is_closed = false;
+Texture2D render_result;
 
 using image = My::Image;
 using bvh = My::BVHNode<float_precision>;
@@ -31,7 +32,7 @@ using camera = My::RayTracingCamera<float_precision>;
 
 using namespace My;
 
-void gui_loop(BaseApplication& app) {
+void gui_loop(BaseApplication& app, image& img) {
     int result;
 
     // Initialize ImGui
@@ -71,6 +72,9 @@ void gui_loop(BaseApplication& app) {
 
     result = app.Initialize();
 
+    // Texture for GUI display
+    render_result = app.GetGraphicsManager()->CreateTexture(img);
+
     if (result == 0) {
         while (!app.IsQuit()) {
             app.Tick();
@@ -107,6 +111,8 @@ class TestGraphicsManager : public TGraphicsManager {
                 ImGui::Text(str.substr(start_pos, end_pos).c_str());
             } while (end_pos != std::string::npos);
 
+            ImGui::Image((ImTextureID)render_result.handler, ImVec2(render_result.width, render_result.height), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
+
             ImGui::End();
         }
         EndPass(frame);
@@ -124,9 +130,6 @@ int main(int argc, char** argv) {
 
     pApp->SetCommandLineParameters(argc, argv);
     pApp->RegisterManagerModule(&graphicsManager);
-
-    auto gui_task = [pApp]() { gui_loop(*pApp); };
-    auto gui_future = std::async(std::launch::async, gui_task);
 
     // Render Settings
     const int image_width = gui_config.screenWidth;
@@ -153,14 +156,18 @@ int main(int argc, char** argv) {
     image img;
     img.Width = image_width;
     img.Height = image_height;
-    img.bitcount = 24;
+    img.bitcount = 32;
     img.bitdepth = 8;
-    img.pixel_format = My::PIXEL_FORMAT::RGB8;
+    img.pixel_format = My::PIXEL_FORMAT::RGBA8;
     img.pitch = (img.bitcount >> 3) * img.Width;
     img.compressed = false;
     img.compress_format = My::COMPRESSED_FORMAT::NONE;
     img.data_size = img.Width * img.Height * (img.bitcount >> 3);
     img.data = new uint8_t[img.data_size];
+
+    // start GUI thread
+    auto gui_task = [pApp, &img]() { gui_loop(*pApp, img); };
+    auto gui_future = std::async(std::launch::async, gui_task);
 
     // Render
     auto start = std::chrono::steady_clock::now();

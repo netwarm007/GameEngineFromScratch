@@ -15,6 +15,8 @@
 #include "imgui_impl_dx12.h"
 #include "imgui_impl_win32.h"
 
+#include "cbuffer.h"
+
 #ifdef DEBUG
 #define my_assert(x) assert(x)
 #else
@@ -60,11 +62,17 @@ int D3d12GraphicsManager::Initialize() {
                         ::DXGI_FORMAT_R8G8B8A8_UNORM, m_pCbvSrvUavHeapImGui,
                         cpuDescriptorHandle, gpuDescriptorHandle);
 
-    // 创建命令清单池
-    rhi.CreateCommandPools();
+    // 创建常量缓冲区
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+        m_PerFrameConstantBuffers[i].size = sizeof(PerFrameConstants);
+        m_PerFrameConstantBuffers[i].buffer = rhi.CreateUniformBuffers(m_PerFrameConstantBuffers[i].size, L"Per Frame Constant Buffer");
+        m_PerBatchConstantBuffers[i].size = sizeof(PerBatchConstants) * GfxConfiguration::kMaxSceneObjectCount;
+        m_PerBatchConstantBuffers[i].buffer = rhi.CreateUniformBuffers(m_PerBatchConstantBuffers[i].size, L"Per Batch Constant Buffer");
+    }
 
-    // 创建命令列表
-    rhi.CreateCommandLists();
+    // 创建资源描述子池
+    rhi.CreateDescriptorHeap(2, L"CbvSrvUav Heap",
+                                GfxConfiguration::kMaxInFlightFrameCount);
 
     return result;
 }
@@ -555,6 +563,20 @@ void D3d12GraphicsManager::GenerateCubemapArray(TextureCubeArray& texture_array)
 
 void D3d12GraphicsManager::GenerateTextureArray(Texture2DArray& texture_array) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+}
+
+Texture2D My::D3d12GraphicsManager::CreateTexture(Image& img) {
+    Texture2D result;
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+    result.format = rhi.getDxgiFormat(img);
+    result.height = img.Height;
+    result.width = img.Width;
+    result.mips = img.mipmaps.size();
+    result.samples = 1;
+    result.pixel_format = img.pixel_format;
+    auto res = rhi.CreateTextureImage(img);
+    result.handler = (TextureHandler)res;
+    return result;
 }
 
 void D3d12GraphicsManager::BeginShadowMap(

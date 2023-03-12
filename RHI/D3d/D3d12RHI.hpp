@@ -7,6 +7,7 @@
 
 #include <DXGI1_4.h>
 #include <d3d12.h>
+#include <string_view>
 
 #include "Buffer.hpp"
 #include "GfxConfiguration.hpp"
@@ -20,7 +21,6 @@ class D3d12RHI {
     using QueryFrameBufferSizeFunc = std::function<void(uint32_t&, uint32_t&)>;
     using GetWindowHandlerFunc = std::function<HWND()>;
     using GetGfxConfigFunc = std::function<const GfxConfiguration()>;
-    using CreateResourceFunc = std::function<void()>;
     using DestroyResourceFunc = std::function<void()>;
 
     struct IndexBuffer {
@@ -34,9 +34,16 @@ class D3d12RHI {
         D3D12_VERTEX_BUFFER_VIEW descriptor;
     };
 
+    struct ConstantBuffer {
+        ID3D12Resource* buffer;
+        size_t size;
+    };
+
    public:
     D3d12RHI();
     ~D3d12RHI();
+
+    static DXGI_FORMAT getDxgiFormat(const Image& img);
 
    public:
     void SetFramebufferSizeQueryCB(const QueryFrameBufferSizeFunc& func) {
@@ -47,9 +54,6 @@ class D3d12RHI {
     }
     void SetGetGfxConfigCB(const GetGfxConfigFunc& func) {
         m_fGetGfxConfigHandler = func;
-    }
-    void CreateResourceCB(const CreateResourceFunc& func) {
-        m_fCreateResourceHandler = func;
     }
     void DestroyResourceCB(const DestroyResourceFunc& func) {
         m_fDestroyResourceHandler = func;
@@ -73,7 +77,7 @@ class D3d12RHI {
 
     void CreateTextureSampler();
 
-    void CreateUniformBuffers(size_t bufferSize);
+    ID3D12Resource* CreateUniformBuffers(size_t bufferSize, std::wstring_view bufferName);
 
     ID3D12RootSignature* CreateRootSignature(
         const D3D12_SHADER_BYTECODE& shader);
@@ -84,12 +88,13 @@ class D3d12RHI {
     ID3D12PipelineState* CreateComputePipeline(
         D3D12_COMPUTE_PIPELINE_STATE_DESC& psod);
 
-    void CreateDescriptorPool(size_t num_descriptors,
-                              const wchar_t* heap_group_name, size_t num_heaps);
+    void CreateDescriptorHeap(size_t num_descriptors,
+                              std::wstring_view heap_group_name, size_t num_heaps);
 
-    void CreateDescriptorSets(size_t perFrameConstantBufferSize, ID3D12Resource** ppResources, size_t count);
-
-    void CreateGraphicsResources();
+    void CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
+                                    size_t constantBufferCount,
+                                    ID3D12Resource** ppShaderResources,
+                                    size_t shaderResourceCount);
 
     void ResetAllBuffers();
     void DestroyAll();
@@ -113,7 +118,7 @@ class D3d12RHI {
     VertexBuffer CreateVertexBuffer(const void* pData, size_t element_size,
                                     int32_t stride_size);
 
-    void UpdateUniformBufer(const void *data, size_t bufferSize);
+    void UpdateUniformBufer(ConstantBuffer* constantBuffers, const void* buffer);
 
     ID3D12Device* GetDevice() { return m_pDev; }
 
@@ -175,8 +180,6 @@ class D3d12RHI {
 
     std::vector<ID3D12Resource*> m_pRawBuffers;
 
-    std::vector<ID3D12Resource*> m_pUniformBuffers;
-
     // Synchronization objects
     HANDLE m_hGraphicsFenceEvent = INVALID_HANDLE_VALUE;
     HANDLE m_hCopyFenceEvent = INVALID_HANDLE_VALUE;
@@ -188,7 +191,6 @@ class D3d12RHI {
     QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
     GetWindowHandlerFunc m_fGetWindowHandler;
     GetGfxConfigFunc m_fGetGfxConfigHandler;
-    CreateResourceFunc m_fCreateResourceHandler;
     DestroyResourceFunc m_fDestroyResourceHandler;
 
     uint32_t m_nCurrentFrame = 0;

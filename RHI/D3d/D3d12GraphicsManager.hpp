@@ -33,6 +33,8 @@ class D3d12GraphicsManager : public GraphicsManager {
 
     void GenerateTextureArray(Texture2DArray& texture_array) final;
 
+    Texture2D CreateTexture(Image& img) final;
+
     void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;
     void EndShadowMap(const TextureBase* pShadowmap,
@@ -88,5 +90,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     D3dDrawBatchContext m_dbcSkyBox;
     std::vector<D3d12RHI::IndexBuffer> m_IndexBuffers;
     std::vector<D3d12RHI::VertexBuffer> m_VertexBuffers;
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerFrameConstantBuffers;
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerBatchConstantBuffers;
 };
 }  // namespace My
