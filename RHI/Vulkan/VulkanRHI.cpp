@@ -994,11 +994,19 @@ void VulkanRHI::cleanupSwapChain() {
 }
 
 void VulkanRHI::recreateSwapChain(const vk::RenderPass &renderPass) {
-    vkDeviceWaitIdle(m_vkDevice);
 
-    cleanupSwapChain();
+    if(m_fQueryFramebufferSizeCB) {
+        uint32_t width, height;
+        m_fQueryFramebufferSizeCB(width, height);
 
-    createSwapChain();
+        if (width & height) {
+            vkDeviceWaitIdle(m_vkDevice);
+
+            cleanupSwapChain();
+
+            createSwapChain();
+        }
+    }
 }
 
 uint32_t VulkanRHI::findMemoryType(uint32_t typeFilter,

@@ -51,7 +51,7 @@ void D3d12Application::CreateMainWindow() {
     m_Rhi.CreateCommandLists();
 }
 
-void D3d12Application::onWindowResize(int, int) { m_Rhi.RecreateSwapChain(); }
+void D3d12Application::onWindowResize(int width, int height) { if (width & height) m_Rhi.RecreateSwapChain(); }
 
 void D3d12Application::Finalize() {
     // 销毁相关资源
