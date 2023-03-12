@@ -50,31 +50,44 @@ class GraphicsManager : _implements_ IGraphicsManager {
 
     void GenerateTextureArray(Texture2DArray& texture_array) override {}
 
-    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t slice, const uint32_t mip) override {}
+    void CreateTextureView(Texture2D& texture_view,
+                           const TextureArrayBase& texture_array,
+                           const uint32_t slice, const uint32_t mip) override {}
 
-    void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
+    void BeginShadowMap(const int32_t light_index,
+                        const TextureBase* pShadowmap,
                         const int32_t layer_index,
                         const Frame& frame) override {}
-    void EndShadowMap(const TextureBase* pShadowmap,
-                      const int32_t layer_index, const Frame& frame) override {}
+    void EndShadowMap(const TextureBase* pShadowmap, const int32_t layer_index,
+                      const Frame& frame) override {}
     void SetShadowMaps(const Frame& frame) override {}
 
     // skybox
     void DrawSkyBox(const Frame& frame) override {}
 
     void CreateTexture(SceneObjectTexture& texture) override {}
-    Texture2D CreateTexture(Image& img) override { Texture2D result; return result; }
+    Texture2D CreateTexture(Image& img) override {
+        Texture2D result;
+        return result;
+    }
+
+    void UpdateTexture(Texture2D& texture, Image& img) override {}
 
     void GenerateTextureForWrite(Texture2D& texture) override {}
 
     void BindTextureForWrite(Texture2D& texture,
                              const uint32_t slot_index) override {}
+
+    void BindTexture(Texture2D& texture, const uint32_t slot_index) {}
+    void BindDebugTexture(Texture2D& texture, const uint32_t slot_index) {}
+
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) override {}
 
     void DrawFullScreenQuad() override {}
 
-    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target, Texture2D& source) override {}
+    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target,
+                     Texture2D& source) override {}
 
    protected:
     virtual void BeginScene(const Scene& scene);
@@ -101,7 +114,7 @@ class GraphicsManager : _implements_ IGraphicsManager {
     std::vector<std::shared_ptr<IDispatchPass>> m_InitPasses;
     std::vector<std::shared_ptr<IDispatchPass>> m_DispatchPasses;
     std::vector<std::shared_ptr<IDrawPass>> m_DrawPasses;
-    
+
     std::map<std::string, material_textures> material_map;
 
     std::vector<TextureBase> m_Textures;

@@ -31,6 +31,8 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     virtual void CreateTexture(SceneObjectTexture & texture) = 0;
     virtual Texture2D CreateTexture(Image& img) = 0;
 
+    virtual void UpdateTexture(Texture2D& texture, Image& img) = 0;
+
     virtual void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array, const uint32_t slice, const uint32_t mip) = 0;
 
     virtual void GenerateTexture(Texture2D& texture) = 0;
@@ -55,6 +57,12 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     virtual void DrawSkyBox(const Frame& frame) = 0;
 
     virtual void GenerateTextureForWrite(Texture2D& texture) = 0;
+
+    virtual void BindTexture(Texture2D& texture,
+                                     const uint32_t slot_index) = 0;
+
+    virtual void BindDebugTexture(Texture2D& texture,
+                                     const uint32_t slot_index) = 0;
 
     virtual void BindTextureForWrite(Texture2D& texture,
                                      const uint32_t slot_index) = 0;

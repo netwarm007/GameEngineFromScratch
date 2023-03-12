@@ -238,7 +238,7 @@ int main() {
     // 创建并登记资源销毁回调函数
     D3d12RHI::DestroyResourceFunc destroyResourceFunc =
         [&pTexture, &pPipelineState, &pRootSignature, &VertexBuffers,
-         &IndexBuffers]() {
+         &IndexBuffers, &ConstantBuffers]() {
             SafeRelease(&pPipelineState);
             SafeRelease(&pRootSignature);
 
@@ -249,6 +249,10 @@ int main() {
             }
 
             for (auto& buf : IndexBuffers) {
+                SafeRelease(&buf.buffer);
+            }
+
+            for (auto& buf : ConstantBuffers) {
                 SafeRelease(&buf.buffer);
             }
         };
@@ -286,7 +290,8 @@ int main() {
         rhi.SetPipelineState(pPipelineState);
         rhi.SetRootSignature(pRootSignature);
         std::array<D3d12RHI::ConstantBuffer*, 1> constBuffers = {ConstantBuffers.data()};
-        rhi.CreateDescriptorSet(constBuffers.data(), 1, &pTexture, 1);
+        rhi.CreateDescriptorSet(constBuffers.data(), 1);
+        rhi.CreateDescriptorSet(1, &pTexture, 1);
         rhi.Draw(VertexBuffers[0].descriptor, IndexBuffers[0].descriptor,
                  D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
                  IndexBuffers[0].indexCount);

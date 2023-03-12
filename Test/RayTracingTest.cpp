@@ -72,11 +72,13 @@ void gui_loop(BaseApplication& app, image& img) {
 
     result = app.Initialize();
 
-    // Texture for GUI display
-    render_result = app.GetGraphicsManager()->CreateTexture(img);
-
     if (result == 0) {
+        // Texture for GUI display
+        render_result = app.GetGraphicsManager()->CreateTexture(img);
+        app.GetGraphicsManager()->BindDebugTexture(render_result, 1);
+
         while (!app.IsQuit()) {
+            app.GetGraphicsManager()->UpdateTexture(render_result, img);
             app.Tick();
         }
 
@@ -85,6 +87,8 @@ void gui_loop(BaseApplication& app, image& img) {
         app.Finalize();
     }
 
+    app.GetGraphicsManager()->ReleaseTexture(render_result);
+
     ImGui::DestroyContext();
 }
 
@@ -92,6 +96,7 @@ class TestGraphicsManager : public TGraphicsManager {
     void Draw() override {
         static bool show_demo_window = true;
         auto& frame = m_Frames[m_nFrameIndex];
+
         BeginPass(frame);
 
         {

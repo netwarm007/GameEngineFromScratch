@@ -27,13 +27,19 @@ using namespace My;
 using namespace std;
 
 D3d12GraphicsManager::~D3d12GraphicsManager() {
-    SafeRelease(&m_pCbvSrvUavHeapImGui);
-
     for (auto& buf : m_VertexBuffers) {
         SafeRelease(&buf.buffer);
     }
 
     for (auto& buf : m_IndexBuffers) {
+        SafeRelease(&buf.buffer);
+    }
+
+    for (auto& buf : m_PerFrameConstantBuffers) {
+        SafeRelease(&buf.buffer);
+    }
+
+    for (auto& buf : m_PerBatchConstantBuffers) {
         SafeRelease(&buf.buffer);
     }
 }
@@ -47,7 +53,7 @@ int D3d12GraphicsManager::Initialize() {
     D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc{};
     cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    cbvSrvUavHeapDesc.NumDescriptors = 1;
+    cbvSrvUavHeapDesc.NumDescriptors = 2;
 
     my_assert(SUCCEEDED(pDev->CreateDescriptorHeap(
         &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeapImGui))));
@@ -79,6 +85,8 @@ int D3d12GraphicsManager::Initialize() {
 
 void D3d12GraphicsManager::Finalize() {
     ImGui_ImplDX12_Shutdown();
+
+    SafeRelease(&m_pCbvSrvUavHeapImGui);
 
     GraphicsManager::Finalize();
 }
@@ -575,8 +583,13 @@ Texture2D My::D3d12GraphicsManager::CreateTexture(Image& img) {
     result.samples = 1;
     result.pixel_format = img.pixel_format;
     auto res = rhi.CreateTextureImage(img);
-    result.handler = (TextureHandler)res;
+    result.buff = (TextureHandler)res;
     return result;
+}
+
+void My::D3d12GraphicsManager::UpdateTexture(Texture2D& texture, Image& img) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+    rhi.UpdateTexture((ID3D12Resource*)texture.buff, img);
 }
 
 void D3d12GraphicsManager::BeginShadowMap(
@@ -590,13 +603,25 @@ void D3d12GraphicsManager::SetShadowMaps(const Frame& frame) {}
 void D3d12GraphicsManager::CreateTexture(SceneObjectTexture& texture) {}
 
 void D3d12GraphicsManager::ReleaseTexture(TextureBase& texture) {
-    ID3D12Resource* pTmp = reinterpret_cast<ID3D12Resource*>(texture.handler);
+    ID3D12Resource* pTmp = reinterpret_cast<ID3D12Resource*>(texture.buff);
     SafeRelease(&pTmp);
 }
 
 void D3d12GraphicsManager::GenerateTextureForWrite(Texture2D& texture) {}
 
 void D3d12GraphicsManager::BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) {}
+
+void D3d12GraphicsManager::BindTexture(Texture2D& texture, const uint32_t slot_index) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+    rhi.CreateDescriptorSet(slot_index, (ID3D12Resource**)&texture.buff, 1);
+    texture.handler = (TextureHandler)rhi.GetGpuDescriptorHandle(nullptr, slot_index).ptr;
+}
+
+void D3d12GraphicsManager::BindDebugTexture(Texture2D& texture, const uint32_t slot_index) {
+    auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
+    rhi.CreateDescriptorSet(m_pCbvSrvUavHeapImGui, slot_index, (ID3D12Resource**)&texture.buff, 1);
+    texture.handler = (TextureHandler)rhi.GetGpuDescriptorHandle(m_pCbvSrvUavHeapImGui, slot_index).ptr;
+}
 
 void D3d12GraphicsManager::Dispatch(const uint32_t width, const uint32_t height,
                                     const uint32_t depth) {}

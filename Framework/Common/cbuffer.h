@@ -136,6 +136,7 @@ using TextureFormat = intptr_t;
 
 struct TextureBase {
     TextureHandler handler = 0;
+    TextureHandler buff = 0;
     TextureFormat format = 0;
     PIXEL_FORMAT pixel_format;
     

@@ -74,6 +74,7 @@ class D3d12RHI {
     void CreateCommandLists();
 
     ID3D12Resource* CreateTextureImage(Image& img);
+    void UpdateTexture(ID3D12Resource* texture, Image& img);
 
     void CreateTextureSampler();
 
@@ -91,10 +92,21 @@ class D3d12RHI {
     void CreateDescriptorHeap(size_t num_descriptors,
                               std::wstring_view heap_group_name, size_t num_heaps);
 
-    void CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
-                                    size_t constantBufferCount,
+    void CreateDescriptorSet(size_t offset,
                                     ID3D12Resource** ppShaderResources,
                                     size_t shaderResourceCount);
+
+    void CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
+                                    size_t constantBufferCount);
+
+    void CreateDescriptorSet(ID3D12DescriptorHeap* pHeap, 
+                                    size_t offset,
+                                    ID3D12Resource** ppShaderResources,
+                                    size_t shaderResourceCount);
+
+    ID3D12DescriptorHeap* GetDescriptorHeap(uint32_t index);
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset);
+    D3D12_GPU_DESCRIPTOR_HANDLE GetGpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset);
 
     void ResetAllBuffers();
     void DestroyAll();

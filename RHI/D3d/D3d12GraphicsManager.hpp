@@ -34,6 +34,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     void GenerateTextureArray(Texture2DArray& texture_array) final;
 
     Texture2D CreateTexture(Image& img) final;
+    void UpdateTexture(Texture2D& texture, Image& img) final; 
 
     void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;
@@ -49,6 +50,9 @@ class D3d12GraphicsManager : public GraphicsManager {
     void GenerateTextureForWrite(Texture2D& texture) final;
 
     void BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) final;
+
+    void BindTexture(Texture2D& texture, const uint32_t slot_index) final;
+    void BindDebugTexture(Texture2D& texture, const uint32_t slot_index) final;
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;

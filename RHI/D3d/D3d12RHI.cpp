@@ -564,6 +564,59 @@ ID3D12Resource* D3d12RHI::CreateTextureImage(Image& img) {
     return pTextureBuffer;
 }
 
+void My::D3d12RHI::UpdateTexture(ID3D12Resource* texture, Image& img) {
+    ID3D12Resource* pTextureUploadHeap;
+
+    D3D12_HEAP_PROPERTIES prop;
+    D3D12_HEAP_FLAGS flags;
+    texture->GetHeapProperties(&prop, &flags);
+
+    D3D12_RESOURCE_DESC textureDesc = texture->GetDesc();
+    const UINT subresourceCount =
+        textureDesc.DepthOrArraySize * textureDesc.MipLevels;
+    const UINT64 uploadBufferSize =
+        GetRequiredIntermediateSize(texture, 0, subresourceCount);
+
+    prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+    D3D12_RESOURCE_DESC resourceDesc{};
+    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    resourceDesc.Alignment = 0;
+    resourceDesc.Width = uploadBufferSize;
+    resourceDesc.Height = 1;
+    resourceDesc.DepthOrArraySize = 1;
+    resourceDesc.MipLevels = 1;
+    resourceDesc.Format = ::DXGI_FORMAT_UNKNOWN;
+    resourceDesc.SampleDesc.Count = 1;
+    resourceDesc.SampleDesc.Quality = 0;
+    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+        IID_PPV_ARGS(&pTextureUploadHeap))));
+
+    // Copy data to the intermediate upload heap and then schedule a copy
+    // from the upload heap to the Texture2D.
+    D3D12_SUBRESOURCE_DATA textureData{};
+    if (img.compressed) {
+        textureData.pData = img.data;
+        textureData.RowPitch = img.pitch;
+        textureData.SlicePitch = img.data_size;
+    } else {
+        textureData.pData = img.data;
+        textureData.RowPitch = img.pitch;
+        textureData.SlicePitch = img.pitch * img.Height;
+    }
+
+    beginSingleTimeCommands();
+    UpdateSubresources(m_pCopyCommandList, texture, pTextureUploadHeap,
+                       0, 0, subresourceCount, &textureData);
+    endSingleTimeCommands();
+
+    SafeRelease(&pTextureUploadHeap);
+}
+
 void D3d12RHI::CreateTextureSampler() {
     const uint32_t num_samplers = 8;
     // Describe and create a sampler descriptor heap.
@@ -651,27 +704,58 @@ void D3d12RHI::CreateDescriptorHeap(size_t num_descriptors,
     }
 }
 
-void D3d12RHI::CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
-                                    size_t constantBufferCount,
+void My::D3d12RHI::CreateDescriptorSet(ID3D12DescriptorHeap* pHeap,
+                                       size_t offset,
+                                       ID3D12Resource** ppShaderResources,
+                                       size_t shaderResourceCount) {
+    D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvUavHandle = pHeap->GetCPUDescriptorHandleForHeapStart();
+    cbvSrvUavHandle.ptr += offset * m_nCbvSrvUavDescriptorSize;
+    // SRVs
+    for (size_t i = 0; i < shaderResourceCount; i++) {
+        m_pDev->CreateShaderResourceView(ppShaderResources[i], NULL, cbvSrvUavHandle);
+        cbvSrvUavHandle.ptr += m_nCbvSrvUavDescriptorSize;
+    }
+}
+
+void D3d12RHI::CreateDescriptorSet(size_t offset,
                                     ID3D12Resource** ppShaderResources,
                                     size_t shaderResourceCount) {
+    CreateDescriptorSet(m_pCbvSrvUavHeaps[m_nCurrentFrame], offset, ppShaderResources, shaderResourceCount);
+}
+
+void D3d12RHI::CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
+                                    size_t constantBufferCount) {
     D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle = m_pCbvSrvUavHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart();
     // CBVs
-    for (size_t j = 0; j < constantBufferCount; j++) {
+    for (size_t i = 0; i < constantBufferCount; i++) {
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-        cbvDesc.BufferLocation = pConstantBuffers[j][m_nCurrentFrame].buffer->GetGPUVirtualAddress();
-        cbvDesc.SizeInBytes = ALIGN(pConstantBuffers[j][m_nCurrentFrame].size, 256);
+        cbvDesc.BufferLocation = pConstantBuffers[i][m_nCurrentFrame].buffer->GetGPUVirtualAddress();
+        cbvDesc.SizeInBytes = ALIGN(pConstantBuffers[i][m_nCurrentFrame].size, 256);
 
         m_pDev->CreateConstantBufferView(&cbvDesc, cbvHandle);
 
         cbvHandle.ptr += m_nCbvSrvUavDescriptorSize;
     }
+}
 
-    // SRVs
-    for (size_t j = 0; j < shaderResourceCount; j++) {
-        m_pDev->CreateShaderResourceView(ppShaderResources[j], NULL, cbvHandle);
-        cbvHandle.ptr += m_nCbvSrvUavDescriptorSize;
-    }
+ID3D12DescriptorHeap* My::D3d12RHI::GetDescriptorHeap(uint32_t index) {
+    my_assert(index <= GfxConfiguration::kMaxInFlightFrameCount);
+    return m_pCbvSrvUavHeaps[index];
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE My::D3d12RHI::GetCpuDescriptorHandle(ID3D12DescriptorHeap* pHeap,
+    size_t offset) {
+    D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvUavHandle = (pHeap ? pHeap->GetCPUDescriptorHandleForHeapStart() : m_pCbvSrvUavHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart());
+    cbvSrvUavHandle.ptr += offset * m_nCbvSrvUavDescriptorSize;
+
+    return cbvSrvUavHandle;
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE My::D3d12RHI::GetGpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset) {
+    D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvUavHandle = (pHeap ? pHeap->GetGPUDescriptorHandleForHeapStart() : m_pCbvSrvUavHeaps[m_nCurrentFrame]->GetGPUDescriptorHandleForHeapStart());
+    cbvSrvUavHandle.ptr += offset * m_nCbvSrvUavDescriptorSize;
+
+    return cbvSrvUavHandle;
 }
 
 void D3d12RHI::waitOnFrame() {
@@ -841,6 +925,14 @@ void D3d12RHI::BeginPass(const Vector4f& clearColor) {
     m_pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
                                       0, 0, nullptr);
+
+    // set descriptor heaps
+    std::vector<ID3D12DescriptorHeap*> ppHeaps;
+    if(m_pCbvSrvUavHeaps[m_nCurrentFrame]) ppHeaps.emplace_back(m_pCbvSrvUavHeaps[m_nCurrentFrame]);
+    if(m_pSamplerHeap) ppHeaps.emplace_back(m_pSamplerHeap);
+
+    m_pCmdList->SetDescriptorHeaps(ppHeaps.size(),
+                                   ppHeaps.data());
 }
 
 void D3d12RHI::SetPipelineState(ID3D12PipelineState* pPipelineState) {
@@ -870,12 +962,6 @@ void D3d12RHI::Draw(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
 
     // set primitive topology
     m_pCmdList->IASetPrimitiveTopology(primitive_topology);
-
-    // set descriptor heaps
-    ID3D12DescriptorHeap* ppHeaps[] = {m_pCbvSrvUavHeaps[m_nCurrentFrame],
-                                       m_pSamplerHeap};
-    m_pCmdList->SetDescriptorHeaps(static_cast<int32_t>(_countof(ppHeaps)),
-                                   ppHeaps);
 
     // Bind Descriptor Set
     auto descriptorHandler = m_pCbvSrvUavHeaps[m_nCurrentFrame]
