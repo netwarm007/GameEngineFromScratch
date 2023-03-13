@@ -116,7 +116,7 @@ class TestGraphicsManager : public TGraphicsManager {
                 ImGui::Text(str.substr(start_pos, end_pos).c_str());
             } while (end_pos != std::string::npos);
 
-            ImGui::Image((ImTextureID)render_result.handler, ImVec2(render_result.width, render_result.height), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
+            ImGui::Image((ImTextureID)render_result.handler, ImVec2(render_result.width, render_result.height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
 
             ImGui::End();
         }

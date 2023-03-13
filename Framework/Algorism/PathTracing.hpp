@@ -93,6 +93,7 @@ class PathTracing {
             img.SetR(x, y, pixel_color_unorm[0]);
             img.SetG(x, y, pixel_color_unorm[1]);
             img.SetB(x, y, pixel_color_unorm[2]);
+            img.SetA(x, y, 255);
 
             return 0;
         };
