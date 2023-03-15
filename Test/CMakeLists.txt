@@ -1,4 +1,4 @@
-add_executable(RayTracingTest RayTracingTest.cpp)
+add_executable(RayTracingTest MACOSX_BUNDLE RayTracingTest.cpp)
 if(OS_MACOS)
     target_link_libraries(RayTracingTest Framework PlatformInterface MetalRHI ${VULKAN_RHI})
 elseif(OS_WINDOWS)

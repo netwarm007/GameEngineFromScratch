@@ -1,12 +1,12 @@
 set(PLATFORM_TEST_CASES BasicWindowTest)
 
 foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
-    add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
+    add_executable(${TEST_CASE} MACOSX_BUNDLE ${TEST_CASE}.cpp)
     target_link_libraries(${TEST_CASE} Framework PlatformInterface)
 endforeach(TEST_CASE)
 
 if(SDL2_FOUND)
-    add_executable(Sdl2WindowTest Sdl2WindowTest.cpp)
+    add_executable(Sdl2WindowTest MACOSX_BUNDLE Sdl2WindowTest.cpp)
     target_link_libraries(Sdl2WindowTest Framework PlatformInterfaceSDL2)
 endif(SDL2_FOUND)
 
@@ -21,7 +21,7 @@ if(Vulkan_FOUND)
 endif(Vulkan_FOUND)
 
 foreach(TEST_CASE IN LISTS GRAPHICS_TEST_CASES)
-    add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
+    add_executable(${TEST_CASE} MACOSX_BUNDLE ${TEST_CASE}.cpp)
 
     if(OS_MACOS)
         target_link_libraries(${TEST_CASE} Framework PlatformInterface MetalRHI ${VULKAN_RHI})
