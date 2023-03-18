@@ -99,7 +99,7 @@ class PathTracing {
         };
 
         for (auto j = 0; j < img.Height && !cancel; j++) {
-            out << "\rScanlines remaining: " << img.Height - j << ' '
+            out << "\rScanlines remaining: " << img.Height - j - 1 << ' '
                       << std::flush;
             for (auto i = 0; i < img.Width && !cancel; i++) {
                 while (raytrace_tasks.size() >= concurrency) {

@@ -32,6 +32,9 @@ using camera = My::RayTracingCamera<float_precision>;
 
 using namespace My;
 
+const My::raytrace_config config = {.samples_per_pixel = 512,
+                                    .max_depth = 50};
+
 class TestGraphicsManager : public TGraphicsManager {
     void Draw() override {
         static bool show_demo_window = true;
@@ -45,6 +48,8 @@ class TestGraphicsManager : public TGraphicsManager {
                                                          // called "Hello,
                                                          // world!" and append
                                                          // into it.
+            auto gfx_cfg = m_pApp->GetConfiguration();
+            ImGui::Text((const char*)u8"宽：%d 高：%d 采样率：%d 最大深度：%d", gfx_cfg.screenWidth, gfx_cfg.screenHeight, config.samples_per_pixel, config.max_depth);
             size_t start_pos = 0;
             size_t end_pos = 0;
             std::string str(oss.str());
@@ -136,15 +141,13 @@ void gui_loop(GfxConfiguration & gui_config, int argc, char** argv, image& img) 
 
 // Main
 int main(int argc, char** argv) {
-    GfxConfiguration gui_config(8, 8, 8, 8, 24, 8, 4, 800, 600,
+    GfxConfiguration gui_config(8, 8, 8, 8, 24, 8, 4, 960, 540,
                                 "Ray Tracing Test");
 
     // Render Settings
     const int image_width = gui_config.screenWidth;
     const int image_height = gui_config.screenHeight;
     const float_precision aspect_ratio = (float_precision)image_width / (float_precision)image_height;
-    const My::raytrace_config config = {.samples_per_pixel = 512,
-                                        .max_depth = 50};
 
     // World
     auto world = random_scene();
