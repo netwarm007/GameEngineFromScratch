@@ -17,10 +17,10 @@ static std::ostream& operator<<(std::ostream& s, const ASTPair<T, U>& v)
 
 static inline std::ostream& operator<<(std::ostream& s, const ASTFieldDecl& v)
 {
-    s << '{' << v.first;
+    s << '{' << std::get<0>(v);
     s << "|{";
-    assert(v.second);
-    dump_node(s, v.second);
+    assert(std::get<1>(v));
+    dump_node(s, std::get<1>(v));
     s << "}}";
     return s;
 }

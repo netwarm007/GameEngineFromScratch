@@ -53,14 +53,8 @@ enum QueueType : byte { Graphics, Compute, CopyTransfer }
 enum CommandType : byte { BindPipeline, BindResourceTable, BindVertexBuffer, BindIndexBuffer, Draw, DrawIndexed, DrawInstanced, DrawIndexedInstanced, CopyResource }
 
 
-// Index type
-// Image type
 // Cube face
 // Shader stage
-// Texture filter
-// Texture wrap
-// Vertex format
-// Vertex step
 // Uniform type
 // Render pass action
 // ERRORS!!!
@@ -162,8 +156,18 @@ struct RenderTarget {
     format                  : TextureFormat;
 }
 
+table FrameBuffer {
+    color_attachment        : RenderTarget;
+    depth_attachment        : RenderTarget;
+}
+
+table RenderPass {
+    frame_buffer            : FrameBuffer;
+    pipeline_state          : PipelineState;
+}
+
 table RenderPipeline {
-    state                   : PipelineState;
+    render_passes           : [RenderPass];
 }
 
 root_type RenderPipeline;

@@ -32,12 +32,12 @@ int main(int argc, char* argv[])
 
     auto struct_= make_ASTNodeRef<ASTNodeStruct, ASTFieldList> (
         "Struct", 
-        { {"field1", enum_}, {"field2", enum_}, {"field3", enum_} }
+        { {"field1", enum_, false}, {"field2", enum_, true}, {"field3", enum_, false} }
     );
 
     auto table = make_ASTNodeRef<ASTNodeTable, ASTFieldList> ( 
         "Table",
-        { {"field1", enum_}, {"field2", struct_}, {"field3", enum_} }
+        { {"field1", enum_, false}, {"field2", struct_, true}, {"field3", enum_, true} }
     );
 
     root->SetLeft(ns);

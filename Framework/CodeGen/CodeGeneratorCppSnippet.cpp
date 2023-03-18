@@ -29,9 +29,9 @@ static const std::map<ASTNode::IDN_TYPE, const char*> prilimitive_types = {
 
 static inline std::ostream& operator<<(values_stream& s, const ASTFieldDecl& v)
 {
-    assert(v.second);
-    auto type_idn = v.second->GetIDN();
-    if (v.second->GetNodeType() == AST_NODE_TYPE::ENUM) {
+    assert(std::get<1>(v));
+    auto type_idn = std::get<1>(v)->GetIDN();
+    if (std::get<1>(v)->GetNodeType() == AST_NODE_TYPE::ENUM) {
         type_idn += "::Enum";
     }
 
@@ -41,8 +41,13 @@ static inline std::ostream& operator<<(values_stream& s, const ASTFieldDecl& v)
         type_idn = it->second;
     }
 
+    // check for array type
+    if (std::get<2>(v)) {
+        type_idn = "std::vector<" + type_idn + ">";
+    }
+
     s << indent() << type_idn << '\t';
-    s << v.first << ';' << std::endl;
+    s << std::get<0>(v) << ';' << std::endl;
     return s;
 }
 
@@ -59,9 +64,17 @@ static const std::map<ASTNode::IDN_TYPE, const char*> imgui_commands = {
 
 static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
 {
-    assert(v.second);
-    auto type_idn = v.second->GetIDN();
-    switch(v.second->GetNodeType())
+    assert(std::get<1>(v));
+    auto type_idn = std::get<1>(v)->GetIDN();
+    auto idn = std::get<0>(v);
+
+    if (std::get<2>(v)) {
+        s<< indent() << "for (int i = 0; i < " << std::get<0>(v) << ".size(); i++) {" << std::endl;
+        indent_val++;
+        idn += "[i]";
+    }
+
+    switch(std::get<1>(v)->GetNodeType())
     {
     case AST_NODE_TYPE::NONE:
         break;
@@ -70,23 +83,23 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
             auto it = imgui_commands.find(type_idn);
             if (it != imgui_commands.end()) {
                 char buf[128];
-                snprintf(buf, 128, it->second, v.first.c_str(), v.first.c_str());
+                snprintf(buf, 128, it->second, idn.c_str(), idn.c_str());
                 s << indent() << buf;
             }
         }
         break;
     case AST_NODE_TYPE::ENUM:
-        s << indent() << "ImGui::Combo( \"" << v.first << "\", (int32_t*)&" << v.first << ", " << type_idn << "::s_value_names, " << type_idn << "::Count );" << std::endl;
+        s << indent() << "ImGui::Combo( \"" << std::get<0>(v) << (std::get<2>(v)?"[%s]\", i, ": "\",") << " (int32_t*)&" << idn << ", " << type_idn << "::s_value_names, " << type_idn << "::Count );" << std::endl;
         break;
     case AST_NODE_TYPE::NAMESPACE:
         break;
     case AST_NODE_TYPE::STRUCT:
-        s << indent() << "ImGui::Text(\"" << v.first << "\");" << std::endl;
-        s << indent() << v.first << ".reflectMembers();" << std::endl;
+        s << indent() << "ImGui::Text(\"" << std::get<0>(v) << (std::get<2>(v)?"[%s]\", i": "\"") << ");" << std::endl;
+        s << indent() << idn << ".reflectMembers();" << std::endl;
         break;
     case AST_NODE_TYPE::TABLE:
-        s << indent() << "ImGui::Text(\"" << v.first << "\");" << std::endl;
-        s << indent() << v.first << ".reflectMembers();" << std::endl;
+        s << indent() << "ImGui::Text(\"" << std::get<0>(v) << (std::get<2>(v)?"[%s]\", i": "\"") << ");" << std::endl;
+        s << indent() << idn << ".reflectMembers();" << std::endl;
         break;
     case AST_NODE_TYPE::ATTRIBUTE:
         break;
@@ -95,14 +108,20 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
     default:
         assert(0);
     }
+
+    if (std::get<2>(v)) {
+        --indent_val;
+        s<< indent() << "}" << std::endl;
+    }
+
     return s;
 }
 
 static inline std::ostream& operator<<(headers_stream& s, const ASTFieldDecl& v)
 {
-    assert(v.second);
-    auto type_idn = v.second->GetIDN();
-    switch(v.second->GetNodeType())
+    assert(std::get<1>(v));
+    auto type_idn = std::get<1>(v)->GetIDN();
+    switch(std::get<1>(v)->GetNodeType())
     {
     case AST_NODE_TYPE::NONE:
         break;
@@ -125,6 +144,14 @@ static inline std::ostream& operator<<(headers_stream& s, const ASTFieldDecl& v)
     default:
         assert(0);
     }
+
+    if (std::get<2>(v)) {
+        if (CodeGenerator::AppendGenerationSource("<vector>")) {
+            // only include once;
+            s << std::endl << "#include <vector>";
+        }
+    }
+
     return s;
 }
 

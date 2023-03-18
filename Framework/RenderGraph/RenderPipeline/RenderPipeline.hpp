@@ -1,13 +1,16 @@
-#include "PipelineState.hpp"
+#include "RenderPass.hpp"
+#include <vector>
 
 namespace My {
     struct RenderPipeline {
-        PipelineState	state;
+        std::vector<RenderPass>	render_passes;
 
 
         void reflectMembers() {
-            ImGui::Text("state");
-            state.reflectMembers();
+            for (int i = 0; i < render_passes.size(); i++) {
+                ImGui::Text("render_passes[%s]", i);
+                render_passes[i].reflectMembers();
+            }
 
         }
 

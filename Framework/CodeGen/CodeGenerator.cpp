@@ -18,7 +18,12 @@ bool CodeGenerator::AppendGenerationSource(ASTNode::IDN_TYPE idn) {
     bool result = false;
     auto it = task_list.find(idn);
     if (it == task_list.end()) {
-        task_list[idn] = GENERATION_STATUS::WAITING;
+        if (idn.at(0) == '<') {
+            // system header, only add, no generate
+            task_list[idn] = GENERATION_STATUS::GENERATED;
+        } else {
+            task_list[idn] = GENERATION_STATUS::WAITING;
+        }
         result = true;
     }
 

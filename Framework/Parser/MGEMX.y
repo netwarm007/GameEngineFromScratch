@@ -117,13 +117,18 @@ field_declaration_list: field_declaration           {   $$ = {$1}; }
 
 field_declaration: IDN ':' IDN ';'                  { 
                                                         auto [result, ref] = findSymbol($3.c_str());
-                                                        $$.first = $1; 
-                                                        if (result) $$.second = ref;
+                                                        std::get<0>($$) = $1; 
+                                                        if (result) { std::get<1>($$) = ref; std::get<2>($$) = false; }
+                                                    }
+    | IDN ':' '[' IDN ']' ';'                       { 
+                                                        auto [result, ref] = findSymbol($4.c_str());
+                                                        std::get<0>($$) = $1; 
+                                                        if (result) { std::get<1>($$) = ref; std::get<2>($$) = true; }
                                                     }
     | IDN ':' IDN '(' attribute_list ')' ';'        { 
                                                         auto [result, ref] = findSymbol($3.c_str());
-                                                        $$.first = $1; 
-                                                        if (result) $$.second = ref;
+                                                        std::get<0>($$) = $1; 
+                                                        if (result) { std::get<1>($$) = ref; std::get<2>($$) = false; }
                                                     }
     ;
 
