@@ -1,4 +1,4 @@
-namespace My {
+namespace My::RenderGraph {
     namespace FillMode {
         int Count = 3;
         enum Enum { 
@@ -17,4 +17,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace FillMode
-} // namespace My
+} // namespace My::RenderGraph

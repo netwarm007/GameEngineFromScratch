@@ -1,4 +1,4 @@
-namespace My {
+namespace My::RenderGraph {
     namespace DepthWriteMask {
         int Count = 2;
         enum Enum { 
@@ -15,4 +15,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace DepthWriteMask
-} // namespace My
+} // namespace My::RenderGraph

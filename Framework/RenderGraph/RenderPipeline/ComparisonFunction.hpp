@@ -1,4 +1,4 @@
-namespace My {
+namespace My::RenderGraph {
     namespace ComparisonFunction {
         int Count = 8;
         enum Enum { 
@@ -27,4 +27,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace ComparisonFunction
-} // namespace My
+} // namespace My::RenderGraph

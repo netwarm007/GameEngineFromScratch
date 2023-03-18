@@ -4,7 +4,7 @@
 
 
 
-namespace My {
+namespace My::RenderGraph {
     struct DepthStencilOperation {
         StencilOperation::Enum	fail;
 
@@ -16,13 +16,21 @@ namespace My {
 
 
         void reflectMembers() {
+            ImGui::PushID(&fail);
             ImGui::Combo( "fail", (int32_t*)&fail, StencilOperation::s_value_names, StencilOperation::Count );
+            ImGui::PopID();
 
+            ImGui::PushID(&depth_fail);
             ImGui::Combo( "depth_fail", (int32_t*)&depth_fail, StencilOperation::s_value_names, StencilOperation::Count );
+            ImGui::PopID();
 
+            ImGui::PushID(&pass);
             ImGui::Combo( "pass", (int32_t*)&pass, StencilOperation::s_value_names, StencilOperation::Count );
+            ImGui::PopID();
 
+            ImGui::PushID(&func);
             ImGui::Combo( "func", (int32_t*)&func, ComparisonFunction::s_value_names, ComparisonFunction::Count );
+            ImGui::PopID();
 
         }
 
@@ -32,4 +40,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

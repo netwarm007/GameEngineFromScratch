@@ -18,7 +18,7 @@ int test(BaseApplication& app) {
 }
 
 int main() {
-    int result;
+    int result = 0;
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600, "Basic Graphics Window Test");
 

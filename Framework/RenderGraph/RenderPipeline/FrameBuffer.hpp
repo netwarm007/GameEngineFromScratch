@@ -1,7 +1,7 @@
 #include "RenderTarget.hpp"
 
 
-namespace My {
+namespace My::RenderGraph {
     struct FrameBuffer {
         RenderTarget	color_attachment;
 
@@ -9,11 +9,15 @@ namespace My {
 
 
         void reflectMembers() {
+            ImGui::PushID(&color_attachment);
             ImGui::Text("color_attachment");
             color_attachment.reflectMembers();
+            ImGui::PopID();
 
+            ImGui::PushID(&depth_attachment);
             ImGui::Text("depth_attachment");
             depth_attachment.reflectMembers();
+            ImGui::PopID();
 
         }
 
@@ -23,4 +27,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

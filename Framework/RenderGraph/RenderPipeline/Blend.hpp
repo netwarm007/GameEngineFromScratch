@@ -1,4 +1,4 @@
-namespace My {
+namespace My::RenderGraph {
     namespace Blend {
         int Count = 17;
         enum Enum { 
@@ -45,4 +45,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace Blend
-} // namespace My
+} // namespace My::RenderGraph

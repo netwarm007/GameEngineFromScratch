@@ -1,7 +1,7 @@
 #include "FrameBuffer.hpp"
 #include "PipelineState.hpp"
 
-namespace My {
+namespace My::RenderGraph {
     struct RenderPass {
         FrameBuffer	frame_buffer;
 
@@ -9,11 +9,15 @@ namespace My {
 
 
         void reflectMembers() {
+            ImGui::PushID(&frame_buffer);
             ImGui::Text("frame_buffer");
             frame_buffer.reflectMembers();
+            ImGui::PopID();
 
+            ImGui::PushID(&pipeline_state);
             ImGui::Text("pipeline_state");
             pipeline_state.reflectMembers();
+            ImGui::PopID();
 
         }
 
@@ -23,4 +27,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

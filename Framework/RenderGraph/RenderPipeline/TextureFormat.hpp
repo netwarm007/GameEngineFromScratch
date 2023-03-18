@@ -1,4 +1,4 @@
-namespace My {
+namespace My::RenderGraph {
     namespace TextureFormat {
         int Count = 93;
         enum Enum { 
@@ -197,4 +197,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace TextureFormat
-} // namespace My
+} // namespace My::RenderGraph

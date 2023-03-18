@@ -5,7 +5,11 @@
 
 #include "imgui/imgui.h"
 
+#include "RenderGraph\RenderPipeline\RenderPipeline.hpp"
+
 using namespace My;
+
+RenderGraph::RenderPipeline renderPipeline;
 
 int test(BaseApplication& app) {
     int result;
@@ -73,7 +77,8 @@ class TestGraphicsManager : public TGraphicsManager {
         // 2. Show a simple window that we create ourselves. We use a Begin/End
         // pair to created a named window.
         {
-            static float f = 0.0f;
+            static float f1 = 0.0f;
+            static float f2 = 0.0f;
             static int counter = 0;
 
             ImGui::Begin(
@@ -90,7 +95,10 @@ class TestGraphicsManager : public TGraphicsManager {
                                                  // window open/close state
 
             ImGui::SliderFloat(
-                (const char*)u8"浮点数", &f, 0.0f,
+                (const char*)u8"浮点数##1", &f1, 0.0f,
+                1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::SliderFloat(
+                (const char*)u8"浮点数##2", &f2, 0.0f,
                 1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3(
                 (const char*)u8"清屏色",
@@ -109,13 +117,15 @@ class TestGraphicsManager : public TGraphicsManager {
                         1000.0f / ImGui::GetIO().Framerate,
                         ImGui::GetIO().Framerate);
             ImGui::End();
+
+            renderPipeline.reflectUI();
         }
         EndPass(frame);
     }
 };
 
 int main(int argc, char** argv) {
-    int result;
+    int result = 0;
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
                             "ImGUI Test");
@@ -126,6 +136,8 @@ int main(int argc, char** argv) {
 
     pApp->SetCommandLineParameters(argc, argv);
     pApp->RegisterManagerModule(&graphicsManager);
+
+    renderPipeline.render_passes.resize(3);
 
     result |= test(*pApp);
 

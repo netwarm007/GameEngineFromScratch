@@ -1,16 +1,20 @@
 #include "RenderPass.hpp"
 #include <vector>
 
-namespace My {
+namespace My::RenderGraph {
     struct RenderPipeline {
         std::vector<RenderPass>	render_passes;
 
 
         void reflectMembers() {
+            ImGui::PushID(&render_passes);
             for (int i = 0; i < render_passes.size(); i++) {
-                ImGui::Text("render_passes[%s]", i);
+                ImGui::PushID(i);
+                ImGui::Text("render_passes[%d]", i);
                 render_passes[i].reflectMembers();
+                ImGui::PopID();
             }
+            ImGui::PopID();
 
         }
 
@@ -20,4 +24,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

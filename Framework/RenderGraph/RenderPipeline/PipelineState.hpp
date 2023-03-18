@@ -4,7 +4,7 @@
 #include "DepthStencilState.hpp"
 #include "TopologyType.hpp"
 
-namespace My {
+namespace My::RenderGraph {
     struct PipelineState {
         BlendState	blend_state;
 
@@ -16,16 +16,24 @@ namespace My {
 
 
         void reflectMembers() {
+            ImGui::PushID(&blend_state);
             ImGui::Text("blend_state");
             blend_state.reflectMembers();
+            ImGui::PopID();
 
+            ImGui::PushID(&rasterizer_state);
             ImGui::Text("rasterizer_state");
             rasterizer_state.reflectMembers();
+            ImGui::PopID();
 
+            ImGui::PushID(&depth_stencil_state);
             ImGui::Text("depth_stencil_state");
             depth_stencil_state.reflectMembers();
+            ImGui::PopID();
 
+            ImGui::PushID(&topology_type);
             ImGui::Combo( "topology_type", (int32_t*)&topology_type, TopologyType::s_value_names, TopologyType::Count );
+            ImGui::PopID();
 
         }
 
@@ -35,4 +43,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

@@ -58,8 +58,8 @@ static const std::map<ASTNode::IDN_TYPE, const char*> imgui_commands = {
         { "bool",   "ImGui::Checkbox( \"%s\", &%s );"},
         { "int",    "ImGui::InputScalar( \"%s\", ImGuiDataType_S32, &%s );"},
         { "uint",   "ImGui::InputScalar( \"%s\", ImGuiDataType_U32, &%s );"},
-        { "float",  "ImGui::InputFloat( \"%s\", &%s );"},
-        { "double", "ImGui::InputDouble( \"%s\", &%s );"}
+        { "float",  "ImGui::SliderFloat( \"%s\", &%s, 0.0f, 1.0f );"},
+        { "double", "ImGui::SliderFloat( \"%s\", &%s );"}
 };
 
 static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
@@ -68,10 +68,13 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
     auto type_idn = std::get<1>(v)->GetIDN();
     auto idn = std::get<0>(v);
 
+    s<< indent() << "ImGui::PushID(&" << idn << ");" << std::endl;
+
     if (std::get<2>(v)) {
         s<< indent() << "for (int i = 0; i < " << std::get<0>(v) << ".size(); i++) {" << std::endl;
         indent_val++;
         idn += "[i]";
+        s<< indent() << "ImGui::PushID(i);" << std::endl;
     }
 
     switch(std::get<1>(v)->GetNodeType())
@@ -82,23 +85,23 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
         {
             auto it = imgui_commands.find(type_idn);
             if (it != imgui_commands.end()) {
-                char buf[128];
-                snprintf(buf, 128, it->second, idn.c_str(), idn.c_str());
-                s << indent() << buf;
+                char buf[256];
+                snprintf(buf, 256, it->second, idn.c_str(), idn.c_str());
+                s << indent() << buf << std::endl;
             }
         }
         break;
     case AST_NODE_TYPE::ENUM:
-        s << indent() << "ImGui::Combo( \"" << std::get<0>(v) << (std::get<2>(v)?"[%s]\", i, ": "\",") << " (int32_t*)&" << idn << ", " << type_idn << "::s_value_names, " << type_idn << "::Count );" << std::endl;
+        s << indent() << "ImGui::Combo( \"" << std::get<0>(v) << "\"," << " (int32_t*)&" << idn << ", " << type_idn << "::s_value_names, " << type_idn << "::Count );" << std::endl;
         break;
     case AST_NODE_TYPE::NAMESPACE:
         break;
     case AST_NODE_TYPE::STRUCT:
-        s << indent() << "ImGui::Text(\"" << std::get<0>(v) << (std::get<2>(v)?"[%s]\", i": "\"") << ");" << std::endl;
+        s << indent() << "ImGui::Text(\"" << std::get<0>(v) << (std::get<2>(v)?"[%d]\", i": "\"") << ");" << std::endl;
         s << indent() << idn << ".reflectMembers();" << std::endl;
         break;
     case AST_NODE_TYPE::TABLE:
-        s << indent() << "ImGui::Text(\"" << std::get<0>(v) << (std::get<2>(v)?"[%s]\", i": "\"") << ");" << std::endl;
+        s << indent() << "ImGui::Text(\"" << std::get<0>(v) << (std::get<2>(v)?"[%d]\", i": "\"") << ");" << std::endl;
         s << indent() << idn << ".reflectMembers();" << std::endl;
         break;
     case AST_NODE_TYPE::ATTRIBUTE:
@@ -110,9 +113,12 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
     }
 
     if (std::get<2>(v)) {
+        s<< indent() << "ImGui::PopID();" << std::endl;
         --indent_val;
         s<< indent() << "}" << std::endl;
     }
+
+    s<< indent() << "ImGui::PopID();" << std::endl;
 
     return s;
 }
