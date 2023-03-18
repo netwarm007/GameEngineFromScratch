@@ -78,8 +78,8 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void BindTextureForWrite(Texture2D& texture,
                              const uint32_t slot_index) override {}
 
-    void BindTexture(Texture2D& texture, const uint32_t slot_index) {}
-    void BindDebugTexture(Texture2D& texture, const uint32_t slot_index) {}
+    void BindTexture(Texture2D& texture, const uint32_t slot_index) override {}
+    void BindDebugTexture(Texture2D& texture, const uint32_t slot_index) override {}
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) override {}
