@@ -1,6 +1,6 @@
 #import <Metal/Metal.h>
 
-#include "Metal2Renderer.h"
+#include "Metal2RHI.h"
 #include "MetalView.h"
 #include "Metal2GraphicsManager.h"
 
@@ -14,21 +14,21 @@ int Metal2GraphicsManager::Initialize() {
 
     NSWindow* pWindow = (NSWindow*)m_pApp->GetMainWindowHandler();
     MetalView* view = [pWindow contentView];
-    m_pRenderer = [[Metal2Renderer new] initWithMetalKitView:view device:view.device];
+    m_pRHI = [[Metal2RHI new] initWithMetalKitView:view device:view.device];
 
     if (result == 0) {
-        [m_pRenderer initialize];
+        [m_pRHI initialize];
     }
 
     return result;
 }
 
 void Metal2GraphicsManager::Finalize() {
-    [m_pRenderer finalize];
+    [m_pRHI finalize];
     GraphicsManager::Finalize();
 }
 
-void Metal2GraphicsManager::Present() { [m_pRenderer present]; }
+void Metal2GraphicsManager::Present() { [m_pRHI present]; }
 
 void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
     uint32_t batch_index = 0;
@@ -55,11 +55,11 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
             for (decltype(vertexPropertiesCount) i = 0; i < vertexPropertiesCount; i++) {
                 const SceneObjectVertexArray& v_property_array = pMesh->GetVertexPropertyArray(i);
 
-                [m_pRenderer createVertexBuffer:v_property_array];
+                [m_pRHI createVertexBuffer:v_property_array];
             }
 
             const SceneObjectIndexArray& index_array = pMesh->GetIndexArray(0);
-            [m_pRenderer createIndexBuffer:index_array];
+            [m_pRHI createIndexBuffer:index_array];
 
             MTLPrimitiveType mode;
             switch (pMesh->GetPrimitiveType()) {
@@ -125,7 +125,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.diffuseMap.handler =
-                                (TextureHandler)[m_pRenderer createTexture:*image];
+                                (TextureHandler)[m_pRHI createTexture:*image];
                             dbc->material.diffuseMap.width = image->Width;
                             dbc->material.diffuseMap.height = image->Height;
                         }
@@ -136,7 +136,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.normalMap.handler =
-                                (TextureHandler)[m_pRenderer createTexture:*image];
+                                (TextureHandler)[m_pRHI createTexture:*image];
                             dbc->material.normalMap.width = image->Width;
                             dbc->material.normalMap.height = image->Height;
                         }
@@ -147,7 +147,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.metallicMap.handler =
-                                (TextureHandler)[m_pRenderer createTexture:*image];
+                                (TextureHandler)[m_pRHI createTexture:*image];
                             dbc->material.metallicMap.width = image->Width;
                             dbc->material.metallicMap.height = image->Height;
                         }
@@ -158,7 +158,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.roughnessMap.handler =
-                                (TextureHandler)[m_pRenderer createTexture:*image];
+                                (TextureHandler)[m_pRHI createTexture:*image];
                             dbc->material.roughnessMap.width = image->Width;
                             dbc->material.roughnessMap.height = image->Height;
                         }
@@ -169,7 +169,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.aoMap.handler =
-                                (TextureHandler)[m_pRenderer createTexture:*image];
+                                (TextureHandler)[m_pRHI createTexture:*image];
                             dbc->material.aoMap.width = image->Width;
                             dbc->material.aoMap.height = image->Height;
                         }
@@ -201,52 +201,52 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
             images.push_back(pImage);
         }
 
-        m_Frames[0].skybox = [m_pRenderer createSkyBox:images];
+        m_Frames[0].skybox = [m_pRHI createSkyBox:images];
     }
 }
 
 void Metal2GraphicsManager::BeginFrame(Frame& frame) {
     GraphicsManager::BeginFrame(frame);
 
-    [m_pRenderer beginFrame:frame];
+    [m_pRHI beginFrame:frame];
 }
 
 void Metal2GraphicsManager::EndFrame(Frame& frame) {
-    [m_pRenderer endFrame:frame];
+    [m_pRHI endFrame:frame];
 
     m_nFrameIndex = ((m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount);
 
     GraphicsManager::EndFrame(frame);
 }
 
-void Metal2GraphicsManager::BeginPass(Frame& frame) { [m_pRenderer beginPass:frame]; }
+void Metal2GraphicsManager::BeginPass(Frame& frame) { [m_pRHI beginPass:frame]; }
 
-void Metal2GraphicsManager::EndPass(Frame& frame) { [m_pRenderer endPass:frame]; }
+void Metal2GraphicsManager::EndPass(Frame& frame) { [m_pRHI endPass:frame]; }
 
-void Metal2GraphicsManager::BeginCompute() { [m_pRenderer beginCompute]; }
+void Metal2GraphicsManager::BeginCompute() { [m_pRHI beginCompute]; }
 
-void Metal2GraphicsManager::EndCompute() { [m_pRenderer endCompute]; }
+void Metal2GraphicsManager::EndCompute() { [m_pRHI endCompute]; }
 
 void Metal2GraphicsManager::SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
                                              const Frame& frame) {
     const std::shared_ptr<MetalPipelineState> pState =
         dynamic_pointer_cast<MetalPipelineState>(pipelineState);
-    [m_pRenderer setPipelineState:*pState frameContext:frame];
+    [m_pRHI setPipelineState:*pState frameContext:frame];
 }
 
-void Metal2GraphicsManager::DrawBatch(const Frame& frame) { [m_pRenderer drawBatch:frame]; }
+void Metal2GraphicsManager::DrawBatch(const Frame& frame) { [m_pRHI drawBatch:frame]; }
 
 void Metal2GraphicsManager::GenerateCubemapArray(TextureCubeArray& texture_array) {
-    [m_pRenderer generateCubemapArray:texture_array];
+    [m_pRHI generateCubemapArray:texture_array];
 }
 
 void Metal2GraphicsManager::GenerateTextureArray(Texture2DArray& texture_array) {
-    [m_pRenderer generateTextureArray:texture_array];
+    [m_pRHI generateTextureArray:texture_array];
 }
 
 void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                                            const int32_t layer_index, const Frame& frame) {
-    [m_pRenderer beginShadowMap:light_index
+    [m_pRHI beginShadowMap:light_index
                       shadowmap:reinterpret_cast<id<MTLTexture>>(pShadowmap->handler)
                           width:pShadowmap->width
                          height:pShadowmap->height
@@ -256,40 +256,63 @@ void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const Text
 
 void Metal2GraphicsManager::EndShadowMap(const TextureBase* pShadowmap, const int32_t layer_index,
                                          const Frame& frame) {
-    [m_pRenderer endShadowMap:reinterpret_cast<id<MTLTexture>>(pShadowmap->handler)
+    [m_pRHI endShadowMap:reinterpret_cast<id<MTLTexture>>(pShadowmap->handler)
                   layer_index:layer_index
                         frame:frame];
 }
 
-void Metal2GraphicsManager::SetShadowMaps(const Frame& frame) { [m_pRenderer setShadowMaps:frame]; }
+void Metal2GraphicsManager::SetShadowMaps(const Frame& frame) { [m_pRHI setShadowMaps:frame]; }
 
 void Metal2GraphicsManager::ReleaseTexture(TextureBase& texture) {
-    [m_pRenderer releaseTexture:reinterpret_cast<id<MTLTexture>>(texture.handler)];
+    [m_pRHI releaseTexture:reinterpret_cast<id<MTLTexture>>(texture.handler)];
 }
 
-void Metal2GraphicsManager::DrawSkyBox(const Frame& frame) { [m_pRenderer drawSkyBox:frame]; }
+void Metal2GraphicsManager::DrawSkyBox(const Frame& frame) { [m_pRHI drawSkyBox:frame]; }
 
 void Metal2GraphicsManager::GenerateTextureForWrite(Texture2D& texture) {
-    [m_pRenderer generateTextureForWrite:texture];
+    [m_pRHI generateTextureForWrite:texture];
 }
 
 void Metal2GraphicsManager::BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) {
-    [m_pRenderer bindTextureForWrite:reinterpret_cast<id<MTLTexture>>(texture.handler)
+    [m_pRHI bindTextureForWrite:reinterpret_cast<id<MTLTexture>>(texture.handler)
                              atIndex:slot_index];
 }
 
 void Metal2GraphicsManager::Dispatch(const uint32_t width, const uint32_t height,
                                      const uint32_t depth) {
-    [m_pRenderer dispatch:width height:height depth:depth];
+    [m_pRHI dispatch:width height:height depth:depth];
 }
 
 void Metal2GraphicsManager::CreateTextureView(Texture2D& texture_view,
                                               const TextureArrayBase& texture_array,
                                               const uint32_t slice,
                                               const uint32_t mip) {
-    [m_pRenderer createTextureView:texture_view texture_array:texture_array slice:slice mip:mip];
+    [m_pRHI createTextureView:texture_view texture_array:texture_array slice:slice mip:mip];
 }
 
 void Metal2GraphicsManager::GenerateTexture(Texture2D& texture) {
-    [m_pRenderer generateTexture:texture];
+    [m_pRHI generateTexture:texture];
+}
+
+Texture2D Metal2GraphicsManager::CreateTexture(Image& img) {
+    Texture2D result;
+
+    result.format = [m_pRHI getMtlPixelFormat:img];
+    result.height = img.Height;
+    result.width = img.Width;
+    result.mips = img.mipmaps.size();
+    result.samples = 1;
+    result.pixel_format = img.pixel_format;
+
+    result.handler = (TextureHandler)[m_pRHI createTexture:img];
+
+    return result;
+}
+
+void Metal2GraphicsManager::BindDebugTexture(Texture2D& texture, const uint32_t slot_index) {
+    [m_pRHI bindFragmentTexture:(id<MTLTexture>)texture.handler atIndex:slot_index];
+}
+
+void Metal2GraphicsManager::UpdateTexture(Texture2D& texture, Image& img) {
+    [m_pRHI updateTexture:(id<MTLTexture>)texture.handler image:img];
 }

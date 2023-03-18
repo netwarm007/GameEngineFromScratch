@@ -1,7 +1,7 @@
 #import <MetalKit/MetalKit.h>
 #import <simd/simd.h>
 
-#import "Metal2Renderer.h"
+#import "Metal2RHI.h"
 
 #import "Metal2GraphicsManager.h"
 
@@ -121,22 +121,10 @@ static MTLPixelFormat getMtlPixelFormat(const PIXEL_FORMAT pixel_format) {
     return format;
 }
 
-static MTLPixelFormat getMtlPixelFormat(const Image& img) {
-    MTLPixelFormat format;
-
-    if (img.compressed) {
-        format = getMtlPixelFormat(img.compress_format);
-    } else {
-        format = getMtlPixelFormat(img.pixel_format);
-    }
-
-    return format;
-}
-
 // The max number of command buffers in flight
 static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightFrameCount;
 
-@implementation Metal2Renderer {
+@implementation Metal2RHI {
     std::vector<dispatch_semaphore_t> _inFlightSemaphores;
     id<MTLCommandQueue> _graphicsQueue;
     std::vector<id<MTLCommandBuffer>> _commandBuffers;
@@ -153,6 +141,18 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLSamplerState> _sampler0;
 
     MTKView* _mtkView;
+}
+
+- (MTLPixelFormat)getMtlPixelFormat:(const Image &)img {
+    MTLPixelFormat format;
+
+    if (img.compressed) {
+        format = getMtlPixelFormat(img.compress_format);
+    } else {
+        format = getMtlPixelFormat(img.pixel_format);
+    }
+
+    return format;
 }
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device.  We'll also use this
@@ -252,7 +252,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     @autoreleasepool {
         MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
 
-        textureDesc.pixelFormat = getMtlPixelFormat(image);
+        textureDesc.pixelFormat = [self getMtlPixelFormat:image];
         textureDesc.width = image.Width;
         textureDesc.height = image.Height;
 
@@ -271,6 +271,18 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     return texture;
 }
 
+- (void)updateTexture:(const _Nonnull id<MTLTexture>)texture image:(const My::Image &)image {
+    @autoreleasepool {
+        // upload the data
+        MTLRegion region = {
+            {0, 0, 0},                      // MTLOrigin
+            {image.Width, image.Height, 1}  // MTLSize
+        };
+
+        [texture replaceRegion:region mipmapLevel:0 withBytes:image.data bytesPerRow:image.pitch];
+    }
+}
+
 - (TextureCubeArray)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
 {
     TextureCubeArray texture_out;
@@ -278,7 +290,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     assert(images.size() == 18);  // 6 sky-cube + 6 irrandiance + 6 radiance
 
-    MTLPixelFormat format = getMtlPixelFormat(*images[0]);
+    MTLPixelFormat format = [self getMtlPixelFormat:*images[0]];
     auto width = images[0]->Width;
     auto height = images[0]->Height;
 
@@ -774,6 +786,10 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 - (void)bindTextureForWrite:(const id<MTLTexture>)texture atIndex:(const uint32_t)atIndex {
     [_computeEncoder setTexture:texture atIndex:atIndex];
+}
+
+- (void)bindFragmentTexture:(const id<MTLTexture>)texture atIndex:(const uint32_t)atIndex {
+    [_renderEncoder setFragmentTexture:texture atIndex:atIndex];
 }
 
 - (void)dispatch:(const uint32_t)width height:(const uint32_t)height depth:(const uint32_t)depth {

@@ -32,8 +32,47 @@ using camera = My::RayTracingCamera<float_precision>;
 
 using namespace My;
 
-void gui_loop(BaseApplication& app, image& img) {
+class TestGraphicsManager : public TGraphicsManager {
+    void Draw() override {
+        static bool show_demo_window = true;
+        auto& frame = m_Frames[m_nFrameIndex];
+
+        BeginPass(frame);
+
+        {
+            ImGui::Begin(
+                (const char*)u8"光线追踪（路径追踪）");  // Create a window
+                                                         // called "Hello,
+                                                         // world!" and append
+                                                         // into it.
+            size_t start_pos = 0;
+            size_t end_pos = 0;
+            std::string str(oss.str());
+            do {
+                start_pos = end_pos + 1;
+                end_pos = str.find('\n', start_pos);
+                start_pos = str.rfind('\r', end_pos);
+                if (start_pos == std::string::npos) start_pos = 0;
+                ImGui::Text("%s", str.substr(start_pos, end_pos).c_str());
+            } while (end_pos != std::string::npos);
+
+            ImGui::Image((ImTextureID)render_result.handler, ImVec2(render_result.width, render_result.height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
+
+            ImGui::End();
+        }
+        EndPass(frame);
+    }
+};
+
+void gui_loop(GfxConfiguration & gui_config, int argc, char** argv, image& img) {
     int result;
+
+    auto pApp = CreateApplication(gui_config);
+
+    TestGraphicsManager graphicsManager;
+
+    pApp->SetCommandLineParameters(argc, argv);
+    pApp->RegisterManagerModule(&graphicsManager);
 
     // Initialize ImGui
     IMGUI_CHECKVERSION();
@@ -68,73 +107,37 @@ void gui_loop(BaseApplication& app, image& img) {
     }
 
     // Create Main Window
-    app.CreateMainWindow();
+    pApp->CreateMainWindow();
 
-    result = app.Initialize();
+    result = pApp->Initialize();
 
     if (result == 0) {
         // Texture for GUI display
-        render_result = app.GetGraphicsManager()->CreateTexture(img);
-        app.GetGraphicsManager()->BindDebugTexture(render_result, 1);
+        render_result = pApp->GetGraphicsManager()->CreateTexture(img);
+        pApp->GetGraphicsManager()->BindDebugTexture(render_result, 1);
 
-        while (!app.IsQuit()) {
-            app.GetGraphicsManager()->UpdateTexture(render_result, img);
-            app.Tick();
+        while (!pApp->IsQuit()) {
+            pApp->GetGraphicsManager()->UpdateTexture(render_result, img);
+            pApp->Tick();
         }
 
         is_closed = true;
 
-        app.Finalize();
+        pApp->Finalize();
     }
 
-    app.GetGraphicsManager()->ReleaseTexture(render_result);
+    pApp->GetGraphicsManager()->ReleaseTexture(render_result);
 
     ImGui::DestroyContext();
+
+    delete pApp;
 }
 
-class TestGraphicsManager : public TGraphicsManager {
-    void Draw() override {
-        static bool show_demo_window = true;
-        auto& frame = m_Frames[m_nFrameIndex];
-
-        BeginPass(frame);
-
-        {
-            ImGui::Begin(
-                (const char*)u8"光线追踪（路径追踪）");  // Create a window
-                                                         // called "Hello,
-                                                         // world!" and append
-                                                         // into it.
-            size_t start_pos = 0;
-            size_t end_pos = 0;
-            std::string str(oss.str());
-            do {
-                start_pos = end_pos + 1;
-                end_pos = str.find('\n', start_pos);
-                start_pos = str.rfind('\r', end_pos);
-                if (start_pos == std::string::npos) start_pos = 0;
-                ImGui::Text(str.substr(start_pos, end_pos).c_str());
-            } while (end_pos != std::string::npos);
-
-            ImGui::Image((ImTextureID)render_result.handler, ImVec2(render_result.width, render_result.height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
-
-            ImGui::End();
-        }
-        EndPass(frame);
-    }
-};
 
 // Main
 int main(int argc, char** argv) {
     GfxConfiguration gui_config(8, 8, 8, 8, 24, 8, 4, 800, 600,
                                 "Ray Tracing Test");
-
-    auto pApp = CreateApplication(gui_config);
-
-    TestGraphicsManager graphicsManager;
-
-    pApp->SetCommandLineParameters(argc, argv);
-    pApp->RegisterManagerModule(&graphicsManager);
 
     // Render Settings
     const int image_width = gui_config.screenWidth;
@@ -170,23 +173,24 @@ int main(int argc, char** argv) {
     img.data_size = img.Width * img.Height * (img.bitcount >> 3);
     img.data = new uint8_t[img.data_size];
 
-    // start GUI thread
-    auto gui_task = [pApp, &img]() { gui_loop(*pApp, img); };
-    auto gui_future = std::async(std::launch::async, gui_task);
-
     // Render
-    auto start = std::chrono::steady_clock::now();
-    My::PathTracing<float_precision>::raytrace(config, world_bvh, cam, img,
-                                               oss, is_closed);
-    auto end = std::chrono::steady_clock::now();
+    auto raytrace_task = [&]() {
+        auto start = std::chrono::steady_clock::now();
+        My::PathTracing<float_precision>::raytrace(config, world_bvh, cam, img,
+                                                oss, is_closed);
+        auto end = std::chrono::steady_clock::now();
 
-    std::chrono::duration<double> diff = end - start;
+        std::chrono::duration<double> diff = end - start;
 
-    std::cout << "Rendering time: " << diff.count() << " s";
+        std::cout << "Rendering time: " << diff.count() << " s";
+    };
 
-    gui_future.wait();
+    auto raytrace_future = std::async(std::launch::async, raytrace_task);
 
-    delete pApp;
+    // start GUI thread
+    gui_loop(gui_config, argc, argv, img);
+
+    raytrace_future.wait();
 
 #if 0
     My::PpmEncoder encoder;
