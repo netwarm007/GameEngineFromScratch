@@ -28,39 +28,27 @@ namespace My::RenderGraph {
 
 
         void reflectMembers() {
-            ImGui::PushID(&enable);
             ImGui::Checkbox( "enable", &enable );
-            ImGui::PopID();
 
-            ImGui::PushID(&depth_function);
             ImGui::Combo( "depth_function", (int32_t*)&depth_function, ComparisonFunction::s_value_names, ComparisonFunction::Count );
-            ImGui::PopID();
 
-            ImGui::PushID(&depth_write_mask);
             ImGui::Combo( "depth_write_mask", (int32_t*)&depth_write_mask, DepthWriteMask::s_value_names, DepthWriteMask::Count );
-            ImGui::PopID();
 
-            ImGui::PushID(&stencil_enable);
             ImGui::Checkbox( "stencil_enable", &stencil_enable );
-            ImGui::PopID();
 
-            ImGui::PushID(&stencil_read_mask);
             ImGui::InputScalar( "stencil_read_mask", ImGuiDataType_S8, &stencil_read_mask );
-            ImGui::PopID();
 
-            ImGui::PushID(&stencil_write_mask);
             ImGui::InputScalar( "stencil_write_mask", ImGuiDataType_S8, &stencil_write_mask );
-            ImGui::PopID();
 
-            ImGui::PushID(&front_face);
-            ImGui::Text("front_face");
-            front_face.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&front_face, "front_face")) {
+                front_face.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::PushID(&back_face);
-            ImGui::Text("back_face");
-            back_face.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&back_face, "back_face")) {
+                back_face.reflectMembers();
+                ImGui::TreePop();
+            }
 
         }
 

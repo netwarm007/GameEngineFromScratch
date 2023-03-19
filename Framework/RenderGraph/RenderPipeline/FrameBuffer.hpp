@@ -9,15 +9,15 @@ namespace My::RenderGraph {
 
 
         void reflectMembers() {
-            ImGui::PushID(&color_attachment);
-            ImGui::Text("color_attachment");
-            color_attachment.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&color_attachment, "color_attachment")) {
+                color_attachment.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::PushID(&depth_attachment);
-            ImGui::Text("depth_attachment");
-            depth_attachment.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&depth_attachment, "depth_attachment")) {
+                depth_attachment.reflectMembers();
+                ImGui::TreePop();
+            }
 
         }
 

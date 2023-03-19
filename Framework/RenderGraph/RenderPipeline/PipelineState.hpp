@@ -16,24 +16,22 @@ namespace My::RenderGraph {
 
 
         void reflectMembers() {
-            ImGui::PushID(&blend_state);
-            ImGui::Text("blend_state");
-            blend_state.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&blend_state, "blend_state")) {
+                blend_state.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::PushID(&rasterizer_state);
-            ImGui::Text("rasterizer_state");
-            rasterizer_state.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&rasterizer_state, "rasterizer_state")) {
+                rasterizer_state.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::PushID(&depth_stencil_state);
-            ImGui::Text("depth_stencil_state");
-            depth_stencil_state.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&depth_stencil_state, "depth_stencil_state")) {
+                depth_stencil_state.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::PushID(&topology_type);
             ImGui::Combo( "topology_type", (int32_t*)&topology_type, TopologyType::s_value_names, TopologyType::Count );
-            ImGui::PopID();
 
         }
 

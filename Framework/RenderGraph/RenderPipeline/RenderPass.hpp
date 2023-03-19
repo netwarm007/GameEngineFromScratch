@@ -9,15 +9,15 @@ namespace My::RenderGraph {
 
 
         void reflectMembers() {
-            ImGui::PushID(&frame_buffer);
-            ImGui::Text("frame_buffer");
-            frame_buffer.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&frame_buffer, "frame_buffer")) {
+                frame_buffer.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::PushID(&pipeline_state);
-            ImGui::Text("pipeline_state");
-            pipeline_state.reflectMembers();
-            ImGui::PopID();
+            if (ImGui::TreeNode(&pipeline_state, "pipeline_state")) {
+                pipeline_state.reflectMembers();
+                ImGui::TreePop();
+            }
 
         }
 

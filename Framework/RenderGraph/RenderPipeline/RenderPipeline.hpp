@@ -7,14 +7,12 @@ namespace My::RenderGraph {
 
 
         void reflectMembers() {
-            ImGui::PushID(&render_passes);
             for (int i = 0; i < render_passes.size(); i++) {
-                ImGui::PushID(i);
-                ImGui::Text("render_passes[%d]", i);
-                render_passes[i].reflectMembers();
-                ImGui::PopID();
+                if (ImGui::TreeNode(&render_passes[i], "render_passes[%d]", i)) {
+                    render_passes[i].reflectMembers();
+                    ImGui::TreePop();
+                }
             }
-            ImGui::PopID();
 
         }
 
