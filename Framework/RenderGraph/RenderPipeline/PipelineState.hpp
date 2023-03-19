@@ -1,4 +1,6 @@
 #pragma once
+#include "geommath.hpp"
+using color = My::Vector4f;
 #include "BlendState.hpp"
 #include "RasterizerState.hpp"
 #include "DepthStencilState.hpp"

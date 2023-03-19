@@ -1,7 +1,11 @@
 #pragma once
+#include "geommath.hpp"
+using color = My::Vector4f;
 
 
 
+
+#include "RenderTargetLoadStoreAction.hpp"
 
 #include "TextureFormat.hpp"
 
@@ -15,6 +19,10 @@ namespace My::RenderGraph {
 
         float	scale_y;
 
+        RenderTargetLoadStoreAction::Enum	load_action;
+
+        RenderTargetLoadStoreAction::Enum	store_action;
+
         TextureFormat::Enum	format;
 
 
@@ -26,6 +34,10 @@ namespace My::RenderGraph {
             ImGui::SliderFloat( "scale_x", &scale_x, 0.0f, 1.0f );
 
             ImGui::SliderFloat( "scale_y", &scale_y, 0.0f, 1.0f );
+
+            ImGui::Combo( "load_action", (int32_t*)&load_action, RenderTargetLoadStoreAction::s_value_names, RenderTargetLoadStoreAction::Count );
+
+            ImGui::Combo( "store_action", (int32_t*)&store_action, RenderTargetLoadStoreAction::s_value_names, RenderTargetLoadStoreAction::Count );
 
             ImGui::Combo( "format", (int32_t*)&format, TextureFormat::s_value_names, TextureFormat::Count );
 

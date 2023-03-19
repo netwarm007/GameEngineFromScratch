@@ -17,7 +17,8 @@ namespace My {
         { "int",    make_ASTNodeRef<ASTNodePrimitive>( "int" ) },
         { "uint",   make_ASTNodeRef<ASTNodePrimitive>( "uint" ) },
         { "float",  make_ASTNodeRef<ASTNodePrimitive>( "float" ) },
-        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) }
+        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) },
+        { "color", make_ASTNodeRef<ASTNodePrimitive>( "color" ) }
     };
 
     ASTNodeRef ast_root = make_ASTNodeRef<ASTNodeNone>( "AST ROOT" );

@@ -1,3 +1,6 @@
+#pragma once
+#include "geommath.hpp"
+using color = My::Vector4f;
 #include "RenderPass.hpp"
 #include <vector>
 

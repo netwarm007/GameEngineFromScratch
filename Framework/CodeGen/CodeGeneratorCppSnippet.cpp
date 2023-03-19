@@ -59,7 +59,8 @@ static const std::map<ASTNode::IDN_TYPE, const char*> imgui_commands = {
         { "int",    "ImGui::InputScalar( \"%s\", ImGuiDataType_S32, &%s );"},
         { "uint",   "ImGui::InputScalar( \"%s\", ImGuiDataType_U32, &%s );"},
         { "float",  "ImGui::SliderFloat( \"%s\", &%s, 0.0f, 1.0f );"},
-        { "double", "ImGui::SliderFloat( \"%s\", &%s );"}
+        { "double", "ImGui::SliderFloat( \"%s\", &%s );"},
+        { "color", "ImGui::ColorEdit4( \"%s\", %s.data );"}
 };
 
 static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
@@ -288,6 +289,8 @@ void CodeGenerator::generateStructCpp(std::ostream& out, const ASTNodeRef& ref) 
     hs << std::dynamic_pointer_cast<ASTNodeStruct<ASTFieldList>>(ref)->GetValue();
 
     out << "#pragma once" << std::endl;
+    out << "#include \"geommath.hpp\"" << std::endl;
+    out << "using color = My::Vector4f;" << std::endl;
     out << hs.str() << std::endl;
 
     if (!nameSpace.empty()) {
@@ -341,6 +344,9 @@ void CodeGenerator::generateTableCpp(std::ostream& out, const ASTNodeRef& ref) {
     headers_stream hs (std::ios_base::out);
     hs << std::dynamic_pointer_cast<ASTNodeTable<ASTFieldList>>(ref)->GetValue();
 
+    out << "#pragma once" << std::endl;
+    out << "#include \"geommath.hpp\"" << std::endl;
+    out << "using color = My::Vector4f;" << std::endl;
     out << hs.str() << std::endl;
 
     if (!nameSpace.empty()) {
