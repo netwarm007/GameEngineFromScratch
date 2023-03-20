@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace Blend {
-        int Count = 17;
+        static inline int Count = 17;
         enum Enum { 
             Zero = 0,
             One = 1,

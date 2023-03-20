@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace TextureFormat {
-        int Count = 93;
+        static inline int Count = 93;
         enum Enum { 
             UNKNOWN = 0,
             R32G32B32A32_TYPELESS = 1,

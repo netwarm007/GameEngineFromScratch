@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace DepthWriteMask {
-        int Count = 2;
+        static inline int Count = 2;
         enum Enum { 
             Zero = 0,
             All = 1

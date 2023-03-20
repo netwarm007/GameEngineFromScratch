@@ -1,6 +1,6 @@
 #pragma once
 #include "geommath.hpp"
-using color = My::Vector4f;
+#include "imgui/imgui.h"
 #include "RenderTarget.hpp"
 
 
@@ -8,9 +8,9 @@ using color = My::Vector4f;
 
 namespace My::RenderGraph {
     struct FrameBuffer {
-        RenderTarget	color_attachment;
+        std::vector<RenderTarget>	color_attachments;
 
-        color	color_clear_value;
+        Vector3f	color_clear_value;
 
         RenderTarget	depth_attachment;
 
@@ -18,12 +18,14 @@ namespace My::RenderGraph {
 
 
         void reflectMembers() {
-            if (ImGui::TreeNode(&color_attachment, "color_attachment")) {
-                color_attachment.reflectMembers();
-                ImGui::TreePop();
+            for (int i = 0; i < color_attachments.size(); i++) {
+                if (ImGui::TreeNode(&color_attachments[i], "color_attachments[%d]", i)) {
+                    color_attachments[i].reflectMembers();
+                    ImGui::TreePop();
+                }
             }
 
-            ImGui::ColorEdit4( "color_clear_value", color_clear_value.data );
+            ImGui::ColorEdit3( "color_clear_value", color_clear_value.data );
 
             if (ImGui::TreeNode(&depth_attachment, "depth_attachment")) {
                 depth_attachment.reflectMembers();

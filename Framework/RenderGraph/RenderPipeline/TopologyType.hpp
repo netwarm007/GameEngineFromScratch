@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace TopologyType {
-        int Count = 5;
+        static inline int Count = 5;
         enum Enum { 
             Unknown = 0,
             Point = 1,

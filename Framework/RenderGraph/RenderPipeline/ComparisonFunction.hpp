@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace ComparisonFunction {
-        int Count = 8;
+        static inline int Count = 8;
         enum Enum { 
             Never = 0,
             Less = 1,

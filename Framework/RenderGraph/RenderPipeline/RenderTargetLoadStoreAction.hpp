@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace RenderTargetLoadStoreAction {
-        int Count = 3;
+        static inline int Count = 3;
         enum Enum { 
             DontCare = 0,
             Clear = 1,

@@ -161,8 +161,8 @@ struct RenderTarget {
 }
 
 table FrameBuffer {
-    color_attachment        : RenderTarget;
-    color_clear_value       : color;
+    color_attachments       : [RenderTarget];
+    color_clear_value       : Vector3f;
     depth_attachment        : RenderTarget;
     depth_clear_value       : float;
 }

@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace StencilOperation {
-        int Count = 8;
+        static inline int Count = 8;
         enum Enum { 
             Keep = 0,
             Zero = 1,

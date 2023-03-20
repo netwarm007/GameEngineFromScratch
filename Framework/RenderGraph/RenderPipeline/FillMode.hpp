@@ -1,6 +1,7 @@
+#pragma once
 namespace My::RenderGraph {
     namespace FillMode {
-        int Count = 3;
+        static inline int Count = 3;
         enum Enum { 
             Wireframe = 0,
             Solid = 1,

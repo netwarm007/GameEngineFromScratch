@@ -1,6 +1,6 @@
 #pragma once
 #include "geommath.hpp"
-using color = My::Vector4f;
+#include "imgui/imgui.h"
 #include "FillMode.hpp"
 #include "CullMode.hpp"
 

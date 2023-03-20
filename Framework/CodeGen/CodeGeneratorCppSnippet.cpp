@@ -60,7 +60,7 @@ static const std::map<ASTNode::IDN_TYPE, const char*> imgui_commands = {
         { "uint",   "ImGui::InputScalar( \"%s\", ImGuiDataType_U32, &%s );"},
         { "float",  "ImGui::SliderFloat( \"%s\", &%s, 0.0f, 1.0f );"},
         { "double", "ImGui::SliderFloat( \"%s\", &%s );"},
-        { "color", "ImGui::ColorEdit4( \"%s\", %s.data );"}
+        { "Vector3f", "ImGui::ColorEdit3( \"%s\", %s.data );"}
 };
 
 static inline std::ostream& operator<<(reflect_stream& s, const ASTFieldDecl& v)
@@ -234,6 +234,7 @@ static inline std::ostream& operator<<(reflect_stream& s, const ASTEnumItems& v)
 
 // private
 void CodeGenerator::generateEnumCpp(std::ostream& out, const ASTNodeRef& ref) {
+    out << "#pragma once" << std::endl;
     if (!nameSpace.empty()) {
         out << indent() << "namespace " << nameSpace << " {" << std::endl;
         indent_val++;
@@ -244,7 +245,7 @@ void CodeGenerator::generateEnumCpp(std::ostream& out, const ASTNodeRef& ref) {
     indent_val++;
 
     values_stream vs (std::ios_base::out);
-    vs << indent() << "int Count = ";
+    vs << indent() << "static inline int Count = ";
     vs << std::dynamic_pointer_cast<ASTNodeEnum<ASTEnumItems>>(ref)->GetValue().size() << ";" << std::endl;
 
     vs << indent() << "enum Enum { " << std::endl;
@@ -290,7 +291,7 @@ void CodeGenerator::generateStructCpp(std::ostream& out, const ASTNodeRef& ref) 
 
     out << "#pragma once" << std::endl;
     out << "#include \"geommath.hpp\"" << std::endl;
-    out << "using color = My::Vector4f;" << std::endl;
+    out << "#include \"imgui/imgui.h\"" << std::endl;
     out << hs.str() << std::endl;
 
     if (!nameSpace.empty()) {
@@ -346,7 +347,7 @@ void CodeGenerator::generateTableCpp(std::ostream& out, const ASTNodeRef& ref) {
 
     out << "#pragma once" << std::endl;
     out << "#include \"geommath.hpp\"" << std::endl;
-    out << "using color = My::Vector4f;" << std::endl;
+    out << "#include \"imgui/imgui.h\"" << std::endl;
     out << hs.str() << std::endl;
 
     if (!nameSpace.empty()) {
