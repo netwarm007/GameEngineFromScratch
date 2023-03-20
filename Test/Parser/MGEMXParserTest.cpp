@@ -34,7 +34,8 @@ int main() {
         { "int",    make_ASTNodeRef<ASTNodePrimitive>( "int" ) },
         { "uint",   make_ASTNodeRef<ASTNodePrimitive>( "uint" ) },
         { "float",  make_ASTNodeRef<ASTNodePrimitive>( "float" ) },
-        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) }
+        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) },
+        { "Vector3f", make_ASTNodeRef<ASTNodePrimitive>( "Vector3f" ) }
     };
 
     parse("Schema/RenderDefinitions.fbs");
