@@ -77,8 +77,10 @@ int D3d12GraphicsManager::Initialize() {
     }
 
     // 创建资源描述子池
-    rhi.CreateDescriptorHeap(2, L"CbvSrvUav Heap",
-                                GfxConfiguration::kMaxInFlightFrameCount);
+    m_pCbvSrvUavHeap = rhi.CreateDescriptorHeap(2, L"CbvSrvUav Heap");
+
+    // 创建采样器
+    m_pSamplerHeap = rhi.CreateTextureSampler(8);
 
     return result;
 }
@@ -87,6 +89,8 @@ void D3d12GraphicsManager::Finalize() {
     ImGui_ImplDX12_Shutdown();
 
     SafeRelease(&m_pCbvSrvUavHeapImGui);
+    SafeRelease(&m_pCbvSrvUavHeap);
+    SafeRelease(&m_pSamplerHeap);
 
     GraphicsManager::Finalize();
 }
@@ -502,7 +506,6 @@ void D3d12GraphicsManager::EndScene() {
 void D3d12GraphicsManager::BeginFrame(Frame& frame) {
     GraphicsManager::BeginFrame(frame);
     ImGui_ImplDX12_NewFrame();
-    ImGui_ImplWin32_NewFrame();
 
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     rhi.BeginFrame();
@@ -534,7 +537,7 @@ void D3d12GraphicsManager::DrawBatch(const Frame& frame) {
         const D3dDrawBatchContext& dbc =
             dynamic_cast<const D3dDrawBatchContext&>(*pDbc);
 
-        rhi.Draw(m_VertexBuffers[dbc.property_offset].descriptor, m_IndexBuffers[dbc.index_offset].descriptor, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, dbc.index_count);
+        rhi.Draw(m_VertexBuffers[dbc.property_offset].descriptor, m_IndexBuffers[dbc.index_offset].descriptor, m_pCbvSrvUavHeap, m_pSamplerHeap, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, dbc.index_count);
     }
 }
 
@@ -613,7 +616,7 @@ void D3d12GraphicsManager::BindTextureForWrite(Texture2D& texture, const uint32_
 
 void D3d12GraphicsManager::BindTexture(Texture2D& texture, const uint32_t slot_index) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
-    rhi.CreateDescriptorSet(slot_index, (ID3D12Resource**)&texture.buff, 1);
+    rhi.CreateDescriptorSet(m_pCbvSrvUavHeap, slot_index, (ID3D12Resource**)&texture.buff, 1);
     texture.handler = (TextureHandler)rhi.GetGpuDescriptorHandle(nullptr, slot_index).ptr;
 }
 

@@ -92,17 +92,18 @@ int main(int argc, char** argv) {
                             "Basic Graphics Window Test");
 
     RenderGraph::RenderPass render_pass;
-    render_pass.frame_buffer.color_clear_value = { 0.2f, 0.3f, 0.4f, 1.0f };
-    render_pass.frame_buffer.color_attachment.format = RenderGraph::TextureFormat::R8G8B8A8_UNORM;
-    render_pass.frame_buffer.color_attachment.width = config.screenWidth;
-    render_pass.frame_buffer.color_attachment.height = config.screenHeight;
-    render_pass.frame_buffer.color_attachment.scale_x = 1.0f;
-    render_pass.frame_buffer.color_attachment.scale_y = 1.0f;
-    render_pass.frame_buffer.color_attachment.load_action = RenderGraph::RenderTargetLoadStoreAction::Clear;
-    render_pass.frame_buffer.color_attachment.store_action = RenderGraph::RenderTargetLoadStoreAction::Keep;
+    render_pass.frame_buffer.color_clear_value = { 0.2f, 0.3f, 0.4f };
+    render_pass.frame_buffer.color_attachments.resize(1);
+    render_pass.frame_buffer.color_attachments[0].format = RenderGraph::TextureFormat::R8G8B8A8_UNORM;
+    render_pass.frame_buffer.color_attachments[0].width = config.screenWidth;
+    render_pass.frame_buffer.color_attachments[0].height = config.screenHeight;
+    render_pass.frame_buffer.color_attachments[0].scale_x = 1.0f;
+    render_pass.frame_buffer.color_attachments[0].scale_y = 1.0f;
+    render_pass.frame_buffer.color_attachments[0].load_action = RenderGraph::RenderTargetLoadStoreAction::Clear;
+    render_pass.frame_buffer.color_attachments[0].store_action = RenderGraph::RenderTargetLoadStoreAction::Keep;
 
     render_pass.frame_buffer.depth_clear_value = 0.0f;
-    render_pass.frame_buffer.depth_attachment.format = RenderGraph::TextureFormat::D32_FLOAT;
+    render_pass.frame_buffer.depth_attachment.format = RenderGraph::TextureFormat::D24_UNORM_S8_UINT;
     render_pass.frame_buffer.depth_attachment.width = config.screenWidth;
     render_pass.frame_buffer.depth_attachment.height = config.screenHeight;
     render_pass.frame_buffer.depth_attachment.scale_x = 1.0f;

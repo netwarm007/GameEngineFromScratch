@@ -71,6 +71,537 @@ DXGI_FORMAT D3d12RHI::getDxgiFormat(const Image& img) {
     return format;
 }
 
+DXGI_FORMAT My::D3d12RHI::getDxgiFormat(
+    const RenderGraph::TextureFormat::Enum& fmt) {
+    DXGI_FORMAT format;
+
+    switch (fmt) {
+        case RenderGraph::TextureFormat::B5G5R5A1_UNORM:
+            format = ::DXGI_FORMAT_B5G5R5A1_UNORM;
+            break;
+        case RenderGraph::TextureFormat::B5G6R5_UNORM:
+            format = ::DXGI_FORMAT_B5G6R5_UNORM;
+            break;
+        case RenderGraph::TextureFormat::B8G8R8A8_TYPELESS:
+            format = ::DXGI_FORMAT_B8G8R8A8_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::B8G8R8A8_UNORM:
+            format = ::DXGI_FORMAT_B8G8R8A8_UNORM;
+            break;
+        case RenderGraph::TextureFormat::B8G8R8A8_UNORM_SRGB:
+            format = ::DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+            break;
+        case RenderGraph::TextureFormat::B8G8R8X8_TYPELESS:
+            format = ::DXGI_FORMAT_B8G8R8X8_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::B8G8R8X8_UNORM:
+            format = ::DXGI_FORMAT_B8G8R8X8_UNORM;
+            break;
+        case RenderGraph::TextureFormat::B8G8R8X8_UNORM_SRGB:
+            format = ::DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
+            break;
+        case RenderGraph::TextureFormat::BC1_TYPELESS:
+            format = ::DXGI_FORMAT_BC1_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::BC1_UNORM:
+            format = ::DXGI_FORMAT_BC1_UNORM;
+            break;
+        case RenderGraph::TextureFormat::BC1_UNORM_SRGB:
+            format = ::DXGI_FORMAT_BC1_UNORM_SRGB;
+            break;
+        case RenderGraph::TextureFormat::BC2_TYPELESS:
+            format = ::DXGI_FORMAT_BC2_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::BC2_UNORM:
+            format = ::DXGI_FORMAT_BC2_UNORM;
+            break;
+        case RenderGraph::TextureFormat::BC2_UNORM_SRGB:
+            format = ::DXGI_FORMAT_BC2_UNORM_SRGB;
+            break;
+        case RenderGraph::TextureFormat::BC3_TYPELESS:
+            format = ::DXGI_FORMAT_BC3_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::BC3_UNORM:
+            format = ::DXGI_FORMAT_BC3_UNORM;
+            break;
+        case RenderGraph::TextureFormat::BC3_UNORM_SRGB:
+            format = ::DXGI_FORMAT_BC3_UNORM_SRGB;
+            break;
+        case RenderGraph::TextureFormat::BC4_TYPELESS:
+            format = ::DXGI_FORMAT_BC4_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::BC4_UNORM:
+            format = ::DXGI_FORMAT_BC4_UNORM;
+            break;
+        case RenderGraph::TextureFormat::BC4_SNORM:
+            format = ::DXGI_FORMAT_BC4_SNORM;
+            break;
+        case RenderGraph::TextureFormat::BC5_TYPELESS:
+            format = ::DXGI_FORMAT_BC5_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::BC5_UNORM:
+            format = ::DXGI_FORMAT_BC5_UNORM;
+            break;
+        case RenderGraph::TextureFormat::BC5_SNORM:
+            format = ::DXGI_FORMAT_BC5_SNORM;
+            break;
+        case RenderGraph::TextureFormat::BC6H_TYPELESS:
+            format = ::DXGI_FORMAT_BC6H_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::BC6H_UF16:
+            format = ::DXGI_FORMAT_BC6H_UF16;
+            break;
+        case RenderGraph::TextureFormat::BC6H_SF16:
+            format = ::DXGI_FORMAT_BC6H_SF16;
+            break;
+        case RenderGraph::TextureFormat::BC7_TYPELESS:
+            format = ::DXGI_FORMAT_BC7_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::BC7_UNORM:
+            format = ::DXGI_FORMAT_BC7_UNORM;
+            break;
+        case RenderGraph::TextureFormat::BC7_UNORM_SRGB:
+            format = ::DXGI_FORMAT_BC7_UNORM_SRGB;
+            break;
+        case RenderGraph::TextureFormat::D16_UNORM:
+            format = ::DXGI_FORMAT_D16_UNORM;
+            break;
+        case RenderGraph::TextureFormat::D24_UNORM_S8_UINT:
+            format = ::DXGI_FORMAT_D24_UNORM_S8_UINT;
+            break;
+        case RenderGraph::TextureFormat::D24_UNORM_X8_UINT:
+            format = ::DXGI_FORMAT_D24_UNORM_S8_UINT;
+            break;
+        case RenderGraph::TextureFormat::D32_FLOAT:
+            format = ::DXGI_FORMAT_D32_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::D32_FLOAT_S8X24_UINT:
+            format = ::DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+            break;
+        case RenderGraph::TextureFormat::FORCE_UINT:
+            format = ::DXGI_FORMAT_FORCE_UINT;
+            break;
+        case RenderGraph::TextureFormat::R10G10B10_XR_BIAS_A2_UNORM:
+            format = ::DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R10G10B10A2_TYPELESS:
+            format = ::DXGI_FORMAT_R10G10B10A2_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R10G10B10A2_UINT:
+            format = ::DXGI_FORMAT_R10G10B10A2_UINT;
+            break;
+        case RenderGraph::TextureFormat::R10G10B10A2_UNORM:
+            format = ::DXGI_FORMAT_R10G10B10A2_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R11G11B10_FLOAT:
+            format = ::DXGI_FORMAT_R11G11B10_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R16_TYPELESS:
+            format = ::DXGI_FORMAT_R16_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R16_FLOAT:
+            format = ::DXGI_FORMAT_R16_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R16_SINT:
+            format = ::DXGI_FORMAT_R16_SINT;
+            break;
+        case RenderGraph::TextureFormat::R16_UINT:
+            format = ::DXGI_FORMAT_R16_UINT;
+            break;
+        case RenderGraph::TextureFormat::R16_UNORM:
+            format = ::DXGI_FORMAT_R16_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R16_SNORM:
+            format = ::DXGI_FORMAT_R16_SNORM;
+            break;
+        case RenderGraph::TextureFormat::R16G16_TYPELESS:
+            format = ::DXGI_FORMAT_R16G16_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R16G16_FLOAT:
+            format = ::DXGI_FORMAT_R16G16_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R16G16_SINT:
+            format = ::DXGI_FORMAT_R16G16_SINT;
+            break;
+        case RenderGraph::TextureFormat::R16G16_UINT:
+            format = ::DXGI_FORMAT_R16G16_UINT;
+            break;
+        case RenderGraph::TextureFormat::R16G16_UNORM:
+            format = ::DXGI_FORMAT_R16G16_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R16G16_SNORM:
+            format = ::DXGI_FORMAT_R16G16_SNORM;
+            break;
+        case RenderGraph::TextureFormat::R16G16B16A16_TYPELESS:
+            format = ::DXGI_FORMAT_R16G16B16A16_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R16G16B16A16_FLOAT:
+            format = ::DXGI_FORMAT_R16G16B16A16_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R16G16B16A16_SINT:
+            format = ::DXGI_FORMAT_R16G16B16A16_SINT;
+            break;
+        case RenderGraph::TextureFormat::R16G16B16A16_UINT:
+            format = ::DXGI_FORMAT_R16G16B16A16_UINT;
+            break;
+        case RenderGraph::TextureFormat::R16G16B16A16_UNORM:
+            format = ::DXGI_FORMAT_R16G16B16A16_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R16G16B16A16_SNORM:
+            format = ::DXGI_FORMAT_R16G16B16A16_SNORM;
+            break;
+        case RenderGraph::TextureFormat::R32_TYPELESS:
+            format = ::DXGI_FORMAT_R32_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R32_FLOAT:
+            format = ::DXGI_FORMAT_R32_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R32_SINT:
+            format = ::DXGI_FORMAT_R32_SINT;
+            break;
+        case RenderGraph::TextureFormat::R32_UINT:
+            format = ::DXGI_FORMAT_R32_UINT;
+            break;
+        case RenderGraph::TextureFormat::R32G32_TYPELESS:
+            format = ::DXGI_FORMAT_R32G32_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R32G32_FLOAT:
+            format = ::DXGI_FORMAT_R32G32_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R32G32_UINT:
+            format = ::DXGI_FORMAT_R32G32_UINT;
+            break;
+        case RenderGraph::TextureFormat::R32G32_SINT:
+            format = ::DXGI_FORMAT_R32G32_SINT;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32_TYPELESS:
+            format = ::DXGI_FORMAT_R32G32B32_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32_FLOAT:
+            format = ::DXGI_FORMAT_R32G32B32_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32_UINT:
+            format = ::DXGI_FORMAT_R32G32B32_UINT;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32_SINT:
+            format = ::DXGI_FORMAT_R32G32B32_SINT;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32A32_TYPELESS:
+            format = ::DXGI_FORMAT_R32G32B32A32_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32A32_FLOAT:
+            format = ::DXGI_FORMAT_R32G32B32A32_FLOAT;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32A32_UINT:
+            format = ::DXGI_FORMAT_R32G32B32A32_UINT;
+            break;
+        case RenderGraph::TextureFormat::R32G32B32A32_SINT:
+            format = ::DXGI_FORMAT_R32G32B32A32_SINT;
+            break;
+        case RenderGraph::TextureFormat::R8_TYPELESS:
+            format = ::DXGI_FORMAT_R8_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R8_UINT:
+            format = ::DXGI_FORMAT_R8_UINT;
+            break;
+        case RenderGraph::TextureFormat::R8_SINT:
+            format = ::DXGI_FORMAT_R8_SINT;
+            break;
+        case RenderGraph::TextureFormat::R8_UNORM:
+            format = ::DXGI_FORMAT_R8_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R8_SNORM:
+            format = ::DXGI_FORMAT_R8_SNORM;
+            break;
+        case RenderGraph::TextureFormat::R8G8_TYPELESS:
+            format = ::DXGI_FORMAT_R8G8_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R8G8_UINT:
+            format = ::DXGI_FORMAT_R8G8_UINT;
+            break;
+        case RenderGraph::TextureFormat::R8G8_SINT:
+            format = ::DXGI_FORMAT_R8G8_SINT;
+            break;
+        case RenderGraph::TextureFormat::R8G8_UNORM:
+            format = ::DXGI_FORMAT_R8G8_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R8G8_SNORM:
+            format = ::DXGI_FORMAT_R8G8_SNORM;
+            break;
+        case RenderGraph::TextureFormat::R8G8B8A8_TYPELESS:
+            format = ::DXGI_FORMAT_R8G8B8A8_TYPELESS;
+            break;
+        case RenderGraph::TextureFormat::R8G8B8A8_UINT:
+            format = ::DXGI_FORMAT_R8G8B8A8_UINT;
+            break;
+        case RenderGraph::TextureFormat::R8G8B8A8_SINT:
+            format = ::DXGI_FORMAT_R8G8B8A8_SINT;
+            break;
+        case RenderGraph::TextureFormat::R8G8B8A8_UNORM:
+            format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
+            break;
+        case RenderGraph::TextureFormat::R8G8B8A8_SNORM:
+            format = ::DXGI_FORMAT_R8G8B8A8_SNORM;
+            break;
+        case RenderGraph::TextureFormat::R8G8B8A8_UNORM_SRGB:
+            format = ::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+            break;
+        case RenderGraph::TextureFormat::R9G9B9E5_SHAREDEXP:
+            format = ::DXGI_FORMAT_R9G9B9E5_SHAREDEXP;
+            break;
+        case RenderGraph::TextureFormat::S8_UINT:
+            format = ::DXGI_FORMAT_R8_UINT;
+            break;
+        case RenderGraph::TextureFormat::UNKNOWN:
+            format = ::DXGI_FORMAT_UNKNOWN;
+        default:
+            my_assert(0);
+            break;
+    }
+
+    return format;
+}
+
+D3D12_RASTERIZER_DESC My::D3d12RHI::getRasterizerDesc(
+    const RenderGraph::RasterizerState& state) {
+    D3D12_RASTERIZER_DESC desc;
+    desc.AntialiasedLineEnable = false;
+    desc.ForcedSampleCount = 0;
+    desc.ConservativeRaster = (state.conservative ? D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON : D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
+    switch (state.cull_mode) {
+        case RenderGraph::CullMode::Back:
+            desc.CullMode = D3D12_CULL_MODE_BACK;
+            break;
+        case RenderGraph::CullMode::Front:
+            desc.CullMode = D3D12_CULL_MODE_FRONT;
+            break;
+        case RenderGraph::CullMode::None:
+            desc.CullMode = D3D12_CULL_MODE_NONE;
+            break;
+        default:
+            my_assert(0);
+    }
+    desc.DepthBias = state.depth_bias;
+    desc.DepthBiasClamp = state.depth_bias_clamp;
+    desc.DepthClipEnable = state.depth_clip_enabled;
+    switch (state.fill_mode) {
+        case RenderGraph::FillMode::Point:
+        case RenderGraph::FillMode::Solid:
+            desc.FillMode = D3D12_FILL_MODE_SOLID;
+            break;
+        case RenderGraph::FillMode::Wireframe:
+            desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+            break;
+        default:
+            my_assert(0);
+    }
+    desc.SlopeScaledDepthBias = state.slope_scaled_depth_bias;
+    desc.FrontCounterClockwise = state.front_counter_clockwise;
+    desc.MultisampleEnable = state.multisample_enabled;
+
+    return desc;
+}
+
+D3D12_RENDER_TARGET_BLEND_DESC My::D3d12RHI::getRenderTargetBlendDesc(
+    const RenderGraph::RenderTargetBlend& blend) {
+    D3D12_RENDER_TARGET_BLEND_DESC desc;
+
+    desc.BlendEnable = blend.blend_enable;
+    desc.RenderTargetWriteMask = blend.color_write_mask;
+    auto getBlendOp = [](RenderGraph::BlendOperation::Enum op)->D3D12_BLEND_OP{
+        switch (op) {
+            case RenderGraph::BlendOperation::Add:
+                return D3D12_BLEND_OP_ADD;
+            case RenderGraph::BlendOperation::Subtract:
+                return D3D12_BLEND_OP_SUBTRACT;
+            case RenderGraph::BlendOperation::RevSubtract:
+                return D3D12_BLEND_OP_REV_SUBTRACT;
+            case RenderGraph::BlendOperation::Min:
+                return D3D12_BLEND_OP_MIN;
+            case RenderGraph::BlendOperation::Max:
+                return D3D12_BLEND_OP_MAX;
+            default:
+                my_assert(0);
+                return D3D12_BLEND_OP_ADD;
+        }
+    };
+    desc.BlendOp = getBlendOp(blend.blend_operation);
+    desc.BlendOpAlpha = getBlendOp(blend.blend_operation_alpha);
+    desc.LogicOpEnable = false;
+    desc.LogicOp = D3D12_LOGIC_OP_NOOP;
+
+    auto getBlend = [](RenderGraph::Blend::Enum bld)->D3D12_BLEND{
+        switch (bld) {
+            case RenderGraph::Blend::One:
+                return D3D12_BLEND_ONE;
+            case RenderGraph::Blend::Zero:
+                return D3D12_BLEND_ZERO;
+            case RenderGraph::Blend::BlendFactor:
+                return D3D12_BLEND_BLEND_FACTOR;
+            case RenderGraph::Blend::InvBlendFactor:
+                return D3D12_BLEND_INV_BLEND_FACTOR;
+            case RenderGraph::Blend::SrcColor:
+                return D3D12_BLEND_SRC_COLOR;
+            case RenderGraph::Blend::Src1Color:
+                return D3D12_BLEND_SRC1_COLOR;
+            case RenderGraph::Blend::SrcAlpha:
+                return D3D12_BLEND_SRC_ALPHA;
+            case RenderGraph::Blend::Src1Alpha:
+                return D3D12_BLEND_SRC1_ALPHA;
+            case RenderGraph::Blend::SrcAlphaSta:
+                return D3D12_BLEND_SRC_ALPHA_SAT;
+            case RenderGraph::Blend::InvSrcColor:
+                return D3D12_BLEND_INV_SRC_COLOR;
+            case RenderGraph::Blend::InvSrcAlpha:
+                return D3D12_BLEND_INV_SRC_ALPHA;
+            case RenderGraph::Blend::InvSrc1Color:
+                return D3D12_BLEND_INV_SRC1_COLOR;
+            case RenderGraph::Blend::InvSrc1Alpha:
+                return D3D12_BLEND_INV_SRC1_ALPHA;
+            case RenderGraph::Blend::DestColor:
+                return D3D12_BLEND_DEST_COLOR;
+            case RenderGraph::Blend::DestAlpha:
+                return D3D12_BLEND_DEST_ALPHA;
+            case RenderGraph::Blend::InvDestColor:
+                return D3D12_BLEND_INV_DEST_COLOR;
+            case RenderGraph::Blend::InvDestAlpha:
+                return D3D12_BLEND_INV_DEST_ALPHA;
+            default:
+                my_assert(0);
+                return D3D12_BLEND_ONE;
+        }
+    };
+    desc.SrcBlend = getBlend(blend.src_blend);
+    desc.SrcBlendAlpha = getBlend(blend.src_blend_alpha);
+    desc.DestBlend = getBlend(blend.dst_blend);
+    desc.DestBlendAlpha = getBlend(blend.dst_blend_alpha);
+
+    return desc;
+}
+
+D3D12_DEPTH_STENCILOP_DESC My::D3d12RHI::getDepthStencilOpDesc(
+    const RenderGraph::DepthStencilOperation& dsop) {
+    D3D12_DEPTH_STENCILOP_DESC desc;
+
+    auto getStencilOp = [](RenderGraph::StencilOperation::Enum op)->D3D12_STENCIL_OP{
+        switch(op) {
+            case RenderGraph::StencilOperation::Decr:
+                return D3D12_STENCIL_OP_DECR;
+            case RenderGraph::StencilOperation::DecrSat:
+                return D3D12_STENCIL_OP_DECR_SAT;
+            case RenderGraph::StencilOperation::Incr:
+                return D3D12_STENCIL_OP_INCR;
+            case RenderGraph::StencilOperation::IncrSat:
+                return D3D12_STENCIL_OP_INCR_SAT;
+            case RenderGraph::StencilOperation::Invert:
+                return D3D12_STENCIL_OP_INVERT;
+            case RenderGraph::StencilOperation::Keep:
+                return D3D12_STENCIL_OP_KEEP;
+            case RenderGraph::StencilOperation::Replace:
+                return D3D12_STENCIL_OP_REPLACE;
+            case RenderGraph::StencilOperation::Zero:
+                return D3D12_STENCIL_OP_ZERO;
+            default:
+                my_assert(0);
+                return D3D12_STENCIL_OP_ZERO;
+        }
+    };
+    
+    desc.StencilDepthFailOp = getStencilOp(dsop.depth_fail);
+    desc.StencilFailOp = getStencilOp(dsop.fail);
+    desc.StencilPassOp = getStencilOp(dsop.pass);
+    desc.StencilFunc = getCompareFunc(dsop.func);
+
+    return desc;
+}
+
+D3D12_COMPARISON_FUNC My::D3d12RHI::getCompareFunc(
+    const RenderGraph::ComparisonFunction::Enum& cmp) {
+    D3D12_COMPARISON_FUNC func;
+
+    switch (cmp) {
+        case RenderGraph::ComparisonFunction::Always:
+            func = D3D12_COMPARISON_FUNC_ALWAYS;
+            break;
+        case RenderGraph::ComparisonFunction::Equal:
+            func = D3D12_COMPARISON_FUNC_EQUAL;
+            break;
+        case RenderGraph::ComparisonFunction::Greater:
+            func = D3D12_COMPARISON_FUNC_GREATER;
+            break;
+        case RenderGraph::ComparisonFunction::GreaterEqual:
+            func = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+            break;
+        case RenderGraph::ComparisonFunction::Less:
+            func = D3D12_COMPARISON_FUNC_LESS;
+            break;
+        case RenderGraph::ComparisonFunction::LessEqual:
+            func = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+            break;
+        case RenderGraph::ComparisonFunction::Never:
+            func = D3D12_COMPARISON_FUNC_NEVER;
+            break;
+        case RenderGraph::ComparisonFunction::NotEqual:
+            func = D3D12_COMPARISON_FUNC_NOT_EQUAL;
+            break;
+        default:
+            my_assert(0);
+            func = D3D12_COMPARISON_FUNC_NEVER;
+    }
+
+    return func;
+}
+
+D3D12_DEPTH_WRITE_MASK My::D3d12RHI::getDepthWriteMask(
+    const RenderGraph::DepthWriteMask::Enum& mask) {
+    D3D12_DEPTH_WRITE_MASK result;
+
+    switch (mask) {
+        case RenderGraph::DepthWriteMask::All:
+            result = D3D12_DEPTH_WRITE_MASK_ALL;
+            break;
+        case RenderGraph::DepthWriteMask::Zero:
+            result = D3D12_DEPTH_WRITE_MASK_ZERO;
+            break;
+        default:
+            my_assert(0);
+            result = D3D12_DEPTH_WRITE_MASK_ALL;
+    }
+
+    return result;
+}
+
+D3D12_PRIMITIVE_TOPOLOGY_TYPE My::D3d12RHI::getTopologyType(
+    const RenderGraph::TopologyType::Enum& topology) {
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE result;
+
+    switch (topology)
+    {
+    case RenderGraph::TopologyType::Line:
+        result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+        break;
+    case RenderGraph::TopologyType::Patch:
+        result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+        break;
+    case RenderGraph::TopologyType::Point:
+        result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+        break;
+    case RenderGraph::TopologyType::Triangle:
+        result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        break;
+    case RenderGraph::TopologyType::Unknown:
+        result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+        break;
+    
+    default:
+        my_assert(0);
+        result = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        break;
+    }
+    
+    return result;
+}
+
 D3d12RHI::D3d12RHI() {}
 D3d12RHI::~D3d12RHI() {}
 
@@ -513,7 +1044,7 @@ ID3D12Resource* D3d12RHI::CreateTextureImage(Image& img) {
 
     my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
         &prop, D3D12_HEAP_FLAG_NONE, &textureDesc,
-        D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+        D3D12_RESOURCE_STATE_COMMON, nullptr,
         IID_PPV_ARGS(&pTextureBuffer))));
 
     const UINT subresourceCount =
@@ -617,8 +1148,8 @@ void My::D3d12RHI::UpdateTexture(ID3D12Resource* texture, Image& img) {
     SafeRelease(&pTextureUploadHeap);
 }
 
-void D3d12RHI::CreateTextureSampler() {
-    const uint32_t num_samplers = 8;
+ID3D12DescriptorHeap* D3d12RHI::CreateTextureSampler(uint32_t num_samplers) {
+    ID3D12DescriptorHeap* pHeap;
     // Describe and create a sampler descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC samplerHeapDesc{};
     samplerHeapDesc.NumDescriptors =
@@ -627,8 +1158,8 @@ void D3d12RHI::CreateTextureSampler() {
     samplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
     my_assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
-        &samplerHeapDesc, IID_PPV_ARGS(&m_pSamplerHeap))));
-    m_pSamplerHeap->SetName(L"Sampler Descriptor Heap");
+        &samplerHeapDesc, IID_PPV_ARGS(&pHeap))));
+    pHeap->SetName(L"Sampler Descriptor Heap");
 
     // Describe and create a sampler.
     D3D12_SAMPLER_DESC samplerDesc{};
@@ -647,11 +1178,13 @@ void D3d12RHI::CreateTextureSampler() {
         D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 
     D3D12_CPU_DESCRIPTOR_HANDLE samplerHandle =
-        m_pSamplerHeap->GetCPUDescriptorHandleForHeapStart();
+        pHeap->GetCPUDescriptorHandleForHeapStart();
     for (int32_t i = 0; i < num_samplers; i++) {
         m_pDev->CreateSampler(&samplerDesc, samplerHandle);
         samplerHandle.ptr += m_nSamplerDescriptorSize;
     }
+
+    return pHeap;
 }
 
 ID3D12RootSignature* D3d12RHI::CreateRootSignature(
@@ -685,9 +1218,9 @@ ID3D12PipelineState* D3d12RHI::CreateComputePipeline(
     return pPipelineState;
 }
 
-void D3d12RHI::CreateDescriptorHeap(size_t num_descriptors,
-                                    std::wstring_view heap_group_name,
-                                    size_t num_heaps) {
+ID3D12DescriptorHeap* D3d12RHI::CreateDescriptorHeap(size_t num_descriptors,
+                                    std::wstring_view heap_group_name) {
+    ID3D12DescriptorHeap* pHeap;
     // Describe and create a CBV SRV UAV descriptor heap.
     D3D12_DESCRIPTOR_HEAP_DESC cbvSrvUavHeapDesc{};
     cbvSrvUavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -696,12 +1229,11 @@ void D3d12RHI::CreateDescriptorHeap(size_t num_descriptors,
     m_nCbvSrvUavDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
-    m_pCbvSrvUavHeaps.resize(num_heaps);
-    for (int i = 0; i < num_heaps; i++) {
-        my_assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
-            &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeaps[i]))));
-        m_pCbvSrvUavHeaps[i]->SetName(heap_group_name.data());
-    }
+    my_assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
+        &cbvSrvUavHeapDesc, IID_PPV_ARGS(&pHeap))));
+    pHeap->SetName(heap_group_name.data());
+
+    return pHeap;
 }
 
 void My::D3d12RHI::CreateDescriptorSet(ID3D12DescriptorHeap* pHeap,
@@ -717,15 +1249,12 @@ void My::D3d12RHI::CreateDescriptorSet(ID3D12DescriptorHeap* pHeap,
     }
 }
 
-void D3d12RHI::CreateDescriptorSet(size_t offset,
-                                    ID3D12Resource** ppShaderResources,
-                                    size_t shaderResourceCount) {
-    CreateDescriptorSet(m_pCbvSrvUavHeaps[m_nCurrentFrame], offset, ppShaderResources, shaderResourceCount);
-}
-
-void D3d12RHI::CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
+void D3d12RHI::CreateDescriptorSet(ID3D12DescriptorHeap* pHeap,
+                                    size_t offset,
+                                    ConstantBuffer** pConstantBuffers,
                                     size_t constantBufferCount) {
-    D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle = m_pCbvSrvUavHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart();
+    D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle = pHeap->GetCPUDescriptorHandleForHeapStart();
+    cbvHandle.ptr += offset * m_nCbvSrvUavDescriptorSize;
     // CBVs
     for (size_t i = 0; i < constantBufferCount; i++) {
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
@@ -738,21 +1267,16 @@ void D3d12RHI::CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
     }
 }
 
-ID3D12DescriptorHeap* My::D3d12RHI::GetDescriptorHeap(uint32_t index) {
-    my_assert(index <= GfxConfiguration::kMaxInFlightFrameCount);
-    return m_pCbvSrvUavHeaps[index];
-}
-
 D3D12_CPU_DESCRIPTOR_HANDLE My::D3d12RHI::GetCpuDescriptorHandle(ID3D12DescriptorHeap* pHeap,
     size_t offset) {
-    D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvUavHandle = (pHeap ? pHeap->GetCPUDescriptorHandleForHeapStart() : m_pCbvSrvUavHeaps[m_nCurrentFrame]->GetCPUDescriptorHandleForHeapStart());
+    D3D12_CPU_DESCRIPTOR_HANDLE cbvSrvUavHandle = pHeap->GetCPUDescriptorHandleForHeapStart();
     cbvSrvUavHandle.ptr += offset * m_nCbvSrvUavDescriptorSize;
 
     return cbvSrvUavHandle;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE My::D3d12RHI::GetGpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset) {
-    D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvUavHandle = (pHeap ? pHeap->GetGPUDescriptorHandleForHeapStart() : m_pCbvSrvUavHeaps[m_nCurrentFrame]->GetGPUDescriptorHandleForHeapStart());
+    D3D12_GPU_DESCRIPTOR_HANDLE cbvSrvUavHandle = pHeap->GetGPUDescriptorHandleForHeapStart();
     cbvSrvUavHandle.ptr += offset * m_nCbvSrvUavDescriptorSize;
 
     return cbvSrvUavHandle;
@@ -842,12 +1366,6 @@ void D3d12RHI::DestroyAll() {
 
     ResetAllBuffers();
 
-    for (auto& pool : m_pCbvSrvUavHeaps) {
-        SafeRelease(&pool);
-    }
-
-    SafeRelease(&m_pSamplerHeap);
-
     SafeRelease(&m_pGraphicsFence);
 
     for (auto& commandList : m_pGraphicsCommandLists) {
@@ -885,7 +1403,7 @@ void D3d12RHI::DestroyAll() {
 #endif
 }
 
-void D3d12RHI::BeginPass(const Vector4f& clearColor) {
+void D3d12RHI::BeginPass(const Vector3f& clearColor) {
     auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
     m_pCmdList->Reset(m_pGraphicsCommandAllocators[m_nCurrentFrame], NULL);
@@ -926,13 +1444,6 @@ void D3d12RHI::BeginPass(const Vector4f& clearColor) {
     m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
                                       0, 0, nullptr);
 
-    // set descriptor heaps
-    std::vector<ID3D12DescriptorHeap*> ppHeaps;
-    if(m_pCbvSrvUavHeaps[m_nCurrentFrame]) ppHeaps.emplace_back(m_pCbvSrvUavHeaps[m_nCurrentFrame]);
-    if(m_pSamplerHeap) ppHeaps.emplace_back(m_pSamplerHeap);
-
-    m_pCmdList->SetDescriptorHeaps(ppHeaps.size(),
-                                   ppHeaps.data());
 }
 
 void D3d12RHI::SetPipelineState(ID3D12PipelineState* pPipelineState) {
@@ -948,6 +1459,8 @@ void D3d12RHI::SetRootSignature(ID3D12RootSignature* pRootSignature) {
 
 void D3d12RHI::Draw(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
                     const D3D12_INDEX_BUFFER_VIEW& indexBufferView,
+                    ID3D12DescriptorHeap* pCbvSrvUavHeap,
+                    ID3D12DescriptorHeap* pSamplerHeap,
                     D3D_PRIMITIVE_TOPOLOGY primitive_topology,
                     uint32_t index_count_per_instance) {
     auto config = m_fGetGfxConfigHandler();
@@ -963,13 +1476,19 @@ void D3d12RHI::Draw(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
     // set primitive topology
     m_pCmdList->IASetPrimitiveTopology(primitive_topology);
 
+    // set descriptor heaps
+    std::array<ID3D12DescriptorHeap*, 2> ppHeaps = { pCbvSrvUavHeap, pSamplerHeap };
+
+    m_pCmdList->SetDescriptorHeaps(ppHeaps.size(),
+                                   ppHeaps.data());
+
     // Bind Descriptor Set
-    auto descriptorHandler = m_pCbvSrvUavHeaps[m_nCurrentFrame]
+    auto descriptorHandler = pCbvSrvUavHeap
                                  ->GetGPUDescriptorHandleForHeapStart();
     m_pCmdList->SetGraphicsRootDescriptorTable(0, descriptorHandler);
 
     // Sampler
-    descriptorHandler = m_pSamplerHeap->GetGPUDescriptorHandleForHeapStart();
+    descriptorHandler = pSamplerHeap->GetGPUDescriptorHandleForHeapStart();
     m_pCmdList->SetGraphicsRootDescriptorTable(1, descriptorHandler);
 
     // draw the vertex buffer to the back buffer
@@ -1118,7 +1637,7 @@ D3d12RHI::VertexBuffer D3d12RHI::CreateVertexBuffer(const void* pData,
 
     if (FAILED(m_pDev->CreateCommittedResource(
             &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-            D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+            D3D12_RESOURCE_STATE_COMMON, nullptr,
             IID_PPV_ARGS(&vertexBuffer.buffer)))) {
         return vertexBuffer;
     }
@@ -1185,7 +1704,7 @@ D3d12RHI::IndexBuffer D3d12RHI::CreateIndexBuffer(const void* pData,
 
     if (FAILED(m_pDev->CreateCommittedResource(
             &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
-            D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+            D3D12_RESOURCE_STATE_COMMON, nullptr,
             IID_PPV_ARGS(&indexBuffer.buffer)))) {
         return indexBuffer;
     }

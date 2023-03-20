@@ -20,7 +20,7 @@ struct Frame : global_textures {
     DrawFrameContext frameContext;
     std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
     LightInfo lightInfo;
-    Vector4f clearColor {0.2f, 0.3f, 0.4f, 1.0f};
+    Vector3f clearColor {0.2f, 0.3f, 0.4f};
     std::vector<Texture2D> colorTextures;
     Texture2D depthTexture;
     intptr_t frameBuffer;

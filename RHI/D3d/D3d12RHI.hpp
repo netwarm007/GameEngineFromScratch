@@ -14,6 +14,8 @@
 #include "Image.hpp"
 #include "geommath.hpp"
 
+#include "RenderGraph/RenderPipeline/RenderPipeline.hpp"
+
 namespace My {
 
 class D3d12RHI {
@@ -44,6 +46,13 @@ class D3d12RHI {
     ~D3d12RHI();
 
     static DXGI_FORMAT getDxgiFormat(const Image& img);
+    static DXGI_FORMAT getDxgiFormat(const RenderGraph::TextureFormat::Enum &fmt);
+    static D3D12_RASTERIZER_DESC getRasterizerDesc(const RenderGraph::RasterizerState &state);
+    static D3D12_RENDER_TARGET_BLEND_DESC getRenderTargetBlendDesc(const RenderGraph::RenderTargetBlend &blend);
+    static D3D12_DEPTH_STENCILOP_DESC getDepthStencilOpDesc(const RenderGraph::DepthStencilOperation &dsop);
+    static D3D12_COMPARISON_FUNC getCompareFunc(const RenderGraph::ComparisonFunction::Enum &cmp);
+    static D3D12_DEPTH_WRITE_MASK getDepthWriteMask(const RenderGraph::DepthWriteMask::Enum &mask);
+    static D3D12_PRIMITIVE_TOPOLOGY_TYPE getTopologyType(const RenderGraph::TopologyType::Enum &topology);
 
    public:
     void SetFramebufferSizeQueryCB(const QueryFrameBufferSizeFunc& func) {
@@ -76,7 +85,7 @@ class D3d12RHI {
     ID3D12Resource* CreateTextureImage(Image& img);
     void UpdateTexture(ID3D12Resource* texture, Image& img);
 
-    void CreateTextureSampler();
+    ID3D12DescriptorHeap* CreateTextureSampler(uint32_t num_samplers);
 
     ID3D12Resource* CreateUniformBuffers(size_t bufferSize, std::wstring_view bufferName);
 
@@ -89,14 +98,12 @@ class D3d12RHI {
     ID3D12PipelineState* CreateComputePipeline(
         D3D12_COMPUTE_PIPELINE_STATE_DESC& psod);
 
-    void CreateDescriptorHeap(size_t num_descriptors,
-                              std::wstring_view heap_group_name, size_t num_heaps);
+    ID3D12DescriptorHeap* CreateDescriptorHeap(size_t num_descriptors,
+                              std::wstring_view heap_group_name);
 
-    void CreateDescriptorSet(size_t offset,
-                                    ID3D12Resource** ppShaderResources,
-                                    size_t shaderResourceCount);
-
-    void CreateDescriptorSet(ConstantBuffer** pConstantBuffers,
+    void CreateDescriptorSet(ID3D12DescriptorHeap* pHeap,
+                                    size_t offset,
+                                    ConstantBuffer** pConstantBuffers,
                                     size_t constantBufferCount);
 
     void CreateDescriptorSet(ID3D12DescriptorHeap* pHeap, 
@@ -104,7 +111,6 @@ class D3d12RHI {
                                     ID3D12Resource** ppShaderResources,
                                     size_t shaderResourceCount);
 
-    ID3D12DescriptorHeap* GetDescriptorHeap(uint32_t index);
     D3D12_CPU_DESCRIPTOR_HANDLE GetCpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset);
     D3D12_GPU_DESCRIPTOR_HANDLE GetGpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset);
 
@@ -112,11 +118,13 @@ class D3d12RHI {
     void DestroyAll();
 
     void BeginFrame();
-    void BeginPass(const Vector4f& clearColor);
+    void BeginPass(const Vector3f& clearColor);
     void SetPipelineState(ID3D12PipelineState* pPipelineState);
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void Draw(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
               const D3D12_INDEX_BUFFER_VIEW& indexBufferView,
+              ID3D12DescriptorHeap* pCbvSrvUavHeap,
+              ID3D12DescriptorHeap* pSamplerHeap,
               D3D_PRIMITIVE_TOPOLOGY primitive_topology,
               uint32_t index_count_per_instance);
     void DrawGUI(ID3D12DescriptorHeap* pCbvSrvHeap);
@@ -181,10 +189,6 @@ class D3d12RHI {
     std::vector<ID3D12DescriptorHeap*> m_pRtvHeaps;
 
     ID3D12DescriptorHeap* m_pDsvHeap = nullptr;
-
-    std::vector<ID3D12DescriptorHeap*> m_pCbvSrvUavHeaps;
-
-    ID3D12DescriptorHeap* m_pSamplerHeap = nullptr;
 
     uint32_t m_nRtvDescriptorSize;
     uint32_t m_nCbvSrvUavDescriptorSize;

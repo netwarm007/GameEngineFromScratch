@@ -52,6 +52,129 @@ int main() {
 
     auto& rhi = app.GetRHI();
 
+    RenderGraph::RenderPass renderPass;
+    RenderGraph::RenderPipeline renderPipeline;
+    renderPass.frame_buffer.color_clear_value = { 0.2f, 0.3f, 0.4f };
+    renderPass.frame_buffer.color_attachments.resize(1);
+    renderPass.frame_buffer.color_attachments[0].format = RenderGraph::TextureFormat::R8G8B8A8_UNORM;
+    renderPass.frame_buffer.color_attachments[0].width = config.screenWidth;
+    renderPass.frame_buffer.color_attachments[0].height = config.screenHeight;
+    renderPass.frame_buffer.color_attachments[0].scale_x = 1.0f;
+    renderPass.frame_buffer.color_attachments[0].scale_y = 1.0f;
+    renderPass.frame_buffer.color_attachments[0].load_action = RenderGraph::RenderTargetLoadStoreAction::Clear;
+    renderPass.frame_buffer.color_attachments[0].store_action = RenderGraph::RenderTargetLoadStoreAction::Keep;
+
+    renderPass.frame_buffer.depth_clear_value = 0.0f;
+    renderPass.frame_buffer.depth_attachment.format = RenderGraph::TextureFormat::D32_FLOAT;
+    renderPass.frame_buffer.depth_attachment.width = config.screenWidth;
+    renderPass.frame_buffer.depth_attachment.height = config.screenHeight;
+    renderPass.frame_buffer.depth_attachment.scale_x = 1.0f;
+    renderPass.frame_buffer.depth_attachment.scale_y = 1.0f;
+    renderPass.frame_buffer.depth_attachment.load_action = RenderGraph::RenderTargetLoadStoreAction::Clear;
+    renderPass.frame_buffer.depth_attachment.store_action = RenderGraph::RenderTargetLoadStoreAction::DontCare;
+
+    renderPass.pipeline_state.topology_type = RenderGraph::TopologyType::Triangle;
+    renderPass.pipeline_state.blend_state.enable = false;
+    renderPass.pipeline_state.blend_state.separate_blend = false;
+    renderPass.pipeline_state.blend_state.render_target_blend0.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend0.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend0.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend0.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend0.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend0.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend0.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend0.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.blend_state.render_target_blend1.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend1.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend1.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend1.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend1.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend1.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend1.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend1.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.blend_state.render_target_blend2.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend2.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend2.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend2.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend2.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend2.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend2.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend2.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.blend_state.render_target_blend3.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend3.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend3.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend3.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend3.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend3.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend3.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend3.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.blend_state.render_target_blend4.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend4.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend4.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend4.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend4.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend4.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend4.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend4.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.blend_state.render_target_blend5.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend5.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend5.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend5.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend5.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend5.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend5.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend5.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.blend_state.render_target_blend6.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend6.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend6.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend6.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend6.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend6.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend6.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend6.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.blend_state.render_target_blend7.blend_enable = false;
+    renderPass.pipeline_state.blend_state.render_target_blend7.blend_operation = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend7.blend_operation_alpha = RenderGraph::BlendOperation::Add;
+    renderPass.pipeline_state.blend_state.render_target_blend7.color_write_mask = 0x0F;
+    renderPass.pipeline_state.blend_state.render_target_blend7.src_blend = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend7.src_blend_alpha = RenderGraph::Blend::One;
+    renderPass.pipeline_state.blend_state.render_target_blend7.dst_blend = RenderGraph::Blend::Zero;
+    renderPass.pipeline_state.blend_state.render_target_blend7.dst_blend_alpha = RenderGraph::Blend::Zero;
+
+    renderPass.pipeline_state.depth_stencil_state.enable = true;
+    renderPass.pipeline_state.depth_stencil_state.back_face.depth_fail = RenderGraph::StencilOperation::Keep;
+    renderPass.pipeline_state.depth_stencil_state.back_face.fail = RenderGraph::StencilOperation::Keep;
+    renderPass.pipeline_state.depth_stencil_state.back_face.pass = RenderGraph::StencilOperation::Keep;
+    renderPass.pipeline_state.depth_stencil_state.back_face.func = RenderGraph::ComparisonFunction::Always;
+    renderPass.pipeline_state.depth_stencil_state.front_face.depth_fail = RenderGraph::StencilOperation::Keep;
+    renderPass.pipeline_state.depth_stencil_state.front_face.fail = RenderGraph::StencilOperation::Keep;
+    renderPass.pipeline_state.depth_stencil_state.front_face.pass = RenderGraph::StencilOperation::Keep;
+    renderPass.pipeline_state.depth_stencil_state.front_face.func = RenderGraph::ComparisonFunction::Always;
+    renderPass.pipeline_state.depth_stencil_state.depth_function = RenderGraph::ComparisonFunction::LessEqual;
+    renderPass.pipeline_state.depth_stencil_state.depth_write_mask = RenderGraph::DepthWriteMask::All;
+    renderPass.pipeline_state.depth_stencil_state.stencil_enable = false;
+    renderPass.pipeline_state.depth_stencil_state.stencil_read_mask = 0xFF;
+    renderPass.pipeline_state.depth_stencil_state.stencil_write_mask = 0xFF;
+
+    renderPass.pipeline_state.rasterizer_state.conservative = false;
+    renderPass.pipeline_state.rasterizer_state.cull_mode = RenderGraph::CullMode::Back;
+    renderPass.pipeline_state.rasterizer_state.depth_bias = 0;
+    renderPass.pipeline_state.rasterizer_state.depth_bias_clamp = 0;
+    renderPass.pipeline_state.rasterizer_state.depth_clip_enabled = false;
+    renderPass.pipeline_state.rasterizer_state.fill_mode = RenderGraph::FillMode::Solid;
+    renderPass.pipeline_state.rasterizer_state.front_counter_clockwise = true;
+    renderPass.pipeline_state.rasterizer_state.multisample_enabled = true;
+    renderPass.pipeline_state.rasterizer_state.slope_scaled_depth_bias = 0;
+
+    renderPipeline.render_passes.emplace_back(renderPass);
+
     // 创建并登记资源创建回调函数
     ID3D12PipelineState* pPipelineState;
     ID3D12RootSignature* pRootSignature;
@@ -59,6 +182,8 @@ int main() {
     std::vector<D3d12RHI::IndexBuffer> IndexBuffers;
     std::vector<D3d12RHI::VertexBuffer> VertexBuffers;
     std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> ConstantBuffers;
+    ID3D12DescriptorHeap* pCbvSrvUavHeap;
+    ID3D12DescriptorHeap* pSamplerHeap;
 
     // 创建图形管道
     {
@@ -81,54 +206,30 @@ int main() {
 
         // 创建 PSO
         // create rasterizer descriptor
-        D3D12_RASTERIZER_DESC rsd{
-            D3D12_FILL_MODE_SOLID,
-            D3D12_CULL_MODE_BACK,
-            TRUE,
-            D3D12_DEFAULT_DEPTH_BIAS,
-            D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-            TRUE,
-            FALSE,
-            FALSE,
-            0,
-            D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF};
+        D3D12_RASTERIZER_DESC rsd = rhi.getRasterizerDesc(renderPass.pipeline_state.rasterizer_state);
 
-        const D3D12_RENDER_TARGET_BLEND_DESC defaultRenderTargetBlend{
-            FALSE,
-            FALSE,
-            D3D12_BLEND_ONE,
-            D3D12_BLEND_ZERO,
-            D3D12_BLEND_OP_ADD,
-            D3D12_BLEND_ONE,
-            D3D12_BLEND_ZERO,
-            D3D12_BLEND_OP_ADD,
-            D3D12_LOGIC_OP_NOOP,
-            D3D12_COLOR_WRITE_ENABLE_ALL};
-
-        const D3D12_BLEND_DESC bld{FALSE,
-                                    FALSE,
+        const D3D12_BLEND_DESC bld{ renderPass.pipeline_state.blend_state.enable,
+                                    renderPass.pipeline_state.blend_state.separate_blend,
                                     {
-                                        defaultRenderTargetBlend,
-                                        defaultRenderTargetBlend,
-                                        defaultRenderTargetBlend,
-                                        defaultRenderTargetBlend,
-                                        defaultRenderTargetBlend,
-                                        defaultRenderTargetBlend,
-                                        defaultRenderTargetBlend,
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend0),
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend1),
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend2),
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend3),
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend4),
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend5),
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend6),
+                                        rhi.getRenderTargetBlendDesc(renderPass.pipeline_state.blend_state.render_target_blend7)
                                     }};
 
-        static const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp{
-            D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP,
-            D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS};
 
-        D3D12_DEPTH_STENCIL_DESC dsd{TRUE,
-                                        D3D12_DEPTH_WRITE_MASK_ALL,
-                                        D3D12_COMPARISON_FUNC_LESS,
-                                        FALSE,
-                                        D3D12_DEFAULT_STENCIL_READ_MASK,
-                                        D3D12_DEFAULT_STENCIL_WRITE_MASK,
-                                        defaultStencilOp,
-                                        defaultStencilOp};
+        D3D12_DEPTH_STENCIL_DESC dsd{ renderPass.pipeline_state.depth_stencil_state.enable,
+                                        rhi.getDepthWriteMask(renderPass.pipeline_state.depth_stencil_state.depth_write_mask),
+                                        rhi.getCompareFunc(renderPass.pipeline_state.depth_stencil_state.depth_function),
+                                        renderPass.pipeline_state.depth_stencil_state.stencil_enable,
+                                        (UINT8)renderPass.pipeline_state.depth_stencil_state.stencil_read_mask,
+                                        (UINT8)renderPass.pipeline_state.depth_stencil_state.stencil_write_mask,
+                                        rhi.getDepthStencilOpDesc(renderPass.pipeline_state.depth_stencil_state.front_face),
+                                        rhi.getDepthStencilOpDesc(renderPass.pipeline_state.depth_stencil_state.back_face)};
 
         // create the input layout object
         static const D3D12_INPUT_ELEMENT_DESC ied_simple[]{
@@ -148,8 +249,8 @@ int main() {
         psod.DepthStencilState = dsd;
         psod.InputLayout = {ied_simple, _countof(ied_simple)};
 
-        psod.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psod.NumRenderTargets = 1;
+        psod.PrimitiveTopologyType = rhi.getTopologyType(renderPass.pipeline_state.topology_type);
+        psod.NumRenderTargets = renderPass.frame_buffer.color_attachments.size();
         psod.SampleDesc.Count = config.msaaSamples;
         if (config.msaaSamples > 1) {
             psod.SampleDesc.Quality =
@@ -157,8 +258,8 @@ int main() {
         } else {
             psod.SampleDesc.Quality = 0;
         }
-        psod.DSVFormat = ::DXGI_FORMAT_D32_FLOAT;
-        psod.RTVFormats[0] = ::DXGI_FORMAT_R8G8B8A8_UNORM;
+        psod.DSVFormat = rhi.getDxgiFormat(renderPass.frame_buffer.depth_attachment.format);
+        psod.RTVFormats[0] = rhi.getDxgiFormat(renderPass.frame_buffer.color_attachments[0].format);
 
         psod.pRootSignature = pRootSignature;
 
@@ -175,7 +276,7 @@ int main() {
     }
 
     // 创建采样器
-    rhi.CreateTextureSampler();
+    pSamplerHeap = rhi.CreateTextureSampler(8);
 
     // 加载模型
     {
@@ -232,13 +333,11 @@ int main() {
     }
 
     // 创建资源描述子池
-    rhi.CreateDescriptorHeap(2, L"CbvSrvUav Heap",
-                                config.kMaxInFlightFrameCount);
+    pCbvSrvUavHeap = rhi.CreateDescriptorHeap(3, L"CbvSrvUav Heap");
 
     // 创建并登记资源销毁回调函数
     D3d12RHI::DestroyResourceFunc destroyResourceFunc =
-        [&pTexture, &pPipelineState, &pRootSignature, &VertexBuffers,
-         &IndexBuffers, &ConstantBuffers]() {
+        [&]() {
             SafeRelease(&pPipelineState);
             SafeRelease(&pRootSignature);
 
@@ -255,11 +354,12 @@ int main() {
             for (auto& buf : ConstantBuffers) {
                 SafeRelease(&buf.buffer);
             }
+
+            SafeRelease(&pCbvSrvUavHeap);
+            SafeRelease(&pSamplerHeap);
         };
 
     rhi.DestroyResourceCB(destroyResourceFunc);
-
-    Vector4f clearColor{0.3f, 0.3f, 0.3f, 1.0f};
 
     // 主消息循环
     while (!app.IsQuit()) {
@@ -286,13 +386,14 @@ int main() {
 
         // 绘制一帧
         rhi.BeginFrame();
-        rhi.BeginPass(clearColor);
+        rhi.BeginPass(renderPass.frame_buffer.color_clear_value);
         rhi.SetPipelineState(pPipelineState);
         rhi.SetRootSignature(pRootSignature);
         std::array<D3d12RHI::ConstantBuffer*, 1> constBuffers = {ConstantBuffers.data()};
-        rhi.CreateDescriptorSet(constBuffers.data(), 1);
-        rhi.CreateDescriptorSet(1, &pTexture, 1);
+        rhi.CreateDescriptorSet(pCbvSrvUavHeap, 0, constBuffers.data(), 1);
+        rhi.CreateDescriptorSet(pCbvSrvUavHeap, 1, &pTexture, 1);
         rhi.Draw(VertexBuffers[0].descriptor, IndexBuffers[0].descriptor,
+                 pCbvSrvUavHeap, pSamplerHeap,
                  D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
                  IndexBuffers[0].indexCount);
         rhi.EndPass();
