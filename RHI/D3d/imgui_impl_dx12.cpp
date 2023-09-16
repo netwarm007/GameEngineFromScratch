@@ -17,8 +17,11 @@
 
 // You can use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
 // Prefer including the entire imgui/ repository into your project (either as a copy or as a submodule), and only build the backends you need.
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
+// Learn about Dear ImGui:
+// - FAQ                  https://dearimgui.com/faq
+// - Getting Started      https://dearimgui.com/getting-started
+// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
+// - Introduction, links and more at the top of imgui.cpp
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
@@ -42,6 +45,7 @@
 //  2018-02-22: Merged into master with all Win32 code synchronized to other examples.
 
 #include "imgui.h"
+#ifndef IMGUI_DISABLE
 #include "imgui_impl_dx12.h"
 
 // DirectX
@@ -822,6 +826,7 @@ void ImGui_ImplDX12_Shutdown()
 
     io.BackendRendererName = nullptr;
     io.BackendRendererUserData = nullptr;
+    io.BackendFlags &= ~(ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_RendererHasViewports);
     IM_DELETE(bd);
 }
 
@@ -847,7 +852,7 @@ static void ImGui_ImplDX12_CreateWindow(ImGuiViewport* viewport)
     viewport->RendererUserData = vd;
 
     // PlatformHandleRaw should always be a HWND, whereas PlatformHandle might be a higher-level handle (e.g. GLFWWindow*, SDL_Window*).
-    // Some backends will leave PlatformHandleRaw NULL, in which case we assume PlatformHandle will contain the HWND.
+    // Some backends will leave PlatformHandleRaw == 0, in which case we assume PlatformHandle will contain the HWND.
     HWND hwnd = viewport->PlatformHandleRaw ? (HWND)viewport->PlatformHandleRaw : (HWND)viewport->PlatformHandle;
     IM_ASSERT(hwnd != 0);
 
@@ -962,7 +967,7 @@ static void ImGui_WaitForPendingOperations(ImGui_ImplDX12_ViewportData* vd)
 
 static void ImGui_ImplDX12_DestroyWindow(ImGuiViewport* viewport)
 {
-    // The main viewport (owned by the application) will always have RendererUserData == NULL since we didn't create the data for it.
+    // The main viewport (owned by the application) will always have RendererUserData == 0 since we didn't create the data for it.
     ImGui_ImplDX12_Data* bd = ImGui_ImplDX12_GetBackendData();
     if (ImGui_ImplDX12_ViewportData* vd = (ImGui_ImplDX12_ViewportData*)viewport->RendererUserData)
     {
@@ -1073,3 +1078,7 @@ void ImGui_ImplDX12_ShutdownPlatformInterface()
 {
     ImGui::DestroyPlatformWindows();
 }
+
+//-----------------------------------------------------------------------------
+
+#endif // #ifndef IMGUI_DISABLE
