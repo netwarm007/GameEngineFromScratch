@@ -70,4 +70,6 @@ imgui.ini
 **/*.generated.cpp
 External/*/astcenc
 
+CMakeFiles/
+
 Proprietary
