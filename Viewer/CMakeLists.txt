@@ -164,14 +164,12 @@ ELSEIF(WA)
 ELSEIF(WIN32)
     target_link_libraries(Viewer
                             MyPhysics
-                            D3dRHI 
-                            OpenGLRHI
+                            D3dRHI
                             Framework
                             PlatformInterface
                         )
 
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/HLSL DESTINATION Asset/Shaders)
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
