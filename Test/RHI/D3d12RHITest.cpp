@@ -8,6 +8,7 @@
 #include "tiny_obj_loader.h"
 
 #include <array>
+#include <chrono>
 
 using namespace My;
 

@@ -2,7 +2,7 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
-[RootSignature(MyRS1)]
+MYGE_ROOT_SIGNATURE(MyRS1)
 float4 skybox_frag_main(cube_vert_output _entryPointOutput) : SV_TARGET
 {
     float4 outputColor;

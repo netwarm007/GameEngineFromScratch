@@ -45,7 +45,7 @@ float2 IntegrateBRDF(float NdotV, float roughness)
 }
 
 [numthreads(1, 1, 1)]
-[RootSignature(BrdfRS)]
+MYGE_ROOT_SIGNATURE(BrdfRS)
 void integrateBRDF_comp_main(uint3 DTid : SV_DISPATCHTHREADID)
 {
     float4 pixel;

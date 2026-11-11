@@ -74,6 +74,7 @@ ELSE(WA) # For Windows / MacOS / Linux
     foreach(TEST_ASSET ${TEST_ASSETS})
         add_custom_command(
             TARGET CopyTestAssets
+            POST_BUILD
             COMMAND cmake -E copy ${TEST_ASSET} ${CMAKE_CURRENT_BINARY_DIR}/Resources/${TEST_ASSET}
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             VERBATIM

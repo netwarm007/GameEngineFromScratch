@@ -18,6 +18,8 @@ using namespace My;
 namespace My {
 enum LightType { Omni = 0, Spot = 1, Infinity = 2, Area = 3 };
 #else
+#include "root_signature.h.hlsl"
+
 #define SEMANTIC(a) : a
 #define REGISTER(x) : register(x)
 #define unistruct cbuffer

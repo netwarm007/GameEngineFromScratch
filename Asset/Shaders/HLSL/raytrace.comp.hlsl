@@ -12,7 +12,7 @@ float4 RayTrace(int2 pixel_coords)
 }
 
 [numthreads(1, 1, 1)]
-[RootSignature(RayTraceRS)]
+MYGE_ROOT_SIGNATURE(RayTraceRS)
 void raytrace_comp_main(uint3 DTid : SV_DISPATCHTHREADID)
 {
     float4 pixel;

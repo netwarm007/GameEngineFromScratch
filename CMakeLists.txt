@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 4.0)
 project(GameEngineFromScratch LANGUAGES C CXX)
 source_group(TREE ${PROJECT_SOURCE_DIR})
 
@@ -156,6 +156,8 @@ if(NOT ANDROID)
     find_package(Vulkan)
 endif(NOT ANDROID)
 
+# Prebuilt OpenAL package configs may still request a pre-3.5 policy version.
+set(CMAKE_POLICY_VERSION_MINIMUM 4.0)
 include(${MYGE_EXTERNAL_LIBRARY_PATH}/cmake/OpenAL/OpenALConfig.cmake)
 
 if(Vulkan_FOUND)

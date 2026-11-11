@@ -378,10 +378,7 @@ bool offscreen(float4 vertex){
     if(vertex.z < -0.5f){
         return true;
     }   
-    return any(
-        (vertex.xy < -1.7f.xx) ||
-        any(vertex.xy > 1.7f.xx)
-    );  
+    return any(vertex.xy < -1.7f.xx) || any(vertex.xy > 1.7f.xx);
 }
 
 float level(float2 v0, float2 v1){
