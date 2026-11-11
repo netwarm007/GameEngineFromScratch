@@ -15,6 +15,10 @@ using namespace std;
 #include "PVR.hpp"
 #include "TGA.hpp"
 
+namespace {
+constexpr char kMissingTexturePath[] = "Textures/texture_missing.png";
+}
+
 void SceneObjectTexture::LoadTextureAsync() {
     if (!m_asyncLoadFuture.valid()) {
         m_asyncLoadFuture =
@@ -24,13 +28,22 @@ void SceneObjectTexture::LoadTextureAsync() {
 
 bool SceneObjectTexture::LoadTexture() {
     AssetLoader assetLoader;
-    if (!assetLoader.FileExists(m_Name.c_str())) return false;
+    string textureName = m_Name;
+    if (!assetLoader.FileExists(textureName.c_str())) {
+        cerr << "Texture not found: " << textureName
+             << "; loading fallback texture " << kMissingTexturePath << endl;
+        textureName = kMissingTexturePath;
+        if (!assetLoader.FileExists(textureName.c_str())) {
+            cerr << "Fallback texture not found: " << textureName << endl;
+            return false;
+        }
+    }
 
-    cerr << "Start async loading of " << m_Name << endl;
+    cerr << "Start async loading of " << textureName << endl;
 
     Image image;
-    Buffer buf = assetLoader.SyncOpenAndReadBinary(m_Name.c_str());
-    string ext = m_Name.substr(m_Name.find_last_of('.'));
+    Buffer buf = assetLoader.SyncOpenAndReadBinary(textureName.c_str());
+    string ext = textureName.substr(textureName.find_last_of('.'));
     if (ext == ".jpg" || ext == ".jpeg") {
         JfifParser jfif_parser;
         image = jfif_parser.Parse(buf);
@@ -59,7 +72,7 @@ bool SceneObjectTexture::LoadTexture() {
         assert(0);
     }
 
-    cerr << "End async loading of " << m_Name << endl;
+    cerr << "End async loading of " << textureName << endl;
 
     atomic_store_explicit(&m_pImage, make_shared<Image>(std::move(image)),
                           std::memory_order_release);

@@ -55,6 +55,7 @@ set(TEST_ASSETS
     Asset/Textures/hdr/PaperMill_E_3k.hdr
     Asset/Textures/huff_simple0.jpg
     Asset/Textures/interior_lod0.tga
+    Asset/Textures/texture_missing.png
     Asset/Scene/splash.ogex
 )
 

@@ -13,6 +13,7 @@ set(SDR_TEXTURES
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-metalness.png
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-rough.png
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-ao.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/texture_missing.png
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/terrain/area_1_0_0.png
 )
 
