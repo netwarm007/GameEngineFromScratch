@@ -1,5 +1,13 @@
 set(PLATFORM_TEST_CASES BasicWindowTest)
 
+if(OS_WINDOWS)
+    add_test(NAME TEST_VisualStudioGenerator
+        COMMAND ${CMAKE_COMMAND}
+            "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
+            "-DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/VisualStudioGeneratorTest.cmake")
+endif()
+
 foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
     add_executable(${TEST_CASE} MACOSX_BUNDLE ${TEST_CASE}.cpp)
     target_link_libraries(${TEST_CASE} Framework PlatformInterface)

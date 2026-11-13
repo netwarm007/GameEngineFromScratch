@@ -94,6 +94,10 @@ Cache misses rebuild the dependencies; the engine and tests still run on every
 pipeline.
 
 ### Windows
+Windows scripts that use Visual Studio select the newest installed version
+supported by CMake. If an existing build directory retains an older generator,
+move it aside before rerunning the script to allow a fresh configuration.
+
     scripts\build_crossguid
     scripts\build_opengex
     scripts\build_zlib
