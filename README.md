@@ -80,6 +80,12 @@ builds and tests successfully on all enabled platforms: currently Windows,
 Linux, and macOS. Local tests do not replace this requirement. Android is
 currently disabled in the CircleCI workflow and is not part of this gate.
 
+The Windows job uses two parallel CMake build jobs and caches installed dependency
+files using their revisions, build scripts, and toolchain details. MSVC may also
+compile source files in parallel within a build job.
+Cache misses rebuild the dependencies; the engine and tests still run on every
+pipeline.
+
 ### Windows
     scripts\build_crossguid
     scripts\build_opengex

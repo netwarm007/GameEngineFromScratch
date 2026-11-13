@@ -2,11 +2,31 @@ version: 2.1
 orbs:
   win: circleci/windows@4.1.1
 
+commands:
+  build_windows_dependency:
+    parameters:
+      dependency:
+        type: string
+      script:
+        type: string
+    steps:
+      - run:
+          name: "Build << parameters.dependency >>"
+          command: |
+            if (Test-Path .circleci\windows-deps-cache\complete.txt) {
+              Write-Output "Using cached << parameters.dependency >>"
+            } else {
+              & ".\scripts\<< parameters.script >>.bat"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+
 jobs:
   build_windows:
     executor:
       name: win/server-2022
       shell: powershell.exe
+    environment:
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
     steps:
       - run: systeminfo
       - run:
@@ -113,17 +133,55 @@ jobs:
           paths:
             - ".git"
       - run:
-          name: "Build Dependencies"
+          name: Prepare Windows dependency cache key
+          command: |
+            cmake -DACTION=key -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - restore_cache:
+          key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+      - run:
+          name: Restore Windows dependency files
+          command: |
+            cmake -DACTION=restore -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run:
+          name: Prepare ImGui backends
           command: |
             scripts/build_imgui
-            scripts/build_crossguid
-            scripts/build_opengex
-            scripts/build_zlib
-            scripts/build_bullet
-            scripts/build_glslangValidator
-            scripts/build_spirvcross
-            scripts/build_libispc-texcomp
-            scripts/build_openal
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - build_windows_dependency:
+          dependency: crossguid
+          script: build_crossguid
+      - build_windows_dependency:
+          dependency: OpenGEX
+          script: build_opengex
+      - build_windows_dependency:
+          dependency: zlib
+          script: build_zlib
+      - build_windows_dependency:
+          dependency: Bullet
+          script: build_bullet
+      - build_windows_dependency:
+          dependency: glslang
+          script: build_glslangValidator
+      - build_windows_dependency:
+          dependency: SPIRV-Cross
+          script: build_spirvcross
+      - build_windows_dependency:
+          dependency: ISPC texture compressor
+          script: build_libispc-texcomp
+      - build_windows_dependency:
+          dependency: OpenAL
+          script: build_openal
+      - run:
+          name: Prepare Windows dependency cache
+          command: |
+            cmake -DACTION=save -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - save_cache:
+          key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+          paths:
+            - ".circleci/windows-deps-cache"
       - run:
           name: "Build Engine"
           command: |
