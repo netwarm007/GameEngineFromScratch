@@ -380,6 +380,10 @@ jobs:
              for i in $(seq 1 8); do
                sleep 15
                if pgrep -x Viewer >/dev/null; then echo "t=$((i*15))s: Viewer running" >> screenshots/diagnostics.txt; else echo "t=$((i*15))s: Viewer not running" >> screenshots/diagnostics.txt; fi
+               if [ "$i" = 4 ]; then
+                 sample Viewer 3 -file screenshots/sample-60s.txt >> screenshots/diagnostics.txt 2>&1 || true
+                 ps -o pid,pcpu,state,etime,command -p "$(pgrep -x Viewer | head -n 1)" >> screenshots/diagnostics.txt 2>&1 || true
+               fi
                screencapture -x "screenshots/viewer-$((i*15))s.png" >> screenshots/diagnostics.txt 2>&1 || true
                swift -e 'import CoreGraphics; for w in (CGWindowListCopyWindowInfo([.optionAll], kCGNullWindowID) as? [[String: Any]] ?? []) where (w["kCGWindowOwnerName"] as? String) == "Viewer" { print(w["kCGWindowNumber"] ?? "", w["kCGWindowBounds"] ?? "", "onscreen:", w["kCGWindowIsOnscreen"] ?? false, "layer:", w["kCGWindowLayer"] ?? "") }' > screenshots/windows-$((i*15))s.txt 2>&1 || true
                WID=$(awk 'NR==1{print $1}' screenshots/windows-$((i*15))s.txt | grep -E '^[0-9]+$' || true)
