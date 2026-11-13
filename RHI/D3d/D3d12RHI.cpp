@@ -1795,6 +1795,7 @@ HRESULT D3d12RHI::saveScreenshot(
     if (FAILED(comResult) && comResult != RPC_E_CHANGED_MODE) {
         return comResult;
     }
+    bool outputOpened = false;
     const HRESULT result = [&]() -> HRESULT {
         using Microsoft::WRL::ComPtr;
         ComPtr<IWICImagingFactory> factory;
@@ -1806,6 +1807,7 @@ HRESULT D3d12RHI::saveScreenshot(
         if (FAILED(hr)) return hr;
         hr = stream->InitializeFromFilename(m_screenshotPath.c_str(), GENERIC_WRITE);
         if (FAILED(hr)) return hr;
+        outputOpened = true;
         ComPtr<IWICBitmapEncoder> encoder;
         hr = factory->CreateEncoder(GUID_ContainerFormatPng, nullptr, encoder.GetAddressOf());
         if (FAILED(hr)) return hr;
@@ -1818,10 +1820,14 @@ HRESULT D3d12RHI::saveScreenshot(
         if (FAILED(hr)) return hr;
         hr = frame->SetSize(footprint.Footprint.Width, footprint.Footprint.Height);
         if (FAILED(hr)) return hr;
-        WICPixelFormatGUID format = GUID_WICPixelFormat32bppRGBA;
+        WICPixelFormatGUID format = GUID_WICPixelFormat32bppBGRA;
         hr = frame->SetPixelFormat(&format);
         if (FAILED(hr)) return hr;
-        if (!IsEqualGUID(format, GUID_WICPixelFormat32bppRGBA)) return E_NOTIMPL;
+        if (!IsEqualGUID(format, GUID_WICPixelFormat32bppBGRA)) {
+            std::cerr << "[D3d12RHI] PNG encoder rejected BGRA pixel format"
+                      << std::endl;
+            return E_NOTIMPL;
+        }
         void* data = nullptr;
         D3D12_RANGE range{static_cast<SIZE_T>(footprint.Offset),
                          static_cast<SIZE_T>(footprint.Offset + byteCount)};
@@ -1831,6 +1837,7 @@ HRESULT D3d12RHI::saveScreenshot(
         for (UINT y = 0; y < footprint.Footprint.Height; ++y) {
             auto* row = pixels + static_cast<size_t>(y) * footprint.Footprint.RowPitch;
             for (UINT x = 0; x < footprint.Footprint.Width; ++x) {
+                std::swap(row[x * 4], row[x * 4 + 2]);
                 row[x * 4 + 3] = 255;
             }
         }
@@ -1843,6 +1850,10 @@ HRESULT D3d12RHI::saveScreenshot(
         if (FAILED(hr)) return hr;
         return encoder->Commit();
     }();
+    if (FAILED(result) && outputOpened && !DeleteFileW(m_screenshotPath.c_str())) {
+        std::cerr << "[D3d12RHI] Failed to remove incomplete screenshot: "
+                  << GetLastError() << std::endl;
+    }
     if (SUCCEEDED(comResult)) CoUninitialize();
     return result;
 }

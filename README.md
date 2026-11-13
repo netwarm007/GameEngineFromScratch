@@ -20,8 +20,8 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow](https://app.circleci.com/workflow/75dd50be-dab0-433d-81a2-a8eb7f690fe8)
-passed the configured builds and tests for revision `11ea6f88feb773734f1c75252045afa21ee158b0` on Windows,
+CircleCI [workflow](https://app.circleci.com/workflow/93158eff-ec69-427f-97f2-1f35d4c65f39)
+passed the configured builds and tests for revision `7c24f8042b145d028600eef2cccfa9147e2e9a78` on Windows,
 macOS, and Linux. These results apply to that revision and do not validate every
 OS version.
 
@@ -47,8 +47,11 @@ The Windows job attempts D3D12 back-buffer readback after 45 seconds and writes
 Viewer closes after the attempt. Device creation falls back to WARP software
 rendering when hardware device creation fails. The job retains `viewer.log`,
 `viewer-error.log`, and capture errors under `viewer-screenshots`, with a
-180-second timeout. Capture is best-effort and this Windows path has not yet
-been verified in CircleCI.
+180-second timeout. Capture is best-effort. At revision
+`7c24f8042b145d028600eef2cccfa9147e2e9a78`, Windows capture failed during WIC
+pixel-format negotiation despite the successful build and tests. The writer
+now converts RGBA readback to BGRA for PNG encoding and removes incomplete
+files on failure; this fix has not yet been verified in CircleCI.
 
 ## Graphic API Support Status
 - OpenGL
