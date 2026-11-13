@@ -68,14 +68,44 @@ int D3d12GraphicsManager::Initialize() {
         &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeapImGui))));
     m_pCbvSrvUavHeapImGui->SetName(L"ImGui CbvSrvUav Heap");
 
-    auto cpuDescriptorHandle =
-        m_pCbvSrvUavHeapImGui->GetCPUDescriptorHandleForHeapStart();
-    auto gpuDescriptorHandle =
-        m_pCbvSrvUavHeapImGui->GetGPUDescriptorHandleForHeapStart();
-
-    ImGui_ImplDX12_Init(pDev, GfxConfiguration::kMaxInFlightFrameCount,
-                        ::DXGI_FORMAT_R8G8B8A8_UNORM, m_pCbvSrvUavHeapImGui,
-                        cpuDescriptorHandle, gpuDescriptorHandle);
+    // ImGui allocates its own texture descriptors (e.g. the font atlas) from
+    // the same slot pool used by CreateImGuiSrv
+    ImGui_ImplDX12_InitInfo imguiInitInfo;
+    imguiInitInfo.Device = pDev;
+    imguiInitInfo.CommandQueue = rhi.GetGraphicsCommandQueue();
+    imguiInitInfo.NumFramesInFlight = GfxConfiguration::kMaxInFlightFrameCount;
+    imguiInitInfo.RTVFormat = ::DXGI_FORMAT_R8G8B8A8_UNORM;
+    imguiInitInfo.DSVFormat = ::DXGI_FORMAT_UNKNOWN;
+    imguiInitInfo.UserData = this;
+    imguiInitInfo.SrvDescriptorHeap = m_pCbvSrvUavHeapImGui;
+    imguiInitInfo.SrvDescriptorAllocFn =
+        [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu,
+           D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu) {
+            auto* self = static_cast<D3d12GraphicsManager*>(info->UserData);
+            auto& rhi = dynamic_cast<D3d12Application*>(self->m_pApp)->GetRHI();
+            uint32_t slot;
+            if (!self->m_freeImGuiSlots.empty()) {
+                slot = self->m_freeImGuiSlots.back();
+                self->m_freeImGuiSlots.pop_back();
+            } else {
+                my_assert(self->m_nextImGuiSlot < 4096);
+                slot = self->m_nextImGuiSlot++;
+            }
+            *out_cpu = rhi.GetCpuDescriptorHandle(self->m_pCbvSrvUavHeapImGui, slot);
+            *out_gpu = rhi.GetGpuDescriptorHandle(self->m_pCbvSrvUavHeapImGui, slot);
+        };
+    imguiInitInfo.SrvDescriptorFreeFn =
+        [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu,
+           D3D12_GPU_DESCRIPTOR_HANDLE) {
+            auto* self = static_cast<D3d12GraphicsManager*>(info->UserData);
+            auto& rhi = dynamic_cast<D3d12Application*>(self->m_pApp)->GetRHI();
+            const auto base = rhi.GetCpuDescriptorHandle(self->m_pCbvSrvUavHeapImGui, 0);
+            const auto stride = info->Device->GetDescriptorHandleIncrementSize(
+                D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+            self->m_freeImGuiSlots.push_back(
+                static_cast<uint32_t>((cpu.ptr - base.ptr) / stride));
+        };
+    ImGui_ImplDX12_Init(&imguiInitInfo);
 
     // 创建常量缓冲区
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
