@@ -13,10 +13,11 @@ commands:
       - run:
           name: "Build << parameters.dependency >>"
           command: |
+            $ErrorActionPreference = 'Stop'
             if (Test-Path .circleci\windows-deps-cache\complete.txt) {
               Write-Output "Using cached << parameters.dependency >>"
             } else {
-              & ".\scripts\<< parameters.script >>.bat"
+              & (Join-Path 'scripts' '<< parameters.script >>.bat')
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
 
