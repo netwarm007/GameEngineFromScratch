@@ -23,6 +23,9 @@
   CircleCI result. Pending, canceled, skipped, unavailable, or failed jobs do
   not satisfy acceptance. Report the pipeline link, revision, each platform's
   result, and any blockers; do not claim acceptance while results are unknown.
+- After CircleCI passes on all enabled platforms, update relevant sections of
+  `README.md` to reflect the latest verified results. Identify the tested
+  revision and platform coverage without implying untested configurations passed.
 - For CircleCI investigation, use
   [the CircleCI troubleshooting skill](.github/skills/circleci-troubleshooting/SKILL.md).
 - When monitoring a running CircleCI pipeline, check its status every five

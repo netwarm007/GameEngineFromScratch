@@ -16,9 +16,10 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
   trusted DNS server. Treat DNS as one possible cause, preserve hostname and TLS
   certificate verification, and do not change system DNS settings without
   authorization.
-- Default to read-only investigation. Do not modify submodules, create forks,
-  commit, push, rerun jobs, or change credentials unless the user authorizes
-  that action as part of the task.
+- Default to read-only investigation, except for the project rule to update
+  README after all enabled platforms pass CI. Do not modify submodules, create
+  forks, commit, push, rerun jobs, or change credentials unless the user
+  authorizes that action as part of the task.
 - Never ask for credentials in chat or print, persist, or transmit them in
   logs, commands, URLs, reports, or artifacts. If Git LFS or CircleCI requires
   authentication, ask the user to enter or configure it through the appropriate
@@ -76,5 +77,7 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
   commit. Report the latest observed state, tests actually run, unresolved
   failures, and any authentication or platform limitations; never claim all
   platforms passed until each required job has completed successfully.
+- After all enabled platforms pass, update relevant README sections with the
+  verified results, tested revision, and platform coverage.
 - Present a short table with platform, job number, status, failed step, and
   sanitized cause or next action. Include the pipeline link and revision.
