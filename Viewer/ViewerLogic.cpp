@@ -4,6 +4,8 @@
 #include "SceneManager.hpp"
 #include "geommath.hpp"
 
+#include <string>
+
 using namespace My;
 using namespace std;
 
@@ -15,8 +17,19 @@ int ViewerLogic::Initialize() {
 
     cout << "[ViewerLogic] Viewer Logic Initialize" << endl;
 
-    if (m_pApp->GetCommandLineArgumentsCount() > 1) {
-        auto scene_filename = m_pApp->GetCommandLineArgument(1);
+    // options such as "-screenshot <path>" are consumed elsewhere; skip them
+    std::string scene_filename;
+    for (int i = 1; i < m_pApp->GetCommandLineArgumentsCount(); i++) {
+        std::string arg = m_pApp->GetCommandLineArgument(i);
+        if (!arg.empty() && arg[0] == '-') {
+            i++;
+            continue;
+        }
+        scene_filename = arg;
+        break;
+    }
+
+    if (!scene_filename.empty()) {
         cout << "[ViewerLogic] Loading Scene: " << scene_filename << endl;
         result = pSceneManager->LoadScene(scene_filename);
     } else {
