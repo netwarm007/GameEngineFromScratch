@@ -361,6 +361,26 @@ jobs:
           command: |
              ctest --test-dir ./build --output-on-failure
       - run:
+          name: Capture Viewer screenshot
+          when: always
+          command: |
+             # Experimental: diagnostics only, never fails the job.
+             mkdir -p screenshots
+             {
+               echo "== displays =="; system_profiler SPDisplaysDataType || true
+               echo "== sessions =="; stat -f '%Su' /dev/console || true
+             } > screenshots/diagnostics.txt 2>&1
+             APP=$(find build -type d -name Viewer.app | head -n 1)
+             if [ -z "$APP" ]; then echo "Viewer.app not found" >> screenshots/diagnostics.txt; exit 0; fi
+             open -n "$APP" || "$APP/Contents/MacOS/Viewer" > screenshots/viewer.log 2>&1 &
+             sleep 20
+             screencapture -x screenshots/viewer-full.png >> screenshots/diagnostics.txt 2>&1 || true
+             pkill -x Viewer || true
+             exit 0
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
+      - run:
           name: Package
           command: |
              cmake --build ./build --target package
