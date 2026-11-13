@@ -1,4 +1,6 @@
 #pragma once
+#include "geommath.hpp"
+#include "imgui/imgui.h"
 #include "FillMode.hpp"
 #include "CullMode.hpp"
 
@@ -9,7 +11,7 @@
 
 
 
-namespace My {
+namespace My::RenderGraph {
     struct RasterizerState {
         FillMode::Enum	fill_mode;
 
@@ -36,12 +38,19 @@ namespace My {
             ImGui::Combo( "cull_mode", (int32_t*)&cull_mode, CullMode::s_value_names, CullMode::Count );
 
             ImGui::Checkbox( "front_counter_clockwise", &front_counter_clockwise );
+
             ImGui::InputScalar( "depth_bias", ImGuiDataType_S32, &depth_bias );
-            ImGui::InputFloat( "depth_bias_clamp", &depth_bias_clamp );
-            ImGui::InputFloat( "slope_scaled_depth_bias", &slope_scaled_depth_bias );
+
+            ImGui::SliderFloat( "depth_bias_clamp", &depth_bias_clamp, 0.0f, 1.0f );
+
+            ImGui::SliderFloat( "slope_scaled_depth_bias", &slope_scaled_depth_bias, 0.0f, 1.0f );
+
             ImGui::Checkbox( "depth_clip_enabled", &depth_clip_enabled );
+
             ImGui::Checkbox( "multisample_enabled", &multisample_enabled );
+
             ImGui::Checkbox( "conservative", &conservative );
+
         }
 
         void reflectUI() {
@@ -50,4 +59,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

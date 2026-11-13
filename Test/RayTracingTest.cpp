@@ -1,73 +1,153 @@
+#include "Platform/CrossPlatformGfxApp.hpp"
+#include "Platform/TGraphicsManager.hpp"
+
+#include "AssetLoader.hpp"
+
+#include "imgui/imgui.h"
+
+#include "BVH.hpp"
 #include "Encoder/PPM.hpp"
 #include "Image.hpp"
-#include "Ray.hpp"
+#include "RayTracingCamera.hpp"
 #include "geommath.hpp"
 #include "portable.hpp"
-#include "random.hpp"
-#include "BVH.hpp"
-#include "RayTracingCamera.hpp"
 
-#define float_precision double
+#define float_precision float
 #include "TestMaterial.hpp"
 #include "TestScene.hpp"
-#include "ColorSpaceConversion.hpp"
+
+#include "PathTracing.hpp"
 
 #include <chrono>
-#include <future>
-#include <list>
-#include <memory>
-#include <thread>
+#include <sstream>
+#include <string_view>
 
-using namespace std::chrono_literals;
+std::ostringstream oss;
+bool is_closed = false;
+Texture2D render_result;
 
 using image = My::Image;
 using bvh = My::BVHNode<float_precision>;
 using camera = My::RayTracingCamera<float_precision>;
-constexpr auto infinity = std::numeric_limits<float_precision>::infinity();
-constexpr auto epsilon = std::numeric_limits<float_precision>::epsilon();
 
-// Utilities
-const color white({1.0, 1.0, 1.0});
-const color black({0.0, 0.0, 0.0});
-const color bg_color({0.5, 0.7, 1.0});
+using namespace My;
 
-color ray_color(const ray& r, int depth,
-                bvh& world) {
-    hit_record hit;
+const My::raytrace_config config = {.samples_per_pixel = 512,
+                                    .max_depth = 50};
 
-    if (depth <= 0) {
-        return black;
+class TestGraphicsManager : public TGraphicsManager {
+    void Draw() override {
+        static bool show_demo_window = true;
+        auto& frame = m_Frames[m_nFrameIndex];
+
+        BeginPass(frame);
+
+        {
+            ImGui::Begin(
+                (const char*)u8"光线追踪（路径追踪）");  // Create a window
+                                                         // called "Hello,
+                                                         // world!" and append
+                                                         // into it.
+            auto gfx_cfg = m_pApp->GetConfiguration();
+            ImGui::Text((const char*)u8"宽：%d 高：%d 采样率：%d 最大深度：%d", gfx_cfg.screenWidth, gfx_cfg.screenHeight, config.samples_per_pixel, config.max_depth);
+            size_t start_pos = 0;
+            size_t end_pos = 0;
+            std::string str(oss.str());
+            do {
+                start_pos = end_pos + 1;
+                end_pos = str.find('\n', start_pos);
+                start_pos = str.rfind('\r', end_pos);
+                if (start_pos == std::string::npos) start_pos = 0;
+                ImGui::Text("%s", str.substr(start_pos, end_pos).c_str());
+            } while (end_pos != std::string::npos);
+
+            ImGui::Image((ImTextureID)render_result.handler, ImVec2(render_result.width, render_result.height), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
+
+            ImGui::End();
+        }
+        EndPass(frame);
+    }
+};
+
+void gui_loop(GfxConfiguration & gui_config, int argc, char** argv, image& img) {
+    int result;
+
+    auto pApp = CreateApplication(gui_config);
+
+    TestGraphicsManager graphicsManager;
+
+    pApp->SetCommandLineParameters(argc, argv);
+    pApp->RegisterManagerModule(&graphicsManager);
+
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    AssetLoader assetLoader;
+    auto font_path =
+        assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
+
+    ImVector<ImWchar> ranges;
+    ImFontGlyphRangesBuilder builder;
+    builder.AddText((const char*)u8"屏擎渲帧钮");
+
+    builder.AddRanges(
+        io.Fonts->GetGlyphRangesChineseSimplifiedCommon());  // Add one of the
+                                                             // default ranges
+    builder.BuildRanges(&ranges);  // Build the final result (ordered ranges
+                                   // with all the unique characters submitted)
+
+    io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
+    io.Fonts->Build();
+
+    ImGui::StyleColorsDark();
+
+    ImGuiStyle& im_style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        im_style.WindowRounding = 0.0f;
+        im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    if (world.Intersect(r, hit, 0.001, infinity)) {
-        ray scattered;
-        color attenuation;
+    // Create Main Window
+    pApp->CreateMainWindow();
 
-        const std::shared_ptr<material> pMat = *reinterpret_cast<const std::shared_ptr<material>*>(hit.getMaterial());
+    result = pApp->Initialize();
 
-        if (pMat->scatter(r, hit, attenuation, scattered)) {
-            if (My::LengthSquared(attenuation) < 0.0002f) return black; // roughly squre of (1.0 / 256)
-            return attenuation * ray_color(scattered, depth - 1, world);
+    if (result == 0) {
+        // Texture for GUI display
+        render_result = pApp->GetGraphicsManager()->CreateTexture(img);
+        pApp->GetGraphicsManager()->BindDebugTexture(render_result, 1);
+
+        while (!pApp->IsQuit()) {
+            pApp->GetGraphicsManager()->UpdateTexture(render_result, img);
+            pApp->Tick();
         }
 
-        return black;
+        is_closed = true;
+
+        pApp->Finalize();
     }
 
-    // background
-    auto& unit_direction = r.getDirection();
-    float_precision t = 0.5 * (unit_direction[1] + 1.0);
-    return ((float_precision)1.0 - t) * white + t * bg_color;
+    pApp->GetGraphicsManager()->ReleaseTexture(render_result);
+
+    ImGui::DestroyContext();
+
+    delete pApp;
 }
 
-// Raytrace
+
 // Main
 int main(int argc, char** argv) {
+    GfxConfiguration gui_config(8, 8, 8, 8, 24, 8, 4, 960, 540,
+                                "Ray Tracing Test");
+
     // Render Settings
-    const float_precision aspect_ratio = 16.0 / 9.0;
-    const int image_width = 1920;
-    const int image_height = static_cast<int>(image_width / aspect_ratio);
-    const int samples_per_pixel = 512;
-    const int max_depth = 50;
+    const int image_width = gui_config.screenWidth;
+    const int image_height = gui_config.screenHeight;
+    const float_precision aspect_ratio = (float_precision)image_width / (float_precision)image_height;
 
     // World
     auto world = random_scene();
@@ -80,16 +160,16 @@ int main(int argc, char** argv) {
     auto dist_to_focus = 10.0;
     auto aperture = 0.1;
 
-    camera cam(lookfrom, lookat, vup, (float_precision)20.0,
-                                aspect_ratio, aperture, dist_to_focus);
+    camera cam(lookfrom, lookat, vup, (float_precision)20.0, aspect_ratio,
+               aperture, dist_to_focus);
 
     // Canvas
     image img;
     img.Width = image_width;
     img.Height = image_height;
-    img.bitcount = 24;
+    img.bitcount = 32;
     img.bitdepth = 8;
-    img.pixel_format = My::PIXEL_FORMAT::RGB8;
+    img.pixel_format = My::PIXEL_FORMAT::RGBA8;
     img.pitch = (img.bitcount >> 3) * img.Width;
     img.compressed = false;
     img.compress_format = My::COMPRESSED_FORMAT::NONE;
@@ -97,64 +177,23 @@ int main(int argc, char** argv) {
     img.data = new uint8_t[img.data_size];
 
     // Render
-    int concurrency = std::thread::hardware_concurrency();
-    std::cerr << "Concurrent ray tracing with (" << concurrency << ") threads."
-              << std::endl;
+    auto raytrace_task = [&]() {
+        auto start = std::chrono::steady_clock::now();
+        My::PathTracing<float_precision>::raytrace(config, world_bvh, cam, img,
+                                                oss, is_closed);
+        auto end = std::chrono::steady_clock::now();
 
-    std::list<std::future<int>> raytrace_tasks;
+        std::chrono::duration<double> diff = end - start;
 
-    auto f_raytrace = [samples_per_pixel, max_depth, &cam, &world_bvh, &img](
-                          int x, int y) -> int {
-        color pixel_color(0);
-        for (auto s = 0; s < samples_per_pixel; s++) {
-            auto u = (x + My::random_f<float_precision>()) / (img.Width - 1);
-            auto v = (y + My::random_f<float_precision>()) / (img.Height - 1);
-
-            auto r = cam.get_ray(u, v);
-            pixel_color += ray_color(r, max_depth, world_bvh);
-        }
-
-        pixel_color = pixel_color * ((float_precision)1.0 / samples_per_pixel);
-
-        // Gamma-correction for gamma = 2.4
-        My::RGB8 pixel_color_unorm = My::QuantizeUnsigned8Bits(My::Linear2SRGB(pixel_color));
-
-        img.SetR(x, y, pixel_color_unorm[0]);
-        img.SetG(x, y, pixel_color_unorm[1]);
-        img.SetB(x, y, pixel_color_unorm[2]);
-
-        return 0;
+        std::cout << "Rendering time: " << diff.count() << " s";
     };
 
-    auto start = std::chrono::steady_clock::now();
-    for (auto j = 0; j < img.Height; j++) {
-        std::cerr << "\rScanlines remaining: " << img.Height - j << ' '
-                  << std::flush;
-        for (auto i = 0; i < img.Width; i++) {
-            while (raytrace_tasks.size() >= concurrency) {
-                // wait for at least one task finish
-                raytrace_tasks.remove_if([](std::future<int>& task) {
-                    return task.wait_for(1ms) == std::future_status::ready;
-                });
-            }
-            color pixel_color(0);
-            raytrace_tasks.emplace_back(
-                std::async(std::launch::async, f_raytrace, i, j));
-        }
-    }
+    auto raytrace_future = std::async(std::launch::async, raytrace_task);
 
-    while (!raytrace_tasks.empty()) {
-        // wait for at least one task finish
-        raytrace_tasks.remove_if([](std::future<int>& task) {
-            return task.wait_for(1s) == std::future_status::ready;
-        });
-    }
-    auto end = std::chrono::steady_clock::now();
+    // start GUI thread
+    gui_loop(gui_config, argc, argv, img);
 
-    std::chrono::duration<double> diff = end - start;
-
-    std::cerr << "\r";
-    std::cout << "Rendering time: " << diff.count() << " s\n";
+    raytrace_future.wait();
 
 #if 0
     My::PpmEncoder encoder;

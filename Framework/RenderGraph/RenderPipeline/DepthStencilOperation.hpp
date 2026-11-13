@@ -1,10 +1,12 @@
 #pragma once
+#include "geommath.hpp"
+#include "imgui/imgui.h"
 #include "StencilOperation.hpp"
 
 
 
 
-namespace My {
+namespace My::RenderGraph {
     struct DepthStencilOperation {
         StencilOperation::Enum	fail;
 
@@ -32,4 +34,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

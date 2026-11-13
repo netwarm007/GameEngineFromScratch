@@ -1,7 +1,7 @@
 #include "functions.h.hlsl"
 #include "vsoutput.h.hlsl"
 
-[RootSignature(MyRS1)] float4 pbr_frag_main(pbr_vert_output _entryPointOutput)
+MYGE_ROOT_SIGNATURE(MyRS1) float4 pbr_frag_main(pbr_vert_output _entryPointOutput)
     : SV_Target {
   // offset texture coordinates with Parallax Mapping
   // float3 viewDir   = normalize(_entryPointOutput.camPos_tangent -

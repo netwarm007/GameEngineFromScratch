@@ -153,7 +153,9 @@ void GraphicsManager::createFramebuffers() {
 
             m_Frames[0].depthTexture = depth_buffer;
         } else {
-            m_Frames[i].colorTextures.push_back(m_Frames[0].colorTextures[1]);
+            if (conf.msaaSamples > 1) {
+                m_Frames[i].colorTextures.push_back(m_Frames[0].colorTextures[1]);
+            }
             m_Frames[i].depthTexture = m_Frames[0].depthTexture;
             m_Frames[i].enableMSAA = m_Frames[0].enableMSAA;
         }

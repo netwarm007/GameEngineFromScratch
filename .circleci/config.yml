@@ -2,11 +2,32 @@ version: 2.1
 orbs:
   win: circleci/windows@4.1.1
 
+commands:
+  build_windows_dependency:
+    parameters:
+      dependency:
+        type: string
+      script:
+        type: string
+    steps:
+      - run:
+          name: "Build << parameters.dependency >>"
+          command: |
+            $ErrorActionPreference = 'Stop'
+            if (Test-Path .circleci\windows-deps-cache\complete.txt) {
+              Write-Output "Using cached << parameters.dependency >>"
+            } else {
+              & (Join-Path 'scripts' '<< parameters.script >>.bat')
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+
 jobs:
   build_windows:
     executor:
       name: win/server-2022
       shell: powershell.exe
+    environment:
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
     steps:
       - run: systeminfo
       - run:
@@ -25,6 +46,7 @@ jobs:
             {
               echo "Chocolatey net present. Installing chocolatey."
               Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+              if (-not ($machinePath.ToLower().Contains($chocolateyPath.ToLower())))
               {
                 echo "Adding $chocolateyPath to Path environment variable"
                 $env:Path += ";$chocolateyPath"
@@ -36,28 +58,19 @@ jobs:
               }
             }
             
-            # install cmake
-            $cmakePath = "${env:ProgramFiles(x86)}\CMake\bin"
-            if(Get-Command "cmake" -ErrorAction SilentlyContinue)
-            {
-              echo "Cmake is already installed. Skipping installation."
+            # The project requires CMake 4 or newer.
+            $cmakeVersion = [version]'0.0'
+            if (Get-Command "cmake" -ErrorAction SilentlyContinue) {
+              $cmakeVersion = [version]((cmake --version | Select-Object -First 1) -replace '^cmake version ', '')
             }
-            else
-            {
-              echo "Cmake not present. Installing cmake."
-              choco install cmake.portable -y
-
-              if (-not ($machinePath.ToLower().Contains($cmakePath.ToLower())))
-              {
-                echo "Adding $cmakePath to Path environment variable"
-                $env:Path += ";$cmakePath"
-                $newMachineEnvironmentPath = "$cmakePath;$newMachineEnvironmentPath"
-              }
-              else
-              {
-                echo "$cmakePath already present in Path environment variable"
-              }
+            if ($cmakeVersion -lt [version]'4.0') {
+              choco upgrade cmake.portable -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              $env:Path = "$chocolateyPath;$env:Path"
+              $newMachineEnvironmentPath = "$chocolateyPath;$newMachineEnvironmentPath"
             }
+            $cmakeVersion = [version]((cmake --version | Select-Object -First 1) -replace '^cmake version ', '')
+            if ($cmakeVersion -lt [version]'4.0') { throw "CMake 4.0 or newer is required" }
 
             # install winflexbison3
             $winflexbison3Path = "${env:ProgramFiles(x86)}\WinFlexBison\bin"
@@ -87,6 +100,13 @@ jobs:
             {
               [Environment]::SetEnvironmentVariable('Path', $newMachineEnvironmentPath, 'MACHINE')
             }
+
+            # install NSIS for packaging
+            choco install nsis -y
+
+            # install vulkan SDK
+            choco install vulkan-sdk -y
+            refreshenv
       - restore_cache:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
@@ -114,21 +134,69 @@ jobs:
           paths:
             - ".git"
       - run:
-          name: "Build Dependencies"
+          name: Prepare Windows dependency cache key
+          command: |
+            cmake -DACTION=key -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - restore_cache:
+          key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+      - run:
+          name: Restore Windows dependency files
+          command: |
+            cmake -DACTION=restore -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run:
+          name: Prepare ImGui backends
           command: |
             scripts/build_imgui
-            scripts/build_crossguid
-            scripts/build_opengex
-            scripts/build_zlib
-            scripts/build_bullet
-            scripts/build_glslangValidator
-            scripts/build_spirvcross
-            scripts/build_libispc-texcomp
-            scripts/build_openal
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - build_windows_dependency:
+          dependency: crossguid
+          script: build_crossguid
+      - build_windows_dependency:
+          dependency: OpenGEX
+          script: build_opengex
+      - build_windows_dependency:
+          dependency: zlib
+          script: build_zlib
+      - build_windows_dependency:
+          dependency: Bullet
+          script: build_bullet
+      - build_windows_dependency:
+          dependency: glslang
+          script: build_glslangValidator
+      - build_windows_dependency:
+          dependency: SPIRV-Cross
+          script: build_spirvcross
+      - build_windows_dependency:
+          dependency: ISPC texture compressor
+          script: build_libispc-texcomp
+      - build_windows_dependency:
+          dependency: OpenAL
+          script: build_openal
+      - run:
+          name: Prepare Windows dependency cache
+          command: |
+            cmake -DACTION=save -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - save_cache:
+          key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+          paths:
+            - ".circleci/windows-deps-cache"
       - run:
           name: "Build Engine"
           command: |
-            scripts/build
+            if (-not (Get-Command dxc.exe -ErrorAction SilentlyContinue)) {
+              $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter dxc.exe -Recurse |
+                Where-Object { $_.DirectoryName -match '\\x64$' } |
+                Sort-Object FullName -Descending | Select-Object -First 1
+              if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
+              $env:Path = "$($dxc.DirectoryName);$env:Path"
+            }
+            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            cmake --build build --config Debug
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
           name: "Cook Asset"
           command: |
@@ -136,7 +204,8 @@ jobs:
       - run:
           name: "Test"
           command: |
-            cmake --build build --target RUN_TESTS
+            ctest --test-dir build -C Debug --output-on-failure
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
           name: Package
           command: |
@@ -149,18 +218,20 @@ jobs:
           path: build/GEFS-0.1.0-win64.exe
   build_linux:
     machine:
-      image: ubuntu-2204:2022.04.1 # recommended linux image
+      image: ubuntu-2204:2026.10.1
     resource_class: large
     steps:
       - run: 
           name: Install Dependencies
           command: |
              sudo apt update 
-             sudo apt install -y curl clang cmake ninja-build git uuid-dev 
+             sudo apt install -y curl clang python3-pip ninja-build git uuid-dev
              sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt install -y flex bison
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
+             python3 -m pip install --user 'cmake>=4.0,<5'
+             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
           environment:
              DEBIAN_FRONTEND: noninteractive
       - restore_cache:
@@ -211,7 +282,7 @@ jobs:
       - run:
           name: Test
           command: |
-             cmake --build ./build --target test
+             ctest --test-dir ./build --output-on-failure
       - run:
           name: Package
           command: |
@@ -230,7 +301,8 @@ jobs:
           path: build/GEFS-0.1.0-Linux.tar.Z
   build_macos:
     macos:
-      xcode: "13.4.0"
+      xcode: "16.4.0"
+    resource_class: m4pro.medium
     steps:
       - restore_cache:
           keys:
@@ -259,17 +331,14 @@ jobs:
           paths:
             - ".git"
       - run: 
-          name: Install Dependencies via MacPorts
+          name: Install Dependencies via Homebrew
           command: |
-             curl -L -o $(pwd)/MacPorts-2.7.2-12-Monterey.pkg https://github.com/macports/macports-base/releases/download/v2.7.2/MacPorts-2.7.2-12-Monterey.pkg
-             sudo installer -package $(pwd)/MacPorts-2.7.2-12-Monterey.pkg -target /
-             rm $(pwd)/MacPorts-2.7.2-12-Monterey.pkg
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             sudo -E port -q install cmake ninja flex bison
+             export HOMEBREW_NO_AUTO_UPDATE=1
+             brew install cmake ninja flex bison ispc
+             echo "export PATH=\"$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:\$PATH\"" >> "$BASH_ENV"
       - run:
           name: "Build Dependencies"
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
@@ -282,7 +351,6 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              ./scripts/build-ninja.sh
       - run:
           name: "Cook Asset"
@@ -291,12 +359,10 @@ jobs:
       - run:
           name: Test
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             cmake --build ./build --target test
+             ctest --test-dir ./build --output-on-failure
       - run:
           name: Package
           command: |
-             export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
              cmake --build ./build --target package
       - persist_to_workspace:
           root: build
@@ -410,7 +476,7 @@ workflows:
   version: 2
   build-and-test: #for branch
     jobs:
-      #- build_windows
+      - build_windows
       - build_linux
       - build_macos
       #- build_android

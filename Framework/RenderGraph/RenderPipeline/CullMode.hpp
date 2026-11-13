@@ -1,6 +1,7 @@
-namespace My {
+#pragma once
+namespace My::RenderGraph {
     namespace CullMode {
-        int Count = 3;
+        static inline int Count = 3;
         enum Enum { 
             None = 0,
             Front = 1,
@@ -17,4 +18,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace CullMode
-} // namespace My
+} // namespace My::RenderGraph

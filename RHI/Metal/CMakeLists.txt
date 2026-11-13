@@ -5,7 +5,7 @@ find_library(QUARTZ_LIBRARY QuartzCore required)
 MESSAGE( STATUS "MTK_LIBRARY: " ${MTK_LIBRARY} )
 
 add_library(MetalRHI
-    Metal2Renderer.mm
+    Metal2RHI.mm
     Metal2GraphicsManager.mm
     MetalPipelineStateManager.mm
     imgui_impl_metal.mm

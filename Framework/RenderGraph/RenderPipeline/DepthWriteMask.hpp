@@ -1,6 +1,7 @@
-namespace My {
+#pragma once
+namespace My::RenderGraph {
     namespace DepthWriteMask {
-        int Count = 2;
+        static inline int Count = 2;
         enum Enum { 
             Zero = 0,
             All = 1
@@ -15,4 +16,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace DepthWriteMask
-} // namespace My
+} // namespace My::RenderGraph

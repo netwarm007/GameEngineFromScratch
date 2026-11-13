@@ -1,6 +1,7 @@
-namespace My {
+#pragma once
+namespace My::RenderGraph {
     namespace TopologyType {
-        int Count = 5;
+        static inline int Count = 5;
         enum Enum { 
             Unknown = 0,
             Point = 1,
@@ -21,4 +22,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace TopologyType
-} // namespace My
+} // namespace My::RenderGraph

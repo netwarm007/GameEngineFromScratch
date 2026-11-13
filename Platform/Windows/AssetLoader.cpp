@@ -9,7 +9,7 @@ int AssetLoader::Initialize() {
     GetModuleFileName(NULL, buffer, sizeof(buffer));
     std::string::size_type pos = std::string_view(buffer).find_last_of("\\/");
 
-    m_strTargetPath = std::string_view(buffer).substr(0, pos);
+    m_strTargetPath = std::string_view(buffer).substr(0, pos + 1);
 
     return 0;
 }

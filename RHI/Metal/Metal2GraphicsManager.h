@@ -3,7 +3,7 @@
 #include "IPipelineStateManager.hpp"
 #include "portable.hpp"
 
-OBJC_CLASS(Metal2Renderer);
+OBJC_CLASS(Metal2RHI);
 
 namespace My {
 class Metal2GraphicsManager : public GraphicsManager {
@@ -25,6 +25,12 @@ class Metal2GraphicsManager : public GraphicsManager {
     void GenerateCubemapArray(TextureCubeArray& texture_array) final;
 
     void GenerateTextureArray(Texture2DArray& texture_array) final;
+
+    Texture2D CreateTexture(Image& img) final; 
+
+    void BindDebugTexture(Texture2D& texture, const uint32_t slot_index) final;
+
+    void UpdateTexture(Texture2D& texture, Image& img) final;
 
     void ReleaseTexture(TextureBase& texture) final;
 
@@ -57,6 +63,6 @@ class Metal2GraphicsManager : public GraphicsManager {
     void initializeSkyBox(const Scene& scene) override;
 
    private:
-    Metal2Renderer* m_pRenderer;
+    Metal2RHI* m_pRHI;
 };
 }  // namespace My
