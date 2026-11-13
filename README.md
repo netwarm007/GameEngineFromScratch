@@ -22,8 +22,8 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - PlayStation 4 (Not continued, related source code not disclosed due to NDA)
 - PlayStation Vita (Not continued, related source code not disclosed due to NDA)
 
-CircleCI [pipeline 816](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/816/details?workflowId=05acee2f-c9eb-48e7-bb2c-302cef96089c)
-passed the configured builds and tests for revision `68e4f2c2` on Windows,
+CircleCI [pipeline 817](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/817/details?workflowId=652ea7d6-c9b6-4aa9-8ff0-e64717df13d2)
+passed the configured builds and tests for revision `13054560` on Windows,
 macOS, and Linux. These results apply to that revision and do not validate every
 OS version.
 
