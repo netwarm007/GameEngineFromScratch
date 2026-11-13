@@ -2,6 +2,10 @@ set(SCENE_FILES
                     ${PROJECT_SOURCE_DIR}/Asset/Scene/splash.ogex
 )
 
+set(FONT_FILES
+                    ${PROJECT_SOURCE_DIR}/Asset/Fonts/NotoSansMonoCJKsc-VF.ttf
+)
+
 set(SDR_TEXTURES
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_basecolor.png
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/gold-scuffed_normal.png
@@ -62,7 +66,7 @@ IF(ANDROID)
 ELSEIF(APPLE)
     add_executable(Viewer MACOSX_BUNDLE
         main.cpp ViewerLogic.cpp
-        Main.metallib ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
+        Main.metallib ${SCENE_FILES} ${FONT_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
         )
 ELSE()
     add_executable(Viewer 
@@ -127,6 +131,10 @@ IF(APPLE)
         )
     endforeach(SCENE_FILE)
 
+    set_property(SOURCE ${FONT_FILES} PROPERTY
+        MACOSX_PACKAGE_LOCATION "Resources/Asset/Fonts"
+    )
+
     foreach(SDR_TEXTURE_FILE ${SDR_TEXTURES})
         set_property(SOURCE ${SDR_TEXTURE_FILE} PROPERTY
             MACOSX_PACKAGE_LOCATION "Resources/Asset/Textures"
@@ -170,6 +178,7 @@ ELSEIF(WIN32)
                         )
 
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/HLSL DESTINATION Asset/Shaders)
+    install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
@@ -186,6 +195,7 @@ endif(SDL2_FOUND)
                             ${PLATFORM_INTERFACE})
 
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
+    install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
