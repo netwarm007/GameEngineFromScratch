@@ -73,6 +73,13 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 -- Android NDK
 
 ## Build Steps
+### Commit acceptance
+
+A commit is accepted only when its CircleCI pipeline completes the configured
+builds and tests successfully on all enabled platforms: currently Windows,
+Linux, and macOS. Local tests do not replace this requirement. Android is
+currently disabled in the CircleCI workflow and is not part of this gate.
+
 ### Windows
     scripts\build_crossguid
     scripts\build_opengex
