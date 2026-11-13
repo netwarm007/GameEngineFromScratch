@@ -96,7 +96,8 @@ IF(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
     )
 
-    foreach(SHADER IN LISTS HLSL_SHADER_SOURCES)
+    set(D3D_SHADER_SOURCES ${HLSL_SHADER_SOURCES} shadowmap_omni.geom generate_mips.comp)
+    foreach(SHADER IN LISTS D3D_SHADER_SOURCES)
         set(SHADER_BIN ${SHADER_BIN_DIR}/${SHADER}.cso)
         if (SHADER MATCHES "^([a-zA-Z0-9_]*)\.vert$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD

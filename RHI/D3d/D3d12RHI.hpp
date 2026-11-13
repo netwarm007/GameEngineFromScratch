@@ -83,6 +83,16 @@ class D3d12RHI {
     void CreateCommandLists();
 
     ID3D12Resource* CreateTextureImage(Image& img);
+    ID3D12Resource* GenerateTextureMipmaps(ID3D12Resource* source,
+                                           ID3D12PipelineState* pipeline,
+                                           ID3D12RootSignature* root);
+    ID3D12Resource* CreateDepthTextureArray(uint32_t width, uint32_t height,
+                                            uint16_t layers);
+    ID3D12Resource* CreateTextureCubeArray(DXGI_FORMAT format, uint32_t width,
+                                           uint32_t height, uint16_t cubes,
+                                           uint16_t mipLevels);
+    void UploadTextureSubresource(ID3D12Resource* texture, const Image& image,
+                                  uint32_t imageMip, uint32_t subresource);
     void UpdateTexture(ID3D12Resource* texture, Image& img);
 
     ID3D12DescriptorHeap* CreateTextureSampler(uint32_t num_samplers);
@@ -115,10 +125,18 @@ class D3d12RHI {
     D3D12_GPU_DESCRIPTOR_HANDLE GetGpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset);
 
     void ResetAllBuffers();
+    void WaitForIdle();
     void DestroyAll();
 
     void BeginFrame();
-    void BeginPass(const Vector3f& clearColor);
+    void BeginCompute();
+    void SetComputePipelineState(ID3D12PipelineState* pipelineState,
+                                 ID3D12RootSignature* rootSignature);
+    void BindComputeTexture(ID3D12Resource* texture,
+                            ID3D12DescriptorHeap* descriptorHeap);
+    void Dispatch(uint32_t width, uint32_t height, uint32_t depth);
+    void EndCompute(ID3D12Resource* texture);
+    void BeginPass(const Vector3f& clearColor, bool clear = true);
     void SetPipelineState(ID3D12PipelineState* pPipelineState);
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void Draw(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
@@ -129,7 +147,7 @@ class D3d12RHI {
               uint32_t index_count_per_instance);
     void DrawGUI(ID3D12DescriptorHeap* pCbvSrvHeap);
     void EndPass();
-    void EndFrame();
+    void EndFrame(bool resolveSwapChain = true);
 
     void Present();
 
@@ -141,11 +159,14 @@ class D3d12RHI {
     void UpdateUniformBufer(ConstantBuffer* constantBuffers, const void* buffer);
 
     ID3D12Device* GetDevice() { return m_pDev; }
+    ID3D12GraphicsCommandList* GetGraphicsCommandList() { return m_pGraphicsCommandLists[0]; }
+    uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
 
    private:
     void msaaResolve();
     void beginSingleTimeCommands();
     void endSingleTimeCommands();
+    void submitComputeCommands();
     void waitOnFrame();
     void moveToNextFrame();
 

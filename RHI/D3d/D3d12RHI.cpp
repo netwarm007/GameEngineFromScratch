@@ -17,6 +17,41 @@ using namespace My;
     }
 #endif
 
+namespace {
+D3D12_SUBRESOURCE_DATA PrepareTextureData(const Image& image,
+                                         std::vector<uint8_t>& converted) {
+    D3D12_SUBRESOURCE_DATA data{};
+    if (!image.compressed && (image.pixel_format == PIXEL_FORMAT::RGB8 ||
+                              image.pixel_format == PIXEL_FORMAT::RGB16)) {
+        const size_t componentBytes = image.pixel_format == PIXEL_FORMAT::RGB8 ? 1 : 2;
+        my_assert(image.data && image.pitch >= static_cast<size_t>(image.Width) * 3 * componentBytes);
+        converted.resize(static_cast<size_t>(image.Width) * image.Height * 4 * componentBytes);
+        for (uint32_t y = 0; y < image.Height; ++y) {
+            const auto* source = image.data + y * image.pitch;
+            auto* target = converted.data() + static_cast<size_t>(y) * image.Width * 4 * componentBytes;
+            for (uint32_t x = 0; x < image.Width; ++x) {
+                auto* pixel = target + x * 4 * componentBytes;
+                memcpy(pixel, source + x * 3 * componentBytes, 3 * componentBytes);
+                if (componentBytes == 1) {
+                    pixel[3] = 255;
+                } else {
+                    const uint16_t alpha = image.is_float ? 0x3c00 : 0xffff;
+                    memcpy(pixel + 6, &alpha, sizeof(alpha));
+                }
+            }
+        }
+        data.pData = converted.data();
+        data.RowPitch = static_cast<LONG_PTR>(image.Width) * 4 * componentBytes;
+        data.SlicePitch = data.RowPitch * image.Height;
+    } else {
+        data.pData = image.data;
+        data.RowPitch = image.pitch;
+        data.SlicePitch = image.compressed ? image.data_size : image.pitch * image.Height;
+    }
+    return data;
+}
+}
+
 DXGI_FORMAT D3d12RHI::getDxgiFormat(const Image& img) {
     DXGI_FORMAT format;
 
@@ -57,13 +92,23 @@ DXGI_FORMAT D3d12RHI::getDxgiFormat(const Image& img) {
             case PIXEL_FORMAT::RG8:
                 format = ::DXGI_FORMAT_R8G8_UNORM;
                 break;
+            case PIXEL_FORMAT::RGB8:
             case PIXEL_FORMAT::RGBA8:
                 format = ::DXGI_FORMAT_R8G8B8A8_UNORM;
                 break;
+            case PIXEL_FORMAT::R16:
+                format = img.is_float ? DXGI_FORMAT_R16_FLOAT : DXGI_FORMAT_R16_UNORM;
+                break;
+            case PIXEL_FORMAT::RG16:
+                format = img.is_float ? DXGI_FORMAT_R16G16_FLOAT : DXGI_FORMAT_R16G16_UNORM;
+                break;
+            case PIXEL_FORMAT::RGB16:
             case PIXEL_FORMAT::RGBA16:
-                format = ::DXGI_FORMAT_R16G16B16A16_FLOAT;
+                format = img.is_float ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R16G16B16A16_UNORM;
                 break;
             default:
+                std::cerr << "Unsupported D3D12 pixel format: "
+                          << static_cast<int>(img.pixel_format) << std::endl;
                 my_assert(0);
         }
     }
@@ -660,14 +705,22 @@ void D3d12RHI::CreateDevice() {
 
 void D3d12RHI::EnableDebugLayer() {
 #if defined(D3D12_RHI_DEBUG)
-    // Enable the D3D12 debug layer.
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_pDebugController)))) {
-        m_pDebugController->EnableDebugLayer();
-
+    if (m_pDebugController) {
         m_pDev->QueryInterface(IID_PPV_ARGS(&m_pDebugDev));
 
         ID3D12InfoQueue* d3dInfoQueue;
         if (SUCCEEDED(m_pDev->QueryInterface(IID_PPV_ARGS(&d3dInfoQueue)))) {
+            ID3D12InfoQueue1* queue1 = nullptr;
+            if (SUCCEEDED(d3dInfoQueue->QueryInterface(IID_PPV_ARGS(&queue1)))) {
+                DWORD cookie;
+                queue1->RegisterMessageCallback(
+                    [](D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity,
+                       D3D12_MESSAGE_ID, LPCSTR description, void*) {
+                        if (severity <= D3D12_MESSAGE_SEVERITY_ERROR)
+                            std::cerr << "D3D12 ERROR: " << description << std::endl;
+                    }, D3D12_MESSAGE_CALLBACK_FLAG_NONE, nullptr, &cookie);
+                queue1->Release();
+            }
             d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION,
                                              true);
             d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR,
@@ -685,6 +738,7 @@ void D3d12RHI::EnableDebugLayer() {
             filter.DenyList.NumIDs = 3;
             d3dInfoQueue->AddRetrievalFilterEntries(&filter);
             d3dInfoQueue->AddStorageFilterEntries(&filter);
+            d3dInfoQueue->Release();
         }
     }
 #endif
@@ -781,7 +835,7 @@ void D3d12RHI::CreateSyncObjects() {
                                             IID_PPV_ARGS(&m_pGraphicsFence))) &&
               "failed to create fence object");
 
-    m_nGraphicsFenceValues.fill(0);
+    m_nGraphicsFenceValues.fill(1);
 
     m_hGraphicsFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     my_assert(m_hGraphicsFenceEvent);
@@ -993,15 +1047,15 @@ void D3d12RHI::CreateCommandLists() {
 }
 
 void D3d12RHI::beginSingleTimeCommands() {
-    m_pCopyCommandList->Reset(m_pCopyCommandAllocator, nullptr);
+    my_assert(SUCCEEDED(m_pCopyCommandAllocator->Reset()));
+    my_assert(SUCCEEDED(m_pCopyCommandList->Reset(m_pCopyCommandAllocator, nullptr)));
 }
 
 void D3d12RHI::endSingleTimeCommands() {
-    if (SUCCEEDED(m_pCopyCommandList->Close())) {
-        ID3D12CommandList* ppCommandLists[] = {m_pCopyCommandList};
-        m_pCopyCommandQueue->ExecuteCommandLists(_countof(ppCommandLists),
-                                                 ppCommandLists);
-    }
+    my_assert(SUCCEEDED(m_pCopyCommandList->Close()));
+    ID3D12CommandList* ppCommandLists[] = {m_pCopyCommandList};
+    m_pCopyCommandQueue->ExecuteCommandLists(_countof(ppCommandLists),
+                                             ppCommandLists);
 
     ID3D12Fence* pCopyQueueFence;
     my_assert(SUCCEEDED(m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE,
@@ -1074,16 +1128,8 @@ ID3D12Resource* D3d12RHI::CreateTextureImage(Image& img) {
 
     // Copy data to the intermediate upload heap and then schedule a copy
     // from the upload heap to the Texture2D.
-    D3D12_SUBRESOURCE_DATA textureData{};
-    if (img.compressed) {
-        textureData.pData = img.data;
-        textureData.RowPitch = img.pitch;
-        textureData.SlicePitch = img.data_size;
-    } else {
-        textureData.pData = img.data;
-        textureData.RowPitch = img.pitch;
-        textureData.SlicePitch = img.pitch * img.Height;
-    }
+    std::vector<uint8_t> converted;
+    auto textureData = PrepareTextureData(img, converted);
 
     beginSingleTimeCommands();
     UpdateSubresources(m_pCopyCommandList, pTextureBuffer, pTextureUploadHeap,
@@ -1093,6 +1139,164 @@ ID3D12Resource* D3d12RHI::CreateTextureImage(Image& img) {
     SafeRelease(&pTextureUploadHeap);
 
     return pTextureBuffer;
+}
+
+ID3D12Resource* D3d12RHI::CreateDepthTextureArray(uint32_t width, uint32_t height,
+                                                 uint16_t layers) {
+    my_assert(width && height && layers);
+    D3D12_HEAP_PROPERTIES heap{};
+    heap.Type = D3D12_HEAP_TYPE_DEFAULT;
+    heap.CreationNodeMask = heap.VisibleNodeMask = 1;
+    D3D12_RESOURCE_DESC desc{};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Width = width;
+    desc.Height = height;
+    desc.DepthOrArraySize = layers;
+    desc.MipLevels = 1;
+    desc.Format = DXGI_FORMAT_R32_TYPELESS;
+    desc.SampleDesc.Count = 1;
+    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    D3D12_CLEAR_VALUE clear{};
+    clear.Format = DXGI_FORMAT_D32_FLOAT;
+    clear.DepthStencil.Depth = 1.0f;
+    ID3D12Resource* resource = nullptr;
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        &heap, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COMMON,
+        &clear, IID_PPV_ARGS(&resource))));
+    return resource;
+}
+
+ID3D12Resource* D3d12RHI::GenerateTextureMipmaps(ID3D12Resource* source,
+                                                  ID3D12PipelineState* pipeline,
+                                                  ID3D12RootSignature* root) {
+    my_assert(source && pipeline && root);
+    auto desc = source->GetDesc();
+    my_assert(desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D &&
+              desc.DepthOrArraySize == 1 && desc.MipLevels == 1);
+    const auto sourceFormat = desc.Format;
+    uint16_t levels = 1;
+    for (UINT64 size = (std::max)(desc.Width, static_cast<UINT64>(desc.Height));
+         size > 1; size >>= 1) {
+        ++levels;
+    }
+    desc.MipLevels = levels;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    D3D12_HEAP_PROPERTIES properties{};
+    properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+    properties.CreationNodeMask = properties.VisibleNodeMask = 1;
+    ID3D12Resource* output = nullptr;
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        &properties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COMMON,
+        nullptr, IID_PPV_ARGS(&output))));
+    auto* heap = CreateDescriptorHeap(levels * 2, L"Material Mipmap Descriptors");
+    const auto increment = m_pDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+    BeginCompute();
+    SetComputePipelineState(pipeline, root);
+    ID3D12DescriptorHeap* heaps[] = {heap};
+    m_pComputeCommandList->SetDescriptorHeaps(1, heaps);
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = source;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    m_pComputeCommandList->ResourceBarrier(1, &barrier);
+
+    for (uint32_t mip = 0; mip < levels; ++mip) {
+        auto cpu = GetCpuDescriptorHandle(heap, mip * 2);
+        D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
+        srv.Format = mip == 0 ? sourceFormat : desc.Format;
+        srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        srv.Texture2D.MostDetailedMip = mip == 0 ? 0 : mip - 1;
+        srv.Texture2D.MipLevels = 1;
+        m_pDev->CreateShaderResourceView(mip == 0 ? source : output, &srv, cpu);
+        cpu.ptr += increment;
+        D3D12_UNORDERED_ACCESS_VIEW_DESC uav{};
+        uav.Format = desc.Format;
+        uav.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+        uav.Texture2D.MipSlice = mip;
+        m_pDev->CreateUnorderedAccessView(output, nullptr, &uav, cpu);
+
+        barrier.Transition.pResource = output;
+        barrier.Transition.Subresource = mip;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        m_pComputeCommandList->ResourceBarrier(1, &barrier);
+        m_pComputeCommandList->SetComputeRootDescriptorTable(
+            0, GetGpuDescriptorHandle(heap, mip * 2));
+        const auto width = static_cast<uint32_t>((std::max)(UINT64(1), desc.Width >> mip));
+        const auto height = (std::max)(1u, desc.Height >> mip);
+        Dispatch((width + 7) / 8, (height + 7) / 8, 1);
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        m_pComputeCommandList->ResourceBarrier(1, &barrier);
+    }
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+    m_pComputeCommandList->ResourceBarrier(1, &barrier);
+    barrier.Transition.pResource = source;
+    m_pComputeCommandList->ResourceBarrier(1, &barrier);
+    submitComputeCommands();
+    SafeRelease(&heap);
+    return output;
+}
+
+ID3D12Resource* D3d12RHI::CreateTextureCubeArray(DXGI_FORMAT format, uint32_t width,
+                                                  uint32_t height, uint16_t cubes,
+                                                  uint16_t mipLevels) {
+    my_assert(width && height && cubes && cubes <= UINT16_MAX / 6 && mipLevels);
+    D3D12_HEAP_PROPERTIES heap{};
+    heap.Type = D3D12_HEAP_TYPE_DEFAULT;
+    heap.CreationNodeMask = heap.VisibleNodeMask = 1;
+    D3D12_RESOURCE_DESC desc{};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    desc.Width = width;
+    desc.Height = height;
+    desc.DepthOrArraySize = cubes * 6;
+    desc.MipLevels = mipLevels;
+    desc.Format = format;
+    desc.SampleDesc.Count = 1;
+    ID3D12Resource* resource = nullptr;
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        &heap, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_COMMON,
+        nullptr, IID_PPV_ARGS(&resource))));
+    return resource;
+}
+
+void D3d12RHI::UploadTextureSubresource(ID3D12Resource* texture, const Image& image,
+                                        uint32_t imageMip, uint32_t subresource) {
+    my_assert(texture && image.data && imageMip < image.mipmaps.size());
+    const auto& mip = image.mipmaps[imageMip];
+    my_assert(mip.offset + mip.data_size <= image.data_size);
+    const UINT64 uploadSize = GetRequiredIntermediateSize(texture, subresource, 1);
+    D3D12_HEAP_PROPERTIES heap{};
+    heap.Type = D3D12_HEAP_TYPE_UPLOAD;
+    heap.CreationNodeMask = heap.VisibleNodeMask = 1;
+    D3D12_RESOURCE_DESC desc{};
+    desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    desc.Width = uploadSize;
+    desc.Height = 1;
+    desc.DepthOrArraySize = 1;
+    desc.MipLevels = 1;
+    desc.SampleDesc.Count = 1;
+    desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    ID3D12Resource* upload = nullptr;
+    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        &heap, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr, IID_PPV_ARGS(&upload))));
+    D3D12_SUBRESOURCE_DATA data{};
+    data.pData = image.data + mip.offset;
+    data.RowPitch = mip.pitch;
+    data.SlicePitch = mip.data_size;
+    beginSingleTimeCommands();
+    my_assert(UpdateSubresources(m_pCopyCommandList, texture, upload, 0,
+                                 subresource, 1, &data) != 0);
+    endSingleTimeCommands();
+    SafeRelease(&upload);
 }
 
 void My::D3d12RHI::UpdateTexture(ID3D12Resource* texture, Image& img) {
@@ -1129,16 +1333,8 @@ void My::D3d12RHI::UpdateTexture(ID3D12Resource* texture, Image& img) {
 
     // Copy data to the intermediate upload heap and then schedule a copy
     // from the upload heap to the Texture2D.
-    D3D12_SUBRESOURCE_DATA textureData{};
-    if (img.compressed) {
-        textureData.pData = img.data;
-        textureData.RowPitch = img.pitch;
-        textureData.SlicePitch = img.data_size;
-    } else {
-        textureData.pData = img.data;
-        textureData.RowPitch = img.pitch;
-        textureData.SlicePitch = img.pitch * img.Height;
-    }
+    std::vector<uint8_t> converted;
+    auto textureData = PrepareTextureData(img, converted);
 
     beginSingleTimeCommands();
     UpdateSubresources(m_pCopyCommandList, texture, pTextureUploadHeap,
@@ -1285,7 +1481,8 @@ D3D12_GPU_DESCRIPTOR_HANDLE My::D3d12RHI::GetGpuDescriptorHandle(ID3D12Descripto
 void D3d12RHI::waitOnFrame() {
     if (m_pGraphicsCommandQueue && m_pGraphicsFence &&
         m_hGraphicsFenceEvent != INVALID_HANDLE_VALUE) {
-        auto fence_value = m_nGraphicsFenceValues[m_nCurrentFrame];
+        auto fence_value = *std::max_element(m_nGraphicsFenceValues.begin(),
+                                              m_nGraphicsFenceValues.end()) + 1;
 
         my_assert(SUCCEEDED(
             m_pGraphicsCommandQueue->Signal(m_pGraphicsFence, fence_value)));
@@ -1296,7 +1493,7 @@ void D3d12RHI::waitOnFrame() {
         std::ignore =
             WaitForSingleObjectEx(m_hGraphicsFenceEvent, INFINITE, FALSE);
 
-        m_nGraphicsFenceValues[m_nCurrentFrame]++;
+        m_nGraphicsFenceValues.fill(fence_value + 1);
     }
 }
 
@@ -1346,8 +1543,7 @@ void D3d12RHI::RecreateSwapChain() {
         CreateDepthStencils();
         CreateFramebuffers();
 
-        m_nCurrentFrame = 0;
-        m_nGraphicsFenceValues.fill(0);
+        m_nCurrentFrame = m_pSwapChain->GetCurrentBackBufferIndex();
     }
 }
 
@@ -1355,6 +1551,10 @@ void D3d12RHI::ResetAllBuffers() {
     for (auto& buf : m_pRawBuffers) {
         SafeRelease(&buf);
     }
+}
+
+void D3d12RHI::WaitForIdle() {
+    waitOnFrame();
 }
 
 void D3d12RHI::DestroyAll() {
@@ -1403,10 +1603,8 @@ void D3d12RHI::DestroyAll() {
 #endif
 }
 
-void D3d12RHI::BeginPass(const Vector3f& clearColor) {
+void D3d12RHI::BeginPass(const Vector3f& clearColor, bool clear) {
     auto& m_pCmdList = m_pGraphicsCommandLists[0];
-
-    m_pCmdList->Reset(m_pGraphicsCommandAllocators[m_nCurrentFrame], NULL);
 
     m_pCmdList->RSSetViewports(1, &m_ViewPort);
     m_pCmdList->RSSetScissorRects(1, &m_ScissorRect);
@@ -1423,26 +1621,16 @@ void D3d12RHI::BeginPass(const Vector3f& clearColor) {
         rtvHandle.ptr += m_nRtvDescriptorSize;
     }
 
-    // transfer resource state
-    D3D12_RESOURCE_BARRIER barrier;
-
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    barrier.Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-    m_pCmdList->ResourceBarrier(1, &barrier);
-
     // set frame buffers
     dsvHandle = m_pDsvHeap->GetCPUDescriptorHandleForHeapStart();
     m_pCmdList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-    // clear the back buffer to a deep blue
-    m_pCmdList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-    m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
-                                      0, 0, nullptr);
+    if (clear) {
+        const float color[] = {clearColor[0], clearColor[1], clearColor[2], 1.0f};
+        m_pCmdList->ClearRenderTargetView(rtvHandle, color, 0, nullptr);
+        m_pCmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f,
+                                          0, 0, nullptr);
+    }
 
 }
 
@@ -1511,14 +1699,10 @@ void D3d12RHI::Present() {
 
     m_pCmdList->ResourceBarrier(1, &barrier);
 
-    if (SUCCEEDED(m_pCmdList->Close())) {
-        ID3D12CommandList* ppCommandLists[] = {m_pCmdList};
-        m_pGraphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists),
-                                                     ppCommandLists);
-
-        my_assert(SUCCEEDED(m_pGraphicsCommandQueue->Signal(
-            m_pGraphicsFence, m_nGraphicsFenceValues[m_nCurrentFrame])));
-    }
+    my_assert(SUCCEEDED(m_pCmdList->Close()));
+    ID3D12CommandList* ppCommandLists[] = {m_pCmdList};
+    m_pGraphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists),
+                                                 ppCommandLists);
 
     // swap the back buffer and the front buffer
     my_assert(SUCCEEDED(m_pSwapChain->Present(1, 0)));
@@ -1725,6 +1909,7 @@ D3d12RHI::IndexBuffer D3d12RHI::CreateIndexBuffer(const void* pData,
     UpdateSubresources<1>(m_pCopyCommandList, indexBuffer.buffer,
                           pIndexBufferUploadHeap, 0, 0, 1, &indexData);
     endSingleTimeCommands();
+    SafeRelease(&pIndexBufferUploadHeap);
 
     // initialize the index buffer view
     indexBuffer.descriptor.BufferLocation =
@@ -1746,12 +1931,84 @@ D3d12RHI::IndexBuffer D3d12RHI::CreateIndexBuffer(const void* pData,
 }
 
 void D3d12RHI::BeginFrame() {
-    m_pGraphicsCommandAllocators[m_nCurrentFrame]->Reset();
+    my_assert(SUCCEEDED(m_pGraphicsCommandAllocators[m_nCurrentFrame]->Reset()));
+    my_assert(SUCCEEDED(m_pGraphicsCommandLists[0]->Reset(
+        m_pGraphicsCommandAllocators[m_nCurrentFrame], nullptr)));
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    m_pGraphicsCommandLists[0]->ResourceBarrier(1, &barrier);
 }
 
-void D3d12RHI::EndFrame() {
+void D3d12RHI::BeginCompute() {
+    my_assert(SUCCEEDED(m_pComputeCommandAllocator->Reset()));
+    my_assert(SUCCEEDED(m_pComputeCommandList->Reset(
+        m_pComputeCommandAllocator, nullptr)));
+}
+
+void D3d12RHI::SetComputePipelineState(ID3D12PipelineState* pipelineState,
+                                       ID3D12RootSignature* rootSignature) {
+    m_pComputeCommandList->SetPipelineState(pipelineState);
+    m_pComputeCommandList->SetComputeRootSignature(rootSignature);
+}
+
+void D3d12RHI::BindComputeTexture(ID3D12Resource* texture,
+                                  ID3D12DescriptorHeap* descriptorHeap) {
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = texture;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    m_pComputeCommandList->ResourceBarrier(1, &barrier);
+
+    D3D12_UNORDERED_ACCESS_VIEW_DESC view{};
+    view.Format = texture->GetDesc().Format;
+    view.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+    m_pDev->CreateUnorderedAccessView(
+        texture, nullptr, &view, descriptorHeap->GetCPUDescriptorHandleForHeapStart());
+    ID3D12DescriptorHeap* heaps[] = {descriptorHeap};
+    m_pComputeCommandList->SetDescriptorHeaps(1, heaps);
+    m_pComputeCommandList->SetComputeRootDescriptorTable(
+        0, descriptorHeap->GetGPUDescriptorHandleForHeapStart());
+}
+
+void D3d12RHI::Dispatch(uint32_t width, uint32_t height, uint32_t depth) {
+    m_pComputeCommandList->Dispatch(width, height, depth);
+}
+
+void D3d12RHI::EndCompute(ID3D12Resource* texture) {
+    D3D12_RESOURCE_BARRIER barrier{};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = texture;
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    m_pComputeCommandList->ResourceBarrier(1, &barrier);
+    submitComputeCommands();
+    std::cerr << "Compute completed" << std::endl;
+}
+
+void D3d12RHI::submitComputeCommands() {
+    my_assert(SUCCEEDED(m_pComputeCommandList->Close()));
+    ID3D12CommandList* lists[] = {m_pComputeCommandList};
+    m_pComputeCommandQueue->ExecuteCommandLists(1, lists);
+
+    ID3D12Fence* fence = nullptr;
+    my_assert(SUCCEEDED(m_pDev->CreateFence(
+        0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence))));
+    my_assert(SUCCEEDED(m_pComputeCommandQueue->Signal(fence, 1)));
+    my_assert(SUCCEEDED(fence->SetEventOnCompletion(1, m_hComputeFenceEvent)));
+    my_assert(WaitForSingleObject(m_hComputeFenceEvent, INFINITE) == WAIT_OBJECT_0);
+    SafeRelease(&fence);
+}
+
+void D3d12RHI::EndFrame(bool resolveSwapChain) {
     // MSAA Resolve
-    if (m_fGetGfxConfigHandler().msaaSamples > 1) {
+    if (resolveSwapChain && m_fGetGfxConfigHandler().msaaSamples > 1) {
         msaaResolve();
     }
 }

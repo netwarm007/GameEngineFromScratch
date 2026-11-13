@@ -65,4 +65,13 @@ void D3d12PipelineStateManager::DestroyPipelineState(
         dynamic_cast<D3d12PipelineState*>(&pipelineState);
 
     SafeRelease(&pPipelineState->pipelineState);
+    SafeRelease(&pPipelineState->rootSignature);
+    delete[] static_cast<const uint8_t*>(pPipelineState->vertexShaderByteCode.pShaderBytecode);
+    delete[] static_cast<const uint8_t*>(pPipelineState->pixelShaderByteCode.pShaderBytecode);
+    delete[] static_cast<const uint8_t*>(pPipelineState->geometryShaderByteCode.pShaderBytecode);
+    delete[] static_cast<const uint8_t*>(pPipelineState->computeShaderByteCode.pShaderBytecode);
+    pPipelineState->vertexShaderByteCode = {};
+    pPipelineState->pixelShaderByteCode = {};
+    pPipelineState->geometryShaderByteCode = {};
+    pPipelineState->computeShaderByteCode = {};
 }

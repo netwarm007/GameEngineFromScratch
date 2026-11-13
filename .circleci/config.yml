@@ -25,6 +25,7 @@ jobs:
             {
               echo "Chocolatey net present. Installing chocolatey."
               Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+              if (-not ($machinePath.ToLower().Contains($chocolateyPath.ToLower())))
               {
                 echo "Adding $chocolateyPath to Path environment variable"
                 $env:Path += ";$chocolateyPath"
@@ -36,28 +37,19 @@ jobs:
               }
             }
             
-            # install cmake
-            $cmakePath = "${env:ProgramFiles(x86)}\CMake\bin"
-            if(Get-Command "cmake" -ErrorAction SilentlyContinue)
-            {
-              echo "Cmake is already installed. Skipping installation."
+            # The project requires CMake 4 or newer.
+            $cmakeVersion = [version]'0.0'
+            if (Get-Command "cmake" -ErrorAction SilentlyContinue) {
+              $cmakeVersion = [version]((cmake --version | Select-Object -First 1) -replace '^cmake version ', '')
             }
-            else
-            {
-              echo "Cmake not present. Installing cmake."
-              choco install cmake.portable -y
-
-              if (-not ($machinePath.ToLower().Contains($cmakePath.ToLower())))
-              {
-                echo "Adding $cmakePath to Path environment variable"
-                $env:Path += ";$cmakePath"
-                $newMachineEnvironmentPath = "$cmakePath;$newMachineEnvironmentPath"
-              }
-              else
-              {
-                echo "$cmakePath already present in Path environment variable"
-              }
+            if ($cmakeVersion -lt [version]'4.0') {
+              choco upgrade cmake.portable -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              $env:Path = "$chocolateyPath;$env:Path"
+              $newMachineEnvironmentPath = "$chocolateyPath;$newMachineEnvironmentPath"
             }
+            $cmakeVersion = [version]((cmake --version | Select-Object -First 1) -replace '^cmake version ', '')
+            if ($cmakeVersion -lt [version]'4.0') { throw "CMake 4.0 or newer is required" }
 
             # install winflexbison3
             $winflexbison3Path = "${env:ProgramFiles(x86)}\WinFlexBison\bin"
@@ -134,7 +126,17 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-            scripts/build-vs
+            if (-not (Get-Command dxc.exe -ErrorAction SilentlyContinue)) {
+              $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter dxc.exe -Recurse |
+                Where-Object { $_.DirectoryName -match '\\x64$' } |
+                Sort-Object FullName -Descending | Select-Object -First 1
+              if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
+              $env:Path = "$($dxc.DirectoryName);$env:Path"
+            }
+            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            cmake --build build --config Debug
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
           name: "Cook Asset"
           command: |
@@ -142,7 +144,8 @@ jobs:
       - run:
           name: "Test"
           command: |
-            cmake --build build --target RUN_TESTS
+            ctest --test-dir build -C Debug --output-on-failure
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
           name: Package
           command: |
@@ -162,11 +165,13 @@ jobs:
           name: Install Dependencies
           command: |
              sudo apt update 
-             sudo apt install -y curl clang cmake ninja-build git uuid-dev 
+             sudo apt install -y curl clang python3-pip ninja-build git uuid-dev
              sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt install -y flex bison
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
+             python3 -m pip install --user 'cmake>=4.0,<5'
+             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
           environment:
              DEBIAN_FRONTEND: noninteractive
       - restore_cache:
@@ -217,7 +222,7 @@ jobs:
       - run:
           name: Test
           command: |
-             cmake --build ./build --target test
+             ctest --test-dir ./build --output-on-failure
       - run:
           name: Package
           command: |
@@ -298,7 +303,7 @@ jobs:
           name: Test
           command: |
              export PATH=/opt/local/bin:/opt/local/sbin:$PATH 
-             cmake --build ./build --target test
+             ctest --test-dir ./build --output-on-failure
       - run:
           name: Package
           command: |

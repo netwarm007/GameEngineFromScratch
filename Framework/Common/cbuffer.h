@@ -2,6 +2,7 @@
 #define __CBUFFER_H__
 
 #define MAX_LIGHTS 100
+#define POINT_SHADOW_FAR_PLANE 1000.0f
 
 #include "config.h"
 
@@ -83,6 +84,7 @@ unistruct ShadowMapConstants REGISTER(b13) {
     float shadowmap_layer_index;  // 4 bytes
     float near_plane;             // 4 bytes
     float far_plane;              // 4 bytes
+    Matrix4X4f shadowMatrices[6];
 };                                // 16 bytes
 
 #ifdef __cplusplus

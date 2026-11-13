@@ -13,6 +13,7 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     virtual ~IGraphicsManager() = default;
     virtual void Draw() = 0;
     virtual void Present() = 0;
+    virtual bool RenderTargetHasTopLeftOrigin() const { return false; }
 
     virtual void ResizeCanvas(int32_t width, int32_t height) = 0;
 
