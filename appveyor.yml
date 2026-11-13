@@ -4,7 +4,7 @@ clone_depth: 50
 environment:
   VULKAN_SDK: C:\VulkanSDK\1.3.216.0
 cache:
-  - VulkanSDK.exe
+  - External\Windows -> .gitmodules, scripts\build_imgui.bat, scripts\build_crossguid.bat, scripts\build_opengex.bat, scripts\build_zlib.bat, scripts\build_bullet.bat, scripts\build_glslangValidator.bat, scripts\build_spirvcross.bat, scripts\build_libispc-texcomp.bat, scripts\build_openal.bat
 init:
 - ps: |
       $machinePath = [Environment]::GetEnvironmentVariable('Path', 'MACHINE')
@@ -78,29 +78,10 @@ build_script:
 - cmd: >-
     call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
-    appveyor DownloadFile https://developer.download.nvidia.com/compute/cuda/12.0.0/local_installers/cuda_12.0.0_527.41_windows.exe -FileName cuda.exe
+    if not exist External\Windows\.deps-ok (
+    call scripts\build_imgui Release && call scripts\build_crossguid Release && call scripts\build_opengex Release && call scripts\build_zlib Release && call scripts\build_bullet Release && call scripts\build_glslangValidator Release && call scripts\build_spirvcross Release && call scripts\build_libispc-texcomp Release && call scripts\build_openal Release && type nul > External\Windows\.deps-ok )
 
-    cuda.exe -s nvcc_12.0 curand_dev_12.0 nvrtc_dev_12.0
-
-    set PATH=%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.0\bin;%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v12.0\libnvvp;%PATH%
-
-    scripts/build_imgui Release
-
-    scripts/build_crossguid Release
-
-    scripts/build_opengex Release
-
-    scripts/build_zlib Release
-
-    scripts/build_bullet Release
-
-    scripts/build_glslangValidator Release
-
-    scripts/build_spirvcross Release
-
-    scripts/build_libispc-texcomp Release
-
-    scripts/build_openal Release
+    if errorlevel 1 exit /b 1
 
     scripts/build-vs Release
 
