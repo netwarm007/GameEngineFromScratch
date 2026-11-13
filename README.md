@@ -11,14 +11,21 @@ This project is written by me as the sample of My articles [Hand-made Next-Gen G
 https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプルソースである
 
 ## Platform Support Status
-- Windows 10 / 11
-- MacOS Catalina - Monterey
-- Linux (Build test on Ubuntu 20.04 - 22.04 and CentOS 7)
-- FreeBSD (Not tested recently, build might fail)
-- Android (Not tested recently, build might fail)
-- WebAssembly (Emscripten, not tested recently, build might fail)
+- Windows 10 / 11 (targeted; CircleCI uses Windows Server 2022).
+- macOS (CircleCI uses Apple Silicon and Xcode 16.4; Catalina-Monterey are not
+  covered by the current CI).
+- Linux (CircleCI uses Ubuntu 22.04; Ubuntu 20.04 and CentOS 7 are not covered
+  by the current CI).
+- FreeBSD (not tested recently; build might fail).
+- Android (CircleCI job disabled; not tested recently).
+- WebAssembly (Emscripten; not tested recently; build might fail).
 - PlayStation 4 (Not continued, related source code not disclosed due to NDA)
 - PlayStation Vita (Not continued, related source code not disclosed due to NDA)
+
+The initial workflow of CircleCI [pipeline 815](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/815/details?workflowId=79bed70f-c362-48ab-aa7d-ecfecd74ae8f)
+passed the configured builds and tests for revision `2a7727db`: Windows 35/35,
+macOS 34/34, and Linux 34/34. These results apply to that revision and do not
+validate every OS version.
 
 ## Graphic API Support Status
 - OpenGL
