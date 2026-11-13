@@ -22,10 +22,10 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - PlayStation 4 (Not continued, related source code not disclosed due to NDA)
 - PlayStation Vita (Not continued, related source code not disclosed due to NDA)
 
-The initial workflow of CircleCI [pipeline 815](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/815/details?workflowId=79bed70f-c362-48ab-aa7d-ecfecd74ae8f)
-passed the configured builds and tests for revision `2a7727db`: Windows 35/35,
-macOS 34/34, and Linux 34/34. These results apply to that revision and do not
-validate every OS version.
+CircleCI [pipeline 816](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/816/details?workflowId=05acee2f-c9eb-48e7-bb2c-302cef96089c)
+passed the configured builds and tests for revision `68e4f2c2` on Windows,
+macOS, and Linux. These results apply to that revision and do not validate every
+OS version.
 
 ## Graphic API Support Status
 - OpenGL
