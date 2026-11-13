@@ -376,18 +376,13 @@ jobs:
                echo "== metal devices =="
                swift -e 'import Metal; print(MTLCreateSystemDefaultDevice() as Any); print(MTLCopyAllDevices().count)' 2>&1 || true
              } >> screenshots/diagnostics.txt 2>&1
-             "$APP/Contents/MacOS/Viewer" > screenshots/viewer.log 2>&1 &
-             VIEWER_PID=$!
-             sleep 20
-             if kill -0 "$VIEWER_PID" 2>/dev/null; then
-               echo "Viewer still running after 20s" >> screenshots/diagnostics.txt
-             else
-               echo "Viewer exited early" >> screenshots/diagnostics.txt
-               wait "$VIEWER_PID"; echo "exit code: $?" >> screenshots/diagnostics.txt
-             fi
-             osascript -e 'tell application "System Events" to get name of every process whose background only is false' >> screenshots/diagnostics.txt 2>&1 || true
-             screencapture -x screenshots/viewer-full.png >> screenshots/diagnostics.txt 2>&1 || true
-             kill "$VIEWER_PID" 2>/dev/null || true
+             open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP"
+             for i in $(seq 1 8); do
+               sleep 15
+               if pgrep -x Viewer >/dev/null; then echo "t=$((i*15))s: Viewer running" >> screenshots/diagnostics.txt; else echo "t=$((i*15))s: Viewer not running" >> screenshots/diagnostics.txt; fi
+               screencapture -x "screenshots/viewer-$((i*15))s.png" >> screenshots/diagnostics.txt 2>&1 || true
+             done
+             pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
              exit 0
       - store_artifacts:
