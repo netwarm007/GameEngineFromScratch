@@ -364,24 +364,15 @@ jobs:
           name: Capture Viewer screenshot
           when: always
           command: |
-             # Experimental: diagnostics only, never fails the job.
+             # Never fails the job; Viewer renders headlessly and saves one frame itself.
              mkdir -p screenshots
-             {
-               echo "== displays =="; system_profiler SPDisplaysDataType || true
-               echo "== sessions =="; stat -f '%Su' /dev/console || true
-             } > screenshots/diagnostics.txt 2>&1
              APP=$(find build -type d -name Viewer.app | head -n 1)
-             if [ -z "$APP" ]; then echo "Viewer.app not found" >> screenshots/diagnostics.txt; exit 0; fi
-             {
-               echo "== metal devices =="
-               swift -e 'import Metal; print(MTLCreateSystemDefaultDevice() as Any); print(MTLCopyAllDevices().count)' 2>&1 || true
-             } >> screenshots/diagnostics.txt 2>&1
+             if [ -z "$APP" ]; then echo "Viewer.app not found"; exit 0; fi
              open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP" --args -screenshot "$PWD/screenshots/viewer-render.png" -screenshotDelay 45
              for i in $(seq 1 12); do
                sleep 15
-               if pgrep -x Viewer >/dev/null; then echo "t=$((i*15))s: Viewer running" >> screenshots/diagnostics.txt; else echo "t=$((i*15))s: Viewer not running" >> screenshots/diagnostics.txt; break; fi
+               pgrep -x Viewer >/dev/null || break
              done
-             screencapture -x screenshots/desktop.png >> screenshots/diagnostics.txt 2>&1 || true
              pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
              exit 0
@@ -504,9 +495,8 @@ workflows:
   version: 2
   build-and-test: #for branch
     jobs:
-      # TEMP: macOS-only iteration; restore all platforms before acceptance.
-      #- build_windows
-      #- build_linux
+      - build_windows
+      - build_linux
       - build_macos
       #- build_android
   build-and-test-and-release: #for tags
