@@ -194,7 +194,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
 
 void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
     if (scene.SkyBox) {
-        std::vector<const std::shared_ptr<My::Image>> images;
+        std::vector<std::shared_ptr<My::Image>> images;
         for (uint32_t i = 0; i < 18; i++) {
             auto& texture = scene.SkyBox->GetTexture(i);
             const auto& pImage = texture.GetTextureImage();

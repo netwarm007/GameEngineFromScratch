@@ -283,7 +283,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     }
 }
 
-- (TextureCubeArray)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>>&)images;
+- (TextureCubeArray)createSkyBox:(const std::vector<std::shared_ptr<My::Image>>&)images;
 {
     TextureCubeArray texture_out;
     id<MTLTexture> texture;
