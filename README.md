@@ -20,10 +20,10 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 817](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/817/details?workflowId=652ea7d6-c9b6-4aa9-8ff0-e64717df13d2)
-passed the configured builds and tests for revision `13054560` on Windows,
-macOS, and Linux. These results apply to that revision and do not validate every
-OS version.
+CircleCI [workflow 37d20081](https://app.circleci.com/workflow/37d20081-19d8-4c5b-b201-8e1c291d7b7b)
+passed the configured builds and tests for revision `929e1f8d` (Dear ImGui
+v1.93.0-docking) on Windows, macOS, and Linux. These results apply to that
+revision and do not validate every OS version.
 
 ## Graphic API Support Status
 - OpenGL
