@@ -275,7 +275,7 @@ jobs:
           name: Install Dependencies via Homebrew
           command: |
              export HOMEBREW_NO_AUTO_UPDATE=1
-             brew install cmake ninja flex bison
+             brew install cmake ninja flex bison ispc
              echo "export PATH=\"$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:\$PATH\"" >> "$BASH_ENV"
       - run:
           name: "Build Dependencies"
