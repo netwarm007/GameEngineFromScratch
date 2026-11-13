@@ -19,8 +19,6 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - FreeBSD (not tested recently; build might fail).
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
-- PlayStation 4 (Not continued, related source code not disclosed due to NDA)
-- PlayStation Vita (Not continued, related source code not disclosed due to NDA)
 
 CircleCI [pipeline 817](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/817/details?workflowId=652ea7d6-c9b6-4aa9-8ff0-e64717df13d2)
 passed the configured builds and tests for revision `13054560` on Windows,
@@ -31,9 +29,8 @@ OS version.
 - OpenGL
 - OpenGL ES (Not tested recently)
 - Metal2
-- DirectX 12 (On going)
+- DirectX 12
 - Vulkan (On going)
-- GNM (Not disclosed due to NDA)
 
 ## Physics
 - Bullet
