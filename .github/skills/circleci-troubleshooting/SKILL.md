@@ -12,6 +12,10 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
   Android is currently disabled. Treat `appveyor.yml` as a separate CI system.
 - Diagnose the requested branch and exact revision. Do not silently substitute
   the newest pipeline or assume a running, canceled, or skipped job passed.
+- If GitHub or CircleCI connectivity is unstable, compare DNS resolution using a
+  trusted DNS server. Treat DNS as one possible cause, preserve hostname and TLS
+  certificate verification, and do not change system DNS settings without
+  authorization.
 - Default to read-only investigation. Do not modify submodules, create forks,
   commit, push, rerun jobs, or change credentials unless the user authorizes
   that action as part of the task.
@@ -25,7 +29,8 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
 
 1. Record the pipeline number, branch, revision, workflow, and link. List every
    platform job and its status, including pending, canceled, and missing jobs.
-   Check all pages when results are paginated.
+   Check all pages when results are paginated. For a running pipeline, check
+   status every five minutes by default unless the user requests another interval.
 2. For each failed job, identify the first failed step and a concise cause;
    distinguish infrastructure, checkout, dependency, build, test, and package
    failures. Inspect later steps only when they provide relevant evidence.

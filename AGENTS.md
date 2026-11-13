@@ -25,6 +25,11 @@
   result, and any blockers; do not claim acceptance while results are unknown.
 - For CircleCI investigation, use
   [the CircleCI troubleshooting skill](.github/skills/circleci-troubleshooting/SKILL.md).
+- When monitoring a running CircleCI pipeline, check its status every five
+  minutes by default unless the user requests a different interval.
+- If GitHub or CircleCI connectivity is unstable, check DNS resolution using a
+  trusted DNS server as a diagnostic. Preserve hostname and TLS certificate
+  verification, and do not change system DNS settings without authorization.
 
 ## Safety
 
