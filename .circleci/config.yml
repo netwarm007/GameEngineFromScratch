@@ -376,19 +376,12 @@ jobs:
                echo "== metal devices =="
                swift -e 'import Metal; print(MTLCreateSystemDefaultDevice() as Any); print(MTLCopyAllDevices().count)' 2>&1 || true
              } >> screenshots/diagnostics.txt 2>&1
-             open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP"
-             for i in $(seq 1 8); do
+             open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP" --args -screenshot "$PWD/screenshots/viewer-render.png" -screenshotDelay 45
+             for i in $(seq 1 12); do
                sleep 15
-               if pgrep -x Viewer >/dev/null; then echo "t=$((i*15))s: Viewer running" >> screenshots/diagnostics.txt; else echo "t=$((i*15))s: Viewer not running" >> screenshots/diagnostics.txt; fi
-               if [ "$i" = 4 ]; then
-                 sample Viewer 3 -file screenshots/sample-60s.txt >> screenshots/diagnostics.txt 2>&1 || true
-                 ps -o pid,pcpu,state,etime,command -p "$(pgrep -x Viewer | head -n 1)" >> screenshots/diagnostics.txt 2>&1 || true
-               fi
-               screencapture -x "screenshots/viewer-$((i*15))s.png" >> screenshots/diagnostics.txt 2>&1 || true
-               swift -e 'import CoreGraphics; for w in (CGWindowListCopyWindowInfo([.optionAll], kCGNullWindowID) as? [[String: Any]] ?? []) where (w["kCGWindowOwnerName"] as? String) == "Viewer" { print(w["kCGWindowNumber"] ?? "", w["kCGWindowBounds"] ?? "", "onscreen:", w["kCGWindowIsOnscreen"] ?? false, "layer:", w["kCGWindowLayer"] ?? "") }' > screenshots/windows-$((i*15))s.txt 2>&1 || true
-               WID=$(awk 'NR==1{print $1}' screenshots/windows-$((i*15))s.txt | grep -E '^[0-9]+$' || true)
-               if [ -n "$WID" ]; then screencapture -x -o -l "$WID" "screenshots/viewer-window-$((i*15))s.png" >> screenshots/diagnostics.txt 2>&1 || true; fi
+               if pgrep -x Viewer >/dev/null; then echo "t=$((i*15))s: Viewer running" >> screenshots/diagnostics.txt; else echo "t=$((i*15))s: Viewer not running" >> screenshots/diagnostics.txt; break; fi
              done
+             screencapture -x screenshots/desktop.png >> screenshots/diagnostics.txt 2>&1 || true
              pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
              exit 0

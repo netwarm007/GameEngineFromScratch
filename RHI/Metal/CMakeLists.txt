@@ -1,6 +1,8 @@
 find_library(MTK_LIBRARY MetalKit required)
 find_library(METAL_LIBRARY Metal required)
 find_library(QUARTZ_LIBRARY QuartzCore required)
+find_library(IMAGEIO_LIBRARY ImageIO required)
+find_library(COREGRAPHICS_LIBRARY CoreGraphics required)
 
 MESSAGE( STATUS "MTK_LIBRARY: " ${MTK_LIBRARY} )
 
@@ -14,6 +16,8 @@ target_link_libraries(MetalRHI
         ${MTK_LIBRARY} 
         ${METAL_LIBRARY}
         ${QUARTZ_LIBRARY}
+        ${IMAGEIO_LIBRARY}
+        ${COREGRAPHICS_LIBRARY}
     )
 
 set_property (TARGET MetalRHI APPEND_STRING PROPERTY 
