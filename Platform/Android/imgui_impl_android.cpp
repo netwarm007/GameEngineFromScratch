@@ -1,13 +1,13 @@
 // dear imgui: Platform Binding for Android native app
-// This needs to be used along with the OpenGL 3 Renderer (imgui_impl_opengl3)
+// This needs to be used along with a Renderer (e.g. OpenGL3, Vulkan..)
 
 // Implemented features:
-//  [X] Platform: Keyboard support. Since 1.87 we are using the io.AddKeyEvent() function. Pass ImGuiKey values to all key functions e.g. ImGui::IsKeyPressed(ImGuiKey_Space). [Legacy AKEYCODE_* values will also be supported unless IMGUI_DISABLE_OBSOLETE_KEYIO is set]
+//  [X] Platform: Keyboard support. Since 1.87 we are using the io.AddKeyEvent() function. Pass ImGuiKey values to all key functions e.g. ImGui::IsKeyPressed(ImGuiKey_Space). [Legacy AKEYCODE_* values are obsolete since 1.87 and not supported since 1.91.5]
 //  [X] Platform: Mouse support. Can discriminate Mouse/TouchScreen/Pen.
-// Missing features:
+// Missing features or Issues:
 //  [ ] Platform: Clipboard support.
-//  [ ] Platform: Gamepad support. Enable with 'io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad'.
-//  [ ] Platform: Mouse cursor shape and visibility. Disable with 'io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange'. FIXME: Check if this is even possible with Android.
+//  [ ] Platform: Gamepad support.
+//  [ ] Platform: Mouse cursor shape and visibility (ImGuiBackendFlags_HasMouseCursors). Disable with 'io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange'. FIXME: Check if this is even possible with Android.
 //  [ ] Platform: Multi-viewport support (multiple windows). Not meaningful on Android.
 // Important:
 //  - Consider using SDL or GLFW backend on Android, which will be more full-featured than this.
@@ -24,7 +24,9 @@
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
-//  2022-09-26: Inputs: Renamed ImGuiKey_ModXXX introduced in 1.87 to ImGuiMod_XXX (old names still supported).
+//  2026-07-15: Inputs: clear mouse position on touch release (AMOTION_EVENT_ACTION_UP) to prevent items from staying in hovered state. (#6627, #9474)
+//  2023-04-11: Inputs: calling new io.AddMouseSourceEvent() to discriminate Mouse from Touch events.
+//  2022-09-26: Inputs: renamed ImGuiKey_ModXXX introduced in 1.87 to ImGuiMod_XXX (old names still supported).
 //  2022-01-26: Inputs: replaced short-lived io.AddKeyModsEvent() (added two weeks ago) with io.AddKeyEvent() using ImGuiKey_ModXXX flags. Sorry for the confusion.
 //  2022-01-17: Inputs: calling new io.AddMousePosEvent(), io.AddMouseButtonEvent(), io.AddMouseWheelEvent() API (1.87+).
 //  2022-01-10: Inputs: calling new io.AddKeyEvent(), io.AddKeyModsEvent() + io.SetKeyEventNativeData() API (1.87+). Support for full ImGuiKey range.
@@ -157,7 +159,7 @@ static ImGuiKey ImGui_ImplAndroid_KeyCodeToImGuiKey(int32_t key_code)
     }
 }
 
-int32_t ImGui_ImplAndroid_HandleInputEvent(AInputEvent* input_event)
+int32_t ImGui_ImplAndroid_HandleInputEvent(const AInputEvent* input_event)
 {
     ImGuiIO& io = ImGui::GetIO();
     int32_t event_type = AInputEvent_getType(input_event);
@@ -184,7 +186,7 @@ int32_t ImGui_ImplAndroid_HandleInputEvent(AInputEvent* input_event)
         case AKEY_EVENT_ACTION_UP:
         {
             ImGuiKey key = ImGui_ImplAndroid_KeyCodeToImGuiKey(event_key_code);
-            if (key != ImGuiKey_None && (event_action == AKEY_EVENT_ACTION_DOWN || event_action == AKEY_EVENT_ACTION_UP))
+            if (key != ImGuiKey_None)
             {
                 io.AddKeyEvent(key, event_action == AKEY_EVENT_ACTION_DOWN);
                 io.SetKeyEventNativeData(key, event_key_code, event_scan_code);
@@ -222,25 +224,29 @@ int32_t ImGui_ImplAndroid_HandleInputEvent(AInputEvent* input_event)
         {
         case AMOTION_EVENT_ACTION_DOWN:
         case AMOTION_EVENT_ACTION_UP:
+        {
             // Physical mouse buttons (and probably other physical devices) also invoke the actions AMOTION_EVENT_ACTION_DOWN/_UP,
             // but we have to process them separately to identify the actual button pressed. This is done below via
             // AMOTION_EVENT_ACTION_BUTTON_PRESS/_RELEASE. Here, we only process "FINGER" input (and "UNKNOWN", as a fallback).
-            if((AMotionEvent_getToolType(input_event, event_pointer_index) == AMOTION_EVENT_TOOL_TYPE_FINGER)
-            || (AMotionEvent_getToolType(input_event, event_pointer_index) == AMOTION_EVENT_TOOL_TYPE_UNKNOWN))
+            int tool_type = AMotionEvent_getToolType(input_event, event_pointer_index);
+            if (tool_type == AMOTION_EVENT_TOOL_TYPE_FINGER || tool_type == AMOTION_EVENT_TOOL_TYPE_UNKNOWN)
             {
                 io.AddMousePosEvent(AMotionEvent_getX(input_event, event_pointer_index), AMotionEvent_getY(input_event, event_pointer_index));
                 io.AddMouseButtonEvent(0, event_action == AMOTION_EVENT_ACTION_DOWN);
+                if (event_action == AMOTION_EVENT_ACTION_UP) // (#6627, #9474)
+                    io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
             }
             break;
+        }
         case AMOTION_EVENT_ACTION_BUTTON_PRESS:
         case AMOTION_EVENT_ACTION_BUTTON_RELEASE:
-            {
-                int32_t button_state = AMotionEvent_getButtonState(input_event);
-                io.AddMouseButtonEvent(0, (button_state & AMOTION_EVENT_BUTTON_PRIMARY) != 0);
-                io.AddMouseButtonEvent(1, (button_state & AMOTION_EVENT_BUTTON_SECONDARY) != 0);
-                io.AddMouseButtonEvent(2, (button_state & AMOTION_EVENT_BUTTON_TERTIARY) != 0);
-            }
+        {
+            int32_t button_state = AMotionEvent_getButtonState(input_event);
+            io.AddMouseButtonEvent(0, (button_state & AMOTION_EVENT_BUTTON_PRIMARY) != 0);
+            io.AddMouseButtonEvent(1, (button_state & AMOTION_EVENT_BUTTON_SECONDARY) != 0);
+            io.AddMouseButtonEvent(2, (button_state & AMOTION_EVENT_BUTTON_TERTIARY) != 0);
             break;
+        }
         case AMOTION_EVENT_ACTION_HOVER_MOVE: // Hovering: Tool moves while NOT pressed (such as a physical mouse)
         case AMOTION_EVENT_ACTION_MOVE:       // Touch pointer moves while DOWN
             io.AddMousePosEvent(AMotionEvent_getX(input_event, event_pointer_index), AMotionEvent_getY(input_event, event_pointer_index));
@@ -262,6 +268,8 @@ int32_t ImGui_ImplAndroid_HandleInputEvent(AInputEvent* input_event)
 
 bool ImGui_ImplAndroid_Init(ANativeWindow* window)
 {
+    IMGUI_CHECKVERSION();
+
     g_Window = window;
     g_Time = 0.0;
 

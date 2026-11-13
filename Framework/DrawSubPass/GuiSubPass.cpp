@@ -60,7 +60,7 @@ void GuiSubPass::Draw(Frame& frame) {
 	    static bool show_app_about = false;
         size_t texture_view_index = 0;
 
-        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
         // viewer
         {
