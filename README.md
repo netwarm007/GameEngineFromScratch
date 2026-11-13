@@ -30,7 +30,14 @@ The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
 desktop capture, so capturing does not require a physical display. Launch with
 `-screenshot <path>` and optionally `-screenshotDelay <seconds>` (default: 45).
 Screenshot capture is best-effort and does not gate the build; a successful job
-alone does not guarantee a PNG was produced. Linux and Windows screenshot
+alone does not guarantee a PNG was produced.
+
+The Linux job also attempts a screenshot under `viewer-screenshots`, using Xvfb
+and Mesa software OpenGL rendering. After 60 seconds it captures the Viewer
+window as `viewer-render.png`; `viewer.log`, `capture.log`, and `diagnostics.txt`
+record startup, capture errors, and the OpenGL renderer. The capture has a
+180-second timeout and is best-effort, not a build gate. This Linux capture path
+is experimental and has not yet been verified in CircleCI. Windows screenshot
 capture is not implemented.
 
 ## Graphic API Support Status

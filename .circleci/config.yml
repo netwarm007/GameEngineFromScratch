@@ -228,6 +228,7 @@ jobs:
              sudo apt install -y curl clang python3-pip ninja-build git uuid-dev
              sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt install -y flex bison
+             sudo apt install -y xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
@@ -283,6 +284,20 @@ jobs:
           name: Test
           command: |
              ctest --test-dir ./build --output-on-failure
+      - run:
+          name: Capture Viewer screenshot
+          when: always
+          command: |
+             mkdir -p screenshots
+             if ! LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
+               xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+               bash scripts/capture_viewer_linux.sh screenshots \
+               > screenshots/capture.log 2>&1; then
+               echo "Viewer screenshot failed; see viewer-screenshots/capture.log and viewer.log"
+             fi
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
       - run:
           name: Package
           command: |
