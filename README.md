@@ -20,10 +20,18 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 817](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/817/details?workflowId=652ea7d6-c9b6-4aa9-8ff0-e64717df13d2)
-passed the configured builds and tests for revision `13054560` on Windows,
+CircleCI [workflow](https://app.circleci.com/workflow/d18dff17-1575-4c6b-b2d8-d2ece02d9230)
+passed the configured builds and tests for revision `1b6da1c677aa4e763f37396d3610fa066ba14273` on Windows,
 macOS, and Linux. These results apply to that revision and do not validate every
 OS version.
+
+The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
+`viewer-render.png` and `viewer.log`. Viewer uses Metal GPU readback rather than
+desktop capture, so capturing does not require a physical display. Launch with
+`-screenshot <path>` and optionally `-screenshotDelay <seconds>` (default: 45).
+Screenshot capture is best-effort and does not gate the build; a successful job
+alone does not guarantee a PNG was produced. Linux and Windows screenshot
+capture is not implemented.
 
 ## Graphic API Support Status
 - OpenGL
