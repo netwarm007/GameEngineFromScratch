@@ -1,6 +1,6 @@
 [submodule "libpng"]
 	path = External/src/libpng
-	url = git://git.code.sf.net/p/libpng/code
+	url = https://github.com/netwarm007/libpng.git
 [submodule "zlib"]
 	path = External/src/zlib
 	url = https://github.com/netwarm007/zlib.git
@@ -24,7 +24,7 @@
 	url = https://github.com/netwarm007/SPIRV-Cross.git
 [submodule "glslang"]
 	path = External/src/glslang
-	url = https://github.com/KhronosGroup/glslang.git
+	url = https://github.com/netwarm007/glslang.git
 [submodule "emsdk"]
 	path = External/src/emsdk
 	url = https://github.com/netwarm007/emsdk.git
@@ -42,7 +42,7 @@
 	url = https://github.com/KhronosGroup/Vulkan-Hpp.git
 [submodule "glfw"]
 	path = External/src/glfw
-	url = https://github.com/glfw/glfw.git
+	url = https://github.com/netwarm007/glfw.git
 [submodule "ISPCTextureCompressor"]
 	path = External/src/ISPCTextureCompressor
 	url = https://github.com/netwarm007/ISPCTextureCompressor.git
@@ -54,4 +54,4 @@
 	url = https://github.com/thedmd/imgui-node-editor.git
 [submodule "openal"]
 	path = External/src/openal
-	url = https://github.com/kcat/openal-soft.git
+	url = https://github.com/netwarm007/openal-soft.git
