@@ -96,8 +96,8 @@ void XcbApplication::CreateMainWindow() {
     if (ImGui::GetCurrentContext()) {
         ImGuiIO& io = ImGui::GetIO();
         io.BackendPlatformName = "imgui_impl_x11";
-        io.DisplaySize.x = DisplayWidth(m_pDisplay, m_nScreen);
-        io.DisplaySize.y = DisplayHeight(m_pDisplay, m_nScreen);
+        io.DisplaySize.x = static_cast<float>(m_Config.screenWidth);
+        io.DisplaySize.y = static_cast<float>(m_Config.screenHeight);
         io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
     }
 }
@@ -175,6 +175,12 @@ void XcbApplication::Tick() {
         if (xcb_connection_has_error(m_pConn)) {
             m_bQuit = true;
         }
+    }
+
+    if (ImGui::GetCurrentContext()) {
+        ImGuiIO& io = ImGui::GetIO();
+        io.DisplaySize.x = static_cast<float>(m_Config.screenWidth);
+        io.DisplaySize.y = static_cast<float>(m_Config.screenHeight);
     }
 
     BaseApplication::Tick();
