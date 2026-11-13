@@ -1,4 +1,4 @@
-# Game Engine From Scratch 
+# Game Engine From Scratch
 [![CircleCI Build Status](https://circleci.com/gh/netwarm007/GameEngineFromScratch.svg?style=shield)](https://circleci.com/gh/netwarm007/GameEngineFromScratch) 
 [![Build status](https://ci.appveyor.com/api/projects/status/hld88pk7py29thx5?svg=true&branch=master)](https://ci.appveyor.com/project/netwarm007/gameenginefromscratch)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/netwarm007/GameEngineFromScratch/master/LICENSE)
@@ -56,27 +56,40 @@ revision and do not validate every OS version.
 ## High Performance / Parallel Computing
 - ISPC
 
+## Architecture
+- `RHI/`: render hardware interfaces (OpenGL, Vulkan, Metal, D3d, D2d, Empty)
+- `Platform/`: platform layers (Windows, Linux, Darwin, Sdl, Android, Empty)
+- `Framework/`, `Physics/`, `Asset/`, `Utility/`, `Game/`, `Viewer/`, `Test/`
+
 ## Dependencies
+Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
+`External/src` as Git submodules; Git LFS is also used by CI.
+
 - Windows
--- Windows Platform SDK
--- Visual Studio or Clang
--- CMake
+  - Windows Platform SDK
+  - Visual Studio or Clang
+  - CMake
+  - Vulkan SDK (used by AppVeyor)
 
 - MacOS
--- Xcode
--- Xcode command line tools
--- MacPorts
--- CMake
+  - Xcode and command line tools
+  - Homebrew (as used by CI): `brew install cmake ninja flex bison ispc` (MacPorts also works)
 
 - Linux
--- gcc/g++ or clang/clang++
--- uuid-dev libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
+  - gcc/g++ or clang/clang++, CMake, Ninja, ISPC, flex, bison
+  - uuid-dev libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
 
 - Android
--- Android SDK
--- Android NDK
+  - Android SDK
+  - Android NDK
 
 ## Build Steps
+Fetch sources first:
+
+    git submodule sync
+    git submodule update --init --recursive
+    git lfs pull
+
 ### Commit acceptance
 
 A commit is accepted only when its CircleCI pipeline completes the configured
@@ -112,12 +125,20 @@ move it aside before rerunning the script to allow a fresh configuration.
     ./scripts/build_cef.sh
     ./scripts/build_glslangValidator.sh
     ./scripts/build_spirvcross.sh
-    ./scripts/build_imgui
-    ./scripts/build_libispc-texcomp
+    ./scripts/build_imgui.sh
+    ./scripts/build_libispc-texcomp.sh
     ./scripts/build-ninja.sh
+
+CI uses plain CMake after the dependencies are built:
+
+    cmake -S . -B build
+    cmake --build build
+    cmake --build build --target package
+
+Windows CI additionally enables `-DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON`.
 
 ## Cook Materials
 ### Windows
     scripts\cook_material
-### Mac)S & Linux
+### MacOS & Linux
     ./scripts/cook_material
