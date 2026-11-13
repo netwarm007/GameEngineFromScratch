@@ -207,6 +207,42 @@ jobs:
             ctest --test-dir build -C Debug --output-on-failure
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
+          name: Capture Viewer screenshot
+          when: always
+          command: |
+            New-Item -ItemType Directory -Force screenshots | Out-Null
+            $process = $null
+            try {
+              $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse |
+                Select-Object -First 1
+              if (-not $viewer) { throw "Viewer.exe not found" }
+              $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path screenshots).Path "viewer-render.png"
+              $process = Start-Process -FilePath $viewer.FullName -PassThru `
+                -RedirectStandardOutput screenshots/viewer.log `
+                -RedirectStandardError screenshots/viewer-error.log
+              if (-not $process.WaitForExit(180000)) {
+                throw "Viewer screenshot timed out after 180 seconds"
+              }
+              if (-not (Test-Path $env:GEFS_SCREENSHOT_PATH)) {
+                throw "Viewer did not produce a PNG; see viewer logs (exit $($process.ExitCode))"
+              }
+              Add-Type -AssemblyName System.Drawing
+              $image = [System.Drawing.Image]::FromFile($env:GEFS_SCREENSHOT_PATH)
+              try { Write-Output "Screenshot saved: $($image.Width)x$($image.Height)" }
+              finally { $image.Dispose() }
+            } catch {
+              $_.Exception.Message | Out-File screenshots/capture.log -Append
+              Write-Output "Viewer screenshot failed; see viewer-screenshots artifacts"
+            } finally {
+              if ($process -and -not $process.HasExited) {
+                Stop-Process -Id $process.Id
+              }
+              Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+            }
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
+      - run:
           name: Package
           command: |
              cmake --build ./build --target package

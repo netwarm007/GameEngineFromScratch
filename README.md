@@ -20,8 +20,8 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow](https://app.circleci.com/workflow/d18dff17-1575-4c6b-b2d8-d2ece02d9230)
-passed the configured builds and tests for revision `1b6da1c677aa4e763f37396d3610fa066ba14273` on Windows,
+CircleCI [workflow](https://app.circleci.com/workflow/75dd50be-dab0-433d-81a2-a8eb7f690fe8)
+passed the configured builds and tests for revision `11ea6f88feb773734f1c75252045afa21ee158b0` on Windows,
 macOS, and Linux. These results apply to that revision and do not validate every
 OS version.
 
@@ -36,9 +36,19 @@ The Linux job also attempts a screenshot under `viewer-screenshots`, using Xvfb
 and Mesa software OpenGL rendering. After 60 seconds it captures the Viewer
 window as `viewer-render.png`; `viewer.log`, `capture.log`, and `diagnostics.txt`
 record startup, capture errors, and the OpenGL renderer. The capture has a
-180-second timeout and is best-effort, not a build gate. This Linux capture path
-is experimental and has not yet been verified in CircleCI. Windows screenshot
-capture is not implemented.
+180-second timeout and is best-effort, not a build gate. Linux capture was
+verified in CircleCI at revision `11ea6f88feb773734f1c75252045afa21ee158b0`;
+the resulting image shows the scene and ImGui interface without the earlier
+window-size clipping.
+
+The Windows job attempts D3D12 back-buffer readback after 45 seconds and writes
+`viewer-render.png` using WIC, without desktop capture. Set
+`GEFS_SCREENSHOT_PATH` to an output filename to enable this one-shot capture;
+Viewer closes after the attempt. Device creation falls back to WARP software
+rendering when hardware device creation fails. The job retains `viewer.log`,
+`viewer-error.log`, and capture errors under `viewer-screenshots`, with a
+180-second timeout. Capture is best-effort and this Windows path has not yet
+been verified in CircleCI.
 
 ## Graphic API Support Status
 - OpenGL
