@@ -1786,9 +1786,18 @@ HRESULT D3d12RHI::saveScreenshot(
     if (footprint.Footprint.Format != DXGI_FORMAT_R8G8B8A8_UNORM) {
         return E_NOTIMPL;
     }
-    const UINT64 byteCount = static_cast<UINT64>(footprint.Footprint.RowPitch) *
-                            footprint.Footprint.Height;
-    if (byteCount > (std::numeric_limits<UINT>::max)()) {
+    const UINT64 rowBytes = static_cast<UINT64>(footprint.Footprint.Width) * 4;
+    const UINT64 byteCount = rowBytes * footprint.Footprint.Height;
+    if (!rowBytes || !footprint.Footprint.Height ||
+        rowBytes > footprint.Footprint.RowPitch ||
+        byteCount > (std::numeric_limits<UINT>::max)()) {
+        return E_INVALIDARG;
+    }
+    // GetCopyableFootprints does not include padding after the final row.
+    const UINT64 mappedBytes = static_cast<UINT64>(footprint.Footprint.RowPitch) *
+                               (footprint.Footprint.Height - 1) + rowBytes;
+    const UINT64 bufferSize = readback->GetDesc().Width;
+    if (footprint.Offset > bufferSize || mappedBytes > bufferSize - footprint.Offset) {
         return E_INVALIDARG;
     }
     const HRESULT comResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -1828,23 +1837,26 @@ HRESULT D3d12RHI::saveScreenshot(
                       << std::endl;
             return E_NOTIMPL;
         }
+        std::vector<BYTE> pixels(static_cast<size_t>(byteCount));
         void* data = nullptr;
         D3D12_RANGE range{static_cast<SIZE_T>(footprint.Offset),
-                         static_cast<SIZE_T>(footprint.Offset + byteCount)};
+                         static_cast<SIZE_T>(footprint.Offset + mappedBytes)};
         hr = readback->Map(0, &range, &data);
         if (FAILED(hr)) return hr;
-        auto* pixels = static_cast<BYTE*>(data) + footprint.Offset;
+        const auto* source = static_cast<const BYTE*>(data) + footprint.Offset;
         for (UINT y = 0; y < footprint.Footprint.Height; ++y) {
-            auto* row = pixels + static_cast<size_t>(y) * footprint.Footprint.RowPitch;
+            auto* row = pixels.data() + static_cast<size_t>(y) * rowBytes;
+            memcpy(row, source + static_cast<size_t>(y) * footprint.Footprint.RowPitch,
+                   static_cast<size_t>(rowBytes));
             for (UINT x = 0; x < footprint.Footprint.Width; ++x) {
                 std::swap(row[x * 4], row[x * 4 + 2]);
                 row[x * 4 + 3] = 255;
             }
         }
-        hr = frame->WritePixels(footprint.Footprint.Height, footprint.Footprint.RowPitch,
-            static_cast<UINT>(byteCount), pixels);
-        D3D12_RANGE written = range;
+        D3D12_RANGE written{0, 0};
         readback->Unmap(0, &written);
+        hr = frame->WritePixels(footprint.Footprint.Height, static_cast<UINT>(rowBytes),
+            static_cast<UINT>(byteCount), pixels.data());
         if (FAILED(hr)) return hr;
         hr = frame->Commit();
         if (FAILED(hr)) return hr;

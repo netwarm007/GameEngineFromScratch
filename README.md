@@ -20,8 +20,8 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow](https://app.circleci.com/workflow/93158eff-ec69-427f-97f2-1f35d4c65f39)
-passed the configured builds and tests for revision `7c24f8042b145d028600eef2cccfa9147e2e9a78` on Windows,
+CircleCI [workflow](https://app.circleci.com/workflow/60e72de9-d1be-41e7-b95f-f62c873026b4)
+passed the configured builds and tests for revision `976e48e98edfbcff83c11ebc44fcb8f5739c17d6` on Windows,
 macOS, and Linux. These results apply to that revision and do not validate every
 OS version.
 
@@ -48,10 +48,11 @@ Viewer closes after the attempt. Device creation falls back to WARP software
 rendering when hardware device creation fails. The job retains `viewer.log`,
 `viewer-error.log`, and capture errors under `viewer-screenshots`, with a
 180-second timeout. Capture is best-effort. At revision
-`7c24f8042b145d028600eef2cccfa9147e2e9a78`, Windows capture failed during WIC
-pixel-format negotiation despite the successful build and tests. The writer
-now converts RGBA readback to BGRA for PNG encoding and removes incomplete
-files on failure; this fix has not yet been verified in CircleCI.
+`976e48e98edfbcff83c11ebc44fcb8f5739c17d6`, Windows capture failed because the
+readback mapping included nonexistent padding after the final row, despite
+the successful build and tests. The writer now maps only valid pixel bytes
+and packs rows as opaque BGRA for PNG encoding, removing incomplete files on
+failure; this fix has not yet been verified in CircleCI.
 
 ## Graphic API Support Status
 - OpenGL
