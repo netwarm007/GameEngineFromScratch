@@ -381,6 +381,9 @@ jobs:
                sleep 15
                if pgrep -x Viewer >/dev/null; then echo "t=$((i*15))s: Viewer running" >> screenshots/diagnostics.txt; else echo "t=$((i*15))s: Viewer not running" >> screenshots/diagnostics.txt; fi
                screencapture -x "screenshots/viewer-$((i*15))s.png" >> screenshots/diagnostics.txt 2>&1 || true
+               swift -e 'import CoreGraphics; for w in (CGWindowListCopyWindowInfo([.optionAll], kCGNullWindowID) as? [[String: Any]] ?? []) where (w["kCGWindowOwnerName"] as? String) == "Viewer" { print(w["kCGWindowNumber"] ?? "", w["kCGWindowBounds"] ?? "", "onscreen:", w["kCGWindowIsOnscreen"] ?? false, "layer:", w["kCGWindowLayer"] ?? "") }' > screenshots/windows-$((i*15))s.txt 2>&1 || true
+               WID=$(awk 'NR==1{print $1}' screenshots/windows-$((i*15))s.txt | grep -E '^[0-9]+$' || true)
+               if [ -n "$WID" ]; then screencapture -x -o -l "$WID" "screenshots/viewer-window-$((i*15))s.png" >> screenshots/diagnostics.txt 2>&1 || true; fi
              done
              pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
