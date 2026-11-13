@@ -69,3 +69,7 @@ imgui.ini
 **/*.generated.hpp
 **/*.generated.cpp
 External/*/astcenc
+
+CMakeFiles/
+
+Proprietary

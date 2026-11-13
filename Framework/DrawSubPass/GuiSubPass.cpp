@@ -43,6 +43,18 @@ static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64},
 
 void GuiSubPass::Draw(Frame& frame) {
     if (ImGui::GetCurrentContext()) {
+        const std::array<TextureHandler, 4> sources{
+            frame.frameContext.globalShadowMap.handler, frame.frameContext.shadowMap.handler,
+            frame.frameContext.cubeShadowMap.handler, frame.skybox.handler};
+        const std::array<uint32_t, 3> sizes{
+            frame.frameContext.globalShadowMap.size, frame.frameContext.shadowMap.size,
+            frame.frameContext.cubeShadowMap.size};
+        if (m_viewSources != sources || m_viewSizes != sizes) {
+            for (auto& view : m_TextureViews) m_pGraphicsManager->ReleaseTexture(view);
+            m_TextureViews.clear();
+            m_viewSources = sources;
+            m_viewSizes = sizes;
+        }
 	    static bool show_app_metrics = false;
 	    static bool show_app_debug_panel = true;
 	    static bool show_app_about = false;
@@ -59,7 +71,11 @@ void GuiSubPass::Draw(Frame& frame) {
             if (frame.enableMSAA) {
                 m_pGraphicsManager->MSAAResolve(frame.colorTextures[0], frame.colorTextures[1]);
             }
-            TexturePreviewer(frame.colorTextures[0], rect);
+            if (m_pGraphicsManager->RenderTargetHasTopLeftOrigin()) {
+                TexturePreviewer(frame.colorTextures[0], rect, {0.0f, 0.0f}, {1.0f, 1.0f});
+            } else {
+                TexturePreviewer(frame.colorTextures[0], rect);
+            }
             m_pGraphicsManager->ResizeCanvas(rect.x, rect.y);
             ImGui::End();
         }
@@ -175,6 +191,7 @@ void GuiSubPass::Draw(Frame& frame) {
 
                 ImGui::Separator();
 
+                if (frame.skybox.handler) {
                 // Draw Skybox
                 auto start_index = texture_view_index;
 
@@ -316,6 +333,7 @@ void GuiSubPass::Draw(Frame& frame) {
                 }
 
                 // BRDF LUT
+                }
                 ImGui::Text(
                     (const char*)u8"BRDF LUT");
 

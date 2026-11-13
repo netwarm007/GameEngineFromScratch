@@ -1,5 +1,11 @@
-add_executable(RayTracingTest RayTracingTest.cpp)
-target_link_libraries(RayTracingTest Framework)
+add_executable(RayTracingTest MACOSX_BUNDLE RayTracingTest.cpp)
+if(OS_MACOS)
+    target_link_libraries(RayTracingTest Framework PlatformInterface MetalRHI ${VULKAN_RHI})
+elseif(OS_WINDOWS)
+    target_link_libraries(RayTracingTest Framework PlatformInterface D3dRHI D2dRHI OpenGLRHI ${VULKAN_RHI})
+else()
+    target_link_libraries(RayTracingTest Framework PlatformInterface OpenGLRHI ${VULKAN_RHI})
+endif(OS_MACOS)
 
 # CUDA
 if(USE_CUDA)
@@ -49,6 +55,7 @@ set(TEST_ASSETS
     Asset/Textures/hdr/PaperMill_E_3k.hdr
     Asset/Textures/huff_simple0.jpg
     Asset/Textures/interior_lod0.tga
+    Asset/Textures/texture_missing.png
     Asset/Scene/splash.ogex
 )
 
@@ -68,6 +75,7 @@ ELSE(WA) # For Windows / MacOS / Linux
     foreach(TEST_ASSET ${TEST_ASSETS})
         add_custom_command(
             TARGET CopyTestAssets
+            POST_BUILD
             COMMAND cmake -E copy ${TEST_ASSET} ${CMAKE_CURRENT_BINARY_DIR}/Resources/${TEST_ASSET}
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             VERBATIM

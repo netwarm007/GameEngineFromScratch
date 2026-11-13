@@ -15,7 +15,9 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 };
 }
 
-@interface Metal2Renderer : NSObject
+@interface Metal2RHI : NSObject
+
+- (MTLPixelFormat)getMtlPixelFormat:(const Image &)img;
 
 - (void)initialize;
 
@@ -57,7 +59,7 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (_Nonnull id<MTLTexture>)createTexture:(const My::Image &)image;
 
-- (TextureCubeArray)createSkyBox:(const std::vector<const std::shared_ptr<My::Image>> &)images;
+- (TextureCubeArray)createSkyBox:(const std::vector<std::shared_ptr<My::Image>> &)images;
 
 - (void)generateCubemapArray:(TextureCubeArray &)texture_array;
 
@@ -76,6 +78,8 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)setShadowMaps:(const Frame &)frame;
 
+- (void)updateTexture:(const _Nonnull id<MTLTexture>)texture image:(const My::Image &)image;
+
 - (void)releaseTexture:(_Nonnull id<MTLTexture>)texture;
 
 - (void)generateTexture:(Texture2D&)texture;
@@ -83,6 +87,8 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 - (void)generateTextureForWrite:(Texture2D &)texture;
 
 - (void)bindTextureForWrite:(const _Nonnull id<MTLTexture>)texture atIndex:(const uint32_t)atIndex;
+
+- (void)bindFragmentTexture:(const _Nonnull id<MTLTexture>)texture atIndex:(const uint32_t)atIndex;
 
 @property(nonnull, readonly, nonatomic) id<MTLDevice> device;
 

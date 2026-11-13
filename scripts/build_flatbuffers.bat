@@ -1,7 +1,12 @@
 @echo off
+setlocal
+call "%~dp0select-vs-generator.bat"
+if errorlevel 1 exit /b 1
 git submodule update --init External\src\flatbuffers
 mkdir External\build\flatbuffers
 pushd External\build\flatbuffers
-cmake -DCMAKE_INSTALL_PREFIX=..\..\Windows\ -G "Visual Studio 16 2019" -A "x64" -Thost=x64 ..\..\src\flatbuffers
+cmake -DCMAKE_INSTALL_PREFIX=..\..\Windows\ -G "%GEFS_VS_GENERATOR%" -A "x64" -Thost=x64 ..\..\src\flatbuffers
+if errorlevel 1 (popd & exit /b 1)
 if "%1" == "" (cmake --build . --config Debug --target install) else (cmake --build . --config %1 --target install)
+if errorlevel 1 (popd & exit /b 1)
 popd

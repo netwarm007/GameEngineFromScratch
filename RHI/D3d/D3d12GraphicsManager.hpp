@@ -5,6 +5,8 @@
 
 #include <array>
 #include <map>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "Buffer.hpp"
@@ -21,8 +23,11 @@ class D3d12GraphicsManager : public GraphicsManager {
 
     int Initialize() final;
     void Finalize() final;
+    void Tick() final;
 
     void Present() final;
+    bool RenderTargetHasTopLeftOrigin() const final { return true; }
+    void ResizeCanvas(int32_t width, int32_t height) final;
 
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
                           const Frame& frame) final;
@@ -32,6 +37,14 @@ class D3d12GraphicsManager : public GraphicsManager {
     void GenerateCubemapArray(TextureCubeArray& texture_array) final;
 
     void GenerateTextureArray(Texture2DArray& texture_array) final;
+    void GenerateTexture(Texture2D& texture) final;
+    void CreateTextureView(Texture2D& texture_view, const TextureArrayBase& texture_array,
+                           uint32_t slice, uint32_t mip) final;
+    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target,
+                     Texture2D& source) final;
+
+    Texture2D CreateTexture(Image& img) final;
+    void UpdateTexture(Texture2D& texture, Image& img) final; 
 
     void BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
                         const int32_t layer_index, const Frame& frame) final;
@@ -47,6 +60,9 @@ class D3d12GraphicsManager : public GraphicsManager {
     void GenerateTextureForWrite(Texture2D& texture) final;
 
     void BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) final;
+
+    void BindTexture(Texture2D& texture, const uint32_t slot_index) final;
+    void BindDebugTexture(Texture2D& texture, const uint32_t slot_index) final;
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
@@ -73,9 +89,42 @@ class D3d12GraphicsManager : public GraphicsManager {
     size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
 
     HRESULT CreatePSO(D3d12PipelineState& pipelineState);
+    void BindDrawResources(const Frame& frame, const DrawBatchContext& batch);
+    void TransitionTexture(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
+    void CreateImGuiSrv(Texture2D& texture, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc);
+    void UpdateDebugViews();
 
    private:
-    ID3D12DescriptorHeap* m_pCbvSrvUavHeapImGui;
+    struct RenderTexture {
+        ID3D12DescriptorHeap* viewHeap = nullptr;
+        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
+    };
+    std::unordered_map<ID3D12Resource*, RenderTexture> m_renderTextures;
+    struct DebugTextureView {
+        ID3D12Resource* source;
+        uint32_t subresource;
+    };
+    std::unordered_map<ID3D12Resource*, DebugTextureView> m_debugViews;
+    std::unordered_map<std::string, Texture2D> m_materialTextures;
+    std::unordered_map<TextureHandler, uint32_t> m_imguiSlots;
+    std::vector<uint32_t> m_freeImGuiSlots;
+    uint32_t m_nextImGuiSlot = 1;
+    int32_t m_pendingWidth = 0;
+    int32_t m_pendingHeight = 0;
+    ID3D12DescriptorHeap* m_pCbvSrvUavHeapImGui = nullptr;
+    ID3D12DescriptorHeap* m_pCbvSrvUavHeap = nullptr;
+    ID3D12DescriptorHeap* m_pComputeHeap = nullptr;
+    ID3D12DescriptorHeap* m_pSamplerHeap = nullptr;
+    ID3D12Resource* m_pComputeTexture = nullptr;
+    ID3D12PipelineState* m_pMipmapPipeline = nullptr;
+    ID3D12RootSignature* m_pMipmapRoot = nullptr;
+    ID3D12DescriptorHeap* m_pShadowDsvHeap = nullptr;
+    std::array<ID3D12DescriptorHeap*, GfxConfiguration::kMaxInFlightFrameCount> m_pDrawHeaps{};
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_LightBuffers{};
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_ShadowBuffers{};
+    std::unordered_set<ID3D12Resource*> m_RenderedShadowMaps;
+    uint32_t m_nextDrawDescriptor = 0;
+    int32_t m_currentShadowLight = -1;
 
     struct D3dDrawBatchContext : public DrawBatchContext {
         uint32_t index_count{0};
@@ -88,5 +137,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     D3dDrawBatchContext m_dbcSkyBox;
     std::vector<D3d12RHI::IndexBuffer> m_IndexBuffers;
     std::vector<D3d12RHI::VertexBuffer> m_VertexBuffers;
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerFrameConstantBuffers;
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerBatchConstantBuffers;
 };
 }  // namespace My

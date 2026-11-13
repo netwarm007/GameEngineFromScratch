@@ -1,6 +1,7 @@
-namespace My {
+#pragma once
+namespace My::RenderGraph {
     namespace Blend {
-        int Count = 17;
+        static inline int Count = 17;
         enum Enum { 
             Zero = 0,
             One = 1,
@@ -45,4 +46,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace Blend
-} // namespace My
+} // namespace My::RenderGraph

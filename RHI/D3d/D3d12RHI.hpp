@@ -7,11 +7,14 @@
 
 #include <DXGI1_4.h>
 #include <d3d12.h>
+#include <string_view>
 
 #include "Buffer.hpp"
 #include "GfxConfiguration.hpp"
 #include "Image.hpp"
 #include "geommath.hpp"
+
+#include "RenderGraph/RenderPipeline/RenderPipeline.hpp"
 
 namespace My {
 
@@ -19,19 +22,37 @@ class D3d12RHI {
    public:
     using QueryFrameBufferSizeFunc = std::function<void(uint32_t&, uint32_t&)>;
     using GetWindowHandlerFunc = std::function<HWND()>;
-    using GetGfxConfigFunc = std::function<const GfxConfiguration&()>;
-    using CreateResourceFunc = std::function<void()>;
+    using GetGfxConfigFunc = std::function<const GfxConfiguration()>;
     using DestroyResourceFunc = std::function<void()>;
 
-    struct UniformBufferObject {
-        Matrix4X4f model;
-        Matrix4X4f view;
-        Matrix4X4f proj;
+    struct IndexBuffer {
+        ID3D12Resource* buffer;
+        D3D12_INDEX_BUFFER_VIEW descriptor;
+        uint32_t indexCount;
+    };
+
+    struct VertexBuffer {
+        ID3D12Resource* buffer;
+        D3D12_VERTEX_BUFFER_VIEW descriptor;
+    };
+
+    struct ConstantBuffer {
+        ID3D12Resource* buffer;
+        size_t size;
     };
 
    public:
     D3d12RHI();
     ~D3d12RHI();
+
+    static DXGI_FORMAT getDxgiFormat(const Image& img);
+    static DXGI_FORMAT getDxgiFormat(const RenderGraph::TextureFormat::Enum &fmt);
+    static D3D12_RASTERIZER_DESC getRasterizerDesc(const RenderGraph::RasterizerState &state);
+    static D3D12_RENDER_TARGET_BLEND_DESC getRenderTargetBlendDesc(const RenderGraph::RenderTargetBlend &blend);
+    static D3D12_DEPTH_STENCILOP_DESC getDepthStencilOpDesc(const RenderGraph::DepthStencilOperation &dsop);
+    static D3D12_COMPARISON_FUNC getCompareFunc(const RenderGraph::ComparisonFunction::Enum &cmp);
+    static D3D12_DEPTH_WRITE_MASK getDepthWriteMask(const RenderGraph::DepthWriteMask::Enum &mask);
+    static D3D12_PRIMITIVE_TOPOLOGY_TYPE getTopologyType(const RenderGraph::TopologyType::Enum &topology);
 
    public:
     void SetFramebufferSizeQueryCB(const QueryFrameBufferSizeFunc& func) {
@@ -42,9 +63,6 @@ class D3d12RHI {
     }
     void SetGetGfxConfigCB(const GetGfxConfigFunc& func) {
         m_fGetGfxConfigHandler = func;
-    }
-    void CreateResourceCB(const CreateResourceFunc& func) {
-        m_fCreateResourceHandler = func;
     }
     void DestroyResourceCB(const DestroyResourceFunc& func) {
         m_fDestroyResourceHandler = func;
@@ -65,10 +83,21 @@ class D3d12RHI {
     void CreateCommandLists();
 
     ID3D12Resource* CreateTextureImage(Image& img);
+    ID3D12Resource* GenerateTextureMipmaps(ID3D12Resource* source,
+                                           ID3D12PipelineState* pipeline,
+                                           ID3D12RootSignature* root);
+    ID3D12Resource* CreateDepthTextureArray(uint32_t width, uint32_t height,
+                                            uint16_t layers);
+    ID3D12Resource* CreateTextureCubeArray(DXGI_FORMAT format, uint32_t width,
+                                           uint32_t height, uint16_t cubes,
+                                           uint16_t mipLevels);
+    void UploadTextureSubresource(ID3D12Resource* texture, const Image& image,
+                                  uint32_t imageMip, uint32_t subresource);
+    void UpdateTexture(ID3D12Resource* texture, Image& img);
 
-    void CreateTextureSampler();
+    ID3D12DescriptorHeap* CreateTextureSampler(uint32_t num_samplers);
 
-    void CreateUniformBuffers();
+    ID3D12Resource* CreateUniformBuffers(size_t bufferSize, std::wstring_view bufferName);
 
     ID3D12RootSignature* CreateRootSignature(
         const D3D12_SHADER_BYTECODE& shader);
@@ -79,55 +108,67 @@ class D3d12RHI {
     ID3D12PipelineState* CreateComputePipeline(
         D3D12_COMPUTE_PIPELINE_STATE_DESC& psod);
 
-    void CreateDescriptorPool(size_t num_descriptors,
-                              const wchar_t* heap_group_name, size_t num_heaps);
+    ID3D12DescriptorHeap* CreateDescriptorHeap(size_t num_descriptors,
+                              std::wstring_view heap_group_name);
 
-    void CreateDescriptorSets(ID3D12Resource** ppResources, size_t count);
+    void CreateDescriptorSet(ID3D12DescriptorHeap* pHeap,
+                                    size_t offset,
+                                    ConstantBuffer** pConstantBuffers,
+                                    size_t constantBufferCount);
 
-    void CreateGraphicsResources();
+    void CreateDescriptorSet(ID3D12DescriptorHeap* pHeap, 
+                                    size_t offset,
+                                    ID3D12Resource** ppShaderResources,
+                                    size_t shaderResourceCount);
+
+    D3D12_CPU_DESCRIPTOR_HANDLE GetCpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset);
+    D3D12_GPU_DESCRIPTOR_HANDLE GetGpuDescriptorHandle(ID3D12DescriptorHeap* pHeap, size_t offset);
 
     void ResetAllBuffers();
+    void WaitForIdle();
     void DestroyAll();
 
     void BeginFrame();
-    void BeginPass(const Vector4f& clearColor);
+    void BeginCompute();
+    void SetComputePipelineState(ID3D12PipelineState* pipelineState,
+                                 ID3D12RootSignature* rootSignature);
+    void BindComputeTexture(ID3D12Resource* texture,
+                            ID3D12DescriptorHeap* descriptorHeap);
+    void Dispatch(uint32_t width, uint32_t height, uint32_t depth);
+    void EndCompute(ID3D12Resource* texture);
+    void BeginPass(const Vector3f& clearColor, bool clear = true);
     void SetPipelineState(ID3D12PipelineState* pPipelineState);
     void SetRootSignature(ID3D12RootSignature* pRootSignature);
     void Draw(const D3D12_VERTEX_BUFFER_VIEW& vertexBufferView,
               const D3D12_INDEX_BUFFER_VIEW& indexBufferView,
+              ID3D12DescriptorHeap* pCbvSrvUavHeap,
+              ID3D12DescriptorHeap* pSamplerHeap,
               D3D_PRIMITIVE_TOPOLOGY primitive_topology,
               uint32_t index_count_per_instance);
     void DrawGUI(ID3D12DescriptorHeap* pCbvSrvHeap);
     void EndPass();
-    void EndFrame();
+    void EndFrame(bool resolveSwapChain = true);
 
     void Present();
-
-    struct IndexBuffer {
-        ID3D12Resource* buffer;
-        D3D12_INDEX_BUFFER_VIEW descriptor;
-        uint32_t indexCount;
-    };
-
-    struct VertexBuffer {
-        ID3D12Resource* buffer;
-        D3D12_VERTEX_BUFFER_VIEW descriptor;
-    };
 
     IndexBuffer CreateIndexBuffer(const void* pData, size_t element_size,
                                   int32_t stride_size);
     VertexBuffer CreateVertexBuffer(const void* pData, size_t element_size,
                                     int32_t stride_size);
 
+    void UpdateUniformBufer(ConstantBuffer* constantBuffers, const void* buffer);
+
     ID3D12Device* GetDevice() { return m_pDev; }
+    ID3D12GraphicsCommandList* GetGraphicsCommandList() { return m_pGraphicsCommandLists[0]; }
+    uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
 
    private:
     void msaaResolve();
     void beginSingleTimeCommands();
     void endSingleTimeCommands();
+    void submitComputeCommands();
     void waitOnFrame();
     void moveToNextFrame();
-    void updateUniformBufer();
 
    private:
     DXGI_FORMAT m_eSurfaceFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -170,17 +211,11 @@ class D3d12RHI {
 
     ID3D12DescriptorHeap* m_pDsvHeap = nullptr;
 
-    std::vector<ID3D12DescriptorHeap*> m_pCbvSrvUavHeaps;
-
-    ID3D12DescriptorHeap* m_pSamplerHeap = nullptr;
-
     uint32_t m_nRtvDescriptorSize;
     uint32_t m_nCbvSrvUavDescriptorSize;
     uint32_t m_nSamplerDescriptorSize;
 
     std::vector<ID3D12Resource*> m_pRawBuffers;
-
-    std::vector<ID3D12Resource*> m_pUniformBuffers;
 
     // Synchronization objects
     HANDLE m_hGraphicsFenceEvent = INVALID_HANDLE_VALUE;
@@ -193,7 +228,6 @@ class D3d12RHI {
     QueryFrameBufferSizeFunc m_fQueryFramebufferSize;
     GetWindowHandlerFunc m_fGetWindowHandler;
     GetGfxConfigFunc m_fGetGfxConfigHandler;
-    CreateResourceFunc m_fCreateResourceHandler;
     DestroyResourceFunc m_fDestroyResourceHandler;
 
     uint32_t m_nCurrentFrame = 0;

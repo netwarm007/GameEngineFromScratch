@@ -2,6 +2,7 @@
 #define __CBUFFER_H__
 
 #define MAX_LIGHTS 100
+#define POINT_SHADOW_FAR_PLANE 1000.0f
 
 #include "config.h"
 
@@ -18,6 +19,8 @@ using namespace My;
 namespace My {
 enum LightType { Omni = 0, Spot = 1, Infinity = 2, Area = 3 };
 #else
+#include "root_signature.h.hlsl"
+
 #define SEMANTIC(a) : a
 #define REGISTER(x) : register(x)
 #define unistruct cbuffer
@@ -81,6 +84,7 @@ unistruct ShadowMapConstants REGISTER(b13) {
     float shadowmap_layer_index;  // 4 bytes
     float near_plane;             // 4 bytes
     float far_plane;              // 4 bytes
+    Matrix4X4f shadowMatrices[6];
 };                                // 16 bytes
 
 #ifdef __cplusplus
@@ -136,6 +140,7 @@ using TextureFormat = intptr_t;
 
 struct TextureBase {
     TextureHandler handler = 0;
+    TextureHandler buff = 0;
     TextureFormat format = 0;
     PIXEL_FORMAT pixel_format;
     

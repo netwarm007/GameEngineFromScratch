@@ -28,8 +28,10 @@ namespace My {
 
     template <typename T, typename V>
     using ASTPair       = std::pair<T, V>;
+    template <typename T, typename V, typename U>
+    using ASTTuple      = std::tuple<T, V, U>;
 
-    using ASTFieldDecl  = ASTPair<std::string, ASTNodeRef>;
+    using ASTFieldDecl  = ASTTuple<std::string, ASTNodeRef, bool>;
     using ASTEnumItemDecl  = ASTPair<std::string, int64_t>;
 
     template <typename T>

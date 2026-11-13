@@ -51,16 +51,14 @@ foreach(SHADER IN LISTS HLSL_SHADER_SOURCES)
 
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
         COMMENT "HLSL --> SPIR-V"
-	    COMMAND ${GLSL_VALIDATOR} -V -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main --uniform-base 1 ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
+	    COMMAND ${GLSL_VALIDATOR} -V --define-macro MYGE_GLSLANG=1 -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main --uniform-base 1 ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${part1}.${part2}.hlsl
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS HLSL/${part1}.${part2}.hlsl
     )
         
     add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
         COMMENT "SPIR-V --> Desktop GLSL"
 	    COMMAND ${SPIRV_CROSS} --version 420 --remove-unused-variables --output ${GLSL_SOURCE_DIR}/${part1}.${part2}.glsl ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS HLSL/${part1}.${part2}.hlsl
     )
 
 if(APPLE)
@@ -72,7 +70,6 @@ if(APPLE)
         COMMENT "SPIR-V --> Metal"
         COMMAND ${SPIRV_CROSS} --msl --msl-version 020101 --msl-decoration-binding --flip-vert-y --remove-unused-variables --output ${METAL_SOURCE_DIR}/${part1}.${part2}.metal ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/${part1}.${part2}.spv
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS HLSL/${part1}.${part2}.hlsl
     )
 endif(APPLE)
 endforeach(SHADER)
@@ -87,7 +84,6 @@ foreach(SHADER IN LISTS GLSL_SHADER_SOURCES)
         COMMENT "GLSL --> SPIR-V"
 	    COMMAND ${GLSL_VALIDATOR} -V -I. -I${PROJECT_SOURCE_DIR}/Framework/Common -o ${VULKAN_SOURCE_DIR}/${part1}.${part2}.spv -e ${part1}_${part2}_main ${PROJECT_SOURCE_DIR}/Asset/Shaders/GLSL/${part1}.${part2}.glsl
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        DEPENDS GLSL/${part1}.${part2}.glsl
     )
         
 endforeach(SHADER)
@@ -100,35 +96,32 @@ IF(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BIN_DIR}
     )
 
-    foreach(SHADER IN LISTS HLSL_SHADER_SOURCES)
+    set(D3D_SHADER_SOURCES ${HLSL_SHADER_SOURCES} shadowmap_omni.geom generate_mips.comp)
+    foreach(SHADER IN LISTS D3D_SHADER_SOURCES)
         set(SHADER_BIN ${SHADER_BIN_DIR}/${SHADER}.cso)
         if (SHADER MATCHES "^([a-zA-Z0-9_]*)\.vert$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
                 COMMAND ${DXC} -T vs_6_1 -E ${CMAKE_MATCH_1}_vert_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
                 WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
-                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         elseif (SHADER MATCHES "^([a-zA-Z0-9_]*)\.frag$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
                 COMMAND ${DXC} -T ps_6_1 -E ${CMAKE_MATCH_1}_frag_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
                 WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
-                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         elseif (SHADER MATCHES "^([a-zA-Z0-9_]*)\.comp$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
                 COMMAND ${DXC} -T cs_6_1 -E ${CMAKE_MATCH_1}_comp_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
                 WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
-                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         elseif (SHADER MATCHES "^([a-zA-Z0-9_]*)\.geom$")
             add_custom_command(TARGET Engine_Asset_Shaders POST_BUILD
                 COMMAND ${DXC} -T gs_6_1 -E ${CMAKE_MATCH_1}_geom_main -Fo ${SHADER_BIN} -I ..\\..\\..\\ -I ..\\..\\..\\Framework\\Common ${SHADER}.hlsl
                 COMMENT "Compile ${SHADER}.hlsl --> ${SHADER}.cso"
                 WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL
-                DEPENDS ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/${SHADER}.hlsl
             )
         endif ()
     endforeach(SHADER)

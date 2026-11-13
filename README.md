@@ -11,22 +11,26 @@ This project is written by me as the sample of My articles [Hand-made Next-Gen G
 https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプルソースである
 
 ## Platform Support Status
-- Windows 10 / 11
-- MacOS Catalina - Monterey
-- Linux (Build test on Ubuntu 20.04 - 22.04 and CentOS 7)
-- FreeBSD (Not tested recently, build might fail)
-- Android (Not tested recently, build might fail)
-- WebAssembly (Emscripten, not tested recently, build might fail)
-- PlayStation 4 (Not continued, related source code not disclosed due to NDA)
-- PlayStation Vita (Not continued, related source code not disclosed due to NDA)
+- Windows 10 / 11 (targeted; CircleCI uses Windows Server 2022).
+- macOS (CircleCI uses Apple Silicon and Xcode 16.4; Catalina-Monterey are not
+  covered by the current CI).
+- Linux (CircleCI uses Ubuntu 22.04; Ubuntu 20.04 and CentOS 7 are not covered
+  by the current CI).
+- FreeBSD (not tested recently; build might fail).
+- Android (CircleCI job disabled; not tested recently).
+- WebAssembly (Emscripten; not tested recently; build might fail).
+
+CircleCI [pipeline 817](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/817/details?workflowId=652ea7d6-c9b6-4aa9-8ff0-e64717df13d2)
+passed the configured builds and tests for revision `13054560` on Windows,
+macOS, and Linux. These results apply to that revision and do not validate every
+OS version.
 
 ## Graphic API Support Status
 - OpenGL
 - OpenGL ES (Not tested recently)
 - Metal2
-- DirectX 12 (On going)
+- DirectX 12
 - Vulkan (On going)
-- GNM (Not disclosed due to NDA)
 
 ## Physics
 - Bullet
@@ -73,7 +77,24 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 -- Android NDK
 
 ## Build Steps
+### Commit acceptance
+
+A commit is accepted only when its CircleCI pipeline completes the configured
+builds and tests successfully on all enabled platforms: currently Windows,
+Linux, and macOS. Local tests do not replace this requirement. Android is
+currently disabled in the CircleCI workflow and is not part of this gate.
+
+The Windows job uses two parallel CMake build jobs and caches installed dependency
+files using their revisions, build scripts, and toolchain details. MSVC may also
+compile source files in parallel within a build job.
+Cache misses rebuild the dependencies; the engine and tests still run on every
+pipeline.
+
 ### Windows
+Windows scripts that use Visual Studio select the newest installed version
+supported by CMake. If an existing build directory retains an older generator,
+move it aside before rerunning the script to allow a fresh configuration.
+
     scripts\build_crossguid
     scripts\build_opengex
     scripts\build_zlib

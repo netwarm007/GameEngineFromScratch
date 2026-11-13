@@ -1,6 +1,7 @@
-namespace My {
+#pragma once
+namespace My::RenderGraph {
     namespace StencilOperation {
-        int Count = 8;
+        static inline int Count = 8;
         enum Enum { 
             Keep = 0,
             Zero = 1,
@@ -27,4 +28,4 @@ namespace My {
             return s_value_names[(int)e];
         }
     } // namespace StencilOperation
-} // namespace My
+} // namespace My::RenderGraph

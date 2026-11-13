@@ -31,7 +31,7 @@ class BaseApplication : _implements_ IApplication {
     [[nodiscard]] bool IsQuit() const override;
     void RequestQuit() override { m_bQuit = true; }
 
-    [[nodiscard]] inline const GfxConfiguration& GetConfiguration()
+    [[nodiscard]] inline const GfxConfiguration GetConfiguration()
         const override {
         return m_Config;
     }

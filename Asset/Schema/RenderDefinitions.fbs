@@ -1,4 +1,4 @@
-namespace rendering;
+namespace render_graph;
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -52,15 +52,11 @@ enum QueueType : byte { Graphics, Compute, CopyTransfer }
 
 enum CommandType : byte { BindPipeline, BindResourceTable, BindVertexBuffer, BindIndexBuffer, Draw, DrawIndexed, DrawInstanced, DrawIndexedInstanced, CopyResource }
 
+enum RenderTargetLoadStoreAction : byte { DontCare, Clear, Keep }
 
-// Index type
-// Image type
+
 // Cube face
 // Shader stage
-// Texture filter
-// Texture wrap
-// Vertex format
-// Vertex step
 // Uniform type
 // Render pass action
 // ERRORS!!!
@@ -159,11 +155,25 @@ struct RenderTarget {
     height                  : ushort (ui: "min:600, max:4320");
     scale_x                 : float;
     scale_y                 : float;
+    load_action             : RenderTargetLoadStoreAction;
+    store_action            : RenderTargetLoadStoreAction;
     format                  : TextureFormat;
 }
 
+table FrameBuffer {
+    color_attachments       : [RenderTarget];
+    color_clear_value       : Vector3f;
+    depth_attachment        : RenderTarget;
+    depth_clear_value       : float;
+}
+
+table RenderPass {
+    frame_buffer            : FrameBuffer;
+    pipeline_state          : PipelineState;
+}
+
 table RenderPipeline {
-    state                   : PipelineState;
+    render_passes           : [RenderPass];
 }
 
 root_type RenderPipeline;

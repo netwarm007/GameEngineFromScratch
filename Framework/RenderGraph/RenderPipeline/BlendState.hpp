@@ -1,4 +1,6 @@
 #pragma once
+#include "geommath.hpp"
+#include "imgui/imgui.h"
 
 
 #include "RenderTargetBlend.hpp"
@@ -10,7 +12,7 @@
 
 
 
-namespace My {
+namespace My::RenderGraph {
     struct BlendState {
         bool	enable;
 
@@ -35,30 +37,48 @@ namespace My {
 
         void reflectMembers() {
             ImGui::Checkbox( "enable", &enable );
+
             ImGui::Checkbox( "separate_blend", &separate_blend );
-            ImGui::Text("render_target_blend0");
-            render_target_blend0.reflectMembers();
 
-            ImGui::Text("render_target_blend1");
-            render_target_blend1.reflectMembers();
+            if (ImGui::TreeNode(&render_target_blend0, "render_target_blend0")) {
+                render_target_blend0.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("render_target_blend2");
-            render_target_blend2.reflectMembers();
+            if (ImGui::TreeNode(&render_target_blend1, "render_target_blend1")) {
+                render_target_blend1.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("render_target_blend3");
-            render_target_blend3.reflectMembers();
+            if (ImGui::TreeNode(&render_target_blend2, "render_target_blend2")) {
+                render_target_blend2.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("render_target_blend4");
-            render_target_blend4.reflectMembers();
+            if (ImGui::TreeNode(&render_target_blend3, "render_target_blend3")) {
+                render_target_blend3.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("render_target_blend5");
-            render_target_blend5.reflectMembers();
+            if (ImGui::TreeNode(&render_target_blend4, "render_target_blend4")) {
+                render_target_blend4.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("render_target_blend6");
-            render_target_blend6.reflectMembers();
+            if (ImGui::TreeNode(&render_target_blend5, "render_target_blend5")) {
+                render_target_blend5.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("render_target_blend7");
-            render_target_blend7.reflectMembers();
+            if (ImGui::TreeNode(&render_target_blend6, "render_target_blend6")) {
+                render_target_blend6.reflectMembers();
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode(&render_target_blend7, "render_target_blend7")) {
+                render_target_blend7.reflectMembers();
+                ImGui::TreePop();
+            }
 
         }
 
@@ -68,4 +88,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

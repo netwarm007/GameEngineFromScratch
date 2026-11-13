@@ -89,10 +89,7 @@ float apply_atten_curve(float dist, int atten_curve_type, float4 atten_params[2]
     return atten;
 }
 
-float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
-    float4 v_light_space = mul(mul(p, light.lightViewMatrix), light.lightProjectionMatrix);
-    v_light_space /= v_light_space.w.xxxx;
-
+float4 shadow_map_coordinates(float4 v_light_space, int clip_space_type) {
     float4x4 depth_bias; 
     if (clip_space_type == 0) {
         // for OpenGL clip space
@@ -111,6 +108,18 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
             float4(0.5f, 0.5f, 0.0f, 1.0f)
         );
     }
+#if defined(OS_WINDOWS) && !defined(MYGE_GLSLANG)
+    if (clip_space_type != 0) {
+        // D3D rasterization maps positive NDC Y to the top of the texture.
+        depth_bias[1][1] = -0.5f;
+    }
+#endif
+    return mul(v_light_space, depth_bias);
+}
+
+float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
+    float4 v_light_space = mul(mul(p, light.lightViewMatrix), light.lightProjectionMatrix);
+    v_light_space /= v_light_space.w.xxxx;
 
     const float4x2 poissonDisk = float4x2 (
         float2( -0.94201624f, -0.39906216f ),
@@ -135,7 +144,11 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                     float3 L = p.xyz - light.lightPosition.xyz;
                     near_occ = cubeShadowMap.Sample(samp0, float4(L, float(light.lightShadowMapIndex))).x;
 
+#if defined(OS_WINDOWS) && !defined(MYGE_GLSLANG)
+                    if (length(L) - near_occ * POINT_SHADOW_FAR_PLANE > bias)
+#else
                     if (length(L) - near_occ * 10.0f > bias)
+#endif
                     {
                         // we are in the shadow
                         visibility -= 0.88f;
@@ -144,7 +157,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                 break;
             case 1: // spot
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(v_light_space, depth_bias);
+                v_light_space = shadow_map_coordinates(v_light_space, clip_space_type);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -158,7 +171,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                 break;
             case 2: // infinity
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(v_light_space, depth_bias);
+                v_light_space = shadow_map_coordinates(v_light_space, clip_space_type);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = globalShadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -172,7 +185,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                 break;
             case 3: // area
                 // adjust from [-1, 1] to [0, 1]
-                v_light_space = mul(v_light_space, depth_bias);
+                v_light_space = shadow_map_coordinates(v_light_space, clip_space_type);
                 for (i = 0; i < 4; i++)
                 {
                     near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
@@ -378,10 +391,7 @@ bool offscreen(float4 vertex){
     if(vertex.z < -0.5f){
         return true;
     }   
-    return any(
-        (vertex.xy < -1.7f.xx) ||
-        any(vertex.xy > 1.7f.xx)
-    );  
+    return any(vertex.xy < -1.7f.xx) || any(vertex.xy > 1.7f.xx);
 }
 
 float level(float2 v0, float2 v1){

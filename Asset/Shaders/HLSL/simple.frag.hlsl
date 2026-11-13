@@ -11,7 +11,7 @@ SamplerState samp0 : register(s1);
     "        flags = DESCRIPTORS_VOLATILE)), "         \
     "DescriptorTable( Sampler(s1, space=0, numDescriptors = 8))"
 
-[RootSignature(MyRS1)]
+MYGE_ROOT_SIGNATURE(MyRS1)
 float4 simple_frag_main(simple_vert_output _entryPointOutput) : SV_Target
 {
     return tex.Sample(samp0, _entryPointOutput.uv);

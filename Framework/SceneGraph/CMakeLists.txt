@@ -7,9 +7,17 @@ add_library(SceneGraph
         SceneObjectTexture.cpp
 )
 
-target_link_libraries(SceneGraph
-        ${XG_LIBRARY} 
-        ${ZLIB_LIBRARY}
-)
+if(MSVC)
+    target_link_libraries(SceneGraph
+            ${XG_LIBRARY}
+            optimized ${ZLIB_LIBRARY}
+            debug ${ZLIB_LIBRARY_DEBUG}
+    )
+else()
+    target_link_libraries(SceneGraph
+            ${XG_LIBRARY}
+            ${ZLIB_LIBRARY}
+    )
+endif()
 
 __add_xg_platform_dependencies(SceneGraph)

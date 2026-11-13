@@ -1,31 +1,15 @@
-#include "GfxConfiguration.hpp"
-#include "config.h"
-
-#if defined(OS_WEBASSEMBLY)
-#include "Platform/Sdl/OpenGLApplication.hpp"
-#elif defined(OS_MACOS)
-#include "CocoaMetalApplication.h"
-#elif defined(OS_WINDOWS)
-#include "D3d12Application.hpp"
-#else
-#include "Platform/Sdl/OpenGLApplication.hpp"
-#endif
-
-#if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
-#include "RHI/OpenGL/OpenGLESConfig.hpp"
-#elif defined(OS_MACOS)
-#include "RHI/Metal/MetalConfig.hpp"
-#elif defined(OS_WINDOWS)
-#include "RHI/D3d/D3d12Config.hpp"
-#else
-#include "RHI/OpenGL/OpenGLConfig.hpp"
-#endif
+#include "Platform/CrossPlatformGfxApp.hpp"
+#include "Platform/TGraphicsManager.hpp"
 
 #include "AssetLoader.hpp"
 
 #include "imgui/imgui.h"
 
+#include "RenderGraph/RenderPipeline/RenderPipeline.hpp"
+
 using namespace My;
+
+RenderGraph::RenderPipeline renderPipeline;
 
 int test(BaseApplication& app) {
     int result;
@@ -93,7 +77,8 @@ class TestGraphicsManager : public TGraphicsManager {
         // 2. Show a simple window that we create ourselves. We use a Begin/End
         // pair to created a named window.
         {
-            static float f = 0.0f;
+            static float f1 = 0.0f;
+            static float f2 = 0.0f;
             static int counter = 0;
 
             ImGui::Begin(
@@ -110,7 +95,10 @@ class TestGraphicsManager : public TGraphicsManager {
                                                  // window open/close state
 
             ImGui::SliderFloat(
-                (const char*)u8"浮点数", &f, 0.0f,
+                (const char*)u8"浮点数##1", &f1, 0.0f,
+                1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::SliderFloat(
+                (const char*)u8"浮点数##2", &f2, 0.0f,
                 1.0f);  // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3(
                 (const char*)u8"清屏色",
@@ -129,38 +117,31 @@ class TestGraphicsManager : public TGraphicsManager {
                         1000.0f / ImGui::GetIO().Framerate,
                         ImGui::GetIO().Framerate);
             ImGui::End();
+
+            renderPipeline.reflectUI();
         }
         EndPass(frame);
     }
 };
 
 int main(int argc, char** argv) {
-    int result;
+    int result = 0;
 
-#if defined(OS_MACOS)
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                            "ImGUI Test (Cocoa Meta)");
-    CocoaMetalApplication app(config);
-#endif
+                            "ImGUI Test");
 
-#if defined(OS_WINDOWS)
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                            "ImGUI Test (DX12)");
-    D3d12Application app(config);
-#endif
-
-#if defined(OS_LINUX)
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 1, 800, 600,
-                            "ImGUI Test (OpenGL + SDL2)");
-    OpenGLApplication app(config);
-#endif
+    auto pApp = My::CreateApplication(config);
 
     TestGraphicsManager graphicsManager;
 
-    app.SetCommandLineParameters(argc, argv);
-    app.RegisterManagerModule(&graphicsManager);
+    pApp->SetCommandLineParameters(argc, argv);
+    pApp->RegisterManagerModule(&graphicsManager);
 
-    result |= test(app);
+    renderPipeline.render_passes.resize(3);
+
+    result |= test(*pApp);
+
+    delete pApp;
 
     return result;
 }

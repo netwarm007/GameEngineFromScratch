@@ -1,13 +1,21 @@
-#include "PipelineState.hpp"
+#pragma once
+#include "geommath.hpp"
+#include "imgui/imgui.h"
+#include "RenderPass.hpp"
+#include <vector>
 
-namespace My {
+namespace My::RenderGraph {
     struct RenderPipeline {
-        PipelineState	state;
+        std::vector<RenderPass>	render_passes;
 
 
         void reflectMembers() {
-            ImGui::Text("state");
-            state.reflectMembers();
+            for (int i = 0; i < render_passes.size(); i++) {
+                if (ImGui::TreeNode(&render_passes[i], "render_passes[%d]", i)) {
+                    render_passes[i].reflectMembers();
+                    ImGui::TreePop();
+                }
+            }
 
         }
 
@@ -17,4 +25,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

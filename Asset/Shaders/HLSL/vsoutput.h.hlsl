@@ -1,3 +1,5 @@
+#include "root_signature.h.hlsl"
+
 struct basic_vert_output
 {
     float4 pos              : SV_Position;

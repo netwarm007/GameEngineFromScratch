@@ -1,10 +1,12 @@
 #pragma once
+#include "geommath.hpp"
+#include "imgui/imgui.h"
 #include "BlendState.hpp"
 #include "RasterizerState.hpp"
 #include "DepthStencilState.hpp"
 #include "TopologyType.hpp"
 
-namespace My {
+namespace My::RenderGraph {
     struct PipelineState {
         BlendState	blend_state;
 
@@ -16,14 +18,20 @@ namespace My {
 
 
         void reflectMembers() {
-            ImGui::Text("blend_state");
-            blend_state.reflectMembers();
+            if (ImGui::TreeNode(&blend_state, "blend_state")) {
+                blend_state.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("rasterizer_state");
-            rasterizer_state.reflectMembers();
+            if (ImGui::TreeNode(&rasterizer_state, "rasterizer_state")) {
+                rasterizer_state.reflectMembers();
+                ImGui::TreePop();
+            }
 
-            ImGui::Text("depth_stencil_state");
-            depth_stencil_state.reflectMembers();
+            if (ImGui::TreeNode(&depth_stencil_state, "depth_stencil_state")) {
+                depth_stencil_state.reflectMembers();
+                ImGui::TreePop();
+            }
 
             ImGui::Combo( "topology_type", (int32_t*)&topology_type, TopologyType::s_value_names, TopologyType::Count );
 
@@ -35,4 +43,4 @@ namespace My {
             ImGui::End();
         }
     };
-} // namespace My
+} // namespace My::RenderGraph

@@ -13,6 +13,7 @@ set(SDR_TEXTURES
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-metalness.png
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-rough.png
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/redbricks2b-ao.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/texture_missing.png
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/terrain/area_1_0_0.png
 )
 
@@ -163,14 +164,12 @@ ELSEIF(WA)
 ELSEIF(WIN32)
     target_link_libraries(Viewer
                             MyPhysics
-                            D3dRHI 
-                            OpenGLRHI
+                            D3dRHI
                             Framework
                             PlatformInterface
                         )
 
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/HLSL DESTINATION Asset/Shaders)
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)

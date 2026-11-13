@@ -56,8 +56,9 @@ void D2dRHI::EndFrame() {
 
 void D2dRHI::DestroyAll() {
     // Destroy client resource
-    assert(m_fDestroyResourceHandler);
-    m_fDestroyResourceHandler();
+    if(m_fDestroyResourceHandler) {
+        m_fDestroyResourceHandler();
+    }
 
     SafeRelease(&m_pRenderTarget);
     SafeRelease(&m_pFactory);
@@ -166,6 +167,11 @@ ID2D1Bitmap* My::D2dRHI::CreateBitmap(const My::Image& img) const {
     bitmap->CopyFromMemory(nullptr, img.data, img.pitch);
 
     return bitmap;
+}
+
+void My::D2dRHI::UpdateBitmap(const My::Image& img,
+                                      ID2D1Bitmap* bmp) const {
+    bmp->CopyFromMemory(nullptr, img.data, img.pitch);
 }
 
 void My::D2dRHI::DrawBitmap(My::Point2Df left_top, My::Point2Df right_bottom,

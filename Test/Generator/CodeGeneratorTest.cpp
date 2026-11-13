@@ -17,7 +17,8 @@ namespace My {
         { "int",    make_ASTNodeRef<ASTNodePrimitive>( "int" ) },
         { "uint",   make_ASTNodeRef<ASTNodePrimitive>( "uint" ) },
         { "float",  make_ASTNodeRef<ASTNodePrimitive>( "float" ) },
-        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) }
+        { "double", make_ASTNodeRef<ASTNodePrimitive>( "double" ) },
+        { "Vector3f", make_ASTNodeRef<ASTNodePrimitive>( "Vector3f" ) }
     };
 
     ASTNodeRef ast_root = make_ASTNodeRef<ASTNodeNone>( "AST ROOT" );
@@ -68,14 +69,14 @@ int main(int argc, char** argv) {
 
     // generate main data structure
     std::ofstream source(ref->GetIDN() + ".hpp");
-    generator.GenerateCode(source, "My", ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+    generator.GenerateCode(source, "My::RenderGraph", ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
     source.close();
 
     // now check if any other dependencies and generate them
     auto next_ref = generator.NextWaitingASTNode();
     while (next_ref) {
         source.open(next_ref->GetIDN() + ".hpp");
-        generator.GenerateCode(source, "My", next_ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
+        generator.GenerateCode(source, "My::RenderGraph", next_ref, CodeGenerator::CODE_GENERATION_TYPE::CPP_SNIPPET);
         source.close();
         next_ref = generator.NextWaitingASTNode();
     }
