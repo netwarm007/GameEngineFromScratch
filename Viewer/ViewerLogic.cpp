@@ -31,7 +31,7 @@ int ViewerLogic::Initialize() {
 
     if (!scene_filename.empty()) {
         cout << "[ViewerLogic] Loading Scene: " << scene_filename << endl;
-        result = pSceneManager->LoadScene(scene_filename);
+        result = pSceneManager->LoadScene(scene_filename.c_str());
     } else {
         cout << "[ViewerLogic] Loading Splash Scene" << endl;
         result = pSceneManager->LoadScene("Scene/splash.ogex");
