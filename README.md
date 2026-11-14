@@ -174,6 +174,20 @@ pipeline.
 Packaging and package artifacts are limited to `master` and tagged builds;
 builds, tests, and Viewer screenshot attempts also run on other branches.
 
+### CircleCI test results
+
+The Windows, Linux, and macOS jobs generate JUnit XML with CTest's
+`--output-junit junit.xml` and upload it with `store_test_results` for the job's
+Tests tab. The standalone C++/ISPC math regression report is
+`build-geommath/junit.xml`; the engine test report is `build/junit.xml`.
+Each report is uploaded immediately after its test step, including when tests
+fail. Test failures still fail the job. Uploads are not guaranteed if a job is
+killed by cancellation or reaches its runtime timeout.
+
+Results represent registered CTest tests, not individual assertions or Viewer
+screenshot captures. This reporting does not enable Smarter Testing or change
+which tests run.
+
 ### Windows
 Windows scripts that use Visual Studio select the newest installed version
 supported by CMake. If an existing build directory retains an older generator,
