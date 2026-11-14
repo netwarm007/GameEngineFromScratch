@@ -91,6 +91,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     HRESULT CreatePSO(D3d12PipelineState& pipelineState);
     void BindDrawResources(const Frame& frame, const DrawBatchContext& batch);
     void TransitionTexture(ID3D12Resource* resource, D3D12_RESOURCE_STATES state);
+    Texture2D UploadTexture(Image& img);
     void CreateImGuiSrv(Texture2D& texture, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc);
     void UpdateDebugViews();
 

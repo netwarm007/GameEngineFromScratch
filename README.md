@@ -20,17 +20,13 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 863](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/863)
+CircleCI [pipeline 869](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/869)
 passed the configured builds and tests for revision
-`7a62cd6803e213dad4b1c6c7fa89882fed16a96f` on Windows (job 4135), Linux
-(job 4134), and macOS (job 4136), after rebasing onto master revision
-`0a2059c3`. This revision adds the default docked Viewer
-layout and regression tests for docking, non-overlapping panels, viewport
-resizing, and saved layouts. The macOS screenshot also confirms the scene
-graph, scene preview, and debug panel are visible in separate docked regions.
-These results apply only to the tested configurations, not every OS version
-or full rendering correctness. The merge with current master is not yet
-verified; these results do not cover the combined revision.
+`5c79e7b595426f321b3cc81b5a549430bcd2942e` on Windows (job 4155), Linux
+(job 4157), and macOS (job 4156). The Viewer screenshot from each job shows
+the scene graph icons for the splash scene's empty, light, geometry, and camera
+nodes. These results apply only to the tested configurations and visible
+nodes, not every OS version, node type, or full rendering correctness.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
