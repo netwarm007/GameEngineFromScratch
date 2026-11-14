@@ -20,11 +20,12 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow a5c800dc](https://app.circleci.com/workflow/a5c800dc-4a54-4a35-8c8b-53261f20fe24)
+CircleCI [pipeline 861](https://app.circleci.com/workflow/8c660f6f-9df6-4c8b-be38-569fb4f89349)
 passed the configured builds and tests for revision
-`f6dabf7dfa9a57066ba406ca760ffa5fd8ebbe2a` on Windows, macOS, and Linux.
-This revision includes the merged scene graph and screenshot changes and the
-font-atlas startup fix. These results apply only to that revision and do not
+`e824b2a35e28fb2695588ebf15f2320e138f30b1` on Windows (job 4129), macOS
+(job 4128), and Linux (job 4130). This revision includes Metal material
+mip generation and validated PVR mip metadata. All three jobs also produced
+Viewer screenshots. These results apply only to that revision and do not
 validate every OS version or full rendering correctness.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
@@ -96,6 +97,14 @@ an uncompressed texture because Metal blit mip generation does not support BC
 formats. This processing does not regenerate prefiltered environment maps or
 add mipmaps to UI textures. PVR parsing records block-aligned mip pitches,
 sizes, and offsets, including levels smaller than a compression block.
+
+The macOS screenshot from pipeline 861 confirms reduced brick-floor speckling
+in the splash scene compared with pipeline 857 (`724642b3`). In the visible
+floor region x=[630,820), y=[510,610), the mean absolute RGB difference from
+the four-neighbor average fell from 17.127 to 7.528 on a 0-255 scale (56.05%).
+The same-region Linux and Windows values were 6.948 and 7.047. This is a
+pixel-scale high-frequency comparison, not a general image-quality benchmark
+or verification of every material and camera position.
 
 ## High Performance / Parallel Computing
 - ISPC
