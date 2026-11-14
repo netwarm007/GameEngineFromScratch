@@ -211,19 +211,12 @@ int main(int argc, char** argv) {
         return ret;
     }
 
-    if (!regressionDir.empty()) {
-        auto camera = sceneManager.GetSceneForRendering()->GetFirstCameraNode();
-        if (!camera) {
-            std::cerr << "BILLIARD_PHYSICS_REGRESSION FAILED: camera missing\n";
-            app.Finalize();
-            ImGui::DestroyContext();
-            return 1;
-        }
-        const auto transform = camera->GetCalculatedTransform();
-        // Only the regression view changes; interactive camera/layout settings are preserved.
-        camera->MoveBy(-(*transform)[3][0], -2.5f - (*transform)[3][1],
-                       3.0f - (*transform)[3][2]);
-        camera->SetTarget(Vector3f{0.0f, 0.0f, 0.85f});
+    if (!regressionDir.empty() &&
+        !sceneManager.GetSceneForRendering()->GetFirstCameraNode()) {
+        std::cerr << "BILLIARD_PHYSICS_REGRESSION FAILED: camera missing\n";
+        app.Finalize();
+        ImGui::DestroyContext();
+        return 1;
     }
 
     // Drive the modules ahead

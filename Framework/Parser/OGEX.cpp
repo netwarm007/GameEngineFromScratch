@@ -2,6 +2,8 @@
 
 #include "OGEX.hpp"
 
+#include <cmath>
+
 #include "Bezier.hpp"
 #include "Curve.hpp"
 #include "Linear.hpp"
@@ -10,6 +12,7 @@ using namespace My;
 
 std::unique_ptr<Scene> OgexParser::Parse(const std::string& buf) {
     m_bUpIsYAxis = false;
+    m_bInvalidCameraTarget = false;
     OGEX::OpenGexDataDescription openGexDataDescription;
 
     ODDL::DataResult result = openGexDataDescription.ProcessText(buf.c_str());
@@ -26,6 +29,7 @@ std::unique_ptr<Scene> OgexParser::Parse(const std::string& buf) {
         while (structure) {
             ConvertOddlStructureToSceneNode(*structure, pScene->SceneGraph,
                                             *pScene);
+            if (m_bInvalidCameraTarget) return nullptr;
 
             structure = structure->Next();
         }
@@ -125,6 +129,35 @@ void OgexParser::ConvertOddlStructureToSceneNode(
             _node->AddSceneObjectRef(_key);
 
             scene.CameraNodes.emplace(_key, _node);
+
+            auto* extension = _structure.GetFirstExtensionSubnode();
+            while (extension) {
+                const auto& cameraExtension =
+                    dynamic_cast<const OGEX::ExtensionStructure&>(*extension);
+                if (cameraExtension.GetApplicationString() == "MyGameEngine" &&
+                    cameraExtension.GetTypeString() == "camera_target") {
+                    const auto* data = dynamic_cast<
+                        const ODDL::DataStructure<ODDL::FloatDataType>*>(
+                        cameraExtension.GetFirstCoreSubnode());
+                    if (!data || data != cameraExtension.GetLastCoreSubnode() ||
+                        data->GetDataElementCount() != 3 ||
+                        !std::isfinite(data->GetDataElement(0)) ||
+                        !std::isfinite(data->GetDataElement(1)) ||
+                        !std::isfinite(data->GetDataElement(2))) {
+                        std::cerr
+                            << "[OgexParser] camera_target requires exactly "
+                               "three finite world-space floats"
+                            << std::endl;
+                        m_bInvalidCameraTarget = true;
+                        return;
+                    }
+                    _node->SetTarget(Vector3f{data->GetDataElement(0),
+                                              data->GetDataElement(1),
+                                              data->GetDataElement(2)});
+                    break;
+                }
+                extension = extension->Next();
+            }
 
             node = _node;
         } break;
