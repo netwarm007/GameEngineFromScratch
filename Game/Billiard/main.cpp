@@ -18,7 +18,7 @@
 #include <iostream>
 #include <map>
 
-#if defined(OS_WINDOWS) || defined(OS_LINUX)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
 #include "glad/glad.h"
 #endif
 
@@ -27,8 +27,11 @@
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
 #elif defined(OS_WINDOWS)
-//#include "D3d12Application.hpp"
+#if defined(BILLIARD_USE_D3D12)
+#include "D3d12Application.hpp"
+#else
 #include "OpenGLApplication.hpp"
+#endif
 #else
 #include "OpenGLApplication.hpp"
 #endif
@@ -38,8 +41,11 @@
 #elif defined(OS_MACOS)
 #include "RHI/Metal/MetalConfig.hpp"
 #elif defined(OS_WINDOWS)
-//#include "RHI/D3d/D3d12Config.hpp"
+#if defined(BILLIARD_USE_D3D12)
+#include "RHI/D3d/D3d12Config.hpp"
+#else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
+#endif
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
@@ -57,7 +63,7 @@ void main_loop() { loop(); }
 
 using namespace My;
 
-#if defined(OS_WINDOWS) || defined(OS_LINUX)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
 namespace {
 bool CaptureBilliardFrame(IApplication& app, const std::filesystem::path& path) {
     uint32_t width = 0, height = 0;
@@ -136,6 +142,11 @@ int main(int argc, char** argv) {
             std::cerr << "Cannot clear Billiard regression marker: " << error.message() << '\n';
             return 2;
         }
+        std::filesystem::remove(regressionDir / "capture-complete", error);
+        if (error) {
+            std::cerr << "Cannot clear Billiard capture marker: " << error.message() << '\n';
+            return 2;
+        }
     }
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Billiard");
@@ -144,8 +155,11 @@ int main(int argc, char** argv) {
 #if defined(OS_MACOS)
     CocoaMetalApplication app(config);
 #elif defined(OS_WINDOWS)
-    // D3d12Application app(config);
+#if defined(BILLIARD_USE_D3D12)
+    D3d12Application app(config);
+#else
     OpenGLApplication app(config);
+#endif
 #else
     OpenGLApplication app(config);
 #endif
@@ -238,7 +252,21 @@ int main(int argc, char** argv) {
     float cueDisplacement = 0.0f, otherDisplacement = 0.0f;
     while (!app.IsQuit()) {
         app.Tick();
-        if (regressionDir.empty() || regressionFrame >= 180) continue;
+        if (regressionDir.empty()) continue;
+        if (regressionFrame >= 180) {
+#if defined(OS_LINUX)
+            std::error_code error;
+            const bool captured = std::filesystem::exists(regressionDir / "capture-complete", error);
+            if (error) {
+                std::cerr << "BILLIARD_PHYSICS_REGRESSION FAILED: " << error.message() << '\n';
+                regressionResult = 1;
+                app.RequestQuit();
+            } else if (captured) {
+                app.RequestQuit();
+            }
+#endif
+            continue;
+        }
         ++regressionFrame;
         if (regressionFrame < 60) continue;
 
@@ -271,7 +299,7 @@ int main(int argc, char** argv) {
         }
         if (app.IsQuit()) continue;
         if (regressionFrame == 60) {
-#if defined(OS_WINDOWS) || defined(OS_LINUX)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-before.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -285,7 +313,7 @@ int main(int argc, char** argv) {
                 app.RequestQuit();
                 continue;
             }
-#if defined(OS_WINDOWS) || defined(OS_LINUX)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-after.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -302,7 +330,7 @@ int main(int argc, char** argv) {
             std::cout << "BILLIARD_PHYSICS_REGRESSION PASSED: cue=" << cueDisplacement
                       << " other=" << otherDisplacement << std::endl;
             regressionResult = 0;
-#if defined(OS_WINDOWS) || defined(OS_LINUX)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
             app.RequestQuit();
 #endif
         }

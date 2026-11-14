@@ -180,12 +180,22 @@ Its opt-in desktop regression loads the real billiard scene, settles it for
 It requires cue-ball XY displacement of at least 0.1 scene units and movement
 of another ball of at least 0.01 units, with finite transforms. A regression-only
 overview camera keeps the table in view; normal camera and saved layouts are
-unchanged. Run `BilliardGame -physicsRegression <output-directory>` on Windows
-or Linux to save before/after framebuffer BMPs and a `physics-passed` result.
-CircleCI converts these to PNG. macOS uses native Metal PNG capture with
+unchanged. The default Windows OpenGL build can run
+`BilliardGame -physicsRegression <output-directory>` to save before/after BMPs
+and a `physics-passed` result. Windows CI explicitly selects the existing
+D3D12 backend with `-DBILLIARD_USE_D3D12=ON`; ordinary builds default to OpenGL.
+Set `GEFS_SCREENSHOT_PATH` and `GEFS_SCREENSHOT_WAIT_FOR` (the `physics-passed`
+path) to capture a native PNG immediately after the check. This does not verify
+Windows OpenGL on CI hosts without WGL support.
+Linux uses `scripts/capture_billiard_linux.sh` inside Xvfb to capture the
+Billiard window after physics success, then signals `capture-complete` and
+verifies normal exit. OpenGL modules shut down before their contexts are
+destroyed, including the previously missing Linux module finalization.
+macOS uses native Metal PNG capture with
 `-screenshot <path> -screenshotWaitFor <output-directory>/physics-passed
 -screenshotDelay 0`; capture cannot complete before the physics check passes.
-All three enabled CI jobs run this regression and retain Billiard screenshots.
+All three enabled CI jobs run this regression and retain Billiard screenshots
+(Windows D3D12, Linux OpenGL, macOS Metal).
 Third-stage acceptance requires inspecting these real Billiard images, not
 Viewer's physics-free scene alone.
 
