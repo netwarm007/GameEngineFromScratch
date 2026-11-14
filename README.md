@@ -20,12 +20,15 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow a5c800dc](https://app.circleci.com/workflow/a5c800dc-4a54-4a35-8c8b-53261f20fe24)
+CircleCI [pipeline 859](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/859)
 passed the configured builds and tests for revision
-`f6dabf7dfa9a57066ba406ca760ffa5fd8ebbe2a` on Windows, macOS, and Linux.
-This revision includes the merged scene graph and screenshot changes and the
-font-atlas startup fix. These results apply only to that revision and do not
-validate every OS version or full rendering correctness.
+`fd239cc4246b3dcf1ff6d1bbfa776e4747a63927` on Windows (job 4123), Linux
+(job 4122), and macOS (job 4124). This revision adds the default docked Viewer
+layout and regression tests for docking, non-overlapping panels, viewport
+resizing, and saved layouts. The macOS screenshot also confirms the scene
+graph, scene preview, and debug panel are visible in separate docked regions.
+These results apply only to the tested configurations, not every OS version
+or full rendering correctness.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
@@ -34,8 +37,8 @@ The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
 `viewer-render.png` and `viewer.log`. Viewer uses Metal GPU readback rather than
 desktop capture, so capturing does not require a physical display. Launch with
 `-screenshot <path>` and optionally `-screenshotDelay <seconds>` (default: 45).
-Screenshot capture is best-effort and does not gate the build; a successful job
-alone does not guarantee a PNG was produced.
+In full workflows, screenshot capture is best-effort and does not gate the
+build; a successful job alone does not guarantee a PNG was produced.
 
 The Linux job also attempts a screenshot under `viewer-screenshots`, using Xvfb
 and Mesa software OpenGL rendering. After 60 seconds it captures the Viewer
