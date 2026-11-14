@@ -20,12 +20,16 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 872](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/872)
+CircleCI [pipeline 875](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/875)
 passed the configured builds and tests for revision
-`c8da9d98f9b269585ff6c3979c458bc28108828f` on Windows (job 4165), Linux
-(job 4164), and macOS (job 4166), including the standalone runtime lifecycle
-regression. Actual Viewer screenshots from all three jobs were inspected
-against revision `e91545f4012b381f5a18b8c68e9eec30ee3d1db4`: the splash scene,
+`1f7935c0343e344228dab395d80aea53819d34ff` on Windows (job 4175), Linux
+(job 4174), and macOS (job 4173), including the runtime lifecycle, scene
+services, parser, scene-loading, animation, and headless layout regressions.
+The Linux static-link failure from pipeline 873 is resolved.
+Actual Viewer screenshots from all three jobs were inspected
+against the lifecycle checkpoint `c8da9d98f9b269585ff6c3979c458bc28108828f`
+([pipeline 872](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/872)):
+the splash scene,
 materials, scene graph icons, and docked panels show no visible regression.
 These results apply only to the tested configurations and captured scene,
 not every OS version or full rendering correctness.
