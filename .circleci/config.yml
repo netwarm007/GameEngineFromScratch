@@ -206,6 +206,42 @@ jobs:
           command: |
             ctest --test-dir build -C Debug --output-on-failure
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run:
+          name: Capture Viewer screenshot
+          when: always
+          command: |
+            New-Item -ItemType Directory -Force screenshots | Out-Null
+            $process = $null
+            try {
+              $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse |
+                Select-Object -First 1
+              if (-not $viewer) { throw "Viewer.exe not found" }
+              $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path screenshots).Path "viewer-render.png"
+              $process = Start-Process -FilePath $viewer.FullName -PassThru `
+                -RedirectStandardOutput screenshots/viewer.log `
+                -RedirectStandardError screenshots/viewer-error.log
+              if (-not $process.WaitForExit(180000)) {
+                throw "Viewer screenshot timed out after 180 seconds"
+              }
+              if (-not (Test-Path $env:GEFS_SCREENSHOT_PATH)) {
+                throw "Viewer did not produce a PNG; see viewer logs (exit $($process.ExitCode))"
+              }
+              Add-Type -AssemblyName System.Drawing
+              $image = [System.Drawing.Image]::FromFile($env:GEFS_SCREENSHOT_PATH)
+              try { Write-Output "Screenshot saved: $($image.Width)x$($image.Height)" }
+              finally { $image.Dispose() }
+            } catch {
+              $_.Exception.Message | Out-File screenshots/capture.log -Append
+              Write-Output "Viewer screenshot failed; see viewer-screenshots artifacts"
+            } finally {
+              if ($process -and -not $process.HasExited) {
+                Stop-Process -Id $process.Id
+              }
+              Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+            }
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
       - when:
           condition:
             or:
@@ -218,7 +254,7 @@ jobs:
                  cmake --build ./build --target package
           - persist_to_workspace:
               root: build
-              paths: 
+              paths:
                 - GEFS-0.1.0-win64.exe
           - store_artifacts:
               path: build/GEFS-0.1.0-win64.exe
@@ -234,6 +270,7 @@ jobs:
              sudo apt install -y curl clang python3-pip ninja-build git uuid-dev
              sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt install -y flex bison
+             sudo apt install -y xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
@@ -289,6 +326,20 @@ jobs:
           name: Test
           command: |
              ctest --test-dir ./build --output-on-failure
+      - run:
+          name: Capture Viewer screenshot
+          when: always
+          command: |
+             mkdir -p screenshots
+             if ! LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
+               xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+               bash scripts/capture_viewer_linux.sh screenshots \
+               > screenshots/capture.log 2>&1; then
+               echo "Viewer screenshot failed; see viewer-screenshots/capture.log and viewer.log"
+             fi
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
       - when:
           condition:
             or:
@@ -301,7 +352,7 @@ jobs:
                  cmake --build ./build --target package
           - persist_to_workspace:
               root: build
-              paths: 
+              paths:
                 - GEFS-0.1.0-Linux.sh
                 - GEFS-0.1.0-Linux.tar.gz
                 - GEFS-0.1.0-Linux.tar.Z
@@ -372,6 +423,25 @@ jobs:
           name: Test
           command: |
              ctest --test-dir ./build --output-on-failure
+      - run:
+          name: Capture Viewer screenshot
+          when: always
+          command: |
+             # Never fails the job; Viewer renders headlessly and saves one frame itself.
+             mkdir -p screenshots
+             APP=$(find build -type d -name Viewer.app | head -n 1)
+             if [ -z "$APP" ]; then echo "Viewer.app not found"; exit 0; fi
+             open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP" --args -screenshot "$PWD/screenshots/viewer-render.png" -screenshotDelay 45
+             for i in $(seq 1 12); do
+               sleep 15
+               pgrep -x Viewer >/dev/null || break
+             done
+             pkill -x Viewer || true
+             cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
+             exit 0
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
       - when:
           condition:
             or:
@@ -384,7 +454,7 @@ jobs:
                  cmake --build ./build --target package
           - persist_to_workspace:
               root: build
-              paths: 
+              paths:
                 - GEFS-0.1.0-Darwin.sh
                 - GEFS-0.1.0-Darwin.tar.gz
           - store_artifacts:

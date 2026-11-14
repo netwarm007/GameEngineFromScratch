@@ -1,5 +1,9 @@
 #include <chrono>
 #include <string>
+#include <cstdlib>
+#include <limits>
+#include <wincodec.h>
+#include <wrl/client.h>
 
 #include "D3d/D3d12Utility.hpp"
 #include "D3d12RHI.hpp"
@@ -651,6 +655,10 @@ D3d12RHI::D3d12RHI() {}
 D3d12RHI::~D3d12RHI() {}
 
 void D3d12RHI::CreateDevice() {
+    if (const auto* path = _wgetenv(L"GEFS_SCREENSHOT_PATH")) {
+        m_screenshotPath = path;
+        m_screenshotStart = std::chrono::steady_clock::now();
+    }
 #if defined(D3D12_RHI_DEBUG)
     // Enable the D3D12 debug layer.
     {
@@ -665,12 +673,13 @@ void D3d12RHI::CreateDevice() {
     my_assert(SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))) &&
               "CreateDXGIFactory1 failed");
 
-    IDXGIAdapter1* pHardwareAdapter;
+    IDXGIAdapter1* pHardwareAdapter = nullptr;
     GetHardwareAdapter(m_pFactory, &pHardwareAdapter);
 
     if (FAILED(D3D12CreateDevice(pHardwareAdapter, D3D_FEATURE_LEVEL_12_0,
                                  IID_PPV_ARGS(&m_pDev)))) {
-        IDXGIAdapter* pWarpAdapter;
+        std::cerr << "Using WARP software rendering" << std::endl;
+        IDXGIAdapter* pWarpAdapter = nullptr;
         if (FAILED(m_pFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)))) {
             SafeRelease(&m_pFactory);
             my_assert(0);
@@ -681,7 +690,9 @@ void D3d12RHI::CreateDevice() {
             SafeRelease(&m_pFactory);
             my_assert(0);
         }
+        SafeRelease(&pWarpAdapter);
     }
+    SafeRelease(&pHardwareAdapter);
 
     static const D3D_FEATURE_LEVEL s_featureLevels[] = {D3D_FEATURE_LEVEL_12_1,
                                                         D3D_FEATURE_LEVEL_12_0};
@@ -1688,6 +1699,53 @@ void D3d12RHI::EndPass() { auto& m_pCmdList = m_pGraphicsCommandLists[0]; }
 void D3d12RHI::Present() {
     auto& m_pCmdList = m_pGraphicsCommandLists[0];
 
+    Microsoft::WRL::ComPtr<ID3D12Resource> readback;
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
+    const bool capture = !m_screenshotPath.empty() &&
+        std::chrono::steady_clock::now() - m_screenshotStart >= std::chrono::seconds(45);
+    if (capture) {
+        auto desc = m_pRenderTargets[m_nCurrentFrame]->GetDesc();
+        UINT64 size = 0;
+        m_pDev->GetCopyableFootprints(&desc, 0, 1, 0, &footprint, nullptr, nullptr, &size);
+        D3D12_HEAP_PROPERTIES heap{};
+        heap.Type = D3D12_HEAP_TYPE_READBACK;
+        D3D12_RESOURCE_DESC buffer{};
+        buffer.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        buffer.Width = size;
+        buffer.Height = 1;
+        buffer.DepthOrArraySize = 1;
+        buffer.MipLevels = 1;
+        buffer.SampleDesc.Count = 1;
+        buffer.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+        const HRESULT hr = m_pDev->CreateCommittedResource(
+            &heap, D3D12_HEAP_FLAG_NONE, &buffer, D3D12_RESOURCE_STATE_COPY_DEST,
+            nullptr, IID_PPV_ARGS(readback.GetAddressOf()));
+        if (FAILED(hr)) {
+            std::cerr << "[D3d12RHI] Screenshot readback allocation FAILED: "
+                      << hr << std::endl;
+            m_screenshotPath.clear();
+            PostMessage(m_fGetWindowHandler(), WM_CLOSE, 0, 0);
+        } else {
+            D3D12_RESOURCE_BARRIER copyBarrier{};
+            copyBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            copyBarrier.Transition.pResource = m_pRenderTargets[m_nCurrentFrame];
+            copyBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+            copyBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+            copyBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            m_pCmdList->ResourceBarrier(1, &copyBarrier);
+            D3D12_TEXTURE_COPY_LOCATION source{};
+            source.pResource = m_pRenderTargets[m_nCurrentFrame];
+            source.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+            D3D12_TEXTURE_COPY_LOCATION destination{};
+            destination.pResource = readback.Get();
+            destination.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+            destination.PlacedFootprint = footprint;
+            m_pCmdList->CopyTextureRegion(&destination, 0, 0, 0, &source, nullptr);
+            std::swap(copyBarrier.Transition.StateBefore, copyBarrier.Transition.StateAfter);
+            m_pCmdList->ResourceBarrier(1, &copyBarrier);
+        }
+    }
+
     D3D12_RESOURCE_BARRIER barrier;
 
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -1704,10 +1762,112 @@ void D3d12RHI::Present() {
     m_pGraphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists),
                                                  ppCommandLists);
 
+    if (readback) {
+        WaitForIdle();
+        const HRESULT hr = saveScreenshot(readback.Get(), footprint);
+        if (FAILED(hr)) {
+            std::cerr << "[D3d12RHI] Screenshot FAILED: " << hr << std::endl;
+        } else {
+            std::wcerr << L"[D3d12RHI] Screenshot saved: " << m_screenshotPath
+                       << std::endl;
+        }
+        m_screenshotPath.clear();
+        PostMessage(m_fGetWindowHandler(), WM_CLOSE, 0, 0);
+    }
+
     // swap the back buffer and the front buffer
     my_assert(SUCCEEDED(m_pSwapChain->Present(1, 0)));
 
     moveToNextFrame();
+}
+
+HRESULT D3d12RHI::saveScreenshot(
+    ID3D12Resource* readback, const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& footprint) {
+    if (footprint.Footprint.Format != DXGI_FORMAT_R8G8B8A8_UNORM) {
+        return E_NOTIMPL;
+    }
+    const UINT64 rowBytes = static_cast<UINT64>(footprint.Footprint.Width) * 4;
+    const UINT64 byteCount = rowBytes * footprint.Footprint.Height;
+    if (!rowBytes || !footprint.Footprint.Height ||
+        rowBytes > footprint.Footprint.RowPitch ||
+        byteCount > (std::numeric_limits<UINT>::max)()) {
+        return E_INVALIDARG;
+    }
+    // GetCopyableFootprints does not include padding after the final row.
+    const UINT64 mappedBytes = static_cast<UINT64>(footprint.Footprint.RowPitch) *
+                               (footprint.Footprint.Height - 1) + rowBytes;
+    const UINT64 bufferSize = readback->GetDesc().Width;
+    if (footprint.Offset > bufferSize || mappedBytes > bufferSize - footprint.Offset) {
+        return E_INVALIDARG;
+    }
+    const HRESULT comResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (FAILED(comResult) && comResult != RPC_E_CHANGED_MODE) {
+        return comResult;
+    }
+    bool outputOpened = false;
+    const HRESULT result = [&]() -> HRESULT {
+        using Microsoft::WRL::ComPtr;
+        ComPtr<IWICImagingFactory> factory;
+        HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+            CLSCTX_INPROC_SERVER, IID_PPV_ARGS(factory.GetAddressOf()));
+        if (FAILED(hr)) return hr;
+        ComPtr<IWICStream> stream;
+        hr = factory->CreateStream(stream.GetAddressOf());
+        if (FAILED(hr)) return hr;
+        hr = stream->InitializeFromFilename(m_screenshotPath.c_str(), GENERIC_WRITE);
+        if (FAILED(hr)) return hr;
+        outputOpened = true;
+        ComPtr<IWICBitmapEncoder> encoder;
+        hr = factory->CreateEncoder(GUID_ContainerFormatPng, nullptr, encoder.GetAddressOf());
+        if (FAILED(hr)) return hr;
+        hr = encoder->Initialize(stream.Get(), WICBitmapEncoderNoCache);
+        if (FAILED(hr)) return hr;
+        ComPtr<IWICBitmapFrameEncode> frame;
+        hr = encoder->CreateNewFrame(frame.GetAddressOf(), nullptr);
+        if (FAILED(hr)) return hr;
+        hr = frame->Initialize(nullptr);
+        if (FAILED(hr)) return hr;
+        hr = frame->SetSize(footprint.Footprint.Width, footprint.Footprint.Height);
+        if (FAILED(hr)) return hr;
+        WICPixelFormatGUID format = GUID_WICPixelFormat32bppBGRA;
+        hr = frame->SetPixelFormat(&format);
+        if (FAILED(hr)) return hr;
+        if (!IsEqualGUID(format, GUID_WICPixelFormat32bppBGRA)) {
+            std::cerr << "[D3d12RHI] PNG encoder rejected BGRA pixel format"
+                      << std::endl;
+            return E_NOTIMPL;
+        }
+        std::vector<BYTE> pixels(static_cast<size_t>(byteCount));
+        void* data = nullptr;
+        D3D12_RANGE range{static_cast<SIZE_T>(footprint.Offset),
+                         static_cast<SIZE_T>(footprint.Offset + mappedBytes)};
+        hr = readback->Map(0, &range, &data);
+        if (FAILED(hr)) return hr;
+        const auto* source = static_cast<const BYTE*>(data) + footprint.Offset;
+        for (UINT y = 0; y < footprint.Footprint.Height; ++y) {
+            auto* row = pixels.data() + static_cast<size_t>(y) * rowBytes;
+            memcpy(row, source + static_cast<size_t>(y) * footprint.Footprint.RowPitch,
+                   static_cast<size_t>(rowBytes));
+            for (UINT x = 0; x < footprint.Footprint.Width; ++x) {
+                std::swap(row[x * 4], row[x * 4 + 2]);
+                row[x * 4 + 3] = 255;
+            }
+        }
+        D3D12_RANGE written{0, 0};
+        readback->Unmap(0, &written);
+        hr = frame->WritePixels(footprint.Footprint.Height, static_cast<UINT>(rowBytes),
+            static_cast<UINT>(byteCount), pixels.data());
+        if (FAILED(hr)) return hr;
+        hr = frame->Commit();
+        if (FAILED(hr)) return hr;
+        return encoder->Commit();
+    }();
+    if (FAILED(result) && outputOpened && !DeleteFileW(m_screenshotPath.c_str())) {
+        std::cerr << "[D3d12RHI] Failed to remove incomplete screenshot: "
+                  << GetLastError() << std::endl;
+    }
+    if (SUCCEEDED(comResult)) CoUninitialize();
+    return result;
 }
 
 void D3d12RHI::msaaResolve() {

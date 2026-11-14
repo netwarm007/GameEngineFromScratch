@@ -8,4 +8,6 @@ add_library(D3dRHI
 target_link_libraries(D3dRHI
     d3d12
     dxgi
+    windowscodecs
+    ole32
 )

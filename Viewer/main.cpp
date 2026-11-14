@@ -96,6 +96,8 @@ int main(int argc, char** argv) {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+    // The executable path must be known before resolving asset paths.
+    assetLoader.Initialize();
     auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
 
     ImVector<ImWchar> ranges;
@@ -105,7 +107,6 @@ int main(int argc, char** argv) {
     builder.BuildRanges(&ranges);                          // Build the final result (ordered ranges with all the unique characters submitted)
 
     io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
-    io.Fonts->Build();
 
     ImGui::StyleColorsDark();
 

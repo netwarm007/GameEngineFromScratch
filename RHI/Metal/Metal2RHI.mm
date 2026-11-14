@@ -1,4 +1,5 @@
 #import <MetalKit/MetalKit.h>
+#import <ImageIO/ImageIO.h>
 #import <simd/simd.h>
 
 #import "Metal2RHI.h"
@@ -143,6 +144,12 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLComputePipelineState> _materialTextureCopyPipeline;
 
     MTKView* _mtkView;
+
+    // Optional headless capture: launch with `-screenshot <path>` and optionally
+    // `-screenshotDelay <seconds>` to save a rendered frame as PNG and quit.
+    NSString* _screenshotPath;
+    CFTimeInterval _screenshotTime;
+    BOOL _screenshotRequested;
 }
 
 - (MTLPixelFormat)getMtlPixelFormat:(const Image &)img {
@@ -165,6 +172,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     if (self) {
         _mtkView = mtkView;
         _device = device;
+
+        NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
+        _screenshotPath = [[defaults stringForKey:@"screenshot"] copy];
+        if (_screenshotPath) {
+            double delay = [defaults objectForKey:@"screenshotDelay"]
+                               ? [defaults doubleForKey:@"screenshotDelay"]
+                               : 45.0;
+            _screenshotTime = CACurrentMediaTime() + delay;
+            // The drawable texture is read back with a blit
+            _mtkView.framebufferOnly = NO;
+        }
         _inFlightSemaphores.resize(GEFSMaxBuffersInFlight);
         for (int32_t i = 0; i < GEFSMaxBuffersInFlight; i++) {
             _inFlightSemaphores[i] = dispatch_semaphore_create(GEFSMaxBuffersInFlight);
@@ -556,6 +574,12 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
         [renderEncoder endEncoding];
 
+        if (_screenshotPath && !_screenshotRequested && CACurrentMediaTime() >= _screenshotTime) {
+            _screenshotRequested = YES;
+            [self encodeScreenshot:_mtkView.currentDrawable.texture
+                     commandBuffer:_commandBuffers[frame.frameIndex]];
+        }
+
         [_commandBuffers[frame.frameIndex] presentDrawable:_mtkView.currentDrawable];
 
         // Add completion hander which signals _inFlightSemaphore when Metal and the GPU has fully
@@ -567,6 +591,54 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
         [_commandBuffers[frame.frameIndex] commit];
     }
+}
+
+- (void)encodeScreenshot:(id<MTLTexture>)source commandBuffer:(id<MTLCommandBuffer>)commandBuffer {
+    const NSUInteger width = source.width;
+    const NSUInteger height = source.height;
+    const NSUInteger bytesPerRow = width * 4;
+    id<MTLBuffer> buffer = [_device newBufferWithLength:bytesPerRow * height
+                                                options:MTLResourceStorageModeShared];
+
+    id<MTLBlitCommandEncoder> blit = [commandBuffer blitCommandEncoder];
+    [blit copyFromTexture:source
+                 sourceSlice:0
+                 sourceLevel:0
+                sourceOrigin:MTLOriginMake(0, 0, 0)
+                  sourceSize:MTLSizeMake(width, height, 1)
+                    toBuffer:buffer
+           destinationOffset:0
+      destinationBytesPerRow:bytesPerRow
+    destinationBytesPerImage:bytesPerRow * height];
+    [blit endEncoding];
+
+    NSString* path = _screenshotPath;
+    [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> finished) {
+      // Drawable pixel format is BGRA8Unorm
+      CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+      CGContextRef context = CGBitmapContextCreate(
+          buffer.contents, width, height, 8, bytesPerRow, colorSpace,
+          kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little);
+      CGImageRef image = CGBitmapContextCreateImage(context);
+      NSURL* url = [NSURL fileURLWithPath:path];
+      CGImageDestinationRef destination =
+          CGImageDestinationCreateWithURL((__bridge CFURLRef)url, CFSTR("public.png"), 1, NULL);
+      bool saved = false;
+      if (destination && image) {
+          CGImageDestinationAddImage(destination, image, NULL);
+          saved = CGImageDestinationFinalize(destination);
+      }
+      NSLog(@"[Metal2RHI] Screenshot %s: %@ (%lux%lu)", saved ? "saved" : "FAILED", path,
+            (unsigned long)width, (unsigned long)height);
+      if (destination) CFRelease(destination);
+      if (image) CGImageRelease(image);
+      if (context) CGContextRelease(context);
+      CGColorSpaceRelease(colorSpace);
+
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [NSApp terminate:nil];
+      });
+    }];
 }
 
 - (void)beginPass:(Frame&)frame {
