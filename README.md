@@ -20,13 +20,17 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 861](https://app.circleci.com/workflow/8c660f6f-9df6-4c8b-be38-569fb4f89349)
+CircleCI [pipeline 863](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/863)
 passed the configured builds and tests for revision
-`e824b2a35e28fb2695588ebf15f2320e138f30b1` on Windows (job 4129), macOS
-(job 4128), and Linux (job 4130). This revision includes Metal material
-mip generation and validated PVR mip metadata. All three jobs also produced
-Viewer screenshots. These results apply only to that revision and do not
-validate every OS version or full rendering correctness.
+`7a62cd6803e213dad4b1c6c7fa89882fed16a96f` on Windows (job 4135), Linux
+(job 4134), and macOS (job 4136), after rebasing onto master revision
+`0a2059c3`. This revision adds the default docked Viewer
+layout and regression tests for docking, non-overlapping panels, viewport
+resizing, and saved layouts. The macOS screenshot also confirms the scene
+graph, scene preview, and debug panel are visible in separate docked regions.
+These results apply only to the tested configurations, not every OS version
+or full rendering correctness. The merge with current master is not yet
+verified; these results do not cover the combined revision.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
@@ -77,6 +81,12 @@ capture, not full rendering correctness or execution through the WARP fallback.
 ## Scene Graph
 - OpenGEX
 - Collada (On the roadmap, not implemented yet)
+
+On first use, Viewer opens with a docked layout: the scene graph on the left,
+the scene preview on the right, and the debug panel across the bottom. The
+panels resize with the main viewport without overlapping. Existing ImGui
+layouts are preserved. Use Debug > Reset window layout to restore these
+defaults, or reopen individual panels through the Debug menu.
 
 ## Shading Language
 - HLSL, auto convert to GLSL/Metal Performance Shader
