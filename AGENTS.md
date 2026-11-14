@@ -42,6 +42,39 @@
   trusted DNS server as a diagnostic. Preserve hostname and TLS certificate
   verification, and do not change system DNS settings without authorization.
 
+## Viewer UI and layout verification
+
+- A successful build or screenshot step does not prove a panel is visible.
+  Inspect the actual screenshot artifact for the affected platform and exact
+  revision. Check overlap, clipping, and placement outside the main viewport
+  before attributing a missing panel to scene loading or rendering.
+- With ImGui multi-viewports enabled, window positions are desktop coordinates.
+  Derive initial placement from the main viewport's work position and size,
+  not fixed coordinates or framebuffer pixel dimensions.
+- Default Viewer panels use docking. Initialize defaults only when no saved
+  layout exists; preserve user rearrangements and floating windows. Rebuilding
+  the dock tree every frame destroys those choices. The Debug menu provides
+  an explicit reset action for restoring defaults, including older layouts.
+- Use `GuiSubPassLayoutTest` for headless layout regression checks. Cover
+  docking, non-overlap, viewport containment, resizing, non-zero viewport
+  origins, Retina framebuffer scaling, and saved layout preservation.
+  Confirm the regression fails without the fix, then inspect a real Viewer
+  screenshot; headless tests do not replace backend rendering verification.
+
+## Focused CI iteration
+
+- For authorized macOS Viewer iterations, use the boolean pipeline parameter
+  `macos-viewer-only: true`. It builds Viewer and its layout test, runs that
+  test, and requires a screenshot, without Windows/Linux jobs, asset cooking,
+  unrelated tests, or packaging. This is not the full acceptance gate.
+- A normal push starts the default full platform workflow; it does not select
+  focused mode. Before pushing an iteration intended to be focused, establish
+  how its parameterized pipeline will be triggered. VS Code's GitHub login
+  does not itself supply CircleCI API credentials.
+- When changing workflow selection, validate the CircleCI configuration and
+  process it with the intended parameters. Inspect the expanded jobs and steps
+  to verify excluded work really is absent and the default workflow is intact.
+
 ## Safety
 
 - Preserve unrelated changes. Do not commit, push, create remote repositories,
