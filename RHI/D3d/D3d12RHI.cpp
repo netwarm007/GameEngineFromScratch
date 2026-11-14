@@ -1,6 +1,7 @@
 #include <chrono>
 #include <string>
 #include <cstdlib>
+#include <filesystem>
 #include <limits>
 #include <wincodec.h>
 #include <wrl/client.h>
@@ -658,6 +659,10 @@ void D3d12RHI::CreateDevice() {
     if (const auto* path = _wgetenv(L"GEFS_SCREENSHOT_PATH")) {
         m_screenshotPath = path;
         m_screenshotStart = std::chrono::steady_clock::now();
+    }
+    m_screenshotWaitFor.clear();
+    if (const auto* path = _wgetenv(L"GEFS_SCREENSHOT_WAIT_FOR")) {
+        m_screenshotWaitFor = path;
     }
 #if defined(D3D12_RHI_DEBUG)
     // Enable the D3D12 debug layer.
@@ -1701,8 +1706,18 @@ void D3d12RHI::Present() {
 
     Microsoft::WRL::ComPtr<ID3D12Resource> readback;
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
-    const bool capture = !m_screenshotPath.empty() &&
-        std::chrono::steady_clock::now() - m_screenshotStart >= std::chrono::seconds(45);
+    bool captureReady = std::chrono::steady_clock::now() - m_screenshotStart >=
+                        std::chrono::seconds(45);
+    if (!m_screenshotPath.empty() && !m_screenshotWaitFor.empty()) {
+        std::error_code error;
+        captureReady = std::filesystem::exists(m_screenshotWaitFor, error);
+        if (error) {
+            std::cerr << "[D3d12RHI] Screenshot gate FAILED: " << error.message() << std::endl;
+            m_screenshotPath.clear();
+            PostMessage(m_fGetWindowHandler(), WM_CLOSE, 0, 0);
+        }
+    }
+    const bool capture = !m_screenshotPath.empty() && captureReady;
     if (capture) {
         auto desc = m_pRenderTargets[m_nCurrentFrame]->GetDesc();
         UINT64 size = 0;

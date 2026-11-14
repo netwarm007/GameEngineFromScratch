@@ -1,4 +1,6 @@
+#include <cmath>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -113,7 +115,9 @@ void TestAnimationWithoutApplication() {
     parser.nextScene->AnimatableNodes.push_back(node);
     Expect(scenes.LoadScene("animated.scene") == 0, "load animated scene");
     animations.Tick();
-    Expect((*node->GetCalculatedTransform())[3][0] == 5.0f,
+    const float animatedX = (*node->GetCalculatedTransform())[3][0];
+    Expect(std::abs(animatedX - 5.0f) <=
+               4.0f * std::numeric_limits<float>::epsilon() * 5.0f,
            "injected scene animation updates transform");
 
     parser.nextScene = std::make_unique<Scene>("replacement");

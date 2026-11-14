@@ -210,7 +210,7 @@ jobs:
               if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
               $env:Path = "$($dxc.DirectoryName);$env:Path"
             }
-            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON
+            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             cmake --build build --config Debug
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -258,11 +258,14 @@ jobs:
             }
       - run:
           name: Billiard physics regression and screenshots
+          no_output_timeout: 15m
           command: |
             $output = New-Item -ItemType Directory -Force billiard-screenshots
             $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse |
               Select-Object -First 1
             if (-not $billiard) { throw "BilliardGame.exe not found" }
+            $env:GEFS_SCREENSHOT_PATH = Join-Path $output.FullName "billiard-after.png"
+            $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $output.FullName "physics-passed"
             $process = Start-Process -FilePath $billiard.FullName -PassThru `
               -ArgumentList @('-physicsRegression', ('"' + $output.FullName + '"')) `
               -RedirectStandardOutput billiard-screenshots/billiard.log `
@@ -273,15 +276,15 @@ jobs:
               $process.Refresh()
               if ($process.ExitCode -ne 0) { throw "Billiard regression failed; see billiard logs" }
               if (-not (Test-Path billiard-screenshots/physics-passed)) { throw "Physics result missing" }
+              if (-not (Test-Path $env:GEFS_SCREENSHOT_PATH)) { throw "Billiard screenshot missing" }
               Add-Type -AssemblyName System.Drawing
-              foreach ($phase in @('before', 'after')) {
-                $image = [System.Drawing.Image]::FromFile("$($output.FullName)/billiard-$phase.bmp")
-                try {
-                  $image.Save("$($output.FullName)/billiard-$phase.png", [System.Drawing.Imaging.ImageFormat]::Png)
-                } finally { $image.Dispose() }
-              }
+              $image = [System.Drawing.Image]::FromFile($env:GEFS_SCREENSHOT_PATH)
+              try { Write-Output "Billiard screenshot: $($image.Width)x$($image.Height)" }
+              finally { $image.Dispose() }
             } finally {
               if (-not $process.HasExited) { Stop-Process -Id $process.Id }
+              Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+              Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
             }
       - store_artifacts:
           path: billiard-screenshots
@@ -393,16 +396,13 @@ jobs:
              fi
       - run:
           name: Billiard physics regression and screenshots
+          no_output_timeout: 15m
           command: |
              mkdir -p billiard-screenshots
-             LIBGL_ALWAYS_SOFTWARE=1 LD_LIBRARY_PATH="$PWD/External/Linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
-               timeout --kill-after=5s 600s xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
-               ./build/Game/Billiard/BilliardGame -physicsRegression "$PWD/billiard-screenshots" \
-               > billiard-screenshots/billiard.log 2>&1
-             test -s billiard-screenshots/physics-passed
-             for phase in before after; do
-               convert "billiard-screenshots/billiard-$phase.bmp" "billiard-screenshots/billiard-$phase.png"
-             done
+             LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
+               xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+               bash scripts/capture_billiard_linux.sh billiard-screenshots \
+               > billiard-screenshots/capture.log 2>&1
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots
@@ -520,6 +520,7 @@ jobs:
              exit 0
       - run:
           name: Billiard physics regression and screenshot
+          no_output_timeout: 15m
           command: |
              mkdir -p billiard-screenshots
              output="$PWD/billiard-screenshots"

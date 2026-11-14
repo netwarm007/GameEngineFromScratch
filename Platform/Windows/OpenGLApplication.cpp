@@ -22,6 +22,7 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam,
 }
 
 void OpenGLApplication::Finalize() {
+    BaseApplication::Finalize();
     if (m_RenderContext) {
         wglMakeCurrent(NULL, NULL);
         wglDeleteContext(m_RenderContext);
