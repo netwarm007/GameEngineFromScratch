@@ -26,18 +26,22 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
    public:
     using SceneNodeType::SceneNode;
 
+    [[nodiscard]] SceneNodeKind GetKind() const override {
+        return SceneNodeKind::Geometry;
+    }
+
     void SetVisibility(bool visible) { m_bVisible = visible; };
-    bool Visible() { return m_bVisible; };
+    bool Visible() const { return m_bVisible; };
     void SetIfCastShadow(bool shadow) { m_bShadow = shadow; };
-    bool CastShadow() { return m_bShadow; };
+    bool CastShadow() const { return m_bShadow; };
     void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
-    bool MotionBlur() { return m_bMotionBlur; };
+    bool MotionBlur() const { return m_bMotionBlur; };
     using SceneNodeType::AddSceneObjectRef;
     void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
     void AddMaterialRef(const std::string&& key) {
         m_Materials.push_back(key);
     };
-    std::string GetMaterialRef(const size_t index) {
+    std::string GetMaterialRef(const size_t index) const {
         if (index < m_Materials.size()) {
             return m_Materials[index];
         }

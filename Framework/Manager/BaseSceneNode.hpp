@@ -8,6 +8,8 @@
 #include "geommath.hpp"
 
 namespace My {
+enum class SceneNodeKind { Empty, Geometry, Light, Camera, Bone };
+
 class BaseSceneNode : public TreeNode {
    protected:
     std::string m_strName;
@@ -30,6 +32,26 @@ class BaseSceneNode : public TreeNode {
     ~BaseSceneNode() override = default;
 
     [[nodiscard]] std::string GetName() const { return m_strName; };
+
+    [[nodiscard]] virtual SceneNodeKind GetKind() const {
+        return SceneNodeKind::Empty;
+    }
+
+    [[nodiscard]] size_t GetChildCount() const { return m_Children.size(); }
+
+    [[nodiscard]] std::vector<std::shared_ptr<BaseSceneNode>> GetChildNodes()
+        const {
+        std::vector<std::shared_ptr<BaseSceneNode>> result;
+        result.reserve(m_Children.size());
+        for (const auto& child : m_Children) {
+            result.push_back(std::static_pointer_cast<BaseSceneNode>(child));
+        }
+        return result;
+    }
+
+    [[nodiscard]] size_t GetAnimationClipCount() const {
+        return m_AnimationClips.size();
+    }
 
     void AttachAnimationClip(
         int clip_index, const std::shared_ptr<SceneObjectAnimationClip>& clip) {
@@ -145,7 +167,7 @@ class SceneNode : public BaseSceneNode {
 
     void AddSceneObjectRef(const std::string& key) { m_keySceneObject = key; };
 
-    const std::string& GetSceneObjectRef() { return m_keySceneObject; };
+    const std::string& GetSceneObjectRef() const { return m_keySceneObject; };
 };
 
 using SceneEmptyNode = BaseSceneNode;

@@ -1,7 +1,11 @@
 #include "GuiSubPass.hpp"
 #include "imgui/imgui.h"
 
+#include <cmath>
 #include <deque>
+
+#include "AssetLoader.hpp"
+#include "PNG.hpp"
 
 using namespace My;
 
@@ -9,6 +13,174 @@ GuiSubPass::~GuiSubPass() {
     for (auto& texture_debug_view : m_TextureViews) {
         m_pGraphicsManager->ReleaseTexture(texture_debug_view);
     }
+
+    for (auto& icon : m_SceneIcons) {
+        if (icon.handler) m_pGraphicsManager->ReleaseTexture(icon);
+    }
+}
+
+namespace {
+constexpr std::array<const char*, 5> kSceneIconFiles{
+    "Textures/Icons/scene_empty.png", "Textures/Icons/scene_geometry.png",
+    "Textures/Icons/scene_light.png", "Textures/Icons/scene_camera.png",
+    "Textures/Icons/scene_bone.png"};
+
+const char* SceneNodeKindName(SceneNodeKind kind) {
+    switch (kind) {
+        case SceneNodeKind::Geometry:
+            return (const char*)u8"几何体";
+        case SceneNodeKind::Light:
+            return (const char*)u8"灯光";
+        case SceneNodeKind::Camera:
+            return (const char*)u8"相机";
+        case SceneNodeKind::Bone:
+            return (const char*)u8"骨骼";
+        default:
+            return (const char*)u8"空节点";
+    }
+}
+}  // namespace
+
+void GuiSubPass::LoadSceneIcons() {
+    m_SceneIconsLoaded = true;
+
+    AssetLoader loader;
+    PngParser parser;
+    for (size_t i = 0; i < kSceneIconFiles.size(); i++) {
+        if (!loader.FileExists(kSceneIconFiles[i])) {
+            std::cerr << "[GuiSubPass] Icon not found: " << kSceneIconFiles[i]
+                      << std::endl;
+            continue;
+        }
+        Buffer buf = loader.SyncOpenAndReadBinary(kSceneIconFiles[i]);
+        Image image = parser.Parse(buf);
+        m_SceneIcons[i] = m_pGraphicsManager->CreateTexture(image);
+    }
+}
+
+void GuiSubPass::DrawSceneNode(const std::shared_ptr<BaseSceneNode>& node) {
+    const auto children = node->GetChildNodes();
+
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+                               ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                               ImGuiTreeNodeFlags_SpanAvailWidth |
+                               ImGuiTreeNodeFlags_DefaultOpen;
+    if (children.empty()) flags |= ImGuiTreeNodeFlags_Leaf;
+    if (m_SelectedNode.lock() == node) flags |= ImGuiTreeNodeFlags_Selected;
+
+    const auto kind = node->GetKind();
+    const auto& icon = m_SceneIcons[static_cast<size_t>(kind)];
+    const float icon_size = ImGui::GetTextLineHeight();
+
+    ImGui::PushID(node.get());
+    const bool open = ImGui::TreeNodeEx("##node", flags);
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+        m_SelectedNode = node;
+    }
+    ImGui::SameLine();
+    if (icon.handler) {
+        ImGui::Image((ImTextureID)icon.handler, ImVec2(icon_size, icon_size));
+    } else {
+        ImGui::Text("[%s]", SceneNodeKindName(kind));
+    }
+    ImGui::SameLine();
+    const auto name = node->GetName();
+    ImGui::TextUnformatted(name.empty() ? (const char*)u8"(未命名)"
+                                        : name.c_str());
+    if (open) {
+        for (const auto& child : children) DrawSceneNode(child);
+        ImGui::TreePop();
+    }
+    ImGui::PopID();
+}
+
+void GuiSubPass::DrawSceneNodeDetail(const BaseSceneNode& node) {
+    const auto kind = node.GetKind();
+    ImGui::Text((const char*)u8"名称: %s", node.GetName().c_str());
+    ImGui::Text((const char*)u8"类型: %s", SceneNodeKindName(kind));
+    ImGui::Text((const char*)u8"子节点数: %zu", node.GetChildCount());
+    ImGui::Text((const char*)u8"动画剪辑数: %zu", node.GetAnimationClipCount());
+
+    switch (kind) {
+        case SceneNodeKind::Geometry: {
+            const auto& n = static_cast<const SceneGeometryNode&>(node);
+            ImGui::Text((const char*)u8"对象引用: %s",
+                        n.GetSceneObjectRef().c_str());
+            ImGui::Text((const char*)u8"可见: %s  投射阴影: %s  运动模糊: %s",
+                        n.Visible() ? "Y" : "N", n.CastShadow() ? "Y" : "N",
+                        n.MotionBlur() ? "Y" : "N");
+            break;
+        }
+        case SceneNodeKind::Light: {
+            const auto& n = static_cast<const SceneLightNode&>(node);
+            ImGui::Text((const char*)u8"对象引用: %s",
+                        n.GetSceneObjectRef().c_str());
+            ImGui::Text((const char*)u8"投射阴影: %s",
+                        n.CastShadow() ? "Y" : "N");
+            break;
+        }
+        case SceneNodeKind::Camera: {
+            const auto& n = static_cast<const SceneCameraNode&>(node);
+            ImGui::Text((const char*)u8"对象引用: %s",
+                        n.GetSceneObjectRef().c_str());
+            const auto& t = n.GetTarget();
+            ImGui::Text((const char*)u8"目标: (%.3f, %.3f, %.3f)", t[0], t[1],
+                        t[2]);
+            break;
+        }
+        default:
+            break;
+    }
+
+    ImGui::Separator();
+    const auto m = *node.GetCalculatedTransform();
+    ImGui::Text((const char*)u8"局部变换");
+    ImGui::Text((const char*)u8"  平移: (%.3f, %.3f, %.3f)", m[3][0], m[3][1],
+                m[3][2]);
+    auto row_len = [&m](int r) {
+        return std::sqrt(m[r][0] * m[r][0] + m[r][1] * m[r][1] +
+                         m[r][2] * m[r][2]);
+    };
+    ImGui::Text((const char*)u8"  缩放: (%.3f, %.3f, %.3f)", row_len(0),
+                row_len(1), row_len(2));
+}
+
+void GuiSubPass::DrawSceneGraphWindow(const Frame& frame, bool* open) {
+    if (!m_SceneIconsLoaded) LoadSceneIcons();
+
+    ImGui::SetNextWindowSize(ImVec2(520, 360), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(60, 60), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin((const char*)u8"场景图", open)) {
+        ImGui::End();
+        return;
+    }
+
+    const auto scene = frame.scene;
+    if (scene.get() != m_LastScene) {
+        m_LastScene = scene.get();
+        m_SelectedNode.reset();
+    }
+
+    if (!scene || !scene->SceneGraph) {
+        ImGui::TextUnformatted((const char*)u8"无场景");
+        ImGui::End();
+        return;
+    }
+
+    ImGui::BeginChild("scene_tree", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true);
+    DrawSceneNode(scene->SceneGraph);
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginChild("scene_node_detail", ImVec2(0, 0), true);
+    if (auto selected = m_SelectedNode.lock()) {
+        DrawSceneNodeDetail(*selected);
+    } else {
+        ImGui::TextUnformatted((const char*)u8"请选择一个节点");
+    }
+    ImGui::EndChild();
+
+    ImGui::End();
 }
 
 static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64}, ImVec2 uv0 = {0.0f, 1.0f}, ImVec2 uv1 = {1.0f, 0.0f}) {
@@ -57,10 +229,11 @@ void GuiSubPass::Draw(Frame& frame) {
         }
 	    static bool show_app_metrics = false;
 	    static bool show_app_debug_panel = true;
+	    static bool show_scene_graph = true;
 	    static bool show_app_about = false;
         size_t texture_view_index = 0;
 
-        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
         // viewer
         {
@@ -95,11 +268,16 @@ void GuiSubPass::Draw(Frame& frame) {
             ImGui::End();
         }
 
+        if (show_scene_graph) {
+            DrawSceneGraphWindow(frame, &show_scene_graph);
+        }
+
         if (ImGui::BeginMainMenuBar())
         {
             if (ImGui::BeginMenu((const char*)u8"调试"))
             {
 			    ImGui::MenuItem((const char*)u8"调试窗口", NULL, &show_app_debug_panel);
+			    ImGui::MenuItem((const char*)u8"场景图", NULL, &show_scene_graph);
 			    ImGui::MenuItem((const char*)u8"ImGui状态及调试窗口", NULL, &show_app_metrics);
                 ImGui::EndMenu();
             }

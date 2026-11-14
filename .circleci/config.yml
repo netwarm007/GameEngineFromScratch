@@ -242,16 +242,22 @@ jobs:
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
-      - run:
-          name: Package
-          command: |
-             cmake --build ./build --target package
-      - persist_to_workspace:
-          root: build
-          paths: 
-            - GEFS-0.1.0-win64.exe
-      - store_artifacts:
-          path: build/GEFS-0.1.0-win64.exe
+      - when:
+          condition:
+            or:
+              - equal: [ master, << pipeline.git.branch >> ]
+              - << pipeline.git.tag >>
+          steps:
+          - run:
+              name: Package
+              command: |
+                 cmake --build ./build --target package
+          - persist_to_workspace:
+              root: build
+              paths:
+                - GEFS-0.1.0-win64.exe
+          - store_artifacts:
+              path: build/GEFS-0.1.0-win64.exe
   build_linux:
     machine:
       image: ubuntu-2204:2026.10.1
@@ -334,22 +340,28 @@ jobs:
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
-      - run:
-          name: Package
-          command: |
-             cmake --build ./build --target package
-      - persist_to_workspace:
-          root: build
-          paths: 
-            - GEFS-0.1.0-Linux.sh
-            - GEFS-0.1.0-Linux.tar.gz
-            - GEFS-0.1.0-Linux.tar.Z
-      - store_artifacts:
-          path: build/GEFS-0.1.0-Linux.sh
-      - store_artifacts:
-          path: build/GEFS-0.1.0-Linux.tar.gz
-      - store_artifacts:
-          path: build/GEFS-0.1.0-Linux.tar.Z
+      - when:
+          condition:
+            or:
+              - equal: [ master, << pipeline.git.branch >> ]
+              - << pipeline.git.tag >>
+          steps:
+          - run:
+              name: Package
+              command: |
+                 cmake --build ./build --target package
+          - persist_to_workspace:
+              root: build
+              paths:
+                - GEFS-0.1.0-Linux.sh
+                - GEFS-0.1.0-Linux.tar.gz
+                - GEFS-0.1.0-Linux.tar.Z
+          - store_artifacts:
+              path: build/GEFS-0.1.0-Linux.sh
+          - store_artifacts:
+              path: build/GEFS-0.1.0-Linux.tar.gz
+          - store_artifacts:
+              path: build/GEFS-0.1.0-Linux.tar.Z
   build_macos:
     macos:
       xcode: "16.4.0"
@@ -430,19 +442,25 @@ jobs:
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
-      - run:
-          name: Package
-          command: |
-             cmake --build ./build --target package
-      - persist_to_workspace:
-          root: build
-          paths: 
-            - GEFS-0.1.0-Darwin.sh
-            - GEFS-0.1.0-Darwin.tar.gz
-      - store_artifacts:
-          path: build/GEFS-0.1.0-Darwin.sh
-      - store_artifacts:
-          path: build/GEFS-0.1.0-Darwin.tar.gz
+      - when:
+          condition:
+            or:
+              - equal: [ master, << pipeline.git.branch >> ]
+              - << pipeline.git.tag >>
+          steps:
+          - run:
+              name: Package
+              command: |
+                 cmake --build ./build --target package
+          - persist_to_workspace:
+              root: build
+              paths:
+                - GEFS-0.1.0-Darwin.sh
+                - GEFS-0.1.0-Darwin.tar.gz
+          - store_artifacts:
+              path: build/GEFS-0.1.0-Darwin.sh
+          - store_artifacts:
+              path: build/GEFS-0.1.0-Darwin.tar.gz
   build_android:
     working_directory: ~/project
     docker:

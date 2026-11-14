@@ -161,6 +161,7 @@ class D3d12RHI {
     void UpdateUniformBufer(ConstantBuffer* constantBuffers, const void* buffer);
 
     ID3D12Device* GetDevice() { return m_pDev; }
+    ID3D12CommandQueue* GetGraphicsCommandQueue() { return m_pGraphicsCommandQueue; }
     ID3D12GraphicsCommandList* GetGraphicsCommandList() { return m_pGraphicsCommandLists[0]; }
     uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
 

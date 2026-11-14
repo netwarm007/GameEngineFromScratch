@@ -59,3 +59,5 @@ External/Darwin/framework/Chromium[[:space:]]Embedded[[:space:]]Framework.framew
 *.pvr filter=lfs diff=lfs merge=lfs -text
 *.ttf filter=lfs diff=lfs merge=lfs -text
 *.otf filter=lfs diff=lfs merge=lfs -text
+# Small generated UI icons are stored directly in Git
+Asset/Textures/Icons/*.png binary -filter -diff -merge

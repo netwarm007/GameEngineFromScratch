@@ -78,6 +78,7 @@ void GraphicsManager::Tick() {
             BeginScene(*scene);
             m_nSceneRevision = rev;
         }
+        m_Frames[m_nFrameIndex].scene = pSceneManager->GetSceneForRendering();
     }
 
     UpdateConstants();
@@ -537,5 +538,6 @@ void GraphicsManager::EndScene() {
         }
 
         ReleaseTexture(frame.depthTexture);
+        frame.scene.reset();
     }
 }
