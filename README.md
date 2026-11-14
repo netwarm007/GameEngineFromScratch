@@ -20,7 +20,16 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 869](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/869)
+CircleCI [pipeline 871](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/871)
+passed the configured builds and tests for revision
+`0f2cea43415ee070bde9e08962785cbdea699242` on Windows (job 4162), Linux
+(job 4161), and macOS (job 4163). Both CTest JUnit uploads succeeded on each
+platform. CircleCI's test metadata contains 41 tests on Windows (2 math
+regressions and 39 engine tests), and 38 each on Linux and macOS (2 math
+regressions and 36 engine tests). These results apply only to the configured
+CI builds; Smarter Testing is not enabled.
+
+Earlier, CircleCI [pipeline 869](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/869)
 passed the configured builds and tests for revision
 `5c79e7b595426f321b3cc81b5a549430bcd2942e` on Windows (job 4155), Linux
 (job 4157), and macOS (job 4156). The Viewer screenshot from each job shows
@@ -173,6 +182,20 @@ pipeline.
 
 Packaging and package artifacts are limited to `master` and tagged builds;
 builds, tests, and Viewer screenshot attempts also run on other branches.
+
+### CircleCI test results
+
+The Windows, Linux, and macOS jobs generate JUnit XML with CTest's
+`--output-junit junit.xml` and upload it with `store_test_results` for the job's
+Tests tab. The standalone C++/ISPC math regression report is
+`build-geommath/junit.xml`; the engine test report is `build/junit.xml`.
+Each report is uploaded immediately after its test step, including when tests
+fail. Test failures still fail the job. Uploads are not guaranteed if a job is
+killed by cancellation or reaches its runtime timeout.
+
+Results represent registered CTest tests, not individual assertions or Viewer
+screenshot captures. This reporting does not enable Smarter Testing or change
+which tests run.
 
 ### Windows
 Windows scripts that use Visual Studio select the newest installed version

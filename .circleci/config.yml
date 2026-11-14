@@ -146,8 +146,10 @@ jobs:
             $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
             $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
             if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S Test\GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-geommath --parallel 2 && ctest --test-dir build-geommath --output-on-failure"
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S Test\GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-geommath --parallel 2 && ctest --test-dir build-geommath --output-on-failure --output-junit junit.xml"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - store_test_results:
+          path: build-geommath/junit.xml
       - run:
           name: Prepare Windows dependency cache key
           command: |
@@ -219,8 +221,10 @@ jobs:
       - run:
           name: "Test"
           command: |
-            ctest --test-dir build -C Debug --output-on-failure
+            ctest --test-dir build -C Debug --output-on-failure --output-junit junit.xml
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - store_test_results:
+          path: build/junit.xml
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -319,12 +323,17 @@ jobs:
           paths:
             - ".git"
       - run:
-          name: "Build Dependencies"
+          name: ISPC and C++ math regression
           command: |
              ./scripts/build_ispc.sh
              cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
              cmake --build build-geommath --parallel 2
-             ctest --test-dir build-geommath --output-on-failure
+             ctest --test-dir build-geommath --output-on-failure --output-junit junit.xml
+      - store_test_results:
+          path: build-geommath/junit.xml
+      - run:
+          name: "Build Dependencies"
+          command: |
              ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
@@ -344,7 +353,9 @@ jobs:
       - run:
           name: Test
           command: |
-             ctest --test-dir ./build --output-on-failure
+             ctest --test-dir ./build --output-on-failure --output-junit junit.xml
+      - store_test_results:
+          path: build/junit.xml
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -419,12 +430,17 @@ jobs:
              brew install cmake ninja flex bison
              echo "export PATH=\"$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:\$PATH\"" >> "$BASH_ENV"
       - run:
-          name: "Build Dependencies"
+          name: ISPC and C++ math regression
           command: |
              ./scripts/build_ispc.sh
              cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
              cmake --build build-geommath --parallel 2
-             ctest --test-dir build-geommath --output-on-failure
+             ctest --test-dir build-geommath --output-on-failure --output-junit junit.xml
+      - store_test_results:
+          path: build-geommath/junit.xml
+      - run:
+          name: "Build Dependencies"
+          command: |
              ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
@@ -445,7 +461,9 @@ jobs:
       - run:
           name: Test
           command: |
-             ctest --test-dir ./build --output-on-failure
+             ctest --test-dir ./build --output-on-failure --output-junit junit.xml
+      - store_test_results:
+          path: build/junit.xml
       - run:
           name: Capture Viewer screenshot
           when: always
