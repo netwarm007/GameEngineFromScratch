@@ -162,6 +162,18 @@ resource-model coupling is a separate migration.
 Failed scene reloads leave the current scene and its revision unchanged and
 report the read or parse failure.
 
+Physics backends own rigid-body bindings and retain bound geometry nodes until
+deletion or cleanup. Scene nodes contain no backend handles. A published
+simulation transform overrides the authored/runtime transform for rendering;
+deleting a body restores normal scene transforms without changing the authored
+data. Graphics consumes `GetRenderTransform()` and no longer queries physics.
+Forces and explicit body-transform updates address scene nodes and return false
+when no body is bound. `MyPhysicsManager` still does not simulate forces.
+Scene-wide cleanup uses the backend's own bindings, not the newly published
+scene, so reloads cannot strand old bodies. `PhysicsSceneIntegrationTest`
+exercises both backends without constructing an application or window; their
+scene discovery during `Tick()` remains a later dependency-injection step.
+
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.

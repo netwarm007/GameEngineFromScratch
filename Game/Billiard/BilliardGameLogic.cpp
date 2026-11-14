@@ -33,11 +33,8 @@ void BilliardGameLogic::OnLeftKey() {
 
     auto ptr = pSceneManager->GetSceneGeometryNode("pbb_cue");
     if (auto node = ptr.lock()) {
-        auto rigidBody = node->RigidBody();
-        if (rigidBody) {
-            pPhysicsManager->ApplyCentralForce(
-                rigidBody, Vector3f({-100.0f, 0.0f, 0.0f}));
-        }
+        pPhysicsManager->ApplyCentralForce(
+            *node, Vector3f({-100.0f, 0.0f, 0.0f}));
     }
 }
 

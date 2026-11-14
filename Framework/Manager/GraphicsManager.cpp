@@ -182,35 +182,7 @@ void GraphicsManager::UpdateConstants() {
     auto& frame = m_Frames[m_nFrameIndex];
 
     for (auto& pDbc : frame.batchContexts) {
-        if (void* rigidBody = pDbc->node->RigidBody()) {
-            Matrix4X4f trans;
-            BuildIdentityMatrix(trans);
-
-            // the geometry has rigid body bounded, we blend the simlation
-            // result here.
-            auto pPhysicsManager =
-                dynamic_cast<BaseApplication*>(m_pApp)->GetPhysicsManager();
-
-            if (pPhysicsManager) {
-                Matrix4X4f simulated_result =
-                    dynamic_cast<BaseApplication*>(m_pApp)
-                        ->GetPhysicsManager()
-                        ->GetRigidBodyTransform(rigidBody);
-
-                // apply the rotation part of the simlation result
-                memcpy(trans[0], simulated_result[0], sizeof(float) * 3);
-                memcpy(trans[1], simulated_result[1], sizeof(float) * 3);
-                memcpy(trans[2], simulated_result[2], sizeof(float) * 3);
-
-                // replace the translation part of the matrix with simlation
-                // result directly
-                memcpy(trans[3], simulated_result[3], sizeof(float) * 3);
-            }
-
-            pDbc->modelMatrix = trans;
-        } else {
-            pDbc->modelMatrix = *pDbc->node->GetCalculatedTransform();
-        }
+        pDbc->modelMatrix = pDbc->node->GetRenderTransform();
     }
 
     // Generate the view matrix based on the camera's position.

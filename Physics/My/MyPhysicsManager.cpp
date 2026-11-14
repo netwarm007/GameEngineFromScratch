@@ -20,34 +20,16 @@ void MyPhysicsManager::Finalize() {
     cout << "[MyPhysicsManager] Finalize" << endl;
     // Clean up
     ClearRigidBodies();
+    m_nSceneRevision = 0;
 }
 
 void MyPhysicsManager::IterateConvexHull() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
-
-    // Geometries
-    for (const auto& _it : scene->GeometryNodes) {
-        auto pGeometryNode = _it.second.lock();
-        if (pGeometryNode) {
-            void* rigidBody = pGeometryNode->RigidBody();
-            if (rigidBody) {
-                auto* _rigidBody = reinterpret_cast<RigidBody<float_precision>*>(rigidBody);
-                auto pGeometry = _rigidBody->GetCollisionShape();
-                if (pGeometry->GetGeometryType() == GeometryType::kPolyhydron) {
-                    if (dynamic_pointer_cast<ConvexHull<float_precision>>(pGeometry)
-                            ->Iterate()) {
-                        // The geometry convex hull is not fully iterated,
-                        // so we break the loop to postpending the process to
-                        // next loop, to avoid too much process in single tick.
-                        break;
-                    }
-
-                    // The geometry convex hull is fully iterated,
-                    // so we move to next geometry
-                }
-            }
+    for (const auto& [node, binding] : m_RigidBodies) {
+        auto geometry = binding.body->GetCollisionShape();
+        if (geometry->GetGeometryType() == GeometryType::kPolyhydron &&
+            dynamic_pointer_cast<ConvexHull<float_precision>>(geometry)->Iterate()) {
+            // Continue unfinished hulls on the next tick.
+            break;
         }
     }
 }
@@ -61,10 +43,17 @@ void MyPhysicsManager::Tick() {
         CreateRigidBodies();
         m_nSceneRevision = rev;
     }
+    for (const auto& [node, binding] : m_RigidBodies) {
+        node->SetSimulationTransform(binding.body->GetMotionState()->GetTransition());
+    }
 }
 
-void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node,
-                                       const SceneObjectGeometry& geometry) {
+void MyPhysicsManager::CreateRigidBody(
+    const std::shared_ptr<SceneGeometryNode>& sceneNode,
+    const SceneObjectGeometry& geometry) {
+    assert(sceneNode);
+    auto& node = *sceneNode;
+    DeleteRigidBody(node);
     const float* param = geometry.CollisionParameters();
     RigidBody<float_precision>* rigidBody = nullptr;
 
@@ -110,26 +99,37 @@ void MyPhysicsManager::CreateRigidBody(SceneGeometryNode& node,
         }
     }
 
-    node.LinkRigidBody(rigidBody);
+    if (rigidBody) {
+        m_RigidBodies.emplace(
+            &node, BodyBinding{sceneNode,
+                             std::unique_ptr<RigidBody<float_precision>>(rigidBody)});
+        node.SetSimulationTransform(rigidBody->GetMotionState()->GetTransition());
+    }
 }
 
-void MyPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node) {
+bool MyPhysicsManager::UpdateRigidBodyTransform(SceneGeometryNode& node) {
+    auto it = m_RigidBodies.find(&node);
+    if (it == m_RigidBodies.end()) {
+        return false;
+    }
     const auto trans = node.GetCalculatedTransform();
-    auto rigidBody = node.RigidBody();
-    auto motionState =
-        reinterpret_cast<RigidBody<float_precision>*>(rigidBody)->GetMotionState();
+    auto motionState = it->second.body->GetMotionState();
     motionState->SetTransition(*trans);
+    node.SetSimulationTransform(*trans);
+    return true;
 }
 
 void MyPhysicsManager::DeleteRigidBody(SceneGeometryNode& node) {
-    auto* rigidBody = reinterpret_cast<RigidBody<float_precision>*>(node.UnlinkRigidBody());
-    delete rigidBody;
+    node.ClearSimulationTransform();
+    m_RigidBodies.erase(&node);
 }
 
 int MyPhysicsManager::CreateRigidBodies() {
+    ClearRigidBodies();
     auto pSceneManager =
         dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
+    m_pSimulationScene = pSceneManager->GetSceneForPhysicalSimulation();
+    const auto& scene = m_pSimulationScene;
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {
@@ -139,7 +139,7 @@ int MyPhysicsManager::CreateRigidBodies() {
                 scene->GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);
 
-            CreateRigidBody(*pGeometryNode, *pGeometry);
+            CreateRigidBody(pGeometryNode, *pGeometry);
         }
     }
 
@@ -147,23 +147,12 @@ int MyPhysicsManager::CreateRigidBodies() {
 }
 
 void MyPhysicsManager::ClearRigidBodies() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    auto& scene = pSceneManager->GetSceneForPhysicalSimulation();
-
-    // Geometries
-    for (const auto& _it : scene->GeometryNodes) {
-        auto pGeometryNode = _it.second.lock();
-        if (pGeometryNode) {
-            DeleteRigidBody(*pGeometryNode);
-        }
+    while (!m_RigidBodies.empty()) {
+        DeleteRigidBody(*m_RigidBodies.begin()->first);
     }
+    m_pSimulationScene.reset();
 }
 
-Matrix4X4f MyPhysicsManager::GetRigidBodyTransform(void* rigidBody) {
-    auto* _rigidBody = reinterpret_cast<RigidBody<float_precision>*>(rigidBody);
-    auto motionState = _rigidBody->GetMotionState();
-    return motionState->GetTransition();
+bool MyPhysicsManager::ApplyCentralForce(SceneGeometryNode& node, Vector3f force) {
+    return false;
 }
-
-void MyPhysicsManager::ApplyCentralForce(void* rigidBody, Vector3f force) {}

@@ -12,16 +12,15 @@ _Interface_ PhysicsManager : _implements_ IPhysicsManager {
     void Finalize() override {}
     void Tick() override {}
 
-    void CreateRigidBody(SceneGeometryNode & node,
+    void CreateRigidBody(const std::shared_ptr<SceneGeometryNode>& node,
                          const SceneObjectGeometry& geometry) override {}
     void DeleteRigidBody(SceneGeometryNode & node) override {}
 
     int CreateRigidBodies() override { return 0; }
     void ClearRigidBodies() override {}
 
-    Matrix4X4f GetRigidBodyTransform(void* rigidBody) override { return Matrix4X4f(); }
-    void UpdateRigidBodyTransform(SceneGeometryNode & node) override {}
+    bool UpdateRigidBodyTransform(SceneGeometryNode & node) override { return false; }
 
-    void ApplyCentralForce(void* rigidBody, Vector3f force) override {}
+    bool ApplyCentralForce(SceneGeometryNode& node, Vector3f force) override { return false; }
 };
 }  // namespace My

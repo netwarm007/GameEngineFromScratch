@@ -18,3 +18,8 @@ endforeach()
 add_executable(SceneServicesTest SceneServicesTest.cpp)
 target_link_libraries(SceneServicesTest PRIVATE SceneServices PlatformAssetIO)
 add_test(NAME TEST_SceneServicesTest COMMAND SceneServicesTest)
+
+add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
+target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
+    BulletPhysics MyPhysics Framework PlatformInterface)
+add_test(NAME TEST_PhysicsSceneIntegrationTest COMMAND PhysicsSceneIntegrationTest)
