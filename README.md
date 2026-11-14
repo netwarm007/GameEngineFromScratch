@@ -20,10 +20,11 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 859](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/859)
+CircleCI [pipeline 863](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/863)
 passed the configured builds and tests for revision
-`fd239cc4246b3dcf1ff6d1bbfa776e4747a63927` on Windows (job 4123), Linux
-(job 4122), and macOS (job 4124). This revision adds the default docked Viewer
+`7a62cd6803e213dad4b1c6c7fa89882fed16a96f` on Windows (job 4135), Linux
+(job 4134), and macOS (job 4136), after rebasing onto master revision
+`0a2059c3`. This revision adds the default docked Viewer
 layout and regression tests for docking, non-overlapping panels, viewport
 resizing, and saved layouts. The macOS screenshot also confirms the scene
 graph, scene preview, and debug panel are visible in separate docked regions.
