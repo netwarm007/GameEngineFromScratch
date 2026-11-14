@@ -20,17 +20,16 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 863](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/863)
+CircleCI [pipeline 867](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/867)
 passed the configured builds and tests for revision
-`7a62cd6803e213dad4b1c6c7fa89882fed16a96f` on Windows (job 4135), Linux
-(job 4134), and macOS (job 4136), after rebasing onto master revision
-`0a2059c3`. This revision adds the default docked Viewer
-layout and regression tests for docking, non-overlapping panels, viewport
-resizing, and saved layouts. The macOS screenshot also confirms the scene
-graph, scene preview, and debug panel are visible in separate docked regions.
-These results apply only to the tested configurations, not every OS version
-or full rendering correctness. The merge with current master is not yet
-verified; these results do not cover the combined revision.
+`f2bc94b261bc1a9e9d2f098ce7d57857bf7b60c3` on Windows (job 4150), Linux
+(job 4149), and macOS (job 4151), after merging master revision `6e94c860`.
+The tested revision includes the default docked Viewer layout, layout
+regression tests, Metal material mip generation, PVR mip metadata validation,
+and ISPC geometry math regression tests. The macOS screenshot confirms the
+scene graph, scene preview, and debug panel are visible in separate docked
+regions. These results apply only to the tested configurations, not every OS
+version or full rendering correctness.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
