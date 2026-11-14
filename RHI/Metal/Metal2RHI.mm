@@ -148,6 +148,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Optional headless capture: launch with `-screenshot <path>` and optionally
     // `-screenshotDelay <seconds>` to save a rendered frame as PNG and quit.
     NSString* _screenshotPath;
+    NSString* _screenshotWaitFor;
     CFTimeInterval _screenshotTime;
     BOOL _screenshotRequested;
 }
@@ -175,6 +176,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
         NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
         _screenshotPath = [[defaults stringForKey:@"screenshot"] copy];
+        _screenshotWaitFor = [[defaults stringForKey:@"screenshotWaitFor"] copy];
         if (_screenshotPath) {
             double delay = [defaults objectForKey:@"screenshotDelay"]
                                ? [defaults doubleForKey:@"screenshotDelay"]
@@ -574,7 +576,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
         [renderEncoder endEncoding];
 
-        if (_screenshotPath && !_screenshotRequested && CACurrentMediaTime() >= _screenshotTime) {
+        if (_screenshotPath && !_screenshotRequested && CACurrentMediaTime() >= _screenshotTime &&
+            (!_screenshotWaitFor || [[NSFileManager defaultManager] fileExistsAtPath:_screenshotWaitFor])) {
             _screenshotRequested = YES;
             [self encodeScreenshot:_mtkView.currentDrawable.texture
                      commandBuffer:_commandBuffers[frame.frameIndex]];

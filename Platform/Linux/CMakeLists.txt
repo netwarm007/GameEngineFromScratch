@@ -1,3 +1,5 @@
+add_platform_asset_io(PlatformAssetIO AssetLoader.cpp)
+
 find_library(XCB_LIBRARY xcb)
 find_library(X11_LIBRARY X11)
 find_library(X11_XCB_LIBRARY X11-xcb)
@@ -11,7 +13,6 @@ endif(${CMAKE_HOST_SYSTEM_NAME} MATCHES FreeBSD)
 set (PlatformSources 
         XcbApplication.cpp 
         OpenGLApplication.cpp
-        AssetLoader.cpp
         ${PROJECT_SOURCE_DIR}/External/src/glad/src/glad_glx.c)
 
 if(Vulkan_FOUND)
@@ -23,6 +24,7 @@ add_library(PlatformInterface
 )
 
 target_link_libraries(PlatformInterface
+        PlatformAssetIO
         ${XCB_LIBRARY} 
         ${X11_LIBRARY} 
         ${X11_XCB_LIBRARY} 

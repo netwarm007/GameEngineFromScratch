@@ -6,6 +6,7 @@
 #include "DebugManager.hpp"
 #include "InputManager.hpp"
 #include "MemoryManager.hpp"
+#include "OGEX.hpp"
 #include "My/MyPhysicsManager.hpp"
 #include "SceneManager.hpp"
 #include "ViewerLogic.hpp"
@@ -62,12 +63,13 @@ int main(int argc, char** argv) {
     OpenGLApplication app(config);
 #endif
     ViewerLogic gameLogic;
-    MyPhysicsManager physicsManager;
     AssetLoader assetLoader;
     MemoryManager memoryManager;
-    SceneManager sceneManager;
+    OgexParser sceneParser;
+    SceneManager sceneManager(assetLoader, sceneParser);
+    MyPhysicsManager physicsManager(sceneManager);
     InputManager inputManager;
-    AnimationManager animationManager;
+    AnimationManager animationManager(sceneManager);
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
@@ -120,6 +122,11 @@ int main(int argc, char** argv) {
     app.CreateMainWindow();
 
     ret = app.Initialize();
+    if (ret != 0) {
+        app.Finalize();
+        ImGui::DestroyContext();
+        return ret;
+    }
 
     // Drive the modules ahead
 #if defined(OS_WEBASSEMBLY)

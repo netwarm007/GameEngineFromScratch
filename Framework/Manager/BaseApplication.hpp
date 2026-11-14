@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "IAnimationManager.hpp"
 #include "IApplication.hpp"
 #include "IAssetLoader.hpp"
@@ -12,6 +11,7 @@
 #include "IPipelineStateManager.hpp"
 #include "IRuntimeModule.hpp"
 #include "ISceneManager.hpp"
+#include "RuntimeModuleGroup.hpp"
 
 namespace My {
 class BaseApplication : _implements_ IApplication {
@@ -90,6 +90,6 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    private:
-    std::vector<IRuntimeModule*> runtime_modules;
+    RuntimeModuleGroup runtime_modules;
 };
 }  // namespace My

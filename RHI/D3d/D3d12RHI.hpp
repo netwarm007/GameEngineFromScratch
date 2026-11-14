@@ -238,6 +238,7 @@ class D3d12RHI {
     uint32_t m_nCurrentFrame = 0;
     bool m_bInitialized = false;
     std::wstring m_screenshotPath;
+    std::wstring m_screenshotWaitFor;
     std::chrono::steady_clock::time_point m_screenshotStart;
 };
 }  // namespace My

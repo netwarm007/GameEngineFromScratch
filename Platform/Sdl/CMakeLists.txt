@@ -1,7 +1,8 @@
+add_platform_asset_io(SdlAssetIO AssetLoader.cpp)
+
 add_library(PlatformInterfaceSDL2
     SdlApplication.cpp
     OpenGLApplication.cpp
-    AssetLoader.cpp
     imgui_impl_sdl2.cpp
 )
 
@@ -16,5 +17,6 @@ target_include_directories(PlatformInterfaceSDL2 PRIVATE
 )
 
 target_link_libraries(PlatformInterfaceSDL2
+    SdlAssetIO
     ${SDL2_LIBRARY}
 )

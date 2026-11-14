@@ -234,6 +234,7 @@ void OpenGLApplication::Tick() {
 }
 
 void OpenGLApplication::Finalize() {
+    BaseApplication::Finalize();
     glXMakeCurrent (m_pDisplay, None, NULL ); 
     glXDestroyContext (m_pDisplay, m_Context); 
     glXDestroyWindow(m_pDisplay, m_GlxWindow);

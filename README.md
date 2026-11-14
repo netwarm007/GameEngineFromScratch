@@ -20,24 +20,12 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 871](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/871)
-passed the configured builds and tests for revision
-`0f2cea43415ee070bde9e08962785cbdea699242` on Windows (job 4162), Linux
-(job 4161), and macOS (job 4163). Both CTest JUnit uploads succeeded on each
-platform. CircleCI's test metadata contains 41 tests on Windows (2 math
-regressions and 39 engine tests), and 38 each on Linux and macOS (2 math
-regressions and 36 engine tests). These results apply only to the configured
-CI builds; Smarter Testing is not enabled.
+Revision-specific CI results and screenshot observations are kept in
+[verification records](docs/verification/), named by the full tested commit SHA.
+A record applies only to its exact revision and listed configurations; it does
+not verify later commits or every supported OS and rendering backend.
 
-Earlier, CircleCI [pipeline 869](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/869)
-passed the configured builds and tests for revision
-`5c79e7b595426f321b3cc81b5a549430bcd2942e` on Windows (job 4155), Linux
-(job 4157), and macOS (job 4156). The Viewer screenshot from each job shows
-the scene graph icons for the splash scene's empty, light, geometry, and camera
-nodes. These results apply only to the tested configurations and visible
-nodes, not every OS version, node type, or full rendering correctness.
-
-Viewer's ImGui renderer backends build and update the font atlas dynamically;
+Viewer and Billiard's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
 
 The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
@@ -133,6 +121,76 @@ or verification of every material and camera position.
 - `Platform/`: platform layers (Windows, Linux, Darwin, Sdl, Android, Empty)
 - `Framework/`, `Physics/`, `Asset/`, `Utility/`, `Game/`, `Viewer/`, `Test/`
 
+Runtime modules are borrowed by the application and must outlive it. Register
+each module once, before initialization. Initialization and updates preserve
+registration order; shutdown runs in reverse order. If initialization fails,
+the application rolls back only successfully initialized modules. The failing
+module must release its own partially initialized resources before returning
+an error. A rolled-back group can retry initialization; final shutdown clears
+its registrations. Viewer and Billiard do not enter the main loop on failure.
+
+The lifecycle regression can run without platform, graphics, asset, or external
+dependencies:
+
+    cmake -S Test/Runtime -B build-runtime
+    cmake --build build-runtime --config Debug
+    ctest --test-dir build-runtime -C Debug --output-on-failure
+
+`SceneManager` takes an `IAssetReader` and an `ISceneParser` by reference;
+`AnimationManager` takes an `ISceneManager` by reference. These borrowed
+dependencies must outlive the managers. Application entry points select the
+OpenGEX parser explicitly; scene services no longer discover their dependencies
+through the application. `SceneServicesTest` exercises loading, failed reloads,
+and animation without creating an application or a window. It links
+`SceneServices`, `SceneGraph`, `AssetIO`, `Common`, and the small
+`PlatformAssetIO` bootstrap, not the rendering or window libraries.
+`AssetIO` contains shared file operations; `PlatformAssetIO` supplies native
+initialization, while SDL applications retain their separate `SdlAssetIO`
+bootstrap. The selected bootstrap is linked as an object rather than a static
+archive, so its virtual-function implementation is not dependent on archive
+scan order. Scene textures still own loading behavior; removing that remaining
+resource-model coupling is a separate migration.
+Failed scene reloads leave the current scene and its revision unchanged and
+report the read or parse failure.
+
+Physics backends own rigid-body bindings and retain bound geometry nodes until
+deletion or cleanup. Scene nodes contain no backend handles. A published
+simulation transform overrides the authored/runtime transform for rendering;
+deleting a body restores normal scene transforms without changing the authored
+data. Graphics consumes `GetRenderTransform()` and no longer queries physics.
+Forces and explicit body-transform updates address scene nodes and return false
+when no body is bound. `MyPhysicsManager` still does not simulate forces.
+Scene-wide cleanup uses the backend's own bindings, not the newly published
+scene, so reloads cannot strand old bodies. Both physics backends borrow an
+`ISceneManager` supplied at construction; it must outlive the backend.
+`PhysicsSceneIntegrationTest` exercises both backends and scene replacement
+without constructing an application or window.
+
+Billiard uses the renderer's dynamic font-atlas initialization, like Viewer.
+Its opt-in desktop regression loads the real billiard scene, settles it for
+60 ticks, applies the normal left-key shot, and follows 120 further ticks.
+It requires cue-ball XY displacement of at least 0.1 scene units and movement
+of another ball of at least 0.01 units, with finite transforms. A regression-only
+overview camera keeps the table in view; normal camera and saved layouts are
+unchanged. The default Windows OpenGL build can run
+`BilliardGame -physicsRegression <output-directory>` to save before/after BMPs
+and a `physics-passed` result. Windows CI explicitly selects the existing
+D3D12 backend with `-DBILLIARD_USE_D3D12=ON`; ordinary builds default to OpenGL.
+Set `GEFS_SCREENSHOT_PATH` and `GEFS_SCREENSHOT_WAIT_FOR` (the `physics-passed`
+path) to capture a native PNG immediately after the check. This does not verify
+Windows OpenGL on CI hosts without WGL support.
+Linux uses `scripts/capture_billiard_linux.sh` inside Xvfb to capture the
+Billiard window after physics success, then signals `capture-complete` and
+verifies normal exit. OpenGL modules shut down before their contexts are
+destroyed, including the previously missing Linux module finalization.
+macOS uses native Metal PNG capture with
+`-screenshot <path> -screenshotWaitFor <output-directory>/physics-passed
+-screenshotDelay 0`; capture cannot complete before the physics check passes.
+All three enabled CI jobs run this regression and retain Billiard screenshots
+(Windows D3D12, Linux OpenGL, macOS Metal).
+Third-stage acceptance requires inspecting these real Billiard images, not
+Viewer's physics-free scene alone.
+
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.
@@ -172,7 +230,20 @@ currently disabled in the CircleCI workflow and is not part of this gate.
 Commits that change only documentation (Markdown files and other prose that no
 build, test, or script reads) are exempt: CircleCI is not run for them, and
 their commit message carries `[ci skip]`. Mixed commits are not exempt. Such a
-commit does not change the last verified revision.
+commit does not verify a new source revision or supersede an existing record.
+
+After all enabled platforms pass for the exact revision, add
+`docs/verification/<full-tested-commit-sha>.md` with the pipeline link, each
+platform's job number and result, tested backends, relevant artifact observations,
+and limitations. Keep one record per tested revision; amend that record only to
+correct or supplement evidence for the same revision. A merge creates a new
+revision that needs its own CI result; passing results from either parent are
+not transferable.
+
+Do not replace a shared "latest verified revision", append a shared result
+index, or update this README for routine acceptance results. Update README only
+when durable build instructions, supported configurations, or behavior change.
+This keeps parallel branches' verification records independent.
 
 The Windows job uses two parallel CMake build jobs and caches installed dependency
 files using their revisions, build scripts, and toolchain details. MSVC may also

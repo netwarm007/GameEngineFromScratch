@@ -1,3 +1,7 @@
+if(WIN32)
+    option(BILLIARD_USE_D3D12 "Use D3D12 instead of OpenGL for Billiard" OFF)
+endif()
+
 IF(ANDROID)
     # Export ANativeActivity_onCreate(),
     # Refer to: https://github.com/android-ndk/ndk/issues/381.
@@ -15,6 +19,10 @@ ELSE(ANDROID)
     add_executable(BilliardGame
         main.cpp BilliardGameLogic.cpp)
 ENDIF(ANDROID)
+
+if(WIN32 AND BILLIARD_USE_D3D12)
+    target_compile_definitions(BilliardGame PRIVATE BILLIARD_USE_D3D12)
+endif()
 
 IF(APPLE)
     set(SHADER_SOURCES basic.vert basic.frag
@@ -82,9 +90,14 @@ ELSEIF(WA)
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_SDL=2 -s USE_WEBGL2=1"
             )
 ELSE(APPLE)
+    if(WIN32 AND BILLIARD_USE_D3D12)
+        set(BILLIARD_RHI D3dRHI)
+    else()
+        set(BILLIARD_RHI OpenGLRHI)
+    endif()
     target_link_libraries(BilliardGame 
                             BulletPhysics
-                            OpenGLRHI
+                            ${BILLIARD_RHI}
                             Framework
                             PlatformInterface
                         )

@@ -1,10 +1,11 @@
 #pragma once
 #include <string>
 #include "Buffer.hpp"
+#include "IAssetReader.hpp"
 #include "IRuntimeModule.hpp"
 
 namespace My {
-_Interface_ IAssetLoader : _inherits_ IRuntimeModule {
+_Interface_ IAssetLoader : _inherits_ IRuntimeModule, _inherits_ IAssetReader {
    public:
     IAssetLoader() = default;
     virtual ~IAssetLoader() = default;
@@ -32,10 +33,6 @@ _Interface_ IAssetLoader : _inherits_ IRuntimeModule {
     virtual AssetFilePtr OpenFile(const char* name, AssetOpenMode mode) = 0;
 
     virtual Buffer SyncOpenAndReadText(const char* filePath) = 0;
-
-    virtual Buffer SyncOpenAndReadBinary(const char* filePath) = 0;
-
-    virtual std::string SyncOpenAndReadTextFileToString(const char* fileName) = 0;
 
     virtual size_t SyncRead(const AssetFilePtr& fp, Buffer& buf) = 0;
 

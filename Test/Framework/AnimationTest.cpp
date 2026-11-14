@@ -7,6 +7,7 @@
 #include "AnimationManager.hpp"
 #include "AssetLoader.hpp"
 #include "SceneManager.hpp"
+#include "OGEX.hpp"
 
 using namespace My;
 using namespace std;
@@ -25,8 +26,9 @@ int main(int argc, char** argv) {
     int error = 0; 
     BaseApplication app;
     AssetLoader assetLoader;
-    SceneManager sceneManager;
-    AnimationManager animationManager;
+    OgexParser sceneParser;
+    SceneManager sceneManager(assetLoader, sceneParser);
+    AnimationManager animationManager(sceneManager);
 
     app.RegisterManagerModule(&assetLoader);
     app.RegisterManagerModule(&sceneManager);

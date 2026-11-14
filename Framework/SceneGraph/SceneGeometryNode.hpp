@@ -1,4 +1,6 @@
 #pragma once
+#include <optional>
+
 #include "BaseSceneNode.hpp"
 
 namespace My {
@@ -9,7 +11,7 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
     bool m_bShadow;
     bool m_bMotionBlur;
     std::vector<std::string> m_Materials;
-    void* m_pRigidBody = nullptr;
+    std::optional<Matrix4X4f> m_SimulationTransform;
 
    protected:
     void dump(std::ostream& out) const override {
@@ -49,15 +51,17 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
         return std::string("default");
     };
 
-    void LinkRigidBody(void* rigidBody) { m_pRigidBody = rigidBody; }
-
-    void* UnlinkRigidBody() {
-        void* rigidBody = m_pRigidBody;
-        m_pRigidBody = nullptr;
-
-        return rigidBody;
+    void SetSimulationTransform(const Matrix4X4f& transform) {
+        m_SimulationTransform = transform;
     }
 
-    void* RigidBody() { return m_pRigidBody; }
+    void ClearSimulationTransform() { m_SimulationTransform.reset(); }
+
+    [[nodiscard]] Matrix4X4f GetRenderTransform() const {
+        if (m_SimulationTransform) {
+            return *m_SimulationTransform;
+        }
+        return *GetCalculatedTransform();
+    }
 };
 }  // namespace My

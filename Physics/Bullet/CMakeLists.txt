@@ -6,7 +6,7 @@ IF(ORBIS)
 ENDIF(ORBIS)
 
 add_library(BulletPhysics BulletPhysicsManager.cpp)
-target_link_libraries(BulletPhysics ${BULLET_DYNAMICS_LIBRARY} ${BULLET_COLLISION_LIBRARY} ${BULLET_LINEARMATH_LIBRARY})
+target_link_libraries(BulletPhysics SceneGraph Common ${BULLET_DYNAMICS_LIBRARY} ${BULLET_COLLISION_LIBRARY} ${BULLET_LINEARMATH_LIBRARY})
 IF(ORBIS)
     target_link_libraries(BulletPhysics ${SCE_POSIX_LIBRARY})
 ENDIF(ORBIS)

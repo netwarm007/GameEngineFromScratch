@@ -21,3 +21,4 @@ else()
 endif()
 
 __add_xg_platform_dependencies(SceneGraph)
+target_link_libraries(SceneGraph AssetIO Common)

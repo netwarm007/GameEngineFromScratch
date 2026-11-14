@@ -1,6 +1,4 @@
 #include "AnimationManager.hpp"
-#include "BaseApplication.hpp"
-#include "SceneManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -10,15 +8,14 @@ int AnimationManager::Initialize() { return 0; }
 void AnimationManager::Finalize() { ClearAnimationClips(); }
 
 void AnimationManager::Tick() {
-    auto pSceneManager = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    auto rev = pSceneManager->GetSceneRevision();
+    auto rev = m_Scenes.GetSceneRevision();
     if (m_nSceneRevision != rev) {
         cerr << "[AnimationManager] Detected Scene Change, reinitialize "
                 "animations ..."
              << endl;
         ClearAnimationClips();
 
-        auto& scene = pSceneManager->GetSceneForRendering();
+        auto& scene = m_Scenes.GetSceneForRendering();
 
         for (const auto& node : scene->AnimatableNodes) {
             auto pNode = node.lock();

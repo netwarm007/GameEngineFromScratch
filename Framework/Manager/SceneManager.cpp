@@ -1,9 +1,6 @@
-#include "OGEX.hpp"
-
 #include "SceneManager.hpp"
 
-#include "AssetLoader.hpp"
-#include "BaseApplication.hpp"
+#include <iostream>
 
 using namespace My;
 using namespace std;
@@ -21,32 +18,32 @@ void SceneManager::Finalize() {}
 void SceneManager::Tick() {}
 
 int SceneManager::LoadScene(const char* scene_file_name) {
-    // now we only has ogex scene parser, call it directly
-    if (LoadOgexScene(scene_file_name)) {
-        m_nSceneRevision++;
-        return 0;
+    if (!scene_file_name || !*scene_file_name) {
+        cerr << "[SceneManager] Scene filename is empty" << endl;
+        return -1;
     }
 
-    return -1;
+    string scene_text =
+        m_Assets.SyncOpenAndReadTextFileToString(scene_file_name);
+
+    if (scene_text.empty()) {
+        cerr << "[SceneManager] Scene data is empty or unavailable: "
+             << scene_file_name << endl;
+        return -1;
+    }
+
+    auto scene = m_Parser.Parse(scene_text);
+    if (!scene) {
+        cerr << "[SceneManager] Scene parse failed: " << scene_file_name << endl;
+        return -1;
+    }
+
+    m_pScene = std::move(scene);
+    ++m_nSceneRevision;
+    return 0;
 }
 
 void SceneManager::ResetScene() { m_nSceneRevision++; }
-
-bool SceneManager::LoadOgexScene(const char* ogex_scene_file_name) {
-    auto pAssetLoader = dynamic_cast<BaseApplication*>(m_pApp)->GetAssetLoader();
-
-    string ogex_text =
-        pAssetLoader->SyncOpenAndReadTextFileToString(ogex_scene_file_name);
-
-    if (ogex_text.empty()) {
-        return false;
-    }
-
-    OgexParser ogex_parser;
-    m_pScene = ogex_parser.Parse(ogex_text);
-
-    return static_cast<bool>(m_pScene);
-}
 
 const std::shared_ptr<Scene> SceneManager::GetSceneForRendering() const {
     // TODO: we should perform CPU scene crop at here

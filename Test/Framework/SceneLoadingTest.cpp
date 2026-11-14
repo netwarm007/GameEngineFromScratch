@@ -4,6 +4,7 @@
 #include "BaseApplication.hpp"
 #include "AssetLoader.hpp"
 #include "SceneManager.hpp"
+#include "OGEX.hpp"
 
 using namespace My;
 using namespace std;
@@ -90,7 +91,8 @@ int main(int argc, char** argv) {
 
     BaseApplication app;
     AssetLoader assetLoader;
-    SceneManager sceneManager;
+    OgexParser sceneParser;
+    SceneManager sceneManager(assetLoader, sceneParser);
 
     app.RegisterManagerModule(&assetLoader);
     app.RegisterManagerModule(&sceneManager);

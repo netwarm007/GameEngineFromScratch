@@ -146,6 +146,8 @@ jobs:
             $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
             $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
             if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S Test\Runtime -B build-runtime -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build-runtime --parallel 2 && ctest --test-dir build-runtime --output-on-failure"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S Test\GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-geommath --parallel 2 && ctest --test-dir build-geommath --output-on-failure --output-junit junit.xml"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - store_test_results:
@@ -210,7 +212,7 @@ jobs:
               if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
               $env:Path = "$($dxc.DirectoryName);$env:Path"
             }
-            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON
+            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             cmake --build build --config Debug
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -258,6 +260,39 @@ jobs:
               }
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
             }
+      - run:
+          name: Billiard physics regression and screenshots
+          no_output_timeout: 15m
+          command: |
+            $output = New-Item -ItemType Directory -Force billiard-screenshots
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse |
+              Select-Object -First 1
+            if (-not $billiard) { throw "BilliardGame.exe not found" }
+            $env:GEFS_SCREENSHOT_PATH = Join-Path $output.FullName "billiard-after.png"
+            $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $output.FullName "physics-passed"
+            $process = Start-Process -FilePath $billiard.FullName -PassThru `
+              -ArgumentList @('-physicsRegression', ('"' + $output.FullName + '"')) `
+              -RedirectStandardOutput billiard-screenshots/billiard.log `
+              -RedirectStandardError billiard-screenshots/billiard-error.log
+            $handle = $process.Handle
+            try {
+              if (-not $process.WaitForExit(600000)) { throw "Billiard regression timed out" }
+              $process.Refresh()
+              if ($process.ExitCode -ne 0) { throw "Billiard regression failed; see billiard logs" }
+              if (-not (Test-Path billiard-screenshots/physics-passed)) { throw "Physics result missing" }
+              if (-not (Test-Path $env:GEFS_SCREENSHOT_PATH)) { throw "Billiard screenshot missing" }
+              Add-Type -AssemblyName System.Drawing
+              $image = [System.Drawing.Image]::FromFile($env:GEFS_SCREENSHOT_PATH)
+              try { Write-Output "Billiard screenshot: $($image.Width)x$($image.Height)" }
+              finally { $image.Dispose() }
+            } finally {
+              if (-not $process.HasExited) { Stop-Process -Id $process.Id }
+              Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+              Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+            }
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
@@ -325,6 +360,9 @@ jobs:
       - run:
           name: ISPC and C++ math regression
           command: |
+             cmake -S Test/Runtime -B build-runtime -G Ninja -DCMAKE_BUILD_TYPE=Debug
+             cmake --build build-runtime --parallel 2
+             ctest --test-dir build-runtime --output-on-failure
              ./scripts/build_ispc.sh
              cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
              cmake --build build-geommath --parallel 2
@@ -367,6 +405,18 @@ jobs:
                > screenshots/capture.log 2>&1; then
                echo "Viewer screenshot failed; see viewer-screenshots/capture.log and viewer.log"
              fi
+      - run:
+          name: Billiard physics regression and screenshots
+          no_output_timeout: 15m
+          command: |
+             mkdir -p billiard-screenshots
+             LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
+               xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+               bash scripts/capture_billiard_linux.sh billiard-screenshots \
+               > billiard-screenshots/capture.log 2>&1
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
@@ -432,6 +482,9 @@ jobs:
       - run:
           name: ISPC and C++ math regression
           command: |
+             cmake -S Test/Runtime -B build-runtime -G Ninja -DCMAKE_BUILD_TYPE=Debug
+             cmake --build build-runtime --parallel 2
+             ctest --test-dir build-runtime --output-on-failure
              ./scripts/build_ispc.sh
              cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
              cmake --build build-geommath --parallel 2
@@ -483,6 +536,34 @@ jobs:
              pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
              exit 0
+      - run:
+          name: Billiard physics regression and screenshot
+          no_output_timeout: 15m
+          command: |
+             mkdir -p billiard-screenshots
+             output="$PWD/billiard-screenshots"
+             APP=$(find build -type d -name BilliardGame.app | head -n 1)
+             test -n "$APP"
+             "$APP/Contents/MacOS/BilliardGame" -physicsRegression "$output" \
+               -screenshot "$output/billiard-after.png" -screenshotWaitFor "$output/physics-passed" \
+               -screenshotDelay 0 > "$output/billiard.log" 2>&1 &
+             billiard_pid=$!
+             trap 'kill "$billiard_pid" 2>/dev/null || true' EXIT
+             for i in $(seq 1 120); do
+               sleep 5
+               kill -0 "$billiard_pid" 2>/dev/null || break
+             done
+             if kill -0 "$billiard_pid" 2>/dev/null; then
+               echo "Billiard regression timed out; see billiard.log" >&2
+               exit 1
+             fi
+             wait "$billiard_pid"
+             trap - EXIT
+             test -s "$output/physics-passed"
+             test -s "$output/billiard-after.png"
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
