@@ -122,7 +122,29 @@ move it aside before rerunning the script to allow a fresh configuration.
     scripts\build_spirvcross
     scripts\build_imgui
     scripts\build_libispc-texcomp
+    scripts\build_openal
     scripts\build
+
+To build and run the Windows DX12 Viewer with Visual Studio after preparing the
+dependencies above:
+
+    cmake -S . -B build -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON
+    cmake --build build --target Viewer --config Debug --parallel 2
+    cd build
+    Viewer\Debug\Viewer.exe
+
+Run from the build directory so the asset loader finds compiled shaders under
+`build/Asset` and source assets in the parent directory. Re-run
+`scripts\build_imgui` after updating ImGui; the Windows script uses native
+`copy` commands and does not require a Unix shell. Viewer lets the ImGui
+renderer backend build and upload the font atlas instead of building it before
+backend initialization.
+Release builds also need matching Release versions of crossguid, OpenGEX, and
+OpenDDL; linking their Debug libraries causes MSVC `LNK2038` runtime and iterator
+debug-level mismatches. Keep separate build directories and select the matching
+libraries with `XG_LIBRARY`, `OPENGEX_LIBRARY`, and `OPENDDL_LIBRARY` when
+validating both configurations locally.
+
 ### MacOS & Linux
     ./scripts/build_crossguid.sh
     ./scripts/build_opengex.sh
