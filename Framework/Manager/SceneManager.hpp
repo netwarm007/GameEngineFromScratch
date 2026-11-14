@@ -1,4 +1,5 @@
 #pragma once
+#include "IAssetReader.hpp"
 #include "ISceneManager.hpp"
 #include "ISceneParser.hpp"
 #include "geommath.hpp"
@@ -6,7 +7,8 @@
 namespace My {
 class SceneManager : _implements_ ISceneManager {
    public:
-    SceneManager() {}
+    SceneManager(IAssetReader& assets, ISceneParser& parser)
+        : m_Assets(assets), m_Parser(parser) {}
     ~SceneManager() override;
 
     int Initialize() override;
@@ -30,10 +32,11 @@ class SceneManager : _implements_ ISceneManager {
         const std::string& key) const override;
 
    protected:
-    bool LoadOgexScene(const char* ogex_scene_file_name);
-
-   protected:
     std::shared_ptr<Scene> m_pScene;
     uint64_t m_nSceneRevision = 0;
+
+   private:
+    IAssetReader& m_Assets;
+    ISceneParser& m_Parser;
 };
 }  // namespace My

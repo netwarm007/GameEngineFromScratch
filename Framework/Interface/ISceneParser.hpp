@@ -5,6 +5,7 @@
 namespace My {
 _Interface_ ISceneParser {
    public:
+    virtual ~ISceneParser() = default;
     virtual std::unique_ptr<Scene> Parse(const std::string& buf) = 0;
 };
 }  // namespace My

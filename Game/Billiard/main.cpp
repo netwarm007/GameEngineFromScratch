@@ -8,6 +8,7 @@
 #include "MemoryManager.hpp"
 #include "Bullet/BulletPhysicsManager.hpp"
 #include "SceneManager.hpp"
+#include "OGEX.hpp"
 #include "BilliardGameLogic.hpp"
 
 #if defined(OS_WEBASSEMBLY)
@@ -60,10 +61,11 @@ int main(int argc, char** argv) {
     OpenGLApplication app(config);
 #endif
     MemoryManager memoryManager;
-    SceneManager sceneManager;
-    InputManager inputManager;
-    AnimationManager animationManager;
     AssetLoader assetLoader;
+    OgexParser sceneParser;
+    SceneManager sceneManager(assetLoader, sceneParser);
+    InputManager inputManager;
+    AnimationManager animationManager(sceneManager);
 #ifdef DEBUG
     DebugManager debugManager;
 #endif

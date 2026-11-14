@@ -141,6 +141,18 @@ dependencies:
     cmake --build build-runtime --config Debug
     ctest --test-dir build-runtime -C Debug --output-on-failure
 
+`SceneManager` takes an `IAssetReader` and an `ISceneParser` by reference;
+`AnimationManager` takes an `ISceneManager` by reference. These borrowed
+dependencies must outlive the managers. Application entry points select the
+OpenGEX parser explicitly; scene services no longer discover their dependencies
+through the application. `SceneServicesTest` exercises loading, failed reloads,
+and animation without creating an application or a window. It still links the
+existing Framework and platform libraries because scene textures currently
+own concrete asset-loading behavior; build-level isolation remains a separate
+resource-model migration.
+Failed scene reloads leave the current scene and its revision unchanged and
+report the read or parse failure.
+
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.

@@ -3,12 +3,13 @@
 #include <list>
 
 #include "IAnimationManager.hpp"
+#include "ISceneManager.hpp"
 #include "SceneObject.hpp"
 
 namespace My {
 class AnimationManager : _implements_ IAnimationManager {
    public:
-    AnimationManager() {}
+    explicit AnimationManager(ISceneManager& scenes) : m_Scenes(scenes) {}
     ~AnimationManager() override {}
     int Initialize() override;
     void Finalize() override;
@@ -19,6 +20,7 @@ class AnimationManager : _implements_ IAnimationManager {
     void ClearAnimationClips() override;
 
    private:
+    ISceneManager& m_Scenes;
     uint64_t m_nSceneRevision{0};
     std::chrono::steady_clock::time_point m_TimeLineStartPoint;
     std::chrono::duration<float> m_TimeLineValue;

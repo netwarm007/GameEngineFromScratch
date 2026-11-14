@@ -14,3 +14,7 @@ foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
     target_link_libraries(${TEST_CASE} Framework PlatformInterface)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach()
+
+add_executable(SceneServicesTest SceneServicesTest.cpp)
+target_link_libraries(SceneServicesTest PRIVATE Framework PlatformInterface)
+add_test(NAME TEST_SceneServicesTest COMMAND SceneServicesTest)

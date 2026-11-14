@@ -6,6 +6,7 @@
 #include "DebugManager.hpp"
 #include "InputManager.hpp"
 #include "MemoryManager.hpp"
+#include "OGEX.hpp"
 #include "My/MyPhysicsManager.hpp"
 #include "SceneManager.hpp"
 #include "ViewerLogic.hpp"
@@ -65,9 +66,10 @@ int main(int argc, char** argv) {
     MyPhysicsManager physicsManager;
     AssetLoader assetLoader;
     MemoryManager memoryManager;
-    SceneManager sceneManager;
+    OgexParser sceneParser;
+    SceneManager sceneManager(assetLoader, sceneParser);
     InputManager inputManager;
-    AnimationManager animationManager;
+    AnimationManager animationManager(sceneManager);
 #ifdef DEBUG
     DebugManager debugManager;
 #endif

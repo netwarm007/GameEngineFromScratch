@@ -1,12 +1,24 @@
+#include "OpenGEX.h"
+
 #include "OGEX.hpp"
+
+#include "Bezier.hpp"
+#include "Curve.hpp"
+#include "Linear.hpp"
 
 using namespace My;
 
 std::unique_ptr<Scene> OgexParser::Parse(const std::string& buf) {
-    std::unique_ptr<Scene> pScene = make_unique<Scene>("OGEX Scene");
+    m_bUpIsYAxis = false;
     OGEX::OpenGexDataDescription openGexDataDescription;
 
     ODDL::DataResult result = openGexDataDescription.ProcessText(buf.c_str());
+    if (result != ODDL::kDataOkay) {
+        std::cerr << "[OgexParser] Invalid OpenGEX data (error " << result << ")"
+                  << std::endl;
+        return nullptr;
+    }
+    auto pScene = std::make_unique<Scene>("OGEX Scene");
     if (result == ODDL::kDataOkay) {
         const ODDL::Structure* structure =
             openGexDataDescription.GetRootStructure()->GetFirstSubnode();

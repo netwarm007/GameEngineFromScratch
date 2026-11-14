@@ -25,8 +25,17 @@ int main(int, char**) {
         assetLoader.SyncOpenAndReadTextFileToString("Scene/splash.ogex");
 
     OgexParser ogexParser;
+    if (ogexParser.Parse("Node {")) {
+        cerr << "FAILED: malformed OpenGEX must report parse failure" << endl;
+        return 1;
+    }
     {
         shared_ptr<Scene> pScene = ogexParser.Parse(ogex_text);
+        if (!pScene) {
+            cerr << "FAILED: valid OpenGEX must load after a parse failure"
+                 << endl;
+            return 1;
+        }
     }  // note texture in the scene will be async loaded until process terminate
 
     assetLoader.Finalize();
