@@ -1,4 +1,8 @@
 #include <cstdio>
+#include "config.h"
+#if defined(OS_WINDOWS)
+#include <Windows.h>
+#endif
 #include "PVR.hpp"
 #include "AssetLoader.hpp"
 

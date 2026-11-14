@@ -200,7 +200,7 @@ class PvrParser : _implements_ ImageParser {
                     throw std::runtime_error("Unsupported PVR compression format");
             }
             uint32_t max_mips = 1;
-            for (auto dimension = std::max(img.Width, img.Height); dimension > 1; dimension >>= 1) {
+            for (auto dimension = (std::max)(img.Width, img.Height); dimension > 1; dimension >>= 1) {
                 ++max_mips;
             }
             if (pHeader->mipmap_count > max_mips) {
@@ -219,8 +219,8 @@ class PvrParser : _implements_ ImageParser {
                 const auto size = pitch * block_rows;
                 img.mipmaps.emplace_back(width, height, pitch, img.data_size, size);
                 img.data_size += size;
-                width = std::max(1u, width >> 1);
-                height = std::max(1u, height >> 1);
+                width = (std::max)(1u, width >> 1);
+                height = (std::max)(1u, height >> 1);
             }
             img.pitch = img.mipmaps.front().pitch;
             img.data = new uint8_t[img.data_size];
