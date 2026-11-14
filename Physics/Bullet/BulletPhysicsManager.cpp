@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "BaseApplication.hpp"
+#include "ISceneManager.hpp"
 
 using namespace My;
 using namespace std;
@@ -39,13 +39,11 @@ void BulletPhysicsManager::Finalize() {
 }
 
 void BulletPhysicsManager::Tick() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    auto rev = pSceneManager->GetSceneRevision();
+    auto rev = m_Scenes.GetSceneRevision();
     if (m_nSceneRevision != rev) {
-        ClearRigidBodies();
-        CreateRigidBodies();
-        m_nSceneRevision = rev;
+        if (CreateRigidBodies() == 0) {
+            m_nSceneRevision = rev;
+        }
     }
 
     m_btDynamicsWorld->stepSimulation(1.0f / 60.0f, 10);
@@ -174,10 +172,12 @@ void BulletPhysicsManager::DeleteRigidBody(SceneGeometryNode& node) {
 
 int BulletPhysicsManager::CreateRigidBodies() {
     ClearRigidBodies();
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    m_pSimulationScene = pSceneManager->GetSceneForPhysicalSimulation();
+    m_pSimulationScene = m_Scenes.GetSceneForPhysicalSimulation();
     const auto& scene = m_pSimulationScene;
+    if (!scene) {
+        cerr << "[BulletPhysicsManager] Scene revision has no scene" << endl;
+        return -1;
+    }
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {

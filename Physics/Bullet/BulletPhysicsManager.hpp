@@ -7,10 +7,11 @@
 
 namespace My {
 class Scene;
+class ISceneManager;
 
 class BulletPhysicsManager : public PhysicsManager {
    public:
-    BulletPhysicsManager() = default;
+    explicit BulletPhysicsManager(ISceneManager& scenes) : m_Scenes(scenes) {}
     ~BulletPhysicsManager() override = default;
     int Initialize() override;
     void Finalize() override;
@@ -31,6 +32,7 @@ class BulletPhysicsManager : public PhysicsManager {
     Matrix4X4f GetRigidBodyTransform(const btRigidBody& rigidBody) const;
     void PublishTransforms();
 
+    ISceneManager& m_Scenes;
     uint64_t m_nSceneRevision{0};
     btBroadphaseInterface* m_btBroadphase;
     btDefaultCollisionConfiguration* m_btCollisionConfiguration;

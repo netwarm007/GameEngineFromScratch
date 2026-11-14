@@ -63,11 +63,11 @@ int main(int argc, char** argv) {
     OpenGLApplication app(config);
 #endif
     ViewerLogic gameLogic;
-    MyPhysicsManager physicsManager;
     AssetLoader assetLoader;
     MemoryManager memoryManager;
     OgexParser sceneParser;
     SceneManager sceneManager(assetLoader, sceneParser);
+    MyPhysicsManager physicsManager(sceneManager);
     InputManager inputManager;
     AnimationManager animationManager(sceneManager);
 #ifdef DEBUG

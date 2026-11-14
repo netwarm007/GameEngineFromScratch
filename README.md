@@ -20,32 +20,10 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 879](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/879)
-passed the configured builds and tests for revision
-`3e92bb82da4a76d11f6670ea2ce88c02e386ccaa` on Windows D3D12 (job 4185),
-Linux OpenGL (job 4187), and macOS Metal (job 4186), including the runtime
-lifecycle, scene services, physics/scene integration, parser, scene-loading,
-animation, and headless layout regressions. Each platform also passed the
-real Billiard shot/collision regression and produced a Billiard PNG.
-The exact-revision images were inspected: the complete table and ball cluster
-are inside the main viewport, docked panels remain visible, and the captured
-ball positions show the shot's effect. The Windows image includes a normal
-mouse-hover texture tooltip; it does not obscure the ball cluster.
-
-| Tested Billiard backend | Maximum cue XY movement | Maximum other-ball XY movement |
-| --- | ---: | ---: |
-| Windows D3D12 | 1.50706 | 0.091782 |
-| Linux OpenGL | 1.50633 | 0.0913834 |
-| macOS Metal | 1.5105 | 0.0919351 |
-
-Movement is measured in scene units; required minima are 0.1 and 0.01.
-Windows CI does not verify Billiard's default OpenGL backend because its host
-cannot initialize WGL. The previous dependency checkpoint
-`1f7935c0343e344228dab395d80aea53819d34ff`
-([pipeline 875](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/875))
-remains the recorded Viewer comparison against the lifecycle checkpoint.
-These results apply only to the tested configurations and captured scene,
-not every OS version or full rendering correctness.
+Revision-specific CI results and screenshot observations are kept in
+[verification records](docs/verification/), named by the full tested commit SHA.
+A record applies only to its exact revision and listed configurations; it does
+not verify later commits or every supported OS and rendering backend.
 
 Viewer and Billiard's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
@@ -183,9 +161,10 @@ data. Graphics consumes `GetRenderTransform()` and no longer queries physics.
 Forces and explicit body-transform updates address scene nodes and return false
 when no body is bound. `MyPhysicsManager` still does not simulate forces.
 Scene-wide cleanup uses the backend's own bindings, not the newly published
-scene, so reloads cannot strand old bodies. `PhysicsSceneIntegrationTest`
-exercises both backends without constructing an application or window; their
-scene discovery during `Tick()` remains a later dependency-injection step.
+scene, so reloads cannot strand old bodies. Both physics backends borrow an
+`ISceneManager` supplied at construction; it must outlive the backend.
+`PhysicsSceneIntegrationTest` exercises both backends and scene replacement
+without constructing an application or window.
 
 Billiard uses the renderer's dynamic font-atlas initialization, like Viewer.
 Its opt-in desktop regression loads the real billiard scene, settles it for
@@ -265,7 +244,20 @@ currently disabled in the CircleCI workflow and is not part of this gate.
 Commits that change only documentation (Markdown files and other prose that no
 build, test, or script reads) are exempt: CircleCI is not run for them, and
 their commit message carries `[ci skip]`. Mixed commits are not exempt. Such a
-commit does not change the last verified revision.
+commit does not verify a new source revision or supersede an existing record.
+
+After all enabled platforms pass for the exact revision, add
+`docs/verification/<full-tested-commit-sha>.md` with the pipeline link, each
+platform's job number and result, tested backends, relevant artifact observations,
+and limitations. Keep one record per tested revision; amend that record only to
+correct or supplement evidence for the same revision. A merge creates a new
+revision that needs its own CI result; passing results from either parent are
+not transferable.
+
+Do not replace a shared "latest verified revision", append a shared result
+index, or update this README for routine acceptance results. Update README only
+when durable build instructions, supported configurations, or behavior change.
+This keeps parallel branches' verification records independent.
 
 The Windows job uses two parallel CMake build jobs and caches installed dependency
 files using their revisions, build scripts, and toolchain details. MSVC may also
@@ -275,6 +267,20 @@ pipeline.
 
 Packaging and package artifacts are limited to `master` and tagged builds;
 builds, tests, and Viewer screenshot attempts also run on other branches.
+
+### CircleCI test results
+
+The Windows, Linux, and macOS jobs generate JUnit XML with CTest's
+`--output-junit junit.xml` and upload it with `store_test_results` for the job's
+Tests tab. The standalone C++/ISPC math regression report is
+`build-geommath/junit.xml`; the engine test report is `build/junit.xml`.
+Each report is uploaded immediately after its test step, including when tests
+fail. Test failures still fail the job. Uploads are not guaranteed if a job is
+killed by cancellation or reaches its runtime timeout.
+
+Results represent registered CTest tests, not individual assertions or Viewer
+screenshot captures. This reporting does not enable Smarter Testing or change
+which tests run.
 
 ### Windows
 Windows scripts that use Visual Studio select the newest installed version

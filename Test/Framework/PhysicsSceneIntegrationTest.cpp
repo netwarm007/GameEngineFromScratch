@@ -5,6 +5,7 @@
 
 #include "AssetLoader.hpp"
 #include "Bullet/BulletPhysicsManager.hpp"
+#include "ISceneManager.hpp"
 #include "My/MyPhysicsManager.hpp"
 #include "OGEX.hpp"
 
@@ -22,8 +23,33 @@ void Expect(bool condition, const char* message) {
 
 bool Near(float lhs, float rhs) { return std::abs(lhs - rhs) < 0.001f; }
 
+class TestScenes : public ISceneManager {
+   public:
+    int Initialize() override { return 0; }
+    void Finalize() override {}
+    void Tick() override {}
+    int LoadScene(const char*) override { return -1; }
+    uint64_t GetSceneRevision() const override { return revision; }
+    const std::shared_ptr<Scene> GetSceneForRendering() const override {
+        return scene;
+    }
+    const std::shared_ptr<Scene> GetSceneForPhysicalSimulation() const override {
+        return scene;
+    }
+    void ResetScene() override { ++revision; }
+    std::weak_ptr<BaseSceneNode> GetRootNode() const override { return {}; }
+    std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(
+        const std::string&) const override { return {}; }
+    std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(
+        const std::string&) const override { return {}; }
+
+    std::shared_ptr<Scene> scene;
+    uint64_t revision = 0;
+};
+
 class SteppingBullet : public BulletPhysicsManager {
    public:
+    using BulletPhysicsManager::BulletPhysicsManager;
     void Step() {
         m_btDynamicsWorld->stepSimulation(1.0f / 60.0f, 10);
         PublishTransforms();
@@ -41,7 +67,8 @@ class SteppingBullet : public BulletPhysicsManager {
 
 template <class Physics>
 void TestBindingsAndTransforms() {
-    Physics physics;
+    TestScenes scenes;
+    Physics physics(scenes);
     Expect(physics.Initialize() == 0, "physics initializes without application");
     auto node = std::make_shared<SceneGeometryNode>("body");
     node->MoveBy(2.0f, 3.0f, 10.0f);
@@ -90,7 +117,8 @@ void TestBindingsAndTransforms() {
 }
 
 void TestBulletSimulationPublication() {
-    SteppingBullet physics;
+    TestScenes scenes;
+    SteppingBullet physics(scenes);
     Expect(physics.Initialize() == 0, "Bullet initializes");
     auto node = std::make_shared<SceneGeometryNode>("falling");
     node->MoveBy(0.0f, 0.0f, 10.0f);
@@ -170,7 +198,8 @@ void TestBilliardScene() {
         }
     }
 
-    SteppingBullet physics;
+    TestScenes scenes;
+    SteppingBullet physics(scenes);
     Expect(physics.Initialize() == 0, "Billiard Bullet initializes");
     for (const auto& [key, weakNode] : scene->GeometryNodes) {
         auto node = weakNode.lock();
@@ -235,6 +264,51 @@ void TestBilliardScene() {
     scene.reset();
     assets.Finalize();
 }
+
+template <class Physics>
+void TestSceneReplacementWithoutApplication() {
+    TestScenes scenes;
+    Physics physics(scenes);
+    Expect(physics.Initialize() == 0, "physics initializes with injected scenes");
+    physics.Tick();
+
+    auto node = std::make_shared<SceneGeometryNode>("old");
+    auto geometry = std::make_shared<SceneObjectGeometry>();
+    geometry->SetCollisionType(SceneObjectCollisionType::kSceneObjectCollisionTypeSphere);
+    const float radius[] = {1.0f};
+    geometry->SetCollisionParameters(radius, 1);
+    node->AddSceneObjectRef("sphere");
+    scenes.scene = std::make_shared<Scene>("first");
+    scenes.scene->SceneGraph->AppendChild(std::shared_ptr<TreeNode>(node));
+    scenes.scene->GeometryNodes.emplace("old", node);
+    scenes.scene->Geometries.emplace("sphere", geometry);
+    scenes.revision = 1;
+    physics.Tick();
+    node->MoveBy(3.0f, 0.0f, 0.0f);
+    Expect(!Near(node->GetRenderTransform()[3][0], 3.0f),
+           "injected scene revision creates a body and publishes transform");
+    Expect(physics.UpdateRigidBodyTransform(*node),
+           "scene-bound body is addressable without application");
+
+    auto replacementNode = std::make_shared<SceneGeometryNode>("new");
+    replacementNode->AddSceneObjectRef("sphere");
+    auto replacement = std::make_shared<Scene>("replacement");
+    replacement->SceneGraph->AppendChild(std::shared_ptr<TreeNode>(replacementNode));
+    replacement->GeometryNodes.emplace("new", replacementNode);
+    replacement->Geometries.emplace("sphere", geometry);
+    scenes.scene.reset();
+    scenes.revision = 2;
+    physics.Tick();
+    node->MoveBy(2.0f, 0.0f, 0.0f);
+    Expect(Near(node->GetRenderTransform()[3][0], 5.0f) &&
+               !physics.UpdateRigidBodyTransform(*node),
+           "missing replacement removes old body and clears its simulation transform");
+    scenes.scene = replacement;
+    physics.Tick();
+    Expect(physics.UpdateRigidBodyTransform(*replacementNode),
+           "same revision is retried and creates replacement body");
+    physics.Finalize();
+}
 }  // namespace
 
 int main() {
@@ -242,5 +316,7 @@ int main() {
     TestBindingsAndTransforms<SteppingBullet>();
     TestBulletSimulationPublication();
     TestBilliardScene();
+    TestSceneReplacementWithoutApplication<MyPhysicsManager>();
+    TestSceneReplacementWithoutApplication<SteppingBullet>();
     return failures == 0 ? 0 : 1;
 }
