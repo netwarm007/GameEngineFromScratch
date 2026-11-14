@@ -39,8 +39,8 @@ The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
 `viewer-render.png` and `viewer.log`. Viewer uses Metal GPU readback rather than
 desktop capture, so capturing does not require a physical display. Launch with
 `-screenshot <path>` and optionally `-screenshotDelay <seconds>` (default: 45).
-In full workflows, screenshot capture is best-effort and does not gate the
-build; a successful job alone does not guarantee a PNG was produced.
+Screenshot capture is best-effort and does not gate the build; a successful job
+alone does not guarantee a PNG was produced.
 
 The Linux job also attempts a screenshot under `viewer-screenshots`, using Xvfb
 and Mesa software OpenGL rendering. After 60 seconds it captures the Viewer
@@ -177,14 +177,6 @@ pipeline.
 
 Packaging and package artifacts are limited to `master` and tagged builds;
 builds, tests, and Viewer screenshot attempts also run on other branches.
-
-For focused macOS Viewer iterations, trigger a pipeline with the boolean
-parameter `macos-viewer-only: true`. Only `build_macos` runs: it prepares the
-required dependencies, builds `Viewer` and `GuiSubPassLayoutTest`, runs the
-layout regression test, and requires a Viewer screenshot artifact. It skips
-Windows/Linux jobs, asset cooking, unrelated tests and targets, and packaging.
-The default remains the full platform workflow. This focused mode is diagnostic
-only and does not satisfy the all-platform commit acceptance gate.
 
 ### Windows
 Windows scripts that use Visual Studio select the newest installed version

@@ -61,20 +61,6 @@
   Confirm the regression fails without the fix, then inspect a real Viewer
   screenshot; headless tests do not replace backend rendering verification.
 
-## Focused CI iteration
-
-- For authorized macOS Viewer iterations, use the boolean pipeline parameter
-  `macos-viewer-only: true`. It builds Viewer and its layout test, runs that
-  test, and requires a screenshot, without Windows/Linux jobs, asset cooking,
-  unrelated tests, or packaging. This is not the full acceptance gate.
-- A normal push starts the default full platform workflow; it does not select
-  focused mode. Before pushing an iteration intended to be focused, establish
-  how its parameterized pipeline will be triggered. VS Code's GitHub login
-  does not itself supply CircleCI API credentials.
-- When changing workflow selection, validate the CircleCI configuration and
-  process it with the intended parameters. Inspect the expanded jobs and steps
-  to verify excluded work really is absent and the default workflow is intact.
-
 ## Safety
 
 - Preserve unrelated changes. Do not commit, push, create remote repositories,
