@@ -146,10 +146,15 @@ dependencies:
 dependencies must outlive the managers. Application entry points select the
 OpenGEX parser explicitly; scene services no longer discover their dependencies
 through the application. `SceneServicesTest` exercises loading, failed reloads,
-and animation without creating an application or a window. It still links the
-existing Framework and platform libraries because scene textures currently
-own concrete asset-loading behavior; build-level isolation remains a separate
-resource-model migration.
+and animation without creating an application or a window. It links
+`SceneServices`, `SceneGraph`, `AssetIO`, `Common`, and the small
+`PlatformAssetIO` bootstrap, not the rendering or window libraries.
+`AssetIO` contains shared file operations; `PlatformAssetIO` supplies native
+initialization, while SDL applications retain their separate `SdlAssetIO`
+bootstrap. The selected bootstrap is linked as an object rather than a static
+archive, so its virtual-function implementation is not dependent on archive
+scan order. Scene textures still own loading behavior; removing that remaining
+resource-model coupling is a separate migration.
 Failed scene reloads leave the current scene and its revision unchanged and
 report the read or parse failure.
 
