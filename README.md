@@ -20,9 +20,9 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow 37d20081](https://app.circleci.com/workflow/37d20081-19d8-4c5b-b201-8e1c291d7b7b)
-passed the configured builds and tests for revision `929e1f8d` (Dear ImGui
-v1.93.0-docking) on Windows, macOS, and Linux. These results apply to that
+CircleCI [workflow 90cbedb9](https://app.circleci.com/workflow/90cbedb9-ad56-4538-baf9-63bdb4d63399)
+passed the configured builds and tests for revision `29800d81` (Viewer scene
+graph debug window) on Windows, macOS, and Linux. These results apply to that
 revision and do not validate every OS version.
 
 ## Graphic API Support Status
@@ -96,6 +96,11 @@ A commit is accepted only when its CircleCI pipeline completes the configured
 builds and tests successfully on all enabled platforms: currently Windows,
 Linux, and macOS. Local tests do not replace this requirement. Android is
 currently disabled in the CircleCI workflow and is not part of this gate.
+
+Commits that change only documentation (Markdown files and other prose that no
+build, test, or script reads) are exempt: CircleCI is not run for them, and
+their commit message carries `[ci skip]`. Mixed commits are not exempt. Such a
+commit does not change the last verified revision.
 
 The Windows job uses two parallel CMake build jobs and caches installed dependency
 files using their revisions, build scripts, and toolchain details. MSVC may also
