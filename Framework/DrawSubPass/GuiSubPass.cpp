@@ -1,6 +1,7 @@
 #include "GuiSubPass.hpp"
 #include "imgui/imgui.h"
 
+#include <algorithm>
 #include <cmath>
 #include <deque>
 
@@ -148,8 +149,15 @@ void GuiSubPass::DrawSceneNodeDetail(const BaseSceneNode& node) {
 void GuiSubPass::DrawSceneGraphWindow(const Frame& frame, bool* open) {
     if (!m_SceneIconsLoaded) LoadSceneIcons();
 
-    ImGui::SetNextWindowSize(ImVec2(520, 360), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(60, 60), ImGuiCond_FirstUseEver);
+    const auto* viewport = ImGui::GetMainViewport();
+    const ImVec2 size(std::min(520.0f, viewport->WorkSize.x * 0.4f),
+                      std::min(360.0f, viewport->WorkSize.y * 0.5f));
+    // Keep the initial window visible beside the debug panel, in viewport coordinates.
+    ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(
+        ImVec2(viewport->WorkPos.x + viewport->WorkSize.x - size.x - 20.0f,
+               viewport->WorkPos.y + 40.0f),
+        ImGuiCond_FirstUseEver);
     if (!ImGui::Begin((const char*)u8"场景图", open)) {
         ImGui::End();
         return;

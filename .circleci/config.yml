@@ -1,4 +1,8 @@
 version: 2.1
+parameters:
+  macos-viewer-only:
+    type: boolean
+    default: false
 orbs:
   win: circleci/windows@4.1.1
 
@@ -414,25 +418,43 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             ./scripts/build-ninja.sh
-      - run:
-          name: "Cook Asset"
-          command: |
-            scripts/cook_material.sh
-      - run:
-          name: Test
-          command: |
-             ctest --test-dir ./build --output-on-failure
+             if [ "<< pipeline.parameters.macos-viewer-only >>" = "true" ]; then
+               cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+               cmake --build build --target Viewer GuiSubPassLayoutTest
+             else
+               ./scripts/build-ninja.sh
+             fi
+      - when:
+          condition:
+            not: << pipeline.parameters.macos-viewer-only >>
+          steps:
+            - run:
+                name: "Cook Asset"
+                command: scripts/cook_material.sh
+            - run:
+                name: Test
+                command: ctest --test-dir ./build --output-on-failure
+      - when:
+          condition: << pipeline.parameters.macos-viewer-only >>
+          steps:
+            - run:
+                name: Test Viewer layout
+                command: ctest --test-dir ./build -R '^TEST_GuiSubPassLayoutTest$' --output-on-failure --timeout 30
       - run:
           name: Capture Viewer screenshot
           when: always
           command: |
-             # Never fails the job; Viewer renders headlessly and saves one frame itself.
+             # Normal builds keep capture best-effort; focused iterations require a PNG.
              mkdir -p screenshots
              APP=$(find build -type d -name Viewer.app | head -n 1)
-             if [ -z "$APP" ]; then echo "Viewer.app not found"; exit 0; fi
+             if [ -z "$APP" ]; then
+               echo "Viewer.app not found"
+               if [ "<< pipeline.parameters.macos-viewer-only >>" = "true" ]; then exit 1; fi
+               exit 0
+             fi
              if ! open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP" --args -screenshot "$PWD/screenshots/viewer-render.png" -screenshotDelay 45 >screenshots/launch.log 2>&1; then
                echo "Viewer launch failed; see screenshots/launch.log"
+               if [ "<< pipeline.parameters.macos-viewer-only >>" = "true" ]; then exit 1; fi
                exit 0
              fi
              for i in $(seq 1 12); do
@@ -441,15 +463,20 @@ jobs:
              done
              pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
+             if [ "<< pipeline.parameters.macos-viewer-only >>" = "true" ]; then
+               test -s screenshots/viewer-render.png
+             fi
              exit 0
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
       - when:
           condition:
-            or:
-              - equal: [ master, << pipeline.git.branch >> ]
-              - << pipeline.git.tag >>
+            and:
+              - not: << pipeline.parameters.macos-viewer-only >>
+              - or:
+                  - equal: [ master, << pipeline.git.branch >> ]
+                  - << pipeline.git.tag >>
           steps:
           - run:
               name: Package
@@ -566,12 +593,16 @@ jobs:
 workflows:
   version: 2
   build-and-test: #for branch
+    when:
+      not: << pipeline.parameters.macos-viewer-only >>
     jobs:
       - build_windows
       - build_linux
       - build_macos
       #- build_android
   build-and-test-and-release: #for tags
+    when:
+      not: << pipeline.parameters.macos-viewer-only >>
     jobs:
       - build_windows:
           filters:
@@ -600,4 +631,8 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\d+$/
+  macos-viewer:
+    when: << pipeline.parameters.macos-viewer-only >>
+    jobs:
+      - build_macos
 

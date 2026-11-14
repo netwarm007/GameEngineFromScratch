@@ -77,6 +77,11 @@ capture, not full rendering correctness or execution through the WARP fallback.
 - OpenGEX
 - Collada (On the roadmap, not implemented yet)
 
+The Viewer scene graph panel opens on the right of the main viewport on first
+use, sized to fit its work area instead of overlapping the debug panel.
+Existing ImGui window layouts are preserved; use the Debug menu's scene graph
+entry to reopen the panel, then move or dock it as desired.
+
 ## Shading Language
 - HLSL, auto convert to GLSL/Metal Performance Shader
 
@@ -147,6 +152,14 @@ pipeline.
 
 Packaging and package artifacts are limited to `master` and tagged builds;
 builds, tests, and Viewer screenshot attempts also run on other branches.
+
+For focused macOS Viewer iterations, trigger a pipeline with the boolean
+parameter `macos-viewer-only: true`. Only `build_macos` runs: it prepares the
+required dependencies, builds `Viewer` and `GuiSubPassLayoutTest`, runs the
+layout regression test, and requires a Viewer screenshot artifact. It skips
+Windows/Linux jobs, asset cooking, unrelated tests and targets, and packaging.
+The default remains the full platform workflow. This focused mode is diagnostic
+only and does not satisfy the all-platform commit acceptance gate.
 
 ### Windows
 Windows scripts that use Visual Studio select the newest installed version
