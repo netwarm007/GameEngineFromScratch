@@ -77,10 +77,11 @@ capture, not full rendering correctness or execution through the WARP fallback.
 - OpenGEX
 - Collada (On the roadmap, not implemented yet)
 
-The Viewer scene graph panel opens on the right of the main viewport on first
-use, sized to fit its work area instead of overlapping the debug panel.
-Existing ImGui window layouts are preserved; use the Debug menu's scene graph
-entry to reopen the panel, then move or dock it as desired.
+On first use, Viewer opens with a docked layout: the scene graph on the left,
+the scene preview on the right, and the debug panel across the bottom. The
+panels resize with the main viewport without overlapping. Existing ImGui
+layouts are preserved. Use Debug > Reset window layout to restore these
+defaults, or reopen individual panels through the Debug menu.
 
 ## Shading Language
 - HLSL, auto convert to GLSL/Metal Performance Shader

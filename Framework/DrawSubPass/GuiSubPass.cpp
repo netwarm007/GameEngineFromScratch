@@ -1,7 +1,7 @@
 #include "GuiSubPass.hpp"
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 
-#include <algorithm>
 #include <cmath>
 #include <deque>
 
@@ -149,15 +149,6 @@ void GuiSubPass::DrawSceneNodeDetail(const BaseSceneNode& node) {
 void GuiSubPass::DrawSceneGraphWindow(const Frame& frame, bool* open) {
     if (!m_SceneIconsLoaded) LoadSceneIcons();
 
-    const auto* viewport = ImGui::GetMainViewport();
-    const ImVec2 size(std::min(520.0f, viewport->WorkSize.x * 0.4f),
-                      std::min(360.0f, viewport->WorkSize.y * 0.5f));
-    // Keep the initial window visible beside the debug panel, in viewport coordinates.
-    ImGui::SetNextWindowSize(size, ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(
-        ImVec2(viewport->WorkPos.x + viewport->WorkSize.x - size.x - 20.0f,
-               viewport->WorkPos.y + 40.0f),
-        ImGuiCond_FirstUseEver);
     if (!ImGui::Begin((const char*)u8"场景图", open)) {
         ImGui::End();
         return;
@@ -175,11 +166,16 @@ void GuiSubPass::DrawSceneGraphWindow(const Frame& frame, bool* open) {
         return;
     }
 
-    ImGui::BeginChild("scene_tree", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0), true);
+    const ImVec2 available = ImGui::GetContentRegionAvail();
+    const bool stack_details = available.x < 420.0f;
+    ImGui::BeginChild("scene_tree",
+                     ImVec2(stack_details ? 0.0f : available.x * 0.5f,
+                            stack_details ? available.y * 0.6f : 0.0f),
+                     true);
     DrawSceneNode(scene->SceneGraph);
     ImGui::EndChild();
 
-    ImGui::SameLine();
+    if (!stack_details) ImGui::SameLine();
     ImGui::BeginChild("scene_node_detail", ImVec2(0, 0), true);
     if (auto selected = m_SelectedNode.lock()) {
         DrawSceneNodeDetail(*selected);
@@ -241,12 +237,36 @@ void GuiSubPass::Draw(Frame& frame) {
 	    static bool show_app_about = false;
         size_t texture_view_index = 0;
 
-        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+        const auto* viewport = ImGui::GetMainViewport();
+        const ImGuiID dockspace = ImGui::DockSpaceOverViewport(0, viewport);
+        if (!m_DockLayoutInitialized || m_ResetDockLayout) {
+            const auto* node = ImGui::DockBuilderGetNode(dockspace);
+            const bool has_saved_layout = ImGui::FindWindowSettingsByID(ImHashStr("Viewer")) != nullptr;
+            if (m_ResetDockLayout ||
+                (!has_saved_layout && node && !node->IsSplitNode() && node->Windows.empty())) {
+                ImGui::DockBuilderRemoveNode(dockspace);
+                ImGui::DockBuilderAddNode(dockspace, ImGuiDockNodeFlags_DockSpace);
+                ImGui::DockBuilderSetNodePos(dockspace, viewport->WorkPos);
+                ImGui::DockBuilderSetNodeSize(dockspace, viewport->WorkSize);
+                ImGuiID viewer_dock = dockspace;
+                ImGuiID debug_dock;
+                ImGuiID scene_dock;
+                ImGui::DockBuilderSplitNode(viewer_dock, ImGuiDir_Down, 0.28f,
+                                            &debug_dock, &viewer_dock);
+                ImGui::DockBuilderSplitNode(viewer_dock, ImGuiDir_Left, 0.28f,
+                                            &scene_dock, &viewer_dock);
+                ImGui::DockBuilderDockWindow("Viewer", viewer_dock);
+                ImGui::DockBuilderDockWindow((const char*)u8"场景图", scene_dock);
+                ImGui::DockBuilderDockWindow((const char*)u8"调试窗口", debug_dock);
+                ImGui::DockBuilderDockWindow("Dear ImGui Metrics/Debugger", debug_dock);
+                ImGui::DockBuilderFinish(dockspace);
+            }
+            m_DockLayoutInitialized = true;
+            m_ResetDockLayout = false;
+        }
 
         // viewer
         {
-            auto viewer_window_size = ImVec2(800, 600);
-            ImGui::SetNextWindowSize(viewer_window_size, ImGuiCond_FirstUseEver);
             ImGui::Begin("Viewer");
             auto rect = ImGui::GetContentRegionAvail();
             if (frame.enableMSAA) {
@@ -287,6 +307,10 @@ void GuiSubPass::Draw(Frame& frame) {
 			    ImGui::MenuItem((const char*)u8"调试窗口", NULL, &show_app_debug_panel);
 			    ImGui::MenuItem((const char*)u8"场景图", NULL, &show_scene_graph);
 			    ImGui::MenuItem((const char*)u8"ImGui状态及调试窗口", NULL, &show_app_metrics);
+                if (ImGui::MenuItem((const char*)u8"重置窗口布局")) {
+                    m_ResetDockLayout = true;
+                    show_scene_graph = show_app_debug_panel = true;
+                }
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu((const char*)u8"帮助"))

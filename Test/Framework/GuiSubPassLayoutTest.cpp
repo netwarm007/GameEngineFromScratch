@@ -70,8 +70,9 @@ void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
 
         auto* scene = ImGui::FindWindowByName((const char*)u8"场景图");
         auto* debug = ImGui::FindWindowByName((const char*)u8"调试窗口");
-        Expect(scene && debug, "scene graph and debug windows are created");
-        if (scene && debug) {
+        auto* viewer = ImGui::FindWindowByName("Viewer");
+        Expect(scene && debug && viewer, "all default panels are created");
+        if (scene && debug && viewer) {
             const auto* viewport = ImGui::GetMainViewport();
             const ImRect work(viewport->WorkPos,
                               ImVec2(viewport->WorkPos.x + viewport->WorkSize.x,
@@ -79,25 +80,56 @@ void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
             Expect(scene->Active && !scene->Hidden && !scene->Collapsed,
                    "scene graph is visible by default");
             Expect(scene->Viewport == viewport, "scene graph stays in the captured main viewport");
-            Expect(work.Contains(scene->Rect()), "scene graph fits inside the main work area");
-            Expect(!scene->Rect().Overlaps(debug->Rect()),
-                   "debug panel does not obscure the scene graph");
+            Expect(scene->DockIsActive && debug->DockIsActive && viewer->DockIsActive,
+                   "all default panels use docking");
+            Expect(scene->DockId != debug->DockId && scene->DockId != viewer->DockId &&
+                       debug->DockId != viewer->DockId,
+                   "panels occupy separate docking regions");
+            Expect(work.Contains(scene->Rect()) && work.Contains(debug->Rect()) &&
+                       work.Contains(viewer->Rect()),
+                   "all panels fit inside the main work area");
+            Expect(!scene->Rect().Overlaps(debug->Rect()) &&
+                       !scene->Rect().Overlaps(viewer->Rect()) &&
+                       !viewer->Rect().Overlaps(debug->Rect()),
+                   "no default panels overlap");
+            Expect(scene->Rect().Max.x <= viewer->Rect().Min.x &&
+                       scene->Rect().Max.y <= debug->Rect().Min.y &&
+                       viewer->Rect().Max.y <= debug->Rect().Min.y,
+                   "scene graph is left, Viewer is right, and debug panel is below");
             Expect(ImGui::GetDrawData()->TotalVtxCount > 0,
                    "main viewport contains rendered UI geometry");
 
+            const ImVec2 oldViewerSize = viewer->Size;
+            io.DisplaySize = ImVec2(displaySize.x * 0.8f, displaySize.y * 0.8f);
+            for (int i = 0; i < 3; i++) {
+                ImGui::NewFrame();
+                gui.Draw(frame);
+                ImGui::Render();
+                ImGui::UpdatePlatformWindows();
+            }
+            Expect(viewer->Size.x < oldViewerSize.x && viewer->Size.y < oldViewerSize.y,
+                   "docked panels resize with the main viewport");
+            Expect(!scene->Rect().Overlaps(viewer->Rect()) &&
+                       !scene->Rect().Overlaps(debug->Rect()) &&
+                       !viewer->Rect().Overlaps(debug->Rect()),
+                   "resizing preserves non-overlapping regions");
+
             const ImVec2 savedPos(viewport->WorkPos.x + 100, viewport->WorkPos.y + 100);
             const ImVec2 savedSize(300, 250);
+            ImGui::SetWindowDock(scene, 0, ImGuiCond_Always);
             ImGui::SetWindowPos(scene->Name, savedPos);
             ImGui::SetWindowSize(scene->Name, savedSize);
             const std::string settings = ImGui::SaveIniSettingsToMemory();
             ImGui::LoadIniSettingsFromMemory(settings.c_str());
             ImGui::NewFrame();
-            gui.Draw(frame);
+            GuiSubPass restoredGui(&graphics, nullptr);
+            restoredGui.Draw(frame);
             ImGui::Render();
             ImGui::UpdatePlatformWindows();
             Expect(scene->Pos.x == savedPos.x && scene->Pos.y == savedPos.y &&
-                       scene->Size.x == savedSize.x && scene->Size.y == savedSize.y,
-                   "existing window position and size are preserved");
+                       scene->Size.x == savedSize.x && scene->Size.y == savedSize.y &&
+                       !scene->DockIsActive,
+                   "restoring existing settings preserves custom floating layout");
         }
     }
     ImGui::DestroyPlatformWindows();

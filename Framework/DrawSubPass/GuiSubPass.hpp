@@ -20,6 +20,8 @@ class GuiSubPass : public BaseSubPass {
     bool m_SceneIconsLoaded{false};
     const Scene* m_LastScene{nullptr};
     std::weak_ptr<BaseSceneNode> m_SelectedNode;
+    bool m_DockLayoutInitialized{false};
+    bool m_ResetDockLayout{false};
 
     std::vector<Texture2D> m_TextureViews;
     std::array<TextureHandler, 4> m_viewSources{};
