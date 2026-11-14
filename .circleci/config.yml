@@ -431,7 +431,10 @@ jobs:
              mkdir -p screenshots
              APP=$(find build -type d -name Viewer.app | head -n 1)
              if [ -z "$APP" ]; then echo "Viewer.app not found"; exit 0; fi
-             open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP" --args -screenshot "$PWD/screenshots/viewer-render.png" -screenshotDelay 45
+             if ! open -n --stdout "$PWD/screenshots/viewer.log" --stderr "$PWD/screenshots/viewer.log" "$APP" --args -screenshot "$PWD/screenshots/viewer-render.png" -screenshotDelay 45 >screenshots/launch.log 2>&1; then
+               echo "Viewer launch failed; see screenshots/launch.log"
+               exit 0
+             fi
              for i in $(seq 1 12); do
                sleep 15
                pgrep -x Viewer >/dev/null || break
