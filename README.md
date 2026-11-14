@@ -20,12 +20,12 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow 353ffb43](https://app.circleci.com/workflow/353ffb43-3945-4e61-9583-7c25c6a756a3)
-passed the configured builds and tests for merged revision
-`95b0a9bbebb0fab406950888be2e5390193f6ee3` on Windows, macOS, and Linux.
-These results apply only to that revision, not subsequent startup fixes or
-every OS version. Linux Viewer screenshot startup hit a font-atlas assertion
-at that revision; the best-effort capture step did not fail the build.
+CircleCI [workflow a5c800dc](https://app.circleci.com/workflow/a5c800dc-4a54-4a35-8c8b-53261f20fe24)
+passed the configured builds and tests for revision
+`f6dabf7dfa9a57066ba406ca760ffa5fd8ebbe2a` on Windows, macOS, and Linux.
+This revision includes the merged scene graph and screenshot changes and the
+font-atlas startup fix. These results apply only to that revision and do not
+validate every OS version or full rendering correctness.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
@@ -45,6 +45,9 @@ record startup, capture errors, and the OpenGL renderer. The capture has a
 verified in CircleCI at revision `11ea6f88feb773734f1c75252045afa21ee158b0`;
 the resulting image shows the scene and ImGui interface without the earlier
 window-size clipping.
+At revision `f6dabf7dfa9a57066ba406ca760ffa5fd8ebbe2a`, the Linux job produced
+the PNG artifact, and its Viewer and capture logs contained no font-atlas
+startup assertion.
 
 The Windows job attempts D3D12 back-buffer readback after 45 seconds and writes
 `viewer-render.png` using WIC, without desktop capture. Set
