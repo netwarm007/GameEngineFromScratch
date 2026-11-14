@@ -53,6 +53,13 @@ revision and do not validate every OS version.
 - PVR (BC1 - 7)
 - ASTC
 
+Metal material textures upload supplied mip chains. Single-level materials
+generate a full mip chain before rendering; BC textures are first sampled into
+an uncompressed texture because Metal blit mip generation does not support BC
+formats. This processing does not regenerate prefiltered environment maps or
+add mipmaps to UI textures. PVR parsing records block-aligned mip pitches,
+sizes, and offsets, including levels smaller than a compression block.
+
 ## High Performance / Parallel Computing
 - ISPC
 

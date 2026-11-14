@@ -124,10 +124,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         auto image = texture->GetTextureImage();
                         if (image) {
                             adjust_image(*image);
-                            dbc->material.diffuseMap.handler =
-                                (TextureHandler)[m_pRHI createTexture:*image];
-                            dbc->material.diffuseMap.width = image->Width;
-                            dbc->material.diffuseMap.height = image->Height;
+                            dbc->material.diffuseMap = [m_pRHI createMaterialTexture:*image];
                         }
                     }
 
@@ -135,10 +132,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         auto image = texture->GetTextureImage();
                         if (image) {
                             adjust_image(*image);
-                            dbc->material.normalMap.handler =
-                                (TextureHandler)[m_pRHI createTexture:*image];
-                            dbc->material.normalMap.width = image->Width;
-                            dbc->material.normalMap.height = image->Height;
+                            dbc->material.normalMap = [m_pRHI createMaterialTexture:*image];
                         }
                     }
 
@@ -146,10 +140,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         auto image = texture->GetTextureImage();
                         if (image) {
                             adjust_image(*image);
-                            dbc->material.metallicMap.handler =
-                                (TextureHandler)[m_pRHI createTexture:*image];
-                            dbc->material.metallicMap.width = image->Width;
-                            dbc->material.metallicMap.height = image->Height;
+                            dbc->material.metallicMap = [m_pRHI createMaterialTexture:*image];
                         }
                     }
 
@@ -157,10 +148,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         auto image = texture->GetTextureImage();
                         if (image) {
                             adjust_image(*image);
-                            dbc->material.roughnessMap.handler =
-                                (TextureHandler)[m_pRHI createTexture:*image];
-                            dbc->material.roughnessMap.width = image->Width;
-                            dbc->material.roughnessMap.height = image->Height;
+                            dbc->material.roughnessMap = [m_pRHI createMaterialTexture:*image];
                         }
                     }
 
@@ -168,10 +156,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         auto image = texture->GetTextureImage();
                         if (image) {
                             adjust_image(*image);
-                            dbc->material.aoMap.handler =
-                                (TextureHandler)[m_pRHI createTexture:*image];
-                            dbc->material.aoMap.width = image->Width;
-                            dbc->material.aoMap.height = image->Height;
+                            dbc->material.aoMap = [m_pRHI createMaterialTexture:*image];
                         }
                     }
 
@@ -297,14 +282,15 @@ void Metal2GraphicsManager::GenerateTexture(Texture2D& texture) {
 Texture2D Metal2GraphicsManager::CreateTexture(Image& img) {
     Texture2D result;
 
-    result.format = [m_pRHI getMtlPixelFormat:img];
+    id<MTLTexture> texture = [m_pRHI createTexture:img];
+    result.format = texture.pixelFormat;
     result.height = img.Height;
     result.width = img.Width;
-    result.mips = img.mipmaps.size();
+    result.mips = static_cast<uint32_t>(texture.mipmapLevelCount);
     result.samples = 1;
     result.pixel_format = img.pixel_format;
 
-    result.handler = (TextureHandler)[m_pRHI createTexture:img];
+    result.handler = (TextureHandler)texture;
 
     return result;
 }

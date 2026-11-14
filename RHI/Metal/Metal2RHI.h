@@ -59,6 +59,8 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (_Nonnull id<MTLTexture>)createTexture:(const My::Image &)image;
 
+- (Texture2D)createMaterialTexture:(const My::Image &)image;
+
 - (TextureCubeArray)createSkyBox:(const std::vector<std::shared_ptr<My::Image>> &)images;
 
 - (void)generateCubemapArray:(TextureCubeArray &)texture_array;
