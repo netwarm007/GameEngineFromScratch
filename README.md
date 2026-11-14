@@ -161,9 +161,10 @@ data. Graphics consumes `GetRenderTransform()` and no longer queries physics.
 Forces and explicit body-transform updates address scene nodes and return false
 when no body is bound. `MyPhysicsManager` still does not simulate forces.
 Scene-wide cleanup uses the backend's own bindings, not the newly published
-scene, so reloads cannot strand old bodies. `PhysicsSceneIntegrationTest`
-exercises both backends without constructing an application or window; their
-scene discovery during `Tick()` remains a later dependency-injection step.
+scene, so reloads cannot strand old bodies. Both physics backends borrow an
+`ISceneManager` supplied at construction; it must outlive the backend.
+`PhysicsSceneIntegrationTest` exercises both backends and scene replacement
+without constructing an application or window.
 
 Billiard uses the renderer's dynamic font-atlas initialization, like Viewer.
 Its opt-in desktop regression loads the real billiard scene, settles it for

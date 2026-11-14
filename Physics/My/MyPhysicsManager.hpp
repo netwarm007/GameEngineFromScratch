@@ -6,12 +6,13 @@
 
 namespace My {
 class Scene;
+class ISceneManager;
 
 class MyPhysicsManager : public PhysicsManager {
    public:
     using float_precision = float;
 
-    MyPhysicsManager() = default;
+    explicit MyPhysicsManager(ISceneManager& scenes) : m_Scenes(scenes) {}
     ~MyPhysicsManager() override = default;
 
     int Initialize() final;
@@ -32,6 +33,7 @@ class MyPhysicsManager : public PhysicsManager {
     void IterateConvexHull();
 
    private:
+    ISceneManager& m_Scenes;
     uint64_t m_nSceneRevision{0};
     struct BodyBinding {
         std::shared_ptr<SceneGeometryNode> node;

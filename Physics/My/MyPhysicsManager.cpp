@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#include "BaseApplication.hpp"
 #include "Box.hpp"
+#include "ISceneManager.hpp"
 #include "Plane.hpp"
 #include "RigidBody.hpp"
 #include "Sphere.hpp"
@@ -35,13 +35,11 @@ void MyPhysicsManager::IterateConvexHull() {
 }
 
 void MyPhysicsManager::Tick() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    auto rev = pSceneManager->GetSceneRevision();
+    auto rev = m_Scenes.GetSceneRevision();
     if (m_nSceneRevision != rev) {
-        ClearRigidBodies();
-        CreateRigidBodies();
-        m_nSceneRevision = rev;
+        if (CreateRigidBodies() == 0) {
+            m_nSceneRevision = rev;
+        }
     }
     for (const auto& [node, binding] : m_RigidBodies) {
         node->SetSimulationTransform(binding.body->GetMotionState()->GetTransition());
@@ -126,10 +124,12 @@ void MyPhysicsManager::DeleteRigidBody(SceneGeometryNode& node) {
 
 int MyPhysicsManager::CreateRigidBodies() {
     ClearRigidBodies();
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-    m_pSimulationScene = pSceneManager->GetSceneForPhysicalSimulation();
+    m_pSimulationScene = m_Scenes.GetSceneForPhysicalSimulation();
     const auto& scene = m_pSimulationScene;
+    if (!scene) {
+        cerr << "[MyPhysicsManager] Scene revision has no scene" << endl;
+        return -1;
+    }
 
     // Geometries
     for (const auto& _it : scene->GeometryNodes) {

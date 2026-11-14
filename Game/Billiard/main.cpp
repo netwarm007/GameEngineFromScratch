@@ -151,7 +151,6 @@ int main(int argc, char** argv) {
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Billiard");
     BilliardGameLogic gameLogic;
-    BulletPhysicsManager physicsManager;
 #if defined(OS_MACOS)
     CocoaMetalApplication app(config);
 #elif defined(OS_WINDOWS)
@@ -167,6 +166,7 @@ int main(int argc, char** argv) {
     AssetLoader assetLoader;
     OgexParser sceneParser;
     SceneManager sceneManager(assetLoader, sceneParser);
+    BulletPhysicsManager physicsManager(sceneManager);
     InputManager inputManager;
     AnimationManager animationManager(sceneManager);
 #ifdef DEBUG
