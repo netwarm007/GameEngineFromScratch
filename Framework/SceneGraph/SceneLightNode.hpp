@@ -9,7 +9,11 @@ class SceneLightNode : public SceneNode<SceneObjectLight> {
    public:
     using SceneNode::SceneNode;
 
+    [[nodiscard]] SceneNodeKind GetKind() const override {
+        return SceneNodeKind::Light;
+    }
+
     void SetIfCastShadow(bool shadow) { m_bShadow = shadow; };
-    bool CastShadow() { return m_bShadow; };
+    bool CastShadow() const { return m_bShadow; };
 };
 }  // namespace My

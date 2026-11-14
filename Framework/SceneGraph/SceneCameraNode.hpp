@@ -9,8 +9,12 @@ class SceneCameraNode : public SceneNode<SceneObjectCamera> {
    public:
     using SceneNode::SceneNode;
 
+    [[nodiscard]] SceneNodeKind GetKind() const override {
+        return SceneNodeKind::Camera;
+    }
+
     void SetTarget(const Vector3f& target) { m_Target = target; };
-    const Vector3f& GetTarget() { return m_Target; };
+    const Vector3f& GetTarget() const { return m_Target; };
     Matrix3X3f GetLocalAxis() override {
         Matrix3X3f result;
         auto pTransform = GetCalculatedTransform();

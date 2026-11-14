@@ -23,9 +23,10 @@ struct Frame : global_textures {
     Vector3f clearColor {0.2f, 0.3f, 0.4f};
     std::vector<Texture2D> colorTextures;
     Texture2D depthTexture;
-    intptr_t frameBuffer;
+    intptr_t frameBuffer{0};
     bool renderToTexture = false;
     bool enableMSAA = false;
     bool clearRT = true;
+    std::shared_ptr<const Scene> scene;
 };
 }  // namespace My
