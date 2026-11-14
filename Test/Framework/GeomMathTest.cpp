@@ -1,12 +1,145 @@
 #include <cassert>
 #include <iostream>
 #include <chrono>
+#include <array>
+#include <random>
+#include <stdexcept>
+#include <string_view>
 
 #include "MatrixComposeDecompose.hpp"
 #include "geommath.hpp"
 
 using namespace std;
 using namespace My;
+
+void require_near(float actual, double expected, const char* operation) {
+    if (!std::isfinite(actual) ||
+        std::abs(actual - expected) > 1e-3 + 2e-5 * std::abs(expected)) {
+        cerr << operation << ": expected " << expected << ", got " << actual << endl;
+        throw std::runtime_error(operation);
+    }
+}
+
+Matrix8X8f reference_dct(const Matrix8X8f& matrix, bool inverse) {
+    Matrix8X8f result;
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            double sum = 0.0;
+            for (int k = 0; k < 8; k++) {
+                for (int l = 0; l < 8; l++) {
+                    const int u = inverse ? k : i;
+                    const int v = inverse ? l : j;
+                    const int x = inverse ? i : k;
+                    const int y = inverse ? j : l;
+                    const double scale = 0.25 * (u == 0 ? std::sqrt(0.5) : 1.0) *
+                        (v == 0 ? std::sqrt(0.5) : 1.0);
+                    sum += scale * matrix[k][l] *
+                        std::cos((2 * x + 1) * u * PI / 16.0) *
+                        std::cos((2 * y + 1) * v * PI / 16.0);
+                }
+            }
+            result[i][j] = static_cast<float>(sum);
+        }
+    }
+    return result;
+}
+
+void regression_test() {
+    std::mt19937 random(12345);
+    std::uniform_real_distribution<float> values(-128.0f, 127.0f);
+    for (int sample = 0; sample < 68; sample++) {
+        Matrix8X8f input;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                input[i][j] = sample == 0 ? 0.0f :
+                    sample == 1 ? 23.0f :
+                    sample == 2 ? (i == 3 && j == 5 ? 127.0f : 0.0f) :
+                    sample == 3 ? ((i + j) % 2 ? -128.0f : 127.0f) : values(random);
+            }
+        }
+        const auto actual = DCT8X8(input);
+        const auto expected = reference_dct(input, false);
+        const auto inverse = IDCT8X8(input);
+        const auto expected_inverse = reference_dct(input, true);
+        const auto reconstructed = IDCT8X8(actual);
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                require_near(actual[i][j], expected[i][j], "DCT reference");
+                require_near(inverse[i][j], expected_inverse[i][j], "IDCT reference");
+                require_near(reconstructed[i][j], input[i][j], "DCT round trip");
+            }
+        }
+#ifdef USE_ISPC
+        auto in_place = input;
+        ispc::DCT8X8(in_place, in_place);
+        ispc::IDCT8X8(in_place, in_place);
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                require_near(in_place[i][j], input[i][j], "in-place DCT round trip");
+            }
+        }
+#endif
+    }
+
+    Vector<float, 37> a, b;
+    double expected_dot = 0.0;
+    for (int i = 0; i < 37; i++) {
+        a[i] = static_cast<float>(i - 18);
+        b[i] = static_cast<float>(i % 7 - 3);
+        expected_dot += a[i] * b[i];
+    }
+    require_near(DotProduct(a, b), expected_dot, "multi-gang dot product");
+#ifdef USE_ISPC
+    for (size_t count : {size_t(0), size_t(1), size_t(3), size_t(4), size_t(8),
+                         size_t(9), size_t(16), size_t(17), size_t(37)}) {
+        float actual = -1.0f;
+        double expected = 0.0;
+        for (size_t i = 0; i < count; i++) expected += a[i] * b[i];
+        ispc::DotProduct(a, b, &actual, count);
+        require_near(actual, expected, "dot product tail");
+    }
+#endif
+    Matrix4X4f transform = {{{1, 2, 3, 4}, {5, 6, 7, 8},
+                             {9, 10, 11, 12}, {13, 14, 15, 16}}};
+    Vector4f vector {1, 2, 3, 4};
+    Transform(vector, transform);
+    for (int i = 0; i < 4; i++) require_near(vector[i], 90 + 10 * i, "transform");
+    Vector3f coordinate {1, 2, 3};
+    MatrixTranslation(transform, 5.0f, 6.0f, 7.0f);
+    TransformCoord(coordinate, transform);
+    for (int i = 0; i < 3; i++) require_near(coordinate[i], 6 + 2 * i, "translation");
+    cout << "GeomMath regression passed" << endl;
+}
+
+void dct_benchmark() {
+    std::array<Matrix8X8f, 16> blocks;
+    std::mt19937 random(12345);
+    std::uniform_real_distribution<float> values(-128.0f, 127.0f);
+    for (auto& block : blocks) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) block[i][j] = values(random);
+        }
+    }
+    constexpr int iterations = 100000;
+    for (bool inverse : {false, true}) {
+        std::array<double, 5> timings;
+        double checksum = 0.0;
+        for (auto& timing : timings) {
+            const auto start = std::chrono::steady_clock::now();
+            for (int i = 0; i < iterations; i++) {
+                auto& input = blocks[i % blocks.size()];
+                input[0][0] += 0.001f;
+                const auto output = inverse ? IDCT8X8(input) : DCT8X8(input);
+                checksum += output[i % 8][(i / 8) % 8];
+            }
+            timing = std::chrono::duration<double, std::micro>(
+                std::chrono::steady_clock::now() - start).count() / iterations;
+        }
+        std::sort(timings.begin(), timings.end());
+        cout << (inverse ? "IDCT" : "DCT") << " median us/block: " << timings[2]
+             << ", checksum: " << checksum << endl;
+    }
+}
 
 void vector_test() {
     Vector2f x {55.3f, 22.1f};
@@ -222,77 +355,16 @@ void matrix_test() {
     cout << "DCT-IDCT error: " << pixel_error;
 }
 
-void performance_test() {
-    Vector3f a {1.0f, 2.0f, 3.0f};
-    Vector3f b {5.0f, 6.0f, 7.0f};
-    Vector3f result_v;
-    float result = 0;
-    Vector3f sum(0);
-    const int64_t iterations = 10'000'000;
-
-    std::chrono::high_resolution_clock performance_test_clock;
-
-    // Dot Product
-#ifdef USE_ISPC
-{
-    auto t0 = performance_test_clock.now();
-    for (int32_t i = 0; i < iterations; i++) {
-     ispc::MulByElement(a, b, result_v, 3);
-     result += result_v[0] + result_v[1] + result_v[2];
+int main(int argc, char** argv) {
+    if (argc == 2 && std::string_view(argv[1]) == "--benchmark") {
+        dct_benchmark();
+        return 0;
     }
-    auto t1 = performance_test_clock.now();
-
-     fprintf(stderr, "Time needed for %lld times of Dot Production using ISPC: %lld\n", iterations, (t1 - t0).count());     
-}
-#endif
- 
-{
-    auto t0 = performance_test_clock.now();
-    for (int32_t i = 0; i < iterations; i++) {
-          result += a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    }
-    auto t1 = performance_test_clock.now();
-
-     fprintf(stderr, "Time needed for %lld times of Dot Production using C++: %lld\n", iterations, (t1 - t0).count());     
-}
-
-     // Cross Product
-#ifdef USE_ISPC
-{
-    auto t0 = performance_test_clock.now();
-    for (int32_t i = 0; i < iterations; i++) {
-     ispc::CrossProduct(a, b, result_v);
-     sum += result_v;
-    }
-    auto t1 = performance_test_clock.now();
-
-     fprintf(stderr, "Time needed for %lld times of Cross Production using ISPC: %lld\n", iterations, (t1 - t0).count());     
-}
-#endif
- 
-{
-    auto t0 = performance_test_clock.now();
-    for (int32_t i = 0; i < iterations; i++) {
-          result_v[0] = a[1] * b[2] - a[2] * b[1];
-          result_v[1] = a[2] * b[0] - a[0] * b[2];
-          result_v[2] = a[0] * b[1] - a[1] * b[0];
-          sum += result_v;
-    }
-    auto t1 = performance_test_clock.now();
-
-     fprintf(stderr, "Time needed for %lld times of Cross Production using C++: %lld\n", iterations, (t1 - t0).count());     
-     fprintf(stdout, "%f", result);
-     cout << sum << "\r ";
-}
-
-}
-
-int main() {
     cout << fixed;
 
+    regression_test();
     vector_test();
     matrix_test();
-    performance_test();
 
     return 0;
 }

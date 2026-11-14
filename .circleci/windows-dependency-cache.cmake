@@ -17,6 +17,7 @@ if(ACTION STREQUAL "key")
     file(GLOB scripts RELATIVE "${root}" "${root}/scripts/build_*.bat")
     list(SORT scripts)
     list(APPEND scripts "scripts/select-vs-generator.bat"
+                        "scripts/install-ispc.cmake"
                         ".circleci/config.yml" ".circleci/windows-dependency-cache.cmake")
     foreach(script IN LISTS scripts)
         file(SHA256 "${root}/${script}" hash)
