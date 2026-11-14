@@ -29,11 +29,18 @@
   is a Markdown file (`*.md`) or other prose documentation that is not read by
   a build, test, or script. Any change to source, build or CI configuration,
   scripts, assets, or tests is not exempt, even if the commit also changes
-  documentation. A documentation-only commit keeps the last verified revision;
-  it does not replace it.
-- After CircleCI passes on all enabled platforms, update relevant sections of
-  `README.md` to reflect the latest verified results. Identify the tested
-  revision and platform coverage without implying untested configurations passed.
+  documentation. A documentation-only commit does not verify a new source
+  revision or supersede an existing verification record.
+- After CircleCI passes on all enabled platforms for the exact revision, add
+  `docs/verification/<full-tested-commit-sha>.md`. Include the pipeline link,
+  each platform's job number and result, tested backends, relevant artifact
+  observations, and limitations without implying untested configurations passed.
+  Preserve other revisions' records; correct or supplement an existing record
+  only with evidence for that same revision. Merges need their own CI results;
+  passing parent revisions do not verify a merge revision.
+- Do not update `README.md` for routine acceptance results or maintain a shared
+  "latest verified revision" or result index. README links to the records
+  directory and changes only for durable instructions, support, or behavior.
 - For CircleCI investigation, use
   [the CircleCI troubleshooting skill](.github/skills/circleci-troubleshooting/SKILL.md).
 - When monitoring a running CircleCI pipeline, check its status every five
