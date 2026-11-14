@@ -29,7 +29,8 @@ layout and regression tests for docking, non-overlapping panels, viewport
 resizing, and saved layouts. The macOS screenshot also confirms the scene
 graph, scene preview, and debug panel are visible in separate docked regions.
 These results apply only to the tested configurations, not every OS version
-or full rendering correctness.
+or full rendering correctness. The merge with current master is not yet
+verified; these results do not cover the combined revision.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
@@ -100,8 +101,27 @@ defaults, or reopen individual panels through the Debug menu.
 - PVR (BC1 - 7)
 - ASTC
 
+Metal material textures upload supplied mip chains. Single-level materials
+generate a full mip chain before rendering; BC textures are first sampled into
+an uncompressed texture because Metal blit mip generation does not support BC
+formats. This processing does not regenerate prefiltered environment maps or
+add mipmaps to UI textures. PVR parsing records block-aligned mip pitches,
+sizes, and offsets, including levels smaller than a compression block.
+
+The macOS screenshot from pipeline 861 confirms reduced brick-floor speckling
+in the splash scene compared with pipeline 857 (`724642b3`). In the visible
+floor region x=[630,820), y=[510,610), the mean absolute RGB difference from
+the four-neighbor average fell from 17.127 to 7.528 on a 0-255 scale (56.05%).
+The same-region Linux and Windows values were 6.948 and 7.047. This is a
+pixel-scale high-frequency comparison, not a general image-quality benchmark
+or verification of every material and camera position.
+
 ## High Performance / Parallel Computing
 - ISPC
+  - Official stable compiler: [1.32.0](https://github.com/ispc/ispc/releases/tag/v1.32.0)
+    (released 2026-10-13), pinned by SHA-256 in `scripts/install-ispc.cmake`.
+    Windows, Linux x86-64/AArch64, and universal macOS packages are supported.
+    The legacy FreeBSD binary is not covered by this upgrade.
 
 ## Architecture
 - `RHI/`: render hardware interfaces (OpenGL, Vulkan, Metal, D3d, D2d, Empty)
@@ -115,15 +135,15 @@ Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 - Windows
   - Windows Platform SDK
   - Visual Studio or Clang
-  - CMake
+  - CMake and Ninja
   - Vulkan SDK (used by AppVeyor)
 
 - MacOS
   - Xcode and command line tools
-  - Homebrew (as used by CI): `brew install cmake ninja flex bison ispc` (MacPorts also works)
+  - Homebrew (as used by CI): `brew install cmake ninja flex bison` (MacPorts also works)
 
 - Linux
-  - gcc/g++ or clang/clang++, CMake, Ninja, ISPC, flex, bison
+  - gcc/g++ or clang/clang++, CMake, Ninja, flex, bison
   - uuid-dev libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
 
 - Android
@@ -221,6 +241,34 @@ CI uses plain CMake after the dependencies are built:
     cmake --build build --target package
 
 Windows CI additionally enables `-DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON`.
+
+### ISPC and geometry math regression
+
+`scripts/build_ispc.bat` (Windows) or `scripts/build_ispc.sh` (Linux/macOS)
+installs the official pinned compiler into `External/<platform>/bin`. Texture
+compressor build scripts also run this installer; no ISPC/LLVM source submodule
+is required. Redistribution notices are in `External/ispc`.
+
+The focused suite builds the same tests for both C++ and ISPC without requiring
+rendering, audio, or asset dependencies. Run from a compiler-enabled shell
+(on Windows, an x64 Visual Studio developer prompt with Ninja on PATH):
+
+    cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
+    cmake --build build-geommath --parallel 2
+    ctest --test-dir build-geommath --output-on-failure
+
+All three enabled CircleCI platforms run this suite in addition to their engine
+builds and tests. It checks DCT/IDCT against an independent direct formula,
+round trips, SIMD reduction tails, and row-vector transforms. DCT/IDCT now use
+two separable passes and a shared precomputed orthonormal basis (1024 instead
+of 4096 terms per block; ISPC scratch storage is 256 bytes instead of 16 KiB).
+Transform coordinates retain row-vector translation in the fourth matrix row.
+
+For a Release benchmark with runtime-generated inputs, five samples, and an
+observable checksum, run each `GeomMathCppTest`/`GeomMathIspcTest` executable
+from `build-geommath` with `--benchmark`. Timing is informational, not a
+machine-dependent correctness threshold. These tests do not by themselves
+establish full three-platform commit acceptance.
 
 ## Cook Materials
 ### Windows

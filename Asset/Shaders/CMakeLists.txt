@@ -20,6 +20,10 @@ set(HLSL_SHADER_SOURCES
 set(GLSL_SHADER_SOURCES #simple.vert simple.frag
         )
 
+if(APPLE)
+    list(APPEND HLSL_SHADER_SOURCES material_texture_copy.comp)
+endif()
+
 IF(WIN32)
     set(GLSL_VALIDATOR ${PROJECT_SOURCE_DIR}/External/Windows/bin/glslangValidator.exe)
     set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/Windows/bin/SPIRV-Cross.exe)

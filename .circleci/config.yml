@@ -35,7 +35,7 @@ jobs:
     steps:
       - run: systeminfo
       - run:
-          name: "Install CMake, Flex and Bison"
+          name: "Install CMake, Ninja, Flex and Bison"
           command: |
             $machinePath = [Environment]::GetEnvironmentVariable('Path', 'MACHINE')
             $newMachineEnvironmentPath = $machinePath
@@ -75,6 +75,11 @@ jobs:
             }
             $cmakeVersion = [version]((cmake --version | Select-Object -First 1) -replace '^cmake version ', '')
             if ($cmakeVersion -lt [version]'4.0') { throw "CMake 4.0 or newer is required" }
+
+            if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
+              choco install ninja -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
 
             # install winflexbison3
             $winflexbison3Path = "${env:ProgramFiles(x86)}\WinFlexBison\bin"
@@ -137,6 +142,16 @@ jobs:
           key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
             - ".git"
+      - run:
+          name: ISPC and C++ math regression
+          command: |
+            scripts/build_ispc.bat
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S Test\GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-geommath --parallel 2 && ctest --test-dir build-geommath --output-on-failure"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
           name: Prepare Windows dependency cache key
           command: |
@@ -310,6 +325,10 @@ jobs:
       - run:
           name: "Build Dependencies"
           command: |
+             ./scripts/build_ispc.sh
+             cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
+             cmake --build build-geommath --parallel 2
+             ctest --test-dir build-geommath --output-on-failure
              ./scripts/build_imgui.sh
              ./scripts/build_crossguid.sh
              ./scripts/build_opengex.sh
@@ -401,8 +420,21 @@ jobs:
           name: Install Dependencies via Homebrew
           command: |
              export HOMEBREW_NO_AUTO_UPDATE=1
-             brew install cmake ninja flex bison ispc
+             brew install cmake ninja flex bison
              echo "export PATH=\"$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:\$PATH\"" >> "$BASH_ENV"
+      - run:
+          name: Install ISPC
+          command: ./scripts/build_ispc.sh
+      - when:
+          condition:
+            not: << pipeline.parameters.macos-viewer-only >>
+          steps:
+            - run:
+                name: ISPC and C++ math regression
+                command: |
+                  cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
+                  cmake --build build-geommath --parallel 2
+                  ctest --test-dir build-geommath --output-on-failure
       - run:
           name: "Build Dependencies"
           command: |

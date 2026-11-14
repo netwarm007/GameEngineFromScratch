@@ -1,6 +1,7 @@
 
 #pragma once
 #include <iostream>
+#include <stdexcept>
 #include <vector>
 #include "IImageParser.hpp"
 
@@ -138,8 +139,18 @@ class PvrParser : _implements_ ImageParser {
    public:
     Image Parse(Buffer& buf) override {
         Image img;
-        PVR::Header* pHeader = reinterpret_cast<PVR::Header*>(buf.GetData());
-        if (pHeader->version == 0x03525650) {
+        if (buf.GetDataSize() < sizeof(PVR::Header)) {
+            std::cerr << "Truncated PVR header" << std::endl;
+            throw std::runtime_error("Truncated PVR header");
+        }
+        PVR::Header header;
+        memcpy(&header, buf.GetData(), sizeof(header));
+        const auto* pHeader = &header;
+        if (pHeader->version != 0x03525650) {
+            std::cerr << "Invalid PVR version" << std::endl;
+            throw std::runtime_error("Invalid PVR version");
+        }
+        {
             std::cerr << "Asset is PVR file" << std::endl;
             std::cerr << "PVR Header" << std::endl;
             std::cerr << "----------------------------" << std::endl;
@@ -149,43 +160,70 @@ class PvrParser : _implements_ ImageParser {
 
             img.Width = pHeader->width;
             img.Height = pHeader->height;
+            if (!img.Width || !img.Height || pHeader->depth != 1 ||
+                pHeader->num_faces != 1 || pHeader->num_surfaces != 1 ||
+                !pHeader->mipmap_count ||
+                pHeader->metadata_size > buf.GetDataSize() - sizeof(PVR::Header)) {
+                std::cerr << "Invalid or unsupported PVR texture layout" << std::endl;
+                throw std::runtime_error("Invalid or unsupported PVR texture layout");
+            }
             auto data_offset = sizeof(PVR::Header) + pHeader->metadata_size;
-            img.data_size = (size_t)buf.GetDataSize() - data_offset;
-            img.data = new uint8_t[img.data_size];
+            const auto available_size = buf.GetDataSize() - data_offset;
             img.compressed = true;
+            size_t block_size = 16;
             switch (pHeader->pixel_format) {
                 case PVR::PixelFormat::BC1:
                     img.compress_format = COMPRESSED_FORMAT::BC1;
-                    img.pitch = img.Width / 4 * 8;
+                    block_size = 8;
                     break;
                 case PVR::PixelFormat::BC2:
                     img.compress_format = COMPRESSED_FORMAT::BC2;
-                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC3:
                     img.compress_format = COMPRESSED_FORMAT::BC3;
-                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC4:
                     img.compress_format = COMPRESSED_FORMAT::BC4;
-                    img.pitch = img.Width / 4 * 8;
+                    block_size = 8;
                     break;
                 case PVR::PixelFormat::BC5:
                     img.compress_format = COMPRESSED_FORMAT::BC5;
-                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC6H:
                     img.compress_format = COMPRESSED_FORMAT::BC6H;
-                    img.pitch = img.Width / 4 * 16;
                     break;
                 case PVR::PixelFormat::BC7:
                     img.compress_format = COMPRESSED_FORMAT::BC7;
-                    img.pitch = img.Width / 4 * 16;
                     break;
                 default:
-                    assert(0);
+                    std::cerr << "Unsupported PVR compression format" << std::endl;
+                    throw std::runtime_error("Unsupported PVR compression format");
             }
-
+            uint32_t max_mips = 1;
+            for (auto dimension = (std::max)(img.Width, img.Height); dimension > 1; dimension >>= 1) {
+                ++max_mips;
+            }
+            if (pHeader->mipmap_count > max_mips) {
+                std::cerr << "Invalid PVR mip count" << std::endl;
+                throw std::runtime_error("Invalid PVR mip count");
+            }
+            auto width = img.Width;
+            auto height = img.Height;
+            for (uint32_t level = 0; level < pHeader->mipmap_count; ++level) {
+                const auto pitch = ((size_t{width} + 3) / 4) * block_size;
+                const auto block_rows = (size_t{height} + 3) / 4;
+                if (pitch > (available_size - img.data_size) / block_rows) {
+                    std::cerr << "Truncated PVR mip data at level " << level << std::endl;
+                    throw std::runtime_error("Truncated PVR mip data");
+                }
+                const auto size = pitch * block_rows;
+                img.mipmaps.emplace_back(width, height, pitch, img.data_size, size);
+                img.data_size += size;
+                width = (std::max)(1u, width >> 1);
+                height = (std::max)(1u, height >> 1);
+            }
+            img.pitch = img.mipmaps.front().pitch;
+            img.data = new uint8_t[img.data_size];
             memcpy(img.data, buf.GetData() + data_offset, img.data_size);
         }
 
