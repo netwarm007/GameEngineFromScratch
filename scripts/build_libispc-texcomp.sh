@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
+./scripts/build_ispc.sh
+export PATH="$(pwd)/External/$(uname -s)/bin:$PATH"
 git submodule update --init External/src/ISPCTextureCompressor
 mkdir -p External/build/ISPCTextureCompressor
 cd External/build/ISPCTextureCompressor

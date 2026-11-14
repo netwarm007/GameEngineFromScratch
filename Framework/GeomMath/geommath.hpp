@@ -40,8 +40,8 @@ void DivByElementi32(const int32_t* a, const int32_t* b, int32_t* result,
                      const size_t count);
 void Normalize(const size_t count, float* v, float length);
 void Transform(float vector[4], const float matrix[16]);
-void Transpose(const float* a, float* r, const uint32_t row_count,
-               const uint32_t column_count);
+void Transpose(const float* a, float* r, const size_t row_count,
+               const size_t column_count);
 void BuildIdentityMatrix(float* data, const int32_t n);
 void MatrixExchangeYandZ(float* data, const int32_t rows, const int32_t cols);
 bool InverseMatrix3X3f(float matrix[9]);
@@ -885,14 +885,14 @@ inline void MatrixRotationYawPitchRoll(Matrix4X4f& matrix, const float yaw,
 
 __host__ __device__ inline void TransformCoord(Vector3f& vector,
                                                const Matrix4X4f& matrix) {
-    Vector4f tmp;
+    Vector4f tmp {vector[0], vector[1], vector[2], 1.0f};
 #ifdef USE_ISPC
     ispc::Transform(tmp, matrix);
 #else
     for (int index = 0; index < 4; index++) {
         tmp[index] = (vector[0] * matrix[0][index]) +
                      (vector[1] * matrix[1][index]) +
-                     (vector[2] * matrix[2][index]) + (1.0f * matrix[2][index]);
+                     (vector[2] * matrix[2][index]) + matrix[3][index];
     }
 #endif
     vector = tmp;
@@ -900,9 +900,9 @@ __host__ __device__ inline void TransformCoord(Vector3f& vector,
 
 __host__ __device__ inline void Transform(Vector4f& vector,
                                           const Matrix4X4f& matrix) {
-    Vector4f tmp;
+    Vector4f tmp = vector;
 #ifdef USE_ISPC
-    ispc::Transform(vector, matrix);
+    ispc::Transform(tmp, matrix);
 #else
     for (int index = 0; index < 4; index++) {
         tmp[index] =
@@ -1308,29 +1308,32 @@ __host__ __device__ inline float normalizing_scale_factor(float a) {
 constexpr float PI_over_sixteen = PI / 16.0;
 constexpr float one_over_four = 1.0f / 4.0f;
 
+inline constexpr float dct_basis[8][8] = {
+#include "DCTBasis.inc"
+};
+
 inline Matrix8X8f DCT8X8(const Matrix8X8f& matrix) {
     Matrix8X8f result;
 #ifdef USE_ISPC
     ispc::DCT8X8(matrix, result);
 #else
+    Matrix8X8f intermediate;
+    for (int u = 0; u < 8; u++) {
+        for (int y = 0; y < 8; y++) {
+            float sum = 0.0f;
+            for (int x = 0; x < 8; x++) {
+                sum += dct_basis[u][x] * matrix[x][y];
+            }
+            intermediate[u][y] = sum;
+        }
+    }
     for (int u = 0; u < 8; u++) {
         for (int v = 0; v < 8; v++) {
-            result[u][v] = 0;
-
-            for (int x = 0; x < 8; x++) {
-                for (int y = 0; y < 8; y++) {
-                    float scale_factor =
-                        one_over_four *
-                        normalizing_scale_factor(static_cast<float>(u)) *
-                        normalizing_scale_factor(static_cast<float>(v));
-                    auto normial = static_cast<float>(
-                        matrix[x][y] *
-                        cos((2.0f * x + 1.0f) * u * PI_over_sixteen) *
-                        cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
-
-                    result[u][v] += scale_factor * normial;
-                }
+            float sum = 0.0f;
+            for (int y = 0; y < 8; y++) {
+                sum += intermediate[u][y] * dct_basis[v][y];
             }
+            result[u][v] = sum;
         }
     }
 #endif
@@ -1342,27 +1345,23 @@ inline Matrix8X8f IDCT8X8(const Matrix8X8f& matrix) {
 #ifdef USE_ISPC
     ispc::IDCT8X8(matrix, result);
 #else
-    const float PI_over_sixteen = PI / 16.0;
-    const float one_over_four = 1.0f / 4.0f;
-
+    Matrix8X8f intermediate;
+    for (int x = 0; x < 8; x++) {
+        for (int v = 0; v < 8; v++) {
+            float sum = 0.0f;
+            for (int u = 0; u < 8; u++) {
+                sum += dct_basis[u][x] * matrix[u][v];
+            }
+            intermediate[x][v] = sum;
+        }
+    }
     for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
-            result[x][y] = 0;
-
-            for (int u = 0; u < 8; u++) {
-                for (int v = 0; v < 8; v++) {
-                    float scale_factor =
-                        one_over_four *
-                        normalizing_scale_factor(static_cast<float>(u)) *
-                        normalizing_scale_factor(static_cast<float>(v));
-                    auto normial = static_cast<float>(
-                        matrix[u][v] *
-                        cos((2.0f * x + 1.0f) * u * PI_over_sixteen) *
-                        cos((2.0f * y + 1.0f) * v * PI_over_sixteen));
-
-                    result[x][y] += scale_factor * normial;
-                }
+            float sum = 0.0f;
+            for (int v = 0; v < 8; v++) {
+                sum += intermediate[x][v] * dct_basis[v][y];
             }
+            result[x][y] = sum;
         }
     }
 #endif

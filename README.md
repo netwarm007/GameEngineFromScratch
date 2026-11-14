@@ -55,6 +55,10 @@ revision and do not validate every OS version.
 
 ## High Performance / Parallel Computing
 - ISPC
+  - Official stable compiler: [1.32.0](https://github.com/ispc/ispc/releases/tag/v1.32.0)
+    (released 2026-10-13), pinned by SHA-256 in `scripts/install-ispc.cmake`.
+    Windows, Linux x86-64/AArch64, and universal macOS packages are supported.
+    The legacy FreeBSD binary is not covered by this upgrade.
 
 ## Architecture
 - `RHI/`: render hardware interfaces (OpenGL, Vulkan, Metal, D3d, D2d, Empty)
@@ -68,15 +72,15 @@ Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 - Windows
   - Windows Platform SDK
   - Visual Studio or Clang
-  - CMake
+  - CMake and Ninja
   - Vulkan SDK (used by AppVeyor)
 
 - MacOS
   - Xcode and command line tools
-  - Homebrew (as used by CI): `brew install cmake ninja flex bison ispc` (MacPorts also works)
+  - Homebrew (as used by CI): `brew install cmake ninja flex bison` (MacPorts also works)
 
 - Linux
-  - gcc/g++ or clang/clang++, CMake, Ninja, ISPC, flex, bison
+  - gcc/g++ or clang/clang++, CMake, Ninja, flex, bison
   - uuid-dev libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
 
 - Android
@@ -141,6 +145,34 @@ CI uses plain CMake after the dependencies are built:
     cmake --build build --target package
 
 Windows CI additionally enables `-DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON`.
+
+### ISPC and geometry math regression
+
+`scripts/build_ispc.bat` (Windows) or `scripts/build_ispc.sh` (Linux/macOS)
+installs the official pinned compiler into `External/<platform>/bin`. Texture
+compressor build scripts also run this installer; no ISPC/LLVM source submodule
+is required. Redistribution notices are in `External/ispc`.
+
+The focused suite builds the same tests for both C++ and ISPC without requiring
+rendering, audio, or asset dependencies. Run from a compiler-enabled shell
+(on Windows, an x64 Visual Studio developer prompt with Ninja on PATH):
+
+    cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
+    cmake --build build-geommath --parallel 2
+    ctest --test-dir build-geommath --output-on-failure
+
+All three enabled CircleCI platforms run this suite in addition to their engine
+builds and tests. It checks DCT/IDCT against an independent direct formula,
+round trips, SIMD reduction tails, and row-vector transforms. DCT/IDCT now use
+two separable passes and a shared precomputed orthonormal basis (1024 instead
+of 4096 terms per block; ISPC scratch storage is 256 bytes instead of 16 KiB).
+Transform coordinates retain row-vector translation in the fourth matrix row.
+
+For a Release benchmark with runtime-generated inputs, five samples, and an
+observable checksum, run each `GeomMathCppTest`/`GeomMathIspcTest` executable
+from `build-geommath` with `--benchmark`. Timing is informational, not a
+machine-dependent correctness threshold. These tests do not by themselves
+establish full three-platform commit acceptance.
 
 ## Cook Materials
 ### Windows

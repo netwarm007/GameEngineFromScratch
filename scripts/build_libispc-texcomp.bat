@@ -1,5 +1,7 @@
 @echo off
 setlocal
+call "%~dp0build_ispc.bat"
+if errorlevel 1 exit /b 1
 call "%~dp0select-vs-generator.bat"
 if errorlevel 1 exit /b 1
 git submodule update --init External\src\ISPCTextureCompressor
