@@ -20,14 +20,15 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow 90cbedb9](https://app.circleci.com/workflow/90cbedb9-ad56-4538-baf9-63bdb4d63399)
-passed the configured builds and tests for revision `29800d81` (Viewer scene
-graph debug window) on Windows, macOS, and Linux. Separately, CircleCI
-[workflow a82fc15c](https://app.circleci.com/workflow/a82fc15c-fc05-4f0f-a825-18b4bb5bedd1)
-passed the configured builds and tests for revision
-`f298bfc2c300eca4f5a537dec098499b7a3e052d` (Viewer screenshot capture) on the
-same three platforms. These results apply only to those revisions; they do
-not validate their merged changes or every OS version.
+CircleCI [workflow 353ffb43](https://app.circleci.com/workflow/353ffb43-3945-4e61-9583-7c25c6a756a3)
+passed the configured builds and tests for merged revision
+`95b0a9bbebb0fab406950888be2e5390193f6ee3` on Windows, macOS, and Linux.
+These results apply only to that revision, not subsequent startup fixes or
+every OS version. Linux Viewer screenshot startup hit a font-atlas assertion
+at that revision; the best-effort capture step did not fail the build.
+
+Viewer's ImGui renderer backends build and update the font atlas dynamically;
+startup registers fonts without manually building the atlas.
 
 The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
 `viewer-render.png` and `viewer.log`. Viewer uses Metal GPU readback rather than
