@@ -21,5 +21,5 @@ add_test(NAME TEST_SceneServicesTest COMMAND SceneServicesTest)
 
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
-    BulletPhysics MyPhysics Framework PlatformInterface)
+    BulletPhysics MyPhysics Manager PlatformAssetIO)
 add_test(NAME TEST_PhysicsSceneIntegrationTest COMMAND PhysicsSceneIntegrationTest)

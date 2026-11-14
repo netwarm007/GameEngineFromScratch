@@ -256,6 +256,36 @@ jobs:
               }
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
             }
+      - run:
+          name: Billiard physics regression and screenshots
+          command: |
+            $output = New-Item -ItemType Directory -Force billiard-screenshots
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse |
+              Select-Object -First 1
+            if (-not $billiard) { throw "BilliardGame.exe not found" }
+            $process = Start-Process -FilePath $billiard.FullName -PassThru `
+              -ArgumentList @('-physicsRegression', ('"' + $output.FullName + '"')) `
+              -RedirectStandardOutput billiard-screenshots/billiard.log `
+              -RedirectStandardError billiard-screenshots/billiard-error.log
+            $handle = $process.Handle
+            try {
+              if (-not $process.WaitForExit(600000)) { throw "Billiard regression timed out" }
+              $process.Refresh()
+              if ($process.ExitCode -ne 0) { throw "Billiard regression failed; see billiard logs" }
+              if (-not (Test-Path billiard-screenshots/physics-passed)) { throw "Physics result missing" }
+              Add-Type -AssemblyName System.Drawing
+              foreach ($phase in @('before', 'after')) {
+                $image = [System.Drawing.Image]::FromFile("$($output.FullName)/billiard-$phase.bmp")
+                try {
+                  $image.Save("$($output.FullName)/billiard-$phase.png", [System.Drawing.Imaging.ImageFormat]::Png)
+                } finally { $image.Dispose() }
+              }
+            } finally {
+              if (-not $process.HasExited) { Stop-Process -Id $process.Id }
+            }
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
@@ -361,6 +391,21 @@ jobs:
                > screenshots/capture.log 2>&1; then
                echo "Viewer screenshot failed; see viewer-screenshots/capture.log and viewer.log"
              fi
+      - run:
+          name: Billiard physics regression and screenshots
+          command: |
+             mkdir -p billiard-screenshots
+             LIBGL_ALWAYS_SOFTWARE=1 LD_LIBRARY_PATH="$PWD/External/Linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+               timeout --kill-after=5s 600s xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+               ./build/Game/Billiard/BilliardGame -physicsRegression "$PWD/billiard-screenshots" \
+               > billiard-screenshots/billiard.log 2>&1
+             test -s billiard-screenshots/physics-passed
+             for phase in before after; do
+               convert "billiard-screenshots/billiard-$phase.bmp" "billiard-screenshots/billiard-$phase.png"
+             done
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
@@ -473,6 +518,33 @@ jobs:
              pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
              exit 0
+      - run:
+          name: Billiard physics regression and screenshot
+          command: |
+             mkdir -p billiard-screenshots
+             output="$PWD/billiard-screenshots"
+             APP=$(find build -type d -name BilliardGame.app | head -n 1)
+             test -n "$APP"
+             "$APP/Contents/MacOS/BilliardGame" -physicsRegression "$output" \
+               -screenshot "$output/billiard-after.png" -screenshotWaitFor "$output/physics-passed" \
+               -screenshotDelay 0 > "$output/billiard.log" 2>&1 &
+             billiard_pid=$!
+             trap 'kill "$billiard_pid" 2>/dev/null || true' EXIT
+             for i in $(seq 1 120); do
+               sleep 5
+               kill -0 "$billiard_pid" 2>/dev/null || break
+             done
+             if kill -0 "$billiard_pid" 2>/dev/null; then
+               echo "Billiard regression timed out; see billiard.log" >&2
+               exit 1
+             fi
+             wait "$billiard_pid"
+             trap - EXIT
+             test -s "$output/physics-passed"
+             test -s "$output/billiard-after.png"
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots

@@ -174,6 +174,21 @@ scene, so reloads cannot strand old bodies. `PhysicsSceneIntegrationTest`
 exercises both backends without constructing an application or window; their
 scene discovery during `Tick()` remains a later dependency-injection step.
 
+Billiard uses the renderer's dynamic font-atlas initialization, like Viewer.
+Its opt-in desktop regression loads the real billiard scene, settles it for
+60 ticks, applies the normal left-key shot, and follows 120 further ticks.
+It requires cue-ball XY displacement of at least 0.1 scene units and movement
+of another ball of at least 0.01 units, with finite transforms. A regression-only
+overview camera keeps the table in view; normal camera and saved layouts are
+unchanged. Run `BilliardGame -physicsRegression <output-directory>` on Windows
+or Linux to save before/after framebuffer BMPs and a `physics-passed` result.
+CircleCI converts these to PNG. macOS uses native Metal PNG capture with
+`-screenshot <path> -screenshotWaitFor <output-directory>/physics-passed
+-screenshotDelay 0`; capture cannot complete before the physics check passes.
+All three enabled CI jobs run this regression and retain Billiard screenshots.
+Third-stage acceptance requires inspecting these real Billiard images, not
+Viewer's physics-free scene alone.
+
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.
