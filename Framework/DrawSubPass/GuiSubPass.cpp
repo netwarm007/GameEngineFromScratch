@@ -55,7 +55,16 @@ void GuiSubPass::LoadSceneIcons() {
         }
         Buffer buf = loader.SyncOpenAndReadBinary(kSceneIconFiles[i]);
         Image image = parser.Parse(buf);
+        if (!image.data) {
+            std::cerr << "[GuiSubPass] Failed to decode icon: "
+                      << kSceneIconFiles[i] << std::endl;
+            continue;
+        }
         m_SceneIcons[i] = m_pGraphicsManager->CreateTexture(image);
+        if (!m_SceneIcons[i].handler) {
+            std::cerr << "[GuiSubPass] Failed to create icon texture: "
+                      << kSceneIconFiles[i] << std::endl;
+        }
     }
 }
 

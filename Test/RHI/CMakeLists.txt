@@ -50,4 +50,8 @@ if(OS_WINDOWS)
         "${PROJECT_BINARY_DIR}/Asset/Shaders/HLSL/integrateBRDF.comp.cso"
         "${PROJECT_BINARY_DIR}/Asset/Shaders/HLSL/generate_mips.comp.cso"
         "${CMAKE_CURRENT_BINARY_DIR}/ShadowCoordinatesTest.cso")
+
+    add_executable(D3d12GuiTextureTest D3d12GuiTextureTest.cpp)
+    target_link_libraries(D3d12GuiTextureTest Framework D3dRHI PlatformInterface)
+    add_test(NAME TEST_D3d12GuiTexture COMMAND D3d12GuiTextureTest)
 endif(OS_WINDOWS)

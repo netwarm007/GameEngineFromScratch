@@ -809,7 +809,7 @@ void D3d12GraphicsManager::CreateImGuiSrv(Texture2D& texture,
     rhi.GetDevice()->CreateShaderResourceView(
         reinterpret_cast<ID3D12Resource*>(texture.buff), &desc, cpu);
     texture.handler = static_cast<TextureHandler>(gpu.ptr);
-    m_imguiSlots.emplace(texture.handler, slot);
+    m_imguiSlots.emplace(texture.buff, slot);
 }
 
 void D3d12GraphicsManager::GenerateTexture(Texture2D& texture) {
@@ -962,6 +962,17 @@ void D3d12GraphicsManager::MSAAResolve(std::optional<std::reference_wrapper<Text
 }
 
 Texture2D My::D3d12GraphicsManager::CreateTexture(Image& img) {
+    auto result = UploadTexture(img);
+    D3D12_SHADER_RESOURCE_VIEW_DESC srv{};
+    srv.Format = static_cast<DXGI_FORMAT>(result.format);
+    srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    srv.Texture2D.MipLevels = 1;
+    CreateImGuiSrv(result, srv);
+    return result;
+}
+
+Texture2D D3d12GraphicsManager::UploadTexture(Image& img) {
     Texture2D result;
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     result.format = rhi.getDxgiFormat(img);
@@ -1073,7 +1084,7 @@ void D3d12GraphicsManager::CreateTexture(SceneObjectTexture& texture) {
         std::cerr << "Could not load material texture: " << texture.GetName() << std::endl;
         return;
     }
-    auto uploaded = CreateTexture(*image);
+    auto uploaded = UploadTexture(*image);
     if (image->compressed &&
         (uploaded.format == DXGI_FORMAT_BC1_UNORM ||
          uploaded.format == DXGI_FORMAT_BC2_UNORM ||
@@ -1117,7 +1128,7 @@ void D3d12GraphicsManager::ReleaseTexture(TextureBase& texture) {
         SafeRelease(&view->second.viewHeap);
         m_renderTextures.erase(view);
     }
-    auto slot = m_imguiSlots.find(texture.handler);
+    auto slot = m_imguiSlots.find(texture.buff);
     if (slot != m_imguiSlots.end()) {
         m_freeImGuiSlots.push_back(slot->second);
         m_imguiSlots.erase(slot);
