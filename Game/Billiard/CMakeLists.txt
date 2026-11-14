@@ -26,6 +26,7 @@ IF(APPLE)
     texture.frag texturearray.frag
     passthrough.vert passthrough_cube.vert
     integrateBRDF.comp
+    material_texture_copy.comp
     )
 
     foreach(SHADER IN LISTS SHADER_SOURCES)

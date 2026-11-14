@@ -7,6 +7,7 @@
 #import "Metal2GraphicsManager.h"
 
 #include <stack>
+#include <stdexcept>
 #include "IApplication.hpp"
 
 #include "imgui_impl_metal.h"
@@ -140,6 +141,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     id<MTLSamplerState> _sampler0;
+    id<MTLComputePipelineState> _materialTextureCopyPipeline;
 
     MTKView* _mtkView;
 
@@ -240,6 +242,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 - (void)finalize {
     ImGui_ImplMetal_Shutdown();
+    [_materialTextureCopyPipeline release];
+    _materialTextureCopyPipeline = nil;
 }
 
 - (void)createVertexBuffer:(const SceneObjectVertexArray&)v_property_array {
@@ -268,25 +272,170 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLTexture> texture;
 
     @autoreleasepool {
-        MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+        if (!image.data || !image.Width || !image.Height) {
+            NSLog(@"Cannot upload an empty texture");
+            throw std::runtime_error("Cannot upload an empty texture");
+        }
+        size_t maxMipLevels = 1;
+        for (auto dimension = std::max(image.Width, image.Height); dimension > 1; dimension >>= 1) {
+            ++maxMipLevels;
+        }
+        if (image.mipmaps.size() > maxMipLevels) {
+            NSLog(@"Invalid texture mip count: %zu", image.mipmaps.size());
+            throw std::runtime_error("Invalid texture mip count");
+        }
+        MTLTextureDescriptor* textureDesc =
+            [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:[self getMtlPixelFormat:image]
+                                                               width:image.Width
+                                                              height:image.Height
+                                                           mipmapped:NO];
+        textureDesc.mipmapLevelCount = std::max(image.mipmaps.size(), size_t{1});
+        textureDesc.usage = MTLTextureUsageShaderRead;
 
-        textureDesc.pixelFormat = [self getMtlPixelFormat:image];
-        textureDesc.width = image.Width;
-        textureDesc.height = image.Height;
-
-        // create the texture obj
         texture = [_device newTextureWithDescriptor:textureDesc];
+        if (!texture) {
+            NSLog(@"Failed to allocate texture (%ux%u)", image.Width, image.Height);
+            throw std::runtime_error("Failed to allocate texture");
+        }
 
-        // now upload the data
-        MTLRegion region = {
-            {0, 0, 0},                      // MTLOrigin
-            {image.Width, image.Height, 1}  // MTLSize
-        };
-
-        [texture replaceRegion:region mipmapLevel:0 withBytes:image.data bytesPerRow:image.pitch];
+        if (image.mipmaps.empty()) {
+            [texture replaceRegion:MTLRegionMake2D(0, 0, image.Width, image.Height)
+                       mipmapLevel:0
+                         withBytes:image.data
+                       bytesPerRow:image.pitch];
+        } else {
+            for (size_t level = 0; level < image.mipmaps.size(); ++level) {
+                const auto& mip = image.mipmaps[level];
+                if (mip.Width != std::max(1u, image.Width >> level) ||
+                    mip.Height != std::max(1u, image.Height >> level) ||
+                    mip.offset > image.data_size || mip.data_size > image.data_size - mip.offset) {
+                    [texture release];
+                    NSLog(@"Invalid texture mip at level %zu", level);
+                    throw std::runtime_error("Invalid texture mip");
+                }
+                [texture replaceRegion:MTLRegionMake2D(0, 0, mip.Width, mip.Height)
+                           mipmapLevel:level
+                             withBytes:image.data + mip.offset
+                           bytesPerRow:mip.pitch];
+            }
+        }
     }
 
     return texture;
+}
+
+- (id<MTLComputePipelineState>)materialTextureCopyPipeline {
+    if (!_materialTextureCopyPipeline) {
+        NSError* error = nil;
+        NSString* path = [[NSBundle mainBundle] pathForResource:@"Main" ofType:@"metallib"];
+        id<MTLLibrary> library = path ? [_device newLibraryWithFile:path error:&error] : nil;
+        id<MTLFunction> function = [library newFunctionWithName:@"material_texture_copy_comp_main"];
+        if (function) {
+            _materialTextureCopyPipeline = [_device newComputePipelineStateWithFunction:function
+                                                                                  error:&error];
+        }
+        [function release];
+        [library release];
+        if (!_materialTextureCopyPipeline) {
+            NSLog(@"Failed to create material texture copy pipeline: %@", error);
+            throw std::runtime_error("Failed to create material texture copy pipeline");
+        }
+    }
+    return _materialTextureCopyPipeline;
+}
+
+- (Texture2D)createMaterialTexture:(const Image&)image {
+    id<MTLComputePipelineState> copyPipeline = nil;
+    if (image.compressed && image.mipmaps.size() <= 1 &&
+        (image.Width > 1 || image.Height > 1)) {
+        copyPipeline = [self materialTextureCopyPipeline];
+    }
+    id<MTLTexture> source = [self createTexture:image];
+    id<MTLTexture> texture = source;
+    PIXEL_FORMAT pixelFormat = image.pixel_format;
+    if (source.mipmapLevelCount == 1 && (image.Width > 1 || image.Height > 1)) {
+        MTLPixelFormat format = source.pixelFormat;
+        if (image.compressed) {
+            switch (format) {
+                case MTLPixelFormatBC1_RGBA:
+                case MTLPixelFormatBC2_RGBA:
+                case MTLPixelFormatBC3_RGBA:
+                case MTLPixelFormatBC7_RGBAUnorm:
+                    format = MTLPixelFormatRGBA8Unorm;
+                    pixelFormat = PIXEL_FORMAT::RGBA8;
+                    break;
+                case MTLPixelFormatBC4_RUnorm:
+                    format = MTLPixelFormatR8Unorm;
+                    pixelFormat = PIXEL_FORMAT::R8;
+                    break;
+                case MTLPixelFormatBC5_RGUnorm:
+                    format = MTLPixelFormatRG8Unorm;
+                    pixelFormat = PIXEL_FORMAT::RG8;
+                    break;
+                default:
+                    format = MTLPixelFormatRGBA16Float;
+                    pixelFormat = PIXEL_FORMAT::RGBA16;
+                    break;
+            }
+        }
+        MTLTextureDescriptor* desc =
+            [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format
+                                                               width:image.Width
+                                                              height:image.Height
+                                                           mipmapped:YES];
+        desc.storageMode = MTLStorageModePrivate;
+        desc.usage = MTLTextureUsageShaderRead;
+        if (image.compressed) desc.usage |= MTLTextureUsageShaderWrite;
+        texture = [_device newTextureWithDescriptor:desc];
+        if (!texture) {
+            [source release];
+            NSLog(@"Failed to allocate mipmapped material texture");
+            throw std::runtime_error("Failed to allocate mipmapped material texture");
+        }
+        id<MTLCommandBuffer> commandBuffer = [_graphicsQueue commandBuffer];
+        commandBuffer.label = @"Generate material mipmaps";
+        if (image.compressed) {
+            // BC formats cannot be mipmapped by a blit. Sample into an uncompressed base level first.
+            id<MTLComputeCommandEncoder> encoder = [commandBuffer computeCommandEncoder];
+            [encoder setComputePipelineState:copyPipeline];
+            [encoder setTexture:source atIndex:0];
+            [encoder setTexture:texture atIndex:1];
+            [encoder setSamplerState:_sampler0 atIndex:0];
+            [encoder dispatchThreadgroups:MTLSizeMake((image.Width + 7) / 8, (image.Height + 7) / 8, 1)
+                    threadsPerThreadgroup:MTLSizeMake(8, 8, 1)];
+            [encoder endEncoding];
+        }
+        id<MTLBlitCommandEncoder> blit = [commandBuffer blitCommandEncoder];
+        if (!image.compressed) {
+            [blit copyFromTexture:source
+                     sourceSlice:0
+                     sourceLevel:0
+                    sourceOrigin:MTLOriginMake(0, 0, 0)
+                      sourceSize:MTLSizeMake(image.Width, image.Height, 1)
+                       toTexture:texture
+                destinationSlice:0
+                destinationLevel:0
+               destinationOrigin:MTLOriginMake(0, 0, 0)];
+        }
+        [blit generateMipmapsForTexture:texture];
+        [blit endEncoding];
+        [commandBuffer commit];
+        [commandBuffer waitUntilCompleted];
+        [source release];
+        if (commandBuffer.status != MTLCommandBufferStatusCompleted) {
+            [texture release];
+            NSLog(@"Material mip generation failed: %@", commandBuffer.error);
+            throw std::runtime_error("Material mip generation failed");
+        }
+    }
+    Texture2D result;
+    result.handler = reinterpret_cast<TextureHandler>(texture);
+    result.format = texture.pixelFormat;
+    result.pixel_format = pixelFormat;
+    result.width = image.Width;
+    result.height = image.Height;
+    result.mips = static_cast<uint32_t>(texture.mipmapLevelCount);
+    return result;
 }
 
 - (void)updateTexture:(const _Nonnull id<MTLTexture>)texture image:(const My::Image &)image {
