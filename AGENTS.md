@@ -23,6 +23,14 @@
   CircleCI result. Pending, canceled, skipped, unavailable, or failed jobs do
   not satisfy acceptance. Report the pipeline link, revision, each platform's
   result, and any blockers; do not claim acceptance while results are unknown.
+- Documentation-only commits are exempt from the CircleCI gate: do not run or
+  wait for CircleCI, and put `[ci skip]` in the commit message so the push does
+  not start a pipeline. A commit is documentation-only when every changed file
+  is a Markdown file (`*.md`) or other prose documentation that is not read by
+  a build, test, or script. Any change to source, build or CI configuration,
+  scripts, assets, or tests is not exempt, even if the commit also changes
+  documentation. A documentation-only commit keeps the last verified revision;
+  it does not replace it.
 - After CircleCI passes on all enabled platforms, update relevant sections of
   `README.md` to reflect the latest verified results. Identify the tested
   revision and platform coverage without implying untested configurations passed.

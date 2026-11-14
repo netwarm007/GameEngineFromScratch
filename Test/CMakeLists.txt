@@ -56,6 +56,11 @@ set(TEST_ASSETS
     Asset/Textures/huff_simple0.jpg
     Asset/Textures/interior_lod0.tga
     Asset/Textures/texture_missing.png
+    Asset/Textures/Icons/scene_empty.png
+    Asset/Textures/Icons/scene_geometry.png
+    Asset/Textures/Icons/scene_light.png
+    Asset/Textures/Icons/scene_camera.png
+    Asset/Textures/Icons/scene_bone.png
     Asset/Scene/splash.ogex
 )
 

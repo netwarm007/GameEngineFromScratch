@@ -17,6 +17,14 @@ set(SDR_TEXTURES
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/terrain/area_1_0_0.png
 )
 
+set(ICON_TEXTURES
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/Icons/scene_empty.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/Icons/scene_geometry.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/Icons/scene_light.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/Icons/scene_camera.png
+                    ${PROJECT_SOURCE_DIR}/Asset/Textures/Icons/scene_bone.png
+)
+
 set(HDR_TEXTURES
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posx.dds
                     ${PROJECT_SOURCE_DIR}/Asset/Textures/hdr/spruit_sunrise_posy.dds
@@ -62,11 +70,11 @@ IF(ANDROID)
 ELSEIF(APPLE)
     add_executable(Viewer MACOSX_BUNDLE
         main.cpp ViewerLogic.cpp
-        Main.metallib ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
+        Main.metallib ${SCENE_FILES} ${SDR_TEXTURES} ${ICON_TEXTURES} ${HDR_TEXTURES}
         )
 ELSE()
     add_executable(Viewer 
-        main.cpp ViewerLogic.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${HDR_TEXTURES}
+        main.cpp ViewerLogic.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${ICON_TEXTURES} ${HDR_TEXTURES}
         )
 ENDIF(ANDROID)
 
@@ -114,6 +122,7 @@ IF(APPLE)
         Main.metallib
         SCENE_FILES
         SDR_TEXTURES
+        ICON_TEXTURES
         HDR_TEXTURES
     )
 
@@ -132,6 +141,12 @@ IF(APPLE)
             MACOSX_PACKAGE_LOCATION "Resources/Asset/Textures"
         )
     endforeach(SDR_TEXTURE_FILE)
+
+    foreach(ICON_TEXTURE_FILE ${ICON_TEXTURES})
+        set_property(SOURCE ${ICON_TEXTURE_FILE} PROPERTY
+            MACOSX_PACKAGE_LOCATION "Resources/Asset/Textures/Icons"
+        )
+    endforeach(ICON_TEXTURE_FILE)
 
     foreach(HDR_TEXTURE_FILE ${HDR_TEXTURES})
         set_property(SOURCE ${HDR_TEXTURE_FILE} PROPERTY
@@ -153,6 +168,7 @@ ELSEIF(WA)
             --no-heap-copy
             --js-output=${CMAKE_CURRENT_BINARY_DIR}/Asset.preload.js 
             --preload ${SDR_TEXTURES} 
+                    ${ICON_TEXTURES}
                     ${HDR_TEXTURES}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         VERBATIM
@@ -172,6 +188,7 @@ ELSEIF(WIN32)
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/HLSL DESTINATION Asset/Shaders)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
+    install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
 ELSE() # LINUX
 if(SDL2_FOUND)
@@ -188,6 +205,7 @@ endif(SDL2_FOUND)
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
+    install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
 ENDIF(APPLE)
 

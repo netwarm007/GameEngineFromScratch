@@ -554,6 +554,41 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
         sizeof(SceneObjectSkyBox::skyboxIndices[0]);
 }
 
+Texture2D OpenGLGraphicsManagerCommonBase::CreateTexture(Image& img) {
+    Texture2D result;
+    if (!img.data) return result;
+
+    GLuint texture_id;
+    glGenTextures(1, &texture_id);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    uint32_t format, internal_format, type;
+    getOpenGLTextureFormat(img, format, internal_format, type);
+    if (img.compressed) {
+        glCompressedTexImage2D(GL_TEXTURE_2D, 0, internal_format, img.Width,
+                               img.Height, 0,
+                               static_cast<int32_t>(img.data_size), img.data);
+    } else {
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, img.Width, img.Height,
+                     0, format, type, img.data);
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    result.handler = static_cast<TextureHandler>(texture_id);
+    result.format = internal_format;
+    result.pixel_format = img.pixel_format;
+    result.width = img.Width;
+    result.height = img.Height;
+
+    return result;
+}
+
 void OpenGLGraphicsManagerCommonBase::EndScene() {
     for (int i = 0; i < m_Frames.size(); i++) {
         auto& batchContexts = m_Frames[i].batchContexts;

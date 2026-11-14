@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <list>
+#include <memory>
 
 namespace My {
 class TreeNode {
@@ -21,6 +22,13 @@ class TreeNode {
         sub_node->m_Parent = this;
         m_Children.push_back(std::move(sub_node));
     }
+
+    [[nodiscard]] const std::list<std::shared_ptr<TreeNode>>& GetChildren()
+        const {
+        return m_Children;
+    }
+
+    [[nodiscard]] const TreeNode* GetParent() const { return m_Parent; }
 
     friend std::ostream& operator<<(std::ostream& out, const TreeNode& node) {
         node.dump(out);
