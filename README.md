@@ -20,21 +20,34 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 875](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/875)
+CircleCI [pipeline 879](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/879)
 passed the configured builds and tests for revision
-`1f7935c0343e344228dab395d80aea53819d34ff` on Windows (job 4175), Linux
-(job 4174), and macOS (job 4173), including the runtime lifecycle, scene
-services, parser, scene-loading, animation, and headless layout regressions.
-The Linux static-link failure from pipeline 873 is resolved.
-Actual Viewer screenshots from all three jobs were inspected
-against the lifecycle checkpoint `c8da9d98f9b269585ff6c3979c458bc28108828f`
-([pipeline 872](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/872)):
-the splash scene,
-materials, scene graph icons, and docked panels show no visible regression.
+`3e92bb82da4a76d11f6670ea2ce88c02e386ccaa` on Windows D3D12 (job 4185),
+Linux OpenGL (job 4187), and macOS Metal (job 4186), including the runtime
+lifecycle, scene services, physics/scene integration, parser, scene-loading,
+animation, and headless layout regressions. Each platform also passed the
+real Billiard shot/collision regression and produced a Billiard PNG.
+The exact-revision images were inspected: the complete table and ball cluster
+are inside the main viewport, docked panels remain visible, and the captured
+ball positions show the shot's effect. The Windows image includes a normal
+mouse-hover texture tooltip; it does not obscure the ball cluster.
+
+| Tested Billiard backend | Maximum cue XY movement | Maximum other-ball XY movement |
+| --- | ---: | ---: |
+| Windows D3D12 | 1.50706 | 0.091782 |
+| Linux OpenGL | 1.50633 | 0.0913834 |
+| macOS Metal | 1.5105 | 0.0919351 |
+
+Movement is measured in scene units; required minima are 0.1 and 0.01.
+Windows CI does not verify Billiard's default OpenGL backend because its host
+cannot initialize WGL. The previous dependency checkpoint
+`1f7935c0343e344228dab395d80aea53819d34ff`
+([pipeline 875](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/875))
+remains the recorded Viewer comparison against the lifecycle checkpoint.
 These results apply only to the tested configurations and captured scene,
 not every OS version or full rendering correctness.
 
-Viewer's ImGui renderer backends build and update the font atlas dynamically;
+Viewer and Billiard's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
 
 The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
