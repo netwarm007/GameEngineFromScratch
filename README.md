@@ -20,13 +20,15 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [pipeline 869](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/869)
+CircleCI [pipeline 872](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/872)
 passed the configured builds and tests for revision
-`5c79e7b595426f321b3cc81b5a549430bcd2942e` on Windows (job 4155), Linux
-(job 4157), and macOS (job 4156). The Viewer screenshot from each job shows
-the scene graph icons for the splash scene's empty, light, geometry, and camera
-nodes. These results apply only to the tested configurations and visible
-nodes, not every OS version, node type, or full rendering correctness.
+`c8da9d98f9b269585ff6c3979c458bc28108828f` on Windows (job 4165), Linux
+(job 4164), and macOS (job 4166), including the standalone runtime lifecycle
+regression. Actual Viewer screenshots from all three jobs were inspected
+against revision `e91545f4012b381f5a18b8c68e9eec30ee3d1db4`: the splash scene,
+materials, scene graph icons, and docked panels show no visible regression.
+These results apply only to the tested configurations and captured scene,
+not every OS version or full rendering correctness.
 
 Viewer's ImGui renderer backends build and update the font atlas dynamically;
 startup registers fonts without manually building the atlas.
