@@ -79,10 +79,12 @@ void SdlApplication::onResize(int width, int height) {
 }
 
 int SdlApplication::Initialize() {
-    BaseApplication::Initialize();
+    const int result = BaseApplication::Initialize();
+    if (result != 0) return result;
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         logSDLError(std::cout, "SDL_Init");
+        BaseApplication::Finalize();
         return 1;
     }
 
@@ -90,6 +92,7 @@ int SdlApplication::Initialize() {
 }
 
 void SdlApplication::Finalize() {
+    BaseApplication::Finalize();
     if (ImGui::GetCurrentContext()) {
         ImGui_ImplSDL2_Shutdown();
     }

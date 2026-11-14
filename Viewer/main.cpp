@@ -120,6 +120,11 @@ int main(int argc, char** argv) {
     app.CreateMainWindow();
 
     ret = app.Initialize();
+    if (ret != 0) {
+        app.Finalize();
+        ImGui::DestroyContext();
+        return ret;
+    }
 
     // Drive the modules ahead
 #if defined(OS_WEBASSEMBLY)

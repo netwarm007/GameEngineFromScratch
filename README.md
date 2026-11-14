@@ -124,6 +124,21 @@ or verification of every material and camera position.
 - `Platform/`: platform layers (Windows, Linux, Darwin, Sdl, Android, Empty)
 - `Framework/`, `Physics/`, `Asset/`, `Utility/`, `Game/`, `Viewer/`, `Test/`
 
+Runtime modules are borrowed by the application and must outlive it. Register
+each module once, before initialization. Initialization and updates preserve
+registration order; shutdown runs in reverse order. If initialization fails,
+the application rolls back only successfully initialized modules. The failing
+module must release its own partially initialized resources before returning
+an error. A rolled-back group can retry initialization; final shutdown clears
+its registrations. Viewer and Billiard do not enter the main loop on failure.
+
+The lifecycle regression can run without platform, graphics, asset, or external
+dependencies:
+
+    cmake -S Test/Runtime -B build-runtime
+    cmake --build build-runtime --config Debug
+    ctest --test-dir build-runtime -C Debug --output-on-failure
+
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.

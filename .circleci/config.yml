@@ -146,6 +146,8 @@ jobs:
             $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
             $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
             if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S Test\Runtime -B build-runtime -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build-runtime --parallel 2 && ctest --test-dir build-runtime --output-on-failure"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S Test\GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build-geommath --parallel 2 && ctest --test-dir build-geommath --output-on-failure"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
@@ -321,6 +323,9 @@ jobs:
       - run:
           name: "Build Dependencies"
           command: |
+             cmake -S Test/Runtime -B build-runtime -G Ninja -DCMAKE_BUILD_TYPE=Debug
+             cmake --build build-runtime --parallel 2
+             ctest --test-dir build-runtime --output-on-failure
              ./scripts/build_ispc.sh
              cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
              cmake --build build-geommath --parallel 2
@@ -421,6 +426,9 @@ jobs:
       - run:
           name: "Build Dependencies"
           command: |
+             cmake -S Test/Runtime -B build-runtime -G Ninja -DCMAKE_BUILD_TYPE=Debug
+             cmake --build build-runtime --parallel 2
+             ctest --test-dir build-runtime --output-on-failure
              ./scripts/build_ispc.sh
              cmake -S Test/GeomMath -B build-geommath -G Ninja -DCMAKE_BUILD_TYPE=Release
              cmake --build build-geommath --parallel 2
