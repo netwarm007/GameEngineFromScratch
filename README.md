@@ -20,8 +20,8 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow](https://app.circleci.com/workflow/60e72de9-d1be-41e7-b95f-f62c873026b4)
-passed the configured builds and tests for revision `976e48e98edfbcff83c11ebc44fcb8f5739c17d6` on Windows,
+CircleCI [workflow](https://app.circleci.com/workflow/a82fc15c-fc05-4f0f-a825-18b4bb5bedd1)
+passed the configured builds and tests for revision `f298bfc2c300eca4f5a537dec098499b7a3e052d` on Windows,
 macOS, and Linux. These results apply to that revision and do not validate every
 OS version.
 
@@ -47,12 +47,12 @@ The Windows job attempts D3D12 back-buffer readback after 45 seconds and writes
 Viewer closes after the attempt. Device creation falls back to WARP software
 rendering when hardware device creation fails. The job retains `viewer.log`,
 `viewer-error.log`, and capture errors under `viewer-screenshots`, with a
-180-second timeout. Capture is best-effort. At revision
-`976e48e98edfbcff83c11ebc44fcb8f5739c17d6`, Windows capture failed because the
-readback mapping included nonexistent padding after the final row, despite
-the successful build and tests. The writer now maps only valid pixel bytes
-and packs rows as opaque BGRA for PNG encoding, removing incomplete files on
-failure; this fix has not yet been verified in CircleCI.
+180-second timeout. Capture is best-effort. Windows capture was verified in
+CircleCI at revision `f298bfc2c300eca4f5a537dec098499b7a3e052d`; the supplied
+image shows the rendered scene, textures, and Chinese ImGui interface. The
+writer maps only valid pixel bytes and packs rows as opaque BGRA for PNG
+encoding, removing incomplete files on failure. This verifies screenshot
+capture, not full rendering correctness or execution through the WARP fallback.
 
 ## Graphic API Support Status
 - OpenGL
