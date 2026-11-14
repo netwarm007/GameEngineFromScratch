@@ -20,10 +20,47 @@ https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプ�
 - Android (CircleCI job disabled; not tested recently).
 - WebAssembly (Emscripten; not tested recently; build might fail).
 
-CircleCI [workflow 90cbedb9](https://app.circleci.com/workflow/90cbedb9-ad56-4538-baf9-63bdb4d63399)
-passed the configured builds and tests for revision `29800d81` (Viewer scene
-graph debug window) on Windows, macOS, and Linux. These results apply to that
-revision and do not validate every OS version.
+CircleCI [workflow a5c800dc](https://app.circleci.com/workflow/a5c800dc-4a54-4a35-8c8b-53261f20fe24)
+passed the configured builds and tests for revision
+`f6dabf7dfa9a57066ba406ca760ffa5fd8ebbe2a` on Windows, macOS, and Linux.
+This revision includes the merged scene graph and screenshot changes and the
+font-atlas startup fix. These results apply only to that revision and do not
+validate every OS version or full rendering correctness.
+
+Viewer's ImGui renderer backends build and update the font atlas dynamically;
+startup registers fonts without manually building the atlas.
+
+The macOS job saves Viewer output under the `viewer-screenshots` artifacts:
+`viewer-render.png` and `viewer.log`. Viewer uses Metal GPU readback rather than
+desktop capture, so capturing does not require a physical display. Launch with
+`-screenshot <path>` and optionally `-screenshotDelay <seconds>` (default: 45).
+Screenshot capture is best-effort and does not gate the build; a successful job
+alone does not guarantee a PNG was produced.
+
+The Linux job also attempts a screenshot under `viewer-screenshots`, using Xvfb
+and Mesa software OpenGL rendering. After 60 seconds it captures the Viewer
+window as `viewer-render.png`; `viewer.log`, `capture.log`, and `diagnostics.txt`
+record startup, capture errors, and the OpenGL renderer. The capture has a
+180-second timeout and is best-effort, not a build gate. Linux capture was
+verified in CircleCI at revision `11ea6f88feb773734f1c75252045afa21ee158b0`;
+the resulting image shows the scene and ImGui interface without the earlier
+window-size clipping.
+At revision `f6dabf7dfa9a57066ba406ca760ffa5fd8ebbe2a`, the Linux job produced
+the PNG artifact, and its Viewer and capture logs contained no font-atlas
+startup assertion.
+
+The Windows job attempts D3D12 back-buffer readback after 45 seconds and writes
+`viewer-render.png` using WIC, without desktop capture. Set
+`GEFS_SCREENSHOT_PATH` to an output filename to enable this one-shot capture;
+Viewer closes after the attempt. Device creation falls back to WARP software
+rendering when hardware device creation fails. The job retains `viewer.log`,
+`viewer-error.log`, and capture errors under `viewer-screenshots`, with a
+180-second timeout. Capture is best-effort. Windows capture was verified in
+CircleCI at revision `f298bfc2c300eca4f5a537dec098499b7a3e052d`; the supplied
+image shows the rendered scene, textures, and Chinese ImGui interface. The
+writer maps only valid pixel bytes and packs rows as opaque BGRA for PNG
+encoding, removing incomplete files on failure. This verifies screenshot
+capture, not full rendering correctness or execution through the WARP fallback.
 
 ## Graphic API Support Status
 - OpenGL
@@ -107,6 +144,9 @@ files using their revisions, build scripts, and toolchain details. MSVC may also
 compile source files in parallel within a build job.
 Cache misses rebuild the dependencies; the engine and tests still run on every
 pipeline.
+
+Packaging and package artifacts are limited to `master` and tagged builds;
+builds, tests, and Viewer screenshot attempts also run on other branches.
 
 ### Windows
 Windows scripts that use Visual Studio select the newest installed version

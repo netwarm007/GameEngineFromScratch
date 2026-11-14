@@ -19,30 +19,9 @@ namespace {
 constexpr char kMissingTexturePath[] = "Textures/texture_missing.png";
 }
 
-void SceneObjectTexture::LoadTextureAsync() {
-    if (!m_asyncLoadFuture.valid()) {
-        m_asyncLoadFuture =
-            async(launch::async, &SceneObjectTexture::LoadTexture, this);
-    }
-}
-
-bool SceneObjectTexture::LoadTexture() {
-    AssetLoader assetLoader;
-    string textureName = m_Name;
-    if (!assetLoader.FileExists(textureName.c_str())) {
-        cerr << "Texture not found: " << textureName
-             << "; loading fallback texture " << kMissingTexturePath << endl;
-        textureName = kMissingTexturePath;
-        if (!assetLoader.FileExists(textureName.c_str())) {
-            cerr << "Fallback texture not found: " << textureName << endl;
-            return false;
-        }
-    }
-
-    cerr << "Start async loading of " << textureName << endl;
-
+namespace {
+Image ParseImage(const string& textureName, Buffer& buf) {
     Image image;
-    Buffer buf = assetLoader.SyncOpenAndReadBinary(textureName.c_str());
     string ext = textureName.substr(textureName.find_last_of('.'));
     if (ext == ".jpg" || ext == ".jpeg") {
         JfifParser jfif_parser;
@@ -71,8 +50,49 @@ bool SceneObjectTexture::LoadTexture() {
     } else {
         assert(0);
     }
+    return image;
+}
 
-    cerr << "End async loading of " << textureName << endl;
+// The fallback is decoded once and shared by every missing texture, so a
+// scene referencing many absent files (e.g. terrain tiles) stays cheap.
+shared_ptr<Image> GetFallbackImage() {
+    static const shared_ptr<Image> fallback = []() -> shared_ptr<Image> {
+        AssetLoader assetLoader;
+        string name = kMissingTexturePath;
+        if (!assetLoader.FileExists(name.c_str())) {
+            cerr << "Fallback texture not found: " << name << endl;
+            return nullptr;
+        }
+        Buffer buf = assetLoader.SyncOpenAndReadBinary(name.c_str());
+        return make_shared<Image>(ParseImage(name, buf));
+    }();
+    return fallback;
+}
+}  // namespace
+
+void SceneObjectTexture::LoadTextureAsync() {
+    if (!m_asyncLoadFuture.valid()) {
+        m_asyncLoadFuture =
+            async(launch::async, &SceneObjectTexture::LoadTexture, this);
+    }
+}
+
+bool SceneObjectTexture::LoadTexture() {
+    AssetLoader assetLoader;
+    if (!assetLoader.FileExists(m_Name.c_str())) {
+        cerr << "Texture not found: " << m_Name
+             << "; using fallback texture " << kMissingTexturePath << endl;
+        auto fallback = GetFallbackImage();
+        atomic_store_explicit(&m_pImage, fallback, std::memory_order_release);
+        return fallback != nullptr;
+    }
+
+    cerr << "Start async loading of " << m_Name << endl;
+
+    Buffer buf = assetLoader.SyncOpenAndReadBinary(m_Name.c_str());
+    Image image = ParseImage(m_Name, buf);
+
+    cerr << "End async loading of " << m_Name << endl;
 
     atomic_store_explicit(&m_pImage, make_shared<Image>(std::move(image)),
                           std::memory_order_release);

@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <chrono>
 #include <functional>
 #include <vector>
 
@@ -8,6 +9,7 @@
 #include <DXGI1_4.h>
 #include <d3d12.h>
 #include <string_view>
+#include <string>
 
 #include "Buffer.hpp"
 #include "GfxConfiguration.hpp"
@@ -170,6 +172,8 @@ class D3d12RHI {
     void submitComputeCommands();
     void waitOnFrame();
     void moveToNextFrame();
+    HRESULT saveScreenshot(ID3D12Resource* readback,
+                           const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& footprint);
 
    private:
     DXGI_FORMAT m_eSurfaceFormat = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -233,5 +237,7 @@ class D3d12RHI {
 
     uint32_t m_nCurrentFrame = 0;
     bool m_bInitialized = false;
+    std::wstring m_screenshotPath;
+    std::chrono::steady_clock::time_point m_screenshotStart;
 };
 }  // namespace My

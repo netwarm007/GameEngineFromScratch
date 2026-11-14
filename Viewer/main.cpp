@@ -96,6 +96,8 @@ int main(int argc, char** argv) {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+    // The executable path must be known before resolving asset paths.
+    assetLoader.Initialize();
     auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
 
     ImVector<ImWchar> ranges;
