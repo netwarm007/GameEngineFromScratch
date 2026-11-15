@@ -283,8 +283,25 @@ A scene without a live camera uses the existing built-in view and perspective,
 now also publishing the matching camera position instead of a stale value.
 Invalid dimensions, projection parameters, and missing/unsupported camera
 references are reported and skip rendering that frame without publishing
-partial camera data. Lighting, RHI ownership, and ImGui lifecycle remain in
-their existing layers for subsequent checkpoints.
+partial camera data.
+
+### CPU lighting preparation
+
+`SceneLighting` prepares light constants from an explicit scene snapshot and
+projection convention, with no Application, RHI, ImGui, or asset loading linkage.
+`GraphicsManager` supplies the same frame snapshot used for camera preparation.
+Omni, spot, area, and directional lights retain their existing transforms,
+attenuation, shadow projections, and shader layout. Directional shadows retain
+their camera-relative target and bounded orthographic extent. Shadow-map
+allocation and index assignment remain in the rendering passes.
+
+Each successful preparation replaces the light set, so scene replacement and
+light-type changes cannot retain previous per-light data. Expired nodes are
+skipped. Unresolved references, invalid shadow projection parameters, and more
+than `MAX_LIGHTS` live lights are reported and skip rendering that frame without
+publishing partial lighting. The headless regression covers all four light
+types, backend clip depths, runtime movement, scene replacement, and capacity.
+RHI ownership and ImGui lifecycle remain for subsequent checkpoints.
 
 ### Commit acceptance
 

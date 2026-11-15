@@ -102,7 +102,7 @@ class GraphicsManager : _implements_ IGraphicsManager {
    private:
     void InitConstants() {}
     bool CalculateCameraMatrix();
-    void CalculateLights();
+    bool CalculateLights();
 
     bool UpdateConstants();
 
