@@ -10,6 +10,7 @@
 #include "BaseApplication.hpp"
 #include "PVR.hpp"
 #include "SceneManager.hpp"
+#include "SceneResourceLoader.hpp"
 #include "OGEX.hpp"
 #include "ispc_texcomp.h"
 
@@ -157,7 +158,8 @@ int main(int argc, char** argv) {
     BaseApplication app;
     AssetLoader assetLoader;
     OgexParser sceneParser;
-    SceneManager sceneManager(assetLoader, sceneParser);
+    SceneResourceLoader sceneResources(assetLoader);
+    SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
 
     app.RegisterManagerModule(&assetLoader);
     app.RegisterManagerModule(&sceneManager);

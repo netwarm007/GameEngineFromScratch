@@ -52,10 +52,24 @@ class RecordingParser : public ISceneParser {
     int parseCount = 0;
 };
 
+class RecordingResources : public ISceneResourceLoader {
+   public:
+    bool Load(Scene& scene) override {
+        lastScene = &scene;
+        ++loadCount;
+        return succeed;
+    }
+
+    Scene* lastScene = nullptr;
+    int loadCount = 0;
+    bool succeed = true;
+};
+
 void TestLoadingAndFailedReload() {
     MemoryAssets assets;
     RecordingParser parser;
-    SceneManager scenes(assets, parser);
+    RecordingResources resources;
+    SceneManager scenes(assets, parser, resources);
     Expect(scenes.Initialize() == 0, "scene service initializes without an app");
     parser.nextScene = std::make_unique<Scene>("first");
     Scene* first = parser.nextScene.get();
@@ -65,8 +79,9 @@ void TestLoadingAndFailedReload() {
            "pass filename and exact text to injected dependencies");
     Expect(scenes.GetSceneForRendering().get() == first &&
                scenes.GetSceneForPhysicalSimulation().get() == first &&
-               scenes.GetSceneRevision() == 1,
-           "publish parsed scene and advance revision once");
+               scenes.GetSceneRevision() == 1 &&
+               resources.lastScene == first && resources.loadCount == 1,
+           "prepare resources before publishing parsed scene");
 
     assets.text.clear();
     Expect(scenes.LoadScene("empty.scene") != 0, "reject empty scene data");
@@ -80,6 +95,17 @@ void TestLoadingAndFailedReload() {
     Expect(scenes.LoadScene(nullptr) != 0 && scenes.LoadScene("") != 0,
            "reject missing filenames");
     Expect(assets.readCount == reads, "invalid filename never reaches reader");
+    Expect(resources.loadCount == 1,
+           "invalid input and parser failures never load resources");
+
+    resources.succeed = false;
+    parser.nextScene = std::make_unique<Scene>("unavailable resources");
+    Expect(scenes.LoadScene("unavailable.scene") != 0,
+           "reject resource loading failure");
+    Expect(scenes.GetSceneForRendering().get() == first &&
+               scenes.GetSceneRevision() == 1,
+           "resource loading failure preserves old scene and revision");
+    resources.succeed = true;
 
     parser.nextScene = std::make_unique<Scene>("second");
     Scene* second = parser.nextScene.get();
@@ -93,7 +119,8 @@ void TestLoadingAndFailedReload() {
 void TestAnimationWithoutApplication() {
     MemoryAssets assets;
     RecordingParser parser;
-    SceneManager scenes(assets, parser);
+    RecordingResources resources;
+    SceneManager scenes(assets, parser, resources);
     AnimationManager animations(scenes);
     Expect(animations.Initialize() == 0, "animation initializes without an app");
     animations.Tick();

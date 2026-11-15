@@ -3,6 +3,8 @@
 #include <cassert>
 #include <iostream>
 
+#include "FrameScheduler.hpp"
+
 using namespace My;
 using namespace std;
 
@@ -20,7 +22,7 @@ void BaseApplication::Finalize() {
 
 // One cycle of the main loop
 void BaseApplication::Tick() {
-    runtime_modules.Tick();
+    TickFrame(runtime_modules.GetInitializedModules());
 }
 
 void BaseApplication::SetCommandLineParameters(int argc, char** argv) {

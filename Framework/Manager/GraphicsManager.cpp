@@ -6,6 +6,8 @@
 #include "BRDFIntegrator.hpp"
 #include "BaseApplication.hpp"
 #include "SceneManager.hpp"
+#include "SceneCamera.hpp"
+#include "SceneLighting.hpp"
 
 #include "ForwardGeometryPass.hpp"
 #include "ShadowMapPass.hpp"
@@ -81,7 +83,7 @@ void GraphicsManager::Tick() {
         m_Frames[m_nFrameIndex].scene = pSceneManager->GetSceneForRendering();
     }
 
-    UpdateConstants();
+    if (!UpdateConstants()) return;
 
     BeginFrame(m_Frames[m_nFrameIndex]);
     ImGui::NewFrame();
@@ -177,7 +179,7 @@ void GraphicsManager::ResizeCanvas(int32_t width, int32_t height) {
     }
 }
 
-void GraphicsManager::UpdateConstants() {
+bool GraphicsManager::UpdateConstants() {
     // update scene object position
     auto& frame = m_Frames[m_nFrameIndex];
 
@@ -186,8 +188,8 @@ void GraphicsManager::UpdateConstants() {
     }
 
     // Generate the view matrix based on the camera's position.
-    CalculateCameraMatrix();
-    CalculateLights();
+    if (!CalculateCameraMatrix()) return false;
+    return CalculateLights();
 }
 
 void GraphicsManager::Draw() {
@@ -206,244 +208,34 @@ void GraphicsManager::Draw() {
     }
 }
 
-void GraphicsManager::CalculateCameraMatrix() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+bool GraphicsManager::CalculateCameraMatrix() {
+    auto& frame = m_Frames[m_nFrameIndex];
+    if (!frame.scene) return true;
 
-    if (pSceneManager) {
-        auto& scene = pSceneManager->GetSceneForRendering();
-        auto pCameraNode = scene->GetFirstCameraNode();
-        DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
-        if (pCameraNode) {
-            auto transform = *pCameraNode->GetCalculatedTransform();
-            Vector3f position =
-                Vector3f({transform[3][0], transform[3][1], transform[3][2]});
-            Vector3f lookAt = pCameraNode->GetTarget();
-            Vector3f up = {0.0f, 0.0f, 1.0f};
-            BuildViewRHMatrix(frameContext.viewMatrix, position, lookAt, up);
-
-            frameContext.camPos = {position[0], position[1], position[2], 0.0f};
-        } else {
-            // use default build-in camera
-            Vector3f position = {0.0f, -5.0f, 0.0f},
-                     lookAt = {0.0f, 0.0f, 0.0f}, up = {0.0f, 0.0f, 1.0f};
-            BuildViewRHMatrix(frameContext.viewMatrix, position, lookAt, up);
-        }
-
-        float fieldOfView = PI / 3.0f;
-        float nearClipDistance = 10.0f;
-        float farClipDistance = 100.0f;
-
-        if (pCameraNode) {
-            auto pCamera = scene->GetCamera(pCameraNode->GetSceneObjectRef());
-            // Set the field of view and screen aspect ratio.
-            fieldOfView =
-                dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)
-                    ->GetFov();
-            nearClipDistance = pCamera->GetNearClipDistance();
-            farClipDistance = pCamera->GetFarClipDistance();
-        }
-
-
-        float screenAspect = (float)m_canvasWidth / (float)m_canvasHeight;
-
-        assert(m_pApp);
-        const GfxConfiguration& conf = m_pApp->GetConfiguration();
-
-        // Build the perspective projection matrix.
-        if (conf.fixOpenGLPerspectiveMatrix) {
-            BuildOpenglPerspectiveFovRHMatrix(
-                frameContext.projectionMatrix, fieldOfView, screenAspect,
-                nearClipDistance, farClipDistance);
-        } else {
-            BuildPerspectiveFovRHMatrix(frameContext.projectionMatrix,
-                                        fieldOfView, screenAspect,
-                                        nearClipDistance, farClipDistance);
-        }
+    CameraFrame camera;
+    if (!PrepareSceneCamera(*frame.scene, m_canvasWidth, m_canvasHeight,
+                            m_pApp->GetConfiguration().fixOpenGLPerspectiveMatrix,
+                            camera)) {
+        return false;
     }
+    frame.frameContext.viewMatrix = camera.viewMatrix;
+    frame.frameContext.projectionMatrix = camera.projectionMatrix;
+    frame.frameContext.camPos = camera.position;
+    return true;
 }
 
-void GraphicsManager::CalculateLights() {
-    DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
-    auto& light_info = m_Frames[m_nFrameIndex].lightInfo;
-
-    frameContext.numLights = 0;
-
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    const GfxConfiguration& conf = m_pApp->GetConfiguration();
-
-    if (conf.fixOpenGLPerspectiveMatrix) {
-        frameContext.clip_space_type = 0;
-    } else {
-        frameContext.clip_space_type = 1;
+bool GraphicsManager::CalculateLights() {
+    auto& frame = m_Frames[m_nFrameIndex];
+    const bool openGL = m_pApp->GetConfiguration().fixOpenGLPerspectiveMatrix;
+    LightingFrame lighting;
+    lighting.clipSpaceType = openGL ? 0 : 1;
+    if (frame.scene && !PrepareSceneLights(*frame.scene, openGL, lighting)) {
+        return false;
     }
-
-    if (pSceneManager) {
-        auto& scene = pSceneManager->GetSceneForRendering();
-        for (const auto& LightNode : scene->LightNodes) {
-            Light& light = light_info.lights[frameContext.numLights];
-            auto pLightNode = LightNode.second.lock();
-            if (!pLightNode) continue;
-            auto trans_ptr = pLightNode->GetCalculatedTransform();
-            light.lightPosition = {0.0f, 0.0f, 0.0f, 1.0f};
-            light.lightDirection = {0.0f, 0.0f, -1.0f, 0.0f};
-            Transform(light.lightPosition, *trans_ptr);
-            Transform(light.lightDirection, *trans_ptr);
-            Normalize(light.lightDirection);
-
-            auto pLight = scene->GetLight(pLightNode->GetSceneObjectRef());
-            if (pLight) {
-                light.lightGuid = pLight->GetGuid();
-                light.lightColor = pLight->GetColor().Value;
-                light.lightIntensity = pLight->GetIntensity();
-                light.lightCastShadow = pLight->GetIfCastShadow();
-                const AttenCurve& atten_curve =
-                    pLight->GetDistanceAttenuation();
-                light.lightDistAttenCurveType = atten_curve.type;
-                memcpy(light.lightDistAttenCurveParams, &atten_curve.u,
-                       sizeof(atten_curve.u));
-                light.lightAngleAttenCurveType = AttenCurveType::kNone;
-
-                Matrix4X4f view;
-                Matrix4X4f projection;
-                BuildIdentityMatrix(projection);
-
-                float nearClipDistance = 1.0f;
-                float farClipDistance = 1000.0f;
-
-                if (pLight->GetType() ==
-                    SceneObjectType::kSceneObjectTypeLightInfi) {
-                    light.lightType = LightType::Infinity;
-
-                    Vector4f target = {0.0f, 0.0f, 0.0f, 1.0f};
-
-                    auto pCameraNode = scene->GetFirstCameraNode();
-                    if (pCameraNode) {
-                        auto pCamera =
-                            scene->GetCamera(pCameraNode->GetSceneObjectRef());
-                        nearClipDistance = pCamera->GetNearClipDistance();
-                        farClipDistance = pCamera->GetFarClipDistance();
-
-                        target[2] = -(0.75f * nearClipDistance +
-                                      0.25f * farClipDistance);
-
-                        // calculate the camera target position
-                        auto trans_ptr = pCameraNode->GetCalculatedTransform();
-                        Transform(target, *trans_ptr);
-                    }
-
-                    light.lightPosition =
-                        target - light.lightDirection * farClipDistance;
-                    Vector3f position;
-                    position.Set((float*)light.lightPosition);
-                    Vector3f lookAt;
-                    lookAt.Set((float*)target);
-                    Vector3f up = {0.0f, 0.0f, 1.0f};
-                    if (abs(light.lightDirection[0]) <= 0.2f &&
-                        abs(light.lightDirection[1]) <= 0.2f) {
-                        up = {0.1f, 0.1f, 1.0f};
-                    }
-                    BuildViewRHMatrix(view, position, lookAt, up);
-
-                    float sm_half_dist = min(farClipDistance * 0.25f, 800.0f);
-
-                    if (conf.fixOpenGLPerspectiveMatrix) {
-                        BuildOpenglOrthographicRHMatrix(projection, -sm_half_dist,
-                                                sm_half_dist, sm_half_dist,
-                                                -sm_half_dist, nearClipDistance,
-                                                farClipDistance + sm_half_dist);
-                    } else {
-                        BuildOrthographicRHMatrix(projection, -sm_half_dist,
-                                                sm_half_dist, sm_half_dist,
-                                                -sm_half_dist, nearClipDistance,
-                                                farClipDistance + sm_half_dist);
-
-                    }
-
-                    // notify shader about the infinity light by setting 4th
-                    // field to 0
-                    light.lightPosition[3] = 0.0f;
-                } else {
-                    Vector3f position;
-                    position.Set(light.lightPosition);
-                    Vector4f tmp = light.lightPosition + light.lightDirection;
-                    Vector3f lookAt;
-                    lookAt.Set(tmp);
-                    Vector3f up = {0.0f, 0.0f, 1.0f};
-                    if (abs(light.lightDirection[0]) <= 0.1f &&
-                        abs(light.lightDirection[1]) <= 0.1f) {
-                        up = {0.0f, 0.707f, 0.707f};
-                    }
-                    BuildViewRHMatrix(view, position, lookAt, up);
-
-                    if (pLight->GetType() ==
-                        SceneObjectType::kSceneObjectTypeLightSpot) {
-                        light.lightType = LightType::Spot;
-
-                        auto plight =
-                            dynamic_pointer_cast<SceneObjectSpotLight>(pLight);
-                        const AttenCurve& angle_atten_curve =
-                            plight->GetAngleAttenuation();
-                        light.lightAngleAttenCurveType = angle_atten_curve.type;
-                        memcpy(light.lightAngleAttenCurveParams,
-                               &angle_atten_curve.u,
-                               sizeof(angle_atten_curve.u));
-
-                        float fieldOfView =
-                            light.lightAngleAttenCurveParams[0][1] * 2.0f;
-                        float screenAspect = 1.0f;
-
-                        // Build the perspective projection matrix.
-                        if (conf.fixOpenGLPerspectiveMatrix) {
-                            BuildOpenglPerspectiveFovRHMatrix(
-                                projection, fieldOfView, screenAspect,
-                                nearClipDistance, farClipDistance);
-                        } else {
-                            BuildPerspectiveFovRHMatrix(projection,
-                                                        fieldOfView, screenAspect,
-                                                        nearClipDistance, farClipDistance);
-                        }
-                    } else if (pLight->GetType() ==
-                               SceneObjectType::kSceneObjectTypeLightArea) {
-                        light.lightType = LightType::Area;
-
-                        auto plight =
-                            dynamic_pointer_cast<SceneObjectAreaLight>(pLight);
-                        light.lightSize = plight->GetDimension();
-                    } else  // omni light
-                    {
-                        light.lightType = LightType::Omni;
-
-                        // auto plight =
-                        // dynamic_pointer_cast<SceneObjectOmniLight>(pLight);
-
-                        float fieldOfView =
-                            PI / 2.0f;  // 90 degree for each cube map face
-                        float screenAspect = 1.0f;
-
-                        // Build the perspective projection matrix.
-                        if (conf.fixOpenGLPerspectiveMatrix) {
-                            BuildOpenglPerspectiveFovRHMatrix(
-                                projection, fieldOfView, screenAspect,
-                                nearClipDistance, farClipDistance);
-                        } else {
-                            BuildPerspectiveFovRHMatrix(projection,
-                                                        fieldOfView, screenAspect,
-                                                        nearClipDistance, farClipDistance);
-                        }
-                    }
-                }
-
-                light.lightViewMatrix = view;
-                light.lightProjectionMatrix = projection;
-                frameContext.numLights++;
-            } else {
-                assert(0);
-            }
-        }
-    }
+    frame.lightInfo = lighting.lightInfo;
+    frame.frameContext.numLights = lighting.numLights;
+    frame.frameContext.clip_space_type = lighting.clipSpaceType;
+    return true;
 }
 
 void GraphicsManager::BeginScene(const Scene& scene) {

@@ -11,6 +11,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 option(USE_ISPC "Use ISPC for geometry math" OFF)
 option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
+option(ENABLE_COVERAGE "Instrument with Clang source-based coverage (llvm-cov)" OFF)
 
 # CUDA
 include(CheckLanguage)
@@ -77,6 +78,15 @@ if(WA)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s FORCE_FILESYSTEM=1 -s LZ4=1 --emrun")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g4 --source-map-base http://localhost:8080/")
 endif(WA)
+
+if(ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT MSVC)
+        add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
+        add_link_options(-fprofile-instr-generate)
+    else()
+        message(FATAL_ERROR "ENABLE_COVERAGE requires Clang (llvm-cov source-based coverage)")
+    endif()
+endif()
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG -D_DEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -D_DEBUG")

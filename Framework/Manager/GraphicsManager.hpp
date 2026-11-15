@@ -101,10 +101,10 @@ class GraphicsManager : _implements_ IGraphicsManager {
 
    private:
     void InitConstants() {}
-    void CalculateCameraMatrix();
-    void CalculateLights();
+    bool CalculateCameraMatrix();
+    bool CalculateLights();
 
-    void UpdateConstants();
+    bool UpdateConstants();
 
    protected:
     uint64_t m_nSceneRevision{0};

@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <string>
 
 #include "BaseSceneObject.hpp"
@@ -48,6 +49,13 @@ class SceneObjectMaterial : public BaseSceneObject {
     [[nodiscard]] const Parameter& GetAO() const { return m_AmbientOcclusion; }
     [[nodiscard]] const Parameter& GetHeight() const { return m_Height; }
     [[nodiscard]] const Normal& GetNormal() const { return m_Normal; }
+    std::array<std::shared_ptr<SceneObjectTexture>, 11> GetTextures() const {
+        return {m_BaseColor.ValueMap, m_Specular.ValueMap,
+                m_SpecularPower.ValueMap, m_Emission.ValueMap,
+                m_Opacity.ValueMap, m_Transparency.ValueMap, m_Normal.ValueMap,
+                m_Metallic.ValueMap, m_Roughness.ValueMap,
+                m_AmbientOcclusion.ValueMap, m_Height.ValueMap};
+    }
     void SetName(const std::string& name) { m_Name = name; }
     void SetName(std::string&& name) { m_Name = std::move(name); }
     void SetColor(const std::string& attrib, const Vector4f& color) {

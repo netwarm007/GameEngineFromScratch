@@ -253,6 +253,75 @@ Fetch sources first:
     git submodule update --init --recursive
     git lfs pull
 
+### Scene resource boundary
+
+Scene construction, parsing, and texture naming do not read files or start tasks.
+`SceneObjectTexture` stores a name and a prepared image; changing its name clears
+that image. Application entry points inject a `SceneResourceLoader` into
+`SceneManager`, alongside the asset reader and scene parser. The resource loader
+uses concurrent binary reads and decodes all material channels, skybox faces,
+and terrain tiles before the manager publishes a replacement scene. Its asset
+reader must support concurrent reads; do not mutate asset search paths during
+loading.
+
+Missing texture files still use the shared missing-texture icon and emit a
+diagnostic. Unsupported formats, failed decoding, or an unavailable fallback
+fail scene loading without replacing the current scene or advancing its revision.
+Code that parses a scene directly or changes texture names on an existing scene
+must explicitly prepare resources before rendering. `SceneGraph` and
+`SceneServices` no longer link asset IO or image decoders. `SceneResources`
+depends on `ImageDecoders`; other direct users of decoder headers (including
+the GUI icon loader) declare that dependency too.
+
+### Runtime lifecycle and frame traversal
+
+`RuntimeModuleGroup` owns no modules: it tracks registration, initialization,
+failure rollback, and reverse-order finalization. Its initialized-module view
+is borrowed and must not be retained across registration or lifecycle changes.
+`TickFrame` traverses an explicitly supplied ordered view without initializing,
+finalizing, or retaining modules. Callers must supply live, initialized modules.
+
+`BaseApplication` uses the group's current initialized-module view on each
+frame, preserving the existing registration/update order. Platform event polling,
+backend frame setup, simulation cadence, and rendering/presentation order are
+unchanged. This checkpoint does not introduce fixed time steps or phased updates.
+The standalone runtime regression verifies independent frame selection/order,
+failed-initialization suppression, retry, and cleanup without a window or GPU.
+
+### CPU camera preparation
+
+`SceneCamera` prepares view/projection matrices and camera position from an
+explicit scene snapshot, canvas dimensions, and projection convention. It links
+only scene data and CPU math, not Application, RHI, ImGui, or asset loading.
+`GraphicsManager` copies the result into the current frame; camera preparation
+no longer looks up the scene through Application.
+
+OpenGL retains its [-1, 1] depth range; the D3D/Metal convention retains [0, 1].
+The render canvas, rather than window or framebuffer size, determines aspect.
+A scene without a live camera uses the existing built-in view and perspective,
+now also publishing the matching camera position instead of a stale value.
+Invalid dimensions, projection parameters, and missing/unsupported camera
+references are reported and skip rendering that frame without publishing
+partial camera data.
+
+### CPU lighting preparation
+
+`SceneLighting` prepares light constants from an explicit scene snapshot and
+projection convention, with no Application, RHI, ImGui, or asset loading linkage.
+`GraphicsManager` supplies the same frame snapshot used for camera preparation.
+Omni, spot, area, and directional lights retain their existing transforms,
+attenuation, shadow projections, and shader layout. Directional shadows retain
+their camera-relative target and bounded orthographic extent. Shadow-map
+allocation and index assignment remain in the rendering passes.
+
+Each successful preparation replaces the light set, so scene replacement and
+light-type changes cannot retain previous per-light data. Expired nodes are
+skipped. Unresolved references, invalid shadow projection parameters, and more
+than `MAX_LIGHTS` live lights are reported and skip rendering that frame without
+publishing partial lighting. The headless regression covers all four light
+types, backend clip depths, runtime movement, scene replacement, and capacity.
+RHI ownership and ImGui lifecycle remain for subsequent checkpoints.
+
 ### Commit acceptance
 
 A commit is accepted only when its CircleCI pipeline completes the configured
