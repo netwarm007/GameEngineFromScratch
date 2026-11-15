@@ -835,6 +835,14 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
             int ball = 0;
             for (const auto& b : frame.batchContexts) {
                 if (b->node && b->node->GetName() == "Ball") ++ball;
+                {
+                    const auto& mtl = dynamic_cast<const MtlDrawBatchContext&>(*b);
+                    NSLog(@"[BallDebug] batch node='%s' indices=%u diffuse=%d normal=%d metallic=%d pos=(%.3f,%.3f,%.3f)",
+                          b->node ? b->node->GetName().c_str() : "<null>", mtl.index_count,
+                          mtl.material.diffuseMap.handler != 0, mtl.material.normalMap.handler != 0,
+                          mtl.material.metallicMap.handler != 0,
+                          b->modelMatrix[3][0], b->modelMatrix[3][1], b->modelMatrix[3][2]);
+                }
             }
             NSLog(@"[BallDebug] drawBatch frame#%d batches=%zu ballBatches=%d", frames,
                   frame.batchContexts.size(), ball);
@@ -844,17 +852,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         [_renderEncoder setVertexBytes:pDbc->modelMatrix length:64 atIndex:11];
 
         const auto& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
-
-        if (_screenshotPath && pDbc->node && pDbc->node->GetName() == "Ball") {
-            static int ballDraws = 0;
-            if (ballDraws++ % 120 == 0) {
-                const auto& m = pDbc->modelMatrix;
-                NSLog(@"[BallDebug] draw#%d pos=(%.3f,%.3f,%.3f) indices=%u props=%u diffuse=%d normal=%d metallic=%d",
-                      ballDraws, m[3][0], m[3][1], m[3][2], dbc.index_count, dbc.property_count,
-                      dbc.material.diffuseMap.handler != 0, dbc.material.normalMap.handler != 0,
-                      dbc.material.metallicMap.handler != 0);
-            }
-        }
 
         // Set mesh's vertex buffers
         for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++) {
