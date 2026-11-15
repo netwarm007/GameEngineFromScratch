@@ -92,7 +92,7 @@ int main(int, char**) {
         "\"motion_constraint\") {string {\"plane\"} float {0, 1, 0}}" +
         geometrySuffix);
     auto physicsGeometry =
-        physicsScene ? physicsScene->GetGeometry("$geo") : nullptr;
+        physicsScene ? physicsScene->GetGeometry("geo") : nullptr;
     if (!physicsGeometry) {
         cerr << "FAILED: valid physics extensions must load" << endl;
         return 1;
