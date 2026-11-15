@@ -15,6 +15,7 @@ class D3d12Application : public WindowsApplication {
     D3d12RHI& GetRHI() { return m_Rhi; }
 
    private:
+    void WaitForGraphicsIdle() final;
     void FinalizeGraphicsResources() final;
     void onWindowResize(int new_width, int new_height) final;
 
