@@ -414,6 +414,22 @@ jobs:
                xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                bash scripts/capture_billiard_linux.sh billiard-screenshots \
                > billiard-screenshots/capture.log 2>&1
+      - run:
+          name: Coverage (llvm-cov)
+          command: |
+             sudo apt install -y llvm
+             ./scripts/coverage_linux.sh build-coverage coverage
+             if [ -n "$CODECOV_TOKEN" ]; then
+               curl -fsSL https://cli.codecov.io/latest/linux/codecov -o codecov
+               chmod +x codecov
+               ./codecov upload-process --token "$CODECOV_TOKEN" --file coverage/lcov.info \
+                 --sha "$CIRCLE_SHA1" --branch "$CIRCLE_BRANCH" || echo "Codecov upload failed"
+             else
+               echo "CODECOV_TOKEN not set; skipping Codecov upload"
+             fi
+      - store_artifacts:
+          path: coverage
+          destination: coverage
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots
