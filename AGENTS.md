@@ -47,8 +47,13 @@
   directory and changes only for durable instructions, support, or behavior.
 - For CircleCI investigation, use
   [the CircleCI troubleshooting skill](.github/skills/circleci-troubleshooting/SKILL.md).
-- When monitoring a running CircleCI pipeline, check its status every five
-  minutes by default unless the user requests a different interval.
+- When monitoring a running CircleCI pipeline, run one background loop that
+  checks the commit status about every 30 seconds and exits as soon as every
+  enabled platform has finished or any has failed, then read its result on
+  notification. Do not poll with fixed multi-minute sleeps unless the user
+  requests a specific interval. Report platforms that never appear as
+  unknown, not passed. A push whose latest commit contains `[ci skip]` starts
+  no pipeline, so push the revision to verify without it.
 - If GitHub or CircleCI connectivity is unstable, check DNS resolution using a
   trusted DNS server as a diagnostic. Preserve hostname and TLS certificate
   verification, and do not change system DNS settings without authorization.
