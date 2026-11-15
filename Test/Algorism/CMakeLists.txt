@@ -12,6 +12,7 @@ set(ALGORISM_TEST_CASES
     QRDecomposeTest
     QuickhullTest
     RandomTest
+    RayHitTest
     RasterizationTest
 )
 
