@@ -6,6 +6,7 @@
 #include "BRDFIntegrator.hpp"
 #include "BaseApplication.hpp"
 #include "SceneManager.hpp"
+#include "SceneCamera.hpp"
 
 #include "ForwardGeometryPass.hpp"
 #include "ShadowMapPass.hpp"
@@ -81,7 +82,7 @@ void GraphicsManager::Tick() {
         m_Frames[m_nFrameIndex].scene = pSceneManager->GetSceneForRendering();
     }
 
-    UpdateConstants();
+    if (!UpdateConstants()) return;
 
     BeginFrame(m_Frames[m_nFrameIndex]);
     ImGui::NewFrame();
@@ -177,7 +178,7 @@ void GraphicsManager::ResizeCanvas(int32_t width, int32_t height) {
     }
 }
 
-void GraphicsManager::UpdateConstants() {
+bool GraphicsManager::UpdateConstants() {
     // update scene object position
     auto& frame = m_Frames[m_nFrameIndex];
 
@@ -186,8 +187,9 @@ void GraphicsManager::UpdateConstants() {
     }
 
     // Generate the view matrix based on the camera's position.
-    CalculateCameraMatrix();
+    if (!CalculateCameraMatrix()) return false;
     CalculateLights();
+    return true;
 }
 
 void GraphicsManager::Draw() {
@@ -206,61 +208,20 @@ void GraphicsManager::Draw() {
     }
 }
 
-void GraphicsManager::CalculateCameraMatrix() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+bool GraphicsManager::CalculateCameraMatrix() {
+    auto& frame = m_Frames[m_nFrameIndex];
+    if (!frame.scene) return true;
 
-    if (pSceneManager) {
-        auto& scene = pSceneManager->GetSceneForRendering();
-        auto pCameraNode = scene->GetFirstCameraNode();
-        DrawFrameContext& frameContext = m_Frames[m_nFrameIndex].frameContext;
-        if (pCameraNode) {
-            auto transform = *pCameraNode->GetCalculatedTransform();
-            Vector3f position =
-                Vector3f({transform[3][0], transform[3][1], transform[3][2]});
-            Vector3f lookAt = pCameraNode->GetTarget();
-            Vector3f up = {0.0f, 0.0f, 1.0f};
-            BuildViewRHMatrix(frameContext.viewMatrix, position, lookAt, up);
-
-            frameContext.camPos = {position[0], position[1], position[2], 0.0f};
-        } else {
-            // use default build-in camera
-            Vector3f position = {0.0f, -5.0f, 0.0f},
-                     lookAt = {0.0f, 0.0f, 0.0f}, up = {0.0f, 0.0f, 1.0f};
-            BuildViewRHMatrix(frameContext.viewMatrix, position, lookAt, up);
-        }
-
-        float fieldOfView = PI / 3.0f;
-        float nearClipDistance = 10.0f;
-        float farClipDistance = 100.0f;
-
-        if (pCameraNode) {
-            auto pCamera = scene->GetCamera(pCameraNode->GetSceneObjectRef());
-            // Set the field of view and screen aspect ratio.
-            fieldOfView =
-                dynamic_pointer_cast<SceneObjectPerspectiveCamera>(pCamera)
-                    ->GetFov();
-            nearClipDistance = pCamera->GetNearClipDistance();
-            farClipDistance = pCamera->GetFarClipDistance();
-        }
-
-
-        float screenAspect = (float)m_canvasWidth / (float)m_canvasHeight;
-
-        assert(m_pApp);
-        const GfxConfiguration& conf = m_pApp->GetConfiguration();
-
-        // Build the perspective projection matrix.
-        if (conf.fixOpenGLPerspectiveMatrix) {
-            BuildOpenglPerspectiveFovRHMatrix(
-                frameContext.projectionMatrix, fieldOfView, screenAspect,
-                nearClipDistance, farClipDistance);
-        } else {
-            BuildPerspectiveFovRHMatrix(frameContext.projectionMatrix,
-                                        fieldOfView, screenAspect,
-                                        nearClipDistance, farClipDistance);
-        }
+    CameraFrame camera;
+    if (!PrepareSceneCamera(*frame.scene, m_canvasWidth, m_canvasHeight,
+                            m_pApp->GetConfiguration().fixOpenGLPerspectiveMatrix,
+                            camera)) {
+        return false;
     }
+    frame.frameContext.viewMatrix = camera.viewMatrix;
+    frame.frameContext.projectionMatrix = camera.projectionMatrix;
+    frame.frameContext.camPos = camera.position;
+    return true;
 }
 
 void GraphicsManager::CalculateLights() {
