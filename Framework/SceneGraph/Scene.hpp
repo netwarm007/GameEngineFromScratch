@@ -53,6 +53,8 @@ class Scene {
 
     ~Scene() { std::cerr << "Scene destroyed" << std::endl; }
 
+    std::vector<SceneObjectTexture*> GetTextures() const;
+
     [[nodiscard]] std::shared_ptr<SceneObjectCamera> GetCamera(
         const std::string& key) const;
     [[nodiscard]] std::shared_ptr<SceneCameraNode> GetFirstCameraNode() const;

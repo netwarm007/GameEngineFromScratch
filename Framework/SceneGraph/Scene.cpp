@@ -3,6 +3,30 @@
 using namespace My;
 using namespace std;
 
+vector<SceneObjectTexture*> Scene::GetTextures() const {
+    vector<SceneObjectTexture*> textures;
+    auto appendMaterial = [&](const SceneObjectMaterial& material) {
+        for (const auto& texture : material.GetTextures()) {
+            if (texture) textures.push_back(texture.get());
+        }
+    };
+    appendMaterial(*m_pDefaultMaterial);
+    for (const auto& [name, material] : Materials) {
+        if (material) appendMaterial(*material);
+    }
+    if (SkyBox) {
+        for (auto& texture : SkyBox->GetTextures()) {
+            textures.push_back(&texture);
+        }
+    }
+    if (Terrain) {
+        for (auto& texture : Terrain->GetTextures()) {
+            textures.push_back(&texture);
+        }
+    }
+    return textures;
+}
+
 shared_ptr<SceneObjectCamera> Scene::GetCamera(const std::string& key) const {
     auto i = Cameras.find(key);
     if (i == Cameras.end()) {

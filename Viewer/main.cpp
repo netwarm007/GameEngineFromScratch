@@ -9,6 +9,7 @@
 #include "OGEX.hpp"
 #include "My/MyPhysicsManager.hpp"
 #include "SceneManager.hpp"
+#include "SceneResourceLoader.hpp"
 #include "ViewerLogic.hpp"
 
 #if defined(OS_WEBASSEMBLY)
@@ -66,7 +67,8 @@ int main(int argc, char** argv) {
     AssetLoader assetLoader;
     MemoryManager memoryManager;
     OgexParser sceneParser;
-    SceneManager sceneManager(assetLoader, sceneParser);
+    SceneResourceLoader sceneResources(assetLoader);
+    SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
     MyPhysicsManager physicsManager(sceneManager);
     InputManager inputManager;
     AnimationManager animationManager(sceneManager);

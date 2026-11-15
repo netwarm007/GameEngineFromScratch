@@ -2,13 +2,15 @@
 #include "IAssetReader.hpp"
 #include "ISceneManager.hpp"
 #include "ISceneParser.hpp"
+#include "ISceneResourceLoader.hpp"
 #include "geommath.hpp"
 
 namespace My {
 class SceneManager : _implements_ ISceneManager {
    public:
-    SceneManager(IAssetReader& assets, ISceneParser& parser)
-        : m_Assets(assets), m_Parser(parser) {}
+    SceneManager(IAssetReader& assets, ISceneParser& parser,
+                 ISceneResourceLoader& resources)
+        : m_Assets(assets), m_Parser(parser), m_Resources(resources) {}
     ~SceneManager() override;
 
     int Initialize() override;
@@ -38,5 +40,6 @@ class SceneManager : _implements_ ISceneManager {
    private:
     IAssetReader& m_Assets;
     ISceneParser& m_Parser;
+    ISceneResourceLoader& m_Resources;
 };
 }  // namespace My
