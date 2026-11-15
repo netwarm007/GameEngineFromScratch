@@ -2,15 +2,19 @@ set(ALGORISM_TEST_CASES
     AaBbTest
     ASTNodeTest
     BezierCubic1DTest
+    BezierCurveTest
     BVHNodeTest
     BulletTest
     ChronoTest
     ColorSpaceConversionTest
+    ColorConversionTest
     GjkTest
     GjkIntersectionTest
     HitableListTest
+    LinearCurveTest
     LinearInterpolateTest
     NumericalMethodsTest
+    PathTracingTest
     PolarDecomposeTest
     QRDecomposeTest
     QuickhullTest
@@ -25,3 +29,7 @@ foreach(TEST_CASE IN LISTS ALGORISM_TEST_CASES)
 endforeach()
 
 target_link_libraries(BulletTest BulletPhysics)
+
+target_include_directories(PathTracingTest PRIVATE ${PROJECT_SOURCE_DIR}/Test)
+find_package(Threads REQUIRED)
+target_link_libraries(PathTracingTest Threads::Threads)
