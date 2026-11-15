@@ -59,6 +59,7 @@ class RecordingModule : public IMemoryManager {
         Expect(m_App.windowAlive && m_App.graphicsAlive,
                "module initialization sees live platform and backend resources");
         m_App.events.push_back("init " + m_Name);
+        if (submitWorkOnInitialize) m_App.gpuWorkPending = true;
         return result;
     }
     void Finalize() override {
@@ -76,6 +77,7 @@ class RecordingModule : public IMemoryManager {
     void FreePage(void*) override {}
 
     int result = 0;
+    bool submitWorkOnInitialize = false;
 
    private:
     std::string m_Name;
@@ -112,14 +114,20 @@ void TestFailedModuleInitialization() {
         RecordingModule* ordered[] = {&first, &second, &third};
         const std::string names[] = {"first", "second", "third"};
         app.CreateMainWindow();
-        for (auto* module : ordered) app.RegisterManagerModule(module);
+        for (auto* module : ordered) {
+            module->submitWorkOnInitialize = true;
+            app.RegisterManagerModule(module);
+        }
         ordered[failingIndex]->result = 17;
         Expect(app.Initialize() == 17, "application preserves the module error");
         std::vector<std::string> expected;
         for (int i = 0; i <= failingIndex; ++i)
             expected.push_back("init " + names[i]);
+        expected.push_back("wait graphics");
         for (int i = failingIndex - 1; i >= 0; --i)
             expected.push_back("stop " + names[i]);
+        Expect(!app.gpuWorkPending,
+               "even first-module failure drains initialization GPU work");
         Expect(app.events == expected && app.graphicsAlive && app.windowAlive,
                "rollback retains platform resources until application shutdown");
         app.Tick();
@@ -131,6 +139,36 @@ void TestFailedModuleInitialization() {
         Expect(app.events == expected && !app.graphicsAlive && !app.windowAlive,
                "failed initialization shutdown releases outer resources without re-finalizing modules");
     }
+}
+
+void TestRetryAfterGpuRollback() {
+    RecordingApplication app;
+    RecordingModule first("first", app), second("second", app);
+    first.submitWorkOnInitialize = true;
+    second.submitWorkOnInitialize = true;
+    second.result = 17;
+    app.CreateMainWindow();
+    app.RegisterManagerModule(&first);
+    app.RegisterManagerModule(&second);
+    Expect(app.Initialize() == 17, "failed GPU initialization can be retried");
+    Expect(app.events == std::vector<std::string>{
+               "init first", "init second", "wait graphics", "stop first"},
+           "rollback synchronization precedes any initialized module cleanup");
+    app.events.clear();
+    second.result = 0;
+    Expect(app.Initialize() == 0, "retry retains registrations");
+    Expect(app.events == std::vector<std::string>{"init first", "init second"} &&
+               app.gpuWorkPending,
+           "successful initialization does not invoke rollback synchronization");
+    app.events.clear();
+    Expect(app.Initialize() != 0, "running application rejects initialization");
+    Expect(app.events.empty() && app.gpuWorkPending,
+           "rejected initialization does not synchronize or unwind live modules");
+    app.Finalize();
+    Expect(app.events == std::vector<std::string>{
+               "wait graphics", "stop second", "stop first", "stop graphics",
+               "stop window"},
+           "retry finalizes initialized modules exactly once after synchronization");
 }
 
 void TestWindowWithoutModules() {
@@ -147,6 +185,7 @@ void TestWindowWithoutModules() {
 int main() {
     TestSuccessfulShutdown();
     TestFailedModuleInitialization();
+    TestRetryAfterGpuRollback();
     TestWindowWithoutModules();
     return failures == 0 ? 0 : 1;
 }
