@@ -34,7 +34,11 @@ ctest --test-dir "$BUILD_DIR" --output-on-failure || echo "ctest reported failur
 "$LLVM_PROFDATA" merge -sparse "$REPORT_DIR"/profraw/*.profraw -o "$REPORT_DIR/coverage.profdata"
 
 # Every instrumented executable under the build dir contributes to the report.
-mapfile -t EXES < <(find "$BUILD_DIR" -type f -executable ! -name '*.so*' ! -name '*.sh' ! -path '*/CMakeFiles/*')
+# Skip non-ELF files (scripts, generated tools) that llvm-cov cannot load.
+EXES=()
+while IFS= read -r f; do
+    [[ "$(head -c4 "$f" | od -An -c | tr -d ' ')" == '177ELF' ]] && EXES+=("$f")
+done < <(find "$BUILD_DIR" -type f -executable ! -name '*.so*' ! -path '*/CMakeFiles/*')
 OBJECTS=()
 for exe in "${EXES[@]:1}"; do OBJECTS+=("-object" "$exe"); done
 FIRST="${EXES[0]}"
