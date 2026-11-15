@@ -55,8 +55,6 @@ void D3d12Application::onWindowResize(int width, int height) {
     if (width > 0 && height > 0) m_Rhi.RecreateSwapChain();
 }
 
-void D3d12Application::Finalize() {
-    m_Rhi.CleanupSwapChain();
-    WindowsApplication::Finalize();
+void D3d12Application::FinalizeGraphicsResources() {
     m_Rhi.DestroyAll();
 }

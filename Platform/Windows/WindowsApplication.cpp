@@ -61,17 +61,20 @@ void WindowsApplication::CreateMainWindow() {
     }
 }
 
-void WindowsApplication::Finalize() {
-    BaseApplication::Finalize();
-
+void WindowsApplication::FinalizePlatformResources() {
     // Finalize ImGui
     if (ImGui::GetCurrentContext()) {
         ImGui_ImplWin32_Shutdown();
     }
 
-    ReleaseDC(m_hWnd, m_hDc);
-
-    DestroyWindow(m_hWnd);
+    if (m_hDc) {
+        ReleaseDC(m_hWnd, m_hDc);
+        m_hDc = nullptr;
+    }
+    if (m_hWnd) {
+        DestroyWindow(m_hWnd);
+        m_hWnd = nullptr;
+    }
 }
 
 void WindowsApplication::Tick() {

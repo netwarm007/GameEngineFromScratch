@@ -70,6 +70,10 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    protected:
+    // Modules release their GPU resources first; the native window is last.
+    virtual void FinalizeGraphicsResources() {}
+    virtual void FinalizePlatformResources() {}
+
     // Flag if need quit the main loop of the application
     bool m_bQuit = false;
     GfxConfiguration m_Config;

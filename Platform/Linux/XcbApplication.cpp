@@ -102,9 +102,20 @@ void XcbApplication::CreateMainWindow() {
     }
 }
 
-void XcbApplication::Finalize() {
-    xcb_destroy_window(m_pConn, m_XWindow);
-    xcb_disconnect(m_pConn);
+void XcbApplication::FinalizePlatformResources() {
+    if (m_pConn) {
+        if (m_XWindow != XCB_WINDOW_NONE) {
+            xcb_destroy_window(m_pConn, m_XWindow);
+            m_XWindow = XCB_WINDOW_NONE;
+        }
+        xcb_disconnect(m_pConn);
+        m_pConn = nullptr;
+        m_pScreen = nullptr;
+    }
+    if (m_pDisplay) {
+        XCloseDisplay(m_pDisplay);
+        m_pDisplay = nullptr;
+    }
 }
 
 void XcbApplication::Tick() {

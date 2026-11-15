@@ -18,6 +18,8 @@ int BaseApplication::Initialize() {
 // Finalize all sub modules and clean up all runtime temporary files.
 void BaseApplication::Finalize() {
     runtime_modules.Finalize();
+    FinalizeGraphicsResources();
+    FinalizePlatformResources();
 }
 
 // One cycle of the main loop
