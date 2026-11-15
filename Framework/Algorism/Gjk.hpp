@@ -75,7 +75,7 @@ inline void NearestPointInTriangleToPoint(const PointList<T>& vertices,
                 s = std::clamp(numer / denom, 0.0, 1.0);
                 t = 1.0 - s;
             } else {
-                s = std::clamp(-e / c, static_cast<T>(0.0), static_cast<T>(1.0));
+                s = std::clamp(-d / a, static_cast<T>(0.0), static_cast<T>(1.0));
                 t = 0.0;
             }
         } else {

@@ -178,7 +178,7 @@ namespace My {
             assert(it->second);
             return std::make_pair(true, it->second->GetIDN());
         }
-        return std::make_pair(false, nullptr);
+        return std::make_pair(false, ASTNode::IDN_TYPE{});
     }
 
     static inline std::pair<bool, ASTNodeRef> findSymbol(ASTNode::IDN_TYPE idn) {
