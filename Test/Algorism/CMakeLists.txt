@@ -1,4 +1,5 @@
 set(ALGORISM_TEST_CASES 
+    AaBbTest
     ASTNodeTest
     BezierCubic1DTest
     BulletTest
