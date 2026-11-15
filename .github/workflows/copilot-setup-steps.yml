@@ -1,0 +1,50 @@
+name: "Copilot Setup Steps"
+
+# Mirrors the Linux job in .circleci/config.yml. Keep both in sync.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be named `copilot-setup-steps`.
+  copilot-setup-steps:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code with submodules and LFS
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Install system dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang python3-pip ninja-build uuid-dev \
+            libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev \
+            libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev \
+            libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev \
+            libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev \
+            libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev \
+            flex bison xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
+
+      - name: Install CMake 4
+        run: |
+          python3 -m pip install --user 'cmake>=4.0,<5'
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify toolchain
+        run: |
+          cmake --version
+          ninja --version
+          clang --version
