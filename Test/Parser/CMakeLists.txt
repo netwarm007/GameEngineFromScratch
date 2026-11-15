@@ -13,7 +13,7 @@ set(PARSER_TEST_CASES
 
 foreach(TEST_CASE IN LISTS PARSER_TEST_CASES)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp)
-    target_link_libraries(${TEST_CASE} Framework PlatformInterface)
+    target_link_libraries(${TEST_CASE} Framework PlatformInterface ImageDecoders)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach()
 

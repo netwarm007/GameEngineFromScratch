@@ -250,8 +250,9 @@ diagnostic. Unsupported formats, failed decoding, or an unavailable fallback
 fail scene loading without replacing the current scene or advancing its revision.
 Code that parses a scene directly or changes texture names on an existing scene
 must explicitly prepare resources before rendering. `SceneGraph` and
-`SceneServices` no longer link asset IO or image decoders; those dependencies
-belong to `SceneResources`.
+`SceneServices` no longer link asset IO or image decoders. `SceneResources`
+depends on `ImageDecoders`; other direct users of decoder headers (including
+the GUI icon loader) declare that dependency too.
 
 ### Commit acceptance
 

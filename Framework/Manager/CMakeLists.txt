@@ -1,13 +1,7 @@
 add_library(AssetIO AssetLoader.cpp)
 
 add_library(SceneResources SceneResourceLoader.cpp)
-target_link_libraries(SceneResources PUBLIC SceneGraph)
-if(MSVC)
-    target_link_libraries(SceneResources PRIVATE
-        optimized ${ZLIB_LIBRARY} debug ${ZLIB_LIBRARY_DEBUG})
-else()
-    target_link_libraries(SceneResources PRIVATE ${ZLIB_LIBRARY})
-endif()
+target_link_libraries(SceneResources PUBLIC SceneGraph PRIVATE ImageDecoders)
 
 add_library(SceneServices AnimationManager.cpp SceneManager.cpp)
 target_link_libraries(SceneServices PUBLIC SceneGraph)

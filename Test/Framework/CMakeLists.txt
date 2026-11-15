@@ -14,6 +14,8 @@ foreach(TEST_CASE IN LISTS FRAMEWORK_TEST_CASES)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach()
 
+target_link_libraries(SceneGraphTest ImageDecoders)
+
 add_executable(SceneObjectTextureTest SceneObjectTextureTest.cpp)
 target_link_libraries(SceneObjectTextureTest PRIVATE
     SceneResources AssetIO PlatformAssetIO)
