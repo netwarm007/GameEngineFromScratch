@@ -9,7 +9,7 @@ struct VkXcbSurfaceCreateInfoKHR {
     const void* pNext;
     VkXcbSurfaceCreateFlagsKHR flags;
     xcb_connection_t* connection;
-    xcb_window_t* window;
+    xcb_window_t window;
 };
 
 typedef VkResult(VKAPI_PTR* PFN_vkCreateXcbSurfaceKHR)(
@@ -34,7 +34,7 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
     memset(&sci, 0, sizeof(sci));
     sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     sci.connection = m_pConn;
-    sci.window = &m_XWindow;
+    sci.window = m_XWindow;
 
     err = vkCreateXcbSurfaceKHR(instance, &sci, nullptr, &surface);
     assert(!err && "Xcb: Failed to create Vulkan surface.");
@@ -49,7 +49,7 @@ void VulkanApplication::CreateMainWindow() {
                                            "VK_KHR_xcb_surface"};
 
     // 设置回调函数
-    auto getFramebufferSize = [this](int& width, int& height) {
+    auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
         GetFramebufferSize(width, height);
     };
 
@@ -88,11 +88,14 @@ void VulkanApplication::CreateMainWindow() {
     // 创建 SwapChain
     m_Rhi.createSwapChain();
 
-    // 创建 Uniform Buffers
-    m_Rhi.createUniformBuffers();
-
     // 创建同步对象
     m_Rhi.createSyncObjects();
+
+    // 创建 Command Pools
+    m_Rhi.createCommandPool();
+
+    // 创建 Command Buffer
+    m_Rhi.createCommandBuffers();
 }
 
 void VulkanApplication::Finalize() {

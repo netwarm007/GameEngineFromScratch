@@ -325,6 +325,7 @@ jobs:
              sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt install -y flex bison
              sudo apt install -y xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
+             sudo apt install -y libvulkan-dev mesa-vulkan-drivers
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
