@@ -8,6 +8,7 @@
 #include "MemoryManager.hpp"
 #include "Bullet/BulletPhysicsManager.hpp"
 #include "SceneManager.hpp"
+#include "SceneResourceLoader.hpp"
 #include "OGEX.hpp"
 #include "BilliardGameLogic.hpp"
 
@@ -165,7 +166,8 @@ int main(int argc, char** argv) {
     MemoryManager memoryManager;
     AssetLoader assetLoader;
     OgexParser sceneParser;
-    SceneManager sceneManager(assetLoader, sceneParser);
+    SceneResourceLoader sceneResources(assetLoader);
+    SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
     BulletPhysicsManager physicsManager(sceneManager);
     InputManager inputManager;
     AnimationManager animationManager(sceneManager);

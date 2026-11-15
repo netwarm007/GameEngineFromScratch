@@ -4,21 +4,9 @@ add_library(SceneGraph
         SceneObjectAnimation.cpp
         SceneObjectMesh.cpp
         SceneObjectTrack.cpp
-        SceneObjectTexture.cpp
 )
 
-if(MSVC)
-    target_link_libraries(SceneGraph
-            ${XG_LIBRARY}
-            optimized ${ZLIB_LIBRARY}
-            debug ${ZLIB_LIBRARY_DEBUG}
-    )
-else()
-    target_link_libraries(SceneGraph
-            ${XG_LIBRARY}
-            ${ZLIB_LIBRARY}
-    )
-endif()
+target_link_libraries(SceneGraph ${XG_LIBRARY})
 
 __add_xg_platform_dependencies(SceneGraph)
-target_link_libraries(SceneGraph AssetIO Common)
+target_link_libraries(SceneGraph Common)

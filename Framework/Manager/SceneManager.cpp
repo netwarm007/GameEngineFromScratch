@@ -38,6 +38,12 @@ int SceneManager::LoadScene(const char* scene_file_name) {
         return -1;
     }
 
+    if (!m_Resources.Load(*scene)) {
+        cerr << "[SceneManager] Scene resource loading failed: "
+             << scene_file_name << endl;
+        return -1;
+    }
+
     m_pScene = std::move(scene);
     ++m_nSceneRevision;
     return 0;

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdio>
+#include <span>
 
 #include "SceneObjectTexture.hpp"
 
@@ -84,6 +85,8 @@ class SceneObjectSkyBox : public BaseSceneObject {
         assert(index < 18);
         return m_Textures[index];
     }
+
+    std::span<SceneObjectTexture> GetTextures() { return m_Textures; }
 
     public:
     constexpr static std::array<float, 24> skyboxVertices {

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdio>
+#include <span>
 
 #include "SceneObjectTexture.hpp"
 
@@ -29,6 +30,8 @@ class SceneObjectTerrain : public BaseSceneObject {
         assert(index < nMaxTerrainHeightMapCount);
         return m_Textures[index];
     }
+
+    std::span<SceneObjectTexture> GetTextures() { return m_Textures; }
 
    private:
     static const int32_t nMaxTerrainGridWidth = 16;

@@ -234,6 +234,25 @@ Fetch sources first:
     git submodule update --init --recursive
     git lfs pull
 
+### Scene resource boundary
+
+Scene construction, parsing, and texture naming do not read files or start tasks.
+`SceneObjectTexture` stores a name and a prepared image; changing its name clears
+that image. Application entry points inject a `SceneResourceLoader` into
+`SceneManager`, alongside the asset reader and scene parser. The resource loader
+uses concurrent binary reads and decodes all material channels, skybox faces,
+and terrain tiles before the manager publishes a replacement scene. Its asset
+reader must support concurrent reads; do not mutate asset search paths during
+loading.
+
+Missing texture files still use the shared missing-texture icon and emit a
+diagnostic. Unsupported formats, failed decoding, or an unavailable fallback
+fail scene loading without replacing the current scene or advancing its revision.
+Code that parses a scene directly or changes texture names on an existing scene
+must explicitly prepare resources before rendering. `SceneGraph` and
+`SceneServices` no longer link asset IO or image decoders; those dependencies
+belong to `SceneResources`.
+
 ### Commit acceptance
 
 A commit is accepted only when its CircleCI pipeline completes the configured
