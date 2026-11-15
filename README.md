@@ -254,6 +254,21 @@ must explicitly prepare resources before rendering. `SceneGraph` and
 depends on `ImageDecoders`; other direct users of decoder headers (including
 the GUI icon loader) declare that dependency too.
 
+### Runtime lifecycle and frame traversal
+
+`RuntimeModuleGroup` owns no modules: it tracks registration, initialization,
+failure rollback, and reverse-order finalization. Its initialized-module view
+is borrowed and must not be retained across registration or lifecycle changes.
+`TickFrame` traverses an explicitly supplied ordered view without initializing,
+finalizing, or retaining modules. Callers must supply live, initialized modules.
+
+`BaseApplication` uses the group's current initialized-module view on each
+frame, preserving the existing registration/update order. Platform event polling,
+backend frame setup, simulation cadence, and rendering/presentation order are
+unchanged. This checkpoint does not introduce fixed time steps or phased updates.
+The standalone runtime regression verifies independent frame selection/order,
+failed-initialization suppression, retry, and cleanup without a window or GPU.
+
 ### Commit acceptance
 
 A commit is accepted only when its CircleCI pipeline completes the configured

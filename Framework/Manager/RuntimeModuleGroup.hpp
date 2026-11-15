@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -47,10 +48,9 @@ class RuntimeModuleGroup {
         m_Initialized = false;
     }
 
-    void Tick() {
-        for (size_t i = 0; i < m_InitializedCount; ++i) {
-            m_Modules[i]->Tick();
-        }
+    // Borrowed view; do not retain it across registration or lifecycle changes.
+    std::span<IRuntimeModule* const> GetInitializedModules() const {
+        return {m_Modules.data(), m_InitializedCount};
     }
 
    private:
