@@ -829,10 +829,32 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 - (void)drawBatch:(const Frame&)frame {
     // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
     [_renderEncoder pushDebugGroup:@"DrawMesh"];
+    if (_screenshotPath) {
+        static int frames = 0;
+        if (frames++ % 120 == 0) {
+            int ball = 0;
+            for (const auto& b : frame.batchContexts) {
+                if (b->node && b->node->GetName() == "Ball") ++ball;
+            }
+            NSLog(@"[BallDebug] drawBatch frame#%d batches=%zu ballBatches=%d", frames,
+                  frame.batchContexts.size(), ball);
+        }
+    }
     for (const auto& pDbc : frame.batchContexts) {
         [_renderEncoder setVertexBytes:pDbc->modelMatrix length:64 atIndex:11];
 
         const auto& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
+
+        if (_screenshotPath && pDbc->node && pDbc->node->GetName() == "Ball") {
+            static int ballDraws = 0;
+            if (ballDraws++ % 120 == 0) {
+                const auto& m = pDbc->modelMatrix;
+                NSLog(@"[BallDebug] draw#%d pos=(%.3f,%.3f,%.3f) indices=%u props=%u diffuse=%d normal=%d metallic=%d",
+                      ballDraws, m[3][0], m[3][1], m[3][2], dbc.index_count, dbc.property_count,
+                      dbc.material.diffuseMap.handler != 0, dbc.material.normalMap.handler != 0,
+                      dbc.material.metallicMap.handler != 0);
+            }
+        }
 
         // Set mesh's vertex buffers
         for (uint32_t bufferIndex = 0; bufferIndex < dbc.property_count; bufferIndex++) {
