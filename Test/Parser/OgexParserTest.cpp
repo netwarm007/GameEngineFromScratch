@@ -69,8 +69,8 @@ int main(int, char**) {
         "GeometryObject $geo { Mesh (primitive = \"triangles\") {"
         "VertexArray (attrib = \"position\") {float[3] {{0,0,0},{1,0,0},"
         "{0,1,0}}}}\n";
-    const string geometrySuffix = "}\nGeometryNode $node { ObjectRef {ref "
-                                  "{$geo}} }\n";
+    const string geometrySuffix = "}\nGeometryNode $node { Name {string {\"node\"}} "
+                                  "ObjectRef {ref {$geo}} }\n";
     const string ext = "Extension (applic = \"MyGameEngine\", type = ";
     for (const auto& invalid :
          {"\"physics_material\") {float {-1.0, 0.5}}",
