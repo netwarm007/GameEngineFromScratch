@@ -33,6 +33,11 @@ add_executable(SceneLightingTest SceneLightingTest.cpp)
 target_link_libraries(SceneLightingTest PRIVATE SceneLighting)
 add_test(NAME TEST_SceneLightingTest COMMAND SceneLightingTest)
 
+add_executable(RenderServicesTest RenderServicesTest.cpp)
+target_link_libraries(RenderServicesTest PRIVATE
+    RenderServices PlatformAssetIO ImageDecoders)
+add_test(NAME TEST_RenderServicesTest COMMAND RenderServicesTest)
+
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
     BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO)

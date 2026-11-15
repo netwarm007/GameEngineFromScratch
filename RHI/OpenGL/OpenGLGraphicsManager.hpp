@@ -4,6 +4,7 @@
 namespace My {
 class OpenGLGraphicsManager : public OpenGLGraphicsManagerCommonBase {
    public:
+    using OpenGLGraphicsManagerCommonBase::OpenGLGraphicsManagerCommonBase;
     int Initialize() final;
     void Finalize() final;
 

@@ -174,8 +174,8 @@ int main(int argc, char** argv) {
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
-    TGraphicsManager graphicsManager;
     TPipelineStateManager pipelineStateManager;
+    TGraphicsManager graphicsManager(sceneManager, pipelineStateManager);
 
     app.SetCommandLineParameters(argc, argv);
 

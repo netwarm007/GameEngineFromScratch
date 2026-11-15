@@ -3,7 +3,7 @@ function(add_platform_asset_io target source)
     add_library(${target} INTERFACE)
     # The selected bootstrap supplies AssetLoader's vtable even for scene-only consumers.
     target_link_libraries(${target} INTERFACE
-        AssetIO $<TARGET_OBJECTS:${target}Bootstrap>)
+        AssetIO ${target}Bootstrap $<TARGET_OBJECTS:${target}Bootstrap>)
 endfunction()
 
 IF(WIN32)

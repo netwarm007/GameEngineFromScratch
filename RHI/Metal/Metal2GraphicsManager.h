@@ -8,6 +8,7 @@ OBJC_CLASS(Metal2RHI);
 namespace My {
 class Metal2GraphicsManager : public GraphicsManager {
    public:
+    using GraphicsManager::GraphicsManager;
     int Initialize() final;
     void Finalize() final;
 

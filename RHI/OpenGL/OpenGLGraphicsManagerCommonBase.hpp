@@ -11,6 +11,7 @@
 namespace My {
 class OpenGLGraphicsManagerCommonBase : public GraphicsManager {
    public:
+    using GraphicsManager::GraphicsManager;
     // overrides
     void Present() final;
 
