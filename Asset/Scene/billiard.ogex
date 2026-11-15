@@ -47,11 +47,15 @@ CameraNode $node3
 	{
 		float[16]
 		{
-			{0.23148225247859955, 0.9728391170501709, -5.362800870045703e-09, 0.0,
-			 -0.13517116010189056, 0.032163314521312714, 0.9903001189231873, 0.0,
-			 0.9634026885032654, -0.229236900806427, 0.13894502818584442, 0.0,
-			 1.8360702991485596, -0.41379404067993164, 0.9790207743644714, 1.0}
+			{0.0, 1.0, 0.0, 0.0,
+			 -0.3176442, 0.0, 0.94821, 0.0,
+			 0.94821, 0.0, 0.3176442, 0.0,
+			 2.0, 0.0, 1.5, 1.0}
 		}
+	}
+	Extension (applic = "MyGameEngine", type = "camera_target")
+	{
+		float[3] {{0.0, 0.0, 0.83}}
 	}
 }
 
@@ -465,6 +469,184 @@ LightNode $node26
 			 0.5663931965827942, 0.21839119493961334, 0.7946722507476807, 0.0,
 			 4.076245307922363, 1.0054539442062378, 5.903861999511719, 1.0}
 		}
+	}
+}
+
+// Finite, invisible support slabs leave four corner pockets and two side pockets.
+GeometryNode $table_support_center (visible = false, shadow = false)
+{
+	Name {string {"table_support_center"}}
+	ObjectRef {ref {$support_center_shape}}
+	Translation (kind = "xyz") {float[3] {{0.0, 0.0, 0.78}}}
+}
+
+GeometryNode $table_support_left (visible = false, shadow = false)
+{
+	Name {string {"table_support_left"}}
+	ObjectRef {ref {$support_end_shape}}
+	Translation (kind = "xyz") {float[3] {{-1.06161, 0.0, 0.78}}}
+}
+
+GeometryNode $table_support_right (visible = false, shadow = false)
+{
+	Name {string {"table_support_right"}}
+	ObjectRef {ref {$support_end_shape}}
+	Translation (kind = "xyz") {float[3] {{1.06161, 0.0, 0.78}}}
+}
+
+GeometryNode $table_support_north_left (visible = false, shadow = false)
+{
+	Name {string {"table_support_north_left"}}
+	ObjectRef {ref {$support_side_shape}}
+	Translation (kind = "xyz") {float[3] {{-0.54368, 0.50589, 0.78}}}
+}
+
+GeometryNode $table_support_north_right (visible = false, shadow = false)
+{
+	Name {string {"table_support_north_right"}}
+	ObjectRef {ref {$support_side_shape}}
+	Translation (kind = "xyz") {float[3] {{0.54368, 0.50589, 0.78}}}
+}
+
+GeometryNode $table_support_south_left (visible = false, shadow = false)
+{
+	Name {string {"table_support_south_left"}}
+	ObjectRef {ref {$support_side_shape}}
+	Translation (kind = "xyz") {float[3] {{-0.54368, -0.50589, 0.78}}}
+}
+
+GeometryNode $table_support_south_right (visible = false, shadow = false)
+{
+	Name {string {"table_support_south_right"}}
+	ObjectRef {ref {$support_side_shape}}
+	Translation (kind = "xyz") {float[3] {{0.54368, -0.50589, 0.78}}}
+}
+
+GeometryNode $cushion_north_left (visible = false, shadow = false)
+{
+	Name {string {"cushion_north_left"}}
+	ObjectRef {ref {$cushion_long_shape}}
+	Translation (kind = "xyz") {float[3] {{-0.54368, 0.52678, 0.838422}}}
+}
+
+GeometryNode $cushion_north_right (visible = false, shadow = false)
+{
+	Name {string {"cushion_north_right"}}
+	ObjectRef {ref {$cushion_long_shape}}
+	Translation (kind = "xyz") {float[3] {{0.54368, 0.52678, 0.838422}}}
+}
+
+GeometryNode $cushion_south_left (visible = false, shadow = false)
+{
+	Name {string {"cushion_south_left"}}
+	ObjectRef {ref {$cushion_long_shape}}
+	Translation (kind = "xyz") {float[3] {{-0.54368, -0.52678, 0.838422}}}
+}
+
+GeometryNode $cushion_south_right (visible = false, shadow = false)
+{
+	Name {string {"cushion_south_right"}}
+	ObjectRef {ref {$cushion_long_shape}}
+	Translation (kind = "xyz") {float[3] {{0.54368, -0.52678, 0.838422}}}
+}
+
+GeometryNode $cushion_left (visible = false, shadow = false)
+{
+	Name {string {"cushion_left"}}
+	ObjectRef {ref {$cushion_short_shape}}
+	Translation (kind = "xyz") {float[3] {{-1.124, 0.0, 0.838422}}}
+}
+
+GeometryNode $cushion_right (visible = false, shadow = false)
+{
+	Name {string {"cushion_right"}}
+	ObjectRef {ref {$cushion_short_shape}}
+	Translation (kind = "xyz") {float[3] {{1.124, 0.0, 0.838422}}}
+}
+
+// OpenGEX requires a mesh; these placeholders are never rendered.
+GeometryObject $support_center_shape (visible = false, shadow = false)
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3] {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}}
+		}
+		IndexArray {unsigned_int32[3] {{0, 1, 2}}}
+	}
+	Extension (applic = "MyGameEngine", type = "collision")
+	{
+		string {"box"}
+		float[3] {{0.99922, 0.485, 0.05}}
+	}
+}
+
+GeometryObject $support_end_shape (visible = false, shadow = false)
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3] {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}}
+		}
+		IndexArray {unsigned_int32[3] {{0, 1, 2}}}
+	}
+	Extension (applic = "MyGameEngine", type = "collision")
+	{
+		string {"box"}
+		float[3] {{0.06239, 0.42407, 0.05}}
+	}
+}
+
+GeometryObject $support_side_shape (visible = false, shadow = false)
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3] {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}}
+		}
+		IndexArray {unsigned_int32[3] {{0, 1, 2}}}
+	}
+	Extension (applic = "MyGameEngine", type = "collision")
+	{
+		string {"box"}
+		float[3] {{0.45554, 0.02089, 0.05}}
+	}
+}
+
+GeometryObject $cushion_long_shape (visible = false, shadow = false)
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3] {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}}
+		}
+		IndexArray {unsigned_int32[3] {{0, 1, 2}}}
+	}
+	Extension (applic = "MyGameEngine", type = "collision")
+	{
+		string {"box"}
+		float[3] {{0.45554, 0.02478, 0.015}}
+	}
+}
+
+GeometryObject $cushion_short_shape (visible = false, shadow = false)
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3] {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}}
+		}
+		IndexArray {unsigned_int32[3] {{0, 1, 2}}}
+	}
+	Extension (applic = "MyGameEngine", type = "collision")
+	{
+		string {"box"}
+		float[3] {{0.0219, 0.42407, 0.015}}
 	}
 }
 
@@ -136578,14 +136760,6 @@ GeometryObject $geometry6		// pt_table
 			}
 		}
 	}
-    Extension (applic = "MyGameEngine", type = "collision")
-    {
-        string {"box"}
-        float[3]
-        {
-            {1.22, 0.61, 0.83}
-        }
-    }
 }
 
 GeometryObject $geometry19		// pbb_13
@@ -194748,7 +194922,7 @@ LightObject $light1 (type = "point", shadow = false)		// Point
 
 CameraObject $camera1		// Camera.001
 {
-	Param (attrib = "fov") {float {0.8575559854507446}}
+	Param (attrib = "fov") {float {1.0471975512}}
 	Param (attrib = "near") {float {0.10000000149011612}}
 	Param (attrib = "far") {float {100.0}}
 }

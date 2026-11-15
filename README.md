@@ -170,9 +170,9 @@ Billiard uses the renderer's dynamic font-atlas initialization, like Viewer.
 Its opt-in desktop regression loads the real billiard scene, settles it for
 60 ticks, applies the normal left-key shot, and follows 120 further ticks.
 It requires cue-ball XY displacement of at least 0.1 scene units and movement
-of another ball of at least 0.01 units, with finite transforms. A regression-only
-overview camera keeps the table in view; normal camera and saved layouts are
-unchanged. The default Windows OpenGL build can run
+of another ball of at least 0.01 units, with finite transforms. Captures use the
+authored scene camera, so the regression also exposes default framing changes;
+saved UI layouts are unchanged. The default Windows OpenGL build can run
 `BilliardGame -physicsRegression <output-directory>` to save before/after BMPs
 and a `physics-passed` result. Windows CI explicitly selects the existing
 D3D12 backend with `-DBILLIARD_USE_D3D12=ON`; ordinary builds default to OpenGL.
@@ -190,6 +190,20 @@ All three enabled CI jobs run this regression and retain Billiard screenshots
 (Windows D3D12, Linux OpenGL, macOS Metal).
 Third-stage acceptance requires inspecting these real Billiard images, not
 Viewer's physics-free scene alone.
+
+The Billiard scene places the camera at `(2.0, 0.0, 1.5)` meters, behind the
+cue ball, looking at `(0.0, 0.0, 0.83)` with a 60-degree vertical field of view.
+An optional `CameraNode` extension supplies a world-space target:
+`Extension (applic = "MyGameEngine", type = "camera_target") {float[3] {{0.0, 0.0, 0.83}}}`.
+It requires exactly three finite floats; cameras without it retain the existing
+origin target. Six invisible static box cushions follow the four table edges,
+with gaps for four corner pockets and two middle pockets. Separate finite
+support slabs preserve the existing support height of 0.83 meters while leaving
+the pocket openings unsupported. The boxes approximate the modeled pocket
+contours; they do not implement scoring, ball removal, jump shots, or high-speed
+continuous collision detection. `PhysicsSceneIntegrationTest` loads this actual
+scene and checks camera containment, resting support, all six cushions, and
+rolling falls through all six pockets before crossing the outer table bounds.
 
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
