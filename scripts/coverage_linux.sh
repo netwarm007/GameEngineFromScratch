@@ -24,6 +24,8 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$ROOT/External/$(uname -s)/lib"
 cmake -S "$ROOT" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
 cmake --build "$BUILD_DIR"
 
+# Tests run from their own working directories, so the profile path must be absolute.
+REPORT_DIR="$(mkdir -p "$REPORT_DIR" && cd "$REPORT_DIR" && pwd)"
 rm -rf "$REPORT_DIR" && mkdir -p "$REPORT_DIR/profraw"
 # %p/%m keep profiles of concurrently running test processes apart.
 export LLVM_PROFILE_FILE="$REPORT_DIR/profraw/%p-%m.profraw"
