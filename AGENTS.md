@@ -23,6 +23,10 @@
   CircleCI result. Pending, canceled, skipped, unavailable, or failed jobs do
   not satisfy acceptance. Report the pipeline link, revision, each platform's
   result, and any blockers; do not claim acceptance while results are unknown.
+- In this repository, complete acceptance before creating a pull request.
+  Push the branch, verify its exact revision on all enabled CircleCI platforms,
+  inspect required visual artifacts, then open the PR. Documentation-only
+  changes covered by the exemption below do not require CI.
 - Documentation-only commits are exempt from the CircleCI gate: do not run or
   wait for CircleCI, and put `[ci skip]` in the commit message so the push does
   not start a pipeline. A commit is documentation-only when every changed file
@@ -55,6 +59,12 @@
   Inspect the actual screenshot artifact for the affected platform and exact
   revision. Check overlap, clipping, and placement outside the main viewport
   before attributing a missing panel to scene loading or rendering.
+- For video capture, target only the application, not the shared desktop.
+  Window capture may return blank OpenGL frames; inspect an early sample and
+  prefer the existing framebuffer readback path if needed. Verify decoded
+  duration, frame count, and samples before, during, and after the action.
+  A local file link is not a downloadable chat attachment; state delivery
+  limitations rather than promising playback in the conversation.
 - With ImGui multi-viewports enabled, window positions are desktop coordinates.
   Derive initial placement from the main viewport's work position and size,
   not fixed coordinates or framebuffer pixel dimensions.
