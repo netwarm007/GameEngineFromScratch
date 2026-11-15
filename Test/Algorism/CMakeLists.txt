@@ -2,10 +2,12 @@ set(ALGORISM_TEST_CASES
     AaBbTest
     ASTNodeTest
     BezierCubic1DTest
+    BezierCurveTest
     BVHNodeTest
     BulletTest
     ChronoTest
     ColorSpaceConversionTest
+    ColorConversionTest
     GjkTest
     GjkIntersectionTest
     HitableListTest
