@@ -9,6 +9,7 @@ set(ALGORISM_TEST_CASES
     GjkTest
     GjkIntersectionTest
     HitableListTest
+    LinearCurveTest
     LinearInterpolateTest
     NumericalMethodsTest
     PolarDecomposeTest
