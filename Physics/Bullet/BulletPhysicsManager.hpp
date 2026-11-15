@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <memory>
 
 #include "PhysicsManager.hpp"
 #define BT_USE_DOUBLE_PRECISION 1
@@ -31,6 +32,8 @@ class BulletPhysicsManager : public PhysicsManager {
    protected:
     Matrix4X4f GetRigidBodyTransform(const btRigidBody& rigidBody) const;
     void PublishTransforms();
+    std::unique_ptr<btTriangleMesh> BuildTriangleMesh(
+        const SceneObjectGeometry& geometry) const;
 
     ISceneManager& m_Scenes;
     uint64_t m_nSceneRevision{0};
@@ -41,6 +44,7 @@ class BulletPhysicsManager : public PhysicsManager {
     btDiscreteDynamicsWorld* m_btDynamicsWorld;
 
     std::vector<btCollisionShape*> m_btCollisionShapes;
+    std::vector<std::unique_ptr<btTriangleMesh>> m_btTriangleMeshes;
     struct BodyBinding {
         std::shared_ptr<SceneGeometryNode> node;
         btRigidBody* body;

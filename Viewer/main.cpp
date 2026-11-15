@@ -7,7 +7,7 @@
 #include "InputManager.hpp"
 #include "MemoryManager.hpp"
 #include "OGEX.hpp"
-#include "My/MyPhysicsManager.hpp"
+#include "Bullet/BulletPhysicsManager.hpp"
 #include "SceneManager.hpp"
 #include "SceneResourceLoader.hpp"
 #include "ViewerLogic.hpp"
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     OgexParser sceneParser;
     SceneResourceLoader sceneResources(assetLoader);
     SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
-    MyPhysicsManager physicsManager(sceneManager);
+    BulletPhysicsManager physicsManager(sceneManager);
     InputManager inputManager;
     AnimationManager animationManager(sceneManager);
 #ifdef DEBUG

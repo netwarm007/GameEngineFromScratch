@@ -12,7 +12,7 @@ int AssetLoader::Initialize() {
     {
         ret = -1;
     } else {
-        m_strTargetPath = pathbuf;
+        m_strTargetPath.assign(pathbuf, ret);
         m_strTargetPath = m_strTargetPath.substr(0, m_strTargetPath.find_last_of('/') + 1);
         fprintf(stderr, "Working Dir: %s\n", m_strTargetPath.c_str());
         ret = 0;

@@ -150,6 +150,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     NSString* _screenshotPath;
     NSString* _screenshotWaitFor;
     CFTimeInterval _screenshotTime;
+    // Optional `-screenshotFrame <n>`: capture the n-th GUI frame instead of waiting a wall-clock delay.
+    NSInteger _screenshotFrame;
+    NSInteger _frameCount;
     BOOL _screenshotRequested;
 }
 
@@ -182,6 +185,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
                                ? [defaults doubleForKey:@"screenshotDelay"]
                                : 45.0;
             _screenshotTime = CACurrentMediaTime() + delay;
+            _screenshotFrame = [defaults integerForKey:@"screenshotFrame"];
             // The drawable texture is read back with a blit
             _mtkView.framebufferOnly = NO;
         }
@@ -576,7 +580,10 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
         [renderEncoder endEncoding];
 
-        if (_screenshotPath && !_screenshotRequested && CACurrentMediaTime() >= _screenshotTime &&
+        ++_frameCount;
+        const BOOL reached = _screenshotFrame > 0 ? _frameCount >= _screenshotFrame
+                                                  : CACurrentMediaTime() >= _screenshotTime;
+        if (_screenshotPath && !_screenshotRequested && reached &&
             (!_screenshotWaitFor || [[NSFileManager defaultManager] fileExistsAtPath:_screenshotWaitFor])) {
             _screenshotRequested = YES;
             [self encodeScreenshot:_mtkView.currentDrawable.texture

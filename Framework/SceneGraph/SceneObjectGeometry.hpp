@@ -3,6 +3,21 @@
 #include "SceneObjectMesh.hpp"
 
 namespace My {
+enum class SceneObjectBodyType { kAuto, kStatic, kDynamic };
+
+// kAuto keeps the historical mapping: spheres are dynamic, other shapes static.
+struct SceneObjectPhysicsProperties {
+    SceneObjectBodyType bodyType{SceneObjectBodyType::kAuto};
+    float mass{1.0f};
+    float friction{0.5f};
+    float restitution{0.0f};
+    Vector3f linearVelocity{0.0f, 0.0f, 0.0f};
+    // Normal axis (0=x, 1=y, 2=z) of the plane the body is confined to: it
+    // cannot translate along the axis and may only spin about it. -1 means
+    // unconstrained.
+    int planeNormalAxis{-1};
+};
+
 class SceneObjectGeometry : public BaseSceneObject {
    protected:
     using MeshType = SceneObjectMesh;
@@ -13,6 +28,7 @@ class SceneObjectGeometry : public BaseSceneObject {
     SceneObjectCollisionType m_CollisionType{
         SceneObjectCollisionType::kSceneObjectCollisionTypeNone};
     float m_CollisionParameters[10];
+    SceneObjectPhysicsProperties m_Physics;
 
    public:
     SceneObjectGeometry()
@@ -38,10 +54,21 @@ class SceneObjectGeometry : public BaseSceneObject {
         return m_CollisionParameters;
     }
 
+    void SetPhysicsProperties(const SceneObjectPhysicsProperties& physics) {
+        m_Physics = physics;
+    }
+    [[nodiscard]] const SceneObjectPhysicsProperties& PhysicsProperties()
+        const {
+        return m_Physics;
+    }
+
     void AddMesh(std::shared_ptr<SceneObjectMesh>&& mesh) {
         m_Mesh.push_back(std::forward<std::shared_ptr<MeshType>>(mesh));
     }
     std::weak_ptr<MeshType> GetMesh() {
+        return (m_Mesh.empty() ? nullptr : m_Mesh[0]);
+    }
+    [[nodiscard]] std::weak_ptr<MeshType> GetMesh() const {
         return (m_Mesh.empty() ? nullptr : m_Mesh[0]);
     }
     std::weak_ptr<MeshType> GetMeshLOD(size_t lod) {
