@@ -33,6 +33,12 @@ class MemoryAssets : public IAssetReader {
         } else if (name == "missing.png" || name == "other-missing.png") {
             return {};
         }
+        if (name == truncatedName) {
+            // keep the signature, IHDR and a partial IDAT chunk only
+            Buffer result(50);
+            std::memcpy(result.GetData(), png.GetData(), 50);
+            return result;
+        }
         Buffer result(png.GetDataSize());
         std::memcpy(result.GetData(), png.GetData(), png.GetDataSize());
         return result;
@@ -42,6 +48,7 @@ class MemoryAssets : public IAssetReader {
     }
 
     Buffer png;
+    std::string truncatedName;
     std::atomic<int> reads{0};
     std::atomic<int> fallbackReads{0};
     bool missingFallback = false;
@@ -96,6 +103,17 @@ void TestResourceLoading(MemoryAssets& assets) {
            "unsupported format is an explicit load failure without stale data");
 }
 
+void TestTruncatedPng(MemoryAssets& assets) {
+    assets.truncatedName = "truncated.png";
+    SceneResourceLoader resources(assets);
+    Scene scene("truncated");
+    scene.SkyBox.reset();
+    scene.Terrain.reset();
+    scene.GetMaterial("default")->SetTexture("diffuse", "truncated.png");
+    Expect(!resources.Load(scene), "truncated PNG fails resource loading");
+    assets.truncatedName.clear();
+}
+
 void TestEnvironmentTextures(MemoryAssets& assets) {
     SceneResourceLoader resources(assets);
     Scene scene("environment");
@@ -137,6 +155,7 @@ int main() {
     }
     MemoryAssets assets(std::move(png));
     TestResourceLoading(assets);
+    TestTruncatedPng(assets);
     TestEnvironmentTextures(assets);
     TestUnavailableFallback();
     return failures == 0 ? 0 : 1;

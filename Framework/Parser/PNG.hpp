@@ -97,6 +97,7 @@ class PngParser : _implements_ ImageParser {
 
         bool imageDataStarted = false;
         bool imageDataEnded = false;
+        bool imageDecoded = false;
         uint8_t* imageDataStartPos = nullptr;
         uint8_t* imageDataEndPos = nullptr;
 
@@ -327,6 +328,7 @@ class PngParser : _implements_ ImageParser {
                         int current_row = 0;
                         int current_col =
                             -1;  // -1 means we need read filter type
+                        bool decodeFailed = false;
 
                         do {
                             uint32_t next_in_size =
@@ -348,6 +350,7 @@ class PngParser : _implements_ ImageParser {
                                     case Z_DATA_ERROR:
                                     case Z_MEM_ERROR:
                                         zerr(ret);
+                                        decodeFailed = true;
                                         ret = Z_STREAM_END;
                                     default:
                                         // now we de-filter the data into image
@@ -481,6 +484,10 @@ class PngParser : _implements_ ImageParser {
 
                         (void)inflateEnd(&strm);
                         delete[] pDecompressedBuffer;
+                        imageDecoded = !decodeFailed &&
+                                       ret == Z_STREAM_END &&
+                                       current_row == m_Height &&
+                                       current_col == -1;
                     } break;
                     default: {
 #if DUMP_DETAILS
@@ -494,6 +501,12 @@ class PngParser : _implements_ ImageParser {
             }
         } else {
             std::cerr << "File is not a PNG file!" << std::endl;
+        }
+
+        if (!imageDecoded) {
+            std::cerr << "PNG decoding failed or the file is incomplete."
+                      << std::endl;
+            return Image();
         }
 
         img.mipmaps.emplace_back(img.Width, img.Height, img.pitch, 0,

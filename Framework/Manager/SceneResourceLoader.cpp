@@ -95,7 +95,17 @@ bool SceneResourceLoader::Load(Scene& scene) {
 
     bool loaded = true;
     for (auto& [texture, result] : pending) {
-        auto image = result.get();
+        shared_ptr<Image> image;
+        try {
+            image = result.get();
+        } catch (const exception& e) {
+            cerr << "[SceneResourceLoader] Exception while decoding texture "
+                 << texture->GetName() << ": " << e.what() << endl;
+        } catch (...) {
+            cerr << "[SceneResourceLoader] Unknown exception while decoding "
+                    "texture "
+                 << texture->GetName() << endl;
+        }
         if (!image) {
             cerr << "[SceneResourceLoader] Cannot prepare texture: "
                  << texture->GetName() << endl;
