@@ -122,11 +122,17 @@ class GraphicsManager : _implements_ IGraphicsManager {
     std::map<std::string, material_textures> material_map;
 
     std::vector<TextureBase> m_Textures;
-    uint32_t m_canvasWidth;
-    uint32_t m_canvasHeight;
+    uint32_t m_canvasWidth = 0;
+    uint32_t m_canvasHeight = 0;
 
    private:
     void createFramebuffers();
+    void releaseFramebuffers();
+
+    // Sole owners of the offscreen targets borrowed by m_Frames.
+    std::array<Texture2D, GfxConfiguration::kMaxInFlightFrameCount> m_ColorTextures;
+    Texture2D m_MsaaColorTexture;
+    Texture2D m_DepthTexture;
 
    private:
     ISceneManager* m_pSceneManager = nullptr;
