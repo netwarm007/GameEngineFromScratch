@@ -1,7 +1,10 @@
+#include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include "AssetLoader.hpp"
 #include "Bullet/BulletPhysicsManager.hpp"
@@ -265,6 +268,152 @@ void TestBilliardScene() {
     assets.Finalize();
 }
 
+std::shared_ptr<SceneObjectMesh> MakeTriangleMesh(
+    const std::vector<float>& positions, const std::vector<uint32_t>& indices) {
+    auto mesh = std::make_shared<SceneObjectMesh>();
+    auto* vertexData = new uint8_t[positions.size() * sizeof(float)];
+    memcpy(vertexData, positions.data(), positions.size() * sizeof(float));
+    mesh->AddVertexArray(SceneObjectVertexArray(
+        "position", 0, VertexDataType::kVertexDataTypeFloat3, vertexData,
+        positions.size()));
+    auto* indexData = new uint8_t[indices.size() * sizeof(uint32_t)];
+    memcpy(indexData, indices.data(), indices.size() * sizeof(uint32_t));
+    mesh->AddIndexArray(SceneObjectIndexArray(
+        0, 0, IndexDataType::kIndexDataTypeInt32, indexData, indices.size()));
+    mesh->SetPrimitiveType(PrimitiveType::kPrimitiveTypeTriList);
+    return mesh;
+}
+
+// Drops a ball on a static ground and returns its highest point after the
+// first bounce, or the final height if it never rebounds.
+float ReboundApex(float restitution, bool tilted, float* lateralDrift) {
+    TestScenes scenes;
+    SteppingBullet physics(scenes);
+    physics.Initialize();
+
+    const std::vector<float> ground =
+        tilted ? std::vector<float>{-5, -5, -0.9f, 5, -5, -0.9f, 5, 5, 0.9f,
+                                    -5, 5, 0.9f}
+               : std::vector<float>{-5, -5, 0, 5, -5, 0, 5, 5, 0, -5, 5, 0};
+    SceneObjectGeometry groundGeometry;
+    groundGeometry.SetCollisionType(
+        SceneObjectCollisionType::kSceneObjectCollisionTypeBvhMesh);
+    groundGeometry.AddMesh(MakeTriangleMesh(ground, {0, 1, 2, 0, 2, 3}));
+    SceneObjectPhysicsProperties groundMaterial;
+    groundMaterial.restitution = 1.0f;
+    groundGeometry.SetPhysicsProperties(groundMaterial);
+    auto groundNode = std::make_shared<SceneGeometryNode>("ground");
+    physics.CreateRigidBody(groundNode, groundGeometry);
+
+    SceneObjectGeometry ballGeometry;
+    ballGeometry.SetCollisionType(
+        SceneObjectCollisionType::kSceneObjectCollisionTypeSphere);
+    const float radius[] = {0.5f};
+    ballGeometry.SetCollisionParameters(radius, 1);
+    SceneObjectPhysicsProperties ballMaterial;
+    ballMaterial.restitution = restitution;
+    ballMaterial.planeNormalAxis = 1;
+    // Out-of-plane velocity must be discarded by the constraint.
+    ballMaterial.linearVelocity = Vector3f{0.0f, 2.0f, 0.0f};
+    ballGeometry.SetPhysicsProperties(ballMaterial);
+    auto ball = std::make_shared<SceneGeometryNode>("ball");
+    ball->MoveBy(0.0f, 0.0f, 4.0f);
+    physics.CreateRigidBody(ball, ballGeometry);
+
+    float apex = 0.0f;
+    float previous = 4.0f;
+    bool bounced = false;
+    float drift = 0.0f;
+    for (int i = 0; i < 240; ++i) {
+        physics.Step();
+        const auto transform = ball->GetRenderTransform();
+        drift = std::max(drift, std::abs(transform[3][1]));
+        if (transform[3][2] > previous && !bounced) bounced = true;
+        if (bounced) apex = std::max(apex, transform[3][2]);
+        previous = transform[3][2];
+    }
+    if (lateralDrift) *lateralDrift = drift;
+    physics.Finalize();
+    return apex;
+}
+
+void TestPhysicsMaterialsAndMeshes() {
+    float drift = 0.0f;
+    const float dull = ReboundApex(0.2f, false, &drift);
+    const float lively = ReboundApex(0.9f, false, nullptr);
+    Expect(dull > 0.0f && lively > dull + 1.0f,
+           "restitution from the physics material scales the rebound");
+    Expect(drift < 0.001f,
+           "planar constraint discards out-of-plane initial velocity");
+    Expect(lively > 0.5f, "triangle mesh ground stops a falling ball");
+
+    float tiltedDrift = 0.0f;
+    ReboundApex(0.9f, true, &tiltedDrift);
+    Expect(tiltedDrift < 0.001f,
+           "planar constraint keeps a ball in plane on a slanted surface");
+}
+
+void TestSplashBouncingBall() {
+    AssetLoader assets;
+    Expect(assets.Initialize() == 0, "Splash assets initialize");
+    OgexParser parser;
+    auto scene = parser.Parse(
+        assets.SyncOpenAndReadTextFileToString("Scene/splash.ogex"));
+    Expect(scene != nullptr, "actual Splash scene parses");
+    if (!scene) {
+        assets.Finalize();
+        return;
+    }
+    auto ball = scene->LUT_Name_GeometryNode.at("Ball").lock();
+    auto text = scene->LUT_Name_GeometryNode.at("Text").lock();
+    Expect(ball && text, "Splash scene has a ball and text");
+    if (!ball || !text) {
+        assets.Finalize();
+        return;
+    }
+    Expect(scene->AnimatableNodes.empty(),
+           "text stays still so the ball can land on it");
+
+    TestScenes scenes;
+    SteppingBullet physics(scenes);
+    Expect(physics.Initialize() == 0, "Splash Bullet initializes");
+    for (const auto& [key, weakNode] : scene->GeometryNodes) {
+        auto node = weakNode.lock();
+        if (!node) continue;
+        auto geometry = scene->GetGeometry(node->GetSceneObjectRef());
+        physics.CreateRigidBody(node, *geometry);
+    }
+    const float authoredY = (*ball->GetCalculatedTransform())[3][1];
+
+    constexpr float textTop = 0.106f;
+    float lowest = 100.0f;
+    float drift = 0.0f;
+    float previous = ball->GetRenderTransform()[3][2];
+    float velocity = 0.0f;
+    int bounces = 0;
+    int stepsToEnd = -1;
+    for (int i = 0; i < 60 * 25 && stepsToEnd < 0; ++i) {
+        physics.Step();
+        const auto transform = ball->GetRenderTransform();
+        const float z = transform[3][2];
+        const float next = z - previous;
+        if (velocity < -1e-4f && next > 1e-4f) ++bounces;
+        if (std::abs(next) > 1e-4f) velocity = next;
+        previous = z;
+        if (transform[3][0] > -5.4f) lowest = std::min(lowest, z);
+        drift = std::max(drift, std::abs(transform[3][1] - authoredY));
+        if (transform[3][0] > 5.5f) stepsToEnd = i;
+    }
+    Expect(stepsToEnd >= 0, "ball reaches the right end of the text");
+    Expect(lowest > textTop + 0.15f,
+           "ball never drops into the gaps between words");
+    Expect(drift < 0.001f, "ball stays in its vertical plane");
+    Expect(bounces >= 8, "ball bounces repeatedly along the text");
+    physics.Finalize();
+    scene.reset();
+    assets.Finalize();
+}
+
 template <class Physics>
 void TestSceneReplacementWithoutApplication() {
     TestScenes scenes;
@@ -316,6 +465,8 @@ int main() {
     TestBindingsAndTransforms<SteppingBullet>();
     TestBulletSimulationPublication();
     TestBilliardScene();
+    TestPhysicsMaterialsAndMeshes();
+    TestSplashBouncingBall();
     TestSceneReplacementWithoutApplication<MyPhysicsManager>();
     TestSceneReplacementWithoutApplication<SteppingBullet>();
     return failures == 0 ? 0 : 1;

@@ -205,6 +205,25 @@ continuous collision detection. `PhysicsSceneIntegrationTest` loads this actual
 scene and checks camera containment, resting support, all six cushions, and
 rolling falls through all six pockets before crossing the outer table bounds.
 
+The Viewer uses the Bullet backend. `GeometryObject` accepts these
+`MyGameEngine` extensions for physics:
+
+- `collision`: `string {"plane"|"sphere"|"box"|"bvhmesh"}` plus `float {...}`
+  parameters (`bvhmesh` takes none and builds a static triangle mesh shape).
+- `physics_material`: `float {friction, restitution}`, both non-negative.
+- `rigid_body`: `string {"dynamic"|"static"}` plus `float {mass, vx, vy, vz}`.
+- `motion_constraint`: `string {"plane"}` plus an axis-aligned unit normal
+  `float {x, y, z}`; the body stays in that plane (it can only rotate about
+  the normal).
+
+The Splash scene uses them for a ball that bounces along the (now static) text
+from left to right. Its start position, speed and restitution were tuned by
+searching with the real engine so every bounce lands on a letter instead of a
+word gap. The trajectory is chaotic, so changing the text mesh, material values
+or Bullet version requires re-tuning; `PhysicsSceneIntegrationTest` checks it.
+The text rotation animation is commented out in `splash.ogex` and can be
+restored by removing the leading `//`.
+
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.

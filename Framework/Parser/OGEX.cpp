@@ -10,9 +10,137 @@
 
 using namespace My;
 
+namespace {
+struct ExtensionPayload {
+    const char* name{nullptr};
+    const float* values{nullptr};
+    int32_t count{0};
+};
+
+// Extension bodies are an optional leading string followed by a float array.
+bool ReadExtensionPayload(const OGEX::ExtensionStructure& extension,
+                          bool expectString, ExtensionPayload& payload) {
+    const auto* first = extension.GetFirstCoreSubnode();
+    const auto* last = extension.GetLastCoreSubnode();
+    if (!first) return false;
+
+    const ODDL::Structure* floats = first;
+    if (expectString) {
+        const auto* text = dynamic_cast<
+            const ODDL::DataStructure<ODDL::StringDataType>*>(first);
+        if (!text || text->GetDataElementCount() != 1) return false;
+        payload.name = text->GetDataElement(0);
+        floats = (first == last) ? nullptr : last;
+    } else if (first != last) {
+        return false;
+    }
+
+    if (floats) {
+        const auto* data =
+            dynamic_cast<const ODDL::DataStructure<ODDL::FloatDataType>*>(
+                floats);
+        if (!data) return false;
+        payload.values = &data->GetDataElement(0);
+        payload.count = data->GetDataElementCount();
+        for (int32_t i = 0; i < payload.count; i++) {
+            if (!std::isfinite(payload.values[i])) return false;
+        }
+    }
+    return true;
+}
+
+bool ParseGeometryExtension(const OGEX::ExtensionStructure& extension,
+                            SceneObjectGeometry& geometry,
+                            SceneObjectPhysicsProperties& physics) {
+    const std::string type(
+        static_cast<const char*>(extension.GetTypeString()));
+    ExtensionPayload payload;
+
+    if (type == "collision") {
+        if (!ReadExtensionPayload(extension, true, payload)) return false;
+        const std::string shape = payload.name;
+        struct Shape {
+            const char* name;
+            SceneObjectCollisionType type;
+            int32_t parameters;
+        };
+        static constexpr Shape shapes[] = {
+            {"plane", SceneObjectCollisionType::kSceneObjectCollisionTypePlane,
+             4},
+            {"sphere",
+             SceneObjectCollisionType::kSceneObjectCollisionTypeSphere, 1},
+            {"box", SceneObjectCollisionType::kSceneObjectCollisionTypeBox, 3},
+            {"bvhmesh",
+             SceneObjectCollisionType::kSceneObjectCollisionTypeBvhMesh, 0}};
+        for (const auto& candidate : shapes) {
+            if (shape != candidate.name) continue;
+            if (payload.count < candidate.parameters || payload.count >= 10) {
+                return false;
+            }
+            geometry.SetCollisionType(candidate.type);
+            if (payload.count > 0) {
+                geometry.SetCollisionParameters(payload.values, payload.count);
+            }
+        }
+        return true;
+    }
+
+    if (type == "physics_material") {
+        if (!ReadExtensionPayload(extension, false, payload) ||
+            payload.count != 2 || payload.values[0] < 0.0f ||
+            payload.values[1] < 0.0f) {
+            return false;
+        }
+        physics.friction = payload.values[0];
+        physics.restitution = payload.values[1];
+        return true;
+    }
+
+    if (type == "rigid_body") {
+        if (!ReadExtensionPayload(extension, true, payload) ||
+            payload.count != 4) {
+            return false;
+        }
+        const std::string body = payload.name;
+        if (body == "dynamic") {
+            physics.bodyType = SceneObjectBodyType::kDynamic;
+        } else if (body == "static") {
+            physics.bodyType = SceneObjectBodyType::kStatic;
+        } else {
+            return false;
+        }
+        if (payload.values[0] <= 0.0f) return false;
+        physics.mass = payload.values[0];
+        physics.linearVelocity =
+            Vector3f{payload.values[1], payload.values[2], payload.values[3]};
+        return true;
+    }
+
+    if (type == "motion_constraint") {
+        if (!ReadExtensionPayload(extension, true, payload) ||
+            std::string(payload.name) != "plane" || payload.count != 3) {
+            return false;
+        }
+        int axis = -1;
+        for (int i = 0; i < 3; i++) {
+            const float v = std::fabs(payload.values[i]);
+            if (v == 0.0f) continue;
+            if (v != 1.0f || axis >= 0) return false;
+            axis = i;
+        }
+        if (axis < 0) return false;
+        physics.planeNormalAxis = axis;
+        return true;
+    }
+
+    return true;
+}
+}  // namespace
+
 std::unique_ptr<Scene> OgexParser::Parse(const std::string& buf) {
     m_bUpIsYAxis = false;
     m_bInvalidCameraTarget = false;
+    m_bInvalidExtension = false;
     OGEX::OpenGexDataDescription openGexDataDescription;
 
     ODDL::DataResult result = openGexDataDescription.ProcessText(buf.c_str());
@@ -29,7 +157,7 @@ std::unique_ptr<Scene> OgexParser::Parse(const std::string& buf) {
         while (structure) {
             ConvertOddlStructureToSceneNode(*structure, pScene->SceneGraph,
                                             *pScene);
-            if (m_bInvalidCameraTarget) return nullptr;
+            if (m_bInvalidCameraTarget || m_bInvalidExtension) return nullptr;
 
             structure = structure->Next();
         }
@@ -173,54 +301,24 @@ void OgexParser::ConvertOddlStructureToSceneNode(
             _object->SetIfMotionBlur(_structure.GetMotionBlurFlag());
 
             // extensions
-            //// collision shape
+            SceneObjectPhysicsProperties physics;
             ODDL::Structure* extension = _structure.GetFirstExtensionSubnode();
             while (extension) {
                 const auto* _extension =
                     dynamic_cast<const OGEX::ExtensionStructure*>(extension);
-                auto _appid = _extension->GetApplicationString();
-                if (_appid == "MyGameEngine") {
-                    auto _type = _extension->GetTypeString();
-                    if (_type == "collision") {
-                        const ODDL::Structure* sub_structure =
-                            _extension->GetFirstCoreSubnode();
-                        const auto* dataStructure1 = static_cast<
-                            const ODDL::DataStructure<ODDL::StringDataType>*>(
-                            sub_structure);
-                        auto collision_type = dataStructure1->GetDataElement(0);
-
-                        sub_structure = _extension->GetLastCoreSubnode();
-                        const auto* dataStructure2 = static_cast<
-                            const ODDL::DataStructure<ODDL::FloatDataType>*>(
-                            sub_structure);
-                        auto elementCount =
-                            dataStructure2->GetDataElementCount();
-                        auto* _data =
-                            (float*)&dataStructure2->GetDataElement(0);
-                        if (collision_type == "plane") {
-                            _object->SetCollisionType(
-                                SceneObjectCollisionType::
-                                    kSceneObjectCollisionTypePlane);
-                            _object->SetCollisionParameters(_data,
-                                                            elementCount);
-                        } else if (collision_type == "sphere") {
-                            _object->SetCollisionType(
-                                SceneObjectCollisionType::
-                                    kSceneObjectCollisionTypeSphere);
-                            _object->SetCollisionParameters(_data,
-                                                            elementCount);
-                        } else if (collision_type == "box") {
-                            _object->SetCollisionType(
-                                SceneObjectCollisionType::
-                                    kSceneObjectCollisionTypeBox);
-                            _object->SetCollisionParameters(_data,
-                                                            elementCount);
-                        }
-                        break;
-                    }
+                if (_extension &&
+                    _extension->GetApplicationString() == "MyGameEngine" &&
+                    !ParseGeometryExtension(*_extension, *_object, physics)) {
+                    std::cerr << "[OgexParser] invalid "
+                              << _extension->GetTypeString()
+                              << " extension on geometry " << _key
+                              << std::endl;
+                    m_bInvalidExtension = true;
+                    return;
                 }
                 extension = extension->Next();
             }
+            _object->SetPhysicsProperties(physics);
 
             // meshs
             const ODDL::Map<OGEX::MeshStructure>* _meshs =

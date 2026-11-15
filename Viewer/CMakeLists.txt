@@ -111,7 +111,7 @@ IF(APPLE)
         )
 
     target_link_libraries(Viewer
-                            MyPhysics
+                            BulletPhysics
                             Framework
                             MetalRHI
                             PlatformInterface
@@ -165,7 +165,7 @@ IF(APPLE)
 
 ELSEIF(WA)
     target_link_libraries(Viewer
-                            MyPhysics
+                            BulletPhysics
                             OpenGLRHI
                             Framework
                             Sdl
@@ -188,7 +188,7 @@ ELSEIF(WA)
             )
 ELSEIF(WIN32)
     target_link_libraries(Viewer
-                            MyPhysics
+                            BulletPhysics
                             D3dRHI
                             Framework
                             PlatformInterface
@@ -207,7 +207,7 @@ else()
 set(PLATFORM_INTERFACE PlatformInterface)
 endif(SDL2_FOUND)
     target_link_libraries(Viewer
-                            MyPhysics
+                            BulletPhysics
                             OpenGLRHI
                             Framework
                             ${PLATFORM_INTERFACE})

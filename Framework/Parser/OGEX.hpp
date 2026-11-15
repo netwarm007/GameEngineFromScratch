@@ -22,5 +22,6 @@ class OgexParser : _implements_ ISceneParser {
    private:
     bool m_bUpIsYAxis{false};
     bool m_bInvalidCameraTarget{false};
+    bool m_bInvalidExtension{false};
 };
 }  // namespace My

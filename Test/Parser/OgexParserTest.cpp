@@ -65,6 +65,50 @@ int main(int, char**) {
              << endl;
         return 1;
     }
+    const string geometryPrefix =
+        "GeometryObject $geo { Mesh (primitive = \"triangles\") {"
+        "VertexArray (attrib = \"position\") {float[3] {{0,0,0},{1,0,0},"
+        "{0,1,0}}}}\n";
+    const string geometrySuffix = "}\nGeometryNode $node { ObjectRef {ref "
+                                  "{$geo}} }\n";
+    const string ext = "Extension (applic = \"MyGameEngine\", type = ";
+    for (const auto& invalid :
+         {"\"physics_material\") {float {-1.0, 0.5}}",
+          "\"physics_material\") {float {0.5}}",
+          "\"rigid_body\") {string {\"kinematic\"} float {1, 0, 0, 0}}",
+          "\"rigid_body\") {string {\"dynamic\"} float {0, 0, 0, 0}}",
+          "\"motion_constraint\") {string {\"plane\"} float {0.5, 0.5, 0.5}}",
+          "\"collision\") {string {\"sphere\"}}"}) {
+        if (ogexParser.Parse(geometryPrefix + ext + invalid + geometrySuffix)) {
+            cerr << "FAILED: invalid physics extension must fail parsing"
+                 << endl;
+            return 1;
+        }
+    }
+    auto physicsScene = ogexParser.Parse(
+        geometryPrefix + ext + "\"collision\") {string {\"bvhmesh\"}}\n" + ext +
+        "\"physics_material\") {float {0.4, 0.95}}\n" + ext +
+        "\"rigid_body\") {string {\"dynamic\"} float {2, 1.5, 0, 0}}\n" + ext +
+        "\"motion_constraint\") {string {\"plane\"} float {0, 1, 0}}" +
+        geometrySuffix);
+    auto physicsGeometry =
+        physicsScene ? physicsScene->GetGeometry("$geo") : nullptr;
+    if (!physicsGeometry) {
+        cerr << "FAILED: valid physics extensions must load" << endl;
+        return 1;
+    }
+    const auto& physics = physicsGeometry->PhysicsProperties();
+    if (physicsGeometry->CollisionType() !=
+            SceneObjectCollisionType::kSceneObjectCollisionTypeBvhMesh ||
+        std::abs(physics.friction - 0.4f) > 1e-5f ||
+        std::abs(physics.restitution - 0.95f) > 1e-5f ||
+        physics.bodyType != SceneObjectBodyType::kDynamic ||
+        std::abs(physics.mass - 2.0f) > 1e-5f ||
+        std::abs(physics.linearVelocity[0] - 1.5f) > 1e-5f ||
+        physics.planeNormalAxis != 1) {
+        cerr << "FAILED: physics extension values were not preserved" << endl;
+        return 1;
+    }
     {
         shared_ptr<Scene> pScene = ogexParser.Parse(ogex_text);
         if (!pScene) {
