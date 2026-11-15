@@ -31,8 +31,10 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
 
 1. Record the pipeline number, branch, revision, workflow, and link. List every
    platform job and its status, including pending, canceled, and missing jobs.
-   Check all pages when results are paginated. For a running pipeline, check
-   status every five minutes by default unless the user requests another interval.
+   Check all pages when results are paginated. For a running pipeline, run one
+   background loop that checks the commit status about every 30 seconds and
+   exits once every enabled platform has finished or any has failed, unless the
+   user requests another interval.
 2. For each failed job, identify the first failed step and a concise cause;
    distinguish infrastructure, checkout, dependency, build, test, and package
    failures. Inspect later steps only when they provide relevant evidence.
