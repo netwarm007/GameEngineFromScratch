@@ -14,6 +14,7 @@ set(ALGORISM_TEST_CASES
     LinearCurveTest
     LinearInterpolateTest
     NumericalMethodsTest
+    PathTracingTest
     PolarDecomposeTest
     QRDecomposeTest
     QuickhullTest
@@ -28,3 +29,7 @@ foreach(TEST_CASE IN LISTS ALGORISM_TEST_CASES)
 endforeach()
 
 target_link_libraries(BulletTest BulletPhysics)
+
+target_include_directories(PathTracingTest PRIVATE ${PROJECT_SOURCE_DIR}/Test)
+find_package(Threads REQUIRED)
+target_link_libraries(PathTracingTest Threads::Threads)
