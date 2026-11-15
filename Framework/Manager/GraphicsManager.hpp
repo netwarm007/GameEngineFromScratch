@@ -17,9 +17,13 @@
 #include "geommath.hpp"
 
 namespace My {
+class ISceneManager;
+
 class GraphicsManager : _implements_ IGraphicsManager {
    public:
+    // Graphics-only mode for clients that provide their own draw loop.
     GraphicsManager();
+    GraphicsManager(ISceneManager& scenes, IPipelineStateManager& pipelines);
     ~GraphicsManager() override = default;
     int Initialize() override;
     void Finalize() override;
@@ -125,6 +129,8 @@ class GraphicsManager : _implements_ IGraphicsManager {
     void createFramebuffers();
 
    private:
+    ISceneManager* m_pSceneManager = nullptr;
+    IPipelineStateManager* m_pPipelineStateManager = nullptr;
     bool m_bInitialize = false;
 };
 }  // namespace My

@@ -4,6 +4,7 @@
 namespace My {
 class OpenGLESGraphicsManager : public OpenGLGraphicsManagerCommonBase {
    public:
+    using OpenGLGraphicsManagerCommonBase::OpenGLGraphicsManagerCommonBase;
     int Initialize() override;
 
    private:

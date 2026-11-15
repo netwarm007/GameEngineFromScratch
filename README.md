@@ -322,6 +322,27 @@ publishing partial lighting. The headless regression covers all four light
 types, backend clip depths, runtime movement, scene replacement, and capacity.
 RHI ownership and ImGui lifecycle remain for subsequent checkpoints.
 
+### Rendering service injection
+
+Viewer and Billiard construct their graphics backend with explicit
+`ISceneManager` and `IPipelineStateManager` references. Both services must outlive
+the graphics manager; module registration still controls initialization and
+frame order. Passes receive that backend instance and the injected pipeline
+service directly, without looking them up through `BaseApplication`.
+
+The default graphics constructor intentionally omits scene-driven passes for
+standalone graphics tests and clients with their own draw loop. It does not
+discover services registered with Application. Both modes still require an
+`IApplication` pointer for platform configuration and framebuffer dimensions.
+
+`RenderServices` contains the rendering coordinator separately from the other
+managers. `RenderServicesTest` uses injected services, a recording backend, and
+an `IApplication` test double without linking the Application implementation or
+an RHI. It covers unloaded scenes, one snapshot per frame, scene replacement,
+missing-snapshot retry, pipeline/backend routing, and graphics-only clients.
+ImGui and the existing UI asset dependencies remain linked until the UI
+lifecycle checkpoint; this is not yet a CPU-only rendering coordinator.
+
 ### Commit acceptance
 
 A commit is accepted only when its CircleCI pipeline completes the configured

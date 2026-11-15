@@ -6,6 +6,7 @@
 namespace My {
 class VulkanGraphicsManager : public GraphicsManager {
    public:
+    using GraphicsManager::GraphicsManager;
     ~VulkanGraphicsManager() override;
 
     int Initialize() final;

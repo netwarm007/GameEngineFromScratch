@@ -19,6 +19,7 @@
 namespace My {
 class D3d12GraphicsManager : public GraphicsManager {
    public:
+    using GraphicsManager::GraphicsManager;
     ~D3d12GraphicsManager() override;
 
     int Initialize() final;

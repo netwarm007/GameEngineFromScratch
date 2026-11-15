@@ -4,8 +4,7 @@
 #include <iostream>
 
 #include "BRDFIntegrator.hpp"
-#include "BaseApplication.hpp"
-#include "SceneManager.hpp"
+#include "ISceneManager.hpp"
 #include "SceneCamera.hpp"
 #include "SceneLighting.hpp"
 
@@ -22,15 +21,23 @@ GraphicsManager::GraphicsManager() {
     m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
 }
 
-int GraphicsManager::Initialize() {
-    int result = 0;
+GraphicsManager::GraphicsManager(ISceneManager& scenes,
+                                 IPipelineStateManager& pipelines)
+    : GraphicsManager() {
+    m_pSceneManager = &scenes;
+    m_pPipelineStateManager = &pipelines;
+}
 
-    const GfxConfiguration& conf = m_pApp->GetConfiguration();
+int GraphicsManager::Initialize() {
+    if (!m_pApp) {
+        cerr << "[GraphicsManager] Application must be set before initialization"
+             << endl;
+        return -1;
+    }
+
     m_pApp->GetFramebufferSize(m_canvasWidth, m_canvasHeight);
 
-    auto pPipelineStateMgr =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetPipelineStateManager();
-
+    auto* pPipelineStateMgr = m_pPipelineStateManager;
     if (pPipelineStateMgr) {
 #if !defined(OS_WEBASSEMBLY)
         m_InitPasses.push_back(
@@ -54,7 +61,7 @@ int GraphicsManager::Initialize() {
 
     m_bInitialize = true;
 
-    return result;
+    return 0;
 }
 
 void GraphicsManager::Finalize() {
@@ -62,12 +69,16 @@ void GraphicsManager::Finalize() {
 }
 
 void GraphicsManager::Tick() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
+    auto* pSceneManager = m_pSceneManager;
     if (pSceneManager) {
         auto rev = pSceneManager->GetSceneRevision();
         if (rev == 0) return;  // scene is not loaded yet
+        const auto scene = pSceneManager->GetSceneForRendering();
+        if (!scene) {
+            cerr << "[GraphicsManager] Scene revision has no rendering snapshot"
+                 << endl;
+            return;
+        }
         assert(m_nSceneRevision <= rev);
         if (m_nSceneRevision < rev) {
             EndScene();
@@ -75,12 +86,10 @@ void GraphicsManager::Tick() {
                     "buffers "
                     "..."
                  << endl;
-            const auto scene = pSceneManager->GetSceneForRendering();
-            assert(scene);
             BeginScene(*scene);
             m_nSceneRevision = rev;
         }
-        m_Frames[m_nFrameIndex].scene = pSceneManager->GetSceneForRendering();
+        m_Frames[m_nFrameIndex].scene = scene;
     }
 
     if (!UpdateConstants()) return;
