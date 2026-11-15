@@ -1,8 +1,10 @@
+#include <array>
 #include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "FrameScheduler.hpp"
 #include "RuntimeModuleGroup.hpp"
 
 using namespace My;
@@ -42,10 +44,10 @@ void TestSuccessfulLifecycle() {
     RuntimeModuleGroup modules;
     modules.Register(first);
     modules.Register(second);
-    modules.Tick();
+    TickFrame(modules.GetInitializedModules());
     Expect(events.empty(), "no updates before initialization");
     Expect(modules.Initialize() == 0, "initialization succeeds");
-    modules.Tick();
+    TickFrame(modules.GetInitializedModules());
     modules.Finalize();
     Expect(events == std::vector<std::string>{
                          "init first", "init second", "tick first",
@@ -53,7 +55,7 @@ void TestSuccessfulLifecycle() {
            "forward initialization/update and reverse finalization");
     events.clear();
     modules.Finalize();
-    modules.Tick();
+    TickFrame(modules.GetInitializedModules());
     Expect(events.empty(), "finalization is not repeated");
 }
 
@@ -76,7 +78,7 @@ void TestFailureRollbackAndRetry() {
         Expect(events == expected,
                "rollback only initialized modules, in reverse order");
         events.clear();
-        modules.Tick();
+        TickFrame(modules.GetInitializedModules());
         Expect(events.empty(), "failed group never updates");
         ordered[failingIndex]->result = 0;
         Expect(modules.Initialize() == 0, "retry after rollback succeeds");
@@ -116,11 +118,55 @@ void TestRegistrationGuards() {
     Expect(events == std::vector<std::string>{"init first", "stop first"},
            "rejected operations do not modify lifecycle");
 }
+
+void TestFrameOrderIndependentOfLifecycle() {
+    std::vector<std::string> events;
+    RecordingModule first("first", events), second("second", events),
+        third("third", events);
+    RuntimeModuleGroup modules;
+    modules.Register(first);
+    modules.Register(second);
+    modules.Register(third);
+    Expect(modules.Initialize() == 0,
+           "initialize independently scheduled group");
+    events.clear();
+
+    const std::array<IRuntimeModule*, 2> frame = {&third, &first};
+    TickFrame(frame);
+    TickFrame(frame);
+    Expect(events == std::vector<std::string>{"tick third", "tick first",
+                                            "tick third", "tick first"},
+           "frame traversal uses the supplied selection and order");
+    events.clear();
+
+    TickFrame(modules.GetInitializedModules());
+    Expect(events == std::vector<std::string>{"tick first", "tick second",
+                                            "tick third"},
+           "custom frame traversal does not reorder lifecycle registrations");
+    events.clear();
+    modules.Finalize();
+    Expect(events == std::vector<std::string>{"stop third", "stop second",
+                                            "stop first"},
+           "frame traversal does not initialize or finalize modules");
+
+    events.clear();
+    TickFrame(modules.GetInitializedModules());
+    Expect(events.empty(),
+           "finalized modules are absent from the default frame");
+    modules.Register(second);
+    Expect(modules.Initialize() == 0, "initialize a new lifecycle");
+    events.clear();
+    TickFrame(modules.GetInitializedModules());
+    Expect(events == std::vector<std::string>{"tick second"},
+           "new lifecycle does not retain the old frame participants");
+    modules.Finalize();
+}
 }  // namespace
 
 int main() {
     TestSuccessfulLifecycle();
     TestFailureRollbackAndRetry();
     TestRegistrationGuards();
+    TestFrameOrderIndependentOfLifecycle();
     return failures == 0 ? 0 : 1;
 }
