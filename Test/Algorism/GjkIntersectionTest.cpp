@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 
 #include "ConvexHull.hpp"
 #include "Gjk.hpp"
@@ -33,9 +34,30 @@ int Run(const SupportFunction<float>& a, const SupportFunction<float>& b) {
     }
     return result;
 }
+
+bool ClosestPointMatches(const PointList<float>& triangle, const Point<float>& point,
+                         float expected_s, float expected_t) {
+    float s, t;
+    NearestPointInTriangleToPoint(triangle, point, s, t);
+    return std::abs(s - expected_s) < 1e-5f &&
+           std::abs(t - expected_t) < 1e-5f;
+}
 }  // namespace
 
 int main() {
+    PointList<float> triangle = {
+        std::make_shared<Point<float>>(Point<float>({0, 0, 0})),
+        std::make_shared<Point<float>>(Point<float>({1, 0, 0})),
+        std::make_shared<Point<float>>(Point<float>({0, 1, 0})),
+    };
+    CHECK(ClosestPointMatches(triangle, Point<float>({0.25f, 0.25f, 1}), 0.25f, 0.25f));
+    CHECK(ClosestPointMatches(triangle, Point<float>({-1, -1, 0}), 0, 0));
+    CHECK(ClosestPointMatches(triangle, Point<float>({0.4f, -0.5f, 0}), 0.4f, 0));
+    CHECK(ClosestPointMatches(triangle, Point<float>({-0.5f, 0.4f, 0}), 0, 0.4f));
+    CHECK(ClosestPointMatches(triangle, Point<float>({0.8f, 0.8f, 0}), 0.5f, 0.5f));
+    CHECK(ClosestPointMatches(triangle, Point<float>({2, -1, 0}), 1, 0));
+    CHECK(ClosestPointMatches(triangle, Point<float>({-1, 2, 0}), 0, 1));
+
     auto origin = CubeSupport(Vector3f({0, 0, 0}));
 
     CHECK(Run(origin, CubeSupport(Vector3f({0.5f, 0.3f, -0.4f}))) == 1);
