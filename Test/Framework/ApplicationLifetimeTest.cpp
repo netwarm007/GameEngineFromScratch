@@ -27,8 +27,15 @@ class RecordingApplication : public BaseApplication {
     std::vector<std::string> events;
     bool windowAlive = false;
     bool graphicsAlive = false;
+    bool gpuWorkPending = false;
 
    protected:
+    void WaitForGraphicsIdle() override {
+        if (!graphicsAlive) return;
+        Expect(windowAlive, "GPU synchronization runs while the window exists");
+        events.push_back("wait graphics");
+        gpuWorkPending = false;
+    }
     void FinalizeGraphicsResources() override {
         if (!graphicsAlive) return;
         Expect(windowAlive, "backend cleanup runs while its native window exists");
@@ -57,9 +64,14 @@ class RecordingModule : public IMemoryManager {
     void Finalize() override {
         Expect(m_App.windowAlive && m_App.graphicsAlive,
                "module cleanup and rollback precede backend and window teardown");
+        Expect(!m_App.gpuWorkPending,
+               "GPU work completes before any module releases referenced resources");
         m_App.events.push_back("stop " + m_Name);
     }
-    void Tick() override { m_App.events.push_back("tick " + m_Name); }
+    void Tick() override {
+        m_App.gpuWorkPending = true;
+        m_App.events.push_back("tick " + m_Name);
+    }
     void* AllocatePage(size_t) override { return nullptr; }
     void FreePage(void*) override {}
 
@@ -82,8 +94,9 @@ void TestSuccessfulShutdown() {
     application.Finalize();
     Expect(app.events == std::vector<std::string>{
                "init first", "init second", "tick first", "tick second",
-               "stop second", "stop first", "stop graphics", "stop window"},
-           "application owns reverse module, backend, then platform shutdown");
+               "wait graphics", "stop second", "stop first", "stop graphics",
+               "stop window"},
+           "application synchronizes GPU work before reverse module, backend, and platform shutdown");
     Expect(!app.graphicsAlive && !app.windowAlive,
            "application shutdown releases both outer resource layers");
     app.events.clear();
@@ -112,6 +125,7 @@ void TestFailedModuleInitialization() {
         app.Tick();
         Expect(app.events == expected, "failed modules do not enter the frame loop");
         app.Finalize();
+        expected.push_back("wait graphics");
         expected.push_back("stop graphics");
         expected.push_back("stop window");
         Expect(app.events == expected && !app.graphicsAlive && !app.windowAlive,
@@ -124,7 +138,8 @@ void TestWindowWithoutModules() {
     app.CreateMainWindow();
     app.Finalize();
     Expect(app.events ==
-               std::vector<std::string>{"stop graphics", "stop window"},
+               std::vector<std::string>{"wait graphics", "stop graphics",
+                                        "stop window"},
            "window-only clients release resources without initializing modules");
 }
 }  // namespace

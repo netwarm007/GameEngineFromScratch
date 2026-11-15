@@ -17,6 +17,7 @@ int BaseApplication::Initialize() {
 
 // Finalize all sub modules and clean up all runtime temporary files.
 void BaseApplication::Finalize() {
+    WaitForGraphicsIdle();
     runtime_modules.Finalize();
     FinalizeGraphicsResources();
     FinalizePlatformResources();
