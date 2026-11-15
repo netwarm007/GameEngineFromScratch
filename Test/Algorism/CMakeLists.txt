@@ -6,6 +6,7 @@ set(ALGORISM_TEST_CASES
     ChronoTest
     ColorSpaceConversionTest
     GjkTest
+    GjkIntersectionTest
     HitableListTest
     LinearInterpolateTest
     NumericalMethodsTest
