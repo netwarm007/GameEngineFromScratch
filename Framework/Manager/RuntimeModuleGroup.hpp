@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <span>
 #include <stdexcept>
@@ -23,7 +24,8 @@ class RuntimeModuleGroup {
         m_Modules.push_back(&module);
     }
 
-    int Initialize() {
+    // The caller may synchronize borrowed resources before failure rollback.
+    int Initialize(const std::function<void()>& beforeRollback = {}) {
         if (m_Initialized) {
             std::cerr << "Module group is already initialized\n";
             return -1;
@@ -33,6 +35,7 @@ class RuntimeModuleGroup {
             if (result != 0) {
                 std::cerr << "Module initialize failed at index "
                           << m_InitializedCount << " (error " << result << ")\n";
+                if (beforeRollback) beforeRollback();
                 Unwind();
                 return result;
             }

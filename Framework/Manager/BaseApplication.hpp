@@ -70,7 +70,7 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    protected:
-    // Drain GPU work before modules release resources; the native window is last.
+    // Drain GPU work before shutdown or failure rollback releases module resources.
     virtual void WaitForGraphicsIdle() {}
     virtual void FinalizeGraphicsResources() {}
     virtual void FinalizePlatformResources() {}
