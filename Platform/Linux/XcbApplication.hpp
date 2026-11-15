@@ -9,7 +9,6 @@ class XcbApplication : public BaseApplication {
    public:
     using BaseApplication::BaseApplication;
 
-    void Finalize() override;
     // One cycle of the main loop
     void Tick() override;
 
@@ -22,11 +21,12 @@ class XcbApplication : public BaseApplication {
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
-    Display *m_pDisplay;
+    void FinalizePlatformResources() override;
+    Display *m_pDisplay = nullptr;
     int m_nScreen;
 
     xcb_connection_t* m_pConn = nullptr;
     xcb_screen_t* m_pScreen = nullptr;
-    xcb_window_t m_XWindow;
+    xcb_window_t m_XWindow = XCB_WINDOW_NONE;
 };
 }  // namespace My

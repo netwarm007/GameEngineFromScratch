@@ -10,14 +10,14 @@ class OpenGLApplication : public XcbApplication {
     using XcbApplication::XcbApplication;
 
     int Initialize() override;
-    void Finalize() override;
     void Tick() override;
 
     void CreateMainWindow() override;
 
    private:
-    GLXContext m_Context;
-    GLXWindow m_GlxWindow;
+    void FinalizeGraphicsResources() override;
+    GLXContext m_Context = nullptr;
+    GLXWindow m_GlxWindow = 0;
     GLXFBConfig fb_config;
 };
 }  // namespace My

@@ -39,6 +39,10 @@ target_link_libraries(RenderServicesTest PRIVATE
     RenderServices PlatformAssetIO ImageDecoders)
 add_test(NAME TEST_RenderServicesTest COMMAND RenderServicesTest)
 
+add_executable(ApplicationLifetimeTest ApplicationLifetimeTest.cpp)
+target_link_libraries(ApplicationLifetimeTest PRIVATE Manager)
+add_test(NAME TEST_ApplicationLifetimeTest COMMAND ApplicationLifetimeTest)
+
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
     BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO)

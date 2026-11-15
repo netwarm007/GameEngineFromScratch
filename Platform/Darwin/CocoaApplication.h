@@ -8,7 +8,6 @@ class CocoaApplication : public BaseApplication {
    public:
     using BaseApplication::BaseApplication;
 
-    void Finalize() override;
     // One cycle of the main loop
     void Tick() override;
 
@@ -19,6 +18,7 @@ class CocoaApplication : public BaseApplication {
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
-    NSWindow* m_pWindow;
+    void FinalizePlatformResources() override;
+    NSWindow* m_pWindow = nullptr;
 };
 }  // namespace My

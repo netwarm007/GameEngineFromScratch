@@ -99,9 +99,7 @@ void VulkanApplication::CreateMainWindow() {
     m_Rhi.createCommandBuffers();
 }
 
-void VulkanApplication::Finalize() {
+void VulkanApplication::FinalizeGraphicsResources() {
     // 销毁Vulkan上下文
     m_Rhi.destroyAll();
-
-    WindowsApplication::Finalize();
 }

@@ -21,15 +21,12 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam,
     return 0;
 }
 
-void OpenGLApplication::Finalize() {
-    BaseApplication::Finalize();
+void OpenGLApplication::FinalizeGraphicsResources() {
     if (m_RenderContext) {
         wglMakeCurrent(NULL, NULL);
         wglDeleteContext(m_RenderContext);
         m_RenderContext = 0;
     }
-
-    WindowsApplication::Finalize();
 }
 
 void OpenGLApplication::Tick() {

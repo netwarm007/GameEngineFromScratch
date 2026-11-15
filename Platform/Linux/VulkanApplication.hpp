@@ -7,8 +7,6 @@ class VulkanApplication : public XcbApplication {
 public:
     using XcbApplication::XcbApplication;
 
-    void Finalize() final;
-
     void CreateMainWindow() final;
 
     VkResult CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface);
@@ -16,6 +14,7 @@ public:
     VulkanRHI& GetRHI() { return m_Rhi; }
 
 private:
+    void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;
 };
 } // namespace My

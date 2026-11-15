@@ -10,11 +10,10 @@ class VulkanApplication : public CocoaMetalApplication {
 
     void CreateMainWindow() final;
 
-    void Finalize() final;
-
     VulkanRHI& GetRHI() { return m_Rhi; }
 
    private:
+    void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;
 };
 }  // namespace My
