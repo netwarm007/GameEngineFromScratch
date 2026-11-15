@@ -25,6 +25,10 @@ add_executable(SceneServicesTest SceneServicesTest.cpp)
 target_link_libraries(SceneServicesTest PRIVATE SceneServices)
 add_test(NAME TEST_SceneServicesTest COMMAND SceneServicesTest)
 
+add_executable(SceneCameraTest SceneCameraTest.cpp)
+target_link_libraries(SceneCameraTest PRIVATE SceneCamera)
+add_test(NAME TEST_SceneCameraTest COMMAND SceneCameraTest)
+
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
     BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO)

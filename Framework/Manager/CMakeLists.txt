@@ -6,6 +6,9 @@ target_link_libraries(SceneResources PUBLIC SceneGraph PRIVATE ImageDecoders)
 add_library(SceneServices AnimationManager.cpp SceneManager.cpp)
 target_link_libraries(SceneServices PUBLIC SceneGraph)
 
+add_library(SceneCamera SceneCamera.cpp)
+target_link_libraries(SceneCamera PUBLIC SceneGraph)
+
 add_library(Manager
         BaseApplication.cpp
         BlockAllocator.cpp
@@ -16,4 +19,4 @@ add_library(Manager
         StackAllocator.cpp
         PipelineStateManager.cpp
 )
-target_link_libraries(Manager PUBLIC AssetIO SceneServices SceneResources)
+target_link_libraries(Manager PUBLIC AssetIO SceneServices SceneResources SceneCamera)

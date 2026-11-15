@@ -269,6 +269,23 @@ unchanged. This checkpoint does not introduce fixed time steps or phased updates
 The standalone runtime regression verifies independent frame selection/order,
 failed-initialization suppression, retry, and cleanup without a window or GPU.
 
+### CPU camera preparation
+
+`SceneCamera` prepares view/projection matrices and camera position from an
+explicit scene snapshot, canvas dimensions, and projection convention. It links
+only scene data and CPU math, not Application, RHI, ImGui, or asset loading.
+`GraphicsManager` copies the result into the current frame; camera preparation
+no longer looks up the scene through Application.
+
+OpenGL retains its [-1, 1] depth range; the D3D/Metal convention retains [0, 1].
+The render canvas, rather than window or framebuffer size, determines aspect.
+A scene without a live camera uses the existing built-in view and perspective,
+now also publishing the matching camera position instead of a stale value.
+Invalid dimensions, projection parameters, and missing/unsupported camera
+references are reported and skip rendering that frame without publishing
+partial camera data. Lighting, RHI ownership, and ImGui lifecycle remain in
+their existing layers for subsequent checkpoints.
+
 ### Commit acceptance
 
 A commit is accepted only when its CircleCI pipeline completes the configured
