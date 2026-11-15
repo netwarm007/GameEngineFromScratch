@@ -21,6 +21,7 @@ struct Frame : global_textures {
     std::vector<std::shared_ptr<DrawBatchContext>> batchContexts;
     LightInfo lightInfo;
     Vector3f clearColor {0.2f, 0.3f, 0.4f};
+    // Borrowed from GraphicsManager; depth and MSAA targets are shared by frames.
     std::vector<Texture2D> colorTextures;
     Texture2D depthTexture;
     intptr_t frameBuffer{0};
