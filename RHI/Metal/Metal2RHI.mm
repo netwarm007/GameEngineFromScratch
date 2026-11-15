@@ -150,6 +150,9 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     NSString* _screenshotPath;
     NSString* _screenshotWaitFor;
     CFTimeInterval _screenshotTime;
+    // Optional `-screenshotFrame <n>`: capture the n-th GUI frame instead of waiting a wall-clock delay.
+    NSInteger _screenshotFrame;
+    NSInteger _frameCount;
     BOOL _screenshotRequested;
 }
 
@@ -182,6 +185,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
                                ? [defaults doubleForKey:@"screenshotDelay"]
                                : 45.0;
             _screenshotTime = CACurrentMediaTime() + delay;
+            _screenshotFrame = [defaults integerForKey:@"screenshotFrame"];
             // The drawable texture is read back with a blit
             _mtkView.framebufferOnly = NO;
         }
@@ -576,7 +580,10 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
         [renderEncoder endEncoding];
 
-        if (_screenshotPath && !_screenshotRequested && CACurrentMediaTime() >= _screenshotTime &&
+        ++_frameCount;
+        const BOOL reached = _screenshotFrame > 0 ? _frameCount >= _screenshotFrame
+                                                  : CACurrentMediaTime() >= _screenshotTime;
+        if (_screenshotPath && !_screenshotRequested && reached &&
             (!_screenshotWaitFor || [[NSFileManager defaultManager] fileExistsAtPath:_screenshotWaitFor])) {
             _screenshotRequested = YES;
             [self encodeScreenshot:_mtkView.currentDrawable.texture
@@ -829,25 +836,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 - (void)drawBatch:(const Frame&)frame {
     // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
     [_renderEncoder pushDebugGroup:@"DrawMesh"];
-    if (_screenshotPath) {
-        static int frames = 0;
-        if (frames++ % 120 == 0) {
-            int ball = 0;
-            for (const auto& b : frame.batchContexts) {
-                if (b->node && b->node->GetName() == "Ball") ++ball;
-                {
-                    const auto& mtl = dynamic_cast<const MtlDrawBatchContext&>(*b);
-                    NSLog(@"[BallDebug] batch node='%s' indices=%u diffuse=%d normal=%d metallic=%d pos=(%.3f,%.3f,%.3f)",
-                          b->node ? b->node->GetName().c_str() : "<null>", mtl.index_count,
-                          mtl.material.diffuseMap.handler != 0, mtl.material.normalMap.handler != 0,
-                          mtl.material.metallicMap.handler != 0,
-                          b->modelMatrix[3][0], b->modelMatrix[3][1], b->modelMatrix[3][2]);
-                }
-            }
-            NSLog(@"[BallDebug] drawBatch frame#%d batches=%zu ballBatches=%d", frames,
-                  frame.batchContexts.size(), ball);
-        }
-    }
     for (const auto& pDbc : frame.batchContexts) {
         [_renderEncoder setVertexBytes:pDbc->modelMatrix length:64 atIndex:11];
 
