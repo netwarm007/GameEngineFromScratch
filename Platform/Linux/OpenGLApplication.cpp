@@ -241,4 +241,8 @@ void OpenGLApplication::FinalizeGraphicsResources() {
         glXDestroyWindow(m_pDisplay, m_GlxWindow);
         m_GlxWindow = 0;
     }
+    if (m_pDisplay) {
+        // XCB owns the native window on a separate connection.
+        XSync(m_pDisplay, False);
+    }
 }
