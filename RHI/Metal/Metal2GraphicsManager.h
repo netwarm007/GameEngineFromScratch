@@ -64,6 +64,7 @@ class Metal2GraphicsManager : public GraphicsManager {
     void initializeSkyBox(const Scene& scene) override;
 
    private:
+    bool m_ImGuiInitialized = false;
     Metal2RHI* m_pRHI = nullptr;
 };
 }  // namespace My

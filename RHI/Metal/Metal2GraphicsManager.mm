@@ -3,11 +3,17 @@
 #include "Metal2RHI.h"
 #include "MetalView.h"
 #include "Metal2GraphicsManager.h"
+#include "imgui_impl_metal.h"
 
 using namespace My;
 using namespace std;
 
 int Metal2GraphicsManager::Initialize() {
+    if (IsInitialized() || !ImGui::GetCurrentContext() ||
+        ImGui::GetIO().BackendRendererUserData) {
+        NSLog(@"Metal graphics initialization requires an unbound ImGui context");
+        return -1;
+    }
     const int result = GraphicsManager::Initialize();
     if (result != 0) return result;
 
@@ -19,12 +25,25 @@ int Metal2GraphicsManager::Initialize() {
         Finalize();
         return -1;
     }
+    m_ImGuiInitialized = ImGui_ImplMetal_Init(view.device);
+    if (!m_ImGuiInitialized) {
+        NSLog(@"Metal ImGui renderer initialization failed");
+        Finalize();
+        return -1;
+    }
 
     return result;
 }
 
 void Metal2GraphicsManager::Finalize() {
+    if (!IsInitialized()) return;
+    [m_pRHI waitForIdle];
+    m_DrawPasses.clear();
     GraphicsManager::Finalize();
+    if (m_ImGuiInitialized) {
+        ImGui_ImplMetal_Shutdown();
+        m_ImGuiInitialized = false;
+    }
     [m_pRHI finalize];
     [m_pRHI release];
     m_pRHI = nullptr;

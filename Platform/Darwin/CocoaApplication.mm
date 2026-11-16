@@ -52,9 +52,12 @@ void CocoaApplication::CreateMainWindow() {
     [m_pWindow setDelegate:winDelegate];
     [winDelegate release];
 
-    if (ImGui::GetCurrentContext()) {
-        ImGui_ImplOSX_Init([m_pWindow contentView]);
-    }
+}
+
+int CocoaApplication::InitializeGuiPlatform() {
+    if (!ImGui::GetCurrentContext()) return 0;
+    if (!m_pWindow || ImGui::GetIO().BackendPlatformUserData) return -1;
+    return ImGui_ImplOSX_Init([m_pWindow contentView]) ? 0 : -1;
 }
 
 void CocoaApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
@@ -67,11 +70,13 @@ void CocoaApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
     }
 }
 
-void CocoaApplication::FinalizePlatformResources() {
-    if (ImGui::GetCurrentContext()) {
+void CocoaApplication::FinalizeGuiPlatform() {
+    if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
         ImGui_ImplOSX_Shutdown();
     }
+}
 
+void CocoaApplication::FinalizePlatformResources() {
     [m_pWindow release];
     m_pWindow = nil;
 }
@@ -170,7 +175,7 @@ void CocoaApplication::Tick() {
         [NSApp updateWindows];
     }
 
-    if (ImGui::GetCurrentContext()) {
+    if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
         ImGui_ImplOSX_NewFrame([m_pWindow contentView]);
     }
     BaseApplication::Tick();

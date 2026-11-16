@@ -8,9 +8,6 @@
 #include "glad/glad.h"
 
 #include "imgui_impl_opengl3.h"
-#ifdef OS_WINDOWS
-#include "imgui_impl_win32.h"
-#endif
 
 using namespace My;
 using namespace std;
@@ -96,6 +93,11 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, unsigned int id,
 }
 
 int OpenGLGraphicsManager::Initialize() {
+    if (IsInitialized() || !ImGui::GetCurrentContext() ||
+        ImGui::GetIO().BackendRendererUserData) {
+        cerr << "OpenGL graphics initialization requires an unbound ImGui context\n";
+        return -1;
+    }
     int result;
 
     result = OpenGLGraphicsManagerCommonBase::Initialize();
@@ -107,7 +109,8 @@ int OpenGLGraphicsManager::Initialize() {
     result = gladLoadGL();
     if (!result) {
         cerr << "OpenGL load failed!" << endl;
-        result = -1;
+        Finalize();
+        return -1;
     } else {
         result = 0;
         cout << "OpenGL Version " << GLVersion.major << "." << GLVersion.minor
@@ -153,14 +156,24 @@ int OpenGLGraphicsManager::Initialize() {
     char version[20];
     snprintf(version, 20, "#version %d",
              GLVersion.major * 100 + GLVersion.minor * 10);
-    ImGui_ImplOpenGL3_Init(version);
+    m_ImGuiInitialized = ImGui_ImplOpenGL3_Init(version);
+    if (!m_ImGuiInitialized) {
+        cerr << "OpenGL ImGui renderer initialization failed\n";
+        Finalize();
+        return -1;
+    }
 
     return result;
 }
 
 void OpenGLGraphicsManager::Finalize() {
-    ImGui_ImplOpenGL3_Shutdown();
+    if (!IsInitialized()) return;
+    m_DrawPasses.clear();
     OpenGLGraphicsManagerCommonBase::Finalize();
+    if (m_ImGuiInitialized) {
+        ImGui_ImplOpenGL3_Shutdown();
+        m_ImGuiInitialized = false;
+    }
 }
 
 void OpenGLGraphicsManager::getOpenGLTextureFormat(
@@ -315,9 +328,6 @@ void OpenGLGraphicsManager::getOpenGLTextureFormat(PIXEL_FORMAT pixel_format,
 void OpenGLGraphicsManager::BeginFrame(Frame& frame) {
     OpenGLGraphicsManagerCommonBase::BeginFrame(frame);
     ImGui_ImplOpenGL3_NewFrame();
-#ifdef OS_WINDOWS
-    ImGui_ImplWin32_NewFrame();
-#endif
 }
 
 void OpenGLGraphicsManager::EndFrame(Frame& frame) {

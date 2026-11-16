@@ -54,7 +54,13 @@ D3d12GraphicsManager::~D3d12GraphicsManager() {
 }
 
 int D3d12GraphicsManager::Initialize() {
+    if (IsInitialized() || !ImGui::GetCurrentContext() ||
+        ImGui::GetIO().BackendRendererUserData) {
+        cerr << "D3D12 graphics initialization requires an unbound ImGui context\n";
+        return -1;
+    }
     int result = GraphicsManager::Initialize();
+    if (result != 0) return result;
 
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
     auto pDev = rhi.GetDevice();
@@ -64,8 +70,12 @@ int D3d12GraphicsManager::Initialize() {
     cbvSrvUavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     cbvSrvUavHeapDesc.NumDescriptors = 4096;
 
-    my_assert(SUCCEEDED(pDev->CreateDescriptorHeap(
-        &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeapImGui))));
+    if (FAILED(pDev->CreateDescriptorHeap(
+            &cbvSrvUavHeapDesc, IID_PPV_ARGS(&m_pCbvSrvUavHeapImGui)))) {
+        cerr << "D3D12 ImGui descriptor heap creation failed\n";
+        Finalize();
+        return -1;
+    }
     m_pCbvSrvUavHeapImGui->SetName(L"ImGui CbvSrvUav Heap");
 
     // ImGui allocates its own texture descriptors (e.g. the font atlas) from
@@ -105,7 +115,12 @@ int D3d12GraphicsManager::Initialize() {
             self->m_freeImGuiSlots.push_back(
                 static_cast<uint32_t>((cpu.ptr - base.ptr) / stride));
         };
-    ImGui_ImplDX12_Init(&imguiInitInfo);
+    m_ImGuiInitialized = ImGui_ImplDX12_Init(&imguiInitInfo);
+    if (!m_ImGuiInitialized) {
+        cerr << "D3D12 ImGui renderer initialization failed\n";
+        Finalize();
+        return -1;
+    }
 
     // 创建常量缓冲区
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
@@ -136,12 +151,19 @@ int D3d12GraphicsManager::Initialize() {
 }
 
 void D3d12GraphicsManager::Finalize() {
+    if (!IsInitialized()) return;
     dynamic_cast<D3d12Application*>(m_pApp)->GetRHI().WaitForIdle();
     m_DrawPasses.clear();
     GraphicsManager::Finalize();
-    ImGui_ImplDX12_Shutdown();
+    if (m_ImGuiInitialized) {
+        ImGui_ImplDX12_Shutdown();
+        m_ImGuiInitialized = false;
+    }
 
     SafeRelease(&m_pCbvSrvUavHeapImGui);
+    m_imguiSlots.clear();
+    m_freeImGuiSlots.clear();
+    m_nextImGuiSlot = 2;
     SafeRelease(&m_pCbvSrvUavHeap);
     SafeRelease(&m_pComputeHeap);
     SafeRelease(&m_pMipmapPipeline);

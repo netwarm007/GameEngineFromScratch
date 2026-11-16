@@ -21,6 +21,8 @@ class XcbApplication : public BaseApplication {
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
+    int InitializeGuiPlatform() override;
+    void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
     Display *m_pDisplay = nullptr;
     int m_nScreen;

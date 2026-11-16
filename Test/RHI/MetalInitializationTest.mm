@@ -94,7 +94,6 @@ struct AllocationState {
 int main() {
     @autoreleasepool {
         [NSApplication sharedApplication];
-        ImGui::CreateContext();
         id<MTLDevice> device = MTLCreateSystemDefaultDevice();
         if (!device) {
             std::cerr << "Metal failure regression requires a native device\n";
@@ -125,7 +124,7 @@ int main() {
             @autoreleasepool {
                 initialized = [rhi initialize];
             }
-            if (!initialized || [rhi initialize]) {
+            if (!initialized || [rhi initialize] || ImGui::GetCurrentContext()) {
                 std::cerr << "Metal retry/repeated initialization contract failed\n";
                 return 1;
             }
@@ -138,6 +137,7 @@ int main() {
                 return 1;
             }
         }
+        ImGui::CreateContext();
         My::Metal2GraphicsManager missingApplication;
         if (missingApplication.Initialize() == 0) {
             std::cerr << "Missing application must reject Metal initialization\n";

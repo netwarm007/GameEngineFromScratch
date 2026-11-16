@@ -111,6 +111,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     std::unordered_map<TextureHandler, uint32_t> m_imguiSlots;
     std::vector<uint32_t> m_freeImGuiSlots;
     uint32_t m_nextImGuiSlot = 2;  // slots 0-1 are reserved for BindDebugTexture
+    bool m_ImGuiInitialized = false;
     int32_t m_pendingWidth = 0;
     int32_t m_pendingHeight = 0;
     ID3D12DescriptorHeap* m_pCbvSrvUavHeapImGui = nullptr;

@@ -72,6 +72,8 @@ class BaseApplication : _implements_ IApplication {
 
    protected:
     virtual int InitializeGraphicsResources() { return 0; }
+    virtual int InitializeGuiPlatform() { return 0; }
+    virtual void FinalizeGuiPlatform() {}
     // Drain GPU work before shutdown or failure rollback releases module resources.
     virtual void WaitForGraphicsIdle() {}
     virtual void FinalizeGraphicsResources() {}
@@ -98,6 +100,7 @@ class BaseApplication : _implements_ IApplication {
 
    private:
     bool m_GraphicsInitialized = false;
+    bool m_GuiPlatformInitialized = false;
     RuntimeModuleGroup runtime_modules;
 };
 }  // namespace My

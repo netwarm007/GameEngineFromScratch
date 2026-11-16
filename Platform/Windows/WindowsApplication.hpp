@@ -20,6 +20,8 @@ class WindowsApplication : public BaseApplication {
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
+    int InitializeGuiPlatform() override;
+    void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
     virtual void onWindowResize(int new_width, int new_height);
 

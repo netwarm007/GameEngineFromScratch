@@ -21,6 +21,8 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (BOOL)initialize;
 
+- (void)waitForIdle;
+
 - (void)finalize;
 
 - (void)present;
