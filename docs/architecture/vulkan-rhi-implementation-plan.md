@@ -13,7 +13,7 @@ change rather than silently diverging from it.
 Remote master was checked at
 `0a20412f26ffd0165faeef89af90d50b8b762f05`, containing both the point-light
 shadow fix (PR #67) and stage C ImGui lifecycle separation (PR #66).
-Checkpoint 1 is implemented and locally validated, awaiting user confirmation;
+Checkpoint 1 is implemented and locally/CI validated, awaiting user confirmation;
 checkpoints 2-5 remain unstarted. Do not advance to the next checkpoint without
 the user's confirmation. Checkpoints do not require PRs; CI may be used during
 implementation with the user's authorization.
@@ -307,14 +307,14 @@ multi-viewports, texture debugging, or saved layouts to get an initial screensho
 ## Checkpoints and exit criteria
 
 Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
-focused local validation and awaits user confirmation, not full cross-platform
-acceptance. Checkpoints 2-5 remain planned and proceed in order, with focused
+focused local and exact-revision CI validation and awaits user confirmation,
+not acceptance of the complete Vulkan backend. Checkpoints 2-5 remain planned and proceed in order, with focused
 validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
 | --- | --- |
 | 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
-| 1. Shader and ABI | Implemented; local checks passed, awaiting user confirmation. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Cross-platform/native graphics acceptance is not established by this checkpoint. |
+| 1. Shader and ABI | Implemented; local and exact-revision CI checks passed, awaiting user confirmation. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
 | 2. Device/resource loop | Implement initialization and selected failure cleanup, buffers/textures/upload, command submission, synchronization, presentation, resize, and minimize/restore. Add bounded automated native tests. |
 | 3. Shared rendering passes | Integrate offscreen rendering, BASIC/PBR, skybox/BRDF, shadows, and MSAA in that order. Verify six-face/multi-light depth and sampling, render output, and resource correctness without a Vulkan-only pass bypass. |
 | 4. UI and applications | Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
@@ -329,8 +329,8 @@ Build/test only the smallest relevant targets initially, escalating as needed.
 
 The focused suite can run without the engine's full asset/window/dependency
 build, but needs CMake 4+, C++20, the pinned crossguid submodule, Vulkan headers
-and loader, glslangValidator, SPIRV-Cross, spirv-val, spirv-dis, and spirv-opt. The compute
-test additionally requires a Vulkan 1.1-capable driver and the Khronos
+and loader, glslangValidator, SPIRV-Cross, spirv-val, spirv-dis, and spirv-opt.
+The compute test additionally requires a Vulkan 1.1-capable driver and the Khronos
 validation layer; absence is an explicit failure, not a skipped success.
 
 ```text
@@ -342,8 +342,9 @@ ctest --test-dir build-vulkan-abi -C Debug --output-on-failure
 In the full engine build, opt in with `-DVULKAN_RHI_TESTS=ON`; ordinary native
 backend builds do not gain an unannounced Vulkan driver requirement merely
 because a Vulkan SDK is installed. Tools may be supplied through the CMake
-`GLSL_VALIDATOR`, `SPIRV_CROSS`, `SPIRV_VAL`, `SPIRV_DIS`, and `SPIRV_OPT` paths. Standalone
-builds compile crossguid from its pinned source; no new dependency is introduced.
+`GLSL_VALIDATOR`, `SPIRV_CROSS`, `SPIRV_VAL`, `SPIRV_DIS`, and `SPIRV_OPT` paths.
+Standalone builds compile crossguid from its pinned source; no new dependency
+is introduced.
 
 Reflection checks validate each original binary, then remove unreachable code
 and unused variables from a test-only copy before inspecting active descriptors.
@@ -368,14 +369,14 @@ Focused Windows Debug checks passed with the installed Vulkan SDK 1.2.182
 - The existing ShadowShaderCompatibility script passed GLSL stage linking and
   MSL generation with the installed tools.
 
-Limits: the initial full engine configure stopped at missing prebuilt Debug
-zlib, so no complete engine build, DXC regression, native Metal compilation,
-Linux/macOS execution, or CircleCI acceptance is claimed here. The standalone
-probe exercises the shader ABI directly, not the unfinished VulkanRHI frame or
+Local limits: the initial full engine configure stopped at missing prebuilt
+Debug zlib; complete native-backend builds are covered by the CI evidence below,
+not this local run. The standalone probe exercises the shader ABI directly,
+not the unfinished VulkanRHI frame or
 resource implementation. Uniform descriptors use offset zero; dynamic uniform
 stride and device-specific allocation/lifetime behavior remain checkpoint 2
 work. Vertex-layer execution, graphics pipelines, shadow rendering, actual
-Viewer/Billiard images, and portability fallback are not verified yet.
+Vulkan Viewer/Billiard images, and portability fallback are not verified yet.
 No plan deviation is needed: the headless compute harness is deliberately
 independent of the device/window implementation reserved for checkpoint 2.
 
@@ -386,9 +387,15 @@ avoids implicitly enabling the unfinished Linux Vulkan application in the
 existing OpenGL regression job. Windows/Linux/macOS native-backend jobs remain
 unchanged and required. The additional job verifies actual shader ABI/compute
 behavior on a software Vulkan implementation, not hardware graphics rendering.
-Its presence does not establish Vulkan runtime coverage on Windows/macOS or in
-the release/tag workflow. CI results must be checked for the exact pushed source
-revision before confirmation; no pipeline result is implied by configuring it.
+Its presence does not establish CI Vulkan runtime coverage on Windows/macOS or
+in the release/tag workflow.
+
+All four required jobs passed for source revision
+`10d54b68f3a744ad98b985c2b76effd59afdc392` in CircleCI pipeline 979.
+The [checkpoint 1 verification record](../verification/10d54b68f3a744ad98b985c2b76effd59afdc392.md)
+records exact job revisions, inspected native-backend Viewer/Billiard images,
+Vulkan compute results, and remaining limitations, including Metal diagnostics.
+User confirmation is still required before checkpoint 2.
 
 ## Platform and acceptance strategy
 
