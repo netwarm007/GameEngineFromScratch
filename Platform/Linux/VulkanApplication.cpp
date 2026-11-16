@@ -1,29 +1,15 @@
 #include "VulkanApplication.hpp"
+#include <vulkan/vulkan_xcb.h>
 
 using namespace My;
 
-using VkXcbSurfaceCreateFlagsKHR = VkFlags;
-
-struct VkXcbSurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext;
-    VkXcbSurfaceCreateFlagsKHR flags;
-    xcb_connection_t* connection;
-    xcb_window_t* window;
-};
-
-typedef VkResult(VKAPI_PTR* PFN_vkCreateXcbSurfaceKHR)(
-    VkInstance, const VkXcbSurfaceCreateInfoKHR*, const VkAllocationCallbacks*,
-    VkSurfaceKHR*);
-
 VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
                                                 VkSurfaceKHR& surface) {
-    VkResult err;
-    VkXcbSurfaceCreateInfoKHR sci;
+    VkXcbSurfaceCreateInfoKHR sci{};
     PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR;
 
-    vkCreateXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)vkGetInstanceProcAddr(
-        instance, "vkCreateXcbSurfaceKHR");
+    vkCreateXcbSurfaceKHR = reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(
+        vkGetInstanceProcAddr(instance, "vkCreateXcbSurfaceKHR"));
 
     if (!vkCreateXcbSurfaceKHR) {
         fprintf(stderr,
@@ -31,19 +17,14 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
-    memset(&sci, 0, sizeof(sci));
     sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     sci.connection = m_pConn;
-    sci.window = &m_XWindow;
-
-    err = vkCreateXcbSurfaceKHR(instance, &sci, nullptr, &surface);
-    assert(!err && "Xcb: Failed to create Vulkan surface.");
-
-    return err;
+    sci.window = m_XWindow;
+    return vkCreateXcbSurfaceKHR(instance, &sci, nullptr, &surface);
 }
 
 int VulkanApplication::InitializeGraphicsResources() {
-    if (!GetMainWindowHandler()) {
+    if (!m_pConn || m_XWindow == XCB_WINDOW_NONE) {
         fprintf(stderr, "Vulkan initialization requires a native window\n");
         return -1;
     }
@@ -52,52 +33,27 @@ int VulkanApplication::InitializeGraphicsResources() {
                                            "VK_KHR_xcb_surface"};
 
     // 设置回调函数
-    auto getFramebufferSize = [this](int& width, int& height) {
+    auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
         GetFramebufferSize(width, height);
     };
 
     // 设置回调函数
     m_Rhi.setFramebufferSizeQueryCB(getFramebufferSize);
 
-    // 创建实例
-    m_Rhi.createInstance(extensions);
-
-    // 开启调试层（对发行版不起作用）
-    m_Rhi.setupDebugMessenger();
-
-    // 创建（连接）画布
-    {
-        auto createWindowSurface = [this](const vk::Instance& instance,
-                                          vk::SurfaceKHR& surface) {
-            VkSurfaceKHR _surface;
-            assert(instance);
-
-            if (CreateWindowSurface(instance, _surface) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create window surface!");
-            }
-
-            surface = _surface;
-        };
-
-        m_Rhi.createSurface(createWindowSurface);
-    }
-
-    // 枚举物理设备并连接
-    m_Rhi.pickPhysicalDevice();
-
-    // 创建逻辑设备
-    m_Rhi.createLogicalDevice();
-
-    // 创建 SwapChain
-    m_Rhi.createSwapChain();
-
-    // 创建 Uniform Buffers
-    m_Rhi.createUniformBuffers();
-
-    // 创建同步对象
-    m_Rhi.createSyncObjects();
+    m_Rhi.SetGetGfxConfigCB([this] { return GetConfiguration(); });
+    m_Rhi.Initialize(extensions, [this](const vk::Instance& instance, vk::SurfaceKHR& surface) {
+        VkSurfaceKHR nativeSurface = VK_NULL_HANDLE;
+        const auto result = CreateWindowSurface(instance, nativeSurface);
+        if (result != VK_SUCCESS) {
+            throw std::runtime_error("Xcb Vulkan surface creation failed: " +
+                                     std::to_string(result));
+        }
+        surface = nativeSurface;
+    });
     return 0;
 }
+
+void VulkanApplication::WaitForGraphicsIdle() { m_Rhi.WaitGPU(); }
 
 void VulkanApplication::FinalizeGraphicsResources() {
     // 销毁 Vulkan 上下文

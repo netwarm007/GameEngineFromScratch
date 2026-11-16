@@ -36,7 +36,8 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y git-lfs ninja-build python3-pip g++ uuid-dev flex bison \
-              libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools
+              libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
+              libxcb1-dev xvfb xauth
             python3 -m pip install --user 'cmake>=4.0,<5'
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
       - checkout
@@ -52,14 +53,14 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"
             cmake --build build-vulkan-tools/spirv-cross --target install --parallel 2
       - run:
-          name: Verify shared Vulkan shader ABI and GPU compute readback
+          name: Verify Vulkan shader ABI, compute readback, and native frame loop
           command: |
             test -r "$VK_ICD_FILENAMES"
             cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
               -DGLSL_VALIDATOR="$PWD/External/Linux/bin/glslangValidator" \
               -DSPIRV_CROSS="$PWD/External/Linux/bin/spirv-cross"
             cmake --build build-vulkan-abi --parallel 2
-            ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
+            xvfb-run -a ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
       - store_test_results:
           path: build-vulkan-abi/junit.xml
       - store_artifacts:

@@ -250,6 +250,7 @@ int main() {
             rhi.drawFrame(vkRenderPass, vkGraphicPipeline, vkPipelineLayout, vertexBuffers[0].buffer, indexBuffers[0].buffer, indexBuffers[0].indexCount);
         }
 
+        rhi.WaitGPU();
         auto device = rhi.GetDevice();
 
         // 释放着色器资源描述子布局

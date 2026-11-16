@@ -13,6 +13,7 @@ public:
 
 private:
     int InitializeGraphicsResources() final;
+    void WaitForGraphicsIdle() final;
     void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;
 };

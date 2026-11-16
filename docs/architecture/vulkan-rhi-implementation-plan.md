@@ -13,8 +13,9 @@ change rather than silently diverging from it.
 Remote master was checked at
 `0a20412f26ffd0165faeef89af90d50b8b762f05`, containing both the point-light
 shadow fix (PR #67) and stage C ImGui lifecycle separation (PR #66).
-Checkpoint 1 is implemented and locally/CI validated, awaiting user confirmation;
-checkpoints 2-5 remain unstarted. Do not advance to the next checkpoint without
+Checkpoint 1 is implemented, locally/CI validated, and confirmed by the user.
+Checkpoint 2 is in progress; checkpoints 3-5 remain unstarted.
+Do not advance to the next checkpoint without
 the user's confirmation. Checkpoints do not require PRs; CI may be used during
 implementation with the user's authorization.
 
@@ -307,15 +308,16 @@ multi-viewports, texture debugging, or saved layouts to get an initial screensho
 ## Checkpoints and exit criteria
 
 Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
-focused local and exact-revision CI validation and awaits user confirmation,
-not acceptance of the complete Vulkan backend. Checkpoints 2-5 remain planned and proceed in order, with focused
+focused local and exact-revision CI validation and received user confirmation,
+not acceptance of the complete Vulkan backend. Checkpoint 2 is in progress;
+checkpoints 3-5 remain planned and proceed in order, with focused
 validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
 | --- | --- |
 | 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
-| 1. Shader and ABI | Implemented; local and exact-revision CI checks passed, awaiting user confirmation. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
-| 2. Device/resource loop | Implement initialization and selected failure cleanup, buffers/textures/upload, command submission, synchronization, presentation, resize, and minimize/restore. Add bounded automated native tests. |
+| 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
+| 2. Device/resource loop | In progress. Implement initialization and selected failure cleanup, buffers/textures/upload, command submission, synchronization, presentation, resize, and minimize/restore. Add bounded automated native tests. |
 | 3. Shared rendering passes | Integrate offscreen rendering, BASIC/PBR, skybox/BRDF, shadows, and MSAA in that order. Verify six-face/multi-light depth and sampling, render output, and resource correctness without a Vulkan-only pass bypass. |
 | 4. UI and applications | Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
 | 5. Cross-platform acceptance | Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. |
@@ -395,7 +397,36 @@ All four required jobs passed for source revision
 The [checkpoint 1 verification record](../verification/10d54b68f3a744ad98b985c2b76effd59afdc392.md)
 records exact job revisions, inspected native-backend Viewer/Billiard images,
 Vulkan compute results, and remaining limitations, including Metal diagnostics.
-User confirmation is still required before checkpoint 2.
+The user confirmed checkpoint 1 and authorized checkpoint 2 after reviewing
+these results.
+
+### Checkpoint 2 implementation progress
+
+The device/frame-loop work now uses one graphics queue with compute support,
+instance-owned debug entry points, enabled validation layers, initialization
+rollback, and repeatable cleanup. Frame fences are separate from swapchain image
+tracking; presentation semaphores belong to images, and acquisition happens
+before a submission fence is reset. Resize and zero-sized framebuffer handling
+use the actual framebuffer dimensions. Shared legacy depth/MSAA attachments are
+ordered by render-pass dependencies on that same queue. Single-sample passes do
+not create an invalid resolve attachment.
+
+The native adapters use SDK surface ABI declarations. Cocoa's Vulkan path uses
+a plain CAMetalLayer-backed view rather than initializing an unrelated Metal
+renderer view; this is native surface ownership, not a GUI lifecycle rewrite.
+All three adapters drain Vulkan work before runtime-module cleanup.
+
+A bounded Windows/Xcb frame-loop regression covers selected initialization
+failures, retry, presentation, resize with disjoint-bit dimensions, deferred
+minimize/restore, and repeated shutdown. The isolated Linux job runs it under
+Xvfb with lavapipe. Local Windows compilation succeeds and the checkpoint 1
+ABI/compute tests still pass, but the AMD driver's Win32 surface-capabilities
+query returns `VK_ERROR_UNKNOWN` before swapchain creation in this environment.
+The native Windows frame-loop test therefore currently fails explicitly; it is
+not skipped or counted as passed. The installed SDK's independent `vkcube`
+two-frame run also did not complete within a bounded local check; no driver or
+system display settings were changed. Linux execution and the remaining resource
+work must be verified before claiming checkpoint 2 complete.
 
 ## Platform and acceptance strategy
 

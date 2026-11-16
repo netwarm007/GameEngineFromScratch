@@ -1,10 +1,10 @@
 #pragma once
 #include <array>
+#include <atomic>
 #include <functional>
 #include <string>
 #include <vector>
 
-#define VK_ENABLE_BETA_EXTENSIONS
 #include <vulkan/vulkan.hpp>
 #include "Buffer.hpp"
 #include "GfxConfiguration.hpp"
@@ -26,7 +26,7 @@ class VulkanRHI {
         vk::Buffer buffer;
         vk::DeviceMemory heap;
 
-        uint32_t indexCount;
+        uint32_t indexCount = 0;
     };
 
     struct VertexBuffer {
@@ -43,7 +43,7 @@ class VulkanRHI {
     struct UniformBuffer {
         vk::Buffer buffer;
         vk::DeviceMemory heap;
-        size_t size;
+        size_t size = 0;
     };
 
     struct Shader {
@@ -60,6 +60,8 @@ class VulkanRHI {
    public:
     VulkanRHI();
     ~VulkanRHI();
+    VulkanRHI(const VulkanRHI&) = delete;
+    VulkanRHI& operator=(const VulkanRHI&) = delete;
 
    public:
     void setFramebufferSizeQueryCB(const QueryFrameBufferSizeCBFunc& func) {
@@ -76,6 +78,17 @@ class VulkanRHI {
     }
 
     void CreateSwapChain();
+    void Initialize(const std::vector<const char*>& extensions,
+                    const CreateSurfaceCBFunc& createSurface);
+    void WaitGPU();
+    bool BeginFrame();
+    void EndFrame();
+    vk::CommandBuffer GetFrameCommandBuffer() const;
+    vk::Framebuffer GetFrameFramebuffer() const;
+    vk::Extent2D GetSwapChainExtent() const { return m_vkSwapChainExtent; }
+    uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
+    uint64_t GetSwapChainGeneration() const { return m_swapChainGeneration; }
+    unsigned GetValidationErrorCount() const { return m_validationErrors.load(); }
 
     void createInstance(std::vector<const char*> extensions);
     void setupDebugMessenger();
@@ -124,7 +137,7 @@ class VulkanRHI {
                    const vk::Buffer& vertexBuffer,
                    const vk::Buffer& indexBuffer, uint32_t indicesCount);
     void cleanupSwapChain();
-    void recreateSwapChain(const vk::RenderPass& renderPass);
+    void recreateSwapChain(const vk::RenderPass& renderPass = {});
 
     void destroyAll();
 
@@ -133,6 +146,8 @@ class VulkanRHI {
    private:
     vk::Instance m_vkInstance;
     vk::DebugUtilsMessengerEXT m_vkDebugMessenger;
+    PFN_vkDestroyDebugUtilsMessengerEXT m_destroyDebugMessenger = nullptr;
+    std::atomic_uint m_validationErrors{0};
     vk::SurfaceKHR m_vkSurface;
 
     vk::PhysicalDevice m_vkPhysicalDevice;
@@ -160,6 +175,14 @@ class VulkanRHI {
     std::vector<vk::Semaphore> m_vkImageAvailableSemaphores;
     std::vector<vk::Semaphore> m_vkRenderFinishedSemaphores;
     std::vector<vk::Fence> m_vkInFlightFences;
+    std::vector<vk::Fence> m_vkImagesInFlight;
+    uint32_t m_currentImage = 0;
+    uint32_t m_framebufferWidth = 0;
+    uint32_t m_framebufferHeight = 0;
+    uint64_t m_swapChainGeneration = 0;
+    bool m_frameActive = false;
+    bool m_recreateSwapChain = false;
+    bool m_swapChainResourcesCreated = false;
 
     vk::Image m_vkColorImage;
     vk::DeviceMemory m_vkColorImageMemory;

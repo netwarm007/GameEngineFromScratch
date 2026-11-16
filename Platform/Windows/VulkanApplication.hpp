@@ -13,6 +13,7 @@ class VulkanApplication : public WindowsApplication {
 
    private:
     int InitializeGraphicsResources() final;
+    void WaitForGraphicsIdle() final;
     void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;
 };
