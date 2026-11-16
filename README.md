@@ -235,6 +235,8 @@ ball can appear without rebuilding the scene's GPU resources.
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party software
+copyright and license notices.
 
 - Windows
   - Windows Platform SDK
