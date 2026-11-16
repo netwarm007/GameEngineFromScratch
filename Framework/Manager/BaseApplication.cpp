@@ -22,6 +22,16 @@ int BaseApplication::Initialize() {
         m_GraphicsInitialized = true;
     }
 
+    if (!m_GuiPlatformInitialized) {
+        const int result = InitializeGuiPlatform();
+        if (result != 0) {
+            cerr << "GUI platform initialization failed (error "
+                 << result << ")\n";
+            return result;
+        }
+        m_GuiPlatformInitialized = true;
+    }
+
     return runtime_modules.Initialize([this] { WaitForGraphicsIdle(); });
 }
 
@@ -29,6 +39,10 @@ int BaseApplication::Initialize() {
 void BaseApplication::Finalize() {
     WaitForGraphicsIdle();
     runtime_modules.Finalize();
+    if (m_GuiPlatformInitialized) {
+        FinalizeGuiPlatform();
+        m_GuiPlatformInitialized = false;
+    }
     FinalizeGraphicsResources();
     m_GraphicsInitialized = false;
     FinalizePlatformResources();

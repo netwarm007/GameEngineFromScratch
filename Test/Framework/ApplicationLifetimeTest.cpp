@@ -223,6 +223,69 @@ void TestBackendInitializationBoundaries() {
                "stop graphics", "stop window"},
            "backend failure does not poison a subsequent lifecycle");
 }
+
+class GuiRecordingApplication : public RecordingApplication {
+   public:
+    int guiResult = 0;
+    bool guiAlive = false;
+
+   protected:
+    int InitializeGuiPlatform() override {
+        Expect(windowAlive && graphicsAlive,
+               "GUI input backend binds after the final native view exists");
+        events.push_back("init gui");
+        guiAlive = guiResult == 0;
+        return guiResult;
+    }
+    void FinalizeGuiPlatform() override {
+        Expect(windowAlive && graphicsAlive && guiAlive && !gpuWorkPending,
+               "GUI shutdown runs once with idle graphics and a live native view");
+        events.push_back("stop gui");
+        guiAlive = false;
+    }
+};
+
+void TestGuiPlatformLifetime() {
+    GuiRecordingApplication app;
+    RecordingModule module("renderer", app), failing("later", app);
+    app.CreateMainWindow();
+    app.RegisterManagerModule(&module);
+    app.RegisterManagerModule(&failing);
+    app.guiResult = 29;
+    Expect(app.Initialize() == 29, "GUI platform errors propagate before modules");
+    Expect(app.events == std::vector<std::string>{"init graphics", "init gui"},
+           "GUI platform failure does not initialize a renderer or modules");
+    app.events.clear();
+    app.guiResult = 0;
+    failing.result = 17;
+    Expect(app.Initialize() == 17, "module failure after GUI setup propagates");
+    Expect(app.events == std::vector<std::string>{
+               "init gui", "init renderer", "init later",
+               "wait graphics", "stop renderer"} && app.guiAlive,
+           "renderer rollback retains GUI input backend for retry");
+    app.events.clear();
+    failing.result = 0;
+    Expect(app.Initialize() == 0, "renderer can retry with the existing GUI platform");
+    Expect(app.events == std::vector<std::string>{"init renderer", "init later"},
+           "retry does not initialize GUI input backend twice");
+    app.events.clear();
+    app.Finalize();
+    app.Finalize();
+    Expect(app.events == std::vector<std::string>{
+               "wait graphics", "stop later", "stop renderer", "stop gui",
+               "stop graphics", "stop window"},
+           "modules, GUI input, graphics and native window shut down in order once");
+
+    GuiRecordingApplication failed;
+    failed.CreateMainWindow();
+    failed.guiResult = 29;
+    Expect(failed.Initialize() == 29, "failed GUI setup can be finalized");
+    failed.events.clear();
+    failed.Finalize();
+    Expect(failed.events == std::vector<std::string>{
+               "wait graphics", "stop graphics", "stop window"},
+           "failed GUI initialization is not passed to its shutdown hook");
+}
 }  // namespace
 
 int main() {
@@ -231,5 +294,6 @@ int main() {
     TestRetryAfterGpuRollback();
     TestWindowWithoutModules();
     TestBackendInitializationBoundaries();
+    TestGuiPlatformLifetime();
     return failures == 0 ? 0 : 1;
 }

@@ -14,6 +14,7 @@ class OpenGLGraphicsManager : public OpenGLGraphicsManagerCommonBase {
     void EndPass(Frame& frame) final;
 
    private:
+    bool m_ImGuiInitialized = false;
     void getOpenGLTextureFormat(const PIXEL_FORMAT pixel_format, uint32_t& format,
                                         uint32_t& internal_format,
                                         uint32_t& type) final;

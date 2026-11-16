@@ -5,6 +5,7 @@
 #include "AssetLoader.hpp"
 #include "GraphicsManager.hpp"
 #include "GuiSubPass.hpp"
+#include "GuiContext.hpp"
 #include "imgui/imgui_internal.h"
 
 using namespace My;
@@ -25,7 +26,11 @@ class LayoutGraphicsManager : public GraphicsManager {
 };
 
 void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
-    ImGui::CreateContext();
+    GuiContext context;
+    if (context.Initialize() != 0) {
+        Expect(false, "layout context initialization");
+        return;
+    }
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.DisplaySize = displaySize;
@@ -133,7 +138,25 @@ void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
         }
     }
     ImGui::DestroyPlatformWindows();
-    ImGui::DestroyContext();
+}
+
+void TestContextOwnership() {
+    GuiContext owner;
+    Expect(owner.Initialize() == 0, "GUI context owner initializes");
+    auto* context = ImGui::GetCurrentContext();
+    auto* font = ImGui::GetIO().Fonts->AddFontDefault();
+    Expect(owner.Initialize() != 0, "double context initialization is rejected");
+    {
+        GuiContext other;
+        Expect(other.Initialize() != 0, "a live external context is not replaced");
+    }
+    Expect(ImGui::GetCurrentContext() == context &&
+               ImGui::GetIO().Fonts->Fonts[0] == font,
+           "failed initialization preserves the active context and its fonts");
+    owner.Finalize();
+    owner.Finalize();
+    Expect(!ImGui::GetCurrentContext(), "context cleanup is repeatable");
+    Expect(owner.Initialize() == 0, "context ownership supports a new lifecycle");
 }
 }  // namespace
 
@@ -151,5 +174,6 @@ int main() {
     TestLayout(ImVec2(640, 240), ImVec2(1024, 768), 2.0f);
     TestLayout(ImVec2(150, 100), ImVec2(1920, 1080), 1.0f);
     loader.Finalize();
+    TestContextOwnership();
     return g_failures;
 }

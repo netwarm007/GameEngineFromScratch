@@ -199,6 +199,10 @@ initialization/rendering/exit remains verified on the enabled CI platforms.
 
 ### C. Separate ImGui lifecycle responsibilities
 
+**Completed and accepted for the selected ownership boundary.** See the
+[stage C verification](../verification/1ed352fa974f2c73b0f51d6e5f9e449d3d69c72b.md)
+for exact-revision three-platform results and actual artifact observations.
+
 Depends on stable platform/backend lifetime contracts from stages A and B.
 
 - Identify ownership of the ImGui context, platform input backend, renderer
@@ -206,6 +210,38 @@ Depends on stable platform/backend lifetime contracts from stages A and B.
 - Extract only the coupling that prevents independent testing or correct cleanup.
 - Preserve docking, user layouts, reset behavior, desktop-coordinate placement,
   and framebuffer scaling.
+
+The first boundary uses the following ownership contracts:
+
+| Resource | Owner and lifetime |
+| --- | --- |
+| Viewer ImGui context and CPU font atlas | `GuiContext` owns the context; Viewer configures flags, style and fonts. The atlas owns font data. The context outlives explicit application shutdown, including initialization failure cleanup. A second owner must not replace an active context. |
+| Enabled native desktop input backends | WindowsApplication, CocoaApplication and XcbApplication initialize GUI platform state after graphics/view setup and before modules. Window creation alone does not bind ImGui. Cocoa binds the final content view, not the view replaced by Metal setup. |
+| Renderer backend and GPU font resources | D3d12GraphicsManager, OpenGLGraphicsManager and Metal2GraphicsManager own their ImGui renderer backend. Renderer initialization checks its result and rejects an already bound context. Only an initialized renderer is shut down. Metal RHI native allocation initialization no longer requires an ImGui context. |
+| UI texture bindings | GuiSubPass owns its scene icons and debug texture views; graphics managers release draw passes while the renderer, texture descriptor pool and native device are still live. The D3D12 descriptor pool is reset after renderer shutdown. |
+
+Shutdown order is the application's graphics-idle hook, reverse module cleanup
+(including UI textures and renderer shutdown), GUI platform shutdown, native
+graphics cleanup, native window cleanup, then context destruction. The Metal
+graphics manager also waits for its retained render/compute submissions before
+releasing UI resources. The context must
+remain current throughout the application lifecycle. A failing initializer
+cleans up its own partial state; it is not passed to its shutdown hook.
+Successful GUI platform state survives module rollback for retry, but is
+released once on explicit application finalization.
+
+ApplicationLifetimeTest covers ordering, GUI platform failure, renderer/module
+rollback and retry. D3d12GuiTextureTest exercises native platform/renderer
+binding, borrowed-backend rejection, descriptor reuse and repeated cleanup.
+GuiSubPassLayoutTest additionally exercises context ownership while retaining
+its docking, viewport-origin, framebuffer-scale, resize and saved-layout cases.
+MetalInitializationTest exercises native allocation failure/retry without a
+context; its native macOS execution is covered by the stage C verification.
+
+This boundary does not migrate SDL/Android platform input ownership, redesign
+UI assets, or establish whole-module-graph restart or device-loss recovery.
+Existing unsupported runtime configurations remain outside acceptance.
+The new source is not covered by the stage A/B verification records.
 
 Exit criteria: UI initialization/cleanup ordering and failure paths are tested;
 GuiSubPassLayoutTest passes; actual backend screenshots confirm visible,
@@ -260,5 +296,6 @@ do not establish new source acceptance.
   Neither is required for every small checkpoint.
 - No fixed delivery dates are implied. Stage A covers initialization
   orchestration; stage B covers the selected native initialization/cleanup
-  failures, not exhaustive driver recovery or ImGui ownership. Stages C and D
-  remain proposals requiring confirmation.
+  failures, not exhaustive driver recovery or ImGui ownership. Stage C covers
+  the selected GUI ownership boundary; stage D remains a proposal requiring
+  confirmation.

@@ -54,19 +54,23 @@ void WindowsApplication::CreateMainWindow() {
 
     // display the window on the screen
     ShowWindow(m_hWnd, SW_SHOW);
-    
-    if (ImGui::GetCurrentContext()) {
-        ImGui_ImplWin32_Init(m_hWnd);
-        ImGui_ImplWin32_EnableDpiAwareness();
+}
+
+int WindowsApplication::InitializeGuiPlatform() {
+    if (!ImGui::GetCurrentContext()) return 0;
+    if (!m_hWnd || ImGui::GetIO().BackendPlatformUserData) return -1;
+    if (!ImGui_ImplWin32_Init(m_hWnd)) return -1;
+    ImGui_ImplWin32_EnableDpiAwareness();
+    return 0;
+}
+
+void WindowsApplication::FinalizeGuiPlatform() {
+    if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
+        ImGui_ImplWin32_Shutdown();
     }
 }
 
 void WindowsApplication::FinalizePlatformResources() {
-    // Finalize ImGui
-    if (ImGui::GetCurrentContext()) {
-        ImGui_ImplWin32_Shutdown();
-    }
-
     if (m_hDc) {
         ReleaseDC(m_hWnd, m_hDc);
         m_hDc = nullptr;
@@ -92,7 +96,7 @@ void WindowsApplication::Tick() {
         DispatchMessage(&msg);
     }
 
-    if (ImGui::GetCurrentContext()) {
+    if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
         ImGui_ImplWin32_NewFrame();
     }
     BaseApplication::Tick();

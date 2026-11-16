@@ -6,6 +6,7 @@
 #include "DebugManager.hpp"
 #include "InputManager.hpp"
 #include "MemoryManager.hpp"
+#include "GuiContext.hpp"
 #include "OGEX.hpp"
 #include "Bullet/BulletPhysicsManager.hpp"
 #include "SceneManager.hpp"
@@ -52,6 +53,7 @@ using namespace My;
 
 int main(int argc, char** argv) {
     int ret;
+    GuiContext gui;
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer");
 #if defined(IS_OPENGL)
@@ -97,14 +99,15 @@ int main(int argc, char** argv) {
 #endif
 
     // Initialize ImGui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    ret = gui.Initialize();
+    if (ret != 0) return ret;
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     // The executable path must be known before resolving asset paths.
-    assetLoader.Initialize();
+    ret = assetLoader.Initialize();
+    if (ret != 0) return ret;
     auto font_path = assetLoader.GetFileRealPath("Fonts/NotoSansMonoCJKsc-VF.ttf");
 
     ImVector<ImWchar> ranges;
@@ -129,7 +132,6 @@ int main(int argc, char** argv) {
     ret = app.Initialize();
     if (ret != 0) {
         app.Finalize();
-        ImGui::DestroyContext();
         return ret;
     }
 
@@ -148,8 +150,6 @@ int main(int argc, char** argv) {
     // Finalize App
     app.Finalize();
 #endif
-
-    ImGui::DestroyContext();
 
     return ret;
 }

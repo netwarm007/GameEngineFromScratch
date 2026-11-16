@@ -94,6 +94,7 @@ class GraphicsManager : _implements_ IGraphicsManager {
                      Texture2D& source) override {}
 
    protected:
+    bool IsInitialized() const { return m_bInitialize; }
     virtual void BeginScene(const Scene& scene);
     virtual void EndScene();
 

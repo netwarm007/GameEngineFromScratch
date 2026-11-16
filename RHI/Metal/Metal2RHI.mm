@@ -155,7 +155,6 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     NSInteger _frameCount;
     BOOL _screenshotRequested;
     BOOL _initialized;
-    BOOL _imguiInitialized;
 }
 
 - (MTLPixelFormat)getMtlPixelFormat:(const Image &)img {
@@ -278,34 +277,29 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         [self finalize];
         return NO;
     }
-    if (!ImGui::GetCurrentContext() || ImGui::GetIO().BackendRendererUserData) {
-        NSLog(@"Metal initialization requires an unbound ImGui context");
-        [self finalize];
-        return NO;
-    }
-    _imguiInitialized = ImGui_ImplMetal_Init(_device);
-    if (!_imguiInitialized) {
-        NSLog(@"Metal ImGui backend initialization failed");
-        [self finalize];
-        return NO;
-    }
     _initialized = YES;
     return YES;
 }
 
-- (void)finalize {
+- (void)waitForIdle {
     for (auto buffer : _commandBuffers) {
         if (buffer.status == MTLCommandBufferStatusCommitted ||
             buffer.status == MTLCommandBufferStatusScheduled) {
             [buffer waitUntilCompleted];
         }
-        [buffer release];
     }
+    if (_computeCommandBuffer.status == MTLCommandBufferStatusCommitted ||
+        _computeCommandBuffer.status == MTLCommandBufferStatusScheduled) {
+        [_computeCommandBuffer waitUntilCompleted];
+    }
+}
+
+- (void)finalize {
+    [self waitForIdle];
+    for (auto buffer : _commandBuffers) [buffer release];
     _commandBuffers.clear();
-    if (_imguiInitialized) {
-        ImGui_ImplMetal_Shutdown();
-        _imguiInitialized = NO;
-    }
+    [_computeCommandBuffer release];
+    _computeCommandBuffer = nil;
     [_materialTextureCopyPipeline release];
     _materialTextureCopyPipeline = nil;
     for (NSUInteger i = 0; i < GEFSMaxBuffersInFlight; ++i) {
@@ -797,7 +791,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 - (void)beginCompute {
     // Create a new command buffer for each render pass to the current drawable
-    _computeCommandBuffer = [_graphicsQueue commandBuffer];
+    [_computeCommandBuffer release];
+    _computeCommandBuffer = [[_graphicsQueue commandBuffer] retain];
     _computeCommandBuffer.label = @"MyComputeCommand";
 
     _computeEncoder = [_computeCommandBuffer computeCommandEncoder];
