@@ -179,6 +179,9 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
                 [NSString stringWithCString:pState->pipelineStateName.c_str()
                                    encoding:[NSString defaultCStringEncoding]];
             pipelineStateDescriptor.sampleCount = pState->sampleCount;
+            if (pState->vertexShaderName == "shadowmap_omni_metal.vert") {
+                pipelineStateDescriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
+            }
             pipelineStateDescriptor.vertexFunction = vertexFunction;
             [vertexFunction release];
             pipelineStateDescriptor.fragmentFunction = fragmentFunction;
