@@ -117,6 +117,10 @@ or verification of every material and camera position.
     The legacy FreeBSD binary is not covered by this upgrade.
 
 ## Architecture
+The [modularization roadmap](docs/architecture/modularization-roadmap.md)
+describes the refactoring goals, completed boundaries, proposed next checkpoints,
+and acceptance process.
+
 - `RHI/`: render hardware interfaces (OpenGL, Vulkan, Metal, D3d, D2d, Empty)
 - `Platform/`: platform layers (Windows, Linux, Darwin, Sdl, Android, Empty)
 - `Framework/`, `Physics/`, `Asset/`, `Utility/`, `Game/`, `Viewer/`, `Test/`
