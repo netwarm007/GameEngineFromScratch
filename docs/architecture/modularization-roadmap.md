@@ -147,6 +147,9 @@ redesigned; D2D/Vulkan runtime support is not established by migrating hooks.
 **Completed and accepted on the topic branch for the selected failure stages.**
 See the [combined native failure verification](../verification/b95495ed37f5d2864a0dc56a7721a0c063c1c22b.md)
 and the earlier [GLX failure verification](../verification/a9c7cdba1cc4af16f800c76248a7364db38b470b.md).
+The [master integration verification](../verification/41eb3105302140bc231ba174c3c695ae60548602.md)
+covers the combined revision after merging the upstream lifecycle, Splash, and
+shadow changes.
 This establishes the scoped exit criteria below, not exhaustive driver failure
 handling, device-loss recovery, or integration into master.
 
