@@ -346,7 +346,11 @@ interactively; screenshots and physics checks do not substitute for those paths.
 
 ### D3. Explicit GUI icon image loading
 
-**In progress.** OverlayPass supplies GuiSubPass with an image-loading callable.
+**Accepted.** See the
+[D3 verification record](../verification/1be28dfa8af835b753f4097546d71743dd38ac68.md)
+for exact-revision three-platform results and inspected native icon artifacts.
+
+OverlayPass supplies GuiSubPass with an image-loading callable.
 The production LoadGuiIconImage function performs existing AssetLoader file
 lookup and PNG decoding; GuiSubPass has no direct asset-loader/parser dependency.
 The callable is required, owned by the GUI pass and returns an owned decoded
@@ -371,6 +375,8 @@ Injected failure tests cover the GUI ownership boundary, not exhaustive malforme
 PNG parsing or native driver allocation failures. Production asset resolution
 and visible icons are verified by the native artifact path. Broader
 Viewer/Billiard service lookups remain a separate assessment.
+DrawSubPass still links ImageDecoders for the production adapter; full target
+isolation and native rendering of every scene-node icon kind are not claimed.
 
 ## Working and acceptance rules
 
