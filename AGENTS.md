@@ -42,6 +42,12 @@
   Preserve other revisions' records; correct or supplement an existing record
   only with evidence for that same revision. Merges need their own CI results;
   passing parent revisions do not verify a merge revision.
+- Known limitations of a roadmap-tracked effort (for example the memory
+  allocator roadmap) belong in that roadmap's "Known limitations and follow-ups"
+  section, with the checkpoint expected to address each. Verification records
+  keep the per-revision limitations, but the roadmap is the single place that
+  lists open ones. Add new limitations when found and remove or mark them
+  resolved when fixed, in the same change.
 - Do not update `README.md` for routine acceptance results or maintain a shared
   "latest verified revision" or result index. README links to the records
   directory and changes only for durable instructions, support, or behavior.

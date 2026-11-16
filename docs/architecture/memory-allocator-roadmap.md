@@ -75,6 +75,20 @@ Priority order, highest first.
 Also: adapt allocators to `std::pmr::memory_resource` so standard containers
 can use them.
 
+## Known limitations and follow-ups
+
+Open items only; remove or mark resolved when fixed. Per-revision details are in
+`docs/verification/`.
+
+| Limitation | Planned handling |
+| --- | --- |
+| `StackAllocator::Marker` is not versioned; a stale marker (stack already unwound below it) is not detected. | Add a generation counter to markers (M3). |
+| `LinearAllocator` and `StackAllocator` are single-threaded with fixed capacity (no growth). | Document per allocator; thread-cache layer in M7. |
+| `BlockAllocator` free-pointer validation is O(pages + free blocks) and on by default only in `_DEBUG`. | Cheaper ownership lookup with the debug decorator (M6). |
+| `BlockAllocator` never returns pages before `FreeAll`/destruction; single free list gives poor locality over time. | Revisit with size-class allocator (M4). |
+| Debug fill patterns are only verified in builds defining `_DEBUG`. | Extend tests to check patterns in the debug decorator (M6). |
+| Allocators are not used by any engine module. | Integration (M8). |
+
 ## Foundation improvements
 
 - `AllocatePage` accepts an alignment; pages aligned to at least a cache line.
