@@ -34,7 +34,8 @@ add_executable(SceneLightingTest SceneLightingTest.cpp)
 target_link_libraries(SceneLightingTest PRIVATE SceneLighting)
 add_test(NAME TEST_SceneLightingTest COMMAND SceneLightingTest)
 
-add_executable(RenderServicesTest RenderServicesTest.cpp)
+add_executable(RenderServicesTest RenderServicesTest.cpp
+    ${PROJECT_SOURCE_DIR}/Framework/Manager/PipelineStateManager.cpp)
 target_link_libraries(RenderServicesTest PRIVATE
     RenderServices PlatformAssetIO ImageDecoders)
 add_test(NAME TEST_RenderServicesTest COMMAND RenderServicesTest)
