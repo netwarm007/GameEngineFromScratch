@@ -3,6 +3,7 @@ set(FRAMEWORK_TEST_CASES
     AssetLoaderTest 
     GeomMathTest
     GuiSubPassLayoutTest
+    ImageTest
     SceneGraphTest
     SceneLoadingTest 
     SceneObjectTest

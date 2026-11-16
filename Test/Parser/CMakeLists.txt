@@ -1,5 +1,6 @@
 set(PARSER_TEST_CASES 
     AstcParserTest
+    BmpParserTest
     DdsParserTest
     HdrParserTest
     JpegParserTest
