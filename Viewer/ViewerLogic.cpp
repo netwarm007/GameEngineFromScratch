@@ -4,6 +4,9 @@
 #include "SceneManager.hpp"
 #include "geommath.hpp"
 
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <string>
 
 using namespace My;
@@ -11,6 +14,9 @@ using namespace std;
 
 int ViewerLogic::Initialize() {
     int result;
+    m_SceneCycle = 0;
+    m_SceneCycleTick = 0;
+    m_SceneCycleReadyPath.clear();
 
     auto pSceneManager =
         dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
@@ -40,6 +46,21 @@ int ViewerLogic::Initialize() {
         }
         scene_filename = arg;
         break;
+    }
+
+    if (m_SceneCycle != 0) {
+        if (const char* path = std::getenv("GEFS_SCREENSHOT_WAIT_FOR")) {
+            m_SceneCycleReadyPath = path;
+        }
+        if (!m_SceneCycleReadyPath.empty()) {
+            std::error_code error;
+            std::filesystem::remove(m_SceneCycleReadyPath, error);
+            if (error) {
+                cerr << "[ViewerLogic] Cannot clear scene-cycle marker: "
+                     << error.message() << '\n';
+                return -1;
+            }
+        }
     }
 
     if (!scene_filename.empty()) {
@@ -72,6 +93,16 @@ void ViewerLogic::Tick() {
         cout << "SCENE_CYCLE_LOADED " << scene << endl;
     }
     if (m_SceneCycleTick == (m_SceneCycle == 1 ? 16 : 24)) {
+        if (!m_SceneCycleReadyPath.empty()) {
+            std::ofstream marker(m_SceneCycleReadyPath);
+            marker << m_SceneCycle << '\n';
+            marker.close();
+            if (!marker) {
+                cerr << "[ViewerLogic] Cannot write scene-cycle marker\n";
+                m_pApp->RequestQuit();
+                return;
+            }
+        }
         cout << "SCENE_CYCLE_READY phase=" << m_SceneCycle << endl;
     }
 }

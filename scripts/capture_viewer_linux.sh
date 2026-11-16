@@ -16,13 +16,23 @@ cleanup() {
 }
 trap cleanup EXIT
 
-for i in $(seq 1 12); do
+for i in $(seq 1 24); do
     sleep 5
     if ! kill -0 "$viewer_pid" 2>/dev/null; then
         echo "Viewer exited before capture; see viewer.log" >&2
         exit 1
     fi
+    if [ -n "${GEFS_SCREENSHOT_WAIT_FOR:-}" ]; then
+        if [ -s "$GEFS_SCREENSHOT_WAIT_FOR" ]; then break; fi
+    elif [ "$i" -eq 12 ]; then
+        break
+    fi
 done
+
+if [ -n "${GEFS_SCREENSHOT_WAIT_FOR:-}" ] && [ ! -s "$GEFS_SCREENSHOT_WAIT_FOR" ]; then
+    echo "Viewer readiness marker timed out; see viewer.log" >&2
+    exit 1
+fi
 
 import -window Viewer "$output_dir/viewer-render.png"
 test -s "$output_dir/viewer-render.png"

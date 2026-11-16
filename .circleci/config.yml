@@ -271,6 +271,7 @@ jobs:
               $output = "screenshots/scene-cycle-$phase"
               New-Item -ItemType Directory -Force $output | Out-Null
               $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path $output).Path "viewer-render.png"
+              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path (Resolve-Path $output).Path "scene-ready"
               $process = $null
               try {
                 $process = Start-Process -FilePath $viewer.FullName -PassThru `
@@ -288,6 +289,7 @@ jobs:
               } finally {
                 if ($process -and -not $process.HasExited) { Stop-Process -Id $process.Id }
                 Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
               }
             }
       - run:
@@ -442,6 +444,7 @@ jobs:
              for phase in 1 2; do
                output="screenshots/scene-cycle-$phase"
                mkdir -p "$output"
+               GEFS_SCREENSHOT_WAIT_FOR="$PWD/$output/scene-ready" \
                LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
                  xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                  bash scripts/capture_viewer_linux.sh "$output" -sceneCycle "$phase" \
@@ -605,8 +608,10 @@ jobs:
              for phase in 1 2; do
                output="$PWD/screenshots/scene-cycle-$phase"
                mkdir -p "$output"
+               export GEFS_SCREENSHOT_WAIT_FOR="$output/scene-ready"
                "$APP/Contents/MacOS/Viewer" -sceneCycle "$phase" \
-                 -screenshot "$output/viewer-render.png" -screenshotDelay 2 \
+                 -screenshot "$output/viewer-render.png" -screenshotDelay 0 \
+                 -screenshotWaitFor "$GEFS_SCREENSHOT_WAIT_FOR" \
                  -screenshotFrame 120 > "$output/viewer.log" 2>&1 &
                viewer_pid=$!
                trap 'kill "$viewer_pid" 2>/dev/null || true' EXIT
@@ -623,6 +628,7 @@ jobs:
                grep -q "SCENE_CYCLE_READY phase=$phase" "$output/viewer.log"
                test -s "$output/viewer-render.png"
              done
+             unset GEFS_SCREENSHOT_WAIT_FOR
       - run:
           name: Billiard physics regression and screenshot
           no_output_timeout: 15m

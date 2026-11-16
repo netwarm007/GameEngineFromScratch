@@ -295,7 +295,10 @@ Implementation and verification sequence:
 The opt-in Viewer argument `-sceneCycle 1` loads splash then billiard, while
 `-sceneCycle 2` returns to splash in the same process. CI captures both final
 states and requires the corresponding `SCENE_CYCLE_READY` log marker. Without
-this argument the ordinary Viewer load path is unchanged. Empty-scene and
+this argument the ordinary Viewer load path is unchanged. CI sets
+`GEFS_SCREENSHOT_WAIT_FOR` to a readiness marker written only after the requested
+scene has rendered multiple frames; capture waits for it instead of relying on
+a fixed delay that can expire during scene uploads. Empty-scene and
 same-name material retirement are checked by RenderServicesTest; native Metal
 buffer release and subsequent reuse are checked by MetalInitializationTest.
 
