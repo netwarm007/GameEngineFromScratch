@@ -91,7 +91,7 @@ upstream dependencies, not additional deliverables of this refactoring series.
 
 ### A. Separate native window creation from RHI initialization
 
-**Recommended next checkpoint; not started.**
+**In progress; implementation and focused checks do not imply CI acceptance.**
 
 First trace creation and failure paths on Windows, Linux, and macOS. Define the
 smallest explicit sequence of native window creation, backend initialization,
@@ -115,6 +115,28 @@ and native three-platform acceptance pass.
 
 Do not combine this stage with ImGui ownership, a new frame scheduler, or a
 swapchain/resize redesign.
+
+The implementation introduces an application-owned backend initialization hook
+before the module walk. Successful backend setup is retained across module
+rollback/retry, and finalization resets that state. A backend-hook error is
+reported and returned without starting modules; the caller still finalizes the
+application. Desktop graphics clients must create the native window first.
+
+| Resource | Current owner and creation boundary |
+| --- | --- |
+| Windows native window and platform DC | WindowsApplication creates them in CreateMainWindow and releases them after backend cleanup. |
+| D3D12 device, queues, swapchain, and sync objects | D3d12Application owns its RHI; its backend hook performs the existing setup sequence before modules. RHI callbacks borrow the application/window. |
+| Windows OpenGL context | OpenGLApplication creates the temporary WGL bootstrap and final context in its backend hook, retaining native window creation in WindowsApplication. |
+| Linux native window and connections | XcbApplication owns them. OpenGL framebuffer configuration discovery remains before native window creation; context/GLX drawable setup moves to the backend hook. |
+| Linux GLX context/drawable | OpenGLApplication releases them and synchronizes their destruction before XcbApplication releases the native window and connections. |
+| macOS window and Metal content view | CocoaApplication owns the window; CocoaMetalApplication installs the Metal view/device during its backend hook. The window retains the content view. Metal RHI setup/cleanup remains in Metal2GraphicsManager. |
+| Vulkan instance, surface, device, and swapchain | VulkanApplication retains its RHI and performs the existing setup in its backend hook. On macOS, the Metal-view hook runs first because surface creation borrows its layer. |
+
+Recording-application tests cover hook ordering/errors and retry. Native D3D12
+and GLX tests check that creating the window alone does not create the
+device/context, while module initialization sees a live backend. Backend-native
+setup assertions, exceptions, and partial-allocation failure behavior are not
+redesigned; D2D/Vulkan runtime support is not established by migrating hooks.
 
 ### B. Harden native partial initialization and cleanup
 
@@ -196,5 +218,6 @@ do not establish new source acceptance.
 - Use an issue for independently scheduled work if useful, and add an ADR only
   for a significant architectural choice with alternatives and consequences.
   Neither is required for every small checkpoint.
-- No fixed delivery dates are implied. Confirm stage A's concrete scope before
-  starting source changes; later stages remain proposals.
+- No fixed delivery dates are implied. Stage A is scoped to initialization
+  orchestration, not device setup internals or ImGui ownership; later stages
+  remain proposals requiring confirmation.

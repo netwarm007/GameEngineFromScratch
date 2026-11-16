@@ -1,13 +1,17 @@
 #import "MetalView.h"
 
 #include <algorithm>
+#include <cstdio>
 
 #include "CocoaMetalApplication.h"
 
 using namespace My;
 
-void CocoaMetalApplication::CreateMainWindow() {
-    CocoaApplication::CreateMainWindow();
+int CocoaMetalApplication::InitializeGraphicsResources() {
+    if (!GetMainWindowHandler()) {
+        fprintf(stderr, "Metal initialization requires a native window\n");
+        return -1;
+    }
 
     @autoreleasepool {
         MetalView* pView = [[MetalView new]
@@ -16,6 +20,7 @@ void CocoaMetalApplication::CreateMainWindow() {
 
         [m_pWindow setContentView:pView];
     }
+    return 0;
 }
 
 void CocoaMetalApplication::Tick() {

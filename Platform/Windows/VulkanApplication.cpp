@@ -43,8 +43,11 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
     return err;
 }
 
-void VulkanApplication::CreateMainWindow() {
-    WindowsApplication::CreateMainWindow();
+int VulkanApplication::InitializeGraphicsResources() {
+    if (!GetMainWindowHandler()) {
+        fprintf(stderr, "Vulkan initialization requires a native window\n");
+        return -1;
+    }
 
     std::vector<const char*> extensions = {"VK_KHR_surface",
                                            "VK_KHR_win32_surface"};
@@ -97,6 +100,7 @@ void VulkanApplication::CreateMainWindow() {
 
     // 创建 Command Buffer
     m_Rhi.createCommandBuffers();
+    return 0;
 }
 
 void VulkanApplication::FinalizeGraphicsResources() {

@@ -39,8 +39,9 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance, VkSurface
     }
 }
 
-void VulkanApplication::CreateMainWindow() {
-    CocoaMetalApplication::CreateMainWindow();
+int VulkanApplication::InitializeGraphicsResources() {
+    const int result = CocoaMetalApplication::InitializeGraphicsResources();
+    if (result != 0) return result;
 
     // 设置回调函数
     auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
@@ -86,6 +87,7 @@ void VulkanApplication::CreateMainWindow() {
 
     // 创建 SwapChain
     m_Rhi.createSwapChain();
+    return 0;
 }
 
 void VulkanApplication::FinalizeGraphicsResources() {

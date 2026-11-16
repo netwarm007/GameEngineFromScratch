@@ -70,6 +70,7 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    protected:
+    virtual int InitializeGraphicsResources() { return 0; }
     // Drain GPU work before shutdown or failure rollback releases module resources.
     virtual void WaitForGraphicsIdle() {}
     virtual void FinalizeGraphicsResources() {}
@@ -95,6 +96,7 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    private:
+    bool m_GraphicsInitialized = false;
     RuntimeModuleGroup runtime_modules;
 };
 }  // namespace My

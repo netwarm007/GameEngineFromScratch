@@ -29,9 +29,12 @@ int main() {
 
     // 创建窗口
     {
-        assert(app.Initialize() == 0 && "App Initialize Failed!");
-
         app.CreateMainWindow();
+        const int result = app.Initialize();
+        if (result != 0) {
+            app.Finalize();
+            return result;
+        }
     }
 
     auto& rhi = app.GetRHI();

@@ -9,7 +9,10 @@ class ContextCheckingModule : public IMemoryManager {
    public:
     explicit ContextCheckingModule(OpenGLApplication& app) : m_App(app) {}
 
-    int Initialize() override { return 0; }
+    int Initialize() override {
+        initializedWithContext = glXGetCurrentContext() != nullptr;
+        return initializedWithContext ? 0 : 17;
+    }
     void Finalize() override {
         valid = m_App.GetMainWindowHandler() != nullptr &&
                 glXGetCurrentContext() != nullptr;
@@ -20,6 +23,7 @@ class ContextCheckingModule : public IMemoryManager {
     void FreePage(void*) override {}
 
     bool finalized = false;
+    bool initializedWithContext = false;
     bool valid = false;
 
    private:
@@ -34,10 +38,16 @@ int main() {
     OpenGLApplication app(config);
     ContextCheckingModule module(app);
     app.CreateMainWindow();
+    if (!app.GetMainWindowHandler() || glXGetCurrentContext()) {
+        std::cerr << "Window creation must not initialize the GLX context\n";
+        app.Finalize();
+        return 1;
+    }
     app.RegisterManagerModule(&module);
     const int result = app.Initialize();
     app.Finalize();
-    if (result != 0 || !module.finalized || !module.valid ||
+    if (result != 0 || !module.initializedWithContext ||
+        !module.finalized || !module.valid ||
         app.GetMainWindowHandler() != nullptr ||
         glXGetCurrentContext() != nullptr) {
         std::cerr << "Linux application did not finalize modules with a live "

@@ -21,15 +21,21 @@ class RecordingApplication : public BaseApplication {
    public:
     void CreateMainWindow() override {
         windowAlive = true;
-        graphicsAlive = true;
     }
 
     std::vector<std::string> events;
     bool windowAlive = false;
     bool graphicsAlive = false;
     bool gpuWorkPending = false;
+    int graphicsResult = 0;
 
    protected:
+    int InitializeGraphicsResources() override {
+        if (!windowAlive) return -1;
+        events.push_back("init graphics");
+        graphicsAlive = true;
+        return graphicsResult;
+    }
     void WaitForGraphicsIdle() override {
         if (!graphicsAlive) return;
         Expect(windowAlive, "GPU synchronization runs while the window exists");
@@ -88,6 +94,7 @@ void TestSuccessfulShutdown() {
     RecordingApplication app;
     RecordingModule first("first", app), second("second", app);
     app.CreateMainWindow();
+    Expect(!app.graphicsAlive, "window creation does not initialize graphics");
     app.RegisterManagerModule(&first);
     app.RegisterManagerModule(&second);
     Expect(app.Initialize() == 0, "application initialization succeeds");
@@ -95,7 +102,8 @@ void TestSuccessfulShutdown() {
     BaseApplication& application = app;
     application.Finalize();
     Expect(app.events == std::vector<std::string>{
-               "init first", "init second", "tick first", "tick second",
+               "init graphics", "init first", "init second",
+               "tick first", "tick second",
                "wait graphics", "stop second", "stop first", "stop graphics",
                "stop window"},
            "application synchronizes GPU work before reverse module, backend, and platform shutdown");
@@ -104,6 +112,12 @@ void TestSuccessfulShutdown() {
     app.events.clear();
     app.Tick();
     Expect(app.events.empty(), "shutdown leaves no modules in the frame loop");
+    app.CreateMainWindow();
+    app.RegisterManagerModule(&first);
+    Expect(app.Initialize() == 0, "a new lifecycle initializes graphics again");
+    Expect(app.events == std::vector<std::string>{"init graphics", "init first"},
+           "finalization resets successful backend initialization state");
+    app.Finalize();
 }
 
 void TestFailedModuleInitialization() {
@@ -120,7 +134,7 @@ void TestFailedModuleInitialization() {
         }
         ordered[failingIndex]->result = 17;
         Expect(app.Initialize() == 17, "application preserves the module error");
-        std::vector<std::string> expected;
+        std::vector<std::string> expected{"init graphics"};
         for (int i = 0; i <= failingIndex; ++i)
             expected.push_back("init " + names[i]);
         expected.push_back("wait graphics");
@@ -152,7 +166,8 @@ void TestRetryAfterGpuRollback() {
     app.RegisterManagerModule(&second);
     Expect(app.Initialize() == 17, "failed GPU initialization can be retried");
     Expect(app.events == std::vector<std::string>{
-               "init first", "init second", "wait graphics", "stop first"},
+               "init graphics", "init first", "init second",
+               "wait graphics", "stop first"},
            "rollback synchronization precedes any initialized module cleanup");
     app.events.clear();
     second.result = 0;
@@ -175,10 +190,38 @@ void TestWindowWithoutModules() {
     RecordingApplication app;
     app.CreateMainWindow();
     app.Finalize();
-    Expect(app.events ==
-               std::vector<std::string>{"wait graphics", "stop graphics",
-                                        "stop window"},
-           "window-only clients release resources without initializing modules");
+    Expect(app.events == std::vector<std::string>{"stop window"},
+           "window-only clients do not create backend resources for cleanup");
+}
+
+void TestBackendInitializationBoundaries() {
+    RecordingApplication app;
+    RecordingModule module("module", app);
+    app.RegisterManagerModule(&module);
+    Expect(app.Initialize() == -1 && app.events.empty(),
+           "missing window prevents backend and module initialization");
+    app.CreateMainWindow();
+    app.graphicsResult = 23;
+    Expect(app.Initialize() == 23,
+           "application preserves the backend initialization error");
+    app.Tick();
+    Expect(app.events == std::vector<std::string>{"init graphics"},
+           "backend failure prevents module initialization and ticks");
+    app.Finalize();
+    Expect(app.events == std::vector<std::string>{
+               "init graphics", "wait graphics", "stop graphics", "stop window"},
+           "explicit shutdown cleans partial backend resources before the window");
+    app.events.clear();
+    app.graphicsResult = 0;
+    app.CreateMainWindow();
+    app.RegisterManagerModule(&module);
+    Expect(app.Initialize() == 0,
+           "a new lifecycle initializes the backend after prior failure cleanup");
+    app.Finalize();
+    Expect(app.events == std::vector<std::string>{
+               "init graphics", "init module", "wait graphics", "stop module",
+               "stop graphics", "stop window"},
+           "backend failure does not poison a subsequent lifecycle");
 }
 }  // namespace
 
@@ -187,5 +230,6 @@ int main() {
     TestFailedModuleInitialization();
     TestRetryAfterGpuRollback();
     TestWindowWithoutModules();
+    TestBackendInitializationBoundaries();
     return failures == 0 ? 0 : 1;
 }

@@ -1,9 +1,14 @@
 #include "D2dApplication.hpp"
 
+#include <cstdio>
+
 using namespace My;
 
-void D2dApplication::CreateMainWindow() {
-    WindowsApplication::CreateMainWindow();
+int D2dApplication::InitializeGraphicsResources() {
+    if (!GetMainWindowHandler()) {
+        fprintf(stderr, "D2D initialization requires a native window\n");
+        return -1;
+    }
 
     auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
         GetFramebufferSize(width, height);
@@ -19,6 +24,7 @@ void D2dApplication::CreateMainWindow() {
     m_Rhi.SetFramebufferSizeQueryCB(getFramebufferSize);
     m_Rhi.SetGetWindowHandlerCB(getWindowHandler);
     m_Rhi.SetGetGfxConfigCB(getGfxConfigHandler);
+    return 0;
 }
 
 void D2dApplication::onWindowResize(int, int) { 

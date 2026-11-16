@@ -12,6 +12,16 @@ using namespace std;
 int BaseApplication::Initialize() {
     cout << m_Config;
 
+    if (!m_GraphicsInitialized) {
+        const int result = InitializeGraphicsResources();
+        if (result != 0) {
+            cerr << "Graphics resource initialization failed (error "
+                 << result << ")\n";
+            return result;
+        }
+        m_GraphicsInitialized = true;
+    }
+
     return runtime_modules.Initialize([this] { WaitForGraphicsIdle(); });
 }
 
@@ -20,6 +30,7 @@ void BaseApplication::Finalize() {
     WaitForGraphicsIdle();
     runtime_modules.Finalize();
     FinalizeGraphicsResources();
+    m_GraphicsInitialized = false;
     FinalizePlatformResources();
 }
 

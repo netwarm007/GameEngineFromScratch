@@ -46,10 +46,6 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
     return 0;
 }
 
-int OpenGLApplication::Initialize() {
-    return XcbApplication::Initialize();
-}
-
 void OpenGLApplication::CreateMainWindow() {
     /* Open Xlib Display */
     m_pDisplay = XOpenDisplay(NULL);
@@ -125,6 +121,7 @@ void OpenGLApplication::CreateMainWindow() {
     /* Get a visual */
     auto vi = glXGetVisualFromFBConfig(m_pDisplay, fb_config);
     printf("Chosen visual ID = 0x%lx\n", vi->visualid);
+    XFree(vi);
 
     XcbApplication::CreateMainWindow(); // implicitly calling create main window here
 #if 0
@@ -142,7 +139,13 @@ void OpenGLApplication::CreateMainWindow() {
 	XMapWindow (m_pDisplay, m_XWindow);
 	XStoreName (m_pDisplay, m_XWindow, m_Config.appName);
 #endif
+}
 
+int OpenGLApplication::InitializeGraphicsResources() {
+    if (!GetMainWindowHandler()) {
+        fprintf(stderr, "OpenGL initialization requires a native window\n");
+        return -1;
+    }
     /* Create OpenGL context */
     ctxErrorOccurred = false;
     int (*oldHandler)(Display *, XErrorEvent *) =
@@ -223,7 +226,7 @@ void OpenGLApplication::CreateMainWindow() {
         fprintf(stderr, "glXMakeContextCurrent failed\n");
     }
 
-    XFree(vi);
+    return 0;
 }
 
 void OpenGLApplication::Tick() {

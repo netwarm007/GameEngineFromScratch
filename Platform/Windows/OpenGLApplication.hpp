@@ -8,9 +8,8 @@ class OpenGLApplication : public WindowsApplication {
 
     void Tick() override;
 
-    void CreateMainWindow() override;
-
    private:
+    int InitializeGraphicsResources() override;
     void FinalizeGraphicsResources() override;
     HDC m_hDC = nullptr;
     HGLRC m_RenderContext = nullptr;

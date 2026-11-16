@@ -1,9 +1,14 @@
 #include "D3d12Application.hpp"
 
+#include <cstdio>
+
 using namespace My;
 
-void D3d12Application::CreateMainWindow() {
-    WindowsApplication::CreateMainWindow();
+int D3d12Application::InitializeGraphicsResources() {
+    if (!GetMainWindowHandler()) {
+        fprintf(stderr, "D3D12 initialization requires a native window\n");
+        return -1;
+    }
 
     auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
         GetFramebufferSize(width, height);
@@ -49,6 +54,7 @@ void D3d12Application::CreateMainWindow() {
 
     // 创建命令列表
     m_Rhi.CreateCommandLists();
+    return 0;
 }
 
 void D3d12Application::onWindowResize(int width, int height) {

@@ -8,11 +8,10 @@ class VulkanApplication : public CocoaMetalApplication {
     using CocoaMetalApplication::CocoaMetalApplication;
     VkResult CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface);
 
-    void CreateMainWindow() final;
-
     VulkanRHI& GetRHI() { return m_Rhi; }
 
    private:
+    int InitializeGraphicsResources() final;
     void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;
 };

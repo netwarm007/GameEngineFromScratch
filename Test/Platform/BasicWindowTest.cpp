@@ -9,9 +9,13 @@ int main() {
 
     auto pApp = My::CreateApplication(config);
 
-    result = pApp->Initialize();
-
     pApp->CreateMainWindow();
+    result = pApp->Initialize();
+    if (result != 0) {
+        pApp->Finalize();
+        delete pApp;
+        return result;
+    }
 
     while(!pApp->IsQuit()) {
         pApp->Tick();
