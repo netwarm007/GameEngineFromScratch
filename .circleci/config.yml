@@ -2,13 +2,14 @@ version: 2.1
 orbs:
   win: circleci/windows@4.1.1
 
-# Branch pushes run the quick scope (fast tests only, no screenshots, coverage
-# or packaging) on `platforms`. Acceptance requires a pipeline triggered through
-# the API with `run_full: true`, which runs every platform at full scope.
+# Branch pushes run the full scope on every platform, needing no API token.
+# For iteration, trigger a pipeline through the API with `run_full: false` to
+# run the quick scope (fast tests only, no screenshots, coverage or packaging)
+# on `platforms`. A quick result is never acceptance.
 parameters:
   run_full:
     type: boolean
-    default: false
+    default: true
   platforms:
     type: string
     default: "windows,linux,macos"
@@ -780,14 +781,14 @@ jobs:
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
 workflows:
   version: 2
-  build-and-test: #acceptance: API-triggered with run_full=true
+  build-and-test: #default on push; acceptance
     when: << pipeline.parameters.run_full >>
     jobs:
       - build_windows
       - build_linux
       - build_macos
       #- build_android
-  quick-windows: #iteration: fast tests only
+  quick-windows: #iteration: API-triggered with run_full=false
     when:
       and:
         - not: << pipeline.parameters.run_full >>
