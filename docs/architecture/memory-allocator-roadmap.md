@@ -90,6 +90,9 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | Debug fill patterns are only verified in builds defining `_DEBUG`. | Extend tests to check patterns in the debug decorator (M6). |
 | `FrameAllocator` and `RingAllocator` are single-threaded; `RingAllocator` leaves fence tracking (when to `Retire`) to the caller. | Thread-cache layer (M7); GPU sub-allocator owns fences (M7). |
 | `PmrAdapter` forwards `deallocate` to `Free`, so LIFO/arena allocators only reclaim as their own rules allow, and failures throw `std::bad_alloc`. | Documented behavior; revisit if engine builds disable exceptions (M8). |
+| `TlsfAllocator` and `BuddyAllocator` are single-threaded with fixed capacity (no growth by adding pools). | Pool growth and thread-cache layer (M7). |
+| `TlsfAllocator` is good-fit: a request within ~1/32 of the only free block can fail; its `Free` checks inspect block headers and can be fooled by crafted user data. | Documented; debug decorator adds a registry-based check (M6). |
+| `BuddyAllocator` wastes up to 50% per block and supports alignment only up to 4096 bytes. | Intended for large or page-like blocks; documented. |
 | Allocators are not used by any engine module. | Integration (M8). |
 
 ## Foundation improvements
@@ -110,7 +113,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests (`LinearAllocatorTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/faa5744f42b9aec60d6b93f561af22a95378320e.md`) |
 | M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; stale `Marker` detection; tests (`FrameAllocatorTest`, `RingAllocatorTest`, `PmrAdapterTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/89926ec5081f370ca6519c6fbeba021a1fc6cbd6.md`) |
 | M4 | `SlabAllocator` (constructed-object cache, empty-slab `Trim`) and `SizeClassAllocator` (16 classes, 16 B to 512 B); tests (`SlabAllocatorTest`, `SizeClassAllocatorTest`). | Done (CI-verified, `docs/verification/b6fab1866eb639ccc1dd0395e526b99527032a44.md`) |
-| M5 | TLSF and Buddy; tests. | Planned |
+| M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Implemented; awaiting CI acceptance |
 | M6 | Debug/tracking decorator, statistics, leak reports; tests. | Planned |
 | M7 | GPU sub-allocator and thread-cache layer; tests. | Planned |
 | M8 | Engine integration (separate decision). | Not started |
@@ -128,6 +131,14 @@ M2 notes: both allocators own one fixed-capacity, 64-byte-aligned arena from
 `StackAllocator` keeps a 16-byte header per allocation so `Free(p)` can pop the
 latest allocation; `Marker` rewinds many at once. Shared helpers are in
 `AllocatorUtils.hpp`.
+
+M5 notes: `TlsfAllocator` keeps a 16-byte header per block (previous-physical
+pointer plus size and free flag), 32 second-level bins per power of two, and
+two bitmaps for O(1) lookup; neighbours coalesce on `Free`, and alignments above
+16 split the leading gap off as a free block. `BuddyAllocator` keeps no headers
+in user memory: a byte-per-unit state table records block starts, orders and
+free flags, and free lists are intrusive. Both expose `Check()` for heap
+invariants, which the tests call throughout randomized workloads.
 
 M4 notes: `SlabAllocator` allocates slabs aligned to their own (power-of-two)
 size, so `Free` finds the owning slab by masking the pointer and needs no size.

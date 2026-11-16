@@ -13,16 +13,18 @@ set(ALLOCATOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Manager")
 set(ALLOCATOR_SOURCES
     "${ALLOCATOR_DIR}/MemoryManager.cpp"
     "${ALLOCATOR_DIR}/BlockAllocator.cpp"
+    "${ALLOCATOR_DIR}/BuddyAllocator.cpp"
     "${ALLOCATOR_DIR}/LinearAllocator.cpp"
     "${ALLOCATOR_DIR}/FrameAllocator.cpp"
     "${ALLOCATOR_DIR}/RingAllocator.cpp"
     "${ALLOCATOR_DIR}/SizeClassAllocator.cpp"
     "${ALLOCATOR_DIR}/SlabAllocator.cpp"
-    "${ALLOCATOR_DIR}/StackAllocator.cpp")
+    "${ALLOCATOR_DIR}/StackAllocator.cpp"
+    "${ALLOCATOR_DIR}/TlsfAllocator.cpp")
 
 foreach(TEST_CASE MemoryAllocatorTest LinearAllocatorTest StackAllocatorTest
     FrameAllocatorTest RingAllocatorTest PmrAdapterTest SlabAllocatorTest
-    SizeClassAllocatorTest)
+    SizeClassAllocatorTest TlsfAllocatorTest BuddyAllocatorTest)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp ${ALLOCATOR_SOURCES})
     target_include_directories(${TEST_CASE} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Common"

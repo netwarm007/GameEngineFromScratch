@@ -19,12 +19,14 @@ target_link_libraries(RenderServices PUBLIC SceneCamera SceneLighting
 add_library(Manager
         BaseApplication.cpp
         BlockAllocator.cpp
+        BuddyAllocator.cpp
         DebugManager.cpp
         FrameAllocator.cpp
         InputManager.cpp
         LinearAllocator.cpp
         MemoryManager.cpp
         StackAllocator.cpp
+        TlsfAllocator.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp
