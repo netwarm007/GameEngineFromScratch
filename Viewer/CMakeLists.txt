@@ -1,3 +1,6 @@
+add_library(SplashSequence SplashSequence.cpp)
+target_link_libraries(SplashSequence PUBLIC SceneServices)
+
 set(SCENE_FILES
                     ${PROJECT_SOURCE_DIR}/Asset/Scene/splash.ogex
 )
@@ -221,5 +224,6 @@ endif(SDL2_FOUND)
 ENDIF(APPLE)
 
 add_dependencies(Viewer Engine_Asset)
+target_link_libraries(Viewer SplashSequence)
 
 install(TARGETS Viewer RUNTIME BUNDLE DESTINATION bin)

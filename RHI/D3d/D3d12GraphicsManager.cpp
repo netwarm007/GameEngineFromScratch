@@ -428,7 +428,7 @@ void D3d12GraphicsManager::initializeGeometries(const Scene& scene) {
     for (const auto& _it : scene.GeometryNodes) {
         const auto& pGeometryNode = _it.second.lock();
 
-        if (pGeometryNode && pGeometryNode->Visible()) {
+        if (pGeometryNode) {
             const auto& pGeometry =
                 scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             my_assert(pGeometry);
@@ -633,6 +633,7 @@ void D3d12GraphicsManager::DrawBatch(const Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
 
     for (const auto& pDbc : frame.batchContexts) {
+        if (!pDbc->node->Visible()) continue;
         const D3dDrawBatchContext& dbc =
             dynamic_cast<const D3dDrawBatchContext&>(*pDbc);
         auto* cmd = rhi.GetGraphicsCommandList();

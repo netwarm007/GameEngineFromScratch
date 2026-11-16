@@ -7,10 +7,12 @@
 #include <vector>
 
 #include "AssetLoader.hpp"
+#include "AnimationManager.hpp"
 #include "Bullet/BulletPhysicsManager.hpp"
 #include "ISceneManager.hpp"
 #include "My/MyPhysicsManager.hpp"
 #include "OGEX.hpp"
+#include "Viewer/SplashSequence.hpp"
 
 using namespace My;
 
@@ -100,6 +102,14 @@ void TestBindingsAndTransforms() {
            "deletion restores authored/runtime transform rendering");
     physics.DeleteRigidBody(*node);
 
+    node->SetPhysicsEnabled(false);
+    physics.CreateRigidBody(node, geometry);
+    Expect(!physics.UpdateRigidBodyTransform(*node),
+           "disabled physics does not create a body");
+    node->MoveBy(1.0f, 0.0f, 0.0f);
+    Expect(Near(node->GetRenderTransform()[3][0], 5.0f),
+           "disabled physics leaves authored transforms visible");
+    node->SetPhysicsEnabled(true);
     physics.CreateRigidBody(node, geometry);
     physics.CreateRigidBody(node, geometry);
     std::weak_ptr<SceneGeometryNode> retained = node;
@@ -353,38 +363,9 @@ void TestPhysicsMaterialsAndMeshes() {
            "planar constraint keeps a ball in plane on a slanted surface");
 }
 
-void TestSplashBouncingBall() {
-    AssetLoader assets;
-    Expect(assets.Initialize() == 0, "Splash assets initialize");
-    OgexParser parser;
-    auto scene = parser.Parse(
-        assets.SyncOpenAndReadTextFileToString("Scene/splash.ogex"));
-    Expect(scene != nullptr, "actual Splash scene parses");
-    if (!scene) {
-        assets.Finalize();
-        return;
-    }
-    auto ball = scene->LUT_Name_GeometryNode.at("Ball").lock();
-    auto text = scene->LUT_Name_GeometryNode.at("Text").lock();
-    Expect(ball && text, "Splash scene has a ball and text");
-    if (!ball || !text) {
-        assets.Finalize();
-        return;
-    }
-    Expect(scene->AnimatableNodes.empty(),
-           "text stays still so the ball can land on it");
-
-    TestScenes scenes;
-    SteppingBullet physics(scenes);
-    Expect(physics.Initialize() == 0, "Splash Bullet initializes");
-    for (const auto& [key, weakNode] : scene->GeometryNodes) {
-        auto node = weakNode.lock();
-        if (!node) continue;
-        auto geometry = scene->GetGeometry(node->GetSceneObjectRef());
-        physics.CreateRigidBody(node, *geometry);
-    }
+void CheckSplashTraversal(SteppingBullet& physics,
+                          const std::shared_ptr<SceneGeometryNode>& ball) {
     const float authoredY = (*ball->GetCalculatedTransform())[3][1];
-
     constexpr float textTop = 0.106f;
     float lowest = 100.0f;
     float drift = 0.0f;
@@ -409,8 +390,142 @@ void TestSplashBouncingBall() {
            "ball never drops into the gaps between words");
     Expect(drift < 0.001f, "ball stays in its vertical plane");
     Expect(bounces >= 8, "ball bounces repeatedly along the text");
+}
+
+void TestSplashBouncingBall() {
+    AssetLoader assets;
+    Expect(assets.Initialize() == 0, "Splash assets initialize");
+    OgexParser parser;
+    auto scene = parser.Parse(
+        assets.SyncOpenAndReadTextFileToString("Scene/splash.ogex"));
+    Expect(scene != nullptr, "actual Splash scene parses");
+    if (!scene) {
+        assets.Finalize();
+        return;
+    }
+    auto ball = scene->LUT_Name_GeometryNode.at("Ball").lock();
+    auto text = scene->LUT_Name_GeometryNode.at("Text").lock();
+    Expect(ball && text, "Splash scene has a ball and text");
+    if (!ball || !text) {
+        assets.Finalize();
+        return;
+    }
+    BaseSceneNode::animation_clip_iterator clip;
+    Expect(text->GetFirstAnimationClip(clip), "Splash text has an introduction");
+    if (text->GetFirstAnimationClip(clip)) {
+        do {
+            clip->second->Update(clip->second->GetEndTime());
+        } while (text->GetNextAnimationClip(clip));
+    }
+    const auto settled = *text->GetCalculatedTransform();
+    Expect(Near(settled[0][0], 1.0f) && Near(settled[1][1], 1.0f) &&
+               Near(settled[2][2], 1.0f),
+           "text animation ends at the original flat collision pose");
+
+    TestScenes scenes;
+    SteppingBullet physics(scenes);
+    Expect(physics.Initialize() == 0, "Splash Bullet initializes");
+    for (const auto& [key, weakNode] : scene->GeometryNodes) {
+        auto node = weakNode.lock();
+        if (!node) continue;
+        auto geometry = scene->GetGeometry(node->GetSceneObjectRef());
+        physics.CreateRigidBody(node, *geometry);
+    }
+    CheckSplashTraversal(physics, ball);
     physics.Finalize();
     scene.reset();
+    assets.Finalize();
+}
+
+void TestSplashSequence() {
+    AssetLoader assets;
+    Expect(assets.Initialize() == 0, "Splash sequence assets initialize");
+    const auto source = assets.SyncOpenAndReadTextFileToString("Scene/splash.ogex");
+    OgexParser parser;
+    for (const int fps : {30, 60, 144}) {
+        TestScenes scenes;
+        scenes.scene = parser.Parse(source);
+        scenes.revision = 1;
+        Expect(scenes.scene != nullptr, "sequenced Splash parses");
+        if (!scenes.scene) continue;
+        auto text = scenes.scene->LUT_Name_GeometryNode.at("Text").lock();
+        auto ball = scenes.scene->LUT_Name_GeometryNode.at("Ball").lock();
+        BaseSceneNode::animation_clip_iterator clip;
+        if (!text || !ball || !text->GetFirstAnimationClip(clip)) {
+            Expect(false, "sequenced Splash has text animation and ball");
+            continue;
+        }
+        const float end = clip->second->GetEndTime();
+        Expect(end > 6.208333f, "introduction includes a settling segment");
+        SteppingBullet physics(scenes);
+        AnimationManager animations(scenes);
+        SplashSequence sequence(scenes, physics, animations);
+        Expect(physics.Initialize() == 0 && animations.Initialize() == 0 &&
+                   sequence.Initialize() == 0,
+               "Splash modules initialize");
+        bool rotated = false;
+        for (int frame = 0; float(frame) / fps < end; ++frame) {
+            animations.Update(float(frame) / fps);
+            sequence.Tick();
+            physics.Tick();
+            Expect(!ball->Visible() && physics.BodyCount() == 0,
+                   "introduction hides the ball and creates no bodies");
+            const auto render = text->GetRenderTransform();
+            if (render[2][2] < 0.8f) rotated = true;
+            Expect(Near(ball->GetRenderTransform()[3][2], 0.968f),
+                   "hidden ball does not fall before its appearance");
+        }
+        Expect(rotated, "rendered text actually rotates during introduction");
+        animations.Update(end - 0.0001f);
+        sequence.Tick();
+        Expect(!ball->Visible() && physics.BodyCount() == 0,
+               "ball stays hidden immediately before the final key");
+        animations.Update(end);
+        sequence.Tick();
+        Expect(ball->Visible() && physics.BodyCount() == 2,
+               "final key creates both bodies and shows the ball");
+        Expect(Near(ball->GetRenderTransform()[3][0], -5.4972f) &&
+                   Near(ball->GetRenderTransform()[3][2], 0.968f),
+               "ball appears at its authored starting position");
+        CheckSplashTraversal(physics, ball);
+        const float reachedX = ball->GetRenderTransform()[3][0];
+        animations.Update(end + 1.0f);
+        sequence.Tick();
+        Expect(physics.BodyCount() == 2 &&
+                   Near(ball->GetRenderTransform()[3][0], reachedX),
+               "completed sequence does not respawn the ball");
+
+        scenes.ResetScene();
+        animations.Update(0.0f);
+        sequence.Tick();
+        physics.Tick();
+        Expect(!ball->Visible() && physics.BodyCount() == 0,
+               "reset removes old bodies and restarts the introduction");
+        animations.Update(end + 0.5f);
+        sequence.Tick();
+        Expect(ball->Visible() && physics.BodyCount() == 2 &&
+                   Near(ball->GetRenderTransform()[3][2], 0.968f),
+               "skipping past the endpoint still spawns a fresh ball once");
+
+        scenes.scene = parser.Parse(source);
+        ++scenes.revision;
+        animations.Update(0.0f);
+        sequence.Tick();
+        physics.Tick();
+        auto reloaded = scenes.scene->LUT_Name_GeometryNode.at("Ball").lock();
+        Expect(reloaded && !reloaded->Visible() && physics.BodyCount() == 0,
+               "scene reload starts with a hidden, unsimulated ball");
+        scenes.scene = std::make_shared<Scene>("unrelated scene");
+        ++scenes.revision;
+        animations.Update(0.0f);
+        sequence.Tick();
+        physics.Tick();
+        Expect(physics.BodyCount() == 0 && reloaded->Visible(),
+               "leaving Splash releases its overrides without affecting other scenes");
+        sequence.Finalize();
+        animations.Finalize();
+        physics.Finalize();
+    }
     assets.Finalize();
 }
 
@@ -467,6 +582,7 @@ int main() {
     TestBilliardScene();
     TestPhysicsMaterialsAndMeshes();
     TestSplashBouncingBall();
+    TestSplashSequence();
     TestSceneReplacementWithoutApplication<MyPhysicsManager>();
     TestSceneReplacementWithoutApplication<SteppingBullet>();
     return failures == 0 ? 0 : 1;

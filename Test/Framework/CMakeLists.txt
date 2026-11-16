@@ -41,5 +41,5 @@ add_test(NAME TEST_RenderServicesTest COMMAND RenderServicesTest)
 
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
-    BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO)
+    BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO SplashSequence)
 add_test(NAME TEST_PhysicsSceneIntegrationTest COMMAND PhysicsSceneIntegrationTest)

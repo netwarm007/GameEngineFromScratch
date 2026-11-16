@@ -49,7 +49,7 @@ void VulkanGraphicsManager::initializeGeometries(const Scene& scene) {
     for (const auto& _it : scene.GeometryNodes) {
         const auto& pGeometryNode = _it.second.lock();
 
-        if (pGeometryNode && pGeometryNode->Visible()) {
+        if (pGeometryNode) {
             const auto& pGeometry =
                 scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);
@@ -205,6 +205,7 @@ void VulkanGraphicsManager::EndPass(Frame& frame) {
 
 void VulkanGraphicsManager::DrawBatch(const Frame& frame) {
     for (const auto& pDbc : frame.batchContexts) {
+        if (!pDbc->node->Visible()) continue;
         const VulkanDrawBatchContext& dbc =
             dynamic_cast<const VulkanDrawBatchContext&>(*pDbc);
     }

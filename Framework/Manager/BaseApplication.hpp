@@ -41,6 +41,7 @@ class BaseApplication : _implements_ IApplication {
     void CreateMainWindow() override {}
     void* GetMainWindowHandler() override { return nullptr; }
 
+    void RegisterManagerModule(IRuntimeModule* module);
     void RegisterManagerModule(IGraphicsManager* mgr);
     void RegisterManagerModule(IMemoryManager* mgr);
     void RegisterManagerModule(IAssetLoader* mgr);

@@ -52,6 +52,7 @@ void MyPhysicsManager::CreateRigidBody(
     assert(sceneNode);
     auto& node = *sceneNode;
     DeleteRigidBody(node);
+    if (!node.PhysicsEnabled()) return;
     const float* param = geometry.CollisionParameters();
     RigidBody<float_precision>* rigidBody = nullptr;
 

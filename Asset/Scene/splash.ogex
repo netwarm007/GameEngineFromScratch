@@ -54,44 +54,43 @@ GeometryNode $node3
 		float {0.0}
 	}
 
-	// Text rotation animation is disabled so the ball bounces on a static
-	// text. Remove the leading "// " on the lines below to restore it.
-	// Animation (begin = 0.0, end = 6.208333333333333)
-	// {
-	// 	Track (target = %xrot)
-	// 	{
-	// 		Time (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 6.208333333333333}}
-	// 			Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047}}
-	// 			Key (kind = "+control") {float {2.423804759979248, 8.632137934366861}}
-	// 		}
-	//
-	// 		Value (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 1.3795047998428345}}
-	// 			Key (kind = "-control") {float {0.0, 1.3795047998428345}}
-	// 			Key (kind = "+control") {float {0.0, 1.3795047998428345}}
-	// 		}
-	// 	}
-	//
-	// 	Track (target = %zrot)
-	// 	{
-	// 		Time (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 6.208333333333333}}
-	// 			Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047}}
-	// 			Key (kind = "+control") {float {2.423804759979248, 8.632137934366861}}
-	// 		}
-	//
-	// 		Value (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 0.7901575565338135}}
-	// 			Key (kind = "-control") {float {0.0, 0.7901575565338135}}
-	// 			Key (kind = "+control") {float {0.0, 0.7901575565338135}}
-	// 		}
-	// 	}
-	// }
+	// Finish the original rotation, then settle flat before the ball appears.
+	Animation (begin = 0.0, end = 8.208333333333333)
+	{
+		Track (target = %xrot)
+		{
+			Time (curve = "bezier")
+			{
+				Key {float {0.0, 6.208333333333333, 8.208333333333333}}
+				Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047, 7.541666666666667}}
+				Key (kind = "+control") {float {2.423804759979248, 6.875, 8.875}}
+			}
+
+			Value (curve = "bezier")
+			{
+				Key {float {0.0, 1.3795047998428345, 0.0}}
+				Key (kind = "-control") {float {0.0, 1.3795047998428345, 0.0}}
+				Key (kind = "+control") {float {0.0, 1.3795047998428345, 0.0}}
+			}
+		}
+
+		Track (target = %zrot)
+		{
+			Time (curve = "bezier")
+			{
+				Key {float {0.0, 6.208333333333333, 8.208333333333333}}
+				Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047, 7.541666666666667}}
+				Key (kind = "+control") {float {2.423804759979248, 6.875, 8.875}}
+			}
+
+			Value (curve = "bezier")
+			{
+				Key {float {0.0, 0.7901575565338135, 0.0}}
+				Key (kind = "-control") {float {0.0, 0.7901575565338135, 0.0}}
+				Key (kind = "+control") {float {0.0, 0.7901575565338135, 0.0}}
+			}
+		}
+	}
 }
 
 GeometryNode $node7

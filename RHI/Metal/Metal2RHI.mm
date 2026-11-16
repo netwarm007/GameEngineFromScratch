@@ -837,6 +837,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     // Push a debug group allowing us to identify render commands in the GPU Frame Capture tool
     [_renderEncoder pushDebugGroup:@"DrawMesh"];
     for (const auto& pDbc : frame.batchContexts) {
+        if (!pDbc->node->Visible()) continue;
         [_renderEncoder setVertexBytes:pDbc->modelMatrix length:64 atIndex:11];
 
         const auto& dbc = dynamic_cast<const MtlDrawBatchContext&>(*pDbc);
