@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     SceneResourceLoader sceneResources(assetLoader);
     SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
     BulletPhysicsManager physicsManager(sceneManager);
-    InputManager inputManager;
+    InputManager inputManager(gameLogic);
     AnimationManager animationManager(sceneManager);
     SplashSequence splashSequence(sceneManager, physicsManager, animationManager);
 #ifdef DEBUG

@@ -44,6 +44,10 @@ add_executable(ApplicationLifetimeTest ApplicationLifetimeTest.cpp)
 target_link_libraries(ApplicationLifetimeTest PRIVATE Manager)
 add_test(NAME TEST_ApplicationLifetimeTest COMMAND ApplicationLifetimeTest)
 
+add_executable(InputManagerTest InputManagerTest.cpp
+    ${PROJECT_SOURCE_DIR}/Framework/Manager/InputManager.cpp)
+add_test(NAME TEST_InputManagerTest COMMAND InputManagerTest)
+
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
     BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO SplashSequence)

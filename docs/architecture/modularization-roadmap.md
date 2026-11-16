@@ -307,9 +307,35 @@ a fixed delay that can expire during scene uploads. Empty-scene and
 same-name material retirement are checked by RenderServicesTest; native Metal
 buffer release and subsequent reuse are checked by MetalInitializationTest.
 
-Next candidates, not part of D1: inject the game-logic dependency into
-InputManager; then reassess Viewer/Billiard service lookups and GuiSubPass's
-direct AssetLoader/PNG dependency using existing interfaces.
+### D2. Explicit input-to-game-logic dependency
+
+**In progress.** InputManager takes a required borrowed `IGameLogic&` at
+construction instead of downcasting Application and looking up game logic
+for every event. The injected logic must outlive InputManager. Viewer and
+Billiard construct logic before input and provide that dependency directly;
+there are no current InputManager construction sites without game logic.
+Platform event routing, ImGui input handling and callback ordering remain
+unchanged. No event bus, configurable bindings or new input abstraction is added.
+
+Preserve per-event arrow-down callbacks, first-press callbacks until release,
+independent held-key state, the `u` button mapping, reserved `d`/`r` no-ops,
+mouse button no-ops and signed drag deltas/analog IDs. Initialize/finalize clear
+held keys without synthesizing game callbacks, so a fresh lifecycle cannot
+inherit a missing key-up from a previous lifecycle.
+
+Verification sequence:
+
+1. Add an application-free InputManagerTest covering repeated/simultaneous
+   arrows, release/repress ordering, buttons, drags and repeated lifecycles.
+   Demonstrate the lifecycle case fails without state reset.
+2. Compile both composition roots and run focused local tests.
+3. Verify the exact source revision with Windows/Linux/macOS CI, inspect native
+   Viewer/scene-cycle/Billiard screenshots and physics results, then write its
+   revision-specific acceptance record. Synthetic input tests do not establish
+   native keyboard/mouse interaction or every ImGui capture configuration.
+
+Next candidates, not part of D2: reassess Viewer/Billiard service lookups and
+GuiSubPass's direct AssetLoader/PNG dependency using existing interfaces.
 
 ## Working and acceptance rules
 
