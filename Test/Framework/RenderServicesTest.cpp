@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -239,6 +240,14 @@ void TestShadowUploadOrder(bool openGL) {
     ShadowPipelines pipelines;
     pipelines.SetAppPointer(&app);
     Expect(pipelines.Initialize() == 0, "initialize production shadow pipelines");
+    bool missingPipelineRejected = false;
+    try {
+        pipelines.GetPipelineState("missing shadow pipeline");
+    } catch (const std::runtime_error&) {
+        missingPipelineRejected = true;
+    }
+    Expect(missingPipelineRejected,
+           "missing shadow pipelines must not fall back to an unrelated pipeline");
     const auto mainCull = pipelines.GetPipelineState("PBR")->cullFaceMode;
     for (const auto* name : {"Spot Light Shadow Map", "Area Light Shadow Map",
                              "Sun Light Shadow Map"}) {

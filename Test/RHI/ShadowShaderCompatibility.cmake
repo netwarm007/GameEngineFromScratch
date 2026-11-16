@@ -3,7 +3,7 @@ set(geometry "${SOURCE_DIR}/Asset/Shaders/HLSL/shadowmap_omni.geom.hlsl")
 set(spirv "${BINARY_DIR}/ShadowCoordinatesCompatibility.spv")
 set(glsl "${BINARY_DIR}/ShadowCoordinatesCompatibility.comp")
 set(metal "${BINARY_DIR}/ShadowCoordinatesCompatibility.metal")
-set(includes "-I${SOURCE_DIR}" "-I${SOURCE_DIR}/Framework/Common"
+set(includes "-I${SOURCE_DIR}" "-I${BINARY_DIR}" "-I${SOURCE_DIR}/Framework/Common"
              "-I${SOURCE_DIR}/Asset/Shaders/HLSL")
 
 function(run_checked)
@@ -48,13 +48,36 @@ run_checked("${SPIRV_CROSS}" --version 430 --remove-unused-variables
             --output "${glsl}" "${spirv}")
 run_checked("${GLSL_VALIDATOR}" -S comp "${glsl}")
 run_checked("${SPIRV_CROSS}" --msl --msl-version 020101 --output "${metal}" "${spirv}")
-run_checked("${GLSL_VALIDATOR}" -V --define-macro MYGE_GLSLANG=1 ${includes}
-            -o "${BINARY_DIR}/ShadowGeometryCompatibility.spv"
-            -e shadowmap_omni_geom_main "${geometry}")
-run_checked("${SPIRV_CROSS}" --version 420 --remove-unused-variables
-            --output "${BINARY_DIR}/ShadowGeometryCompatibility.geom"
-            "${BINARY_DIR}/ShadowGeometryCompatibility.spv")
-run_checked("${GLSL_VALIDATOR}" -S geom "${BINARY_DIR}/ShadowGeometryCompatibility.geom")
+foreach(stage IN ITEMS vert geom frag)
+    set(stage_spirv "${BINARY_DIR}/PointShadow.${stage}.spv")
+    set(stage_glsl "${BINARY_DIR}/PointShadow.${stage}")
+    run_checked("${GLSL_VALIDATOR}" -V --define-macro MYGE_GLSLANG=1 ${includes}
+                -o "${stage_spirv}" -e "shadowmap_omni_${stage}_main"
+                "${SOURCE_DIR}/Asset/Shaders/HLSL/shadowmap_omni.${stage}.hlsl")
+    run_checked("${SPIRV_CROSS}" --version 420 --remove-unused-variables
+                --output "${stage_glsl}" "${stage_spirv}")
+endforeach()
+run_checked("${GLSL_VALIDATOR}" -l "${BINARY_DIR}/PointShadow.vert"
+            "${BINARY_DIR}/PointShadow.geom" "${BINARY_DIR}/PointShadow.frag")
+foreach(stage IN ITEMS vert frag)
+    if(stage STREQUAL "vert")
+        set(shader_name shadowmap_omni_metal)
+    else()
+        set(shader_name shadowmap_omni)
+    endif()
+    run_checked("${GLSL_VALIDATOR}" -V --define-macro MYGE_GLSLANG=1 ${includes}
+                -o "${BINARY_DIR}/PointShadowMetal.${stage}.spv"
+                -e "${shader_name}_${stage}_main"
+                "${SOURCE_DIR}/Asset/Shaders/HLSL/${shader_name}.${stage}.hlsl")
+    run_checked("${SPIRV_CROSS}" --msl --msl-version 020101 --msl-decoration-binding
+                --flip-vert-y --remove-unused-variables
+                --output "${BINARY_DIR}/PointShadowMetal.${stage}.metal"
+                "${BINARY_DIR}/PointShadowMetal.${stage}.spv")
+    if(APPLE_PLATFORM)
+        run_checked(xcrun -sdk macosx metal -c "${BINARY_DIR}/PointShadowMetal.${stage}.metal"
+                    -o "${BINARY_DIR}/PointShadowMetal.${stage}.air")
+    endif()
+endforeach()
 if(APPLE_PLATFORM)
     run_checked(xcrun -sdk macosx metal -c "${metal}" -o "${BINARY_DIR}/ShadowCoordinatesCompatibility.air")
 endif()

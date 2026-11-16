@@ -270,6 +270,15 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
 
     [_device release];
 
+    const bool valid = pState->pipelineType == PIPELINE_TYPE::GRAPHIC ?
+        pState->mtlRenderPipelineState != nil && pState->depthState != nil :
+        pState->mtlComputePipelineState != nil;
+    if (!valid) {
+        DestroyPipelineState(*pState);
+        delete pState;
+        return false;
+    }
+
     *ppPipelineState = pState;
 
     return true;

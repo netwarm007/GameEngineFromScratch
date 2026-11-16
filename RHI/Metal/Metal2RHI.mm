@@ -9,6 +9,7 @@
 #include <stack>
 #include <stdexcept>
 #include "IApplication.hpp"
+#include "PointShadowMatrices.hpp"
 
 #include "imgui_impl_metal.h"
 
@@ -138,6 +139,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     id<MTLBuffer> _lightInfo[GEFSMaxBuffersInFlight];
     ShadowMapConstants shadow_map_constants;
+    NSUInteger _shadowInstanceCount = 1;
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     id<MTLSamplerState> _sampler0;
@@ -733,6 +735,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 }
 
 - (void)setPipelineState:(const MetalPipelineState&)pipelineState frameContext:(const Frame&)frame {
+    _shadowInstanceCount = 1;
     switch (pipelineState.pipelineType) {
         case PIPELINE_TYPE::GRAPHIC: {
             switch (pipelineState.cullFaceMode) {
@@ -769,6 +772,13 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
                     [_renderEncoder setVertexBytes:static_cast<const void*>(&shadow_map_constants)
                                             length:sizeof(ShadowMapConstants)
                                            atIndex:13];
+                    [_renderEncoder setFragmentBytes:static_cast<const void*>(&shadow_map_constants)
+                                              length:sizeof(ShadowMapConstants)
+                                             atIndex:13];
+                    if (frame.lightInfo.lights[shadow_map_constants.light_index].lightType ==
+                        LightType::Omni) {
+                        _shadowInstanceCount = 6;
+                    }
                     break;
                 case PIPELINE_FLAG::NONE:
                     break;
@@ -881,7 +891,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
                                    indexCount:dbc.index_count
                                     indexType:dbc.index_type
                                   indexBuffer:_indexBuffers[dbc.index_offset]
-                            indexBufferOffset:0];
+                            indexBufferOffset:0
+                                instanceCount:_shadowInstanceCount];
     }
 
     [_renderEncoder popDebugGroup];
@@ -939,11 +950,15 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
                 height:(const uint32_t)height
            layer_index:(const int32_t)layer_index
                  frame:(const Frame&)frame {
+    const auto& light = frame.lightInfo.lights[light_index];
+    const bool cube = light.lightType == LightType::Omni;
     MTLRenderPassDescriptor* renderPassDescriptor = [MTLRenderPassDescriptor new];
     renderPassDescriptor.colorAttachments[0] = Nil;
     renderPassDescriptor.depthAttachment.texture = shadowmap;
     renderPassDescriptor.depthAttachment.level = 0;
-    renderPassDescriptor.depthAttachment.slice = layer_index;
+    renderPassDescriptor.depthAttachment.slice = cube ? layer_index * 6 : layer_index;
+    renderPassDescriptor.renderTargetArrayLength = cube ? 6 : 1;
+    renderPassDescriptor.depthAttachment.clearDepth = 1.0;
     renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
     renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
 
@@ -960,10 +975,17 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         0.0, 1.0};
     [_renderEncoder setViewport:viewport];
 
+    shadow_map_constants = {};
     shadow_map_constants.light_index = light_index;
     shadow_map_constants.shadowmap_layer_index = static_cast<float>(layer_index);
     shadow_map_constants.near_plane = 1.0;
-    shadow_map_constants.far_plane = 100.0;
+    shadow_map_constants.far_plane = POINT_SHADOW_FAR_PLANE;
+    if (cube) {
+        const Vector3f position{light.lightPosition[0], light.lightPosition[1],
+                                light.lightPosition[2]};
+        BuildPointShadowMatrices(shadow_map_constants.shadowMatrices, position,
+                                  light.lightProjectionMatrix);
+    }
 }
 
 - (void)endShadowMap:(const id<MTLTexture>)shadowmap
