@@ -37,7 +37,12 @@ set(binding_img_output ${cpu_binding_storageImageBase})
 foreach(shader IN LISTS SHADERS)
     set(binary "${SHADER_DIR}/${shader}.spv")
     run_checked("${SPIRV_VAL}" --target-env vulkan1.1 "${binary}")
-    run_checked("${SPIRV_CROSS}" "${binary}" --reflect)
+    # Unoptimized compilers retain inactive b13 aliases from the shared header.
+    set(active_binary "${SHADER_DIR}/${shader}.active.spv")
+    run_checked("${SPIRV_OPT}" --eliminate-dead-functions
+        --eliminate-dead-code-aggressive --eliminate-dead-variables
+        "${binary}" -o "${active_binary}")
+    run_checked("${SPIRV_CROSS}" "${active_binary}" --reflect)
     set(reflection "${result_output}")
     set("reflection_${shader}" "${reflection}")
     set(occupied)

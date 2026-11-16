@@ -31,6 +31,7 @@ find_program(SPIRV_CROSS NAMES spirv-cross SPIRV-Cross
     HINTS "${root}/External/${CMAKE_SYSTEM_NAME}/bin" "$ENV{VULKAN_SDK}/Bin" REQUIRED)
 find_program(SPIRV_VAL NAMES spirv-val HINTS "$ENV{VULKAN_SDK}/Bin" REQUIRED)
 find_program(SPIRV_DIS NAMES spirv-dis HINTS "$ENV{VULKAN_SDK}/Bin" REQUIRED)
+find_program(SPIRV_OPT NAMES spirv-opt HINTS "$ENV{VULKAN_SDK}/Bin" REQUIRED)
 find_path(CROSSGUID_INCLUDE_DIR Guid.hpp
     HINTS "${root}/External/${CMAKE_SYSTEM_NAME}/include"
           "${root}/External/src/crossguid" REQUIRED)
@@ -46,7 +47,18 @@ add_custom_command(OUTPUT "${shader_dir}/ShaderAbi.comp.spv"
     DEPENDS VulkanTestShaders "${CMAKE_CURRENT_SOURCE_DIR}/ShaderAbi.comp.hlsl"
         "${root}/Framework/Common/cbuffer.h"
     VERBATIM)
-add_executable(VulkanShaderTest VulkanShaderTest.cpp "${shader_dir}/ShaderAbi.comp.spv")
+add_custom_command(OUTPUT "${shader_dir}/basic_noopt.vert.spv"
+    COMMAND "${GLSL_VALIDATOR}" ${MYGE_VULKAN_GLSLANG_OPTIONS} -Od
+        "-I${config_dir}" "-I${root}/Framework/Common"
+        -e basic_vert_main -o "${shader_dir}/basic_noopt.vert.spv"
+        "${root}/Asset/Shaders/HLSL/basic.vert.hlsl"
+    DEPENDS VulkanTestShaders "${root}/Asset/Shaders/HLSL/basic.vert.hlsl"
+        "${root}/Asset/Shaders/HLSL/vsoutput.h.hlsl"
+        "${config_dir}/config.h" "${root}/Framework/Common/cbuffer.h"
+        "${root}/Framework/Common/root_signature.h.hlsl"
+    VERBATIM)
+add_executable(VulkanShaderTest VulkanShaderTest.cpp
+    "${shader_dir}/ShaderAbi.comp.spv" "${shader_dir}/basic_noopt.vert.spv")
 target_link_libraries(VulkanShaderTest PRIVATE Vulkan::Vulkan ${XG_LIBRARY})
 if(USE_ISPC)
     target_link_libraries(VulkanShaderTest PRIVATE GeomMath)
@@ -61,8 +73,9 @@ endif()
 
 add_test(NAME TEST_VulkanShaderAbi COMMAND "${CMAKE_COMMAND}"
     "-DPROBE=$<TARGET_FILE:VulkanShaderTest>"
-    "-DSHADER_DIR=${shader_dir}" "-DSHADERS=${MYGE_VULKAN_SHADER_SOURCES}"
+    "-DSHADER_DIR=${shader_dir}" "-DSHADERS=${MYGE_VULKAN_SHADER_SOURCES};basic_noopt.vert"
     "-DSPIRV_CROSS=${SPIRV_CROSS}" "-DSPIRV_VAL=${SPIRV_VAL}" "-DSPIRV_DIS=${SPIRV_DIS}"
+    "-DSPIRV_OPT=${SPIRV_OPT}"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/ShaderAbi.cmake")
 add_test(NAME TEST_VulkanCompute COMMAND VulkanShaderTest "${shader_dir}")
 set_tests_properties(TEST_VulkanShaderAbi TEST_VulkanCompute PROPERTIES TIMEOUT 90)

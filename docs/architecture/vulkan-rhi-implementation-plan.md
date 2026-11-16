@@ -329,7 +329,7 @@ Build/test only the smallest relevant targets initially, escalating as needed.
 
 The focused suite can run without the engine's full asset/window/dependency
 build, but needs CMake 4+, C++20, the pinned crossguid submodule, Vulkan headers
-and loader, glslangValidator, SPIRV-Cross, spirv-val, and spirv-dis. The compute
+and loader, glslangValidator, SPIRV-Cross, spirv-val, spirv-dis, and spirv-opt. The compute
 test additionally requires a Vulkan 1.1-capable driver and the Khronos
 validation layer; absence is an explicit failure, not a skipped success.
 
@@ -342,8 +342,15 @@ ctest --test-dir build-vulkan-abi -C Debug --output-on-failure
 In the full engine build, opt in with `-DVULKAN_RHI_TESTS=ON`; ordinary native
 backend builds do not gain an unannounced Vulkan driver requirement merely
 because a Vulkan SDK is installed. Tools may be supplied through the CMake
-`GLSL_VALIDATOR`, `SPIRV_CROSS`, `SPIRV_VAL`, and `SPIRV_DIS` paths. Standalone
+`GLSL_VALIDATOR`, `SPIRV_CROSS`, `SPIRV_VAL`, `SPIRV_DIS`, and `SPIRV_OPT` paths. Standalone
 builds compile crossguid from its pinned source; no new dependency is introduced.
+
+Reflection checks validate each original binary, then remove unreachable code
+and unused variables from a test-only copy before inspecting active descriptors.
+Pinned glslang builds without its optimizer retain inactive shared declarations,
+including the mutually exclusive debug/shadow b13 blocks; these are not an
+active binding collision. An additional unoptimized basic vertex fixture covers
+this case. Production shader binaries and compute inputs remain unchanged.
 
 Focused Windows Debug checks passed with the installed Vulkan SDK 1.2.182
 (glslang 11.5) on AMD Radeon(TM) Graphics:
