@@ -21,6 +21,19 @@ int ViewerLogic::Initialize() {
     std::string scene_filename;
     for (int i = 1; i < m_pApp->GetCommandLineArgumentsCount(); i++) {
         std::string arg = m_pApp->GetCommandLineArgument(i);
+        if (arg == "-sceneCycle") {
+            if (++i >= m_pApp->GetCommandLineArgumentsCount()) {
+                cerr << "[ViewerLogic] -sceneCycle requires 0, 1 or 2\n";
+                return -1;
+            }
+            const std::string phase = m_pApp->GetCommandLineArgument(i);
+            if (phase != "0" && phase != "1" && phase != "2") {
+                cerr << "[ViewerLogic] Invalid -sceneCycle phase\n";
+                return -1;
+            }
+            m_SceneCycle = phase[0] - '0';
+            continue;
+        }
         if (!arg.empty() && arg[0] == '-') {
             i++;
             continue;
@@ -42,7 +55,26 @@ int ViewerLogic::Initialize() {
 
 void ViewerLogic::Finalize() { cout << "[ViewerLogic] Finalize" << endl; }
 
-void ViewerLogic::Tick() {}
+void ViewerLogic::Tick() {
+    if (m_SceneCycle == 0) return;
+    ++m_SceneCycleTick;
+    const char* scene = nullptr;
+    if (m_SceneCycleTick == 8) scene = "Scene/billiard.ogex";
+    if (m_SceneCycleTick == 16 && m_SceneCycle == 2)
+        scene = "Scene/splash.ogex";
+    if (scene) {
+        auto* scenes = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+        if (scenes->LoadScene(scene) != 0) {
+            cerr << "[ViewerLogic] Scene-cycle load failed: " << scene << '\n';
+            m_pApp->RequestQuit();
+            return;
+        }
+        cout << "SCENE_CYCLE_LOADED " << scene << endl;
+    }
+    if (m_SceneCycleTick == (m_SceneCycle == 1 ? 16 : 24)) {
+        cout << "SCENE_CYCLE_READY phase=" << m_SceneCycle << endl;
+    }
+}
 
 void ViewerLogic::OnLeftKeyDown() {
     auto pSceneManager =

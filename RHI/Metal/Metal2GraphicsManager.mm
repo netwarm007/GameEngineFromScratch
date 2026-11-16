@@ -51,6 +51,11 @@ void Metal2GraphicsManager::Finalize() {
 
 void Metal2GraphicsManager::Present() { [m_pRHI present]; }
 
+void Metal2GraphicsManager::EndScene() {
+    [m_pRHI releaseSceneGeometry];
+    GraphicsManager::EndScene();
+}
+
 void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
     uint32_t batch_index = 0;
     uint32_t v_property_offset = 0;
@@ -146,6 +151,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.diffuseMap = [m_pRHI createMaterialTexture:*image];
+                            m_Textures.push_back(dbc->material.diffuseMap);
                         }
                     }
 
@@ -154,6 +160,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.normalMap = [m_pRHI createMaterialTexture:*image];
+                            m_Textures.push_back(dbc->material.normalMap);
                         }
                     }
 
@@ -162,6 +169,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.metallicMap = [m_pRHI createMaterialTexture:*image];
+                            m_Textures.push_back(dbc->material.metallicMap);
                         }
                     }
 
@@ -170,6 +178,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.roughnessMap = [m_pRHI createMaterialTexture:*image];
+                            m_Textures.push_back(dbc->material.roughnessMap);
                         }
                     }
 
@@ -178,6 +187,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
                         if (image) {
                             adjust_image(*image);
                             dbc->material.aoMap = [m_pRHI createMaterialTexture:*image];
+                            m_Textures.push_back(dbc->material.aoMap);
                         }
                     }
 
@@ -208,6 +218,7 @@ void Metal2GraphicsManager::initializeSkyBox(const Scene& scene) {
         }
 
         m_Frames[0].skybox = [m_pRHI createSkyBox:images];
+        m_Textures.push_back(m_Frames[0].skybox);
     }
 }
 
@@ -244,10 +255,12 @@ void Metal2GraphicsManager::DrawBatch(const Frame& frame) { [m_pRHI drawBatch:fr
 
 void Metal2GraphicsManager::GenerateCubemapArray(TextureCubeArray& texture_array) {
     [m_pRHI generateCubemapArray:texture_array];
+    m_Textures.push_back(texture_array);
 }
 
 void Metal2GraphicsManager::GenerateTextureArray(Texture2DArray& texture_array) {
     [m_pRHI generateTextureArray:texture_array];
+    m_Textures.push_back(texture_array);
 }
 
 void Metal2GraphicsManager::BeginShadowMap(const int32_t light_index, const TextureBase* pShadowmap,
@@ -277,6 +290,7 @@ void Metal2GraphicsManager::DrawSkyBox(const Frame& frame) { [m_pRHI drawSkyBox:
 
 void Metal2GraphicsManager::GenerateTextureForWrite(Texture2D& texture) {
     [m_pRHI generateTextureForWrite:texture];
+    m_Textures.push_back(texture);
 }
 
 void Metal2GraphicsManager::BindTextureForWrite(Texture2D& texture, const uint32_t slot_index) {

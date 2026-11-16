@@ -2,12 +2,13 @@
 set -eu
 
 output_dir=${1:-screenshots}
+if [ "$#" -gt 0 ]; then shift; fi
 mkdir -p "$output_dir"
 output_dir=$(cd "$output_dir" && pwd)
 export LD_LIBRARY_PATH="$PWD/External/Linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 glxinfo -B > "$output_dir/diagnostics.txt" 2>&1
-stdbuf -oL -eL ./build/Viewer/Viewer > "$output_dir/viewer.log" 2>&1 &
+stdbuf -oL -eL ./build/Viewer/Viewer "$@" > "$output_dir/viewer.log" 2>&1 &
 viewer_pid=$!
 cleanup() {
     kill "$viewer_pid" 2>/dev/null || true

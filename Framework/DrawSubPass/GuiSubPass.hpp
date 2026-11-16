@@ -24,6 +24,7 @@ class GuiSubPass : public BaseSubPass {
     bool m_ResetDockLayout{false};
 
     std::vector<Texture2D> m_TextureViews;
+    std::weak_ptr<const Scene> m_ViewScene;
     std::array<TextureHandler, 4> m_viewSources{};
     std::array<uint32_t, 3> m_viewSizes{};
 };

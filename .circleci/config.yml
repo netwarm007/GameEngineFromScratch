@@ -261,6 +261,34 @@ jobs:
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
             }
       - run:
+          name: Viewer scene replacement regression
+          no_output_timeout: 10m
+          command: |
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse |
+              Select-Object -First 1
+            if (-not $viewer) { throw "Viewer.exe not found" }
+            foreach ($phase in 1, 2) {
+              $output = "screenshots/scene-cycle-$phase"
+              New-Item -ItemType Directory -Force $output | Out-Null
+              $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path $output).Path "viewer-render.png"
+              $process = $null
+              try {
+                $process = Start-Process -FilePath $viewer.FullName -PassThru `
+                  -ArgumentList "-sceneCycle", "$phase" `
+                  -RedirectStandardOutput "$output/viewer.log" `
+                  -RedirectStandardError "$output/viewer-error.log"
+                if (-not $process.WaitForExit(180000)) { throw "Scene cycle timed out" }
+                if ($process.ExitCode -ne 0) { throw "Scene cycle exited $($process.ExitCode)" }
+                if (-not (Test-Path $env:GEFS_SCREENSHOT_PATH)) { throw "Scene cycle PNG missing" }
+                if (-not (Select-String -Path "$output/viewer.log" -SimpleMatch "SCENE_CYCLE_READY phase=$phase" -Quiet)) {
+                  throw "Scene cycle did not reach phase $phase"
+                }
+              } finally {
+                if ($process -and -not $process.HasExited) { Stop-Process -Id $process.Id }
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+              }
+            }
+      - run:
           name: Billiard physics regression and screenshots
           no_output_timeout: 15m
           command: |
@@ -405,6 +433,20 @@ jobs:
                > screenshots/capture.log 2>&1; then
                echo "Viewer screenshot failed; see viewer-screenshots/capture.log and viewer.log"
              fi
+      - run:
+          name: Viewer scene replacement regression
+          no_output_timeout: 10m
+          command: |
+             for phase in 1 2; do
+               output="screenshots/scene-cycle-$phase"
+               mkdir -p "$output"
+               LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
+                 xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                 bash scripts/capture_viewer_linux.sh "$output" -sceneCycle "$phase" \
+                 > "$output/capture.log" 2>&1
+               grep -q "SCENE_CYCLE_READY phase=$phase" "$output/viewer.log"
+               test -s "$output/viewer-render.png"
+             done
       - run:
           name: Billiard physics regression and screenshots
           no_output_timeout: 15m
@@ -552,6 +594,33 @@ jobs:
              pkill -x Viewer || true
              cp ~/Library/Logs/DiagnosticReports/Viewer* screenshots/ 2>/dev/null || true
              exit 0
+      - run:
+          name: Viewer scene replacement regression
+          no_output_timeout: 10m
+          command: |
+             APP=$(find build -type d -name Viewer.app | head -n 1)
+             test -n "$APP"
+             for phase in 1 2; do
+               output="$PWD/screenshots/scene-cycle-$phase"
+               mkdir -p "$output"
+               "$APP/Contents/MacOS/Viewer" -sceneCycle "$phase" \
+                 -screenshot "$output/viewer-render.png" -screenshotDelay 2 \
+                 -screenshotFrame 120 > "$output/viewer.log" 2>&1 &
+               viewer_pid=$!
+               trap 'kill "$viewer_pid" 2>/dev/null || true' EXIT
+               for i in $(seq 1 36); do
+                 sleep 5
+                 kill -0 "$viewer_pid" 2>/dev/null || break
+               done
+               if kill -0 "$viewer_pid" 2>/dev/null; then
+                 echo "Scene cycle timed out" >&2
+                 exit 1
+               fi
+               wait "$viewer_pid"
+               trap - EXIT
+               grep -q "SCENE_CYCLE_READY phase=$phase" "$output/viewer.log"
+               test -s "$output/viewer-render.png"
+             done
       - run:
           name: Billiard physics regression and screenshot
           no_output_timeout: 15m

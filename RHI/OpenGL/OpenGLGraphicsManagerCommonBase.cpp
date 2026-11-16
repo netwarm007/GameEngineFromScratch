@@ -341,6 +341,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
                             texture_out.width = texture->Width;
                             texture_out.height = texture->Height;
 
+                            m_Textures.push_back(texture_out);
                             return texture_out;
                         };
 
@@ -520,6 +521,7 @@ void OpenGLGraphicsManagerCommonBase::initializeSkyBox(const Scene& scene) {
     m_Frames[0].skybox.height = height;
     m_Frames[0].skybox.size = 2;
     m_Frames[0].skybox.mips = pImage->mipmaps.size();
+    m_Textures.push_back(m_Frames[0].skybox);
 
     glBindTexture(target, 0);
 
@@ -590,6 +592,7 @@ Texture2D OpenGLGraphicsManagerCommonBase::CreateTexture(Image& img) {
 }
 
 void OpenGLGraphicsManagerCommonBase::EndScene() {
+    if (!m_Buffers.empty() || !m_Textures.empty()) glFinish();
     for (int i = 0; i < m_Frames.size(); i++) {
         auto& batchContexts = m_Frames[i].batchContexts;
 
@@ -920,6 +923,7 @@ void OpenGLGraphicsManagerCommonBase::GenerateCubemapArray(
 
     texture_array.handler = static_cast<TextureHandler>(shadowMap);
     texture_array.format = static_cast<TextureFormat>(internal_format);
+    m_Textures.push_back(texture_array);
 }
 
 void OpenGLGraphicsManagerCommonBase::GenerateTextureArray(
@@ -944,6 +948,7 @@ void OpenGLGraphicsManagerCommonBase::GenerateTextureArray(
 
     texture_array.handler = static_cast<TextureHandler>(shadowMap);
     texture_array.format = static_cast<TextureFormat>(internal_format);
+    m_Textures.push_back(texture_array);
 }
 
 void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
@@ -1116,6 +1121,7 @@ void OpenGLGraphicsManagerCommonBase::GenerateTextureForWrite(
     glBindTexture(GL_TEXTURE_2D, 0);
 
     texture.handler = static_cast<TextureHandler>(tex_output);
+    m_Textures.push_back(texture);
 }
 
 void OpenGLGraphicsManagerCommonBase::BindTextureForWrite(

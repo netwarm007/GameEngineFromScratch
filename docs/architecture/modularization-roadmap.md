@@ -249,12 +249,59 @@ contained panels. Headless checks do not replace rendering inspection.
 
 ### D. Reassess remaining coupling
 
-After the preceding stages, inspect the resulting dependency graph and choose
-the next small boundary based on evidence. Candidates include residual
-Application lookups, UI asset dependencies, and clearer GPU scene-resource
-ownership. Do not assume that streaming, cancellation, hot reload, or a new
-resource framework is required. Each candidate needs its own problem statement,
-scope, compatibility constraints, and verification plan before implementation.
+**D1 selected and in progress: retire GPU scene resources on scene replacement.**
+
+Read-only assessment found a concrete lifetime boundary before the remaining
+service-location and UI-asset coupling: Metal appends geometry buffers and draw
+batches while caching materials by name, but has no scene-specific teardown.
+The common teardown does not clear these borrowed batches or material entries.
+D3D12 already implements explicit scene retirement; OpenGL clears geometry but
+does not consistently register scene textures for release.
+
+Problem: replacing A with B (including identical material names with different
+content), returning to A, or selecting an empty scene must not retain old
+geometry, material bindings or scene-owned GPU allocations.
+
+Scope and invariants:
+
+- Wait for relevant GPU submissions before retiring a scene. Clear borrowed
+  draw batches, material entries and frame texture bindings.
+- Release scene-owned material, environment, BRDF and shadow textures once.
+  Keep framebuffer ownership separate, and do not adopt UI icons or UI-owned
+  texture views into the scene texture collection.
+- Add Metal geometry-buffer retirement, retaining its initialized device,
+  queues, per-frame constants, renderer backend and shared pipeline objects.
+- Preserve existing shader/coordinate semantics, single-scene appearance,
+  docking and saved layouts. Do not introduce a general resource framework,
+  streaming, cancellation, hot reload or device-loss recovery.
+
+Implementation and verification sequence:
+
+1. Extend RenderServicesTest with registered scene textures, real geometry-node
+   references, repeated material names, A/B/A and empty-scene transitions.
+   Demonstrate failure before changing the common teardown.
+2. Fix the common scene retirement contract and the dependent Metal/OpenGL
+   ownership paths; preserve D3D12's existing explicit cleanup.
+3. Add native Metal buffer-retirement/reuse coverage and exercise actual scene
+   replacement, not merely application reinitialization. Verify empty/repeated
+   cleanup and keep GPU/backend resources usable afterward.
+4. Run focused local tests, then exact-revision Windows/Linux/macOS CI.
+   Inspect native scene-switch screenshots and existing Viewer/Billiard
+   artifacts. Headless checks and single-scene captures do not by themselves
+   establish native scene-switch correctness.
+5. Record results and remaining limitations under the tested full revision;
+   mark this checkpoint accepted only after its stated gates pass.
+
+The opt-in Viewer argument `-sceneCycle 1` loads splash then billiard, while
+`-sceneCycle 2` returns to splash in the same process. CI captures both final
+states and requires the corresponding `SCENE_CYCLE_READY` log marker. Without
+this argument the ordinary Viewer load path is unchanged. Empty-scene and
+same-name material retirement are checked by RenderServicesTest; native Metal
+buffer release and subsequent reuse are checked by MetalInitializationTest.
+
+Next candidates, not part of D1: inject the game-logic dependency into
+InputManager; then reassess Viewer/Billiard service lookups and GuiSubPass's
+direct AssetLoader/PNG dependency using existing interfaces.
 
 ## Working and acceptance rules
 
@@ -297,5 +344,5 @@ do not establish new source acceptance.
 - No fixed delivery dates are implied. Stage A covers initialization
   orchestration; stage B covers the selected native initialization/cleanup
   failures, not exhaustive driver recovery or ImGui ownership. Stage C covers
-  the selected GUI ownership boundary; stage D remains a proposal requiring
-  confirmation.
+  the selected GUI ownership boundary; D1 targets scene-resource retirement.
+  Later D checkpoints require their own scope and evidence.

@@ -294,8 +294,16 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     }
 }
 
-- (void)finalize {
+- (void)releaseSceneGeometry {
     [self waitForIdle];
+    for (auto buffer : _vertexBuffers) [buffer release];
+    _vertexBuffers.clear();
+    for (auto buffer : _indexBuffers) [buffer release];
+    _indexBuffers.clear();
+}
+
+- (void)finalize {
+    [self releaseSceneGeometry];
     for (auto buffer : _commandBuffers) [buffer release];
     _commandBuffers.clear();
     [_computeCommandBuffer release];

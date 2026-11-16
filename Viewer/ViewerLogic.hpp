@@ -4,6 +4,8 @@
 
 namespace My {
 class ViewerLogic : public GameLogic {
+    int m_SceneCycle = 0;
+    int m_SceneCycleTick = 0;
     // overrides
     int Initialize() final;
     void Finalize() final;

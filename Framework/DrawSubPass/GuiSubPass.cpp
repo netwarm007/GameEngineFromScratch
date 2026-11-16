@@ -234,11 +234,13 @@ void GuiSubPass::Draw(Frame& frame) {
         const std::array<uint32_t, 3> sizes{
             frame.frameContext.globalShadowMap.size, frame.frameContext.shadowMap.size,
             frame.frameContext.cubeShadowMap.size};
-        if (m_viewSources != sources || m_viewSizes != sizes) {
+        if (m_ViewScene.lock() != frame.scene ||
+            m_viewSources != sources || m_viewSizes != sizes) {
             for (auto& view : m_TextureViews) m_pGraphicsManager->ReleaseTexture(view);
             m_TextureViews.clear();
             m_viewSources = sources;
             m_viewSizes = sizes;
+            m_ViewScene = frame.scene;
         }
 	    static bool show_app_metrics = false;
 	    static bool show_app_debug_panel = true;

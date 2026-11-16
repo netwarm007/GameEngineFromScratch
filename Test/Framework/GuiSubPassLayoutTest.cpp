@@ -22,6 +22,18 @@ void Expect(bool condition, const char* what) {
 }
 
 class LayoutGraphicsManager : public GraphicsManager {
+   public:
+    int viewsCreated = 0;
+    int viewsReleased = 0;
+    void CreateTextureView(Texture2D& view, const TextureArrayBase& source,
+                           uint32_t, uint32_t) override {
+        view.handler = ++viewsCreated;
+        view.width = source.width;
+        view.height = source.height;
+    }
+    void ReleaseTexture(TextureBase&) override { ++viewsReleased; }
+
+   private:
     void ResizeCanvas(int32_t, int32_t) override {}
 };
 
@@ -65,6 +77,11 @@ void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
         GuiSubPass gui(&graphics, nullptr);
         Frame frame;
         frame.colorTextures.resize(1);
+        frame.scene = std::make_shared<Scene>("A");
+        frame.frameContext.globalShadowMap.handler = 42;
+        frame.frameContext.globalShadowMap.size = 1;
+        frame.frameContext.globalShadowMap.width = 64;
+        frame.frameContext.globalShadowMap.height = 64;
 
         for (int i = 0; i < 3; i++) {
             ImGui::NewFrame();
@@ -72,6 +89,15 @@ void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
             ImGui::Render();
             ImGui::UpdatePlatformWindows();
         }
+        Expect(graphics.viewsCreated == 1 && graphics.viewsReleased == 0,
+               "unchanged scene reuses its debug texture view");
+        frame.scene = std::make_shared<Scene>("B");
+        ImGui::NewFrame();
+        gui.Draw(frame);
+        ImGui::Render();
+        ImGui::UpdatePlatformWindows();
+        Expect(graphics.viewsCreated == 2 && graphics.viewsReleased == 1,
+               "scene change refreshes debug views even when handles are reused");
 
         auto* scene = ImGui::FindWindowByName((const char*)u8"场景图");
         auto* debug = ImGui::FindWindowByName((const char*)u8"调试窗口");

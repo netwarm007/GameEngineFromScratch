@@ -170,6 +170,91 @@ class ShadowPipelines : public PipelineStateManager {
     }
 };
 
+class SceneResourceGraphics : public FrameResourceGraphics {
+   public:
+    using FrameResourceGraphics::FrameResourceGraphics;
+    bool BorrowedStateEmpty() const {
+        if (!material_map.empty()) return false;
+        for (const auto& frame : m_Frames) {
+            if (!frame.batchContexts.empty() || frame.brdfLUT.handler ||
+                frame.skybox.handler || frame.frameContext.shadowMap.handler ||
+                frame.frameContext.globalShadowMap.handler ||
+                frame.frameContext.cubeShadowMap.handler) return false;
+        }
+        return true;
+    }
+    TextureHandler materialHandle = 0;
+
+   protected:
+    void BeginScene(const Scene& scene) override {
+        RecordingGraphics::BeginScene(scene);
+        if (scene.SceneGraph->GetChildCount() == 0) return;
+        auto it = material_map.find("same material name");
+        if (it == material_map.end()) {
+            material_textures material;
+            GenerateTexture(material.diffuseMap);
+            m_Textures.push_back(material.diffuseMap);
+            it = material_map.emplace("same material name", material).first;
+        }
+        materialHandle = it->second.diffuseMap.handler;
+        auto batch = std::make_shared<DrawBatchContext>();
+        batch->node = std::static_pointer_cast<SceneGeometryNode>(
+            scene.SceneGraph->GetChildNodes().front());
+        batch->material = it->second;
+        for (auto& frame : m_Frames) {
+            frame.batchContexts.push_back(batch);
+            frame.skybox.handler = materialHandle;
+            frame.brdfLUT = it->second.diffuseMap;
+            frame.frameContext.shadowMap.handler = materialHandle;
+            frame.frameContext.globalShadowMap.handler = materialHandle;
+            frame.frameContext.cubeShadowMap.handler = materialHandle;
+        }
+    }
+};
+
+void TestSceneResourceRetirement() {
+    TestApplication app;
+    TestScenes scenes;
+    TestPipelines pipelines;
+    SceneResourceGraphics graphics(scenes, pipelines);
+    graphics.SetAppPointer(&app);
+    Expect(graphics.Initialize() == 0, "scene resource regression initializes");
+    TextureHandler previousMaterial = 0;
+    std::weak_ptr<SceneGeometryNode> previousNode;
+    for (const auto* name : {"A", "B", "A", "empty"}) {
+        scenes.scene = std::make_shared<Scene>(name);
+        scenes.scene->SkyBox.reset();
+        if (std::string(name) != "empty") {
+            auto node = std::make_shared<SceneGeometryNode>(name);
+            scenes.scene->SceneGraph->AppendChild(std::move(node));
+        }
+        ++scenes.revision;
+        graphics.Tick();
+        Expect(previousNode.expired(),
+               "scene replacement retires geometry references from every frame");
+        if (std::string(name) == "empty") {
+            Expect(graphics.BorrowedStateEmpty(),
+                   "empty scene has no old material, batch or texture bindings");
+        } else {
+            Expect(graphics.materialHandle != previousMaterial,
+                   "same material name in another scene gets a new texture");
+            previousMaterial = graphics.materialHandle;
+            previousNode = std::static_pointer_cast<SceneGeometryNode>(
+                scenes.scene->SceneGraph->GetChildNodes().front());
+        }
+        Expect(graphics.liveTextures.size() ==
+                   GfxConfiguration::kMaxInFlightFrameCount + 1u +
+                       (std::string(name) == "empty" ? 0u : 1u),
+               "only current scene textures and framebuffer targets remain live");
+    }
+    graphics.Finalize();
+    graphics.Finalize();
+    Expect(graphics.liveTextures.empty() &&
+               graphics.allocations == graphics.releases &&
+               graphics.BorrowedStateEmpty(),
+           "repeated shutdown releases scene resources once and clears borrowers");
+}
+
 class ShadowGraphics : public RecordingGraphics {
    public:
     ShadowGraphics(TestScenes& scenes, ShadowPipelines& pipelines)
@@ -463,6 +548,7 @@ int main() {
     TestFrameResourceOwnership(4, false);
     TestFrameResourceOwnership(4, true);
     TestFrameResourcesAfterFailedInitialization();
+    TestSceneResourceRetirement();
 
     ImGui::DestroyContext();
     return failures == 0 ? 0 : 1;
