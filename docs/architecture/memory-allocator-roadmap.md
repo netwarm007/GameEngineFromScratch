@@ -106,7 +106,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M0 | This roadmap | Done (docs only) |
 | M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Done (CI-verified, `docs/verification/03a8504ee0dc1fd042c3444d520f2b3863c85304.md`) |
 | M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests (`LinearAllocatorTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/faa5744f42b9aec60d6b93f561af22a95378320e.md`) |
-| M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; stale `Marker` detection; tests (`FrameAllocatorTest`, `RingAllocatorTest`, `PmrAdapterTest`, `StackAllocatorTest`). | Implemented; awaiting CI acceptance |
+| M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; stale `Marker` detection; tests (`FrameAllocatorTest`, `RingAllocatorTest`, `PmrAdapterTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/89926ec5081f370ca6519c6fbeba021a1fc6cbd6.md`) |
 | M4 | Size-class small-object allocator and Slab; tests. | Planned |
 | M5 | TLSF and Buddy; tests. | Planned |
 | M6 | Debug/tracking decorator, statistics, leak reports; tests. | Planned |
