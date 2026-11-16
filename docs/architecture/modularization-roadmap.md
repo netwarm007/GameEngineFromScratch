@@ -87,11 +87,14 @@ The earlier acceptance records remain unchanged after rebasing. Algorithm,
 coverage, and unrelated rendering improvements brought in from master are
 upstream dependencies, not additional deliverables of this refactoring series.
 
-## Proposed remaining stages
+## Follow-on stages
 
 ### A. Separate native window creation from RHI initialization
 
-**In progress; implementation and focused checks do not imply CI acceptance.**
+**Completed and accepted on the topic branch.** See the
+[initialization boundary verification](../verification/f3ab9862160edae8d180d6d6ff81c5f4f2209f05.md)
+for exact-revision evidence and limitations. This is not a claim of integration
+into master.
 
 First trace creation and failure paths on Windows, Linux, and macOS. Define the
 smallest explicit sequence of native window creation, backend initialization,
@@ -139,6 +142,8 @@ setup assertions, exceptions, and partial-allocation failure behavior are not
 redesigned; D2D/Vulkan runtime support is not established by migrating hooks.
 
 ### B. Harden native partial initialization and cleanup
+
+**Proposed next checkpoint; not started.**
 
 Depends on the boundaries established in stage A.
 
