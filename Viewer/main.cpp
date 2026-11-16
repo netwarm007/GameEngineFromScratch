@@ -11,6 +11,7 @@
 #include "SceneManager.hpp"
 #include "SceneResourceLoader.hpp"
 #include "ViewerLogic.hpp"
+#include "SplashSequence.hpp"
 
 #if defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
@@ -72,6 +73,7 @@ int main(int argc, char** argv) {
     BulletPhysicsManager physicsManager(sceneManager);
     InputManager inputManager;
     AnimationManager animationManager(sceneManager);
+    SplashSequence splashSequence(sceneManager, physicsManager, animationManager);
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
@@ -81,6 +83,7 @@ int main(int argc, char** argv) {
     app.SetCommandLineParameters(argc, argv);
 
     app.RegisterManagerModule(&animationManager);
+    app.RegisterManagerModule(&splashSequence);
     app.RegisterManagerModule(&assetLoader);
     app.RegisterManagerModule(&graphicsManager);
     app.RegisterManagerModule(&inputManager);

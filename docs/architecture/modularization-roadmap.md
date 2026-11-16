@@ -62,10 +62,11 @@ their named source revisions, not every subsequent commit or merge.
   replacement, and graphics-only clients. See the
   [rendering services record](../verification/0ebcff1802e79c36bb3414a12532fbef8b211da9.md).
 
-### Follow-on work accepted on the current topic branch
+### Follow-on foundations integrated upstream
 
-These changes are implemented and verified on the topic branch, not yet
-integrated into master by this series:
+The following checkpoints were originally accepted on this topic branch and
+have since been integrated into master through PR #61. The stage A/B work below
+builds on those upstream foundations; it is not a second implementation of them.
 
 - **Offscreen ownership:** GraphicsManager owns per-frame color and shared
   depth/MSAA targets; Frame borrows descriptors. Resize, scene cleanup, and

@@ -53,6 +53,11 @@ const char* BaseApplication::GetCommandLineArgument(int index) const {
 
 bool BaseApplication::IsQuit() const { return m_bQuit; }
 
+void BaseApplication::RegisterManagerModule(IRuntimeModule* module) {
+    runtime_modules.Register(*module);
+    module->SetAppPointer(this);
+}
+
 void BaseApplication::RegisterManagerModule(IGraphicsManager* mgr) {
     runtime_modules.Register(*mgr);
     m_pGraphicsManager = mgr;

@@ -12,6 +12,7 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
     bool m_bMotionBlur;
     std::vector<std::string> m_Materials;
     std::optional<Matrix4X4f> m_SimulationTransform;
+    bool m_PhysicsEnabled{true};
 
    protected:
     void dump(std::ostream& out) const override {
@@ -38,6 +39,8 @@ class SceneGeometryNode : public SceneNode<SceneObjectGeometry> {
     bool CastShadow() const { return m_bShadow; };
     void SetIfMotionBlur(bool motion_blur) { m_bMotionBlur = motion_blur; };
     bool MotionBlur() const { return m_bMotionBlur; };
+    void SetPhysicsEnabled(bool enabled) { m_PhysicsEnabled = enabled; }
+    bool PhysicsEnabled() const { return m_PhysicsEnabled; }
     using SceneNodeType::AddSceneObjectRef;
     void AddMaterialRef(const std::string& key) { m_Materials.push_back(key); };
     void AddMaterialRef(const std::string&& key) {

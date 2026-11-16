@@ -135,6 +135,8 @@ int PipelineStateManager::Initialize() {
     pipelineState.vertexShaderName = VS_SHADOWMAP_SOURCE_FILE;
     pipelineState.pixelShaderName = PS_SHADOWMAP_SOURCE_FILE;
     pipelineState.geometryShaderName.clear();
+    // Metal already compensates its vertex Y flip in the front-face winding.
+    pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
     RegisterPipelineState(pipelineState);
 
     pipelineState.pipelineStateName = "Area Light Shadow Map";

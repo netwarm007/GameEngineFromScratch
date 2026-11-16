@@ -144,7 +144,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
     // Geometries
     for (const auto& _it : scene.GeometryNodes) {
         const auto& pGeometryNode = _it.second.lock();
-        if (pGeometryNode && pGeometryNode->Visible()) {
+        if (pGeometryNode) {
             const auto& pGeometry =
                 scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);
@@ -854,6 +854,7 @@ void OpenGLGraphicsManagerCommonBase::SetPerBatchConstants(
 
 void OpenGLGraphicsManagerCommonBase::DrawBatch(const Frame& frame) {
     for (auto& pDbc : frame.batchContexts) {
+        if (!pDbc->node->Visible()) continue;
         SetPerBatchConstants(*pDbc);
 
         const auto& dbc = dynamic_cast<const OpenGLDrawBatchContext&>(*pDbc);

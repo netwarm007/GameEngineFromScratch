@@ -8,6 +8,18 @@ int AnimationManager::Initialize() { return 0; }
 void AnimationManager::Finalize() { ClearAnimationClips(); }
 
 void AnimationManager::Tick() {
+    SynchronizeScene();
+    if (!m_bTimeLineStarted) {
+        m_TimeLineStartPoint = std::chrono::steady_clock::now();
+        m_bTimeLineStarted = true;
+    }
+
+    const std::chrono::duration<float> elapsed =
+        std::chrono::steady_clock::now() - m_TimeLineStartPoint;
+    Update(elapsed.count());
+}
+
+void AnimationManager::SynchronizeScene() {
     auto rev = m_Scenes.GetSceneRevision();
     if (m_nSceneRevision != rev) {
         cerr << "[AnimationManager] Detected Scene Change, reinitialize "
@@ -34,14 +46,11 @@ void AnimationManager::Tick() {
         // reset timeline
         m_bTimeLineStarted = false;
     }
+}
 
-    if (!m_bTimeLineStarted) {
-        m_TimeLineStartPoint = std::chrono::steady_clock::now();
-        m_bTimeLineStarted = true;
-    }
-
-    m_TimeLineValue = std::chrono::steady_clock::now() - m_TimeLineStartPoint;
-
+void AnimationManager::Update(float timePoint) {
+    SynchronizeScene();
+    m_TimeLineValue = std::chrono::duration<float>(timePoint);
     for (const auto& clip : m_AnimationClips) {
         clip->Update(m_TimeLineValue.count());
     }

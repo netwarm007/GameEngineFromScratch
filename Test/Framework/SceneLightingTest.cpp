@@ -1,8 +1,10 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <set>
 #include <string>
 
+#include "GfxConfiguration.hpp"
 #include "Scene.hpp"
 #include "SceneLighting.hpp"
 
@@ -23,14 +25,15 @@ bool Near(float actual, float expected) {
 }
 
 std::shared_ptr<SceneLightNode> AddLight(
-    Scene& scene, const std::shared_ptr<SceneObjectLight>& source) {
+    Scene& scene, const std::shared_ptr<SceneObjectLight>& source,
+    const std::string& key = "light") {
     auto node = std::make_shared<SceneLightNode>("light node");
-    node->AddSceneObjectRef("light");
+    node->AddSceneObjectRef(key);
     node->AppendTransform("position", std::make_shared<SceneObjectTranslation>(
                                           3.0f, -2.0f, 6.0f));
     scene.SceneGraph->AppendChild(node);
-    scene.LightNodes.emplace("light", node);
-    scene.Lights.emplace("light", source);
+    scene.LightNodes.emplace(key, node);
+    scene.Lights.emplace(key, source);
     return node;
 }
 
@@ -198,6 +201,115 @@ void TestDirectionalShadows() {
            "directional shadow half extent remains capped at 800");
 }
 
+std::shared_ptr<SceneObjectSpotLight> ShadowSpot() {
+    auto light = std::make_shared<SceneObjectSpotLight>();
+    AttenCurve angle{};
+    angle.type = AttenCurveType::kLinear;
+    angle.u.linear_params = {PI / 8, PI / 4};
+    light->SetAngleAttenuation(angle);
+    light->SetIfCastShadow(true);
+    return light;
+}
+
+void TestPreparedShadowLayers() {
+    Scene scene("colored spots");
+    auto red = ShadowSpot();
+    auto green = ShadowSpot();
+    std::string colorName = "light";
+    Vector4f redColor{1, 0, 0, 1}, greenColor{0, 1, 0, 1};
+    red->SetColor(colorName, redColor);
+    green->SetColor(colorName, greenColor);
+    AddLight(scene, red, "red");
+    AddLight(scene, green, "green");
+
+    LightingFrame frame;
+    for (bool openGL : {false, true}) {
+        for (int tick = 0; tick < 3; ++tick) {
+            Expect(PrepareSceneLights(scene, openGL, frame),
+                   "prepare colored spot shadows on every frame");
+            std::set<int> layers;
+            for (int i = 0; i < frame.numLights; ++i) {
+                const auto& light = frame.lightInfo.lights[i];
+                Expect(light.lightCastShadow &&
+                           (light.lightGuid == red->GetGuid() ||
+                            light.lightGuid == green->GetGuid()),
+                       "retain each colored caster's identity");
+                layers.insert(light.lightShadowMapIndex);
+            }
+            Expect(layers == std::set<int>{0, 1},
+                   "distinct spot layers are ready before backend upload");
+        }
+        scene.LightNodes.rehash(scene.LightNodes.bucket_count() * 2);
+    }
+
+    scene.LightNodes.clear();
+    AddLight(scene, green, "remaining");
+    Expect(PrepareSceneLights(scene, false, frame) && frame.numLights == 1 &&
+               frame.lightInfo.lights[0].lightShadowMapIndex == 0,
+           "removing a caster rebuilds a dense shadow allocation");
+}
+
+void TestShadowCapacity() {
+    Scene scene("mixed shadow pools");
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxShadowMapCount + 2; ++i) {
+        std::shared_ptr<SceneObjectLight> source;
+        if (i % 2 == 0) {
+            source = ShadowSpot();
+        } else {
+            auto area = std::make_shared<SceneObjectAreaLight>();
+            area->SetIfCastShadow(true);
+            source = area;
+        }
+        AddLight(scene, source, "planar" + std::to_string(i));
+    }
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxCubeShadowMapCount + 1; ++i) {
+        auto source = std::make_shared<SceneObjectOmniLight>();
+        source->SetIfCastShadow(true);
+        AddLight(scene, source, "omni" + std::to_string(i));
+    }
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxGlobalShadowMapCount + 1; ++i) {
+        auto source = std::make_shared<SceneObjectInfiniteLight>();
+        source->SetIfCastShadow(true);
+        AddLight(scene, source, "sun" + std::to_string(i));
+    }
+    AddLight(scene, std::make_shared<SceneObjectOmniLight>(), "unshadowed");
+    scene.LightNodes.emplace("expired", std::weak_ptr<SceneLightNode>{});
+
+    LightingFrame frame;
+    Expect(PrepareSceneLights(scene, false, frame) &&
+               frame.numLights == static_cast<int>(
+                   GfxConfiguration::kMaxShadowMapCount +
+                   GfxConfiguration::kMaxCubeShadowMapCount +
+                   GfxConfiguration::kMaxGlobalShadowMapCount + 5),
+           "shadow overflow preserves illumination and skips expired nodes");
+    std::set<int> planar, cube, global;
+    int unshadowed = 0;
+    for (int i = 0; i < frame.numLights; ++i) {
+        const auto& light = frame.lightInfo.lights[i];
+        if (!light.lightCastShadow) {
+            ++unshadowed;
+            continue;
+        }
+        auto& layers = light.lightType == LightType::Omni ? cube :
+                       light.lightType == LightType::Infinity ? global : planar;
+        Expect(layers.insert(light.lightShadowMapIndex).second,
+               "each caster owns one layer in its texture pool");
+    }
+    auto dense = [](const std::set<int>& layers, uint32_t capacity) {
+        if (layers.size() != capacity) return false;
+        int next = 0;
+        for (int layer : layers) {
+            if (layer != next++) return false;
+        }
+        return true;
+    };
+    Expect(dense(planar, GfxConfiguration::kMaxShadowMapCount) &&
+               dense(cube, GfxConfiguration::kMaxCubeShadowMapCount) &&
+               dense(global, GfxConfiguration::kMaxGlobalShadowMapCount) &&
+               unshadowed == 5,
+           "spot and area share a bounded pool; cube and sun pools are independent");
+}
+
 void TestCapacityAndInvalidReferences() {
     Scene scene("capacity");
     auto source = std::make_shared<SceneObjectOmniLight>();
@@ -257,6 +369,8 @@ int main() {
     TestOmniAndFrameReplacement();
     TestSpotAndArea();
     TestDirectionalShadows();
+    TestPreparedShadowLayers();
+    TestShadowCapacity();
     TestCapacityAndInvalidReferences();
     return failures == 0 ? 0 : 1;
 }

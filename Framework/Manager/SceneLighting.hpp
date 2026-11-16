@@ -11,6 +11,8 @@ struct LightingFrame {
     int32_t clipSpaceType{0};
 };
 
+// Assign shadow layers before backend uploads; excess casters stay lit without
+// shadows and emit a diagnostic.
 bool PrepareSceneLights(const Scene& scene, bool openGLProjection,
                         LightingFrame& lighting);
 }  // namespace My

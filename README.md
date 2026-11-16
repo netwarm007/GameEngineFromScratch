@@ -208,7 +208,7 @@ macOS uses native Metal PNG capture with
 All three enabled CI jobs run this regression and retain Billiard screenshots
 (Windows D3D12, Linux OpenGL, macOS Metal).
 Third-stage acceptance requires inspecting these real Billiard images, not
-Viewer's physics-free scene alone.
+Viewer screenshots alone.
 
 The Billiard scene places the camera at `(2.0, 0.0, 1.5)` meters, behind the
 cue ball, looking at `(0.0, 0.0, 0.83)` with a 60-degree vertical field of view.
@@ -235,17 +235,27 @@ The Viewer uses the Bullet backend. `GeometryObject` accepts these
   `float {x, y, z}`; the body stays in that plane (it can only rotate about
   the normal).
 
-The Splash scene uses them for a ball that bounces along the (now static) text
-from left to right. Its start position, speed and restitution were tuned by
-searching with the real engine so every bounce lands on a letter instead of a
-word gap. The trajectory is chaotic, so changing the text mesh, material values
-or Bullet version requires re-tuning; `PhysicsSceneIntegrationTest` checks it.
-The text rotation animation is commented out in `splash.ogex` and can be
-restored by removing the leading `//`.
+The Viewer's Splash sequence plays a 6.208-second text rotation ending at
+90 degrees upright, then holds that pose. The ball remains hidden and neither
+it nor the text has a physics body during this introduction. At the animation's
+last time key, the Viewer creates the static text collision mesh and the dynamic
+ball, and shows the ball. Scene reset or reload restarts the introduction.
+After that handoff, Bullet alone drives the ball from left to right against the
+actual upright text mesh, without motion constraints, hidden supports or scripted
+trajectory corrections. The launch direction follows the text's final heading;
+the speed and material values are unchanged. Its start position was tuned with
+the real engine to cross the letters without falling away.
+The trajectory is chaotic, so changing the text mesh, material values
+or Bullet version requires re-tuning; `PhysicsSceneIntegrationTest` checks both
+the staged handoff and the real static-text traversal. Runtime visibility is
+checked by each rendering backend when drawing, including shadow passes, so the
+ball can appear without rebuilding the scene's GPU resources.
 
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for third-party software
+copyright and license notices.
 
 - Windows
   - Windows Platform SDK

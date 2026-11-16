@@ -133,6 +133,7 @@ void BulletPhysicsManager::CreateRigidBody(
     assert(sceneNode);
     auto& node = *sceneNode;
     DeleteRigidBody(node);
+    if (!node.PhysicsEnabled()) return;
 
     const float* param = geometry.CollisionParameters();
     const auto& physics = geometry.PhysicsProperties();

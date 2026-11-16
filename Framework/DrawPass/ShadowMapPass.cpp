@@ -14,7 +14,7 @@ void ShadowMapPass::Draw(Frame& frame) {
     uint32_t cube_shadowmap_index = 0;
 
     for (int32_t i = 0; i < frame.frameContext.numLights; i++) {
-        auto& light = frame.lightInfo.lights[i];
+        const auto& light = frame.lightInfo.lights[i];
 
         if (light.lightCastShadow) {
             TextureBase* pShadowmap;
@@ -29,7 +29,7 @@ void ShadowMapPass::Draw(Frame& frame) {
                     }
                     pipelineStateName = "Omni Light Shadow Map";
                     pShadowmap = &frame.frameContext.cubeShadowMap;
-                    light.lightShadowMapIndex = cube_shadowmap_index++;
+                    ++cube_shadowmap_index;
                     break;
                 case LightType::Spot:
                     if (shadowmap_index >=
@@ -38,7 +38,7 @@ void ShadowMapPass::Draw(Frame& frame) {
                     }
                     pipelineStateName = "Spot Light Shadow Map";
                     pShadowmap = &frame.frameContext.shadowMap;
-                    light.lightShadowMapIndex = shadowmap_index++;
+                    ++shadowmap_index;
                     break;
                 case LightType::Area:
                     if (shadowmap_index >=
@@ -47,16 +47,16 @@ void ShadowMapPass::Draw(Frame& frame) {
                     }
                     pipelineStateName = "Area Light Shadow Map";
                     pShadowmap = &frame.frameContext.shadowMap;
-                    light.lightShadowMapIndex = shadowmap_index++;
+                    ++shadowmap_index;
                     break;
                 case LightType::Infinity:
                     if (global_shadowmap_index >=
-                        GfxConfiguration::kMaxShadowMapCount) {
+                        GfxConfiguration::kMaxGlobalShadowMapCount) {
                         continue;
                     }
                     pipelineStateName = "Sun Light Shadow Map";
                     pShadowmap = &frame.frameContext.globalShadowMap;
-                    light.lightShadowMapIndex = global_shadowmap_index++;
+                    ++global_shadowmap_index;
                     break;
                 default:
                     assert(0);

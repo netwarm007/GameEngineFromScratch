@@ -7,10 +7,12 @@
 #include <vector>
 
 #include "AssetLoader.hpp"
+#include "AnimationManager.hpp"
 #include "Bullet/BulletPhysicsManager.hpp"
 #include "ISceneManager.hpp"
 #include "My/MyPhysicsManager.hpp"
 #include "OGEX.hpp"
+#include "Viewer/SplashSequence.hpp"
 
 using namespace My;
 
@@ -100,6 +102,14 @@ void TestBindingsAndTransforms() {
            "deletion restores authored/runtime transform rendering");
     physics.DeleteRigidBody(*node);
 
+    node->SetPhysicsEnabled(false);
+    physics.CreateRigidBody(node, geometry);
+    Expect(!physics.UpdateRigidBodyTransform(*node),
+           "disabled physics does not create a body");
+    node->MoveBy(1.0f, 0.0f, 0.0f);
+    Expect(Near(node->GetRenderTransform()[3][0], 5.0f),
+           "disabled physics leaves authored transforms visible");
+    node->SetPhysicsEnabled(true);
     physics.CreateRigidBody(node, geometry);
     physics.CreateRigidBody(node, geometry);
     std::weak_ptr<SceneGeometryNode> retained = node;
@@ -353,6 +363,58 @@ void TestPhysicsMaterialsAndMeshes() {
            "planar constraint keeps a ball in plane on a slanted surface");
 }
 
+void CheckSplashTraversal(SteppingBullet& physics,
+                          const std::shared_ptr<SceneGeometryNode>& ball,
+                          const std::shared_ptr<SceneGeometryNode>& text) {
+    const auto upright = text->GetRenderTransform();
+    const Vector3f along{upright[0][0], upright[0][1], upright[0][2]};
+    const Vector3f across{-along[1], along[0], 0.0f};
+    const Vector3f origin{upright[3][0], upright[3][1], upright[3][2]};
+    constexpr float ballRadius = 0.3f;
+    float lowest = 100.0f;
+    float lateralDistance = 0.0f;
+    float previous = ball->GetRenderTransform()[3][2];
+    float velocity = 0.0f;
+    int bounces = 0;
+    int stepsToEnd = -1;
+    bool textStayedUpright = Near(upright[1][2], 1.0f);
+    for (int i = 0; i < 60 * 25 && stepsToEnd < 0; ++i) {
+        physics.Step();
+        const auto transform = ball->GetRenderTransform();
+        const Vector3f position{transform[3][0], transform[3][1],
+                                transform[3][2]};
+        const auto relative = position - origin;
+        const float progress = DotProduct(relative, along);
+        const float z = transform[3][2];
+        const float next = z - previous;
+        if (velocity < -1e-4f && next > 1e-4f) ++bounces;
+        if (std::abs(next) > 1e-4f) velocity = next;
+        previous = z;
+        lowest = std::min(lowest, relative[2]);
+        lateralDistance = std::max(
+            lateralDistance, std::abs(DotProduct(relative, across)));
+        const auto renderedText = text->GetRenderTransform();
+        for (int row = 0; row < 4; ++row) {
+            for (int column = 0; column < 4; ++column) {
+                textStayedUpright &= Near(renderedText[row][column],
+                                         upright[row][column]);
+            }
+        }
+        if (progress > 5.5f) stepsToEnd = i;
+        if (relative[2] < 0.0f) break;
+    }
+    Expect(stepsToEnd >= 0, "ball reaches the right end of the text");
+    Expect(lowest > ballRadius,
+           "ball stays above the text baseline throughout the traversal");
+    Expect(lateralDistance < ballRadius,
+           "ball stays over the text rather than passing in front or behind");
+    Expect(bounces >= 3, "ball bounces repeatedly along the text");
+    Expect(textStayedUpright, "text stays at its upright final pose");
+    std::cout << "Splash traversal: steps=" << stepsToEnd + 1
+              << " bounces=" << bounces << " lowest=" << lowest
+              << " lateral=" << lateralDistance << '\n';
+}
+
 void TestSplashBouncingBall() {
     AssetLoader assets;
     Expect(assets.Initialize() == 0, "Splash assets initialize");
@@ -371,8 +433,19 @@ void TestSplashBouncingBall() {
         assets.Finalize();
         return;
     }
-    Expect(scene->AnimatableNodes.empty(),
-           "text stays still so the ball can land on it");
+    BaseSceneNode::animation_clip_iterator clip;
+    Expect(text->GetFirstAnimationClip(clip), "Splash text has an introduction");
+    if (text->GetFirstAnimationClip(clip)) {
+        do {
+            clip->second->Update(clip->second->GetEndTime());
+        } while (text->GetNextAnimationClip(clip));
+    }
+    const auto upright = *text->GetCalculatedTransform();
+    Expect(Near(upright[1][2], 1.0f) && Near(upright[2][2], 0.0f),
+           "text animation ends at exactly 90 degrees");
+    const auto ballGeometry = scene->GetGeometry(ball->GetSceneObjectRef());
+    Expect(ballGeometry->PhysicsProperties().planeNormalAxis == -1,
+           "Splash traversal does not use a planar motion constraint");
 
     TestScenes scenes;
     SteppingBullet physics(scenes);
@@ -383,34 +456,109 @@ void TestSplashBouncingBall() {
         auto geometry = scene->GetGeometry(node->GetSceneObjectRef());
         physics.CreateRigidBody(node, *geometry);
     }
-    const float authoredY = (*ball->GetCalculatedTransform())[3][1];
-
-    constexpr float textTop = 0.106f;
-    float lowest = 100.0f;
-    float drift = 0.0f;
-    float previous = ball->GetRenderTransform()[3][2];
-    float velocity = 0.0f;
-    int bounces = 0;
-    int stepsToEnd = -1;
-    for (int i = 0; i < 60 * 25 && stepsToEnd < 0; ++i) {
-        physics.Step();
-        const auto transform = ball->GetRenderTransform();
-        const float z = transform[3][2];
-        const float next = z - previous;
-        if (velocity < -1e-4f && next > 1e-4f) ++bounces;
-        if (std::abs(next) > 1e-4f) velocity = next;
-        previous = z;
-        if (transform[3][0] > -5.4f) lowest = std::min(lowest, z);
-        drift = std::max(drift, std::abs(transform[3][1] - authoredY));
-        if (transform[3][0] > 5.5f) stepsToEnd = i;
-    }
-    Expect(stepsToEnd >= 0, "ball reaches the right end of the text");
-    Expect(lowest > textTop + 0.15f,
-           "ball never drops into the gaps between words");
-    Expect(drift < 0.001f, "ball stays in its vertical plane");
-    Expect(bounces >= 8, "ball bounces repeatedly along the text");
+    Expect(physics.BodyCount() == 2,
+           "Splash only collides the ball with the actual text mesh");
+    CheckSplashTraversal(physics, ball, text);
     physics.Finalize();
     scene.reset();
+    assets.Finalize();
+}
+
+void TestSplashSequence() {
+    AssetLoader assets;
+    Expect(assets.Initialize() == 0, "Splash sequence assets initialize");
+    const auto source = assets.SyncOpenAndReadTextFileToString("Scene/splash.ogex");
+    OgexParser parser;
+    for (const int fps : {30, 60, 144}) {
+        TestScenes scenes;
+        scenes.scene = parser.Parse(source);
+        scenes.revision = 1;
+        Expect(scenes.scene != nullptr, "sequenced Splash parses");
+        if (!scenes.scene) continue;
+        auto text = scenes.scene->LUT_Name_GeometryNode.at("Text").lock();
+        auto ball = scenes.scene->LUT_Name_GeometryNode.at("Ball").lock();
+        BaseSceneNode::animation_clip_iterator clip;
+        if (!text || !ball || !text->GetFirstAnimationClip(clip)) {
+            Expect(false, "sequenced Splash has text animation and ball");
+            continue;
+        }
+        const float end = clip->second->GetEndTime();
+        const auto spawn = *ball->GetCalculatedTransform();
+        Expect(Near(end, 6.208333f),
+               "introduction ends without an extra return-to-flat segment");
+        SteppingBullet physics(scenes);
+        AnimationManager animations(scenes);
+        SplashSequence sequence(scenes, physics, animations);
+        Expect(physics.Initialize() == 0 && animations.Initialize() == 0 &&
+                   sequence.Initialize() == 0,
+               "Splash modules initialize");
+        bool rotated = false;
+        for (int frame = 0; float(frame) / fps < end; ++frame) {
+            animations.Update(float(frame) / fps);
+            sequence.Tick();
+            physics.Tick();
+            Expect(!ball->Visible() && physics.BodyCount() == 0,
+                   "introduction hides the ball and creates no bodies");
+            const auto render = text->GetRenderTransform();
+            if (render[2][2] < 0.8f) rotated = true;
+            Expect(Near(ball->GetRenderTransform()[3][2], spawn[3][2]),
+                   "hidden ball does not fall before its appearance");
+        }
+        Expect(rotated, "rendered text actually rotates during introduction");
+        animations.Update(end - 0.0001f);
+        sequence.Tick();
+        Expect(!ball->Visible() && physics.BodyCount() == 0,
+               "ball stays hidden immediately before the final key");
+        animations.Update(end);
+        sequence.Tick();
+        Expect(ball->Visible() && physics.BodyCount() == 2,
+               "final key creates both bodies and shows the ball");
+        Expect(Near(ball->GetRenderTransform()[3][0], spawn[3][0]) &&
+                   Near(ball->GetRenderTransform()[3][1], spawn[3][1]) &&
+                   Near(ball->GetRenderTransform()[3][2], spawn[3][2]),
+               "ball appears at its authored starting position");
+        CheckSplashTraversal(physics, ball, text);
+        const float reachedX = ball->GetRenderTransform()[3][0];
+        animations.Update(end + 1.0f);
+        sequence.Tick();
+        Expect(physics.BodyCount() == 2 &&
+                   Near(ball->GetRenderTransform()[3][0], reachedX),
+               "completed sequence does not respawn the ball");
+        Expect(Near((*text->GetCalculatedTransform())[1][2], 1.0f) &&
+                   Near(text->GetRenderTransform()[1][2], 1.0f),
+               "text remains upright after animation and physics handoff");
+
+        scenes.ResetScene();
+        animations.Update(0.0f);
+        sequence.Tick();
+        physics.Tick();
+        Expect(!ball->Visible() && physics.BodyCount() == 0,
+               "reset removes old bodies and restarts the introduction");
+        animations.Update(end + 0.5f);
+        sequence.Tick();
+        Expect(ball->Visible() && physics.BodyCount() == 2 &&
+                   Near(ball->GetRenderTransform()[3][2], spawn[3][2]),
+               "skipping past the endpoint still spawns a fresh ball once");
+
+        scenes.scene = parser.Parse(source);
+        ++scenes.revision;
+        animations.Update(0.0f);
+        sequence.Tick();
+        physics.Tick();
+        auto reloaded = scenes.scene->LUT_Name_GeometryNode.at("Ball").lock();
+        Expect(reloaded && !reloaded->Visible() && physics.BodyCount() == 0,
+               "scene reload starts with a hidden, unsimulated ball");
+        scenes.scene = std::make_shared<Scene>("unrelated scene");
+        ++scenes.revision;
+        animations.Update(0.0f);
+        sequence.Tick();
+        physics.Tick();
+        Expect(physics.BodyCount() == 0 && reloaded->Visible(),
+               "leaving Splash releases its overrides without affecting other scenes");
+        sequence.Finalize();
+        animations.Finalize();
+        physics.Finalize();
+    }
     assets.Finalize();
 }
 
@@ -467,6 +615,7 @@ int main() {
     TestBilliardScene();
     TestPhysicsMaterialsAndMeshes();
     TestSplashBouncingBall();
+    TestSplashSequence();
     TestSceneReplacementWithoutApplication<MyPhysicsManager>();
     TestSceneReplacementWithoutApplication<SteppingBullet>();
     return failures == 0 ? 0 : 1;
