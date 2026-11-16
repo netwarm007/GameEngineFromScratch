@@ -472,6 +472,23 @@ LightNode $node26
 	}
 }
 
+// Diagnostic-only stationary occluder above the cloth.
+GeometryNode $shadow_probe
+{
+	Name {string {"shadow_probe"}}
+	ObjectRef {ref {$shadow_probe_shape}}
+	MaterialRef (index = 0) {ref {$material7}}
+	Translation (kind = "xyz") {float[3] {{0.25, 0.18, 1.15}}}
+}
+
+// Keep a shadow pass active in both captures without adding illumination.
+LightNode $shadow_probe_aux
+{
+	Name {string {"shadow_probe_aux"}}
+	ObjectRef {ref {$shadow_probe_aux_light}}
+	Translation (kind = "xyz") {float[3] {{0.0, 0.0, 5.0}}}
+}
+
 // Finite, invisible support slabs leave four corner pockets and two side pockets.
 GeometryNode $table_support_center (visible = false, shadow = false)
 {
@@ -562,6 +579,61 @@ GeometryNode $cushion_right (visible = false, shadow = false)
 	Name {string {"cushion_right"}}
 	ObjectRef {ref {$cushion_short_shape}}
 	Translation (kind = "xyz") {float[3] {{1.124, 0.0, 0.838422}}}
+}
+
+GeometryObject $shadow_probe_shape
+{
+	Mesh (primitive = "triangles")
+	{
+		VertexArray (attrib = "position")
+		{
+			float[3] {
+				{-0.12, -0.12, -0.12}, {0.12, -0.12, -0.12},
+				{0.12, 0.12, -0.12}, {-0.12, 0.12, -0.12},
+				{-0.12, -0.12, 0.12}, {0.12, -0.12, 0.12},
+				{0.12, 0.12, 0.12}, {-0.12, 0.12, 0.12}
+			}
+		}
+		VertexArray (attrib = "normal")
+		{
+			float[3] {
+				{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1},
+				{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}
+			}
+		}
+		VertexArray (attrib = "texcoord")
+		{
+			float[2] {
+				{0, 0}, {1, 0}, {1, 1}, {0, 1},
+				{0, 0}, {1, 0}, {1, 1}, {0, 1}
+			}
+		}
+		VertexArray (attrib = "tangent")
+		{
+			float[3] {
+				{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0},
+				{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}
+			}
+		}
+		IndexArray
+		{
+			unsigned_int32[3] {
+				{0, 2, 1}, {0, 3, 2}, {4, 5, 6}, {4, 6, 7},
+				{0, 1, 5}, {0, 5, 4}, {3, 7, 6}, {3, 6, 2},
+				{0, 4, 7}, {0, 7, 3}, {1, 2, 6}, {1, 6, 5}
+			}
+		}
+	}
+}
+
+LightObject $shadow_probe_aux_light (type = "spot")
+{
+	Param (attrib = "intensity") {float {0.0}}
+	Atten (kind = "angle", curve = "linear")
+	{
+		Param (attrib = "begin") {float {0.3349176}}
+		Param (attrib = "end") {float {0.5427974}}
+	}
 }
 
 // OpenGEX requires a mesh; these placeholders are never rendered.
@@ -194898,7 +194970,7 @@ GeometryObject $geometry2		// ps_2
 	}
 }
 
-LightObject $light2 (type = "point", shadow = false)		// Lamp
+LightObject $light2 (type = "point")		// Lamp
 {
 	Color (attrib = "light") {float[3] {{1.0, 1.0, 1.0}}}
     Param (attrib = "intensity") {float {5.0}}
