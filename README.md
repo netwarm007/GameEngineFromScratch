@@ -216,15 +216,17 @@ The Viewer uses the Bullet backend. `GeometryObject` accepts these
   `float {x, y, z}`; the body stays in that plane (it can only rotate about
   the normal).
 
-The Viewer's Splash sequence first plays the original 6.208-second text rotation,
-then settles the text flat over two seconds. The ball remains hidden and neither
+The Viewer's Splash sequence plays a 6.208-second text rotation ending at
+90 degrees upright, then holds that pose. The ball remains hidden and neither
 it nor the text has a physics body during this introduction. At the animation's
 last time key, the Viewer creates the static text collision mesh and the dynamic
 ball, and shows the ball. Scene reset or reload restarts the introduction.
-After that handoff, Bullet alone drives the ball from left to right.
-Its start position, speed and restitution were tuned by
-searching with the real engine so every bounce lands on a letter instead of a
-word gap. The trajectory is chaotic, so changing the text mesh, material values
+After that handoff, Bullet alone drives the ball from left to right against the
+actual upright text mesh, without motion constraints, hidden supports or scripted
+trajectory corrections. The launch direction follows the text's final heading;
+the speed and material values are unchanged. Its start position was tuned with
+the real engine to cross the letters without falling away.
+The trajectory is chaotic, so changing the text mesh, material values
 or Bullet version requires re-tuning; `PhysicsSceneIntegrationTest` checks both
 the staged handoff and the real static-text traversal. Runtime visibility is
 checked by each rendering backend when drawing, including shadow passes, so the
