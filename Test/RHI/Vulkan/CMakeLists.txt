@@ -37,7 +37,7 @@ find_path(CROSSGUID_INCLUDE_DIR Guid.hpp
           "${root}/External/src/crossguid" REQUIRED)
 
 include("${root}/cmake/VulkanShaders.cmake")
-set(shader_dir "${CMAKE_CURRENT_BINARY_DIR}/Shaders")
+set(shader_dir "${CMAKE_CURRENT_BINARY_DIR}/Asset/Shaders/Vulkan/Engine")
 myge_add_vulkan_shaders(VulkanTestShaders "${root}" "${shader_dir}" "${config_dir}")
 add_custom_command(OUTPUT "${shader_dir}/ShaderAbi.comp.spv"
     COMMAND "${GLSL_VALIDATOR}" ${MYGE_VULKAN_GLSLANG_OPTIONS}
@@ -81,9 +81,13 @@ add_test(NAME TEST_VulkanCompute COMMAND VulkanShaderTest "${shader_dir}")
 set_tests_properties(TEST_VulkanShaderAbi TEST_VulkanCompute PROPERTIES TIMEOUT 90)
 
 add_library(VulkanRegressionRHI STATIC "${root}/RHI/Vulkan/VulkanRHI.cpp"
-    "${root}/RHI/Vulkan/VulkanRHIResources.cpp")
+    "${root}/RHI/Vulkan/VulkanRHIResources.cpp"
+    "${root}/RHI/Vulkan/VulkanPipelineStateManager.cpp"
+    "${root}/Framework/Manager/PipelineStateManager.cpp"
+    "${root}/Framework/Manager/AssetLoader.cpp")
 target_include_directories(VulkanRegressionRHI PUBLIC
-    $<TARGET_PROPERTY:VulkanShaderTest,INCLUDE_DIRECTORIES>)
+    $<TARGET_PROPERTY:VulkanShaderTest,INCLUDE_DIRECTORIES>
+    "${root}/Framework/Interface")
 target_link_libraries(VulkanRegressionRHI PUBLIC Vulkan::Vulkan ${XG_LIBRARY})
 if(USE_ISPC)
     target_link_libraries(VulkanRegressionRHI PUBLIC GeomMath)
@@ -95,6 +99,12 @@ add_executable(VulkanResourceTest VulkanResourceTest.cpp)
 target_link_libraries(VulkanResourceTest PRIVATE VulkanRegressionRHI)
 add_test(NAME TEST_VulkanResources COMMAND VulkanResourceTest)
 set_tests_properties(TEST_VulkanResources PROPERTIES TIMEOUT 90)
+add_executable(VulkanPipelineTest VulkanPipelineTest.cpp
+    "${root}/Platform/Empty/AssetLoader.cpp")
+target_link_libraries(VulkanPipelineTest PRIVATE VulkanRegressionRHI)
+add_dependencies(VulkanPipelineTest VulkanTestShaders)
+add_test(NAME TEST_VulkanPipelines COMMAND VulkanPipelineTest "${CMAKE_CURRENT_BINARY_DIR}")
+set_tests_properties(TEST_VulkanPipelines PROPERTIES TIMEOUT 90)
 
 if(WIN32 OR (UNIX AND NOT APPLE))
     add_executable(VulkanFrameLoopTest VulkanFrameLoopTest.cpp)

@@ -90,6 +90,7 @@ class VulkanRHI {
                     const CreateSurfaceCBFunc& createSurface);
     void InitializeHeadless();
     void WaitGPU();
+    void ExecuteCommands(const std::function<void(vk::CommandBuffer)>& record);
     bool BeginFrame();
     void EndFrame();
     vk::CommandBuffer GetFrameCommandBuffer() const;
@@ -190,6 +191,7 @@ class VulkanRHI {
     };
     void initializeDevice(const std::vector<const char*>& extensions,
                            const CreateSurfaceCBFunc& surface);
+    void submitAndWait(vk::CommandBuffer command);
 
     vk::Instance m_vkInstance;
     vk::DebugUtilsMessengerEXT m_vkDebugMessenger;

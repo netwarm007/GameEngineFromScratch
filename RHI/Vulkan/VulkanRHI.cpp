@@ -818,9 +818,16 @@ vk::RenderPass VulkanRHI::createRenderPass() {
 }
 
 vk::ShaderModule VulkanRHI::createShaderModule(const Buffer& code) {
+    if (!m_vkDevice || !code.GetData() || code.GetDataSize() < 5 * sizeof(uint32_t) ||
+        code.GetDataSize() % sizeof(uint32_t) != 0) {
+        throw std::invalid_argument("Vulkan shader requires an initialized device and complete SPIR-V words");
+    }
+    std::vector<uint32_t> words(code.GetDataSize() / sizeof(uint32_t));
+    std::memcpy(words.data(), code.GetData(), code.GetDataSize());
+    if (words.front() != 0x07230203u) throw std::invalid_argument("Invalid Vulkan SPIR-V magic");
     vk::ShaderModuleCreateInfo createInfo;
     createInfo.codeSize = code.GetDataSize();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.GetData());
+    createInfo.pCode = words.data();
 
     vk::ShaderModule shaderModule;
     shaderModule = m_vkDevice.createShaderModule(createInfo);
@@ -1786,17 +1793,32 @@ vk::CommandBuffer VulkanRHI::beginSingleTimeCommands() {
 
 void VulkanRHI::endSingleTimeCommands(vk::CommandBuffer& commandBuffer) {
     commandBuffer.end();
+    submitAndWait(commandBuffer);
+    m_vkDevice.freeCommandBuffers(m_vkCommandPoolTransfer, commandBuffer);
+}
 
+void VulkanRHI::submitAndWait(vk::CommandBuffer commandBuffer) {
     vk::SubmitInfo submitInfo;
     submitInfo.setCommandBuffers(commandBuffer);
 
     const auto fence = m_vkDevice.createFenceUnique({});
     m_vkTransferQueue.submit(submitInfo, *fence);
     if (m_vkDevice.waitForFences(*fence, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
-        throw std::runtime_error("Vulkan upload fence wait failed");
+        throw std::runtime_error("Vulkan immediate command fence wait failed");
     }
+}
 
-    m_vkDevice.freeCommandBuffers(m_vkCommandPoolTransfer, commandBuffer);
+void VulkanRHI::ExecuteCommands(const std::function<void(vk::CommandBuffer)>& record) {
+    if (!m_vkDevice || !record || m_frameActive) {
+        throw std::logic_error("Vulkan immediate commands require a device, recorder, and no active frame");
+    }
+    auto commands = m_vkDevice.allocateCommandBuffersUnique(
+        {m_vkCommandPoolTransfer, vk::CommandBufferLevel::ePrimary, 1});
+    auto command = *commands.front();
+    command.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    record(command);
+    command.end();
+    submitAndWait(command);
 }
 
 void VulkanRHI::transitionImageLayout(vk::Image image, vk::Format format,

@@ -14,8 +14,8 @@ Remote master was checked at
 `0a20412f26ffd0165faeef89af90d50b8b762f05`, containing both the point-light
 shadow fix (PR #67) and stage C ImGui lifecycle separation (PR #66).
 Checkpoint 1 is implemented, locally/CI validated, and confirmed by the user.
-Checkpoint 2 is implemented and exact-revision CI validated, awaiting user
-confirmation; checkpoints 3-5 remain unstarted.
+Checkpoint 2 is implemented, exact-revision CI validated, and confirmed by the
+user. Checkpoint 3 is in progress; checkpoints 4-5 remain unstarted.
 Do not advance to the next checkpoint without
 the user's confirmation. Checkpoints do not require PRs; CI may be used during
 implementation with the user's authorization.
@@ -310,16 +310,17 @@ multi-viewports, texture debugging, or saved layouts to get an initial screensho
 
 Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
 focused local and exact-revision CI validation and received user confirmation,
-not acceptance of the complete Vulkan backend. Checkpoint 2 is implemented and
-validated, awaiting user confirmation; checkpoints 3-5 remain planned and proceed in order, with focused
+not acceptance of the complete Vulkan backend. Checkpoint 2 has also received
+user confirmation. Checkpoint 3 is in progress; checkpoints 4-5 remain planned
+and proceed in order, with focused
 validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
 | --- | --- |
 | 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
 | 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
-| 2. Device/resource loop | Implemented and exact-revision CI validated; awaiting user confirmation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
-| 3. Shared rendering passes | Integrate offscreen rendering, BASIC/PBR, skybox/BRDF, shadows, and MSAA in that order. Verify six-face/multi-light depth and sampling, render output, and resource correctness without a Vulkan-only pass bypass. |
+| 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
+| 3. Shared rendering passes | In progress. Integrate offscreen rendering, BASIC/PBR, skybox/BRDF, shadows, and MSAA in that order. Verify six-face/multi-light depth and sampling, render output, and resource correctness without a Vulkan-only pass bypass. |
 | 4. UI and applications | Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
 | 5. Cross-platform acceptance | Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. |
 
@@ -499,7 +500,7 @@ Its [verification record](../verification/77cf9ebcfcb40cd3c3de857f8b44be8920eafc
 records all four focused Vulkan tests passing, the native retirement/aborted-frame
 success markers, zero validation-error/VUID markers, and inspection of all six
 native-backend application captures. Checkpoint 2 implementation and
-reference-path validation are complete, awaiting user confirmation. Windows
+reference-path validation were subsequently confirmed by the user. Windows
 Vulkan WSI and MoltenVK are still unverified; native application captures are
 D3D12/OpenGL/Metal regressions, not Vulkan scene-rendering acceptance.
 
@@ -520,6 +521,55 @@ Stage 4 must preserve this retirement contract for any secondary ImGui
 swapchains before advertising renderer multi-viewport support; enabling an
 extension on the main device alone does not make an older helper's independent
 presentation/cleanup path safe.
+
+### Checkpoint 3 implementation progress
+
+The user confirmed checkpoint 2 and authorized checkpoint 3. Remote master was
+rechecked and remains `0a20412f26ffd0165faeef89af90d50b8b762f05`; the tested
+baseline was not changed.
+
+The first increment replaces the Vulkan pipeline manager's shader-loading
+stub. It takes explicit production-RHI and asset-reader dependencies, loads
+`Shaders/Vulkan/Engine/` outputs using the existing pipeline shader names, and
+checks SPIR-V entry-point names/execution models before creating modules.
+Missing or mismatched stages, unsupported stage kinds, and duplicate
+registrations fail explicitly. Scoped handles roll back partial creation.
+Vertex-layer/viewport-output capabilities are currently rejected before module
+creation: enabling their device features or adding the planned shared
+single-face shadow adaptation remains part of checkpoint 3, not an advertised
+capability of this first increment.
+Finalization and unregistering release GPU state without deleting an object
+still borrowed by shared pipeline references.
+
+The initial fixed engine layout has dynamic uniform bindings 10-13, sampled
+images 32-43, sampler 64, and storage image 96. Binding a set supplies four
+dynamic offsets in binding order. Geometry visibility is included only when
+that device feature is enabled. Compute pipelines are built immediately;
+graphics pipelines are built against their supplied compatible render pass,
+with separate position/normal/UV/tangent streams matching the shared A2V ABI.
+The RHI also provides scoped synchronous command recording for initialization
+and readback; normal frame rendering must still use the frame command path.
+
+`TEST_VulkanPipelines` exercises the production manager rather than a second
+shader loader/pipeline implementation. It dispatches the shared BRDF kernel,
+reuses the existing independent CPU reference at selected interior samples,
+and creates BASIC/PBR graphics pipelines. The shared texture-debug stages draw
+an offscreen four-color fixture; every output texel checks orientation,
+separate vertex streams, and front/back culling. A negative-height viewport
+paired with counterclockwise Vulkan front faces passes locally; the clockwise
+negative control left the target cleared and failed the regression. This is
+not yet proof of shadow cubemap orientation.
+
+An initial analytic near-zero-roughness BRDF test assumption did not match
+the existing shared kernel's output on the local driver. The production-path
+test uses the established CPU-reference method and interior samples; it does
+not modify shared shader algorithms or claim exhaustive numerical validation
+of the LUT boundary.
+
+This increment still needs exact-revision CI. GraphicsManager scene/pass
+integration, GPU consumption of frame/batch/light arenas, BASIC/PBR scene
+rendering, skybox, six-face/multi-light shadows, and MSAA remain checkpoint 3
+work. Shader module/pipeline creation alone does not establish those features.
 
 ## Platform and acceptance strategy
 
