@@ -249,7 +249,12 @@ contained panels. Headless checks do not replace rendering inspection.
 
 ### D. Reassess remaining coupling
 
-**D1 selected and in progress: retire GPU scene resources on scene replacement.**
+**D1 accepted: retire GPU scene resources on scene replacement.**
+
+Implementation, regression controls and exact-revision three-platform native
+acceptance are complete. See the
+[D1 verification record](../verification/4ee8fee385f277506ad7ed45a07949e9da22cfbc.md)
+for tested backends, scene-switch screenshots and limitations.
 
 Read-only assessment found a concrete lifetime boundary before the remaining
 service-location and UI-asset coupling: Metal appends geometry buffers and draw
@@ -347,5 +352,5 @@ do not establish new source acceptance.
 - No fixed delivery dates are implied. Stage A covers initialization
   orchestration; stage B covers the selected native initialization/cleanup
   failures, not exhaustive driver recovery or ImGui ownership. Stage C covers
-  the selected GUI ownership boundary; D1 targets scene-resource retirement.
+  the selected GUI ownership boundary; D1 covers scene-resource retirement.
   Later D checkpoints require their own scope and evidence.
