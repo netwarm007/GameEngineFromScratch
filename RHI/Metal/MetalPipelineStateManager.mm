@@ -161,6 +161,17 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
                 newFunctionWithName:shaderFileName2MainFuncName(pState->vertexShaderName)];
             id<MTLFunction> fragmentFunction = [myLibrary
                 newFunctionWithName:shaderFileName2MainFuncName(pState->pixelShaderName)];
+            if (!vertexFunction || !fragmentFunction) {
+                NSLog(@"Missing Metal shader function for pipeline %s",
+                      pState->pipelineStateName.c_str());
+                [vertexFunction release];
+                [fragmentFunction release];
+                [mtlVertexDescriptor release];
+                [myLibrary release];
+                [_device release];
+                delete pState;
+                return false;
+            }
 
             MTLRenderPipelineDescriptor* pipelineStateDescriptor =
                 [MTLRenderPipelineDescriptor new];
