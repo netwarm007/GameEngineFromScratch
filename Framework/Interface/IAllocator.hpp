@@ -9,12 +9,12 @@ namespace My {
 _Interface_ IAllocator {
    public:
     // debug patterns
-    const uint8_t PATTERN_ALIGN = 0xFC;
-    const uint8_t PATTERN_ALLOC = 0xFD;
-    const uint8_t PATTERN_FREE = 0xFE;
+    static constexpr uint8_t PATTERN_ALIGN = 0xFC;
+    static constexpr uint8_t PATTERN_ALLOC = 0xFD;
+    static constexpr uint8_t PATTERN_FREE = 0xFE;
 
     IAllocator(IMemoryManager * pMmgr) : m_pMemoryManager(pMmgr){}
-    virtual ~IAllocator();
+    virtual ~IAllocator() = default;
 
     virtual void* Allocate(size_t size) = 0;
     virtual void Free(void* p) = 0;

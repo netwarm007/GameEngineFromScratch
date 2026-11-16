@@ -89,7 +89,7 @@ can use them.
 | ID | Scope | Status |
 | --- | --- | --- |
 | M0 | This roadmap | Done (docs only) |
-| M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`MemoryAllocatorTest`). | Planned |
+| M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Implemented; awaiting CI acceptance |
 | M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests. | Planned |
 | M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; tests. | Planned |
 | M4 | Size-class small-object allocator and Slab; tests. | Planned |
@@ -97,5 +97,12 @@ can use them.
 | M6 | Debug/tracking decorator, statistics, leak reports; tests. | Planned |
 | M7 | GPU sub-allocator and thread-cache layer; tests. | Planned |
 | M8 | Engine integration (separate decision). | Not started |
+
+M1 notes: `MemoryManager` no longer depends on `portable.hpp`/`config.h`, so
+allocator tests build standalone (`cmake -S Test/Memory`). `IMemoryManager`
+gained `AllocateAlignedPage` (default falls back to `AllocatePage`).
+`BlockAllocator` allocates blocks lazily from the newest page; free-pointer
+validation (ownership, alignment, double free) is on in `_DEBUG` builds and
+enabled explicitly with `SetValidation(true)`.
 
 Checkpoint scopes may be re-split as implementation reveals complexity.
