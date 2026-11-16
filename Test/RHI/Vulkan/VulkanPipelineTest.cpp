@@ -73,6 +73,62 @@ class MismatchedAssets final : public AssetLoader {
     }
 };
 
+class TestApplication final : public IApplication {
+   public:
+    void SetCommandLineParameters(int, char**) final {}
+    int GetCommandLineArgumentsCount() const final { return 0; }
+    const char* GetCommandLineArgument(int) const final { return nullptr; }
+    bool IsQuit() const final { return false; }
+    void RequestQuit() final {}
+    void CreateMainWindow() final { throw std::logic_error("Headless test has no native window"); }
+    void* GetMainWindowHandler() final { return nullptr; }
+    const GfxConfiguration GetConfiguration() const final {
+        GfxConfiguration config;
+        config.msaaSamples = 1;
+        return config;
+    }
+    void GetFramebufferSize(uint32_t& width, uint32_t& height) final { width = height = 16; }
+};
+
+class FailingAssets final : public AssetLoader {
+   public:
+    std::string failedPath;
+    bool reached = false;
+    Buffer SyncOpenAndReadBinary(const char* path) final {
+        if (failedPath == path) {
+            reached = true;
+            throw std::runtime_error("Injected registry asset failure");
+        }
+        return AssetLoader::SyncOpenAndReadBinary(path);
+    }
+};
+
+void CheckRegistryRollback(VulkanRHI& rhi) {
+    TestApplication app;
+    FailingAssets assets;
+    VulkanPipelineStateManager registry(rhi, assets);
+    registry.SetAppPointer(&app);
+    for (const auto* failure : {"pbr.frag", "integrateBRDF.comp"}) {
+        assets.failedPath = std::string("Shaders/Vulkan/Engine/") + failure + ".spv";
+        assets.reached = false;
+        bool rejected = false;
+        try {
+            registry.Initialize();
+        } catch (const std::runtime_error&) {
+            rejected = true;
+        }
+        Require(rejected && assets.reached, "Registry retry did not reach the injected failure");
+        bool removed = false;
+        try {
+            registry.GetPipelineState("BASIC");
+        } catch (const std::runtime_error&) {
+            removed = true;
+        }
+        Require(removed, "Failed registry initialization retained an earlier completed pipeline");
+    }
+    registry.Finalize();
+}
+
 void CheckFailures(VulkanRHI& rhi, VulkanPipelineStateManager& manager) {
     auto definition = ComputeDefinition();
     definition.pipelineStateName = "Missing asset";
@@ -295,6 +351,7 @@ int main(int argc, char** argv) {
             AssetLoader assets;
             assets.AddSearchPath(argv[1]);
             VulkanPipelineStateManager manager(rhi, assets);
+            CheckRegistryRollback(rhi);
             CheckFailures(rhi, manager);
             const auto retained = CheckCompute(rhi, manager);
             CheckOffscreen(rhi, manager);

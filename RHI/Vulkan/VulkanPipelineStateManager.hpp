@@ -24,6 +24,7 @@ class VulkanPipelineStateManager : public PipelineStateManager {
     VulkanPipelineStateManager(VulkanRHI& rhi, IAssetReader& assets)
         : m_rhi(rhi), m_assets(assets) {}
 
+    int Initialize() final;
     void CreateGraphicsPipeline(VulkanPipelineState& state, vk::RenderPass renderPass);
     void UnregisterPipelineState(PipelineState& pipelineState) final;
 

@@ -79,6 +79,20 @@ vk::CompareOp DepthCompare(DEPTH_TEST_MODE mode) {
 }
 }  // namespace
 
+int VulkanPipelineStateManager::Initialize() {
+    if (!m_pApp || !m_pipelineStates.empty()) {
+        throw std::logic_error("Vulkan registry initialization requires an application and empty registry");
+    }
+    struct Rollback {
+        VulkanPipelineStateManager& manager;
+        bool active = true;
+        ~Rollback() { if (active) manager.Clear(); }
+    } rollback{*this};
+    const auto result = PipelineStateManager::Initialize();
+    if (result == 0) rollback.active = false;
+    return result;
+}
+
 bool VulkanPipelineStateManager::InitializePipelineState(
     PipelineState** ppPipelineState) {
     if (!ppPipelineState || !*ppPipelineState || !m_rhi.GetDevice()) {

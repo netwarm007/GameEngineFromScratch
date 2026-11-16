@@ -540,6 +540,10 @@ single-face shadow adaptation remains part of checkpoint 3, not an advertised
 capability of this first increment.
 Finalization and unregistering release GPU state without deleting an object
 still borrowed by shared pipeline references.
+Whole-registry initialization also rolls back earlier completed pipelines if a
+later asset fails. The regression injects failures at two successive registry
+positions and retries the same manager, matching the runtime module's partial
+initialization ownership contract.
 
 The initial fixed engine layout has dynamic uniform bindings 10-13, sampled
 images 32-43, sampler 64, and storage image 96. Binding a set supplies four
