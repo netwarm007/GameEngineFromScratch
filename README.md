@@ -121,6 +121,11 @@ The [modularization roadmap](docs/architecture/modularization-roadmap.md)
 describes the refactoring goals, completed boundaries, proposed next checkpoints,
 and acceptance process.
 
+The [Vulkan RHI implementation plan](docs/architecture/vulkan-rhi-implementation-plan.md)
+defines the shared-HLSL requirement, backend boundaries, implementation
+checkpoints, and acceptance criteria. It incorporates the merged point-light
+shadow and ImGui lifecycle contracts; implementation starts from current master.
+
 Desktop graphics applications create the native window with `CreateMainWindow()`
 before calling `Initialize()`. Application initialization prepares the backend
 before initializing runtime modules; module-initialization retries reuse a
