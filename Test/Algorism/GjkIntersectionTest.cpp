@@ -46,6 +46,39 @@ bool ClosestPointMatches(const PointList<float>& triangle, const Point<float>& p
 }  // namespace
 
 int main() {
+    {
+        ConvexHull<float> hull;
+        const std::array<std::array<float, 3>, 4> vertices = {{
+            {{0, 0, 0}}, {{10, 10, 10}}, {{2, 3, 4}}, {{7, 4, 5}},
+        }};
+        for (const auto& vertex : vertices) {
+            hull.AddPoint(std::make_shared<Point<float>>(
+                Point<float>({vertex[0], vertex[1], vertex[2]})));
+        }
+        while (hull.Iterate()) {
+        }
+        CHECK(hull.Faces.size() == 4);
+        const auto support = ConvexPolyhedronSupportFunction(hull, Vector3f({0, 0, 0}));
+        bool is_vertex = false;
+        for (const auto& vertex : vertices) {
+            if (support[0] == vertex[0] && support[1] == vertex[1] &&
+                support[2] == vertex[2]) {
+                is_vertex = true;
+            }
+        }
+        CHECK(is_vertex);
+    }
+
+    {
+        bool rejected = false;
+        try {
+            ConvexPolyhedronSupportFunction(Polyhedron<float>{}, Vector3f({1, 0, 0}));
+        } catch (const std::invalid_argument&) {
+            rejected = true;
+        }
+        CHECK(rejected);
+    }
+
     for (const float side : {-1.0f, 1.0f}) {
         const std::array<std::array<float, 3>, 4> tetrahedron = {{
             {{0, 0, 0}}, {{10, 0, 0}}, {{3, 3, 0}}, {{4, 1, side}},

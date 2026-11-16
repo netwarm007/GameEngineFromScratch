@@ -62,11 +62,6 @@ class QuickHull {
                 ExtremePointZMax = point_ptr;
         }
 
-        PointSet<T> ExtremePoints;
-        ExtremePoints.insert({ExtremePointXMin, ExtremePointXMax,
-                              ExtremePointYMin, ExtremePointYMax,
-                              ExtremePointZMin, ExtremePointZMax});
-
         // now we find the most distant pair among 6 extreme points
         {
             float distance_x, distance_y, distance_z;
@@ -97,16 +92,13 @@ class QuickHull {
                     assert(0);
             }
 
-            ExtremePoints.erase(A);
-            ExtremePoints.erase(B);
-
-            // now we have 2 points on the convex hull, find the 3rd one among
-            // remain extreme points
+            // Find the third point among all points: the axis extrema can
+            // consist of only A and B even when the point set is 3D.
             PointPtr<T> C;
             {
                 double max_distance = 0.0f;
 
-                for (const auto& point_ptr : ExtremePoints) {
+                for (const auto& point_ptr : point_set) {
                     Vector3f numerator;
                     Vector3f denominator;
                     CrossProduct(numerator, *point_ptr - *A, *point_ptr - *B);
