@@ -196,11 +196,12 @@ void GuiSubPass::DrawSceneGraphWindow(const Frame& frame, bool* open) {
     ImGui::End();
 }
 
-static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64}, ImVec2 uv0 = {0.0f, 1.0f}, ImVec2 uv1 = {1.0f, 0.0f}) {
+static void DrawTexturePreviewer(TextureHandler textureHandle, ImVec2 size,
+                                 ImVec2 uv0, ImVec2 uv1) {
 	ImGuiIO& io = ImGui::GetIO();
 	ImVec2 pos = ImGui::GetCursorScreenPos();
 
-    ImGui::Image((ImTextureID)texture.handler, size, uv0, uv1);
+    ImGui::Image((ImTextureID)textureHandle, size, uv0, uv1);
     if (ImGui::IsItemHovered())
     {
         float focus_sz = 32.0f;
@@ -221,12 +222,19 @@ static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64},
         ImGui::Text("UV(min): (%.2f, %.2f)", _uv0.x, _uv0.y);
         ImGui::Text("UV(max): (%.2f, %.2f)", _uv1.x, _uv1.y);
         if (uv0.y > uv1.y) { _uv0.y = 1.0f - _uv0.y; _uv1.y = 1.0f - _uv1.y; }
-        ImGui::Image((ImTextureID)texture.handler, ImVec2(128, 128), _uv0, _uv1, ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
+        ImGui::Image((ImTextureID)textureHandle, ImVec2(128, 128), _uv0, _uv1, ImColor(255, 255, 255, 255), ImColor(255, 255, 255, 128));
         ImGui::EndTooltip();
     }
 }
 
 void GuiSubPass::Draw(Frame& frame) {
+    const auto TexturePreviewer =
+        [this](const TextureBase& texture, ImVec2 size = {64, 64},
+               ImVec2 uv0 = {0.0f, 1.0f}, ImVec2 uv1 = {1.0f, 0.0f}) {
+            DrawTexturePreviewer(
+                m_pGraphicsManager->GetImGuiTextureHandle(texture), size, uv0,
+                uv1);
+        };
     if (ImGui::GetCurrentContext()) {
         const std::array<TextureHandler, 4> sources{
             frame.frameContext.globalShadowMap.handler, frame.frameContext.shadowMap.handler,

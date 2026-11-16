@@ -12,7 +12,9 @@
 #include "SceneResourceLoader.hpp"
 #include "ViewerLogic.hpp"
 
-#if defined(OS_WEBASSEMBLY)
+#if defined(GEFS_USE_VULKAN_VIEWER)
+#include "Platform/Linux/VulkanApplication.hpp"
+#elif defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
@@ -26,7 +28,9 @@
 #endif
 #endif
 
-#if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
+#if defined(GEFS_USE_VULKAN_VIEWER)
+#include "RHI/Vulkan/VulkanConfig.hpp"
+#elif defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
 #elif defined(OS_MACOS)
 #include "RHI/Metal/MetalConfig.hpp"
@@ -56,7 +60,9 @@ int main(int argc, char** argv) {
 #if defined(IS_OPENGL)
     config.fixOpenGLPerspectiveMatrix = true;
 #endif
-#if defined(OS_MACOS)
+#if defined(GEFS_USE_VULKAN_VIEWER)
+    VulkanApplication app(config);
+#elif defined(OS_MACOS)
     CocoaMetalApplication app(config);
 #elif defined(OS_WINDOWS)
     D3d12Application app(config);

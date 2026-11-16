@@ -14,6 +14,9 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     virtual void Draw() = 0;
     virtual void Present() = 0;
     virtual bool RenderTargetHasTopLeftOrigin() const { return false; }
+    virtual TextureHandler GetImGuiTextureHandle(const TextureBase& texture) {
+        return texture.handler;
+    }
 
     virtual void ResizeCanvas(int32_t width, int32_t height) = 0;
 

@@ -206,6 +206,21 @@ set(PLATFORM_INTERFACE PlatformInterfaceSDL2)
 else()
 set(PLATFORM_INTERFACE PlatformInterface)
 endif(SDL2_FOUND)
+option(GEFS_VIEWER_USE_VULKAN "Build the Linux Viewer with the Vulkan RHI" OFF)
+if(GEFS_VIEWER_USE_VULKAN)
+    if(NOT Vulkan_FOUND)
+        message(FATAL_ERROR "GEFS_VIEWER_USE_VULKAN requires Vulkan")
+    endif()
+    set(PLATFORM_INTERFACE PlatformInterface)
+    target_compile_definitions(Viewer PRIVATE GEFS_USE_VULKAN_VIEWER)
+    target_link_libraries(Viewer
+                            BulletPhysics
+                            VulkanRHI
+                            Framework
+                            ${PLATFORM_INTERFACE})
+
+    install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/Vulkan DESTINATION Asset/Shaders)
+else()
     target_link_libraries(Viewer
                             BulletPhysics
                             OpenGLRHI
@@ -213,6 +228,7 @@ endif(SDL2_FOUND)
                             ${PLATFORM_INTERFACE})
 
     install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
+endif()
     install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)

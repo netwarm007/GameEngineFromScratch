@@ -11,6 +11,8 @@
 #include <limits>
 #include <optional>
 #include <set>
+#include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "geommath.hpp"
@@ -601,12 +603,13 @@ void VulkanRHI::createSwapChain() {
 void VulkanRHI::getDeviceQueues() {
     auto indices = findQueueFamilies(m_vkPhysicalDevice, m_vkSurface);
 
+    m_nGraphicsQueueFamily = indices.graphicsFamily.value();
     m_vkGraphicsQueue = m_vkDevice.getQueue(indices.graphicsFamily.value(), 0);
     m_vkPresentQueue = m_vkDevice.getQueue(indices.presentFamily.value(), 0);
     m_vkTransferQueue = m_vkDevice.getQueue(indices.transferFamily.value(), 0);
 }
 
-vk::RenderPass VulkanRHI::createRenderPass() {
+vk::RenderPass VulkanRHI::createRenderPass(bool offscreen) {
     vk::AttachmentDescription colorAttachment;
     colorAttachment.format = m_vkSwapChainImageFormat;
     colorAttachment.samples = m_vkMsaaSamples;
@@ -644,7 +647,9 @@ vk::RenderPass VulkanRHI::createRenderPass() {
     colorAttachmentResolve.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
     colorAttachmentResolve.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
     colorAttachmentResolve.initialLayout = vk::ImageLayout::eUndefined;
-    colorAttachmentResolve.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+    colorAttachmentResolve.finalLayout =
+        offscreen ? vk::ImageLayout::eShaderReadOnlyOptimal
+                  : vk::ImageLayout::ePresentSrcKHR;
 
     vk::AttachmentReference colorAttachmentResolveRef;
     colorAttachmentResolveRef.attachment = 2;
@@ -656,24 +661,42 @@ vk::RenderPass VulkanRHI::createRenderPass() {
     subpass.setPDepthStencilAttachment(&depthAttachmentRef);
     subpass.setPResolveAttachments(&colorAttachmentResolveRef);
 
-    vk::SubpassDependency dependency;
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask =
+    std::vector<vk::SubpassDependency> dependencies(offscreen ? 2 : 1);
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask =
+        vk::PipelineStageFlagBits::eFragmentShader |
         vk::PipelineStageFlagBits::eColorAttachmentOutput |
         vk::PipelineStageFlagBits::eEarlyFragmentTests;
-    dependency.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
-    dependency.dstStageMask =
+    dependencies[0].srcAccessMask =
+        vk::AccessFlagBits::eShaderRead |
+        vk::AccessFlagBits::eColorAttachmentWrite |
+        vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    dependencies[0].dstStageMask =
         vk::PipelineStageFlagBits::eColorAttachmentOutput |
         vk::PipelineStageFlagBits::eEarlyFragmentTests;
-    dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite |
-                               vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    dependencies[0].dstAccessMask =
+        vk::AccessFlagBits::eColorAttachmentWrite |
+        vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+
+    if (offscreen) {
+        dependencies[1].srcSubpass = 0;
+        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependencies[1].srcStageMask =
+            vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        dependencies[1].srcAccessMask =
+            vk::AccessFlagBits::eColorAttachmentWrite;
+        dependencies[1].dstStageMask =
+            vk::PipelineStageFlagBits::eFragmentShader;
+        dependencies[1].dstAccessMask = vk::AccessFlagBits::eShaderRead;
+    }
 
     std::array<vk::AttachmentDescription, 3> attachments = {
         colorAttachment, depthAttachment, colorAttachmentResolve};
 
     vk::RenderPassCreateInfo renderPassInfo(vk::RenderPassCreateFlags(),
-                                            attachments, subpass, dependency);
+                                            attachments, subpass,
+                                            dependencies);
 
     return m_vkDevice.createRenderPass(renderPassInfo);
 }
@@ -695,8 +718,31 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
                                        const vk::DescriptorSetLayout &descriptorSetLayout,
                                        const vk::RenderPass &renderPass,
                                        vk::PipelineLayout &pipelineLayout,
-                                       vk::Pipeline &pipeline
+                                       vk::Pipeline &pipeline,
+                                       vk::Extent2D viewportExtent,
+                                       bool depthOnly,
+                                       vk::CullModeFlags cullMode,
+                                       bool depthWrite,
+                                       vk::CompareOp depthCompare
                                        ) {
+    createGraphicsPipeline(shaders, shaderCount, &bindingDescription, 1,
+                           attributeDescriptions, attributeCount,
+                           descriptorSetLayout, renderPass, pipelineLayout,
+                           pipeline, viewportExtent, depthOnly, cullMode,
+                           depthWrite, depthCompare);
+}
+
+void VulkanRHI::createGraphicsPipeline(
+    const VulkanRHI::Shader* shaders, size_t shaderCount,
+    const vk::VertexInputBindingDescription* bindingDescriptions,
+    size_t bindingCount,
+    const vk::VertexInputAttributeDescription* attributeDescriptions,
+    size_t attributeCount,
+    const vk::DescriptorSetLayout& descriptorSetLayout,
+    const vk::RenderPass& renderPass, vk::PipelineLayout& pipelineLayout,
+    vk::Pipeline& pipeline, vk::Extent2D viewportExtent, bool depthOnly,
+    vk::CullModeFlags cullMode, bool depthWrite,
+    vk::CompareOp depthCompare) {
     std::vector<vk::PipelineShaderStageCreateInfo> shaderStages;
 
     for (size_t i = 0; i < shaderCount; i++) {
@@ -711,8 +757,9 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
     // 顶点输入格式
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
 
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexBindingDescriptionCount =
+        static_cast<uint32_t>(bindingCount);
+    vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions;
     vertexInputInfo.vertexAttributeDescriptionCount =
         static_cast<uint32_t>(attributeCount);
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions;
@@ -723,10 +770,14 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // 视口和裁剪
-    vk::Viewport viewport(0.0f, 0.0f, m_vkSwapChainExtent.width,
-                          m_vkSwapChainExtent.height, 0.0f, 1.0f);
+    if (viewportExtent.width == 0 || viewportExtent.height == 0) {
+        viewportExtent = m_vkSwapChainExtent;
+    }
+    vk::Viewport viewport(0.0f, 0.0f,
+                          static_cast<float>(viewportExtent.width),
+                          static_cast<float>(viewportExtent.height), 0.0f, 1.0f);
 
-    vk::Rect2D scissor({0, 0}, m_vkSwapChainExtent);
+    vk::Rect2D scissor({0, 0}, viewportExtent);
 
     vk::PipelineViewportStateCreateInfo viewportState({}, viewport, scissor);
 
@@ -736,7 +787,7 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = vk::PolygonMode::eFill;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = vk::CullModeFlagBits::eBack;
+    rasterizer.cullMode = cullMode;
     rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;
@@ -745,8 +796,10 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
 
     // 多采样（Multisampling）
     vk::PipelineMultisampleStateCreateInfo multisampling;
-    multisampling.rasterizationSamples = m_vkMsaaSamples;
-    multisampling.sampleShadingEnable = m_bUseSampleShading;
+    multisampling.rasterizationSamples =
+        depthOnly ? vk::SampleCountFlagBits::e1 : m_vkMsaaSamples;
+    multisampling.sampleShadingEnable =
+        !depthOnly && m_bUseSampleShading;
     multisampling.minSampleShading = 0.2f;
     multisampling.pSampleMask = nullptr;
     multisampling.alphaToCoverageEnable = VK_FALSE;
@@ -755,8 +808,8 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
     // 深度以及蒙板测试
     vk::PipelineDepthStencilStateCreateInfo depthStencil;
     depthStencil.depthTestEnable = VK_TRUE;
-    depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = vk::CompareOp::eLess;
+    depthStencil.depthWriteEnable = depthWrite ? VK_TRUE : VK_FALSE;
+    depthStencil.depthCompareOp = depthCompare;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.minDepthBounds = 0.0f;
     depthStencil.maxDepthBounds = 1.0f;
@@ -778,8 +831,18 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
     vk::PipelineColorBlendStateCreateInfo colorBlending;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = vk::LogicOp::eCopy;
-    colorBlending.setAttachments(colorBlendAttachment);
+    if (depthOnly) {
+        colorBlending.attachmentCount = 0;
+        colorBlending.pAttachments = nullptr;
+    } else {
+        colorBlending.setAttachments(colorBlendAttachment);
+    }
     colorBlending.setBlendConstants({0.0f, 0.0f, 0.0f, 0.0f});
+
+    std::array<vk::DynamicState, 2> dynamicStates{
+        vk::DynamicState::eViewport, vk::DynamicState::eScissor};
+    vk::PipelineDynamicStateCreateInfo dynamicStateInfo;
+    dynamicStateInfo.setDynamicStates(dynamicStates);
 
     // 常量布局
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
@@ -791,7 +854,8 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
     vk::GraphicsPipelineCreateInfo pipelineInfo(
         vk::PipelineCreateFlags(), shaderStages, &vertexInputInfo,
         &inputAssembly, nullptr, &viewportState, &rasterizer, &multisampling,
-        &depthStencil, &colorBlending, nullptr, pipelineLayout,
+        &depthStencil, &colorBlending,
+        depthOnly ? &dynamicStateInfo : nullptr, pipelineLayout,
         renderPass);
 
     auto [result, createdPipeline] =
@@ -818,6 +882,282 @@ void VulkanRHI::createFramebuffers(const vk::RenderPass &renderPass) {
 
         m_vkSwapChainFramebuffers[i] =
             m_vkDevice.createFramebuffer(framebufferInfo);
+    }
+}
+
+VulkanRHI::Texture VulkanRHI::createRenderTexture2D(
+    uint32_t width, uint32_t height, bool depth,
+    vk::SampleCountFlagBits samples) {
+    if (width == 0 || height == 0) {
+        throw std::invalid_argument("Invalid Vulkan render texture dimensions");
+    }
+
+    VulkanRHI::Texture texture;
+    texture.format = depth ? findDepthFormat() : m_vkSwapChainImageFormat;
+    vk::ImageCreateInfo imageInfo;
+    imageInfo.imageType = vk::ImageType::e2D;
+    imageInfo.extent = vk::Extent3D(width, height, 1);
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = texture.format;
+    imageInfo.tiling = vk::ImageTiling::eOptimal;
+    imageInfo.initialLayout = vk::ImageLayout::eUndefined;
+    imageInfo.usage =
+        depth ? vk::ImageUsageFlagBits::eDepthStencilAttachment
+              : vk::ImageUsageFlagBits::eColorAttachment;
+    if (!depth && samples == vk::SampleCountFlagBits::e1) {
+        imageInfo.usage |= vk::ImageUsageFlagBits::eSampled;
+    }
+    imageInfo.sharingMode = vk::SharingMode::eExclusive;
+    imageInfo.samples = samples;
+
+    try {
+        texture.image = m_vkDevice.createImage(imageInfo);
+        const auto requirements =
+            m_vkDevice.getImageMemoryRequirements(texture.image);
+        vk::MemoryAllocateInfo allocationInfo;
+        allocationInfo.allocationSize = requirements.size;
+        allocationInfo.memoryTypeIndex = findMemoryType(
+            requirements.memoryTypeBits,
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        texture.heap = m_vkDevice.allocateMemory(allocationInfo);
+        m_vkDevice.bindImageMemory(texture.image, texture.heap, 0);
+
+        vk::ImageViewCreateInfo viewInfo;
+        viewInfo.image = texture.image;
+        viewInfo.viewType = vk::ImageViewType::e2D;
+        viewInfo.format = texture.format;
+        viewInfo.subresourceRange.aspectMask =
+            depth ? vk::ImageAspectFlagBits::eDepth
+                  : vk::ImageAspectFlagBits::eColor;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.layerCount = 1;
+        texture.descriptor = m_vkDevice.createImageView(viewInfo);
+    } catch (...) {
+        if (texture.descriptor) m_vkDevice.destroyImageView(texture.descriptor);
+        if (texture.image) m_vkDevice.destroyImage(texture.image);
+        if (texture.heap) m_vkDevice.freeMemory(texture.heap);
+        throw;
+    }
+    return texture;
+}
+
+vk::RenderPass VulkanRHI::createOffscreenRenderPass() {
+    return createRenderPass(true);
+}
+
+vk::Framebuffer VulkanRHI::createOffscreenFramebuffer(
+    const vk::RenderPass& renderPass,
+    const vk::ImageView& multisampleColorView,
+    const vk::ImageView& depthView, const vk::ImageView& resolveView,
+    uint32_t width, uint32_t height) {
+    if (!renderPass || !multisampleColorView || !depthView || !resolveView ||
+        width == 0 || height == 0) {
+        throw std::invalid_argument("Invalid Vulkan offscreen framebuffer");
+    }
+    std::array<vk::ImageView, 3> attachments{
+        multisampleColorView, depthView, resolveView};
+    vk::FramebufferCreateInfo framebufferInfo(
+        {}, renderPass, attachments, width, height, 1);
+    return m_vkDevice.createFramebuffer(framebufferInfo);
+}
+
+VulkanRHI::Texture VulkanRHI::createDepthTextureArray(
+    uint32_t width, uint32_t height, uint32_t arrayLayers, bool cubeArray,
+    std::vector<vk::ImageView>& layerViews) {
+    if (width == 0 || height == 0 || arrayLayers == 0 ||
+        (cubeArray && arrayLayers % 6 != 0)) {
+        throw std::invalid_argument("Invalid Vulkan depth texture dimensions");
+    }
+
+    Texture texture{};
+    const uint32_t imageLayers = arrayLayers;
+    const auto format = findDepthFormat();
+    vk::ImageCreateInfo imageInfo;
+    imageInfo.flags = cubeArray ? vk::ImageCreateFlagBits::eCubeCompatible
+                                : vk::ImageCreateFlags{};
+    imageInfo.imageType = vk::ImageType::e2D;
+    imageInfo.format = format;
+    imageInfo.extent = vk::Extent3D(width, height, 1);
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = imageLayers;
+    imageInfo.samples = vk::SampleCountFlagBits::e1;
+    imageInfo.tiling = vk::ImageTiling::eOptimal;
+    imageInfo.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment |
+                      vk::ImageUsageFlagBits::eSampled;
+    imageInfo.sharingMode = vk::SharingMode::eExclusive;
+
+    try {
+        texture.image = m_vkDevice.createImage(imageInfo);
+        const auto requirements =
+            m_vkDevice.getImageMemoryRequirements(texture.image);
+        vk::MemoryAllocateInfo allocationInfo;
+        allocationInfo.allocationSize = requirements.size;
+        allocationInfo.memoryTypeIndex = findMemoryType(
+            requirements.memoryTypeBits,
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        texture.heap = m_vkDevice.allocateMemory(allocationInfo);
+        m_vkDevice.bindImageMemory(texture.image, texture.heap, 0);
+
+        vk::ImageSubresourceRange arrayRange(
+            vk::ImageAspectFlagBits::eDepth, 0, 1, 0, imageLayers);
+        vk::ImageViewCreateInfo arrayViewInfo;
+        arrayViewInfo.image = texture.image;
+        arrayViewInfo.viewType = cubeArray ? vk::ImageViewType::eCubeArray
+                                           : vk::ImageViewType::e2DArray;
+        arrayViewInfo.format = format;
+        arrayViewInfo.subresourceRange = arrayRange;
+        texture.descriptor = m_vkDevice.createImageView(arrayViewInfo);
+
+        layerViews.reserve(imageLayers);
+        for (uint32_t layer = 0; layer < imageLayers; ++layer) {
+            vk::ImageSubresourceRange layerRange(
+                vk::ImageAspectFlagBits::eDepth, 0, 1, layer, 1);
+            vk::ImageViewCreateInfo layerViewInfo;
+            layerViewInfo.image = texture.image;
+            layerViewInfo.viewType = vk::ImageViewType::e2D;
+            layerViewInfo.format = format;
+            layerViewInfo.subresourceRange = layerRange;
+            layerViews.push_back(m_vkDevice.createImageView(layerViewInfo));
+        }
+    } catch (...) {
+        for (auto layerView : layerViews) {
+            m_vkDevice.destroyImageView(layerView);
+        }
+        layerViews.clear();
+        if (texture.descriptor) m_vkDevice.destroyImageView(texture.descriptor);
+        if (texture.image) m_vkDevice.destroyImage(texture.image);
+        if (texture.heap) m_vkDevice.freeMemory(texture.heap);
+        throw;
+    }
+    return texture;
+}
+
+vk::RenderPass VulkanRHI::createDepthRenderPass() {
+    const auto format = findDepthFormat();
+    vk::AttachmentDescription depthAttachment;
+    depthAttachment.format = format;
+    depthAttachment.samples = vk::SampleCountFlagBits::e1;
+    depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+    depthAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+    depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
+    depthAttachment.finalLayout =
+        vk::ImageLayout::eDepthStencilReadOnlyOptimal;
+
+    vk::AttachmentReference depthReference(
+        0, vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    vk::SubpassDescription subpass;
+    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+    subpass.setPDepthStencilAttachment(&depthReference);
+
+    std::array<vk::SubpassDependency, 2> dependencies{};
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask =
+        vk::PipelineStageFlagBits::eFragmentShader |
+        vk::PipelineStageFlagBits::eLateFragmentTests;
+    dependencies[0].dstStageMask =
+        vk::PipelineStageFlagBits::eEarlyFragmentTests;
+    dependencies[0].srcAccessMask = vk::AccessFlagBits::eShaderRead |
+                                    vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    dependencies[0].dstAccessMask =
+        vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    dependencies[0].dependencyFlags =
+        vk::DependencyFlagBits::eByRegion;
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask =
+        vk::PipelineStageFlagBits::eLateFragmentTests;
+    dependencies[1].dstStageMask =
+        vk::PipelineStageFlagBits::eFragmentShader;
+    dependencies[1].srcAccessMask =
+        vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+    dependencies[1].dstAccessMask = vk::AccessFlagBits::eShaderRead;
+    dependencies[1].dependencyFlags =
+        vk::DependencyFlagBits::eByRegion;
+
+    vk::RenderPassCreateInfo renderPassInfo;
+    renderPassInfo.setAttachments(depthAttachment);
+    renderPassInfo.setSubpasses(subpass);
+    renderPassInfo.setDependencies(dependencies);
+    return m_vkDevice.createRenderPass(renderPassInfo);
+}
+
+vk::Framebuffer VulkanRHI::createDepthFramebuffer(
+    const vk::RenderPass& renderPass, const vk::ImageView& depthView,
+    uint32_t width, uint32_t height) {
+    vk::FramebufferCreateInfo framebufferInfo;
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.setAttachments(depthView);
+    framebufferInfo.width = width;
+    framebufferInfo.height = height;
+    framebufferInfo.layers = 1;
+    return m_vkDevice.createFramebuffer(framebufferInfo);
+}
+
+void VulkanRHI::drawDepthPass(const vk::RenderPass& renderPass,
+                              const vk::Framebuffer& framebuffer,
+                              uint32_t width, uint32_t height,
+                              const std::vector<DrawCommand>& drawCommands) {
+    if (!renderPass || !framebuffer || width == 0 || height == 0) {
+        throw std::invalid_argument("Invalid Vulkan depth pass target");
+    }
+    for (const auto& draw : drawCommands) {
+        if (!draw.pipeline || !draw.pipelineLayout ||
+            draw.vertexBuffers.empty() ||
+            draw.vertexBuffers.size() != draw.vertexOffsets.size() ||
+            !draw.indexBuffer || draw.indexCount == 0 ||
+            !draw.descriptorSet) {
+            throw std::invalid_argument("Invalid Vulkan depth draw command");
+        }
+    }
+
+    vk::CommandBufferAllocateInfo allocationInfo(
+        m_vkCommandPool, vk::CommandBufferLevel::ePrimary, 1);
+    const auto commandBuffer =
+        m_vkDevice.allocateCommandBuffers(allocationInfo).front();
+    try {
+        commandBuffer.begin(
+            vk::CommandBufferBeginInfo(
+                vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+        const vk::ClearValue clearValue(
+            vk::ClearDepthStencilValue(1.0f, 0));
+        const vk::RenderPassBeginInfo renderPassInfo(
+            renderPass, framebuffer, vk::Rect2D({0, 0}, {width, height}),
+            clearValue);
+        commandBuffer.beginRenderPass(renderPassInfo,
+                                      vk::SubpassContents::eInline);
+        commandBuffer.setViewport(
+            0, vk::Viewport(0.0f, 0.0f, static_cast<float>(width),
+                            static_cast<float>(height), 0.0f, 1.0f));
+        commandBuffer.setScissor(0, vk::Rect2D({0, 0}, {width, height}));
+
+        for (const auto& draw : drawCommands) {
+            commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                       draw.pipeline);
+            commandBuffer.bindVertexBuffers(0, draw.vertexBuffers,
+                                            draw.vertexOffsets);
+            commandBuffer.bindIndexBuffer(draw.indexBuffer, 0,
+                                          draw.indexType);
+            commandBuffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, draw.pipelineLayout, 0,
+                draw.descriptorSet, nullptr);
+            commandBuffer.drawIndexed(draw.indexCount, 1, 0, 0, 0);
+        }
+
+        commandBuffer.endRenderPass();
+        commandBuffer.end();
+
+        vk::SubmitInfo submitInfo;
+        submitInfo.setCommandBuffers(commandBuffer);
+        m_vkGraphicsQueue.submit(submitInfo);
+        m_vkGraphicsQueue.waitIdle();
+        m_vkDevice.freeCommandBuffers(m_vkCommandPool, commandBuffer);
+    } catch (...) {
+        m_vkDevice.freeCommandBuffers(m_vkCommandPool, commandBuffer);
+        throw;
     }
 }
 
@@ -848,16 +1188,57 @@ void VulkanRHI::createCommandBuffers() {
 }
 
 void VulkanRHI::recordCommandBuffer(const vk::RenderPass &renderPass,
-                                    const vk::Pipeline &pipeline,
-                                    const vk::PipelineLayout &pipelineLayout,
-                                    const vk::Buffer &vertexBuffer,
-                                    const vk::Buffer &indexBuffer,
-                                    const vk::CommandBuffer& commandBuffer, 
-                                    uint32_t indicesCount,
-                                    uint32_t imageIndex) {
+                                    const std::vector<DrawCommand>& drawCommands,
+                                    const vk::CommandBuffer& commandBuffer,
+                                    uint32_t imageIndex,
+                                    const RenderCallback& renderCallback,
+                                    const OffscreenPass* offscreenPass) {
     vk::CommandBufferBeginInfo beginInfo;
 
     commandBuffer.begin(beginInfo);
+
+    auto drawScene = [&](const std::vector<DrawCommand>& commands) {
+        for (const auto& draw : commands) {
+            commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                       draw.pipeline);
+            commandBuffer.bindVertexBuffers(0, draw.vertexBuffers,
+                                            draw.vertexOffsets);
+            commandBuffer.bindIndexBuffer(draw.indexBuffer, 0,
+                                          draw.indexType);
+            const auto descriptorSet =
+                draw.descriptorSet ? draw.descriptorSet
+                                   : m_vkDescriptorSets[m_nCurrentFrame];
+            commandBuffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics, draw.pipelineLayout, 0,
+                descriptorSet, nullptr);
+            commandBuffer.drawIndexed(draw.indexCount, 1, 0, 0, 0);
+        }
+    };
+
+    if (offscreenPass) {
+        if (!offscreenPass->renderPass || !offscreenPass->framebuffer ||
+            offscreenPass->extent.width == 0 ||
+            offscreenPass->extent.height == 0) {
+            throw std::invalid_argument("Invalid Vulkan offscreen pass");
+        }
+        std::array<vk::ClearValue, 3> clearValues{};
+        clearValues[0].color = vk::ClearColorValue(offscreenPass->clearColor);
+        clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+        vk::RenderPassBeginInfo renderPassInfo(
+            offscreenPass->renderPass, offscreenPass->framebuffer,
+            vk::Rect2D({0, 0}, offscreenPass->extent), clearValues);
+        commandBuffer.beginRenderPass(renderPassInfo,
+                                      vk::SubpassContents::eInline);
+        commandBuffer.setViewport(
+            0, vk::Viewport(0.0f, 0.0f,
+                            static_cast<float>(offscreenPass->extent.width),
+                            static_cast<float>(offscreenPass->extent.height),
+                            0.0f, 1.0f));
+        commandBuffer.setScissor(
+            0, vk::Rect2D({0, 0}, offscreenPass->extent));
+        drawScene(drawCommands);
+        commandBuffer.endRenderPass();
+    }
 
     std::array<vk::ClearValue, 2> clearValues;
     clearValues[0].color =
@@ -869,20 +1250,21 @@ void VulkanRHI::recordCommandBuffer(const vk::RenderPass &renderPass,
         vk::Rect2D(vk::Offset2D(0, 0), m_vkSwapChainExtent), clearValues);
 
     commandBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+    commandBuffer.setViewport(
+        0, vk::Viewport(0.0f, 0.0f,
+                        static_cast<float>(m_vkSwapChainExtent.width),
+                        static_cast<float>(m_vkSwapChainExtent.height), 0.0f,
+                        1.0f));
+    commandBuffer.setScissor(
+        0, vk::Rect2D({0, 0}, m_vkSwapChainExtent));
 
-    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                               pipeline);
+    if (!offscreenPass) {
+        drawScene(drawCommands);
+    }
 
-    commandBuffer.bindVertexBuffers(0, vertexBuffer, vk::DeviceSize(0));
-
-    commandBuffer.bindIndexBuffer(indexBuffer, 0, vk::IndexType::eUint32);
-
-    commandBuffer.bindDescriptorSets(
-        vk::PipelineBindPoint::eGraphics, pipelineLayout, 0,
-        m_vkDescriptorSets[m_nCurrentFrame], nullptr);
-
-    commandBuffer.drawIndexed(indicesCount, 1, 0, 0,
-                              0);
+    if (renderCallback) {
+        renderCallback(commandBuffer);
+    }
 
     commandBuffer.endRenderPass();
 
@@ -913,6 +1295,51 @@ void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
                           const vk::Buffer &vertexBuffer,
                           const vk::Buffer &indexBuffer,
                           uint32_t indicesCount) {
+    DrawCommand draw;
+    draw.pipeline = pipeline;
+    draw.pipelineLayout = pipelineLayout;
+    draw.vertexBuffers.push_back(vertexBuffer);
+    draw.vertexOffsets.push_back(0);
+    draw.indexBuffer = indexBuffer;
+    draw.indexCount = indicesCount;
+    drawFrame(renderPass, std::vector<DrawCommand>{std::move(draw)});
+}
+
+void VulkanRHI::drawFrame(const vk::RenderPass& renderPass,
+                          const std::vector<DrawCommand>& drawCommands) {
+    drawFrame(renderPass, drawCommands, {});
+}
+
+void VulkanRHI::drawFrame(const vk::RenderPass& renderPass,
+                          const std::vector<DrawCommand>& drawCommands,
+                          const RenderCallback& renderCallback) {
+    drawFrame(renderPass, drawCommands, renderCallback, nullptr);
+}
+
+void VulkanRHI::drawFrame(const vk::RenderPass& renderPass,
+                          const std::vector<DrawCommand>& drawCommands,
+                          const OffscreenPass& offscreenPass,
+                          const RenderCallback& renderCallback) {
+    drawFrame(renderPass, drawCommands, renderCallback, &offscreenPass);
+}
+
+void VulkanRHI::drawFrame(const vk::RenderPass& renderPass,
+                          const std::vector<DrawCommand>& drawCommands,
+                          const RenderCallback& renderCallback,
+                          const OffscreenPass* offscreenPass) {
+    for (const auto& draw : drawCommands) {
+        if (!draw.pipeline || !draw.pipelineLayout || draw.vertexBuffers.empty() ||
+            draw.vertexBuffers.size() != draw.vertexOffsets.size() ||
+            !draw.indexBuffer || draw.indexCount == 0) {
+            throw std::invalid_argument("Invalid Vulkan draw command");
+        }
+        if (!draw.descriptorSet &&
+            m_vkDescriptorSets.size() <= m_nCurrentFrame) {
+            throw std::logic_error(
+                "Vulkan draw command has no available descriptor set");
+        }
+    }
+
     try {
         while (vk::Result::eTimeout ==
                m_vkDevice.waitForFences(m_vkInFlightFences[m_nCurrentFrame],
@@ -939,7 +1366,9 @@ void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
 
         m_vkDevice.resetFences(m_vkInFlightFences[m_nCurrentFrame]);
         m_vkCommandBuffers[m_nCurrentFrame].reset();
-        recordCommandBuffer(renderPass, pipeline, pipelineLayout, vertexBuffer, indexBuffer, m_vkCommandBuffers[m_nCurrentFrame], indicesCount, imageIndex);
+        recordCommandBuffer(renderPass, drawCommands,
+                            m_vkCommandBuffers[m_nCurrentFrame], imageIndex,
+                            renderCallback, offscreenPass);
 
         // 提交 Command Buffer
         vk::SubmitInfo submitInfo;
@@ -979,7 +1408,7 @@ void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
     }
 }
 
-void VulkanRHI::cleanupSwapChain() {
+void VulkanRHI::cleanupSwapChainResources() {
     for (auto& framebuffer : m_vkSwapChainFramebuffers) {
         m_vkDevice.destroyFramebuffer(framebuffer);
     }
@@ -1002,6 +1431,10 @@ void VulkanRHI::cleanupSwapChain() {
     m_vkDepthImageView = nullptr;
     m_vkDepthImage = nullptr;
     m_vkDepthImageMemory = nullptr;
+}
+
+void VulkanRHI::cleanupSwapChain() {
+    cleanupSwapChainResources();
 
     for (auto& imageView : m_vkSwapChainImageViews) {
         m_vkDevice.destroyImageView(imageView);
@@ -1077,7 +1510,14 @@ void VulkanRHI::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
     m_vkDevice.bindBufferMemory(buffer, bufferMemory, 0);
 }
 
-void VulkanRHI::createVertexBuffer(void *buffer, vk::DeviceSize bufferSize, VulkanRHI::VertexBuffer &vertexBuffer) {
+void VulkanRHI::createVertexBuffer(const void* buffer,
+                                   vk::DeviceSize bufferSize,
+                                   VulkanRHI::VertexBuffer& vertexBuffer) {
+    if (!buffer || bufferSize == 0) {
+        throw std::invalid_argument(
+            "Vulkan vertex buffer data must be non-empty");
+    }
+
     // 创建中间缓冲区
     vk::Buffer stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -1105,7 +1545,17 @@ void VulkanRHI::createVertexBuffer(void *buffer, vk::DeviceSize bufferSize, Vulk
     m_vkDevice.freeMemory(stagingBufferMemory);
 }
 
-void VulkanRHI::createIndexBuffer(void *buffer, vk::DeviceSize bufferSize, VulkanRHI::IndexBuffer &indexBuffer) {
+void VulkanRHI::createIndexBuffer(const void* buffer,
+                                  vk::DeviceSize bufferSize,
+                                  VulkanRHI::IndexBuffer& indexBuffer) {
+    if (!buffer || bufferSize == 0 ||
+        bufferSize % sizeof(uint32_t) != 0 ||
+        bufferSize / sizeof(uint32_t) >
+            (std::numeric_limits<uint32_t>::max)()) {
+        throw std::invalid_argument(
+            "Vulkan index buffer data must contain 32-bit indices");
+    }
+
     // 创建中间缓冲区
     vk::Buffer stagingBuffer;
     vk::DeviceMemory stagingBufferMemory;
@@ -1131,6 +1581,8 @@ void VulkanRHI::createIndexBuffer(void *buffer, vk::DeviceSize bufferSize, Vulka
 
     m_vkDevice.destroyBuffer(stagingBuffer);
     m_vkDevice.freeMemory(stagingBufferMemory);
+    indexBuffer.indexCount =
+        static_cast<uint32_t>(bufferSize / sizeof(uint32_t));
 }
 
 void VulkanRHI::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer,
@@ -1202,15 +1654,40 @@ void VulkanRHI::createUniformBuffers(std::vector<VulkanRHI::UniformBuffer> &unif
     }
 }
 
-void VulkanRHI::UpdateUniformBuffer(const std::vector<VulkanRHI::UniformBuffer> &uniformBuffers, void *ubo, size_t uboSize) {
-    assert(uniformBuffers[m_nCurrentFrame].size >= uboSize);
+void VulkanRHI::createStorageBuffers(
+    std::vector<VulkanRHI::UniformBuffer>& storageBuffers,
+    vk::DeviceSize bufferSize) {
+    storageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-    // 上传数据
-    void *data;
-    vkMapMemory(m_vkDevice, uniformBuffers[m_nCurrentFrame].heap, 0,
-                uboSize, 0, &data);
-    memcpy(data, ubo, uboSize);
-    vkUnmapMemory(m_vkDevice, uniformBuffers[m_nCurrentFrame].heap);
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+        createBuffer(bufferSize, vk::BufferUsageFlagBits::eStorageBuffer,
+                     vk::MemoryPropertyFlagBits::eHostVisible |
+                         vk::MemoryPropertyFlagBits::eHostCoherent,
+                     storageBuffers[i].buffer, storageBuffers[i].heap);
+        storageBuffers[i].size = bufferSize;
+    }
+}
+
+void VulkanRHI::UpdateUniformBuffer(
+    const std::vector<VulkanRHI::UniformBuffer>& uniformBuffers,
+    const void* ubo, size_t uboSize) {
+    if (m_nCurrentFrame >= uniformBuffers.size()) {
+        throw std::out_of_range("Vulkan uniform buffer frame index is invalid");
+    }
+    UpdateUniformBuffer(uniformBuffers[m_nCurrentFrame], ubo, uboSize);
+}
+
+void VulkanRHI::UpdateUniformBuffer(
+    const VulkanRHI::UniformBuffer& uniformBuffer, const void* ubo,
+    size_t uboSize) {
+    if (!ubo || !uniformBuffer.heap || uboSize == 0 ||
+        uniformBuffer.size < uboSize) {
+        throw std::invalid_argument("Invalid Vulkan uniform buffer update");
+    }
+
+    void* data = m_vkDevice.mapMemory(uniformBuffer.heap, 0, uboSize);
+    std::memcpy(data, ubo, uboSize);
+    m_vkDevice.unmapMemory(uniformBuffer.heap);
 }
 
 void VulkanRHI::createDescriptorPool() {
@@ -1511,6 +1988,7 @@ VulkanRHI::Texture VulkanRHI::createTextureImage(Image& image) {
 
     vk::Format format;
     getTextureFormat(image, format);
+    texture.format = format;
 
     transitionImageLayout(texture.image, format, vk::ImageLayout::eUndefined,
                           vk::ImageLayout::eTransferDstOptimal);
@@ -1528,6 +2006,325 @@ VulkanRHI::Texture VulkanRHI::createTextureImage(Image& image) {
     texture.descriptor = createImageView(texture.image, format,
                                            vk::ImageAspectFlagBits::eColor);
 
+    return texture;
+}
+
+void VulkanRHI::updateTextureImage(const VulkanRHI::Texture& texture,
+                                   Image& image) {
+    if (!texture.image || !image.data || image.Width == 0 ||
+        image.Height == 0 || image.data_size == 0) {
+        throw std::invalid_argument("Invalid Vulkan texture update");
+    }
+
+    vk::Format format;
+    getTextureFormat(image, format);
+    if (format != texture.format) {
+        throw std::invalid_argument(
+            "Vulkan texture update format does not match the image");
+    }
+
+    const vk::DeviceSize imageSize =
+        static_cast<vk::DeviceSize>(image.data_size);
+    vk::Buffer stagingBuffer;
+    vk::DeviceMemory stagingBufferMemory;
+    createBuffer(imageSize, vk::BufferUsageFlagBits::eTransferSrc,
+                 vk::MemoryPropertyFlagBits::eHostVisible |
+                     vk::MemoryPropertyFlagBits::eHostCoherent,
+                 stagingBuffer, stagingBufferMemory);
+    try {
+        void* data = m_vkDevice.mapMemory(stagingBufferMemory, 0, imageSize);
+        std::memcpy(data, image.data, image.data_size);
+        m_vkDevice.unmapMemory(stagingBufferMemory);
+
+        transitionImageLayout(texture.image, format,
+                              vk::ImageLayout::eShaderReadOnlyOptimal,
+                              vk::ImageLayout::eTransferDstOptimal);
+        copyBufferToImage(stagingBuffer, texture.image, image.Width,
+                          image.Height);
+        transitionImageLayout(texture.image, format,
+                              vk::ImageLayout::eTransferDstOptimal,
+                              vk::ImageLayout::eShaderReadOnlyOptimal);
+    } catch (...) {
+        m_vkDevice.destroyBuffer(stagingBuffer);
+        m_vkDevice.freeMemory(stagingBufferMemory);
+        throw;
+    }
+    m_vkDevice.destroyBuffer(stagingBuffer);
+    m_vkDevice.freeMemory(stagingBufferMemory);
+}
+
+VulkanRHI::Texture VulkanRHI::createStorageTexture2D(
+    uint32_t width, uint32_t height, vk::Format format) {
+    if (!width || !height || format == vk::Format::eUndefined) {
+        throw std::invalid_argument(
+            "Invalid Vulkan storage texture dimensions or format");
+    }
+    const auto formatProperties = m_vkPhysicalDevice.getFormatProperties(format);
+    const auto requiredFeatures =
+        vk::FormatFeatureFlagBits::eStorageImage |
+        vk::FormatFeatureFlagBits::eSampledImage;
+    if ((formatProperties.optimalTilingFeatures & requiredFeatures) !=
+        requiredFeatures) {
+        throw std::runtime_error(
+            "Vulkan storage texture format is not supported");
+    }
+
+    VulkanRHI::Texture texture;
+    texture.format = format;
+    vk::ImageCreateInfo imageInfo;
+    imageInfo.imageType = vk::ImageType::e2D;
+    imageInfo.extent = vk::Extent3D(width, height, 1);
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = vk::ImageTiling::eOptimal;
+    imageInfo.initialLayout = vk::ImageLayout::eUndefined;
+    imageInfo.usage = vk::ImageUsageFlagBits::eStorage |
+                      vk::ImageUsageFlagBits::eSampled;
+    imageInfo.sharingMode = vk::SharingMode::eExclusive;
+    imageInfo.samples = vk::SampleCountFlagBits::e1;
+    texture.image = m_vkDevice.createImage(imageInfo);
+    try {
+        const auto requirements =
+            m_vkDevice.getImageMemoryRequirements(texture.image);
+        vk::MemoryAllocateInfo allocationInfo;
+        allocationInfo.allocationSize = requirements.size;
+        allocationInfo.memoryTypeIndex = findMemoryType(
+            requirements.memoryTypeBits,
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        texture.heap = m_vkDevice.allocateMemory(allocationInfo);
+        m_vkDevice.bindImageMemory(texture.image, texture.heap, 0);
+
+        vk::ImageViewCreateInfo viewInfo;
+        viewInfo.image = texture.image;
+        viewInfo.viewType = vk::ImageViewType::e2D;
+        viewInfo.format = format;
+        viewInfo.subresourceRange.aspectMask =
+            vk::ImageAspectFlagBits::eColor;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.layerCount = 1;
+        texture.descriptor = m_vkDevice.createImageView(viewInfo);
+    } catch (...) {
+        if (texture.descriptor) {
+            m_vkDevice.destroyImageView(texture.descriptor);
+        }
+        m_vkDevice.destroyImage(texture.image);
+        if (texture.heap) m_vkDevice.freeMemory(texture.heap);
+        throw;
+    }
+    return texture;
+}
+
+VulkanRHI::Texture VulkanRHI::createTextureCubeArray(
+    uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t cubeCount,
+    const std::vector<CubeArraySubresource>& subresources) {
+    if (!width || width != height || !mipLevels || !cubeCount ||
+        cubeCount > std::numeric_limits<uint32_t>::max() / 6 ||
+        subresources.empty()) {
+        throw std::invalid_argument("Invalid Vulkan cube array dimensions");
+    }
+
+    const uint32_t layerCount = cubeCount * 6;
+    struct UploadRegion {
+        vk::BufferImageCopy copy;
+        const uint8_t* source;
+        size_t size;
+    };
+    std::vector<UploadRegion> regions;
+    regions.reserve(subresources.size());
+    vk::Format format = vk::Format::eUndefined;
+    vk::DeviceSize stagingSize = 0;
+    constexpr vk::DeviceSize kCopyOffsetAlignment = 16;
+
+    for (const auto& subresource : subresources) {
+        if (!subresource.image || !subresource.image->data ||
+            subresource.arrayLayer >= layerCount ||
+            subresource.mipLevel >= mipLevels) {
+            throw std::invalid_argument(
+                "Invalid Vulkan cube array subresource");
+        }
+        const auto& image = *subresource.image;
+        if (subresource.imageMipLevel >= image.mipmaps.size()) {
+            throw std::invalid_argument(
+                "Vulkan cube array subresource has no requested mip");
+        }
+        const auto& mip = image.mipmaps[subresource.imageMipLevel];
+        const uint32_t mipWidth = std::max(1u, width >> subresource.mipLevel);
+        const uint32_t mipHeight =
+            std::max(1u, height >> subresource.mipLevel);
+        if (mip.Width != mipWidth || mip.Height != mipHeight ||
+            mip.offset > image.data_size ||
+            mip.data_size > image.data_size - mip.offset ||
+            mip.data_size == 0) {
+            throw std::invalid_argument(
+                "Vulkan cube array subresource has invalid mip data");
+        }
+
+        vk::Format imageFormat;
+        getTextureFormat(image, imageFormat);
+        if (format == vk::Format::eUndefined) {
+            format = imageFormat;
+        } else if (format != imageFormat) {
+            throw std::invalid_argument(
+                "Vulkan cube array faces use different formats");
+        }
+
+        if (!image.compressed) {
+            const size_t bytesPerPixel = image.bitcount / 8;
+            const size_t minimumPitch =
+                static_cast<size_t>(mip.Width) * bytesPerPixel;
+            if (!bytesPerPixel || mip.pitch < minimumPitch ||
+                mip.pitch % bytesPerPixel != 0) {
+                throw std::invalid_argument(
+                    "Vulkan cube array mip has an invalid row pitch");
+            }
+        }
+
+        stagingSize = (stagingSize + kCopyOffsetAlignment - 1) /
+                      kCopyOffsetAlignment * kCopyOffsetAlignment;
+        UploadRegion region{};
+        region.source = image.data + mip.offset;
+        region.size = mip.data_size;
+        region.copy.bufferOffset = stagingSize;
+        region.copy.imageSubresource.aspectMask =
+            vk::ImageAspectFlagBits::eColor;
+        region.copy.imageSubresource.mipLevel = subresource.mipLevel;
+        region.copy.imageSubresource.baseArrayLayer = subresource.arrayLayer;
+        region.copy.imageSubresource.layerCount = 1;
+        region.copy.imageExtent = vk::Extent3D(mipWidth, mipHeight, 1);
+        if (!image.compressed) {
+            const uint32_t rowLength =
+                static_cast<uint32_t>(mip.pitch / (image.bitcount / 8));
+            if (rowLength != mip.Width) {
+                region.copy.bufferRowLength = rowLength;
+            }
+        }
+        if (mip.data_size >
+            std::numeric_limits<vk::DeviceSize>::max() - stagingSize) {
+            throw std::length_error(
+                "Vulkan cube array staging data is too large");
+        }
+        stagingSize += mip.data_size;
+        regions.push_back(region);
+    }
+
+    VulkanRHI::Texture texture;
+    texture.format = format;
+    texture.mipLevels = mipLevels;
+    texture.arrayLayers = layerCount;
+    vk::Buffer stagingBuffer;
+    vk::DeviceMemory stagingMemory;
+    try {
+        createBuffer(stagingSize, vk::BufferUsageFlagBits::eTransferSrc,
+                     vk::MemoryPropertyFlagBits::eHostVisible |
+                         vk::MemoryPropertyFlagBits::eHostCoherent,
+                     stagingBuffer, stagingMemory);
+        auto* mapped = static_cast<uint8_t*>(
+            m_vkDevice.mapMemory(stagingMemory, 0, stagingSize));
+        for (const auto& region : regions) {
+            std::memcpy(mapped + region.copy.bufferOffset, region.source,
+                        region.size);
+        }
+        m_vkDevice.unmapMemory(stagingMemory);
+
+        const auto queueFamilies =
+            findQueueFamilies(m_vkPhysicalDevice, m_vkSurface);
+        const bool separateTransferFamily =
+            queueFamilies.transferFamily.value() !=
+            queueFamilies.graphicsFamily.value();
+        vk::ImageCreateInfo imageInfo;
+        imageInfo.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.extent = vk::Extent3D(width, height, 1);
+        imageInfo.mipLevels = mipLevels;
+        imageInfo.arrayLayers = layerCount;
+        imageInfo.format = format;
+        imageInfo.tiling = vk::ImageTiling::eOptimal;
+        imageInfo.initialLayout = vk::ImageLayout::eUndefined;
+        imageInfo.usage = vk::ImageUsageFlagBits::eTransferDst |
+                          vk::ImageUsageFlagBits::eSampled;
+        imageInfo.sharingMode =
+            separateTransferFamily ? vk::SharingMode::eConcurrent
+                                   : vk::SharingMode::eExclusive;
+        if (separateTransferFamily) {
+            const std::array<uint32_t, 2> indices{
+                queueFamilies.transferFamily.value(),
+                queueFamilies.graphicsFamily.value()};
+            imageInfo.setQueueFamilyIndices(indices);
+        }
+        imageInfo.samples = vk::SampleCountFlagBits::e1;
+        texture.image = m_vkDevice.createImage(imageInfo);
+
+        const auto memoryRequirements =
+            m_vkDevice.getImageMemoryRequirements(texture.image);
+        vk::MemoryAllocateInfo allocationInfo;
+        allocationInfo.allocationSize = memoryRequirements.size;
+        allocationInfo.memoryTypeIndex = findMemoryType(
+            memoryRequirements.memoryTypeBits,
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        texture.heap = m_vkDevice.allocateMemory(allocationInfo);
+        m_vkDevice.bindImageMemory(texture.image, texture.heap, 0);
+
+        auto commandBuffer = beginSingleTimeCommands();
+        vk::ImageMemoryBarrier toTransfer;
+        toTransfer.oldLayout = vk::ImageLayout::eUndefined;
+        toTransfer.newLayout = vk::ImageLayout::eTransferDstOptimal;
+        toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toTransfer.image = texture.image;
+        toTransfer.subresourceRange.aspectMask =
+            vk::ImageAspectFlagBits::eColor;
+        toTransfer.subresourceRange.levelCount = mipLevels;
+        toTransfer.subresourceRange.layerCount = layerCount;
+        toTransfer.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+        commandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::DependencyFlagBits::eByRegion, nullptr, nullptr, toTransfer);
+
+        std::vector<vk::BufferImageCopy> copyRegions;
+        copyRegions.reserve(regions.size());
+        for (const auto& region : regions) {
+            copyRegions.push_back(region.copy);
+        }
+        commandBuffer.copyBufferToImage(
+            stagingBuffer, texture.image,
+            vk::ImageLayout::eTransferDstOptimal, copyRegions);
+
+        vk::ImageMemoryBarrier toShader;
+        toShader.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+        toShader.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        toShader.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toShader.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toShader.image = texture.image;
+        toShader.subresourceRange = toTransfer.subresourceRange;
+        toShader.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+        toShader.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+        commandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            vk::DependencyFlagBits::eByRegion, nullptr, nullptr, toShader);
+        endSingleTimeCommands(commandBuffer);
+
+        vk::ImageViewCreateInfo viewInfo;
+        viewInfo.image = texture.image;
+        viewInfo.viewType = vk::ImageViewType::eCubeArray;
+        viewInfo.format = format;
+        viewInfo.subresourceRange = toTransfer.subresourceRange;
+        texture.descriptor = m_vkDevice.createImageView(viewInfo);
+
+        m_vkDevice.destroyBuffer(stagingBuffer);
+        m_vkDevice.freeMemory(stagingMemory);
+    } catch (...) {
+        if (stagingBuffer) m_vkDevice.destroyBuffer(stagingBuffer);
+        if (stagingMemory) m_vkDevice.freeMemory(stagingMemory);
+        if (texture.descriptor) {
+            m_vkDevice.destroyImageView(texture.descriptor);
+        }
+        if (texture.image) m_vkDevice.destroyImage(texture.image);
+        if (texture.heap) m_vkDevice.freeMemory(texture.heap);
+        throw;
+    }
     return texture;
 }
 
@@ -1549,13 +2346,15 @@ vk::ImageView VulkanRHI::createImageView(vk::Image image, vk::Format format,
     return imageView;
 }
 
-vk::Sampler VulkanRHI::createTextureSampler() {
+vk::Sampler VulkanRHI::createTextureSampler(bool clampToEdge, float maxLod) {
     vk::SamplerCreateInfo samplerInfo;
     samplerInfo.magFilter = vk::Filter::eLinear;
     samplerInfo.minFilter = vk::Filter::eLinear;
-    samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
-    samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+    const auto addressMode = clampToEdge ? vk::SamplerAddressMode::eClampToEdge
+                                         : vk::SamplerAddressMode::eRepeat;
+    samplerInfo.addressModeU = addressMode;
+    samplerInfo.addressModeV = addressMode;
+    samplerInfo.addressModeW = addressMode;
     samplerInfo.anisotropyEnable = VK_TRUE;
 
     vk::PhysicalDeviceProperties properties =
@@ -1568,9 +2367,103 @@ vk::Sampler VulkanRHI::createTextureSampler() {
     samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
+    samplerInfo.maxLod = maxLod;
 
     return m_vkDevice.createSampler(samplerInfo);
+}
+
+void VulkanRHI::createComputePipeline(
+    const VulkanRHI::Shader& shader,
+    const vk::DescriptorSetLayout& descriptorSetLayout,
+    vk::PipelineLayout& pipelineLayout, vk::Pipeline& pipeline) {
+    vk::PipelineLayoutCreateInfo layoutInfo;
+    layoutInfo.setSetLayouts(descriptorSetLayout);
+    pipelineLayout = m_vkDevice.createPipelineLayout(layoutInfo);
+
+    vk::PipelineShaderStageCreateInfo stageInfo;
+    stageInfo.stage = shader.stage;
+    stageInfo.module = shader.module;
+    stageInfo.pName = shader.entry_point.c_str();
+    vk::ComputePipelineCreateInfo pipelineInfo;
+    pipelineInfo.stage = stageInfo;
+    pipelineInfo.layout = pipelineLayout;
+    const auto [result, createdPipeline] =
+        m_vkDevice.createComputePipeline(nullptr, pipelineInfo);
+    if (result != vk::Result::eSuccess) {
+        m_vkDevice.destroyPipelineLayout(pipelineLayout);
+        pipelineLayout = nullptr;
+        throw std::runtime_error(
+            "Failed to create Vulkan compute pipeline: " +
+            vk::to_string(result));
+    }
+    pipeline = createdPipeline;
+}
+
+void VulkanRHI::dispatchCompute(const vk::Pipeline& pipeline,
+                                const vk::PipelineLayout& pipelineLayout,
+                                const vk::DescriptorSet& descriptorSet,
+                                const vk::Image& outputImage,
+                                uint32_t groupCountX, uint32_t groupCountY,
+                                uint32_t groupCountZ) {
+    if (!pipeline || !pipelineLayout || !descriptorSet || !outputImage ||
+        !groupCountX || !groupCountY || !groupCountZ) {
+        throw std::invalid_argument("Invalid Vulkan compute dispatch");
+    }
+
+    vk::CommandBufferAllocateInfo allocationInfo(
+        m_vkCommandPool, vk::CommandBufferLevel::ePrimary, 1);
+    auto commandBuffer = m_vkDevice.allocateCommandBuffers(allocationInfo).front();
+    try {
+        commandBuffer.begin(vk::CommandBufferBeginInfo(
+            vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
+
+        vk::ImageMemoryBarrier toGeneral;
+        toGeneral.oldLayout = vk::ImageLayout::eUndefined;
+        toGeneral.newLayout = vk::ImageLayout::eGeneral;
+        toGeneral.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toGeneral.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toGeneral.image = outputImage;
+        toGeneral.subresourceRange.aspectMask =
+            vk::ImageAspectFlagBits::eColor;
+        toGeneral.subresourceRange.levelCount = 1;
+        toGeneral.subresourceRange.layerCount = 1;
+        toGeneral.dstAccessMask = vk::AccessFlagBits::eShaderWrite;
+        commandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            vk::PipelineStageFlagBits::eComputeShader,
+            vk::DependencyFlagBits::eByRegion, nullptr, nullptr, toGeneral);
+
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline);
+        commandBuffer.bindDescriptorSets(
+            vk::PipelineBindPoint::eCompute, pipelineLayout, 0,
+            descriptorSet, nullptr);
+        commandBuffer.dispatch(groupCountX, groupCountY, groupCountZ);
+
+        vk::ImageMemoryBarrier toShaderRead;
+        toShaderRead.oldLayout = vk::ImageLayout::eGeneral;
+        toShaderRead.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        toShaderRead.image = outputImage;
+        toShaderRead.subresourceRange = toGeneral.subresourceRange;
+        toShaderRead.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+        toShaderRead.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+        commandBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eComputeShader,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            vk::DependencyFlagBits::eByRegion, nullptr, nullptr,
+            toShaderRead);
+        commandBuffer.end();
+
+        vk::SubmitInfo submitInfo;
+        submitInfo.setCommandBuffers(commandBuffer);
+        m_vkGraphicsQueue.submit(submitInfo);
+        m_vkGraphicsQueue.waitIdle();
+    } catch (...) {
+        m_vkDevice.freeCommandBuffers(m_vkCommandPool, commandBuffer);
+        throw;
+    }
+    m_vkDevice.freeCommandBuffers(m_vkCommandPool, commandBuffer);
 }
 
 vk::CommandBuffer VulkanRHI::beginSingleTimeCommands() {
@@ -1636,6 +2529,13 @@ void VulkanRHI::transitionImageLayout(vk::Image image, vk::Format format,
 
         sourceStage = vk::PipelineStageFlagBits::eTransfer;
         destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+    } else if (oldLayout == vk::ImageLayout::eShaderReadOnlyOptimal &&
+               newLayout == vk::ImageLayout::eTransferDstOptimal) {
+        barrier.srcAccessMask = vk::AccessFlagBits::eShaderRead;
+        barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+        sourceStage = vk::PipelineStageFlagBits::eFragmentShader;
+        destinationStage = vk::PipelineStageFlagBits::eTransfer;
     } else {
         throw std::invalid_argument("unsupported layout transition!");
     }
@@ -1671,7 +2571,8 @@ vk::Format VulkanRHI::findDepthFormat() {
         {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint,
          vk::Format::eD24UnormS8Uint},
         vk::ImageTiling::eOptimal,
-        vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+        vk::FormatFeatureFlagBits::eDepthStencilAttachment |
+           vk::FormatFeatureFlagBits::eSampledImage);
 }
 
 static bool hasStencilComponent(vk::Format format) {

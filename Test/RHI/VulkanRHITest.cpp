@@ -1,18 +1,70 @@
 #include "AssetLoader.hpp"
 #include "PVR.hpp"
+#include "SceneObjectIndexArray.hpp"
+#include "SceneObjectVertexArray.hpp"
+#include "Vulkan/VulkanGraphicsManager.hpp"
 #include "Vulkan/VulkanRHI.hpp"
 #include "VulkanApplication.hpp"
 #include "config.h"
+#include "imgui.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+#include <array>
 #include <chrono>
+#include <cstring>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 
 using namespace My;
+
+class TestVulkanApplication : public VulkanApplication {
+   public:
+    using VulkanApplication::VulkanApplication;
+
+    void SetPipelineStateManagerForTest(IPipelineStateManager* manager) {
+        m_pPipelineStateManager = manager;
+    }
+};
+
+class TestVulkanGraphicsManager : public VulkanGraphicsManager {
+   public:
+    using VulkanGraphicsManager::CreateIndexBuffer;
+    using VulkanGraphicsManager::CreateVertexBuffer;
+    using VulkanGraphicsManager::BeginCompute;
+    using VulkanGraphicsManager::BeginPass;
+    using VulkanGraphicsManager::EndCompute;
+    using VulkanGraphicsManager::EndPass;
+    using VulkanGraphicsManager::EndScene;
+    using VulkanGraphicsManager::PendingDrawCommandCount;
+
+    void BeginSceneForTest(const Scene& scene) { BeginScene(scene); }
+    void BeginFrameForTest(Frame& frame) { BeginFrame(frame); }
+    Frame& GetTestFrame() { return m_Frames[0]; }
+    Frame& GetTestFrame(size_t index) { return m_Frames.at(index); }
+    void RunBRDFForTest(const std::shared_ptr<PipelineState>& pipelineState) {
+        auto& frame = GetTestFrame();
+        Texture2D brdfLUT;
+        brdfLUT.width = 8;
+        brdfLUT.height = 8;
+        brdfLUT.pixel_format = PIXEL_FORMAT::RG32;
+        BeginCompute();
+        SetPipelineState(pipelineState, frame);
+        GenerateTextureForWrite(brdfLUT);
+        frame.brdfLUT = brdfLUT;
+        BindTextureForWrite(brdfLUT, 0);
+        Dispatch(brdfLUT.width, brdfLUT.height, 1);
+        EndCompute();
+    }
+    Vector4f GetTestBatchBaseColor() const {
+        return static_cast<const VulkanDrawBatchContext&>(
+                   *m_Frames[0].batchContexts[0])
+            .baseColor;
+    }
+};
 
 struct Vertex {
     Vector3f pos;
@@ -77,7 +129,7 @@ int main(int argc, char** argv) {
 
         GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
                                 "Vulkan RHI Test");
-        VulkanApplication app(config);
+        TestVulkanApplication app(config);
 
         AssetLoader asset_loader;
 
@@ -95,6 +147,341 @@ int main(int argc, char** argv) {
 
         // 获取命令队列
         rhi.getDeviceQueues();
+
+        VulkanPipelineStateManager pipelineStateManager;
+        pipelineStateManager.SetAppPointer(&app);
+        if (pipelineStateManager.Initialize() != 0) {
+            throw std::runtime_error(
+                "Vulkan pipeline state manager failed to initialize");
+        }
+        app.SetPipelineStateManagerForTest(&pipelineStateManager);
+
+        TestVulkanGraphicsManager graphicsManager;
+        graphicsManager.SetAppPointer(&app);
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        if (graphicsManager.Initialize() != 0) {
+            throw std::runtime_error(
+                "Vulkan graphics manager failed to initialize");
+        }
+        graphicsManager.RunBRDFForTest(
+            pipelineStateManager.GetPipelineState("PBR BRDF CS"));
+
+        Image standaloneTextureImage;
+        standaloneTextureImage.Width = 1;
+        standaloneTextureImage.Height = 1;
+        standaloneTextureImage.bitcount = 32;
+        standaloneTextureImage.bitdepth = 8;
+        standaloneTextureImage.pitch = 4;
+        standaloneTextureImage.data_size = 4;
+        standaloneTextureImage.pixel_format = PIXEL_FORMAT::RGBA8;
+        standaloneTextureImage.data =
+            new uint8_t[4]{255, 255, 255, 255};
+        auto standaloneTexture =
+            graphicsManager.CreateTexture(standaloneTextureImage);
+        delete[] standaloneTextureImage.data;
+        standaloneTextureImage.data = nullptr;
+        if (!standaloneTexture.handler || !standaloneTexture.buff ||
+            standaloneTexture.width != 1 || standaloneTexture.height != 1) {
+            throw std::runtime_error(
+                "Vulkan graphics manager failed to create a standalone texture");
+        }
+        standaloneTextureImage.data =
+            new uint8_t[4]{0, 0, 0, 255};
+        graphicsManager.UpdateTexture(standaloneTexture,
+                                      standaloneTextureImage);
+        delete[] standaloneTextureImage.data;
+        standaloneTextureImage.data = nullptr;
+        graphicsManager.ReleaseTexture(standaloneTexture);
+        if (standaloneTexture.handler || standaloneTexture.buff) {
+            throw std::runtime_error(
+                "Vulkan graphics manager failed to release a standalone texture");
+        }
+
+        const std::array<float, 9> managerVertices{};
+        auto* managerVertexBytes = new uint8_t[sizeof(managerVertices)];
+        std::memcpy(managerVertexBytes, managerVertices.data(),
+                    sizeof(managerVertices));
+        SceneObjectVertexArray managerVertexArray(
+            "POSITION", 0, VertexDataType::kVertexDataTypeFloat3,
+            managerVertexBytes, managerVertices.size());
+        if (graphicsManager.CreateVertexBuffer(managerVertexArray) != 0) {
+            throw std::runtime_error(
+                "Vulkan graphics manager returned an invalid vertex buffer "
+                "index");
+        }
+
+        const std::array<uint32_t, 3> managerIndices{0, 1, 2};
+        auto* managerIndexBytes = new uint8_t[sizeof(managerIndices)];
+        std::memcpy(managerIndexBytes, managerIndices.data(),
+                    sizeof(managerIndices));
+        SceneObjectIndexArray managerIndexArray(
+            0, 0, IndexDataType::kIndexDataTypeInt32, managerIndexBytes,
+            managerIndices.size());
+        if (graphicsManager.CreateIndexBuffer(managerIndexArray) != 0) {
+            throw std::runtime_error(
+                "Vulkan graphics manager returned an invalid index buffer "
+                "index");
+        }
+
+        const std::array<uint16_t, 3> compactIndices{0, 1, 2};
+        auto* compactIndexBytes = new uint8_t[sizeof(compactIndices)];
+        std::memcpy(compactIndexBytes, compactIndices.data(),
+                    sizeof(compactIndices));
+        SceneObjectIndexArray compactIndexArray(
+            0, 0, IndexDataType::kIndexDataTypeInt16, compactIndexBytes,
+            compactIndices.size());
+        if (graphicsManager.CreateIndexBuffer(compactIndexArray) != 1) {
+            throw std::runtime_error(
+                "Vulkan graphics manager failed to accept 16-bit indices");
+        }
+
+        auto createSkyboxImage = [](uint32_t width, bool fullMipChain,
+                                    bool rgb = false) {
+            auto image = std::make_shared<Image>();
+            image->Width = width;
+            image->Height = width;
+            const size_t channels = rgb ? 3 : 4;
+            image->bitcount = static_cast<uint16_t>(channels * 8);
+            image->bitdepth = 8;
+            image->pixel_format =
+                rgb ? PIXEL_FORMAT::RGB8 : PIXEL_FORMAT::RGBA8;
+            uint32_t mipWidth = width;
+            size_t offset = 0;
+            do {
+                const size_t pitch = static_cast<size_t>(mipWidth) * channels;
+                const size_t size = pitch * mipWidth;
+                image->mipmaps.emplace_back(mipWidth, mipWidth, pitch, offset,
+                                            size);
+                offset += size;
+                mipWidth = std::max(1u, mipWidth >> 1);
+            } while (fullMipChain && mipWidth < image->mipmaps.back().Width);
+            image->data_size = offset;
+            image->pitch = static_cast<size_t>(width) * channels;
+            image->data = new uint8_t[offset];
+            std::memset(image->data, 128, offset);
+            if (!rgb) {
+                for (uint32_t mip = 0; mip < image->mipmaps.size(); ++mip) {
+                    const auto& mipmap = image->mipmaps[mip];
+                    for (uint32_t pixel = 0;
+                         pixel < mipmap.Width * mipmap.Height; ++pixel) {
+                        image->data[mipmap.offset + pixel * 4 + 3] = 255;
+                    }
+                }
+            }
+            return image;
+        };
+
+        Scene scene("Vulkan geometry test");
+        for (uint32_t face = 0; face < 6; ++face) {
+            scene.SkyBox->GetTexture(face).SetTextureImage(
+                createSkyboxImage(2, false));
+            scene.SkyBox->GetTexture(face + 6).SetTextureImage(
+                createSkyboxImage(1, false));
+            scene.SkyBox->GetTexture(face + 12).SetTextureImage(
+                createSkyboxImage(2, true, face == 0));
+        }
+        auto material = std::make_shared<SceneObjectMaterial>("test material");
+        const std::string diffuseAttribute = "diffuse";
+        const Vector4f expectedBaseColor{0.25f, 0.5f, 0.75f, 1.0f};
+        material->SetColor(diffuseAttribute, expectedBaseColor);
+        auto baseColorTexture = std::make_shared<SceneObjectTexture>(
+            "Vulkan base-color texture");
+        auto baseColorImage = std::make_shared<Image>();
+        baseColorImage->Width = 1;
+        baseColorImage->Height = 1;
+        baseColorImage->bitcount = 24;
+        baseColorImage->bitdepth = 8;
+        baseColorImage->pitch = 4;
+        baseColorImage->data_size = 4;
+        baseColorImage->pixel_format = PIXEL_FORMAT::RGB8;
+        baseColorImage->data = new uint8_t[4]{255, 255, 255, 0};
+        baseColorTexture->SetTextureImage(std::move(baseColorImage));
+        material->SetTexture(diffuseAttribute, baseColorTexture);
+        auto normalTexture = std::make_shared<SceneObjectTexture>(
+            "Vulkan normal texture");
+        auto normalImage = std::make_shared<Image>();
+        normalImage->Width = 1;
+        normalImage->Height = 1;
+        normalImage->bitcount = 32;
+        normalImage->bitdepth = 8;
+        normalImage->pitch = 8;
+        normalImage->data_size = 8;
+        normalImage->pixel_format = PIXEL_FORMAT::RGBA8;
+        normalImage->data =
+            new uint8_t[8]{128, 128, 255, 255, 0, 0, 0, 0};
+        normalTexture->SetTextureImage(std::move(normalImage));
+        material->SetTexture("normal", normalTexture);
+        scene.Materials.emplace("test material", material);
+        auto geometry = std::make_shared<SceneObjectGeometry>();
+        auto mesh = std::make_shared<SceneObjectMesh>();
+        const std::array<float, 9> triangleVertices{
+            -0.6f, -0.6f, 0.5f, 0.6f, -0.6f, 0.5f, 0.0f, 0.6f, 0.5f};
+        auto* triangleVertexBytes = new uint8_t[sizeof(triangleVertices)];
+        std::memcpy(triangleVertexBytes, triangleVertices.data(),
+                    sizeof(triangleVertices));
+        mesh->AddVertexArray(SceneObjectVertexArray(
+            "position", 0, VertexDataType::kVertexDataTypeFloat3,
+            triangleVertexBytes, triangleVertices.size()));
+        const std::array<float, 6> triangleTexcoords{
+            0.0f, 0.0f, 1.0f, 0.0f, 0.5f, 1.0f};
+        auto* triangleTexcoordBytes =
+            new uint8_t[sizeof(triangleTexcoords)];
+        std::memcpy(triangleTexcoordBytes, triangleTexcoords.data(),
+                    sizeof(triangleTexcoords));
+        mesh->AddVertexArray(SceneObjectVertexArray(
+            "texcoord", 0, VertexDataType::kVertexDataTypeFloat2,
+            triangleTexcoordBytes, triangleTexcoords.size()));
+        const std::array<uint16_t, 3> triangleIndices{0, 1, 2};
+        auto* triangleIndexBytes = new uint8_t[sizeof(triangleIndices)];
+        std::memcpy(triangleIndexBytes, triangleIndices.data(),
+                    sizeof(triangleIndices));
+        mesh->AddIndexArray(SceneObjectIndexArray(
+            0, 0, IndexDataType::kIndexDataTypeInt16, triangleIndexBytes,
+            triangleIndices.size()));
+        geometry->AddMesh(std::move(mesh));
+        scene.Geometries.emplace("triangle", geometry);
+        auto geometryNode =
+            std::make_shared<SceneGeometryNode>("triangle node");
+        geometryNode->AddSceneObjectRef("triangle");
+        geometryNode->AddMaterialRef("test material");
+        geometryNode->SetVisibility(true);
+        scene.GeometryNodes.emplace("triangle", geometryNode);
+
+        graphicsManager.BeginSceneForTest(scene);
+        const auto actualBaseColor =
+            graphicsManager.GetTestBatchBaseColor();
+        for (size_t component = 0; component < 4; ++component) {
+            if (actualBaseColor[component] != expectedBaseColor[component]) {
+                throw std::runtime_error(
+                    "Vulkan scene batch did not preserve material base color");
+            }
+        }
+        BuildIdentityMatrix(
+            graphicsManager.GetTestFrame().batchContexts[0]->modelMatrix);
+        auto configureFrame = [](Frame& frame) {
+            BuildIdentityMatrix(frame.frameContext.viewMatrix);
+            BuildIdentityMatrix(frame.frameContext.projectionMatrix);
+            frame.frameContext.camPos = {0.0f, 0.0f, 2.0f, 1.0f};
+            frame.frameContext.numLights = 1;
+            auto& light = frame.lightInfo.lights[0];
+            light.lightColor = {1.0f, 1.0f, 1.0f, 1.0f};
+            light.lightIntensity = 10.0f;
+            light.lightCastShadow = 1;
+            light.lightDirection = {0.0f, 0.0f, -1.0f, 0.0f};
+            BuildIdentityMatrix(light.lightViewMatrix);
+            BuildIdentityMatrix(light.lightProjectionMatrix);
+        };
+        auto& sceneFrame = graphicsManager.GetTestFrame();
+        configureFrame(sceneFrame);
+        graphicsManager.BeginFrameForTest(sceneFrame);
+        sceneFrame.renderToTexture = true;
+        graphicsManager.BeginPass(sceneFrame);
+        Texture2D shadowTextureView;
+        graphicsManager.CreateTextureView(
+            shadowTextureView, sceneFrame.frameContext.shadowMap, 0, 0);
+        Texture2D skyboxTextureView;
+        graphicsManager.CreateTextureView(skyboxTextureView, sceneFrame.skybox,
+                                          0, 0);
+        ImGui::GetIO().DisplaySize = ImVec2(800.0f, 600.0f);
+        ImGui::GetIO().DeltaTime = 1.0f / 60.0f;
+        ImGui::NewFrame();
+        ImGui::Begin("Vulkan ImGui backend test");
+        ImGui::Text("Vulkan scene rendering");
+        ImGui::Image(
+            (ImTextureID)graphicsManager.GetImGuiTextureHandle(
+                sceneFrame.colorTextures[0]),
+            ImVec2(128.0f, 128.0f));
+        ImGui::Image(
+            (ImTextureID)graphicsManager.GetImGuiTextureHandle(
+                shadowTextureView),
+            ImVec2(64.0f, 64.0f));
+        ImGui::Image(
+            (ImTextureID)graphicsManager.GetImGuiTextureHandle(
+                skyboxTextureView),
+            ImVec2(64.0f, 64.0f));
+        ImGui::End();
+        ImGui::Render();
+
+        auto renderShadowMap =
+            [&](LightType lightType, TextureBase& shadowMap,
+                const char* shadowPipelineName) {
+                sceneFrame.lightInfo.lights[0].lightType = lightType;
+                sceneFrame.lightInfo.lights[0].lightPosition =
+                    {0.0f, 0.0f, 2.0f,
+                     lightType == LightType::Infinity ? 0.0f : 1.0f};
+                graphicsManager.BeginShadowMap(0, &shadowMap, 0, sceneFrame);
+                graphicsManager.SetPipelineState(
+                    pipelineStateManager.GetPipelineState(shadowPipelineName),
+                    sceneFrame);
+                graphicsManager.DrawBatch(sceneFrame);
+                graphicsManager.EndShadowMap(&shadowMap, 0, sceneFrame);
+            };
+
+        renderShadowMap(LightType::Omni,
+                        sceneFrame.frameContext.cubeShadowMap,
+                        "Omni Light Shadow Map");
+        renderShadowMap(LightType::Spot, sceneFrame.frameContext.shadowMap,
+                        "Spot Light Shadow Map");
+        renderShadowMap(LightType::Infinity,
+                        sceneFrame.frameContext.globalShadowMap,
+                        "Sun Light Shadow Map");
+        graphicsManager.SetPipelineState(
+            pipelineStateManager.GetPipelineState("PBR"), sceneFrame);
+        graphicsManager.DrawBatch(sceneFrame);
+        graphicsManager.SetPipelineState(
+            pipelineStateManager.GetPipelineState("SkyBox"), sceneFrame);
+        graphicsManager.DrawSkyBox(sceneFrame);
+        graphicsManager.EndPass(sceneFrame);
+        if (graphicsManager.PendingDrawCommandCount() != 2) {
+            throw std::runtime_error(
+                "Vulkan engine scene did not produce geometry and skybox draws");
+        }
+        graphicsManager.Present();
+        graphicsManager.ReleaseTexture(shadowTextureView);
+        graphicsManager.ReleaseTexture(skyboxTextureView);
+
+        auto renderOffscreenFrame = [&](Frame& frame, const char* windowTitle,
+                                        bool resizeCanvas) {
+            configureFrame(frame);
+            graphicsManager.BeginFrameForTest(frame);
+            frame.renderToTexture = true;
+            graphicsManager.BeginPass(frame);
+            ImGui::NewFrame();
+            ImGui::Begin(windowTitle);
+            ImGui::Image(
+                (ImTextureID)graphicsManager.GetImGuiTextureHandle(
+                    frame.colorTextures[0]),
+                ImVec2(64.0f, 64.0f));
+            ImGui::End();
+            ImGui::Render();
+            graphicsManager.SetPipelineState(
+                pipelineStateManager.GetPipelineState("PBR"), frame);
+            graphicsManager.DrawBatch(frame);
+            graphicsManager.SetPipelineState(
+                pipelineStateManager.GetPipelineState("SkyBox"), frame);
+            graphicsManager.DrawSkyBox(frame);
+            graphicsManager.EndPass(frame);
+            if (resizeCanvas) graphicsManager.ResizeCanvas(640, 480);
+            graphicsManager.Present();
+        };
+        renderOffscreenFrame(graphicsManager.GetTestFrame(1),
+                             "Vulkan offscreen frame reuse test", false);
+        renderOffscreenFrame(graphicsManager.GetTestFrame(0),
+                             "Vulkan offscreen resize test", true);
+        if (graphicsManager.GetTestFrame(0).colorTextures[0].width != 640 ||
+            graphicsManager.GetTestFrame(0).colorTextures[0].height != 480) {
+            throw std::runtime_error(
+                "Vulkan offscreen resize was not applied after presentation");
+        }
+        renderOffscreenFrame(graphicsManager.GetTestFrame(1),
+                             "Vulkan resized offscreen test", false);
+
+        rhi.GetDevice().waitIdle();
+        pipelineStateManager.InvalidatePipelines();
+        graphicsManager.Finalize();
+        pipelineStateManager.Finalize();
+        ImGui::DestroyContext();
 
         std::vector<VulkanRHI::Shader> vkShaders;
 
@@ -190,7 +577,6 @@ int main(int argc, char** argv) {
             // 创建索引缓冲区
             indexBuffers.resize(1);
             rhi.createIndexBuffer(indices.data(), sizeof(indices[0]) * indices.size(), indexBuffers[0]);
-            indexBuffers[0].indexCount = indices.size();
         }
 
 
@@ -254,6 +640,16 @@ int main(int argc, char** argv) {
         // 创建图形渲染交换链
         rhi.CreateSwapChain();
 
+        std::vector<VulkanRHI::DrawCommand> drawCommands(2);
+        for (auto& draw : drawCommands) {
+            draw.pipeline = vkGraphicPipeline;
+            draw.pipelineLayout = vkPipelineLayout;
+            draw.vertexBuffers.push_back(vertexBuffers[0].buffer);
+            draw.vertexOffsets.push_back(0);
+            draw.indexBuffer = indexBuffers[0].buffer;
+            draw.indexCount = indexBuffers[0].indexCount;
+        }
+
         // 主消息循环
         uint32_t renderedFrames = 0;
         while (!app.IsQuit() &&
@@ -280,7 +676,14 @@ int main(int argc, char** argv) {
 
             rhi.UpdateUniformBuffer(uniformBuffers, &ubo, sizeof(ubo));
 
-            rhi.drawFrame(vkRenderPass, vkGraphicPipeline, vkPipelineLayout, vertexBuffers[0].buffer, indexBuffers[0].buffer, indexBuffers[0].indexCount);
+            if (renderedFrames == 0) {
+                rhi.drawFrame(vkRenderPass, vkGraphicPipeline,
+                              vkPipelineLayout, vertexBuffers[0].buffer,
+                              indexBuffers[0].buffer,
+                              indexBuffers[0].indexCount);
+            } else {
+                rhi.drawFrame(vkRenderPass, drawCommands);
+            }
             ++renderedFrames;
         }
 

@@ -85,6 +85,8 @@ void VulkanApplication::CreateMainWindow() {
     // 创建逻辑设备
     m_Rhi.createLogicalDevice();
 
+    m_Rhi.getDeviceQueues();
+
     // 创建 SwapChain
     m_Rhi.createSwapChain();
 

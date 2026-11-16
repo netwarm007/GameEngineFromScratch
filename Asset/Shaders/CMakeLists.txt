@@ -8,12 +8,14 @@ set(HLSL_SHADER_SOURCES
             debug.vert debug.frag
             cubemap.frag cubemaparray.frag
             pbr.vert pbr.frag
+            vulkan_scene.vert vulkan_scene.frag vulkan_shadow.vert
+            vulkan_shadow.frag vulkan_skybox.vert vulkan_skybox.frag
             skybox.vert skybox.frag
             shadowmap.vert shadowmap.frag
             shadowmap_omni.vert shadowmap_omni.frag
             texture.frag texturearray.frag
             passthrough.vert passthrough_cube.vert
-            integrateBRDF.comp
+            integrateBRDF.comp vulkan_integrateBRDF.comp
             raytrace.comp
         )
 

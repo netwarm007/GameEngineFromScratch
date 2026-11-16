@@ -38,6 +38,16 @@ class VulkanRHI {
         vk::Image image;
         vk::ImageView descriptor;
         vk::DeviceMemory heap;
+        vk::Format format{vk::Format::eUndefined};
+        uint32_t mipLevels{1};
+        uint32_t arrayLayers{1};
+    };
+
+    struct CubeArraySubresource {
+        const Image* image;
+        uint32_t imageMipLevel;
+        uint32_t mipLevel;
+        uint32_t arrayLayer;
     };
 
     struct UniformBuffer {
@@ -46,8 +56,26 @@ class VulkanRHI {
         size_t size;
     };
 
+    struct DrawCommand {
+        vk::Pipeline pipeline;
+        vk::PipelineLayout pipelineLayout;
+        std::vector<vk::Buffer> vertexBuffers;
+        std::vector<vk::DeviceSize> vertexOffsets;
+        vk::Buffer indexBuffer;
+        vk::IndexType indexType{vk::IndexType::eUint32};
+        uint32_t indexCount{0};
+        vk::DescriptorSet descriptorSet;
+    };
+    struct OffscreenPass {
+        vk::RenderPass renderPass;
+        vk::Framebuffer framebuffer;
+        vk::Extent2D extent;
+        std::array<float, 4> clearColor{};
+    };
+
     struct Shader {
-        Shader(const vk::ShaderModule &&module, vk::ShaderStageFlagBits stage, const char *entry_point) {
+        Shader(vk::ShaderModule module, vk::ShaderStageFlagBits stage,
+               const char *entry_point) {
             this->module = module;
             this->stage = stage;
             this->entry_point = entry_point;
@@ -56,6 +84,7 @@ class VulkanRHI {
         vk::ShaderStageFlagBits stage;
         std::string entry_point;
     };
+    using RenderCallback = std::function<void(const vk::CommandBuffer&)>;
 
    public:
     VulkanRHI();
@@ -84,7 +113,7 @@ class VulkanRHI {
     void createLogicalDevice();
     void createSwapChain();
     void getDeviceQueues();
-    vk::RenderPass createRenderPass();
+    vk::RenderPass createRenderPass(bool offscreen = false);
     vk::DescriptorSetLayout createDescriptorSetLayout();
     void createGraphicsPipeline(
         const VulkanRHI::Shader* shaders, size_t shaderCount,
@@ -93,22 +122,82 @@ class VulkanRHI {
         size_t attributeCount,
         const vk::DescriptorSetLayout& descriptorSetLayout,
         const vk::RenderPass& renderPass, vk::PipelineLayout& pipelineLayout,
-        vk::Pipeline& pipeline);
+        vk::Pipeline& pipeline, vk::Extent2D viewportExtent = {},
+        bool depthOnly = false,
+        vk::CullModeFlags cullMode = vk::CullModeFlagBits::eBack,
+        bool depthWrite = true,
+        vk::CompareOp depthCompare = vk::CompareOp::eLess);
+    void createGraphicsPipeline(
+        const VulkanRHI::Shader* shaders, size_t shaderCount,
+        const vk::VertexInputBindingDescription* bindingDescriptions,
+        size_t bindingCount,
+        const vk::VertexInputAttributeDescription* attributeDescriptions,
+        size_t attributeCount,
+        const vk::DescriptorSetLayout& descriptorSetLayout,
+        const vk::RenderPass& renderPass, vk::PipelineLayout& pipelineLayout,
+        vk::Pipeline& pipeline, vk::Extent2D viewportExtent = {},
+        bool depthOnly = false,
+        vk::CullModeFlags cullMode = vk::CullModeFlagBits::eBack,
+        bool depthWrite = true,
+        vk::CompareOp depthCompare = vk::CompareOp::eLess);
     void createCommandPool();
     void createColorResources();
     void createDepthResources();
     void createFramebuffers(const vk::RenderPass& renderPass);
+    VulkanRHI::Texture createRenderTexture2D(uint32_t width, uint32_t height,
+                                              bool depth,
+                                              vk::SampleCountFlagBits samples);
+    vk::RenderPass createOffscreenRenderPass();
+    vk::Framebuffer createOffscreenFramebuffer(
+        const vk::RenderPass& renderPass,
+        const vk::ImageView& multisampleColorView,
+        const vk::ImageView& depthView,
+        const vk::ImageView& resolveView, uint32_t width, uint32_t height);
+    VulkanRHI::Texture createDepthTextureArray(
+        uint32_t width, uint32_t height, uint32_t arrayLayers,
+        bool cubeArray, std::vector<vk::ImageView>& layerViews);
+    vk::RenderPass createDepthRenderPass();
+    vk::Framebuffer createDepthFramebuffer(const vk::RenderPass& renderPass,
+                                           const vk::ImageView& depthView,
+                                           uint32_t width, uint32_t height);
+    void drawDepthPass(const vk::RenderPass& renderPass,
+                       const vk::Framebuffer& framebuffer, uint32_t width,
+                       uint32_t height,
+                       const std::vector<DrawCommand>& drawCommands);
     VulkanRHI::Texture createTextureImage(Image& image);
-    vk::Sampler createTextureSampler();
-    void createVertexBuffer(void* buffer, vk::DeviceSize bufferSize,
+    void updateTextureImage(const VulkanRHI::Texture& texture, Image& image);
+    VulkanRHI::Texture createStorageTexture2D(uint32_t width,
+                                              uint32_t height,
+                                              vk::Format format);
+    VulkanRHI::Texture createTextureCubeArray(
+        uint32_t width, uint32_t height, uint32_t mipLevels,
+        uint32_t cubeCount,
+        const std::vector<CubeArraySubresource>& subresources);
+    vk::Sampler createTextureSampler(bool clampToEdge = false,
+                                     float maxLod = 0.0f);
+    void createComputePipeline(
+        const VulkanRHI::Shader& shader,
+        const vk::DescriptorSetLayout& descriptorSetLayout,
+        vk::PipelineLayout& pipelineLayout, vk::Pipeline& pipeline);
+    void dispatchCompute(const vk::Pipeline& pipeline,
+                        const vk::PipelineLayout& pipelineLayout,
+                        const vk::DescriptorSet& descriptorSet,
+                        const vk::Image& outputImage, uint32_t groupCountX,
+                        uint32_t groupCountY, uint32_t groupCountZ);
+    void createVertexBuffer(const void* buffer, vk::DeviceSize bufferSize,
                             VulkanRHI::VertexBuffer& vertexBuffer);
-    void createIndexBuffer(void* buffer, vk::DeviceSize bufferSize,
+    void createIndexBuffer(const void* buffer, vk::DeviceSize bufferSize,
                            VulkanRHI::IndexBuffer& indexBuffer);
     void createUniformBuffers(
         std::vector<VulkanRHI::UniformBuffer>& uniformBuffers,
         vk::DeviceSize bufferSize);
+    void createStorageBuffers(
+        std::vector<VulkanRHI::UniformBuffer>& storageBuffers,
+        vk::DeviceSize bufferSize);
     void UpdateUniformBuffer(const std::vector<VulkanRHI::UniformBuffer> &uniformBuffers,
-                            void* ubo, size_t uboSize);
+                            const void* ubo, size_t uboSize);
+    void UpdateUniformBuffer(const VulkanRHI::UniformBuffer& uniformBuffer,
+                             const void* ubo, size_t uboSize);
     vk::ShaderModule createShaderModule(const Buffer& code);
     void createDescriptorPool();
     void createDescriptorSets(
@@ -123,12 +212,45 @@ class VulkanRHI {
                    const vk::PipelineLayout& pipelineLayout,
                    const vk::Buffer& vertexBuffer,
                    const vk::Buffer& indexBuffer, uint32_t indicesCount);
+    void drawFrame(const vk::RenderPass& renderPass,
+                   const std::vector<DrawCommand>& drawCommands);
+    void drawFrame(const vk::RenderPass& renderPass,
+                   const std::vector<DrawCommand>& drawCommands,
+                   const RenderCallback& renderCallback);
+    void drawFrame(const vk::RenderPass& renderPass,
+                   const std::vector<DrawCommand>& drawCommands,
+                   const OffscreenPass& offscreenPass,
+                   const RenderCallback& renderCallback);
+    void drawFrame(const vk::RenderPass& renderPass,
+                   const std::vector<DrawCommand>& drawCommands,
+                   const RenderCallback& renderCallback,
+                   const OffscreenPass* offscreenPass);
+    void cleanupSwapChainResources();
     void cleanupSwapChain();
     void recreateSwapChain(const vk::RenderPass& renderPass);
 
     void destroyAll();
 
     inline vk::Device GetDevice() { return m_vkDevice; }
+    inline vk::Instance GetInstance() const { return m_vkInstance; }
+    inline vk::PhysicalDevice GetPhysicalDevice() const {
+        return m_vkPhysicalDevice;
+    }
+    inline vk::Queue GetGraphicsQueue() const { return m_vkGraphicsQueue; }
+    inline uint32_t GetGraphicsQueueFamily() const {
+        return m_nGraphicsQueueFamily;
+    }
+    inline uint32_t GetSwapChainImageCount() const {
+        return static_cast<uint32_t>(m_vkSwapChainImages.size());
+    }
+    inline vk::SampleCountFlagBits GetMsaaSamples() const {
+        return m_vkMsaaSamples;
+    }
+    inline uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
+    inline bool IsSwapChainSrgb() const {
+        return m_vkSwapChainImageFormat == vk::Format::eB8G8R8A8Srgb ||
+               m_vkSwapChainImageFormat == vk::Format::eR8G8B8A8Srgb;
+    }
 
    private:
     vk::Instance m_vkInstance;
@@ -170,6 +292,7 @@ class VulkanRHI {
     vk::ImageView m_vkDepthImageView;
 
     vk::SampleCountFlagBits m_vkMsaaSamples = vk::SampleCountFlagBits::e1;
+    uint32_t m_nGraphicsQueueFamily{0};
 
     QueryFrameBufferSizeCBFunc m_fQueryFramebufferSizeCB;
     GetGfxConfigCBFunc m_fGetGfxConfigCB;
@@ -178,12 +301,11 @@ class VulkanRHI {
 
    private:
     void recordCommandBuffer(const vk::RenderPass& renderPass,
-                             const vk::Pipeline& pipeline,
-                             const vk::PipelineLayout& pipelineLayout,
-                             const vk::Buffer& vertexBuffer,
-                             const vk::Buffer& indexBuffer,
+                             const std::vector<DrawCommand>& drawCommands,
                              const vk::CommandBuffer& commandBuffer,
-                             uint32_t indicesCount, uint32_t imageIndex);
+                             uint32_t imageIndex,
+                             const RenderCallback& renderCallback,
+                             const OffscreenPass* offscreenPass);
     void createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
                       vk::MemoryPropertyFlags properties, vk::Buffer& buffer,
                       vk::DeviceMemory& bufferMemory);
