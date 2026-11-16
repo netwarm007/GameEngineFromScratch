@@ -1,5 +1,6 @@
-#include <iostream>
+#include <array>
 #include <cmath>
+#include <iostream>
 
 #include "ConvexHull.hpp"
 #include "Gjk.hpp"
@@ -45,6 +46,23 @@ bool ClosestPointMatches(const PointList<float>& triangle, const Point<float>& p
 }  // namespace
 
 int main() {
+    for (const float side : {-1.0f, 1.0f}) {
+        const std::array<std::array<float, 3>, 4> tetrahedron = {{
+            {{0, 0, 0}}, {{10, 0, 0}}, {{3, 3, 0}}, {{4, 1, side}},
+        }};
+        ConvexHull<float> hull;
+        for (const auto& vertex : tetrahedron) {
+            hull.AddPoint(std::make_shared<Point<float>>(
+                Point<float>({vertex[0], vertex[1], vertex[2]})));
+        }
+        while (hull.Iterate()) {
+        }
+        CHECK(hull.Faces.size() == 4);
+        const auto extreme =
+            ConvexPolyhedronSupportFunction(hull, Vector3f({0, 0, side}));
+        CHECK(extreme[0] == 4 && extreme[1] == 1 && extreme[2] == side);
+    }
+
     PointList<float> triangle = {
         std::make_shared<Point<float>>(Point<float>({0, 0, 0})),
         std::make_shared<Point<float>>(Point<float>({1, 0, 0})),
