@@ -171,13 +171,21 @@ void TestPolymorphicAllocatorPropagation() {
 }  // namespace
 
 int main() {
+    std::cerr << "run TestVectorOnLinear" << std::endl;
     TestVectorOnLinear();
+    std::cerr << "run TestAlignment" << std::endl;
     TestAlignment();
+    std::cerr << "run TestFailureThrows" << std::endl;
     TestFailureThrows();
+    std::cerr << "run TestEquality" << std::endl;
     TestEquality();
+    std::cerr << "run TestStackLifo" << std::endl;
     TestStackLifo();
+    std::cerr << "run TestBlockAllocator" << std::endl;
     TestBlockAllocator();
+    std::cerr << "run TestFrameAndRing" << std::endl;
     TestFrameAndRing();
+    std::cerr << "run TestPolymorphicAllocatorPropagation" << std::endl;
     TestPolymorphicAllocatorPropagation();
 
     if (failures == 0) std::cout << "All PMR adapter tests passed\n";
