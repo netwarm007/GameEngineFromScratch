@@ -22,6 +22,49 @@ commands:
             }
 
 jobs:
+  verify_vulkan_shader_abi:
+    machine:
+      image: ubuntu-2204:2026.10.1
+    resource_class: large
+    environment:
+      GIT_LFS_SKIP_SMUDGE: "1"
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+    steps:
+      - run:
+          name: Install headless Vulkan test dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y git-lfs ninja-build python3-pip g++ uuid-dev flex bison \
+              libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools
+            python3 -m pip install --user 'cmake>=4.0,<5'
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - checkout
+      - run:
+          name: Build pinned shader tools
+          command: |
+            git submodule update --init External/src/crossguid External/src/glslang External/src/spirv-cross
+            cmake -S External/src/glslang -B build-vulkan-tools/glslang -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DBUILD_EXTERNAL=NO \
+              -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"
+            cmake --build build-vulkan-tools/glslang --target install --parallel 2
+            cmake -S External/src/spirv-cross -B build-vulkan-tools/spirv-cross -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"
+            cmake --build build-vulkan-tools/spirv-cross --target install --parallel 2
+      - run:
+          name: Verify shared Vulkan shader ABI and GPU compute readback
+          command: |
+            test -r "$VK_ICD_FILENAMES"
+            cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+              -DGLSL_VALIDATOR="$PWD/External/Linux/bin/glslangValidator" \
+              -DSPIRV_CROSS="$PWD/External/Linux/bin/spirv-cross"
+            cmake --build build-vulkan-abi --parallel 2
+            ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
+      - store_test_results:
+          path: build-vulkan-abi/junit.xml
+      - store_artifacts:
+          path: build-vulkan-abi/Testing
+          destination: vulkan-shader-verification
   build_windows:
     executor:
       name: win/server-2022
@@ -708,6 +751,7 @@ workflows:
       - build_windows
       - build_linux
       - build_macos
+      - verify_vulkan_shader_abi
       #- build_android
   build-and-test-and-release: #for tags
     jobs:

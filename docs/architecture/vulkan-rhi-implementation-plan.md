@@ -372,6 +372,17 @@ Viewer/Billiard images, and portability fallback are not verified yet.
 No plan deviation is needed: the headless compute harness is deliberately
 independent of the device/window implementation reserved for checkpoint 2.
 
+Before confirming checkpoint 1, the user requested CI verification. The branch
+workflow now adds `verify_vulkan_shader_abi`, an isolated Linux job using pinned
+glslang/SPIRV-Cross, SPIR-V tools, Khronos validation, and Mesa lavapipe. This
+avoids implicitly enabling the unfinished Linux Vulkan application in the
+existing OpenGL regression job. Windows/Linux/macOS native-backend jobs remain
+unchanged and required. The additional job verifies actual shader ABI/compute
+behavior on a software Vulkan implementation, not hardware graphics rendering.
+Its presence does not establish Vulkan runtime coverage on Windows/macOS or in
+the release/tag workflow. CI results must be checked for the exact pushed source
+revision before confirmation; no pipeline result is implied by configuring it.
+
 ## Platform and acceptance strategy
 
 Desktop scope is Windows and Linux Vulkan plus macOS Vulkan through MoltenVK.
