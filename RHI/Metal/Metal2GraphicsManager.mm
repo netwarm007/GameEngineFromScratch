@@ -40,7 +40,7 @@ void Metal2GraphicsManager::initializeGeometries(const Scene& scene) {
     for (auto& _it : scene.GeometryNodes) {
         auto pGeometryNode = _it.second.lock();
 
-        if (pGeometryNode && pGeometryNode->Visible()) {
+        if (pGeometryNode) {
             auto pGeometry = scene.GetGeometry(pGeometryNode->GetSceneObjectRef());
             assert(pGeometry);
             auto pMesh = pGeometry->GetMesh().lock();

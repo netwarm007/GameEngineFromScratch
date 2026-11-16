@@ -908,6 +908,11 @@ void OgexParser::ConvertOddlStructureToSceneNode(
                             &dataStructure->GetDataElement(0);
                         // current we only handle 1D time curve
                         assert(time_array_size == 0);
+                        if (time_key_data_count > 0 &&
+                            time_knots[time_key_data_count - 1] >
+                                clip->GetEndTime()) {
+                            clip->SetEndTime(time_knots[time_key_data_count - 1]);
+                        }
 
                         auto value_key_value =
                             value_structure.GetKeyValueStructure();

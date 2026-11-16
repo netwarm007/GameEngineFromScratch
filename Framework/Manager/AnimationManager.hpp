@@ -14,6 +14,8 @@ class AnimationManager : _implements_ IAnimationManager {
     int Initialize() override;
     void Finalize() override;
     void Tick() override;
+    void Update(float timePoint);
+    float GetTimelineTime() const { return m_TimeLineValue.count(); }
 
     void AddAnimationClip(
         const std::shared_ptr<SceneObjectAnimationClip>& clip) override;
@@ -23,8 +25,9 @@ class AnimationManager : _implements_ IAnimationManager {
     ISceneManager& m_Scenes;
     uint64_t m_nSceneRevision{0};
     std::chrono::steady_clock::time_point m_TimeLineStartPoint;
-    std::chrono::duration<float> m_TimeLineValue;
+    std::chrono::duration<float> m_TimeLineValue{0.0f};
     std::list<std::shared_ptr<SceneObjectAnimationClip>> m_AnimationClips;
     bool m_bTimeLineStarted{false};
+    void SynchronizeScene();
 };
 }  // namespace My

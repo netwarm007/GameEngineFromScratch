@@ -54,44 +54,43 @@ GeometryNode $node3
 		float {0.0}
 	}
 
-	// Text rotation animation is disabled so the ball bounces on a static
-	// text. Remove the leading "// " on the lines below to restore it.
-	// Animation (begin = 0.0, end = 6.208333333333333)
-	// {
-	// 	Track (target = %xrot)
-	// 	{
-	// 		Time (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 6.208333333333333}}
-	// 			Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047}}
-	// 			Key (kind = "+control") {float {2.423804759979248, 8.632137934366861}}
-	// 		}
-	//
-	// 		Value (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 1.3795047998428345}}
-	// 			Key (kind = "-control") {float {0.0, 1.3795047998428345}}
-	// 			Key (kind = "+control") {float {0.0, 1.3795047998428345}}
-	// 		}
-	// 	}
-	//
-	// 	Track (target = %zrot)
-	// 	{
-	// 		Time (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 6.208333333333333}}
-	// 			Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047}}
-	// 			Key (kind = "+control") {float {2.423804759979248, 8.632137934366861}}
-	// 		}
-	//
-	// 		Value (curve = "bezier")
-	// 		{
-	// 			Key {float {0.0, 0.7901575565338135}}
-	// 			Key (kind = "-control") {float {0.0, 0.7901575565338135}}
-	// 			Key (kind = "+control") {float {0.0, 0.7901575565338135}}
-	// 		}
-	// 	}
-	// }
+	// Hold the upright final pose before the ball appears.
+	Animation (begin = 0.0, end = 6.208333333333333)
+	{
+		Track (target = %xrot)
+		{
+			Time (curve = "bezier")
+			{
+				Key {float {0.0, 6.208333333333333}}
+				Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047}}
+				Key (kind = "+control") {float {2.423804759979248, 6.875}}
+			}
+
+			Value (curve = "bezier")
+			{
+				Key {float {0.0, 1.5707963267948966}}
+				Key (kind = "-control") {float {0.0, 1.5707963267948966}}
+				Key (kind = "+control") {float {0.0, 1.5707963267948966}}
+			}
+		}
+
+		Track (target = %zrot)
+		{
+			Time (curve = "bezier")
+			{
+				Key {float {0.0, 6.208333333333333}}
+				Key (kind = "-control") {float {-2.423804759979248, 3.7845287322998047}}
+				Key (kind = "+control") {float {2.423804759979248, 6.875}}
+			}
+
+			Value (curve = "bezier")
+			{
+				Key {float {0.0, 0.7901575565338135}}
+				Key (kind = "-control") {float {0.0, 0.7901575565338135}}
+				Key (kind = "+control") {float {0.0, 0.7901575565338135}}
+			}
+		}
+	}
 }
 
 GeometryNode $node7
@@ -107,7 +106,7 @@ GeometryNode $node7
 			{1.0, 0.0, 0.0, 0.0,
 			 0.0, 1.0, 0.0, 0.0,
 			 0.0, 0.0, 1.0, 0.0,
-			 -5.4972, -0.1473, 0.9680, 1.0}
+			 -3.931663513, -4.011663437, 1.622365355, 1.0}
 		}
 	}
 }
@@ -10393,14 +10392,7 @@ GeometryObject $geometry3		// Ball
 	Extension (applic = "MyGameEngine", type = "rigid_body")
 	{
 		string {"dynamic"}
-		float {1.0, 3.9728, 0.0, 0.0}
-	}
-
-	// Keeps the ball in its starting XZ plane so it travels along the text
-	Extension (applic = "MyGameEngine", type = "motion_constraint")
-	{
-		string {"plane"}
-		float {0.0, 1.0, 0.0}
+		float {1.0, 2.795792341, 2.822531939, 0.0}
 	}
 
 	Mesh (primitive = "triangles")

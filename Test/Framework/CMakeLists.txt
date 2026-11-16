@@ -45,5 +45,5 @@ add_test(NAME TEST_ApplicationLifetimeTest COMMAND ApplicationLifetimeTest)
 
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
-    BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO)
+    BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO SplashSequence)
 add_test(NAME TEST_PhysicsSceneIntegrationTest COMMAND PhysicsSceneIntegrationTest)
