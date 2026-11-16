@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <limits>
+#include <system_error>
 #include <wincodec.h>
 #include <wrl/client.h>
 
@@ -23,6 +24,13 @@ using namespace My;
 #endif
 
 namespace {
+void RequireInitialization(HRESULT result, const char* operation) {
+    if (FAILED(result)) {
+        throw std::system_error(static_cast<int>(result),
+                                std::system_category(), operation);
+    }
+}
+
 D3D12_SUBRESOURCE_DATA PrepareTextureData(const Image& image,
                                          std::vector<uint8_t>& converted) {
     D3D12_SUBRESOURCE_DATA data{};
@@ -674,30 +682,24 @@ void D3d12RHI::CreateDevice() {
     }
 #endif
 
-    m_pFactory;
-    my_assert(SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory))) &&
-              "CreateDXGIFactory1 failed");
+    RequireInitialization(CreateDXGIFactory1(IID_PPV_ARGS(&m_pFactory)),
+                          "CreateDXGIFactory1");
 
-    IDXGIAdapter1* pHardwareAdapter = nullptr;
-    GetHardwareAdapter(m_pFactory, &pHardwareAdapter);
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> hardwareAdapter;
+    GetHardwareAdapter(m_pFactory, hardwareAdapter.GetAddressOf());
 
-    if (FAILED(D3D12CreateDevice(pHardwareAdapter, D3D_FEATURE_LEVEL_12_0,
+    if (FAILED(D3D12CreateDevice(hardwareAdapter.Get(), D3D_FEATURE_LEVEL_12_0,
                                  IID_PPV_ARGS(&m_pDev)))) {
         std::cerr << "Using WARP software rendering" << std::endl;
-        IDXGIAdapter* pWarpAdapter = nullptr;
-        if (FAILED(m_pFactory->EnumWarpAdapter(IID_PPV_ARGS(&pWarpAdapter)))) {
-            SafeRelease(&m_pFactory);
-            my_assert(0);
-        }
-
-        if (FAILED(D3D12CreateDevice(pWarpAdapter, D3D_FEATURE_LEVEL_12_0,
-                                     IID_PPV_ARGS(&m_pDev)))) {
-            SafeRelease(&m_pFactory);
-            my_assert(0);
-        }
-        SafeRelease(&pWarpAdapter);
+        Microsoft::WRL::ComPtr<IDXGIAdapter> warpAdapter;
+        RequireInitialization(
+            m_pFactory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter)),
+            "EnumWarpAdapter");
+        RequireInitialization(
+            D3D12CreateDevice(warpAdapter.Get(), D3D_FEATURE_LEVEL_12_0,
+                              IID_PPV_ARGS(&m_pDev)),
+            "D3D12CreateDevice");
     }
-    SafeRelease(&pHardwareAdapter);
 
     static const D3D_FEATURE_LEVEL s_featureLevels[] = {D3D_FEATURE_LEVEL_12_1,
                                                         D3D_FEATURE_LEVEL_12_0};
@@ -706,8 +708,9 @@ void D3d12RHI::CreateDevice() {
         _countof(s_featureLevels), s_featureLevels, D3D_FEATURE_LEVEL_12_0};
 
     D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_12_0;
-    my_assert(SUCCEEDED(m_pDev->CheckFeatureSupport(
-        D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels))));
+    RequireInitialization(m_pDev->CheckFeatureSupport(
+        D3D12_FEATURE_FEATURE_LEVELS, &featLevels, sizeof(featLevels)),
+        "CheckFeatureSupport");
     featureLevel = featLevels.MaxSupportedFeatureLevel;
     switch (featureLevel) {
         case D3D_FEATURE_LEVEL_12_0:
@@ -766,28 +769,25 @@ void D3d12RHI::CreateCommandQueues() {
     queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-    if (FAILED(m_pDev->CreateCommandQueue(
-            &queueDesc, IID_PPV_ARGS(&m_pGraphicsCommandQueue)))) {
-        my_assert(0);
-    }
+    RequireInitialization(m_pDev->CreateCommandQueue(
+        &queueDesc, IID_PPV_ARGS(&m_pGraphicsCommandQueue)),
+        "Create graphics command queue");
 
     m_pGraphicsCommandQueue->SetName(L"Graphics Command Queue");
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
 
-    if (FAILED(m_pDev->CreateCommandQueue(
-            &queueDesc, IID_PPV_ARGS(&m_pComputeCommandQueue)))) {
-        my_assert(0);
-    }
+    RequireInitialization(m_pDev->CreateCommandQueue(
+        &queueDesc, IID_PPV_ARGS(&m_pComputeCommandQueue)),
+        "Create compute command queue");
 
     m_pComputeCommandQueue->SetName(L"Compute Command Queue");
 
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
 
-    if (FAILED(m_pDev->CreateCommandQueue(
-            &queueDesc, IID_PPV_ARGS(&m_pCopyCommandQueue)))) {
-        my_assert(0);
-    }
+    RequireInitialization(m_pDev->CreateCommandQueue(
+        &queueDesc, IID_PPV_ARGS(&m_pCopyCommandQueue)),
+        "Create copy command queue");
 
     m_pCopyCommandQueue->SetName(L"Copy Command Queue");
 }
@@ -833,42 +833,44 @@ void D3d12RHI::CreateSwapChain() {
     scd.Flags =
         DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;  // allow full-screen transition
 
-    IDXGISwapChain1* pSwapChain;
+    Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain;
     HWND hWnd = m_fGetWindowHandler();
 
-    if (FAILED(m_pFactory->CreateSwapChainForHwnd(
+    RequireInitialization(m_pFactory->CreateSwapChainForHwnd(
             m_pGraphicsCommandQueue,  // Swap chain needs the queue so
                                       // that it can force a flush on it
-            hWnd, &scd, NULL, NULL, &pSwapChain))) {
-        my_assert(0);
-    }
-
-    m_pSwapChain = reinterpret_cast<IDXGISwapChain3*>(pSwapChain);
+            hWnd, &scd, NULL, NULL, swapChain.GetAddressOf()),
+            "CreateSwapChainForHwnd");
+    RequireInitialization(swapChain->QueryInterface(IID_PPV_ARGS(&m_pSwapChain)),
+                          "Query IDXGISwapChain3");
 }
 
-void D3d12RHI::CreateSyncObjects() {
-    my_assert(SUCCEEDED(m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE,
-                                            IID_PPV_ARGS(&m_pGraphicsFence))) &&
-              "failed to create fence object");
+void D3d12RHI::CreateSyncObjects(const std::function<HANDLE()>& createEvent) {
+    RequireInitialization(m_pDev->CreateFence(0, D3D12_FENCE_FLAG_NONE,
+                                            IID_PPV_ARGS(&m_pGraphicsFence)),
+                          "CreateFence");
 
     m_nGraphicsFenceValues.fill(1);
 
-    m_hGraphicsFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    my_assert(m_hGraphicsFenceEvent);
-
-    m_hComputeFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    my_assert(m_hComputeFenceEvent);
-
-    m_hCopyFenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    my_assert(m_hCopyFenceEvent);
+    for (auto* event : {&m_hGraphicsFenceEvent, &m_hComputeFenceEvent,
+                        &m_hCopyFenceEvent}) {
+        *event = createEvent();
+        if (!*event || *event == INVALID_HANDLE_VALUE) {
+            const DWORD error = GetLastError();
+            throw std::system_error(
+                error ? error : ERROR_NOT_ENOUGH_MEMORY,
+                std::system_category(), "Create D3D12 fence event");
+        }
+    }
 }
 
 void D3d12RHI::CreateRenderTargets() {
     m_pRenderTargets.resize(GfxConfiguration::kMaxInFlightFrameCount);
 
     for (int32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        my_assert(SUCCEEDED(
-            m_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i]))));
+        RequireInitialization(
+            m_pSwapChain->GetBuffer(i, IID_PPV_ARGS(&m_pRenderTargets[i])),
+            "Get swapchain buffer");
 
         m_pRenderTargets[i]->SetName(
             (std::wstring(L"Render Target ") + std::to_wstring(i)).c_str());
@@ -903,10 +905,10 @@ void D3d12RHI::CreateRenderTargets() {
         prop.VisibleNodeMask = 1;
 
         ID3D12Resource* pMsaaRT;
-        my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+        RequireInitialization(m_pDev->CreateCommittedResource(
             &prop, D3D12_HEAP_FLAG_NONE, &textureDesc,
             D3D12_RESOURCE_STATE_RENDER_TARGET, &optimizedClearValue,
-            IID_PPV_ARGS(&pMsaaRT))));
+            IID_PPV_ARGS(&pMsaaRT)), "Create MSAA render target");
 
         pMsaaRT->SetName(L"MSAA Render Target");
 
@@ -950,10 +952,10 @@ void D3d12RHI::CreateDepthStencils() {
     resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-    my_assert(SUCCEEDED(m_pDev->CreateCommittedResource(
+    RequireInitialization(m_pDev->CreateCommittedResource(
         &prop, D3D12_HEAP_FLAG_NONE, &resourceDesc,
         D3D12_RESOURCE_STATE_DEPTH_WRITE, &depthOptimizedClearValue,
-        IID_PPV_ARGS(&m_pDepthStencilBuffer))));
+        IID_PPV_ARGS(&m_pDepthStencilBuffer)), "Create depth stencil");
 
     m_pDepthStencilBuffer->SetName(L"DepthStencilBuffer");
 }
@@ -972,8 +974,9 @@ void D3d12RHI::CreateFramebuffers() {
     m_nRtvDescriptorSize = m_pDev->GetDescriptorHandleIncrementSize(
         D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     for (int i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        my_assert(SUCCEEDED(m_pDev->CreateDescriptorHeap(
-            &rtvHeapDesc, IID_PPV_ARGS(&m_pRtvHeaps[i]))));
+        RequireInitialization(m_pDev->CreateDescriptorHeap(
+            &rtvHeapDesc, IID_PPV_ARGS(&m_pRtvHeaps[i])),
+            "Create RTV heap");
 
         m_pRtvHeaps[i]->SetName(
             (std::wstring(L"RTV Descriptor Heap") + std::to_wstring(i))
@@ -998,8 +1001,9 @@ void D3d12RHI::CreateFramebuffers() {
     dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
     dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-    my_assert(SUCCEEDED(
-        m_pDev->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_pDsvHeap))));
+    RequireInitialization(
+        m_pDev->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_pDsvHeap)),
+        "Create DSV heap");
     m_pDsvHeap->SetName(L"DSV Descriptor Heap");
 
     D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle =
@@ -1014,24 +1018,26 @@ void D3d12RHI::CreateCommandPools() {
         GfxConfiguration::kMaxInFlightFrameCount);
 
     for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
-        my_assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
+        RequireInitialization(m_pDev->CreateCommandAllocator(
             D3D12_COMMAND_LIST_TYPE_DIRECT,
-            IID_PPV_ARGS(&m_pGraphicsCommandAllocators[i]))));
+            IID_PPV_ARGS(&m_pGraphicsCommandAllocators[i])),
+            "Create graphics allocator");
         m_pGraphicsCommandAllocators[i]->SetName(
             (std::wstring(L"Graphics Command Allocator") + std::to_wstring(i))
                 .c_str());
     }
 
     // Compute
-    my_assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
+    RequireInitialization(m_pDev->CreateCommandAllocator(
         D3D12_COMMAND_LIST_TYPE_COMPUTE,
-        IID_PPV_ARGS(&m_pComputeCommandAllocator))));
+        IID_PPV_ARGS(&m_pComputeCommandAllocator)), "Create compute allocator");
 
     m_pComputeCommandAllocator->SetName(L"Compute Command Allocator");
 
     // Copy
-    my_assert(SUCCEEDED(m_pDev->CreateCommandAllocator(
-        D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_pCopyCommandAllocator))));
+    RequireInitialization(m_pDev->CreateCommandAllocator(
+        D3D12_COMMAND_LIST_TYPE_COPY, IID_PPV_ARGS(&m_pCopyCommandAllocator)),
+        "Create copy allocator");
 
     m_pCopyCommandAllocator->SetName(L"Copy Command Allocator");
 }
@@ -1040,24 +1046,24 @@ void D3d12RHI::CreateCommandLists() {
     // Graphics
     m_pGraphicsCommandLists.resize(1);
 
-    my_assert(SUCCEEDED(m_pDev->CreateCommandList1(
+    RequireInitialization(m_pDev->CreateCommandList1(
         0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE,
-        IID_PPV_ARGS(&m_pGraphicsCommandLists[0]))));
+        IID_PPV_ARGS(&m_pGraphicsCommandLists[0])), "Create graphics list");
 
     m_pGraphicsCommandLists[0]->SetName(
         (std::wstring(L"Graphics Command List ") + std::to_wstring(0)).c_str());
 
     // Compute
-    my_assert(SUCCEEDED(m_pDev->CreateCommandList1(
+    RequireInitialization(m_pDev->CreateCommandList1(
         0, D3D12_COMMAND_LIST_TYPE_COMPUTE, D3D12_COMMAND_LIST_FLAG_NONE,
-        IID_PPV_ARGS(&m_pComputeCommandList))));
+        IID_PPV_ARGS(&m_pComputeCommandList)), "Create compute list");
 
     m_pComputeCommandList->SetName(L"Compute Command List");
 
     // Copy
-    my_assert(SUCCEEDED(m_pDev->CreateCommandList1(
+    RequireInitialization(m_pDev->CreateCommandList1(
         0, D3D12_COMMAND_LIST_TYPE_COPY, D3D12_COMMAND_LIST_FLAG_NONE,
-        IID_PPV_ARGS(&m_pCopyCommandList))));
+        IID_PPV_ARGS(&m_pCopyCommandList)), "Create copy list");
 
     m_pCopyCommandList->SetName(L"Copy Command List");
 }
@@ -1496,6 +1502,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE My::D3d12RHI::GetGpuDescriptorHandle(ID3D12Descripto
 
 void D3d12RHI::waitOnFrame() {
     if (m_pGraphicsCommandQueue && m_pGraphicsFence &&
+        m_hGraphicsFenceEvent &&
         m_hGraphicsFenceEvent != INVALID_HANDLE_VALUE) {
         auto fence_value = *std::max_element(m_nGraphicsFenceValues.begin(),
                                               m_nGraphicsFenceValues.end()) + 1;
@@ -1567,6 +1574,7 @@ void D3d12RHI::ResetAllBuffers() {
     for (auto& buf : m_pRawBuffers) {
         SafeRelease(&buf);
     }
+    m_pRawBuffers.clear();
 }
 
 void D3d12RHI::WaitForIdle() {
@@ -1577,7 +1585,9 @@ void D3d12RHI::DestroyAll() {
     CleanupSwapChain();
 
     if (m_fDestroyResourceHandler) {
-        m_fDestroyResourceHandler();
+        auto destroyResources = std::move(m_fDestroyResourceHandler);
+        m_fDestroyResourceHandler = {};
+        destroyResources();
     }
 
     ResetAllBuffers();
@@ -1597,9 +1607,16 @@ void D3d12RHI::DestroyAll() {
         SafeRelease(&commandAllocator);
     }
 
-    CloseHandle(m_hComputeFenceEvent);
-    CloseHandle(m_hCopyFenceEvent);
-    CloseHandle(m_hGraphicsFenceEvent);
+    for (auto* event : {&m_hComputeFenceEvent, &m_hCopyFenceEvent,
+                        &m_hGraphicsFenceEvent}) {
+        if (*event && *event != INVALID_HANDLE_VALUE) {
+            if (!CloseHandle(*event)) {
+                std::cerr << "D3D12 fence event cleanup failed: "
+                          << GetLastError() << '\n';
+            }
+        }
+        *event = INVALID_HANDLE_VALUE;
+    }
 
     SafeRelease(&m_pGraphicsCommandQueue);
     SafeRelease(&m_pComputeCommandQueue);

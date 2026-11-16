@@ -154,6 +154,8 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     NSInteger _screenshotFrame;
     NSInteger _frameCount;
     BOOL _screenshotRequested;
+    BOOL _initialized;
+    BOOL _imguiInitialized;
 }
 
 - (MTLPixelFormat)getMtlPixelFormat:(const Image &)img {
@@ -170,10 +172,15 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
 /// Initialize with the MetalKit view from which we'll obtain our Metal device.  We'll also use this
 /// mtkView object to set the pixel format and other properties of our drawable
-- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView*)mtkView
+- (nullable instancetype)initWithMetalKitView:(nonnull MTKView*)mtkView
                                       device:(id<MTLDevice>)device {
     self = [super init];
     if (self) {
+        if (!mtkView || !device) {
+            NSLog(@"Metal initialization requires a view and device");
+            [self release];
+            return nil;
+        }
         _mtkView = mtkView;
         _device = device;
 
@@ -199,7 +206,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 }
 
 /// Create our metal render state objects including our shaders and render state pipeline objects
-- (void)loadMetal {
+- (BOOL)loadMetal {
     // Create and load our basic Metal state objects
 
     for (NSUInteger i = 0; i < GEFSMaxBuffersInFlight; i++) {
@@ -207,11 +214,19 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
         // CPU can access the buffer
         _uniformBuffers[i] = [_device newBufferWithLength:kSizePerFrameConstantBuffer
                                                   options:MTLResourceStorageModeShared];
+        if (!_uniformBuffers[i]) {
+            NSLog(@"Metal uniform buffer allocation failed at frame %lu", i);
+            return NO;
+        }
 
         _uniformBuffers[i].label = [NSString stringWithFormat:@"uniformBuffer %lu", i];
 
         _lightInfo[i] = [_device newBufferWithLength:kSizeLightInfo
                                              options:MTLResourceStorageModeShared];
+        if (!_lightInfo[i]) {
+            NSLog(@"Metal light buffer allocation failed at frame %lu", i);
+            return NO;
+        }
 
         _lightInfo[i].label = [NSString stringWithFormat:@"lightInfo %lu", i];
     }
@@ -229,27 +244,91 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     _sampler0 = [_device newSamplerStateWithDescriptor:samplerDescriptor];
     [samplerDescriptor release];
+    if (!_sampler0) {
+        NSLog(@"Metal sampler allocation failed");
+        return NO;
+    }
 
     // Create the command queue
     _graphicsQueue = [_device newCommandQueue];
+    if (!_graphicsQueue) {
+        NSLog(@"Metal command queue allocation failed");
+        return NO;
+    }
 
     // Create command lists
     _commandBuffers.resize(GEFSMaxBuffersInFlight);
     for (NSUInteger i = 0; i < GEFSMaxBuffersInFlight; i++) {
-        _commandBuffers[i] = [_graphicsQueue commandBuffer];
+        _commandBuffers[i] = [[_graphicsQueue commandBuffer] retain];
+        if (!_commandBuffers[i]) {
+            NSLog(@"Metal command buffer allocation failed at frame %lu", i);
+            return NO;
+        }
         _commandBuffers[i].label = [NSString stringWithFormat:@"Per Frame Command Buffer %lu", i];
     }
+    return YES;
 }
 
-- (void)initialize {
-    [self loadMetal];
-    ImGui_ImplMetal_Init(_device);
+- (BOOL)initialize {
+    if (_initialized) {
+        NSLog(@"Metal RHI is already initialized");
+        return NO;
+    }
+    if (![self loadMetal]) {
+        [self finalize];
+        return NO;
+    }
+    if (!ImGui::GetCurrentContext() || ImGui::GetIO().BackendRendererUserData) {
+        NSLog(@"Metal initialization requires an unbound ImGui context");
+        [self finalize];
+        return NO;
+    }
+    _imguiInitialized = ImGui_ImplMetal_Init(_device);
+    if (!_imguiInitialized) {
+        NSLog(@"Metal ImGui backend initialization failed");
+        [self finalize];
+        return NO;
+    }
+    _initialized = YES;
+    return YES;
 }
 
 - (void)finalize {
-    ImGui_ImplMetal_Shutdown();
+    for (auto buffer : _commandBuffers) {
+        if (buffer.status == MTLCommandBufferStatusCommitted ||
+            buffer.status == MTLCommandBufferStatusScheduled) {
+            [buffer waitUntilCompleted];
+        }
+        [buffer release];
+    }
+    _commandBuffers.clear();
+    if (_imguiInitialized) {
+        ImGui_ImplMetal_Shutdown();
+        _imguiInitialized = NO;
+    }
     [_materialTextureCopyPipeline release];
     _materialTextureCopyPipeline = nil;
+    for (NSUInteger i = 0; i < GEFSMaxBuffersInFlight; ++i) {
+        [_uniformBuffers[i] release];
+        _uniformBuffers[i] = nil;
+        [_lightInfo[i] release];
+        _lightInfo[i] = nil;
+    }
+    [_sampler0 release];
+    _sampler0 = nil;
+    [_graphicsQueue release];
+    _graphicsQueue = nil;
+    _initialized = NO;
+}
+
+- (void)dealloc {
+    [self finalize];
+    for (auto semaphore : _inFlightSemaphores) {
+        if (semaphore) dispatch_release(semaphore);
+    }
+    [_screenshotPath release];
+    [_screenshotWaitFor release];
+    [super dealloc];
 }
 
 - (void)createVertexBuffer:(const SceneObjectVertexArray&)v_property_array {
@@ -557,7 +636,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     }
 
     [_commandBuffers[frame.frameIndex] release];
-    _commandBuffers[frame.frameIndex] = [_graphicsQueue commandBuffer];
+    _commandBuffers[frame.frameIndex] = [[_graphicsQueue commandBuffer] retain];
     _commandBuffers[frame.frameIndex].label =
         [NSString stringWithFormat:@"Per Frame Command Buffer %d", frame.frameIndex];
 }

@@ -43,12 +43,30 @@ static bool isExtensionSupported(const char *extList, const char *extension) {
 static bool ctxErrorOccurred = false;
 static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
     ctxErrorOccurred = true;
+    fprintf(stderr, "GLX initialization X error: code=%u request=%u minor=%u\n",
+            ev->error_code, ev->request_code, ev->minor_code);
     return 0;
 }
 
-int OpenGLApplication::Initialize() {
-    return XcbApplication::Initialize();
-}
+namespace {
+class ScopedContextErrorHandler {
+   public:
+    explicit ScopedContextErrorHandler(Display* display) : m_Display(display) {
+        XSync(m_Display, False);
+        ctxErrorOccurred = false;
+        m_Previous = XSetErrorHandler(ctxErrorHandler);
+    }
+
+    ~ScopedContextErrorHandler() {
+        XSync(m_Display, False);
+        XSetErrorHandler(m_Previous);
+    }
+
+   private:
+    Display* m_Display;
+    XErrorHandler m_Previous;
+};
+}  // namespace
 
 void OpenGLApplication::CreateMainWindow() {
     /* Open Xlib Display */
@@ -121,10 +139,12 @@ void OpenGLApplication::CreateMainWindow() {
             fb_config = fb_configs[best_fbc];
         }
     }
+    XFree(fb_configs);
 
     /* Get a visual */
     auto vi = glXGetVisualFromFBConfig(m_pDisplay, fb_config);
     printf("Chosen visual ID = 0x%lx\n", vi->visualid);
+    XFree(vi);
 
     XcbApplication::CreateMainWindow(); // implicitly calling create main window here
 #if 0
@@ -142,22 +162,33 @@ void OpenGLApplication::CreateMainWindow() {
 	XMapWindow (m_pDisplay, m_XWindow);
 	XStoreName (m_pDisplay, m_XWindow, m_Config.appName);
 #endif
+}
 
-    /* Create OpenGL context */
-    ctxErrorOccurred = false;
-    int (*oldHandler)(Display *, XErrorEvent *) =
-        XSetErrorHandler(&ctxErrorHandler);
+int OpenGLApplication::InitializeGraphicsResources() {
+    if (!GetMainWindowHandler() || !m_pDisplay) {
+        fprintf(stderr, "OpenGL initialization requires a native window\n");
+        return -1;
+    }
+    ScopedContextErrorHandler errorHandler(m_pDisplay);
+    const auto fail = [this](const char* message) {
+        fprintf(stderr, "%s\n", message);
+        FinalizeGraphicsResources();
+        return -1;
+    };
 
     /* Create GLX Window */
     m_GlxWindow = glXCreateWindow(m_pDisplay, fb_config, m_XWindow, 0);
-
-    if (!m_GlxWindow) {
-        fprintf(stderr, "glxCreateWindow failed\n");
+    XSync(m_pDisplay, False);
+    if (ctxErrorOccurred || !m_GlxWindow) {
+        return fail("glXCreateWindow failed");
     }
 
     /* Get the default screen's GLX extension list */
     const char *glxExts;
     glxExts = glXQueryExtensionsString(m_pDisplay, m_nScreen);
+    if (!glxExts) {
+        return fail("glXQueryExtensionsString failed");
+    }
 
     if (!isExtensionSupported(glxExts, "GLX_ARB_create_context") ||
         !glXCreateContextAttribsARB) {
@@ -166,9 +197,6 @@ void OpenGLApplication::CreateMainWindow() {
             " ... using old-style GLX context\n");
         m_Context =
             glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, NULL, GL_TRUE);
-        if (!m_Context) {
-            fprintf(stderr, "glXCreateNewContext failed\n");
-        }
     } else {
         int context_attribs[] = {GLX_CONTEXT_MAJOR_VERSION_ARB,
                                  4,
@@ -188,27 +216,22 @@ void OpenGLApplication::CreateMainWindow() {
         if (!ctxErrorOccurred && m_Context)
             printf("Created GL 4.3 context\n");
         else {
-            /* GLX_CONTEXT_MAJOR_VERSION_ARB = 1 */
-            context_attribs[1] = 1;
-            /* GLX_CONTEXT_MINOR_VERSION_ARB = 0 */
-            context_attribs[3] = 0;
-
+            if (m_Context) {
+                glXDestroyContext(m_pDisplay, m_Context);
+                m_Context = nullptr;
+                XSync(m_pDisplay, False);
+            }
             ctxErrorOccurred = false;
 
             m_Context =
                 glXCreateNewContext(m_pDisplay, fb_config, GLX_RGBA_TYPE, NULL, GL_TRUE);
-            if (!m_Context) {
-                fprintf(stderr, "glXCreateNewContext failed\n");
-            }
         }
     }
 
     XSync(m_pDisplay, False);
 
-    XSetErrorHandler(oldHandler);
-
     if (ctxErrorOccurred || !m_Context) {
-        printf("Failed to create an OpenGL context\n");
+        return fail("Failed to create an OpenGL context");
     }
 
     /* Verifying that context is a direct context */
@@ -219,21 +242,27 @@ void OpenGLApplication::CreateMainWindow() {
     }
 
     /* make OpenGL context current */
-    if (!glXMakeContextCurrent(m_pDisplay, m_XWindow, m_XWindow, m_Context)) {
-        fprintf(stderr, "glXMakeContextCurrent failed\n");
+    const bool madeCurrent =
+        glXMakeContextCurrent(m_pDisplay, m_XWindow, m_XWindow, m_Context);
+    XSync(m_pDisplay, False);
+    if (!madeCurrent || ctxErrorOccurred) {
+        return fail("glXMakeContextCurrent failed");
     }
 
-    XFree(vi);
+    return 0;
 }
 
 void OpenGLApplication::Tick() {
+    if (!m_Context) return;
     XcbApplication::Tick();
     glXSwapBuffers(m_pDisplay, m_XWindow);
 }
 
 void OpenGLApplication::FinalizeGraphicsResources() {
     if (m_Context) {
-        glXMakeCurrent(m_pDisplay, None, nullptr);
+        if (glXGetCurrentContext() == m_Context) {
+            glXMakeCurrent(m_pDisplay, None, nullptr);
+        }
         glXDestroyContext(m_pDisplay, m_Context);
         m_Context = nullptr;
     }

@@ -7,13 +7,12 @@ class VulkanApplication : public WindowsApplication {
    public:
     using WindowsApplication::WindowsApplication;
 
-    void CreateMainWindow() final;
-
     VkResult CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface);
 
     VulkanRHI& GetRHI() { return m_Rhi; }
 
    private:
+    int InitializeGraphicsResources() final;
     void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;
 };

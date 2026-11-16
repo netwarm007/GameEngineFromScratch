@@ -10,11 +10,15 @@ class D3d12Application : public WindowsApplication {
    public:
     using WindowsApplication::WindowsApplication;
 
-    void CreateMainWindow() final;
-
     D3d12RHI& GetRHI() { return m_Rhi; }
 
+   protected:
+    virtual HANDLE CreateFenceEvent() {
+        return CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    }
+
    private:
+    int InitializeGraphicsResources() final;
     void WaitForGraphicsIdle() final;
     void FinalizeGraphicsResources() final;
     void onWindowResize(int new_width, int new_height) final;

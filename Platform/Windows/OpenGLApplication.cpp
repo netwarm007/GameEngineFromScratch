@@ -36,7 +36,11 @@ void OpenGLApplication::Tick() {
     SwapBuffers(m_hDC);
 }
 
-void OpenGLApplication::CreateMainWindow() {
+int OpenGLApplication::InitializeGraphicsResources() {
+    if (!GetMainWindowHandler()) {
+        fprintf(stderr, "OpenGL initialization requires a native window\n");
+        return -1;
+    }
     auto colorBits =
         m_Config.redBits + m_Config.greenBits +
         m_Config
@@ -101,8 +105,6 @@ void OpenGLApplication::CreateMainWindow() {
     wglDeleteContext(m_RenderContext);
     ReleaseDC(TemphWnd, TemphDC);
     DestroyWindow(TemphWnd);
-
-    WindowsApplication::CreateMainWindow();
 
     m_hDC = GetDC(m_hWnd);
 
@@ -193,4 +195,5 @@ void OpenGLApplication::CreateMainWindow() {
     if (GLAD_WGL_EXT_swap_control) {
         wglSwapIntervalEXT(1);
     }
+    return 0;
 }

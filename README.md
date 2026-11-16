@@ -117,6 +117,25 @@ or verification of every material and camera position.
     The legacy FreeBSD binary is not covered by this upgrade.
 
 ## Architecture
+The [modularization roadmap](docs/architecture/modularization-roadmap.md)
+describes the refactoring goals, completed boundaries, proposed next checkpoints,
+and acceptance process.
+
+Desktop graphics applications create the native window with `CreateMainWindow()`
+before calling `Initialize()`. Application initialization prepares the backend
+before initializing runtime modules; module-initialization retries reuse a
+successfully prepared backend. `Finalize()` synchronizes GPU work, stops modules
+in reverse order, destroys backend resources, then releases the native window.
+Call it on initialization failure as well as normal exit. The failing initializer
+still owns its partial-resource cleanup contract; this ordering does not imply
+that every native allocation failure is recoverable.
+
+On Linux, framebuffer configuration discovery remains a window-creation
+prerequisite, but the GLX context is created during initialization. On macOS,
+the Metal view/device is prepared before modules; Metal graphics-manager
+initialization still owns its RHI setup. SDL and Android keep their existing
+creation contracts.
+
 - `RHI/`: render hardware interfaces (OpenGL, Vulkan, Metal, D3d, D2d, Empty)
 - `Platform/`: platform layers (Windows, Linux, Darwin, Sdl, Android, Empty)
 - `Framework/`, `Physics/`, `Asset/`, `Utility/`, `Game/`, `Viewer/`, `Test/`

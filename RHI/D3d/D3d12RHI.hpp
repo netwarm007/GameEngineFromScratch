@@ -75,7 +75,10 @@ class D3d12RHI {
     void CreateSwapChain();
     void CleanupSwapChain();
     void RecreateSwapChain();
-    void CreateSyncObjects();
+    void CreateSyncObjects(
+        const std::function<HANDLE()>& createEvent = [] {
+            return CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        });
 
     void CreateRenderTargets();
     void CreateDepthStencils();

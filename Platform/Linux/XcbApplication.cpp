@@ -16,8 +16,8 @@ void XcbApplication::CreateMainWindow() {
     uint32_t mask = 0;
     uint32_t values[3];
 
-    /* Open Xlib Display */
-    m_pDisplay = XOpenDisplay(NULL);
+    // GLX framebuffer configurations belong to the display that queried them.
+    if (!m_pDisplay) m_pDisplay = XOpenDisplay(NULL);
     if (!m_pDisplay) {
         fprintf(stderr, "Can't open display\n");
     }

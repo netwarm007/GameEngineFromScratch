@@ -14,8 +14,16 @@ int main() {
     D3d12GraphicsManager graphics;
     app.RegisterManagerModule(&graphics);
     app.CreateMainWindow();
+    if (!app.GetMainWindowHandler() || app.GetRHI().GetDevice()) {
+        std::cerr << "Window creation must not initialize the D3D12 device\n";
+        app.Finalize();
+        ImGui::DestroyContext();
+        return 1;
+    }
     if (app.Initialize() != 0) {
         std::cerr << "Failed to initialize graphics manager\n";
+        app.Finalize();
+        ImGui::DestroyContext();
         return 1;
     }
 

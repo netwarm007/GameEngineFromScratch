@@ -27,7 +27,19 @@ if(OS_MACOS OR OS_WINDOWS)
     endif(Vulkan_FOUND)
 endif(OS_MACOS OR OS_WINDOWS)
 
+if(OS_MACOS)
+    add_executable(MetalInitializationTest MetalInitializationTest.mm)
+    target_link_libraries(MetalInitializationTest Framework MetalRHI PlatformInterface)
+    add_test(NAME TEST_MetalInitialization COMMAND MetalInitializationTest)
+    set_tests_properties(TEST_MetalInitialization PROPERTIES TIMEOUT 60)
+endif()
+
 if(OS_WINDOWS)
+    add_executable(D3d12InitializationTest D3d12InitializationTest.cpp)
+    target_link_libraries(D3d12InitializationTest Framework D3dRHI PlatformInterface)
+    add_test(NAME TEST_D3d12Initialization COMMAND D3d12InitializationTest)
+    set_tests_properties(TEST_D3d12Initialization PROPERTIES TIMEOUT 60)
+
     add_executable(D2dRHITest D2dRHITest.cpp)
     target_link_libraries(D2dRHITest Framework D2dRHI PlatformInterface)
 

@@ -19,13 +19,13 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (MTLPixelFormat)getMtlPixelFormat:(const Image &)img;
 
-- (void)initialize;
+- (BOOL)initialize;
 
 - (void)finalize;
 
 - (void)present;
 
-- (nonnull instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
+- (nullable instancetype)initWithMetalKitView:(nonnull MTKView *)mtkView
                                       device:(nonnull id<MTLDevice>)device;
 
 - (void)setPerFrameConstants:(const DrawFrameContext &)context frameIndex:(const int32_t)index;
