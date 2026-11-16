@@ -143,11 +143,11 @@ redesigned; D2D/Vulkan runtime support is not established by migrating hooks.
 
 ### B. Harden native partial initialization and cleanup
 
-**Linux GLX sub-checkpoint completed and accepted on the topic branch.**
-See the [GLX failure verification](../verification/a9c7cdba1cc4af16f800c76248a7364db38b470b.md).
-D3D12 and Metal hardening is in progress under the authorized stage B scope;
-stage B is not accepted until the resulting exact revision passes all enabled
-platforms and the native application artifacts are inspected.
+**Completed and accepted on the topic branch for the selected failure stages.**
+See the [combined native failure verification](../verification/b95495ed37f5d2864a0dc56a7721a0c063c1c22b.md)
+and the earlier [GLX failure verification](../verification/a9c7cdba1cc4af16f800c76248a7364db38b470b.md).
+This establishes the scoped exit criteria below, not exhaustive driver failure
+handling, device-loss recovery, or integration into master.
 
 Depends on the boundaries established in stage A.
 
@@ -160,10 +160,10 @@ creation, including a queued asynchronous X error. Repeat finalization must
 not destroy a resource twice. Window creation also preserves the Display that
 queried the GLX configuration so legacy context fallback uses matching handles.
 This is not exhaustive driver allocation-failure coverage or generalized X
-display/framebuffer-selection failure handling, and it does not establish
-equivalent D3D12/Metal guarantees.
+display/framebuffer-selection failure handling. D3D12 and Metal have their own
+selected failure coverage below rather than identical driver-level guarantees.
 
-The next selected stages are D3D12 initialization HRESULT propagation and
+The other completed stages are D3D12 initialization HRESULT propagation and
 partial fence-event allocation, plus Metal initialization-buffer, sampler,
 queue and command-buffer allocation. D3D12 setup errors must release partial
 backend resources before returning without starting modules. Event handles are
@@ -171,9 +171,12 @@ invalidated after closing, and registered resource cleanup runs once. Native
 tests also submit a gated command list to prove GPU completion precedes module
 rollback. Metal's failing initializer releases its own partial allocations;
 successful initialization owns those same resources until explicit cleanup.
-Repeated cleanup and deliberate retry are covered without changing ImGui
-context ownership (stage C). These stages do not claim device-loss recovery,
-exhaustive driver fault injection, or D2D/Vulkan runtime guarantees.
+Repeated cleanup, D3D12 reinitialization after explicit platform/backend
+cleanup, and same-RHI Metal retry are covered without changing ImGui context
+ownership (stage C). Metal module-graph restart and failure after native GPU
+submission were not independently injected. These stages do not claim
+device-loss recovery, exhaustive driver fault injection, or D2D/Vulkan runtime
+guarantees.
 
 - Inspect actual backend failure paths before selecting failure-injection seams.
 - Cover partial native resource creation, a single cleanup attempt, and repeat
@@ -251,6 +254,7 @@ do not establish new source acceptance.
 - Use an issue for independently scheduled work if useful, and add an ADR only
   for a significant architectural choice with alternatives and consequences.
   Neither is required for every small checkpoint.
-- No fixed delivery dates are implied. Stage A is scoped to initialization
-  orchestration, not device setup internals or ImGui ownership; later stages
+- No fixed delivery dates are implied. Stage A covers initialization
+  orchestration; stage B covers the selected native initialization/cleanup
+  failures, not exhaustive driver recovery or ImGui ownership. Stages C and D
   remain proposals requiring confirmation.
