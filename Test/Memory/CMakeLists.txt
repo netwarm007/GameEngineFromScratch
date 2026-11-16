@@ -9,11 +9,18 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 endif()
 
 # Allocators are self-contained and are tested without the rest of the engine.
-add_executable(MemoryAllocatorTest MemoryAllocatorTest.cpp
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Manager/MemoryManager.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Manager/BlockAllocator.cpp")
-target_include_directories(MemoryAllocatorTest PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Common"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Interface"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Manager")
-add_test(NAME TEST_MemoryAllocatorTest COMMAND MemoryAllocatorTest)
+set(ALLOCATOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Manager")
+set(ALLOCATOR_SOURCES
+    "${ALLOCATOR_DIR}/MemoryManager.cpp"
+    "${ALLOCATOR_DIR}/BlockAllocator.cpp"
+    "${ALLOCATOR_DIR}/LinearAllocator.cpp"
+    "${ALLOCATOR_DIR}/StackAllocator.cpp")
+
+foreach(TEST_CASE MemoryAllocatorTest LinearAllocatorTest StackAllocatorTest)
+    add_executable(${TEST_CASE} ${TEST_CASE}.cpp ${ALLOCATOR_SOURCES})
+    target_include_directories(${TEST_CASE} PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Common"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Interface"
+        "${ALLOCATOR_DIR}")
+    add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
+endforeach()

@@ -21,6 +21,7 @@ add_library(Manager
         BlockAllocator.cpp
         DebugManager.cpp
         InputManager.cpp
+        LinearAllocator.cpp
         MemoryManager.cpp
         StackAllocator.cpp
         PipelineStateManager.cpp

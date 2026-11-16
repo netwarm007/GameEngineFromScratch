@@ -90,7 +90,7 @@ can use them.
 | --- | --- | --- |
 | M0 | This roadmap | Done (docs only) |
 | M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Done (CI-verified, `docs/verification/03a8504ee0dc1fd042c3444d520f2b3863c85304.md`) |
-| M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests. | Planned |
+| M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests (`LinearAllocatorTest`, `StackAllocatorTest`). | Implemented; awaiting CI acceptance |
 | M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; tests. | Planned |
 | M4 | Size-class small-object allocator and Slab; tests. | Planned |
 | M5 | TLSF and Buddy; tests. | Planned |
@@ -104,5 +104,12 @@ gained `AllocateAlignedPage` (default falls back to `AllocatePage`).
 `BlockAllocator` allocates blocks lazily from the newest page; free-pointer
 validation (ownership, alignment, double free) is on in `_DEBUG` builds and
 enabled explicitly with `SetValidation(true)`.
+
+M2 notes: both allocators own one fixed-capacity, 64-byte-aligned arena from
+`AllocateAlignedPage`, accept per-allocation power-of-two alignment, and return
+`nullptr` instead of growing. `LinearAllocator::FreeAll` keeps the arena.
+`StackAllocator` keeps a 16-byte header per allocation so `Free(p)` can pop the
+latest allocation; `Marker` rewinds many at once. Shared helpers are in
+`AllocatorUtils.hpp`.
 
 Checkpoint scopes may be re-split as implementation reveals complexity.
