@@ -59,7 +59,7 @@ void* StackAllocator::Allocate(size_t size, size_t alignment) {
         return nullptr;
     }
 
-    Header header{m_szTop, m_szLast};
+    Header header{m_szTop, m_szLast, ++m_nSerial};
     std::memcpy(m_pBase + offset - sizeof(Header), &header, sizeof(Header));
 
     m_szTop = offset + size;
@@ -100,8 +100,34 @@ void StackAllocator::Free(void* p) {
     m_szLast = header.prevLast;
 }
 
+StackAllocator::Marker StackAllocator::GetMarker() const {
+    Marker marker{m_szTop, m_szLast, 0};
+    if (m_szLast != SIZE_MAX) {
+        Header header;
+        std::memcpy(&header, m_pBase + m_szLast - sizeof(Header),
+                    sizeof(Header));
+        marker.serial = header.serial;
+    }
+    return marker;
+}
+
 bool StackAllocator::FreeToMarker(const Marker& marker) {
-    if (marker.top > m_szTop) {
+    bool valid = marker.top <= m_szTop;
+    if (valid) {
+        if (marker.last == SIZE_MAX) {
+            valid = marker.top == 0 && marker.serial == 0;
+        } else {
+            valid = m_pBase && marker.last >= sizeof(Header) &&
+                    marker.last < m_szTop && marker.last <= marker.top;
+            if (valid) {
+                Header header;
+                std::memcpy(&header, m_pBase + marker.last - sizeof(Header),
+                            sizeof(Header));
+                valid = header.serial == marker.serial;
+            }
+        }
+    }
+    if (!valid) {
         ++m_nInvalidFrees;
         return false;
     }

@@ -144,6 +144,54 @@ void TestMarkers() {
     Expect(s.Allocate(10) != nullptr, "usable after rewinding to empty");
 }
 
+void TestStaleMarkers() {
+    MemoryManager mm;
+    StackAllocator s(&mm, 2048);
+
+    s.Allocate(32);
+    auto* x = s.Allocate(64);
+    auto stale = s.GetMarker();
+    s.Free(x);
+    // same offset, different allocation: the old marker must not match
+    s.Allocate(64);
+    const size_t top = s.Used();
+    Expect(!s.FreeToMarker(stale), "marker of unwound allocation rejected");
+    Expect(s.InvalidFreeCount() == 1 && s.Used() == top,
+           "stale marker changes nothing");
+
+    auto fresh = s.GetMarker();
+    s.Allocate(8);
+    Expect(s.FreeToMarker(fresh), "fresh marker accepted");
+
+    // marker survives pops above it
+    auto older = s.GetMarker();
+    auto* y = s.Allocate(16);
+    s.Free(y);
+    Expect(s.FreeToMarker(older), "marker valid after pops above it");
+
+    // markers do not survive FreeAll or re-initialization
+    s.Allocate(16);
+    auto beforeReset = s.GetMarker();
+    s.FreeAll();
+    s.Allocate(16);
+    s.Allocate(16);
+    Expect(!s.FreeToMarker(beforeReset), "marker rejected after FreeAll");
+    auto beforeInit = s.GetMarker();
+    s.Initialize(2048);
+    s.Allocate(16);
+    s.Allocate(16);
+    s.Allocate(16);
+    Expect(!s.FreeToMarker(beforeInit), "marker rejected after Initialize");
+
+    StackAllocator::Marker forged;
+    forged.top = 100;
+    forged.last = 64;
+    forged.serial = 1;
+    s.FreeAll();
+    Expect(!s.FreeToMarker(forged), "forged marker rejected");
+    Expect(s.FreeToMarker(s.GetMarker()), "marker of empty stack accepted");
+}
+
 void TestExhaustionAndFreeAll() {
     MemoryManager mm;
     StackAllocator s(&mm, 128);
@@ -155,9 +203,9 @@ void TestExhaustionAndFreeAll() {
            "near SIZE_MAX fails");
     Expect(s.FailedAllocationCount() == 3, "failures counted");
 
-    // header (16 bytes) + payload must fit
+    // header + payload must fit
     Expect(s.Allocate(128, 1) == nullptr, "header overhead counted");
-    void* fill = s.Allocate(128 - sizeof(size_t) * 2, 1);
+    void* fill = s.Allocate(128 - StackAllocator::kHeaderSize, 1);
     Expect(fill != nullptr, "largest possible allocation fits");
     Expect(s.Remaining() == 0, "stack full");
     Expect(s.Allocate(1, 1) == nullptr, "full stack fails");
@@ -242,6 +290,7 @@ int main() {
     TestConfiguration();
     TestPushPop();
     TestMarkers();
+    TestStaleMarkers();
     TestExhaustionAndFreeAll();
     TestPaddingBeyondCapacity();
     TestRandomStress();

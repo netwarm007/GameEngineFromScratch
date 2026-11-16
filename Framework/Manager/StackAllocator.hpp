@@ -12,15 +12,26 @@ namespace My {
 // allocation can be popped with Free(p). GetMarker()/FreeToMarker() release
 // everything allocated after a point in one step. Out-of-order Free calls,
 // foreign pointers and markers newer than the current top are rejected and
-// counted instead of corrupting the stack. A marker is only meaningful while
-// the stack has not been unwound below it.
+// counted instead of corrupting the stack.
 class StackAllocator : _implements_ IAllocator {
    public:
     static constexpr size_t kDefaultAlignment = 16;
 
+    // Per-allocation bookkeeping stored right below each user pointer.
+    struct Header {
+        size_t prevTop;
+        size_t prevLast;
+        // unique and increasing for the allocator's lifetime; never reused
+        uint64_t serial;
+    };
+    static constexpr size_t kHeaderSize = sizeof(Header);
+
+    // Identifies a stack state. The serial of the newest allocation lets
+    // FreeToMarker detect markers whose allocations were already unwound.
     struct Marker {
         size_t top = 0;
         size_t last = SIZE_MAX;
+        uint64_t serial = 0;
     };
 
     explicit StackAllocator(IMemoryManager* pMmgr) : IAllocator(pMmgr) {}
@@ -43,9 +54,10 @@ class StackAllocator : _implements_ IAllocator {
     // Empties the stack; capacity is kept.
     void FreeAll() override;
 
-    Marker GetMarker() const { return {m_szTop, m_szLast}; }
-    // Returns false (and changes nothing) if the marker is newer than the
-    // current top.
+    Marker GetMarker() const;
+    // Returns false (and changes nothing, counting an invalid free) if the
+    // marker is stale: newer than the current top, or taken before its newest
+    // allocation was unwound.
     bool FreeToMarker(const Marker& marker);
 
     bool IsConfigured() const { return m_pBase != nullptr; }
@@ -57,11 +69,6 @@ class StackAllocator : _implements_ IAllocator {
     size_t InvalidFreeCount() const { return m_nInvalidFrees; }
 
    private:
-    struct Header {
-        size_t prevTop;
-        size_t prevLast;
-    };
-
     void Poison(size_t from, size_t to);
 
     uint8_t* m_pBase = nullptr;
@@ -70,6 +77,7 @@ class StackAllocator : _implements_ IAllocator {
     // offset of the most recent allocation, SIZE_MAX when empty
     size_t m_szLast = SIZE_MAX;
     size_t m_szPeak = 0;
+    uint64_t m_nSerial = 0;
     size_t m_nFailures = 0;
     size_t m_nInvalidFrees = 0;
 };

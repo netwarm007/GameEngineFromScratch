@@ -20,10 +20,12 @@ add_library(Manager
         BaseApplication.cpp
         BlockAllocator.cpp
         DebugManager.cpp
+        FrameAllocator.cpp
         InputManager.cpp
         LinearAllocator.cpp
         MemoryManager.cpp
         StackAllocator.cpp
         PipelineStateManager.cpp
+        RingAllocator.cpp
 )
 target_link_libraries(Manager PUBLIC AssetIO SceneServices SceneResources RenderServices)

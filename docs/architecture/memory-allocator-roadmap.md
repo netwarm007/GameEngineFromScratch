@@ -82,11 +82,12 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 
 | Limitation | Planned handling |
 | --- | --- |
-| `StackAllocator::Marker` is not versioned; a stale marker (stack already unwound below it) is not detected. | Add a generation counter to markers (M3). |
 | `LinearAllocator` and `StackAllocator` are single-threaded with fixed capacity (no growth). | Document per allocator; thread-cache layer in M7. |
 | `BlockAllocator` free-pointer validation is O(pages + free blocks) and on by default only in `_DEBUG`. | Cheaper ownership lookup with the debug decorator (M6). |
 | `BlockAllocator` never returns pages before `FreeAll`/destruction; single free list gives poor locality over time. | Revisit with size-class allocator (M4). |
 | Debug fill patterns are only verified in builds defining `_DEBUG`. | Extend tests to check patterns in the debug decorator (M6). |
+| `FrameAllocator` and `RingAllocator` are single-threaded; `RingAllocator` leaves fence tracking (when to `Retire`) to the caller. | Thread-cache layer (M7); GPU sub-allocator owns fences (M7). |
+| `PmrAdapter` forwards `deallocate` to `Free`, so LIFO/arena allocators only reclaim as their own rules allow, and failures throw `std::bad_alloc`. | Documented behavior; revisit if engine builds disable exceptions (M8). |
 | Allocators are not used by any engine module. | Integration (M8). |
 
 ## Foundation improvements
@@ -105,7 +106,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M0 | This roadmap | Done (docs only) |
 | M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Done (CI-verified, `docs/verification/03a8504ee0dc1fd042c3444d520f2b3863c85304.md`) |
 | M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests (`LinearAllocatorTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/faa5744f42b9aec60d6b93f561af22a95378320e.md`) |
-| M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; tests. | Planned |
+| M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; stale `Marker` detection; tests (`FrameAllocatorTest`, `RingAllocatorTest`, `PmrAdapterTest`, `StackAllocatorTest`). | Implemented; awaiting CI acceptance |
 | M4 | Size-class small-object allocator and Slab; tests. | Planned |
 | M5 | TLSF and Buddy; tests. | Planned |
 | M6 | Debug/tracking decorator, statistics, leak reports; tests. | Planned |
@@ -125,5 +126,13 @@ M2 notes: both allocators own one fixed-capacity, 64-byte-aligned arena from
 `StackAllocator` keeps a 16-byte header per allocation so `Free(p)` can pop the
 latest allocation; `Marker` rewinds many at once. Shared helpers are in
 `AllocatorUtils.hpp`.
+
+M3 notes: `StackAllocator::Header` now carries a never-reused 64-bit serial, and
+`Marker` records the serial of the newest allocation, so markers of unwound
+allocations, markers across `FreeAll`, and forged markers are rejected.
+`FrameAllocator` rotates N (>=2) `LinearAllocator` arenas. `RingAllocator` uses
+monotonic 64-bit logical positions; `GetHead()`/`Retire()` implement FIFO
+reclamation. `PmrAdapter<A>` (header only) wraps any allocator as a
+`std::pmr::memory_resource`.
 
 Checkpoint scopes may be re-split as implementation reveals complexity.
