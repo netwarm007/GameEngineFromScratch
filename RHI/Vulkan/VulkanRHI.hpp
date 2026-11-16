@@ -223,6 +223,11 @@ class VulkanRHI {
     std::vector<vk::Semaphore> m_vkRenderFinishedSemaphores;
     std::vector<vk::Fence> m_vkInFlightFences;
     std::vector<vk::Fence> m_vkImagesInFlight;
+    std::vector<vk::Fence> m_vkPresentFences;
+    std::vector<bool> m_presentPending;
+    bool m_surfaceMaintenanceKHR = false;
+    bool m_surfaceMaintenanceEXT = false;
+    bool m_presentationFencesEnabled = false;
     uint32_t m_currentImage = 0;
     uint32_t m_framebufferWidth = 0;
     uint32_t m_framebufferHeight = 0;

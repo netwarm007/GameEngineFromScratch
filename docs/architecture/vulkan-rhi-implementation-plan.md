@@ -456,19 +456,61 @@ commands fixed the crash and the same GPU regression passes.
 
 The shader ABI, compute, and new production resource tests pass locally on the
 Windows AMD device with core/synchronization validation enabled and zero
-reported errors. The new resource code still needs its own exact-revision
-cross-platform CI. Shader descriptor integration and GPU consumption of shared
+reported errors. Resource revision
+`e369cea7137dd3b0f7d2640853d4d87ead45e38f` subsequently passed all four required
+jobs in [pipeline 991](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/991);
+its [verification record](../verification/e369cea7137dd3b0f7d2640853d4d87ead45e38f.md)
+records the four passing focused Vulkan tests and inspected native captures.
+This does not verify the later strict retirement changes. Shader descriptor
+integration and GPU consumption of shared
 per-frame/per-batch arenas belong to checkpoint 3, not this readback test.
 
-Before closing checkpoint 2, settle presentation-resource retirement on older
-implementations. Image-indexed presentation semaphores solve normal-frame reuse,
-but device-idle waits alone do not strictly establish swapchain/present-semaphore
-retirement in unextended Vulkan, as documented by the
+The user selected strict presentation-resource retirement rather than a legacy
+compatibility fallback. Image-indexed presentation semaphores solve normal-frame
+reuse, but device-idle waits alone do not strictly establish
+swapchain/present-semaphore retirement in unextended Vulkan, as documented by the
 [Khronos synchronization guide](https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html).
-Presentation fences require swapchain-maintenance extensions and their
-dependencies. Decide whether to retain a documented legacy compatibility path
-or require that capability before treating native retirement as complete;
-passing legacy validation does not resolve this specification limitation.
+Native Vulkan therefore requires `VK_KHR_swapchain_maintenance1` or the
+equivalent EXT extension, its matching surface-maintenance instance extension,
+`VK_KHR_get_surface_capabilities2`, and the `swapchainMaintenance1` feature.
+Unsupported headers, instance extensions, or device features fail explicitly;
+there is no queue-idle-only native fallback. The core API floor remains Vulkan
+1.1, and headless device/resource/compute initialization does not require WSI
+maintenance extensions. This is a justified capability refinement of the
+original tentative baseline, approved before implementation.
+
+The implementation attaches a fence to each presentation and waits before
+reusing that fence or retiring its swapchain/semaphores. Out-of-date and
+surface-lost presents still enqueue their waits/fences and are tracked.
+Shutdown after an acquired but unsubmitted frame first drains the acquisition
+semaphore without submitting the abandoned command buffer. The native regression
+now covers this aborted-recording path and describes submissions accurately,
+without claiming every submission produced a displayed scene frame.
+
+The isolated Vulkan CI job uses the published Ubuntu 24.04 image tag
+`2026.10.1`, with newer distro headers, validation layers, and lavapipe.
+Its CMake installation uses a private Python virtual environment, respecting
+Ubuntu's externally managed Python policy. The three original native-backend
+jobs retain their existing images/dependency setup. The strict retirement code
+still needs exact-revision CI validation before checkpoint 2 can be closed.
+
+The strict code also compiles against official 1.3.275 headers (EXT path) and
+1.4.368 headers (promoted KHR path), using task-local header checkouts without
+changing the installed SDK/driver. These are compile checks, not native WSI
+runtime evidence. The installed 1.2.182 SDK now rejects native initialization
+with an explicit missing-maintenance-header diagnostic; its headless tests
+remain runnable. Mixing newer headers with the old validation layer also makes
+the independent compute probe report an obsolete portability-flag VUID, despite
+correct numerical readback. That mixed configuration is not counted as passed;
+native verification needs a matched, maintenance-aware SDK/validation runtime.
+Local header changes are validated with clean rebuilds because this machine's
+localized MSVC/Ninja include-prefix detection produced empty dependency records
+and stale-object results; incremental results alone are not trusted.
+
+Stage 4 must preserve this retirement contract for any secondary ImGui
+swapchains before advertising renderer multi-viewport support; enabling an
+extension on the main device alone does not make an older helper's independent
+presentation/cleanup path safe.
 
 ## Platform and acceptance strategy
 

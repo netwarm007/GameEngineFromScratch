@@ -24,22 +24,23 @@ commands:
 jobs:
   verify_vulkan_shader_abi:
     machine:
-      image: ubuntu-2204:2026.10.1
+      image: ubuntu-2404:2026.10.1
     resource_class: large
     environment:
       GIT_LFS_SKIP_SMUDGE: "1"
       CMAKE_BUILD_PARALLEL_LEVEL: "2"
-      VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+      VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.json
     steps:
       - run:
-          name: Install headless Vulkan test dependencies
+          name: Install Vulkan device and native-WSI test dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install -y git-lfs ninja-build python3-pip g++ uuid-dev flex bison \
+            sudo apt-get install -y git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
               libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
               libxcb1-dev xvfb xauth
-            python3 -m pip install --user 'cmake>=4.0,<5'
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+            python3 -m venv "$HOME/.local/share/vulkan-ci-tools"
+            "$HOME/.local/share/vulkan-ci-tools/bin/python" -m pip install 'cmake>=4.0,<5'
+            echo 'export PATH="$HOME/.local/share/vulkan-ci-tools/bin:$PATH"' >> "$BASH_ENV"
       - checkout
       - run:
           name: Build pinned shader tools
@@ -53,7 +54,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"
             cmake --build build-vulkan-tools/spirv-cross --target install --parallel 2
       - run:
-          name: Verify Vulkan shader ABI, compute readback, and native frame loop
+          name: Verify Vulkan ABI, compute, resources, and native presentation
           command: |
             test -r "$VK_ICD_FILENAMES"
             cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \

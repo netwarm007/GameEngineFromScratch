@@ -202,9 +202,9 @@ void Run() {
 
     minimized = false;
     window.Resize(128, 256);
-    unsigned presented = 0;
-    for (unsigned attempt = 0; attempt < 40 && presented < 20; ++attempt) {
-        if (presented == 6) window.Resize(256, 128);
+    unsigned submitted = 0;
+    for (unsigned attempt = 0; attempt < 40 && submitted < 20; ++attempt) {
+        if (submitted == 6) window.Resize(256, 128);
         if (!rhi.BeginFrame()) continue;
         auto command = rhi.GetFrameCommandBuffer();
         const std::array<vk::ClearValue, 2> clear = {
@@ -215,8 +215,8 @@ void Run() {
         command.beginRenderPass(pass, vk::SubpassContents::eInline);
         command.endRenderPass();
         rhi.EndFrame();
-        ++presented;
-        if (presented == 12) {
+        ++submitted;
+        if (submitted == 12) {
             const auto generation = rhi.GetSwapChainGeneration();
             minimized = true;
             Require(!rhi.BeginFrame() && !rhi.BeginFrame(),
@@ -227,15 +227,18 @@ void Run() {
             window.Resize(128, 256);
         }
     }
-    Require(presented == 20, "The frame loop failed to make bounded progress");
+    Require(submitted == 20, "The frame loop failed to make bounded progress");
     Require(rhi.GetSwapChainGeneration() >= 3, "Resize/restore did not rebuild the swapchain");
     rhi.WaitGPU();
+    bool acquired = false;
+    for (unsigned attempt = 0; attempt < 10 && !acquired; ++attempt) acquired = rhi.BeginFrame();
+    Require(acquired, "Could not acquire the frame used to test aborted recording cleanup");
     rhi.destroyAll();
     rhi.destroyAll();
     Require(rhi.GetValidationErrorCount() == 0,
             "Vulkan lifecycle/frame regression reported validation errors");
-    std::cout << "Vulkan partial initialization, retry, 20 presented frames, resize, "
-                 "minimize/restore and repeated shutdown passed\n";
+    std::cout << "Vulkan partial initialization, retry, 20 native frame submissions, resize, "
+                 "minimize/restore, presentation-fence retirement, aborted recording, and repeated shutdown passed\n";
 }
 }  // namespace
 

@@ -87,6 +87,50 @@ bool checkValidationLayerSupport() {
 
 using namespace My;
 
+namespace {
+#if defined(VK_KHR_swapchain_maintenance1)
+using MaintenanceFeatures = VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR;
+using PresentFenceInfo = VkSwapchainPresentFenceInfoKHR;
+constexpr auto maintenanceFeaturesType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR;
+constexpr auto presentFenceInfoType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_KHR;
+#elif defined(VK_EXT_swapchain_maintenance1)
+using MaintenanceFeatures = VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT;
+using PresentFenceInfo = VkSwapchainPresentFenceInfoEXT;
+constexpr auto maintenanceFeaturesType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT;
+constexpr auto presentFenceInfoType = VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT;
+#endif
+
+const char* findPresentFenceExtension(vk::PhysicalDevice device, bool khrSurface, bool extSurface) {
+    if (!device || (!khrSurface && !extSurface)) return nullptr;
+#if defined(VK_KHR_swapchain_maintenance1) || defined(VK_EXT_swapchain_maintenance1)
+    const auto extensions = device.enumerateDeviceExtensionProperties();
+    const auto available = [&](const char* name) {
+        return std::any_of(extensions.begin(), extensions.end(), [name](const auto& extension) {
+            return std::strcmp(extension.extensionName, name) == 0;
+        });
+    };
+    const char* name = nullptr;
+#ifdef VK_KHR_swapchain_maintenance1
+    if (khrSurface && available(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME)) {
+        name = VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
+    }
+#endif
+#ifdef VK_EXT_swapchain_maintenance1
+    if (!name && extSurface && available(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME)) {
+        name = VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
+    }
+#endif
+    if (name) {
+        MaintenanceFeatures maintenance{maintenanceFeaturesType, nullptr, VK_FALSE};
+        VkPhysicalDeviceFeatures2 features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &maintenance, {}};
+        vkGetPhysicalDeviceFeatures2(device, &features);
+        if (maintenance.swapchainMaintenance1) return name;
+    }
+#endif
+    return nullptr;
+}
+}  // namespace
+
 VulkanRHI::VulkanRHI() = default;
 
 VulkanRHI::~VulkanRHI() { destroyAll(); }
@@ -94,6 +138,11 @@ VulkanRHI::~VulkanRHI() { destroyAll(); }
 void VulkanRHI::Initialize(const std::vector<const char*>& extensions,
                            const CreateSurfaceCBFunc& surface) {
     if (!surface) throw std::invalid_argument("Vulkan native initialization requires a surface callback");
+    if (std::none_of(extensions.begin(), extensions.end(), [](const char* extension) {
+            return extension && std::strcmp(extension, VK_KHR_SURFACE_EXTENSION_NAME) == 0;
+        })) {
+        throw std::invalid_argument("Vulkan native initialization requires VK_KHR_surface");
+    }
     initializeDevice(extensions, surface);
 }
 
@@ -132,12 +181,29 @@ void VulkanRHI::initializeDevice(const std::vector<const char*>& extensions,
 }
 
 void VulkanRHI::WaitGPU() {
-    if (m_vkDevice) m_vkDevice.waitIdle();
+    if (!m_vkDevice) return;
+    m_vkDevice.waitIdle();
+    for (size_t image = 0; image < m_presentPending.size(); ++image) {
+        if (m_presentPending[image]) {
+            if (m_vkDevice.waitForFences(m_vkPresentFences[image], VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
+                throw std::runtime_error("Vulkan presentation retirement fence wait failed");
+            }
+            m_presentPending[image] = false;
+        }
+    }
 }
 
 void VulkanRHI::destroyAll() {
     if (m_vkDevice) {
         try {
+            if (m_frameActive) {
+                const vk::PipelineStageFlags stage = vk::PipelineStageFlagBits::eAllCommands;
+                vk::SubmitInfo drain;
+                drain.setWaitSemaphores(m_vkImageAvailableSemaphores.at(m_nCurrentFrame));
+                drain.setWaitDstStageMask(stage);
+                m_vkGraphicsQueue.submit(drain, {});
+                m_frameActive = false;
+            }
             WaitGPU();
         } catch (const vk::SystemError& error) {
             std::cerr << "Vulkan shutdown wait failed: " << error.what() << '\n';
@@ -190,24 +256,59 @@ void VulkanRHI::destroyAll() {
     m_currentImage = 0;
     m_frameActive = false;
     m_recreateSwapChain = false;
+    m_surfaceMaintenanceKHR = false;
+    m_surfaceMaintenanceEXT = false;
+    m_presentationFencesEnabled = false;
 }
 
 void VulkanRHI::createInstance(std::vector<const char*> extensions) {
+    if (m_vkInstance) throw std::logic_error("Vulkan instance is already initialized");
+    for (const char* extension : extensions) {
+        if (!extension) throw std::invalid_argument("Null Vulkan instance extension");
+    }
     if (enableValidationLayers && !checkValidationLayerSupport()) {
         throw std::runtime_error(
             "validation layers requested, but not available!");
     }
 
-    if (enableValidationLayers) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
     const auto availableExtensions = vk::enumerateInstanceExtensionProperties();
+    const auto available = [&](const char* name) {
+        return std::any_of(availableExtensions.begin(), availableExtensions.end(), [name](const auto& extension) {
+            return std::strcmp(extension.extensionName, name) == 0;
+        });
+    };
+    const auto requested = [&](const char* name) {
+        return std::any_of(extensions.begin(), extensions.end(), [name](const char* extension) {
+            return std::strcmp(extension, name) == 0;
+        });
+    };
+    const auto add = [&](const char* name) {
+        if (!requested(name)) extensions.push_back(name);
+    };
+    if (enableValidationLayers) add(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    if (requested(VK_KHR_SURFACE_EXTENSION_NAME)) {
+#if !defined(VK_KHR_swapchain_maintenance1) && !defined(VK_EXT_swapchain_maintenance1)
+        throw std::runtime_error("Native Vulkan requires SDK headers exposing swapchain-maintenance1; headless Vulkan 1.1 remains supported");
+#else
+        if (!available(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
+            throw std::runtime_error("Native Vulkan requires VK_KHR_get_surface_capabilities2");
+        }
+#ifdef VK_KHR_swapchain_maintenance1
+        m_surfaceMaintenanceKHR = available(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+        if (m_surfaceMaintenanceKHR) add(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+#endif
+#ifdef VK_EXT_swapchain_maintenance1
+        m_surfaceMaintenanceEXT = available(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+        if (m_surfaceMaintenanceEXT) add(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+#endif
+        if (!m_surfaceMaintenanceKHR && !m_surfaceMaintenanceEXT) {
+            throw std::runtime_error("Native Vulkan requires a supported surface-maintenance1 extension");
+        }
+        add(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+#endif
+    }
     for (const char* extension : extensions) {
-        if (std::none_of(availableExtensions.begin(), availableExtensions.end(),
-                         [extension](const auto& available) {
-                             return std::strcmp(available.extensionName,
-                                                extension) == 0;
-                         })) {
+        if (!available(extension)) {
             throw std::runtime_error(std::string("Required Vulkan instance extension unavailable: ") + extension);
         }
     }
@@ -387,6 +488,10 @@ void VulkanRHI::pickPhysicalDevice() {
         auto _indices = findQueueFamilies(device, surface);
 
         bool extensionsSupported = !surface || checkDeviceExtensionSupport(device);
+        if (surface && !findPresentFenceExtension(device, m_surfaceMaintenanceKHR, m_surfaceMaintenanceEXT)) {
+            std::cerr << "Vulkan native device rejected: swapchain-maintenance1 presentation fences required\n";
+            return false;
+        }
         if (!_indices.isComplete() || !extensionsSupported) return false;
 
         bool swapChainAdequate = !surface;
@@ -418,7 +523,7 @@ void VulkanRHI::pickPhysicalDevice() {
     }
 
     if (!m_vkPhysicalDevice) {
-        throw std::runtime_error("faild to find a suitable GPU!");
+        throw std::runtime_error("No suitable Vulkan 1.1 graphics/compute device; native presentation also requires swapchain-maintenance1");
     }
 }
 
@@ -467,7 +572,20 @@ void VulkanRHI::createLogicalDevice() {
 
     vk::DeviceCreateInfo createInfo(vk::DeviceCreateFlags(), queueCreateInfos,
                                     {}, extensions, &deviceFeatures);
+#if defined(VK_KHR_swapchain_maintenance1) || defined(VK_EXT_swapchain_maintenance1)
+    MaintenanceFeatures maintenance{maintenanceFeaturesType, nullptr, VK_TRUE};
+    if (m_vkSurface) {
+        const auto extension = findPresentFenceExtension(m_vkPhysicalDevice, m_surfaceMaintenanceKHR, m_surfaceMaintenanceEXT);
+        if (!extension) throw std::runtime_error("Native Vulkan device lacks swapchain-maintenance1");
+        extensions.push_back(extension);
+        createInfo.setPEnabledExtensionNames(extensions);
+        createInfo.pNext = &maintenance;
+    }
+#else
+    if (m_vkSurface) throw std::runtime_error("Native Vulkan SDK lacks swapchain-maintenance1");
+#endif
     m_vkDevice = m_vkPhysicalDevice.createDevice(createInfo);
+    m_presentationFencesEnabled = static_cast<bool>(m_vkSurface);
 }
 
 static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
@@ -519,6 +637,9 @@ static vk::Extent2D chooseSwapExtent(
 }
 
 void VulkanRHI::createSwapChain() {
+    if (!m_vkDevice || !m_vkSurface || !m_presentationFencesEnabled) {
+        throw std::logic_error("Vulkan swapchain requires native presentation-fence support");
+    }
     if (!m_fQueryFramebufferSizeCB) {
         throw std::logic_error("Vulkan swapchain requires a framebuffer size callback");
     }
@@ -596,8 +717,11 @@ void VulkanRHI::createSwapChain() {
 
     m_vkImagesInFlight.assign(m_vkSwapChainImages.size(), vk::Fence{});
     m_vkRenderFinishedSemaphores.resize(m_vkSwapChainImages.size());
-    for (auto& semaphore : m_vkRenderFinishedSemaphores) {
-        semaphore = m_vkDevice.createSemaphore({});
+    m_vkPresentFences.resize(m_vkSwapChainImages.size());
+    m_presentPending.assign(m_vkSwapChainImages.size(), false);
+    for (size_t image = 0; image < m_vkSwapChainImages.size(); ++image) {
+        m_vkRenderFinishedSemaphores[image] = m_vkDevice.createSemaphore({});
+        m_vkPresentFences[image] = m_vkDevice.createFence({});
     }
     ++m_swapChainGeneration;
     m_recreateSwapChain = false;
@@ -956,6 +1080,7 @@ bool VulkanRHI::BeginFrame() {
         throw std::runtime_error("Vulkan image acquisition failed: " + vk::to_string(result));
     }
     m_recreateSwapChain = result == vk::Result::eSuboptimalKHR;
+    m_frameActive = true;
     if (m_vkImagesInFlight[m_currentImage] &&
         m_vkDevice.waitForFences(m_vkImagesInFlight[m_currentImage], VK_TRUE,
                                  UINT64_MAX) != vk::Result::eSuccess) {
@@ -964,7 +1089,6 @@ bool VulkanRHI::BeginFrame() {
     auto command = m_vkCommandBuffers.at(m_nCurrentFrame);
     command.reset();
     command.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-    m_frameActive = true;
     return true;
 }
 
@@ -994,9 +1118,27 @@ void VulkanRHI::EndFrame() {
     m_nCurrentFrame = (m_nCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     const VkSemaphore semaphore = finished;
     const VkSwapchainKHR swapchain = m_vkSwapChain;
-    const VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, nullptr,
+    const void* presentNext = nullptr;
+#if defined(VK_KHR_swapchain_maintenance1) || defined(VK_EXT_swapchain_maintenance1)
+    const auto fenceIndex = m_currentImage;
+    const VkFence presentFence = m_vkPresentFences.at(fenceIndex);
+    if (m_presentPending[fenceIndex] &&
+        m_vkDevice.waitForFences(m_vkPresentFences[fenceIndex], VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
+        throw std::runtime_error("Vulkan presentation fence reuse wait failed");
+    }
+    m_presentPending[fenceIndex] = false;
+    m_vkDevice.resetFences(m_vkPresentFences[fenceIndex]);
+    const PresentFenceInfo fenceInfo{presentFenceInfoType, nullptr, 1, &presentFence};
+    presentNext = &fenceInfo;
+#endif
+    const VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, presentNext,
                                   1, &semaphore, 1, &swapchain, &m_currentImage, nullptr};
     const auto result = static_cast<vk::Result>(vkQueuePresentKHR(m_vkPresentQueue, &present));
+    // WSI rejection still enqueues the presentation waits and fence.
+    if (result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR ||
+        result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eErrorSurfaceLostKHR) {
+        m_presentPending.at(m_currentImage) = true;
+    }
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR) {
         m_recreateSwapChain = true;
     } else if (result != vk::Result::eSuccess) {
@@ -1054,6 +1196,9 @@ void VulkanRHI::cleanupSwapChain() {
         m_vkDevice.destroySemaphore(semaphore);
     }
     m_vkRenderFinishedSemaphores.clear();
+    for (auto fence : m_vkPresentFences) m_vkDevice.destroyFence(fence);
+    m_vkPresentFences.clear();
+    m_presentPending.clear();
 }
 
 void VulkanRHI::recreateSwapChain(const vk::RenderPass&) {
