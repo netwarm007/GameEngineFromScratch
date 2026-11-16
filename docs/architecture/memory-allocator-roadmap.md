@@ -89,7 +89,7 @@ can use them.
 | ID | Scope | Status |
 | --- | --- | --- |
 | M0 | This roadmap | Done (docs only) |
-| M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Implemented; awaiting CI acceptance |
+| M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Done (CI-verified, `docs/verification/03a8504ee0dc1fd042c3444d520f2b3863c85304.md`) |
 | M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests. | Planned |
 | M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; tests. | Planned |
 | M4 | Size-class small-object allocator and Slab; tests. | Planned |
