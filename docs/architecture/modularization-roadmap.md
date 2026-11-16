@@ -344,8 +344,33 @@ Input semantics are tested directly without Application, not by injecting OS
 events. Native focus and every ImGui capture configuration remain unverified
 interactively; screenshots and physics checks do not substitute for those paths.
 
-Next candidates, not part of D2: reassess Viewer/Billiard service lookups and
-GuiSubPass's direct AssetLoader/PNG dependency using existing interfaces.
+### D3. Explicit GUI icon image loading
+
+**In progress.** OverlayPass supplies GuiSubPass with an image-loading callable.
+The production LoadGuiIconImage function performs existing AssetLoader file
+lookup and PNG decoding; GuiSubPass has no direct asset-loader/parser dependency.
+The callable is required, owned by the GUI pass and returns an owned decoded
+Image. A provider returning no pixel data must report the load failure; the
+production provider preserves missing-file/decode diagnostics.
+
+GuiSubPass retains lazy one-shot loading, icon filenames/order, fallback node
+labels, upload-error reporting and ownership of successfully created GPU icon
+textures. Those textures remain separate from scene allocations and debug
+texture views, and are released while the backend is still available.
+No new asset framework or application-service refactor is included.
+
+Verification: inject decoded/missing images into GuiSubPassLayoutTest; cover
+failed GPU creation, no per-frame/per-scene reload, unused-pass destruction,
+partial-success cleanup and fresh GUI lifecycles. Preserve all layout checks.
+Run focused local builds/tests, then exact-revision three-platform CI and
+inspect actual Viewer/scene-cycle/Billiard artifacts before recording acceptance.
+
+#### Known limitations and follow-ups (D3)
+
+Injected failure tests cover the GUI ownership boundary, not exhaustive malformed
+PNG parsing or native driver allocation failures. Production asset resolution
+and visible icons are verified by the native artifact path. Broader
+Viewer/Billiard service lookups remain a separate assessment.
 
 ## Working and acceptance rules
 

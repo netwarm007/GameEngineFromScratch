@@ -1,8 +1,8 @@
 #include <cstdlib>
 #include <iostream>
+#include <set>
 #include <string>
 
-#include "AssetLoader.hpp"
 #include "GraphicsManager.hpp"
 #include "GuiSubPass.hpp"
 #include "GuiContext.hpp"
@@ -36,6 +36,95 @@ class LayoutGraphicsManager : public GraphicsManager {
    private:
     void ResizeCanvas(int32_t, int32_t) override {}
 };
+
+void TestIconOwnership() {
+    GuiContext context;
+    Expect(context.Initialize() == 0, "icon regression context initializes");
+    auto& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.DisplaySize = ImVec2(1024, 768);
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.Fonts->AddFontDefault();
+    io.Fonts->Build();
+    io.Fonts->SetTexID(1);
+
+    class IconGraphics : public GraphicsManager {
+       public:
+        int uploads = 0;
+        int releases = 0;
+        std::set<TextureHandler> live;
+        Texture2D CreateTexture(Image& image) override {
+            Expect(image.data && image.Width == 1 && image.Height == 1 &&
+                       image.data[0] == 123,
+                   "injected decoded pixels reach the GPU upload unchanged");
+            Texture2D texture;
+            if (++uploads != 2) {
+                texture.handler = 100 + uploads;
+                live.insert(texture.handler);
+            }
+            return texture;
+        }
+        void ReleaseTexture(TextureBase& texture) override {
+            Expect(live.erase(texture.handler) == 1,
+                   "only successfully created icon textures are released once");
+            ++releases;
+        }
+        void ResizeCanvas(int32_t, int32_t) override {}
+    } graphics;
+
+    std::vector<std::string> paths;
+    auto load = [&](const char* path) {
+        paths.emplace_back(path);
+        Image image;
+        if (paths.size() == 2 || paths.size() == 4) return image;
+        image.Width = image.Height = 1;
+        image.bitcount = 32;
+        image.bitdepth = 8;
+        image.pixel_format = PIXEL_FORMAT::RGBA8;
+        image.pitch = image.data_size = 4;
+        image.data = new uint8_t[4]{123, 45, 67, 255};
+        return image;
+    };
+    Frame frame;
+    frame.colorTextures.resize(1);
+    frame.scene = std::make_shared<Scene>("icons A");
+    auto draw = [&](GuiSubPass& gui) {
+        ImGui::NewFrame();
+        gui.Draw(frame);
+        ImGui::Render();
+    };
+    {
+        GuiSubPass unused(&graphics, nullptr, load);
+    }
+    Expect(paths.empty() && graphics.uploads == 0 && graphics.releases == 0,
+           "destroying an undrawn GUI does not load or release icons");
+    {
+        GuiSubPass gui(&graphics, nullptr, load);
+        draw(gui);
+        draw(gui);
+        frame.scene = std::make_shared<Scene>("icons B");
+        draw(gui);
+        Expect(paths == std::vector<std::string>{
+                   "Textures/Icons/scene_empty.png",
+                   "Textures/Icons/scene_geometry.png",
+                   "Textures/Icons/scene_light.png",
+                   "Textures/Icons/scene_camera.png",
+                   "Textures/Icons/scene_bone.png"},
+               "all icon paths load once despite frame and scene changes");
+        Expect(graphics.uploads == 3 && graphics.live.size() == 2 &&
+                   graphics.releases == 0,
+               "unavailable images skip upload; failed upload does not discard other icons");
+    }
+    Expect(graphics.live.empty() && graphics.releases == 2,
+           "GUI teardown releases successful icons including after partial failure");
+    {
+        GuiSubPass gui(&graphics, nullptr, load);
+        draw(gui);
+    }
+    Expect(paths.size() == 10 && graphics.uploads == 8 &&
+               graphics.releases == 7 && graphics.live.empty(),
+           "a new GUI lifecycle reloads its own icons and releases them once");
+}
 
 void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
     GuiContext context;
@@ -74,7 +163,7 @@ void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
 
     {
         LayoutGraphicsManager graphics;
-        GuiSubPass gui(&graphics, nullptr);
+        GuiSubPass gui(&graphics, nullptr, [](const char*) { return Image{}; });
         Frame frame;
         frame.colorTextures.resize(1);
         frame.scene = std::make_shared<Scene>("A");
@@ -153,7 +242,8 @@ void TestLayout(ImVec2 position, ImVec2 displaySize, float framebufferScale) {
             const std::string settings = ImGui::SaveIniSettingsToMemory();
             ImGui::LoadIniSettingsFromMemory(settings.c_str());
             ImGui::NewFrame();
-            GuiSubPass restoredGui(&graphics, nullptr);
+            GuiSubPass restoredGui(&graphics, nullptr,
+                                  [](const char*) { return Image{}; });
             restoredGui.Draw(frame);
             ImGui::Render();
             ImGui::UpdatePlatformWindows();
@@ -191,15 +281,10 @@ int main() {
     _set_error_mode(_OUT_TO_STDERR);
     _set_abort_behavior(0, _CALL_REPORTFAULT);
 #endif
-    AssetLoader loader;
-    if (loader.Initialize() != 0) {
-        std::cerr << "FAILED: AssetLoader initialization" << std::endl;
-        return 1;
-    }
     TestLayout(ImVec2(0, 0), ImVec2(1024, 768), 1.0f);
     TestLayout(ImVec2(640, 240), ImVec2(1024, 768), 2.0f);
     TestLayout(ImVec2(150, 100), ImVec2(1920, 1080), 1.0f);
-    loader.Finalize();
+    TestIconOwnership();
     TestContextOwnership();
     return g_failures;
 }

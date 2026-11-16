@@ -5,9 +5,6 @@
 #include <cmath>
 #include <deque>
 
-#include "AssetLoader.hpp"
-#include "PNG.hpp"
-
 using namespace My;
 
 GuiSubPass::~GuiSubPass() {
@@ -45,19 +42,9 @@ const char* SceneNodeKindName(SceneNodeKind kind) {
 void GuiSubPass::LoadSceneIcons() {
     m_SceneIconsLoaded = true;
 
-    AssetLoader loader;
-    PngParser parser;
     for (size_t i = 0; i < kSceneIconFiles.size(); i++) {
-        if (!loader.FileExists(kSceneIconFiles[i])) {
-            std::cerr << "[GuiSubPass] Icon not found: " << kSceneIconFiles[i]
-                      << std::endl;
-            continue;
-        }
-        Buffer buf = loader.SyncOpenAndReadBinary(kSceneIconFiles[i]);
-        Image image = parser.Parse(buf);
+        Image image = m_LoadIconImage(kSceneIconFiles[i]);
         if (!image.data) {
-            std::cerr << "[GuiSubPass] Failed to decode icon: "
-                      << kSceneIconFiles[i] << std::endl;
             continue;
         }
         m_SceneIcons[i] = m_pGraphicsManager->CreateTexture(image);

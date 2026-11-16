@@ -1,6 +1,7 @@
 add_library(DrawSubPass
     GeometrySubPass.cpp
     GuiSubPass.cpp
+    GuiIconLoader.cpp
     DebugOverlaySubPass.cpp
     SkyBoxSubPass.cpp
     ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui.cpp
