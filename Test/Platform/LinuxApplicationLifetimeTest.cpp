@@ -146,6 +146,9 @@ bool TestInitializationFailure(FailurePoint point) {
     const int result = app.Initialize();
     app.Tick();
     const bool success = point == FailurePoint::CoreContext;
+    const int expectedWindows = point == FailurePoint::Drawable ? 0 : 1;
+    const int expectedContexts =
+        point == FailurePoint::Bind || success ? 1 : 0;
     const bool initializationValid = success
         ? result == 0 && module.initializedWithContext &&
               module.initializeCount == 1 && module.tickCount == 1 &&
@@ -161,6 +164,8 @@ bool TestInitializationFailure(FailurePoint point) {
     if (!initializationValid || !nativeWindowAlive || !handlerRestored ||
         injection.unexpectedErrors != 0 || app.GetMainWindowHandler() ||
         glXGetCurrentContext() ||
+        injection.windowsCreated != expectedWindows ||
+        injection.contextsCreated != expectedContexts ||
         injection.windowsCreated != injection.windowsDestroyed ||
         injection.contextsCreated != injection.contextsDestroyed ||
         module.finalized != success) {

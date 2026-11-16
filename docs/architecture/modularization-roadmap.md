@@ -143,9 +143,20 @@ redesigned; D2D/Vulkan runtime support is not established by migrating hooks.
 
 ### B. Harden native partial initialization and cleanup
 
-**Proposed next checkpoint; not started.**
+**In progress: Linux GLX failure handling first; other native backends remain
+separate proposed checkpoints.**
 
 Depends on the boundaries established in stage A.
+
+The first scoped change rejects GLX drawable, context, and context-binding
+failures before module startup. It releases partial GLX resources while the
+native window/display remain alive, restores the previous X error handler,
+and preserves the existing legacy-context fallback. Native Xvfb tests replace
+GLAD entry points temporarily to fail specific calls after real resource
+creation, including a queued asynchronous X error. Repeat finalization must
+not destroy a resource twice. This is not driver allocation-failure coverage
+or a redesign of X display/framebuffer selection, and it does not establish
+equivalent D3D12/Metal guarantees.
 
 - Inspect actual backend failure paths before selecting failure-injection seams.
 - Cover partial native resource creation, a single cleanup attempt, and repeat
