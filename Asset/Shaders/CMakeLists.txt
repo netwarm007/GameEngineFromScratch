@@ -2,20 +2,8 @@ add_custom_target(Engine_Asset_Shaders
         COMMAND echo "Start processing Engine Shaders"
     )
 
-set(HLSL_SHADER_SOURCES 
-            simple.vert simple.frag
-            basic.vert basic.frag
-            debug.vert debug.frag
-            cubemap.frag cubemaparray.frag
-            pbr.vert pbr.frag
-            skybox.vert skybox.frag
-            shadowmap.vert shadowmap.frag
-            shadowmap_omni.vert shadowmap_omni.frag
-            texture.frag texturearray.frag
-            passthrough.vert passthrough_cube.vert
-            integrateBRDF.comp
-            raytrace.comp
-        )
+include("${PROJECT_SOURCE_DIR}/cmake/VulkanShaders.cmake")
+set(HLSL_SHADER_SOURCES ${MYGE_SHARED_SHADER_SOURCES})
 
 set(GLSL_SHADER_SOURCES #simple.vert simple.frag
         )
@@ -37,6 +25,10 @@ ELSE(WIN32)
         set(SPIRV_CROSS    ${PROJECT_SOURCE_DIR}/External/${MYGE_TARGET_PLATFORM}/bin/spirv-cross)
     endif(CMAKE_CROSSCOMPILING)
 ENDIF(WIN32)
+
+myge_add_vulkan_shaders(Engine_Asset_VulkanShaders "${PROJECT_SOURCE_DIR}"
+    "${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan/Engine" "${PROJECT_SOURCE_DIR}")
+add_dependencies(Engine_Asset_Shaders Engine_Asset_VulkanShaders)
 
 set(VULKAN_SOURCE_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/Vulkan)
 set(GLSL_SOURCE_DIR ${PROJECT_BINARY_DIR}/Asset/Shaders/OpenGL)

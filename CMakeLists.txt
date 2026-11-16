@@ -11,6 +11,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 option(USE_ISPC "Use ISPC for geometry math" OFF)
 option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
+option(VULKAN_RHI_TESTS "Enable Vulkan shader ABI and native compute tests (requires a Vulkan driver and validation layer)" OFF)
 option(ENABLE_COVERAGE "Instrument with Clang source-based coverage (llvm-cov)" OFF)
 
 # CUDA

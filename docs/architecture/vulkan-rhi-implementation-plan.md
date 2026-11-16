@@ -13,14 +13,17 @@ change rather than silently diverging from it.
 Remote master was checked at
 `0a20412f26ffd0165faeef89af90d50b8b762f05`, containing both the point-light
 shadow fix (PR #67) and stage C ImGui lifecycle separation (PR #66).
-Implementation checkpoints 1-5 remain unstarted.
+Checkpoint 1 is implemented and locally validated, awaiting user confirmation;
+checkpoints 2-5 remain unstarted. Do not advance to the next checkpoint without
+the user's confirmation. Checkpoints do not require PRs; CI may be used during
+implementation with the user's authorization.
 
 The initial investigation used master at
-`0f784beebd4143e83e643e398e5140d4b78182c0`. The documentation worktree is still
-based on that revision; fetching and reviewing remote master did not integrate
-its source into this worktree. Before implementation, incorporate the latest
-master while preserving the local documentation edits, then recheck the
-contracts below. Do not implement against the older local source.
+`0f784beebd4143e83e643e398e5140d4b78182c0`. Before checkpoint 1, the local
+documentation commit was rebased onto master
+`0a20412f26ffd0165faeef89af90d50b8b762f05`, preserving the plan and integrating
+both upstream dependencies. Recheck master and preserve local changes before
+later integration work; do not silently change the tested baseline.
 The historical `redesigned-fiesta` branch, inspected at
 `0b19c5714b7d7762650558c82a58c1cdf4c738bf`, is reference material only:
 do not merge or cherry-pick its implementation wholesale.
@@ -117,6 +120,47 @@ Before implementing pipeline layouts:
 
 Use fixed layouts validated against compiler output initially; do not introduce
 a general-purpose runtime reflection framework without a demonstrated need.
+
+### Implemented shader ABI (checkpoint 1)
+
+[VulkanShaders.cmake](../../cmake/VulkanShaders.cmake) keeps the common shader
+manifest and compiles Vulkan 1.1-targeted variants into
+`Asset/Shaders/Vulkan/Engine/`. These variants do not replace the legacy
+`Asset/Shaders/Vulkan/*.spv` intermediates consumed by GLSL/Metal conversion or
+the existing standalone Vulkan demo. Shared HLSL algorithms and legacy
+conversion commands are unchanged.
+
+The fixed mapping is recorded in
+[VulkanShaderBindings.hpp](../../RHI/Vulkan/VulkanShaderBindings.hpp) and checked
+against reflection of actual compiler output:
+
+| HLSL register class | Vulkan set | Binding |
+| --- | --- | --- |
+| Constant buffers `bN` | 0 | N |
+| Sampled images `tN` | 0 | 32 + N |
+| Samplers `sN` | 0 | 64 + N |
+| Storage images `uN` | 0 | 96 + N |
+
+Current shaders fit within each reserved 32-binding range. Per-frame,
+per-batch, light, and pass constants use bindings 10, 11, 12, and 13.
+Debug and shadow constants alias binding 13 in separate pipelines, not in the
+same shader module. The standalone simple-model demo retains its different
+`b0`/`t1`/`s1` contract.
+
+The tests compare reflected buffer sizes, all reflected CPU-buffer member
+offsets, matrix stride 16, Light array stride 288, and shadow-matrix array stride
+64 with the actual C++ types. They check descriptor names/bindings/image types,
+PBR vertex locations, and producer/consumer stage locations/types. GPU readback
+also checks non-symmetric matrix transforms and the second Light/last shadow
+matrix, rather than assuming reflected matrix-major decorations establish
+correct multiplication semantics.
+
+The instanced omni variant declares vertex-layer capability; compilation alone
+does not establish device support. The local glslang 11.5 compiler also emits
+`SampledCubeArray` capability for compute shaders that include the shared
+declarations. The compute probe explicitly requires and enables `imageCubeArray`;
+device setup in checkpoint 2 must honor emitted shader capabilities, not only
+the resources remaining active after optimization.
 
 ### Coordinates and integrated point-light contract
 
@@ -262,14 +306,15 @@ multi-viewports, texture debugging, or saved layouts to get an initial screensho
 
 ## Checkpoints and exit criteria
 
-Checkpoint 0's remote dependency review is complete. Integrating refreshed
-master into the implementation worktree is still required. Checkpoints 1-5
-remain planned and proceed in order, with focused validation at each boundary.
+Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
+focused local validation and awaits user confirmation, not full cross-platform
+acceptance. Checkpoints 2-5 remain planned and proceed in order, with focused
+validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
 | --- | --- |
-| 0. Review upstream dependencies | Remote review complete: point shadows and stage C are merged; their contracts and evidence limits are incorporated above. Before checkpoint 1, integrate latest master into this worktree while preserving the plan. |
-| 1. Shader and ABI | Compile relevant shared shaders, including omni stage variants; validate bindings/layouts/stage interfaces and vertex-layer capabilities; exercise compute with checked GPU readback. Preserve existing GLSL/Metal/D3D outputs' semantics. |
+| 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
+| 1. Shader and ABI | Implemented; local checks passed, awaiting user confirmation. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Cross-platform/native graphics acceptance is not established by this checkpoint. |
 | 2. Device/resource loop | Implement initialization and selected failure cleanup, buffers/textures/upload, command submission, synchronization, presentation, resize, and minimize/restore. Add bounded automated native tests. |
 | 3. Shared rendering passes | Integrate offscreen rendering, BASIC/PBR, skybox/BRDF, shadows, and MSAA in that order. Verify six-face/multi-light depth and sampling, render output, and resource correctness without a Vulkan-only pass bypass. |
 | 4. UI and applications | Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
@@ -279,6 +324,53 @@ At the start of each checkpoint, identify the production paths and focused
 tests. At its end, review the actual diff against this plan, record any justified
 deviation here, and do not claim the next checkpoint's functionality early.
 Build/test only the smallest relevant targets initially, escalating as needed.
+
+### Checkpoint 1 validation and reproducible commands
+
+The focused suite can run without the engine's full asset/window/dependency
+build, but needs CMake 4+, C++20, the pinned crossguid submodule, Vulkan headers
+and loader, glslangValidator, SPIRV-Cross, spirv-val, and spirv-dis. The compute
+test additionally requires a Vulkan 1.1-capable driver and the Khronos
+validation layer; absence is an explicit failure, not a skipped success.
+
+```text
+cmake -S Test/RHI/Vulkan -B build-vulkan-abi -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-vulkan-abi --config Debug
+ctest --test-dir build-vulkan-abi -C Debug --output-on-failure
+```
+
+In the full engine build, opt in with `-DVULKAN_RHI_TESTS=ON`; ordinary native
+backend builds do not gain an unannounced Vulkan driver requirement merely
+because a Vulkan SDK is installed. Tools may be supplied through the CMake
+`GLSL_VALIDATOR`, `SPIRV_CROSS`, `SPIRV_VAL`, and `SPIRV_DIS` paths. Standalone
+builds compile crossguid from its pinned source; no new dependency is introduced.
+
+Focused Windows Debug checks passed with the installed Vulkan SDK 1.2.182
+(glslang 11.5) on AMD Radeon(TM) Graphics:
+
+- All 24 production shader stages passed SPIR-V validation, reflected ABI and
+  relevant producer/consumer interface checks, including both omni stage paths.
+- TEST_VulkanCompute passed actual uniform/matrix readback and production
+  `integrateBRDF.comp` dispatch over a 512x512 LUT. Four distributed sample
+  positions matched an independent double-precision CPU integration within
+  0.001 per RG channel; repeated BA channels were also checked.
+- Khronos core and synchronization validation reported no errors during the
+  compute probe, including device/resource destruction.
+- A negative control compiled PBR without binding shifts: TEST_VulkanShaderAbi
+  failed on the old bindings; restoring the native variant passed both tests.
+- The existing ShadowShaderCompatibility script passed GLSL stage linking and
+  MSL generation with the installed tools.
+
+Limits: the initial full engine configure stopped at missing prebuilt Debug
+zlib, so no complete engine build, DXC regression, native Metal compilation,
+Linux/macOS execution, or CircleCI acceptance is claimed here. The standalone
+probe exercises the shader ABI directly, not the unfinished VulkanRHI frame or
+resource implementation. Uniform descriptors use offset zero; dynamic uniform
+stride and device-specific allocation/lifetime behavior remain checkpoint 2
+work. Vertex-layer execution, graphics pipelines, shadow rendering, actual
+Viewer/Billiard images, and portability fallback are not verified yet.
+No plan deviation is needed: the headless compute harness is deliberately
+independent of the device/window implementation reserved for checkpoint 2.
 
 ## Platform and acceptance strategy
 

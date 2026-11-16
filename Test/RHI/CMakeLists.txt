@@ -18,6 +18,10 @@ if(NOT ANDROID AND NOT WA)
             -P "${CMAKE_CURRENT_SOURCE_DIR}/ShadowShaderCompatibility.cmake")
 endif()
 
+if(Vulkan_FOUND AND BUILD_TESTING AND VULKAN_RHI_TESTS)
+    add_subdirectory(Vulkan)
+endif()
+
 if(OS_MACOS OR OS_WINDOWS)
     if(Vulkan_FOUND)
         execute_process(COMMAND git submodule update --init ${MYGE_EXTERNAL_ROOT}/../src/tinyobjloader)
