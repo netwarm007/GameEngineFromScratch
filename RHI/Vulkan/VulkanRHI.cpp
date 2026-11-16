@@ -588,11 +588,15 @@ void VulkanRHI::createSwapChain() {
     m_vkSwapChainExtent = extent;
 
     m_vkSwapChainImageViews.resize(m_vkSwapChainImages.size());
+    m_vkRenderFinishedSemaphores.resize(m_vkSwapChainImages.size());
+    vk::SemaphoreCreateInfo semaphoreInfo;
 
     for (size_t i = 0; i < m_vkSwapChainImages.size(); i++) {
         m_vkSwapChainImageViews[i] =
             createImageView(m_vkSwapChainImages[i], m_vkSwapChainImageFormat,
                             vk::ImageAspectFlagBits::eColor);
+        m_vkRenderFinishedSemaphores[i] =
+            m_vkDevice.createSemaphore(semaphoreInfo);
     }
 
     if (m_fCreateSwapChainCB) {
@@ -1273,7 +1277,6 @@ void VulkanRHI::recordCommandBuffer(const vk::RenderPass &renderPass,
 
 void VulkanRHI::createSyncObjects() {
     m_vkImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_vkRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     m_vkInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
     vk::SemaphoreCreateInfo semaphoreInfo;
@@ -1282,8 +1285,6 @@ void VulkanRHI::createSyncObjects() {
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_vkImageAvailableSemaphores[i] =
-            m_vkDevice.createSemaphore(semaphoreInfo);
-        m_vkRenderFinishedSemaphores[i] =
             m_vkDevice.createSemaphore(semaphoreInfo);
         m_vkInFlightFences[i] = m_vkDevice.createFence(fenceInfo);
     }
@@ -1363,6 +1364,10 @@ void VulkanRHI::drawFrame(const vk::RenderPass& renderPass,
             default:
                 throw std::runtime_error("failed to acquire swap chain image!");
         }
+        if (imageIndex >= m_vkRenderFinishedSemaphores.size()) {
+            throw std::out_of_range(
+                "Vulkan swapchain image has no presentation semaphore");
+        }
 
         m_vkDevice.resetFences(m_vkInFlightFences[m_nCurrentFrame]);
         m_vkCommandBuffers[m_nCurrentFrame].reset();
@@ -1379,13 +1384,13 @@ void VulkanRHI::drawFrame(const vk::RenderPass& renderPass,
         submitInfo.setWaitDstStageMask(waitStages);
         submitInfo.setCommandBuffers(m_vkCommandBuffers[m_nCurrentFrame]);
         submitInfo.setSignalSemaphores(
-            m_vkRenderFinishedSemaphores[m_nCurrentFrame]);
+            m_vkRenderFinishedSemaphores[imageIndex]);
 
         m_vkGraphicsQueue.submit(submitInfo,
                                  m_vkInFlightFences[m_nCurrentFrame]);
 
         vk::PresentInfoKHR presentInfo(
-            m_vkRenderFinishedSemaphores[m_nCurrentFrame], m_vkSwapChain,
+            m_vkRenderFinishedSemaphores[imageIndex], m_vkSwapChain,
             imageIndex);
 
         auto result = m_vkPresentQueue.presentKHR(presentInfo);
@@ -1435,6 +1440,11 @@ void VulkanRHI::cleanupSwapChainResources() {
 
 void VulkanRHI::cleanupSwapChain() {
     cleanupSwapChainResources();
+
+    for (const auto& semaphore : m_vkRenderFinishedSemaphores) {
+        if (semaphore) m_vkDevice.destroySemaphore(semaphore);
+    }
+    m_vkRenderFinishedSemaphores.clear();
 
     for (auto& imageView : m_vkSwapChainImageViews) {
         m_vkDevice.destroyImageView(imageView);
