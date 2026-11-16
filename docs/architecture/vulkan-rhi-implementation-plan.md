@@ -14,7 +14,8 @@ Remote master was checked at
 `0a20412f26ffd0165faeef89af90d50b8b762f05`, containing both the point-light
 shadow fix (PR #67) and stage C ImGui lifecycle separation (PR #66).
 Checkpoint 1 is implemented, locally/CI validated, and confirmed by the user.
-Checkpoint 2 is in progress; checkpoints 3-5 remain unstarted.
+Checkpoint 2 is implemented and exact-revision CI validated, awaiting user
+confirmation; checkpoints 3-5 remain unstarted.
 Do not advance to the next checkpoint without
 the user's confirmation. Checkpoints do not require PRs; CI may be used during
 implementation with the user's authorization.
@@ -309,15 +310,15 @@ multi-viewports, texture debugging, or saved layouts to get an initial screensho
 
 Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
 focused local and exact-revision CI validation and received user confirmation,
-not acceptance of the complete Vulkan backend. Checkpoint 2 is in progress;
-checkpoints 3-5 remain planned and proceed in order, with focused
+not acceptance of the complete Vulkan backend. Checkpoint 2 is implemented and
+validated, awaiting user confirmation; checkpoints 3-5 remain planned and proceed in order, with focused
 validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
 | --- | --- |
 | 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
 | 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
-| 2. Device/resource loop | In progress. Implement initialization and selected failure cleanup, buffers/textures/upload, command submission, synchronization, presentation, resize, and minimize/restore. Add bounded automated native tests. |
+| 2. Device/resource loop | Implemented and exact-revision CI validated; awaiting user confirmation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
 | 3. Shared rendering passes | Integrate offscreen rendering, BASIC/PBR, skybox/BRDF, shadows, and MSAA in that order. Verify six-face/multi-light depth and sampling, render output, and resource correctness without a Vulkan-only pass bypass. |
 | 4. UI and applications | Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
 | 5. Cross-platform acceptance | Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. |
@@ -462,8 +463,8 @@ jobs in [pipeline 991](https://app.circleci.com/pipelines/github/netwarm007/Game
 its [verification record](../verification/e369cea7137dd3b0f7d2640853d4d87ead45e38f.md)
 records the four passing focused Vulkan tests and inspected native captures.
 This does not verify the later strict retirement changes. Shader descriptor
-integration and GPU consumption of shared
-per-frame/per-batch arenas belong to checkpoint 3, not this readback test.
+integration and GPU consumption of shared per-frame/per-batch arenas belong to
+checkpoint 3, not this readback test.
 
 The user selected strict presentation-resource retirement rather than a legacy
 compatibility fallback. Image-indexed presentation semaphores solve normal-frame
@@ -491,8 +492,16 @@ The isolated Vulkan CI job uses the published Ubuntu 24.04 image tag
 `2026.10.1`, with newer distro headers, validation layers, and lavapipe.
 Its CMake installation uses a private Python virtual environment, respecting
 Ubuntu's externally managed Python policy. The three original native-backend
-jobs retain their existing images/dependency setup. The strict retirement code
-still needs exact-revision CI validation before checkpoint 2 can be closed.
+jobs retain their existing images/dependency setup. Strict retirement revision
+`77cf9ebcfcb40cd3c3de857f8b44be8920eafc8a` subsequently passed all four required
+jobs in [pipeline 993](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/993).
+Its [verification record](../verification/77cf9ebcfcb40cd3c3de857f8b44be8920eafc8a.md)
+records all four focused Vulkan tests passing, the native retirement/aborted-frame
+success markers, zero validation-error/VUID markers, and inspection of all six
+native-backend application captures. Checkpoint 2 implementation and
+reference-path validation are complete, awaiting user confirmation. Windows
+Vulkan WSI and MoltenVK are still unverified; native application captures are
+D3D12/OpenGL/Metal regressions, not Vulkan scene-rendering acceptance.
 
 The strict code also compiles against official 1.3.275 headers (EXT path) and
 1.4.368 headers (promoted KHR path), using task-local header checkouts without
