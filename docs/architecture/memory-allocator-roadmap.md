@@ -113,7 +113,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests (`LinearAllocatorTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/faa5744f42b9aec60d6b93f561af22a95378320e.md`) |
 | M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; stale `Marker` detection; tests (`FrameAllocatorTest`, `RingAllocatorTest`, `PmrAdapterTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/89926ec5081f370ca6519c6fbeba021a1fc6cbd6.md`) |
 | M4 | `SlabAllocator` (constructed-object cache, empty-slab `Trim`) and `SizeClassAllocator` (16 classes, 16 B to 512 B); tests (`SlabAllocatorTest`, `SizeClassAllocatorTest`). | Done (CI-verified, `docs/verification/b6fab1866eb639ccc1dd0395e526b99527032a44.md`) |
-| M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Implemented; awaiting CI acceptance |
+| M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Done (CI-verified, `docs/verification/e81a6ccb009943eac7627ec6fc16acdb59810421.md`) |
 | M6 | Debug/tracking decorator, statistics, leak reports; tests. | Planned |
 | M7 | GPU sub-allocator and thread-cache layer; tests. | Planned |
 | M8 | Engine integration (separate decision). | Not started |
