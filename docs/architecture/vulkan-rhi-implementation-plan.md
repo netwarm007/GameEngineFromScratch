@@ -570,7 +570,13 @@ test uses the established CPU-reference method and interior samples; it does
 not modify shared shader algorithms or claim exhaustive numerical validation
 of the LUT boundary.
 
-This increment still needs exact-revision CI. GraphicsManager scene/pass
+Revision `e6c67b124979cadf30dbbf5a98152bcd6a8d9cc8` passed all four required jobs
+in [pipeline 998](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/998).
+The [verification record](../verification/e6c67b124979cadf30dbbf5a98152bcd6a8d9cc8.md)
+records five passing focused Vulkan tests, zero validation-error/VUID markers,
+and inspection of all six native-backend application captures.
+This validates the first increment, not checkpoint 3 completion.
+GraphicsManager scene/pass
 integration, GPU consumption of frame/batch/light arenas, BASIC/PBR scene
 rendering, skybox, six-face/multi-light shadows, and MSAA remain checkpoint 3
 work. Shader module/pipeline creation alone does not establish those features.
