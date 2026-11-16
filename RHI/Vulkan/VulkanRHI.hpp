@@ -199,7 +199,7 @@ class VulkanRHI {
                      vk::SharingMode sharing_mode,
                      vk::MemoryPropertyFlags properties, vk::Image& vk_image,
                      vk::DeviceMemory& vk_image_memory,
-                     uint32_t queueFamilyIndexCount = 1,
+                     uint32_t queueFamilyIndexCount = 0,
                      uint32_t* queueFamilyIndices = nullptr);
     vk::ImageView createImageView(vk::Image image, vk::Format format,
                                   vk::ImageAspectFlags aspectFlags);

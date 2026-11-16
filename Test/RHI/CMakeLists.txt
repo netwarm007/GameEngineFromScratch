@@ -24,6 +24,15 @@ if(OS_MACOS OR OS_WINDOWS OR OS_LINUX)
         add_executable(VulkanRHITest VulkanRHITest.cpp)
         target_include_directories(VulkanRHITest PRIVATE ${PROJECT_SOURCE_DIR}/External/src/tinyobjloader)
         target_link_libraries(VulkanRHITest Framework PlatformInterface VulkanRHI Framework)
+        if(OS_LINUX)
+            find_program(XVFB_RUN_EXECUTABLE xvfb-run)
+            if(XVFB_RUN_EXECUTABLE)
+                add_test(NAME TEST_VulkanRHI
+                    COMMAND ${XVFB_RUN_EXECUTABLE} -a -s
+                        "-screen 0 1280x1024x24 +extension GLX"
+                        $<TARGET_FILE:VulkanRHITest> --frames=3)
+            endif()
+        endif()
     endif(Vulkan_FOUND)
 endif(OS_MACOS OR OS_WINDOWS OR OS_LINUX)
 

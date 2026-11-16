@@ -8,6 +8,9 @@
 #include "tiny_obj_loader.h"
 
 #include <chrono>
+#include <limits>
+#include <string>
+#include <string_view>
 
 using namespace My;
 
@@ -48,8 +51,29 @@ struct UniformBufferObject {
     Matrix4X4f proj;
 };
 
-int main() {
+int main(int argc, char** argv) {
     try {
+        uint32_t frameLimit = 0;
+        for (int i = 1; i < argc; ++i) {
+            const std::string argument(argv[i]);
+            constexpr std::string_view frameOption = "--frames=";
+            if (argument.starts_with(frameOption)) {
+                const auto value = argument.substr(frameOption.size());
+                size_t parsedCharacters = 0;
+                const auto frameCount =
+                    std::stoul(value, &parsedCharacters);
+                if (frameCount == 0 ||
+                    parsedCharacters != value.size() ||
+                    frameCount > std::numeric_limits<uint32_t>::max()) {
+                    throw std::invalid_argument(
+                        "--frames must be between 1 and UINT32_MAX");
+                }
+                frameLimit = static_cast<uint32_t>(frameCount);
+            } else {
+                throw std::invalid_argument("unknown argument: " + argument);
+            }
+        }
+
         GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
                                 "Vulkan RHI Test");
         VulkanApplication app(config);
@@ -99,10 +123,19 @@ int main() {
 
         // 加载贴图
         {
-            auto buf = asset_loader.SyncOpenAndReadBinary(
-                "Textures/viking_room.pvr");
-            PVR::PvrParser parser;
-            auto image = parser.Parse(buf);
+            Image image;
+            if (frameLimit > 0) {
+                image.Width = 1;
+                image.Height = 1;
+                image.bitcount = 32;
+                image.data_size = 4;
+                image.data = new uint8_t[4]{255, 255, 255, 255};
+            } else {
+                auto buf = asset_loader.SyncOpenAndReadBinary(
+                    "Textures/viking_room.pvr");
+                PVR::PvrParser parser;
+                image = parser.Parse(buf);
+            }
             textures.emplace_back(rhi.createTextureImage(image));
         }
 
@@ -221,7 +254,9 @@ int main() {
         rhi.CreateSwapChain();
 
         // 主消息循环
-        while (!app.IsQuit()) {
+        uint32_t renderedFrames = 0;
+        while (!app.IsQuit() &&
+               (frameLimit == 0 || renderedFrames < frameLimit)) {
             app.Tick();
 
             static auto startTime = std::chrono::high_resolution_clock::now();
@@ -245,6 +280,7 @@ int main() {
             rhi.UpdateUniformBuffer(uniformBuffers, &ubo, sizeof(ubo));
 
             rhi.drawFrame(vkRenderPass, vkGraphicPipeline, vkPipelineLayout, vertexBuffers[0].buffer, indexBuffers[0].buffer, indexBuffers[0].indexCount);
+            ++renderedFrames;
         }
 
         auto device = rhi.GetDevice();

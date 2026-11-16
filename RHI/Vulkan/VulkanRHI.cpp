@@ -178,38 +178,61 @@ VulkanRHI::VulkanRHI() {
     }
 }
 
-VulkanRHI::~VulkanRHI() {}
+VulkanRHI::~VulkanRHI() { destroyAll(); }
 
 void VulkanRHI::destroyAll() {
-    // 等待图形管道空闲
-    m_vkDevice.waitIdle();
+    if (m_vkDevice) {
+        m_vkDevice.waitIdle();
 
-    cleanupSwapChain();
+        if (m_vkSwapChain) {
+            cleanupSwapChain();
+        }
 
-    m_vkDevice.destroyDescriptorPool(m_vkDescriptorPool);
+        if (m_vkDescriptorPool) {
+            m_vkDevice.destroyDescriptorPool(m_vkDescriptorPool);
+            m_vkDescriptorPool = nullptr;
+        }
 
-    for (size_t i = 0; i < m_vkImageAvailableSemaphores.size(); i++) {
-        m_vkDevice.destroySemaphore(m_vkImageAvailableSemaphores[i]);
+        for (const auto& semaphore : m_vkImageAvailableSemaphores) {
+            m_vkDevice.destroySemaphore(semaphore);
+        }
+        m_vkImageAvailableSemaphores.clear();
+
+        for (const auto& semaphore : m_vkRenderFinishedSemaphores) {
+            m_vkDevice.destroySemaphore(semaphore);
+        }
+        m_vkRenderFinishedSemaphores.clear();
+
+        for (const auto& fence : m_vkInFlightFences) {
+            m_vkDevice.destroyFence(fence);
+        }
+        m_vkInFlightFences.clear();
+
+        if (m_vkCommandPool) {
+            m_vkDevice.destroyCommandPool(m_vkCommandPool);
+            m_vkCommandPool = nullptr;
+        }
+        if (m_vkCommandPoolTransfer) {
+            m_vkDevice.destroyCommandPool(m_vkCommandPoolTransfer);
+            m_vkCommandPoolTransfer = nullptr;
+        }
+
+        m_vkDevice.destroy();
+        m_vkDevice = nullptr;
     }
 
-    for (size_t i = 0; i < m_vkRenderFinishedSemaphores.size(); i++) {
-        m_vkDevice.destroySemaphore(m_vkRenderFinishedSemaphores[i]);
+    if (m_vkInstance) {
+        if (m_vkDebugMessenger) {
+            m_vkInstance.destroyDebugUtilsMessengerEXT(m_vkDebugMessenger);
+            m_vkDebugMessenger = nullptr;
+        }
+        if (m_vkSurface) {
+            m_vkInstance.destroySurfaceKHR(m_vkSurface);
+            m_vkSurface = nullptr;
+        }
+        m_vkInstance.destroy();
+        m_vkInstance = nullptr;
     }
-
-    for (size_t i = 0; i < m_vkInFlightFences.size(); i++) {
-        m_vkDevice.destroyFence(m_vkInFlightFences[i]);
-    }
-
-    m_vkDevice.destroyCommandPool(m_vkCommandPool);
-    m_vkDevice.destroyCommandPool(m_vkCommandPoolTransfer);
-
-    m_vkDevice.destroy();  // 销毁逻辑设备
-
-    if (enableValidationLayers) {
-        m_vkInstance.destroyDebugUtilsMessengerEXT(m_vkDebugMessenger);
-    }
-
-    m_vkInstance.destroySurfaceKHR(m_vkSurface);
 }
 
 void VulkanRHI::createInstance(std::vector<const char*> extensions) {
@@ -289,10 +312,9 @@ void VulkanRHI::setupDebugMessenger() {
             vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
             vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
             vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
-        vk::DebugUtilsMessengerEXT m_vkDebugUtilsMessenger =
-            m_vkInstance.createDebugUtilsMessengerEXT(
-                vk::DebugUtilsMessengerCreateInfoEXT(
-                    {}, severityFlags, messageTypeFlags, &debugMessageFunc));
+        m_vkDebugMessenger = m_vkInstance.createDebugUtilsMessengerEXT(
+            vk::DebugUtilsMessengerCreateInfoEXT(
+                {}, severityFlags, messageTypeFlags, &debugMessageFunc));
     }
 }
 
@@ -408,7 +430,8 @@ void VulkanRHI::pickPhysicalDevice() {
         vk::PhysicalDeviceFeatures supportedFeatures = device.getFeatures();
 
         return _indices.isComplete() && extensionsSupported &&
-               swapChainAdequate && supportedFeatures.samplerAnisotropy;
+               swapChainAdequate && supportedFeatures.samplerAnisotropy &&
+               supportedFeatures.sampleRateShading;
     };
 
     for (const auto& device : devices) {
@@ -537,6 +560,11 @@ void VulkanRHI::createSwapChain() {
         vk::SwapchainCreateFlagsKHR(), m_vkSurface, imageCount,
         surfaceFormat.format, surfaceFormat.colorSpace, extent, 1,
         vk::ImageUsageFlagBits::eColorAttachment);
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     auto indices = findQueueFamilies(m_vkPhysicalDevice, m_vkSurface);
 
@@ -548,12 +576,6 @@ void VulkanRHI::createSwapChain() {
         createInfo.setQueueFamilyIndices(queueFamilyIndices);
     } else {
         createInfo.imageSharingMode = vk::SharingMode::eExclusive;
-        createInfo.preTransform =
-            swapChainSupport.capabilities.currentTransform;
-        createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
-        createInfo.presentMode = presentMode;
-        createInfo.clipped = VK_TRUE;
-        createInfo.oldSwapchain = VK_NULL_HANDLE;
     }
 
     m_vkSwapChain = m_vkDevice.createSwapchainKHR(createInfo);
@@ -759,12 +781,6 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
     colorBlending.setAttachments(colorBlendAttachment);
     colorBlending.setBlendConstants({0.0f, 0.0f, 0.0f, 0.0f});
 
-    // 动态（间接）管线状态
-    std::array<vk::DynamicState, 2> states = {vk::DynamicState::eViewport,
-                                              vk::DynamicState::eLineWidth};
-
-    vk::PipelineDynamicStateCreateInfo dynamicState({}, states);
-
     // 常量布局
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.setSetLayouts(descriptorSetLayout);
@@ -778,19 +794,15 @@ void VulkanRHI::createGraphicsPipeline(const VulkanRHI::Shader *shaders, size_t 
         &depthStencil, &colorBlending, nullptr, pipelineLayout,
         renderPass);
 
-    vk::Result result;
-    std::tie(result, pipeline) =
+    auto [result, createdPipeline] =
         m_vkDevice.createGraphicsPipeline(nullptr, pipelineInfo);
-
-    switch (result) {
-        case vk::Result::eSuccess:
-            break;
-        case vk::Result::ePipelineCompileRequiredEXT:
-            // something meaningfull here
-            break;
-        default:
-            assert(false);  // should never happen
+    if (result != vk::Result::eSuccess) {
+        m_vkDevice.destroyPipelineLayout(pipelineLayout);
+        pipelineLayout = nullptr;
+        throw std::runtime_error("failed to create Vulkan graphics pipeline: " +
+                                 vk::to_string(result));
     }
+    pipeline = createdPipeline;
 }
 
 void VulkanRHI::createFramebuffers(const vk::RenderPass &renderPass) {
@@ -906,7 +918,6 @@ void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
                m_vkDevice.waitForFences(m_vkInFlightFences[m_nCurrentFrame],
                                         VK_TRUE, UINT64_MAX))
             ;
-        m_vkDevice.resetFences(m_vkInFlightFences[m_nCurrentFrame]);
 
         uint32_t imageIndex;
         vk::ResultValue<uint32_t> currentBuffer =
@@ -926,6 +937,7 @@ void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
                 throw std::runtime_error("failed to acquire swap chain image!");
         }
 
+        m_vkDevice.resetFences(m_vkInFlightFences[m_nCurrentFrame]);
         m_vkCommandBuffers[m_nCurrentFrame].reset();
         recordCommandBuffer(renderPass, pipeline, pipelineLayout, vertexBuffer, indexBuffer, m_vkCommandBuffers[m_nCurrentFrame], indicesCount, imageIndex);
 
@@ -968,39 +980,46 @@ void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
 }
 
 void VulkanRHI::cleanupSwapChain() {
-    if (m_fDestroySwapChainCB) {
-        m_fDestroySwapChainCB();
-    }
-
-    m_vkDevice.destroyImageView(m_vkColorImageView);
-    m_vkDevice.destroyImage(m_vkColorImage);
-    m_vkDevice.freeMemory(m_vkColorImageMemory);
-
-    m_vkDevice.destroyImageView(m_vkDepthImageView);
-    m_vkDevice.destroyImage(m_vkDepthImage);
-    m_vkDevice.freeMemory(m_vkDepthImageMemory);
-
     for (auto& framebuffer : m_vkSwapChainFramebuffers) {
         m_vkDevice.destroyFramebuffer(framebuffer);
     }
     m_vkSwapChainFramebuffers.clear();
+
+    if (m_fDestroySwapChainCB && m_vkSwapChain) {
+        m_fDestroySwapChainCB();
+    }
+
+    if (m_vkColorImageView) m_vkDevice.destroyImageView(m_vkColorImageView);
+    if (m_vkColorImage) m_vkDevice.destroyImage(m_vkColorImage);
+    if (m_vkColorImageMemory) m_vkDevice.freeMemory(m_vkColorImageMemory);
+    m_vkColorImageView = nullptr;
+    m_vkColorImage = nullptr;
+    m_vkColorImageMemory = nullptr;
+
+    if (m_vkDepthImageView) m_vkDevice.destroyImageView(m_vkDepthImageView);
+    if (m_vkDepthImage) m_vkDevice.destroyImage(m_vkDepthImage);
+    if (m_vkDepthImageMemory) m_vkDevice.freeMemory(m_vkDepthImageMemory);
+    m_vkDepthImageView = nullptr;
+    m_vkDepthImage = nullptr;
+    m_vkDepthImageMemory = nullptr;
 
     for (auto& imageView : m_vkSwapChainImageViews) {
         m_vkDevice.destroyImageView(imageView);
     }
     m_vkSwapChainImageViews.clear();
 
-    m_vkDevice.destroySwapchainKHR(m_vkSwapChain);
+    if (m_vkSwapChain) m_vkDevice.destroySwapchainKHR(m_vkSwapChain);
+    m_vkSwapChain = nullptr;
+    m_vkSwapChainImages.clear();
 }
 
 void VulkanRHI::recreateSwapChain(const vk::RenderPass &renderPass) {
-
-    if(m_fQueryFramebufferSizeCB) {
+    if (m_fQueryFramebufferSizeCB) {
         uint32_t width, height;
         m_fQueryFramebufferSizeCB(width, height);
 
-        if (width & height) {
-            vkDeviceWaitIdle(m_vkDevice);
+        if (width > 0 && height > 0) {
+            m_vkDevice.waitIdle();
 
             cleanupSwapChain();
 
@@ -1040,11 +1059,7 @@ void VulkanRHI::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage,
         bufferInfo.sharingMode = vk::SharingMode::eConcurrent;
         bufferInfo.setQueueFamilyIndices(queueFamilyIndices);
     } else {
-        std::array<uint32_t, 2> queueFamilyIndices = {
-            indices.graphicsFamily.value()};
-
         bufferInfo.sharingMode = vk::SharingMode::eExclusive;
-        bufferInfo.setQueueFamilyIndices(queueFamilyIndices);
     }
 
     buffer = m_vkDevice.createBuffer(bufferInfo);
@@ -1423,7 +1438,11 @@ void VulkanRHI::createImage(
     imageInfo.initialLayout = vk::ImageLayout::eUndefined;
     imageInfo.usage = usage;
     imageInfo.sharingMode = sharing_mode;
-    if (queueFamilyIndexCount > 0) {
+    if (sharing_mode == vk::SharingMode::eConcurrent) {
+        if (queueFamilyIndexCount < 2 || !queueFamilyIndices) {
+            throw std::invalid_argument(
+                "concurrent image sharing requires queue family indices");
+        }
         imageInfo.queueFamilyIndexCount = queueFamilyIndexCount;
         imageInfo.pQueueFamilyIndices = queueFamilyIndices;
     }
