@@ -1,4 +1,6 @@
 #pragma once
+#include <cmath>
+
 #include "Polyhedron.hpp"
 #include "geommath.hpp"
 
@@ -129,7 +131,8 @@ class QuickHull {
                 float max_distance = 0.0f;
 
                 for (const auto& point_ptr : point_set) {
-                    auto distance = PointToPlaneDistance({A, B, C}, *point_ptr);
+                    auto distance =
+                        std::abs(PointToPlaneDistance({A, B, C}, *point_ptr));
                     if (distance > max_distance) {
                         D = point_ptr;
                         max_distance = distance;
