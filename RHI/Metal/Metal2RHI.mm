@@ -139,7 +139,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
     id<MTLBuffer> _uniformBuffers[GEFSMaxBuffersInFlight];
     id<MTLBuffer> _lightInfo[GEFSMaxBuffersInFlight];
     ShadowMapConstants shadow_map_constants;
-    NSUInteger _shadowInstanceCount = 1;
+    NSUInteger _shadowInstanceCount;
     std::vector<id<MTLBuffer>> _vertexBuffers;
     std::vector<id<MTLBuffer>> _indexBuffers;
     id<MTLSamplerState> _sampler0;
