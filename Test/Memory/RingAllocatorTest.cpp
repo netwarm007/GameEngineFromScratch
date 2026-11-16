@@ -198,7 +198,9 @@ void TestLargeAlignment() {
     RingAllocator r(&mm, 1024);
     auto* p = r.Allocate(8, 256);
     Expect(p != nullptr && Aligned(p, 256), "alignment above arena start");
-    Expect(r.Allocate(8, 4096) == nullptr, "alignment impossible within buffer");
+    // whether a 4096 boundary falls inside the buffer depends on its address
+    void* q = r.Allocate(8, 4096);
+    Expect(q == nullptr || Aligned(q, 4096), "large alignment honored or refused");
 }
 }  // namespace
 

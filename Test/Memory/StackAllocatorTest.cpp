@@ -223,11 +223,15 @@ void TestExhaustionAndFreeAll() {
 void TestPaddingBeyondCapacity() {
     MemoryManager mm;
     StackAllocator s(&mm, 256);
-    // the arena is 64-byte aligned, so a 4096-aligned user pointer would need
-    // padding past the end of the arena
-    Expect(s.Allocate(8, 4096) == nullptr, "padding beyond capacity fails");
-    Expect(s.Used() == 0 && s.FailedAllocationCount() == 1,
-           "failed padded allocation consumes nothing");
+    // a 4096 boundary may or may not fall inside the arena, depending on its
+    // address; either the result is aligned or nothing is consumed
+    void* p = s.Allocate(8, 4096);
+    if (p) {
+        Expect(Aligned(p, 4096), "padded allocation is aligned");
+    } else {
+        Expect(s.Used() == 0 && s.FailedAllocationCount() == 1,
+               "failed padded allocation consumes nothing");
+    }
 }
 
 void TestRandomStress() {

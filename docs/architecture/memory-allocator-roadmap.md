@@ -135,4 +135,9 @@ monotonic 64-bit logical positions; `GetHead()`/`Retire()` implement FIFO
 reclamation. `PmrAdapter<A>` (header only) wraps any allocator as a
 `std::pmr::memory_resource`.
 
+Test lessons: debug-mode standard containers keep a live proxy allocated from
+their memory resource, so containers must be destroyed before `FreeAll()`;
+alignment-failure tests must not assume buffer addresses (a large alignment
+boundary may fall inside a small buffer).
+
 Checkpoint scopes may be re-split as implementation reveals complexity.

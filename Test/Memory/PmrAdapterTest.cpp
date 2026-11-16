@@ -129,12 +129,16 @@ void TestBlockAllocator() {
 
     thrown = false;
     const size_t freeBefore = pool.FreeBlockCount();
+    void* aligned = nullptr;
     try {
-        (void)resource.allocate(32, 4096);
+        aligned = resource.allocate(32, 4096);
     } catch (const std::bad_alloc&) {
         thrown = true;
     }
-    Expect(thrown, "unsatisfiable alignment throws");
+    // block addresses decide whether 4096 alignment happens to be satisfied
+    Expect(thrown || reinterpret_cast<uintptr_t>(aligned) % 4096 == 0,
+           "unsatisfiable alignment throws");
+    if (aligned) resource.deallocate(aligned, 32, 4096);
     Expect(pool.FreeBlockCount() == freeBefore, "misaligned block given back");
 }
 
@@ -158,34 +162,30 @@ void TestPolymorphicAllocatorPropagation() {
     LinearAllocator arena(&mm, 8192);
     PmrAdapter<LinearAllocator> resource(arena);
 
-    std::pmr::vector<std::pmr::string> names(&resource);
-    names.emplace_back("first entry that is long enough to allocate");
-    names.emplace_back("second entry that is long enough to allocate");
-    const size_t used = arena.Used();
-    Expect(used > 0, "nested containers use the arena");
-    names.clear();
-    Expect(arena.Used() == used, "arena memory is only reclaimed by FreeAll");
+    {
+        std::pmr::vector<std::pmr::string> names(&resource);
+        names.emplace_back("first entry that is long enough to allocate");
+        names.emplace_back("second entry that is long enough to allocate");
+        const size_t used = arena.Used();
+        Expect(used > 0, "nested containers use the arena");
+        names.clear();
+        Expect(arena.Used() == used,
+               "arena memory is only reclaimed by FreeAll");
+    }
+    // containers must be gone before FreeAll: debug builds poison the arena
     arena.FreeAll();
     Expect(arena.Used() == 0, "reset");
 }
 }  // namespace
 
 int main() {
-    std::cerr << "run TestVectorOnLinear" << std::endl;
     TestVectorOnLinear();
-    std::cerr << "run TestAlignment" << std::endl;
     TestAlignment();
-    std::cerr << "run TestFailureThrows" << std::endl;
     TestFailureThrows();
-    std::cerr << "run TestEquality" << std::endl;
     TestEquality();
-    std::cerr << "run TestStackLifo" << std::endl;
     TestStackLifo();
-    std::cerr << "run TestBlockAllocator" << std::endl;
     TestBlockAllocator();
-    std::cerr << "run TestFrameAndRing" << std::endl;
     TestFrameAndRing();
-    std::cerr << "run TestPolymorphicAllocatorPropagation" << std::endl;
     TestPolymorphicAllocatorPropagation();
 
     if (failures == 0) std::cout << "All PMR adapter tests passed\n";
