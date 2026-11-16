@@ -12,12 +12,15 @@ using namespace std;
 int BaseApplication::Initialize() {
     cout << m_Config;
 
-    return runtime_modules.Initialize();
+    return runtime_modules.Initialize([this] { WaitForGraphicsIdle(); });
 }
 
 // Finalize all sub modules and clean up all runtime temporary files.
 void BaseApplication::Finalize() {
+    WaitForGraphicsIdle();
     runtime_modules.Finalize();
+    FinalizeGraphicsResources();
+    FinalizePlatformResources();
 }
 
 // One cycle of the main loop

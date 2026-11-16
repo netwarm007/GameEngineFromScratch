@@ -47,9 +47,7 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
 }
 
 int OpenGLApplication::Initialize() {
-    XcbApplication::Initialize();
-
-    return 0;
+    return XcbApplication::Initialize();
 }
 
 void OpenGLApplication::CreateMainWindow() {
@@ -233,11 +231,18 @@ void OpenGLApplication::Tick() {
     glXSwapBuffers(m_pDisplay, m_XWindow);
 }
 
-void OpenGLApplication::Finalize() {
-    BaseApplication::Finalize();
-    glXMakeCurrent (m_pDisplay, None, NULL ); 
-    glXDestroyContext (m_pDisplay, m_Context); 
-    glXDestroyWindow(m_pDisplay, m_GlxWindow);
-
-    XcbApplication::Finalize();
+void OpenGLApplication::FinalizeGraphicsResources() {
+    if (m_Context) {
+        glXMakeCurrent(m_pDisplay, None, nullptr);
+        glXDestroyContext(m_pDisplay, m_Context);
+        m_Context = nullptr;
+    }
+    if (m_GlxWindow) {
+        glXDestroyWindow(m_pDisplay, m_GlxWindow);
+        m_GlxWindow = 0;
+    }
+    if (m_pDisplay) {
+        // XCB owns the native window on a separate connection.
+        XSync(m_pDisplay, False);
+    }
 }

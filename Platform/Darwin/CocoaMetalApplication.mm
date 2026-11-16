@@ -37,5 +37,3 @@ void CocoaMetalApplication::Tick() {
     }
     CocoaApplication::Tick();
 }
-
-void CocoaMetalApplication::Finalize() { CocoaApplication::Finalize(); }

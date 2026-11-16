@@ -1,5 +1,15 @@
 set(PLATFORM_TEST_CASES BasicWindowTest)
 
+if(OS_LINUX)
+    add_executable(LinuxApplicationLifetimeTest LinuxApplicationLifetimeTest.cpp)
+    target_link_libraries(LinuxApplicationLifetimeTest PRIVATE Framework PlatformInterface)
+    add_test(NAME TEST_LinuxApplicationLifetimeTest
+        COMMAND xvfb-run -a -s "-screen 0 640x480x24 +extension GLX"
+            $<TARGET_FILE:LinuxApplicationLifetimeTest>)
+    set_tests_properties(TEST_LinuxApplicationLifetimeTest PROPERTIES
+        ENVIRONMENT "LIBGL_ALWAYS_SOFTWARE=1")
+endif()
+
 if(OS_WINDOWS)
     add_test(NAME TEST_VisualStudioGenerator
         COMMAND ${CMAKE_COMMAND}

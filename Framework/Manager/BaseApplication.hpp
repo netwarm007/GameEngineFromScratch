@@ -70,6 +70,11 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    protected:
+    // Drain GPU work before shutdown or failure rollback releases module resources.
+    virtual void WaitForGraphicsIdle() {}
+    virtual void FinalizeGraphicsResources() {}
+    virtual void FinalizePlatformResources() {}
+
     // Flag if need quit the main loop of the application
     bool m_bQuit = false;
     GfxConfiguration m_Config;

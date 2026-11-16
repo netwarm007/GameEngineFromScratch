@@ -24,8 +24,8 @@ int Metal2GraphicsManager::Initialize() {
 }
 
 void Metal2GraphicsManager::Finalize() {
-    [m_pRHI finalize];
     GraphicsManager::Finalize();
+    [m_pRHI finalize];
 }
 
 void Metal2GraphicsManager::Present() { [m_pRHI present]; }

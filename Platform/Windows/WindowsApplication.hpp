@@ -10,7 +10,6 @@ class WindowsApplication : public BaseApplication {
    public:
     using BaseApplication::BaseApplication;
 
-    void Finalize() override;
     // One cycle of the main loop
     void Tick() override;
 
@@ -21,6 +20,7 @@ class WindowsApplication : public BaseApplication {
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
    protected:
+    void FinalizePlatformResources() override;
     virtual void onWindowResize(int new_width, int new_height);
 
    private:

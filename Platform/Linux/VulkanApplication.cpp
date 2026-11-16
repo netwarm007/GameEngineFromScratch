@@ -95,9 +95,7 @@ void VulkanApplication::CreateMainWindow() {
     m_Rhi.createSyncObjects();
 }
 
-void VulkanApplication::Finalize() {
+void VulkanApplication::FinalizeGraphicsResources() {
     // 销毁 Vulkan 上下文
     m_Rhi.destroyAll();
-
-    XcbApplication::Finalize();
 }

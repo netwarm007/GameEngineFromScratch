@@ -554,14 +554,6 @@ void D3d12GraphicsManager::EndScene() {
         if (texture.buff && released.insert(texture.buff).second) ReleaseTexture(texture);
     }
     for (auto& frame : m_Frames) {
-        for (auto& texture : frame.colorTextures) {
-            if (texture.buff && released.insert(texture.buff).second) ReleaseTexture(texture);
-        }
-        if (frame.depthTexture.buff && released.insert(frame.depthTexture.buff).second) {
-            ReleaseTexture(frame.depthTexture);
-        }
-        frame.colorTextures.clear();
-        frame.depthTexture = {};
         frame.batchContexts.clear();
     }
     m_Textures.clear();
@@ -574,6 +566,7 @@ void D3d12GraphicsManager::EndScene() {
         frame.frameContext.globalShadowMap = {};
         frame.frameContext.cubeShadowMap = {};
     }
+    GraphicsManager::EndScene();
 }
 
 void D3d12GraphicsManager::BeginFrame(Frame& frame) {

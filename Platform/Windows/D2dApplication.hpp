@@ -10,12 +10,12 @@ class D2dApplication : public WindowsApplication {
    public:
     using WindowsApplication::WindowsApplication;
 
-    void Finalize() final;
     void CreateMainWindow() final;
 
     D2dRHI& GetRHI() { return m_Rhi; }
 
    private:
+    void FinalizeGraphicsResources() final;
     void onWindowResize(int new_width, int new_height) final;
 
    private:

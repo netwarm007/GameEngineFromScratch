@@ -25,9 +25,7 @@ void D2dApplication::onWindowResize(int, int) {
     m_Rhi.RecreateGraphicsResources();
 }
 
-void D2dApplication::Finalize() {
+void D2dApplication::FinalizeGraphicsResources() {
     // 销毁相关资源
     m_Rhi.DestroyAll();
-
-    WindowsApplication::Finalize();
 }

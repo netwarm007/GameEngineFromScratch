@@ -88,8 +88,6 @@ void VulkanApplication::CreateMainWindow() {
     m_Rhi.createSwapChain();
 }
 
-void VulkanApplication::Finalize() {
+void VulkanApplication::FinalizeGraphicsResources() {
     m_Rhi.destroyAll();
-
-    CocoaMetalApplication::Finalize();
 }

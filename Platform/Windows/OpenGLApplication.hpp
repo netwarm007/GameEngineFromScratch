@@ -6,14 +6,14 @@ class OpenGLApplication : public WindowsApplication {
    public:
     using WindowsApplication::WindowsApplication;
 
-    void Finalize() override;
     void Tick() override;
 
     void CreateMainWindow() override;
 
    private:
-    HDC m_hDC;
-    HGLRC m_RenderContext;
+    void FinalizeGraphicsResources() override;
+    HDC m_hDC = nullptr;
+    HGLRC m_RenderContext = nullptr;
     int m_nPixelFormat;
     PIXELFORMATDESCRIPTOR m_pfd;
 };
