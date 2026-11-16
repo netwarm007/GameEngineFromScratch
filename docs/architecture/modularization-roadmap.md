@@ -199,7 +199,9 @@ initialization/rendering/exit remains verified on the enabled CI platforms.
 
 ### C. Separate ImGui lifecycle responsibilities
 
-**Implementation started; native three-platform and visual acceptance pending.**
+**Completed and accepted for the selected ownership boundary.** See the
+[stage C verification](../verification/1ed352fa974f2c73b0f51d6e5f9e449d3d69c72b.md)
+for exact-revision three-platform results and actual artifact observations.
 
 Depends on stable platform/backend lifetime contracts from stages A and B.
 
@@ -234,7 +236,7 @@ binding, borrowed-backend rejection, descriptor reuse and repeated cleanup.
 GuiSubPassLayoutTest additionally exercises context ownership while retaining
 its docking, viewport-origin, framebuffer-scale, resize and saved-layout cases.
 MetalInitializationTest exercises native allocation failure/retry without a
-context; its native execution remains required on macOS.
+context; its native macOS execution is covered by the stage C verification.
 
 This boundary does not migrate SDL/Android platform input ownership, redesign
 UI assets, or establish whole-module-graph restart or device-loss recovery.
@@ -294,5 +296,6 @@ do not establish new source acceptance.
   Neither is required for every small checkpoint.
 - No fixed delivery dates are implied. Stage A covers initialization
   orchestration; stage B covers the selected native initialization/cleanup
-  failures, not exhaustive driver recovery or ImGui ownership. Stage C is in
-  progress; stage D remains a proposal requiring confirmation.
+  failures, not exhaustive driver recovery or ImGui ownership. Stage C covers
+  the selected GUI ownership boundary; stage D remains a proposal requiring
+  confirmation.
