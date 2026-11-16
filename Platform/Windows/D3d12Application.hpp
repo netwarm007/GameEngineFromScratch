@@ -12,6 +12,11 @@ class D3d12Application : public WindowsApplication {
 
     D3d12RHI& GetRHI() { return m_Rhi; }
 
+   protected:
+    virtual HANDLE CreateFenceEvent() {
+        return CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    }
+
    private:
     int InitializeGraphicsResources() final;
     void WaitForGraphicsIdle() final;

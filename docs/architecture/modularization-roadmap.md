@@ -145,8 +145,9 @@ redesigned; D2D/Vulkan runtime support is not established by migrating hooks.
 
 **Linux GLX sub-checkpoint completed and accepted on the topic branch.**
 See the [GLX failure verification](../verification/a9c7cdba1cc4af16f800c76248a7364db38b470b.md).
-Other native backends remain separate proposed checkpoints; stage B as a whole
-is not complete.
+D3D12 and Metal hardening is in progress under the authorized stage B scope;
+stage B is not accepted until the resulting exact revision passes all enabled
+platforms and the native application artifacts are inspected.
 
 Depends on the boundaries established in stage A.
 
@@ -161,6 +162,18 @@ queried the GLX configuration so legacy context fallback uses matching handles.
 This is not exhaustive driver allocation-failure coverage or generalized X
 display/framebuffer-selection failure handling, and it does not establish
 equivalent D3D12/Metal guarantees.
+
+The next selected stages are D3D12 initialization HRESULT propagation and
+partial fence-event allocation, plus Metal initialization-buffer, sampler,
+queue and command-buffer allocation. D3D12 setup errors must release partial
+backend resources before returning without starting modules. Event handles are
+invalidated after closing, and registered resource cleanup runs once. Native
+tests also submit a gated command list to prove GPU completion precedes module
+rollback. Metal's failing initializer releases its own partial allocations;
+successful initialization owns those same resources until explicit cleanup.
+Repeated cleanup and deliberate retry are covered without changing ImGui
+context ownership (stage C). These stages do not claim device-loss recovery,
+exhaustive driver fault injection, or D2D/Vulkan runtime guarantees.
 
 - Inspect actual backend failure paths before selecting failure-injection seams.
 - Cover partial native resource creation, a single cleanup attempt, and repeat

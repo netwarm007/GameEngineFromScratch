@@ -8,16 +8,16 @@ using namespace My;
 using namespace std;
 
 int Metal2GraphicsManager::Initialize() {
-    int result;
-
-    result = GraphicsManager::Initialize();
+    const int result = GraphicsManager::Initialize();
+    if (result != 0) return result;
 
     NSWindow* pWindow = (NSWindow*)m_pApp->GetMainWindowHandler();
     MetalView* view = [pWindow contentView];
-    m_pRHI = [[Metal2RHI new] initWithMetalKitView:view device:view.device];
-
-    if (result == 0) {
-        [m_pRHI initialize];
+    m_pRHI = [[Metal2RHI alloc] initWithMetalKitView:view device:view.device];
+    if (!m_pRHI || ![m_pRHI initialize]) {
+        NSLog(@"Metal graphics manager initialization failed");
+        Finalize();
+        return -1;
     }
 
     return result;
@@ -26,6 +26,8 @@ int Metal2GraphicsManager::Initialize() {
 void Metal2GraphicsManager::Finalize() {
     GraphicsManager::Finalize();
     [m_pRHI finalize];
+    [m_pRHI release];
+    m_pRHI = nullptr;
 }
 
 void Metal2GraphicsManager::Present() { [m_pRHI present]; }
