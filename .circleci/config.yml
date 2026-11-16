@@ -277,7 +277,9 @@ jobs:
                   -ArgumentList "-sceneCycle", "$phase" `
                   -RedirectStandardOutput "$output/viewer.log" `
                   -RedirectStandardError "$output/viewer-error.log"
+                $handle = $process.Handle
                 if (-not $process.WaitForExit(180000)) { throw "Scene cycle timed out" }
+                $process.Refresh()
                 if ($process.ExitCode -ne 0) { throw "Scene cycle exited $($process.ExitCode)" }
                 if (-not (Test-Path $env:GEFS_SCREENSHOT_PATH)) { throw "Scene cycle PNG missing" }
                 if (-not (Select-String -Path "$output/viewer.log" -SimpleMatch "SCENE_CYCLE_READY phase=$phase" -Quiet)) {
