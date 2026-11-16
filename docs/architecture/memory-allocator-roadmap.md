@@ -84,7 +84,9 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | --- | --- |
 | `LinearAllocator` and `StackAllocator` are single-threaded with fixed capacity (no growth). | Document per allocator; thread-cache layer in M7. |
 | `BlockAllocator` free-pointer validation is O(pages + free blocks) and on by default only in `_DEBUG`. | Cheaper ownership lookup with the debug decorator (M6). |
-| `BlockAllocator` never returns pages before `FreeAll`/destruction; single free list gives poor locality over time. | Revisit with size-class allocator (M4). |
+| `BlockAllocator` never returns pages before `FreeAll`/destruction; single free list gives poor locality over time. | Use `SlabAllocator`/`SizeClassAllocator` (`Trim`) where page return matters; `BlockAllocator` itself stays as is. |
+| `SlabAllocator`/`SizeClassAllocator` are single-threaded; validation off (release default) cannot detect pointers outside any slab, and `Trim` is manual (no automatic shrink policy). | Thread-cache layer (M7); decorator-based ownership checks (M6). |
+| `SizeClassAllocator` serves only 1..512 bytes and 16-byte alignment; larger requests return `nullptr` and the caller must route them elsewhere. | General allocator (TLSF/Buddy, M5) and routing facade (M8). |
 | Debug fill patterns are only verified in builds defining `_DEBUG`. | Extend tests to check patterns in the debug decorator (M6). |
 | `FrameAllocator` and `RingAllocator` are single-threaded; `RingAllocator` leaves fence tracking (when to `Retire`) to the caller. | Thread-cache layer (M7); GPU sub-allocator owns fences (M7). |
 | `PmrAdapter` forwards `deallocate` to `Free`, so LIFO/arena allocators only reclaim as their own rules allow, and failures throw `std::bad_alloc`. | Documented behavior; revisit if engine builds disable exceptions (M8). |
@@ -107,7 +109,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Done (CI-verified, `docs/verification/03a8504ee0dc1fd042c3444d520f2b3863c85304.md`) |
 | M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests (`LinearAllocatorTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/faa5744f42b9aec60d6b93f561af22a95378320e.md`) |
 | M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; stale `Marker` detection; tests (`FrameAllocatorTest`, `RingAllocatorTest`, `PmrAdapterTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/89926ec5081f370ca6519c6fbeba021a1fc6cbd6.md`) |
-| M4 | Size-class small-object allocator and Slab; tests. | Planned |
+| M4 | `SlabAllocator` (constructed-object cache, empty-slab `Trim`) and `SizeClassAllocator` (16 classes, 16 B to 512 B); tests (`SlabAllocatorTest`, `SizeClassAllocatorTest`). | Implemented; awaiting CI acceptance |
 | M5 | TLSF and Buddy; tests. | Planned |
 | M6 | Debug/tracking decorator, statistics, leak reports; tests. | Planned |
 | M7 | GPU sub-allocator and thread-cache layer; tests. | Planned |
@@ -126,6 +128,14 @@ M2 notes: both allocators own one fixed-capacity, 64-byte-aligned arena from
 `StackAllocator` keeps a 16-byte header per allocation so `Free(p)` can pop the
 latest allocation; `Marker` rewinds many at once. Shared helpers are in
 `AllocatorUtils.hpp`.
+
+M4 notes: `SlabAllocator` allocates slabs aligned to their own (power-of-two)
+size, so `Free` finds the owning slab by masking the pointer and needs no size.
+Free-index lists and in-use flags live in the slab header, which keeps freed
+objects intact; with a constructor/destructor pair objects stay constructed
+across `Free`/`Allocate` and are destroyed only when a slab is released.
+`SizeClassAllocator` owns one `SlabAllocator` per class and finds the class
+from the slab header (or by ownership walk when validation is on).
 
 M3 notes: `StackAllocator::Header` now carries a never-reused 64-bit serial, and
 `Marker` records the serial of the newest allocation, so markers of unwound

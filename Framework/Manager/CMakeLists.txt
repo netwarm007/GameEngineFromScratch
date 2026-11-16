@@ -27,5 +27,7 @@ add_library(Manager
         StackAllocator.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
+        SizeClassAllocator.cpp
+        SlabAllocator.cpp
 )
 target_link_libraries(Manager PUBLIC AssetIO SceneServices SceneResources RenderServices)
