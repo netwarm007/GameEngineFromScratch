@@ -1,5 +1,6 @@
 add_library(VulkanRHI
     VulkanRHI.cpp
+    VulkanRHIResources.cpp
     VulkanPipelineStateManager.cpp
     VulkanGraphicsManager.cpp
 )

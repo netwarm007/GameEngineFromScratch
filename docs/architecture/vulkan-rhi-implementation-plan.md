@@ -425,8 +425,50 @@ query returns `VK_ERROR_UNKNOWN` before swapchain creation in this environment.
 The native Windows frame-loop test therefore currently fails explicitly; it is
 not skipped or counted as passed. The installed SDK's independent `vkcube`
 two-frame run also did not complete within a bounded local check; no driver or
-system display settings were changed. Linux execution and the remaining resource
-work must be verified before claiming checkpoint 2 complete.
+system display settings were changed.
+
+The foundation revision `2f74cfc8ff306a0b09eb442d710aad669895b576` passed all
+four required jobs in CircleCI pipeline 986, including the actual Xcb native
+frame-loop test on lavapipe. Its [verification record](../verification/2f74cfc8ff306a0b09eb442d710aad669895b576.md)
+records exact job revisions, inspected native-backend Viewer/Billiard captures,
+and coverage limits. This does not verify subsequent resource changes or
+complete checkpoint 2.
+
+The resource implementation now provides transactional buffer allocations,
+aligned per-frame uniform arenas and offset updates, explicit texture allocation,
+GPU upload/readback, and per-mip/per-layer layout tracking. Supplied mip chains
+are preserved; optional mip generation is an explicit operation. The existing
+Image adapter repacks padded rows and expands RGB24, including signed normalized
+alpha, rather than assuming every image is tightly packed RGBA8. Compression
+features, format/usage limits, dimensions, and byte ranges fail explicitly.
+Packed depth/stencil CPU transfer remains unsupported rather than being
+silently treated as color data.
+
+An explicit `InitializeHeadless` path exercises this production RHI on the local
+GPU independently of WSI; it is not an automatic fallback for a failed native
+initialization and does not introduce another renderer. Its resource regression
+covers vertex/index bytes, actual device uniform alignment and independent
+arena slices, array/cube-array subresources, independently checked generated
+mips, retained supplied mips, padded RGB/RGBA input, signed RGB expansion, and
+partial-upload rollback. An initial headless shutdown crash reproduced calls to
+unenabled surface/swapchain extension commands with null handles; guarding those
+commands fixed the crash and the same GPU regression passes.
+
+The shader ABI, compute, and new production resource tests pass locally on the
+Windows AMD device with core/synchronization validation enabled and zero
+reported errors. The new resource code still needs its own exact-revision
+cross-platform CI. Shader descriptor integration and GPU consumption of shared
+per-frame/per-batch arenas belong to checkpoint 3, not this readback test.
+
+Before closing checkpoint 2, settle presentation-resource retirement on older
+implementations. Image-indexed presentation semaphores solve normal-frame reuse,
+but device-idle waits alone do not strictly establish swapchain/present-semaphore
+retirement in unextended Vulkan, as documented by the
+[Khronos synchronization guide](https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html).
+Presentation fences require swapchain-maintenance extensions and their
+dependencies. Decide whether to retain a documented legacy compatibility path
+or require that capability before treating native retirement as complete;
+passing legacy validation does not resolve this specification limitation.
 
 ## Platform and acceptance strategy
 

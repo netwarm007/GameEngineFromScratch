@@ -80,15 +80,25 @@ add_test(NAME TEST_VulkanShaderAbi COMMAND "${CMAKE_COMMAND}"
 add_test(NAME TEST_VulkanCompute COMMAND VulkanShaderTest "${shader_dir}")
 set_tests_properties(TEST_VulkanShaderAbi TEST_VulkanCompute PROPERTIES TIMEOUT 90)
 
+add_library(VulkanRegressionRHI STATIC "${root}/RHI/Vulkan/VulkanRHI.cpp"
+    "${root}/RHI/Vulkan/VulkanRHIResources.cpp")
+target_include_directories(VulkanRegressionRHI PUBLIC
+    $<TARGET_PROPERTY:VulkanShaderTest,INCLUDE_DIRECTORIES>)
+target_link_libraries(VulkanRegressionRHI PUBLIC Vulkan::Vulkan ${XG_LIBRARY})
+if(USE_ISPC)
+    target_link_libraries(VulkanRegressionRHI PUBLIC GeomMath)
+endif()
+if(MSVC)
+    target_compile_options(VulkanRegressionRHI PUBLIC /utf-8)
+endif()
+add_executable(VulkanResourceTest VulkanResourceTest.cpp)
+target_link_libraries(VulkanResourceTest PRIVATE VulkanRegressionRHI)
+add_test(NAME TEST_VulkanResources COMMAND VulkanResourceTest)
+set_tests_properties(TEST_VulkanResources PROPERTIES TIMEOUT 90)
+
 if(WIN32 OR (UNIX AND NOT APPLE))
-    add_executable(VulkanFrameLoopTest VulkanFrameLoopTest.cpp
-        "${root}/RHI/Vulkan/VulkanRHI.cpp")
-    target_include_directories(VulkanFrameLoopTest PRIVATE
-        $<TARGET_PROPERTY:VulkanShaderTest,INCLUDE_DIRECTORIES>)
-    target_link_libraries(VulkanFrameLoopTest PRIVATE Vulkan::Vulkan ${XG_LIBRARY})
-    if(USE_ISPC)
-        target_link_libraries(VulkanFrameLoopTest PRIVATE GeomMath)
-    endif()
+    add_executable(VulkanFrameLoopTest VulkanFrameLoopTest.cpp)
+    target_link_libraries(VulkanFrameLoopTest PRIVATE VulkanRegressionRHI)
     if(WIN32)
         target_link_libraries(VulkanFrameLoopTest PRIVATE user32)
         if(MSVC)

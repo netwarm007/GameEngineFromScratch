@@ -38,6 +38,14 @@ class VulkanRHI {
         vk::Image image;
         vk::ImageView descriptor;
         vk::DeviceMemory heap;
+        vk::Format format = vk::Format::eUndefined;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        uint32_t mipLevels = 0;
+        uint32_t layers = 0;
+        vk::ImageAspectFlags aspect;
+        vk::ImageUsageFlags usage;
+        std::vector<vk::ImageLayout> layouts;
     };
 
     struct UniformBuffer {
@@ -80,6 +88,7 @@ class VulkanRHI {
     void CreateSwapChain();
     void Initialize(const std::vector<const char*>& extensions,
                     const CreateSurfaceCBFunc& createSurface);
+    void InitializeHeadless();
     void WaitGPU();
     bool BeginFrame();
     void EndFrame();
@@ -89,6 +98,22 @@ class VulkanRHI {
     uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
     uint64_t GetSwapChainGeneration() const { return m_swapChainGeneration; }
     unsigned GetValidationErrorCount() const { return m_validationErrors.load(); }
+    vk::DeviceSize GetUniformBufferStride(vk::DeviceSize size) const;
+    std::vector<uint8_t> ReadBuffer(vk::Buffer buffer, vk::DeviceSize size);
+    Texture CreateTexture(uint32_t width, uint32_t height, vk::Format format,
+                          uint32_t mipLevels = 1, uint32_t layers = 1,
+                          vk::ImageViewType viewType = vk::ImageViewType::e2D,
+                          vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eSampled);
+    void UpdateTexture(Texture& texture, const void* data, size_t size,
+                       uint32_t mip = 0, uint32_t layer = 0);
+    std::vector<uint8_t> ReadTexture(Texture& texture, uint32_t mip = 0,
+                                     uint32_t layer = 0);
+    void GenerateMipmaps(Texture& texture);
+    void TransitionTexture(vk::CommandBuffer command, Texture& texture,
+                            const vk::ImageSubresourceRange& range,
+                            vk::ImageLayout layout);
+    void DestroyTexture(Texture& texture);
+    void DestroyUniformBuffers(std::vector<UniformBuffer>& buffers);
 
     void createInstance(std::vector<const char*> extensions);
     void setupDebugMessenger();
@@ -113,15 +138,15 @@ class VulkanRHI {
     void createFramebuffers(const vk::RenderPass& renderPass);
     VulkanRHI::Texture createTextureImage(Image& image);
     vk::Sampler createTextureSampler();
-    void createVertexBuffer(void* buffer, vk::DeviceSize bufferSize,
+    void createVertexBuffer(const void* buffer, vk::DeviceSize bufferSize,
                             VulkanRHI::VertexBuffer& vertexBuffer);
-    void createIndexBuffer(void* buffer, vk::DeviceSize bufferSize,
+    void createIndexBuffer(const void* buffer, vk::DeviceSize bufferSize,
                            VulkanRHI::IndexBuffer& indexBuffer);
     void createUniformBuffers(
         std::vector<VulkanRHI::UniformBuffer>& uniformBuffers,
         vk::DeviceSize bufferSize);
     void UpdateUniformBuffer(const std::vector<VulkanRHI::UniformBuffer> &uniformBuffers,
-                            void* ubo, size_t uboSize);
+                            const void* ubo, size_t uboSize, size_t offset = 0);
     vk::ShaderModule createShaderModule(const Buffer& code);
     void createDescriptorPool();
     void createDescriptorSets(
@@ -142,8 +167,30 @@ class VulkanRHI {
     void destroyAll();
 
     inline vk::Device GetDevice() { return m_vkDevice; }
+    vk::PhysicalDevice GetPhysicalDevice() const { return m_vkPhysicalDevice; }
 
    private:
+    struct BufferAllocation {
+        explicit BufferAllocation(vk::Device value) : device(value) {}
+        BufferAllocation(const BufferAllocation&) = delete;
+        BufferAllocation& operator=(const BufferAllocation&) = delete;
+        ~BufferAllocation() {
+            if (device) {
+                device.destroyBuffer(buffer);
+                device.freeMemory(memory);
+            }
+        }
+        void Release() {
+            buffer = nullptr;
+            memory = nullptr;
+        }
+        vk::Device device;
+        vk::Buffer buffer;
+        vk::DeviceMemory memory;
+    };
+    void initializeDevice(const std::vector<const char*>& extensions,
+                           const CreateSurfaceCBFunc& surface);
+
     vk::Instance m_vkInstance;
     vk::DebugUtilsMessengerEXT m_vkDebugMessenger;
     PFN_vkDestroyDebugUtilsMessengerEXT m_destroyDebugMessenger = nullptr;
