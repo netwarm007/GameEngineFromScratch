@@ -719,7 +719,8 @@ void VulkanGraphicsManager::initializeSkyBox(const Scene& scene) {
                     destinationPitch * mip.Height;
                 const size_t destinationOffset = destination.data_size;
                 if (destinationSize >
-                    std::numeric_limits<size_t>::max() - destinationOffset) {
+                    (std::numeric_limits<size_t>::max)() -
+                        destinationOffset) {
                     throw std::length_error(
                         "Vulkan skybox RGB texture is too large");
                 }
