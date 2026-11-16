@@ -2,6 +2,7 @@
 #include <functional>
 #include <limits>
 #include <list>
+#include <stdexcept>
 
 #include "Polyhedron.hpp"
 #include "geommath.hpp"
@@ -268,24 +269,19 @@ inline Point<T> ConvexPolyhedronSupportFunction(const Polyhedron<T>& polyhedron,
     T max_score = std::numeric_limits<T>::lowest();
     PointPtr<T> extreme_point;
     for (const auto& pFace : polyhedron.Faces) {
-        T score;
-        DotProduct(score, pFace->Normal, direction);
-        if (score <= 0.0) {
-            // back-facing face, ignore it
-            continue;
-        }
-
         for (const auto& pEdge : pFace->Edges) {
+            T score;
             DotProduct(score, *pEdge->first, direction);
-            if (score > max_score) {
+            if (!extreme_point || score > max_score) {
                 max_score = score;
                 extreme_point = pEdge->first;
             }
-
-            assert(extreme_point != nullptr);
         }
     }
 
+    if (!extreme_point) {
+        throw std::invalid_argument("Cannot find support point of an empty polyhedron");
+    }
     return *extreme_point;
 }
 }  // namespace My
