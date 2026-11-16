@@ -27,6 +27,7 @@ add_library(Manager
         MemoryManager.cpp
         StackAllocator.cpp
         TlsfAllocator.cpp
+        TrackingAllocator.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp

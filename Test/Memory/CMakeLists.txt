@@ -20,11 +20,13 @@ set(ALLOCATOR_SOURCES
     "${ALLOCATOR_DIR}/SizeClassAllocator.cpp"
     "${ALLOCATOR_DIR}/SlabAllocator.cpp"
     "${ALLOCATOR_DIR}/StackAllocator.cpp"
-    "${ALLOCATOR_DIR}/TlsfAllocator.cpp")
+    "${ALLOCATOR_DIR}/TlsfAllocator.cpp"
+    "${ALLOCATOR_DIR}/TrackingAllocator.cpp")
 
 foreach(TEST_CASE MemoryAllocatorTest LinearAllocatorTest StackAllocatorTest
     FrameAllocatorTest RingAllocatorTest PmrAdapterTest SlabAllocatorTest
-    SizeClassAllocatorTest TlsfAllocatorTest BuddyAllocatorTest)
+    SizeClassAllocatorTest TlsfAllocatorTest BuddyAllocatorTest
+    TrackingAllocatorTest)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp ${ALLOCATOR_SOURCES})
     target_include_directories(${TEST_CASE} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Common"
