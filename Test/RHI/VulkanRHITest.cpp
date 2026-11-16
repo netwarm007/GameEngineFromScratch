@@ -64,7 +64,8 @@ int main(int argc, char** argv) {
                     std::stoul(value, &parsedCharacters);
                 if (frameCount == 0 ||
                     parsedCharacters != value.size() ||
-                    frameCount > std::numeric_limits<uint32_t>::max()) {
+                    frameCount >
+                        (std::numeric_limits<uint32_t>::max)()) {
                     throw std::invalid_argument(
                         "--frames must be between 1 and UINT32_MAX");
                 }
