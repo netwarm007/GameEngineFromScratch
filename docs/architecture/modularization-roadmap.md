@@ -309,7 +309,11 @@ buffer release and subsequent reuse are checked by MetalInitializationTest.
 
 ### D2. Explicit input-to-game-logic dependency
 
-**In progress.** InputManager takes a required borrowed `IGameLogic&` at
+**Accepted.** See the
+[D2 verification record](../verification/0dfac0f10cfb8bc0a389475c0c23b09a8e597e5d.md)
+for exact-revision three-platform results and inspected native artifacts.
+
+InputManager takes a required borrowed `IGameLogic&` at
 construction instead of downcasting Application and looking up game logic
 for every event. The injected logic must outlive InputManager. Viewer and
 Billiard construct logic before input and provide that dependency directly;
@@ -333,6 +337,12 @@ Verification sequence:
    Viewer/scene-cycle/Billiard screenshots and physics results, then write its
    revision-specific acceptance record. Synthetic input tests do not establish
    native keyboard/mouse interaction or every ImGui capture configuration.
+
+#### Known limitations and follow-ups (D2)
+
+Input semantics are tested directly without Application, not by injecting OS
+events. Native focus and every ImGui capture configuration remain unverified
+interactively; screenshots and physics checks do not substitute for those paths.
 
 Next candidates, not part of D2: reassess Viewer/Billiard service lookups and
 GuiSubPass's direct AssetLoader/PNG dependency using existing interfaces.
