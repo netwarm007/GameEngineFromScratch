@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
                 image->mipmaps.emplace_back(mipWidth, mipWidth, pitch, offset,
                                             size);
                 offset += size;
-                mipWidth = std::max(1u, mipWidth >> 1);
+                mipWidth = (std::max)(1u, mipWidth >> 1);
             } while (fullMipChain && mipWidth < image->mipmaps.back().Width);
             image->data_size = offset;
             image->pitch = static_cast<size_t>(width) * channels;
