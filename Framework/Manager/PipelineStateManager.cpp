@@ -1,5 +1,7 @@
 #include "PipelineStateManager.hpp"
 
+#include <stdexcept>
+
 #include "IApplication.hpp"
 
 using namespace My;
@@ -42,6 +44,8 @@ bool PipelineStateManager::RegisterPipelineState(PipelineState& pipelineState) {
         return true;
     }
 
+    cerr << "Failed to initialize pipeline: " << pipelineState.pipelineStateName
+         << endl;
     return false;
 }
 
@@ -74,10 +78,8 @@ const std::shared_ptr<PipelineState> PipelineStateManager::GetPipelineState(
     const auto& it = m_pipelineStates.find(name);
     if (it != m_pipelineStates.end()) {
         return it->second;
-    } else {
-        assert(!m_pipelineStates.empty());
-        return m_pipelineStates.begin()->second;
     }
+    throw std::runtime_error("Required pipeline is unavailable: " + name);
 }
 
 int PipelineStateManager::Initialize() {
@@ -120,11 +122,10 @@ int PipelineStateManager::Initialize() {
     pipelineState.geometryShaderName = GS_OMNI_SHADOWMAP_SOURCE_FILE;
     pipelineState.computeShaderName.clear();
 #ifdef OS_MACOS
-    // we flip the viewport so we need flip the culling mode too.
-    pipelineState.cullFaceMode = CULL_FACE_MODE::BACK;
-#else
-    pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
+    pipelineState.vertexShaderName = "shadowmap_omni_metal.vert";
+    pipelineState.geometryShaderName.clear();
 #endif
+    pipelineState.cullFaceMode = CULL_FACE_MODE::FRONT;
     pipelineState.pixelFormat = PIXEL_FORMAT::UNKNOWN;
     pipelineState.sampleCount = 1;
     pipelineState.a2vType = A2V_TYPES::A2V_TYPES_POS_ONLY;

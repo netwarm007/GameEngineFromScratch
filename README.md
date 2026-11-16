@@ -351,6 +351,14 @@ publishing partial lighting. The headless regression covers all four light
 types, backend clip depths, runtime movement, scene replacement, and capacity.
 RHI ownership and ImGui lifecycle remain for subsequent checkpoints.
 
+Point-light shadow maps store world-space radial distance normalized by
+`POINT_SHADOW_FAR_PLANE`; sampling uses that same scale on every backend.
+OpenGL and D3D12 expand each triangle to six cube faces in a geometry shader.
+Metal uses six vertex instances and a layered depth attachment instead.
+`PointShadowMatrices.hpp` shares the cube-face transforms, accounting for the
+backend viewport Y convention. A missing required pipeline is an explicit
+error, not a fallback to an unrelated shader.
+
 ### Rendering service injection
 
 Viewer and Billiard construct their graphics backend with explicit

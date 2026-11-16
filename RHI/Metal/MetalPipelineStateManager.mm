@@ -161,6 +161,17 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
                 newFunctionWithName:shaderFileName2MainFuncName(pState->vertexShaderName)];
             id<MTLFunction> fragmentFunction = [myLibrary
                 newFunctionWithName:shaderFileName2MainFuncName(pState->pixelShaderName)];
+            if (!vertexFunction || !fragmentFunction) {
+                NSLog(@"Missing Metal shader function for pipeline %s",
+                      pState->pipelineStateName.c_str());
+                [vertexFunction release];
+                [fragmentFunction release];
+                [mtlVertexDescriptor release];
+                [myLibrary release];
+                [_device release];
+                delete pState;
+                return false;
+            }
 
             MTLRenderPipelineDescriptor* pipelineStateDescriptor =
                 [MTLRenderPipelineDescriptor new];
@@ -168,6 +179,9 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
                 [NSString stringWithCString:pState->pipelineStateName.c_str()
                                    encoding:[NSString defaultCStringEncoding]];
             pipelineStateDescriptor.sampleCount = pState->sampleCount;
+            if (pState->vertexShaderName == "shadowmap_omni_metal.vert") {
+                pipelineStateDescriptor.inputPrimitiveTopology = MTLPrimitiveTopologyClassTriangle;
+            }
             pipelineStateDescriptor.vertexFunction = vertexFunction;
             [vertexFunction release];
             pipelineStateDescriptor.fragmentFunction = fragmentFunction;
@@ -269,6 +283,15 @@ bool MetalPipelineStateManager::InitializePipelineState(PipelineState** ppPipeli
     [depthStateDesc release];
 
     [_device release];
+
+    const bool valid = pState->pipelineType == PIPELINE_TYPE::GRAPHIC ?
+        pState->mtlRenderPipelineState != nil && pState->depthState != nil :
+        pState->mtlComputePipelineState != nil;
+    if (!valid) {
+        DestroyPipelineState(*pState);
+        delete pState;
+        return false;
+    }
 
     *ppPipelineState = pState;
 

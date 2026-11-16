@@ -21,7 +21,7 @@ set(GLSL_SHADER_SOURCES #simple.vert simple.frag
         )
 
 if(APPLE)
-    list(APPEND HLSL_SHADER_SOURCES material_texture_copy.comp)
+    list(APPEND HLSL_SHADER_SOURCES material_texture_copy.comp shadowmap_omni_metal.vert)
 endif()
 
 IF(WIN32)
@@ -77,6 +77,16 @@ if(APPLE)
     )
 endif(APPLE)
 endforeach(SHADER)
+
+# Geometry shaders are not supported by Metal.
+add_custom_command(TARGET Engine_Asset_Shaders PRE_BUILD
+    COMMAND ${GLSL_VALIDATOR} -V --define-macro MYGE_GLSLANG=1 -I. -I${PROJECT_SOURCE_DIR}/Framework/Common
+        -o ${VULKAN_SOURCE_DIR}/shadowmap_omni.geom.spv -e shadowmap_omni_geom_main
+        ${PROJECT_SOURCE_DIR}/Asset/Shaders/HLSL/shadowmap_omni.geom.hlsl
+    COMMAND ${SPIRV_CROSS} --version 420 --remove-unused-variables
+        --output ${GLSL_SOURCE_DIR}/shadowmap_omni.geom.glsl ${VULKAN_SOURCE_DIR}/shadowmap_omni.geom.spv
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)
 
 foreach(SHADER IN LISTS GLSL_SHADER_SOURCES)
     # Convert GLSL to Others

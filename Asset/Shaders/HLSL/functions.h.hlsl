@@ -144,11 +144,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                     float3 L = p.xyz - light.lightPosition.xyz;
                     near_occ = cubeShadowMap.Sample(samp0, float4(L, float(light.lightShadowMapIndex))).x;
 
-#if defined(OS_WINDOWS) && !defined(MYGE_GLSLANG)
                     if (length(L) - near_occ * POINT_SHADOW_FAR_PLANE > bias)
-#else
-                    if (length(L) - near_occ * 10.0f > bias)
-#endif
                     {
                         // we are in the shadow
                         visibility -= 0.88f;
