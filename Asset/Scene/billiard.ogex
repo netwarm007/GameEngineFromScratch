@@ -194970,7 +194970,7 @@ GeometryObject $geometry2		// ps_2
 	}
 }
 
-LightObject $light2 (type = "point", shadow = false)		// Lamp
+LightObject $light2 (type = "point")		// Lamp
 {
 	Color (attrib = "light") {float[3] {{1.0, 1.0, 1.0}}}
     Param (attrib = "intensity") {float {5.0}}
