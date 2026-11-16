@@ -22,6 +22,7 @@ Image::Image(Image&& rhs) noexcept {
 
 Image& Image::operator=(Image&& rhs) noexcept {
     if (this != &rhs) {
+        delete[] data;
         Width = rhs.Width;
         Height = rhs.Height;
         data = rhs.data;
@@ -234,7 +235,7 @@ void adjust_image(Image& image) {
                 src = image.data + (ptrdiff_t)row * image.pitch;
                 for (decltype(image.Width) col = 0; col < image.Width; col++) {
                     memcpy(buf, src, 6);
-                    *reinterpret_cast<int16_t*>(buf + 6) = 0b0000'0100'0000'0000; // set alpha to (fp16)1.0 = 0b 0 00001 0000 0000 00
+                    *reinterpret_cast<int16_t*>(buf + 6) = 0b0011'1100'0000'0000; // set alpha to (fp16)1.0
                     buf += 8;
                     src += 6;
                 }
