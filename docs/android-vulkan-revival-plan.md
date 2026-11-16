@@ -53,6 +53,82 @@ If the supported device set requires fallback, retain an explicit GLES
 fallback; otherwise document the minimum Vulkan/device requirements and fail
 clearly on unsupported devices.
 
+## WebAssembly backend assessment
+
+WebAssembly does not mandate OpenGLES. Browser WebAssembly code can call
+JavaScript browser APIs, and Emscripten provides a C/C++ WebGPU port. WebGPU is
+a realistic additional backend, but it is not a universally available drop-in
+replacement for WebGL 2.
+
+The MDN browser-compatibility data queried on 2026-11-16 reports:
+
+| Browser | WebGPU availability in the queried data | Important limits |
+|---|---|---|
+| Chrome / Edge desktop | Chrome 113+ on ChromeOS, macOS, and Windows; Chrome 144+ on Linux | Linux note limits support to Intel Gen12+ GPUs; Edge mirrors Chromium. |
+| Chrome Android | Chrome 121+ | The physical device still needs a compatible WebGPU adapter and driver. |
+| Firefox desktop | Firefox 141+, partial implementation | Windows since 141; Apple silicon macOS since 145/147 depending on OS; no Linux or Intel macOS support in the data. |
+| Firefox Android | Not available | No WebGPU fallback from this browser. |
+| Safari / iOS Safari | Safari 26+, iOS mirrors Safari | Still subject to supported OS/device and adapter features. |
+
+By comparison, MDN lists WebGL 2 in Chrome 56+, Firefox 51+, and Safari 15+,
+with corresponding Android/iOS browser entries. WebGPU's adapter can still be
+unavailable even where the API is implemented. WebGPU also requires a secure
+context; production web delivery should use HTTPS (localhost is suitable for
+development). Browser compatibility changes over time, so re-check the live
+matrix before setting a product support policy.
+
+Official references:
+
+- [MDN WebGPU API](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API)
+- [MDN WebGPU compatibility data](https://github.com/mdn/browser-compat-data/blob/bdee0e51289bc0e7aeb0763f315a3a200f23ff7e/api/GPU.json)
+- [MDN WebGL 2 compatibility data](https://github.com/mdn/browser-compat-data/blob/bdee0e51289bc0e7aeb0763f315a3a200f23ff7e/api/WebGL2RenderingContext.json)
+- [Emscripten: Using WebGPU](https://github.com/emscripten-core/emscripten/blob/2e9f2298d0ba76962543f2ab7192085af677ed0a/site/source/docs/porting/multimedia_and_graphics/WebGPU-support.rst)
+
+Emscripten's current documented route is Emdawnwebgpu, a Dawn-style
+`webgpu.h` C API implemented on top of the browser WebGPU JavaScript API. Its
+remote port requires Emscripten 4.0.10 or newer and is enabled during both
+compile and link with `--use-port=emdawnwebgpu`. Pin the Emscripten SDK and
+remote-port version/hash for reproducible CI; do not make a release build
+depend on an unpinned download.
+
+The repository's current WebAssembly path is specifically WebGL 2:
+`Game/Billiard/CMakeLists.txt` sets `USE_WEBGL2`, `Platform/CrossPlatformGfxApp.hpp`
+selects `OpenGLESApplication`, and `RHI/OpenGL/CMakeLists.txt` builds the
+OpenGLES RHI for `WA`. The WebGL shader loader expects `Shaders/WebGL/` and
+disables compute shaders, while `Asset/Shaders/CMakeLists.txt` currently emits
+SPIR-V and desktop GLSL 4.20, not WGSL. No WebGL/WebGL2 shader files are
+tracked under `Asset/Shaders` in the examined revision. This means the present
+WebAssembly path should not be assumed to be a working renderer merely because
+its OpenGLES/WebGL code compiles.
+
+WebGPU is not a browser-exposed Vulkan, Metal, or Direct3D RHI. It is a distinct
+web API/RHI: the browser maps it to the native graphics stack. Reusing the
+existing `VulkanRHI` is not a viable shortcut. A WebGPU RHI would need its own
+device/surface and asynchronous adapter/device startup, resource and render
+pipeline code, WGSL shader inputs or a proven SPIR-V-to-WGSL conversion path,
+and an ImGui WebGPU renderer backend. Existing HLSL-to-SPIR-V plus
+SPIRV-Cross-to-desktop-GLSL does not produce WGSL.
+
+### Recommended WebAssembly follow-up
+
+1. First make the existing WebGL 2 path measurable: build the Emscripten target,
+   ensure all required `Shaders/WebGL` assets are generated/packaged, serve it
+   from HTTPS/localhost, and inspect a browser screenshot. Keep the existing
+   WebGL2 fallback because its browser coverage is wider.
+2. In a separate spike, add a minimal Emscripten WebGPU triangle/clear backend
+   using a pinned Emdawnwebgpu port. Verify async startup, canvas resize,
+   device loss, and screenshots in current supported Chrome/Edge, Safari, and
+   Firefox desktop configurations; record unsupported combinations as skips,
+   not passes.
+3. If the spike succeeds, compare the cost of the missing engine pieces
+   (WGSL/shader pipeline, buffers/textures, passes, UI, assets) against fixing
+   WebGL2 first. Implement WebGPU as a separate RHI behind the existing
+   engine-facing graphics interfaces; select it at build/runtime only where
+   `navigator.gpu` and a compatible adapter are present.
+4. Do not remove WebGL2 until the project's browser support policy explicitly
+   excludes browsers/devices that lack WebGPU and real browser tests cover the
+   replacement. If broad browser reach remains a goal, keep both backends.
+
 ## Work plan
 
 ### Phase 0 — Establish a reproducible Android build
