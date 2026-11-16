@@ -1,6 +1,7 @@
 #import <MetalKit/MetalKit.h>
 
 #include <iostream>
+#include "imgui.h"
 
 #include "Metal/Metal2GraphicsManager.h"
 #include "Metal/Metal2RHI.h"
