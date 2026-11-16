@@ -6,6 +6,8 @@
 
 #include "GraphicsManager.hpp"
 #include "ISceneManager.hpp"
+#include "PipelineStateManager.hpp"
+#include "ShadowMapPass.hpp"
 #include "imgui.h"
 
 using namespace My;
@@ -159,6 +161,103 @@ class FrameResourceGraphics : public RecordingGraphics {
     TextureHandler releases = 0;
     std::set<TextureHandler> liveTextures;
 };
+
+class ShadowPipelines : public PipelineStateManager {
+   protected:
+    bool InitializePipelineState(PipelineState** state) override {
+        *state = new PipelineState(**state);
+        return true;
+    }
+};
+
+class ShadowGraphics : public RecordingGraphics {
+   public:
+    ShadowGraphics(TestScenes& scenes, ShadowPipelines& pipelines)
+        : RecordingGraphics(scenes, pipelines), pipelines(pipelines) {}
+
+    void Draw() override {
+        shadowLayers.clear();
+        auto& frame = m_Frames[m_nFrameIndex];
+        ShadowMapPass pass(this, &pipelines);
+        pass.Draw(frame);
+        Expect(shadowLayers == std::set<int>{0, 1} &&
+                   frame.frameContext.shadowMap.size == 2,
+               "both uploaded spot layers are rendered exactly once");
+        for (int i = 0; i < frame.frameContext.numLights; ++i) {
+            Expect(uploaded.lights[i].lightShadowMapIndex ==
+                       frame.lightInfo.lights[i].lightShadowMapIndex,
+                   "shadow rendering does not change uploaded light indices");
+        }
+    }
+
+    void BeginShadowMap(int32_t lightIndex, const TextureBase*, int32_t layer,
+                        const Frame&) override {
+        Expect(uploaded.lights[lightIndex].lightShadowMapIndex == layer,
+               "render each shadow into the layer already uploaded for its light");
+        Expect(shadowLayers.insert(layer).second,
+               "colored spot lights never share a rendered shadow layer");
+    }
+
+   protected:
+    void BeginFrame(Frame& frame) override {
+        RecordingGraphics::BeginFrame(frame);
+        uploaded = frame.lightInfo;
+    }
+
+   private:
+    ShadowPipelines& pipelines;
+    LightInfo uploaded{};
+    std::set<int> shadowLayers;
+};
+
+void TestShadowUploadOrder(bool openGL) {
+    TestApplication app;
+    app.config.fixOpenGLPerspectiveMatrix = openGL;
+    TestScenes scenes;
+    scenes.revision = 1;
+    scenes.scene = std::make_shared<Scene>("colored shadow upload");
+    for (const std::string key : {"red", "green"}) {
+        auto source = std::make_shared<SceneObjectSpotLight>();
+        source->SetIfCastShadow(true);
+        AttenCurve angle{};
+        angle.type = AttenCurveType::kLinear;
+        angle.u.linear_params = {PI / 8, PI / 4};
+        source->SetAngleAttenuation(angle);
+        std::string attrib = "light";
+        Vector4f color = key == "red" ? Vector4f{1, 0, 0, 1} :
+                                       Vector4f{0, 1, 0, 1};
+        source->SetColor(attrib, color);
+        auto node = std::make_shared<SceneLightNode>(key);
+        node->AddSceneObjectRef(key);
+        node->AppendTransform("position",
+            std::make_shared<SceneObjectTranslation>(3.0f, -2.0f, 6.0f));
+        scenes.scene->SceneGraph->AppendChild(node);
+        scenes.scene->LightNodes.emplace(key, node);
+        scenes.scene->Lights.emplace(key, source);
+    }
+
+    ShadowPipelines pipelines;
+    pipelines.SetAppPointer(&app);
+    Expect(pipelines.Initialize() == 0, "initialize production shadow pipelines");
+    const auto mainCull = pipelines.GetPipelineState("PBR")->cullFaceMode;
+    for (const auto* name : {"Spot Light Shadow Map", "Area Light Shadow Map",
+                             "Sun Light Shadow Map"}) {
+        const auto pipeline = pipelines.GetPipelineState(name);
+        Expect(mainCull == CULL_FACE_MODE::BACK &&
+                   pipeline->cullFaceMode == CULL_FACE_MODE::FRONT,
+               "planar shadows cull the lit face of a single-sided surface");
+    }
+    ShadowGraphics graphics(scenes, pipelines);
+    graphics.SetAppPointer(&app);
+    Expect(graphics.Initialize() == 0, "initialize shadow upload coordinator");
+    graphics.Tick();
+    graphics.Tick();
+    scenes.scene->LightNodes.rehash(
+        scenes.scene->LightNodes.bucket_count() * 2);
+    graphics.Tick();
+    graphics.Finalize();
+    pipelines.Finalize();
+}
 
 void ExpectFrameTargets(const FrameResourceGraphics& graphics, uint32_t samples,
                         uint32_t width, uint32_t height) {
@@ -358,6 +457,8 @@ int main() {
 
     TestInjectedServices();
     TestGraphicsOnlyMode();
+    TestShadowUploadOrder(false);
+    TestShadowUploadOrder(true);
     TestFrameResourceOwnership(1, false);
     TestFrameResourceOwnership(4, false);
     TestFrameResourceOwnership(4, true);

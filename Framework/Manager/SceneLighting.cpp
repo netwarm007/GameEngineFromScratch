@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 
+#include "GfxConfiguration.hpp"
 #include "Scene.hpp"
 
 using namespace My;
@@ -20,12 +21,25 @@ void BuildLightPerspective(Matrix4X4f& projection, float fieldOfView,
                                     POINT_SHADOW_FAR_PLANE);
     }
 }
+
+void AllocateShadowMap(Light& light, uint32_t& count, uint32_t capacity) {
+    if (count < capacity) {
+        light.lightShadowMapIndex = static_cast<int32_t>(count++);
+    } else {
+        light.lightCastShadow = false;
+        std::cerr << "[SceneLighting] Shadow map capacity exceeded for light "
+                  << light.lightGuid << "; rendering without shadows\n";
+    }
+}
 }  // namespace
 
 bool My::PrepareSceneLights(const Scene& scene, bool openGLProjection,
                             LightingFrame& lighting) {
     LightingFrame result;
     result.clipSpaceType = openGLProjection ? 0 : 1;
+    uint32_t shadowmapCount = 0;
+    uint32_t globalShadowmapCount = 0;
+    uint32_t cubeShadowmapCount = 0;
     for (const auto& entry : scene.LightNodes) {
         const auto node = entry.second.lock();
         if (!node) continue;
@@ -158,6 +172,23 @@ bool My::PrepareSceneLights(const Scene& scene, bool openGLProjection,
         if (light.lightType == LightType::Infinity) {
             // The shader distinguishes a directional light using position W.
             light.lightPosition[3] = 0.0f;
+        }
+        if (light.lightCastShadow) {
+            switch (light.lightType) {
+                case LightType::Omni:
+                    AllocateShadowMap(light, cubeShadowmapCount,
+                                      GfxConfiguration::kMaxCubeShadowMapCount);
+                    break;
+                case LightType::Infinity:
+                    AllocateShadowMap(light, globalShadowmapCount,
+                                      GfxConfiguration::kMaxGlobalShadowMapCount);
+                    break;
+                case LightType::Spot:
+                case LightType::Area:
+                    AllocateShadowMap(light, shadowmapCount,
+                                      GfxConfiguration::kMaxShadowMapCount);
+                    break;
+            }
         }
         ++result.numLights;
     }
