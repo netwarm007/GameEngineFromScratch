@@ -43,6 +43,8 @@ static bool isExtensionSupported(const char *extList, const char *extension) {
 static bool ctxErrorOccurred = false;
 static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
     ctxErrorOccurred = true;
+    fprintf(stderr, "GLX initialization X error: code=%u request=%u minor=%u\n",
+            ev->error_code, ev->request_code, ev->minor_code);
     return 0;
 }
 
@@ -137,6 +139,7 @@ void OpenGLApplication::CreateMainWindow() {
             fb_config = fb_configs[best_fbc];
         }
     }
+    XFree(fb_configs);
 
     /* Get a visual */
     auto vi = glXGetVisualFromFBConfig(m_pDisplay, fb_config);

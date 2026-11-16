@@ -170,7 +170,16 @@ bool TestInitializationFailure(FailurePoint point) {
         injection.contextsCreated != injection.contextsDestroyed ||
         module.finalized != success) {
         std::cerr << "GLX failure boundary " << static_cast<int>(point)
-                  << " did not preserve initialization/cleanup invariants\n";
+                  << " did not preserve initialization/cleanup invariants: "
+                  << "result=" << result
+                  << " windows=" << injection.windowsCreated << "/"
+                  << injection.windowsDestroyed
+                  << " contexts=" << injection.contextsCreated << "/"
+                  << injection.contextsDestroyed
+                  << " attempts=" << injection.coreAttempts << "/"
+                  << injection.legacyAttempts
+                  << " unexpected X errors=" << injection.unexpectedErrors
+                  << "\n";
         return false;
     }
     return true;
