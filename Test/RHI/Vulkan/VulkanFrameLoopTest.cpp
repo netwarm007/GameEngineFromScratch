@@ -7,6 +7,7 @@
 
 #include "Vulkan/VulkanGraphicsManager.hpp"
 #include "GuiContext.hpp"
+#include "backends/imgui_impl_vulkan.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -14,6 +15,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <filesystem>
+#include <cstring>
 
 namespace {
 void Require(bool condition, const char* message) {
@@ -182,6 +184,41 @@ class GuiGraphics final : public My::VulkanGraphicsManager {
     }
 };
 
+VkResult VKAPI_PTR RejectDescriptorAllocation(VkDevice, const VkDescriptorSetAllocateInfo*, VkDescriptorSet*) {
+    return VK_ERROR_OUT_OF_POOL_MEMORY;
+}
+
+void CheckGuiAllocationRollback(My::VulkanRHI& rhi, GuiGraphics& graphics, My::Image& image,
+                                My::TextureHandler lastIdentity) {
+    auto* backend = ImGui::GetIO().BackendRendererUserData;
+    Require(ImGui_ImplVulkan_LoadFunctions(VK_API_VERSION_1_1,
+        [](const char* name, void* owner) -> PFN_vkVoidFunction {
+            if (std::strcmp(name, "vkAllocateDescriptorSets") == 0) {
+                return reinterpret_cast<PFN_vkVoidFunction>(&RejectDescriptorAllocation);
+            }
+            return vkGetInstanceProcAddr(static_cast<My::VulkanRHI*>(owner)->GetInstance(), name);
+        }, &rhi), "Native Vulkan descriptor-failure injection could not load functions");
+    bool rejected = false;
+    try {
+        graphics.CreateTexture(image);
+    } catch (const std::runtime_error& error) {
+        rejected = std::string(error.what()).starts_with("ImGui Vulkan operation failed:");
+        if (!rejected) throw;
+    }
+    Require(rejected && ImGui::GetIO().BackendRendererUserData == backend,
+            "Vulkan GUI allocation failure did not preserve the borrowed renderer");
+    // No presentation occurs with this test-only dispatch table. The next
+    // renderer initialization reinstalls the production strict-present adapter.
+    Require(ImGui_ImplVulkan_LoadFunctions(VK_API_VERSION_1_1,
+        [](const char* name, void* owner) {
+            return vkGetInstanceProcAddr(static_cast<My::VulkanRHI*>(owner)->GetInstance(), name);
+        }, &rhi), "Native Vulkan function restoration failed");
+    auto retry = graphics.CreateTexture(image);
+    Require(retry.handler == lastIdentity + 1,
+            "Failed Vulkan GUI registration published an engine texture identity");
+    graphics.ReleaseTexture(retry);
+}
+
 void RunNativeGui() {
     Window window, floating;
     GuiApplication app(window);
@@ -222,14 +259,15 @@ void RunNativeGui() {
         viewport.Size = {160, 160};
         viewport.PlatformUserData = &floating;
         auto& platform = ImGui::GetPlatformIO();
-        platform.Renderer_CreateWindow(&viewport);
-        Require(viewport.RendererUserData != nullptr, "Native Vulkan secondary viewport was not initialized");
         struct ViewportCleanup {
             ImGuiViewport& viewport;
             ~ViewportCleanup() {
                 if (viewport.RendererUserData) ImGui::GetPlatformIO().Renderer_DestroyWindow(&viewport);
+                viewport.PlatformUserData = nullptr;
             }
         } cleanup{viewport};
+        platform.Renderer_CreateWindow(&viewport);
+        Require(viewport.RendererUserData != nullptr, "Native Vulkan secondary viewport was not initialized");
         const auto generation = rhi.GetSwapChainGeneration();
         for (unsigned frame = 0; frame < 12; ++frame) {
             if (frame == 3) window.Resize(256, 128);
@@ -293,6 +331,7 @@ void RunNativeGui() {
         Require(rhi.GetSwapChainGeneration() > generation || attempt != 0,
                 "Native Vulkan GUI resize did not recreate main composition targets");
         platform.Renderer_DestroyWindow(&viewport);
+        CheckGuiAllocationRollback(rhi, graphics, image, texture.handler);
         graphics.Finalize();
         graphics.Finalize();
         Require(!io.BackendRendererUserData, "Native Vulkan GUI renderer shutdown retained borrowed context state");
