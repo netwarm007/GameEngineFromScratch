@@ -47,6 +47,12 @@ class SizeClassAllocator : _implements_ IAllocator {
     static size_t ClassIndex(size_t size);
     static size_t ClassSizeAt(size_t index);
 
+    // Class index of a pointer returned by Allocate(), or kClassCount if the
+    // slab header does not belong to this allocator. Reads only immutable
+    // slab header fields, so it is safe to call while other threads allocate
+    // from other objects; p must be a live object of this allocator.
+    size_t ClassIndexOf(const void* p) const;
+
     size_t SlabCount() const;
     size_t LiveCount() const;
     size_t FailedAllocationCount() const { return m_nFailures + ClassFailures(); }

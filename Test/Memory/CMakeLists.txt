@@ -21,16 +21,21 @@ set(ALLOCATOR_SOURCES
     "${ALLOCATOR_DIR}/SlabAllocator.cpp"
     "${ALLOCATOR_DIR}/StackAllocator.cpp"
     "${ALLOCATOR_DIR}/TlsfAllocator.cpp"
-    "${ALLOCATOR_DIR}/TrackingAllocator.cpp")
+    "${ALLOCATOR_DIR}/TrackingAllocator.cpp"
+    "${ALLOCATOR_DIR}/GpuSubAllocator.cpp"
+    "${ALLOCATOR_DIR}/ThreadCacheAllocator.cpp")
+
+find_package(Threads REQUIRED)
 
 foreach(TEST_CASE MemoryAllocatorTest LinearAllocatorTest StackAllocatorTest
     FrameAllocatorTest RingAllocatorTest PmrAdapterTest SlabAllocatorTest
     SizeClassAllocatorTest TlsfAllocatorTest BuddyAllocatorTest
-    TrackingAllocatorTest)
+    TrackingAllocatorTest GpuSubAllocatorTest ThreadCacheAllocatorTest)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp ${ALLOCATOR_SOURCES})
     target_include_directories(${TEST_CASE} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Common"
         "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Interface"
         "${ALLOCATOR_DIR}")
+    target_link_libraries(${TEST_CASE} PRIVATE Threads::Threads)
     add_test(NAME TEST_${TEST_CASE} COMMAND ${TEST_CASE})
 endforeach()

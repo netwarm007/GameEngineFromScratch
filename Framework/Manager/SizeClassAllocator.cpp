@@ -58,6 +58,15 @@ void* SizeClassAllocator::Allocate(size_t size) {
     return m_Classes[i]->Allocate();
 }
 
+size_t SizeClassAllocator::ClassIndexOf(const void* p) const {
+    if (!p || !m_bConfigured) return kClassCount;
+    const SlabAllocator* owner = SlabAllocator::OwnerOf(p, m_szSlabSize);
+    for (size_t i = 0; i < kClassCount; i++) {
+        if (m_Classes[i].get() == owner) return i;
+    }
+    return kClassCount;
+}
+
 void SizeClassAllocator::Free(void* p) {
     if (!p) return;
     if (!m_bConfigured) {

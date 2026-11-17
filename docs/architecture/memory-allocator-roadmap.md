@@ -82,18 +82,20 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 
 | Limitation | Planned handling |
 | --- | --- |
-| `LinearAllocator` and `StackAllocator` are single-threaded with fixed capacity (no growth). | Document per allocator; thread-cache layer in M7. |
+| `LinearAllocator` and `StackAllocator` are single-threaded with fixed capacity (no growth). | Documented; use one instance per thread (the thread-cache layer in M7 covers small objects only). |
 | `BlockAllocator` free-pointer validation is O(pages + free blocks) and on by default only in `_DEBUG`. | Use `TrackingAllocator` (M6) for registry-based ownership checks when validation is off. |
 | `BlockAllocator` never returns pages before `FreeAll`/destruction; single free list gives poor locality over time. | Use `SlabAllocator`/`SizeClassAllocator` (`Trim`) where page return matters; `BlockAllocator` itself stays as is. |
-| `SlabAllocator`/`SizeClassAllocator` are single-threaded; validation off (release default) cannot detect pointers outside any slab, and `Trim` is manual (no automatic shrink policy). | Thread-cache layer (M7); `TrackingAllocator` ownership checks (M6, done). |
+| `SlabAllocator`/`SizeClassAllocator` are single-threaded; validation off (release default) cannot detect pointers outside any slab, and `Trim` is manual (no automatic shrink policy). | Resolved for small objects by `ThreadCacheAllocator` (M7); `TrackingAllocator` ownership checks (M6, done). |
 | `SizeClassAllocator` serves only 1..512 bytes and 16-byte alignment; larger requests return `nullptr` and the caller must route them elsewhere. | General allocator (TLSF/Buddy, M5) and routing facade (M8). |
 | Debug fill patterns are only verified in builds defining `_DEBUG`. | Open; `TrackingAllocator` adds guard bytes but does not check fill patterns. |
-| `FrameAllocator` and `RingAllocator` are single-threaded; `RingAllocator` leaves fence tracking (when to `Retire`) to the caller. | Thread-cache layer (M7); GPU sub-allocator owns fences (M7). |
+| `FrameAllocator` and `RingAllocator` are single-threaded; `RingAllocator` leaves fence tracking (when to `Retire`) to the caller. | Per-thread instances; `GpuSubAllocator` (M7) owns fence-based reclamation for GPU memory, `RingAllocator` stays caller-driven. |
 | `PmrAdapter` forwards `deallocate` to `Free`, so LIFO/arena allocators only reclaim as their own rules allow, and failures throw `std::bad_alloc`. | Documented behavior; revisit if engine builds disable exceptions (M8). |
-| `TlsfAllocator` and `BuddyAllocator` are single-threaded with fixed capacity (no growth by adding pools). | Pool growth and thread-cache layer (M7). |
+| `TlsfAllocator` and `BuddyAllocator` are single-threaded with fixed capacity (no growth by adding pools). | Per-thread instances or an external lock; pool growth is open and goes with engine integration (M8). |
 | `TlsfAllocator` is good-fit: a request within ~1/32 of the only free block can fail; its `Free` checks inspect block headers and can be fooled by crafted user data. | Documented; `TrackingAllocator` (M6) rejects unregistered pointers before they reach `Free`. |
 | `BuddyAllocator` wastes up to 50% per block and supports alignment only up to 4096 bytes. | Intended for large or page-like blocks; documented. |
 | `TrackingAllocator` has a rear guard only (no underrun detection), no call stacks, adds 16 bytes plus a registry entry per block, and holds a global mutex; keeps the wrapped allocator's alignment (no aligned allocate); tag pointers must outlive allocations. | Debug/tooling use only; aligned allocate and call stacks if needed (M8). |
+| `ThreadCacheAllocator` serves only 1..512 bytes, cannot detect double frees (cached objects look live), and returns a thread's cache only on thread exit, `FlushThreadCache()` or `Trim()`. `FreeAll()` must not run concurrently. | Use `TrackingAllocator` on top for double-free detection; routing facade (M8). |
+| `GpuSubAllocator` manages one heap (no growth or multiple heaps), is single-threaded, uses O(log n) ordered maps (not a constant-time TLSF), and is not yet wired to any RHI backend (Vulkan/D3D12/Metal). | Heap growth and RHI binding with engine integration (M8). |
 | Allocators are not used by any engine module. | Integration (M8). |
 
 ## Foundation improvements
@@ -116,7 +118,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M4 | `SlabAllocator` (constructed-object cache, empty-slab `Trim`) and `SizeClassAllocator` (16 classes, 16 B to 512 B); tests (`SlabAllocatorTest`, `SizeClassAllocatorTest`). | Done (CI-verified, `docs/verification/b6fab1866eb639ccc1dd0395e526b99527032a44.md`) |
 | M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Done (CI-verified, `docs/verification/e81a6ccb009943eac7627ec6fc16acdb59810421.md`) |
 | M6 | `TrackingAllocator` debug decorator: statistics, tags, guard bytes, registry-based free checks, leak reports; tests (`TrackingAllocatorTest`). | Done (CI-verified, `docs/verification/05b0b2616b0c56f5bca8b66f46147da3c254c326.md`) |
-| M7 | GPU sub-allocator and thread-cache layer; tests. | Planned |
+| M7 | `GpuSubAllocator` (offset allocator with fence-based deferred free) and `ThreadCacheAllocator` (per-thread caches over `SizeClassAllocator`); tests (`GpuSubAllocatorTest`, `ThreadCacheAllocatorTest`). | Implemented; awaiting CI acceptance |
 | M8 | Engine integration (separate decision). | Not started |
 
 M1 notes: `MemoryManager` no longer depends on `portable.hpp`/`config.h`, so
@@ -132,6 +134,17 @@ M2 notes: both allocators own one fixed-capacity, 64-byte-aligned arena from
 `StackAllocator` keeps a 16-byte header per allocation so `Free(p)` can pop the
 latest allocation; `Marker` rewinds many at once. Shared helpers are in
 `AllocatorUtils.hpp`.
+
+M7 notes: `GpuSubAllocator` is backend-agnostic: it hands out offsets into a
+heap and keeps all bookkeeping on the CPU, so it also works for device-local
+memory. Free ranges live in an ordered map (coalescing) plus a size-ordered set
+(best fit); `FreeDeferred(handle, fence)` plus `Retire(completed)` keep memory
+reserved until the GPU is done. Handles carry a serial id so stale handles are
+rejected. `ThreadCacheAllocator` keeps an intrusive free list per size class in
+each thread, moves objects to or from a mutex-protected `SizeClassAllocator` in
+batches, and returns a thread's cache when the thread exits. Allocator ids are
+never reused and a registry tells exiting threads which allocators still exist.
+`SizeClassAllocator::ClassIndexOf` finds a pointer's class from the slab header.
 
 M6 notes: `TrackingAllocator` wraps any `IAllocator&` without owning it. It
 appends a 16-byte guard band after each block, keeps an `unordered_map` of live

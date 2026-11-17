@@ -28,6 +28,8 @@ add_library(Manager
         StackAllocator.cpp
         TlsfAllocator.cpp
         TrackingAllocator.cpp
+        GpuSubAllocator.cpp
+        ThreadCacheAllocator.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp
