@@ -234,6 +234,14 @@ void TestPaddingBeyondCapacity() {
     }
 }
 
+void TestAddressOverflow() {
+    MemoryManager mm;
+    StackAllocator s(&mm, 256);
+    Expect(s.Allocate(8, size_t(1) << (sizeof(size_t) * 8 - 1)) == nullptr &&
+               s.Used() == 0 && s.FailedAllocationCount() == 1,
+           "alignment past the address space is refused");
+}
+
 void TestRandomStress() {
     MemoryManager mm;
     StackAllocator s(&mm, 1 << 16);
@@ -297,6 +305,7 @@ int main() {
     TestStaleMarkers();
     TestExhaustionAndFreeAll();
     TestPaddingBeyondCapacity();
+    TestAddressOverflow();
     TestRandomStress();
 
     if (failures == 0) std::cout << "All stack allocator tests passed\n";

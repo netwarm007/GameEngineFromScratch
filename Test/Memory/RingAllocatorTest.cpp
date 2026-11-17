@@ -202,6 +202,14 @@ void TestLargeAlignment() {
     void* q = r.Allocate(8, 4096);
     Expect(q == nullptr || Aligned(q, 4096), "large alignment honored or refused");
 }
+
+void TestAddressOverflow() {
+    MemoryManager mm;
+    RingAllocator r(&mm, 1024);
+    Expect(r.Allocate(8, size_t(1) << (sizeof(size_t) * 8 - 1)) == nullptr &&
+               r.Used() == 0,
+           "alignment past the address space is refused");
+}
 }  // namespace
 
 int main() {
@@ -212,6 +220,7 @@ int main() {
     TestRetire();
     TestFencedFrames();
     TestLargeAlignment();
+    TestAddressOverflow();
 
     if (failures == 0) std::cout << "All ring allocator tests passed\n";
     return failures == 0 ? 0 : 1;

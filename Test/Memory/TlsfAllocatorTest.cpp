@@ -243,6 +243,14 @@ void TestGoodFit() {
     Expect(t.Check() && t.Used() == 0, "cleanup");
 }
 
+void TestOversizedRequests() {
+    FailingMemoryManager mm;
+    TlsfAllocator t(&mm, 4096);
+    Expect(t.Allocate(4096) == nullptr, "header does not fit");
+    Expect(t.Allocate(16, 4096) == nullptr, "alignment slack does not fit");
+    Expect(t.FailedAllocationCount() == 2 && t.Check(), "failures counted");
+}
+
 void TestRandomStress() {
     FailingMemoryManager mm;
     TlsfAllocator t(&mm, 1 << 20);
@@ -302,6 +310,7 @@ int main() {
     TestFreeAll();
     TestBinBoundaries();
     TestGoodFit();
+    TestOversizedRequests();
     TestRandomStress();
 
     if (failures == 0) std::cout << "All TLSF allocator tests passed\n";

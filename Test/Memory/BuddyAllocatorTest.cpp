@@ -31,7 +31,12 @@ class FailingMemoryManager : public MemoryManager {
         if (fail) return nullptr;
         return MemoryManager::AllocateAlignedPage(size, alignment);
     }
+    void* AllocatePage(size_t size) override {
+        if (failPlain) return nullptr;
+        return MemoryManager::AllocatePage(size);
+    }
     bool fail = false;
+    bool failPlain = false;
 };
 
 void TestConfiguration() {
@@ -210,6 +215,39 @@ void TestDataIntegrity() {
     Expect(b.Check() && b.Used() == 0, "cleanup");
 }
 
+void TestStateAllocationFailure() {
+    FailingMemoryManager mm;
+    BuddyAllocator b(&mm);
+    mm.failPlain = true;
+    Expect(!b.Initialize(4096) && mm.PageCount() == 0,
+           "state table failure releases the arena");
+    mm.failPlain = false;
+    Expect(b.Initialize(4096), "initialize recovers");
+}
+
+void TestOversizeAndFullArena() {
+    FailingMemoryManager mm;
+    BuddyAllocator b(&mm);
+    Expect(b.Initialize(1024, 64), "initialize");
+    Expect(b.Allocate(2048) == nullptr && b.Allocate(8, 4096) == nullptr &&
+               b.FailedAllocationCount() == 2,
+           "requests above capacity fail");
+    Expect(b.Allocate(1024) != nullptr && b.LargestFreeBlock() == 0,
+           "full arena has no free block");
+}
+
+void TestCheckDetectsCorruption() {
+    FailingMemoryManager mm;
+    BuddyAllocator b(&mm);
+    Expect(b.Initialize(1024, 64), "initialize");
+    auto* a = static_cast<uint8_t*>(b.Allocate(64));
+    Expect(a != nullptr && b.Check(), "healthy before corruption");
+    // the neighbouring free block stores its list links in its first bytes
+    std::memset(a + 64, 0xFF, 2 * sizeof(void*));
+    Expect(!b.Check(), "corrupted free list link detected");
+    std::memset(a + 64, 0, 2 * sizeof(void*));
+}
+
 void TestRandomStress() {
     FailingMemoryManager mm;
     BuddyAllocator b(&mm, 1 << 20, 64);
@@ -265,6 +303,9 @@ int main() {
     TestInvalidFrees();
     TestFreeAll();
     TestDataIntegrity();
+    TestStateAllocationFailure();
+    TestOversizeAndFullArena();
+    TestCheckDetectsCorruption();
     TestRandomStress();
 
     if (failures == 0) std::cout << "All buddy allocator tests passed\n";
