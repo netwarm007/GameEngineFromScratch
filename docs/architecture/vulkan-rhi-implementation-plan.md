@@ -632,7 +632,12 @@ ImGui context or window and does not verify Vulkan UI rendering.
 
 The five locally runnable tests pass on the installed Windows AMD headless
 configuration; native WSI remains subject to the checkpoint-2 SDK limitation.
-Exact-revision full CI for this increment is still required. BASIC/PBR scene
+Revision `921b3a44fae5141d887e11051f9d62e6a15cd85c` passed the full workflow in
+[pipeline 1005](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/1005).
+The [verification record](../verification/921b3a44fae5141d887e11051f9d62e6a15cd85c.md)
+records all six focused Vulkan tests passing, zero validation-error/VUID
+markers, and inspection of all six native-backend application captures.
+BASIC/PBR scene
 draws, material/frame/light bindings, skybox, shadow depth/sampling, MSAA, and
 frame-command integration remain checkpoint-3 work. This is not checkpoint
 completion and does not authorize proceeding to checkpoint 4.
