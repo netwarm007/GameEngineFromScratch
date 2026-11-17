@@ -23,6 +23,17 @@
 
 - Run focused local builds and tests for the change. Use `.circleci/config.yml`
   as the source of truth for platform-specific dependencies and commands.
+  Local runs on the current platform are the fastest feedback; use
+  `ctest -L fast` for the headless unit tests.
+- CircleCI has two scopes. A normal push runs the full scope on all enabled
+  platforms (every test, screenshots, coverage), which needs no API token and
+  is what acceptance uses. For iteration, trigger the branch through the
+  CircleCI API with `{"parameters": {"run_full": false, "platforms": "macos"}}`
+  (token from the user's environment; never record it) to run only the quick
+  scope on the listed platforms: ccache builds and `ctest -L fast`, with no
+  screenshots, coverage, or packaging. A quick result never counts as
+  acceptance. Label new tests that need no window or GPU as `fast` (see
+  `Test/CMakeLists.txt`).
 - A project commit is accepted only after the CircleCI pipeline for that exact
   revision completes successfully on every enabled platform: currently Windows,
   Linux, and macOS. Each platform must complete its configured build and tests.
