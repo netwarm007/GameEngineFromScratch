@@ -142,7 +142,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                 // recalculate the v_light_space because we do not need to taking account of rotation
                 {
                     float3 L = p.xyz - light.lightPosition.xyz;
-                    near_occ = cubeShadowMap.Sample(samp0, float4(L, float(light.lightShadowMapIndex))).x;
+                    near_occ = cubeShadowMap.Sample(shadowSampler, float4(L, float(light.lightShadowMapIndex))).x;
 
                     if (length(L) - near_occ * POINT_SHADOW_FAR_PLANE > bias)
                     {
@@ -156,7 +156,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                 v_light_space = shadow_map_coordinates(v_light_space, clip_space_type);
                 for (i = 0; i < 4; i++)
                 {
-                    near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = shadowMap.Sample(shadowSampler, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
 
                     if (v_light_space.z - near_occ > bias)
                     {
@@ -170,7 +170,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                 v_light_space = shadow_map_coordinates(v_light_space, clip_space_type);
                 for (i = 0; i < 4; i++)
                 {
-                    near_occ = globalShadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = globalShadowMap.Sample(shadowSampler, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
 
                     if (v_light_space.z - near_occ > bias)
                     {
@@ -184,7 +184,7 @@ float shadow_test(float4 p, Light light, float cosTheta, int clip_space_type) {
                 v_light_space = shadow_map_coordinates(v_light_space, clip_space_type);
                 for (i = 0; i < 4; i++)
                 {
-                    near_occ = shadowMap.Sample(samp0, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
+                    near_occ = shadowMap.Sample(shadowSampler, float3(v_light_space.xy + (poissonDisk[i] / 700.0f.xx), float(light.lightShadowMapIndex))).x;
 
                     if (v_light_space.z - near_occ > bias)
                     {

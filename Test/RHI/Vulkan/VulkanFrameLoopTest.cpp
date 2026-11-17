@@ -206,6 +206,12 @@ void Run() {
     for (unsigned attempt = 0; attempt < 40 && submitted < 20; ++attempt) {
         if (submitted == 6) window.Resize(256, 128);
         if (!rhi.BeginFrame()) continue;
+        if (submitted == 3) {
+            const auto generation = rhi.GetSwapChainGeneration();
+            rhi.AbortFrame();
+            Require(rhi.BeginFrame() && rhi.GetSwapChainGeneration() > generation,
+                    "Abandoned acquisition did not permit a safe frame retry");
+        }
         auto command = rhi.GetFrameCommandBuffer();
         const std::array<vk::ClearValue, 2> clear = {
             vk::ClearColorValue(std::array<float, 4>{0.25f, 0.5f, 0.75f, 1.0f}),

@@ -194,16 +194,10 @@ void VulkanRHI::WaitGPU() {
 }
 
 void VulkanRHI::destroyAll() {
+    if (m_commands) m_commands->Cancel();
     if (m_vkDevice) {
         try {
-            if (m_frameActive) {
-                const vk::PipelineStageFlags stage = vk::PipelineStageFlagBits::eAllCommands;
-                vk::SubmitInfo drain;
-                drain.setWaitSemaphores(m_vkImageAvailableSemaphores.at(m_nCurrentFrame));
-                drain.setWaitDstStageMask(stage);
-                m_vkGraphicsQueue.submit(drain, {});
-                m_frameActive = false;
-            }
+            AbortFrame();
             WaitGPU();
         } catch (const vk::SystemError& error) {
             std::cerr << "Vulkan shutdown wait failed: " << error.what() << '\n';
@@ -1059,7 +1053,7 @@ void VulkanRHI::createSyncObjects() {
 }
 
 bool VulkanRHI::BeginFrame() {
-    if (m_frameActive) throw std::logic_error("Vulkan frame is already recording");
+    if (m_frameActive || m_commands) throw std::logic_error("Vulkan commands are already recording");
     if (!m_vkDevice || !m_fQueryFramebufferSizeCB ||
         m_vkInFlightFences.size() != MAX_FRAMES_IN_FLIGHT) {
         throw std::logic_error("Vulkan frame resources are not initialized");
@@ -1099,6 +1093,24 @@ bool VulkanRHI::BeginFrame() {
     return true;
 }
 
+void VulkanRHI::AbortFrame() {
+    if (!m_frameActive) return;
+    const vk::PipelineStageFlags stage = vk::PipelineStageFlagBits::eAllCommands;
+    vk::SubmitInfo drain;
+    drain.setWaitSemaphores(m_vkImageAvailableSemaphores.at(m_nCurrentFrame));
+    drain.setWaitDstStageMask(stage);
+    const auto fence = m_vkDevice.createFenceUnique({});
+    m_vkGraphicsQueue.submit(drain, *fence);
+    if (m_vkDevice.waitForFences(*fence, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
+        throw std::runtime_error("Vulkan abandoned acquisition drain failed");
+    }
+    m_vkCommandBuffers.at(m_nCurrentFrame).reset();
+    for (auto& [texture, layouts] : m_frameLayouts) texture->layouts = std::move(layouts);
+    m_frameLayouts.clear();
+    m_frameActive = false;
+    m_recreateSwapChain = true;
+}
+
 vk::CommandBuffer VulkanRHI::GetFrameCommandBuffer() const {
     if (!m_frameActive) throw std::logic_error("No Vulkan frame is recording");
     return m_vkCommandBuffers.at(m_nCurrentFrame);
@@ -1120,6 +1132,7 @@ void VulkanRHI::EndFrame() {
     // Reset only after acquisition and recording have succeeded.
     m_vkDevice.resetFences(fence);
     m_vkGraphicsQueue.submit(submit, fence);
+    m_frameLayouts.clear();
     m_vkImagesInFlight[m_currentImage] = fence;
     m_frameActive = false;
     m_nCurrentFrame = (m_nCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -1427,12 +1440,19 @@ void VulkanRHI::UpdateUniformBuffer(const std::vector<VulkanRHI::UniformBuffer> 
         throw std::runtime_error("Vulkan uniform upload fence wait failed");
     }
 
-    // 上传数据
-    void *data;
-    data = m_vkDevice.mapMemory(uniformBuffers[m_nCurrentFrame].heap, 0,
-                                uniformBuffers[m_nCurrentFrame].size);
-    memcpy(static_cast<uint8_t*>(data) + offset, ubo, uboSize);
-    m_vkDevice.unmapMemory(uniformBuffers[m_nCurrentFrame].heap);
+    UpdateUniformBuffer(uniformBuffers[m_nCurrentFrame], ubo, uboSize, offset);
+}
+
+void VulkanRHI::UpdateUniformBuffer(const UniformBuffer& buffer, const void* data,
+                                  size_t size, size_t offset) {
+    if (!m_vkDevice || !buffer.buffer || !buffer.heap || !data || !size ||
+        offset > buffer.size || size > buffer.size - offset ||
+        offset % m_vkPhysicalDevice.getProperties().limits.minUniformBufferOffsetAlignment) {
+        throw std::invalid_argument("Invalid Vulkan uniform slice upload");
+    }
+    auto* mapped = static_cast<uint8_t*>(m_vkDevice.mapMemory(buffer.heap, 0, buffer.size));
+    std::memcpy(mapped + offset, data, size);
+    m_vkDevice.unmapMemory(buffer.heap);
 }
 
 void VulkanRHI::createDescriptorPool() {
@@ -1777,6 +1797,9 @@ vk::Sampler VulkanRHI::createTextureSampler() {
 }
 
 vk::CommandBuffer VulkanRHI::beginSingleTimeCommands() {
+    if (!m_vkDevice || m_frameActive || m_commands) {
+        throw std::logic_error("Vulkan immediate transfers cannot overlap a graphics recording");
+    }
     vk::CommandBufferAllocateInfo allocInfo(
         m_vkCommandPoolTransfer, vk::CommandBufferLevel::ePrimary, 1);
 
@@ -1809,16 +1832,49 @@ void VulkanRHI::submitAndWait(vk::CommandBuffer commandBuffer) {
 }
 
 void VulkanRHI::ExecuteCommands(const std::function<void(vk::CommandBuffer)>& record) {
-    if (!m_vkDevice || !record || m_frameActive) {
-        throw std::logic_error("Vulkan immediate commands require a device, recorder, and no active frame");
+    if (!record) throw std::invalid_argument("Vulkan commands require a recorder");
+    auto commands = BeginCommands();
+    record(commands->Get());
+    commands->Submit();
+}
+
+std::unique_ptr<VulkanRHI::Commands> VulkanRHI::BeginCommands() {
+    return std::unique_ptr<Commands>(new Commands(*this));
+}
+
+VulkanRHI::Commands::Commands(VulkanRHI& rhi) : m_rhi(&rhi) {
+    if (!rhi.m_vkDevice || rhi.m_frameActive || rhi.m_commands) {
+        throw std::logic_error("Vulkan immediate recording requires an idle initialized RHI");
     }
-    auto commands = m_vkDevice.allocateCommandBuffersUnique(
-        {m_vkCommandPoolTransfer, vk::CommandBufferLevel::ePrimary, 1});
-    auto command = *commands.front();
-    command.begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-    record(command);
+    auto commands = rhi.m_vkDevice.allocateCommandBuffersUnique(
+        {rhi.m_vkCommandPoolTransfer, vk::CommandBufferLevel::ePrimary, 1});
+    m_command = std::move(commands.front());
+    m_command->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    rhi.m_commands = this;
+}
+
+VulkanRHI::Commands::~Commands() { Cancel(); }
+
+vk::CommandBuffer VulkanRHI::Commands::Get() const {
+    if (!m_rhi) throw std::logic_error("Vulkan recording has already completed");
+    return *m_command;
+}
+
+void VulkanRHI::Commands::Submit() {
+    const auto command = Get();
     command.end();
-    submitAndWait(command);
+    m_rhi->submitAndWait(command);
+    m_layouts.clear();
+    Cancel();
+}
+
+void VulkanRHI::Commands::Cancel() {
+    if (!m_rhi) return;
+    for (auto& [texture, layouts] : m_layouts) texture->layouts = std::move(layouts);
+    m_layouts.clear();
+    m_command.reset();
+    m_rhi->m_commands = nullptr;
+    m_rhi = nullptr;
 }
 
 void VulkanRHI::transitionImageLayout(vk::Image image, vk::Format format,

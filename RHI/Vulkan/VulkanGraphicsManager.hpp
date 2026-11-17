@@ -8,14 +8,15 @@ class VulkanGraphicsManager : public GraphicsManager {
    public:
     explicit VulkanGraphicsManager(VulkanRHI& rhi) : m_rhi(rhi) {}
     VulkanGraphicsManager(VulkanRHI& rhi, ISceneManager& scenes,
-                          IPipelineStateManager& pipelines)
-        : GraphicsManager(scenes, pipelines), m_rhi(rhi) {}
+                          VulkanPipelineStateManager& pipelines)
+        : GraphicsManager(scenes, pipelines), m_rhi(rhi), m_pipelines(&pipelines) {}
     ~VulkanGraphicsManager() override;
 
     int Initialize() final;
     void Finalize() final;
 
     void Present() final;
+    void Draw() final;
 
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
                           const Frame& frame) final;
@@ -33,6 +34,7 @@ class VulkanGraphicsManager : public GraphicsManager {
                       const int32_t layer_index, const Frame& frame) final;
     void SetShadowMaps(const Frame& frame) final;
     void CreateTexture(SceneObjectTexture& texture) final;
+    Texture2D CreateTexture(Image& image) final;
     void ReleaseTexture(TextureBase& texture) final;
 
     // skybox
@@ -46,6 +48,9 @@ class VulkanGraphicsManager : public GraphicsManager {
                   const uint32_t depth) final;
 
     std::vector<uint8_t> ReadTexture(const TextureBase& texture);
+    std::vector<uint8_t> ReadTexture(const TextureBase& texture, uint32_t layer, uint32_t mip = 0);
+    void MSAAResolve(std::optional<std::reference_wrapper<Texture2D>> target,
+                     Texture2D& source) final;
 
    protected:
     void EndScene() final;
@@ -62,12 +67,6 @@ class VulkanGraphicsManager : public GraphicsManager {
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;
 
-    void SetPerFrameConstants(const Frame& frame);
-    void SetLightInfo(const Frame& frame);
-
-    size_t CreateIndexBuffer(const SceneObjectIndexArray& index_array);
-    size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
-
    private:
     struct OwnedTexture {
         explicit OwnedTexture(VulkanRHI& owner) : rhi(owner) {}
@@ -82,20 +81,80 @@ class VulkanGraphicsManager : public GraphicsManager {
     VulkanRHI::Texture& GetTextureResource(const TextureBase& texture);
 
     VulkanRHI& m_rhi;
+    VulkanPipelineStateManager* m_pipelines = nullptr;
     std::map<TextureHandler, std::unique_ptr<OwnedTexture>> m_ownedTextures;
     TextureHandler m_nextTexture = 0;
     bool m_computeActive = false;
     std::shared_ptr<VulkanPipelineState> m_computePipeline;
     TextureHandler m_computeOutput = 0;
 
-    struct VulkanDrawBatchContext : public DrawBatchContext {
-        uint32_t index_count{0};
-        size_t index_offset{0};
-        uint32_t property_count{0};
-        size_t property_offset{0};
-        size_t descriptor_offset{0};
+    struct BufferResource {
+        vk::UniqueDeviceMemory memory;
+        vk::UniqueBuffer buffer;
+    };
+    struct VulkanDrawBatchContext : DrawBatchContext {
+        std::array<vk::Buffer, 4> vertices{};
+        vk::Buffer indices;
+        vk::IndexType indexType = vk::IndexType::eUint32;
+        uint32_t indexCount = 0;
+    };
+    struct RenderResources {
+        std::vector<vk::UniqueImageView> views;
+        std::vector<vk::UniqueRenderPass> passes;
+        std::vector<vk::UniqueFramebuffer> framebuffers;
+        std::vector<vk::UniqueDescriptorPool> descriptorPools;
+        uint32_t descriptorCount = 0;
+        void Clear() {
+            framebuffers.clear();
+            passes.clear();
+            views.clear();
+            descriptorPools.clear();
+            descriptorCount = 0;
+        }
     };
 
-    VulkanDrawBatchContext m_dbcSkyBox;
+    vk::CommandBuffer Command() const;
+    void BeginRenderTarget(VulkanRHI::Texture* color, VulkanRHI::Texture& depth,
+                           bool clear, uint32_t firstLayer = 0, uint32_t layers = 1);
+    void FinishRenderTarget();
+    uint32_t UploadConstants(const void* data, size_t size);
+    void BindDraw(const Frame& frame, const material_textures& material, uint32_t batchOffset);
+    void DrawBatches(const Frame& frame);
+    vk::Buffer UploadVertex(const void* data, size_t size);
+    vk::Buffer UploadIndex(const void* data, size_t size);
+    Texture2D SolidTexture(const std::array<uint8_t, 4>& pixel);
+    Texture2D MaterialTexture(const std::shared_ptr<SceneObjectTexture>& source,
+                              const std::array<uint8_t, 4>& value);
+    void InitializeFallbacks();
+    void InitializeDepth(TextureBase& texture);
+
+    std::vector<BufferResource> m_buffers;
+    std::map<const SceneObjectTexture*, Texture2D> m_materialTextures;
+    std::array<Texture2D, 4> m_fallback2D;
+    Texture2DArray m_fallbackShadow;
+    TextureCubeArray m_fallbackCubeShadow;
+    TextureCubeArray m_fallbackSky;
+    vk::UniqueSampler m_sampler;
+    vk::UniqueSampler m_shadowSampler;
+    std::vector<VulkanRHI::UniformBuffer> m_uniforms;
+    std::array<RenderResources, GfxConfiguration::kMaxInFlightFrameCount> m_renderResources;
+    std::vector<uint32_t> m_batchOffsets;
+    uint32_t m_uniformCursor = 0;
+    uint32_t m_frameOffset = 0;
+    uint32_t m_lightOffset = 0;
+    uint32_t m_passOffset = 0;
+    uint32_t m_skyOffset = 0;
+    bool m_rendering = false;
+    bool m_frameRecording = false;
+    vk::RenderPass m_renderPass;
+    VulkanRHI::Texture* m_renderColor = nullptr;
+    VulkanRHI::Texture* m_renderDepth = nullptr;
+    std::shared_ptr<VulkanPipelineState> m_graphicsPipeline;
+    VulkanDrawBatchContext m_skyBatch;
+    ShadowMapConstants m_shadowConstants{};
+    bool m_shadowOmni = false;
+    bool m_shadowSingleFace = false;
+    uint32_t m_shadowFirstLayer = 0;
+    std::unique_ptr<VulkanRHI::Commands> m_commands;
 };
 }  // namespace My

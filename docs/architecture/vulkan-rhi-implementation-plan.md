@@ -642,6 +642,105 @@ draws, material/frame/light bindings, skybox, shadow depth/sampling, MSAA, and
 frame-command integration remain checkpoint-3 work. This is not checkpoint
 completion and does not authorize proceeding to checkpoint 4.
 
+#### Shared scene, environment, shadow, and MSAA integration
+
+The renderer now consumes the shared scene batches and actual
+ForwardGeometryPass/GeometrySubPass/SkyBoxSubPass and ShadowMapPass contracts.
+It uploads position/normal/UV/tangent streams, material image/scalar parameters,
+normalized index groups, runtime model matrices, frame constants, and prepared
+light data. Aligned immutable uniform slices distinguish frames, batches,
+lights, and the six single-face shadow draws. Descriptor pools, image views,
+framebuffers, and render passes live until their frame slot completes.
+Normal native frames use the existing submission fences; synchronous headless
+recording is an explicit test path, not an alternative scene/pass scheduler.
+
+Visible environment faces retain supplied mips, generating missing visible
+mips only when the format supports blitting. Irradiance replaces cube 0 mip 1;
+prefiltered radiance occupies cube 1 and preserves its supplied mip chain.
+These operations never regenerate the supplied irradiance/radiance data.
+The shipped sunrise headers use 1024-square visible/radiance faces and
+512-square irradiance faces, matching this existing packed shader contract.
+Generated HDR-independent fixtures verify packing and shader consumption;
+actual Vulkan Viewer/Billiard asset captures remain checkpoint 4 work.
+
+Two narrowly scoped shader adaptations preserve the shared algorithms:
+
+- The existing omni HLSL vertex source also supplies a macro-selected
+  single-face entry point. Production standard omni definitions select this
+  variant when geometry shaders are unavailable or the upstream macOS registry
+  selects the Metal vertex-layer variant. Both paths use the unchanged shared
+  radial-depth fragment shader; no Vulkan lighting/shadow shader copy exists.
+- Vulkan binds a dedicated shadow sampler at s1/binding 65. The shared
+  `shadowSampler` name aliases the original s0 on other backends, preserving
+  their bindings and sampling behavior. Vulkan material/environment sampling
+  remains linear/trilinear with repeat addressing, as in D3D12; shadow sampling
+  uses clamped linear filtering where D32 supports it, otherwise reports and
+  uses nearest filtering. A D32 capability limitation no longer downgrades all
+  material/environment textures to nearest filtering.
+
+Color targets retain the tested negative-height viewport/counterclockwise
+front-face pairing. Shadow targets instead use positive-height viewports with
+clockwise front faces: this preserves the existing shared projected-shadow UV
+mapping and cubemap face/up conventions. A local negative control restoring
+negative-height shadow viewports failed the real PBR off-axis shadow-receiver
+assertion; the corrected pairing passes. Depth-only projected shadow pipelines
+omit the shared no-op color-output fragment stage rather than attaching a fake
+color target or changing another backend's shader.
+
+MSAA color/depth images use validated, supported sample counts, followed by the
+shared explicit resolve call. Scoped abandoned recordings restore tracked
+subresource layouts without submitting their recorded work. Native frame abort
+drains acquisition separately, discards the command buffer, and requests safe
+swapchain recreation before retry; scene teardown also uses that path.
+
+Focused local GPU regressions now cover:
+
+- Actual BASIC/PBR pixels, separate material index groups, an uploaded gradient
+  texture and the shared vertex-stage V flip, visibility, model updates across
+  frame slots, and a farther differently colored mesh deliberately drawn last.
+- An off-axis shadow receiver plus untouched lit controls for point, spot, area,
+  and directional lights through the production PBR shader.
+- Twelve unequal off-axis occluders, translated point lights, reversed distinct
+  cube indices, all six faces, radial-depth error below 0.000002, and preserved
+  clear center texels, through both geometry and forced single-face variants.
+- Every packed environment face/mip, generated visible mips, all six rendered
+  sky directions with spatial orientation and tone-mapping checks, and actual
+  PBR irradiance/radiance/BRDF consumption versus a black-environment control.
+- One- versus four-sample rendering, analytic 3/4 edge coverage within three
+  RGBA8 levels, matching fully covered interiors, and completed resolve output.
+- Recording cancellation/layout rollback, rejected overlapping transfers and
+  tracked-image destruction, reload after an abandoned render pass, resize,
+  repeated finalization, and validation through destruction.
+
+The isolated CI job retains these offscreen PPM readback images as artifacts;
+they are Vulkan images, not application-window or desktop captures. Local
+results do not satisfy the exact-revision full CI gate. Checkpoint 3 remains
+open until that gate and image inspection finish, followed by user confirmation.
+
+## Known limitations and follow-ups
+
+- **Checkpoint 3:** The production renderer requires the shared 28800-byte
+  LightInfo uniform block to fit maxUniformBufferRange. Devices offering only
+  Vulkan's smaller minimum fail explicitly; low-level headless tests do not
+  impose this renderer-specific limit.
+- **Checkpoint 3:** D32 linear filtering is capability-dependent. The explicit
+  nearest shadow-sampler path preserves material filtering but can change
+  shadow-edge filtering compared with a linear-capable device.
+- **Checkpoint 3:** Scene upload currently accepts triangle lists with the
+  shared float position/normal/UV/tangent streams. Unsupported stream formats,
+  malformed indices, incompatible environment packing, and unsupported sample
+  counts fail explicitly rather than producing partial or missing geometry.
+  Initialization compute executes the active shared BRDF kernel; dormant
+  raytrace dispatch is not enabled or advertised as covered.
+- **Checkpoint 4:** The final swapchain/UI pass, Vulkan ImGui renderer lifecycle,
+  native Viewer/Billiard backend selection, icons/previews/debug textures, and
+  supported floating viewports are not implemented or verified by these
+  offscreen scene tests.
+- **Checkpoint 5:** Windows Vulkan WSI and MoltenVK runtime acceptance remain
+  unknown. Linux lavapipe/Xcb is reference coverage, not hardware acceptance;
+  passing native Metal jobs do not verify MoltenVK. The installed local old
+  SDK still cannot exercise the strict maintenance-aware native frame loop.
+
 ## Platform and acceptance strategy
 
 Desktop scope is Windows and Linux Vulkan plus macOS Vulkan through MoltenVK.

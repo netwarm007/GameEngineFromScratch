@@ -32,6 +32,7 @@ set(binding_texture_array ${cpu_binding_textureBase})
 set(binding_cubemap ${cpu_binding_textureBase})
 set(binding_tex ${cpu_binding_textureBase})
 set(binding_samp0 ${cpu_binding_samplerBase})
+set(binding_shadowSampler ${cpu_binding_shadowSampler})
 set(binding_img_output ${cpu_binding_storageImageBase})
 
 foreach(shader IN LISTS SHADERS)
@@ -107,12 +108,12 @@ foreach(shader IN LISTS SHADERS)
         set(required PerFrameConstants PerBatchConstants)
     elseif(shader STREQUAL "pbr.frag")
         set(required PerFrameConstants LightInfo cubeShadowMap shadowMap
-            globalShadowMap diffuseMap metallicMap normalMap skybox brdfLUT samp0)
+            globalShadowMap diffuseMap metallicMap normalMap skybox brdfLUT samp0 shadowSampler)
     elseif(shader STREQUAL "shadowmap_omni.geom")
         set(required ShadowMapConstants)
     elseif(shader STREQUAL "shadowmap_omni.frag")
         set(required ShadowMapConstants LightInfo)
-    elseif(shader STREQUAL "shadowmap_omni_metal.vert")
+    elseif(shader STREQUAL "shadowmap_omni_metal.vert" OR shader STREQUAL "shadowmap_omni_single.vert")
         set(required ShadowMapConstants PerBatchConstants)
     elseif(shader MATCHES "^(integrateBRDF|raytrace).comp$")
         set(required img_output)
@@ -166,6 +167,7 @@ foreach(pair IN ITEMS "simple.vert|simple.frag" "basic.vert|basic.frag"
     "debug.vert|debug.frag" "pbr.vert|pbr.frag" "skybox.vert|skybox.frag"
     "shadowmap.vert|shadowmap.frag" "shadowmap_omni.geom|shadowmap_omni.frag"
     "shadowmap_omni_metal.vert|shadowmap_omni.frag"
+    "shadowmap_omni_single.vert|shadowmap_omni.frag"
     "passthrough.vert|texture.frag" "passthrough.vert|texturearray.frag"
     "passthrough_cube.vert|cubemap.frag" "passthrough_cube.vert|cubemaparray.frag")
     string(REPLACE "|" ";" stages "${pair}")

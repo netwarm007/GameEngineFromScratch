@@ -98,7 +98,17 @@ bool VulkanPipelineStateManager::InitializePipelineState(
     if (!ppPipelineState || !*ppPipelineState || !m_rhi.GetDevice()) {
         throw std::logic_error("Vulkan pipeline creation requires a definition and initialized device");
     }
-    const auto& definition = **ppPipelineState;
+    auto definition = **ppPipelineState;
+    if (definition.pixelFormat == PIXEL_FORMAT::UNKNOWN &&
+        definition.pixelShaderName == "shadowmap.frag") {
+        definition.pixelShaderName.clear();
+    }
+    const auto features = m_rhi.GetPhysicalDevice().getFeatures();
+    if (definition.pipelineStateName == "Omni Light Shadow Map" &&
+        (!features.geometryShader || definition.vertexShaderName == "shadowmap_omni_metal.vert")) {
+        definition.vertexShaderName = "shadowmap_omni_single.vert";
+        definition.geometryShaderName.clear();
+    }
     if (definition.pipelineStateName.empty() || m_pipelineStates.contains(definition.pipelineStateName)) {
         throw std::invalid_argument("Empty or duplicate Vulkan pipeline name");
     }
@@ -116,7 +126,6 @@ bool VulkanPipelineStateManager::InitializePipelineState(
                 : definition.vertexShaderName.empty() || !definition.computeShaderName.empty()) {
         throw std::invalid_argument("Vulkan pipeline has missing or incompatible shader stages");
     }
-    const auto features = m_rhi.GetPhysicalDevice().getFeatures();
     if (!definition.geometryShaderName.empty() && !features.geometryShader) {
         throw std::runtime_error("Vulkan pipeline requires geometry shader support");
     }
@@ -153,6 +162,7 @@ bool VulkanPipelineStateManager::InitializePipelineState(
         bindings.emplace_back(kTextureBase + texture, vk::DescriptorType::eSampledImage, 1, visibility);
     }
     bindings.emplace_back(kSamplerBase, vk::DescriptorType::eSampler, 1, visibility);
+    bindings.emplace_back(kShadowSampler, vk::DescriptorType::eSampler, 1, visibility);
     bindings.emplace_back(kStorageImageBase, vk::DescriptorType::eStorageImage, 1, visibility);
     const auto device = m_rhi.GetDevice();
     state->descriptorSetLayout = device.createDescriptorSetLayoutUnique({{}, bindings});
@@ -201,7 +211,10 @@ void VulkanPipelineStateManager::CreateGraphicsPipeline(VulkanPipelineState& sta
         case A2V_TYPES_FULL: attribute(3); attribute(3); attribute(2); attribute(3); break;
         case A2V_TYPES_SIMPLE: attribute(3); attribute(2); break;
         case A2V_TYPES_POS_ONLY: attribute(3); break;
-        case A2V_TYPES_CUBE: attribute(3); attribute(3); break;
+        case A2V_TYPES_CUBE:
+            attribute(3);
+            if (state.vertexShaderName != "skybox.vert") attribute(3);
+            break;
         case A2V_TYPES_NONE: break;
         default: throw std::invalid_argument("Unsupported Vulkan vertex input layout");
     }
@@ -217,7 +230,8 @@ void VulkanPipelineStateManager::CreateGraphicsPipeline(VulkanPipelineState& sta
     }
     // Paired with a negative-height viewport for the engine's Y-up rendering convention.
     const vk::PipelineRasterizationStateCreateInfo raster(
-        {}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, cull, vk::FrontFace::eCounterClockwise,
+        {}, VK_FALSE, VK_FALSE, vk::PolygonMode::eFill, cull,
+        state.flag == PIPELINE_FLAG::SHADOW ? vk::FrontFace::eClockwise : vk::FrontFace::eCounterClockwise,
         VK_FALSE, 0, 0, 0, 1);
     const vk::PipelineMultisampleStateCreateInfo multisample({}, samples);
     const vk::PipelineDepthStencilStateCreateInfo depth(

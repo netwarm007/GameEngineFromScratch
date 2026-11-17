@@ -39,7 +39,7 @@ struct Descriptors {
         const std::array sizes{
             vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 4),
             vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 12),
-            vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 1),
+            vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
             vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 1)};
         pool = device.createDescriptorPoolUnique({{}, 1, sizes});
         const auto layout = *state.descriptorSetLayout;

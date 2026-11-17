@@ -143,6 +143,9 @@ else()
     add_library(VulkanRegressionGraphics STATIC "${root}/RHI/Vulkan/VulkanGraphicsManager.cpp")
     target_link_libraries(VulkanRegressionGraphics PUBLIC VulkanRegressionRHI PRIVATE RenderServices)
 endif()
+target_sources(VulkanRegressionGraphics PRIVATE
+    "${root}/RHI/Vulkan/VulkanGraphicsRendering.cpp"
+    "${root}/RHI/Vulkan/VulkanGraphicsShadow.cpp")
 target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/Framework/Geometries")
 add_executable(VulkanGraphicsTest VulkanGraphicsTest.cpp
     "${root}/Platform/Empty/AssetLoader.cpp")

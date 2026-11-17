@@ -10,5 +10,6 @@ inline constexpr uint32_t kLightInfo = 12;
 inline constexpr uint32_t kPassConstants = 13;
 inline constexpr uint32_t kTextureBase = 32;
 inline constexpr uint32_t kSamplerBase = 64;
+inline constexpr uint32_t kShadowSampler = kSamplerBase + 1;
 inline constexpr uint32_t kStorageImageBase = 96;
 }  // namespace My::VulkanShaderBindings

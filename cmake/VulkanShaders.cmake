@@ -13,6 +13,7 @@ set(MYGE_SHARED_SHADER_SOURCES
 
 set(MYGE_VULKAN_GLSLANG_OPTIONS -V --target-env vulkan1.1
     --define-macro MYGE_GLSLANG=1
+    --define-macro MYGE_VULKAN=1
     --shift-UBO-binding 0 --shift-texture-binding 32
     --shift-sampler-binding 64 --shift-image-binding 96 --shift-uav-binding 96)
 
@@ -36,6 +37,20 @@ function(myge_add_vulkan_shaders target root output config_dir)
             VERBATIM)
         list(APPEND outputs "${binary}")
     endforeach()
+    set(single_face "${output}/shadowmap_omni_single.vert.spv")
+    add_custom_command(OUTPUT "${single_face}"
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${output}"
+        COMMAND "${GLSL_VALIDATOR}" ${MYGE_VULKAN_GLSLANG_OPTIONS}
+            --define-macro MYGE_POINT_SHADOW_SINGLE_FACE=1
+            "-I${config_dir}" "-I${root}/Framework/Common"
+            -e shadowmap_omni_single_vert_main -o "${single_face}"
+            "${root}/Asset/Shaders/HLSL/shadowmap_omni.vert.hlsl"
+        DEPENDS ${headers} "${config_dir}/config.h"
+            "${root}/Framework/Common/cbuffer.h"
+            "${root}/Framework/Common/root_signature.h.hlsl"
+        VERBATIM)
+    list(APPEND outputs "${single_face}")
+    list(APPEND shaders shadowmap_omni_single.vert)
     add_custom_target(${target} DEPENDS ${outputs})
     set(MYGE_VULKAN_SHADER_SOURCES "${shaders}" PARENT_SCOPE)
 endfunction()

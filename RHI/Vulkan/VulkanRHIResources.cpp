@@ -202,7 +202,8 @@ std::vector<uint8_t> VulkanRHI::ReadBuffer(vk::Buffer buffer, vk::DeviceSize siz
 
 VulkanRHI::Texture VulkanRHI::CreateTexture(
     uint32_t width, uint32_t height, vk::Format format, uint32_t mipLevels,
-    uint32_t layers, vk::ImageViewType viewType, vk::ImageUsageFlags usage) {
+    uint32_t layers, vk::ImageViewType viewType, vk::ImageUsageFlags usage,
+    vk::SampleCountFlagBits samples) {
     if (!m_vkDevice) throw std::logic_error("Texture creation requires a Vulkan device");
     uint32_t maxMips = 1;
     for (auto dimension = (std::max)(width, height); dimension > 1; dimension >>= 1) ++maxMips;
@@ -212,7 +213,10 @@ VulkanRHI::Texture VulkanRHI::CreateTexture(
         (viewType != vk::ImageViewType::e2D && viewType != vk::ImageViewType::e2DArray && !cube) ||
         (viewType == vk::ImageViewType::e2D && layers != 1) ||
         (viewType == vk::ImageViewType::eCube && layers != 6) ||
-        (cube && (width != height || layers % 6 != 0))) {
+        (cube && (width != height || layers % 6 != 0)) ||
+        (samples != vk::SampleCountFlagBits::e1 && (mipLevels != 1 || cube)) ||
+        !(static_cast<uint32_t>(samples)) ||
+        (static_cast<uint32_t>(samples) & (static_cast<uint32_t>(samples) - 1))) {
         throw std::invalid_argument("Invalid Vulkan texture dimensions, format, or view type");
     }
     const auto features = m_vkPhysicalDevice.getFeatures();
@@ -230,6 +234,7 @@ VulkanRHI::Texture VulkanRHI::CreateTexture(
     texture.mipLevels = mipLevels;
     texture.layers = layers;
     texture.format = format;
+    texture.samples = samples;
     texture.aspect = vk::ImageAspectFlagBits::eColor;
     if (format == vk::Format::eD16Unorm || format == vk::Format::eD32Sfloat ||
         format == vk::Format::eX8D24UnormPack32) {
@@ -253,13 +258,14 @@ VulkanRHI::Texture VulkanRHI::CreateTexture(
                                   vk::to_string(static_cast<vk::Result>(supported)));
     }
     if (width > support.maxExtent.width || height > support.maxExtent.height ||
-        layers > support.maxArrayLayers || mipLevels > support.maxMipLevels) {
+        layers > support.maxArrayLayers || mipLevels > support.maxMipLevels ||
+        !(support.sampleCounts & static_cast<VkSampleCountFlags>(samples))) {
         throw std::invalid_argument("Vulkan texture exceeds device image limits");
     }
     texture.layouts.assign(size_t{mipLevels} * layers, vk::ImageLayout::eUndefined);
     TextureOwner owner{m_vkDevice, texture};
     const vk::ImageCreateInfo image(flags, vk::ImageType::e2D, format,
-        vk::Extent3D(width, height, 1), mipLevels, layers, vk::SampleCountFlagBits::e1,
+        vk::Extent3D(width, height, 1), mipLevels, layers, samples,
         vk::ImageTiling::eOptimal, texture.usage);
     texture.image = m_vkDevice.createImage(image);
     const auto memory = m_vkDevice.getImageMemoryRequirements(texture.image);
@@ -301,6 +307,11 @@ void VulkanRHI::TransitionTexture(vk::CommandBuffer command, Texture& texture,
          texture.aspect == vk::ImageAspectFlagBits::eColor)) {
         throw std::invalid_argument("Vulkan texture layout is incompatible with its usage or aspect");
     }
+    if (m_commands && m_commands->Get() == command) {
+        m_commands->m_layouts.try_emplace(&texture, texture.layouts);
+    } else if (m_frameActive && GetFrameCommandBuffer() == command) {
+        m_frameLayouts.try_emplace(&texture, texture.layouts);
+    }
     for (uint32_t layer = range.baseArrayLayer; layer < range.baseArrayLayer + range.layerCount; ++layer) {
         for (uint32_t mip = range.baseMipLevel; mip < range.baseMipLevel + range.levelCount; ++mip) {
             auto& previous = texture.layouts[size_t{layer} * texture.mipLevels + mip];
@@ -319,6 +330,7 @@ void VulkanRHI::UpdateTexture(Texture& texture, const void* data, size_t size,
                               uint32_t mip, uint32_t layer) {
     CheckSubresource(texture, mip, layer);
     if (!data || size != SubresourceBytes(texture, mip) ||
+        texture.samples != vk::SampleCountFlagBits::e1 ||
         (texture.aspect & vk::ImageAspectFlagBits::eStencil)) {
         throw std::invalid_argument("Vulkan texture upload requires one tightly packed mip/layer");
     }
@@ -342,7 +354,7 @@ void VulkanRHI::UpdateTexture(Texture& texture, const void* data, size_t size,
 std::vector<uint8_t> VulkanRHI::ReadTexture(Texture& texture, uint32_t mip, uint32_t layer) {
     CheckSubresource(texture, mip, layer);
     const auto previous = texture.layouts[size_t{layer} * texture.mipLevels + mip];
-    if (previous == vk::ImageLayout::eUndefined ||
+    if (previous == vk::ImageLayout::eUndefined || texture.samples != vk::SampleCountFlagBits::e1 ||
         (texture.aspect & vk::ImageAspectFlagBits::eStencil)) {
         throw std::invalid_argument("Cannot read undefined or packed depth/stencil texture contents");
     }
@@ -370,6 +382,9 @@ std::vector<uint8_t> VulkanRHI::ReadTexture(Texture& texture, uint32_t mip, uint
 
 void VulkanRHI::GenerateMipmaps(Texture& texture) {
     CheckSubresource(texture, 0, 0);
+    if (texture.samples != vk::SampleCountFlagBits::e1) {
+        throw std::invalid_argument("Vulkan multisample images cannot have mipmaps");
+    }
     if (texture.mipLevels == 1) return;
     const auto required = vk::FormatFeatureFlagBits::eBlitSrc |
                           vk::FormatFeatureFlagBits::eBlitDst |
@@ -405,16 +420,40 @@ void VulkanRHI::GenerateMipmaps(Texture& texture) {
 }
 
 void VulkanRHI::DestroyTexture(Texture& texture) {
+    if ((m_commands && m_commands->m_layouts.contains(&texture)) || m_frameLayouts.contains(&texture)) {
+        throw std::logic_error("Cannot destroy a texture referenced by an active Vulkan recording");
+    }
     if (!m_vkDevice) {
         if (texture.image || texture.descriptor || texture.heap) {
             throw std::logic_error("Vulkan texture outlived its device");
         }
+
     } else {
         m_vkDevice.destroyImageView(texture.descriptor);
         m_vkDevice.destroyImage(texture.image);
         m_vkDevice.freeMemory(texture.heap);
     }
     texture = {};
+}
+
+void VulkanRHI::ResolveTexture(vk::CommandBuffer command, Texture& source, Texture& target) {
+    if (source.samples == vk::SampleCountFlagBits::e1 ||
+        target.samples != vk::SampleCountFlagBits::e1 ||
+        source.aspect != vk::ImageAspectFlagBits::eColor || source.aspect != target.aspect ||
+        source.format != target.format || source.width != target.width || source.height != target.height ||
+        source.layers != 1 || target.layers != 1 ||
+        source.layouts.empty() || source.layouts[0] == vk::ImageLayout::eUndefined) {
+        throw std::invalid_argument("Vulkan resolve requires matching initialized multisample/color targets");
+    }
+    const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+    TransitionTexture(command, source, range, vk::ImageLayout::eTransferSrcOptimal);
+    TransitionTexture(command, target, range, vk::ImageLayout::eTransferDstOptimal);
+    const vk::ImageSubresourceLayers layer(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+    command.resolveImage(source.image, vk::ImageLayout::eTransferSrcOptimal, target.image,
+        vk::ImageLayout::eTransferDstOptimal,
+        vk::ImageResolve(layer, {0, 0, 0}, layer, {0, 0, 0}, {source.width, source.height, 1}));
+    TransitionTexture(command, source, range, vk::ImageLayout::eColorAttachmentOptimal);
+    TransitionTexture(command, target, range, vk::ImageLayout::eShaderReadOnlyOptimal);
 }
 
 VulkanRHI::Texture VulkanRHI::createTextureImage(Image& image) {

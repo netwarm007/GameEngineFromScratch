@@ -3,6 +3,8 @@ add_library(VulkanRHI
     VulkanRHIResources.cpp
     VulkanPipelineStateManager.cpp
     VulkanGraphicsManager.cpp
+    VulkanGraphicsRendering.cpp
+    VulkanGraphicsShadow.cpp
 )
 
 target_link_libraries(VulkanRHI ${Vulkan_LIBRARIES})

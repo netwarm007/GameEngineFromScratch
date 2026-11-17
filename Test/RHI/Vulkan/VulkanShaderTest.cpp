@@ -86,6 +86,7 @@ void PrintAbi() {
               << "\nbinding_passConstants=" << Bindings::kPassConstants
               << "\nbinding_textureBase=" << Bindings::kTextureBase
               << "\nbinding_samplerBase=" << Bindings::kSamplerBase
+              << "\nbinding_shadowSampler=" << Bindings::kShadowSampler
               << "\nbinding_storageImageBase=" << Bindings::kStorageImageBase << '\n';
 }
 

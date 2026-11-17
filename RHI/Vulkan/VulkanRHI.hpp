@@ -2,6 +2,8 @@
 #include <array>
 #include <atomic>
 #include <functional>
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -45,6 +47,7 @@ class VulkanRHI {
         uint32_t layers = 0;
         vk::ImageAspectFlags aspect;
         vk::ImageUsageFlags usage;
+        vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1;
         std::vector<vk::ImageLayout> layouts;
     };
 
@@ -63,6 +66,23 @@ class VulkanRHI {
         vk::ShaderModule module;
         vk::ShaderStageFlagBits stage;
         std::string entry_point;
+    };
+
+    class Commands {
+       public:
+        ~Commands();
+        Commands(const Commands&) = delete;
+        Commands& operator=(const Commands&) = delete;
+        vk::CommandBuffer Get() const;
+        void Submit();
+
+       private:
+        friend class VulkanRHI;
+        explicit Commands(VulkanRHI& rhi);
+        void Cancel();
+        VulkanRHI* m_rhi;
+        vk::UniqueCommandBuffer m_command;
+        std::map<Texture*, std::vector<vk::ImageLayout>> m_layouts;
     };
 
    public:
@@ -91,7 +111,10 @@ class VulkanRHI {
     void InitializeHeadless();
     void WaitGPU();
     void ExecuteCommands(const std::function<void(vk::CommandBuffer)>& record);
+    std::unique_ptr<Commands> BeginCommands();
+    bool HasSurface() const { return bool(m_vkSurface); }
     bool BeginFrame();
+    void AbortFrame();
     void EndFrame();
     vk::CommandBuffer GetFrameCommandBuffer() const;
     vk::Framebuffer GetFrameFramebuffer() const;
@@ -104,7 +127,9 @@ class VulkanRHI {
     Texture CreateTexture(uint32_t width, uint32_t height, vk::Format format,
                           uint32_t mipLevels = 1, uint32_t layers = 1,
                           vk::ImageViewType viewType = vk::ImageViewType::e2D,
-                          vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eSampled);
+                          vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eSampled,
+                          vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1);
+    void ResolveTexture(vk::CommandBuffer command, Texture& source, Texture& target);
     void UpdateTexture(Texture& texture, const void* data, size_t size,
                        uint32_t mip = 0, uint32_t layer = 0);
     std::vector<uint8_t> ReadTexture(Texture& texture, uint32_t mip = 0,
@@ -148,6 +173,8 @@ class VulkanRHI {
         vk::DeviceSize bufferSize);
     void UpdateUniformBuffer(const std::vector<VulkanRHI::UniformBuffer> &uniformBuffers,
                             const void* ubo, size_t uboSize, size_t offset = 0);
+    void UpdateUniformBuffer(const UniformBuffer& buffer, const void* data,
+                             size_t size, size_t offset);
     vk::ShaderModule createShaderModule(const Buffer& code);
     void createDescriptorPool();
     void createDescriptorSets(
@@ -192,6 +219,8 @@ class VulkanRHI {
     void initializeDevice(const std::vector<const char*>& extensions,
                            const CreateSurfaceCBFunc& surface);
     void submitAndWait(vk::CommandBuffer command);
+    Commands* m_commands = nullptr;
+    std::map<Texture*, std::vector<vk::ImageLayout>> m_frameLayouts;
 
     vk::Instance m_vkInstance;
     vk::DebugUtilsMessengerEXT m_vkDebugMessenger;

@@ -205,6 +205,48 @@ void CheckImageUploads(RHI& rhi) {
     Bytes(rhi.ReadTexture(signedRgb.value), rgba.data(), rgba.size());
 }
 
+void CheckAbandonedCommands(RHI& rhi) {
+    Texture image{rhi, rhi.CreateTexture(2, 2, vk::Format::eR8G8B8A8Unorm)};
+    const std::array<uint8_t, 16> original{15, 25, 35, 255, 15, 25, 35, 255,
+                                           15, 25, 35, 255, 15, 25, 35, 255};
+    rhi.UpdateTexture(image.value, original.data(), original.size());
+    const auto layouts = image.value.layouts;
+    const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+    bool failed = false;
+    try {
+        rhi.ExecuteCommands([&](vk::CommandBuffer command) {
+            rhi.TransitionTexture(command, image.value, range, vk::ImageLayout::eTransferDstOptimal);
+            command.clearColorImage(image.value.image, vk::ImageLayout::eTransferDstOptimal,
+                vk::ClearColorValue(std::array<float, 4>{0, 1, 0, 1}), range);
+            throw std::runtime_error("injected recording failure");
+        });
+    } catch (const std::runtime_error& error) {
+        if (std::string(error.what()) != "injected recording failure") throw;
+        failed = true;
+    }
+    Require(failed && image.value.layouts == layouts,
+            "Abandoned Vulkan commands did not restore CPU-side subresource layouts");
+    Bytes(rhi.ReadTexture(image.value), original.data(), original.size());
+    auto commands = rhi.BeginCommands();
+    rhi.TransitionTexture(commands->Get(), image.value, range, vk::ImageLayout::eTransferSrcOptimal);
+    failed = false;
+    try {
+        rhi.DestroyTexture(image.value);
+    } catch (const std::logic_error&) {
+        failed = true;
+    }
+    Require(failed && image.value.image, "Recording allowed a tracked texture to be destroyed");
+    failed = false;
+    try {
+        rhi.ReadTexture(image.value);
+    } catch (const std::logic_error&) {
+        failed = true;
+    }
+    Require(failed, "Immediate transfer overlapped an unsubmitted graphics recording");
+    commands.reset();
+    Bytes(rhi.ReadTexture(image.value), original.data(), original.size());
+}
+
 void Run() {
 #ifdef NDEBUG
     throw std::runtime_error("Run Vulkan resource regressions in Debug with validation enabled");
@@ -214,6 +256,7 @@ void Run() {
     CheckBuffers(rhi);
     CheckSubresources(rhi);
     CheckImageUploads(rhi);
+    CheckAbandonedCommands(rhi);
     rhi.destroyAll();
     rhi.destroyAll();
     Require(rhi.GetValidationErrorCount() == 0,
