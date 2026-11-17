@@ -49,7 +49,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
               libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
-              libxcb1-dev xvfb xauth
+              libxcb1-dev xvfb xauth zlib1g-dev
             python3 -m venv "$HOME/.local/share/vulkan-ci-tools"
             "$HOME/.local/share/vulkan-ci-tools/bin/python" -m pip install 'cmake>=4.0,<5'
             echo 'export PATH="$HOME/.local/share/vulkan-ci-tools/bin:$PATH"' >> "$BASH_ENV"
@@ -57,7 +57,7 @@ jobs:
       - run:
           name: Build pinned shader tools
           command: |
-            git submodule update --init External/src/crossguid External/src/glslang External/src/spirv-cross
+            git submodule update --init External/src/crossguid External/src/glslang External/src/spirv-cross External/src/imgui
             cmake -S External/src/glslang -B build-vulkan-tools/glslang -G Ninja \
               -DCMAKE_BUILD_TYPE=Release -DBUILD_EXTERNAL=NO \
               -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"

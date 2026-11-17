@@ -106,6 +106,52 @@ add_dependencies(VulkanPipelineTest VulkanTestShaders)
 add_test(NAME TEST_VulkanPipelines COMMAND VulkanPipelineTest "${CMAKE_CURRENT_BINARY_DIR}")
 set_tests_properties(TEST_VulkanPipelines PROPERTIES TIMEOUT 90)
 
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    find_package(ZLIB REQUIRED)
+    function(add_vulkan_regression_graphics)
+        # Shared pass targets locate bundled ImGui relative to the engine root.
+        set(PROJECT_SOURCE_DIR "${root}")
+        list(APPEND CMAKE_MODULE_PATH "${root}/cmake")
+        include("${root}/cmake/PlatformDependencies.cmake")
+        include_directories(
+            $<TARGET_PROPERTY:VulkanRegressionRHI,INTERFACE_INCLUDE_DIRECTORIES>
+            "${root}/Framework/DrawPass" "${root}/Framework/DispatchPass"
+            "${root}/Framework/DrawSubPass" "${root}/Framework/Parser"
+            "${root}/Framework/Ability"
+            "${root}/Framework/Geometries" "${root}/External/src"
+            "${root}/External/src/imgui")
+        if(MSVC)
+            add_compile_options(/utf-8)
+        endif()
+        add_subdirectory("${root}/Framework/Common" "${CMAKE_CURRENT_BINARY_DIR}/Common")
+        add_library(ImageDecoders INTERFACE)
+        target_link_libraries(ImageDecoders INTERFACE Common ZLIB::ZLIB)
+        add_subdirectory("${root}/Framework/SceneGraph" "${CMAKE_CURRENT_BINARY_DIR}/SceneGraph")
+        add_subdirectory("${root}/Framework/DrawPass" "${CMAKE_CURRENT_BINARY_DIR}/DrawPass")
+        add_subdirectory("${root}/Framework/DrawSubPass" "${CMAKE_CURRENT_BINARY_DIR}/DrawSubPass")
+        add_subdirectory("${root}/Framework/DispatchPass" "${CMAKE_CURRENT_BINARY_DIR}/DispatchPass")
+        add_library(VulkanRegressionGraphics STATIC
+            "${root}/RHI/Vulkan/VulkanGraphicsManager.cpp"
+            "${root}/Framework/Manager/GraphicsManager.cpp"
+            "${root}/Framework/Manager/SceneCamera.cpp"
+            "${root}/Framework/Manager/SceneLighting.cpp")
+        target_link_libraries(VulkanRegressionGraphics PUBLIC VulkanRegressionRHI
+            PRIVATE SceneGraph DrawPass DrawSubPass DispatchPass)
+    endfunction()
+    add_vulkan_regression_graphics()
+else()
+    add_library(VulkanRegressionGraphics STATIC "${root}/RHI/Vulkan/VulkanGraphicsManager.cpp")
+    target_link_libraries(VulkanRegressionGraphics PUBLIC VulkanRegressionRHI PRIVATE RenderServices)
+endif()
+target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/Framework/Geometries")
+add_executable(VulkanGraphicsTest VulkanGraphicsTest.cpp
+    "${root}/Platform/Empty/AssetLoader.cpp")
+target_include_directories(VulkanGraphicsTest PRIVATE "${root}/Framework/DispatchPass")
+target_link_libraries(VulkanGraphicsTest PRIVATE VulkanRegressionGraphics)
+add_dependencies(VulkanGraphicsTest VulkanTestShaders)
+add_test(NAME TEST_VulkanGraphics COMMAND VulkanGraphicsTest "${CMAKE_CURRENT_BINARY_DIR}")
+set_tests_properties(TEST_VulkanGraphics PROPERTIES TIMEOUT 90)
+
 if(WIN32 OR (UNIX AND NOT APPLE))
     add_executable(VulkanFrameLoopTest VulkanFrameLoopTest.cpp)
     target_link_libraries(VulkanFrameLoopTest PRIVATE VulkanRegressionRHI)

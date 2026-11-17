@@ -581,6 +581,57 @@ integration, GPU consumption of frame/batch/light arenas, BASIC/PBR scene
 rendering, skybox, six-face/multi-light shadows, and MSAA remain checkpoint 3
 work. Shader module/pipeline creation alone does not establish those features.
 
+#### Shared BRDF initialization integration
+
+Before this increment, master `23cc8a8abe6bf53689bce217bcaa8a1290602648`
+was integrated. Its quick/full CI scopes leave the scene, point-shadow, and
+ImGui ownership contracts unchanged. Acceptance continues to use the full
+workflow; earlier passing parent revisions do not verify this merge.
+
+VulkanGraphicsManager now takes an explicit RHI dependency, without a native
+VulkanApplication cast. This small BRDF slice precedes scene draws because
+GraphicsManager::BeginScene runs initialization passes before creating scene
+resources; the remaining rendering milestones are unchanged.
+The existing BRDFIntegrator invokes its real compute
+hooks and owned engine-texture implementation. No alternate Vulkan BRDF pass
+or shader is introduced. Compute dispatch is synchronous and intended for the
+shared initialization pass; frame-command compute integration is still pending.
+Unsupported kernels and malformed pass/binding/dispatch sequences fail
+explicitly. The existing BRDF kernel requires a 512-by-512 output and one
+thread per workgroup, so smaller images or mismatched dispatch grids are
+rejected rather than permitting out-of-bounds writes.
+
+The logical RG32 BRDF descriptor uses RGBA32F Vulkan storage because the shared
+HLSL declares RWTexture2D<float4> and the verified SPIR-V image format is rgba32f.
+This backend backing-format adaptation preserves shared shader math and the
+logical red/green sampling contract. A compute-write-to-shader-read transition
+precedes synchronous completion.
+
+Backend-owned texture records provide opaque, non-reused identities for engine
+descriptors. Scene teardown releases shared frame globals once across borrowed
+frame copies, preserves independently owned textures, and leaves offscreen
+target ownership with GraphicsManager. Finalization clears pass borrowers
+before releasing remaining allocations and permits reinitialization. RGBA8/D32
+single-sample targets and D32 shadow arrays/cube arrays allocate real images;
+allocation alone does not establish shadow rendering. Multisample generation
+still fails explicitly instead of silently allocating a single-sample image.
+
+TEST_VulkanGraphics runs the real shared BRDFIntegrator, GraphicsManager, and
+VulkanGraphicsManager with the production pipeline manager. It checks GPU
+samples against the independent CPU reference within 0.001, repeated dispatch,
+shared-global cleanup, stale descriptors, independent-texture preservation,
+scene reload, finalize/reinitialize, registry teardown, and invalid dispatches.
+The standalone regression now also requires pinned ImGui sources and zlib
+headers/library to link the unchanged shared render services; it creates no
+ImGui context or window and does not verify Vulkan UI rendering.
+
+The five locally runnable tests pass on the installed Windows AMD headless
+configuration; native WSI remains subject to the checkpoint-2 SDK limitation.
+Exact-revision full CI for this increment is still required. BASIC/PBR scene
+draws, material/frame/light bindings, skybox, shadow depth/sampling, MSAA, and
+frame-command integration remain checkpoint-3 work. This is not checkpoint
+completion and does not authorize proceeding to checkpoint 4.
+
 ## Platform and acceptance strategy
 
 Desktop scope is Windows and Linux Vulkan plus macOS Vulkan through MoltenVK.

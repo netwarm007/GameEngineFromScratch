@@ -6,7 +6,10 @@
 namespace My {
 class VulkanGraphicsManager : public GraphicsManager {
    public:
-    using GraphicsManager::GraphicsManager;
+    explicit VulkanGraphicsManager(VulkanRHI& rhi) : m_rhi(rhi) {}
+    VulkanGraphicsManager(VulkanRHI& rhi, ISceneManager& scenes,
+                          IPipelineStateManager& pipelines)
+        : GraphicsManager(scenes, pipelines), m_rhi(rhi) {}
     ~VulkanGraphicsManager() override;
 
     int Initialize() final;
@@ -19,6 +22,7 @@ class VulkanGraphicsManager : public GraphicsManager {
 
     void DrawBatch(const Frame& frame) final;
 
+    void GenerateTexture(Texture2D& texture) final;
     void GenerateCubemapArray(TextureCubeArray& texture_array) final;
 
     void GenerateTextureArray(Texture2DArray& texture_array) final;
@@ -40,6 +44,8 @@ class VulkanGraphicsManager : public GraphicsManager {
 
     void Dispatch(const uint32_t width, const uint32_t height,
                   const uint32_t depth) final;
+
+    std::vector<uint8_t> ReadTexture(const TextureBase& texture);
 
    protected:
     void EndScene() final;
@@ -63,6 +69,25 @@ class VulkanGraphicsManager : public GraphicsManager {
     size_t CreateVertexBuffer(const SceneObjectVertexArray& v_property_array);
 
    private:
+    struct OwnedTexture {
+        explicit OwnedTexture(VulkanRHI& owner) : rhi(owner) {}
+        ~OwnedTexture() { rhi.DestroyTexture(texture); }
+        VulkanRHI& rhi;
+        VulkanRHI::Texture texture;
+    };
+
+    void GenerateTextureResource(TextureBase& texture, uint32_t layers,
+                                 vk::ImageViewType viewType,
+                                 vk::ImageUsageFlags usage, vk::Format format);
+    VulkanRHI::Texture& GetTextureResource(const TextureBase& texture);
+
+    VulkanRHI& m_rhi;
+    std::map<TextureHandler, std::unique_ptr<OwnedTexture>> m_ownedTextures;
+    TextureHandler m_nextTexture = 0;
+    bool m_computeActive = false;
+    std::shared_ptr<VulkanPipelineState> m_computePipeline;
+    TextureHandler m_computeOutput = 0;
+
     struct VulkanDrawBatchContext : public DrawBatchContext {
         uint32_t index_count{0};
         size_t index_offset{0};
