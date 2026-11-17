@@ -591,6 +591,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
+             ./scripts/build-ninja.sh
       - save_cache:
           key: ccache-macos-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
