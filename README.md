@@ -256,6 +256,21 @@ the staged handoff and the real static-text traversal. Runtime visibility is
 checked by each rendering backend when drawing, including shadow passes, so the
 ball can appear without rebuilding the scene's GPU resources.
 
+### Opt-in Vulkan applications
+
+Configure with `-DVULKAN_APPLICATIONS=ON` to use Vulkan for both Viewer and
+Billiard; platform defaults are unchanged. This desktop path requires a
+maintenance-aware Vulkan SDK/driver with swapchain-maintenance1 and a compatible
+RGBA8/BGRA8 UNORM surface. It uses the shared HLSL-derived engine SPIR-V.
+Implementation and verification limits are tracked in the
+[Vulkan implementation plan](docs/architecture/vulkan-rhi-implementation-plan.md).
+
+Vulkan application-only framebuffer capture accepts
+`-screenshot <path.ppm>` (or `GEFS_SCREENSHOT_PATH`), waits 45 seconds, writes a
+top-left PPM image, and exits. `GEFS_SCREENSHOT_WAIT_FOR` instead gates capture
+on a file's existence. Capture requires transfer-source swapchain support;
+it never captures the shared desktop.
+
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
 `External/src` as Git submodules; Git LFS is also used by CI.

@@ -5,12 +5,15 @@
 #define VK_USE_PLATFORM_XCB_KHR
 #endif
 
-#include "Vulkan/VulkanRHI.hpp"
+#include "Vulkan/VulkanGraphicsManager.hpp"
+#include "GuiContext.hpp"
 
 #include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
+#include <fstream>
+#include <filesystem>
 
 namespace {
 void Require(bool condition, const char* message) {
@@ -25,7 +28,9 @@ class Window {
         WNDCLASSW type{};
         type.lpfnWndProc = DefWindowProcW;
         type.hInstance = GetModuleHandleW(nullptr);
-        type.lpszClassName = L"VulkanFrameLoopRegression";
+        static unsigned identity = 0;
+        m_className = L"VulkanFrameLoopRegression" + std::to_wstring(++identity);
+        type.lpszClassName = m_className.c_str();
         Require(RegisterClassW(&type) != 0, "Win32 test class registration failed");
         m_window = CreateWindowExW(0, type.lpszClassName, L"Vulkan frame regression",
                                    WS_OVERLAPPEDWINDOW, 0, 0, 160, 160, nullptr,
@@ -56,7 +61,7 @@ class Window {
     ~Window() {
 #ifdef _WIN32
         DestroyWindow(m_window);
-        UnregisterClassW(L"VulkanFrameLoopRegression", GetModuleHandleW(nullptr));
+        UnregisterClassW(m_className.c_str(), GetModuleHandleW(nullptr));
 #else
         xcb_disconnect(m_connection);
 #endif
@@ -135,12 +140,169 @@ class Window {
    private:
 #ifdef _WIN32
     HWND m_window = nullptr;
+    std::wstring m_className;
 #else
     xcb_connection_t* m_connection = nullptr;
     xcb_screen_t* m_screen = nullptr;
     xcb_window_t m_window = XCB_WINDOW_NONE;
 #endif
 };
+
+class GuiApplication final : public My::IApplication {
+   public:
+    explicit GuiApplication(Window& window) : m_window(window) {}
+    void SetCommandLineParameters(int, char**) final {}
+    int GetCommandLineArgumentsCount() const final { return 0; }
+    const char* GetCommandLineArgument(int) const final { return nullptr; }
+    bool IsQuit() const final { return false; }
+    void RequestQuit() final {}
+    void CreateMainWindow() final { throw std::logic_error("Native GUI test owns its window"); }
+    void* GetMainWindowHandler() final { return nullptr; }
+    const My::GfxConfiguration GetConfiguration() const final {
+        My::GfxConfiguration config;
+        config.msaaSamples = 1;
+        return config;
+    }
+    void GetFramebufferSize(uint32_t& width, uint32_t& height) final { m_window.Size(width, height); }
+
+   private:
+    Window& m_window;
+};
+
+class GuiGraphics final : public My::VulkanGraphicsManager {
+   public:
+    using VulkanGraphicsManager::VulkanGraphicsManager;
+    using VulkanGraphicsManager::BeginFrame;
+    using VulkanGraphicsManager::EndFrame;
+    My::Frame& CurrentFrame() {
+        auto& frame = m_Frames.at(m_nFrameIndex);
+        frame.frameIndex = m_nFrameIndex;
+        frame.frameContext.numLights = 0;
+        return frame;
+    }
+};
+
+void RunNativeGui() {
+    Window window, floating;
+    GuiApplication app(window);
+    My::VulkanRHI rhi;
+    rhi.setFramebufferSizeQueryCB([&](uint32_t& width, uint32_t& height) { window.Size(width, height); });
+    rhi.SetGetGfxConfigCB([&] { return app.GetConfiguration(); });
+    rhi.Initialize(window.Extensions(), [&](const vk::Instance& instance, vk::SurfaceKHR& surface) {
+        window.Surface(instance, surface);
+    });
+    My::GuiContext context;
+    Require(context.Initialize() == 0, "Native Vulkan GUI context initialization failed");
+    auto& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.DeltaTime = 1.0f / 60;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    ImGui::GetPlatformIO().Platform_CreateVkSurface =
+        [](ImGuiViewport* viewport, ImU64 instance, const void*, ImU64* output) -> int {
+        vk::SurfaceKHR surface;
+        static_cast<Window*>(viewport->PlatformUserData)->Surface(
+            reinterpret_cast<VkInstance>(instance), surface);
+        *output = reinterpret_cast<ImU64>(static_cast<VkSurfaceKHR>(surface));
+        return VK_SUCCESS;
+    };
+    for (unsigned attempt = 0; attempt < 2; ++attempt) {
+        GuiGraphics graphics(rhi);
+        graphics.SetAppPointer(&app);
+        Require(graphics.Initialize() == 0, "Native Vulkan GUI graphics initialization failed");
+        My::Image image;
+        image.Width = image.Height = 1;
+        image.bitcount = 32;
+        image.bitdepth = 8;
+        image.pixel_format = My::PIXEL_FORMAT::RGBA8;
+        image.pitch = image.data_size = 4;
+        image.data = new uint8_t[4]{220, 80, 20, 255};
+        auto texture = graphics.CreateTexture(image);
+        ImGuiViewport viewport;
+        viewport.ID = 0x1234;
+        viewport.Size = {160, 160};
+        viewport.PlatformUserData = &floating;
+        auto& platform = ImGui::GetPlatformIO();
+        platform.Renderer_CreateWindow(&viewport);
+        Require(viewport.RendererUserData != nullptr, "Native Vulkan secondary viewport was not initialized");
+        struct ViewportCleanup {
+            ImGuiViewport& viewport;
+            ~ViewportCleanup() {
+                if (viewport.RendererUserData) ImGui::GetPlatformIO().Renderer_DestroyWindow(&viewport);
+            }
+        } cleanup{viewport};
+        const auto generation = rhi.GetSwapChainGeneration();
+        for (unsigned frame = 0; frame < 12; ++frame) {
+            if (frame == 3) window.Resize(256, 128);
+            if (frame == 5) {
+                floating.Resize(224, 96);
+                viewport.Size = {224, 96};
+                platform.Renderer_SetWindowSize(&viewport, viewport.Size);
+            }
+            if (frame == 8) {
+                platform.Renderer_DestroyWindow(&viewport);
+                Require(!viewport.RendererUserData, "Native Vulkan viewport destruction retained renderer data");
+                platform.Renderer_CreateWindow(&viewport);
+            }
+            uint32_t width = 0, height = 0;
+            window.Size(width, height);
+            io.DisplaySize = {static_cast<float>(width), static_cast<float>(height)};
+            auto& current = graphics.CurrentFrame();
+            graphics.BeginFrame(current);
+            ImGui::NewFrame();
+            ImGui::GetBackgroundDrawList()->AddImage(
+                ImTextureRef(static_cast<ImTextureID>(texture.handler)), {8, 8}, {80, 80});
+            ImGui::GetBackgroundDrawList()->AddText({8, 90}, IM_COL32_WHITE, "Native Vulkan GUI");
+            ImGui::Render();
+            const auto capture = std::filesystem::path("vulkan-images") /
+                ("native-gui-" + std::to_string(attempt) + ".ppm");
+            if (frame == 10) {
+                std::filesystem::create_directories(capture.parent_path());
+                graphics.RequestScreenshot(capture);
+            }
+            graphics.EndFrame(current);
+            if (frame == 10) {
+                std::ifstream input(capture, std::ios::binary);
+                std::string magic;
+                unsigned captureWidth = 0, captureHeight = 0, maxColor = 0;
+                input >> magic >> captureWidth >> captureHeight >> maxColor;
+                Require(input.good() && magic == "P6" && captureWidth == width &&
+                            captureHeight == height && maxColor == 255,
+                        "Native Vulkan application capture has invalid dimensions or PPM header");
+                Require(input.get() == '\n', "Native Vulkan capture header has no pixel separator");
+                std::vector<uint8_t> pixels(size_t{width} * height * 3);
+                input.read(reinterpret_cast<char*>(pixels.data()), pixels.size());
+                Require(input.good() && input.peek() == std::char_traits<char>::eof(),
+                        "Native Vulkan application capture was truncated or contains extra pixels");
+                const auto pixel = (size_t{16} * width + 16) * 3;
+                Require(pixels[pixel] == 220 && pixels[pixel + 1] == 80 && pixels[pixel + 2] == 20,
+                        "Native Vulkan capture changed image channels, top-left placement, or display gamma");
+                Require(pixels[0] < 20 && pixels[1] < 20 && pixels[2] < 20,
+                        "Native Vulkan capture was not the application-only composed GUI framebuffer");
+            }
+            viewport.DrawData = ImGui::GetDrawData();
+            auto* originalOwner = viewport.DrawData->OwnerViewport;
+            viewport.DrawData->OwnerViewport = &viewport;
+            struct RestoreOwner {
+                ImDrawData& data;
+                ImGuiViewport* owner;
+                ~RestoreOwner() { data.OwnerViewport = owner; }
+            } restore{*viewport.DrawData, originalOwner};
+            platform.Renderer_RenderWindow(&viewport, nullptr);
+            platform.Renderer_SwapBuffers(&viewport, nullptr);
+        }
+        Require(rhi.GetSwapChainGeneration() > generation || attempt != 0,
+                "Native Vulkan GUI resize did not recreate main composition targets");
+        platform.Renderer_DestroyWindow(&viewport);
+        graphics.Finalize();
+        graphics.Finalize();
+        Require(!io.BackendRendererUserData, "Native Vulkan GUI renderer shutdown retained borrowed context state");
+    }
+    context.Finalize();
+    rhi.destroyAll();
+    Require(rhi.GetValidationErrorCount() == 0, "Native Vulkan GUI/presentation produced validation errors");
+    std::cout << "Vulkan native GUI composition, engine texture IDs, main/secondary resize, "
+                 "strict secondary presentation retirement, recreate, retry, and cleanup passed\n";
+}
 
 void Run() {
 #ifdef NDEBUG
@@ -251,6 +413,7 @@ void Run() {
 int main() {
     try {
         Run();
+        RunNativeGui();
         return 0;
     } catch (const std::exception& error) {
         std::cerr << "Vulkan frame regression failed: " << error.what() << '\n';

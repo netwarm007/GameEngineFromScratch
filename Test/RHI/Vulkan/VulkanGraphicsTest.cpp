@@ -613,6 +613,22 @@ void CheckEnvironment(VulkanRHI& rhi, AssetLoader& assets) {
     }
     Require(ambient[0] == 0 && ambient[1] > 40,
             "Shared PBR did not consume packed irradiance/radiance/BRDF textures");
+    Texture2D view;
+    graphics.CreateTextureView(view, sky, 9, 2);
+    const auto selected = graphics.ReadTexture(sky, 9, 2);
+    Require(view.width == 1 && view.height == 1 && graphics.ReadTexture(view) == selected,
+            "Vulkan GUI cube view did not select its actual face and mip");
+    Reject<std::invalid_argument>([&] { graphics.CreateTextureView(view, sky, 0, 0); },
+                                  "Vulkan GUI replaced a live texture view");
+    Texture2D invalidView;
+    Reject<std::invalid_argument>([&] { graphics.CreateTextureView(invalidView, sky, 12, 0); },
+                                  "Vulkan GUI accepted an out-of-range cube face");
+    graphics.EndScene();
+    Require(graphics.ReadTexture(view) == selected,
+            "Releasing the scene source invalidated a retained Vulkan GUI view");
+    Reject<std::invalid_argument>([&] { graphics.ReadTexture(sky); },
+                                  "Vulkan GUI view ownership kept a stale source handle usable");
+    graphics.ReleaseTexture(view);
     graphics.Finalize();
 }
 

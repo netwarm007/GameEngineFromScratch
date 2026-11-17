@@ -586,16 +586,20 @@ static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(
     const std::vector<vk::SurfaceFormatKHR>& availableFormats) {
     if (availableFormats.empty()) throw std::runtime_error("Vulkan surface has no formats");
     if (availableFormats.size() == 1 && availableFormats.front().format == vk::Format::eUndefined) {
-        return {vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear};
+        return {vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear};
     }
     for (const auto& availableFormat : availableFormats) {
-        if (availableFormat.format == vk::Format::eB8G8R8A8Srgb &&
+        if (availableFormat.format == vk::Format::eB8G8R8A8Unorm &&
             availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
             return availableFormat;
         }
     }
 
-    return availableFormats[0];
+    for (const auto& availableFormat : availableFormats) {
+        if (availableFormat.format == vk::Format::eR8G8B8A8Unorm &&
+            availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) return availableFormat;
+    }
+    throw std::runtime_error("Vulkan composition requires an RGBA8/BGRA8 UNORM surface for display-encoded shared shaders");
 }
 
 static const vk::PresentModeKHR chooseSwapPresentMode(
@@ -666,6 +670,9 @@ void VulkanRHI::createSwapChain() {
         vk::SwapchainCreateFlagsKHR(), m_vkSurface, imageCount,
         surfaceFormat.format, surfaceFormat.colorSpace, extent, 1,
         vk::ImageUsageFlagBits::eColorAttachment);
+    m_swapChainCanCapture = bool(swapChainSupport.capabilities.supportedUsageFlags &
+                                 vk::ImageUsageFlagBits::eTransferSrc);
+    if (m_swapChainCanCapture) createInfo.imageUsage |= vk::ImageUsageFlagBits::eTransferSrc;
 
     auto indices = findQueueFamilies(m_vkPhysicalDevice, m_vkSurface);
 
@@ -729,6 +736,11 @@ void VulkanRHI::getDeviceQueues() {
     m_vkPresentQueue = m_vkDevice.getQueue(indices.presentFamily.value(), 0);
     m_vkTransferQueue = m_vkDevice.getQueue(indices.transferFamily.value(), 0);
     m_vkComputeQueue = m_vkGraphicsQueue;
+}
+
+uint32_t VulkanRHI::GetGraphicsQueueFamily() const {
+    if (!m_vkPhysicalDevice) throw std::logic_error("Vulkan queue family requires an initialized device");
+    return findQueueFamilies(m_vkPhysicalDevice, m_vkSurface).graphicsFamily.value();
 }
 
 vk::RenderPass VulkanRHI::createRenderPass() {
@@ -1111,6 +1123,36 @@ void VulkanRHI::AbortFrame() {
     m_recreateSwapChain = true;
 }
 
+vk::Result VulkanRHI::PresentAndWait(vk::Queue queue, const VkPresentInfoKHR& present) {
+    if (!m_vkDevice || !m_presentationFencesEnabled || !queue ||
+        !present.swapchainCount || !present.pSwapchains || !present.pImageIndices || present.pNext) {
+        throw std::invalid_argument("Vulkan scoped presentation requires maintenance support and an unextended present");
+    }
+#if defined(VK_KHR_swapchain_maintenance1) || defined(VK_EXT_swapchain_maintenance1)
+    std::vector<vk::UniqueFence> fences;
+    std::vector<VkFence> nativeFences;
+    std::vector<vk::Fence> waits;
+    for (uint32_t image = 0; image < present.swapchainCount; ++image) {
+        fences.push_back(m_vkDevice.createFenceUnique({}));
+        nativeFences.push_back(*fences.back());
+        waits.push_back(*fences.back());
+    }
+    const PresentFenceInfo fenceInfo{presentFenceInfoType, nullptr, present.swapchainCount, nativeFences.data()};
+    auto info = present;
+    info.pNext = &fenceInfo;
+    const auto result = static_cast<vk::Result>(vkQueuePresentKHR(queue, &info));
+    if (result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR ||
+        result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eErrorSurfaceLostKHR) {
+        if (m_vkDevice.waitForFences(waits, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
+            throw std::runtime_error("Vulkan secondary presentation retirement fence wait failed");
+        }
+    }
+    return result;
+#else
+    throw std::runtime_error("Vulkan secondary presentation requires maintenance-aware SDK headers");
+#endif
+}
+
 vk::CommandBuffer VulkanRHI::GetFrameCommandBuffer() const {
     if (!m_frameActive) throw std::logic_error("No Vulkan frame is recording");
     return m_vkCommandBuffers.at(m_nCurrentFrame);
@@ -1164,6 +1206,61 @@ void VulkanRHI::EndFrame() {
     } else if (result != vk::Result::eSuccess) {
         throw std::runtime_error("Vulkan presentation failed: " + vk::to_string(result));
     }
+}
+
+Image VulkanRHI::EndFrameWithCapture() {
+    const auto command = GetFrameCommandBuffer();
+    const auto format = m_vkSwapChainImageFormat;
+    const bool bgra = format == vk::Format::eB8G8R8A8Unorm || format == vk::Format::eB8G8R8A8Srgb;
+    if (!m_swapChainCanCapture || (!bgra &&
+        format != vk::Format::eR8G8B8A8Unorm && format != vk::Format::eR8G8B8A8Srgb)) {
+        throw std::runtime_error("Vulkan application capture requires a transfer-readable RGBA8/BGRA8 swapchain");
+    }
+    Image image;
+    image.Width = m_vkSwapChainExtent.width;
+    image.Height = m_vkSwapChainExtent.height;
+    image.bitcount = 32;
+    image.bitdepth = 8;
+    image.pitch = size_t{image.Width} * 4;
+    image.data_size = image.pitch * image.Height;
+    image.pixel_format = PIXEL_FORMAT::RGBA8;
+    image.data = new uint8_t[image.data_size];
+    BufferAllocation staging(m_vkDevice);
+    createBuffer(image.data_size, vk::BufferUsageFlagBits::eTransferDst,
+        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+        staging.buffer, staging.memory);
+    const auto swapImage = m_vkSwapChainImages.at(m_currentImage);
+    const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+    command.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer,
+        {}, {}, {}, vk::ImageMemoryBarrier(vk::AccessFlagBits::eColorAttachmentWrite, vk::AccessFlagBits::eTransferRead,
+            vk::ImageLayout::ePresentSrcKHR, vk::ImageLayout::eTransferSrcOptimal,
+            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, swapImage, range));
+    command.copyImageToBuffer(swapImage, vk::ImageLayout::eTransferSrcOptimal, staging.buffer,
+        vk::BufferImageCopy(0, 0, 0, {vk::ImageAspectFlagBits::eColor, 0, 0, 1},
+            {0, 0, 0}, {image.Width, image.Height, 1}));
+    command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eHost, {},
+        vk::MemoryBarrier(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eHostRead), {}, {});
+    command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe,
+        {}, {}, {}, vk::ImageMemoryBarrier(vk::AccessFlagBits::eTransferRead, {},
+            vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::ePresentSrcKHR,
+            VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, swapImage, range));
+    try {
+        EndFrame();
+        WaitGPU();
+    } catch (...) {
+        AbortFrame();
+        WaitGPU();
+        throw;
+    }
+    const auto mapped = m_vkDevice.mapMemory(staging.memory, 0, image.data_size);
+    std::memcpy(image.data, mapped, image.data_size);
+    m_vkDevice.unmapMemory(staging.memory);
+    if (bgra) {
+        for (size_t pixel = 0; pixel < image.data_size; pixel += 4) {
+            std::swap(image.data[pixel], image.data[pixel + 2]);
+        }
+    }
+    return image;
 }
 
 void VulkanRHI::drawFrame(const vk::RenderPass &renderPass,
@@ -1842,14 +1939,15 @@ std::unique_ptr<VulkanRHI::Commands> VulkanRHI::BeginCommands() {
     return std::unique_ptr<Commands>(new Commands(*this));
 }
 
-VulkanRHI::Commands::Commands(VulkanRHI& rhi) : m_rhi(&rhi) {
-    if (!rhi.m_vkDevice || rhi.m_frameActive || rhi.m_commands) {
+VulkanRHI::Commands::Commands(VulkanRHI& rhi, bool independentTransfer) : m_rhi(&rhi) {
+    if (!rhi.m_vkDevice || (!independentTransfer && (rhi.m_frameActive || rhi.m_commands))) {
         throw std::logic_error("Vulkan immediate recording requires an idle initialized RHI");
     }
     auto commands = rhi.m_vkDevice.allocateCommandBuffersUnique(
         {rhi.m_vkCommandPoolTransfer, vk::CommandBufferLevel::ePrimary, 1});
     m_command = std::move(commands.front());
     m_command->begin({vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+    m_previous = rhi.m_commands;
     rhi.m_commands = this;
 }
 
@@ -1873,8 +1971,31 @@ void VulkanRHI::Commands::Cancel() {
     for (auto& [texture, layouts] : m_layouts) texture->layouts = std::move(layouts);
     m_layouts.clear();
     m_command.reset();
-    m_rhi->m_commands = nullptr;
+    m_rhi->m_commands = m_previous;
     m_rhi = nullptr;
+}
+
+void VulkanRHI::CheckTextureAvailable(const Texture& texture, vk::CommandBuffer command) const {
+    const auto overlaps = [&](const auto& layouts) {
+        return std::any_of(layouts.begin(), layouts.end(),
+            [&](const auto& entry) { return entry.first->image == texture.image; });
+    };
+    for (auto* active = m_commands; active; active = active->m_previous) {
+        if (active->Get() != command && overlaps(active->m_layouts)) {
+            throw std::logic_error("Vulkan texture is referenced by an unsubmitted recording");
+        }
+    }
+    if (m_frameActive && GetFrameCommandBuffer() != command && overlaps(m_frameLayouts)) {
+        throw std::logic_error("Vulkan texture is referenced by an unsubmitted native frame");
+    }
+}
+
+void VulkanRHI::ExecuteTextureCommands(Texture& texture,
+    const std::function<void(vk::CommandBuffer)>& record) {
+    CheckTextureAvailable(texture);
+    Commands commands(*this, true);
+    record(commands.Get());
+    commands.Submit();
 }
 
 void VulkanRHI::transitionImageLayout(vk::Image image, vk::Format format,

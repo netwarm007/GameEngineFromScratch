@@ -1,7 +1,10 @@
 #pragma once
 #include "VulkanPipelineStateManager.hpp"
+#include "VulkanGuiRenderer.hpp"
 #include "GraphicsManager.hpp"
 #include "SceneObject.hpp"
+#include <chrono>
+#include <filesystem>
 
 namespace My {
 class VulkanGraphicsManager : public GraphicsManager {
@@ -17,6 +20,9 @@ class VulkanGraphicsManager : public GraphicsManager {
 
     void Present() final;
     void Draw() final;
+    bool RenderTargetHasTopLeftOrigin() const final { return true; }
+    void ResizeCanvas(int32_t width, int32_t height) final;
+    void RequestScreenshot(const std::filesystem::path& path);
 
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
                           const Frame& frame) final;
@@ -35,6 +41,9 @@ class VulkanGraphicsManager : public GraphicsManager {
     void SetShadowMaps(const Frame& frame) final;
     void CreateTexture(SceneObjectTexture& texture) final;
     Texture2D CreateTexture(Image& image) final;
+    void UpdateTexture(Texture2D& texture, Image& image) final;
+    void CreateTextureView(Texture2D& texture, const TextureArrayBase& source,
+                           uint32_t slice, uint32_t mip) final;
     void ReleaseTexture(TextureBase& texture) final;
 
     // skybox
@@ -66,23 +75,32 @@ class VulkanGraphicsManager : public GraphicsManager {
 
     void initializeGeometries(const Scene& scene) final;
     void initializeSkyBox(const Scene& scene) final;
+    void InitializeGui(vk::RenderPass renderPass);
+    void PrepareGui();
+    void RenderGui(ImDrawData& drawData, vk::CommandBuffer command);
 
    private:
     struct OwnedTexture {
         explicit OwnedTexture(VulkanRHI& owner) : rhi(owner) {}
-        ~OwnedTexture() { rhi.DestroyTexture(texture); }
+        ~OwnedTexture() { if (!parent) rhi.DestroyTexture(texture); }
         VulkanRHI& rhi;
         VulkanRHI::Texture texture;
+        std::shared_ptr<OwnedTexture> parent;
+        vk::UniqueImageView view;
+        bool guiVisible = false;
+        uint32_t slice = 0;
+        uint32_t mip = 0;
     };
 
     void GenerateTextureResource(TextureBase& texture, uint32_t layers,
                                  vk::ImageViewType viewType,
                                  vk::ImageUsageFlags usage, vk::Format format);
     VulkanRHI::Texture& GetTextureResource(const TextureBase& texture);
+    TextureHandler StoreTexture(std::shared_ptr<OwnedTexture> texture);
 
     VulkanRHI& m_rhi;
     VulkanPipelineStateManager* m_pipelines = nullptr;
-    std::map<TextureHandler, std::unique_ptr<OwnedTexture>> m_ownedTextures;
+    std::map<TextureHandler, std::shared_ptr<OwnedTexture>> m_ownedTextures;
     TextureHandler m_nextTexture = 0;
     bool m_computeActive = false;
     std::shared_ptr<VulkanPipelineState> m_computePipeline;
@@ -127,6 +145,10 @@ class VulkanGraphicsManager : public GraphicsManager {
                               const std::array<uint8_t, 4>& value);
     void InitializeFallbacks();
     void InitializeDepth(TextureBase& texture);
+    void CreateGuiTargets();
+    void ComposeGui();
+    void SubmitGuiFrame();
+    void InitializeCapture();
 
     std::vector<BufferResource> m_buffers;
     std::map<const SceneObjectTexture*, Texture2D> m_materialTextures;
@@ -155,6 +177,16 @@ class VulkanGraphicsManager : public GraphicsManager {
     bool m_shadowOmni = false;
     bool m_shadowSingleFace = false;
     uint32_t m_shadowFirstLayer = 0;
+    vk::UniqueRenderPass m_guiPass;
+    std::vector<vk::UniqueFramebuffer> m_guiTargets;
+    vk::Format m_guiFormat = vk::Format::eUndefined;
+    std::unique_ptr<VulkanGuiRenderer> m_gui;
+    std::filesystem::path m_screenshot;
+    std::filesystem::path m_screenshotGate;
+    std::chrono::steady_clock::time_point m_screenshotDue{};
+    bool m_quitAfterCapture = false;
+    int32_t m_pendingWidth = 0;
+    int32_t m_pendingHeight = 0;
     std::unique_ptr<VulkanRHI::Commands> m_commands;
 };
 }  // namespace My

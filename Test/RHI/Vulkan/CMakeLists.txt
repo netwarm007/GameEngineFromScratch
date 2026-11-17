@@ -144,9 +144,15 @@ else()
     target_link_libraries(VulkanRegressionGraphics PUBLIC VulkanRegressionRHI PRIVATE RenderServices)
 endif()
 target_sources(VulkanRegressionGraphics PRIVATE
+    "${root}/RHI/Vulkan/VulkanGraphicsGui.cpp"
+    "${root}/RHI/Vulkan/VulkanGuiRenderer.cpp"
+    "${root}/External/src/imgui/backends/imgui_impl_vulkan.cpp"
     "${root}/RHI/Vulkan/VulkanGraphicsRendering.cpp"
     "${root}/RHI/Vulkan/VulkanGraphicsShadow.cpp")
+set_source_files_properties("${root}/External/src/imgui/backends/imgui_impl_vulkan.cpp"
+    PROPERTIES COMPILE_DEFINITIONS IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/Framework/Geometries")
+target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/External/src/imgui")
 add_executable(VulkanGraphicsTest VulkanGraphicsTest.cpp
     "${root}/Platform/Empty/AssetLoader.cpp")
 target_include_directories(VulkanGraphicsTest PRIVATE "${root}/Framework/DispatchPass")
@@ -154,10 +160,14 @@ target_link_libraries(VulkanGraphicsTest PRIVATE VulkanRegressionGraphics)
 add_dependencies(VulkanGraphicsTest VulkanTestShaders)
 add_test(NAME TEST_VulkanGraphics COMMAND VulkanGraphicsTest "${CMAKE_CURRENT_BINARY_DIR}")
 set_tests_properties(TEST_VulkanGraphics PROPERTIES TIMEOUT 90)
+add_executable(VulkanGuiTest VulkanGuiTest.cpp "${root}/Platform/Empty/AssetLoader.cpp")
+target_link_libraries(VulkanGuiTest PRIVATE VulkanRegressionGraphics)
+add_test(NAME TEST_VulkanGui COMMAND VulkanGuiTest)
+set_tests_properties(TEST_VulkanGui PROPERTIES TIMEOUT 90)
 
 if(WIN32 OR (UNIX AND NOT APPLE))
-    add_executable(VulkanFrameLoopTest VulkanFrameLoopTest.cpp)
-    target_link_libraries(VulkanFrameLoopTest PRIVATE VulkanRegressionRHI)
+    add_executable(VulkanFrameLoopTest VulkanFrameLoopTest.cpp "${root}/Platform/Empty/AssetLoader.cpp")
+    target_link_libraries(VulkanFrameLoopTest PRIVATE VulkanRegressionGraphics)
     if(WIN32)
         target_link_libraries(VulkanFrameLoopTest PRIVATE user32)
         if(MSVC)

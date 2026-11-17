@@ -9,6 +9,8 @@
 using namespace My;
 
 VulkanGraphicsManager::~VulkanGraphicsManager() {
+    m_rhi.CreateSwapChainCB({});
+    m_rhi.DestroySwapChainCB({});
     m_commands.reset();
     try {
         m_rhi.AbortFrame();
@@ -34,16 +36,35 @@ int VulkanGraphicsManager::Initialize() {
         throw std::runtime_error("Vulkan renderer requires the shared 28800-byte light uniform range");
     }
     InitializeFallbacks();
+    if (m_rhi.HasSurface()) {
+        InitializeCapture();
+        m_rhi.CreateSwapChainCB([this] { CreateGuiTargets(); });
+        m_rhi.DestroySwapChainCB([this] { m_guiTargets.clear(); });
+        m_rhi.CreateSwapChain();
+    }
     rollback.active = false;
     return 0;
 }
 
 void VulkanGraphicsManager::Finalize() {
+    m_commands.reset();
+    m_rhi.AbortFrame();
+    m_frameRecording = m_rendering = false;
     m_InitPasses.clear();
     m_DispatchPasses.clear();
     m_DrawPasses.clear();
     GraphicsManager::Finalize();
     m_ownedTextures.clear();
+    if (m_gui) m_gui->Finalize();
+    m_gui.reset();
+    m_rhi.CreateSwapChainCB({});
+    m_rhi.DestroySwapChainCB({});
+    m_guiTargets.clear();
+    m_guiPass.reset();
+    m_guiFormat = vk::Format::eUndefined;
+    m_screenshot.clear();
+    m_screenshotGate.clear();
+    m_quitAfterCapture = false;
     m_fallback2D = {};
     m_fallbackShadow = {};
     m_fallbackCubeShadow = {};
@@ -146,11 +167,19 @@ void VulkanGraphicsManager::GenerateTextureArray(Texture2DArray& texture_array) 
 
 void VulkanGraphicsManager::ReleaseTexture(TextureBase& texture) {
     if (!texture.handler && !texture.buff) return;
-    if (m_frameRecording) throw std::logic_error("Cannot release a texture during Vulkan frame recording");
-    GetTextureResource(texture);
+    const auto& resource = GetTextureResource(texture);
+    if (m_frameRecording && !m_ownedTextures.at(texture.handler)->parent) {
+        throw std::logic_error("Cannot release an owned texture during Vulkan frame recording");
+    }
+    m_rhi.CheckTextureAvailable(resource);
     m_rhi.WaitGPU();
-    for (auto& resources : m_renderResources) resources.Clear();
+    if (!m_frameRecording) {
+        for (auto& resources : m_renderResources) resources.Clear();
+    }
     if (m_computeOutput == texture.handler) m_computeOutput = 0;
+    if (m_gui && m_ownedTextures.at(texture.handler)->guiVisible) {
+        m_gui->ReleaseTexture(static_cast<ImTextureID>(texture.handler));
+    }
     m_ownedTextures.erase(texture.handler);
     texture.handler = 0;
     texture.buff = 0;
@@ -163,14 +192,12 @@ void VulkanGraphicsManager::GenerateTextureResource(
         m_nextTexture == (std::numeric_limits<TextureHandler>::max)()) {
         throw std::invalid_argument("Vulkan texture generation requires an empty descriptor");
     }
-    auto owned = std::make_unique<OwnedTexture>(m_rhi);
+    auto owned = std::make_shared<OwnedTexture>(m_rhi);
     owned->texture = m_rhi.CreateTexture(texture.width, texture.height, format,
         texture.mips, layers, viewType, usage,
         static_cast<vk::SampleCountFlagBits>(texture.samples));
-    const auto id = m_nextTexture + 1;
-    m_ownedTextures.emplace(id, std::move(owned));
-    m_nextTexture = id;
-    texture.handler = id;
+    owned->guiVisible = viewType == vk::ImageViewType::e2D && texture.samples == 1;
+    texture.handler = StoreTexture(std::move(owned));
 }
 
 VulkanRHI::Texture& VulkanGraphicsManager::GetTextureResource(const TextureBase& texture) {

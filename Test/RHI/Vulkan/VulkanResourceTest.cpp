@@ -243,6 +243,20 @@ void CheckAbandonedCommands(RHI& rhi) {
         failed = true;
     }
     Require(failed, "Immediate transfer overlapped an unsubmitted graphics recording");
+    auto alias = image.value;
+    failed = false;
+    try {
+        rhi.ReadTexture(alias);
+    } catch (const std::logic_error&) {
+        failed = true;
+    }
+    Require(failed, "An aliased image bypassed the unsubmitted-recording transfer guard");
+    {
+        Texture icon{rhi, rhi.CreateTexture(2, 2, vk::Format::eR8G8B8A8Unorm)};
+        rhi.UpdateTexture(icon.value, original.data(), original.size());
+        Bytes(rhi.ReadTexture(icon.value), original.data(), original.size());
+    }
+    Require(bool(commands->Get()), "Independent icon transfer lost the outer recording");
     commands.reset();
     Bytes(rhi.ReadTexture(image.value), original.data(), original.size());
 }

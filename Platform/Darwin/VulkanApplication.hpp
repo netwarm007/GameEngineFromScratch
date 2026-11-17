@@ -12,6 +12,7 @@ class VulkanApplication : public CocoaApplication {
 
    private:
     int InitializeGraphicsResources() final;
+    int InitializeGuiPlatform() final;
     void WaitForGraphicsIdle() final;
     void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;

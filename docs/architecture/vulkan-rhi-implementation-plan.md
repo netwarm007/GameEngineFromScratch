@@ -312,8 +312,8 @@ Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
 focused local and exact-revision CI validation and received user confirmation,
 not acceptance of the complete Vulkan backend. Checkpoint 2 has also received
 user confirmation. Checkpoint 3 implementation and exact-revision reference
-checks are complete, awaiting user confirmation; checkpoints 4-5 remain planned
-and proceed in order, with focused
+checks have received user confirmation. Checkpoint 4 is in progress; checkpoint 5
+remains planned. They proceed in order, with focused
 validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
@@ -321,8 +321,8 @@ validation and user confirmation at each boundary.
 | 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
 | 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
 | 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
-| 3. Shared rendering passes | Implemented and exact-revision CI verified; awaiting user confirmation. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
-| 4. UI and applications | Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
+| 3. Shared rendering passes | Confirmed by the user after exact-revision CI verification. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
+| 4. UI and applications | In progress. Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
 | 5. Cross-platform acceptance | Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. |
 
 At the start of each checkpoint, identify the production paths and focused
@@ -724,7 +724,61 @@ records six passing Vulkan tests, zero validation messages/VUID markers,
 twenty-four point-face checks, four shadow-receiver checks, six sky-direction
 checks, and inspection of all fifteen Vulkan readbacks and six native-backend
 application captures. Checkpoint 3 implementation/reference exit checks are
-complete, pending user confirmation; checkpoints 4-5 have not started.
+complete and subsequently confirmed by the user's request to continue.
+
+### Checkpoint 4 implementation progress
+
+The Vulkan GUI adapter compiles the pinned official ImGui renderer directly,
+without editing the submodule or copying its rendering implementation. It
+borrows the application context, owns its descriptor pool, handles dynamic font
+textures, and translates monotonic engine texture identities only during
+submission. Original draw-command identities and sampler callbacks are restored
+after submission or rejection. Sampled formats without linear filtering use
+the official nearest-sampler callback just for those previews, not for all UI
+images. Stale descriptors and replacement of a borrowed renderer fail explicitly.
+
+GUI subresource views retain their parent images after source-handle release.
+Readback selects the original mip and layer rather than treating a view as
+layer zero. Lazy icon uploads can submit independent, synchronously completed
+texture transfers while a frame is being recorded; aliased images referenced
+by any unsubmitted recording remain protected. Canvas resize is deferred until
+the next frame, preserving the shared GuiSubPass's request-during-draw contract.
+
+Native composition uses its own single-sample, color-only swapchain pass,
+independent of scene MSAA/depth attachments. Swapchain callbacks recreate its
+targets and rebind the renderer if the format changes. The supported official
+function-loader hook adapts secondary presents to maintenance1 fences: each
+secondary presentation retires before returning, without a device-idle
+fallback for presentation ownership. Win32 and Cocoa adapters provide native
+surface callbacks; the existing Xcb platform's disabled multi-viewport input
+support is unchanged. The native regression directly drives secondary-renderer
+callbacks on a separate window, without claiming Xcb platform input support.
+
+The shared scene shaders already produce display-encoded colors. Composition
+therefore selects BGRA8/RGBA8 UNORM surfaces instead of applying an additional
+sRGB framebuffer encoding to scene previews or UI colors. An unavailable
+compatible UNORM surface fails explicitly. This is a Vulkan-only format-choice
+refinement; shared HLSL tone mapping and original backend behavior are unchanged.
+
+`VULKAN_APPLICATIONS=ON` opts Viewer and Billiard into service-injected Vulkan
+managers; defaults remain unchanged. Shared engine SPIR-V is installed, and
+macOS bundles receive Vulkan assets without building a Metal application
+library. Native application capture copies the composed swapchain framebuffer
+before presentation, checks RGBA/BGRA transfer support, and writes top-left PPM
+pixels. `-screenshot <path.ppm>` or `GEFS_SCREENSHOT_PATH` captures after the
+existing 45-second settling period and exits; `GEFS_SCREENSHOT_WAIT_FOR`
+optionally gates it on a file instead. No desktop capture is used.
+
+All six locally supported headless GPU/ABI tests pass on the Windows AMD
+device. Focused additions cover actual image/text/depth preview pixels,
+clipping, font atlas growth, renderer rejection/retry/repeated cleanup, padded
+image updates preserving identity, selected cube face/mip readback and
+parent retention, lazy uploads, aliased-image transfer rejection, and deferred
+canvas resize. The native GUI regression adds main/secondary resize, repeated
+secondary creation/destruction, strict present retirement, and quantitative
+capture checks, but cannot run with the installed old SDK. Native tests and
+real Vulkan application captures require CI; no checkpoint-4 acceptance or
+Windows/MoltenVK runtime claim is made by these local results.
 
 ## Known limitations and follow-ups
 
@@ -741,10 +795,17 @@ complete, pending user confirmation; checkpoints 4-5 have not started.
   counts fail explicitly rather than producing partial or missing geometry.
   Initialization compute executes the active shared BRDF kernel; dormant
   raytrace dispatch is not enabled or advertised as covered.
-- **Checkpoint 4:** The final swapchain/UI pass, Vulkan ImGui renderer lifecycle,
-  native Viewer/Billiard backend selection, icons/previews/debug textures, and
-  supported floating viewports are not implemented or verified by these
-  offscreen scene tests.
+- **Checkpoint 4:** Final native composition, supported floating viewports, and
+  real Viewer/Billiard assets/captures are implemented but await native CI
+  validation and image inspection. Local offscreen GUI tests are not
+  application-window acceptance. Secondary presents currently wait a scoped
+  maintenance fence synchronously; asynchronous secondary presentation is a
+  performance follow-up, not grounds for weakening retirement guarantees.
+- **Checkpoint 4:** Native GUI composition requires an RGBA8/BGRA8 UNORM surface
+  to preserve the existing shaders' display encoding. Application framebuffer
+  capture additionally requires transfer-source surface usage and writes PPM,
+  not PNG. Secondary Cocoa window scaling still needs real MoltenVK/Retina
+  runtime checks.
 - **Checkpoint 5:** Windows Vulkan WSI and MoltenVK runtime acceptance remain
   unknown. Linux lavapipe/Xcb is reference coverage, not hardware acceptance;
   passing native Metal jobs do not verify MoltenVK. The installed local old

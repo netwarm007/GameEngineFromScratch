@@ -78,9 +78,10 @@ class VulkanRHI {
 
        private:
         friend class VulkanRHI;
-        explicit Commands(VulkanRHI& rhi);
+        explicit Commands(VulkanRHI& rhi, bool independentTransfer = false);
         void Cancel();
         VulkanRHI* m_rhi;
+        Commands* m_previous = nullptr;
         vk::UniqueCommandBuffer m_command;
         std::map<Texture*, std::vector<vk::ImageLayout>> m_layouts;
     };
@@ -115,10 +116,16 @@ class VulkanRHI {
     bool HasSurface() const { return bool(m_vkSurface); }
     bool BeginFrame();
     void AbortFrame();
+    vk::Result PresentAndWait(vk::Queue queue, const VkPresentInfoKHR& present);
+    bool HasPresentationFences() const { return m_presentationFencesEnabled; }
     void EndFrame();
+    Image EndFrameWithCapture();
     vk::CommandBuffer GetFrameCommandBuffer() const;
     vk::Framebuffer GetFrameFramebuffer() const;
     vk::Extent2D GetSwapChainExtent() const { return m_vkSwapChainExtent; }
+    vk::Format GetSwapChainFormat() const { return m_vkSwapChainImageFormat; }
+    const std::vector<vk::ImageView>& GetSwapChainViews() const { return m_vkSwapChainImageViews; }
+    uint32_t GetCurrentImageIndex() const { return m_currentImage; }
     uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
     uint64_t GetSwapChainGeneration() const { return m_swapChainGeneration; }
     unsigned GetValidationErrorCount() const { return m_validationErrors.load(); }
@@ -139,6 +146,7 @@ class VulkanRHI {
                             const vk::ImageSubresourceRange& range,
                             vk::ImageLayout layout);
     void DestroyTexture(Texture& texture);
+    void CheckTextureAvailable(const Texture& texture, vk::CommandBuffer command = {}) const;
     void DestroyUniformBuffers(std::vector<UniformBuffer>& buffers);
 
     void createInstance(std::vector<const char*> extensions);
@@ -195,6 +203,9 @@ class VulkanRHI {
     void destroyAll();
 
     inline vk::Device GetDevice() { return m_vkDevice; }
+    vk::Instance GetInstance() const { return m_vkInstance; }
+    vk::Queue GetGraphicsQueue() const { return m_vkGraphicsQueue; }
+    uint32_t GetGraphicsQueueFamily() const;
     vk::PhysicalDevice GetPhysicalDevice() const { return m_vkPhysicalDevice; }
 
    private:
@@ -219,8 +230,10 @@ class VulkanRHI {
     void initializeDevice(const std::vector<const char*>& extensions,
                            const CreateSurfaceCBFunc& surface);
     void submitAndWait(vk::CommandBuffer command);
+    void ExecuteTextureCommands(Texture& texture, const std::function<void(vk::CommandBuffer)>& record);
     Commands* m_commands = nullptr;
     std::map<Texture*, std::vector<vk::ImageLayout>> m_frameLayouts;
+    bool m_swapChainCanCapture = false;
 
     vk::Instance m_vkInstance;
     vk::DebugUtilsMessengerEXT m_vkDebugMessenger;

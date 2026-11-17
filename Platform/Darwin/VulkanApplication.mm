@@ -2,8 +2,40 @@
 #import <QuartzCore/CAMetalLayer.h>
 #include "VulkanApplication.hpp"
 #include <vulkan/vulkan_metal.h>
+#include "imgui.h"
 
 using namespace My;
+
+int VulkanApplication::InitializeGuiPlatform() {
+    const auto result = CocoaApplication::InitializeGuiPlatform();
+    if (result != 0 || !ImGui::GetCurrentContext()) return result;
+    ImGui::GetPlatformIO().Platform_CreateVkSurface =
+        [](ImGuiViewport* viewport, ImU64 instance, const void* allocator, ImU64* output) -> int {
+        @autoreleasepool {
+            const auto nativeInstance = reinterpret_cast<VkInstance>(instance);
+            const auto create = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
+                vkGetInstanceProcAddr(nativeInstance, "vkCreateMetalSurfaceEXT"));
+            if (!create) return VK_ERROR_EXTENSION_NOT_PRESENT;
+            NSWindow* window = static_cast<NSWindow*>(viewport->PlatformHandleRaw);
+            NSView* view = window.contentView;
+            view.wantsLayer = YES;
+            auto* layer = [CAMetalLayer layer];
+            layer.contentsScale = window.backingScaleFactor;
+            const auto size = [view convertRectToBacking:view.bounds].size;
+            layer.drawableSize = CGSizeMake(size.width, size.height);
+            view.layer = layer;
+            VkMetalSurfaceCreateInfoEXT info{};
+            info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+            info.pLayer = layer;
+            VkSurfaceKHR surface = VK_NULL_HANDLE;
+            const auto status = create(nativeInstance, &info,
+                static_cast<const VkAllocationCallbacks*>(allocator), &surface);
+            if (status == VK_SUCCESS) *output = reinterpret_cast<ImU64>(surface);
+            return status;
+        }
+    };
+    return 0;
+}
 
 VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface) {
     @autoreleasepool {

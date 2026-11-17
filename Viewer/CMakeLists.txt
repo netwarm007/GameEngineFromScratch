@@ -75,9 +75,12 @@ IF(ANDROID)
     add_library(Viewer SHARED 
         ViewerLogic.cpp)
 ELSEIF(APPLE)
+    if(NOT VULKAN_APPLICATIONS)
+        set(VIEWER_SHADER_LIBRARY Main.metallib)
+    endif()
     add_executable(Viewer MACOSX_BUNDLE
         main.cpp ViewerLogic.cpp
-        Main.metallib ${SCENE_FILES} ${FONT_FILES} ${SDR_TEXTURES} ${ICON_TEXTURES} ${HDR_TEXTURES}
+        ${VIEWER_SHADER_LIBRARY} ${SCENE_FILES} ${FONT_FILES} ${SDR_TEXTURES} ${ICON_TEXTURES} ${HDR_TEXTURES}
         )
 ELSE()
     add_executable(Viewer 
@@ -85,7 +88,9 @@ ELSE()
         )
 ENDIF(ANDROID)
 
-IF(APPLE)
+IF(VULKAN_APPLICATIONS)
+    myge_vulkan_application(Viewer)
+ELSEIF(APPLE)
     list(APPEND SHADER_SOURCES material_texture_copy.comp shadowmap_omni_metal.vert)
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air

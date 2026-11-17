@@ -42,7 +42,7 @@ Texture2D VulkanGraphicsManager::CreateTexture(Image& image) {
     if (m_nextTexture == (std::numeric_limits<TextureHandler>::max)()) {
         throw std::overflow_error("Vulkan texture identity exhausted");
     }
-    auto resource = std::make_unique<OwnedTexture>(m_rhi);
+    auto resource = std::make_shared<OwnedTexture>(m_rhi);
     resource->texture = m_rhi.createTextureImage(image);
     Texture2D texture;
     texture.width = image.Width;
@@ -50,9 +50,8 @@ Texture2D VulkanGraphicsManager::CreateTexture(Image& image) {
     texture.mips = resource->texture.mipLevels;
     texture.pixel_format = image.pixel_format;
     texture.format = static_cast<TextureFormat>(resource->texture.format);
-    const auto id = m_nextTexture + 1;
-    m_ownedTextures.emplace(id, std::move(resource));
-    m_nextTexture = texture.handler = id;
+    resource->guiVisible = true;
+    texture.handler = StoreTexture(std::move(resource));
     return texture;
 }
 
@@ -254,6 +253,11 @@ void VulkanGraphicsManager::BeginFrame(Frame& frame) {
         frame.frameContext.numLights < 0 || frame.frameContext.numLights > MAX_LIGHTS) {
         throw std::logic_error("Invalid Vulkan graphics frame state");
     }
+    if (m_pendingWidth > 0 && m_pendingHeight > 0) {
+        GraphicsManager::ResizeCanvas(m_pendingWidth, m_pendingHeight);
+        m_pendingWidth = m_pendingHeight = 0;
+    }
+    if (m_gui) m_gui->NewFrame();
     if (m_rhi.HasSurface()) {
         if (!m_rhi.BeginFrame()) return;
     } else {
@@ -299,7 +303,8 @@ void VulkanGraphicsManager::EndFrame(Frame&) {
         m_commands->Submit();
         m_commands.reset();
     } else {
-        m_rhi.EndFrame();
+        ComposeGui();
+        SubmitGuiFrame();
     }
     m_frameRecording = false;
     m_nFrameIndex = (m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount;
@@ -504,5 +509,11 @@ void VulkanGraphicsManager::MSAAResolve(std::optional<std::reference_wrapper<Tex
 std::vector<uint8_t> VulkanGraphicsManager::ReadTexture(const TextureBase& texture, uint32_t layer, uint32_t mip) {
     if (m_frameRecording) throw std::logic_error("Vulkan readback requires a completed graphics frame");
     m_rhi.WaitGPU();
-    return m_rhi.ReadTexture(GetTextureResource(texture), mip, layer);
+    auto& resource = GetTextureResource(texture);
+    const auto& owner = m_ownedTextures.at(texture.handler);
+    if (owner->parent) {
+        if (layer || mip) throw std::invalid_argument("Vulkan texture view contains only its selected subresource");
+        return m_rhi.ReadTexture(owner->parent->texture, owner->mip, owner->slice);
+    }
+    return m_rhi.ReadTexture(resource, mip, layer);
 }

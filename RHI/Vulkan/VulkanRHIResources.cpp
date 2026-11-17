@@ -289,6 +289,7 @@ void VulkanRHI::TransitionTexture(vk::CommandBuffer command, Texture& texture,
         throw std::invalid_argument("Invalid Vulkan texture transition range");
     }
     CheckSubresource(texture, range.baseMipLevel, range.baseArrayLayer);
+    CheckTextureAvailable(texture, command);
     const auto destination = LayoutScope(layout);
     using Layout = vk::ImageLayout;
     using Usage = vk::ImageUsageFlagBits;
@@ -341,14 +342,14 @@ void VulkanRHI::UpdateTexture(Texture& texture, const void* data, size_t size,
     auto mapped = m_vkDevice.mapMemory(staging.memory, 0, size);
     std::memcpy(mapped, data, size);
     m_vkDevice.unmapMemory(staging.memory);
-    auto command = beginSingleTimeCommands();
-    const auto range = Subresource(texture, mip, layer);
-    TransitionTexture(command, texture, range, vk::ImageLayout::eTransferDstOptimal);
-    const vk::BufferImageCopy copy(0, 0, 0,
-        vk::ImageSubresourceLayers(texture.aspect, mip, layer, 1), {0, 0, 0}, MipExtent(texture, mip));
-    command.copyBufferToImage(staging.buffer, texture.image, vk::ImageLayout::eTransferDstOptimal, copy);
-    TransitionTexture(command, texture, range, ReadyLayout(texture));
-    endSingleTimeCommands(command);
+    ExecuteTextureCommands(texture, [&](vk::CommandBuffer command) {
+        const auto range = Subresource(texture, mip, layer);
+        TransitionTexture(command, texture, range, vk::ImageLayout::eTransferDstOptimal);
+        const vk::BufferImageCopy copy(0, 0, 0,
+            vk::ImageSubresourceLayers(texture.aspect, mip, layer, 1), {0, 0, 0}, MipExtent(texture, mip));
+        command.copyBufferToImage(staging.buffer, texture.image, vk::ImageLayout::eTransferDstOptimal, copy);
+        TransitionTexture(command, texture, range, ReadyLayout(texture));
+    });
 }
 
 std::vector<uint8_t> VulkanRHI::ReadTexture(Texture& texture, uint32_t mip, uint32_t layer) {
@@ -363,17 +364,17 @@ std::vector<uint8_t> VulkanRHI::ReadTexture(Texture& texture, uint32_t mip, uint
     createBuffer(result.size(), vk::BufferUsageFlagBits::eTransferDst,
                   vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
                   staging.buffer, staging.memory);
-    auto command = beginSingleTimeCommands();
-    const auto range = Subresource(texture, mip, layer);
-    TransitionTexture(command, texture, range, vk::ImageLayout::eTransferSrcOptimal);
-    const vk::BufferImageCopy copy(0, 0, 0,
-        vk::ImageSubresourceLayers(texture.aspect, mip, layer, 1), {0, 0, 0}, MipExtent(texture, mip));
-    command.copyImageToBuffer(texture.image, vk::ImageLayout::eTransferSrcOptimal, staging.buffer, copy);
-    const vk::MemoryBarrier host(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eHostRead);
-    command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
-                             vk::PipelineStageFlagBits::eHost, {}, host, {}, {});
-    TransitionTexture(command, texture, range, previous);
-    endSingleTimeCommands(command);
+    ExecuteTextureCommands(texture, [&](vk::CommandBuffer command) {
+        const auto range = Subresource(texture, mip, layer);
+        TransitionTexture(command, texture, range, vk::ImageLayout::eTransferSrcOptimal);
+        const vk::BufferImageCopy copy(0, 0, 0,
+            vk::ImageSubresourceLayers(texture.aspect, mip, layer, 1), {0, 0, 0}, MipExtent(texture, mip));
+        command.copyImageToBuffer(texture.image, vk::ImageLayout::eTransferSrcOptimal, staging.buffer, copy);
+        const vk::MemoryBarrier host(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eHostRead);
+        command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                 vk::PipelineStageFlagBits::eHost, {}, host, {}, {});
+        TransitionTexture(command, texture, range, previous);
+    });
     auto mapped = m_vkDevice.mapMemory(staging.memory, 0, result.size());
     std::memcpy(result.data(), mapped, result.size());
     m_vkDevice.unmapMemory(staging.memory);
@@ -398,7 +399,7 @@ void VulkanRHI::GenerateMipmaps(Texture& texture) {
             throw std::logic_error("Vulkan mip generation requires initialized base levels");
         }
     }
-    auto command = beginSingleTimeCommands();
+    ExecuteTextureCommands(texture, [&](vk::CommandBuffer command) {
     for (uint32_t layer = 0; layer < texture.layers; ++layer) {
         for (uint32_t mip = 1; mip < texture.mipLevels; ++mip) {
             TransitionTexture(command, texture, Subresource(texture, mip - 1, layer), vk::ImageLayout::eTransferSrcOptimal);
@@ -416,13 +417,11 @@ void VulkanRHI::GenerateMipmaps(Texture& texture) {
         }
         TransitionTexture(command, texture, Subresource(texture, texture.mipLevels - 1, layer), ReadyLayout(texture));
     }
-    endSingleTimeCommands(command);
+    });
 }
 
 void VulkanRHI::DestroyTexture(Texture& texture) {
-    if ((m_commands && m_commands->m_layouts.contains(&texture)) || m_frameLayouts.contains(&texture)) {
-        throw std::logic_error("Cannot destroy a texture referenced by an active Vulkan recording");
-    }
+    CheckTextureAvailable(texture);
     if (!m_vkDevice) {
         if (texture.image || texture.descriptor || texture.heap) {
             throw std::logic_error("Vulkan texture outlived its device");

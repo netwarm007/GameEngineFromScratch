@@ -1,7 +1,31 @@
 #include "VulkanApplication.hpp"
 #include <vulkan/vulkan_win32.h>
+#include "imgui.h"
 
 using namespace My;
+
+int VulkanApplication::InitializeGuiPlatform() {
+    const auto result = WindowsApplication::InitializeGuiPlatform();
+    if (result != 0 || !ImGui::GetCurrentContext()) return result;
+    ImGui::GetPlatformIO().Platform_CreateVkSurface =
+        [](ImGuiViewport* viewport, ImU64 instance, const void* allocator, ImU64* output) -> int {
+        const auto nativeInstance = reinterpret_cast<VkInstance>(instance);
+        const auto create = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
+            vkGetInstanceProcAddr(nativeInstance, "vkCreateWin32SurfaceKHR"));
+        if (!create) return VK_ERROR_EXTENSION_NOT_PRESENT;
+        const auto window = static_cast<HWND>(viewport->PlatformHandleRaw);
+        VkWin32SurfaceCreateInfoKHR info{};
+        info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        info.hwnd = window;
+        info.hinstance = reinterpret_cast<HINSTANCE>(GetWindowLongPtr(window, GWLP_HINSTANCE));
+        VkSurfaceKHR surface = VK_NULL_HANDLE;
+        const auto status = create(nativeInstance, &info,
+            static_cast<const VkAllocationCallbacks*>(allocator), &surface);
+        if (status == VK_SUCCESS) *output = reinterpret_cast<ImU64>(surface);
+        return status;
+    };
+    return 0;
+}
 
 VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
                                                 VkSurfaceKHR& surface) {
