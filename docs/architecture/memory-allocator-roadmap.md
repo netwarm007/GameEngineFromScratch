@@ -118,7 +118,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M4 | `SlabAllocator` (constructed-object cache, empty-slab `Trim`) and `SizeClassAllocator` (16 classes, 16 B to 512 B); tests (`SlabAllocatorTest`, `SizeClassAllocatorTest`). | Done (CI-verified, `docs/verification/b6fab1866eb639ccc1dd0395e526b99527032a44.md`) |
 | M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Done (CI-verified, `docs/verification/e81a6ccb009943eac7627ec6fc16acdb59810421.md`) |
 | M6 | `TrackingAllocator` debug decorator: statistics, tags, guard bytes, registry-based free checks, leak reports; tests (`TrackingAllocatorTest`). | Done (CI-verified, `docs/verification/05b0b2616b0c56f5bca8b66f46147da3c254c326.md`) |
-| M7 | `GpuSubAllocator` (offset allocator with fence-based deferred free) and `ThreadCacheAllocator` (per-thread caches over `SizeClassAllocator`); tests (`GpuSubAllocatorTest`, `ThreadCacheAllocatorTest`). | Implemented; awaiting CI acceptance |
+| M7 | `GpuSubAllocator` (offset allocator with fence-based deferred free) and `ThreadCacheAllocator` (per-thread caches over `SizeClassAllocator`); tests (`GpuSubAllocatorTest`, `ThreadCacheAllocatorTest`). | Done (CI-verified, `docs/verification/857656ce14a8d5d9192cd4a4e9b6ef7f6caae43e.md`) |
 | M8 | Engine integration (separate decision). | Not started |
 
 M1 notes: `MemoryManager` no longer depends on `portable.hpp`/`config.h`, so
