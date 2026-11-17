@@ -1,0 +1,255 @@
+# Memory allocator roadmap
+
+## Purpose and scope
+
+Build a tested, standalone set of memory allocators suited to a game engine
+(`Framework/Manager`: `MemoryManager`, `IAllocator`, `BlockAllocator`,
+`StackAllocator`). This is a maintained engineering plan: update it as
+checkpoints land, findings change, or priorities shift.
+
+**Out of scope for now:** switching other engine modules to these allocators.
+Integration is a separate later effort. Each allocator is delivered and
+verified on its own.
+
+## Delivery rules
+
+- Work in checkpoints; each is an independently testable unit.
+- Every allocator ships with thorough unit tests (normal paths, boundaries,
+  exhaustion, alignment, reset/reuse, misuse detection where applicable).
+- Each checkpoint must pass the CircleCI gate on all enabled platforms (Windows,
+  Linux, macOS) for its exact revision before it counts as done; see
+  `docs/verification/`. Pull requests are not created automatically.
+- Documentation-only commits use `[ci skip]`.
+
+## Review findings (baseline)
+
+Reviewed before implementation. No engine code uses the allocators yet.
+
+### BlockAllocator
+
+| Severity | Issue |
+| --- | --- |
+| High | Single-argument constructor leaves statistics and size members uninitialized; `Reset` calls `FreeAll` on them. |
+| High | `AllocatePage` returning `nullptr` is not checked. |
+| High | `m_nBlocksPerPage == 0` underflows `m_nBlocksPerPage - 1` and overruns the page. |
+| High | Block addresses are only as aligned as the 8-byte `PageHeader`; alignment of 16/32/64 is not guaranteed. |
+| Medium | `Free` does not check null, ownership, block boundary, or double free. |
+| Medium | Size check is only an `assert`; oversized requests overrun in Release. |
+| Low | Global `ALIGN` macro; redundant `pNext` writes in `FillFreePage`; per-instance debug pattern members; undefined `IAllocator::~IAllocator`. |
+| Low | Free list is one list: poor locality over time, pages never returned, no thread-safety statement. |
+
+### StackAllocator
+
+An empty shell: `Allocate` returns `nullptr`, the destructor is not defined,
+the header lacks `#pragma once`, and its members (`std::list`,
+`shared_ptr<void>`) are unsuitable for a stack allocator.
+
+### MemoryManager
+
+- `std::map` bookkeeping per page: extra heap allocations, O(log n), no locking.
+- `FreePage` silently ignores unknown pointers (hides double free).
+- Leak detection is an `assert` only; no report in Release.
+- `Tick` uses `#if DEBUG` (the rest uses `_DEBUG`), triggers once, no separators.
+- `MemoryType::GPU` unused; no aligned page allocation; no statistics.
+
+## Planned allocators
+
+Priority order, highest first.
+
+| # | Allocator | Use in a game engine |
+| --- | --- | --- |
+| 1 | Linear / arena (bump) | Per-frame scratch, command buffers, load-time data; reset as a whole. |
+| 2 | Stack with markers | Scoped temporaries; `GetMarker` / `FreeToMarker`. |
+| 3 | Double-buffered frame allocator | Data that must survive one more frame across threads. |
+| 4 | Pool (fixed block) | Components, nodes, particles, tasks. Fixed `BlockAllocator`. |
+| 5 | Size-class small-object allocator | Replace general `malloc` for small objects (8..512 B). |
+| 6 | Slab | Pool plus cached constructed objects. |
+| 7 | TLSF | O(1) general allocator, low fragmentation, real-time safe. |
+| 8 | Buddy | Power-of-two page and heap management. |
+| 9 | GPU sub-allocator | Linear / ring / TLSF over Vulkan, D3D12, Metal heaps (`MemoryType::GPU`). |
+| 10 | Ring | Per-frame uploads, streaming; needs fence-based reclamation. |
+| 11 | Handle-based / compacting | Resource manager data that must be defragmented. |
+| 12 | Thread-cache layer | Per-thread caches over a shared backing; or adopt an existing allocator. |
+| 13 | Debug / tracking decorator | Guard bytes, leak reports, statistics around any allocator. |
+
+Also: adapt allocators to `std::pmr::memory_resource` so standard containers
+can use them.
+
+## Known limitations and follow-ups
+
+Open items only; remove or mark resolved when fixed. Per-revision details are in
+`docs/verification/`.
+
+| Limitation | Planned handling |
+| --- | --- |
+| `LinearAllocator` and `StackAllocator` are single-threaded with fixed capacity (no growth). | Documented; use one instance per thread (the thread-cache layer in M7 covers small objects only). |
+| `BlockAllocator` free-pointer validation is O(pages + free blocks) and on by default only in `_DEBUG`. | Use `TrackingAllocator` (M6) for registry-based ownership checks when validation is off. |
+| `BlockAllocator` never returns pages before `FreeAll`/destruction; single free list gives poor locality over time. | Use `SlabAllocator`/`SizeClassAllocator` (`Trim`) where page return matters; `BlockAllocator` itself stays as is. |
+| `SlabAllocator`/`SizeClassAllocator` are single-threaded; validation off (release default) cannot detect pointers outside any slab, and `Trim` is manual (no automatic shrink policy). | Resolved for small objects by `ThreadCacheAllocator` (M7); `TrackingAllocator` ownership checks (M6, done). |
+| `SizeClassAllocator` serves only 1..512 bytes and 16-byte alignment; larger requests return `nullptr` and the caller must route them elsewhere. | General allocator (TLSF/Buddy, M5) and routing facade (M8). |
+| Debug fill patterns are only verified in builds defining `_DEBUG`. | Open; `TrackingAllocator` adds guard bytes but does not check fill patterns. |
+| `FrameAllocator` and `RingAllocator` are single-threaded; `RingAllocator` leaves fence tracking (when to `Retire`) to the caller. | Per-thread instances; `GpuSubAllocator` (M7) owns fence-based reclamation for GPU memory, `RingAllocator` stays caller-driven. |
+| `PmrAdapter` forwards `deallocate` to `Free`, so LIFO/arena allocators only reclaim as their own rules allow, and failures throw `std::bad_alloc`. | Documented behavior; revisit if engine builds disable exceptions (M8). |
+| `TlsfAllocator` and `BuddyAllocator` are single-threaded with fixed capacity (no growth by adding pools). | Per-thread instances or an external lock; pool growth is open and goes with engine integration (M8). |
+| `TlsfAllocator` is good-fit: a request within ~1/32 of the only free block can fail; its `Free` checks inspect block headers and can be fooled by crafted user data. | Documented; `TrackingAllocator` (M6) rejects unregistered pointers before they reach `Free`. |
+| `BuddyAllocator` wastes up to 50% per block and supports alignment only up to 4096 bytes. | Intended for large or page-like blocks; documented. |
+| `TrackingAllocator` has a rear guard only (no underrun detection), no call stacks, adds 16 bytes plus a registry entry per block, and holds a global mutex; keeps the wrapped allocator's alignment (no aligned allocate); tag pointers must outlive allocations. | Debug/tooling use only; aligned allocate and call stacks if needed (M8). |
+| `ThreadCacheAllocator` serves only 1..512 bytes, cannot detect double frees (cached objects look live), and returns a thread's cache only on thread exit, `FlushThreadCache()` or `Trim()`. `FreeAll()` must not run concurrently. | Use `TrackingAllocator` on top for double-free detection; routing facade (M8). |
+| `GpuSubAllocator` manages one heap (no growth or multiple heaps), is single-threaded, uses O(log n) ordered maps (not a constant-time TLSF), and is not yet wired to any RHI backend (Vulkan/D3D12/Metal). | Heap growth and RHI binding with engine integration (M8). |
+| The frame arena has a fixed 1 MiB per frame and throws `std::bad_alloc` when exhausted (no fallback); the only pilot site is Direct3D 12 on Windows, so OpenGL/Metal/Vulkan do not exercise it. | More sites or a fallback if profiling needs it (M8.6). |
+| `MemorySystem` exists only when `USE_ENGINE_ALLOCATORS` is ON; pilots are the D3D12 vertex-view scratch (M8.3) and the D3D12/OpenGL `DrawBatchContext` objects (M8.4; the OpenGL context is 480 B and uses the small-object path, others are not measured); the ON path is built and tested by CI on all three platforms since `721eb2f` (macOS added then; its Metal path has no pilot site). | Default stays OFF (M8.6 decision); same-revision OFF/ON screenshot parity is unchecked on every platform. |
+| `SetEngineAllocator` must only change while no thread allocates through the hook; objects must not outlive the `MemorySystem` (a block from a replaced or unhooked allocator is leaked, not freed). | Lifetime ordering is enforced by `BaseApplication`; revisit in M8.5. |
+| `RoutingAllocator` has a fixed-capacity TLSF arena behind one mutex (large path serializes), small double frees are not detected, and over-aligned small requests use the TLSF path. | Pool growth and per-thread large arenas if profiling shows contention (M8.6); `TrackingAllocator` for double frees (M8.5). |
+
+## Foundation improvements
+
+- `AllocatePage` accepts an alignment; pages aligned to at least a cache line.
+- Intrusive page metadata instead of `std::map`; keep a debug-only registry.
+- Default member initializers and parameter validation everywhere.
+- Report failures (null returns, invalid frees) rather than silently ignoring.
+- Allocation statistics (current, peak, count) switchable by build option.
+- Document the thread-safety model of each allocator.
+
+## Checkpoints
+
+| ID | Scope | Status |
+| --- | --- | --- |
+| M0 | This roadmap | Done (docs only) |
+| M1 | Foundation and BlockAllocator fixes: initialization, validation, alignment, null handling, double-free detection; tests (`Test/Memory/MemoryAllocatorTest`). | Done (CI-verified, `docs/verification/03a8504ee0dc1fd042c3444d520f2b3863c85304.md`) |
+| M2 | `LinearAllocator` and marker-based `StackAllocator` (replace the shell); tests (`LinearAllocatorTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/faa5744f42b9aec60d6b93f561af22a95378320e.md`) |
+| M3 | Frame (double-buffered) and ring allocators; `std::pmr` adapter; stale `Marker` detection; tests (`FrameAllocatorTest`, `RingAllocatorTest`, `PmrAdapterTest`, `StackAllocatorTest`). | Done (CI-verified, `docs/verification/89926ec5081f370ca6519c6fbeba021a1fc6cbd6.md`) |
+| M4 | `SlabAllocator` (constructed-object cache, empty-slab `Trim`) and `SizeClassAllocator` (16 classes, 16 B to 512 B); tests (`SlabAllocatorTest`, `SizeClassAllocatorTest`). | Done (CI-verified, `docs/verification/b6fab1866eb639ccc1dd0395e526b99527032a44.md`) |
+| M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Done (CI-verified, `docs/verification/e81a6ccb009943eac7627ec6fc16acdb59810421.md`) |
+| M6 | `TrackingAllocator` debug decorator: statistics, tags, guard bytes, registry-based free checks, leak reports; tests (`TrackingAllocatorTest`). | Done (CI-verified, `docs/verification/05b0b2616b0c56f5bca8b66f46147da3c254c326.md`) |
+| M7 | `GpuSubAllocator` (offset allocator with fence-based deferred free) and `ThreadCacheAllocator` (per-thread caches over `SizeClassAllocator`); tests (`GpuSubAllocatorTest`, `ThreadCacheAllocatorTest`). | Done (CI-verified, `docs/verification/857656ce14a8d5d9192cd4a4e9b6ef7f6caae43e.md`) |
+| M8 | Engine integration, pilot only and off by default (see "M8 plan"). | Complete, switch stays OFF (M8.1 CI-verified, `docs/verification/7b1e8090152549cbefc9c1959008d7e08e9ec113.md`; M8.2 CI-verified, `docs/verification/5b0597d65d56cf77d11601d5806b10a49b4ee584.md`; M8.3 CI-verified, `docs/verification/5fd7af44dae36d2a3b501bc0cb40ff344ee49b09.md`; M8.4 CI-verified, `docs/verification/7b07414eaf5c5d5b4fda1235c20b1d5dda150a52.md`; M8.5 CI-verified, `docs/verification/f72e0d212dc96f55e92887ba007273be40fdc3df.md`; M8.6 CI-verified, `docs/verification/66780f9634a1fb859170269977b5b9fe167fc141.md`) |
+
+M1 notes: `MemoryManager` no longer depends on `portable.hpp`/`config.h`, so
+allocator tests build standalone (`cmake -S Test/Memory`). `IMemoryManager`
+gained `AllocateAlignedPage` (default falls back to `AllocatePage`).
+`BlockAllocator` allocates blocks lazily from the newest page; free-pointer
+validation (ownership, alignment, double free) is on in `_DEBUG` builds and
+enabled explicitly with `SetValidation(true)`.
+
+M2 notes: both allocators own one fixed-capacity, 64-byte-aligned arena from
+`AllocateAlignedPage`, accept per-allocation power-of-two alignment, and return
+`nullptr` instead of growing. `LinearAllocator::FreeAll` keeps the arena.
+`StackAllocator` keeps a 16-byte header per allocation so `Free(p)` can pop the
+latest allocation; `Marker` rewinds many at once. Shared helpers are in
+`AllocatorUtils.hpp`.
+
+M7 notes: `GpuSubAllocator` is backend-agnostic: it hands out offsets into a
+heap and keeps all bookkeeping on the CPU, so it also works for device-local
+memory. Free ranges live in an ordered map (coalescing) plus a size-ordered set
+(best fit); `FreeDeferred(handle, fence)` plus `Retire(completed)` keep memory
+reserved until the GPU is done. Handles carry a serial id so stale handles are
+rejected. `ThreadCacheAllocator` keeps an intrusive free list per size class in
+each thread, moves objects to or from a mutex-protected `SizeClassAllocator` in
+batches, and returns a thread's cache when the thread exits. Allocator ids are
+never reused and a registry tells exiting threads which allocators still exist.
+`SizeClassAllocator::ClassIndexOf` finds a pointer's class from the slab header.
+
+M6 notes: `TrackingAllocator` wraps any `IAllocator&` without owning it. It
+appends a 16-byte guard band after each block, keeps an `unordered_map` of live
+blocks, and never forwards unknown or double-freed pointers to the wrapped
+allocator (counted as `invalidFrees`). `CheckGuards()` scans live blocks;
+`LeakReport()`/`SetLeakHandler` report survivors, and the destructor reports
+leaks automatically.
+
+M5 notes: `TlsfAllocator` keeps a 16-byte header per block (previous-physical
+pointer plus size and free flag), 32 second-level bins per power of two, and
+two bitmaps for O(1) lookup; neighbours coalesce on `Free`, and alignments above
+16 split the leading gap off as a free block. `BuddyAllocator` keeps no headers
+in user memory: a byte-per-unit state table records block starts, orders and
+free flags, and free lists are intrusive. Both expose `Check()` for heap
+invariants, which the tests call throughout randomized workloads.
+
+M4 notes: `SlabAllocator` allocates slabs aligned to their own (power-of-two)
+size, so `Free` finds the owning slab by masking the pointer and needs no size.
+Free-index lists and in-use flags live in the slab header, which keeps freed
+objects intact; with a constructor/destructor pair objects stay constructed
+across `Free`/`Allocate` and are destroyed only when a slab is released.
+`SizeClassAllocator` owns one `SlabAllocator` per class and finds the class
+from the slab header (or by ownership walk when validation is on).
+
+M3 notes: `StackAllocator::Header` now carries a never-reused 64-bit serial, and
+`Marker` records the serial of the newest allocation, so markers of unwound
+allocations, markers across `FreeAll`, and forged markers are rejected.
+`FrameAllocator` rotates N (>=2) `LinearAllocator` arenas. `RingAllocator` uses
+monotonic 64-bit logical positions; `GetHead()`/`Retire()` implement FIFO
+reclamation. `PmrAdapter<A>` (header only) wraps any allocator as a
+`std::pmr::memory_resource`.
+
+Test lessons: debug-mode standard containers keep a live proxy allocated from
+their memory resource, so containers must be destroyed before `FreeAll()`;
+alignment-failure tests must not assume buffer addresses (a large alignment
+boundary may fall inside a small buffer).
+
+Checkpoint scopes may be re-split as implementation reveals complexity.
+
+## M8 plan: engine integration
+
+Goal: use the allocators in the engine behind switches, without changing
+behavior or rendering output. Current state: `MemoryManager` is only a page
+source registered with `BaseApplication`; no module uses an allocator and there
+is no global `operator new` override.
+
+In scope: a `MemorySystem` owned by the application; a routing facade (blocks
+up to 512 bytes to `ThreadCacheAllocator`, larger to `TlsfAllocator`, with
+aligned allocation); `FrameAllocator` plus `PmrAdapter` for per-frame data;
+optional `TrackingAllocator` with a leak report at shutdown; periodic statistics
+from `MemoryManager::Tick`.
+
+Out of scope: global `new`/`delete` replacement, bulk container conversion, and
+binding `GpuSubAllocator` to Vulkan/D3D12/Metal heaps (a later checkpoint).
+
+Policy: CMake options `USE_ENGINE_ALLOCATORS` (default OFF) and
+`ENABLE_ALLOCATOR_TRACKING`. Pilot only 1-2 per-frame temporary data sites and
+1-2 high-frequency small object types.
+
+| Step | Scope |
+| --- | --- |
+| M8.1 | `RoutingAllocator` facade with aligned allocation; unit and multithreaded tests (`RoutingAllocatorTest`). |
+| M8.2 | `MemorySystem` (routing allocator, optional tracking) owned by `BaseApplication`; CMake options `USE_ENGINE_ALLOCATORS`, `ENABLE_ALLOCATOR_TRACKING` (both default OFF); tests `MemorySystemTest`, `ApplicationLifetimeTest`. The Linux CI build turns both ON; Windows turns it ON from M8.3 and macOS from `721eb2f`. |
+| M8.3 | Per-frame pilot: `MemorySystem` owns a `FrameAllocator` (1 MiB x 2) exposed as a pmr `FrameResource()`, recycled by `BaseApplication::Tick`; pilot site is the per-draw vertex-buffer-view scratch in `D3d12GraphicsManager::DrawBatch`. The Windows CI build also turns the switch ON. |
+| M8.4 | Small-object pilot: `MemorySystem` now owns a private page source and lives from before module initialization until after module finalization. `EngineAllocation` (`SetEngineAllocator`, `EngineAllocate/Free`, `MakeEngineShared`) tags every block with an allocator generation so blocks return to their origin; pilot types are the D3D12 and OpenGL `DrawBatchContext` subclasses. |
+| M8.5 | `MemorySystem::StatsReport()` summarizes routing, frame and tracking counters; the destructor emits it, followed by the tracker's leak report, through `Config::reportHandler` (default `std::cerr`). With the switch ON, tracking is on in every non-`NDEBUG` build. |
+| M8.6 | Compare switch on/off; decide whether to enable by default. **Decision: keep OFF.** Evidence (Linux, OpenGL): Billiard screenshot of the ON build (`f72e0d2`, job 4625) is byte-identical to the OFF build of `7b1e809` (job 4578), and the ON shutdown report shows 36 pilot allocations, 36 frees, 0 live, 0 invalid frees, 0 guard violations. The Viewer screenshot differs slightly (1595 pixels) but the two runs also differ in asset format (DDS vs PVR) and the Viewer never reports pilot allocations, so it is not an ON/OFF comparison. Same-revision all-platform comparison (ON `721eb2f` vs OFF baseline `c30c814`, identical source apart from the CI flags; both CI-green, record `docs/verification/c30c814de112a39290024a8319b6abda5c6017ec.md`): Linux Billiard is byte-identical; Linux Viewer differs in 1507 pixels (animated ball position and frame-time text); macOS and Windows differ only in the frame-time/FPS text (Billiard 1531 and 2202 pixels, bounded to the stats rows) plus Viewer animation phase; no geometry, shading or layout differences were seen. ON logs show 0 live and 0 invalid frees on Linux and Windows; the macOS ON logs print no `[MemorySystem]` report (no pilot site, and the report may not run at exit), so macOS parity is rendering-only. Reasons to stay OFF: the pilot covers two small types, the comparison is visual only (no pixel-exact check beyond Linux Billiard because the UI shows live frame times), and tracking's global mutex is a debug-only cost. Micro-benchmark (`Test/Memory/AllocatorBenchmark.cpp`, manual, not a test; Linux g++ `-O2`, 2 vCPUs so the 4/8-thread columns are oversubscribed and indicative only), ns per alloc+free: 32-480 B churn, 1 thread: default heap 24.7, `RoutingAllocator` 17.7, with `TrackingAllocator` 67.2; 4 threads: 51.7 / 45.3 / 2492 (global tracker mutex); 4 KiB blocks, 1 thread: 2331 / 37.0 (fixed pre-reserved arena); per-frame pmr scratch: 14.9 us per frame on the default heap vs 8.1 us on the frame arena; `MakeEngineShared` of a 16 B object: 18.9 hook off, 21.3 on, 60.6 on with tracking. Takeaways: the routing stack is not slower than the default heap and clearly faster for large blocks and frame scratch; tracking is a debug-only cost (about 3x single-threaded, severe under contention), which is why it must stay out of release builds; the hook adds about 2 ns. No engine-level frame-time comparison has been made. Enable by default only after more pilot sites, and a screenshot comparison with the frame-time text masked or a fixed-time capture. |
+
+Tests: facade routing (512/513 boundary, alignment, double free), stress under
+ASan/UBSan/TSan, `Test/Framework` lifecycle tests with the switch on and off
+(no leaks), screenshot parity between on and off.
+
+Acceptance: each step passes Windows, Linux and macOS CircleCI on its exact
+revision with a verification record; switch OFF behaves exactly as today;
+switch ON passes all existing tests and screenshot checks; no leaks reported.
+
+Risks: Windows debug-container lifetime with pmr (seen in M3);
+`ThreadCacheAllocator::FreeAll` must not run concurrently; cross-module frees
+must match their allocator, hence the small pilot scope.
+
+## Future work: full engine adoption (not started)
+
+Status after M8: three pilot sites (D3D12 and OpenGL `DrawBatchContext`, D3D12
+vertex-view scratch) out of roughly 110 `new`, 90 `make_shared` and many
+container/string sites in about 40-50 files, so under 5% of allocation sites
+use the engine allocators. Runtime share is unmeasured (Billiard reports 36
+pilot allocations; no total exists). Third-party libraries and the global
+`operator new` are untouched. Planned order, each step a checkpoint with
+three-platform CI and a verification record, switch default OFF until the end:
+
+1. Measure: count allocations by size and call site (tracking or a counting
+   global `operator new`) to get the real share and hot spots.
+2. Frame scratch: move per-pass temporary vectors/strings to `pmr` on the frame
+   arena; add a fallback for arena exhaustion.
+3. Small objects: scene nodes, materials and other `make_shared` sites via
+   `MakeEngineShared`.
+4. Optional global `operator new/delete` routing to `RoutingAllocator`; needs
+   owner lookup on free, a fix for the single-mutex large path, and thread-exit
+   cache draining.
+5. GPU memory: connect `GpuSubAllocator` to each RHI backend.
+6. Close the open items in "Known limitations and follow-ups".
+
+Risk: freeing across module or third-party boundaries must reach the owning
+allocator, so keep the header-tag scheme and roll out gradually. Decision:
+deferred by the user; revisit later.

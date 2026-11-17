@@ -120,6 +120,8 @@ or verification of every material and camera position.
 The [modularization roadmap](docs/architecture/modularization-roadmap.md)
 describes the refactoring goals, completed boundaries, proposed next checkpoints,
 and acceptance process.
+The [memory allocator roadmap](docs/architecture/memory-allocator-roadmap.md)
+tracks the review findings and planned allocators.
 
 Desktop graphics applications create the native window with `CreateMainWindow()`
 before calling `Initialize()`. Application initialization prepares the backend

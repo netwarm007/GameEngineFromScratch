@@ -6,6 +6,7 @@ add_library(D3dRHI
 )
 
 target_link_libraries(D3dRHI
+    Manager
     d3d12
     dxgi
     windowscodecs

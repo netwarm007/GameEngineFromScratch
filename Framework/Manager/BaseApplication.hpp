@@ -13,12 +13,17 @@
 #include "ISceneManager.hpp"
 #include "RuntimeModuleGroup.hpp"
 
+#include <memory>
+
 namespace My {
+class MemorySystem;
+
 class BaseApplication : _implements_ IApplication {
    public:
-    BaseApplication() = default;
-    explicit BaseApplication(GfxConfiguration& cfg) : m_Config(cfg) {}
-    ~BaseApplication() override = default;
+    // Defined out of line: MemorySystem is incomplete here.
+    BaseApplication();
+    explicit BaseApplication(GfxConfiguration& cfg);
+    ~BaseApplication() override;
     virtual int Initialize();
     virtual void Finalize();
     // One cycle of the main loop
@@ -66,6 +71,8 @@ class BaseApplication : _implements_ IApplication {
         return m_pPipelineStateManager;
     }
     IGameLogic* GetGameLogic() { return m_pGameLogic; }
+    // nullptr unless built with USE_ENGINE_ALLOCATORS and running.
+    MemorySystem* GetMemorySystem() { return m_pMemorySystem.get(); }
 #ifdef DEBUG
     IDebugManager* GetDebugManager() { return m_pDebugManager; }
 #endif
@@ -99,8 +106,10 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    private:
+    void ReleaseMemorySystem();
     bool m_GraphicsInitialized = false;
     bool m_GuiPlatformInitialized = false;
     RuntimeModuleGroup runtime_modules;
+    std::unique_ptr<MemorySystem> m_pMemorySystem;
 };
 }  // namespace My

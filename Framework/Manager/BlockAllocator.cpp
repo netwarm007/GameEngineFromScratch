@@ -1,97 +1,134 @@
 #include "BlockAllocator.hpp"
 
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 
-#include "MemoryManager.hpp"
-
-#ifndef ALIGN
-#define ALIGN(x, a) (((x) + ((a)-1)) & ~((a)-1))
-#endif
-
 using namespace My;
-using namespace std;
 
-BlockAllocator::BlockAllocator(IMemoryManager* pMmgr, size_t data_size, size_t page_size,
-                               size_t alignment)
-    : IAllocator(pMmgr), m_pPageList(nullptr), m_pFreeList(nullptr) {
+namespace {
+constexpr size_t AlignUp(size_t x, size_t a) { return (x + (a - 1)) & ~(a - 1); }
+}  // namespace
+
+BlockAllocator::BlockAllocator(IMemoryManager* pMmgr, size_t data_size,
+                               size_t page_size, size_t alignment)
+    : IAllocator(pMmgr) {
     Reset(data_size, page_size, alignment);
 }
 
 BlockAllocator::~BlockAllocator() { FreeAll(); }
 
-void BlockAllocator::Reset(size_t data_size, size_t page_size,
+bool BlockAllocator::Reset(size_t data_size, size_t page_size,
                            size_t alignment) {
     FreeAll();
+    m_bConfigured = false;
+    m_nBlocksPerPage = 0;
 
-    m_szPageSize = page_size;
+    // the masks below only work for power-of-two alignments
+    if (alignment == 0 || (alignment & (alignment - 1)) != 0) return false;
 
     size_t minimal_size =
         (sizeof(BlockHeader) > data_size) ? sizeof(BlockHeader) : data_size;
-    // this magic only works when alignment is 2^n, which should general be the
-    // case because most CPU/GPU also requires the aligment be in 2^n but still
-    // we use a assert to guarantee it
-#if defined(_DEBUG)
-    assert(alignment > 0 && ((alignment & (alignment - 1))) == 0);
-#endif
-    m_szBlockSize = ALIGN(minimal_size, alignment);
+    size_t block_size = AlignUp(minimal_size, alignment);
+    // overflow guard
+    if (block_size < minimal_size) return false;
 
-    m_szAlignmentSize = m_szBlockSize - minimal_size;
+    // page memory is aligned to the block alignment and the header is padded
+    // so the first block is aligned as well
+    size_t page_align =
+        alignment > alignof(PageHeader) ? alignment : alignof(PageHeader);
+    size_t header_size = AlignUp(sizeof(PageHeader), page_align);
+    if (page_size <= header_size) return false;
 
-    m_nBlocksPerPage = (m_szPageSize - sizeof(PageHeader)) / m_szBlockSize;
+    size_t blocks_per_page = (page_size - header_size) / block_size;
+    if (blocks_per_page == 0) return false;
+
+    m_szPageSize = page_size;
+    m_szAlignment = page_align;
+    m_szHeaderSize = header_size;
+    m_szBlockSize = block_size;
+    m_szAlignmentSize = block_size - minimal_size;
+    m_nBlocksPerPage = blocks_per_page;
+    m_bConfigured = true;
+    return true;
 }
 
 void* BlockAllocator::Allocate(size_t size) {
-    assert(size <= m_szBlockSize);
+    if (size > m_szBlockSize) return nullptr;
     return Allocate();
 }
 
 void* BlockAllocator::Allocate() {
-    if (!m_pFreeList) {
-        // allocate a new page
-        auto* pNewPage = reinterpret_cast<PageHeader*>(
-            m_pMemoryManager->AllocatePage(m_szPageSize));
-        ++m_nPages;
-        m_nBlocks += m_nBlocksPerPage;
-        m_nFreeBlocks += m_nBlocksPerPage;
+    if (!m_bConfigured) return nullptr;
 
-#if defined(_DEBUG)
-        FillFreePage(pNewPage);
-#endif
+    BlockHeader* block = nullptr;
 
-        if (m_pPageList) {
+    if (m_pFreeList) {
+        block = m_pFreeList;
+        m_pFreeList = block->pNext;
+    } else {
+        if (m_pBump == m_pBumpEnd) {
+            auto* pNewPage = static_cast<PageHeader*>(
+                m_pMemoryManager->AllocateAlignedPage(m_szPageSize,
+                                                      m_szAlignment));
+            if (!pNewPage) return nullptr;
+
             pNewPage->pNext = m_pPageList;
-        } else {
-            pNewPage->pNext = nullptr;
+            m_pPageList = pNewPage;
+            m_pBump = PageBlocks(pNewPage);
+            m_pBumpEnd = m_pBump + m_nBlocksPerPage * m_szBlockSize;
+
+            ++m_nPages;
+            m_nBlocks += m_nBlocksPerPage;
+            m_nFreeBlocks += m_nBlocksPerPage;
         }
 
-        m_pPageList = pNewPage;
-
-        BlockHeader* pBlock = pNewPage->Blocks();
-        // link each block in the page
-        for (uint32_t i = 0; i < m_nBlocksPerPage - 1; i++) {
-            pBlock->pNext = NextBlock(pBlock);
-            pBlock = NextBlock(pBlock);
-        }
-        pBlock->pNext = nullptr;
-
-        m_pFreeList = pNewPage->Blocks();
+        block = reinterpret_cast<BlockHeader*>(m_pBump);
+        m_pBump += m_szBlockSize;
     }
 
-    BlockHeader* freeBlock = m_pFreeList;
-    m_pFreeList = m_pFreeList->pNext;
     --m_nFreeBlocks;
 
 #if defined(_DEBUG)
-    FillAllocatedBlock(freeBlock);
+    FillAllocatedBlock(block);
 #endif
 
-    return reinterpret_cast<void*>(freeBlock);
+    return block;
+}
+
+bool BlockAllocator::OwnsBlock(const void* p) const {
+    auto addr = reinterpret_cast<uintptr_t>(p);
+    for (PageHeader* page = m_pPageList; page; page = page->pNext) {
+        auto first = reinterpret_cast<uintptr_t>(PageBlocks(page));
+        auto end = first + m_nBlocksPerPage * m_szBlockSize;
+        if (addr >= first && addr < end) {
+            return (addr - first) % m_szBlockSize == 0;
+        }
+    }
+    return false;
+}
+
+bool BlockAllocator::IsOnFreeList(const BlockHeader* pBlock) const {
+    for (const BlockHeader* b = m_pFreeList; b; b = b->pNext) {
+        if (b == pBlock) return true;
+    }
+    return false;
 }
 
 void BlockAllocator::Free(void* p) {
-    auto* block = reinterpret_cast<BlockHeader*>(p);
+    if (!p) return;
+
+    auto* block = static_cast<BlockHeader*>(p);
+
+    if (m_bValidate) {
+        auto bump = reinterpret_cast<uintptr_t>(m_pBump);
+        auto addr = reinterpret_cast<uintptr_t>(p);
+        bool inUntouched = bump != 0 &&
+                           addr >= bump && addr < reinterpret_cast<uintptr_t>(m_pBumpEnd);
+        if (!OwnsBlock(p) || inUntouched || IsOnFreeList(block)) {
+            ++m_nInvalidFrees;
+            return;
+        }
+    }
 
 #if defined(_DEBUG)
     FillFreeBlock(block);
@@ -108,11 +145,13 @@ void BlockAllocator::FreeAll() {
         PageHeader* _p = pPage;
         pPage = pPage->pNext;
 
-        m_pMemoryManager->FreePage(reinterpret_cast<void*>(_p));
+        m_pMemoryManager->FreePage(_p);
     }
 
     m_pPageList = nullptr;
     m_pFreeList = nullptr;
+    m_pBump = nullptr;
+    m_pBumpEnd = nullptr;
 
     m_nPages = 0;
     m_nBlocks = 0;
@@ -120,18 +159,6 @@ void BlockAllocator::FreeAll() {
 }
 
 #if defined(_DEBUG)
-void BlockAllocator::FillFreePage(PageHeader* pPage) {
-    // page header
-    pPage->pNext = nullptr;
-
-    // blocks
-    BlockHeader* pBlock = pPage->Blocks();
-    for (uint32_t i = 0; i < m_nBlocksPerPage; i++) {
-        FillFreeBlock(pBlock);
-        pBlock = NextBlock(pBlock);
-    }
-}
-
 void BlockAllocator::FillFreeBlock(BlockHeader* pBlock) {
     // block header + data
     memset(pBlock, PATTERN_FREE, m_szBlockSize - m_szAlignmentSize);
@@ -151,10 +178,4 @@ void BlockAllocator::FillAllocatedBlock(BlockHeader* pBlock) {
         reinterpret_cast<uint8_t*>(pBlock) + m_szBlockSize - m_szAlignmentSize,
         PATTERN_ALIGN, m_szAlignmentSize);
 }
-
 #endif
-
-My::BlockHeader* BlockAllocator::NextBlock(BlockHeader* pBlock) {
-    return reinterpret_cast<BlockHeader*>(reinterpret_cast<uint8_t*>(pBlock) +
-                                          m_szBlockSize);
-}

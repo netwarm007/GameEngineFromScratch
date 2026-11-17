@@ -3,7 +3,8 @@ set -e
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/External/$(uname -s)/lib
 mkdir -p build
 pushd build
-cmake -G"Ninja" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+# CMAKE_ARGS is intentionally word-split into extra cmake options.
+cmake -G"Ninja" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $CMAKE_ARGS ..
 if [[ -z $1 ]];
 then
     cmake --build . --config Debug
