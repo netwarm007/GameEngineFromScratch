@@ -30,6 +30,7 @@ add_library(Manager
         TrackingAllocator.cpp
         GpuSubAllocator.cpp
         ThreadCacheAllocator.cpp
+        RoutingAllocator.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp

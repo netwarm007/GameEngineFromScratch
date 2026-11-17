@@ -53,6 +53,11 @@ class TlsfAllocator : _implements_ IAllocator {
     bool Check() const;
 
     bool IsConfigured() const { return m_pBase != nullptr; }
+    // True if p lies inside the arena (says nothing about block validity).
+    bool Owns(const void* p) const {
+        const auto* b = static_cast<const uint8_t*>(p);
+        return m_pBase != nullptr && b >= m_pBase && b < m_pBase + m_szCapacity;
+    }
     size_t Capacity() const { return m_szCapacity; }
     // Bytes held by live blocks, headers included.
     size_t Used() const { return m_szUsed; }
