@@ -122,7 +122,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Done (CI-verified, `docs/verification/e81a6ccb009943eac7627ec6fc16acdb59810421.md`) |
 | M6 | `TrackingAllocator` debug decorator: statistics, tags, guard bytes, registry-based free checks, leak reports; tests (`TrackingAllocatorTest`). | Done (CI-verified, `docs/verification/05b0b2616b0c56f5bca8b66f46147da3c254c326.md`) |
 | M7 | `GpuSubAllocator` (offset allocator with fence-based deferred free) and `ThreadCacheAllocator` (per-thread caches over `SizeClassAllocator`); tests (`GpuSubAllocatorTest`, `ThreadCacheAllocatorTest`). | Done (CI-verified, `docs/verification/857656ce14a8d5d9192cd4a4e9b6ef7f6caae43e.md`) |
-| M8 | Engine integration, pilot only and off by default (see "M8 plan"). | In progress (M8.1 CI-verified, `docs/verification/7b1e8090152549cbefc9c1959008d7e08e9ec113.md`; M8.2 CI-verified, `docs/verification/5b0597d65d56cf77d11601d5806b10a49b4ee584.md`; M8.3 CI-verified, `docs/verification/5fd7af44dae36d2a3b501bc0cb40ff344ee49b09.md`) |
+| M8 | Engine integration, pilot only and off by default (see "M8 plan"). | In progress (M8.1 CI-verified, `docs/verification/7b1e8090152549cbefc9c1959008d7e08e9ec113.md`; M8.2 CI-verified, `docs/verification/5b0597d65d56cf77d11601d5806b10a49b4ee584.md`; M8.3 CI-verified, `docs/verification/5fd7af44dae36d2a3b501bc0cb40ff344ee49b09.md`; M8.4 CI-verified, `docs/verification/7b07414eaf5c5d5b4fda1235c20b1d5dda150a52.md`) |
 
 M1 notes: `MemoryManager` no longer depends on `portable.hpp`/`config.h`, so
 allocator tests build standalone (`cmake -S Test/Memory`). `IMemoryManager`
