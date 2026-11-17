@@ -311,7 +311,8 @@ multi-viewports, texture debugging, or saved layouts to get an initial screensho
 Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
 focused local and exact-revision CI validation and received user confirmation,
 not acceptance of the complete Vulkan backend. Checkpoint 2 has also received
-user confirmation. Checkpoint 3 is in progress; checkpoints 4-5 remain planned
+user confirmation. Checkpoint 3 implementation and exact-revision reference
+checks are complete, awaiting user confirmation; checkpoints 4-5 remain planned
 and proceed in order, with focused
 validation and user confirmation at each boundary.
 
@@ -320,7 +321,7 @@ validation and user confirmation at each boundary.
 | 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
 | 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
 | 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
-| 3. Shared rendering passes | In progress. Integrate offscreen rendering, BASIC/PBR, skybox/BRDF, shadows, and MSAA in that order. Verify six-face/multi-light depth and sampling, render output, and resource correctness without a Vulkan-only pass bypass. |
+| 3. Shared rendering passes | Implemented and exact-revision CI verified; awaiting user confirmation. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
 | 4. UI and applications | Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
 | 5. Cross-platform acceptance | Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. |
 
@@ -715,9 +716,15 @@ Focused local GPU regressions now cover:
   repeated finalization, and validation through destruction.
 
 The isolated CI job retains these offscreen PPM readback images as artifacts;
-they are Vulkan images, not application-window or desktop captures. Local
-results do not satisfy the exact-revision full CI gate. Checkpoint 3 remains
-open until that gate and image inspection finish, followed by user confirmation.
+they are Vulkan images, not application-window or desktop captures.
+Revision `33e9ecbff70d8637da95bf6ef1bd3d586a1c14bb` passed the full workflow in
+[pipeline 1009](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/1009).
+The [verification record](../verification/33e9ecbff70d8637da95bf6ef1bd3d586a1c14bb.md)
+records six passing Vulkan tests, zero validation messages/VUID markers,
+twenty-four point-face checks, four shadow-receiver checks, six sky-direction
+checks, and inspection of all fifteen Vulkan readbacks and six native-backend
+application captures. Checkpoint 3 implementation/reference exit checks are
+complete, pending user confirmation; checkpoints 4-5 have not started.
 
 ## Known limitations and follow-ups
 
