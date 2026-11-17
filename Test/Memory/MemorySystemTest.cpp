@@ -113,11 +113,54 @@ void TestUnavailablePages() {
 }
 }  // namespace
 
+void TestShutdownReport() {
+    std::vector<std::string> reports;
+    {
+        MemorySystem::Config config;
+        config.tracking = true;
+        config.reportHandler = [&](const std::string& r) {
+            reports.push_back(r);
+        };
+        MemorySystem sys(config);
+        void* kept = sys.Allocator().Allocate(64);
+        void* freed = sys.Allocator().Allocate(2048);
+        sys.Allocator().Free(freed);
+        const std::string stats = sys.StatsReport();
+        Expect(stats.find("small: live") != std::string::npos &&
+                   stats.find("frame: 2 x") != std::string::npos,
+               "stats cover routing and frame allocators");
+        Expect(stats.find("allocs 2, frees 1, live 1") != std::string::npos,
+               "stats include tracking counters");
+        Expect(reports.empty(), "nothing is reported while running");
+        (void)kept;  // leaked on purpose
+    }
+    Expect(reports.size() == 2, "statistics then leak report at shutdown");
+    if (reports.size() == 2) {
+        Expect(reports[0].find("[MemorySystem] frame:") != std::string::npos,
+               "shutdown statistics come first");
+        Expect(reports[1].find("engine") != std::string::npos,
+               "leak report names the tracker");
+    }
+
+    reports.clear();
+    {
+        MemorySystem::Config config;
+        config.tracking = true;
+        config.reportHandler = [&](const std::string& r) {
+            reports.push_back(r);
+        };
+        MemorySystem sys(config);
+        sys.Allocator().Free(sys.Allocator().Allocate(32));
+    }
+    Expect(reports.size() == 1, "clean shutdown reports statistics only");
+}
+
 int main() {
     TestPlain();
     TestFrameResource();
     TestTracking();
     TestUnavailablePages();
+    TestShutdownReport();
 
     if (failures == 0) std::cout << "All memory system tests passed\n";
     return failures == 0 ? 0 : 1;

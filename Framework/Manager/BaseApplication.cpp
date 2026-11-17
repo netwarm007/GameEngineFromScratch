@@ -41,8 +41,8 @@ int BaseApplication::Initialize() {
 #ifdef USE_ENGINE_ALLOCATORS
     if (!m_pMemorySystem) {
         MemorySystem::Config config;
-#ifdef ENABLE_ALLOCATOR_TRACKING
-        config.tracking = true;
+#if defined(ENABLE_ALLOCATOR_TRACKING) || !defined(NDEBUG)
+        config.tracking = true;  // always on in Debug builds
 #endif
         auto system = make_unique<MemorySystem>(config);
         if (system->IsConfigured()) {

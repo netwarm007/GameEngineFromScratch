@@ -213,7 +213,7 @@ Policy: CMake options `USE_ENGINE_ALLOCATORS` (default OFF) and
 | M8.2 | `MemorySystem` (routing allocator, optional tracking) owned by `BaseApplication`; CMake options `USE_ENGINE_ALLOCATORS`, `ENABLE_ALLOCATOR_TRACKING` (both default OFF); tests `MemorySystemTest`, `ApplicationLifetimeTest`. The Linux CI build turns both ON; Windows and macOS build with the switch OFF. |
 | M8.3 | Per-frame pilot: `MemorySystem` owns a `FrameAllocator` (1 MiB x 2) exposed as a pmr `FrameResource()`, recycled by `BaseApplication::Tick`; pilot site is the per-draw vertex-buffer-view scratch in `D3d12GraphicsManager::DrawBatch`. The Windows CI build also turns the switch ON. |
 | M8.4 | Small-object pilot: `MemorySystem` now owns a private page source and lives from before module initialization until after module finalization. `EngineAllocation` (`SetEngineAllocator`, `EngineAllocate/Free`, `MakeEngineShared`) tags every block with an allocator generation so blocks return to their origin; pilot types are the D3D12 and OpenGL `DrawBatchContext` subclasses. |
-| M8.5 | Shutdown leak report and statistics output; tracking on in Debug. |
+| M8.5 | `MemorySystem::StatsReport()` summarizes routing, frame and tracking counters; the destructor emits it, followed by the tracker's leak report, through `Config::reportHandler` (default `std::cerr`). With the switch ON, tracking is on in every non-`NDEBUG` build. |
 | M8.6 | Compare switch on/off; decide whether to enable by default. |
 
 Tests: facade routing (512/513 boundary, alignment, double free), stress under

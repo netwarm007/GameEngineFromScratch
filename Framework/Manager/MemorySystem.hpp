@@ -1,7 +1,9 @@
 #pragma once
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <memory_resource>
+#include <string>
 
 #include "FrameAllocator.hpp"
 #include "IAllocator.hpp"
@@ -22,6 +24,9 @@ class MemorySystem {
         size_t largeCapacity = 16 * 1024 * 1024;
         size_t frameCapacity = 1024 * 1024;  // per frame arena
         bool tracking = false;
+        // Receives the shutdown statistics and leak reports; defaults to
+        // std::cerr. Called from the destructor, on the destroying thread.
+        std::function<void(const std::string&)> reportHandler;
     };
 
     // Draws pages from pMmgr, which must outlive the system.
@@ -29,6 +34,7 @@ class MemorySystem {
     // Draws pages from a private page source owned by the system, so the
     // system's lifetime is independent of any registered runtime module.
     explicit MemorySystem(const Config& config);
+    ~MemorySystem();
     MemorySystem(const MemorySystem&) = delete;
     MemorySystem& operator=(const MemorySystem&) = delete;
 
@@ -52,6 +58,10 @@ class MemorySystem {
     // nullptr unless tracking is on.
     TrackingAllocator* Tracking() { return m_Tracking.get(); }
 
+    // Human-readable snapshot of every allocator's counters. Not synchronized
+    // with concurrent allocation; counters may be slightly stale.
+    std::string StatsReport() const;
+
    private:
     MemorySystem(std::unique_ptr<MemoryManager> pages, const Config& config);
 
@@ -59,6 +69,7 @@ class MemorySystem {
     RoutingAllocator m_Routing;
     FrameAllocator m_Frame;
     PmrAdapter<FrameAllocator> m_FrameResource;
+    std::function<void(const std::string&)> m_Report;
     std::unique_ptr<TrackingAllocator> m_Tracking;  // destroyed first
 };
 }  // namespace My
