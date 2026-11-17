@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "MatrixComposeDecompose.hpp"
+#include "PointShadowMatrices.hpp"
 #include "geommath.hpp"
 
 using namespace std;
@@ -355,6 +356,44 @@ void matrix_test() {
     cout << "DCT-IDCT error: " << pixel_error;
 }
 
+void point_shadow_test() {
+    const Vector3f position{3, -4, 2};
+    const Vector3f directions[] = {{4, 1, 2}, {-4, 1, 2}, {1, 4, 2},
+                                   {1, -4, 2}, {1, 2, 4}, {1, 2, -4}};
+    const float sc[] = {-2, 2, 1, 1, 1, -1};
+    const float tc[] = {-1, -1, 2, -2, -2, -2};
+    for (bool openGL : {true, false}) {
+        for (bool flipY : {false, true}) {
+            Matrix4X4f projection, matrices[6];
+            if (openGL) {
+                BuildOpenglPerspectiveFovRHMatrix(projection, PI / 2, 1, 1, 1000);
+            } else {
+                BuildPerspectiveFovRHMatrix(projection, PI / 2, 1, 1, 1000);
+            }
+            BuildPointShadowMatrices(matrices, position, projection, flipY);
+            for (size_t face = 0; face < 6; ++face) {
+                for (float scale : {-1.9f, -1.0f, 0.0f, 1.0f, 1.9f}) {
+                    Vector4f p{position[0], position[1], position[2], 1};
+                    for (size_t axis = 0; axis < 3; ++axis) {
+                        p[axis] += directions[face][axis] *
+                            (axis == face / 2 ? 1.0f : scale);
+                    }
+                    Transform(p, matrices[face]);
+                    require_near((p[0] / p[3] + 1) / 2,
+                                 (sc[face] * scale / 4 + 1) / 2,
+                                 "point shadow cube U");
+                    const float y = p[1] / p[3] * (flipY ? -1 : 1);
+                    require_near((y + 1) / 2, (tc[face] * scale / 4 + 1) / 2,
+                                 "point shadow cube V");
+                    if (p[3] <= 0 || p[2] < (openGL ? -p[3] : 0) || p[2] > p[3]) {
+                        throw std::runtime_error("point shadow clip depth");
+                    }
+                }
+            }
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc == 2 && std::string_view(argv[1]) == "--benchmark") {
         dct_benchmark();
@@ -363,6 +402,7 @@ int main(int argc, char** argv) {
     cout << fixed;
 
     regression_test();
+    point_shadow_test();
     vector_test();
     matrix_test();
 

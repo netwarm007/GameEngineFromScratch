@@ -401,6 +401,7 @@ void OpenGLGraphicsManager::BeginPass(Frame& frame) {
                     frame.clearColor[3]);
 
         // Clear the screen and depth buffer.
+        glDepthMask(GL_TRUE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 }

@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "OpenGLPipelineStateManagerCommonBase.hpp"
+#include "PointShadowMatrices.hpp"
 
 #if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include <GLES3/gl32.h>
@@ -996,13 +997,20 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
     }
 
     float nearClipDistance = 1.0f;
-    float farClipDistance = 100.0f;
-    ShadowMapConstants constants;
+    float farClipDistance = POINT_SHADOW_FAR_PLANE;
+    ShadowMapConstants constants{};
 
     constants.light_index = light_index;
     constants.shadowmap_layer_index = static_cast<float>(layer_index);
     constants.near_plane = nearClipDistance;
     constants.far_plane = farClipDistance;
+    const auto& light = frame.lightInfo.lights[light_index];
+    if (light.lightType == LightType::Omni) {
+        const Vector3f position{light.lightPosition[0], light.lightPosition[1],
+                                light.lightPosition[2]};
+        BuildPointShadowMatrices(constants.shadowMatrices, position,
+                                  light.lightProjectionMatrix);
+    }
 
     if (!m_uboShadowMatricesConstant[frame.frameIndex]) {
         glGenBuffers(1, &m_uboShadowMatricesConstant[frame.frameIndex]);

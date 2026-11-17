@@ -85,7 +85,7 @@ unistruct ShadowMapConstants REGISTER(b13) {
     float near_plane;             // 4 bytes
     float far_plane;              // 4 bytes
     Matrix4X4f shadowMatrices[6];
-};                                // 16 bytes
+};                                // 400 bytes
 
 #ifdef __cplusplus
 const size_t kSizePerFrameConstantBuffer =
