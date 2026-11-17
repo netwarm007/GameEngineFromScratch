@@ -312,8 +312,9 @@ Checkpoint 0 and baseline integration are complete. Checkpoint 1 has passed
 focused local and exact-revision CI validation and received user confirmation,
 not acceptance of the complete Vulkan backend. Checkpoint 2 has also received
 user confirmation. Checkpoint 3 implementation and exact-revision reference
-checks have received user confirmation. Checkpoint 4 is in progress; checkpoint 5
-remains planned. They proceed in order, with focused
+checks have received user confirmation. Checkpoint 4 implementation and
+exact-revision reference verification are complete, awaiting user confirmation;
+checkpoint 5 remains planned. They proceed in order, with focused
 validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
@@ -322,7 +323,7 @@ validation and user confirmation at each boundary.
 | 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
 | 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
 | 3. Shared rendering passes | Confirmed by the user after exact-revision CI verification. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
-| 4. UI and applications | In progress. Add explicit Vulkan selection for Viewer/Billiard without changing defaults. Follow stage C ownership; test renderer rejection/failure/rollback/retry/descriptor cleanup, fonts, icons, previews, debug views, supported multi-viewports, and application-only screenshot readback. |
+| 4. UI and applications | Implemented and reference-verified; awaiting user confirmation. Explicit Viewer/Billiard selection preserves defaults. Stage C ownership, renderer rejection/failure/rollback/retry/descriptor cleanup, fonts/icons/previews/debug views, secondary renderer lifecycle, and application-only capture have focused checks. Windows/MoltenVK runtime remains checkpoint 5 work. |
 | 5. Cross-platform acceptance | Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. |
 
 At the start of each checkpoint, identify the production paths and focused
@@ -800,6 +801,22 @@ capture checks, but cannot run with the installed old SDK. Native tests and
 real Vulkan application captures require CI; no checkpoint-4 acceptance or
 Windows/MoltenVK runtime claim is made by these local results.
 
+Revision `0ed53c19ff19f48262247da9b034cf223a5363d2` passed all full-scope jobs in
+[pipeline 1018](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/1018):
+Windows 4620, Linux 4623, macOS 4622, and Linux Vulkan 4621. The
+[verification record](../verification/0ed53c19ff19f48262247da9b034cf223a5363d2.md)
+records seven passing Vulkan tests, inspection of both actual Vulkan
+application captures, both native GUI captures, fifteen offscreen images, and
+all six existing-backend application captures. Shared lifecycle/layout/service
+tests passed on all three native platforms. macOS additionally compiled both
+Vulkan applications and passed the bundle shader-refresh regression, without
+claiming MoltenVK runtime coverage. The only test validation callback was the
+expected host-allocation failure diagnostic; actual application captures had
+none. The checkpoint diff preserves shared scheduling/HLSL and the existing
+material cooker. UI/application reference verification is complete, not full
+filtering or cross-platform Vulkan acceptance; confirmation is required before
+checkpoint 5.
+
 ## Known limitations and follow-ups
 
 - **Checkpoint 3:** The production renderer requires the shared 28800-byte
@@ -815,10 +832,17 @@ Windows/MoltenVK runtime claim is made by these local results.
   counts fail explicitly rather than producing partial or missing geometry.
   Initialization compute executes the active shared BRDF kernel; dormant
   raytrace dispatch is not enabled or advertised as covered.
-- **Checkpoint 4:** Final native composition, supported floating viewports, and
-  real Viewer/Billiard assets/captures are implemented but await native CI
-  validation and image inspection. Local offscreen GUI tests are not
-  application-window acceptance. Secondary presents currently wait a scoped
+- **Checkpoint 3, follow-up in checkpoint 5:** Base-only material uploads still
+  have one mip level. Supplied mip chains and explicit uncompressed mip
+  generation are tested, but automatic material mip generation is not yet at
+  OpenGL/Metal parity. The actual Vulkan Viewer capture has visibly stronger
+  high-frequency floor/specular aliasing. Resolve this before claiming full
+  filtering parity, reusing shared shader stages for compressed-to-filterable
+  conversion rather than adding Vulkan-specific shader logic.
+- **Checkpoint 4:** Native composition, secondary renderer lifecycle, and real
+  Viewer/Billiard assets/captures passed Linux reference CI and actual image
+  inspection. This does not establish floating-window platform input on Xcb
+  or Windows/MoltenVK runtime acceptance. Secondary presents currently wait a scoped
   maintenance fence synchronously; asynchronous secondary presentation is a
   performance follow-up, not grounds for weakening retirement guarantees.
 - **Checkpoint 4:** Native GUI composition requires an RGBA8/BGRA8 UNORM surface
