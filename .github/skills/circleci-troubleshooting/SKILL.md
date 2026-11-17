@@ -29,7 +29,9 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
 
 ## Collect pipeline results
 
-1. Record the pipeline number, branch, revision, workflow, and link. List every
+1. Record the pipeline number, branch, revision, workflow, and link. A workflow
+   named `quick-*` (fast tests only) is not acceptance evidence; the full
+   `build-and-test` workflow is. List every
    platform job and its status, including pending, canceled, and missing jobs.
    Check all pages when results are paginated. For a running pipeline, run one
    background loop that checks the commit status about every 30 seconds and

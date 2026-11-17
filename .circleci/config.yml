@@ -2,6 +2,18 @@ version: 2.1
 orbs:
   win: circleci/windows@4.1.1
 
+# Branch pushes run the full scope on every platform, needing no API token.
+# For iteration, trigger a pipeline through the API with `run_full: false` to
+# run the quick scope (fast tests only, no screenshots, coverage or packaging)
+# on `platforms`. A quick result is never acceptance.
+parameters:
+  run_full:
+    type: boolean
+    default: true
+  platforms:
+    type: string
+    default: "windows,linux,macos"
+
 commands:
   build_windows_dependency:
     parameters:
@@ -23,6 +35,14 @@ commands:
 
 jobs:
   build_windows:
+    parameters:
+      scope:
+        type: enum
+        enum: [quick, full]
+        default: full
+      ctest_args:
+        type: string
+        default: ""
     executor:
       name: win/server-2022
       shell: powershell.exe
@@ -223,10 +243,15 @@ jobs:
       - run:
           name: "Test"
           command: |
-            ctest --test-dir build -C Debug --output-on-failure --output-junit junit.xml
+            ctest --test-dir build -C Debug --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - store_test_results:
           path: build/junit.xml
+      - when:
+          condition:
+            equal: [quick, << parameters.scope >>]
+          steps:
+            - run: circleci-agent step halt
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -313,6 +338,19 @@ jobs:
           - store_artifacts:
               path: build/GEFS-0.1.0-win64.exe
   build_linux:
+    parameters:
+      scope:
+        type: enum
+        enum: [quick, full]
+        default: full
+      ctest_args:
+        type: string
+        default: ""
+    environment:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_MAXSIZE: 2G
+      CCACHE_BASEDIR: /home/circleci/project
     machine:
       image: ubuntu-2204:2026.10.1
     resource_class: large
@@ -323,7 +361,7 @@ jobs:
              sudo apt update 
              sudo apt install -y curl clang python3-pip ninja-build git uuid-dev
              sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
-             sudo apt install -y flex bison
+             sudo apt install -y flex bison ccache
              sudo apt install -y xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt install -y git-lfs
@@ -331,6 +369,11 @@ jobs:
              echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
           environment:
              DEBIAN_FRONTEND: noninteractive
+      - restore_cache:
+          keys:
+            - ccache-linux-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+            - ccache-linux-{{ arch }}-{{ .Branch }}-
+            - ccache-linux-{{ arch }}-
       - restore_cache:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
@@ -384,6 +427,10 @@ jobs:
           name: "Build Engine"
           command: |
              ./scripts/build-ninja.sh
+      - save_cache:
+          key: ccache-linux-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ~/.cache/ccache
       - run:
           name: "Cook Asset"
           command: |
@@ -391,9 +438,14 @@ jobs:
       - run:
           name: Test
           command: |
-             ctest --test-dir ./build --output-on-failure --output-junit junit.xml
+             ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
       - store_test_results:
           path: build/junit.xml
+      - when:
+          condition:
+            equal: [quick, << parameters.scope >>]
+          steps:
+            - run: circleci-agent step halt
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -459,6 +511,18 @@ jobs:
           - store_artifacts:
               path: build/GEFS-0.1.0-Linux.tar.Z
   build_macos:
+    parameters:
+      scope:
+        type: enum
+        enum: [quick, full]
+        default: full
+      ctest_args:
+        type: string
+        default: ""
+    environment:
+      CMAKE_C_COMPILER_LAUNCHER: ccache
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      CCACHE_MAXSIZE: 2G
     macos:
       xcode: "16.4.0"
     resource_class: m4pro.medium
@@ -493,8 +557,13 @@ jobs:
           name: Install Dependencies via Homebrew
           command: |
              export HOMEBREW_NO_AUTO_UPDATE=1
-             brew install cmake ninja flex bison
+             brew install cmake ninja flex bison ccache
              echo "export PATH=\"$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:\$PATH\"" >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - ccache-macos-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+            - ccache-macos-{{ arch }}-{{ .Branch }}-
+            - ccache-macos-{{ arch }}-
       - run:
           name: ISPC and C++ math regression
           command: |
@@ -523,6 +592,10 @@ jobs:
           name: "Build Engine"
           command: |
              ./scripts/build-ninja.sh
+      - save_cache:
+          key: ccache-macos-{{ arch }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ~/Library/Caches/ccache
       - run:
           name: "Cook Asset"
           command: |
@@ -530,9 +603,14 @@ jobs:
       - run:
           name: Test
           command: |
-             ctest --test-dir ./build --output-on-failure --output-junit junit.xml
+             ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
       - store_test_results:
           path: build/junit.xml
+      - when:
+          condition:
+            equal: [quick, << parameters.scope >>]
+          steps:
+            - run: circleci-agent step halt
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -703,12 +781,40 @@ jobs:
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
 workflows:
   version: 2
-  build-and-test: #for branch
+  build-and-test: #default on push; acceptance
+    when: << pipeline.parameters.run_full >>
     jobs:
       - build_windows
       - build_linux
       - build_macos
       #- build_android
+  quick-windows: #iteration: API-triggered with run_full=false
+    when:
+      and:
+        - not: << pipeline.parameters.run_full >>
+        - matches: { pattern: ".*windows.*", value: << pipeline.parameters.platforms >> }
+    jobs:
+      - build_windows:
+          scope: quick
+          ctest_args: "-L fast"
+  quick-linux:
+    when:
+      and:
+        - not: << pipeline.parameters.run_full >>
+        - matches: { pattern: ".*linux.*", value: << pipeline.parameters.platforms >> }
+    jobs:
+      - build_linux:
+          scope: quick
+          ctest_args: "-L fast"
+  quick-macos:
+    when:
+      and:
+        - not: << pipeline.parameters.run_full >>
+        - matches: { pattern: ".*macos.*", value: << pipeline.parameters.platforms >> }
+    jobs:
+      - build_macos:
+          scope: quick
+          ctest_args: "-L fast"
   build-and-test-and-release: #for tags
     jobs:
       - build_windows:
