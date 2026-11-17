@@ -9,6 +9,8 @@
 using namespace My;
 using namespace std;
 
+BaseApplication::BaseApplication() = default;
+BaseApplication::BaseApplication(GfxConfiguration& cfg) : m_Config(cfg) {}
 BaseApplication::~BaseApplication() = default;
 
 // Parse command line, read configuration, initialize all sub modules

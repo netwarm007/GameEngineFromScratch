@@ -20,8 +20,9 @@ class MemorySystem;
 
 class BaseApplication : _implements_ IApplication {
    public:
-    BaseApplication() = default;
-    explicit BaseApplication(GfxConfiguration& cfg) : m_Config(cfg) {}
+    // Defined out of line: MemorySystem is incomplete here.
+    BaseApplication();
+    explicit BaseApplication(GfxConfiguration& cfg);
     ~BaseApplication() override;
     virtual int Initialize();
     virtual void Finalize();
