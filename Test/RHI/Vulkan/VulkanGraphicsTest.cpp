@@ -454,6 +454,12 @@ void CheckPointShadows(VulkanRHI& rhi, AssetLoader& assets, bool singleFace) {
     AddQuads(scene, "twelve unequal off-axis occluders", positions, materials, true);
     graphics.BeginScene(scene);
     auto& frame = graphics.CurrentFrame();
+    for (const auto& batch : frame.batchContexts) {
+        Require(batch->material.diffuseMap.handler == frame.batchContexts.front()->material.diffuseMap.handler &&
+                    batch->material.normalMap.handler == frame.batchContexts.front()->material.normalMap.handler &&
+                    batch->material.metallicMap.handler == frame.batchContexts.front()->material.metallicMap.handler,
+                "Repeated material references allocated duplicate scalar/image textures per draw group");
+    }
     SetFrame(frame);
     frame.frameContext.numLights = 2;
     for (uint32_t light = 0; light < 2; ++light) {

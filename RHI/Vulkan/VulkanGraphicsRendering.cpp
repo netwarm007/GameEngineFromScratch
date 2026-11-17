@@ -204,7 +204,13 @@ void VulkanGraphicsManager::initializeGeometries(const Scene& scene) {
             batch->batchIndex = batchIndex++;
             batch->node = node;
             batch->modelMatrix = node->GetRenderTransform();
-            const auto material = scene.GetMaterial(node->GetMaterialRef(array.GetMaterialIndex()));
+            const auto materialKey = node->GetMaterialRef(array.GetMaterialIndex());
+            if (const auto cached = material_map.find(materialKey); cached != material_map.end()) {
+                batch->material = cached->second;
+                m_Frames.front().batchContexts.push_back(std::move(batch));
+                continue;
+            }
+            const auto material = scene.GetMaterial(materialKey);
             if (!material) throw std::runtime_error("Vulkan material reference is unresolved");
             const auto& color = material->GetBaseColor();
             batch->material.diffuseMap = MaterialTexture(color.ValueMap,
@@ -219,6 +225,7 @@ void VulkanGraphicsManager::initializeGeometries(const Scene& scene) {
                 {Channel(material->GetAO().Value), 0, 0, 255});
             batch->material.heightMap = MaterialTexture(material->GetHeight().ValueMap,
                 {Channel(material->GetHeight().Value), 0, 0, 255});
+            material_map.emplace(materialKey, batch->material);
             m_Frames.front().batchContexts.push_back(std::move(batch));
         }
     }

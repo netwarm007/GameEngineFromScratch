@@ -648,7 +648,9 @@ The renderer now consumes the shared scene batches and actual
 ForwardGeometryPass/GeometrySubPass/SkyBoxSubPass and ShadowMapPass contracts.
 It uploads position/normal/UV/tangent streams, material image/scalar parameters,
 normalized index groups, runtime model matrices, frame constants, and prepared
-light data. Aligned immutable uniform slices distinguish frames, batches,
+light data. The existing per-material cache shares uploaded/scalar textures
+across repeated groups instead of allocating six new images for every draw.
+Aligned immutable uniform slices distinguish frames, batches,
 lights, and the six single-face shadow draws. Descriptor pools, image views,
 framebuffers, and render passes live until their frame slot completes.
 Normal native frames use the existing submission fences; synchronous headless
