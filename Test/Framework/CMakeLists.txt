@@ -53,6 +53,11 @@ add_executable(ViewerLogicTest ViewerLogicTest.cpp
 target_link_libraries(ViewerLogicTest PRIVATE SceneGraph)
 add_test(NAME TEST_ViewerLogicTest COMMAND ViewerLogicTest)
 
+add_executable(BilliardGameLogicTest BilliardGameLogicTest.cpp
+    ${PROJECT_SOURCE_DIR}/Game/Billiard/BilliardGameLogic.cpp)
+target_link_libraries(BilliardGameLogicTest PRIVATE SceneGraph)
+add_test(NAME TEST_BilliardGameLogicTest COMMAND BilliardGameLogicTest)
+
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
     BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO SplashSequence)

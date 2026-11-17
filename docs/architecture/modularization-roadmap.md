@@ -411,6 +411,41 @@ paths or every camera orientation. Scene-cycle marker I/O remains covered by
 native capture gates, not the isolated test. D4b will separately assess the
 Billiard scene/physics service lookups.
 
+### D4b. Explicit Billiard scene and physics dependencies
+
+**In progress.** BilliardGameLogic takes required borrowed `ISceneManager&`
+and `IPhysicsManager&` references instead of downcasting Application to locate
+services. The composition root constructs both services before logic, which
+must not outlive either. The inactive legacy game configuration now supplies
+an explicit logic factory with the same dependencies, not a global default
+construction.
+
+Preserve the billiard scene path and load result, resolve the current
+`pbb_cue` node for each held-left callback and apply the existing (-100, 0, 0)
+force. Missing/expired nodes and nodes without physics bodies remain valid
+no-action conditions. Right-drag rotation retains its signs and per-axis
+window-size scaling. Application still supplies configuration through
+IApplication and must be attached before camera callbacks; loading and cue
+force routing no longer require Application. No input, physics integration,
+rendering or Application framework rewrite is included.
+
+Verification: BilliardGameLogicTest injects fake scene/physics services and a
+plain IApplication, without a native window/backend. Cover loading/error
+propagation, exact force/node routing, missing/expired cues, same-name node
+replacement, no-body results, drag filtering/scaling, camera replacement and
+missing scenes/cameras. Compile both Billiard entry/configuration paths and
+run focused tests, then exact-revision three-platform CI with native artifact
+and physics-threshold inspection.
+
+#### Known limitations and follow-ups (D4b)
+
+Synthetic input does not establish native OS delivery, exhaustive ImGui focus
+paths or every camera orientation. Fake physics establishes request routing,
+not numerical integration; existing native Billiard physics gates cover that
+separately. The legacy configuration factory is compile-checked but is not
+wired into the current native executable. Configuration access remains an
+Application dependency with its existing valid-dimensions precondition.
+
 ## Working and acceptance rules
 
 For each checkpoint:
