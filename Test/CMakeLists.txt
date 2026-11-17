@@ -98,3 +98,13 @@ add_subdirectory(Parser)
 add_subdirectory(Platform)
 add_subdirectory(RHI)
 add_subdirectory(Runtime)
+
+# Tests that need no window or GPU are labeled "fast" so iteration builds can
+# run `ctest -L fast`. Unlabeled Platform/RHI tests run only in full verification.
+foreach(FAST_TEST_DIR Algorism Audio Encoder Framework Generator Parser Runtime)
+    get_property(FAST_TESTS DIRECTORY ${FAST_TEST_DIR} PROPERTY TESTS)
+    if(FAST_TESTS)
+        set_tests_properties(${FAST_TESTS} DIRECTORY ${FAST_TEST_DIR}
+            PROPERTIES LABELS fast)
+    endif()
+endforeach()
