@@ -12,7 +12,9 @@ class VulkanGuiRenderer {
     VulkanGuiRenderer(const VulkanGuiRenderer&) = delete;
     VulkanGuiRenderer& operator=(const VulkanGuiRenderer&) = delete;
 
-    void Initialize(vk::RenderPass renderPass, uint32_t imageCount);
+    // A supplied Vulkan host allocator must remain live through Finalize.
+    void Initialize(vk::RenderPass renderPass, uint32_t imageCount,
+                    const VkAllocationCallbacks* allocator = nullptr);
     void Finalize();
     bool IsInitialized() const { return m_context != nullptr; }
     void NewFrame();

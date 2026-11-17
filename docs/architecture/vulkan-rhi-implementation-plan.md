@@ -736,6 +736,10 @@ submission. Original draw-command identities and sampler callbacks are restored
 after submission or rejection. Sampled formats without linear filtering use
 the official nearest-sampler callback just for those previews, not for all UI
 images. Stale descriptors and replacement of a borrowed renderer fail explicitly.
+Initialization also accepts the official Vulkan host-allocation callbacks.
+The regression rejects actual backend allocations and checks cleanup, borrowed
+context preservation, and successful retry; it does not replace the dispatch
+table of an already initialized ImGui context.
 
 GUI subresource views retain their parent images after source-handle release.
 Readback selects the original mip and layer rather than treating a view as
@@ -763,7 +767,11 @@ refinement; shared HLSL tone mapping and original backend behavior are unchanged
 `VULKAN_APPLICATIONS=ON` opts Viewer and Billiard into service-injected Vulkan
 managers; defaults remain unchanged. Shared engine SPIR-V is installed, and
 macOS bundles receive Vulkan assets without building a Metal application
-library. Native application capture copies the composed swapchain framebuffer
+library. An asset dependency refreshes those bundles even without relinking.
+The full macOS job additionally compiles both Vulkan applications with the
+Homebrew Vulkan headers/loader and checks replacement of a missing bundled
+SPIR-V file on an asset-only rebuild. This is compile/package coverage, not
+MoltenVK runtime acceptance. Native application capture copies the composed swapchain framebuffer
 before presentation, checks RGBA/BGRA transfer support, and writes top-left PPM
 pixels. `-screenshot <path.ppm>` or `GEFS_SCREENSHOT_PATH` captures after the
 existing 45-second settling period and exits; `GEFS_SCREENSHOT_WAIT_FOR`

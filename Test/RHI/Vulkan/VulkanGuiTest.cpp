@@ -4,6 +4,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <cstdlib>
 
 namespace {
 using namespace My;
@@ -33,6 +34,20 @@ struct Texture {
     VulkanRHI::Texture value;
     ~Texture() { rhi.DestroyTexture(value); }
 };
+
+void* VKAPI_PTR RejectAllocation(void* attempted, size_t, size_t, VkSystemAllocationScope) {
+    *static_cast<bool*>(attempted) = true;
+    return nullptr;
+}
+
+void* VKAPI_PTR RejectReallocation(void* attempted, void*, size_t, size_t, VkSystemAllocationScope) {
+    *static_cast<bool*>(attempted) = true;
+    return nullptr;
+}
+
+void VKAPI_PTR FreeAllocation(void*, void* allocation) {
+    std::free(allocation);
+}
 
 class TestApplication final : public IApplication {
    public:
@@ -203,6 +218,19 @@ void Run(VulkanRHI& rhi) {
     Require(!io.BackendRendererUserData && (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable),
             "Viewport rejection silently disabled the requested behavior");
     io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+    bool allocationAttempted = false;
+    VkAllocationCallbacks rejectAllocations{};
+    rejectAllocations.pUserData = &allocationAttempted;
+    rejectAllocations.pfnAllocation = RejectAllocation;
+    rejectAllocations.pfnReallocation = RejectReallocation;
+    rejectAllocations.pfnFree = FreeAllocation;
+    Reject<std::runtime_error>([&] { renderer.Initialize(*pass, 2, &rejectAllocations); },
+                               "Vulkan GUI did not propagate renderer host-allocation failure");
+    Require(allocationAttempted && !io.BackendRendererUserData &&
+                !ImGui::GetMainViewport()->RendererUserData &&
+                ImGui::GetCurrentContext() == context.value &&
+                (io.ConfigFlags & ImGuiConfigFlags_DockingEnable),
+            "Vulkan GUI initialization failure retained renderer resources or damaged borrowed state");
     constexpr ImTextureID identity = 12345;
     for (uint32_t attempt = 0; attempt < 2; ++attempt) {
         renderer.Initialize(*pass, 2);

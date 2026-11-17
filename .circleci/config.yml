@@ -759,6 +759,18 @@ jobs:
               path: build/GEFS-0.1.0-Darwin.sh
           - store_artifacts:
               path: build/GEFS-0.1.0-Darwin.tar.gz
+      - run:
+          name: Compile opt-in Vulkan applications and verify bundle asset refresh
+          command: |
+             export HOMEBREW_NO_AUTO_UPDATE=1
+             brew install vulkan-headers vulkan-loader
+             cmake -S . -B build-vulkan-apps -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+               -DVULKAN_APPLICATIONS=ON -DCMAKE_CUDA_COMPILER=NOTFOUND
+             cmake --build build-vulkan-apps --target Viewer BilliardGame --parallel 2
+             cmake -E rm -f build-vulkan-apps/Viewer/Viewer.app/Contents/Resources/Asset/Shaders/Vulkan/Engine/pbr.frag.spv
+             cmake --build build-vulkan-apps --target Viewer --parallel 2
+             cmp build-vulkan-apps/Asset/Shaders/Vulkan/Engine/pbr.frag.spv \
+               build-vulkan-apps/Viewer/Viewer.app/Contents/Resources/Asset/Shaders/Vulkan/Engine/pbr.frag.spv
   build_android:
     working_directory: ~/project
     docker:

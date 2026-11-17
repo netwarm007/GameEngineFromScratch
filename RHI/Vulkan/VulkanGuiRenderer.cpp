@@ -37,7 +37,8 @@ void VulkanGuiRenderer::CheckContext() const {
     }
 }
 
-void VulkanGuiRenderer::Initialize(vk::RenderPass renderPass, uint32_t imageCount) {
+void VulkanGuiRenderer::Initialize(vk::RenderPass renderPass, uint32_t imageCount,
+                                   const VkAllocationCallbacks* allocator) {
     if (IsInitialized() || !ImGui::GetCurrentContext() || !m_rhi.GetDevice() ||
         !renderPass || imageCount < 2) {
         throw std::logic_error("Vulkan GUI initialization requires an idle renderer, context, device, and render pass");
@@ -63,6 +64,7 @@ void VulkanGuiRenderer::Initialize(vk::RenderPass renderPass, uint32_t imageCoun
     info.QueueFamily = m_rhi.GetGraphicsQueueFamily();
     info.Queue = m_rhi.GetGraphicsQueue();
     info.DescriptorPool = *pool;
+    info.Allocator = allocator;
     info.MinImageCount = 2;
     info.ImageCount = imageCount;
     info.PipelineInfoMain.RenderPass = renderPass;
