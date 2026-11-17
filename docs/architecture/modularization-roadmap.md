@@ -413,7 +413,7 @@ Billiard scene/physics service lookups.
 
 ### D4b. Explicit Billiard scene and physics dependencies
 
-**In progress.** BilliardGameLogic takes required borrowed `ISceneManager&`
+**Accepted.** BilliardGameLogic takes required borrowed `ISceneManager&`
 and `IPhysicsManager&` references instead of downcasting Application to locate
 services. The composition root constructs both services before logic, which
 must not outlive either. The inactive legacy game configuration now supplies
@@ -436,6 +436,12 @@ replacement, no-body results, drag filtering/scaling, camera replacement and
 missing scenes/cameras. Compile both Billiard entry/configuration paths and
 run focused tests, then exact-revision three-platform CI with native artifact
 and physics-threshold inspection.
+
+Source `32db35fc56942ea085ea18d419d2ee1fb816076f` passed CircleCI pipeline
+1020 on Windows (job 4628, 61 tests), Linux (4627, 58 tests) and macOS
+(4629, 58 tests). Twelve native screenshots, phase markers/loading order and
+Billiard physics thresholds were inspected. See the
+[revision-specific verification record](../verification/32db35fc56942ea085ea18d419d2ee1fb816076f.md).
 
 #### Known limitations and follow-ups (D4b)
 
