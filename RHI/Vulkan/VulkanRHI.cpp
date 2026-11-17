@@ -1624,16 +1624,16 @@ void VulkanRHI::getTextureFormat(const Image& img,
     if (img.compressed) {
         switch (img.compress_format) {
             case COMPRESSED_FORMAT::BC1:
-                internal_format = vk::Format::eBc1RgbSrgbBlock;
+                internal_format = vk::Format::eBc1RgbUnormBlock;
                 break;
             case COMPRESSED_FORMAT::BC1A:
-                internal_format = vk::Format::eBc1RgbaSrgbBlock;
+                internal_format = vk::Format::eBc1RgbaUnormBlock;
                 break;
             case COMPRESSED_FORMAT::BC2:
-                internal_format = vk::Format::eBc2SrgbBlock;
+                internal_format = vk::Format::eBc2UnormBlock;
                 break;
             case COMPRESSED_FORMAT::BC3:
-                internal_format = vk::Format::eBc3SrgbBlock;
+                internal_format = vk::Format::eBc3UnormBlock;
                 break;
             case COMPRESSED_FORMAT::BC4:
                 internal_format = (img.is_signed) ? vk::Format::eBc4SnormBlock

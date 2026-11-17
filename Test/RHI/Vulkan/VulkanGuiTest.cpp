@@ -102,6 +102,13 @@ void RunManager(VulkanRHI& rhi, VulkanRHI::Texture& target, vk::RenderPass pass,
     };
     fill(0);
     auto texture = graphics.CreateTexture(image);
+    Image compressed;
+    compressed.Width = compressed.Height = 4;
+    compressed.compressed = true;
+    compressed.compress_format = COMPRESSED_FORMAT::BC1;
+    compressed.pitch = compressed.data_size = 8;
+    compressed.data = new uint8_t[8]{0x10, 0x84, 0, 0, 0, 0, 0, 0};
+    auto material = graphics.CreateTexture(compressed);
     const auto identity = texture.handler;
     graphics.InitializeGui(pass);
     Texture2DArray array;
@@ -146,6 +153,8 @@ void RunManager(VulkanRHI& rhi, VulkanRHI::Texture& target, vk::RenderPass pass,
         ImGui::NewFrame();
         ImGui::GetBackgroundDrawList()->AddImage(ImTextureRef(static_cast<ImTextureID>(identity)),
                                                 {0, 0}, {32, 32});
+        ImGui::GetBackgroundDrawList()->AddImage(ImTextureRef(static_cast<ImTextureID>(material.handler)),
+                                                {40, 0}, {72, 32});
         ImGui::Render();
         graphics.EndFrame(current);
         if (frame) {
@@ -166,7 +175,13 @@ void RunManager(VulkanRHI& rhi, VulkanRHI::Texture& target, vk::RenderPass pass,
         Require(pixels[(8 * 96 + 8) * 4 + frame] == 255 &&
                     pixels[(8 * 96 + 8) * 4 + (1 - frame)] == 0,
                 "Vulkan GUI did not sample the graphics manager's current engine texture");
+        const auto gray = (8 * 96 + 48) * 4;
+        Require(std::abs(int(pixels[gray]) - 132) <= 1 &&
+                    std::abs(int(pixels[gray + 1]) - 130) <= 1 &&
+                    std::abs(int(pixels[gray + 2]) - 132) <= 1,
+                "Vulkan compressed material sampling applied an unintended sRGB decode");
     }
+    graphics.ReleaseTexture(material);
     graphics.ReleaseTexture(texture);
     graphics.Finalize();
     graphics.Finalize();

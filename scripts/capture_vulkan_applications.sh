@@ -17,6 +17,10 @@ for application in Viewer BilliardGame; do
     test -s "$output/$application.ppm"
     test "$(head -c 2 "$output/$application.ppm")" = P6
     grep -q "Vulkan application framebuffer capture saved:" "$output/$application.log"
+    if grep -Eq "Error opening file 'Materials/|Texture unavailable: Materials/|Texture decoding failed: Materials/" "$output/$application.log"; then
+        echo "$application Vulkan capture used missing or invalid scene materials" >&2
+        exit 1
+    fi
     if grep -Eq 'Validation Error|VUID-' "$output/$application.log"; then
         echo "$application Vulkan capture reported validation errors" >&2
         exit 1

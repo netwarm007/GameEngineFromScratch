@@ -745,6 +745,13 @@ storage on lavapipe. The Vulkan upload adapter expands RGB16/RGB32 assets into
 matching RGBA storage, as it already does for RGB8, preserving component bits,
 row padding, supplied mips, and a type-correct opaque alpha. This adaptation is
 backend-local; image parsers and shared shader color semantics remain unchanged.
+Actual framebuffer inspection then rejected a green CI result: Viewer was
+displaying the missing-texture pattern because the targeted application build
+had not run the existing material cooker. Vulkan application targets now depend
+on that same MaterialBaker, package its generated PVR files, and reject captures
+that report missing scene materials. BC1-3 use UNORM sampling like OpenGL/Metal:
+shared HLSL owns albedo decoding and packed material channels must remain linear.
+A real BC1 GPU sampling regression failed with the old sRGB mapping.
 
 GUI subresource views retain their parent images after source-handle release.
 Readback selects the original mip and layer rather than treating a view as

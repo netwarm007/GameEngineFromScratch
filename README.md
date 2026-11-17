@@ -262,6 +262,8 @@ Configure with `-DVULKAN_APPLICATIONS=ON` to use Vulkan for both Viewer and
 Billiard; platform defaults are unchanged. This desktop path requires a
 maintenance-aware Vulkan SDK/driver with swapchain-maintenance1 and a compatible
 RGBA8/BGRA8 UNORM surface. It uses the shared HLSL-derived engine SPIR-V.
+The application targets run the existing MaterialBaker; macOS bundles and
+installed assets include its packed scene materials.
 Implementation and verification limits are tracked in the
 [Vulkan implementation plan](docs/architecture/vulkan-rhi-implementation-plan.md).
 
