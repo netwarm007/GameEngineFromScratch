@@ -15,7 +15,9 @@ Remote master was checked at
 shadow fix (PR #67) and stage C ImGui lifecycle separation (PR #66).
 Checkpoint 1 is implemented, locally/CI validated, and confirmed by the user.
 Checkpoint 2 is implemented, exact-revision CI validated, and confirmed by the
-user. Checkpoint 3 is in progress; checkpoints 4-5 remain unstarted.
+user. Checkpoints 3 and 4 have also received user confirmation after their
+exact-revision reference checks. Checkpoint 5 is in progress; native Windows
+Vulkan and MoltenVK acceptance remain blocked, not implicitly passed.
 Do not advance to the next checkpoint without
 the user's confirmation. Checkpoints do not require PRs; CI may be used during
 implementation with the user's authorization.
@@ -313,8 +315,8 @@ focused local and exact-revision CI validation and received user confirmation,
 not acceptance of the complete Vulkan backend. Checkpoint 2 has also received
 user confirmation. Checkpoint 3 implementation and exact-revision reference
 checks have received user confirmation. Checkpoint 4 implementation and
-exact-revision reference verification are complete, awaiting user confirmation;
-checkpoint 5 remains planned. They proceed in order, with focused
+exact-revision reference verification are complete and confirmed by the user;
+checkpoint 5 is in progress. They proceed in order, with focused
 validation and user confirmation at each boundary.
 
 | Checkpoint | Deliverables and exit criteria |
@@ -323,8 +325,8 @@ validation and user confirmation at each boundary.
 | 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
 | 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
 | 3. Shared rendering passes | Confirmed by the user after exact-revision CI verification. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
-| 4. UI and applications | Implemented and reference-verified; awaiting user confirmation. Explicit Viewer/Billiard selection preserves defaults. Stage C ownership, renderer rejection/failure/rollback/retry/descriptor cleanup, fonts/icons/previews/debug views, secondary renderer lifecycle, and application-only capture have focused checks. Windows/MoltenVK runtime remains checkpoint 5 work. |
-| 5. Cross-platform acceptance | Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. |
+| 4. UI and applications | Confirmed by the user after reference verification. Explicit Viewer/Billiard selection preserves defaults. Stage C ownership, renderer rejection/failure/rollback/retry/descriptor cleanup, fonts/icons/previews/debug views, secondary renderer lifecycle, and application-only capture have focused checks. Windows/MoltenVK native runtime remains checkpoint 5 work. |
+| 5. Cross-platform acceptance | In progress. Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. Material filtering and explicit headless MoltenVK coverage are being added; native platform blockers remain open. |
 
 At the start of each checkpoint, identify the production paths and focused
 tests. At its end, review the actual diff against this plan, record any justified
@@ -814,8 +816,59 @@ claiming MoltenVK runtime coverage. The only test validation callback was the
 expected host-allocation failure diagnostic; actual application captures had
 none. The checkpoint diff preserves shared scheduling/HLSL and the existing
 material cooker. UI/application reference verification is complete, not full
-filtering or cross-platform Vulkan acceptance; confirmation is required before
-checkpoint 5.
+filtering or cross-platform Vulkan acceptance. The user subsequently reviewed
+the application images and confirmed proceeding to checkpoint 5.
+
+### Checkpoint 5 implementation and validation scope
+
+The replacement B continuation worktree was initially based on master
+`e02ad9e227d3b89f3e9f4fe53aae3b54243d7489`, without the Vulkan implementation.
+Read-only history checks located the predecessor's published tip
+`8dd79ef79bcd6a61c569482e40b46cae87f20a6e`, containing the checkpoint 4 source
+and record. Only the clean continuation branch was fast-forwarded to that tip;
+the predecessor's worktree and history were not changed. Published master
+`23cc8a8abe6bf53689bce217bcaa8a1290602648` is already an ancestor of that
+baseline; no new integration merge is needed.
+
+Production scope starts with
+[material upload](../../RHI/Vulkan/VulkanGraphicsRendering.cpp). Base-only
+scene materials now receive a complete mip chain. Uncompressed uploads keep
+their storage format; compressed uploads first render their base level into
+filterable storage using the existing shared `passthrough.vert` and
+`texture.frag` stages, then use the RHI's checked linear mip generation.
+BC UNORM values are not gamma-decoded by an extra sRGB conversion. Signed
+BC4/5 and floating BC6H retain signed/float storage; ASTC retains its existing
+sRGB encoding. GUI image creation remains single-level, supplied chains
+(including deliberately partial chains) remain unchanged, and prefiltered
+environment upload is untouched. Unsupported format/usage or linear-blit
+capabilities still produce explicit errors.
+
+[VulkanGraphicsTest](../../Test/RHI/Vulkan/VulkanGraphicsTest.cpp) exercises
+the real scene material path. GPU readback verifies BC quadrant orientation,
+UNORM values and averaged final/intermediate mips, padded non-square RGB
+filtering, supplied mip preservation, and scalar/GUI single-level behavior.
+Its negative control restored the original material upload call and failed
+on the missing BC mip chain; the fixed path passes locally along with the
+other five headless Vulkan regressions. Native frame-loop validation still
+fails explicitly with the installed old SDK, not as a skipped test.
+
+The existing Linux Vulkan job retains seven tests and real application
+captures; original D3D12/OpenGL/Metal regressions remain required. macOS CI
+additionally installs stable Homebrew MoltenVK and validation layers and
+explicitly runs the six headless Vulkan tests and stores their rendered
+artifacts. This is not a native WSI or Retina test. No production dependency
+pin, shared shader algorithm, default backend, or presentation-retirement
+contract changes.
+
+Native runtime blockers must not be bypassed to finish this checkpoint.
+The installed Windows SDK predates maintenance1, and the local instance
+extension enumeration does not expose surface-maintenance1. The inspected
+[stable MoltenVK v1.4.2 extension list](https://github.com/KhronosGroup/MoltenVK/blob/v1.4.2/MoltenVK/MoltenVK/Layers/MVKExtensions.def)
+also does not advertise surface/swapchain-maintenance1. Upstream development
+support is not permission to replace stable dependencies. The user explicitly
+requires retaining stable dependencies and the strict presentation contract;
+development MoltenVK evaluation requires separate version/source, capability
+evidence, dependency scope, validation plan, and authorization.
 
 ## Known limitations and follow-ups
 
@@ -832,13 +885,12 @@ checkpoint 5.
   counts fail explicitly rather than producing partial or missing geometry.
   Initialization compute executes the active shared BRDF kernel; dormant
   raytrace dispatch is not enabled or advertised as covered.
-- **Checkpoint 3, follow-up in checkpoint 5:** Base-only material uploads still
-  have one mip level. Supplied mip chains and explicit uncompressed mip
-  generation are tested, but automatic material mip generation is not yet at
-  OpenGL/Metal parity. The actual Vulkan Viewer capture has visibly stronger
-  high-frequency floor/specular aliasing. Resolve this before claiming full
-  filtering parity, reusing shared shader stages for compressed-to-filterable
-  conversion rather than adding Vulkan-specific shader logic.
+- **Checkpoint 3, follow-up in checkpoint 5:** Automatic material mip generation
+  now has focused GPU coverage, including shared-stage compressed conversion.
+  The checkpoint 4 Viewer capture had visibly stronger high-frequency
+  floor/specular aliasing. Inspect new exact-revision application artifacts
+  before claiming an improvement or full filtering parity; mip readback alone
+  does not establish visual equivalence.
 - **Checkpoint 4:** Native composition, secondary renderer lifecycle, and real
   Viewer/Billiard assets/captures passed Linux reference CI and actual image
   inspection. This does not establish floating-window platform input on Xcb
@@ -850,10 +902,11 @@ checkpoint 5.
   capture additionally requires transfer-source surface usage and writes PPM,
   not PNG. Secondary Cocoa window scaling still needs real MoltenVK/Retina
   runtime checks.
-- **Checkpoint 5:** Windows Vulkan WSI and MoltenVK runtime acceptance remain
-  unknown. Linux lavapipe/Xcb is reference coverage, not hardware acceptance;
-  passing native Metal jobs do not verify MoltenVK. The installed local old
-  SDK still cannot exercise the strict maintenance-aware native frame loop.
+- **Checkpoint 5:** Windows Vulkan WSI and MoltenVK native runtime acceptance
+  remain blocked on a verified maintenance-aware SDK/driver/runtime.
+  Stable MoltenVK headless CI is separate from native Metal and WSI coverage.
+  Linux lavapipe/Xcb is reference coverage, not hardware acceptance.
+  No unsupported environment is given a device-idle retirement fallback.
 
 ## Platform and acceptance strategy
 

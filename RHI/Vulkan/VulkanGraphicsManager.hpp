@@ -141,6 +141,8 @@ class VulkanGraphicsManager : public GraphicsManager {
     vk::Buffer UploadVertex(const void* data, size_t size);
     vk::Buffer UploadIndex(const void* data, size_t size);
     Texture2D SolidTexture(const std::array<uint8_t, 4>& pixel);
+    Texture2D CreateMaterialTexture(Image& image);
+    void CopyMaterialBase(VulkanRHI::Texture& source, VulkanRHI::Texture& target);
     Texture2D MaterialTexture(const std::shared_ptr<SceneObjectTexture>& source,
                               const std::array<uint8_t, 4>& value);
     void InitializeFallbacks();

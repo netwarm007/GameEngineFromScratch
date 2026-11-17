@@ -78,11 +78,132 @@ Texture2D VulkanGraphicsManager::MaterialTexture(
     return texture;
 }
 
+void VulkanGraphicsManager::CopyMaterialBase(VulkanRHI::Texture& source, VulkanRHI::Texture& target) {
+    if (!m_pipelines) throw std::logic_error("Vulkan material conversion requires a pipeline manager");
+    const auto device = m_rhi.GetDevice();
+    const vk::ImageSubresourceRange base(target.aspect, 0, 1, 0, 1);
+    const auto view = device.createImageViewUnique(
+        {{}, target.image, vk::ImageViewType::e2D, target.format, {}, base});
+    const vk::AttachmentDescription attachment({}, target.format, vk::SampleCountFlagBits::e1,
+        vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore,
+        vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+        vk::ImageLayout::eColorAttachmentOptimal, vk::ImageLayout::eColorAttachmentOptimal);
+    const vk::AttachmentReference color(0, vk::ImageLayout::eColorAttachmentOptimal);
+    vk::SubpassDescription subpass;
+    subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+    subpass.setColorAttachments(color);
+    const auto pass = device.createRenderPassUnique({{}, attachment, subpass});
+    const auto framebuffer = device.createFramebufferUnique(
+        {{}, *pass, *view, target.width, target.height, 1});
+    const auto pipeline = m_pipelines->CreateMaterialCopyPipeline(*pass);
+    const std::array sizes{
+        vk::DescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, 4),
+        vk::DescriptorPoolSize(vk::DescriptorType::eSampledImage, 12),
+        vk::DescriptorPoolSize(vk::DescriptorType::eSampler, 2),
+        vk::DescriptorPoolSize(vk::DescriptorType::eStorageImage, 1)};
+    const auto pool = device.createDescriptorPoolUnique({{}, 1, sizes});
+    const auto set = device.allocateDescriptorSets({*pool, *pipeline->descriptorSetLayout}).front();
+    const vk::DescriptorImageInfo sampled({}, source.descriptor, vk::ImageLayout::eShaderReadOnlyOptimal);
+    // Decode at texel centers without requiring linear filtering on the compressed source.
+    const auto copySampler = device.createSamplerUnique({});
+    const vk::DescriptorImageInfo sampler(*copySampler, {}, {});
+    const std::array writes{
+        vk::WriteDescriptorSet(set, VulkanShaderBindings::kTextureBase, 0, 1,
+            vk::DescriptorType::eSampledImage, &sampled),
+        vk::WriteDescriptorSet(set, VulkanShaderBindings::kSamplerBase, 0, 1,
+            vk::DescriptorType::eSampler, &sampler)};
+    device.updateDescriptorSets(writes, {});
+    const std::array<float, 18> positions{-1, -1, 0, 1, -1, 0, 1, 1, 0,
+                                         -1, -1, 0, 1, 1, 0, -1, 1, 0};
+    const std::array<float, 12> uvs{0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0};
+    const auto upload = [&](const auto& data) {
+        VulkanRHI::VertexBuffer buffer;
+        m_rhi.createVertexBuffer(data.data(), sizeof(data), buffer);
+        return BufferResource{vk::UniqueDeviceMemory(buffer.heap, device),
+                              vk::UniqueBuffer(buffer.buffer, device)};
+    };
+    const auto vertices = upload(positions);
+    const auto texcoords = upload(uvs);
+    m_rhi.ExecuteCommands([&](vk::CommandBuffer command) {
+        m_rhi.TransitionTexture(command, target, base, vk::ImageLayout::eColorAttachmentOptimal);
+        command.beginRenderPass({*pass, *framebuffer, {{0, 0}, {target.width, target.height}}},
+                                 vk::SubpassContents::eInline);
+        command.setViewport(0, vk::Viewport(0, float(target.height), float(target.width),
+                                            -float(target.height), 0, 1));
+        command.setScissor(0, vk::Rect2D({0, 0}, {target.width, target.height}));
+        command.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->pipelineState);
+        const std::array<uint32_t, 4> offsets{};
+        command.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+            *pipeline->pipelineLayout, 0, set, offsets);
+        const std::array buffers{*vertices.buffer, *texcoords.buffer};
+        const std::array<vk::DeviceSize, 2> vertexOffsets{};
+        command.bindVertexBuffers(0, buffers, vertexOffsets);
+        command.draw(6, 1, 0, 0);
+        command.endRenderPass();
+    });
+}
+
+Texture2D VulkanGraphicsManager::CreateMaterialTexture(Image& image) {
+    if (m_frameRecording || m_computeActive) {
+        throw std::logic_error("Vulkan material upload requires an idle graphics manager");
+    }
+    if (image.mipmaps.size() > 1 || (image.Width == 1 && image.Height == 1)) {
+        return CreateTexture(image);
+    }
+    OwnedTexture source(m_rhi);
+    source.texture = m_rhi.createTextureImage(image);
+    auto format = source.texture.format;
+    auto pixelFormat = image.pixel_format;
+    if (image.compressed) {
+        pixelFormat = PIXEL_FORMAT::RGBA8;
+        format = vk::Format::eR8G8B8A8Unorm;
+        if (image.compress_format == COMPRESSED_FORMAT::BC6H) {
+            pixelFormat = PIXEL_FORMAT::RGBA16;
+            format = vk::Format::eR16G16B16A16Sfloat;
+        } else if (image.is_signed) {
+            format = vk::Format::eR8G8B8A8Snorm;
+        } else if (source.texture.format >= vk::Format::eAstc4x4SrgbBlock &&
+                   source.texture.format <= vk::Format::eAstc12x12SrgbBlock) {
+            format = vk::Format::eR8G8B8A8Srgb;
+        }
+    }
+    uint32_t mips = 1;
+    for (auto dimension = (std::max)(image.Width, image.Height); dimension > 1; dimension >>= 1) ++mips;
+    auto owned = std::make_shared<OwnedTexture>(m_rhi);
+    auto usage = vk::ImageUsageFlags(vk::ImageUsageFlagBits::eSampled);
+    if (image.compressed) usage |= vk::ImageUsageFlagBits::eColorAttachment;
+    owned->texture = m_rhi.CreateTexture(image.Width, image.Height, format, mips,
+        1, vk::ImageViewType::e2D, usage);
+    if (image.compressed) {
+        CopyMaterialBase(source.texture, owned->texture);
+    } else {
+        m_rhi.ExecuteCommands([&](vk::CommandBuffer command) {
+            const vk::ImageSubresourceRange base(source.texture.aspect, 0, 1, 0, 1);
+            m_rhi.TransitionTexture(command, source.texture, base, vk::ImageLayout::eTransferSrcOptimal);
+            m_rhi.TransitionTexture(command, owned->texture, base, vk::ImageLayout::eTransferDstOptimal);
+            const vk::ImageSubresourceLayers layer(source.texture.aspect, 0, 0, 1);
+            command.copyImage(source.texture.image, vk::ImageLayout::eTransferSrcOptimal,
+                owned->texture.image, vk::ImageLayout::eTransferDstOptimal,
+                vk::ImageCopy(layer, {0, 0, 0}, layer, {0, 0, 0}, {image.Width, image.Height, 1}));
+        });
+    }
+    m_rhi.GenerateMipmaps(owned->texture);
+    Texture2D texture;
+    texture.width = image.Width;
+    texture.height = image.Height;
+    texture.mips = mips;
+    texture.pixel_format = pixelFormat;
+    texture.format = static_cast<TextureFormat>(format);
+    owned->guiVisible = true;
+    texture.handler = StoreTexture(std::move(owned));
+    return texture;
+}
+
 void VulkanGraphicsManager::CreateTexture(SceneObjectTexture& source) {
     if (m_materialTextures.contains(&source)) return;
     const auto image = source.GetTextureImage();
     if (!image) throw std::runtime_error("Vulkan material image was not loaded: " + source.GetName());
-    auto texture = CreateTexture(*image);
+    auto texture = CreateMaterialTexture(*image);
     m_Textures.push_back(texture);
     m_materialTextures.emplace(&source, texture);
 }

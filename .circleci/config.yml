@@ -771,6 +771,30 @@ jobs:
              cmake --build build-vulkan-apps --target Viewer --parallel 2
              cmp build-vulkan-apps/Asset/Shaders/Vulkan/Engine/pbr.frag.spv \
                build-vulkan-apps/Viewer/Viewer.app/Contents/Resources/Asset/Shaders/Vulkan/Engine/pbr.frag.spv
+      - run:
+          name: Verify explicit headless MoltenVK rendering and material mips
+          command: |
+             export HOMEBREW_NO_AUTO_UPDATE=1
+             brew install molten-vk vulkan-validationlayers spirv-tools
+             export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+             export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+             export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+             test -r "$VK_DRIVER_FILES"
+             test -r "$VK_LAYER_PATH/VkLayer_khronos_validation.json"
+             cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+               -DGLSL_VALIDATOR="$PWD/External/Darwin/bin/glslangValidator" \
+               -DSPIRV_CROSS="$PWD/External/Darwin/bin/spirv-cross" \
+               -DZLIB_ROOT="$PWD/External/Darwin"
+             cmake --build build-vulkan-abi --parallel 2
+             ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
+      - store_test_results:
+          path: build-vulkan-abi/junit.xml
+      - store_artifacts:
+          path: build-vulkan-abi/Testing
+          destination: moltenvk-headless-verification
+      - store_artifacts:
+          path: build-vulkan-abi/vulkan-images
+          destination: moltenvk-headless-images
   build_android:
     working_directory: ~/project
     docker:

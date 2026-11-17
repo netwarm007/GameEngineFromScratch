@@ -177,6 +177,28 @@ bool VulkanPipelineStateManager::InitializePipelineState(
     return true;
 }
 
+std::shared_ptr<VulkanPipelineState> VulkanPipelineStateManager::CreateMaterialCopyPipeline(
+    vk::RenderPass renderPass) {
+    PipelineState definition;
+    definition.pipelineStateName = "Material Texture Copy";
+    definition.vertexShaderName = "passthrough.vert";
+    definition.pixelShaderName = "texture.frag";
+    definition.pipelineType = PIPELINE_TYPE::GRAPHIC;
+    definition.a2vType = A2V_TYPES::A2V_TYPES_SIMPLE;
+    definition.depthTestMode = DEPTH_TEST_MODE::NONE;
+    definition.bDepthWrite = false;
+    definition.stencilTestMode = STENCIL_TEST_MODE::NONE;
+    definition.cullFaceMode = CULL_FACE_MODE::NONE;
+    definition.pixelFormat = PIXEL_FORMAT::RGBA8;
+    definition.sampleCount = 1;
+    definition.flag = PIPELINE_FLAG::NONE;
+    PipelineState* result = &definition;
+    InitializePipelineState(&result);
+    auto state = std::dynamic_pointer_cast<VulkanPipelineState>(std::shared_ptr<PipelineState>(result));
+    CreateGraphicsPipeline(*state, renderPass);
+    return state;
+}
+
 void VulkanPipelineStateManager::CreateGraphicsPipeline(VulkanPipelineState& state,
                                                          vk::RenderPass renderPass) {
     if (state.pipelineType != PIPELINE_TYPE::GRAPHIC || !renderPass ||

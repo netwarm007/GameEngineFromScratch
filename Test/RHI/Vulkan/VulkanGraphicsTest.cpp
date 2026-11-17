@@ -66,6 +66,7 @@ class TestGraphics final : public VulkanGraphicsManager {
     using VulkanGraphicsManager::EndFrame;
     using VulkanGraphicsManager::BeginPass;
     using VulkanGraphicsManager::EndPass;
+    using VulkanGraphicsManager::initializeGeometries;
 
     Frame& FirstFrame() { return m_Frames.front(); }
     Frame& CurrentFrame() { return m_Frames.at(m_nFrameIndex); }
@@ -670,6 +671,158 @@ void CheckSceneInitialization(VulkanRHI& rhi, VulkanPipelineStateManager& pipeli
     }
 }
 
+void CheckMaterialMipmaps(VulkanRHI& rhi, AssetLoader& assets) {
+    TestApplication app;
+    TestScenes scenes;
+    VulkanPipelineStateManager pipelines(rhi, assets);
+    TestGraphics graphics(rhi, scenes, pipelines);
+    graphics.SetAppPointer(&app);
+    Require(graphics.Initialize() == 0, "Material mip renderer initialization failed");
+    Scene scene("Automatic material mip regression");
+    const auto add = [&](const char* name, std::shared_ptr<Image> image) {
+        auto source = std::make_shared<SceneObjectTexture>(name);
+        source->SetTextureImage(std::move(image));
+        auto material = std::make_shared<SceneObjectMaterial>(name);
+        material->SetTexture("diffuse", source);
+        scene.Materials.emplace(name, material);
+        AddQuads(scene, name, {{-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0}}, {name});
+    };
+    auto compressed = std::make_shared<Image>();
+    compressed->Width = compressed->Height = 8;
+    compressed->compressed = true;
+    compressed->compress_format = COMPRESSED_FORMAT::BC1;
+    compressed->pitch = 16;
+    compressed->data_size = 32;
+    compressed->data = new uint8_t[32]{};
+    const std::array<uint16_t, 4> endpoints{0x8000, 0x0400, 0x0010, 0xffff};
+    for (size_t block = 0; block < endpoints.size(); ++block) {
+        std::memcpy(compressed->data + block * 8, &endpoints[block], sizeof(uint16_t));
+    }
+    // Exercise both the explicit base-only mip descriptor and absent-mip upload paths.
+    compressed->mipmaps.emplace_back(8, 8, 16, 0, 32);
+    add("compressed", compressed);
+
+    auto signedBc = std::make_shared<Image>();
+    signedBc->Width = signedBc->Height = 4;
+    signedBc->compressed = signedBc->is_signed = true;
+    signedBc->compress_format = COMPRESSED_FORMAT::BC4;
+    signedBc->pitch = signedBc->data_size = 8;
+    signedBc->data = new uint8_t[8]{0x81, 0x7f};
+    add("signed BC4", signedBc);
+
+    auto floatBc = std::make_shared<Image>();
+    floatBc->Width = floatBc->Height = 4;
+    floatBc->compressed = floatBc->is_float = true;
+    floatBc->compress_format = COMPRESSED_FORMAT::BC6H;
+    floatBc->pitch = floatBc->data_size = 16;
+    floatBc->data = new uint8_t[16]{};
+    add("float BC6H", floatBc);
+
+    auto rgb = std::make_shared<Image>();
+    rgb->Width = 6;
+    rgb->Height = 4;
+    rgb->pixel_format = PIXEL_FORMAT::RGB8;
+    rgb->bitcount = 24;
+    rgb->bitdepth = 8;
+    rgb->pitch = 20;
+    rgb->data_size = 80;
+    rgb->data = new uint8_t[80]{};
+    for (uint32_t y = 0; y < rgb->Height; ++y) {
+        for (uint32_t x = 0; x < rgb->Width; ++x) {
+            std::memset(rgb->data + y * rgb->pitch + x * 3, (x + y) % 2 ? 255 : 0, 3);
+        }
+    }
+    add("padded non-square RGB", rgb);
+
+    auto supplied = std::make_shared<Image>();
+    supplied->Width = supplied->Height = 4;
+    supplied->pixel_format = PIXEL_FORMAT::RGBA8;
+    supplied->bitcount = 32;
+    supplied->bitdepth = 8;
+    supplied->pitch = 16;
+    supplied->data_size = 80;
+    supplied->data = new uint8_t[80]{};
+    for (size_t pixel = 0; pixel < 20; ++pixel) {
+        supplied->data[pixel * 4 + (pixel < 16 ? 0 : 1)] = 255;
+        supplied->data[pixel * 4 + 3] = 255;
+    }
+    supplied->mipmaps.emplace_back(4, 4, 16, 0, 64);
+    supplied->mipmaps.emplace_back(2, 2, 8, 64, 16);
+    add("supplied partial chain", supplied);
+    graphics.initializeGeometries(scene);
+    for (const auto& batch : graphics.FirstFrame().batchContexts) {
+        const auto& texture = batch->material.diffuseMap;
+        const auto name = batch->node->GetSceneObjectRef();
+        if (name == "compressed") {
+            Require(texture.mips == 4 && texture.pixel_format == PIXEL_FORMAT::RGBA8,
+                    "Base-only BC material did not become a complete filterable mip chain");
+            const auto base = graphics.ReadTexture(texture);
+            const std::array<std::array<uint8_t, 3>, 4> expected{{
+                {132, 0, 0}, {0, 130, 0}, {0, 0, 132}, {255, 255, 255}}};
+            for (size_t block = 0; block < 4; ++block) {
+                const auto offset = ((block / 2 * 4) * 8 + block % 2 * 4) * 4;
+                for (size_t channel = 0; channel < 3; ++channel) {
+                    Require(std::abs(int(base[offset + channel]) - expected[block][channel]) <= 1,
+                            "BC material conversion changed orientation or applied extra gamma decoding");
+                }
+            }
+            const auto average = graphics.ReadTexture(texture, 0, 3);
+            Require(average.size() == 4 && std::abs(int(average[0]) - 97) <= 1 &&
+                        std::abs(int(average[1]) - 96) <= 1 &&
+                        std::abs(int(average[2]) - 97) <= 1 && average[3] == 255,
+                    "BC material's final mip does not contain its filtered average");
+            const auto blocks = graphics.ReadTexture(texture, 0, 2);
+            Require(blocks.size() == 16, "BC material intermediate mip has the wrong dimensions");
+            for (size_t block = 0; block < 4; ++block) {
+                for (size_t channel = 0; channel < 3; ++channel) {
+                    Require(std::abs(int(blocks[block * 4 + channel]) - expected[block][channel]) <= 1,
+                            "BC material intermediate mip lost block orientation");
+                }
+                Require(blocks[block * 4 + 3] == 255, "BC material intermediate mip lost alpha");
+            }
+        } else if (name == "signed BC4") {
+            const auto bytes = graphics.ReadTexture(texture, 0, 2);
+            Require(texture.mips == 3 && bytes.size() == 4 &&
+                        texture.format == static_cast<TextureFormat>(vk::Format::eR8G8B8A8Snorm) &&
+                        bytes[0] == 0x81 && bytes[1] == 0 && bytes[2] == 0 && bytes[3] == 0x7f,
+                    "Signed BC conversion clipped negative samples or lost the filtered chain");
+        } else if (name == "float BC6H") {
+            const auto bytes = graphics.ReadTexture(texture, 0, 2);
+            std::array<uint16_t, 4> half{};
+            Require(texture.mips == 3 && bytes.size() == sizeof(half) &&
+                        texture.pixel_format == PIXEL_FORMAT::RGBA16 &&
+                        texture.format == static_cast<TextureFormat>(vk::Format::eR16G16B16A16Sfloat),
+                    "Floating BC material did not retain filterable floating-point storage");
+            std::memcpy(half.data(), bytes.data(), bytes.size());
+            Require(half == std::array<uint16_t, 4>{0, 0, 0, 0x3c00},
+                    "Floating BC material conversion changed decoded samples or alpha");
+        } else if (name == "padded non-square RGB") {
+            Require(texture.mips == 3, "Non-square material has the wrong generated mip count");
+            for (uint32_t mip = 1; mip < texture.mips; ++mip) {
+                const auto bytes = graphics.ReadTexture(texture, 0, mip);
+                const auto expectedSize = (std::max)(1u, 6u >> mip) * (std::max)(1u, 4u >> mip) * 4;
+                Require(bytes.size() == expectedSize, "Generated non-square mip has the wrong dimensions");
+                for (size_t pixel = 0; pixel < bytes.size(); pixel += 4) {
+                    Require(std::abs(int(bytes[pixel]) - 128) <= 1 &&
+                                bytes[pixel] == bytes[pixel + 1] && bytes[pixel] == bytes[pixel + 2] &&
+                                bytes[pixel + 3] == 255,
+                            "Automatic material mips did not filter the padded RGB checkerboard");
+                }
+            }
+        } else {
+            const auto mip = graphics.ReadTexture(texture, 0, 1);
+            Require(texture.mips == 2 && mip.size() == 16 &&
+                        mip[0] == 0 && mip[1] == 255 && mip[2] == 0 && mip[3] == 255,
+                    "Automatic material generation overwrote or extended supplied mip content");
+        }
+        Require(batch->material.normalMap.mips == 1, "Scalar fallback material gained extra mips");
+    }
+    auto gui = graphics.CreateTexture(*rgb);
+    Require(gui.mips == 1, "Material generation changed ordinary GUI texture upload semantics");
+    graphics.ReleaseTexture(gui);
+    graphics.Finalize();
+}
+
 void CheckTextures(TestGraphics& graphics) {
     Texture2D color;
     color.width = color.height = 16;
@@ -791,6 +944,7 @@ int main(int argc, char** argv) {
             CheckPointShadows(rhi, assets, false);
             CheckPointShadows(rhi, assets, true);
             CheckEnvironment(rhi, assets);
+            CheckMaterialMipmaps(rhi, assets);
             graphics.BeginCompute();
             graphics.SetPipelineState(pipelines.GetPipelineState("PBR BRDF CS"), frame);
             graphics.BindTextureForWrite(frame.brdfLUT, 0);
