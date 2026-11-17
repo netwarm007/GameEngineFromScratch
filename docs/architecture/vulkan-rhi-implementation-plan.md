@@ -879,12 +879,53 @@ filtering/highlight differences remain. This completes the bounded material
 filtering/reference work, not checkpoint 5's native platform acceptance.
 
 Native runtime blockers must not be bypassed to finish this checkpoint.
-The installed Windows SDK predates maintenance1. A direct loader recheck found
+The locally installed Windows SDK predates maintenance1. A direct loader recheck found
 no instance maintenance extension and no swapchain-maintenance1 extension on
 the AMD adapter or either enumerated Dozen adapter. New headers alone cannot
 resolve that runtime gap. The latest stable Windows SDK reported by LunarG
 at recheck was 1.4.363.1, but installing it or changing a system driver is not
 part of this continuation.
+
+The user subsequently reported native tests of documentation tip
+`40eee68bc1dadb54c412b2889ff9c6a744443785` on another Windows machine
+(RTX 3070, driver 617.14; user-local SDK 1.4.363.1, loader 1.4.341,
+validation 1.4.363). Direct enumeration there found KHR/EXT maintenance1
+extensions and `swapchainMaintenance1=true`; that machine is **not** blocked
+by absent maintenance capability. Six Vulkan tests and three shared tests
+passed, but the native frame-loop test failed twice in the secondary GUI phase.
+The reported main-window lifecycle passed. The pinned ImGui helper submits
+layout transitions on all newly created swapchain images before any acquire,
+consistent with the reported validation failure. Raw validation messages/VUIDs
+have not been delivered here; the remote report is user-provided evidence, not
+an independent local reproduction.
+
+A narrow [versioned backport](../../External/patches/README.md) removes that
+eager submission, based on upstream ImGui
+`4cb4b17cb5db3d9c581c4c5d539802303e7e9777`, without upgrading the pinned submodule
+through 59 intervening commits. Production and standalone tests use the same
+hash-checked build-copy preparation. An additional old-pin compatibility change
+uses `UNDEFINED` for the acquired dynamic-rendering image's clear/discard
+barrier; traditional render-pass initial/final layouts and engine presentation
+fences are unchanged. The CPU lifecycle regression exercises real helper
+creation/resize and out-of-date/suboptimal acquire callbacks, with the original
+helper failing and the patched helper passing. Local SDK 1.2.182 cannot compile
+the dynamic-rendering execution branch, which remains explicitly unverified
+locally. Local GPU/headless results and this CPU test do not verify the new
+source on native Windows or supersede historical exact-revision CI records.
+Native stage assertions now distinguish secondary create/resize/recreate
+failures from acquire/render/present failures.
+
+Local validation of this uncommitted continuation passed the six existing
+non-WSI Vulkan tests, the new `fast` CPU lifecycle test, and the three existing
+shared layout/render-service/application-lifetime tests (10/10). The shared
+test sources were built against the standalone regression libraries through a
+local harness, not a full application build. The native frame-loop target built
+but execution failed at the local SDK maintenance1 gate before WSI coverage.
+Clean cross-drive preparation, repeated configuration, and LF-only input
+preparation/compilation passed; changed input, malformed patch, and an incomplete
+patch result each failed explicitly. The production CMake target selected its
+prepared backend copy; the standalone graphics library compiled that copy.
+These checks do not replace a fresh real application build or platform CI.
 
 The earlier claim that stable MoltenVK v1.4.2 lacks the maintenance extensions
 was incorrect. The
@@ -906,11 +947,12 @@ The native test reported Cocoa backing scale 1 on an Apple paravirtual device.
 This is native WSI reference evidence, not physical Retina or interactive
 floating-input acceptance. No new platform input backend is introduced.
 
-The minimal remaining environment choices are an already-maintenance-capable
-Windows runner (matching surface/device extensions and feature enabled), and
+The remaining native validation requires rerunning the fix on the reported
+maintenance-capable Windows runner (matching surface/device extensions and
+feature enabled), and
 an accessible physical Retina Mac for cross-display scaling and actual
 keyboard/pointer/floating-window interactions. Stable SDK 1.4.363.1 can address
-Windows headers/validation but cannot add the missing driver extensions.
+local Windows headers/validation but cannot add the missing local driver extensions.
 No particular untested driver upgrade is claimed to solve that gap; system
 installation changes require authorization. The stable MoltenVK native run
 removes the need to propose a development runtime merely to obtain WSI coverage.
@@ -953,13 +995,23 @@ evidence, dependency scope, validation plan, and authorization.
   capture additionally requires transfer-source surface usage and writes PPM,
   not PNG. Secondary Cocoa window scaling still needs real MoltenVK/Retina
   runtime checks.
-- **Checkpoint 5:** Windows Vulkan WSI remains blocked on a verified
-  maintenance-aware SDK/driver/runtime. Stable MoltenVK headless and native
+- **Checkpoint 5:** Windows Vulkan WSI has a reported secondary-swapchain
+  pre-acquire layout defect on a verified maintenance-capable runtime. Its narrow
+  backport still requires remote Windows revalidation, exact-revision full CI,
+  and real application capture inspection; checkpoint 5 is not complete.
+  The local machine separately lacks the SDK/runtime maintenance capability.
+  Stable MoltenVK headless and native
   presentation tests and actual applications passed on an Apple paravirtual
   device, separately from native Metal. Physical Retina/mixed-DPI and interactive
   floating-window input remain unverified, not inferred from scale-1 WSI success.
   Linux lavapipe/Xcb is reference coverage, not hardware acceptance.
   No unsupported environment is given a device-idle retirement fallback.
+- **Checkpoint 5:** The user-reported Windows application runs each emitted
+  255 fallback diagnostics for missing `Textures/terrain/area_1_*` tiles.
+  This resource limitation is distinct from Vulkan validation. The reported
+  Viewer/Billiard material captures and zero application validation callbacks
+  do not imply clean resource logs or fix the secondary frame-loop failure.
+  Terrain assets are not fabricated as part of this work.
 
 ## Platform and acceptance strategy
 

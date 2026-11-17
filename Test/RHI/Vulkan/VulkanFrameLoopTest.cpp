@@ -284,6 +284,8 @@ void RunNativeGui() {
         } cleanup{viewport};
         platform.Renderer_CreateWindow(&viewport);
         Require(viewport.RendererUserData != nullptr, "Native Vulkan secondary viewport was not initialized");
+        Require(rhi.GetValidationErrorCount() == 0,
+                "Secondary viewport creation produced validation errors before first acquire");
         const auto generation = rhi.GetSwapChainGeneration();
         for (unsigned frame = 0; frame < 12; ++frame) {
             if (frame == 3) window.Resize(256, 128);
@@ -291,11 +293,15 @@ void RunNativeGui() {
                 floating.Resize(224, 96);
                 viewport.Size = {224, 96};
                 platform.Renderer_SetWindowSize(&viewport, viewport.Size);
+                Require(rhi.GetValidationErrorCount() == 0,
+                        "Secondary viewport resize produced validation errors before reacquire");
             }
             if (frame == 8) {
                 platform.Renderer_DestroyWindow(&viewport);
                 Require(!viewport.RendererUserData, "Native Vulkan viewport destruction retained renderer data");
                 platform.Renderer_CreateWindow(&viewport);
+                Require(rhi.GetValidationErrorCount() == 0,
+                        "Secondary viewport recreation produced validation errors before reacquire");
             }
             uint32_t width = 0, height = 0;
             window.Size(width, height);
@@ -343,6 +349,8 @@ void RunNativeGui() {
             } restore{*viewport.DrawData, originalOwner};
             platform.Renderer_RenderWindow(&viewport, nullptr);
             platform.Renderer_SwapBuffers(&viewport, nullptr);
+            Require(rhi.GetValidationErrorCount() == 0,
+                    "Secondary viewport acquire/render/present produced validation errors");
         }
         Require(rhi.GetSwapChainGeneration() > generation || attempt != 0,
                 "Native Vulkan GUI resize did not recreate main composition targets");

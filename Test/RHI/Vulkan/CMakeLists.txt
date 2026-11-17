@@ -143,14 +143,14 @@ else()
     add_library(VulkanRegressionGraphics STATIC "${root}/RHI/Vulkan/VulkanGraphicsManager.cpp")
     target_link_libraries(VulkanRegressionGraphics PUBLIC VulkanRegressionRHI PRIVATE RenderServices)
 endif()
+include("${root}/cmake/ImGuiVulkanBackend.cmake")
+myge_prepare_imgui_vulkan_backend(imgui_vulkan_backend "${root}")
 target_sources(VulkanRegressionGraphics PRIVATE
     "${root}/RHI/Vulkan/VulkanGraphicsGui.cpp"
     "${root}/RHI/Vulkan/VulkanGuiRenderer.cpp"
-    "${root}/External/src/imgui/backends/imgui_impl_vulkan.cpp"
+    "${imgui_vulkan_backend}"
     "${root}/RHI/Vulkan/VulkanGraphicsRendering.cpp"
     "${root}/RHI/Vulkan/VulkanGraphicsShadow.cpp")
-set_source_files_properties("${root}/External/src/imgui/backends/imgui_impl_vulkan.cpp"
-    PROPERTIES COMPILE_DEFINITIONS IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/Framework/Geometries")
 target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/External/src/imgui")
 add_executable(VulkanGraphicsTest VulkanGraphicsTest.cpp
@@ -164,6 +164,13 @@ add_executable(VulkanGuiTest VulkanGuiTest.cpp "${root}/Platform/Empty/AssetLoad
 target_link_libraries(VulkanGuiTest PRIVATE VulkanRegressionGraphics)
 add_test(NAME TEST_VulkanGui COMMAND VulkanGuiTest)
 set_tests_properties(TEST_VulkanGui PROPERTIES TIMEOUT 90)
+add_executable(VulkanSwapchainLifecycleTest VulkanSwapchainLifecycleTest.cpp)
+target_compile_definitions(VulkanSwapchainLifecycleTest PRIVATE
+    IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+    "MYGE_IMGUI_VULKAN_BACKEND_SOURCE=\"${imgui_vulkan_backend}\"")
+target_link_libraries(VulkanSwapchainLifecycleTest PRIVATE VulkanRegressionGraphics)
+add_test(NAME TEST_VulkanSwapchainLifecycle COMMAND VulkanSwapchainLifecycleTest)
+set_tests_properties(TEST_VulkanSwapchainLifecycle PROPERTIES TIMEOUT 10 LABELS fast)
 
 if(WIN32 OR UNIX)
     add_executable(VulkanFrameLoopTest VulkanFrameLoopTest.cpp "${root}/Platform/Empty/AssetLoader.cpp")
