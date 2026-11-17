@@ -305,6 +305,10 @@ void TestMemorySystemLifetime() {
         void* p = app.GetMemorySystem()->Allocator().Allocate(64);
         Expect(p != nullptr, "engine allocation works");
         app.GetMemorySystem()->Allocator().Free(p);
+        const auto frame = app.GetMemorySystem()->Frame().FrameNumber();
+        app.Tick();
+        Expect(app.GetMemorySystem()->Frame().FrameNumber() == frame + 1,
+               "each application tick begins a new frame arena");
         Expect(app.Initialize() != 0 && app.GetMemorySystem() != nullptr,
                "rejected re-initialization keeps the memory system");
         app.Finalize();

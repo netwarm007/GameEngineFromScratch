@@ -3,12 +3,15 @@
 #include <objbase.h>
 
 #include <iostream>
+#include <memory_resource>
+#include <vector>
 
 #include "AssetLoader.hpp"
 #include "D3d12Application.hpp"
 #include "D3d12Utility.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
+#include "MemorySystem.hpp"
 
 #include "D3d12RHI.hpp"
 #include "D3d12ShadowUtils.hpp"
@@ -647,12 +650,22 @@ void D3d12GraphicsManager::EndPass(Frame& frame) {
 void D3d12GraphicsManager::DrawBatch(const Frame& frame) {
     auto& rhi = dynamic_cast<D3d12Application*>(m_pApp)->GetRHI();
 
+    // Scratch buffer reused across draws; per-frame arena when the engine
+    // allocators are on, default heap otherwise.
+    std::pmr::memory_resource* scratch = std::pmr::get_default_resource();
+#ifdef USE_ENGINE_ALLOCATORS
+    if (auto* memory = dynamic_cast<D3d12Application*>(m_pApp)->GetMemorySystem()) {
+        scratch = &memory->FrameResource();
+    }
+#endif
+    std::pmr::vector<D3D12_VERTEX_BUFFER_VIEW> views(scratch);
+
     for (const auto& pDbc : frame.batchContexts) {
         if (!pDbc->node->Visible()) continue;
         const D3dDrawBatchContext& dbc =
             dynamic_cast<const D3dDrawBatchContext&>(*pDbc);
         auto* cmd = rhi.GetGraphicsCommandList();
-        std::vector<D3D12_VERTEX_BUFFER_VIEW> views;
+        views.clear();
         views.reserve(dbc.property_count);
         for (size_t i = 0; i < dbc.property_count; ++i) {
             views.push_back(m_VertexBuffers[dbc.property_offset + i].descriptor);

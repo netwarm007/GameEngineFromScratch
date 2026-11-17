@@ -75,6 +75,7 @@ void BaseApplication::Finalize() {
 
 // One cycle of the main loop
 void BaseApplication::Tick() {
+    if (m_pMemorySystem) m_pMemorySystem->BeginFrame();
     TickFrame(runtime_modules.GetInitializedModules());
 }
 

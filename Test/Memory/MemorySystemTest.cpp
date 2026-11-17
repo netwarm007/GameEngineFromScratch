@@ -1,5 +1,7 @@
 #include <iostream>
+#include <memory_resource>
 #include <string>
+#include <vector>
 
 #include "MemoryManager.hpp"
 #include "MemorySystem.hpp"
@@ -37,6 +39,38 @@ void TestPlain() {
         sys.Allocator().Free(large);
     }
     Expect(mm.PageCount() == 0, "destruction returns every page");
+}
+
+void TestFrameResource() {
+    MemoryManager mm;
+    MemorySystem::Config config;
+    config.frameCapacity = 4096;
+    {
+        MemorySystem sys(&mm, config);
+        const size_t used0 = sys.Frame().Used();
+        {
+            std::pmr::vector<int> v(&sys.FrameResource());
+            for (int i = 0; i < 100; ++i) v.push_back(i);
+            Expect(v[99] == 99, "container works on the frame arena");
+        }
+        Expect(sys.Frame().Used() > used0, "container drew from the arena");
+
+        const uint64_t frame = sys.Frame().FrameNumber();
+        sys.BeginFrame();
+        sys.BeginFrame();
+        Expect(sys.Frame().FrameNumber() == frame + 2, "BeginFrame advances");
+        Expect(sys.Frame().Used() == used0, "arena recycled after rotation");
+
+        bool threw = false;
+        try {
+            std::pmr::vector<char> big(&sys.FrameResource());
+            big.resize(1 << 20);
+        } catch (const std::bad_alloc&) {
+            threw = true;
+        }
+        Expect(threw, "exhausting the arena throws bad_alloc");
+    }
+    Expect(mm.PageCount() == 0, "frame arenas return their pages");
 }
 
 void TestTracking() {
@@ -81,6 +115,7 @@ void TestUnavailablePages() {
 
 int main() {
     TestPlain();
+    TestFrameResource();
     TestTracking();
     TestUnavailablePages();
 
