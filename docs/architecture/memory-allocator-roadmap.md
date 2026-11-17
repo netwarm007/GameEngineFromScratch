@@ -227,3 +227,29 @@ switch ON passes all existing tests and screenshot checks; no leaks reported.
 Risks: Windows debug-container lifetime with pmr (seen in M3);
 `ThreadCacheAllocator::FreeAll` must not run concurrently; cross-module frees
 must match their allocator, hence the small pilot scope.
+
+## Future work: full engine adoption (not started)
+
+Status after M8: three pilot sites (D3D12 and OpenGL `DrawBatchContext`, D3D12
+vertex-view scratch) out of roughly 110 `new`, 90 `make_shared` and many
+container/string sites in about 40-50 files, so under 5% of allocation sites
+use the engine allocators. Runtime share is unmeasured (Billiard reports 36
+pilot allocations; no total exists). Third-party libraries and the global
+`operator new` are untouched. Planned order, each step a checkpoint with
+three-platform CI and a verification record, switch default OFF until the end:
+
+1. Measure: count allocations by size and call site (tracking or a counting
+   global `operator new`) to get the real share and hot spots.
+2. Frame scratch: move per-pass temporary vectors/strings to `pmr` on the frame
+   arena; add a fallback for arena exhaustion.
+3. Small objects: scene nodes, materials and other `make_shared` sites via
+   `MakeEngineShared`.
+4. Optional global `operator new/delete` routing to `RoutingAllocator`; needs
+   owner lookup on free, a fix for the single-mutex large path, and thread-exit
+   cache draining.
+5. GPU memory: connect `GpuSubAllocator` to each RHI backend.
+6. Close the open items in "Known limitations and follow-ups".
+
+Risk: freeing across module or third-party boundaries must reach the owning
+allocator, so keep the header-tag scheme and roll out gradually. Decision:
+deferred by the user; revisit later.
