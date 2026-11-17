@@ -868,6 +868,15 @@ platform. Windows/Linux retain the Vulkan host-allocation rejection probe;
 macOS explicitly reports that unsupported injection mechanism rather than
 claiming a Vulkan host-allocation failure occurred. Validation remains enabled.
 
+Revision `1468078f4ae92ca76b61d0863d95227576aefcec` passed all full-scope jobs in
+[pipeline 1023](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/1023).
+The [verification record](../verification/1468078f4ae92ca76b61d0863d95227576aefcec.md)
+records seven Linux Vulkan tests, six stable MoltenVK headless tests, existing
+backend regressions, and actual application/native GUI/offscreen inspection.
+Viewer floor noise is visibly reduced against checkpoint 4; residual
+filtering/highlight differences remain. This completes the bounded material
+filtering/reference work, not checkpoint 5's native platform acceptance.
+
 Native runtime blockers must not be bypassed to finish this checkpoint.
 The installed Windows SDK predates maintenance1, and the local instance
 extension enumeration does not expose surface-maintenance1. The inspected
@@ -895,10 +904,10 @@ evidence, dependency scope, validation plan, and authorization.
   raytrace dispatch is not enabled or advertised as covered.
 - **Checkpoint 3, follow-up in checkpoint 5:** Automatic material mip generation
   now has focused GPU coverage, including shared-stage compressed conversion.
-  The checkpoint 4 Viewer capture had visibly stronger high-frequency
-  floor/specular aliasing. Inspect new exact-revision application artifacts
-  before claiming an improvement or full filtering parity; mip readback alone
-  does not establish visual equivalence.
+  Exact-revision Viewer artifact inspection confirms reduced high-frequency
+  floor noise against checkpoint 4 and closer filtering to the OpenGL
+  reference. Residual filtering/highlight differences remain; neither mip
+  readback nor the observed improvement establishes complete visual parity.
 - **Checkpoint 4:** Native composition, secondary renderer lifecycle, and real
   Viewer/Billiard assets/captures passed Linux reference CI and actual image
   inspection. This does not establish floating-window platform input on Xcb
@@ -912,7 +921,8 @@ evidence, dependency scope, validation plan, and authorization.
   runtime checks.
 - **Checkpoint 5:** Windows Vulkan WSI and MoltenVK native runtime acceptance
   remain blocked on a verified maintenance-aware SDK/driver/runtime.
-  Stable MoltenVK headless CI is separate from native Metal and WSI coverage.
+  Stable MoltenVK headless CI passed on an Apple paravirtual device, separately
+  from native Metal and without establishing WSI or physical Retina coverage.
   Linux lavapipe/Xcb is reference coverage, not hardware acceptance.
   No unsupported environment is given a device-idle retirement fallback.
 
