@@ -1,7 +1,6 @@
 #include "ViewerLogic.hpp"
 
-#include "BaseApplication.hpp"
-#include "SceneManager.hpp"
+#include "ISceneManager.hpp"
 #include "geommath.hpp"
 
 #include <cstdlib>
@@ -18,8 +17,10 @@ int ViewerLogic::Initialize() {
     m_SceneCycleTick = 0;
     m_SceneCycleReadyPath.clear();
 
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    if (!m_pApp) {
+        cerr << "[ViewerLogic] Application must be set before initialization\n";
+        return -1;
+    }
 
     cout << "[ViewerLogic] Viewer Logic Initialize" << endl;
 
@@ -65,10 +66,10 @@ int ViewerLogic::Initialize() {
 
     if (!scene_filename.empty()) {
         cout << "[ViewerLogic] Loading Scene: " << scene_filename << endl;
-        result = pSceneManager->LoadScene(scene_filename.c_str());
+        result = m_Scenes.LoadScene(scene_filename.c_str());
     } else {
         cout << "[ViewerLogic] Loading Splash Scene" << endl;
-        result = pSceneManager->LoadScene("Scene/splash.ogex");
+        result = m_Scenes.LoadScene("Scene/splash.ogex");
     }
 
     return result;
@@ -84,8 +85,7 @@ void ViewerLogic::Tick() {
     if (m_SceneCycleTick == 16 && m_SceneCycle == 2)
         scene = "Scene/splash.ogex";
     if (scene) {
-        auto* scenes = dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-        if (scenes->LoadScene(scene) != 0) {
+        if (m_Scenes.LoadScene(scene) != 0) {
             cerr << "[ViewerLogic] Scene-cycle load failed: " << scene << '\n';
             m_pApp->RequestQuit();
             return;
@@ -108,10 +108,7 @@ void ViewerLogic::Tick() {
 }
 
 void ViewerLogic::OnLeftKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -128,10 +125,7 @@ void ViewerLogic::OnLeftKeyDown() {
 }
 
 void ViewerLogic::OnRightKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -148,10 +142,7 @@ void ViewerLogic::OnRightKeyDown() {
 }
 
 void ViewerLogic::OnUpKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -168,10 +159,7 @@ void ViewerLogic::OnUpKeyDown() {
 }
 
 void ViewerLogic::OnDownKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -188,11 +176,8 @@ void ViewerLogic::OnDownKeyDown() {
 }
 
 void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
     if (id == 1) {
-        auto& scene = pSceneManager->GetSceneForRendering();
+        auto& scene = m_Scenes.GetSceneForRendering();
         if (scene) {
             auto pCameraNode = scene->GetFirstCameraNode();
             if (pCameraNode) {

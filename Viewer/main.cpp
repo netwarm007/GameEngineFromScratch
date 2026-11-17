@@ -66,12 +66,12 @@ int main(int argc, char** argv) {
 #else
     OpenGLApplication app(config);
 #endif
-    ViewerLogic gameLogic;
     AssetLoader assetLoader;
     MemoryManager memoryManager;
     OgexParser sceneParser;
     SceneResourceLoader sceneResources(assetLoader);
     SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
+    ViewerLogic gameLogic(sceneManager);
     BulletPhysicsManager physicsManager(sceneManager);
     InputManager inputManager(gameLogic);
     AnimationManager animationManager(sceneManager);

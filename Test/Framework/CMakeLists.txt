@@ -48,6 +48,11 @@ add_executable(InputManagerTest InputManagerTest.cpp
     ${PROJECT_SOURCE_DIR}/Framework/Manager/InputManager.cpp)
 add_test(NAME TEST_InputManagerTest COMMAND InputManagerTest)
 
+add_executable(ViewerLogicTest ViewerLogicTest.cpp
+    ${PROJECT_SOURCE_DIR}/Viewer/ViewerLogic.cpp)
+target_link_libraries(ViewerLogicTest PRIVATE SceneGraph)
+add_test(NAME TEST_ViewerLogicTest COMMAND ViewerLogicTest)
+
 add_executable(PhysicsSceneIntegrationTest PhysicsSceneIntegrationTest.cpp)
 target_link_libraries(PhysicsSceneIntegrationTest PRIVATE
     BulletPhysics MyPhysics Parser AssetIO PlatformAssetIO SplashSequence)

@@ -378,6 +378,33 @@ Viewer/Billiard service lookups remain a separate assessment.
 DrawSubPass still links ImageDecoders for the production adapter; full target
 isolation and native rendering of every scene-node icon kind are not claimed.
 
+### D4a. Explicit Viewer scene dependency
+
+**In progress.** ViewerLogic takes a required borrowed `ISceneManager&` instead
+of downcasting Application to locate it on initialization and each input event.
+Viewer constructs the scene manager before logic so the service outlives its
+consumer. Application remains responsible for command-line arguments and quit
+requests through IApplication; initialization without it is explicitly rejected.
+Billiard dependencies are deferred to D4b.
+
+Preserve default/custom scene loading, option handling, A/B/A scene-cycle timing,
+readiness markers, load-error propagation and camera movement/rotation semantics.
+Do not introduce a dependency-injection framework or change platform input.
+
+Verification: ViewerLogicTest uses an ISceneManager fake and a plain
+IApplication (not BaseApplication), with no native window/backend. Cover
+default/custom loading and errors, invalid cycle options, phase order, fresh
+lifecycles, quit-on-load-failure, directional camera/target movement, drag
+rotation, scene replacement and absent scenes/cameras. Then build Viewer and
+run focused tests, exact-revision three-platform CI and native artifact checks.
+
+#### Known limitations and follow-ups (D4a)
+
+Synthetic callbacks do not establish native OS event delivery, all ImGui focus
+paths or every camera orientation. Scene-cycle marker I/O remains covered by
+native capture gates, not the isolated test. D4b will separately assess the
+Billiard scene/physics service lookups.
+
 ## Working and acceptance rules
 
 For each checkpoint:
