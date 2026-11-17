@@ -860,6 +860,14 @@ artifacts. This is not a native WSI or Retina test. No production dependency
 pin, shared shader algorithm, default backend, or presentation-retirement
 contract changes.
 
+The first explicit MoltenVK run exposed a nonportable fault-injection assumption:
+MoltenVK documents that it ignores `VkAllocationCallbacks`. The GUI regression
+now also injects an ImGui allocation failure after the backend has bound its
+borrowed context, checking real partial-renderer cleanup and retry on every
+platform. Windows/Linux retain the Vulkan host-allocation rejection probe;
+macOS explicitly reports that unsupported injection mechanism rather than
+claiming a Vulkan host-allocation failure occurred. Validation remains enabled.
+
 Native runtime blockers must not be bypassed to finish this checkpoint.
 The installed Windows SDK predates maintenance1, and the local instance
 extension enumeration does not expose surface-maintenance1. The inspected

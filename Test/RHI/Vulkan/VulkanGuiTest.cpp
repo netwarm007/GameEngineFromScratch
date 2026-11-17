@@ -3,6 +3,7 @@
 #include <array>
 #include <cstring>
 #include <iostream>
+#include <new>
 #include <stdexcept>
 #include <cstdlib>
 
@@ -35,6 +36,7 @@ struct Texture {
     ~Texture() { rhi.DestroyTexture(value); }
 };
 
+#ifndef __APPLE__
 void* VKAPI_PTR RejectAllocation(void* attempted, size_t, size_t, VkSystemAllocationScope) {
     *static_cast<bool*>(attempted) = true;
     return nullptr;
@@ -48,6 +50,31 @@ void* VKAPI_PTR RejectReallocation(void* attempted, void*, size_t, size_t, VkSys
 void VKAPI_PTR FreeAllocation(void*, void* allocation) {
     std::free(allocation);
 }
+#endif
+
+struct RejectGuiAllocation {
+    ImGuiMemAllocFunc allocate;
+    ImGuiMemFreeFunc free;
+    void* user;
+    bool attempted = false;
+
+    RejectGuiAllocation() {
+        ImGui::GetAllocatorFunctions(&allocate, &free, &user);
+        ImGui::SetAllocatorFunctions([](size_t size, void* data) -> void* {
+            auto& owner = *static_cast<RejectGuiAllocation*>(data);
+            if (ImGui::GetIO().BackendRendererUserData) {
+                owner.attempted = true;
+                throw std::bad_alloc();
+            }
+            return owner.allocate(size, owner.user);
+        }, [](void* allocation, void* data) {
+            auto& owner = *static_cast<RejectGuiAllocation*>(data);
+            owner.free(allocation, owner.user);
+        }, this);
+    }
+
+    ~RejectGuiAllocation() { ImGui::SetAllocatorFunctions(allocate, free, user); }
+};
 
 class TestApplication final : public IApplication {
    public:
@@ -233,6 +260,7 @@ void Run(VulkanRHI& rhi) {
     Require(!io.BackendRendererUserData && (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable),
             "Viewport rejection silently disabled the requested behavior");
     io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+#ifndef __APPLE__
     bool allocationAttempted = false;
     VkAllocationCallbacks rejectAllocations{};
     rejectAllocations.pUserData = &allocationAttempted;
@@ -246,6 +274,20 @@ void Run(VulkanRHI& rhi) {
                 ImGui::GetCurrentContext() == context.value &&
                 (io.ConfigFlags & ImGuiConfigFlags_DockingEnable),
             "Vulkan GUI initialization failure retained renderer resources or damaged borrowed state");
+#else
+    std::cout << "MoltenVK ignores VkAllocationCallbacks; testing partial renderer allocation rollback "
+                 "through the ImGui allocator instead\n";
+#endif
+    {
+        RejectGuiAllocation reject;
+        Reject<std::bad_alloc>([&] { renderer.Initialize(*pass, 2); },
+                               "Vulkan GUI did not propagate a partial renderer allocation failure");
+        Require(reject.attempted && !io.BackendRendererUserData &&
+                    !ImGui::GetMainViewport()->RendererUserData &&
+                    ImGui::GetCurrentContext() == context.value &&
+                    (io.ConfigFlags & ImGuiConfigFlags_DockingEnable),
+                "Vulkan GUI allocation rollback retained resources or damaged borrowed state");
+    }
     constexpr ImTextureID identity = 12345;
     for (uint32_t attempt = 0; attempt < 2; ++attempt) {
         renderer.Initialize(*pass, 2);
