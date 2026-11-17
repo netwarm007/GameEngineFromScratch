@@ -1,6 +1,10 @@
 #ifdef _WIN32
 #define NOMINMAX
 #define VK_USE_PLATFORM_WIN32_KHR
+#elif defined(__APPLE__)
+#define VK_USE_PLATFORM_METAL_EXT
+#import <Cocoa/Cocoa.h>
+#import <QuartzCore/CAMetalLayer.h>
 #else
 #define VK_USE_PLATFORM_XCB_KHR
 #endif
@@ -43,6 +47,19 @@ class Window {
             TranslateMessage(&message);
             DispatchMessageW(&message);
         }
+#elif defined(__APPLE__)
+        m_window = [[NSWindow alloc]
+            initWithContentRect:NSMakeRect(0, 0, 160, 160)
+                      styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskResizable
+                        backing:NSBackingStoreBuffered defer:NO];
+        Require(m_window != nil, "Cocoa test window creation failed");
+        m_window.releasedWhenClosed = NO;
+        m_window.title = @"Vulkan frame regression";
+        m_window.contentView.wantsLayer = YES;
+        m_window.contentView.layer = [CAMetalLayer layer];
+        [m_window orderFront:nil];
+        PumpEvents();
+        std::cout << "Cocoa Vulkan native backing scale: " << m_window.backingScaleFactor << '\n';
 #else
         m_connection = xcb_connect(nullptr, nullptr);
         Require(m_connection && !xcb_connection_has_error(m_connection),
@@ -62,6 +79,9 @@ class Window {
 #ifdef _WIN32
         DestroyWindow(m_window);
         UnregisterClassW(m_className.c_str(), GetModuleHandleW(nullptr));
+#elif defined(__APPLE__)
+        [m_window close];
+        [m_window release];
 #else
         xcb_disconnect(m_connection);
 #endif
@@ -81,6 +101,9 @@ class Window {
             TranslateMessage(&message);
             DispatchMessageW(&message);
         }
+#elif defined(__APPLE__)
+        [m_window setContentSize:NSMakeSize(width, height)];
+        PumpEvents();
 #else
         const uint32_t values[] = {width, height};
         xcb_configure_window(m_connection, m_window,
@@ -96,6 +119,15 @@ class Window {
         Require(GetClientRect(m_window, &rect) != 0, "Win32 test size query failed");
         width = static_cast<uint32_t>(rect.right);
         height = static_cast<uint32_t>(rect.bottom);
+#elif defined(__APPLE__)
+        PumpEvents();
+        NSView* view = m_window.contentView;
+        const auto size = [view convertRectToBacking:view.bounds].size;
+        width = static_cast<uint32_t>(size.width);
+        height = static_cast<uint32_t>(size.height);
+        auto* layer = static_cast<CAMetalLayer*>(view.layer);
+        layer.contentsScale = m_window.backingScaleFactor;
+        layer.drawableSize = CGSizeMake(width, height);
 #else
         const auto cookie = xcb_get_geometry(m_connection, m_window);
         const std::unique_ptr<xcb_get_geometry_reply_t, decltype(&std::free)> reply(
@@ -109,6 +141,10 @@ class Window {
     std::vector<const char*> Extensions() const {
 #ifdef _WIN32
         return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME};
+#elif defined(__APPLE__)
+        return {VK_KHR_SURFACE_EXTENSION_NAME, VK_EXT_METAL_SURFACE_EXTENSION_NAME,
+                VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};
 #else
         return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XCB_SURFACE_EXTENSION_NAME};
 #endif
@@ -122,6 +158,14 @@ class Window {
         info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
         info.hinstance = GetModuleHandleW(nullptr);
         info.hwnd = m_window;
+#elif defined(__APPLE__)
+        uint32_t width = 0, height = 0;
+        Size(width, height);
+        const auto create = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
+            instance.getProcAddr("vkCreateMetalSurfaceEXT"));
+        VkMetalSurfaceCreateInfoEXT info{};
+        info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+        info.pLayer = static_cast<CAMetalLayer*>(m_window.contentView.layer);
 #else
         const auto create = reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(
             instance.getProcAddr("vkCreateXcbSurfaceKHR"));
@@ -141,6 +185,15 @@ class Window {
 #ifdef _WIN32
     HWND m_window = nullptr;
     std::wstring m_className;
+#elif defined(__APPLE__)
+    static void PumpEvents() {
+        while (NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
+            untilDate:nil inMode:NSDefaultRunLoopMode dequeue:YES]) {
+            [NSApp sendEvent:event];
+        }
+        [NSApp updateWindows];
+    }
+    NSWindow* m_window = nil;
 #else
     xcb_connection_t* m_connection = nullptr;
     xcb_screen_t* m_screen = nullptr;
@@ -412,6 +465,12 @@ void Run() {
 }  // namespace
 
 int main() {
+#ifdef __APPLE__
+    @autoreleasepool {
+    [NSApplication sharedApplication];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [NSApp finishLaunching];
+#endif
     try {
         Run();
         RunNativeGui();
@@ -420,4 +479,7 @@ int main() {
         std::cerr << "Vulkan frame regression failed: " << error.what() << '\n';
         return 1;
     }
+#ifdef __APPLE__
+    }
+#endif
 }

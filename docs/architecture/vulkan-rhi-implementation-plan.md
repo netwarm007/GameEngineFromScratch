@@ -326,7 +326,7 @@ validation and user confirmation at each boundary.
 | 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
 | 3. Shared rendering passes | Confirmed by the user after exact-revision CI verification. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
 | 4. UI and applications | Confirmed by the user after reference verification. Explicit Viewer/Billiard selection preserves defaults. Stage C ownership, renderer rejection/failure/rollback/retry/descriptor cleanup, fonts/icons/previews/debug views, secondary renderer lifecycle, and application-only capture have focused checks. Windows/MoltenVK native runtime remains checkpoint 5 work. |
-| 5. Cross-platform acceptance | In progress. Complete original-backend regressions and explicit Vulkan coverage; inspect actual artifacts and record exact-revision evidence and limitations. Material filtering and explicit headless MoltenVK coverage are being added; native platform blockers remain open. |
+| 5. Cross-platform acceptance | In progress. Material filtering, existing-backend regressions, and explicit headless MoltenVK coverage have exact-revision evidence. Stable MoltenVK native lifecycle/application coverage is being added; Windows Vulkan and physical Retina/floating-input gates remain open. |
 
 At the start of each checkpoint, identify the production paths and focused
 tests. At its end, review the actual diff against this plan, record any justified
@@ -878,11 +878,28 @@ filtering/highlight differences remain. This completes the bounded material
 filtering/reference work, not checkpoint 5's native platform acceptance.
 
 Native runtime blockers must not be bypassed to finish this checkpoint.
-The installed Windows SDK predates maintenance1, and the local instance
-extension enumeration does not expose surface-maintenance1. The inspected
-[stable MoltenVK v1.4.2 extension list](https://github.com/KhronosGroup/MoltenVK/blob/v1.4.2/MoltenVK/MoltenVK/Layers/MVKExtensions.def)
-also does not advertise surface/swapchain-maintenance1. Upstream development
-support is not permission to replace stable dependencies. The user explicitly
+The installed Windows SDK predates maintenance1. A direct loader recheck found
+no instance maintenance extension and no swapchain-maintenance1 extension on
+the AMD adapter or either enumerated Dozen adapter. New headers alone cannot
+resolve that runtime gap. The latest stable Windows SDK reported by LunarG
+at recheck was 1.4.363.1, but installing it or changing a system driver is not
+part of this continuation.
+
+The earlier claim that stable MoltenVK v1.4.2 lacks the maintenance extensions
+was incorrect. The
+[tagged extension list](https://github.com/KhronosGroup/MoltenVK/blob/db66022459ffb663aa2b50f6b018bc2e124f5edf/MoltenVK/MoltenVK/Layers/MVKExtensions.def)
+declares both KHR and EXT surface/swapchain-maintenance1. Homebrew still selects
+stable 1.4.2. Extension declarations are not runtime feature or native acceptance
+evidence, but they justify trying the native path without replacing dependencies.
+The existing frame-loop regression now has Cocoa/CAMetalLayer windows and backing
+pixel-size queries. macOS full CI will exercise its strict main/secondary
+presentation fences, resize, rollback/retry, and GUI capture checks, then capture
+the actual Vulkan Viewer/Billiard applications with the same stable ICD.
+The native test reports the actual Cocoa backing scale: a scale-1 paravirtual
+result must not be presented as physical Retina or interactive floating-input
+acceptance. No new platform input backend is introduced.
+
+Upstream development support is not permission to replace stable dependencies. The user explicitly
 requires retaining stable dependencies and the strict presentation contract;
 development MoltenVK evaluation requires separate version/source, capability
 evidence, dependency scope, validation plan, and authorization.
@@ -919,8 +936,9 @@ evidence, dependency scope, validation plan, and authorization.
   capture additionally requires transfer-source surface usage and writes PPM,
   not PNG. Secondary Cocoa window scaling still needs real MoltenVK/Retina
   runtime checks.
-- **Checkpoint 5:** Windows Vulkan WSI and MoltenVK native runtime acceptance
-  remain blocked on a verified maintenance-aware SDK/driver/runtime.
+- **Checkpoint 5:** Windows Vulkan WSI remains blocked on a verified
+  maintenance-aware SDK/driver/runtime. Stable MoltenVK's declared maintenance
+  support is being tested natively, not inferred from its headless results.
   Stable MoltenVK headless CI passed on an Apple paravirtual device, separately
   from native Metal and without establishing WSI or physical Retina coverage.
   Linux lavapipe/Xcb is reference coverage, not hardware acceptance.
