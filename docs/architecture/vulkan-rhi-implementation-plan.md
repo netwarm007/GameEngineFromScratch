@@ -16,8 +16,9 @@ shadow fix (PR #67) and stage C ImGui lifecycle separation (PR #66).
 Checkpoint 1 is implemented, locally/CI validated, and confirmed by the user.
 Checkpoint 2 is implemented, exact-revision CI validated, and confirmed by the
 user. Checkpoints 3 and 4 have also received user confirmation after their
-exact-revision reference checks. Checkpoint 5 is in progress; native Windows
-Vulkan and MoltenVK acceptance remain blocked, not implicitly passed.
+exact-revision reference checks. Checkpoint 5 is in progress; stable MoltenVK
+native WSI has scale-1 paravirtual reference evidence. Windows Vulkan,
+physical Retina/mixed-DPI, and interactive floating-input acceptance remain open.
 Do not advance to the next checkpoint without
 the user's confirmation. Checkpoints do not require PRs; CI may be used during
 implementation with the user's authorization.
@@ -323,10 +324,10 @@ validation and user confirmation at each boundary.
 | --- | --- |
 | 0. Review upstream dependencies | Complete: reviewed merged point-shadow/stage C changes and integrated master `0a20412f26ffd0165faeef89af90d50b8b762f05` while preserving the plan. |
 | 1. Shader and ABI | Confirmed by the user after local and exact-revision CI checks passed. Shared shader variants, fixed bindings, C++ layout/stage-interface checks, capability inspection, and GPU ABI/BRDF readback are present. Native Vulkan graphics acceptance is not established by this checkpoint. |
-| 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI and MoltenVK remain unverified. |
+| 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI remains unverified; MoltenVK native reference evidence was added in checkpoint 5. |
 | 3. Shared rendering passes | Confirmed by the user after exact-revision CI verification. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
-| 4. UI and applications | Confirmed by the user after reference verification. Explicit Viewer/Billiard selection preserves defaults. Stage C ownership, renderer rejection/failure/rollback/retry/descriptor cleanup, fonts/icons/previews/debug views, secondary renderer lifecycle, and application-only capture have focused checks. Windows/MoltenVK native runtime remains checkpoint 5 work. |
-| 5. Cross-platform acceptance | In progress. Material filtering, existing-backend regressions, and explicit headless MoltenVK coverage have exact-revision evidence. Stable MoltenVK native lifecycle/application coverage is being added; Windows Vulkan and physical Retina/floating-input gates remain open. |
+| 4. UI and applications | Confirmed by the user after reference verification. Explicit Viewer/Billiard selection preserves defaults. Stage C ownership, renderer rejection/failure/rollback/retry/descriptor cleanup, fonts/icons/previews/debug views, secondary renderer lifecycle, and application-only capture have focused checks. Cross-platform native acceptance remains checkpoint 5 work. |
+| 5. Cross-platform acceptance | In progress. Material filtering, existing-backend regressions, and stable MoltenVK headless/native lifecycle/application coverage have exact-revision evidence. Windows Vulkan and physical Retina/mixed-DPI/floating-input gates remain open. |
 
 At the start of each checkpoint, identify the production paths and focused
 tests. At its end, review the actual diff against this plan, record any justified
@@ -892,12 +893,27 @@ declares both KHR and EXT surface/swapchain-maintenance1. Homebrew still selects
 stable 1.4.2. Extension declarations are not runtime feature or native acceptance
 evidence, but they justify trying the native path without replacing dependencies.
 The existing frame-loop regression now has Cocoa/CAMetalLayer windows and backing
-pixel-size queries. macOS full CI will exercise its strict main/secondary
-presentation fences, resize, rollback/retry, and GUI capture checks, then capture
-the actual Vulkan Viewer/Billiard applications with the same stable ICD.
-The native test reports the actual Cocoa backing scale: a scale-1 paravirtual
-result must not be presented as physical Retina or interactive floating-input
-acceptance. No new platform input backend is introduced.
+pixel-size queries. Revision `3ef2702d8d9983c2ecb3de626c5abd3388a8aac4` passed
+all configured jobs in
+[pipeline 1027](https://app.circleci.com/pipelines/github/netwarm007/GameEngineFromScratch/1027).
+Its [record](../verification/3ef2702d8d9983c2ecb3de626c5abd3388a8aac4.md)
+documents seven tests on both explicit Vulkan paths, including strict
+main/secondary presentation fences, resize, rollback/retry, and native GUI
+capture checks, plus inspected real MoltenVK Viewer/Billiard captures.
+The actual CI packages were stable MoltenVK 1.3.0 and Vulkan
+headers/loader/validation 1.4.315, not the current website's 1.4.2.
+The native test reported Cocoa backing scale 1 on an Apple paravirtual device.
+This is native WSI reference evidence, not physical Retina or interactive
+floating-input acceptance. No new platform input backend is introduced.
+
+The minimal remaining environment choices are an already-maintenance-capable
+Windows runner (matching surface/device extensions and feature enabled), and
+an accessible physical Retina Mac for cross-display scaling and actual
+keyboard/pointer/floating-window interactions. Stable SDK 1.4.363.1 can address
+Windows headers/validation but cannot add the missing driver extensions.
+No particular untested driver upgrade is claimed to solve that gap; system
+installation changes require authorization. The stable MoltenVK native run
+removes the need to propose a development runtime merely to obtain WSI coverage.
 
 Upstream development support is not permission to replace stable dependencies. The user explicitly
 requires retaining stable dependencies and the strict presentation contract;
@@ -927,8 +943,9 @@ evidence, dependency scope, validation plan, and authorization.
   readback nor the observed improvement establishes complete visual parity.
 - **Checkpoint 4:** Native composition, secondary renderer lifecycle, and real
   Viewer/Billiard assets/captures passed Linux reference CI and actual image
-  inspection. This does not establish floating-window platform input on Xcb
-  or Windows/MoltenVK runtime acceptance. Secondary presents currently wait a scoped
+  inspection; checkpoint 5 adds stable MoltenVK scale-1 native reference coverage.
+  This does not establish floating-window platform input on Xcb, physical Retina
+  interactions, or Windows Vulkan acceptance. Secondary presents currently wait a scoped
   maintenance fence synchronously; asynchronous secondary presentation is a
   performance follow-up, not grounds for weakening retirement guarantees.
 - **Checkpoint 4:** Native GUI composition requires an RGBA8/BGRA8 UNORM surface
@@ -937,10 +954,10 @@ evidence, dependency scope, validation plan, and authorization.
   not PNG. Secondary Cocoa window scaling still needs real MoltenVK/Retina
   runtime checks.
 - **Checkpoint 5:** Windows Vulkan WSI remains blocked on a verified
-  maintenance-aware SDK/driver/runtime. Stable MoltenVK's declared maintenance
-  support is being tested natively, not inferred from its headless results.
-  Stable MoltenVK headless CI passed on an Apple paravirtual device, separately
-  from native Metal and without establishing WSI or physical Retina coverage.
+  maintenance-aware SDK/driver/runtime. Stable MoltenVK headless and native
+  presentation tests and actual applications passed on an Apple paravirtual
+  device, separately from native Metal. Physical Retina/mixed-DPI and interactive
+  floating-window input remain unverified, not inferred from scale-1 WSI success.
   Linux lavapipe/Xcb is reference coverage, not hardware acceptance.
   No unsupported environment is given a device-idle retirement fallback.
 
