@@ -1744,8 +1744,6 @@ void VulkanRHI::getTextureFormat(const Image& img,
                 internal_format = img.is_float ? vk::Format::eR16G16Sfloat :
                     (img.is_signed ? vk::Format::eR16G16Snorm : vk::Format::eR16G16Unorm); return;
             case PIXEL_FORMAT::RGB16:
-                internal_format = img.is_float ? vk::Format::eR16G16B16Sfloat :
-                    (img.is_signed ? vk::Format::eR16G16B16Snorm : vk::Format::eR16G16B16Unorm); return;
             case PIXEL_FORMAT::RGBA16:
                 internal_format = img.is_float ? vk::Format::eR16G16B16A16Sfloat :
                     (img.is_signed ? vk::Format::eR16G16B16A16Snorm : vk::Format::eR16G16B16A16Unorm); return;
@@ -1756,8 +1754,6 @@ void VulkanRHI::getTextureFormat(const Image& img,
                 internal_format = img.is_float ? vk::Format::eR32G32Sfloat :
                     (img.is_signed ? vk::Format::eR32G32Sint : vk::Format::eR32G32Uint); return;
             case PIXEL_FORMAT::RGB32:
-                internal_format = img.is_float ? vk::Format::eR32G32B32Sfloat :
-                    (img.is_signed ? vk::Format::eR32G32B32Sint : vk::Format::eR32G32B32Uint); return;
             case PIXEL_FORMAT::RGBA32:
                 internal_format = img.is_float ? vk::Format::eR32G32B32A32Sfloat :
                     (img.is_signed ? vk::Format::eR32G32B32A32Sint : vk::Format::eR32G32B32A32Uint); return;

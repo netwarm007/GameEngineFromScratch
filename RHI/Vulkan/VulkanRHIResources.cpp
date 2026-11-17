@@ -461,8 +461,27 @@ VulkanRHI::Texture VulkanRHI::createTextureImage(Image& image) {
     }
     vk::Format format;
     getTextureFormat(image, format);
-    const bool expandRgb = !image.compressed && image.bitcount == 24;
-    const auto block = expandRgb ? Block{1, 1, 3} : FormatBlock(format);
+    const bool expandRgb = !image.compressed &&
+        (image.bitcount == 24 || image.pixel_format == PIXEL_FORMAT::RGB16 ||
+         image.pixel_format == PIXEL_FORMAT::RGB32);
+    const auto outputBlock = FormatBlock(format);
+    const auto componentBytes = expandRgb ? outputBlock.bytes / 4 : 0;
+    const auto block = expandRgb ? Block{1, 1, componentBytes * 3} : outputBlock;
+    std::array<uint8_t, 4> alpha{};
+    if (expandRgb) {
+        if (componentBytes == 1) {
+            alpha[0] = image.is_signed ? 127 : 255;
+        } else if (componentBytes == 2) {
+            const uint16_t value = image.is_float ? 0x3c00 : (image.is_signed ? 0x7fff : 0xffff);
+            std::memcpy(alpha.data(), &value, sizeof(value));
+        } else if (image.is_float) {
+            const float value = 1.0f;
+            std::memcpy(alpha.data(), &value, sizeof(value));
+        } else {
+            const uint32_t value = 1;
+            std::memcpy(alpha.data(), &value, sizeof(value));
+        }
+    }
     const auto levels = image.mipmaps.empty()
         ? std::vector<Image::Mipmap>{Image::Mipmap(image.Width, image.Height, image.pitch, 0, image.data_size)}
         : image.mipmaps;
@@ -485,9 +504,9 @@ VulkanRHI::Texture VulkanRHI::createTextureImage(Image& image) {
             const auto* input = image.data + source.offset + row * source.pitch;
             if (expandRgb) {
                 for (uint32_t x = 0; x < source.Width; ++x) {
-                    const auto output = (row * source.Width + x) * 4;
-                    std::memcpy(packed.data() + output, input + size_t{x} * 3, 3);
-                    packed[output + 3] = image.is_signed ? 127 : 255;
+                    const auto output = (row * source.Width + x) * outputBlock.bytes;
+                    std::memcpy(packed.data() + output, input + size_t{x} * block.bytes, block.bytes);
+                    std::memcpy(packed.data() + output + block.bytes, alpha.data(), componentBytes);
                 }
             } else {
                 std::memcpy(packed.data() + row * rowBytes, input, static_cast<size_t>(rowBytes));

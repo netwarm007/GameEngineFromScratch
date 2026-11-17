@@ -740,6 +740,11 @@ Initialization also accepts the official Vulkan host-allocation callbacks.
 The regression rejects actual backend allocations and checks cleanup, borrowed
 context preservation, and successful retry; it does not replace the dispatch
 table of an already initialized ImGui context.
+The first real Viewer run exposed unsupported three-component 16-bit image
+storage on lavapipe. The Vulkan upload adapter expands RGB16/RGB32 assets into
+matching RGBA storage, as it already does for RGB8, preserving component bits,
+row padding, supplied mips, and a type-correct opaque alpha. This adaptation is
+backend-local; image parsers and shared shader color semantics remain unchanged.
 
 GUI subresource views retain their parent images after source-handle release.
 Readback selects the original mip and layer rather than treating a view as

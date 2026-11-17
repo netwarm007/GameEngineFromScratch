@@ -140,6 +140,44 @@ void CheckSubresources(RHI& rhi) {
     }
 }
 
+template <typename Component>
+void CheckWideRgbUpload(RHI& rhi, bool floating, bool signedValues,
+                        Component alpha, vk::Format format) {
+    My::Image image;
+    image.Width = 3;
+    image.Height = 2;
+    image.bitcount = 24 * sizeof(Component);
+    image.bitdepth = 8 * sizeof(Component);
+    image.pixel_format = sizeof(Component) == 2 ? My::PIXEL_FORMAT::RGB16 : My::PIXEL_FORMAT::RGB32;
+    image.is_float = floating;
+    image.is_signed = signedValues;
+    image.pitch = (image.Width * 3 * sizeof(Component) + 7) & ~size_t{7};
+    const auto mipPitch = (3 * sizeof(Component) + 7) & ~size_t{7};
+    const auto mipOffset = image.pitch * image.Height;
+    image.data_size = mipOffset + mipPitch;
+    image.data = new uint8_t[image.data_size];
+    std::memset(image.data, 0xcd, image.data_size);
+    std::vector<Component> expected;
+    for (size_t y = 0; y < image.Height; ++y) {
+        for (size_t x = 0; x < image.Width; ++x) {
+            const std::array<Component, 3> color{
+                static_cast<Component>(x + 1), static_cast<Component>(y + 5),
+                static_cast<Component>(x + y + 9)};
+            std::memcpy(image.data + y * image.pitch + x * sizeof(color), color.data(), sizeof(color));
+            expected.insert(expected.end(), color.begin(), color.end());
+            expected.push_back(alpha);
+        }
+    }
+    const std::array<Component, 4> mip{Component{12}, Component{23}, Component{34}, alpha};
+    std::memcpy(image.data + mipOffset, mip.data(), 3 * sizeof(Component));
+    image.mipmaps.emplace_back(3, 2, image.pitch, 0, mipOffset);
+    image.mipmaps.emplace_back(1, 1, mipPitch, mipOffset, mipPitch);
+    Texture converted{rhi, rhi.createTextureImage(image)};
+    Require(converted.value.format == format, "Wide RGB image did not select compatible RGBA storage");
+    Bytes(rhi.ReadTexture(converted.value), expected.data(), expected.size() * sizeof(Component));
+    Bytes(rhi.ReadTexture(converted.value, 1), mip.data(), sizeof(mip));
+}
+
 void CheckImageUploads(RHI& rhi) {
     My::Image image;
     image.Width = image.Height = 3;
@@ -203,6 +241,10 @@ void CheckImageUploads(RHI& rhi) {
     Require(signedRgb.value.format == vk::Format::eR8G8B8A8Snorm,
             "Signed image metadata was lost during RGB expansion");
     Bytes(rhi.ReadTexture(signedRgb.value), rgba.data(), rgba.size());
+    CheckWideRgbUpload<uint16_t>(rhi, false, false, 65535, vk::Format::eR16G16B16A16Unorm);
+    CheckWideRgbUpload<uint16_t>(rhi, false, true, 32767, vk::Format::eR16G16B16A16Snorm);
+    CheckWideRgbUpload<uint16_t>(rhi, true, false, 0x3c00, vk::Format::eR16G16B16A16Sfloat);
+    CheckWideRgbUpload<float>(rhi, true, false, 1.0f, vk::Format::eR32G32B32A32Sfloat);
 }
 
 void CheckAbandonedCommands(RHI& rhi) {
