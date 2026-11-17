@@ -5,16 +5,17 @@
 
 #include "FrameAllocator.hpp"
 #include "IAllocator.hpp"
+#include "MemoryManager.hpp"
 #include "PmrAdapter.hpp"
 #include "RoutingAllocator.hpp"
 #include "TrackingAllocator.hpp"
 
 namespace My {
 
-// Engine-wide allocator stack owned by the application: a RoutingAllocator
-// over the page source, optionally wrapped by a TrackingAllocator that reports
-// leaks on destruction. Must be destroyed before the IMemoryManager it draws
-// pages from is finalized.
+// Engine-wide allocator stack owned by the application: a RoutingAllocator and
+// a per-frame arena over a page source, optionally wrapped by a
+// TrackingAllocator that reports leaks on destruction. With an external page
+// source the system must be destroyed before that source is finalized.
 class MemorySystem {
    public:
     struct Config {
@@ -23,7 +24,11 @@ class MemorySystem {
         bool tracking = false;
     };
 
+    // Draws pages from pMmgr, which must outlive the system.
     MemorySystem(IMemoryManager* pMmgr, const Config& config);
+    // Draws pages from a private page source owned by the system, so the
+    // system's lifetime is independent of any registered runtime module.
+    explicit MemorySystem(const Config& config);
     MemorySystem(const MemorySystem&) = delete;
     MemorySystem& operator=(const MemorySystem&) = delete;
 
@@ -48,6 +53,9 @@ class MemorySystem {
     TrackingAllocator* Tracking() { return m_Tracking.get(); }
 
    private:
+    MemorySystem(std::unique_ptr<MemoryManager> pages, const Config& config);
+
+    std::unique_ptr<MemoryManager> m_OwnedPages;  // destroyed last
     RoutingAllocator m_Routing;
     FrameAllocator m_Frame;
     PmrAdapter<FrameAllocator> m_FrameResource;

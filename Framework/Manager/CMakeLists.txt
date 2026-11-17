@@ -32,6 +32,7 @@ add_library(Manager
         ThreadCacheAllocator.cpp
         RoutingAllocator.cpp
         MemorySystem.cpp
+        EngineAllocation.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp

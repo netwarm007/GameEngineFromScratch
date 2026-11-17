@@ -25,7 +25,8 @@ set(ALLOCATOR_SOURCES
     "${ALLOCATOR_DIR}/GpuSubAllocator.cpp"
     "${ALLOCATOR_DIR}/ThreadCacheAllocator.cpp"
     "${ALLOCATOR_DIR}/RoutingAllocator.cpp"
-    "${ALLOCATOR_DIR}/MemorySystem.cpp")
+    "${ALLOCATOR_DIR}/MemorySystem.cpp"
+    "${ALLOCATOR_DIR}/EngineAllocation.cpp")
 
 find_package(Threads REQUIRED)
 
@@ -33,7 +34,7 @@ foreach(TEST_CASE MemoryAllocatorTest LinearAllocatorTest StackAllocatorTest
     FrameAllocatorTest RingAllocatorTest PmrAdapterTest SlabAllocatorTest
     SizeClassAllocatorTest TlsfAllocatorTest BuddyAllocatorTest
     TrackingAllocatorTest GpuSubAllocatorTest ThreadCacheAllocatorTest
-    RoutingAllocatorTest MemorySystemTest)
+    RoutingAllocatorTest MemorySystemTest EngineAllocationTest)
     add_executable(${TEST_CASE} ${TEST_CASE}.cpp ${ALLOCATOR_SOURCES})
     target_include_directories(${TEST_CASE} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Common"

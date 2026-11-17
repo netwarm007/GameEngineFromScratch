@@ -5,6 +5,15 @@
 
 namespace My {
 
+MemorySystem::MemorySystem(const Config& config)
+    : MemorySystem(std::make_unique<MemoryManager>(), config) {}
+
+MemorySystem::MemorySystem(std::unique_ptr<MemoryManager> pages,
+                           const Config& config)
+    : MemorySystem(pages.get(), config) {
+    m_OwnedPages = std::move(pages);
+}
+
 MemorySystem::MemorySystem(IMemoryManager* pMmgr, const Config& config)
     : m_Routing(pMmgr, config.largeCapacity),
       m_Frame(pMmgr, config.frameCapacity),

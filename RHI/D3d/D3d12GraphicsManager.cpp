@@ -11,6 +11,7 @@
 #include "D3d12Utility.hpp"
 #include "IApplication.hpp"
 #include "IPhysicsManager.hpp"
+#include "EngineAllocation.hpp"
 #include "MemorySystem.hpp"
 
 #include "D3d12RHI.hpp"
@@ -472,7 +473,7 @@ void D3d12GraphicsManager::initializeGeometries(const Scene& scene) {
             }
 
             for (size_t group = 0; group < pMesh->GetIndexGroupCount(); ++group) {
-                auto dbc = make_shared<D3dDrawBatchContext>();
+                auto dbc = MakeEngineShared<D3dDrawBatchContext>();
                 dbc->property_offset = propertyOffset;
                 const SceneObjectIndexArray& index_array = pMesh->GetIndexArray(group);
                 dbc->index_offset = CreateIndexBuffer(index_array);

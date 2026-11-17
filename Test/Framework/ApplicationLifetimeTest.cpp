@@ -1,10 +1,12 @@
 #include <iostream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "BaseApplication.hpp"
 #include "MemoryManager.hpp"
+#include "EngineAllocation.hpp"
 #include "MemorySystem.hpp"
 
 using namespace My;
@@ -291,20 +293,40 @@ void TestGuiPlatformLifetime() {
 }  // namespace
 
 #ifdef USE_ENGINE_ALLOCATORS
+// Records whether the memory system still exists when a module finalizes.
+class AllocatingModule : public RecordingModule {
+   public:
+    AllocatingModule(RecordingApplication& app) : RecordingModule("alloc", app),
+        m_App(app) {}
+    int Initialize() override {
+        m_Object = MakeEngineShared<int>(42);
+        return RecordingModule::Initialize();
+    }
+    void Finalize() override {
+        sawSystemAtFinalize = m_App.GetMemorySystem() != nullptr;
+        m_Object.reset();
+        RecordingModule::Finalize();
+    }
+    bool sawSystemAtFinalize = false;
+
+   private:
+    RecordingApplication& m_App;
+    std::shared_ptr<int> m_Object;
+};
+
 void TestMemorySystemLifetime() {
     {
         RecordingApplication app;
-        MemoryManager mm;
+        AllocatingModule module(app);
         app.CreateMainWindow();
-        app.RegisterManagerModule(&mm);
+        app.RegisterManagerModule(static_cast<IRuntimeModule*>(&module));
         Expect(app.GetMemorySystem() == nullptr,
                "no memory system before initialization");
-        Expect(app.Initialize() == 0, "application with memory manager starts");
+        Expect(app.Initialize() == 0, "application starts");
         Expect(app.GetMemorySystem() && app.GetMemorySystem()->IsConfigured(),
                "memory system exists while running");
-        void* p = app.GetMemorySystem()->Allocator().Allocate(64);
-        Expect(p != nullptr, "engine allocation works");
-        app.GetMemorySystem()->Allocator().Free(p);
+        Expect(EngineAllocationCount() >= 1,
+               "module objects come from the engine allocator");
         const auto frame = app.GetMemorySystem()->Frame().FrameNumber();
         app.Tick();
         Expect(app.GetMemorySystem()->Frame().FrameNumber() == frame + 1,
@@ -312,32 +334,20 @@ void TestMemorySystemLifetime() {
         Expect(app.Initialize() != 0 && app.GetMemorySystem() != nullptr,
                "rejected re-initialization keeps the memory system");
         app.Finalize();
+        Expect(module.sawSystemAtFinalize,
+               "memory system outlives module finalization");
         Expect(app.GetMemorySystem() == nullptr,
-               "memory system is released before the memory manager finalizes");
-        Expect(mm.PageCount() == 0, "no pages remain after shutdown");
+               "memory system is released after shutdown");
     }
     {
         RecordingApplication app;
-        MemoryManager mm;
         RecordingModule failing("failing", app);
         failing.result = 17;
         app.CreateMainWindow();
-        app.RegisterManagerModule(&mm);
-        // Register as a plain module so it does not replace the page source.
         app.RegisterManagerModule(static_cast<IRuntimeModule*>(&failing));
         Expect(app.Initialize() == 17, "module failure propagates");
         Expect(app.GetMemorySystem() == nullptr,
-               "rollback releases pages before the memory manager finalizes");
-        app.Finalize();
-    }
-    {
-        RecordingApplication app;
-        RecordingModule module("module", app);  // page source that always fails
-        app.CreateMainWindow();
-        app.RegisterManagerModule(&module);
-        Expect(app.Initialize() == 0, "unusable page source is tolerated");
-        Expect(app.GetMemorySystem() == nullptr,
-               "unconfigured memory system is discarded");
+               "failed initialization releases the memory system");
         app.Finalize();
     }
 }

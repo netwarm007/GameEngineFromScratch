@@ -97,7 +97,8 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | `ThreadCacheAllocator` serves only 1..512 bytes, cannot detect double frees (cached objects look live), and returns a thread's cache only on thread exit, `FlushThreadCache()` or `Trim()`. `FreeAll()` must not run concurrently. | Use `TrackingAllocator` on top for double-free detection; routing facade (M8). |
 | `GpuSubAllocator` manages one heap (no growth or multiple heaps), is single-threaded, uses O(log n) ordered maps (not a constant-time TLSF), and is not yet wired to any RHI backend (Vulkan/D3D12/Metal). | Heap growth and RHI binding with engine integration (M8). |
 | The frame arena has a fixed 1 MiB per frame and throws `std::bad_alloc` when exhausted (no fallback); the only pilot site is Direct3D 12 on Windows, so OpenGL/Metal/Vulkan do not exercise it. | More sites or a fallback if profiling needs it (M8.6). |
-| `MemorySystem` exists only when `USE_ENGINE_ALLOCATORS` is ON and the registered memory manager supplies pages, but no engine module allocates from it yet; the ON path is exercised by CI on Linux and Windows (not macOS). | Pilots (M8.3, M8.4); ON on all platforms in the M8.6 comparison. |
+| `MemorySystem` exists only when `USE_ENGINE_ALLOCATORS` is ON; pilots are the D3D12 vertex-view scratch (M8.3) and the D3D12/OpenGL `DrawBatchContext` objects (M8.4, larger than 512 B so served by TLSF); the ON path is exercised by CI on Linux and Windows (not macOS). | ON on all platforms in the M8.6 comparison. |
+| `SetEngineAllocator` must only change while no thread allocates through the hook; objects must not outlive the `MemorySystem` (a block from a replaced or unhooked allocator is leaked, not freed). | Lifetime ordering is enforced by `BaseApplication`; revisit in M8.5. |
 | `RoutingAllocator` has a fixed-capacity TLSF arena behind one mutex (large path serializes), small double frees are not detected, and over-aligned small requests use the TLSF path. | Pool growth and per-thread large arenas if profiling shows contention (M8.6); `TrackingAllocator` for double frees (M8.5). |
 
 ## Foundation improvements
@@ -211,7 +212,7 @@ Policy: CMake options `USE_ENGINE_ALLOCATORS` (default OFF) and
 | M8.1 | `RoutingAllocator` facade with aligned allocation; unit and multithreaded tests (`RoutingAllocatorTest`). |
 | M8.2 | `MemorySystem` (routing allocator, optional tracking) owned by `BaseApplication`; CMake options `USE_ENGINE_ALLOCATORS`, `ENABLE_ALLOCATOR_TRACKING` (both default OFF); tests `MemorySystemTest`, `ApplicationLifetimeTest`. The Linux CI build turns both ON; Windows and macOS build with the switch OFF. |
 | M8.3 | Per-frame pilot: `MemorySystem` owns a `FrameAllocator` (1 MiB x 2) exposed as a pmr `FrameResource()`, recycled by `BaseApplication::Tick`; pilot site is the per-draw vertex-buffer-view scratch in `D3d12GraphicsManager::DrawBatch`. The Windows CI build also turns the switch ON. |
-| M8.4 | Small-object pilot (class-level `operator new` or pmr). |
+| M8.4 | Small-object pilot: `MemorySystem` now owns a private page source and lives from before module initialization until after module finalization. `EngineAllocation` (`SetEngineAllocator`, `EngineAllocate/Free`, `MakeEngineShared`) tags every block with an allocator generation so blocks return to their origin; pilot types are the D3D12 and OpenGL `DrawBatchContext` subclasses. |
 | M8.5 | Shutdown leak report and statistics output; tracking on in Debug. |
 | M8.6 | Compare switch on/off; decide whether to enable by default. |
 

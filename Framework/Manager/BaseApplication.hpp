@@ -106,6 +106,7 @@ class BaseApplication : _implements_ IApplication {
 #endif
 
    private:
+    void ReleaseMemorySystem();
     bool m_GraphicsInitialized = false;
     bool m_GuiPlatformInitialized = false;
     RuntimeModuleGroup runtime_modules;

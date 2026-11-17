@@ -16,6 +16,7 @@
 #endif
 
 #include "BaseApplication.hpp"
+#include "EngineAllocation.hpp"
 
 using namespace std;
 using namespace My;
@@ -292,7 +293,7 @@ void OpenGLGraphicsManagerCommonBase::initializeGeometries(const Scene& scene) {
 
                 m_Buffers.push_back(buffer_id);
 
-                auto dbc = make_shared<OpenGLDrawBatchContext>();
+                auto dbc = MakeEngineShared<OpenGLDrawBatchContext>();
 
                 const auto material_index = index_array.GetMaterialIndex();
                 const auto& material_key =

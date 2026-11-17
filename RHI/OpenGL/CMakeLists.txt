@@ -4,6 +4,7 @@ add_library(OpenGLRHI
         OpenGLESPipelineStateManager.cpp
         OpenGLGraphicsManagerCommonBase.cpp
 )
+target_link_libraries(OpenGLRHI Manager)
 ELSE(ANDROID OR WA)
 find_package(OpenGL REQUIRED)
 add_library(OpenGLRHI
@@ -14,6 +15,7 @@ add_library(OpenGLRHI
         imgui_impl_opengl3.cpp
 )
 target_link_libraries(OpenGLRHI
+        Manager
         ${OPENGL_LIBRARIES}
 )
 ENDIF(ANDROID OR WA)
