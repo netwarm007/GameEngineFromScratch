@@ -380,7 +380,7 @@ isolation and native rendering of every scene-node icon kind are not claimed.
 
 ### D4a. Explicit Viewer scene dependency
 
-**In progress.** ViewerLogic takes a required borrowed `ISceneManager&` instead
+**Accepted.** ViewerLogic takes a required borrowed `ISceneManager&` instead
 of downcasting Application to locate it on initialization and each input event.
 Viewer constructs the scene manager before logic so the service outlives its
 consumer. Application remains responsible for command-line arguments and quit
@@ -397,6 +397,12 @@ default/custom loading and errors, invalid cycle options, phase order, fresh
 lifecycles, quit-on-load-failure, directional camera/target movement, drag
 rotation, scene replacement and absent scenes/cameras. Then build Viewer and
 run focused tests, exact-revision three-platform CI and native artifact checks.
+
+Source `a96a0d7e41fc7964f48b3bd952e6dd0f88a4b589` passed CircleCI pipeline
+1012 on Windows (job 4600, 60 tests), Linux (4599, 57 tests) and macOS
+(4598, 57 tests). Twelve native screenshots, phase markers/loading order and
+Billiard physics evidence were inspected. See the
+[revision-specific verification record](../verification/a96a0d7e41fc7964f48b3bd952e6dd0f88a4b589.md).
 
 #### Known limitations and follow-ups (D4a)
 
