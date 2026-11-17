@@ -9,6 +9,7 @@
 #include "AssetLoader.hpp"
 #include "BRDFIntegrator.hpp"
 #include "BrdfReference.hpp"
+#include "ISceneManager.hpp"
 
 namespace {
 using namespace My;
@@ -51,17 +52,16 @@ class TestGraphics final : public VulkanGraphicsManager {
     using VulkanGraphicsManager::BeginCompute;
     using VulkanGraphicsManager::EndCompute;
     using VulkanGraphicsManager::EndScene;
+    using VulkanGraphicsManager::BeginScene;
 
     Frame& FirstFrame() { return m_Frames.front(); }
+    const std::vector<Frame>& Frames() const { return m_Frames; }
     void ShareGlobals() {
         for (auto& frame : m_Frames) frame.brdfLUT = m_Frames.front().brdfLUT;
     }
 };
 
-void CheckBrdf(TestGraphics& graphics, BRDFIntegrator& pass, Frame& frame) {
-    pass.BeginPass(frame);
-    pass.Dispatch(frame);
-    pass.EndPass(frame);
+void VerifyBrdf(TestGraphics& graphics, const Frame& frame) {
     Require(frame.brdfLUT.handler && frame.brdfLUT.pixel_format == PIXEL_FORMAT::RG32,
             "Shared BRDF pass did not create its engine texture descriptor");
     const auto bytes = graphics.ReadTexture(frame.brdfLUT);
@@ -77,6 +77,66 @@ void CheckBrdf(TestGraphics& graphics, BRDFIntegrator& pass, Frame& frame) {
                         std::abs(pixel[channel] - reference[channel % 2]) <= 0.001,
                     "Shared BRDF pass output differs from the independent CPU reference");
         }
+    }
+}
+
+void CheckBrdf(TestGraphics& graphics, BRDFIntegrator& pass, Frame& frame) {
+    pass.BeginPass(frame);
+    pass.Dispatch(frame);
+    pass.EndPass(frame);
+    VerifyBrdf(graphics, frame);
+}
+
+class TestScenes final : public ISceneManager {
+   public:
+    int Initialize() final { return 0; }
+    void Finalize() final {}
+    void Tick() final {}
+    int LoadScene(const char*) final { return 0; }
+    uint64_t GetSceneRevision() const final { return 0; }
+    const std::shared_ptr<Scene> GetSceneForRendering() const final { return {}; }
+    const std::shared_ptr<Scene> GetSceneForPhysicalSimulation() const final { return {}; }
+    void ResetScene() final {}
+    std::weak_ptr<BaseSceneNode> GetRootNode() const final { return {}; }
+    std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(const std::string&) const final { return {}; }
+    std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(const std::string&) const final { return {}; }
+};
+
+void CheckSceneInitialization(VulkanRHI& rhi, VulkanPipelineStateManager& pipelines,
+                              TestApplication& app) {
+    TestScenes scenes;
+    TestGraphics graphics(rhi, scenes, pipelines);
+    graphics.SetAppPointer(&app);
+    Scene scene;
+    scene.SkyBox.reset();
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        Require(graphics.Initialize() == 0, "Scene graphics initialization failed");
+        graphics.BeginScene(scene);
+        VerifyBrdf(graphics, graphics.FirstFrame());
+        const auto first = graphics.FirstFrame();
+        for (const auto& frame : graphics.Frames()) {
+            Require(frame.brdfLUT.handler == first.brdfLUT.handler &&
+                        frame.frameContext.cubeShadowMap.handler ==
+                            first.frameContext.cubeShadowMap.handler &&
+                        frame.depthTexture.handler == first.depthTexture.handler &&
+                        frame.colorTextures.size() == 1 && frame.colorTextures[0].handler,
+                    "Shared scene initialization did not preserve framebuffer/global borrowing");
+        }
+        Require(graphics.Frames()[0].colorTextures[0].handler !=
+                    graphics.Frames()[1].colorTextures[0].handler,
+                "In-flight frames alias the same offscreen color target");
+        graphics.ResizeCanvas(24, 12);
+        Reject<std::invalid_argument>([&] { graphics.ReadTexture(first.colorTextures[0]); },
+                                      "Resize retained a stale offscreen color allocation");
+        Require(graphics.FirstFrame().brdfLUT.handler == first.brdfLUT.handler &&
+                    graphics.FirstFrame().colorTextures[0].width == 24 &&
+                    graphics.FirstFrame().depthTexture.height == 12,
+                "Resize replaced scene globals or failed to update borrowed targets");
+        graphics.EndScene();
+        Reject<std::invalid_argument>([&] { graphics.ReadTexture(first.frameContext.cubeShadowMap); },
+                                      "Scene teardown retained a shared shadow-array allocation");
+        graphics.Finalize();
+        graphics.Finalize();
     }
 }
 
@@ -195,6 +255,7 @@ int main(int argc, char** argv) {
             Require(graphics.Initialize() == 0, "Graphics reinitialization failed");
             frame = Frame{};
             CheckBrdf(graphics, pass, frame);
+            CheckSceneInitialization(rhi, pipelines, app);
             graphics.BeginCompute();
             graphics.SetPipelineState(pipelines.GetPipelineState("PBR BRDF CS"), frame);
             graphics.BindTextureForWrite(frame.brdfLUT, 0);

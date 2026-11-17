@@ -621,6 +621,11 @@ VulkanGraphicsManager with the production pipeline manager. It checks GPU
 samples against the independent CPU reference within 0.001, repeated dispatch,
 shared-global cleanup, stale descriptors, independent-texture preservation,
 scene reload, finalize/reinitialize, registry teardown, and invalid dispatches.
+It also runs GraphicsManager::BeginScene itself with an empty scene and the
+normal service-injected constructor: the shared scheduler produces the checked
+BRDF, allocates shared shadow arrays and borrowed per-frame targets, and survives
+resize/teardown/reinitialization without replacing globals or retaining old
+target handles. This does not execute or verify the still-pending draw passes.
 The standalone regression now also requires pinned ImGui sources and zlib
 headers/library to link the unchanged shared render services; it creates no
 ImGui context or window and does not verify Vulkan UI rendering.
