@@ -119,7 +119,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | M5 | `TlsfAllocator` and `BuddyAllocator`; tests (`TlsfAllocatorTest`, `BuddyAllocatorTest`). | Done (CI-verified, `docs/verification/e81a6ccb009943eac7627ec6fc16acdb59810421.md`) |
 | M6 | `TrackingAllocator` debug decorator: statistics, tags, guard bytes, registry-based free checks, leak reports; tests (`TrackingAllocatorTest`). | Done (CI-verified, `docs/verification/05b0b2616b0c56f5bca8b66f46147da3c254c326.md`) |
 | M7 | `GpuSubAllocator` (offset allocator with fence-based deferred free) and `ThreadCacheAllocator` (per-thread caches over `SizeClassAllocator`); tests (`GpuSubAllocatorTest`, `ThreadCacheAllocatorTest`). | Done (CI-verified, `docs/verification/857656ce14a8d5d9192cd4a4e9b6ef7f6caae43e.md`) |
-| M8 | Engine integration (separate decision). | Not started |
+| M8 | Engine integration, pilot only and off by default (see "M8 plan"). | Planned |
 
 M1 notes: `MemoryManager` no longer depends on `portable.hpp`/`config.h`, so
 allocator tests build standalone (`cmake -S Test/Memory`). `IMemoryManager`
@@ -183,3 +183,44 @@ alignment-failure tests must not assume buffer addresses (a large alignment
 boundary may fall inside a small buffer).
 
 Checkpoint scopes may be re-split as implementation reveals complexity.
+
+## M8 plan: engine integration
+
+Goal: use the allocators in the engine behind switches, without changing
+behavior or rendering output. Current state: `MemoryManager` is only a page
+source registered with `BaseApplication`; no module uses an allocator and there
+is no global `operator new` override.
+
+In scope: a `MemorySystem` owned by the application; a routing facade (blocks
+up to 512 bytes to `ThreadCacheAllocator`, larger to `TlsfAllocator`, with
+aligned allocation); `FrameAllocator` plus `PmrAdapter` for per-frame data;
+optional `TrackingAllocator` with a leak report at shutdown; periodic statistics
+from `MemoryManager::Tick`.
+
+Out of scope: global `new`/`delete` replacement, bulk container conversion, and
+binding `GpuSubAllocator` to Vulkan/D3D12/Metal heaps (a later checkpoint).
+
+Policy: CMake options `USE_ENGINE_ALLOCATORS` (default OFF) and
+`ENABLE_ALLOCATOR_TRACKING`. Pilot only 1-2 per-frame temporary data sites and
+1-2 high-frequency small object types.
+
+| Step | Scope |
+| --- | --- |
+| M8.1 | Routing facade with aligned allocation; unit and multithreaded tests. |
+| M8.2 | `MemorySystem` wiring in `BaseApplication`; CMake options. |
+| M8.3 | Per-frame pilot with `FrameAllocator` and pmr containers. |
+| M8.4 | Small-object pilot (class-level `operator new` or pmr). |
+| M8.5 | Shutdown leak report and statistics output; tracking on in Debug. |
+| M8.6 | Compare switch on/off; decide whether to enable by default. |
+
+Tests: facade routing (512/513 boundary, alignment, double free), stress under
+ASan/UBSan/TSan, `Test/Framework` lifecycle tests with the switch on and off
+(no leaks), screenshot parity between on and off.
+
+Acceptance: each step passes Windows, Linux and macOS CircleCI on its exact
+revision with a verification record; switch OFF behaves exactly as today;
+switch ON passes all existing tests and screenshot checks; no leaks reported.
+
+Risks: Windows debug-container lifetime with pmr (seen in M3);
+`ThreadCacheAllocator::FreeAll` must not run concurrently; cross-module frees
+must match their allocator, hence the small pilot scope.
