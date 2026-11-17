@@ -31,9 +31,16 @@ add_library(Manager
         GpuSubAllocator.cpp
         ThreadCacheAllocator.cpp
         RoutingAllocator.cpp
+        MemorySystem.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp
         SlabAllocator.cpp
 )
 target_link_libraries(Manager PUBLIC AssetIO SceneServices SceneResources RenderServices)
+if(USE_ENGINE_ALLOCATORS)
+    target_compile_definitions(Manager PUBLIC USE_ENGINE_ALLOCATORS)
+    if(ENABLE_ALLOCATOR_TRACKING)
+        target_compile_definitions(Manager PUBLIC ENABLE_ALLOCATOR_TRACKING)
+    endif()
+endif()

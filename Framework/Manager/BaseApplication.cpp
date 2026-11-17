@@ -4,9 +4,12 @@
 #include <iostream>
 
 #include "FrameScheduler.hpp"
+#include "MemorySystem.hpp"
 
 using namespace My;
 using namespace std;
+
+BaseApplication::~BaseApplication() = default;
 
 // Parse command line, read configuration, initialize all sub modules
 int BaseApplication::Initialize() {
@@ -32,12 +35,32 @@ int BaseApplication::Initialize() {
         m_GuiPlatformInitialized = true;
     }
 
-    return runtime_modules.Initialize([this] { WaitForGraphicsIdle(); });
+#ifdef USE_ENGINE_ALLOCATORS
+    if (!m_pMemorySystem && m_pMemoryManager) {
+        MemorySystem::Config config;
+#ifdef ENABLE_ALLOCATOR_TRACKING
+        config.tracking = true;
+#endif
+        auto system = make_unique<MemorySystem>(m_pMemoryManager, config);
+        if (system->IsConfigured()) {
+            m_pMemorySystem = std::move(system);
+        } else {
+            cerr << "Engine allocators unavailable; using default heap\n";
+        }
+    }
+#endif
+
+    // Pages must return to the memory manager before its module finalizes.
+    return runtime_modules.Initialize([this] {
+        WaitForGraphicsIdle();
+        m_pMemorySystem.reset();
+    });
 }
 
 // Finalize all sub modules and clean up all runtime temporary files.
 void BaseApplication::Finalize() {
     WaitForGraphicsIdle();
+    m_pMemorySystem.reset();
     runtime_modules.Finalize();
     if (m_GuiPlatformInitialized) {
         FinalizeGuiPlatform();

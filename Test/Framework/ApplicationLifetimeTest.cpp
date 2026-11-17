@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "BaseApplication.hpp"
+#include "MemoryManager.hpp"
+#include "MemorySystem.hpp"
 
 using namespace My;
 
@@ -288,6 +290,55 @@ void TestGuiPlatformLifetime() {
 }
 }  // namespace
 
+#ifdef USE_ENGINE_ALLOCATORS
+void TestMemorySystemLifetime() {
+    {
+        RecordingApplication app;
+        MemoryManager mm;
+        app.CreateMainWindow();
+        app.RegisterManagerModule(&mm);
+        Expect(app.GetMemorySystem() == nullptr,
+               "no memory system before initialization");
+        Expect(app.Initialize() == 0, "application with memory manager starts");
+        Expect(app.GetMemorySystem() && app.GetMemorySystem()->IsConfigured(),
+               "memory system exists while running");
+        void* p = app.GetMemorySystem()->Allocator().Allocate(64);
+        Expect(p != nullptr, "engine allocation works");
+        app.GetMemorySystem()->Allocator().Free(p);
+        Expect(app.Initialize() != 0 && app.GetMemorySystem() != nullptr,
+               "rejected re-initialization keeps the memory system");
+        app.Finalize();
+        Expect(app.GetMemorySystem() == nullptr,
+               "memory system is released before the memory manager finalizes");
+        Expect(mm.PageCount() == 0, "no pages remain after shutdown");
+    }
+    {
+        RecordingApplication app;
+        MemoryManager mm;
+        RecordingModule failing("failing", app);
+        failing.result = 17;
+        app.CreateMainWindow();
+        app.RegisterManagerModule(&mm);
+        // Register as a plain module so it does not replace the page source.
+        app.RegisterManagerModule(static_cast<IRuntimeModule*>(&failing));
+        Expect(app.Initialize() == 17, "module failure propagates");
+        Expect(app.GetMemorySystem() == nullptr,
+               "rollback releases pages before the memory manager finalizes");
+        app.Finalize();
+    }
+    {
+        RecordingApplication app;
+        RecordingModule module("module", app);  // page source that always fails
+        app.CreateMainWindow();
+        app.RegisterManagerModule(&module);
+        Expect(app.Initialize() == 0, "unusable page source is tolerated");
+        Expect(app.GetMemorySystem() == nullptr,
+               "unconfigured memory system is discarded");
+        app.Finalize();
+    }
+}
+#endif
+
 int main() {
     TestSuccessfulShutdown();
     TestFailedModuleInitialization();
@@ -295,5 +346,8 @@ int main() {
     TestWindowWithoutModules();
     TestBackendInitializationBoundaries();
     TestGuiPlatformLifetime();
+#ifdef USE_ENGINE_ALLOCATORS
+    TestMemorySystemLifetime();
+#endif
     return failures == 0 ? 0 : 1;
 }

@@ -96,7 +96,7 @@ Open items only; remove or mark resolved when fixed. Per-revision details are in
 | `TrackingAllocator` has a rear guard only (no underrun detection), no call stacks, adds 16 bytes plus a registry entry per block, and holds a global mutex; keeps the wrapped allocator's alignment (no aligned allocate); tag pointers must outlive allocations. | Debug/tooling use only; aligned allocate and call stacks if needed (M8). |
 | `ThreadCacheAllocator` serves only 1..512 bytes, cannot detect double frees (cached objects look live), and returns a thread's cache only on thread exit, `FlushThreadCache()` or `Trim()`. `FreeAll()` must not run concurrently. | Use `TrackingAllocator` on top for double-free detection; routing facade (M8). |
 | `GpuSubAllocator` manages one heap (no growth or multiple heaps), is single-threaded, uses O(log n) ordered maps (not a constant-time TLSF), and is not yet wired to any RHI backend (Vulkan/D3D12/Metal). | Heap growth and RHI binding with engine integration (M8). |
-| Allocators are not used by any engine module. | Integration (M8.2 onward). |
+| `MemorySystem` exists only when `USE_ENGINE_ALLOCATORS` is ON and the registered memory manager supplies pages, but no engine module allocates from it yet; the ON path is exercised by CI on Linux only. | Pilots (M8.3, M8.4); ON on all platforms in the M8.6 comparison. |
 | `RoutingAllocator` has a fixed-capacity TLSF arena behind one mutex (large path serializes), small double frees are not detected, and over-aligned small requests use the TLSF path. | Pool growth and per-thread large arenas if profiling shows contention (M8.6); `TrackingAllocator` for double frees (M8.5). |
 
 ## Foundation improvements
@@ -208,7 +208,7 @@ Policy: CMake options `USE_ENGINE_ALLOCATORS` (default OFF) and
 | Step | Scope |
 | --- | --- |
 | M8.1 | `RoutingAllocator` facade with aligned allocation; unit and multithreaded tests (`RoutingAllocatorTest`). |
-| M8.2 | `MemorySystem` wiring in `BaseApplication`; CMake options. |
+| M8.2 | `MemorySystem` (routing allocator, optional tracking) owned by `BaseApplication`; CMake options `USE_ENGINE_ALLOCATORS`, `ENABLE_ALLOCATOR_TRACKING` (both default OFF); tests `MemorySystemTest`, `ApplicationLifetimeTest`. The Linux CI build turns both ON; Windows and macOS build with the switch OFF. |
 | M8.3 | Per-frame pilot with `FrameAllocator` and pmr containers. |
 | M8.4 | Small-object pilot (class-level `operator new` or pmr). |
 | M8.5 | Shutdown leak report and statistics output; tracking on in Debug. |

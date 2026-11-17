@@ -383,7 +383,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             ./scripts/build-ninja.sh
+             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON" ./scripts/build-ninja.sh
       - run:
           name: "Cook Asset"
           command: |
