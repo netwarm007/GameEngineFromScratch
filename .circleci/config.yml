@@ -779,6 +779,7 @@ jobs:
              export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
              export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
              export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
              test -r "$VK_DRIVER_FILES"
              test -r "$VK_LAYER_PATH/VkLayer_khronos_validation.json"
              cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
