@@ -72,7 +72,7 @@ jobs:
           command: |
             test -r "$VK_ICD_FILENAMES"
             cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-              -DGLSL_VALIDATOR="$PWD/External/Linux/bin/glslangValidator" \
+              -DGLSL_VALIDATOR="$PWD/External/Linux/bin/glslang" \
               -DSPIRV_CROSS="$PWD/External/Linux/bin/spirv-cross"
             cmake --build build-vulkan-abi --parallel 2
             xvfb-run -a ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
@@ -784,7 +784,7 @@ jobs:
              test -r "$VK_DRIVER_FILES"
              test -r "$VK_LAYER_PATH/VkLayer_khronos_validation.json"
              cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
-               -DGLSL_VALIDATOR="$PWD/External/Darwin/bin/glslangValidator" \
+               -DGLSL_VALIDATOR="$PWD/External/Darwin/bin/glslang" \
                -DSPIRV_CROSS="$PWD/External/Darwin/bin/spirv-cross" \
                -DZLIB_ROOT="$PWD/External/Darwin"
              cmake --build build-vulkan-abi --parallel 2

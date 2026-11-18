@@ -8,4 +8,4 @@ if errorlevel 1 (popd & exit /b 1)
 if "%1" == "" (cmake --build . --config Debug --target install) else (cmake --build . --config %1 --target install)
 if errorlevel 1 (popd & exit /b 1)
 popd
-echo "Completed build of glslangValidator"
+echo "Completed build of glslang"

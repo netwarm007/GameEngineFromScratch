@@ -25,7 +25,7 @@ else()
 endif()
 
 find_package(Vulkan REQUIRED)
-find_program(GLSL_VALIDATOR NAMES glslangValidator
+find_program(GLSL_VALIDATOR NAMES glslang
     HINTS "${root}/External/${CMAKE_SYSTEM_NAME}/bin" "$ENV{VULKAN_SDK}/Bin" REQUIRED)
 find_program(SPIRV_CROSS NAMES spirv-cross SPIRV-Cross
     HINTS "${root}/External/${CMAKE_SYSTEM_NAME}/bin" "$ENV{VULKAN_SDK}/Bin" REQUIRED)

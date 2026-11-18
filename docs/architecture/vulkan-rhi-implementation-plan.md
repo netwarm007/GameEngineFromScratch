@@ -340,7 +340,7 @@ Build/test only the smallest relevant targets initially, escalating as needed.
 
 The focused suite can run without the engine's full asset/window/dependency
 build, but needs CMake 4+, C++20, the pinned crossguid submodule, Vulkan headers
-and loader, glslangValidator, SPIRV-Cross, spirv-val, spirv-dis, and spirv-opt.
+and loader, glslang, SPIRV-Cross, spirv-val, spirv-dis, and spirv-opt.
 The compute test additionally requires a Vulkan 1.1-capable driver and the Khronos
 validation layer; absence is an explicit failure, not a skipped success.
 
