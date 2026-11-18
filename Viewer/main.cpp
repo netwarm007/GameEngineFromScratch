@@ -22,7 +22,11 @@
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
 #elif defined(OS_WINDOWS)
+#if defined(VIEWER_USE_WIN32_OPENGL)
+#include "Platform/Windows/OpenGLApplication.hpp"
+#else
 #include "D3d12Application.hpp"
+#endif
 #else
 #if defined(HAS_SDL2)
 #include "Platform/Sdl/OpenGLApplication.hpp"
@@ -36,7 +40,7 @@
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
 #elif defined(OS_MACOS)
 #include "RHI/Metal/MetalConfig.hpp"
-#elif defined(OS_WINDOWS)
+#elif defined(OS_WINDOWS) && !defined(VIEWER_USE_WIN32_OPENGL)
 #include "RHI/D3d/D3d12Config.hpp"
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
@@ -59,7 +63,11 @@ int main(int argc, char** argv) {
     int ret;
     GuiContext gui;
 
+#if defined(VIEWER_USE_WIN32_OPENGL)
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer (Win32/OpenGL)");
+#else
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer");
+#endif
 #if defined(IS_OPENGL)
     config.fixOpenGLPerspectiveMatrix = true;
 #endif
@@ -67,19 +75,19 @@ int main(int argc, char** argv) {
     VulkanApplication app(config);
 #elif defined(OS_MACOS)
     CocoaMetalApplication app(config);
-#elif defined(OS_WINDOWS)
+#elif defined(OS_WINDOWS) && !defined(VIEWER_USE_WIN32_OPENGL)
     D3d12Application app(config);
 #else
     OpenGLApplication app(config);
 #endif
-    ViewerLogic gameLogic;
     AssetLoader assetLoader;
     MemoryManager memoryManager;
     OgexParser sceneParser;
     SceneResourceLoader sceneResources(assetLoader);
     SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
+    ViewerLogic gameLogic(sceneManager);
     BulletPhysicsManager physicsManager(sceneManager);
-    InputManager inputManager;
+    InputManager inputManager(gameLogic);
     AnimationManager animationManager(sceneManager);
     SplashSequence splashSequence(sceneManager, physicsManager, animationManager);
 #ifdef DEBUG

@@ -155,7 +155,6 @@ int main(int argc, char** argv) {
     }
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Billiard");
-    BilliardGameLogic gameLogic;
 #if defined(MYGE_USE_VULKAN)
     VulkanApplication app(config);
 #elif defined(OS_MACOS)
@@ -175,7 +174,8 @@ int main(int argc, char** argv) {
     SceneResourceLoader sceneResources(assetLoader);
     SceneManager sceneManager(assetLoader, sceneParser, sceneResources);
     BulletPhysicsManager physicsManager(sceneManager);
-    InputManager inputManager;
+    BilliardGameLogic gameLogic(sceneManager, physicsManager);
+    InputManager inputManager(gameLogic);
     AnimationManager animationManager(sceneManager);
 #ifdef DEBUG
     DebugManager debugManager;

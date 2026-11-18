@@ -51,6 +51,20 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
    private keys, and sensitive environment values. Pattern-based redaction
    alone cannot guarantee safety; omit any excerpt that cannot be verified safe.
 
+## Windows dependency and monitoring learnings
+
+- In PowerShell CI steps, check `$LASTEXITCODE` immediately after every native
+  installer command. A nonzero Chocolatey result does not automatically fail
+  the step, so an unchecked install can surface later as a misleading build or
+  packaging failure. After installation, verify the executable at its actual
+  install path and put its directory on `PATH`; `Get-Command` alone can fail
+  when the package installs outside the existing `PATH` (for example, NSIS
+  installs under `Program Files (x86)\NSIS`).
+- Before starting a status-monitor loop, verify the status endpoint and the
+  response fields it uses. If polling repeatedly fails, stop and report the
+  monitoring limitation or switch to the CircleCI tools/UI; do not leave an
+  endless retry loop running without a valid status.
+
 ## Check submodule revisions
 
 1. Inspect `.gitmodules` and the gitlinks for the pipeline's revision, not just

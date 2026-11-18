@@ -89,6 +89,9 @@ void GraphicsManager::Tick() {
                  << endl;
             BeginScene(*scene);
             m_nSceneRevision = rev;
+            for (auto& frame : m_Frames) {
+                frame.sceneResourceRevision = rev;
+            }
         }
         m_Frames[m_nFrameIndex].scene = scene;
     }
@@ -305,12 +308,20 @@ void GraphicsManager::BeginScene(const Scene& scene) {
 }
 
 void GraphicsManager::EndScene() {
+    for (auto& frame : m_Frames) {
+        frame.batchContexts.clear();
+        frame.brdfLUT = {};
+        frame.skybox = {};
+        frame.frameContext.shadowMap = {};
+        frame.frameContext.globalShadowMap = {};
+        frame.frameContext.cubeShadowMap = {};
+        frame.scene.reset();
+        frame.sceneResourceRevision = 0;
+    }
+    material_map.clear();
     for (auto& texture : m_Textures) {
         ReleaseTexture(texture);
     }
-
+    m_Textures.clear();
     releaseFramebuffers();
-    for (auto& frame : m_Frames) {
-        frame.scene.reset();
-    }
 }

@@ -62,6 +62,7 @@ class Metal2GraphicsManager : public GraphicsManager {
 
     void initializeGeometries(const Scene& scene) override;
     void initializeSkyBox(const Scene& scene) override;
+    void EndScene() override;
 
    private:
     bool m_ImGuiInitialized = false;

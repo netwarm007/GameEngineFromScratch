@@ -23,6 +23,8 @@ struct MtlDrawBatchContext : public DrawBatchContext {
 
 - (void)waitForIdle;
 
+- (void)releaseSceneGeometry;
+
 - (void)finalize;
 
 - (void)present;

@@ -1,9 +1,11 @@
 #include "ViewerLogic.hpp"
 
-#include "BaseApplication.hpp"
-#include "SceneManager.hpp"
+#include "ISceneManager.hpp"
 #include "geommath.hpp"
 
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <string>
 
 using namespace My;
@@ -11,9 +13,14 @@ using namespace std;
 
 int ViewerLogic::Initialize() {
     int result;
+    m_SceneCycle = 0;
+    m_SceneCycleTick = 0;
+    m_SceneCycleReadyPath.clear();
 
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
+    if (!m_pApp) {
+        cerr << "[ViewerLogic] Application must be set before initialization\n";
+        return -1;
+    }
 
     cout << "[ViewerLogic] Viewer Logic Initialize" << endl;
 
@@ -21,6 +28,19 @@ int ViewerLogic::Initialize() {
     std::string scene_filename;
     for (int i = 1; i < m_pApp->GetCommandLineArgumentsCount(); i++) {
         std::string arg = m_pApp->GetCommandLineArgument(i);
+        if (arg == "-sceneCycle") {
+            if (++i >= m_pApp->GetCommandLineArgumentsCount()) {
+                cerr << "[ViewerLogic] -sceneCycle requires 0, 1 or 2\n";
+                return -1;
+            }
+            const std::string phase = m_pApp->GetCommandLineArgument(i);
+            if (phase != "0" && phase != "1" && phase != "2") {
+                cerr << "[ViewerLogic] Invalid -sceneCycle phase\n";
+                return -1;
+            }
+            m_SceneCycle = phase[0] - '0';
+            continue;
+        }
         if (!arg.empty() && arg[0] == '-') {
             i++;
             continue;
@@ -29,12 +49,27 @@ int ViewerLogic::Initialize() {
         break;
     }
 
+    if (m_SceneCycle != 0) {
+        if (const char* path = std::getenv("GEFS_SCREENSHOT_WAIT_FOR")) {
+            m_SceneCycleReadyPath = path;
+        }
+        if (!m_SceneCycleReadyPath.empty()) {
+            std::error_code error;
+            std::filesystem::remove(m_SceneCycleReadyPath, error);
+            if (error) {
+                cerr << "[ViewerLogic] Cannot clear scene-cycle marker: "
+                     << error.message() << '\n';
+                return -1;
+            }
+        }
+    }
+
     if (!scene_filename.empty()) {
         cout << "[ViewerLogic] Loading Scene: " << scene_filename << endl;
-        result = pSceneManager->LoadScene(scene_filename.c_str());
+        result = m_Scenes.LoadScene(scene_filename.c_str());
     } else {
         cout << "[ViewerLogic] Loading Splash Scene" << endl;
-        result = pSceneManager->LoadScene("Scene/splash.ogex");
+        result = m_Scenes.LoadScene("Scene/splash.ogex");
     }
 
     return result;
@@ -42,13 +77,38 @@ int ViewerLogic::Initialize() {
 
 void ViewerLogic::Finalize() { cout << "[ViewerLogic] Finalize" << endl; }
 
-void ViewerLogic::Tick() {}
+void ViewerLogic::Tick() {
+    if (m_SceneCycle == 0) return;
+    ++m_SceneCycleTick;
+    const char* scene = nullptr;
+    if (m_SceneCycleTick == 8) scene = "Scene/billiard.ogex";
+    if (m_SceneCycleTick == 16 && m_SceneCycle == 2)
+        scene = "Scene/splash.ogex";
+    if (scene) {
+        if (m_Scenes.LoadScene(scene) != 0) {
+            cerr << "[ViewerLogic] Scene-cycle load failed: " << scene << '\n';
+            m_pApp->RequestQuit();
+            return;
+        }
+        cout << "SCENE_CYCLE_LOADED " << scene << endl;
+    }
+    if (m_SceneCycleTick == (m_SceneCycle == 1 ? 16 : 24)) {
+        if (!m_SceneCycleReadyPath.empty()) {
+            std::ofstream marker(m_SceneCycleReadyPath);
+            marker << m_SceneCycle << '\n';
+            marker.close();
+            if (!marker) {
+                cerr << "[ViewerLogic] Cannot write scene-cycle marker\n";
+                m_pApp->RequestQuit();
+                return;
+            }
+        }
+        cout << "SCENE_CYCLE_READY phase=" << m_SceneCycle << endl;
+    }
+}
 
 void ViewerLogic::OnLeftKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -65,10 +125,7 @@ void ViewerLogic::OnLeftKeyDown() {
 }
 
 void ViewerLogic::OnRightKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -85,10 +142,7 @@ void ViewerLogic::OnRightKeyDown() {
 }
 
 void ViewerLogic::OnUpKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -105,10 +159,7 @@ void ViewerLogic::OnUpKeyDown() {
 }
 
 void ViewerLogic::OnDownKeyDown() {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
-    auto& scene = pSceneManager->GetSceneForRendering();
+    auto& scene = m_Scenes.GetSceneForRendering();
     if (scene) {
         auto pCameraNode = scene->GetFirstCameraNode();
         if (pCameraNode) {
@@ -125,11 +176,8 @@ void ViewerLogic::OnDownKeyDown() {
 }
 
 void ViewerLogic::OnAnalogStick(int id, float deltaX, float deltaY) {
-    auto pSceneManager =
-        dynamic_cast<BaseApplication*>(m_pApp)->GetSceneManager();
-
     if (id == 1) {
-        auto& scene = pSceneManager->GetSceneForRendering();
+        auto& scene = m_Scenes.GetSceneForRendering();
         if (scene) {
             auto pCameraNode = scene->GetFirstCameraNode();
             if (pCameraNode) {

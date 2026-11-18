@@ -5,7 +5,9 @@
 
 namespace My {
 GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 960, 540, "Billiard Game");
-GameLogic* g_pGameLogic = static_cast<GameLogic*>(new BilliardGameLogic);
+GameLogic* CreateBilliardGameLogic(ISceneManager& scenes, IPhysicsManager& physics) {
+    return new BilliardGameLogic(scenes, physics);
+}
 PhysicsManager* CreateBilliardPhysicsManager(ISceneManager& scenes) {
     return new BulletPhysicsManager(scenes);
 }

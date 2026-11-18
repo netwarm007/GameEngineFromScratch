@@ -6,6 +6,17 @@ Incrementally separate runtime orchestration, scene data, CPU preparation,
 physics, rendering, platform resources, and UI so that dependencies and resource
 ownership are explicit and modules can be tested independently.
 
+The project began as a runtime-first, rendering-first effort, with editor and
+host tools deferred until later ([series introduction](https://zhuanlan.zhihu.com/p/28587092)).
+Its articles document experiments rather than a fixed architecture: for example,
+the physics work integrates Bullet into a real scene
+([part 38](https://zhuanlan.zhihu.com/p/33090740)), while later GPU path-tracing
+work explores data layouts that differ from the CPU implementation
+([part 101](https://zhuanlan.zhihu.com/p/612018390)). Use that incremental,
+hands-on approach as context, not as a requirement to reproduce every experiment.
+Choose boundaries from current dependencies and tests, and preserve explicit
+backend differences where the evidence requires them.
+
 This is a maintained engineering plan, not a rewrite proposal, CI dashboard,
 or authorization to implement every future stage. Confirm the next checkpoint's
 scope before implementation. Prefer one independently testable boundary per
@@ -130,7 +141,7 @@ application. Desktop graphics clients must create the native window first.
 | --- | --- |
 | Windows native window and platform DC | WindowsApplication creates them in CreateMainWindow and releases them after backend cleanup. |
 | D3D12 device, queues, swapchain, and sync objects | D3d12Application owns its RHI; its backend hook performs the existing setup sequence before modules. RHI callbacks borrow the application/window. |
-| Windows OpenGL context | OpenGLApplication creates the temporary WGL bootstrap and final context in its backend hook, retaining native window creation in WindowsApplication. |
+| Windows OpenGL context | OpenGLApplication creates the temporary WGL bootstrap and final context in its backend hook, retaining native window creation in WindowsApplication. ImGui secondary windows use DCs with the main window's pixel format and borrow the same context while drawing; the previous DC is restored before returning to the engine. |
 | Linux native window and connections | XcbApplication owns them. OpenGL framebuffer configuration discovery remains before native window creation; context/GLX drawable setup moves to the backend hook. |
 | Linux GLX context/drawable | OpenGLApplication releases them and synchronizes their destruction before XcbApplication releases the native window and connections. |
 | macOS window and Metal content view | CocoaApplication owns the window; CocoaMetalApplication installs the Metal view/device during its backend hook. The window retains the content view. Metal RHI setup/cleanup remains in Metal2GraphicsManager. |
@@ -230,6 +241,13 @@ cleans up its own partial state; it is not passed to its shutdown hook.
 Successful GUI platform state survives module rollback for retry, but is
 released once on explicit application finalization.
 
+On Win32/OpenGL, `OpenGLApplication` wraps the ImGui viewport render callback
+only after `OpenGLGraphicsManager` has initialized the ImGui OpenGL renderer
+and registered that callback. During renderer shutdown, ImGui destroys the
+secondary platform windows and their renderer destroy callbacks release the
+window DCs. This must happen before `OpenGLApplication` destroys the shared
+WGL context.
+
 ApplicationLifetimeTest covers ordering, GUI platform failure, renderer/module
 rollback and retry. D3d12GuiTextureTest exercises native platform/renderer
 binding, borrowed-backend rejection, descriptor reuse and repeated cleanup.
@@ -249,12 +267,225 @@ contained panels. Headless checks do not replace rendering inspection.
 
 ### D. Reassess remaining coupling
 
-After the preceding stages, inspect the resulting dependency graph and choose
-the next small boundary based on evidence. Candidates include residual
-Application lookups, UI asset dependencies, and clearer GPU scene-resource
-ownership. Do not assume that streaming, cancellation, hot reload, or a new
-resource framework is required. Each candidate needs its own problem statement,
-scope, compatibility constraints, and verification plan before implementation.
+**D1 accepted: retire GPU scene resources on scene replacement.**
+
+Implementation, regression controls and exact-revision three-platform native
+acceptance are complete. See the
+[D1 verification record](../verification/4ee8fee385f277506ad7ed45a07949e9da22cfbc.md)
+for tested backends, scene-switch screenshots and limitations.
+
+Read-only assessment found a concrete lifetime boundary before the remaining
+service-location and UI-asset coupling: Metal appends geometry buffers and draw
+batches while caching materials by name, but has no scene-specific teardown.
+The common teardown does not clear these borrowed batches or material entries.
+D3D12 already implements explicit scene retirement; OpenGL clears geometry but
+does not consistently register scene textures for release.
+
+Problem: replacing A with B (including identical material names with different
+content), returning to A, or selecting an empty scene must not retain old
+geometry, material bindings or scene-owned GPU allocations.
+
+Scope and invariants:
+
+- Wait for relevant GPU submissions before retiring a scene. Clear borrowed
+  draw batches, material entries and frame texture bindings.
+- Release scene-owned material, environment, BRDF and shadow textures once.
+  Keep framebuffer ownership separate, and do not adopt UI icons or UI-owned
+  texture views into the scene texture collection.
+- Add Metal geometry-buffer retirement, retaining its initialized device,
+  queues, per-frame constants, renderer backend and shared pipeline objects.
+- Preserve existing shader/coordinate semantics, single-scene appearance,
+  docking and saved layouts. Do not introduce a general resource framework,
+  streaming, cancellation, hot reload or device-loss recovery.
+
+Implementation and verification sequence:
+
+1. Extend RenderServicesTest with registered scene textures, real geometry-node
+   references, repeated material names, A/B/A and empty-scene transitions.
+   Demonstrate failure before changing the common teardown.
+2. Fix the common scene retirement contract and the dependent Metal/OpenGL
+   ownership paths; preserve D3D12's existing explicit cleanup.
+3. Add native Metal buffer-retirement/reuse coverage and exercise actual scene
+   replacement, not merely application reinitialization. Verify empty/repeated
+   cleanup and keep GPU/backend resources usable afterward.
+4. Run focused local tests, then exact-revision Windows/Linux/macOS CI.
+   Inspect native scene-switch screenshots and existing Viewer/Billiard
+   artifacts. Headless checks and single-scene captures do not by themselves
+   establish native scene-switch correctness.
+5. Record results and remaining limitations under the tested full revision;
+   mark this checkpoint accepted only after its stated gates pass.
+
+The opt-in Viewer argument `-sceneCycle 1` loads splash then billiard, while
+`-sceneCycle 2` returns to splash in the same process. CI captures both final
+states and requires the corresponding `SCENE_CYCLE_READY` log marker. Without
+this argument the ordinary Viewer load path is unchanged. CI sets
+`GEFS_SCREENSHOT_WAIT_FOR` to a readiness marker written only after the requested
+scene has rendered multiple frames; capture waits for it instead of relying on
+a fixed delay that can expire during scene uploads. Empty-scene and
+same-name material retirement are checked by RenderServicesTest; native Metal
+buffer release and subsequent reuse are checked by MetalInitializationTest.
+
+#### Known limitations and follow-ups (D1)
+
+- PR #70 review follow-up: debug texture views must also be invalidated when
+  `ResetScene()` rebuilds resources for the same Scene and texture names/sizes
+  are reused. Frames now carry the rebuilt scene-resource revision, published
+  to every in-flight frame and cleared on teardown; GuiSubPass includes it in
+  the cache key. RenderServicesTest drives real rendering coordination and GUI
+  cache paths with a recording backend, reused shadow/skybox handles, repeated
+  same-Scene resets and frame rotation. It checks view retirement/reuse and
+  revision propagation, not native driver storage or rendered pixel contents.
+- This review follow-up has its own
+  [exact-revision full acceptance record](../verification/fe02caabf92d0d3d7033487c9739d5d6430dfae4.md):
+  Windows, Linux and macOS passed, and twelve native screenshots were inspected.
+  The historical D1 record remains unchanged. Native captures do not force
+  same-Scene GL name reuse; that case is deterministic recording-backend
+  coverage, not native driver-storage proof. Linux uses software OpenGL.
+
+### D2. Explicit input-to-game-logic dependency
+
+**Accepted.** See the
+[D2 verification record](../verification/0dfac0f10cfb8bc0a389475c0c23b09a8e597e5d.md)
+for exact-revision three-platform results and inspected native artifacts.
+
+InputManager takes a required borrowed `IGameLogic&` at
+construction instead of downcasting Application and looking up game logic
+for every event. The injected logic must outlive InputManager. Viewer and
+Billiard construct logic before input and provide that dependency directly;
+there are no current InputManager construction sites without game logic.
+Platform event routing, ImGui input handling and callback ordering remain
+unchanged. No event bus, configurable bindings or new input abstraction is added.
+
+Preserve per-event arrow-down callbacks, first-press callbacks until release,
+independent held-key state, the `u` button mapping, reserved `d`/`r` no-ops,
+mouse button no-ops and signed drag deltas/analog IDs. Initialize/finalize clear
+held keys without synthesizing game callbacks, so a fresh lifecycle cannot
+inherit a missing key-up from a previous lifecycle.
+
+Verification sequence:
+
+1. Add an application-free InputManagerTest covering repeated/simultaneous
+   arrows, release/repress ordering, buttons, drags and repeated lifecycles.
+   Demonstrate the lifecycle case fails without state reset.
+2. Compile both composition roots and run focused local tests.
+3. Verify the exact source revision with Windows/Linux/macOS CI, inspect native
+   Viewer/scene-cycle/Billiard screenshots and physics results, then write its
+   revision-specific acceptance record. Synthetic input tests do not establish
+   native keyboard/mouse interaction or every ImGui capture configuration.
+
+#### Known limitations and follow-ups (D2)
+
+Input semantics are tested directly without Application, not by injecting OS
+events. Native focus and every ImGui capture configuration remain unverified
+interactively; screenshots and physics checks do not substitute for those paths.
+
+### D3. Explicit GUI icon image loading
+
+**Accepted.** See the
+[D3 verification record](../verification/1be28dfa8af835b753f4097546d71743dd38ac68.md)
+for exact-revision three-platform results and inspected native icon artifacts.
+
+OverlayPass supplies GuiSubPass with an image-loading callable.
+The production LoadGuiIconImage function performs existing AssetLoader file
+lookup and PNG decoding; GuiSubPass has no direct asset-loader/parser dependency.
+The callable is required, owned by the GUI pass and returns an owned decoded
+Image. A provider returning no pixel data must report the load failure; the
+production provider preserves missing-file/decode diagnostics.
+
+GuiSubPass retains lazy one-shot loading, icon filenames/order, fallback node
+labels, upload-error reporting and ownership of successfully created GPU icon
+textures. Those textures remain separate from scene allocations and debug
+texture views, and are released while the backend is still available.
+No new asset framework or application-service refactor is included.
+
+Verification: inject decoded/missing images into GuiSubPassLayoutTest; cover
+failed GPU creation, no per-frame/per-scene reload, unused-pass destruction,
+partial-success cleanup and fresh GUI lifecycles. Preserve all layout checks.
+Run focused local builds/tests, then exact-revision three-platform CI and
+inspect actual Viewer/scene-cycle/Billiard artifacts before recording acceptance.
+
+#### Known limitations and follow-ups (D3)
+
+Injected failure tests cover the GUI ownership boundary, not exhaustive malformed
+PNG parsing or native driver allocation failures. Production asset resolution
+and visible icons are verified by the native artifact path. Broader
+Viewer/Billiard service lookups remain a separate assessment.
+DrawSubPass still links ImageDecoders for the production adapter; full target
+isolation and native rendering of every scene-node icon kind are not claimed.
+
+### D4a. Explicit Viewer scene dependency
+
+**Accepted.** ViewerLogic takes a required borrowed `ISceneManager&` instead
+of downcasting Application to locate it on initialization and each input event.
+Viewer constructs the scene manager before logic so the service outlives its
+consumer. Application remains responsible for command-line arguments and quit
+requests through IApplication; initialization without it is explicitly rejected.
+Billiard dependencies are deferred to D4b.
+
+Preserve default/custom scene loading, option handling, A/B/A scene-cycle timing,
+readiness markers, load-error propagation and camera movement/rotation semantics.
+Do not introduce a dependency-injection framework or change platform input.
+
+Verification: ViewerLogicTest uses an ISceneManager fake and a plain
+IApplication (not BaseApplication), with no native window/backend. Cover
+default/custom loading and errors, invalid cycle options, phase order, fresh
+lifecycles, quit-on-load-failure, directional camera/target movement, drag
+rotation, scene replacement and absent scenes/cameras. Then build Viewer and
+run focused tests, exact-revision three-platform CI and native artifact checks.
+
+Source `a96a0d7e41fc7964f48b3bd952e6dd0f88a4b589` passed CircleCI pipeline
+1012 on Windows (job 4600, 60 tests), Linux (4599, 57 tests) and macOS
+(4598, 57 tests). Twelve native screenshots, phase markers/loading order and
+Billiard physics evidence were inspected. See the
+[revision-specific verification record](../verification/a96a0d7e41fc7964f48b3bd952e6dd0f88a4b589.md).
+
+#### Known limitations and follow-ups (D4a)
+
+Synthetic callbacks do not establish native OS event delivery, all ImGui focus
+paths or every camera orientation. Scene-cycle marker I/O remains covered by
+native capture gates, not the isolated test. D4b will separately assess the
+Billiard scene/physics service lookups.
+
+### D4b. Explicit Billiard scene and physics dependencies
+
+**Accepted.** BilliardGameLogic takes required borrowed `ISceneManager&`
+and `IPhysicsManager&` references instead of downcasting Application to locate
+services. The composition root constructs both services before logic, which
+must not outlive either. The inactive legacy game configuration now supplies
+an explicit logic factory with the same dependencies, not a global default
+construction.
+
+Preserve the billiard scene path and load result, resolve the current
+`pbb_cue` node for each held-left callback and apply the existing (-100, 0, 0)
+force. Missing/expired nodes and nodes without physics bodies remain valid
+no-action conditions. Right-drag rotation retains its signs and per-axis
+window-size scaling. Application still supplies configuration through
+IApplication and must be attached before camera callbacks; loading and cue
+force routing no longer require Application. No input, physics integration,
+rendering or Application framework rewrite is included.
+
+Verification: BilliardGameLogicTest injects fake scene/physics services and a
+plain IApplication, without a native window/backend. Cover loading/error
+propagation, exact force/node routing, missing/expired cues, same-name node
+replacement, no-body results, drag filtering/scaling, camera replacement and
+missing scenes/cameras. Compile both Billiard entry/configuration paths and
+run focused tests, then exact-revision three-platform CI with native artifact
+and physics-threshold inspection.
+
+Source `32db35fc56942ea085ea18d419d2ee1fb816076f` passed CircleCI pipeline
+1020 on Windows (job 4628, 61 tests), Linux (4627, 58 tests) and macOS
+(4629, 58 tests). Twelve native screenshots, phase markers/loading order and
+Billiard physics thresholds were inspected. See the
+[revision-specific verification record](../verification/32db35fc56942ea085ea18d419d2ee1fb816076f.md).
+
+#### Known limitations and follow-ups (D4b)
+
+Synthetic input does not establish native OS delivery, exhaustive ImGui focus
+paths or every camera orientation. Fake physics establishes request routing,
+not numerical integration; existing native Billiard physics gates cover that
+separately. The legacy configuration factory is compile-checked but is not
+wired into the current native executable. Configuration access remains an
+Application dependency with its existing valid-dimensions precondition.
 
 ## Working and acceptance rules
 
@@ -297,5 +528,5 @@ do not establish new source acceptance.
 - No fixed delivery dates are implied. Stage A covers initialization
   orchestration; stage B covers the selected native initialization/cleanup
   failures, not exhaustive driver recovery or ImGui ownership. Stage C covers
-  the selected GUI ownership boundary; stage D remains a proposal requiring
-  confirmation.
+  the selected GUI ownership boundary; D1 covers scene-resource retirement.
+  Later D checkpoints require their own scope and evidence.

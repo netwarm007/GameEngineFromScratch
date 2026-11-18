@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "GraphicsManager.hpp"
+#include "GuiSubPass.hpp"
 #include "ISceneManager.hpp"
 #include "PipelineStateManager.hpp"
 #include "ShadowMapPass.hpp"
@@ -55,7 +56,7 @@ class TestScenes : public ISceneManager {
     const std::shared_ptr<Scene> GetSceneForPhysicalSimulation() const override {
         return scene;
     }
-    void ResetScene() override {}
+    void ResetScene() override { ++revision; }
     std::weak_ptr<BaseSceneNode> GetRootNode() const override { return {}; }
     std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(
         const std::string&) const override {
@@ -170,6 +171,216 @@ class ShadowPipelines : public PipelineStateManager {
         return true;
     }
 };
+
+void TestSameSceneDebugViewRebuild() {
+    class ReusedHandleGraphics : public RecordingGraphics {
+       public:
+        ReusedHandleGraphics(TestScenes& scenes, TestPipelines& pipelines)
+            : RecordingGraphics(scenes, pipelines),
+              scenes(scenes),
+              gui(this, &pipelines, [](const char*) { return Image{}; }) {}
+
+        void GenerateTextureArray(Texture2DArray& texture) override {
+            texture.handler = ++sourceHandle;
+            texture.size = 1;
+        }
+        void GenerateCubemapArray(TextureCubeArray& texture) override {
+            texture.handler = ++sourceHandle;
+            texture.size = 1;
+        }
+        void CreateTextureView(Texture2D& view, const TextureArrayBase& source,
+                               uint32_t, uint32_t) override {
+            view.handler = 1000 + ++viewsCreated;
+            view.width = source.width;
+            view.height = source.height;
+            liveViews.insert(view.handler);
+        }
+        void ReleaseTexture(TextureBase& texture) override {
+            if (texture.handler >= 1000) {
+                Expect(liveViews.erase(texture.handler) == 1,
+                       "each retired debug view is released exactly once");
+                ++viewsReleased;
+            }
+        }
+        void Draw() override {
+            RecordingGraphics::Draw();
+            for (const auto& frame : m_Frames) {
+                Expect(frame.sceneResourceRevision == scenes.revision,
+                       "rebuilt resource revision reaches every in-flight frame");
+            }
+            gui.Draw(m_Frames[m_nFrameIndex]);
+        }
+        void Present() override {
+            RecordingGraphics::Present();
+            m_nFrameIndex =
+                (m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount;
+        }
+        void ExpectRetiredRevision() const {
+            for (const auto& frame : m_Frames) {
+                Expect(frame.sceneResourceRevision == 0,
+                       "scene teardown clears borrowed resource revisions");
+            }
+        }
+
+        int viewsCreated = 0;
+        int viewsReleased = 0;
+        std::set<TextureHandler> liveViews;
+
+       protected:
+        void BeginScene(const Scene& scene) override {
+            sourceHandle = 0;  // Model GL name reuse for new texture storage.
+            RecordingGraphics::BeginScene(scene);
+        }
+        void initializeSkyBox(const Scene&) override {
+            m_Frames[0].skybox.handler = ++sourceHandle;
+        }
+
+       private:
+        void ResizeCanvas(int32_t, int32_t) override {}
+        TestScenes& scenes;
+        GuiSubPass gui;
+        TextureHandler sourceHandle = 0;
+    };
+
+    auto& io = ImGui::GetIO();
+    const auto previousFlags = io.ConfigFlags;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    TestApplication app;
+    TestScenes scenes;
+    TestPipelines pipelines;
+    scenes.scene = std::make_shared<Scene>("same scene reset");
+    const auto* originalScene = scenes.scene.get();
+    scenes.revision = 1;
+    ReusedHandleGraphics graphics(scenes, pipelines);
+    graphics.SetAppPointer(&app);
+    Expect(graphics.Initialize() == 0, "debug view rebuild regression initializes");
+    graphics.Tick();
+    const int viewCount = graphics.viewsCreated;
+    Expect(viewCount == 21 && graphics.viewsReleased == 0,
+           "debug cache owns all shadow layers and skybox face/mip views");
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; ++i) {
+        graphics.Tick();
+    }
+    Expect(graphics.viewsCreated == viewCount && graphics.viewsReleased == 0,
+           "unchanged resources reuse views across every in-flight frame");
+
+    for (int rebuild = 1; rebuild <= 2; ++rebuild) {
+        scenes.ResetScene();
+        graphics.Tick();
+        Expect(scenes.scene.get() == originalScene &&
+                   graphics.viewsCreated == (rebuild + 1) * viewCount &&
+                   graphics.viewsReleased == rebuild * viewCount &&
+                   graphics.liveViews.size() == static_cast<size_t>(viewCount),
+               "same-Scene reset replaces every view despite identical handles and sizes");
+        for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; ++i) {
+            graphics.Tick();
+        }
+        Expect(graphics.viewsCreated == (rebuild + 1) * viewCount &&
+                   graphics.viewsReleased == rebuild * viewCount,
+               "subsequent in-flight frames reuse only the rebuilt views");
+    }
+    graphics.Finalize();
+    graphics.ExpectRetiredRevision();
+    io.ConfigFlags = previousFlags;
+}
+
+void TestGuiSubPassRequiresIconLoader() {
+    TestScenes scenes;
+    TestPipelines pipelines;
+    RecordingGraphics graphics(scenes, pipelines);
+    bool rejected = false;
+    try {
+        GuiSubPass gui(&graphics, &pipelines, {});
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    Expect(rejected, "GUI subpass rejects an empty icon image loader");
+}
+
+class SceneResourceGraphics : public FrameResourceGraphics {
+   public:
+    using FrameResourceGraphics::FrameResourceGraphics;
+    bool BorrowedStateEmpty() const {
+        if (!material_map.empty()) return false;
+        for (const auto& frame : m_Frames) {
+            if (!frame.batchContexts.empty() || frame.brdfLUT.handler ||
+                frame.skybox.handler || frame.frameContext.shadowMap.handler ||
+                frame.frameContext.globalShadowMap.handler ||
+                frame.frameContext.cubeShadowMap.handler) return false;
+        }
+        return true;
+    }
+    TextureHandler materialHandle = 0;
+
+   protected:
+    void BeginScene(const Scene& scene) override {
+        RecordingGraphics::BeginScene(scene);
+        if (scene.SceneGraph->GetChildCount() == 0) return;
+        auto it = material_map.find("same material name");
+        if (it == material_map.end()) {
+            material_textures material;
+            GenerateTexture(material.diffuseMap);
+            m_Textures.push_back(material.diffuseMap);
+            it = material_map.emplace("same material name", material).first;
+        }
+        materialHandle = it->second.diffuseMap.handler;
+        auto batch = std::make_shared<DrawBatchContext>();
+        batch->node = std::static_pointer_cast<SceneGeometryNode>(
+            scene.SceneGraph->GetChildNodes().front());
+        batch->material = it->second;
+        for (auto& frame : m_Frames) {
+            frame.batchContexts.push_back(batch);
+            frame.skybox.handler = materialHandle;
+            frame.brdfLUT = it->second.diffuseMap;
+            frame.frameContext.shadowMap.handler = materialHandle;
+            frame.frameContext.globalShadowMap.handler = materialHandle;
+            frame.frameContext.cubeShadowMap.handler = materialHandle;
+        }
+    }
+};
+
+void TestSceneResourceRetirement() {
+    TestApplication app;
+    TestScenes scenes;
+    TestPipelines pipelines;
+    SceneResourceGraphics graphics(scenes, pipelines);
+    graphics.SetAppPointer(&app);
+    Expect(graphics.Initialize() == 0, "scene resource regression initializes");
+    TextureHandler previousMaterial = 0;
+    std::weak_ptr<SceneGeometryNode> previousNode;
+    for (const auto* name : {"A", "B", "A", "empty"}) {
+        scenes.scene = std::make_shared<Scene>(name);
+        scenes.scene->SkyBox.reset();
+        if (std::string(name) != "empty") {
+            auto node = std::make_shared<SceneGeometryNode>(name);
+            scenes.scene->SceneGraph->AppendChild(std::move(node));
+        }
+        ++scenes.revision;
+        graphics.Tick();
+        Expect(previousNode.expired(),
+               "scene replacement retires geometry references from every frame");
+        if (std::string(name) == "empty") {
+            Expect(graphics.BorrowedStateEmpty(),
+                   "empty scene has no old material, batch or texture bindings");
+        } else {
+            Expect(graphics.materialHandle != previousMaterial,
+                   "same material name in another scene gets a new texture");
+            previousMaterial = graphics.materialHandle;
+            previousNode = std::static_pointer_cast<SceneGeometryNode>(
+                scenes.scene->SceneGraph->GetChildNodes().front());
+        }
+        Expect(graphics.liveTextures.size() ==
+                   GfxConfiguration::kMaxInFlightFrameCount + 1u +
+                       (std::string(name) == "empty" ? 0u : 1u),
+               "only current scene textures and framebuffer targets remain live");
+    }
+    graphics.Finalize();
+    graphics.Finalize();
+    Expect(graphics.liveTextures.empty() &&
+               graphics.allocations == graphics.releases &&
+               graphics.BorrowedStateEmpty(),
+           "repeated shutdown releases scene resources once and clears borrowers");
+}
 
 class ShadowGraphics : public RecordingGraphics {
    public:
@@ -472,6 +683,9 @@ int main() {
     TestFrameResourceOwnership(4, false);
     TestFrameResourceOwnership(4, true);
     TestFrameResourcesAfterFailedInitialization();
+    TestSceneResourceRetirement();
+    TestSameSceneDebugViewRebuild();
+    TestGuiSubPassRequiresIconLoader();
 
     ImGui::DestroyContext();
     return failures == 0 ? 0 : 1;

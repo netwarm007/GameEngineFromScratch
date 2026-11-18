@@ -10,6 +10,21 @@ This project is written by me as the sample of My articles [Hand-made Next-Gen G
 このプロジェクトは私の連載中の[ゼロから始める手作り次世代ゲームエンジン](
 https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプルソースである
 
+## Project intent and evolution
+
+This project grew alongside the [Zhihu series](https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352).
+Its starting plan was deliberately runtime-first and rendering-first, with
+editor and host tools deferred until after the runtime. The series records an
+open-ended, hands-on progression: from the initial plan
+([introduction](https://zhuanlan.zhihu.com/p/28587092)), through integrating
+Bullet into a scene simulation ([part 38](https://zhuanlan.zhihu.com/p/33090740)),
+to later GPU-focused ray-tracing experiments
+([part 101](https://zhuanlan.zhihu.com/p/612018390)).
+
+Those articles are historical context, not a feature contract for the current
+repository. Current behavior and engineering plans are defined by the source,
+focused roadmaps, tests, and revision-specific verification records.
+
 ## Platform Support Status
 - Windows 10 / 11 (targeted; CircleCI uses Windows Server 2022).
 - macOS (CircleCI uses Apple Silicon and Xcode 16.4; Catalina-Monterey are not
@@ -80,6 +95,10 @@ the scene preview on the right, and the debug panel across the bottom. The
 panels resize with the main viewport without overlapping. Existing ImGui
 layouts are preserved. Use Debug > Reset window layout to restore these
 defaults, or reopen individual panels through the Debug menu.
+
+On Windows, Viewer defaults to D3D12. To build the native Win32/OpenGL (WGL)
+variant instead, configure with `-DVIEWER_USE_WIN32_OPENGL=ON` and build the
+`Viewer` target. This variant runs as `ViewerOpenGL.exe`.
 
 ## Shading Language
 - HLSL, auto convert to GLSL/Metal Performance Shader
@@ -464,9 +483,17 @@ screenshot captures. This reporting does not enable Smarter Testing or change
 which tests run.
 
 ### Windows
-Windows scripts that use Visual Studio select the newest installed version
-supported by CMake. If an existing build directory retains an older generator,
-move it aside before rerunning the script to allow a fresh configuration.
+The engine's `windows-vs2026` CMake preset pins the Visual Studio 2026 generator
+and uses the repository's `build` directory. CMake Tools, `scripts\build`, and
+the commands below use the same preset and output layout. Select
+`windows-vs2026` as the configure preset and `windows-vs2026-debug` or
+`windows-vs2026-release` as the build preset in VS Code, then run
+`CMake: configure (active preset)`. The launch configurations resolve targets
+through CMake Tools and build the selected target before starting it. If `build`
+was configured with another generator, move it aside before configuring this
+preset. Dependency scripts that use Visual Studio still select the newest
+version supported by CMake.
+
 The `build_glslangValidator` script retains its name for compatibility and
 builds the `glslang` executable.
 
@@ -485,8 +512,8 @@ builds the `glslang` executable.
 To build and run the Windows DX12 Viewer with Visual Studio after preparing the
 dependencies above:
 
-    cmake -S . -B build -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON
-    cmake --build build --target Viewer --config Debug --parallel 2
+    cmake --preset windows-vs2026
+    cmake --build --preset windows-vs2026-debug --target Viewer --parallel 2
     cd build
     Viewer\Debug\Viewer.exe
 
@@ -498,9 +525,10 @@ renderer backend build and upload the font atlas instead of building it before
 backend initialization.
 Release builds also need matching Release versions of crossguid, OpenGEX, and
 OpenDDL; linking their Debug libraries causes MSVC `LNK2038` runtime and iterator
-debug-level mismatches. Keep separate build directories and select the matching
-libraries with `XG_LIBRARY`, `OPENGEX_LIBRARY`, and `OPENDDL_LIBRARY` when
-validating both configurations locally.
+debug-level mismatches. Select matching libraries with `XG_LIBRARY`,
+`OPENGEX_LIBRARY`, and `OPENDDL_LIBRARY` when validating both configurations.
+Use a separate build directory when changing generators, not merely when
+switching between Debug and Release.
 
 ### MacOS & Linux
     ./scripts/build_crossguid.sh
@@ -511,13 +539,20 @@ validating both configurations locally.
     ./scripts/build_spirvcross.sh
     ./scripts/build_imgui.sh
     ./scripts/build_libispc-texcomp.sh
-    ./scripts/build-ninja.sh
+    ./scripts/build-ninja.sh Debug
 
-CI uses plain CMake after the dependencies are built:
+Select the `ninja-debug` configure and build presets in CMake Tools to use the
+same generator and `build` directory as `scripts/build-ninja.sh`. Use the
+`ninja-release` presets or pass `Release` to the script for Release builds.
+Run `CMake: configure (active preset)` after preparing dependencies; launch
+configurations resolve targets through CMake Tools and build before starting.
+The Xcode helper uses a separate `build/xcode` directory.
 
-    cmake -S . -B build
-    cmake --build build
-    cmake --build build --target package
+Manual CMake builds use the matching presets:
+
+    cmake --preset ninja-debug
+    cmake --build --preset ninja-debug
+    cmake --build --preset ninja-debug --target package
 
 Windows CI additionally enables `-DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON`.
 

@@ -3,88 +3,68 @@
     "tasks": [
         {
             "label": "Build External Dependencies (Debug)",
-            "type": "shell",
-            "command": "./scripts/build_crossguid.sh && ./scripts/build_opengex.sh && ./scripts/build_zlib.sh && ./scripts/build_bullet.sh && ./scripts/build_glslangValidator.sh && ./scripts/build_spirvcross.sh && ./scripts/build_libispc-texcomp.sh && ./scripts/build_openal.sh",
-            "windows": {
-                "command": "scripts\\build_crossguid.bat; scripts\\build_opengex.bat; scripts\\build_zlib.bat; scripts\\build_bullet.bat; scripts\\build_glslangValidator.bat; scripts\\build_spirvcross.bat; scripts\\build_libispc-texcomp.bat; scripts\\build_openal.bat"
-            },
-            "problemMatcher": [
-                "$msCompile"
+            "type": "process",
+            "command": "bash",
+            "args": [
+                "-lc",
+                "./scripts/build_crossguid.sh && ./scripts/build_opengex.sh && ./scripts/build_zlib.sh && ./scripts/build_bullet.sh && ./scripts/build_glslangValidator.sh && ./scripts/build_spirvcross.sh && ./scripts/build_libispc-texcomp.sh && ./scripts/build_openal.sh"
             ],
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/d",
+                    "/c",
+                    "call scripts\\build_crossguid.bat && call scripts\\build_opengex.bat && call scripts\\build_zlib.bat && call scripts\\build_bullet.bat && call scripts\\build_glslangValidator.bat && call scripts\\build_spirvcross.bat && call scripts\\build_libispc-texcomp.bat && call scripts\\build_openal.bat"
+                ]
+            },
+            "problemMatcher": [],
             "group": "build"
         },
         {
             "label": "Build External Dependencies (Release)",
-            "type": "shell",
-            "command": "./scripts/build_crossguid.sh Release && ./scripts/build_opengex.sh Release && ./scripts/build_zlib.sh Release && ./scripts/build_bullet.sh Release && ./scripts/build_glslangValidator.sh Release && ./scripts/build_spirvcross.sh Release && ./scripts/build_libispc-texcomp.sh Release && ./scripts/build_openal.sh Release",
-            "windows": {
-                "command": "scripts\\build_crossguid.bat Release; scripts\\build_opengex.bat Release; scripts\\build_zlib.bat Release; scripts\\build_bullet.bat Release; scripts\\build_glslangValidator.bat Release; scripts\\build_spirvcross.bat Release; scripts\\build_libispc-texcomp.bat Release; scripts\\build_openal.bat Release"
-            },
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": "build"
-        },
-        {
-            "label": "Build Engine (Debug)",
-            "type": "shell",
-            "command": "./scripts/build.sh Debug",
-            "windows": {
-                "command": "scripts\\build.bat Debug"
-            },
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "Build Engine (Release)",
-            "type": "shell",
-            "command": "./scripts/build.sh Release",
-            "windows": {
-                "command": "scripts\\build.bat Release"
-            },
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": "build"
-        },
-        {
-            "type": "cppbuild",
-            "label": "C/C++: clang++ 生成活动文件",
-            "command": "/usr/bin/clang++",
+            "type": "process",
+            "command": "bash",
             "args": [
-                "-fdiagnostics-color=always",
-                "-g",
-                "${file}",
-                "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "-lc",
+                "./scripts/build_crossguid.sh Release && ./scripts/build_opengex.sh Release && ./scripts/build_zlib.sh Release && ./scripts/build_bullet.sh Release && ./scripts/build_glslangValidator.sh Release && ./scripts/build_spirvcross.sh Release && ./scripts/build_libispc-texcomp.sh Release && ./scripts/build_openal.sh Release"
             ],
-            "options": {
-                "cwd": "${fileDirname}"
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/d",
+                    "/c",
+                    "call scripts\\build_crossguid.bat Release && call scripts\\build_opengex.bat Release && call scripts\\build_zlib.bat Release && call scripts\\build_bullet.bat Release && call scripts\\build_glslangValidator.bat Release && call scripts\\build_spirvcross.bat Release && call scripts\\build_libispc-texcomp.bat Release && call scripts\\build_openal.bat Release"
+                ]
             },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "group": "build",
-            "detail": "调试器生成的任务。"
+            "problemMatcher": [],
+            "group": "build"
         },
         {
             "type": "cmake",
-            "label": "CMake: clean rebuild",
-            "command": "cleanRebuild",
+            "label": "CMake: configure (active preset)",
+            "command": "configure",
+            "preset": "${command:cmake.activeConfigurePresetName}",
+            "problemMatcher": []
+        },
+        {
+            "type": "cmake",
+            "label": "Build Engine (active CMake preset)",
+            "command": "build",
             "targets": [
-                "ALL_BUILD"
+                "all"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
+            "preset": "${command:cmake.activeBuildPresetName}",
             "problemMatcher": [],
-            "detail": "CMake template clean rebuild task"
+            "group": "build",
+            "detail": "Builds using the selected CMake configure/build presets."
+        },
+        {
+            "type": "cmake",
+            "label": "CMake: clean rebuild (active preset)",
+            "command": "cleanRebuild",
+            "preset": "${command:cmake.activeBuildPresetName}",
+            "problemMatcher": [],
+            "detail": "Clean and rebuild using the selected CMake build preset."
         }
     ]
 }
