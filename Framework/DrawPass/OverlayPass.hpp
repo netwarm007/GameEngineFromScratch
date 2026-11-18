@@ -2,6 +2,7 @@
 #include "BaseDrawPass.hpp"
 #include "DebugOverlaySubPass.hpp"
 #include "GuiSubPass.hpp"
+#include "GuiIconLoader.hpp"
 
 namespace My {
 class OverlayPass : public BaseDrawPass {
@@ -12,7 +13,7 @@ class OverlayPass : public BaseDrawPass {
         m_DrawSubPasses.push_back(std::make_shared<DebugOverlaySubPass>(
             m_pGraphicsManager, m_pPipelineStateManager));
         m_DrawSubPasses.push_back(std::make_shared<GuiSubPass>(
-            m_pGraphicsManager, m_pPipelineStateManager));
+            m_pGraphicsManager, m_pPipelineStateManager, LoadGuiIconImage));
     }
 };
 }  // namespace My

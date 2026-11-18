@@ -68,6 +68,7 @@ struct AllocationState {
 - (void)forwardInvocation:(NSInvocation*)invocation {
     const SEL selector = invocation.selector;
     const bool allocation = selector == @selector(newBufferWithLength:options:) ||
+                            selector == @selector(newBufferWithBytes:length:options:) ||
                             selector == @selector(newSamplerStateWithDescriptor:) ||
                             selector == @selector(newCommandQueue);
     if (allocation && _state->attempts++ == _state->failAt) {
@@ -127,6 +128,27 @@ int main() {
             if (!initialized || [rhi initialize] || ImGui::GetCurrentContext()) {
                 std::cerr << "Metal retry/repeated initialization contract failed\n";
                 return 1;
+            }
+            const int baseline = state.live;
+            for (int scene = 0; scene < 3; ++scene) {
+                My::SceneObjectVertexArray vertices(
+                    "position", 0, My::VertexDataType::kVertexDataTypeFloat3,
+                    new uint8_t[9 * sizeof(float)]{}, 9);
+                My::SceneObjectIndexArray indices(
+                    0, 0, My::IndexDataType::kIndexDataTypeInt16,
+                    new uint8_t[3 * sizeof(uint16_t)]{}, 3);
+                [rhi createVertexBuffer:vertices];
+                [rhi createIndexBuffer:indices];
+                if (state.live != baseline + 2) {
+                    std::cerr << "Metal geometry allocations were not tracked\n";
+                    return 1;
+                }
+                [rhi releaseSceneGeometry];
+                [rhi releaseSceneGeometry];
+                if (state.live != baseline) {
+                    std::cerr << "Metal scene retirement retained old geometry\n";
+                    return 1;
+                }
             }
             [rhi finalize];
             [rhi finalize];

@@ -2,8 +2,12 @@
 #include "IInputManager.hpp"
 
 namespace My {
+class IGameLogic;
+
 class InputManager : _implements_ IInputManager {
    public:
+    explicit InputManager(IGameLogic& gameLogic) : m_GameLogic(gameLogic) {}
+
     int Initialize() override;
     void Finalize() override;
     void Tick() override;
@@ -36,5 +40,8 @@ class InputManager : _implements_ IInputManager {
     bool m_bDownKeyPressed = false;
     bool m_bLeftKeyPressed = false;
     bool m_bRightKeyPressed = false;
+
+   private:
+    IGameLogic& m_GameLogic;
 };
 }  // namespace My
