@@ -307,6 +307,20 @@ a fixed delay that can expire during scene uploads. Empty-scene and
 same-name material retirement are checked by RenderServicesTest; native Metal
 buffer release and subsequent reuse are checked by MetalInitializationTest.
 
+#### Known limitations and follow-ups (D1)
+
+- PR #70 review follow-up: debug texture views must also be invalidated when
+  `ResetScene()` rebuilds resources for the same Scene and texture names/sizes
+  are reused. Frames now carry the rebuilt scene-resource revision, published
+  to every in-flight frame and cleared on teardown; GuiSubPass includes it in
+  the cache key. RenderServicesTest drives real rendering coordination and GUI
+  cache paths with a recording backend, reused shadow/skybox handles, repeated
+  same-Scene resets and frame rotation. It checks view retirement/reuse and
+  revision propagation, not native driver storage or rendered pixel contents.
+- This review follow-up is not covered by the historical D1 acceptance above.
+  Exact-revision full Windows/Linux/macOS CI and native artifact inspection
+  remain required; no new acceptance is claimed by this local change.
+
 ### D2. Explicit input-to-game-logic dependency
 
 **Accepted.** See the

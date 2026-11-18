@@ -29,5 +29,6 @@ struct Frame : global_textures {
     bool enableMSAA = false;
     bool clearRT = true;
     std::shared_ptr<const Scene> scene;
+    uint64_t sceneResourceRevision{0};
 };
 }  // namespace My

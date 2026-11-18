@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "GraphicsManager.hpp"
+#include "GuiSubPass.hpp"
 #include "ISceneManager.hpp"
 #include "PipelineStateManager.hpp"
 #include "ShadowMapPass.hpp"
@@ -55,7 +56,7 @@ class TestScenes : public ISceneManager {
     const std::shared_ptr<Scene> GetSceneForPhysicalSimulation() const override {
         return scene;
     }
-    void ResetScene() override {}
+    void ResetScene() override { ++revision; }
     std::weak_ptr<BaseSceneNode> GetRootNode() const override { return {}; }
     std::weak_ptr<SceneGeometryNode> GetSceneGeometryNode(
         const std::string&) const override {
@@ -170,6 +171,118 @@ class ShadowPipelines : public PipelineStateManager {
         return true;
     }
 };
+
+void TestSameSceneDebugViewRebuild() {
+    class ReusedHandleGraphics : public RecordingGraphics {
+       public:
+        ReusedHandleGraphics(TestScenes& scenes, TestPipelines& pipelines)
+            : RecordingGraphics(scenes, pipelines),
+              scenes(scenes),
+              gui(this, &pipelines, [](const char*) { return Image{}; }) {}
+
+        void GenerateTextureArray(Texture2DArray& texture) override {
+            texture.handler = ++sourceHandle;
+            texture.size = 1;
+        }
+        void GenerateCubemapArray(TextureCubeArray& texture) override {
+            texture.handler = ++sourceHandle;
+            texture.size = 1;
+        }
+        void CreateTextureView(Texture2D& view, const TextureArrayBase& source,
+                               uint32_t, uint32_t) override {
+            view.handler = 1000 + ++viewsCreated;
+            view.width = source.width;
+            view.height = source.height;
+            liveViews.insert(view.handler);
+        }
+        void ReleaseTexture(TextureBase& texture) override {
+            if (texture.handler >= 1000) {
+                Expect(liveViews.erase(texture.handler) == 1,
+                       "each retired debug view is released exactly once");
+                ++viewsReleased;
+            }
+        }
+        void Draw() override {
+            RecordingGraphics::Draw();
+            for (const auto& frame : m_Frames) {
+                Expect(frame.sceneResourceRevision == scenes.revision,
+                       "rebuilt resource revision reaches every in-flight frame");
+            }
+            gui.Draw(m_Frames[m_nFrameIndex]);
+        }
+        void Present() override {
+            RecordingGraphics::Present();
+            m_nFrameIndex =
+                (m_nFrameIndex + 1) % GfxConfiguration::kMaxInFlightFrameCount;
+        }
+        void ExpectRetiredRevision() const {
+            for (const auto& frame : m_Frames) {
+                Expect(frame.sceneResourceRevision == 0,
+                       "scene teardown clears borrowed resource revisions");
+            }
+        }
+
+        int viewsCreated = 0;
+        int viewsReleased = 0;
+        std::set<TextureHandler> liveViews;
+
+       protected:
+        void BeginScene(const Scene& scene) override {
+            sourceHandle = 0;  // Model GL name reuse for new texture storage.
+            RecordingGraphics::BeginScene(scene);
+        }
+        void initializeSkyBox(const Scene&) override {
+            m_Frames[0].skybox.handler = ++sourceHandle;
+        }
+
+       private:
+        void ResizeCanvas(int32_t, int32_t) override {}
+        TestScenes& scenes;
+        GuiSubPass gui;
+        TextureHandler sourceHandle = 0;
+    };
+
+    auto& io = ImGui::GetIO();
+    const auto previousFlags = io.ConfigFlags;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    TestApplication app;
+    TestScenes scenes;
+    TestPipelines pipelines;
+    scenes.scene = std::make_shared<Scene>("same scene reset");
+    const auto* originalScene = scenes.scene.get();
+    scenes.revision = 1;
+    ReusedHandleGraphics graphics(scenes, pipelines);
+    graphics.SetAppPointer(&app);
+    Expect(graphics.Initialize() == 0, "debug view rebuild regression initializes");
+    graphics.Tick();
+    const int viewCount = graphics.viewsCreated;
+    Expect(viewCount == 21 && graphics.viewsReleased == 0,
+           "debug cache owns all shadow layers and skybox face/mip views");
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; ++i) {
+        graphics.Tick();
+    }
+    Expect(graphics.viewsCreated == viewCount && graphics.viewsReleased == 0,
+           "unchanged resources reuse views across every in-flight frame");
+
+    for (int rebuild = 1; rebuild <= 2; ++rebuild) {
+        scenes.ResetScene();
+        graphics.Tick();
+        Expect(scenes.scene.get() == originalScene &&
+                   graphics.viewsCreated == (rebuild + 1) * viewCount &&
+                   graphics.viewsReleased == rebuild * viewCount &&
+                   graphics.liveViews.size() == static_cast<size_t>(viewCount),
+               "same-Scene reset replaces every view despite identical handles and sizes");
+        for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; ++i) {
+            graphics.Tick();
+        }
+        Expect(graphics.viewsCreated == (rebuild + 1) * viewCount &&
+                   graphics.viewsReleased == rebuild * viewCount,
+               "subsequent in-flight frames reuse only the rebuilt views");
+    }
+    graphics.Finalize();
+    graphics.ExpectRetiredRevision();
+    io.ConfigFlags = previousFlags;
+}
 
 class SceneResourceGraphics : public FrameResourceGraphics {
    public:
@@ -558,6 +671,7 @@ int main() {
     TestFrameResourceOwnership(4, true);
     TestFrameResourcesAfterFailedInitialization();
     TestSceneResourceRetirement();
+    TestSameSceneDebugViewRebuild();
 
     ImGui::DestroyContext();
     return failures == 0 ? 0 : 1;

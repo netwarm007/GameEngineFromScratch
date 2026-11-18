@@ -222,12 +222,14 @@ void GuiSubPass::Draw(Frame& frame) {
             frame.frameContext.globalShadowMap.size, frame.frameContext.shadowMap.size,
             frame.frameContext.cubeShadowMap.size};
         if (m_ViewScene.lock() != frame.scene ||
+            m_ViewResourceRevision != frame.sceneResourceRevision ||
             m_viewSources != sources || m_viewSizes != sizes) {
             for (auto& view : m_TextureViews) m_pGraphicsManager->ReleaseTexture(view);
             m_TextureViews.clear();
             m_viewSources = sources;
             m_viewSizes = sizes;
             m_ViewScene = frame.scene;
+            m_ViewResourceRevision = frame.sceneResourceRevision;
         }
 	    static bool show_app_metrics = false;
 	    static bool show_app_debug_panel = true;
