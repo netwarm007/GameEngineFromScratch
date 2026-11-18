@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <string_view>
 
@@ -80,17 +81,30 @@ vk::CompareOp DepthCompare(DEPTH_TEST_MODE mode) {
 }  // namespace
 
 int VulkanPipelineStateManager::Initialize() {
-    if (!m_pApp || !m_pipelineStates.empty()) {
-        throw std::logic_error("Vulkan registry initialization requires an application and empty registry");
+    if (!m_pApp) {
+        throw std::logic_error("Vulkan registry initialization requires an application");
+    }
+    if (!m_pipelineStates.empty()) {
+        throw std::logic_error("Vulkan registry initialization requires an empty registry");
     }
     struct Rollback {
         VulkanPipelineStateManager& manager;
         bool active = true;
         ~Rollback() { if (active) manager.Clear(); }
     } rollback{*this};
-    const auto result = PipelineStateManager::Initialize();
-    if (result == 0) rollback.active = false;
-    return result;
+    // A missing or invalid engine SPIR-V file throws from the shared registry.
+    // The module contract reports failures by error code so the application can
+    // unwind already initialized modules; convert the throw into a nonzero result
+    // after rolling back this registry.
+    try {
+        const auto result = PipelineStateManager::Initialize();
+        if (result != 0) return result;
+    } catch (const std::exception& error) {
+        std::cerr << "Vulkan pipeline registry initialization failed: " << error.what() << '\n';
+        return -1;
+    }
+    rollback.active = false;
+    return 0;
 }
 
 bool VulkanPipelineStateManager::InitializePipelineState(

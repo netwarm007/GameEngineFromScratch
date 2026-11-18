@@ -18,7 +18,12 @@ if(NOT ANDROID AND NOT WA)
             -P "${CMAKE_CURRENT_SOURCE_DIR}/ShadowShaderCompatibility.cmake")
 endif()
 
-if(Vulkan_FOUND AND BUILD_TESTING AND VULKAN_RHI_TESTS)
+if(BUILD_TESTING AND VULKAN_RHI_TESTS)
+    if(NOT Vulkan_FOUND)
+        message(FATAL_ERROR
+            "VULKAN_RHI_TESTS=ON requires a Vulkan SDK. Install one, or configure "
+            "with -DVULKAN_RHI_TESTS=OFF to omit the Vulkan regression suite.")
+    endif()
     add_subdirectory(Vulkan)
 endif()
 

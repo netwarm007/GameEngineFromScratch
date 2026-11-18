@@ -336,7 +336,13 @@ int main(int argc, char** argv) {
             std::cout << "BILLIARD_PHYSICS_REGRESSION PASSED: cue=" << cueDisplacement
                       << " other=" << otherDisplacement << std::endl;
             regressionResult = 0;
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(MYGE_USE_VULKAN) && !defined(OS_LINUX)
+            // Linux completion is driven by the external capture script's
+            // capture-complete marker. Elsewhere quit automatically unless a
+            // screenshot request is still pending; the capture path retires the
+            // application itself once the frame is saved.
+            if (!graphicsManager.HasPendingScreenshot()) app.RequestQuit();
+#elif defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             app.RequestQuit();
 #endif
         }

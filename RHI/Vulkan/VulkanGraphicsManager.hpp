@@ -23,6 +23,9 @@ class VulkanGraphicsManager : public GraphicsManager {
     bool RenderTargetHasTopLeftOrigin() const final { return true; }
     void ResizeCanvas(int32_t width, int32_t height) final;
     void RequestScreenshot(const std::filesystem::path& path);
+    // True while a screenshot request has not yet been captured. The capture
+    // path retires the application itself once the frame is saved.
+    bool HasPendingScreenshot() const { return !m_screenshot.empty(); }
 
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
                           const Frame& frame) final;

@@ -111,13 +111,8 @@ void CheckRegistryRollback(VulkanRHI& rhi) {
     for (const auto* failure : {"pbr.frag", "integrateBRDF.comp"}) {
         assets.failedPath = std::string("Shaders/Vulkan/Engine/") + failure + ".spv";
         assets.reached = false;
-        bool rejected = false;
-        try {
-            registry.Initialize();
-        } catch (const std::runtime_error&) {
-            rejected = true;
-        }
-        Require(rejected && assets.reached, "Registry retry did not reach the injected failure");
+        const auto result = registry.Initialize();
+        Require(result != 0 && assets.reached, "Registry retry did not reach the injected failure");
         bool removed = false;
         try {
             registry.GetPipelineState("BASIC");
