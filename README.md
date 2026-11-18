@@ -120,6 +120,8 @@ or verification of every material and camera position.
 The [modularization roadmap](docs/architecture/modularization-roadmap.md)
 describes the refactoring goals, completed boundaries, proposed next checkpoints,
 and acceptance process.
+The [memory allocator roadmap](docs/architecture/memory-allocator-roadmap.md)
+tracks the review findings and planned allocators.
 
 The [Vulkan RHI implementation plan](docs/architecture/vulkan-rhi-implementation-plan.md)
 defines the shared-HLSL requirement, backend boundaries, implementation
@@ -303,6 +305,17 @@ Fetch sources first:
     git submodule sync
     git submodule update --init --recursive
     git lfs pull
+
+The Windows clang-cl build script writes to `build/clang-cl`, separate from
+the default build tree. The dependency scripts that refresh their CMake
+configuration use separate build directories under `External/build` for
+native and cross-toolchain builds. `cmake --fresh` resets CMake configuration;
+use an empty build directory if you need to rule out all old build outputs.
+
+On Linux, `scripts/coverage_linux.sh [build-dir] [report-dir]` leaves existing
+report directories intact. Each run writes profiles, HTML, and a text summary
+to its own `run.*` subdirectory. The latest completed LCOV export is published
+as `lcov.info` in the report directory for CI.
 
 ### Scene resource boundary
 

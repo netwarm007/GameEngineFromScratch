@@ -10,6 +10,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 option(USE_ISPC "Use ISPC for geometry math" OFF)
+option(USE_ENGINE_ALLOCATORS "Route pilot engine allocations through MemorySystem" OFF)
+option(ENABLE_ALLOCATOR_TRACKING "Wrap engine allocators in TrackingAllocator (leak report)" OFF)
 option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
 option(VULKAN_RHI_TESTS "Enable Vulkan shader ABI and native compute tests (requires a Vulkan driver and validation layer)" OFF)
 option(VULKAN_APPLICATIONS "Use Vulkan for Viewer and Billiard (requires swapchain-maintenance1)" OFF)

@@ -311,7 +311,7 @@ jobs:
               if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
               $env:Path = "$($dxc.DirectoryName);$env:Path"
             }
-            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON
+            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             cmake --build build --config Debug
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -505,7 +505,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             ./scripts/build-ninja.sh
+             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON" ./scripts/build-ninja.sh
       - save_cache:
           key: ccache-linux-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:
@@ -670,7 +670,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             ./scripts/build-ninja.sh
+             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON" ./scripts/build-ninja.sh
       - save_cache:
           key: ccache-macos-{{ arch }}-{{ .Branch }}-{{ .Revision }}
           paths:

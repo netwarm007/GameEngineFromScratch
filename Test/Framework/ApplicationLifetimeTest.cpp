@@ -1,9 +1,13 @@
 #include <iostream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "BaseApplication.hpp"
+#include "MemoryManager.hpp"
+#include "EngineAllocation.hpp"
+#include "MemorySystem.hpp"
 
 using namespace My;
 
@@ -288,6 +292,67 @@ void TestGuiPlatformLifetime() {
 }
 }  // namespace
 
+#ifdef USE_ENGINE_ALLOCATORS
+// Records whether the memory system still exists when a module finalizes.
+class AllocatingModule : public RecordingModule {
+   public:
+    AllocatingModule(RecordingApplication& app) : RecordingModule("alloc", app),
+        m_App(app) {}
+    int Initialize() override {
+        m_Object = MakeEngineShared<int>(42);
+        return RecordingModule::Initialize();
+    }
+    void Finalize() override {
+        sawSystemAtFinalize = m_App.GetMemorySystem() != nullptr;
+        m_Object.reset();
+        RecordingModule::Finalize();
+    }
+    bool sawSystemAtFinalize = false;
+
+   private:
+    RecordingApplication& m_App;
+    std::shared_ptr<int> m_Object;
+};
+
+void TestMemorySystemLifetime() {
+    {
+        RecordingApplication app;
+        AllocatingModule module(app);
+        app.CreateMainWindow();
+        app.RegisterManagerModule(static_cast<IRuntimeModule*>(&module));
+        Expect(app.GetMemorySystem() == nullptr,
+               "no memory system before initialization");
+        Expect(app.Initialize() == 0, "application starts");
+        Expect(app.GetMemorySystem() && app.GetMemorySystem()->IsConfigured(),
+               "memory system exists while running");
+        Expect(EngineAllocationCount() >= 1,
+               "module objects come from the engine allocator");
+        const auto frame = app.GetMemorySystem()->Frame().FrameNumber();
+        app.Tick();
+        Expect(app.GetMemorySystem()->Frame().FrameNumber() == frame + 1,
+               "each application tick begins a new frame arena");
+        Expect(app.Initialize() != 0 && app.GetMemorySystem() != nullptr,
+               "rejected re-initialization keeps the memory system");
+        app.Finalize();
+        Expect(module.sawSystemAtFinalize,
+               "memory system outlives module finalization");
+        Expect(app.GetMemorySystem() == nullptr,
+               "memory system is released after shutdown");
+    }
+    {
+        RecordingApplication app;
+        RecordingModule failing("failing", app);
+        failing.result = 17;
+        app.CreateMainWindow();
+        app.RegisterManagerModule(static_cast<IRuntimeModule*>(&failing));
+        Expect(app.Initialize() == 17, "module failure propagates");
+        Expect(app.GetMemorySystem() == nullptr,
+               "failed initialization releases the memory system");
+        app.Finalize();
+    }
+}
+#endif
+
 int main() {
     TestSuccessfulShutdown();
     TestFailedModuleInitialization();
@@ -295,5 +360,8 @@ int main() {
     TestWindowWithoutModules();
     TestBackendInitializationBoundaries();
     TestGuiPlatformLifetime();
+#ifdef USE_ENGINE_ALLOCATORS
+    TestMemorySystemLifetime();
+#endif
     return failures == 0 ? 0 : 1;
 }

@@ -1,14 +1,11 @@
 #!/bin/bash
 set -e
-git submodule update --init External/src/cmft
-mkdir -p External/build/cmft
-pushd External/build/cmft
-rm -rf *
-cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../`uname -s`/ -DCMAKE_INSTALL_RPATH=../../`uname -s`/ ../../src/cmft
-if [[ -z $1 ]];
-then
-    cmake --build . --config debug --target install
-else
-    cmake --build . --config $1 --target install
-fi
-popd
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)"
+HOST="$(uname -s)"
+BUILD_DIR="$ROOT/External/build/cmft-$HOST"
+INSTALL_DIR="$ROOT/External/$HOST"
+
+git -C "$ROOT" submodule update --init -- External/src/cmft
+cmake --fresh -S "$ROOT/External/src/cmft" -B "$BUILD_DIR" -G Ninja \
+    "-DCMAKE_INSTALL_PREFIX=$INSTALL_DIR" "-DCMAKE_INSTALL_RPATH=$INSTALL_DIR"
+cmake --build "$BUILD_DIR" --config "${1:-debug}" --target install
