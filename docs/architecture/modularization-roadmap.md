@@ -241,6 +241,13 @@ cleans up its own partial state; it is not passed to its shutdown hook.
 Successful GUI platform state survives module rollback for retry, but is
 released once on explicit application finalization.
 
+On Win32/OpenGL, `OpenGLApplication` wraps the ImGui viewport render callback
+only after `OpenGLGraphicsManager` has initialized the ImGui OpenGL renderer
+and registered that callback. During renderer shutdown, ImGui destroys the
+secondary platform windows and their renderer destroy callbacks release the
+window DCs. This must happen before `OpenGLApplication` destroys the shared
+WGL context.
+
 ApplicationLifetimeTest covers ordering, GUI platform failure, renderer/module
 rollback and retry. D3d12GuiTextureTest exercises native platform/renderer
 binding, borrowed-backend rejection, descriptor reuse and repeated cleanup.
