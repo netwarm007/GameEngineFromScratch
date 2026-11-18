@@ -4,8 +4,19 @@
 #include <tchar.h>
 
 #include "glad/glad_wgl.h"
+#include "imgui.h"
+#include "imgui_impl_win32.h"
 
 using namespace My;
+
+namespace {
+struct WglViewportData {
+    HWND window;
+    HDC dc;
+    void (*render)(ImGuiViewport*, void*);
+    bool rendered = false;
+};
+}  // namespace
 
 static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam,
                                    LPARAM lParam) {
@@ -27,6 +38,84 @@ void OpenGLApplication::FinalizeGraphicsResources() {
         wglDeleteContext(m_RenderContext);
         m_RenderContext = 0;
     }
+    if (m_hDC) {
+        ReleaseDC(m_hWnd, m_hDC);
+        m_hDC = nullptr;
+    }
+}
+
+int OpenGLApplication::InitializeGuiPlatform() {
+    if (!ImGui::GetCurrentContext()) return 0;
+    if (!m_hWnd || ImGui::GetIO().BackendPlatformUserData) return -1;
+    if (!ImGui_ImplWin32_InitForOpenGL(m_hWnd)) return -1;
+    ImGui_ImplWin32_EnableDpiAwareness();
+    return 0;
+}
+
+int OpenGLApplication::Initialize() {
+    const int result = WindowsApplication::Initialize();
+    if (result != 0 || !ImGui::GetCurrentContext()) return result;
+
+    auto& platform = ImGui::GetPlatformIO();
+    auto* mainViewport = ImGui::GetMainViewport();
+    if (!platform.Renderer_RenderWindow || mainViewport->RendererUserData) return 0;
+    mainViewport->RendererUserData =
+        new WglViewportData{m_hWnd, m_hDC, platform.Renderer_RenderWindow};
+
+    platform.Renderer_CreateWindow = [](ImGuiViewport* viewport) {
+        auto* main = static_cast<WglViewportData*>(ImGui::GetMainViewport()->RendererUserData);
+        auto hwnd = static_cast<HWND>(viewport->PlatformHandleRaw);
+        if (!main || !hwnd) {
+            fprintf(stderr, "Cannot create WGL drawable for ImGui viewport\n");
+            return;
+        }
+        HDC dc = GetDC(hwnd);
+        const int format = GetPixelFormat(main->dc);
+        PIXELFORMATDESCRIPTOR descriptor{};
+        // WGL can bind the same context to another DC only with a matching pixel format.
+        if (!dc || !format ||
+            !DescribePixelFormat(dc, format, sizeof(descriptor), &descriptor) ||
+            !SetPixelFormat(dc, format, &descriptor)) {
+            fprintf(stderr, "Cannot set pixel format for ImGui WGL viewport\n");
+            if (dc) ReleaseDC(hwnd, dc);
+            return;
+        }
+        viewport->RendererUserData = new WglViewportData{hwnd, dc, main->render};
+    };
+    platform.Renderer_DestroyWindow = [](ImGuiViewport* viewport) {
+        auto* data = static_cast<WglViewportData*>(viewport->RendererUserData);
+        if (!data) return;
+        if (viewport != ImGui::GetMainViewport()) ReleaseDC(data->window, data->dc);
+        delete data;
+        viewport->RendererUserData = nullptr;
+    };
+    platform.Renderer_RenderWindow = [](ImGuiViewport* viewport, void* arg) {
+        auto* data = static_cast<WglViewportData*>(viewport->RendererUserData);
+        if (!data) return;
+        data->rendered = false;
+        const HDC previousDC = wglGetCurrentDC();
+        const HGLRC context = wglGetCurrentContext();
+        if (!context) {
+            fprintf(stderr, "No current WGL context for ImGui viewport\n");
+            return;
+        }
+        if (wglMakeCurrent(data->dc, context)) {
+            data->render(viewport, arg);
+            data->rendered = true;
+        } else {
+            fprintf(stderr, "Cannot bind WGL context to ImGui viewport\n");
+        }
+        if (!wglMakeCurrent(previousDC, context)) {
+            fprintf(stderr, "Cannot restore WGL context after drawing ImGui viewport\n");
+        }
+    };
+    platform.Renderer_SwapBuffers = [](ImGuiViewport* viewport, void*) {
+        auto* data = static_cast<WglViewportData*>(viewport->RendererUserData);
+        if (data && data->rendered && !SwapBuffers(data->dc)) {
+            fprintf(stderr, "Cannot present ImGui WGL viewport\n");
+        }
+    };
+    return 0;
 }
 
 void OpenGLApplication::Tick() {
@@ -83,28 +172,21 @@ int OpenGLApplication::InitializeGraphicsResources() {
     HDC TemphDC = GetDC(TemphWnd);
     // Set a temporary default pixel format.
     m_nPixelFormat = ChoosePixelFormat(TemphDC, &m_pfd);
-    assert(m_nPixelFormat &&
-           "Pixel format specified it not supported by the platform!");
-
-    auto result = SetPixelFormat(TemphDC, m_nPixelFormat, &m_pfd);
-    assert(result == 1 && "SetPixelFormat failed!");
-
-    // Create a temporary rendering context.
-    m_RenderContext = wglCreateContext(TemphDC);
-    assert(m_RenderContext && "wglCreateContext failed!");
-
-    // Set the temporary rendering context as the current rendering context for
-    // this window.
-    result = wglMakeCurrent(TemphDC, m_RenderContext);
-    assert(result && "wglMakeCurrent failed!");
-
-    assert(gladLoadWGL(TemphDC) && "WGL initialize failed!\n");
-    printf("WGL initialize finished!\n");
-
-    wglMakeCurrent(NULL, NULL);
-    wglDeleteContext(m_RenderContext);
-    ReleaseDC(TemphWnd, TemphDC);
-    DestroyWindow(TemphWnd);
+    HGLRC tempContext = nullptr;
+    if (TemphDC && m_nPixelFormat &&
+        SetPixelFormat(TemphDC, m_nPixelFormat, &m_pfd)) {
+        tempContext = wglCreateContext(TemphDC);
+    }
+    const bool tempCurrent = tempContext && wglMakeCurrent(TemphDC, tempContext);
+    const bool loaded = tempCurrent && gladLoadWGL(TemphDC);
+    if (tempCurrent) wglMakeCurrent(nullptr, nullptr);
+    if (tempContext) wglDeleteContext(tempContext);
+    if (TemphDC) ReleaseDC(TemphWnd, TemphDC);
+    if (TemphWnd) DestroyWindow(TemphWnd);
+    if (!loaded) {
+        fprintf(stderr, "Cannot initialize WGL bootstrap context\n");
+        return -1;
+    }
 
     m_hDC = GetDC(m_hWnd);
 
@@ -140,16 +222,12 @@ int OpenGLApplication::InitializeGraphicsResources() {
                                   (const int)m_Config.msaaSamples,
                                   0};
 
-        UINT numFormats;
-
-        if (FAILED(wglChoosePixelFormatARB(m_hDC, attributes, nullptr, 1u,
-                                           &m_nPixelFormat, &numFormats)) ||
+        UINT numFormats = 0;
+        if (!wglChoosePixelFormatARB(m_hDC, attributes, nullptr, 1u,
+                                     &m_nPixelFormat, &numFormats) ||
             numFormats == 0) {
-            printf("wglChoosePixelFormatARB failed!\n");
+            m_nPixelFormat = ChoosePixelFormat(m_hDC, &m_pfd);
         }
-
-        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) &&
-               "SetPixelFormat failed!\n");
 
         const int context_attributes[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB,
@@ -166,30 +244,21 @@ int OpenGLApplication::InitializeGraphicsResources() {
 #endif
             0};
 
-        assert((m_RenderContext =
-                    wglCreateContextAttribsARB(m_hDC, 0, context_attributes)) &&
-               "wglCreateContextAttributeARB failed!\n");
-
-        assert(wglMakeCurrent(m_hDC, m_RenderContext) &&
-               "wglMakeCurrent failed!\n");
+        if (m_nPixelFormat && SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd)) {
+            m_RenderContext = wglCreateContextAttribsARB(m_hDC, nullptr, context_attributes);
+        }
     } else {
         // Set pixel format.
         m_nPixelFormat = ChoosePixelFormat(m_hDC, &m_pfd);
-        if (m_nPixelFormat == 0) {
-            printf("ChoosePixelFormat failed!\n");
+        if (m_nPixelFormat && SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd)) {
+            m_RenderContext = wglCreateContext(m_hDC);
         }
+    }
 
-        assert(SetPixelFormat(m_hDC, m_nPixelFormat, &m_pfd) &&
-               "SetPixelFormat failed!\n");
-
-        // Create rendering context.
-        assert((m_RenderContext = wglCreateContext(m_hDC)) &&
-               "wglCreateContext failed!\n");
-
-        // Set the rendering context as the current rendering context for this
-        // window.
-        assert(wglMakeCurrent(m_hDC, m_RenderContext) &&
-               "wglMakeCurrent failed!\n");
+    if (!m_RenderContext || !wglMakeCurrent(m_hDC, m_RenderContext)) {
+        fprintf(stderr, "Cannot initialize WGL context for the main window\n");
+        FinalizeGraphicsResources();
+        return -1;
     }
 
     if (GLAD_WGL_EXT_swap_control) {

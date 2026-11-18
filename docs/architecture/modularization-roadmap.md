@@ -141,7 +141,7 @@ application. Desktop graphics clients must create the native window first.
 | --- | --- |
 | Windows native window and platform DC | WindowsApplication creates them in CreateMainWindow and releases them after backend cleanup. |
 | D3D12 device, queues, swapchain, and sync objects | D3d12Application owns its RHI; its backend hook performs the existing setup sequence before modules. RHI callbacks borrow the application/window. |
-| Windows OpenGL context | OpenGLApplication creates the temporary WGL bootstrap and final context in its backend hook, retaining native window creation in WindowsApplication. |
+| Windows OpenGL context | OpenGLApplication creates the temporary WGL bootstrap and final context in its backend hook, retaining native window creation in WindowsApplication. ImGui secondary windows use DCs with the main window's pixel format and borrow the same context while drawing; the previous DC is restored before returning to the engine. |
 | Linux native window and connections | XcbApplication owns them. OpenGL framebuffer configuration discovery remains before native window creation; context/GLX drawable setup moves to the backend hook. |
 | Linux GLX context/drawable | OpenGLApplication releases them and synchronizes their destruction before XcbApplication releases the native window and connections. |
 | macOS window and Metal content view | CocoaApplication owns the window; CocoaMetalApplication installs the Metal view/device during its backend hook. The window retains the content view. Metal RHI setup/cleanup remains in Metal2GraphicsManager. |

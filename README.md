@@ -96,6 +96,10 @@ panels resize with the main viewport without overlapping. Existing ImGui
 layouts are preserved. Use Debug > Reset window layout to restore these
 defaults, or reopen individual panels through the Debug menu.
 
+On Windows, Viewer defaults to D3D12. To build the native Win32/OpenGL (WGL)
+variant instead, configure with `-DVIEWER_USE_WIN32_OPENGL=ON` and build the
+`Viewer` target. This variant runs as `ViewerOpenGL.exe`.
+
 ## Shading Language
 - HLSL, auto convert to GLSL/Metal Performance Shader
 

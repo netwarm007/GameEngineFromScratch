@@ -1,6 +1,10 @@
 add_library(SplashSequence SplashSequence.cpp)
 target_link_libraries(SplashSequence PUBLIC SceneServices)
 
+if(WIN32)
+    option(VIEWER_USE_WIN32_OPENGL "Build Viewer with native Win32 OpenGL instead of D3D12" OFF)
+endif()
+
 set(SCENE_FILES
                     ${PROJECT_SOURCE_DIR}/Asset/Scene/splash.ogex
 )
@@ -190,14 +194,23 @@ ELSEIF(WA)
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s DEMANGLE_SUPPORT=1 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
             )
 ELSEIF(WIN32)
+    if(VIEWER_USE_WIN32_OPENGL)
+        target_compile_definitions(Viewer PRIVATE VIEWER_USE_WIN32_OPENGL)
+        set_target_properties(Viewer PROPERTIES OUTPUT_NAME ViewerOpenGL)
+        set(VIEWER_WINDOWS_RHI OpenGLRHI)
+        set(VIEWER_WINDOWS_SHADERS OpenGL)
+    else()
+        set(VIEWER_WINDOWS_RHI D3dRHI)
+        set(VIEWER_WINDOWS_SHADERS HLSL)
+    endif()
     target_link_libraries(Viewer
                             BulletPhysics
-                            D3dRHI
+                            ${VIEWER_WINDOWS_RHI}
                             Framework
                             PlatformInterface
                         )
 
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/HLSL DESTINATION Asset/Shaders)
+    install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/${VIEWER_WINDOWS_SHADERS} DESTINATION Asset/Shaders)
     install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
     install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
