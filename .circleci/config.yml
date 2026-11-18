@@ -127,11 +127,26 @@ jobs:
             }
 
             # install NSIS for packaging
-            choco install nsis -y
+            $nsisInstalled = $false
+            for ($attempt = 1; $attempt -le 3; $attempt++) {
+              choco install nsis -y --no-progress
+              if ($LASTEXITCODE -eq 0) {
+                $nsisInstalled = $true
+                break
+              }
+              if ($attempt -lt 3) {
+                Write-Warning "NSIS installation failed (attempt $attempt/3); retrying in 10 seconds."
+                Start-Sleep -Seconds 10
+              }
+            }
+            if (-not $nsisInstalled) { throw "NSIS installation failed after 3 attempts" }
 
             # install vulkan SDK
             choco install vulkan-sdk -y
             refreshenv
+            if (-not (Get-Command "makensis.exe" -ErrorAction SilentlyContinue)) {
+              throw "NSIS compiler makensis.exe was not found after installation"
+            }
       - restore_cache:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
