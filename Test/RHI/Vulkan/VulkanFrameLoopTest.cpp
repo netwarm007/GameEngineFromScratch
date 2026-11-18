@@ -227,6 +227,7 @@ class GuiGraphics final : public My::VulkanGraphicsManager {
     using VulkanGraphicsManager::VulkanGraphicsManager;
     using VulkanGraphicsManager::BeginFrame;
     using VulkanGraphicsManager::EndFrame;
+    using VulkanGraphicsManager::IsInitialized;
     My::Frame& CurrentFrame() {
         auto& frame = m_Frames.at(m_nFrameIndex);
         frame.frameIndex = m_nFrameIndex;
