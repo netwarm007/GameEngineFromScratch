@@ -6,6 +6,17 @@ Incrementally separate runtime orchestration, scene data, CPU preparation,
 physics, rendering, platform resources, and UI so that dependencies and resource
 ownership are explicit and modules can be tested independently.
 
+The project began as a runtime-first, rendering-first effort, with editor and
+host tools deferred until later ([series introduction](https://zhuanlan.zhihu.com/p/28587092)).
+Its articles document experiments rather than a fixed architecture: for example,
+the physics work integrates Bullet into a real scene
+([part 38](https://zhuanlan.zhihu.com/p/33090740)), while later GPU path-tracing
+work explores data layouts that differ from the CPU implementation
+([part 101](https://zhuanlan.zhihu.com/p/612018390)). Use that incremental,
+hands-on approach as context, not as a requirement to reproduce every experiment.
+Choose boundaries from current dependencies and tests, and preserve explicit
+backend differences where the evidence requires them.
+
 This is a maintained engineering plan, not a rewrite proposal, CI dashboard,
 or authorization to implement every future stage. Confirm the next checkpoint's
 scope before implementation. Prefer one independently testable boundary per

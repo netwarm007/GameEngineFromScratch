@@ -10,6 +10,21 @@ This project is written by me as the sample of My articles [Hand-made Next-Gen G
 このプロジェクトは私の連載中の[ゼロから始める手作り次世代ゲームエンジン](
 https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352)のサンプルソースである
 
+## Project intent and evolution
+
+This project grew alongside the [Zhihu series](https://zhuanlan.zhihu.com/c_119702958?group_id=934116274502500352).
+Its starting plan was deliberately runtime-first and rendering-first, with
+editor and host tools deferred until after the runtime. The series records an
+open-ended, hands-on progression: from the initial plan
+([introduction](https://zhuanlan.zhihu.com/p/28587092)), through integrating
+Bullet into a scene simulation ([part 38](https://zhuanlan.zhihu.com/p/33090740)),
+to later GPU-focused ray-tracing experiments
+([part 101](https://zhuanlan.zhihu.com/p/612018390)).
+
+Those articles are historical context, not a feature contract for the current
+repository. Current behavior and engineering plans are defined by the source,
+focused roadmaps, tests, and revision-specific verification records.
+
 ## Platform Support Status
 - Windows 10 / 11 (targeted; CircleCI uses Windows Server 2022).
 - macOS (CircleCI uses Apple Silicon and Xcode 16.4; Catalina-Monterey are not
