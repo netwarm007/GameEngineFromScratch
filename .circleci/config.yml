@@ -108,6 +108,8 @@ jobs:
               echo "bison not present. Installing bison."
               choco install winflexbison3 -y
 
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
               if (-not ($machinePath.ToLower().Contains($winflexbison3Path.ToLower())))
               {
                 echo "Adding $winflexbison3Path to Path environment variable"
@@ -143,10 +145,14 @@ jobs:
 
             # install vulkan SDK
             choco install vulkan-sdk -y
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             refreshenv
-            if (-not (Get-Command "makensis.exe" -ErrorAction SilentlyContinue)) {
-              throw "NSIS compiler makensis.exe was not found after installation"
+            $nsisPath = Join-Path "${env:ProgramFiles(x86)}" "NSIS"
+            $makensisPath = Join-Path $nsisPath "makensis.exe"
+            if (-not (Test-Path -LiteralPath $makensisPath)) {
+              throw "NSIS compiler was not found at $makensisPath after installation"
             }
+            $env:Path = "$nsisPath;$env:Path"
       - restore_cache:
           keys:
             - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
