@@ -3,7 +3,7 @@
 # Usage: scripts/coverage_linux.sh [build-dir] [report-dir]
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)"
 BUILD_DIR="${1:-$ROOT/build-coverage}"
 REPORT_DIR="${2:-$ROOT/coverage}"
 
@@ -19,19 +19,26 @@ LLVM_COV="$(find_tool llvm-cov)"
 LLVM_PROFDATA="$(find_tool llvm-profdata)"
 
 export CC="${CC:-clang}" CXX="${CXX:-clang++}"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$ROOT/External/$(uname -s)/lib"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$ROOT/External/$(uname -s)/lib"
 
 cmake -S "$ROOT" -B "$BUILD_DIR" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
 cmake --build "$BUILD_DIR"
 
 # Tests run from their own working directories, so the profile path must be absolute.
-REPORT_DIR="$(mkdir -p "$REPORT_DIR" && cd "$REPORT_DIR" && pwd)"
-rm -rf "$REPORT_DIR" && mkdir -p "$REPORT_DIR/profraw"
+REPORT_DIR="$(mkdir -p -- "$REPORT_DIR" && CDPATH= cd -- "$REPORT_DIR" && pwd -P)"
+RUN_DIR="$(mktemp -d -- "$REPORT_DIR/run.XXXXXXXX")"
+mkdir -- "$RUN_DIR/profraw"
 # %p/%m keep profiles of concurrently running test processes apart.
-export LLVM_PROFILE_FILE="$REPORT_DIR/profraw/%p-%m.profraw"
+export LLVM_PROFILE_FILE="$RUN_DIR/profraw/%p-%m.profraw"
 ctest --test-dir "$BUILD_DIR" --output-on-failure || echo "ctest reported failures; coverage still generated"
 
-"$LLVM_PROFDATA" merge -sparse "$REPORT_DIR"/profraw/*.profraw -o "$REPORT_DIR/coverage.profdata"
+shopt -s nullglob
+PROFILES=("$RUN_DIR"/profraw/*.profraw)
+if ((${#PROFILES[@]} == 0)); then
+    printf 'No coverage profiles found in %s\n' "$RUN_DIR/profraw" >&2
+    exit 1
+fi
+"$LLVM_PROFDATA" merge -sparse "${PROFILES[@]}" -o "$RUN_DIR/coverage.profdata"
 
 # Every instrumented executable under the build dir contributes to the report.
 # Skip non-ELF files (scripts, generated tools) that llvm-cov cannot load.
@@ -39,13 +46,20 @@ EXES=()
 while IFS= read -r f; do
     [[ "$(head -c4 "$f" | od -An -c | tr -d ' ')" == '177ELF' ]] && EXES+=("$f")
 done < <(find "$BUILD_DIR" -type f -executable ! -name '*.so*' ! -path '*/CMakeFiles/*')
+if ((${#EXES[@]} == 0)); then
+    printf 'No ELF executables found in %s\n' "$BUILD_DIR" >&2
+    exit 1
+fi
 OBJECTS=()
 for exe in "${EXES[@]:1}"; do OBJECTS+=("-object" "$exe"); done
 FIRST="${EXES[0]}"
 
 IGNORE=(-ignore-filename-regex='(External|/Test/|/usr/|CMakeFiles|MGEMX\.(tab|yy|lex))')
-COMMON=("$FIRST" "${OBJECTS[@]}" -instr-profile="$REPORT_DIR/coverage.profdata" "${IGNORE[@]}")
+COMMON=("$FIRST" "${OBJECTS[@]}" -instr-profile="$RUN_DIR/coverage.profdata" "${IGNORE[@]}")
 
-"$LLVM_COV" export "${COMMON[@]}" -format=lcov > "$REPORT_DIR/lcov.info"
-"$LLVM_COV" show "${COMMON[@]}" -format=html -output-dir="$REPORT_DIR/html"
-"$LLVM_COV" report "${COMMON[@]}" | tee "$REPORT_DIR/summary.txt"
+"$LLVM_COV" export "${COMMON[@]}" -format=lcov > "$RUN_DIR/lcov.info"
+"$LLVM_COV" show "${COMMON[@]}" -format=html -output-dir="$RUN_DIR/html"
+"$LLVM_COV" report "${COMMON[@]}" | tee "$RUN_DIR/summary.txt"
+# Publish the CI-facing file only after generation succeeds; do not follow a destination symlink.
+mv -fT -- "$RUN_DIR/lcov.info" "$REPORT_DIR/lcov.info"
+printf 'Coverage report: %s\n' "$RUN_DIR/html/index.html"

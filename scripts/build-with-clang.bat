@@ -1,8 +1,11 @@
-mkdir build
-pushd build
-rm -rf *
-set PATH=%PATH%;..\External\Windows\bin
-cmake -G "NMake Makefiles" -DCMAKE_TOOLCHAIN_FILE=..\cmake\clang-cl.cmake ..
-if "%1" == "" (cmake --build . --config Debug) else (cmake --build . --config %1)
-popd
+@echo off
+setlocal DisableDelayedExpansion
+for %%I in ("%~dp0..") do set "ROOT=%%~fI"
+set "BUILD_DIR=%ROOT%\build\clang-cl"
+set "PATH=%PATH%;%ROOT%\External\Windows\bin"
+set "CONFIG=%~1"
+if not defined CONFIG set "CONFIG=Debug"
 
+cmake --fresh -S "%ROOT%" -B "%BUILD_DIR%" -G "NMake Makefiles" ^
+    "-DCMAKE_TOOLCHAIN_FILE=%ROOT%\cmake\clang-cl.cmake" || exit /b 1
+cmake --build "%BUILD_DIR%" --config "%CONFIG%" || exit /b 1
