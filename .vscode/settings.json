@@ -137,7 +137,9 @@
         "parentbad": "cpp"
     },
     "git.ignoreLimitWarning": true,
+    "cmake.useCMakePresets": "always",
     "cmake.configureOnOpen": false,
+    "cmake.buildBeforeRun": true,
     "editor.formatOnSave": true,
     "python.pythonPath": "C:\\Users\\Tim.AzureAD\\AppData\\Local\\Programs\\Python\\Python38\\python.exe"
 }

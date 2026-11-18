@@ -1,11 +1,83 @@
 {
     "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "viewerProgram",
+            "type": "command",
+            "command": "cmake.launchTargetPath",
+            "args": {
+                "targetName": "Viewer"
+            }
+        },
+        {
+            "id": "billiardProgram",
+            "type": "command",
+            "command": "cmake.launchTargetPath",
+            "args": {
+                "targetName": "BilliardGame"
+            }
+        },
+        {
+            "id": "vulkanRhiTestProgram",
+            "type": "command",
+            "command": "cmake.launchTargetPath",
+            "args": {
+                "targetName": "VulkanRHITest"
+            }
+        },
+        {
+            "id": "imguiTestSdl2Program",
+            "type": "command",
+            "command": "cmake.launchTargetPath",
+            "args": {
+                "targetName": "ImGuiTestSDL2"
+            }
+        },
+        {
+            "id": "sdl2WindowTestProgram",
+            "type": "command",
+            "command": "cmake.launchTargetPath",
+            "args": {
+                "targetName": "Sdl2WindowTest"
+            }
+        },
+        {
+            "id": "sdl2OpenGlWindowTestProgram",
+            "type": "command",
+            "command": "cmake.launchTargetPath",
+            "args": {
+                "targetName": "Sdl2OpenGLWindowTest"
+            }
+        }
+    ],
     "configurations": [
+        {
+            "name": "(Windows / Visual Studio) Launch Viewer",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${input:viewerProgram}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false
+        },
+        {
+            "name": "(Windows / Visual Studio) Launch Game",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${input:billiardProgram}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false
+        },
         {
             "name": "(Mac OS) Launch Viewer",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Viewer/Viewer.app/Contents/MacOS/Viewer",
+            "program": "${input:viewerProgram}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
@@ -17,7 +89,7 @@
             "name": "(Mac OS) Launch Game",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Game/Billiard/BilliardGame.app/Contents/MacOS/BilliardGame",
+            "program": "${input:billiardProgram}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
@@ -29,7 +101,7 @@
             "name": "(Mac OS) Launch VulkanRHITest",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Test/VulkanRHITest",
+            "program": "${input:vulkanRhiTestProgram}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
@@ -43,94 +115,56 @@
             "MIMode": "lldb"
         },
         {
-            "name": "(Windows) Launch Viewer",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Viewer/Debug/Viewer.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build",
-            "environment": [],
-            "externalConsole": false
-        },
-        {
-            "name": "(Windows) Launch Game",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/Game/Billiard/Debug/BilliardGame.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build",
-            "environment": [],
-            "externalConsole": false
-        },
-        {
             "name": "(Linux) Launch Viewer",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Viewer/Viewer",
+            "program": "${input:viewerProgram}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
-            "environment": [
-                {
-                    "name": "DISPLAY",
-                    "value": ":0.0"
-                }
-            ],
+            "environment": [],
             "externalConsole": false,
-            "miDebuggerPath": "/usr/bin/gdb"
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb"
         },
         {
-            "name": "(Linux) Launch ImGuiTest",
+            "name": "(Linux) Launch ImGuiTestSDL2",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Test/ImGuiTestSDL2",
+            "program": "${input:imguiTestSdl2Program}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
-            "environment": [
-                {
-                    "name": "DISPLAY",
-                    "value": ":0.0"
-                }
-            ],
+            "environment": [],
             "externalConsole": false,
-            "miDebuggerPath": "/usr/bin/gdb"
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb"
         },
         {
             "name": "(Linux) Launch Sdl2WindowTest",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Test/Sdl2WindowTest",
+            "program": "${input:sdl2WindowTestProgram}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
-            "environment": [
-                {
-                    "name": "DISPLAY",
-                    "value": ":0.0"
-                }
-            ],
+            "environment": [],
             "externalConsole": false,
-            "miDebuggerPath": "/usr/bin/gdb"
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb"
         },
         {
             "name": "(Linux) Launch Sdl2OpenGLWindowTest",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Test/Sdl2OpenGLWindowTest",
+            "program": "${input:sdl2OpenGlWindowTestProgram}",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
-            "environment": [
-                {
-                    "name": "DISPLAY",
-                    "value": ":0.0"
-                }
-            ],
+            "environment": [],
             "externalConsole": false,
-            "miDebuggerPath": "/usr/bin/gdb"
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb"
         }
     ]
 }
