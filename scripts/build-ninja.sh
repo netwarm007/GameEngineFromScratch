@@ -1,15 +1,20 @@
 #!/bin/bash
 set -e
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/External/$(uname -s)/lib
-mkdir -p build
-pushd build
-# CMAKE_ARGS is intentionally word-split into extra cmake options.
-cmake -G"Ninja" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $CMAKE_ARGS ..
-if [[ -z $1 ]];
-then
-    cmake --build . --config Debug
-else
-    cmake --build . --config $1
-fi
-popd
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$ROOT/External/$(uname -s)/lib"
+CONFIG="${1:-Debug}"
+
+case "$CONFIG" in
+    Debug) PRESET=ninja-debug ;;
+    Release) PRESET=ninja-release ;;
+    *)
+        echo "Unsupported configuration '$CONFIG'. Use Debug or Release." >&2
+        exit 2
+        ;;
+esac
+
+cd "$ROOT"
+# CMAKE_ARGS is intentionally word-split into extra CMake options.
+cmake --preset "$PRESET" ${CMAKE_ARGS:-}
+cmake --build --preset "$PRESET"
 
