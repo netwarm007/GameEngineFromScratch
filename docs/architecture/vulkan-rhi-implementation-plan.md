@@ -17,8 +17,10 @@ Checkpoint 1 is implemented, locally/CI validated, and confirmed by the user.
 Checkpoint 2 is implemented, exact-revision CI validated, and confirmed by the
 user. Checkpoints 3 and 4 have also received user confirmation after their
 exact-revision reference checks. Checkpoint 5 is in progress; stable MoltenVK
-native WSI has scale-1 paravirtual reference evidence. Windows Vulkan,
-physical Retina/mixed-DPI, and interactive floating-input acceptance remain open.
+native WSI has scale-1 paravirtual reference evidence. Exact-revision Windows
+Vulkan revalidation has user-transferred evidence, not independently inspected
+remote artifacts. Physical Retina/mixed-DPI and interactive floating-input
+acceptance remain open.
 Do not advance to the next checkpoint without
 the user's confirmation. Checkpoints do not require PRs; CI may be used during
 implementation with the user's authorization.
@@ -327,7 +329,7 @@ validation and user confirmation at each boundary.
 | 2. Device/resource loop | Confirmed by the user after exact-revision CI validation. Initialization and selected failure cleanup, buffers/textures/upload, command submission, strict presentation retirement, resize, and minimize/restore have bounded native/reference-path tests. Windows Vulkan WSI remains unverified; MoltenVK native reference evidence was added in checkpoint 5. |
 | 3. Shared rendering passes | Confirmed by the user after exact-revision CI verification. Offscreen BASIC/PBR, skybox/BRDF, shadows, and MSAA use shared passes. Six-face/multi-light depth, receiver sampling, render output, and resource correctness have quantitative GPU checks. |
 | 4. UI and applications | Confirmed by the user after reference verification. Explicit Viewer/Billiard selection preserves defaults. Stage C ownership, renderer rejection/failure/rollback/retry/descriptor cleanup, fonts/icons/previews/debug views, secondary renderer lifecycle, and application-only capture have focused checks. Cross-platform native acceptance remains checkpoint 5 work. |
-| 5. Cross-platform acceptance | In progress. Material filtering, existing-backend regressions, and stable MoltenVK headless/native lifecycle/application coverage have exact-revision evidence. Windows Vulkan and physical Retina/mixed-DPI/floating-input gates remain open. |
+| 5. Cross-platform acceptance | In progress. Material filtering, existing-backend regressions, and stable MoltenVK headless/native lifecycle/application coverage have exact-revision evidence. Windows Vulkan revalidation is user-reported, not independently inspected here. Physical Retina/mixed-DPI/floating-input gates remain open. |
 
 At the start of each checkpoint, identify the production paths and focused
 tests. At its end, review the actual diff against this plan, record any justified
@@ -915,7 +917,7 @@ source on native Windows or supersede historical exact-revision CI records.
 Native stage assertions now distinguish secondary create/resize/recreate
 failures from acquire/render/present failures.
 
-Local validation of this uncommitted continuation passed the six existing
+Before the source commit, local validation of this continuation passed the six existing
 non-WSI Vulkan tests, the new `fast` CPU lifecycle test, and the three existing
 shared layout/render-service/application-lifetime tests (10/10). The shared
 test sources were built against the standalone regression libraries through a
@@ -947,9 +949,18 @@ The native test reported Cocoa backing scale 1 on an Apple paravirtual device.
 This is native WSI reference evidence, not physical Retina or interactive
 floating-input acceptance. No new platform input backend is introduced.
 
-The remaining native validation requires rerunning the fix on the reported
-maintenance-capable Windows runner (matching surface/device extensions and
-feature enabled), and
+The [exact-source verification record](../verification/d6325c0fe15b68d668f6da6d7aa5823bb1ce6d81.md)
+now records the backport's successful full CircleCI workflow and independently
+inspected CI captures. The later user-transferred report from the original
+maintenance-capable Windows runner states that eight Vulkan tests, three shared
+tests, two native frame-loop runs, application/readback/layout checks, and
+physics passed at that source revision. Its remote raw artifacts have not been
+independently inspected by this continuation. Real acquire/present returned
+`VK_SUCCESS`; out-of-date/suboptimal remains deterministic CPU coverage, not an
+observed GPU/WSI return-code test. This bounded report does not complete
+checkpoint 5.
+
+The remaining native validation requires
 an accessible physical Retina Mac for cross-display scaling and actual
 keyboard/pointer/floating-window interactions. Stable SDK 1.4.363.1 can address
 local Windows headers/validation but cannot add the missing local driver extensions.
@@ -987,7 +998,8 @@ evidence, dependency scope, validation plan, and authorization.
   Viewer/Billiard assets/captures passed Linux reference CI and actual image
   inspection; checkpoint 5 adds stable MoltenVK scale-1 native reference coverage.
   This does not establish floating-window platform input on Xcb, physical Retina
-  interactions, or Windows Vulkan acceptance. Secondary presents currently wait a scoped
+  interactions. Windows Vulkan revalidation is separately user-reported in
+  checkpoint 5, not established by these CI images. Secondary presents currently wait a scoped
   maintenance fence synchronously; asynchronous secondary presentation is a
   performance follow-up, not grounds for weakening retirement guarantees.
 - **Checkpoint 4:** Native GUI composition requires an RGBA8/BGRA8 UNORM surface
@@ -995,10 +1007,13 @@ evidence, dependency scope, validation plan, and authorization.
   capture additionally requires transfer-source surface usage and writes PPM,
   not PNG. Secondary Cocoa window scaling still needs real MoltenVK/Retina
   runtime checks.
-- **Checkpoint 5:** Windows Vulkan WSI has a reported secondary-swapchain
-  pre-acquire layout defect on a verified maintenance-capable runtime. Its narrow
-  backport still requires remote Windows revalidation, exact-revision full CI,
-  and real application capture inspection; checkpoint 5 is not complete.
+- **Checkpoint 5:** The secondary-swapchain pre-acquire layout backport has
+  exact-revision full CI and actual application capture inspection recorded
+  above. Windows Vulkan WSI revalidation on the original maintenance-capable
+  machine is user-transferred evidence; its raw artifacts were not independently
+  inspected here. Real out-of-date/suboptimal returns were not observed; only
+  deterministic CPU coverage is established for those returns. Checkpoint 5
+  is not complete.
   The local machine separately lacks the SDK/runtime maintenance capability.
   Stable MoltenVK headless and native
   presentation tests and actual applications passed on an Apple paravirtual
@@ -1009,8 +1024,10 @@ evidence, dependency scope, validation plan, and authorization.
 - **Checkpoint 5:** The user-reported Windows application runs each emitted
   255 fallback diagnostics for missing `Textures/terrain/area_1_*` tiles.
   This resource limitation is distinct from Vulkan validation. The reported
-  Viewer/Billiard material captures and zero application validation callbacks
-  do not imply clean resource logs or fix the secondary frame-loop failure.
+  Viewer/Billiard material captures do not imply clean resource logs. The later
+  exact-revision Windows report says the secondary frame-loop failure no longer
+  reproduces, but also reports two loader ICD-path case warnings per application
+  run; do not describe those runs as having zero validation messages.
   Terrain assets are not fabricated as part of this work.
 
 ## Platform and acceptance strategy
