@@ -460,6 +460,8 @@ which tests run.
 Windows scripts that use Visual Studio select the newest installed version
 supported by CMake. If an existing build directory retains an older generator,
 move it aside before rerunning the script to allow a fresh configuration.
+The `build_glslangValidator` script retains its name for compatibility and
+builds the `glslang` executable.
 
     scripts\build_crossguid
     scripts\build_opengex
