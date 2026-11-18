@@ -6,9 +6,11 @@ class OpenGLApplication : public WindowsApplication {
    public:
     using WindowsApplication::WindowsApplication;
 
+    int Initialize() override;
     void Tick() override;
 
    private:
+    int InitializeGuiPlatform() override;
     int InitializeGraphicsResources() override;
     void FinalizeGraphicsResources() override;
     HDC m_hDC = nullptr;
