@@ -317,9 +317,12 @@ buffer release and subsequent reuse are checked by MetalInitializationTest.
   cache paths with a recording backend, reused shadow/skybox handles, repeated
   same-Scene resets and frame rotation. It checks view retirement/reuse and
   revision propagation, not native driver storage or rendered pixel contents.
-- This review follow-up is not covered by the historical D1 acceptance above.
-  Exact-revision full Windows/Linux/macOS CI and native artifact inspection
-  remain required; no new acceptance is claimed by this local change.
+- This review follow-up has its own
+  [exact-revision full acceptance record](../verification/fe02caabf92d0d3d7033487c9739d5d6430dfae4.md):
+  Windows, Linux and macOS passed, and twelve native screenshots were inspected.
+  The historical D1 record remains unchanged. Native captures do not force
+  same-Scene GL name reuse; that case is deterministic recording-backend
+  coverage, not native driver-storage proof. Linux uses software OpenGL.
 
 ### D2. Explicit input-to-game-logic dependency
 
