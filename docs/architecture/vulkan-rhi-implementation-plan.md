@@ -292,6 +292,17 @@ D3d12GuiTextureTest. Windows/macOS floating viewport lifecycle needs explicit
 Vulkan validation. Xcb currently disables ImGui viewports; preserve and report
 that limitation rather than expand Linux input support in this task.
 
+Runtime initialization failures follow the module contract. Each platform
+`VulkanApplication` converts RHI initialization exceptions (missing driver,
+surface or device failure) to an error code after the RHI has rolled back, and
+`VulkanGraphicsManager::Initialize` returns an error code after rolling back
+its own state instead of unwinding through the application. The caller then
+finalizes the window as for other backends. `VulkanFrameLoopTest` covers
+graphics-manager failure and retry on a native window;
+`LinuxVulkanApplicationLifetimeTest` covers the Xcb application with no
+driver. Win32 and Cocoa `VulkanApplication` apply the same conversion but have
+no equivalent application-level test yet.
+
 ### VulkanPipelineStateManager and VulkanGraphicsManager
 
 The pipeline manager loads shared shader outputs and builds graphics/compute
@@ -975,6 +986,10 @@ evidence, dependency scope, validation plan, and authorization.
 
 ## Known limitations and follow-ups
 
+- **Checkpoint 5:** Application-level Vulkan initialization-failure coverage
+  is Linux/Xcb only. Win32 and Cocoa `VulkanApplication` share the same
+  exception-to-error-code conversion but it is compile-checked, not executed
+  by a dedicated test; the new source has no exact-revision CI record yet.
 - **Checkpoint 3:** The production renderer requires the shared 28800-byte
   LightInfo uniform block to fit maxUniformBufferRange. Devices offering only
   Vulkan's smaller minimum fail explicitly; low-level headless tests do not

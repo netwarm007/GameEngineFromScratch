@@ -1,4 +1,6 @@
 #include "VulkanApplication.hpp"
+#include <cstdio>
+#include <exception>
 #include <vulkan/vulkan_win32.h>
 #include "imgui.h"
 
@@ -65,15 +67,21 @@ int VulkanApplication::InitializeGraphicsResources() {
 
     m_Rhi.setFramebufferSizeQueryCB(getFramebufferSize);
     m_Rhi.SetGetGfxConfigCB([this] { return GetConfiguration(); });
-    m_Rhi.Initialize(extensions, [this](const vk::Instance& instance, vk::SurfaceKHR& surface) {
-        VkSurfaceKHR nativeSurface = VK_NULL_HANDLE;
-        const auto result = CreateWindowSurface(instance, nativeSurface);
-        if (result != VK_SUCCESS) {
-            throw std::runtime_error("Win32 Vulkan surface creation failed: " +
-                                     std::to_string(result));
-        }
-        surface = nativeSurface;
-    });
+    try {
+        m_Rhi.Initialize(extensions, [this](const vk::Instance& instance, vk::SurfaceKHR& surface) {
+            VkSurfaceKHR nativeSurface = VK_NULL_HANDLE;
+            const auto result = CreateWindowSurface(instance, nativeSurface);
+            if (result != VK_SUCCESS) {
+                throw std::runtime_error("Win32 Vulkan surface creation failed: " +
+                                         std::to_string(result));
+            }
+            surface = nativeSurface;
+        });
+    } catch (const std::exception& error) {
+        // The RHI has already rolled back its partial state.
+        fprintf(stderr, "Vulkan initialization failed: %s\n", error.what());
+        return -1;
+    }
     return 0;
 }
 

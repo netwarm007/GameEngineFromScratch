@@ -244,6 +244,17 @@ void RunNativeGui() {
     rhi.Initialize(window.Extensions(), [&](const vk::Instance& instance, vk::SurfaceKHR& surface) {
         window.Surface(instance, surface);
     });
+    {
+        // A module reports initialization failure by error code, rolls back its
+        // own partial state, and leaves the borrowed RHI usable for a retry.
+        GuiGraphics unbound(rhi);
+        unbound.SetAppPointer(&app);
+        Require(unbound.Initialize() != 0,
+                "Native Vulkan graphics initialization without a GUI context must fail");
+        Require(!unbound.IsInitialized() && !ImGui::GetCurrentContext() && rhi.GetDevice(),
+                "Failed Vulkan graphics initialization did not roll back only its own state");
+        unbound.Finalize();
+    }
     My::GuiContext context;
     Require(context.Initialize() == 0, "Native Vulkan GUI context initialization failed");
     auto& io = ImGui::GetIO();

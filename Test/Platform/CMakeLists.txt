@@ -8,6 +8,16 @@ if(OS_LINUX)
             $<TARGET_FILE:LinuxApplicationLifetimeTest>)
     set_tests_properties(TEST_LinuxApplicationLifetimeTest PROPERTIES
         ENVIRONMENT "LIBGL_ALWAYS_SOFTWARE=1")
+
+    if(Vulkan_FOUND)
+        add_executable(LinuxVulkanApplicationLifetimeTest LinuxVulkanApplicationLifetimeTest.cpp)
+        target_link_libraries(LinuxVulkanApplicationLifetimeTest PRIVATE Framework PlatformInterface VulkanRHI)
+        add_test(NAME TEST_LinuxVulkanApplicationLifetimeTest
+            COMMAND xvfb-run -a $<TARGET_FILE:LinuxVulkanApplicationLifetimeTest>)
+        # Without a driver, native initialization must fail cleanly instead of throwing.
+        set_tests_properties(TEST_LinuxVulkanApplicationLifetimeTest PROPERTIES
+            ENVIRONMENT "VK_ICD_FILENAMES=/nonexistent/icd.json;VK_DRIVER_FILES=/nonexistent/icd.json")
+    endif()
 endif()
 
 if(OS_WINDOWS)

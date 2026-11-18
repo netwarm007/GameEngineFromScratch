@@ -1,6 +1,7 @@
 #include "VulkanGraphicsManager.hpp"
 #include "VulkanShaderBindings.hpp"
 
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <set>
@@ -27,22 +28,29 @@ int VulkanGraphicsManager::Initialize() {
     }
     const auto result = GraphicsManager::Initialize();
     if (result != 0) return result;
-    struct Rollback {
-        VulkanGraphicsManager& owner;
-        bool active = true;
-        ~Rollback() { if (active) owner.Finalize(); }
-    } rollback{*this};
-    if (m_rhi.GetPhysicalDevice().getProperties().limits.maxUniformBufferRange < sizeof(LightInfo)) {
-        throw std::runtime_error("Vulkan renderer requires the shared 28800-byte light uniform range");
+    // Runtime failures follow the module contract: report an error code after
+    // rolling back this manager, rather than unwinding through the application.
+    try {
+        struct Rollback {
+            VulkanGraphicsManager& owner;
+            bool active = true;
+            ~Rollback() { if (active) owner.Finalize(); }
+        } rollback{*this};
+        if (m_rhi.GetPhysicalDevice().getProperties().limits.maxUniformBufferRange < sizeof(LightInfo)) {
+            throw std::runtime_error("Vulkan renderer requires the shared 28800-byte light uniform range");
+        }
+        InitializeFallbacks();
+        if (m_rhi.HasSurface()) {
+            InitializeCapture();
+            m_rhi.CreateSwapChainCB([this] { CreateGuiTargets(); });
+            m_rhi.DestroySwapChainCB([this] { m_guiTargets.clear(); });
+            m_rhi.CreateSwapChain();
+        }
+        rollback.active = false;
+    } catch (const std::exception& error) {
+        std::cerr << "Vulkan graphics initialization failed: " << error.what() << '\n';
+        return -1;
     }
-    InitializeFallbacks();
-    if (m_rhi.HasSurface()) {
-        InitializeCapture();
-        m_rhi.CreateSwapChainCB([this] { CreateGuiTargets(); });
-        m_rhi.DestroySwapChainCB([this] { m_guiTargets.clear(); });
-        m_rhi.CreateSwapChain();
-    }
-    rollback.active = false;
     return 0;
 }
 
