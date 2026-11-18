@@ -103,7 +103,7 @@ elseif(ACTION STREQUAL "save")
         return()
     endif()
     set(installed)
-    foreach(dependency IN ITEMS crossguid opengex zlib bullet glslang spirv-cross
+    foreach(dependency IN ITEMS crossguid opengex-windows zlib-windows bullet glslang spirv-cross-windows
                                 ISPCTextureCompressor openal)
         set(manifest "${root}/External/build/${dependency}/install_manifest.txt")
         if(NOT EXISTS "${manifest}")

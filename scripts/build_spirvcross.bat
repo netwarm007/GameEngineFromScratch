@@ -1,13 +1,14 @@
 @echo off
-git submodule update --init External\src\spirv-cross
-if errorlevel 1 exit /b 1
-if not exist External\build\spirv-cross mkdir External\build\spirv-cross
-pushd External\build\spirv-cross || exit /b 1
-rm -rf *
-if errorlevel 1 (popd & exit /b 1)
-cmake -DCMAKE_INSTALL_PREFIX=../../Windows/ -DCMAKE_INSTALL_RPATH=../../Windows/ -DCMAKE_BUILD_TYPE=RELEASE ../../src/spirv-cross
-if errorlevel 1 (popd & exit /b 1)
-if "%1" == "" (cmake --build . --config Debug --target install) else (cmake --build . --config %1 --target install)
-if errorlevel 1 (popd & exit /b 1)
-popd
+setlocal DisableDelayedExpansion
+for %%I in ("%~dp0..") do set "ROOT=%%~fI"
+set "BUILD_DIR=%ROOT%\External\build\spirv-cross-windows"
+set "INSTALL_DIR=%ROOT%\External\Windows"
+set "CONFIG=%~1"
+if not defined CONFIG set "CONFIG=Debug"
+
+git -C "%ROOT%" submodule update --init -- External/src/spirv-cross || exit /b 1
+cmake --fresh -S "%ROOT%\External\src\spirv-cross" -B "%BUILD_DIR%" ^
+    "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%" "-DCMAKE_INSTALL_RPATH=%INSTALL_DIR%" ^
+    -DCMAKE_BUILD_TYPE=RELEASE || exit /b 1
+cmake --build "%BUILD_DIR%" --config "%CONFIG%" --target install || exit /b 1
 echo "Completed build of SPIRV-Cross"
