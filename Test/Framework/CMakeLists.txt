@@ -53,6 +53,12 @@ add_executable(ViewerLogicTest ViewerLogicTest.cpp
 target_link_libraries(ViewerLogicTest PRIVATE SceneGraph)
 add_test(NAME TEST_ViewerLogicTest COMMAND ViewerLogicTest)
 
+add_executable(GuiIconLoaderTest GuiIconLoaderTest.cpp)
+target_link_libraries(GuiIconLoaderTest PRIVATE Framework PlatformAssetIO)
+add_test(NAME TEST_GuiIconLoaderTest COMMAND GuiIconLoaderTest)
+set_tests_properties(TEST_GuiIconLoaderTest PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 add_executable(BilliardGameLogicTest BilliardGameLogicTest.cpp
     ${PROJECT_SOURCE_DIR}/Game/Billiard/BilliardGameLogic.cpp)
 target_link_libraries(BilliardGameLogicTest PRIVATE SceneGraph)

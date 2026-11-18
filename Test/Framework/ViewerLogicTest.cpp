@@ -1,5 +1,8 @@
 #include <cmath>
+#include <chrono>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,6 +19,14 @@ void Expect(bool condition, const char* message) {
         std::cerr << "FAILED: " << message << '\n';
         ++failures;
     }
+}
+
+bool SetMarkerPath(const std::filesystem::path& path) {
+#if defined(_WIN32)
+    return _putenv_s("GEFS_SCREENSHOT_WAIT_FOR", path.string().c_str()) == 0;
+#else
+    return setenv("GEFS_SCREENSHOT_WAIT_FOR", path.string().c_str(), 1) == 0;
+#endif
 }
 
 class TestApplication : public IApplication {
@@ -110,6 +121,64 @@ void TestLoadingAndCycle() {
            "new ordinary lifecycle does not retain previous cycle state");
 }
 
+void TestSceneCycleMarker() {
+    const auto tempDir = std::filesystem::temp_directory_path() /
+                         ("gefs-viewer-marker-" +
+                          std::to_string(std::chrono::steady_clock::now()
+                                             .time_since_epoch()
+                                             .count()));
+    std::filesystem::create_directories(tempDir);
+    const auto marker = tempDir / "ready.txt";
+
+    TestApplication app;
+    TestScenes scenes;
+    ViewerLogic viewer(scenes);
+    IGameLogic& logic = viewer;
+    logic.SetAppPointer(&app);
+    app.args = {"Viewer", "-sceneCycle", "1"};
+
+    {
+        std::ofstream staleMarker(marker);
+        staleMarker << "stale";
+    }
+    Expect(std::filesystem::exists(marker), "stale marker fixture is created");
+    Expect(SetMarkerPath(marker), "scene-cycle marker path is configurable");
+    Expect(logic.Initialize() == 0 && !std::filesystem::exists(marker),
+           "initialization clears a stale scene-cycle marker");
+    for (int tick = 0; tick < 15; ++tick) logic.Tick();
+    Expect(!std::filesystem::exists(marker),
+           "scene-cycle marker is not written before the ready tick");
+    logic.Tick();
+    std::ifstream readyMarker(marker);
+    std::string phase;
+    std::getline(readyMarker, phase);
+    Expect(readyMarker.is_open(),
+           "scene-cycle marker is readable after the ready tick");
+    Expect(phase == "1", "scene-cycle marker contains the completed phase");
+    readyMarker.close();
+    std::filesystem::remove(marker);
+
+    const auto nonEmptyDirectory = tempDir / "not-a-marker";
+    std::filesystem::create_directories(nonEmptyDirectory);
+    {
+        std::ofstream sentinel(nonEmptyDirectory / "sentinel");
+        sentinel << "keep";
+    }
+    const auto loadsBeforeClearFailure = scenes.loads.size();
+    Expect(SetMarkerPath(nonEmptyDirectory), "marker error path is configurable");
+    Expect(logic.Initialize() != 0 &&
+               scenes.loads.size() == loadsBeforeClearFailure,
+           "marker cleanup failure rejects initialization before loading a scene");
+
+    const auto blockedMarker = tempDir / "blocked-marker";
+    Expect(SetMarkerPath(blockedMarker), "marker write failure path is configurable");
+    Expect(logic.Initialize() == 0, "marker write failure case initializes");
+    std::filesystem::create_directory(blockedMarker);
+    for (int tick = 0; tick < 16; ++tick) logic.Tick();
+    Expect(app.quit, "marker write failure requests application quit");
+    std::filesystem::remove_all(tempDir);
+}
+
 std::shared_ptr<SceneCameraNode> SetCamera(TestScenes& scenes) {
     scenes.scene = std::make_shared<Scene>("camera");
     auto node = std::make_shared<SceneCameraNode>("camera node");
@@ -176,6 +245,7 @@ int main() {
     if (unsetenv("GEFS_SCREENSHOT_WAIT_FOR") != 0) return 1;
 #endif
     TestLoadingAndCycle();
+    TestSceneCycleMarker();
     TestCameraInput();
 #if defined(_WIN32)
     if (_putenv_s("GEFS_SCREENSHOT_WAIT_FOR", savedMarker.c_str()) != 0) return 1;

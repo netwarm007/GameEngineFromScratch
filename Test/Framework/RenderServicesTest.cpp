@@ -284,6 +284,19 @@ void TestSameSceneDebugViewRebuild() {
     io.ConfigFlags = previousFlags;
 }
 
+void TestGuiSubPassRequiresIconLoader() {
+    TestScenes scenes;
+    TestPipelines pipelines;
+    RecordingGraphics graphics(scenes, pipelines);
+    bool rejected = false;
+    try {
+        GuiSubPass gui(&graphics, &pipelines, {});
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    Expect(rejected, "GUI subpass rejects an empty icon image loader");
+}
+
 class SceneResourceGraphics : public FrameResourceGraphics {
    public:
     using FrameResourceGraphics::FrameResourceGraphics;
@@ -672,6 +685,7 @@ int main() {
     TestFrameResourcesAfterFailedInitialization();
     TestSceneResourceRetirement();
     TestSameSceneDebugViewRebuild();
+    TestGuiSubPassRequiresIconLoader();
 
     ImGui::DestroyContext();
     return failures == 0 ? 0 : 1;
