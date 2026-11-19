@@ -1,27 +1,41 @@
 #pragma once
-#include <vulkan/vulkan.hpp>
-
+#include "IAssetReader.hpp"
 #include "PipelineStateManager.hpp"
+#include "VulkanRHI.hpp"
 
 namespace My {
 struct VulkanPipelineState : public PipelineState {
-    vk::ShaderModule vertexShaderByteCode;
-    vk::ShaderModule pixelShaderByteCode;
-    vk::ShaderModule geometryShaderByteCode;
-    vk::ShaderModule computeShaderByteCode;
-    vk::ShaderModule meshShaderByteCode;
-    vk::Pipeline pipelineState{nullptr};
+    struct Stage {
+        vk::UniqueShaderModule module;
+        vk::ShaderStageFlagBits stage;
+        std::string entry;
+    };
 
-    VulkanPipelineState(PipelineState& state) : PipelineState(state) {}
+    vk::UniqueDescriptorSetLayout descriptorSetLayout;
+    vk::UniquePipelineLayout pipelineLayout;
+    std::vector<Stage> stages;
+    vk::UniquePipeline pipelineState;
+
+    explicit VulkanPipelineState(const PipelineState& state) : PipelineState(state) {}
 };
 
 class VulkanPipelineStateManager : public PipelineStateManager {
    public:
-    VulkanPipelineStateManager() = default;
-    ~VulkanPipelineStateManager() = default;
+    VulkanPipelineStateManager(VulkanRHI& rhi, IAssetReader& assets)
+        : m_rhi(rhi), m_assets(assets) {}
+
+    int Initialize() final;
+    void Clear() final;
+    void CreateGraphicsPipeline(VulkanPipelineState& state, vk::RenderPass renderPass);
+    std::shared_ptr<VulkanPipelineState> CreateMaterialCopyPipeline(vk::RenderPass renderPass);
+    void UnregisterPipelineState(PipelineState& pipelineState) final;
 
    protected:
     bool InitializePipelineState(PipelineState** ppPipelineState) final;
     void DestroyPipelineState(PipelineState& pipelineState) final;
+
+   private:
+    VulkanRHI& m_rhi;
+    IAssetReader& m_assets;
 };
 }  // namespace My

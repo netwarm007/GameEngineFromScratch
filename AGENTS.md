@@ -10,6 +10,15 @@
   changes and ensure any new pinned commits are available from their configured
   remotes before proposing them.
 
+## Vulkan implementation
+
+- For Vulkan backend work, read and follow the
+  [Vulkan RHI implementation plan](docs/architecture/vulkan-rhi-implementation-plan.md).
+  Check each implementation checkpoint against the plan and document justified
+  deviations there. The upstream point-light shadow and ImGui lifecycle changes
+  have been reviewed; integrate the latest master before implementation and
+  preserve their contracts as detailed in the plan.
+
 ## Verification and acceptance
 
 - Run focused local builds and tests for the change. Use `.circleci/config.yml`

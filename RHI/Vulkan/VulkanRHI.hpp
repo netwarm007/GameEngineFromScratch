@@ -1,10 +1,12 @@
 #pragma once
 #include <array>
+#include <atomic>
 #include <functional>
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
-#define VK_ENABLE_BETA_EXTENSIONS
 #include <vulkan/vulkan.hpp>
 #include "Buffer.hpp"
 #include "GfxConfiguration.hpp"
@@ -26,7 +28,7 @@ class VulkanRHI {
         vk::Buffer buffer;
         vk::DeviceMemory heap;
 
-        uint32_t indexCount;
+        uint32_t indexCount = 0;
     };
 
     struct VertexBuffer {
@@ -34,16 +36,45 @@ class VulkanRHI {
         vk::DeviceMemory heap;
     };
 
+    struct TextureLayoutState {
+        vk::Image image;
+        uint32_t mipLevels = 0;
+        uint32_t layers = 0;
+        std::vector<vk::ImageLayout> layouts;
+    };
+
     struct Texture {
         vk::Image image;
         vk::ImageView descriptor;
         vk::DeviceMemory heap;
+        vk::Format format = vk::Format::eUndefined;
+        uint32_t width = 0;
+        uint32_t height = 0;
+        uint32_t mipLevels = 0;
+        uint32_t layers = 0;
+        vk::ImageAspectFlags aspect;
+        vk::ImageUsageFlags usage;
+        vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1;
+        std::shared_ptr<TextureLayoutState> layoutState;
+        uint32_t layoutBaseMipLevel = 0;
+        uint32_t layoutBaseArrayLayer = 0;
+
+        size_t LayoutIndex(uint32_t mip, uint32_t layer) const {
+            return size_t{layoutBaseArrayLayer + layer} * layoutState->mipLevels +
+                   layoutBaseMipLevel + mip;
+        }
+        vk::ImageLayout& Layout(uint32_t mip, uint32_t layer) {
+            return layoutState->layouts.at(LayoutIndex(mip, layer));
+        }
+        const vk::ImageLayout& Layout(uint32_t mip, uint32_t layer) const {
+            return layoutState->layouts.at(LayoutIndex(mip, layer));
+        }
     };
 
     struct UniformBuffer {
         vk::Buffer buffer;
         vk::DeviceMemory heap;
-        size_t size;
+        size_t size = 0;
     };
 
     struct Shader {
@@ -57,9 +88,30 @@ class VulkanRHI {
         std::string entry_point;
     };
 
+    class Commands {
+       public:
+        ~Commands();
+        Commands(const Commands&) = delete;
+        Commands& operator=(const Commands&) = delete;
+        vk::CommandBuffer Get() const;
+        void Submit();
+
+       private:
+        friend class VulkanRHI;
+        explicit Commands(VulkanRHI& rhi, bool independentTransfer = false);
+        void Cancel();
+        VulkanRHI* m_rhi;
+        Commands* m_previous = nullptr;
+        vk::UniqueCommandBuffer m_command;
+        std::map<std::shared_ptr<TextureLayoutState>, std::vector<vk::ImageLayout>,
+                 std::owner_less<std::shared_ptr<TextureLayoutState>>> m_layouts;
+    };
+
    public:
     VulkanRHI();
     ~VulkanRHI();
+    VulkanRHI(const VulkanRHI&) = delete;
+    VulkanRHI& operator=(const VulkanRHI&) = delete;
 
    public:
     void setFramebufferSizeQueryCB(const QueryFrameBufferSizeCBFunc& func) {
@@ -76,6 +128,48 @@ class VulkanRHI {
     }
 
     void CreateSwapChain();
+    void Initialize(const std::vector<const char*>& extensions,
+                    const CreateSurfaceCBFunc& createSurface);
+    void InitializeHeadless();
+    void WaitGPU();
+    bool IsRecording() const { return m_frameActive || m_commands; }
+    void ExecuteCommands(const std::function<void(vk::CommandBuffer)>& record);
+    std::unique_ptr<Commands> BeginCommands();
+    bool HasSurface() const { return bool(m_vkSurface); }
+    bool BeginFrame();
+    void AbortFrame();
+    vk::Result PresentAndWait(vk::Queue queue, const VkPresentInfoKHR& present);
+    bool HasPresentationFences() const { return m_presentationFencesEnabled; }
+    void EndFrame();
+    Image EndFrameWithCapture();
+    vk::CommandBuffer GetFrameCommandBuffer() const;
+    vk::Framebuffer GetFrameFramebuffer() const;
+    vk::Extent2D GetSwapChainExtent() const { return m_vkSwapChainExtent; }
+    vk::Format GetSwapChainFormat() const { return m_vkSwapChainImageFormat; }
+    const std::vector<vk::ImageView>& GetSwapChainViews() const { return m_vkSwapChainImageViews; }
+    uint32_t GetCurrentImageIndex() const { return m_currentImage; }
+    uint32_t GetCurrentFrameIndex() const { return m_nCurrentFrame; }
+    uint64_t GetSwapChainGeneration() const { return m_swapChainGeneration; }
+    unsigned GetValidationErrorCount() const { return m_validationErrors.load(); }
+    vk::DeviceSize GetUniformBufferStride(vk::DeviceSize size) const;
+    std::vector<uint8_t> ReadBuffer(vk::Buffer buffer, vk::DeviceSize size);
+    Texture CreateTexture(uint32_t width, uint32_t height, vk::Format format,
+                          uint32_t mipLevels = 1, uint32_t layers = 1,
+                          vk::ImageViewType viewType = vk::ImageViewType::e2D,
+                          vk::ImageUsageFlags usage = vk::ImageUsageFlagBits::eSampled,
+                          vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1);
+    void ResolveTexture(vk::CommandBuffer command, Texture& source, Texture& target);
+    void UpdateTexture(Texture& texture, const void* data, size_t size,
+                       uint32_t mip = 0, uint32_t layer = 0);
+    std::vector<uint8_t> ReadTexture(Texture& texture, uint32_t mip = 0,
+                                     uint32_t layer = 0);
+    void GenerateMipmaps(Texture& texture);
+    void TransitionTexture(vk::CommandBuffer command, Texture& texture,
+                            const vk::ImageSubresourceRange& range,
+                            vk::ImageLayout layout);
+    void DestroyTexture(Texture& texture);
+    void CheckTextureAvailable(const Texture& texture, vk::CommandBuffer command = {}) const;
+    void DestroyUniformBuffers(std::vector<UniformBuffer>& buffers);
 
     void createInstance(std::vector<const char*> extensions);
     void setupDebugMessenger();
@@ -100,15 +194,17 @@ class VulkanRHI {
     void createFramebuffers(const vk::RenderPass& renderPass);
     VulkanRHI::Texture createTextureImage(Image& image);
     vk::Sampler createTextureSampler();
-    void createVertexBuffer(void* buffer, vk::DeviceSize bufferSize,
+    void createVertexBuffer(const void* buffer, vk::DeviceSize bufferSize,
                             VulkanRHI::VertexBuffer& vertexBuffer);
-    void createIndexBuffer(void* buffer, vk::DeviceSize bufferSize,
+    void createIndexBuffer(const void* buffer, vk::DeviceSize bufferSize,
                            VulkanRHI::IndexBuffer& indexBuffer);
     void createUniformBuffers(
         std::vector<VulkanRHI::UniformBuffer>& uniformBuffers,
         vk::DeviceSize bufferSize);
     void UpdateUniformBuffer(const std::vector<VulkanRHI::UniformBuffer> &uniformBuffers,
-                            void* ubo, size_t uboSize);
+                            const void* ubo, size_t uboSize, size_t offset = 0);
+    void UpdateUniformBuffer(const UniformBuffer& buffer, const void* data,
+                             size_t size, size_t offset);
     vk::ShaderModule createShaderModule(const Buffer& code);
     void createDescriptorPool();
     void createDescriptorSets(
@@ -124,15 +220,48 @@ class VulkanRHI {
                    const vk::Buffer& vertexBuffer,
                    const vk::Buffer& indexBuffer, uint32_t indicesCount);
     void cleanupSwapChain();
-    void recreateSwapChain(const vk::RenderPass& renderPass);
+    void recreateSwapChain(const vk::RenderPass& renderPass = {});
 
     void destroyAll();
 
     inline vk::Device GetDevice() { return m_vkDevice; }
+    vk::Instance GetInstance() const { return m_vkInstance; }
+    vk::Queue GetGraphicsQueue() const { return m_vkGraphicsQueue; }
+    uint32_t GetGraphicsQueueFamily() const;
+    vk::PhysicalDevice GetPhysicalDevice() const { return m_vkPhysicalDevice; }
 
    private:
+    struct BufferAllocation {
+        explicit BufferAllocation(vk::Device value) : device(value) {}
+        BufferAllocation(const BufferAllocation&) = delete;
+        BufferAllocation& operator=(const BufferAllocation&) = delete;
+        ~BufferAllocation() {
+            if (device) {
+                device.destroyBuffer(buffer);
+                device.freeMemory(memory);
+            }
+        }
+        void Release() {
+            buffer = nullptr;
+            memory = nullptr;
+        }
+        vk::Device device;
+        vk::Buffer buffer;
+        vk::DeviceMemory memory;
+    };
+    void initializeDevice(const std::vector<const char*>& extensions,
+                           const CreateSurfaceCBFunc& surface);
+    void submitAndWait(vk::CommandBuffer command);
+    void ExecuteTextureCommands(Texture& texture, const std::function<void(vk::CommandBuffer)>& record);
+    Commands* m_commands = nullptr;
+    std::map<std::shared_ptr<TextureLayoutState>, std::vector<vk::ImageLayout>,
+             std::owner_less<std::shared_ptr<TextureLayoutState>>> m_frameLayouts;
+    bool m_swapChainCanCapture = false;
+
     vk::Instance m_vkInstance;
     vk::DebugUtilsMessengerEXT m_vkDebugMessenger;
+    PFN_vkDestroyDebugUtilsMessengerEXT m_destroyDebugMessenger = nullptr;
+    std::atomic_uint m_validationErrors{0};
     vk::SurfaceKHR m_vkSurface;
 
     vk::PhysicalDevice m_vkPhysicalDevice;
@@ -160,6 +289,19 @@ class VulkanRHI {
     std::vector<vk::Semaphore> m_vkImageAvailableSemaphores;
     std::vector<vk::Semaphore> m_vkRenderFinishedSemaphores;
     std::vector<vk::Fence> m_vkInFlightFences;
+    std::vector<vk::Fence> m_vkImagesInFlight;
+    std::vector<vk::Fence> m_vkPresentFences;
+    std::vector<bool> m_presentPending;
+    bool m_surfaceMaintenanceKHR = false;
+    bool m_surfaceMaintenanceEXT = false;
+    bool m_presentationFencesEnabled = false;
+    uint32_t m_currentImage = 0;
+    uint32_t m_framebufferWidth = 0;
+    uint32_t m_framebufferHeight = 0;
+    uint64_t m_swapChainGeneration = 0;
+    bool m_frameActive = false;
+    bool m_recreateSwapChain = false;
+    bool m_swapChainResourcesCreated = false;
 
     vk::Image m_vkColorImage;
     vk::DeviceMemory m_vkColorImageMemory;

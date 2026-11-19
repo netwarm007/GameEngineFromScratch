@@ -34,6 +34,85 @@ commands:
             }
 
 jobs:
+  verify_vulkan_shader_abi:
+    machine:
+      image: ubuntu-2404:2026.10.1
+    resource_class: large
+    environment:
+      GIT_LFS_SKIP_SMUDGE: "1"
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+      VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.json
+    steps:
+      - run:
+          name: Install Vulkan device and native-WSI test dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
+              libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
+              libxcb1-dev xvfb xauth zlib1g-dev libx11-dev libx11-xcb-dev \
+              libgl1-mesa-dev libxi-dev libxrandr-dev libxcursor-dev libxinerama-dev \
+              libasound2-dev libpulse-dev
+            python3 -m venv "$HOME/.local/share/vulkan-ci-tools"
+            "$HOME/.local/share/vulkan-ci-tools/bin/python" -m pip install 'cmake>=4.0,<5'
+            echo 'export PATH="$HOME/.local/share/vulkan-ci-tools/bin:$PATH"' >> "$BASH_ENV"
+      - checkout
+      - run:
+          name: Build pinned shader tools
+          command: |
+            git submodule update --init External/src/crossguid External/src/glslang External/src/spirv-cross External/src/imgui
+            cmake -S External/src/glslang -B build-vulkan-tools/glslang -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DBUILD_EXTERNAL=NO \
+              -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"
+            cmake --build build-vulkan-tools/glslang --target install --parallel 2
+            cmake -S External/src/spirv-cross -B build-vulkan-tools/spirv-cross -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"
+            cmake --build build-vulkan-tools/spirv-cross --target install --parallel 2
+      - run:
+          name: Verify shared Vulkan rendering, resources, and native presentation
+          command: |
+            test -r "$VK_ICD_FILENAMES"
+            cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+              -DGLSL_VALIDATOR="$PWD/External/Linux/bin/glslang" \
+              -DSPIRV_CROSS="$PWD/External/Linux/bin/spirv-cross"
+            cmake --build build-vulkan-abi --parallel 2
+            xvfb-run -a ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
+      - run:
+          name: Build native Vulkan application dependencies
+          command: |
+            git submodule update --init --recursive External/src/opengex External/src/bullet External/src/openal \
+              External/src/ISPCTextureCompressor
+            git lfs pull --include="Asset/Fonts/**,Asset/Textures/**,Asset/Scene/**"
+            ./scripts/build_imgui.sh
+            ./scripts/build_crossguid.sh
+            ./scripts/build_opengex.sh
+            cmake -S External/src/bullet -B build-vulkan-deps/bullet -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux" \
+              -DBUILD_SHARED_LIBS=ON -DBUILD_BULLET2_DEMOS=OFF -DBUILD_OPENGL3_DEMOS=OFF \
+              -DBUILD_CPU_DEMOS=OFF -DBUILD_PYBULLET=OFF -DUSE_DOUBLE_PRECISION=ON \
+              -DBUILD_EXTRAS=OFF -DBUILD_UNIT_TESTS=OFF -DINSTALL_LIBS=ON
+            cmake --build build-vulkan-deps/bullet --target install --parallel 2
+            ./scripts/build_libispc-texcomp.sh
+            cmake -S External/src/openal -B build-vulkan-deps/openal -G Ninja \
+              -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$PWD/External/Linux"
+            cmake --build build-vulkan-deps/openal --target install --parallel 2
+      - run:
+          name: Build and capture Vulkan Viewer and Billiard
+          command: |
+            cmake -S . -B build-vulkan-apps -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+              -DVULKAN_APPLICATIONS=ON -DCMAKE_CUDA_COMPILER=NOTFOUND
+            cmake --build build-vulkan-apps --target Viewer BilliardGame --parallel 2
+            bash scripts/capture_vulkan_applications.sh vulkan-applications
+      - store_test_results:
+          path: build-vulkan-abi/junit.xml
+      - store_artifacts:
+          path: build-vulkan-abi/Testing
+          destination: vulkan-shader-verification
+      - store_artifacts:
+          path: build-vulkan-abi/vulkan-images
+          destination: vulkan-scene-images
+      - store_artifacts:
+          path: vulkan-applications
+          destination: vulkan-applications
   build_windows:
     parameters:
       scope:
@@ -778,6 +857,48 @@ jobs:
               path: build/GEFS-0.1.0-Darwin.sh
           - store_artifacts:
               path: build/GEFS-0.1.0-Darwin.tar.gz
+      - run:
+          name: Compile opt-in Vulkan applications and verify bundle asset refresh
+          command: |
+             export HOMEBREW_NO_AUTO_UPDATE=1
+             brew install vulkan-headers vulkan-loader
+             cmake -S . -B build-vulkan-apps -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+               -DVULKAN_APPLICATIONS=ON -DCMAKE_CUDA_COMPILER=NOTFOUND
+             cmake --build build-vulkan-apps --target Viewer BilliardGame --parallel 2
+             cmake -E rm -f build-vulkan-apps/Viewer/Viewer.app/Contents/Resources/Asset/Shaders/Vulkan/Engine/pbr.frag.spv
+             cmake --build build-vulkan-apps --target Viewer --parallel 2
+             cmp build-vulkan-apps/Asset/Shaders/Vulkan/Engine/pbr.frag.spv \
+               build-vulkan-apps/Viewer/Viewer.app/Contents/Resources/Asset/Shaders/Vulkan/Engine/pbr.frag.spv
+      - run:
+          name: Verify explicit MoltenVK rendering and native presentation
+          command: |
+             export HOMEBREW_NO_AUTO_UPDATE=1
+             brew install molten-vk vulkan-validationlayers spirv-tools
+             brew list --versions molten-vk vulkan-headers vulkan-loader vulkan-validationlayers
+             export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+             export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+             export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+             test -r "$VK_DRIVER_FILES"
+             test -r "$VK_LAYER_PATH/VkLayer_khronos_validation.json"
+             cmake -S Test/RHI/Vulkan -B build-vulkan-abi -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+               -DGLSL_VALIDATOR="$PWD/External/Darwin/bin/glslang" \
+               -DSPIRV_CROSS="$PWD/External/Darwin/bin/spirv-cross" \
+               -DZLIB_ROOT="$PWD/External/Darwin"
+             cmake --build build-vulkan-abi --parallel 2
+             ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
+             bash scripts/capture_vulkan_applications.sh moltenvk-applications
+      - store_test_results:
+          path: build-vulkan-abi/junit.xml
+      - store_artifacts:
+          path: build-vulkan-abi/Testing
+          destination: moltenvk-verification
+      - store_artifacts:
+          path: build-vulkan-abi/vulkan-images
+          destination: moltenvk-images
+      - store_artifacts:
+          path: moltenvk-applications
+          destination: moltenvk-applications
   build_android:
     working_directory: ~/project
     docker:
@@ -885,6 +1006,7 @@ workflows:
       - build_windows
       - build_linux
       - build_macos
+      - verify_vulkan_shader_abi
       #- build_android
   quick-windows: #iteration: API-triggered with run_full=false
     when:

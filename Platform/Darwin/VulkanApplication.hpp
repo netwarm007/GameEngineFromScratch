@@ -1,17 +1,19 @@
 #pragma once
-#include "CocoaMetalApplication.h"
+#include "CocoaApplication.h"
 #include "Vulkan/VulkanRHI.hpp"
 
 namespace My {
-class VulkanApplication : public CocoaMetalApplication {
+class VulkanApplication : public CocoaApplication {
    public:
-    using CocoaMetalApplication::CocoaMetalApplication;
+    using CocoaApplication::CocoaApplication;
     VkResult CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface);
 
     VulkanRHI& GetRHI() { return m_Rhi; }
 
    private:
     int InitializeGraphicsResources() final;
+    int InitializeGuiPlatform() final;
+    void WaitForGraphicsIdle() final;
     void FinalizeGraphicsResources() final;
     VulkanRHI m_Rhi;
 };

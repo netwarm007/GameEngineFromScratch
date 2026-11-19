@@ -11,20 +11,29 @@ IF(ANDROID)
     add_library(BilliardGame SHARED 
         BilliardGameLogic.cpp)
 ELSEIF(APPLE)
+    if(NOT VULKAN_APPLICATIONS)
+        set(BILLIARD_SHADER_LIBRARY Main.metallib)
+    endif()
     add_executable(BilliardGame MACOSX_BUNDLE
         main.cpp BilliardGameLogic.cpp
-        Main.metallib
+        ${BILLIARD_SHADER_LIBRARY}
         )
 ELSE(ANDROID)
     add_executable(BilliardGame
         main.cpp BilliardGameLogic.cpp)
 ENDIF(ANDROID)
 
+if(VULKAN_APPLICATIONS AND BILLIARD_USE_D3D12)
+    message(FATAL_ERROR "BILLIARD_USE_D3D12 conflicts with VULKAN_APPLICATIONS")
+endif()
 if(WIN32 AND BILLIARD_USE_D3D12)
     target_compile_definitions(BilliardGame PRIVATE BILLIARD_USE_D3D12)
 endif()
 
-IF(APPLE)
+IF(VULKAN_APPLICATIONS)
+    myge_vulkan_application(BilliardGame)
+    add_dependencies(BilliardGame Engine_Asset)
+ELSEIF(APPLE)
     set(SHADER_SOURCES basic.vert basic.frag
     debug.vert debug.frag
     pbr.vert pbr.frag

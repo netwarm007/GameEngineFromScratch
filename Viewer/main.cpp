@@ -14,7 +14,10 @@
 #include "ViewerLogic.hpp"
 #include "SplashSequence.hpp"
 
-#if defined(OS_WEBASSEMBLY)
+#if defined(MYGE_USE_VULKAN)
+#include "VulkanApplication.hpp"
+#include "RHI/Vulkan/VulkanGraphicsManager.hpp"
+#elif defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
@@ -32,7 +35,8 @@
 #endif
 #endif
 
-#if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
+#if defined(MYGE_USE_VULKAN)
+#elif defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
 #elif defined(OS_MACOS)
 #include "RHI/Metal/MetalConfig.hpp"
@@ -67,7 +71,9 @@ int main(int argc, char** argv) {
 #if defined(IS_OPENGL)
     config.fixOpenGLPerspectiveMatrix = true;
 #endif
-#if defined(OS_MACOS)
+#if defined(MYGE_USE_VULKAN)
+    VulkanApplication app(config);
+#elif defined(OS_MACOS)
     CocoaMetalApplication app(config);
 #elif defined(OS_WINDOWS) && !defined(VIEWER_USE_WIN32_OPENGL)
     D3d12Application app(config);
@@ -87,8 +93,13 @@ int main(int argc, char** argv) {
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
+#if defined(MYGE_USE_VULKAN)
+    VulkanPipelineStateManager pipelineStateManager(app.GetRHI(), assetLoader);
+    VulkanGraphicsManager graphicsManager(app.GetRHI(), sceneManager, pipelineStateManager);
+#else
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager);
+#endif
 
     app.SetCommandLineParameters(argc, argv);
 

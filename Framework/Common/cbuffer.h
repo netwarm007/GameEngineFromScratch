@@ -207,6 +207,11 @@ Texture2D terrainHeightMap REGISTER(t11);
 
 // samplers
 SamplerState samp0 REGISTER(s0);
+#if defined(MYGE_VULKAN)
+SamplerState shadowSampler REGISTER(s1);
+#else
+#define shadowSampler samp0
+#endif
 #endif
 
 #define MyRS1                                           \

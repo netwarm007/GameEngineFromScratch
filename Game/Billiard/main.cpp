@@ -19,11 +19,14 @@
 #include <iostream>
 #include <map>
 
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
 #include "glad/glad.h"
 #endif
 
-#if defined(OS_WEBASSEMBLY)
+#if defined(MYGE_USE_VULKAN)
+#include "VulkanApplication.hpp"
+#include "RHI/Vulkan/VulkanGraphicsManager.hpp"
+#elif defined(OS_WEBASSEMBLY)
 #include "Platform/Sdl/OpenGLApplication.hpp"
 #elif defined(OS_MACOS)
 #include "CocoaMetalApplication.h"
@@ -37,7 +40,8 @@
 #include "OpenGLApplication.hpp"
 #endif
 
-#if defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
+#if defined(MYGE_USE_VULKAN)
+#elif defined(OS_ANDROID) || defined(OS_WEBASSEMBLY)
 #include "RHI/OpenGL/OpenGLESConfig.hpp"
 #elif defined(OS_MACOS)
 #include "RHI/Metal/MetalConfig.hpp"
@@ -64,7 +68,7 @@ void main_loop() { loop(); }
 
 using namespace My;
 
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
 namespace {
 bool CaptureBilliardFrame(IApplication& app, const std::filesystem::path& path) {
     uint32_t width = 0, height = 0;
@@ -151,7 +155,9 @@ int main(int argc, char** argv) {
     }
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Billiard");
-#if defined(OS_MACOS)
+#if defined(MYGE_USE_VULKAN)
+    VulkanApplication app(config);
+#elif defined(OS_MACOS)
     CocoaMetalApplication app(config);
 #elif defined(OS_WINDOWS)
 #if defined(BILLIARD_USE_D3D12)
@@ -174,8 +180,13 @@ int main(int argc, char** argv) {
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
+#if defined(MYGE_USE_VULKAN)
+    VulkanPipelineStateManager pipelineStateManager(app.GetRHI(), assetLoader);
+    VulkanGraphicsManager graphicsManager(app.GetRHI(), sceneManager, pipelineStateManager);
+#else
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager);
+#endif
 
     app.SetCommandLineParameters(argc, argv);
 
@@ -294,7 +305,7 @@ int main(int argc, char** argv) {
         }
         if (app.IsQuit()) continue;
         if (regressionFrame == 60) {
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-before.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -308,7 +319,7 @@ int main(int argc, char** argv) {
                 app.RequestQuit();
                 continue;
             }
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
+#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-after.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -325,7 +336,13 @@ int main(int argc, char** argv) {
             std::cout << "BILLIARD_PHYSICS_REGRESSION PASSED: cue=" << cueDisplacement
                       << " other=" << otherDisplacement << std::endl;
             regressionResult = 0;
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12)
+#if defined(MYGE_USE_VULKAN) && !defined(OS_LINUX)
+            // Linux completion is driven by the external capture script's
+            // capture-complete marker. Elsewhere quit automatically unless a
+            // screenshot request is still pending; the capture path retires the
+            // application itself once the frame is saved.
+            if (!graphicsManager.HasPendingScreenshot()) app.RequestQuit();
+#elif defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             app.RequestQuit();
 #endif
         }

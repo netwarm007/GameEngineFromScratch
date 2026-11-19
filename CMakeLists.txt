@@ -13,6 +13,8 @@ option(USE_ISPC "Use ISPC for geometry math" OFF)
 option(USE_ENGINE_ALLOCATORS "Route pilot engine allocations through MemorySystem" OFF)
 option(ENABLE_ALLOCATOR_TRACKING "Wrap engine allocators in TrackingAllocator (leak report)" OFF)
 option(D3D12_RHI_DEBUG "D3d12 Debug Layer" ON)
+option(VULKAN_RHI_TESTS "Enable Vulkan shader ABI and native compute tests (requires a Vulkan driver and validation layer)" OFF)
+option(VULKAN_APPLICATIONS "Use Vulkan for Viewer and Billiard (requires swapchain-maintenance1)" OFF)
 option(ENABLE_COVERAGE "Instrument with Clang source-based coverage (llvm-cov)" OFF)
 
 # CUDA
@@ -179,6 +181,13 @@ if(Vulkan_FOUND)
     set(HAS_VULKAN 1)
     include_directories(${Vulkan_INCLUDE_DIRS})
 endif(Vulkan_FOUND)
+
+if(VULKAN_APPLICATIONS)
+    if(NOT Vulkan_FOUND OR NOT (WIN32 OR APPLE OR OS_LINUX))
+        message(FATAL_ERROR "VULKAN_APPLICATIONS requires a Vulkan SDK and a Windows, Linux or macOS target")
+    endif()
+    include(VulkanApplications)
+endif()
 
 if(SDL2_FOUND)
     set(HAS_SDL2 1)

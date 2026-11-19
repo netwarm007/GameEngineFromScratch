@@ -1,30 +1,42 @@
 #include "VulkanApplication.hpp"
+#include <cstdio>
+#include <exception>
+#include <vulkan/vulkan_win32.h>
+#include "imgui.h"
 
 using namespace My;
 
-using VkWin32SurfaceCreateFlagsKHR = VkFlags;
-
-typedef struct VkWin32SurfaceCreateInfoKHR {
-    VkStructureType sType;
-    const void* pNext;
-    VkWin32SurfaceCreateFlagsKHR flags;
-    HINSTANCE hinstance;
-    HWND hwnd;
-} VkWin32SurfaceCreateInfoKHR;
-
-typedef VkResult(APIENTRY* PFN_vkCreateWin32SurfaceKHR)(
-    VkInstance, const VkWin32SurfaceCreateInfoKHR*,
-    const VkAllocationCallbacks*, VkSurfaceKHR*);
+int VulkanApplication::InitializeGuiPlatform() {
+    const auto result = WindowsApplication::InitializeGuiPlatform();
+    if (result != 0 || !ImGui::GetCurrentContext()) return result;
+    ImGui::GetPlatformIO().Platform_CreateVkSurface =
+        [](ImGuiViewport* viewport, ImU64 instance, const void* allocator, ImU64* output) -> int {
+        const auto nativeInstance = reinterpret_cast<VkInstance>(instance);
+        const auto create = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
+            vkGetInstanceProcAddr(nativeInstance, "vkCreateWin32SurfaceKHR"));
+        if (!create) return VK_ERROR_EXTENSION_NOT_PRESENT;
+        const auto window = static_cast<HWND>(viewport->PlatformHandleRaw);
+        VkWin32SurfaceCreateInfoKHR info{};
+        info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        info.hwnd = window;
+        info.hinstance = reinterpret_cast<HINSTANCE>(GetWindowLongPtr(window, GWLP_HINSTANCE));
+        VkSurfaceKHR surface = VK_NULL_HANDLE;
+        const auto status = create(nativeInstance, &info,
+            static_cast<const VkAllocationCallbacks*>(allocator), &surface);
+        if (status == VK_SUCCESS) *output = reinterpret_cast<ImU64>(surface);
+        return status;
+    };
+    return 0;
+}
 
 VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
                                                 VkSurfaceKHR& surface) {
-    VkResult err;
-    VkWin32SurfaceCreateInfoKHR sci;
+    VkWin32SurfaceCreateInfoKHR sci{};
     PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
 
     vkCreateWin32SurfaceKHR =
-        (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(
-            instance, "vkCreateWin32SurfaceKHR");
+        reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(vkGetInstanceProcAddr(
+            instance, "vkCreateWin32SurfaceKHR"));
     if (!vkCreateWin32SurfaceKHR) {
         fprintf(
             stderr,
@@ -32,15 +44,11 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
-    memset(&sci, 0, sizeof(sci));
     sci.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
     sci.hinstance = m_hInstance;
     sci.hwnd = m_hWnd;
 
-    err = vkCreateWin32SurfaceKHR(instance, &sci, nullptr, &surface);
-    assert(!err && "Win32: Failed to create Vulkan surface.");
-
-    return err;
+    return vkCreateWin32SurfaceKHR(instance, &sci, nullptr, &surface);
 }
 
 int VulkanApplication::InitializeGraphicsResources() {
@@ -57,51 +65,27 @@ int VulkanApplication::InitializeGraphicsResources() {
         GetFramebufferSize(width, height);
     };
 
-    // 设置回调函数
     m_Rhi.setFramebufferSizeQueryCB(getFramebufferSize);
-
-    // 创建实例
-    m_Rhi.createInstance(extensions);
-
-    // 开启调试层（对发行版不起作用）
-    m_Rhi.setupDebugMessenger();
-
-    // 创建（连接）画布
-    {
-        auto createWindowSurface = [this](const vk::Instance& instance,
-                                          vk::SurfaceKHR& surface) {
-            VkSurfaceKHR _surface;
-            assert(instance);
-
-            if (CreateWindowSurface(instance, _surface) != VK_SUCCESS) {
-                throw std::runtime_error("faild to create window surface!");
+    m_Rhi.SetGetGfxConfigCB([this] { return GetConfiguration(); });
+    try {
+        m_Rhi.Initialize(extensions, [this](const vk::Instance& instance, vk::SurfaceKHR& surface) {
+            VkSurfaceKHR nativeSurface = VK_NULL_HANDLE;
+            const auto result = CreateWindowSurface(instance, nativeSurface);
+            if (result != VK_SUCCESS) {
+                throw std::runtime_error("Win32 Vulkan surface creation failed: " +
+                                         std::to_string(result));
             }
-
-            surface = _surface;
-        };
-
-        m_Rhi.createSurface(createWindowSurface);
+            surface = nativeSurface;
+        });
+    } catch (const std::exception& error) {
+        // The RHI has already rolled back its partial state.
+        fprintf(stderr, "Vulkan initialization failed: %s\n", error.what());
+        return -1;
     }
-
-    // 枚举物理设备并选择
-    m_Rhi.pickPhysicalDevice();
-
-    // 创建逻辑设备
-    m_Rhi.createLogicalDevice();
-
-    // 创建 SwapChain
-    m_Rhi.createSwapChain();
-
-    // 创建同步对象
-    m_Rhi.createSyncObjects();
-
-    // 创建 Command Pools
-    m_Rhi.createCommandPool();
-
-    // 创建 Command Buffer
-    m_Rhi.createCommandBuffers();
     return 0;
 }
+
+void VulkanApplication::WaitForGraphicsIdle() { m_Rhi.WaitGPU(); }
 
 void VulkanApplication::FinalizeGraphicsResources() {
     // 销毁Vulkan上下文

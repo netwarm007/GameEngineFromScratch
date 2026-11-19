@@ -142,6 +142,11 @@ and acceptance process.
 The [memory allocator roadmap](docs/architecture/memory-allocator-roadmap.md)
 tracks the review findings and planned allocators.
 
+The [Vulkan RHI implementation plan](docs/architecture/vulkan-rhi-implementation-plan.md)
+defines the shared-HLSL requirement, backend boundaries, implementation
+checkpoints, and acceptance criteria. It incorporates the merged point-light
+shadow and ImGui lifecycle contracts; implementation starts from current master.
+
 Desktop graphics applications create the native window with `CreateMainWindow()`
 before calling `Initialize()`. Application initialization prepares the backend
 before initializing runtime modules; module-initialization retries reuse a
@@ -271,6 +276,23 @@ or Bullet version requires re-tuning; `PhysicsSceneIntegrationTest` checks both
 the staged handoff and the real static-text traversal. Runtime visibility is
 checked by each rendering backend when drawing, including shadow passes, so the
 ball can appear without rebuilding the scene's GPU resources.
+
+### Opt-in Vulkan applications
+
+Configure with `-DVULKAN_APPLICATIONS=ON` to use Vulkan for both Viewer and
+Billiard; platform defaults are unchanged. This desktop path requires a
+maintenance-aware Vulkan SDK/driver with swapchain-maintenance1 and a compatible
+RGBA8/BGRA8 UNORM surface. It uses the shared HLSL-derived engine SPIR-V.
+The application targets run the existing MaterialBaker; macOS bundles and
+installed assets include its packed scene materials.
+Implementation and verification limits are tracked in the
+[Vulkan implementation plan](docs/architecture/vulkan-rhi-implementation-plan.md).
+
+Vulkan application-only framebuffer capture accepts
+`-screenshot <path.ppm>` (or `GEFS_SCREENSHOT_PATH`), waits 45 seconds, writes a
+top-left PPM image, and exits. `GEFS_SCREENSHOT_WAIT_FOR` instead gates capture
+on a file's existence. Capture requires transfer-source swapchain support;
+it never captures the shared desktop.
 
 ## Dependencies
 Requires a C++20 compiler and CMake 4.0 or newer. Third-party libraries live in
