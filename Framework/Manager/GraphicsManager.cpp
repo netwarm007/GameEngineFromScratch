@@ -19,6 +19,9 @@ using namespace std;
 
 GraphicsManager::GraphicsManager() {
     m_Frames.resize(GfxConfiguration::kMaxInFlightFrameCount);
+    for (uint32_t i = 0; i < GfxConfiguration::kMaxInFlightFrameCount; i++) {
+        m_Frames[i].frameIndex = static_cast<int32_t>(i);
+    }
 }
 
 GraphicsManager::GraphicsManager(ISceneManager& scenes,
