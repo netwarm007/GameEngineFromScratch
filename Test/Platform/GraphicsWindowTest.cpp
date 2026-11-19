@@ -33,7 +33,6 @@ int test(BaseApplication& app) {
                                    // with all the unique characters submitted)
 
     io.Fonts->AddFontFromFileTTF(font_path.c_str(), 16.0f, NULL, ranges.Data);
-    io.Fonts->Build();
 
     ImGui::StyleColorsDark();
 
