@@ -3,12 +3,13 @@ set -e
 git submodule update --init External/src/opengex
 mkdir -p External/build/opengex
 pushd External/build/opengex
-cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../ ../../src/opengex
+CONFIG="${1:-Debug}"
+cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../ "-DCMAKE_BUILD_TYPE=$CONFIG" ../../src/opengex
 if [[ -z $1 ]];
 then
-    cmake --build . --config Debug --target install
+    cmake --build . --config "$CONFIG" --target install
 else
-    cmake --build . --config $1 --target install
+    cmake --build . --config "$CONFIG" --target install
 fi
 popd
 

@@ -554,7 +554,10 @@ Manual CMake builds use the matching presets:
     cmake --build --preset ninja-debug
     cmake --build --preset ninja-debug --target package
 
-Windows CI additionally enables `-DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON`.
+Full CircleCI builds and tests the engine and its linked external dependencies
+in both Debug and Release on Windows, Linux, and macOS. Quick iteration jobs
+remain Debug-only. Windows CI enables
+`-DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON` for the Debug build.
 
 ### ISPC and geometry math regression
 
