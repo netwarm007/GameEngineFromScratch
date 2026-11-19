@@ -46,8 +46,8 @@ jobs:
       - run:
           name: Install Vulkan device and native-WSI test dependencies
           command: |
-            sudo apt-get update
-            sudo apt-get install -y git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
+            sudo apt-get -o Acquire::Retries=3 update
+            sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
               libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
               libxcb1-dev xvfb xauth zlib1g-dev libx11-dev libx11-xcb-dev \
               libgl1-mesa-dev libxi-dev libxrandr-dev libxcursor-dev libxinerama-dev \
@@ -535,13 +535,13 @@ jobs:
       - run: 
           name: Install Dependencies
           command: |
-             sudo apt update 
-             sudo apt install -y curl clang python3-pip ninja-build git uuid-dev
-             sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
-             sudo apt install -y flex bison ccache
-             sudo apt install -y xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
+             sudo apt-get -o Acquire::Retries=3 update
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing curl clang python3-pip ninja-build git uuid-dev
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing flex bison ccache
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-             sudo apt install -y git-lfs
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
              echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
           environment:
@@ -687,7 +687,7 @@ jobs:
       - run:
           name: Coverage (llvm-cov)
           command: |
-             sudo apt install -y llvm
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing llvm
              ./scripts/coverage_linux.sh build-coverage coverage
              if [ -n "$CODECOV_TOKEN" ]; then
                curl -fsSL https://cli.codecov.io/latest/linux/codecov -o codecov
