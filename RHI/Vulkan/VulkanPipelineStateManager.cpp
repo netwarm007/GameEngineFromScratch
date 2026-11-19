@@ -294,12 +294,18 @@ void VulkanPipelineStateManager::DestroyPipelineState(PipelineState& pipelineSta
     state.descriptorSetLayout.reset();
 }
 
+void VulkanPipelineStateManager::Clear() {
+    if (m_rhi.IsRecording()) {
+        throw std::logic_error("Cannot clear Vulkan pipelines while a command buffer is recording");
+    }
+    if (m_rhi.GetDevice()) m_rhi.WaitGPU();
+    PipelineStateManager::Clear();
+}
+
 void VulkanPipelineStateManager::UnregisterPipelineState(PipelineState& pipelineState) {
     const auto found = m_pipelineStates.find(pipelineState.pipelineStateName);
     if (found == m_pipelineStates.end()) {
         throw std::invalid_argument("Vulkan pipeline is not registered: " + pipelineState.pipelineStateName);
     }
-    const auto retained = found->second;
     m_pipelineStates.erase(found);
-    DestroyPipelineState(*retained);
 }

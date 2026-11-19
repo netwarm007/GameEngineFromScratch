@@ -302,6 +302,11 @@ void Run(VulkanRHI& rhi) {
                                   source.value.format);
         renderer.RegisterTexture(identity + 1, depth.value.descriptor, vk::ImageLayout::eShaderReadOnlyOptimal,
                                   depth.value.format);
+        for (uintptr_t index = 0; index < 4095; ++index) {
+            renderer.RegisterTexture(identity + 2 + index, source.value.descriptor,
+                                      vk::ImageLayout::eShaderReadOnlyOptimal, source.value.format);
+        }
+        renderer.ReleaseTexture(identity + 2);
         Reject<std::invalid_argument>([&] {
             renderer.RegisterTexture(identity, source.value.descriptor, vk::ImageLayout::eShaderReadOnlyOptimal,
                                       source.value.format);

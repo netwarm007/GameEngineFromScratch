@@ -110,8 +110,13 @@ void VulkanGuiRenderer::Initialize(vk::RenderPass renderPass, uint32_t imageCoun
     m_createViewport = platform.Renderer_CreateWindow;
     m_destroyViewport = platform.Renderer_DestroyWindow;
     m_renderViewport = platform.Renderer_RenderWindow;
+    m_getFramebufferScale = platform.Platform_GetWindowFramebufferScale;
+    m_setViewportSize = platform.Renderer_SetWindowSize;
     platform.Renderer_CreateWindow = CreateViewport;
+    platform.Renderer_DestroyWindow = DestroyViewport;
     platform.Renderer_RenderWindow = RenderViewport;
+    if (m_getFramebufferScale) platform.Platform_GetWindowFramebufferScale = GetWindowFramebufferScale;
+    if (m_setViewportSize) platform.Renderer_SetWindowSize = SetWindowSize;
     m_context = ImGui::GetCurrentContext();
     m_backend = io.BackendRendererUserData;
     m_pool = std::move(pool);
@@ -121,8 +126,17 @@ void VulkanGuiRenderer::Finalize() {
     if (!IsInitialized()) return;
     CheckContext();
     m_rhi.WaitGPU();
+    auto& platform = ImGui::GetPlatformIO();
+    if (platform.Renderer_CreateWindow == CreateViewport) platform.Renderer_CreateWindow = m_createViewport;
+    if (platform.Renderer_DestroyWindow == DestroyViewport) platform.Renderer_DestroyWindow = m_destroyViewport;
+    if (platform.Renderer_RenderWindow == RenderViewport) platform.Renderer_RenderWindow = m_renderViewport;
+    if (platform.Platform_GetWindowFramebufferScale == GetWindowFramebufferScale) {
+        platform.Platform_GetWindowFramebufferScale = m_getFramebufferScale;
+    }
+    if (platform.Renderer_SetWindowSize == SetWindowSize) platform.Renderer_SetWindowSize = m_setViewportSize;
+    m_viewportScales.clear();
     for (const auto& [identity, texture] : m_textures) {
-        ImGui_ImplVulkan_RemoveTexture(texture.descriptor);
+        if (texture.descriptor) ImGui_ImplVulkan_RemoveTexture(texture.descriptor);
     }
     m_textures.clear();
     ImGui_ImplVulkan_Shutdown();
@@ -157,21 +171,17 @@ void VulkanGuiRenderer::RegisterTexture(ImTextureID identity, vk::ImageView view
         throw std::invalid_argument("Vulkan GUI texture format is not sampleable");
     }
     const bool nearest = !(features & vk::FormatFeatureFlagBits::eSampledImageFilterLinear);
-    const auto descriptor = ImGui_ImplVulkan_AddTexture(view, static_cast<VkImageLayout>(layout));
-    try {
-        m_textures.emplace(identity, GuiTexture{descriptor, nearest});
-    } catch (...) {
-        ImGui_ImplVulkan_RemoveTexture(descriptor);
-        throw;
-    }
+    m_textures.emplace(identity, GuiTexture{view, layout, format, VK_NULL_HANDLE, nearest});
 }
 
 void VulkanGuiRenderer::ReleaseTexture(ImTextureID identity) {
     CheckContext();
     const auto found = m_textures.find(identity);
     if (found == m_textures.end()) throw std::invalid_argument("Unknown Vulkan GUI texture identity");
-    m_rhi.WaitGPU();
-    ImGui_ImplVulkan_RemoveTexture(found->second.descriptor);
+    if (found->second.descriptor) {
+        m_rhi.WaitGPU();
+        ImGui_ImplVulkan_RemoveTexture(found->second.descriptor);
+    }
     m_textures.erase(found);
 }
 
@@ -208,6 +218,13 @@ void VulkanGuiRenderer::WithTextures(ImDrawData& drawData, const std::function<v
                 const auto found = m_textures.find(draw.GetTexID());
                 if (found == m_textures.end()) {
                     throw std::invalid_argument("Vulkan GUI draw references an unknown or released texture");
+                }
+                if (!found->second.descriptor) {
+                    found->second.descriptor = ImGui_ImplVulkan_AddTexture(
+                        found->second.view, static_cast<VkImageLayout>(found->second.layout));
+                    if (!found->second.descriptor) {
+                        throw std::runtime_error("Vulkan GUI texture descriptor allocation returned null");
+                    }
                 }
                 draw.TexRef = ImTextureRef(reinterpret_cast<ImTextureID>(found->second.descriptor));
                 nearest = found->second.nearest;
@@ -257,8 +274,49 @@ void VulkanGuiRenderer::CreateViewport(ImGuiViewport* viewport) {
         if (!viewport->RendererUserData) throw std::runtime_error("Vulkan viewport surface/queue support is unavailable");
     } catch (...) {
         if (viewport->RendererUserData) owner.m_destroyViewport(viewport);
+        owner.m_viewportScales.erase(viewport);
         throw;
     }
+}
+
+void VulkanGuiRenderer::DestroyViewport(ImGuiViewport* viewport) {
+    auto& owner = Current();
+    if (!viewport) throw std::invalid_argument("Vulkan secondary viewport is null");
+    try {
+        owner.m_destroyViewport(viewport);
+    } catch (...) {
+        owner.m_viewportScales.erase(viewport);
+        throw;
+    }
+    owner.m_viewportScales.erase(viewport);
+}
+
+ImVec2 VulkanGuiRenderer::GetWindowFramebufferScale(ImGuiViewport* viewport) {
+    auto& owner = Current();
+    if (!viewport || !owner.m_getFramebufferScale) {
+        throw std::logic_error("Vulkan viewport framebuffer scale callback is unavailable");
+    }
+    const auto scale = owner.m_getFramebufferScale(viewport);
+    if (!(scale.x > 0) || !(scale.y > 0)) {
+        throw std::runtime_error("Vulkan viewport framebuffer scale must be positive");
+    }
+    const auto [found, inserted] = owner.m_viewportScales.try_emplace(viewport, scale);
+    const bool changed = found->second.x != scale.x || found->second.y != scale.y;
+    if (viewport->RendererUserData && owner.m_setViewportSize &&
+        ((inserted && (scale.x != 1 || scale.y != 1)) || changed)) {
+        owner.m_setViewportSize(viewport, {viewport->Size.x * scale.x, viewport->Size.y * scale.y});
+    }
+    found->second = scale;
+    return scale;
+}
+
+void VulkanGuiRenderer::SetWindowSize(ImGuiViewport* viewport, ImVec2 size) {
+    auto& owner = Current();
+    if (!viewport || !owner.m_setViewportSize) {
+        throw std::logic_error("Vulkan viewport resize callback is unavailable");
+    }
+    const auto scale = viewport->FramebufferScale;
+    owner.m_setViewportSize(viewport, {size.x * scale.x, size.y * scale.y});
 }
 
 void VulkanGuiRenderer::RenderViewport(ImGuiViewport* viewport, void* argument) {

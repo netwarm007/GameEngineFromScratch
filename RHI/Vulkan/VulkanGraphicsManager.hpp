@@ -124,12 +124,14 @@ class VulkanGraphicsManager : public GraphicsManager {
         std::vector<vk::UniqueRenderPass> passes;
         std::vector<vk::UniqueFramebuffer> framebuffers;
         std::vector<vk::UniqueDescriptorPool> descriptorPools;
+        std::vector<std::shared_ptr<VulkanPipelineState>> pipelines;
         uint32_t descriptorCount = 0;
         void Clear() {
             framebuffers.clear();
             passes.clear();
             views.clear();
             descriptorPools.clear();
+            pipelines.clear();
             descriptorCount = 0;
         }
     };

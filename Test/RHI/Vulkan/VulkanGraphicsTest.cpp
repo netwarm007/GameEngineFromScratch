@@ -287,17 +287,33 @@ std::vector<uint8_t> RenderScene(TestGraphics& graphics, VulkanPipelineStateMana
     ForwardGeometryPass forward(&graphics, &pipelines);
     forward.EnableRenderToTexture();
     forward.BeginPass(frame);
+    std::shared_ptr<PipelineState> retiredPipeline;
+    std::weak_ptr<PipelineState> retiredPipelineOwner;
+    bool tracksRetiredPipeline = false;
     if (pbr) {
         forward.Draw(frame);
     } else {
-        graphics.SetPipelineState(pipelines.GetPipelineState("BASIC"), frame);
+        retiredPipeline = pipelines.GetPipelineState("BASIC");
+        graphics.SetPipelineState(retiredPipeline, frame);
         graphics.DrawBatch(frame);
     }
     forward.EndPass(frame);
+    if (retiredPipeline) {
+        pipelines.UnregisterPipelineState(*retiredPipeline);
+        retiredPipelineOwner = retiredPipeline;
+        retiredPipeline.reset();
+        tracksRetiredPipeline = true;
+        Require(!retiredPipelineOwner.expired(),
+                "Unregister destroyed a pipeline retained by the recording frame slot");
+    }
     if (frame.colorTextures.size() > 1) {
         graphics.MSAAResolve(frame.colorTextures[0], frame.colorTextures[1]);
     }
     graphics.EndFrame(frame);
+    if (tracksRetiredPipeline) {
+        Require(!retiredPipelineOwner.expired(),
+                "Submitted frame released its pipeline before the frame slot completed");
+    }
     return graphics.ReadTexture(frame.colorTextures[0]);
 }
 

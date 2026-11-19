@@ -1,6 +1,6 @@
 # Narrow dependency backports
 
-## ImGui Vulkan acquire/layout lifecycle
+## ImGui Vulkan acquire/layout and viewport rollback lifecycle
 
 `imgui-vulkan-acquire-layout.patch` targets the locked ImGui revision
 `b916186e66aa3c02b72c6ca17455516512ed8049`. It backports the backend-only removal
@@ -17,6 +17,15 @@ always uses `loadOp=CLEAR`, so discarding on each acquired frame is intentional
 and does not rely on a previous presentation layout. The post-render transition
 to `PRESENT_SRC_KHR` and strict engine presentation-fence retirement are unchanged.
 
+Secondary viewport creation assigns cleanup ownership before invoking the platform
+surface callback and unwinds partially created surfaces, swapchains, and frame
+resources if a callback or Vulkan allocation fails. Partial-frame destruction
+checks the handles actually allocated, and failed swapchain replacement retires
+the previous handle rather than leaking it. The standalone
+`TEST_VulkanSwapchainLifecycle` injects surface, swapchain, and image-view
+creation failures and verifies that viewport data and created resources are
+released.
+
 [The shared CMake preparation function](../../cmake/ImGuiVulkanBackend.cmake)
 verifies newline-normalized input and patched-output content hashes and applies
 the patch to a build-directory copy
@@ -30,8 +39,9 @@ ImGui.
 
 `TEST_VulkanSwapchainLifecycle` compiles this same selected backend with a typed
 test-only function dispatch. It exercises resource creation/resize, actual
-out-of-date and suboptimal acquire/rebuild callbacks, and acquire-semaphore
-submission waits without a GPU. When SDK headers expose dynamic rendering, it
+out-of-date and suboptimal acquire/rebuild callbacks, acquire-semaphore
+submission waits, and transactional viewport creation failure cleanup without
+a GPU. When SDK headers expose dynamic rendering, it
 also executes the clear/discard and presentation-layout barriers. Older headers
 report that branch unavailable. The unchanged helper fails the same test by
 recording GPU work before acquisition. This does not validate real Vulkan

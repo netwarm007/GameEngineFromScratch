@@ -36,6 +36,13 @@ class VulkanRHI {
         vk::DeviceMemory heap;
     };
 
+    struct TextureLayoutState {
+        vk::Image image;
+        uint32_t mipLevels = 0;
+        uint32_t layers = 0;
+        std::vector<vk::ImageLayout> layouts;
+    };
+
     struct Texture {
         vk::Image image;
         vk::ImageView descriptor;
@@ -48,7 +55,20 @@ class VulkanRHI {
         vk::ImageAspectFlags aspect;
         vk::ImageUsageFlags usage;
         vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1;
-        std::vector<vk::ImageLayout> layouts;
+        std::shared_ptr<TextureLayoutState> layoutState;
+        uint32_t layoutBaseMipLevel = 0;
+        uint32_t layoutBaseArrayLayer = 0;
+
+        size_t LayoutIndex(uint32_t mip, uint32_t layer) const {
+            return size_t{layoutBaseArrayLayer + layer} * layoutState->mipLevels +
+                   layoutBaseMipLevel + mip;
+        }
+        vk::ImageLayout& Layout(uint32_t mip, uint32_t layer) {
+            return layoutState->layouts.at(LayoutIndex(mip, layer));
+        }
+        const vk::ImageLayout& Layout(uint32_t mip, uint32_t layer) const {
+            return layoutState->layouts.at(LayoutIndex(mip, layer));
+        }
     };
 
     struct UniformBuffer {
@@ -83,7 +103,8 @@ class VulkanRHI {
         VulkanRHI* m_rhi;
         Commands* m_previous = nullptr;
         vk::UniqueCommandBuffer m_command;
-        std::map<Texture*, std::vector<vk::ImageLayout>> m_layouts;
+        std::map<std::shared_ptr<TextureLayoutState>, std::vector<vk::ImageLayout>,
+                 std::owner_less<std::shared_ptr<TextureLayoutState>>> m_layouts;
     };
 
    public:
@@ -111,6 +132,7 @@ class VulkanRHI {
                     const CreateSurfaceCBFunc& createSurface);
     void InitializeHeadless();
     void WaitGPU();
+    bool IsRecording() const { return m_frameActive || m_commands; }
     void ExecuteCommands(const std::function<void(vk::CommandBuffer)>& record);
     std::unique_ptr<Commands> BeginCommands();
     bool HasSurface() const { return bool(m_vkSurface); }
@@ -232,7 +254,8 @@ class VulkanRHI {
     void submitAndWait(vk::CommandBuffer command);
     void ExecuteTextureCommands(Texture& texture, const std::function<void(vk::CommandBuffer)>& record);
     Commands* m_commands = nullptr;
-    std::map<Texture*, std::vector<vk::ImageLayout>> m_frameLayouts;
+    std::map<std::shared_ptr<TextureLayoutState>, std::vector<vk::ImageLayout>,
+             std::owner_less<std::shared_ptr<TextureLayoutState>>> m_frameLayouts;
     bool m_swapChainCanCapture = false;
 
     vk::Instance m_vkInstance;

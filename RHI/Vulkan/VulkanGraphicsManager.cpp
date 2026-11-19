@@ -1,6 +1,7 @@
 #include "VulkanGraphicsManager.hpp"
 #include "VulkanShaderBindings.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -134,6 +135,10 @@ void VulkanGraphicsManager::SetPipelineState(
             throw std::invalid_argument("Vulkan pipeline does not match the target attachment/sample configuration");
         }
         if (!state->pipelineState) m_pipelines->CreateGraphicsPipeline(*state, m_renderPass);
+        auto& pipelines = m_renderResources.at(m_nFrameIndex).pipelines;
+        if (std::find(pipelines.begin(), pipelines.end(), state) == pipelines.end()) {
+            pipelines.push_back(state);
+        }
         m_graphicsPipeline = std::move(state);
         Command().bindPipeline(vk::PipelineBindPoint::eGraphics, *m_graphicsPipeline->pipelineState);
         return;
@@ -144,6 +149,10 @@ void VulkanGraphicsManager::SetPipelineState(
     }
     if (state->computeShaderName != "integrateBRDF.comp") {
         throw std::invalid_argument("Vulkan graphics compute binding currently supports the shared BRDF kernel only");
+    }
+    auto& pipelines = m_renderResources.at(m_nFrameIndex).pipelines;
+    if (std::find(pipelines.begin(), pipelines.end(), state) == pipelines.end()) {
+        pipelines.push_back(state);
     }
     m_computePipeline = std::move(state);
 }

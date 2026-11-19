@@ -281,7 +281,7 @@ void CheckOffscreen(VulkanRHI& rhi, VulkanPipelineStateManager& manager) {
     for (const bool frontCull : {false, true}) {
         definition.pipelineStateName = frontCull ? "Front-cull regression" : "Texture Debug Output";
         definition.cullFaceMode = frontCull ? CULL_FACE_MODE::FRONT : CULL_FACE_MODE::BACK;
-        const auto state = Register(manager, definition);
+        auto state = Register(manager, definition);
         manager.CreateGraphicsPipeline(*state, *renderPass);
         Descriptors descriptors(device, *state);
         const vk::DescriptorImageInfo image({}, resources.source.descriptor,
@@ -331,8 +331,11 @@ void CheckOffscreen(VulkanRHI& rhi, VulkanPipelineStateManager& manager) {
             }
         }
         manager.UnregisterPipelineState(definition);
-        Require(!state->pipelineState && !state->pipelineLayout && state->stages.empty(),
-                "Unregistering a source definition retained GPU resources in the borrowed state");
+        const std::weak_ptr<VulkanPipelineState> retired = state;
+        Require(state->pipelineState && state->pipelineLayout && !state->stages.empty(),
+                "Unregistering destroyed a pipeline before its final owner released it");
+        state.reset();
+        Require(retired.expired(), "Retired pipeline state remained owned after its final reference was released");
     }
 }
 }  // namespace
@@ -350,6 +353,15 @@ int main(int argc, char** argv) {
             CheckFailures(rhi, manager);
             const auto retained = CheckCompute(rhi, manager);
             CheckOffscreen(rhi, manager);
+            auto recording = rhi.BeginCommands();
+            bool rejected = false;
+            try {
+                manager.Clear();
+            } catch (const std::logic_error&) {
+                rejected = true;
+            }
+            Require(rejected, "Pipeline clear accepted an unsubmitted Vulkan recording");
+            recording.reset();
             manager.Finalize();
             manager.Finalize();
             Require(!retained->pipelineState && !retained->pipelineLayout &&

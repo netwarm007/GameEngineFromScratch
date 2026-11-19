@@ -8,10 +8,30 @@
 
 using namespace My;
 
+namespace {
+ImVec2 (*cocoaGetWindowFramebufferScale)(ImGuiViewport*) = nullptr;
+
+ImVec2 GetVulkanWindowFramebufferScale(ImGuiViewport* viewport) {
+    const auto scale = cocoaGetWindowFramebufferScale(viewport);
+    @autoreleasepool {
+        NSWindow* window = static_cast<NSWindow*>(viewport->PlatformHandleRaw);
+        NSView* view = window.contentView;
+        if ([view.layer isKindOfClass:[CAMetalLayer class]]) {
+            CAMetalLayer* layer = static_cast<CAMetalLayer*>(view.layer);
+            layer.contentsScale = window.backingScaleFactor;
+            const auto size = [view convertRectToBacking:view.bounds].size;
+            layer.drawableSize = CGSizeMake(size.width, size.height);
+        }
+    }
+    return scale;
+}
+}  // namespace
+
 int VulkanApplication::InitializeGuiPlatform() {
     const auto result = CocoaApplication::InitializeGuiPlatform();
     if (result != 0 || !ImGui::GetCurrentContext()) return result;
-    ImGui::GetPlatformIO().Platform_CreateVkSurface =
+    auto& platform = ImGui::GetPlatformIO();
+    platform.Platform_CreateVkSurface =
         [](ImGuiViewport* viewport, ImU64 instance, const void* allocator, ImU64* output) -> int {
         @autoreleasepool {
             const auto nativeInstance = reinterpret_cast<VkInstance>(instance);
@@ -36,6 +56,10 @@ int VulkanApplication::InitializeGuiPlatform() {
             return status;
         }
     };
+    cocoaGetWindowFramebufferScale = platform.Platform_GetWindowFramebufferScale;
+    if (cocoaGetWindowFramebufferScale) {
+        platform.Platform_GetWindowFramebufferScale = GetVulkanWindowFramebufferScale;
+    }
     return 0;
 }
 

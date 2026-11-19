@@ -20,6 +20,11 @@ VkSemaphore acquireSemaphore = VK_NULL_HANDLE;
 unsigned submissions = 0;
 unsigned transitions = 0;
 unsigned renderPasses = 0;
+unsigned destroyedSurfaces = 0;
+unsigned destroyedImageViews = 0;
+bool failSwapchainCreate = false;
+int failImageViewAfter = -1;
+bool failSurfaceCreate = false;
 std::array<VkImage, 3> currentImages{};
 
 void Require(bool condition, const char* message) {
@@ -33,6 +38,58 @@ Handle NewHandle() {
     } else {
         return static_cast<Handle>(identity++);
     }
+}
+
+int CreateSurface(ImGuiViewport*, ImU64, const void*, ImU64* output) {
+    *output = NewHandle<ImU64>();
+    return failSurfaceCreate ? VK_ERROR_INITIALIZATION_FAILED : VK_SUCCESS;
+}
+
+void VKAPI_PTR CheckVkResult(VkResult result) {
+    if (result != VK_SUCCESS) throw std::runtime_error("injected Vulkan result");
+}
+
+void VKAPI_PTR DestroySurface(VkInstance, VkSurfaceKHR surface, const VkAllocationCallbacks*) {
+    if (surface) ++destroyedSurfaces;
+}
+
+VkResult VKAPI_PTR SurfaceSupport(VkPhysicalDevice, uint32_t, VkSurfaceKHR, VkBool32* supported) {
+    *supported = VK_TRUE;
+    return VK_SUCCESS;
+}
+
+VkResult VKAPI_PTR SurfaceFormats(VkPhysicalDevice, VkSurfaceKHR, uint32_t* count,
+                                  VkSurfaceFormatKHR* formats) {
+    if (!formats) {
+        *count = 1;
+    } else {
+        formats[0] = {VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+        *count = 1;
+    }
+    return VK_SUCCESS;
+}
+
+VkResult VKAPI_PTR SurfacePresentModes(VkPhysicalDevice, VkSurfaceKHR, uint32_t* count,
+                                       VkPresentModeKHR* modes) {
+    if (!modes) {
+        *count = 1;
+    } else {
+        modes[0] = VK_PRESENT_MODE_FIFO_KHR;
+        *count = 1;
+    }
+    return VK_SUCCESS;
+}
+
+VkResult VKAPI_PTR CreateImageView(VkDevice, const VkImageViewCreateInfo*,
+                                   const VkAllocationCallbacks*, VkImageView* output) {
+    if (failImageViewAfter == 0) return VK_ERROR_INITIALIZATION_FAILED;
+    if (failImageViewAfter > 0) --failImageViewAfter;
+    *output = NewHandle<VkImageView>();
+    return VK_SUCCESS;
+}
+
+void VKAPI_PTR DestroyImageView(VkDevice, VkImageView view, const VkAllocationCallbacks*) {
+    if (view) ++destroyedImageViews;
 }
 
 template <typename Info, typename Handle>
@@ -60,6 +117,7 @@ VkResult VKAPI_PTR Capabilities(VkPhysicalDevice, VkSurfaceKHR, VkSurfaceCapabil
 VkResult VKAPI_PTR CreateSwapchain(VkDevice, const VkSwapchainCreateInfoKHR* info,
                                    const VkAllocationCallbacks*, VkSwapchainKHR* output) {
     Require(info->oldSwapchain == current, "Rebuild lost its previous swapchain identity");
+    if (failSwapchainCreate) return VK_ERROR_INITIALIZATION_FAILED;
     current = *output = NewHandle<VkSwapchainKHR>();
     ++generations;
     return VK_SUCCESS;
@@ -172,6 +230,10 @@ PFN_vkVoidFunction Load(const char* name, void*) {
 #define FUNCTION(symbol, implementation) \
     if (std::strcmp(name, #symbol) == 0) return reinterpret_cast<PFN_vkVoidFunction>(implementation)
     FUNCTION(vkDeviceWaitIdle, WaitIdle);
+    FUNCTION(vkDestroySurfaceKHR, DestroySurface);
+    FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR, SurfaceSupport);
+    FUNCTION(vkGetPhysicalDeviceSurfaceFormatsKHR, SurfaceFormats);
+    FUNCTION(vkGetPhysicalDeviceSurfacePresentModesKHR, SurfacePresentModes);
     FUNCTION(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, Capabilities);
     FUNCTION(vkCreateSwapchainKHR, CreateSwapchain);
     FUNCTION(vkDestroySwapchainKHR, DestroySwapchain);
@@ -195,18 +257,76 @@ PFN_vkVoidFunction Load(const char* name, void*) {
     if (std::strcmp(name, "vkDestroy" #type) == 0) \
         return reinterpret_cast<PFN_vkVoidFunction>(&Destroy<Vk##type>)
     OBJECT(name, RenderPass);
-    OBJECT(name, ImageView);
     OBJECT(name, Framebuffer);
     OBJECT(name, CommandPool);
     OBJECT(name, Fence);
     OBJECT(name, Semaphore);
 #undef OBJECT
+    if (std::strcmp(name, "vkCreateImageView") == 0)
+        return reinterpret_cast<PFN_vkVoidFunction>(CreateImageView);
+    if (std::strcmp(name, "vkDestroyImageView") == 0)
+        return reinterpret_cast<PFN_vkVoidFunction>(DestroyImageView);
 #define REJECT(symbol) \
     if (std::strcmp(name, #symbol) == 0) \
         return reinterpret_cast<PFN_vkVoidFunction>(&Reject<PFN_##symbol>::Call);
     IMGUI_VULKAN_FUNC_MAP(REJECT)
 #undef REJECT
     return nullptr;
+}
+
+void CheckViewportCreationRollback() {
+    ImGui_ImplVulkan_Data backend;
+    backend.Functions = ImGuiImplVulkanFuncs;
+    auto& init = backend.VulkanInitInfo;
+    init.Instance = NewHandle<VkInstance>();
+    init.PhysicalDevice = NewHandle<VkPhysicalDevice>();
+    init.Device = NewHandle<VkDevice>();
+    init.QueueFamily = 0;
+    init.MinImageCount = 2;
+    init.PipelineInfoForViewports.SwapChainImageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    init.CheckVkResultFn = CheckVkResult;
+    ImGui::GetIO().BackendRendererUserData = &backend;
+    ImGui::GetPlatformIO().Platform_CreateVkSurface = CreateSurface;
+
+    ImGuiViewport viewport;
+    viewport.Size = {32, 24};
+    const auto expectFailure = [&](const char* description) {
+        bool failed = false;
+        try {
+            ImGui_ImplVulkan_CreateWindow(&viewport);
+        } catch (const std::runtime_error&) {
+            failed = true;
+        }
+        Require(failed && !viewport.RendererUserData, description);
+    };
+
+    auto surfacesBefore = destroyedSurfaces;
+    failSurfaceCreate = true;
+    expectFailure("Surface callback failure retained a secondary viewport");
+    failSurfaceCreate = false;
+    Require(destroyedSurfaces == surfacesBefore + 1,
+            "Surface callback failure leaked its partially created surface");
+
+    surfacesBefore = destroyedSurfaces;
+    failSwapchainCreate = true;
+    expectFailure("Swapchain creation failure retained a secondary viewport");
+    failSwapchainCreate = false;
+    Require(!current && destroyedSurfaces == surfacesBefore + 1,
+            "Swapchain creation failure leaked its viewport surface or swapchain");
+
+    surfacesBefore = destroyedSurfaces;
+    const auto retiredBefore = retired;
+    const auto viewsBefore = destroyedImageViews;
+    failImageViewAfter = 1;
+    expectFailure("Partial swapchain allocation failure retained a secondary viewport");
+    failImageViewAfter = -1;
+    Require(!current && retired == retiredBefore + 1 &&
+                destroyedSurfaces == surfacesBefore + 1 &&
+                destroyedImageViews == viewsBefore + 1,
+            "Partial swapchain allocation failure leaked viewport resources");
+
+    ImGui::GetIO().BackendRendererUserData = nullptr;
+    ImGui::GetPlatformIO().Platform_CreateVkSurface = nullptr;
 }
 
 void Check(bool dynamicRendering) {
@@ -289,6 +409,7 @@ int main() {
         Require(ImGui_ImplVulkan_LoadFunctions(VK_API_VERSION_1_1, Load),
                 "Unable to initialize the test-only Vulkan function dispatch");
         ImGui::CreateContext();
+        CheckViewportCreationRollback();
         Check(false);
 #ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
         ImGuiImplVulkanFuncs_vkCmdBeginRenderingKHR = BeginRendering;

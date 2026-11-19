@@ -120,6 +120,19 @@ void CheckSubresources(RHI& rhi) {
         }
         Bytes(rhi.ReadTexture(array.value, 0, layer), originals[layer].data(), 64);
     }
+    auto view = array.value;
+    view.width = view.height = 2;
+    view.mipLevels = view.layers = 1;
+    view.layoutBaseMipLevel = 1;
+    view.layoutBaseArrayLayer = 1;
+    const auto viewedMip = rhi.ReadTexture(view);
+    const auto sourceMip = rhi.ReadTexture(array.value, 1, 1);
+    Bytes(viewedMip, sourceMip.data(), viewedMip.size());
+    const std::array<uint8_t, 16> viewedReplacement{
+        27, 67, 207, 255, 27, 67, 207, 255,
+        27, 67, 207, 255, 27, 67, 207, 255};
+    rhi.UpdateTexture(view, viewedReplacement.data(), viewedReplacement.size());
+    Bytes(rhi.ReadTexture(array.value, 1, 1), viewedReplacement.data(), viewedReplacement.size());
     const auto unchanged = rhi.ReadTexture(array.value, 1, 0);
     const std::array<uint8_t, 4> replacement{13, 57, 201, 255};
     rhi.UpdateTexture(array.value, replacement.data(), replacement.size(), 2, 1);
@@ -252,7 +265,7 @@ void CheckAbandonedCommands(RHI& rhi) {
     const std::array<uint8_t, 16> original{15, 25, 35, 255, 15, 25, 35, 255,
                                            15, 25, 35, 255, 15, 25, 35, 255};
     rhi.UpdateTexture(image.value, original.data(), original.size());
-    const auto layouts = image.value.layouts;
+    const auto layouts = image.value.layoutState->layouts;
     const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
     bool failed = false;
     try {
@@ -266,11 +279,13 @@ void CheckAbandonedCommands(RHI& rhi) {
         if (std::string(error.what()) != "injected recording failure") throw;
         failed = true;
     }
-    Require(failed && image.value.layouts == layouts,
+    Require(failed && image.value.layoutState->layouts == layouts,
             "Abandoned Vulkan commands did not restore CPU-side subresource layouts");
     Bytes(rhi.ReadTexture(image.value), original.data(), original.size());
     auto commands = rhi.BeginCommands();
+    auto alias = image.value;
     rhi.TransitionTexture(commands->Get(), image.value, range, vk::ImageLayout::eTransferSrcOptimal);
+    rhi.TransitionTexture(commands->Get(), alias, range, vk::ImageLayout::eTransferDstOptimal);
     failed = false;
     try {
         rhi.DestroyTexture(image.value);
@@ -285,7 +300,6 @@ void CheckAbandonedCommands(RHI& rhi) {
         failed = true;
     }
     Require(failed, "Immediate transfer overlapped an unsubmitted graphics recording");
-    auto alias = image.value;
     failed = false;
     try {
         rhi.ReadTexture(alias);
@@ -300,6 +314,12 @@ void CheckAbandonedCommands(RHI& rhi) {
     }
     Require(bool(commands->Get()), "Independent icon transfer lost the outer recording");
     commands.reset();
+    Bytes(rhi.ReadTexture(alias), original.data(), original.size());
+    const std::array<uint8_t, 16> replacement{
+        90, 80, 70, 255, 90, 80, 70, 255, 90, 80, 70, 255, 90, 80, 70, 255};
+    rhi.UpdateTexture(image.value, replacement.data(), replacement.size());
+    Bytes(rhi.ReadTexture(alias), replacement.data(), replacement.size());
+    rhi.UpdateTexture(alias, original.data(), original.size());
     Bytes(rhi.ReadTexture(image.value), original.data(), original.size());
 }
 

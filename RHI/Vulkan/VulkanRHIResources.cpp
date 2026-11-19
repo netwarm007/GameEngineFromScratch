@@ -110,8 +110,14 @@ size_t SubresourceBytes(const VulkanRHI::Texture& texture, uint32_t mip) {
 }
 
 void CheckSubresource(const VulkanRHI::Texture& texture, uint32_t mip, uint32_t layer) {
-    if (!texture.image || mip >= texture.mipLevels || layer >= texture.layers ||
-        texture.layouts.size() != size_t{texture.mipLevels} * texture.layers) {
+    if (!texture.image || !texture.layoutState || texture.layoutState->image != texture.image ||
+        !texture.layoutState->mipLevels || mip >= texture.mipLevels || layer >= texture.layers ||
+        texture.mipLevels > texture.layoutState->mipLevels ||
+        texture.layers > texture.layoutState->layers ||
+        texture.layoutBaseMipLevel > texture.layoutState->mipLevels - texture.mipLevels ||
+        texture.layoutBaseArrayLayer > texture.layoutState->layers - texture.layers ||
+        texture.layoutState->layouts.size() !=
+            size_t{texture.layoutState->mipLevels} * texture.layoutState->layers) {
         throw std::invalid_argument("Invalid Vulkan texture subresource");
     }
 }
@@ -262,7 +268,10 @@ VulkanRHI::Texture VulkanRHI::CreateTexture(
         !(support.sampleCounts & static_cast<VkSampleCountFlags>(samples))) {
         throw std::invalid_argument("Vulkan texture exceeds device image limits");
     }
-    texture.layouts.assign(size_t{mipLevels} * layers, vk::ImageLayout::eUndefined);
+    texture.layoutState = std::make_shared<TextureLayoutState>();
+    texture.layoutState->mipLevels = mipLevels;
+    texture.layoutState->layers = layers;
+    texture.layoutState->layouts.assign(size_t{mipLevels} * layers, vk::ImageLayout::eUndefined);
     TextureOwner owner{m_vkDevice, texture};
     const vk::ImageCreateInfo image(flags, vk::ImageType::e2D, format,
         vk::Extent3D(width, height, 1), mipLevels, layers, samples,
@@ -275,6 +284,7 @@ VulkanRHI::Texture VulkanRHI::CreateTexture(
     const vk::ImageViewCreateInfo view({}, texture.image, viewType, format, {},
         vk::ImageSubresourceRange(texture.aspect, 0, mipLevels, 0, layers));
     texture.descriptor = m_vkDevice.createImageView(view);
+    texture.layoutState->image = texture.image;
     owner.active = false;
     return texture;
 }
@@ -309,18 +319,20 @@ void VulkanRHI::TransitionTexture(vk::CommandBuffer command, Texture& texture,
         throw std::invalid_argument("Vulkan texture layout is incompatible with its usage or aspect");
     }
     if (m_commands && m_commands->Get() == command) {
-        m_commands->m_layouts.try_emplace(&texture, texture.layouts);
+        m_commands->m_layouts.try_emplace(texture.layoutState, texture.layoutState->layouts);
     } else if (m_frameActive && GetFrameCommandBuffer() == command) {
-        m_frameLayouts.try_emplace(&texture, texture.layouts);
+        m_frameLayouts.try_emplace(texture.layoutState, texture.layoutState->layouts);
     }
     for (uint32_t layer = range.baseArrayLayer; layer < range.baseArrayLayer + range.layerCount; ++layer) {
         for (uint32_t mip = range.baseMipLevel; mip < range.baseMipLevel + range.levelCount; ++mip) {
-            auto& previous = texture.layouts[size_t{layer} * texture.mipLevels + mip];
+            const auto imageMip = texture.layoutBaseMipLevel + mip;
+            const auto imageLayer = texture.layoutBaseArrayLayer + layer;
+            auto& previous = texture.Layout(mip, layer);
             if (previous == layout) continue;
             const auto source = LayoutScope(previous);
             const vk::ImageMemoryBarrier barrier(source.second, destination.second, previous, layout,
                 VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, texture.image,
-                vk::ImageSubresourceRange(texture.aspect, mip, 1, layer, 1));
+                vk::ImageSubresourceRange(texture.aspect, imageMip, 1, imageLayer, 1));
             command.pipelineBarrier(source.first, destination.first, {}, {}, {}, barrier);
             previous = layout;
         }
@@ -346,7 +358,9 @@ void VulkanRHI::UpdateTexture(Texture& texture, const void* data, size_t size,
         const auto range = Subresource(texture, mip, layer);
         TransitionTexture(command, texture, range, vk::ImageLayout::eTransferDstOptimal);
         const vk::BufferImageCopy copy(0, 0, 0,
-            vk::ImageSubresourceLayers(texture.aspect, mip, layer, 1), {0, 0, 0}, MipExtent(texture, mip));
+            vk::ImageSubresourceLayers(texture.aspect, texture.layoutBaseMipLevel + mip,
+                                       texture.layoutBaseArrayLayer + layer, 1),
+            {0, 0, 0}, MipExtent(texture, mip));
         command.copyBufferToImage(staging.buffer, texture.image, vk::ImageLayout::eTransferDstOptimal, copy);
         TransitionTexture(command, texture, range, ReadyLayout(texture));
     });
@@ -354,7 +368,7 @@ void VulkanRHI::UpdateTexture(Texture& texture, const void* data, size_t size,
 
 std::vector<uint8_t> VulkanRHI::ReadTexture(Texture& texture, uint32_t mip, uint32_t layer) {
     CheckSubresource(texture, mip, layer);
-    const auto previous = texture.layouts[size_t{layer} * texture.mipLevels + mip];
+    const auto previous = texture.Layout(mip, layer);
     if (previous == vk::ImageLayout::eUndefined || texture.samples != vk::SampleCountFlagBits::e1 ||
         (texture.aspect & vk::ImageAspectFlagBits::eStencil)) {
         throw std::invalid_argument("Cannot read undefined or packed depth/stencil texture contents");
@@ -368,7 +382,9 @@ std::vector<uint8_t> VulkanRHI::ReadTexture(Texture& texture, uint32_t mip, uint
         const auto range = Subresource(texture, mip, layer);
         TransitionTexture(command, texture, range, vk::ImageLayout::eTransferSrcOptimal);
         const vk::BufferImageCopy copy(0, 0, 0,
-            vk::ImageSubresourceLayers(texture.aspect, mip, layer, 1), {0, 0, 0}, MipExtent(texture, mip));
+            vk::ImageSubresourceLayers(texture.aspect, texture.layoutBaseMipLevel + mip,
+                                       texture.layoutBaseArrayLayer + layer, 1),
+            {0, 0, 0}, MipExtent(texture, mip));
         command.copyImageToBuffer(texture.image, vk::ImageLayout::eTransferSrcOptimal, staging.buffer, copy);
         const vk::MemoryBarrier host(vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eHostRead);
         command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
@@ -395,7 +411,7 @@ void VulkanRHI::GenerateMipmaps(Texture& texture) {
         throw std::runtime_error("Linear Vulkan mip generation unsupported for " + vk::to_string(texture.format));
     }
     for (uint32_t layer = 0; layer < texture.layers; ++layer) {
-        if (texture.layouts[size_t{layer} * texture.mipLevels] == vk::ImageLayout::eUndefined) {
+        if (texture.Layout(0, layer) == vk::ImageLayout::eUndefined) {
             throw std::logic_error("Vulkan mip generation requires initialized base levels");
         }
     }
@@ -432,25 +448,35 @@ void VulkanRHI::DestroyTexture(Texture& texture) {
         m_vkDevice.destroyImage(texture.image);
         m_vkDevice.freeMemory(texture.heap);
     }
+    if (texture.layoutState) {
+        texture.layoutState->image = nullptr;
+        texture.layoutState->layouts.clear();
+    }
     texture = {};
 }
 
 void VulkanRHI::ResolveTexture(vk::CommandBuffer command, Texture& source, Texture& target) {
+    CheckSubresource(source, 0, 0);
+    CheckSubresource(target, 0, 0);
     if (source.samples == vk::SampleCountFlagBits::e1 ||
         target.samples != vk::SampleCountFlagBits::e1 ||
         source.aspect != vk::ImageAspectFlagBits::eColor || source.aspect != target.aspect ||
         source.format != target.format || source.width != target.width || source.height != target.height ||
         source.layers != 1 || target.layers != 1 ||
-        source.layouts.empty() || source.layouts[0] == vk::ImageLayout::eUndefined) {
+        source.Layout(0, 0) == vk::ImageLayout::eUndefined) {
         throw std::invalid_argument("Vulkan resolve requires matching initialized multisample/color targets");
     }
     const vk::ImageSubresourceRange range(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
     TransitionTexture(command, source, range, vk::ImageLayout::eTransferSrcOptimal);
     TransitionTexture(command, target, range, vk::ImageLayout::eTransferDstOptimal);
-    const vk::ImageSubresourceLayers layer(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+    const vk::ImageSubresourceLayers sourceLayer(vk::ImageAspectFlagBits::eColor,
+        source.layoutBaseMipLevel, source.layoutBaseArrayLayer, 1);
+    const vk::ImageSubresourceLayers targetLayer(vk::ImageAspectFlagBits::eColor,
+        target.layoutBaseMipLevel, target.layoutBaseArrayLayer, 1);
     command.resolveImage(source.image, vk::ImageLayout::eTransferSrcOptimal, target.image,
         vk::ImageLayout::eTransferDstOptimal,
-        vk::ImageResolve(layer, {0, 0, 0}, layer, {0, 0, 0}, {source.width, source.height, 1}));
+        vk::ImageResolve(sourceLayer, {0, 0, 0}, targetLayer, {0, 0, 0},
+                         {source.width, source.height, 1}));
     TransitionTexture(command, source, range, vk::ImageLayout::eColorAttachmentOptimal);
     TransitionTexture(command, target, range, vk::ImageLayout::eShaderReadOnlyOptimal);
 }

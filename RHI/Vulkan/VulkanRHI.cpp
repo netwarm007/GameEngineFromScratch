@@ -1117,7 +1117,7 @@ void VulkanRHI::AbortFrame() {
         throw std::runtime_error("Vulkan abandoned acquisition drain failed");
     }
     m_vkCommandBuffers.at(m_nCurrentFrame).reset();
-    for (auto& [texture, layouts] : m_frameLayouts) texture->layouts = std::move(layouts);
+    for (auto& [state, layouts] : m_frameLayouts) state->layouts = std::move(layouts);
     m_frameLayouts.clear();
     m_frameActive = false;
     m_recreateSwapChain = true;
@@ -1964,7 +1964,7 @@ void VulkanRHI::Commands::Submit() {
 
 void VulkanRHI::Commands::Cancel() {
     if (!m_rhi) return;
-    for (auto& [texture, layouts] : m_layouts) texture->layouts = std::move(layouts);
+    for (auto& [state, layouts] : m_layouts) state->layouts = std::move(layouts);
     m_layouts.clear();
     m_command.reset();
     m_rhi->m_commands = m_previous;

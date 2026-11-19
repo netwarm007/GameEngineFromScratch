@@ -874,6 +874,36 @@ artifacts. This is not a native WSI or Retina test. No production dependency
 pin, shared shader algorithm, default backend, or presentation-retirement
 contract changes.
 
+PR #71 review follow-ups extend this checkpoint without changing those
+contracts. `VulkanGraphicsManager` now retains each bound graphics/compute
+pipeline in its frame-slot resources; the slot is released only after
+`BeginFrame` has waited for its fence. Pipeline-manager `Clear()` rejects an
+active recording and waits for device completion before clearing registered
+states. `VulkanGraphicsTest` unregisters a pipeline after recording and checks
+that it survives submission; `VulkanPipelineTest` covers the active-recording
+guard.
+
+Texture copies and subresource views now share one per-image layout state.
+Their mip/layer base offsets are applied consistently to transitions, uploads,
+readbacks, and resolves, and command/frame cancellation restores one snapshot
+for the shared image. `VulkanResourceTest` covers cross-alias recording,
+rollback, and a nonzero-mip/nonzero-layer view.
+
+GUI texture registration retains metadata only; Vulkan descriptors are
+allocated on the first draw that actually references a texture. This keeps
+unshown material fallback textures from consuming the renderer's fixed
+descriptor pool. The GUI regression registers more textures than the former
+pool capacity while drawing only a small subset. Cocoa refreshes each
+`CAMetalLayer` scale/drawable size when ImGui queries framebuffer scale, and
+the renderer recreates secondary swapchains when that scale changes. The
+pinned ImGui backend backport now makes secondary viewport creation
+transactional and checks partial frame/swapchain resources during rollback;
+the CPU-dispatch lifecycle regression injects surface, swapchain, and
+image-view failures. Windows Debug builds and the focused headless Vulkan
+resource, pipeline, graphics, GUI, and swapchain tests pass locally. This is
+not exact-revision cross-platform CI, physical Retina/mixed-DPI validation, or
+Windows Vulkan WSI runtime validation.
+
 The first explicit MoltenVK run exposed a nonportable fault-injection assumption:
 MoltenVK documents that it ignores `VkAllocationCallbacks`. The GUI regression
 now also injects an ImGui allocation failure after the backend has bound its
@@ -1036,6 +1066,11 @@ evidence, dependency scope, validation plan, and authorization.
   floating-window input remain unverified, not inferred from scale-1 WSI success.
   Linux lavapipe/Xcb is reference coverage, not hardware acceptance.
   No unsupported environment is given a device-idle retirement fallback.
+- **Checkpoint 5 follow-up:** Cocoa now refreshes secondary CAMetalLayer scale
+  and drawable dimensions and resizes its Vulkan swapchain when the reported
+  framebuffer scale changes. The behavior still needs physical mixed-DPI/
+  Retina validation; the headless CPU-dispatch regression cannot establish
+  native Cocoa presentation or floating-window input correctness.
 - **Checkpoint 5:** The user-reported Windows application runs each emitted
   255 fallback diagnostics for missing `Textures/terrain/area_1_*` tiles.
   This resource limitation is distinct from Vulkan validation. The reported

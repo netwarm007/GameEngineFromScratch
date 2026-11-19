@@ -30,18 +30,27 @@ class VulkanGuiRenderer {
     static VkResult VKAPI_PTR Present(VkQueue queue, const VkPresentInfoKHR* info);
     static void RenderViewport(ImGuiViewport* viewport, void* argument);
     static void CreateViewport(ImGuiViewport* viewport);
+    static void DestroyViewport(ImGuiViewport* viewport);
+    static ImVec2 GetWindowFramebufferScale(ImGuiViewport* viewport);
+    static void SetWindowSize(ImGuiViewport* viewport, ImVec2 size);
 
     VulkanRHI& m_rhi;
     ImGuiContext* m_context = nullptr;
     void* m_backend = nullptr;
     vk::UniqueDescriptorPool m_pool;
     struct GuiTexture {
-        VkDescriptorSet descriptor;
+        vk::ImageView view;
+        vk::ImageLayout layout;
+        vk::Format format;
+        VkDescriptorSet descriptor = VK_NULL_HANDLE;
         bool nearest;
     };
     std::map<ImTextureID, GuiTexture> m_textures;
     void (*m_createViewport)(ImGuiViewport*) = nullptr;
-    void (*m_renderViewport)(ImGuiViewport*, void*) = nullptr;
     void (*m_destroyViewport)(ImGuiViewport*) = nullptr;
+    void (*m_renderViewport)(ImGuiViewport*, void*) = nullptr;
+    ImVec2 (*m_getFramebufferScale)(ImGuiViewport*) = nullptr;
+    void (*m_setViewportSize)(ImGuiViewport*, ImVec2) = nullptr;
+    std::map<ImGuiViewport*, ImVec2> m_viewportScales;
 };
 }  // namespace My

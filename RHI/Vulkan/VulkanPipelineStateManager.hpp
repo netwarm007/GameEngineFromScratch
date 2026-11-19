@@ -25,6 +25,7 @@ class VulkanPipelineStateManager : public PipelineStateManager {
         : m_rhi(rhi), m_assets(assets) {}
 
     int Initialize() final;
+    void Clear() final;
     void CreateGraphicsPipeline(VulkanPipelineState& state, vk::RenderPass renderPass);
     std::shared_ptr<VulkanPipelineState> CreateMaterialCopyPipeline(vk::RenderPass renderPass);
     void UnregisterPipelineState(PipelineState& pipelineState) final;

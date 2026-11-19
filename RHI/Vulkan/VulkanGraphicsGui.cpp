@@ -173,7 +173,8 @@ void VulkanGraphicsManager::CreateTextureView(Texture2D& descriptor,
     owned->texture.width = (std::max)(1u, original.width >> mip);
     owned->texture.height = (std::max)(1u, original.height >> mip);
     owned->texture.layers = owned->texture.mipLevels = 1;
-    owned->texture.layouts = {original.layouts.at(size_t{slice} * original.mipLevels + mip)};
+    owned->texture.layoutBaseMipLevel = mip;
+    owned->texture.layoutBaseArrayLayer = slice;
     owned->view = m_rhi.GetDevice().createImageViewUnique(
         {{}, original.image, vk::ImageViewType::e2D, original.format, {},
          {original.aspect, mip, 1, slice, 1}});
