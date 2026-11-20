@@ -65,8 +65,14 @@ endforeach()
 
 # A second application build must refresh staged and bundled assets, not just
 # pass because the first build happened to provide them.
+# CMake install compares timestamps at second resolution, unlike build staging.
+run_checked("${CMAKE_COMMAND}" -E sleep 1.1)
 file(WRITE "${source}/Asset/Scene/splash.ogex" "updated scene\n")
 run_checked("${CMAKE_COMMAND}" --build "${build}" --config Debug --target Viewer BilliardGame)
+file(READ "${build}/Asset/Scene/splash.ogex" scene)
+if(NOT scene STREQUAL "updated scene\n")
+    message(FATAL_ERROR "Build-tree scene was not refreshed")
+endif()
 run_checked("${CMAKE_COMMAND}" --install "${build}" --config Debug --prefix "${prefix}")
 file(READ "${prefix}/Asset/Scene/splash.ogex" scene)
 if(NOT scene STREQUAL "updated scene\n")
