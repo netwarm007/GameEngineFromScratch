@@ -15,6 +15,22 @@ parameters:
     default: "windows,linux,macos"
 
 commands:
+  # Weekly cache period: each cache is saved at most once per period (an
+  # existing key is never overwritten), and restores fall back to the newest
+  # older period. This replaces per-commit keys that stored a full copy every push.
+  cache_period_unix:
+    steps:
+      - run:
+          name: Compute cache period
+          command: |
+            echo "$(date -u +%Y)-$(( 10#$(date -u +%j) / 7 ))" > /tmp/cache-period.txt
+  cache_period_windows:
+    steps:
+      - run:
+          name: Compute cache period
+          command: |
+            $now = (Get-Date).ToUniversalTime()
+            "$($now.Year)-$([int][math]::Floor($now.DayOfYear / 7))" | Set-Content -NoNewline C:\cache-period.txt
   build_windows_dependency:
     parameters:
       dependency:
@@ -233,11 +249,11 @@ jobs:
               throw "NSIS compiler was not found at $makensisPath after installation"
             }
             $env:Path = "$nsisPath;$env:Path"
+      - cache_period_windows
       - restore_cache:
           keys:
-            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}-
+            - source-v2-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
+            - source-v2-{{ arch }}-
       - run:
           name: restore repo
           command: |
@@ -250,15 +266,19 @@ jobs:
           command: |
             git submodule sync
             git submodule update --init --recursive
-      - run:
-          name: git gc
-          command: |
-             git gc
-             git lfs prune
-      - save_cache:
-          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ".git"
+      - when:
+          condition:
+            equal: [ master, << pipeline.git.branch >> ]
+          steps:
+            - run:
+                name: git gc
+                command: |
+                   git gc
+                   git lfs prune
+            - save_cache:
+                key: source-v2-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
+                paths:
+                  - ".git"
       - run:
           name: ISPC and C++ math regression
           command: |
@@ -474,26 +494,40 @@ jobs:
           condition:
             equal: [full, << parameters.scope >>]
           steps:
+            - restore_cache:
+                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
             - run:
                 name: "Build Windows dependencies (Release)"
                 command: |
                   $ErrorActionPreference = 'Stop'
-                  scripts/build_crossguid Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  scripts/build_opengex Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  scripts/build_zlib Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  scripts/build_bullet Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  scripts/build_glslangValidator Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  scripts/build_spirvcross Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  scripts/build_libispc-texcomp Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  scripts/build_openal Release
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  if (Test-Path .circleci\windows-deps-cache-release\complete.txt) {
+                    Write-Output "Using cached Release dependencies"
+                    cmake -DACTION=restore -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  } else {
+                    scripts/build_crossguid Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_opengex Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_zlib Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_bullet Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_glslangValidator Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_spirvcross Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_libispc-texcomp Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_openal Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    cmake -DACTION=save -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  }
+            - save_cache:
+                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+                paths:
+                  - ".circleci/windows-deps-cache-release"
             - run:
                 name: "Build Engine (Release)"
                 command: |
@@ -547,16 +581,15 @@ jobs:
              echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
           environment:
              DEBIAN_FRONTEND: noninteractive
+      - cache_period_unix
       - restore_cache:
           keys:
-            - ccache-linux-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - ccache-linux-{{ arch }}-{{ .Branch }}-
-            - ccache-linux-{{ arch }}-
+            - ccache-linux-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+            - ccache-linux-v2-{{ arch }}-
       - restore_cache:
           keys:
-            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}-
+            - source-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+            - source-v2-{{ arch }}-
       - run:
           name: restore repo
           command: |
@@ -569,15 +602,19 @@ jobs:
           command: |
             git submodule sync
             git submodule update --init --recursive
-      - run:
-          name: git gc
-          command: |
-             git gc
-             git lfs prune
-      - save_cache:
-          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ".git"
+      - when:
+          condition:
+            equal: [ master, << pipeline.git.branch >> ]
+          steps:
+            - run:
+                name: git gc
+                command: |
+                   git gc
+                   git lfs prune
+            - save_cache:
+                key: source-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+                paths:
+                  - ".git"
       - run:
           name: ISPC and C++ math regression
           command: |
@@ -605,10 +642,14 @@ jobs:
           name: "Build Engine"
           command: |
              CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON" ./scripts/build-ninja.sh
-      - save_cache:
-          key: ccache-linux-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ~/.cache/ccache
+      - when:
+          condition:
+            equal: [ master, << pipeline.git.branch >> ]
+          steps:
+            - save_cache:
+                key: ccache-linux-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+                paths:
+                  - ~/.cache/ccache
       - run:
           name: "Cook Asset"
           command: |
@@ -708,15 +749,31 @@ jobs:
             equal: [full, << parameters.scope >>]
           steps:
             - run:
+                name: "Prepare Release dependency cache key"
+                command: |
+                  cmake -DACTION=key -DCONFIG=Release -P .circleci/unix-dependency-cache.cmake
+            - restore_cache:
+                key: unix-deps-release-v1-{{ arch }}-{{ checksum ".circleci/unix-deps-key.txt" }}
+            - run:
                 name: "Build dependencies (Release)"
                 command: |
-                  ./scripts/build_crossguid.sh Release
-                  ./scripts/build_opengex.sh Release
-                  ./scripts/build_bullet.sh Release
-                  ./scripts/build_glslangValidator.sh Release
-                  ./scripts/build_spirvcross.sh Release
-                  ./scripts/build_libispc-texcomp.sh Release
-                  ./scripts/build_openal.sh Release
+                  if [ -f .circleci/unix-deps-cache-Release/complete.txt ]; then
+                    echo "Using cached Release dependencies"
+                    cmake -DACTION=restore -DCONFIG=Release -P .circleci/unix-dependency-cache.cmake
+                  else
+                    ./scripts/build_crossguid.sh Release
+                    ./scripts/build_opengex.sh Release
+                    ./scripts/build_bullet.sh Release
+                    ./scripts/build_glslangValidator.sh Release
+                    ./scripts/build_spirvcross.sh Release
+                    ./scripts/build_libispc-texcomp.sh Release
+                    ./scripts/build_openal.sh Release
+                    cmake -DACTION=save -DCONFIG=Release -P .circleci/unix-dependency-cache.cmake
+                  fi
+            - save_cache:
+                key: unix-deps-release-v1-{{ arch }}-{{ checksum ".circleci/unix-deps-key.txt" }}
+                paths:
+                  - ".circleci/unix-deps-cache-Release"
             - run:
                 name: "Build Engine (Release)"
                 command: |
@@ -746,11 +803,11 @@ jobs:
       xcode: "16.4.0"
     resource_class: m4pro.medium
     steps:
+      - cache_period_unix
       - restore_cache:
           keys:
-            - source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - source-{{ arch }}-{{ .Branch }}-
-            - source-{{ arch }}-
+            - source-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+            - source-v2-{{ arch }}-
       - run:
           name: restore repo
           command: |
@@ -763,15 +820,19 @@ jobs:
           command: |
             git submodule sync
             git submodule update --init --recursive
-      - run:
-          name: git gc
-          command: |
-             git gc
-             git lfs prune
-      - save_cache:
-          key: source-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ".git"
+      - when:
+          condition:
+            equal: [ master, << pipeline.git.branch >> ]
+          steps:
+            - run:
+                name: git gc
+                command: |
+                   git gc
+                   git lfs prune
+            - save_cache:
+                key: source-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+                paths:
+                  - ".git"
       - run: 
           name: Install Dependencies via Homebrew
           command: |
@@ -780,9 +841,8 @@ jobs:
              echo "export PATH=\"$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:\$PATH\"" >> "$BASH_ENV"
       - restore_cache:
           keys:
-            - ccache-macos-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-            - ccache-macos-{{ arch }}-{{ .Branch }}-
-            - ccache-macos-{{ arch }}-
+            - ccache-macos-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+            - ccache-macos-v2-{{ arch }}-
       - run:
           name: ISPC and C++ math regression
           command: |
@@ -811,10 +871,14 @@ jobs:
           name: "Build Engine"
           command: |
              CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON" ./scripts/build-ninja.sh
-      - save_cache:
-          key: ccache-macos-{{ arch }}-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ~/Library/Caches/ccache
+      - when:
+          condition:
+            equal: [ master, << pipeline.git.branch >> ]
+          steps:
+            - save_cache:
+                key: ccache-macos-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
+                paths:
+                  - ~/Library/Caches/ccache
       - run:
           name: "Cook Asset"
           command: |
@@ -1042,15 +1106,6 @@ jobs:
           command: |
             git submodule sync
             git submodule update --init --recursive
-      - run:
-          name: git gc
-          command: |
-             git gc
-             git lfs prune
-      - save_cache:
-          key: source-android-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - ".git"
       - restore_cache:
           key: jars-{{ checksum "Game/Billiard/build.gradle" }}-{{ checksum  "Game/Billiard/app/build.gradle" }}
       - run:

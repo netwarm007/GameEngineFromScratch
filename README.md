@@ -459,11 +459,17 @@ index, or update this README for routine acceptance results. Update README only
 when durable build instructions, supported configurations, or behavior change.
 This keeps parallel branches' verification records independent.
 
-The Windows job uses two parallel CMake build jobs and caches installed dependency
+The Windows job uses eight parallel CMake build jobs and caches installed dependency
 files using their revisions, build scripts, and toolchain details. MSVC may also
 compile source files in parallel within a build job.
 Cache misses rebuild the dependencies; the engine and tests still run on every
 pipeline.
+
+The source (`.git`) and ccache caches are saved only from `master`, at most once
+per week per platform (`v2` keys); other branches only restore them.
+
+Full Windows builds also cache the Release dependency files, and full Linux builds
+cache them too, keyed by submodule revisions, build scripts, and toolchain details.
 
 Packaging and package artifacts are limited to `master` and tagged builds;
 builds, tests, and Viewer screenshot attempts also run on other branches.
