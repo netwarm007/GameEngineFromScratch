@@ -3,12 +3,13 @@ set -e
 git submodule update --init External/src/crossguid
 mkdir -p External/build/crossguid
 pushd External/build/crossguid
-cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../ ../../src/crossguid
+CONFIG="${1:-Debug}"
+cmake -G "Ninja" -DCMAKE_INSTALL_PREFIX=../../ "-DCMAKE_BUILD_TYPE=$CONFIG" ../../src/crossguid
 if [[ -z $1 ]];
 then
-    cmake --build . --config Debug --target install
+    cmake --build . --config "$CONFIG" --target install
 else
-    cmake --build . --config $1 --target install
+    cmake --build . --config "$CONFIG" --target install
 fi
 popd
 

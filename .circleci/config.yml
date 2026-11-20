@@ -46,8 +46,8 @@ jobs:
       - run:
           name: Install Vulkan device and native-WSI test dependencies
           command: |
-            sudo apt-get update
-            sudo apt-get install -y git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
+            sudo apt-get -o Acquire::Retries=3 update
+            sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
               libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
               libxcb1-dev xvfb xauth zlib1g-dev libx11-dev libx11-xcb-dev \
               libgl1-mesa-dev libxi-dev libxrandr-dev libxcursor-dev libxinerama-dev \
@@ -469,6 +469,51 @@ jobs:
                 - GEFS-0.1.0-win64.exe
           - store_artifacts:
               path: build/GEFS-0.1.0-win64.exe
+      - when:
+          condition:
+            equal: [full, << parameters.scope >>]
+          steps:
+            - run:
+                name: "Build Windows dependencies (Release)"
+                command: |
+                  $ErrorActionPreference = 'Stop'
+                  scripts/build_crossguid Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  scripts/build_opengex Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  scripts/build_zlib Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  scripts/build_bullet Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  scripts/build_glslangValidator Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  scripts/build_spirvcross Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  scripts/build_libispc-texcomp Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  scripts/build_openal Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - run:
+                name: "Build Engine (Release)"
+                command: |
+                  if (-not (Get-Command dxc.exe -ErrorAction SilentlyContinue)) {
+                    $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter dxc.exe -Recurse |
+                      Where-Object { $_.DirectoryName -match '\\x64$' } |
+                      Sort-Object FullName -Descending | Select-Object -First 1
+                    if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
+                    $env:Path = "$($dxc.DirectoryName);$env:Path"
+                  }
+                  cmake -S . -B build-release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=OFF -DD3D12_RHI_DEBUG=OFF -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  cmake --build build-release --config Release
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - run:
+                name: "Test (Release)"
+                command: |
+                  ctest --test-dir build-release -C Release --output-on-failure --output-junit junit.xml
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - store_test_results:
+                path: build-release/junit.xml
   build_linux:
     parameters:
       scope:
@@ -490,13 +535,13 @@ jobs:
       - run: 
           name: Install Dependencies
           command: |
-             sudo apt update 
-             sudo apt install -y curl clang python3-pip ninja-build git uuid-dev
-             sudo apt install -y libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
-             sudo apt install -y flex bison ccache
-             sudo apt install -y xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
+             sudo apt-get -o Acquire::Retries=3 update
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing curl clang python3-pip ninja-build git uuid-dev
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing flex bison ccache
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-             sudo apt install -y git-lfs
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
              echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
           environment:
@@ -616,7 +661,7 @@ jobs:
       - run:
           name: Coverage (llvm-cov)
           command: |
-             sudo apt install -y llvm
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing llvm
              ./scripts/coverage_linux.sh build-coverage coverage
              if [ -n "$CODECOV_TOKEN" ]; then
                curl -fsSL https://cli.codecov.io/latest/linux/codecov -o codecov
@@ -657,6 +702,32 @@ jobs:
               path: build/GEFS-0.1.0-Linux.tar.gz
           - store_artifacts:
               path: build/GEFS-0.1.0-Linux.tar.Z
+      - when:
+          condition:
+            equal: [full, << parameters.scope >>]
+          steps:
+            - run:
+                name: "Build dependencies (Release)"
+                command: |
+                  ./scripts/build_crossguid.sh Release
+                  ./scripts/build_opengex.sh Release
+                  ./scripts/build_bullet.sh Release
+                  ./scripts/build_glslangValidator.sh Release
+                  ./scripts/build_spirvcross.sh Release
+                  ./scripts/build_libispc-texcomp.sh Release
+                  ./scripts/build_openal.sh Release
+            - run:
+                name: "Build Engine (Release)"
+                command: |
+                  cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release \
+                    -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
+                  cmake --build build-release
+            - run:
+                name: "Test (Release)"
+                command: |
+                  ctest --test-dir build-release --output-on-failure --output-junit junit.xml
+            - store_test_results:
+                path: build-release/junit.xml
   build_macos:
     parameters:
       scope:
@@ -899,6 +970,33 @@ jobs:
       - store_artifacts:
           path: moltenvk-applications
           destination: moltenvk-applications
+      - when:
+          condition:
+            equal: [full, << parameters.scope >>]
+          steps:
+            - run:
+                name: "Build dependencies (Release)"
+                command: |
+                  ./scripts/build_crossguid.sh Release
+                  ./scripts/build_opengex.sh Release
+                  ./scripts/build_zlib.sh Release
+                  ./scripts/build_bullet.sh Release
+                  ./scripts/build_glslangValidator.sh Release
+                  ./scripts/build_spirvcross.sh Release
+                  ./scripts/build_libispc-texcomp.sh Release
+                  ./scripts/build_openal.sh Release
+            - run:
+                name: "Build Engine (Release)"
+                command: |
+                  cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release \
+                    -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
+                  cmake --build build-release
+            - run:
+                name: "Test (Release)"
+                command: |
+                  ctest --test-dir build-release --output-on-failure --output-junit junit.xml
+            - store_test_results:
+                path: build-release/junit.xml
   build_android:
     working_directory: ~/project
     docker:
