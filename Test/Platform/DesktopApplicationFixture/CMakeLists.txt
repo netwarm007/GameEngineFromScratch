@@ -60,7 +60,8 @@ set_target_properties(MaterialBaker PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/Utility/$<0:>")
 
 include("${ENGINE_SOURCE_DIR}/cmake/DesktopApplications.cmake")
-foreach(app Viewer BilliardGame)
+# Do not let screenshot discovery mistake these fixtures for real applications.
+foreach(app FixtureViewer FixtureBilliard)
     add_executable(${app} MACOSX_BUNDLE "${CMAKE_CURRENT_BINARY_DIR}/main.cpp")
     if(APPLE)
         file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${app}.metallib" "fixture:metallib\n")
