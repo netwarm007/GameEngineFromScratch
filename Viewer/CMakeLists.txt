@@ -79,7 +79,7 @@ IF(ANDROID)
     add_library(Viewer SHARED 
         ViewerLogic.cpp)
 ELSEIF(APPLE)
-    if(NOT VULKAN_APPLICATIONS)
+    if(BUILD_ALL_DESKTOP_RHIS OR NOT VULKAN_APPLICATIONS)
         set(VIEWER_SHADER_LIBRARY Main.metallib)
     endif()
     add_executable(Viewer MACOSX_BUNDLE
@@ -94,7 +94,9 @@ ENDIF(ANDROID)
 
 IF(VULKAN_APPLICATIONS)
     myge_vulkan_application(Viewer)
-ELSEIF(APPLE)
+endif()
+
+IF(APPLE AND (BUILD_ALL_DESKTOP_RHIS OR NOT VULKAN_APPLICATIONS))
     list(APPEND SHADER_SOURCES material_texture_copy.comp shadowmap_omni_metal.vert)
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air
@@ -175,7 +177,7 @@ ELSEIF(APPLE)
         )
     endforeach(HDR_TEXTURE_FILE)
 
-ELSEIF(WA)
+ELSEIF(WA AND NOT VULKAN_APPLICATIONS)
     target_link_libraries(Viewer
                             BulletPhysics
                             OpenGLRHI
@@ -198,7 +200,7 @@ ELSEIF(WA)
     set_target_properties(Viewer
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s DEMANGLE_SUPPORT=1 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
             )
-ELSEIF(WIN32)
+ELSEIF(WIN32 AND NOT VULKAN_APPLICATIONS)
     if(VIEWER_USE_WIN32_OPENGL)
         target_compile_definitions(Viewer PRIVATE VIEWER_USE_WIN32_OPENGL)
         set_target_properties(Viewer PROPERTIES OUTPUT_NAME ViewerOpenGL)
@@ -215,13 +217,15 @@ ELSEIF(WIN32)
                             PlatformInterface
                         )
 
-    install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/${VIEWER_WINDOWS_SHADERS} DESTINATION Asset/Shaders)
-    install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
-    install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
-    install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
-    install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
-    install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
-ELSE() # LINUX
+    if(NOT BUILD_ALL_DESKTOP_RHIS)
+        install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/${VIEWER_WINDOWS_SHADERS} DESTINATION Asset/Shaders)
+        install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
+        install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
+        install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
+        install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
+        install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
+    endif()
+ELSEIF(NOT VULKAN_APPLICATIONS) # LINUX
 if(SDL2_FOUND)
 set(PLATFORM_INTERFACE PlatformInterfaceSDL2)
 else()
@@ -233,15 +237,21 @@ endif(SDL2_FOUND)
                             Framework
                             ${PLATFORM_INTERFACE})
 
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
-    install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
-    install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
-    install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
-    install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
-    install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
+    if(NOT BUILD_ALL_DESKTOP_RHIS)
+        install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
+        install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
+        install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
+        install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
+        install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
+        install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
+    endif()
 ENDIF(APPLE)
 
 add_dependencies(Viewer Engine_Asset)
 target_link_libraries(Viewer SplashSequence)
+
+if(BUILD_ALL_DESKTOP_RHIS)
+    myge_desktop_application(Viewer)
+endif()
 
 install(TARGETS Viewer RUNTIME BUNDLE DESTINATION bin)

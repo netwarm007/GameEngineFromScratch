@@ -572,7 +572,7 @@ jobs:
           command: |
              sudo apt-get -o Acquire::Retries=3 update
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing curl clang python3-pip ninja-build git uuid-dev
-             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libvulkan-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing flex bison ccache
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
@@ -835,7 +835,7 @@ jobs:
           name: Install Dependencies via Homebrew
           command: |
              export HOMEBREW_NO_AUTO_UPDATE=1
-             brew install cmake ninja flex bison ccache
+             brew install cmake ninja flex bison ccache vulkan-headers vulkan-loader
              echo "export PATH=\"$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:\$PATH\"" >> "$BASH_ENV"
       - restore_cache:
           keys:
@@ -995,7 +995,6 @@ jobs:
           name: Compile opt-in Vulkan applications and verify bundle asset refresh
           command: |
              export HOMEBREW_NO_AUTO_UPDATE=1
-             brew install vulkan-headers vulkan-loader
              cmake -S . -B build-vulkan-apps -G Ninja -DCMAKE_BUILD_TYPE=Debug \
                -DVULKAN_APPLICATIONS=ON -DCMAKE_CUDA_COMPILER=NOTFOUND
              cmake --build build-vulkan-apps --target Viewer BilliardGame --parallel 2
@@ -1216,4 +1215,3 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\d+$/
-

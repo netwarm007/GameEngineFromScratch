@@ -11,7 +11,7 @@ IF(ANDROID)
     add_library(BilliardGame SHARED 
         BilliardGameLogic.cpp)
 ELSEIF(APPLE)
-    if(NOT VULKAN_APPLICATIONS)
+    if(BUILD_ALL_DESKTOP_RHIS OR NOT VULKAN_APPLICATIONS)
         set(BILLIARD_SHADER_LIBRARY Main.metallib)
     endif()
     add_executable(BilliardGame MACOSX_BUNDLE
@@ -33,7 +33,9 @@ endif()
 IF(VULKAN_APPLICATIONS)
     myge_vulkan_application(BilliardGame)
     add_dependencies(BilliardGame Engine_Asset)
-ELSEIF(APPLE)
+endif()
+
+IF(APPLE AND (BUILD_ALL_DESKTOP_RHIS OR NOT VULKAN_APPLICATIONS))
     set(SHADER_SOURCES basic.vert basic.frag
     debug.vert debug.frag
     pbr.vert pbr.frag
@@ -89,7 +91,7 @@ ELSEIF(APPLE)
                             MetalRHI
                             PlatformInterface
                         )
-ELSEIF(WA)
+ELSEIF(WA AND NOT VULKAN_APPLICATIONS)
     target_link_libraries(BilliardGame 
                             BulletPhysics
                             OpenGLRHI
@@ -99,7 +101,7 @@ ELSEIF(WA)
     set_target_properties(BilliardGame
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_SDL=2 -s USE_WEBGL2=1"
             )
-ELSE(APPLE)
+ELSEIF(NOT VULKAN_APPLICATIONS)
     if(WIN32 AND BILLIARD_USE_D3D12)
         set(BILLIARD_RHI D3dRHI)
     else()
@@ -112,3 +114,8 @@ ELSE(APPLE)
                             PlatformInterface
                         )
 ENDIF(APPLE)
+
+if(BUILD_ALL_DESKTOP_RHIS)
+    myge_desktop_application(BilliardGame)
+    install(TARGETS BilliardGame RUNTIME BUNDLE DESTINATION bin)
+endif()

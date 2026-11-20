@@ -236,6 +236,16 @@ All three enabled CI jobs run this regression and retain Billiard screenshots
 Third-stage acceptance requires inspecting these real Billiard images, not
 Viewer screenshots alone.
 
+Desktop builds now default to `BUILD_ALL_DESKTOP_RHIS=ON`: Windows builds
+D3D12/OpenGL/Vulkan, Linux builds OpenGL/Vulkan, and macOS builds Metal/Vulkan.
+A Vulkan SDK is required for this complete build. Viewer and Billiard stage
+shared assets and bake materials as build dependencies; installed applications
+include the corresponding shader variants, with both Metal and Vulkan resources
+in macOS bundles. `-DBUILD_ALL_DESKTOP_RHIS=OFF` retains the legacy build path.
+Startup selection still uses the existing compile-time options; runtime
+selection and switching are subsequent stages of the
+[runtime RHI roadmap](docs/architecture/runtime-rhi-switching-roadmap.md).
+
 The Billiard scene places the camera at `(2.0, 0.0, 1.5)` meters, behind the
 cue ball, looking at `(0.0, 0.0, 0.83)` with a 60-degree vertical field of view.
 An optional `CameraNode` extension supplies a world-space target:

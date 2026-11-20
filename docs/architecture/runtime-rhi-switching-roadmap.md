@@ -1,0 +1,244 @@
+# Runtime RHI selection and switching roadmap
+
+## Status and scope
+
+This is the maintained, incremental implementation roadmap.
+The user requested a path from compile-time selection to building all supported
+backends for a platform and switching between them at runtime, and authorized
+stepwise implementation after reviewing the draft. M0 adopts the first-release
+contract below; M1 is being implemented. Later checkpoints remain separate
+implementation and acceptance steps, not completed functionality.
+
+The working branch was fast-forwarded to master
+`175d3567bb032e5356a8b537b5c5bb5f50edc6b2` before preparing this draft.
+This identifies the inspected baseline, not a new acceptance result.
+
+Follow the [repository instructions](../../AGENTS.md),
+[modularization roadmap](modularization-roadmap.md), and
+[Vulkan implementation plan](vulkan-rhi-implementation-plan.md).
+Reuse their existing ownership boundaries; this effort does not reopen completed
+scene, input, physics, or ImGui refactors. Vulkan's outstanding acceptance work
+remains governed by its own plan.
+
+## First-release contract
+
+- Build and package every backend in the agreed desktop platform matrix into
+  one application. Build selection controls inclusion, not the active backend.
+- First deliver startup selection, then switching within the same process.
+  Viewer is the first integration client; Billiard follows using the same
+  composition mechanism, not duplicated switching logic.
+- Allow a rendering pause and, where necessary, recreation of the native
+  window or content view. Seamless switching is not a first-release guarantee.
+- Preserve the current CPU scene, prepared assets, camera, physics, animation,
+  game state, ImGui context/font data, and saved/custom UI layout. Do not reload
+  the scene or initialize the whole runtime merely to change backends.
+- Pause simulation during switching without accumulating a catch-up interval.
+  Continue necessary platform event processing; discard stale window events
+  and reconcile held input when focus/window ownership changes.
+- Recreate every backend-owned GPU resource. Never transfer native texture,
+  buffer, pipeline, descriptor, draw-batch, or ImGui texture handles.
+- Preserve application-specific defaults initially: Viewer uses D3D12 on
+  Windows, OpenGL on Linux, and Metal on macOS; Billiard's ordinary Windows
+  default is OpenGL, although CI explicitly selects D3D12.
+- Explicit startup selection and an explicit switch must not silently choose
+  another backend. Report unavailable backends and initialization failures.
+  Initially, an unavailable default also fails explicitly; an automatic
+  fallback policy is a separate decision, not an implicit factory behavior.
+- If a switch fails before retirement, keep the old session. After retirement,
+  attempt to reconstruct the previous backend once. Report the failed switch
+  even when recovery succeeds. If recovery fails, stop rendering and exit
+  orderly with both errors; do not reuse the retired session.
+
+Dynamic library/plugin unloading, dual-device prewarming, zero-black-frame
+transitions, simultaneous rendering with multiple RHIs, device-loss recovery,
+Wayland integration, and new mobile/web backends are outside this first release.
+
+## Platform and availability matrix
+
+Distinguish compiled inclusion, runtime prerequisites, and successful
+initialization. A library target or installed SDK does not establish native
+application support. A preliminary probe cannot guarantee initialization.
+
+| Platform | Proposed complete desktop build | Limits |
+| --- | --- | --- |
+| Windows | D3D12, OpenGL, Vulkan | Probe each backend's device, driver, and presentation requirements. |
+| Linux | OpenGL, Vulkan | Use native XCB for the future switching host; M1 preserves current SDL/OpenGL startup when SDL is available. |
+| macOS | Metal, Vulkan through MoltenVK | The OpenGL library target alone does not establish a supported native application path. |
+| Android | Retain existing OpenGL ES path | Vulkan integration and mobile lifecycle switching are deferred. |
+| WebAssembly | Retain existing WebGL path | WebGPU would be a separate backend effort. |
+| FreeBSD and other targets | Preserve existing behavior | No new runtime-switching support claim without native evidence. |
+
+D2D and Empty remain available for their existing specialized/test uses; they
+are not advertised as full scene-rendering peers. Vulkan native availability
+must retain the maintenance-extension and presentation-retirement requirements
+in its implementation plan. Headless Vulkan is not a fallback for native WSI.
+
+A complete desktop build should fail configuration when required dependencies
+are missing, rather than silently omit a matrix backend. An explicitly trimmed
+developer build may omit backends, but must expose its compiled set and cannot
+satisfy complete-build acceptance.
+
+## Current implementation boundaries
+
+- [RHI targets](../../RHI/CMakeLists.txt) already build multiple libraries.
+  [Viewer composition](../../Viewer/main.cpp) and
+  [application linking/packaging](../../Viewer/CMakeLists.txt) still select one
+  backend through preprocessor conditions and CMake options.
+- D3D12 graphics operations obtain the RHI through `D3d12Application` casts.
+  Metal graphics initialization obtains its device/view through the window.
+  Vulkan already injects its RHI into graphics/pipeline managers.
+- [BaseApplication](../../Framework/Manager/BaseApplication.cpp) coordinates
+  full shutdown, including platform resources.
+  [RuntimeModuleGroup](../../Framework/Manager/RuntimeModuleGroup.hpp) borrows
+  modules, rejects running registration, and clears registrations on finalization.
+  Neither currently provides isolated render-session replacement.
+- GraphicsManager owns its offscreen targets and passes; frames borrow resource
+  descriptors. Scene texture objects retain prepared CPU images. Reuse these
+  boundaries for reconstruction without broadening shared GPU ownership.
+- ImGui context, platform integration, renderer integration, and GUI textures
+  already have separate owners. Renderer shutdown must release secondary-window
+  renderer resources before context/device destruction.
+- OpenGL projection correction is selected at startup by `IS_OPENGL`.
+  Render conventions must instead follow the active session, including camera,
+  shadow, depth, and shader semantics.
+- Shared HLSL already produces backend-specific shader artifacts. Package all
+  required variants without copying algorithms or changing other variants' ABI.
+
+## Target ownership and switching sequence
+
+The application composition root retains long-lived CPU services and an owned,
+replaceable render session. That session groups the backend lifecycle, graphics
+and pipeline managers, passes, GPU resources, and ImGui renderer. A platform host
+retains event routing and native window ownership, with explicit backend hooks
+for drawable/view/window reconstruction and GUI platform rebinding.
+
+This is an ownership boundary, not a requirement for a new universal GPU API,
+service locator, configurable scheduler, or interface per resource. Use existing
+interfaces and narrowly scoped factories. Static linking and explicit factory
+registration are sufficient initially.
+
+Proposed state sequence:
+
+```text
+Running -> Preflight -> Quiescing -> Retiring -> Creating -> Restoring
+        -> FirstFrame -> Running
+
+Preflight failure -> Running with old session and reported error
+Failure after retirement -> RecoverPrevious -> Running with reported error
+Recovery failure -> OrderlyExit with both errors
+```
+
+Process one request at a complete frame boundary, after main and secondary
+viewport submission. Reject overlapping requests with an explicit result;
+selecting the already active backend is a no-op.
+
+Wait for all relevant render/compute/presentation work before retirement.
+Release UI textures/views, scene allocations, offscreen resources, renderer,
+and pipelines while their required device/context is alive. Unbind GUI platform
+callbacks before destroying/replacing native windows or views. Then release
+backend-native resources, including partial initialization state.
+
+Create the target drawable/window integration, backend, GUI platform binding,
+pipelines, renderer/fonts, and scene GPU resources in dependency order. Activate
+its render conventions before preparing camera/light data. Publish success only
+after the restored scene has completed a rendered/presented frame; a minimized
+or zero-size window must not produce a false success or a busy wait.
+
+Use a render-session generation independent of scene revision to invalidate
+borrowed GPU references and UI caches. A switch reconstructs the same Scene
+without pretending it is a newly published CPU scene. Persist UI interaction
+state separately from GPU-owned pass instances where reconstruction would
+otherwise reset it.
+
+Window recreation is an intentional compatibility option: GLX visual selection
+precedes window creation, WGL pixel format has window-lifetime constraints, and
+Metal/Vulkan use different Cocoa view integrations. Preserve logical window
+geometry, DPI-aware layout, and floating-panel placement, not native handles.
+
+## Implementation checkpoints
+
+Each checkpoint depends on the preceding one. Confirm the next scope before
+implementation; checkpoint acceptance does not authorize all remaining stages.
+
+| Checkpoint | Deliverables | Exit criteria |
+| --- | --- | --- |
+| M0: agree contracts | Confirm matrix, defaults, Linux host choice, pause/state/window policies, availability/error model, and ownership order. Identify scoped backend failure paths to harden. | Reviewable contracts and testable acceptance cases; no implementation claims. |
+| M1: complete build and package | Link the agreed backend set; stage all shader/material/font/scene assets for build-tree and installed/bundle execution. Separate inclusion options from selection. | One distributable contains all required backend code/resources; existing default launch remains unchanged. |
+| M2: startup selection | Add explicit factories, availability diagnostics, `--rhi` and `--list-rhi`; remove conflicting entry-point aliases/macros and concrete application casts as required. | The same executable launches each matrix backend without rebuilding; missing support/assets and initialization errors fail explicitly. |
+| M3: isolated reconstruction | Separate persistent runtime services from the render session and native backend hooks; maintain safe scheduling/borrowed lifetimes. Harden partial cleanup required by reconstruction. | Same-backend destruction/recreation preserves CPU state; repeated cleanup and failure recovery are covered without whole-runtime restart. |
+| M4: cross-backend switching | Implement frame-boundary state machine, resource generation/invalidation, render-convention updates, window/view rebinding, and one-shot previous-backend recovery. | Native A/B/A transitions restore the scene; failed switches preserve or reconstruct the previous backend, or exit explicitly. |
+| M5: UI and application rollout | Viewer selection/status/error UI; preserve docking/floating state; reuse composition in Billiard; integrate complete acceptance matrix. | All supported directed transitions have native evidence; installed applications, interactions, and backend-specific visuals are checked. |
+
+M2 may construct a selected concrete application for startup. M3 must remove
+that application-type dependency from the live switching path; replacing the
+application and invalidating every module's borrowed app pointer is not the
+target design. Preserve current frame participant order when introducing the
+session boundary instead of reopening frame-scheduler design.
+
+### M1 implementation boundary
+
+`BUILD_ALL_DESKTOP_RHIS` defaults to `ON` for Windows, Linux, and macOS.
+Configuration requires Vulkan rather than silently omitting it. Viewer and
+Billiard link the complete platform library set and depend on shared material
+baking and CPU asset staging. Windows stages/installs HLSL, OpenGL, and Vulkan
+shader variants; Linux stages/installs OpenGL and Vulkan variants. macOS builds
+the existing Metal library even when the initial backend is Vulkan, and embeds
+Vulkan shaders and prepared assets into both bundles.
+
+Existing startup-selection options retain their meaning until M2.
+`BUILD_ALL_DESKTOP_RHIS=OFF` preserves the legacy selected-backend build path;
+it is not a complete desktop build. No runtime selector or switching menu has
+been added. Normal static-library linking does not force unused backend objects
+into the executable: M2 factories must create references to their implementations
+before executable-level backend availability can be claimed.
+
+`TEST_DesktopApplications` is a `fast` build/packaging regression using small
+substitute libraries and a baker, exercising the production CMake helpers.
+It links both fixture clients against every platform backend, checks staged,
+installed, and macOS-bundled assets, and repeats the build after an asset edit.
+This tests the build graph/copy paths, not real shader compilation, compression,
+native device initialization, or rendering.
+
+## Verification and acceptance
+
+- Add focused production-path headless tests for selection, ordering, rejected
+  requests, partial initialization, reconstruction/recovery failure, state
+  retention, generations, and repeated lifecycles. Mark window/GPU-free tests
+  `fast`. Demonstrate regressions fail without their implementation.
+- Native tests must launch each backend from the same complete application and
+  exercise every directed pair: six on Windows, two each on Linux and macOS.
+  Include A/B/A loops, same-backend reconstruction, empty/populated scenes,
+  resize/minimize, MSAA, shadows, skybox, textures, and GUI debug views.
+- Check no stale GPU/UI handles and no cumulative engine-owned live-resource
+  growth across repeated cycles. Distinguish driver caching from owned leaks.
+- Inspect captures before and after switching and after recovery. Verify scene
+  readiness, shadow/coordinate correctness, visible unclipped panels, and
+  preserved layout; a successful screenshot command is not visual acceptance.
+  Native keyboard/focus/floating-window behavior needs interactive evidence.
+- Use the current `.circleci/config.yml` commands and exact-revision full
+  Windows/Linux/macOS acceptance. Extend its backend runs as checkpoints need
+  them. If a runner cannot exercise a matrix backend, record the gap and obtain
+  revision-matched native evidence; compilation or another backend's passing
+  job cannot substitute for that transition.
+- Before PR creation, satisfy the repository acceptance gate and write the
+  revision-specific verification record. Documentation-only changes follow the
+  existing exemption; this draft does not verify new source behavior.
+
+## Known limitations and follow-ups
+
+| Limitation or open decision | Owning checkpoint |
+| --- | --- |
+| M1 preserves SDL OpenGL startup when available; M2 must move runtime selection to the agreed XCB host and document the launch change. | M2 |
+| Static archives can discard unused backends until factories reference them; complete executable inclusion is not claimed by library linking alone. | M2 |
+| Loader linkage/packaging must allow non-Vulkan backends to start when the Vulkan runtime is absent; handle availability explicitly without requiring plugins. | M2 |
+| Material baking uses the native Utility executable; complete desktop cross-compilation needs an explicit host-tool path before it can be supported. | Follow-on build scope |
+| Existing backend-specific partial initialization and static platform/ImGui callbacks do not establish repeatable session replacement. Audit and harden the required paths. | M3 |
+| GPU caches, UI pass state, queued events, and held input require explicit reconstruction/invalidation behavior. | M3, M4 |
+| Minimized windows and quit requests during switching need a cancellable, non-busy-wait first-frame/recovery contract. | M4 |
+| Vulkan Retina/mixed-DPI and floating-input acceptance remains open in the Vulkan plan; this roadmap does not resolve or duplicate its evidence. | M5 depends on the Vulkan plan |
+| Complete native switching coverage is not established by current single-backend CI runs. | M5 |
+| Android, WebAssembly, other desktop targets, macOS OpenGL, plugins, seamless switching, and device-loss recovery are deferred, not supported by implication. | Follow-on scope after M5 |
+
+Keep open limitations here with their owning checkpoint and resolve/update them
+in the same implementation change. Per-revision evidence belongs in verification
+records, not a rolling result index.
