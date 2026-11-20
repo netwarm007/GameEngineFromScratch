@@ -66,6 +66,11 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
 
 ## Windows dependency and monitoring learnings
 
+- Source-cache jobs retain blobless checkout and run only `git gc` before
+  saving the cache on master. Do not add `git lfs prune`: it scans historical
+  Git blobs and can fail with `Prune error: missing object` after a blobless
+  checkout. A 40-character missing object ID can identify an ordinary Git
+  blob, not missing LFS content. LFS pruning is not required for builds.
 - In PowerShell CI steps, check `$LASTEXITCODE` immediately after every native
   installer command. A nonzero Chocolatey result does not automatically fail
   the step, so an unchecked install can surface later as a misleading build or

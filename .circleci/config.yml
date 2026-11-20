@@ -273,8 +273,8 @@ jobs:
             - run:
                 name: git gc
                 command: |
-                   git gc
-                   git lfs prune
+                  git gc
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             - save_cache:
                 key: source-v2-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
                 paths:
@@ -609,8 +609,7 @@ jobs:
             - run:
                 name: git gc
                 command: |
-                   git gc
-                   git lfs prune
+                  git gc
             - save_cache:
                 key: source-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
                 paths:
@@ -827,8 +826,7 @@ jobs:
             - run:
                 name: git gc
                 command: |
-                   git gc
-                   git lfs prune
+                  git gc
             - save_cache:
                 key: source-v2-{{ arch }}-{{ checksum "/tmp/cache-period.txt" }}
                 paths:
