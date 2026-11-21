@@ -527,17 +527,33 @@ jobs:
                   # System32, so the system loader can predate the instance
                   # extensions the native WSI path requires. Point the engine at
                   # the SDK's current loader through GEFS_VULKAN_LIBRARY.
-                  $sdkLoader = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkan-1.dll' -ErrorAction SilentlyContinue |
-                    Where-Object { $_.FullName -match '\\Bin\\' } |
-                    Sort-Object { $_.VersionInfo.FileVersion } -Descending |
-                    Select-Object -First 1
+                  $sysLoader = "$env:SystemRoot\System32\vulkan-1.dll"
+                  if (Test-Path $sysLoader) {
+                    Write-Output "System32 Vulkan loader version: $((Get-Item $sysLoader).VersionInfo.FileVersion)"
+                  }
+                  Write-Output "VULKAN_SDK env: '$env:VULKAN_SDK'"
+                  $sdkLoader = $null
+                  if ($env:VULKAN_SDK -and (Test-Path "$env:VULKAN_SDK\Bin\vulkan-1.dll")) {
+                    $sdkLoader = Get-Item "$env:VULKAN_SDK\Bin\vulkan-1.dll"
+                  } else {
+                    $sdkLoader = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkan-1.dll' -ErrorAction SilentlyContinue |
+                      Sort-Object LastWriteTime -Descending |
+                      Select-Object -First 1
+                  }
                   if ($sdkLoader) {
                     $env:GEFS_VULKAN_LIBRARY = $sdkLoader.FullName
                     Write-Output "Using Vulkan SDK loader: $($sdkLoader.FullName) ($($sdkLoader.VersionInfo.FileVersion))"
-                  } elseif (Test-Path "$env:SystemRoot\System32\vulkan-1.dll") {
-                    Write-Output 'No SDK loader found; falling back to the System32 Vulkan loader'
                   } else {
-                    throw 'No Vulkan loader available (SDK or System32)'
+                    Write-Output 'SDK loader search diagnostics:'
+                    Write-Output "C:\VulkanSDK exists: $(Test-Path 'C:\VulkanSDK')"
+                    Get-ChildItem 'C:\VulkanSDK' -ErrorAction SilentlyContinue | ForEach-Object { Write-Output "  $($_.FullName)" }
+                    Get-ChildItem 'C:\VulkanSDK' -Recurse -Directory -ErrorAction SilentlyContinue |
+                      Select-Object -First 30 -ExpandProperty FullName | ForEach-Object { Write-Output "  dir: $_" }
+                    if (Test-Path $sysLoader) {
+                      Write-Output 'No SDK loader found; falling back to the System32 Vulkan loader'
+                    } else {
+                      throw 'No Vulkan loader available (SDK or System32)'
+                    }
                   }
                   $lvp = Find-MesaFile 'vulkan_lvp.dll'
                   $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
