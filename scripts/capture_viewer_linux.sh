@@ -42,6 +42,12 @@ for i in $(seq 1 10); do
 done
 if [ -z "$window_id" ]; then
     echo "Viewer window not found; see viewer.log" >&2
+    echo "=== process state ===" >&2
+    if kill -0 "$viewer_pid" 2>/dev/null; then echo "viewer alive" >&2; else echo "viewer EXITED" >&2; fi
+    echo "=== all windows (xdotool) ===" >&2
+    xdotool search --name "" 2>&1 | head -20 >&2 || true
+    echo "=== xwininfo -root -tree ===" >&2
+    xwininfo -root -tree 2>&1 | head -40 >&2 || true
     exit 1
 fi
 import -window "$window_id" "$output_dir/viewer-render.png"

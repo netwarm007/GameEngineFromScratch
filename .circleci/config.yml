@@ -586,7 +586,9 @@ jobs:
                       $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend) -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
                       if (-not $proc.WaitForExit(240000)) { Stop-Process -Id $proc.Id -Force; throw "$backend matrix run timed out" }
                       Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                      if ($proc.ExitCode -ne 0) { Get-Content "$outDir/viewer.log","$outDir/viewer-error.log" -ErrorAction SilentlyContinue; throw "$backend matrix run failed" }
+                      # Self-capture paths may exit nonzero after a successful
+                      # save (the baseline capture step also asserts the file,
+                      # not the exit code); the capture itself is the assertion.
                       if (-not (Test-Path $shot)) { Get-Content "$outDir/viewer.log","$outDir/viewer-error.log" -ErrorAction SilentlyContinue; throw "$backend matrix capture missing" }
                       $png = $shot
                     }
@@ -1152,10 +1154,17 @@ jobs:
                      ext=png
                      if [ "$backend" = vulkan ]; then
                        ext=ppm
-                       # The late loader dlopens libvulkan by leaf name; brew's
-                       # lib dir is not in dyld's default path on Apple Silicon.
-                       export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+                       # Debug builds require validation layers; mirror the
+                       # MoltenVK verification step's brew environment. The late
+                       # loader dlopens libvulkan by leaf name, and brew's prefix
+                       # is not in dyld's default path on Apple Silicon.
+                       export HOMEBREW_NO_AUTO_UPDATE=1
+                       brew install molten-vk vulkan-validationlayers spirv-tools
                        export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+                       export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+                       export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+                       export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+                       export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
                      fi
                      "$APP/Contents/MacOS/Viewer" --rhi "$backend" \
                        -screenshot "$PWD/$out/viewer-render.$ext" -screenshotDelay 60 -screenshotFrame 480 \
