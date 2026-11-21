@@ -129,9 +129,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('baseline')
     parser.add_argument('candidate')
-    parser.add_argument('--max-diff-fraction', type=float, default=0.10)
+    parser.add_argument('--max-diff-fraction', type=float, default=0.05)
     parser.add_argument('--max-channel-delta', type=int, default=32)
-    parser.add_argument('--max-high-delta-fraction', type=float, default=0.02)
+    parser.add_argument('--max-high-delta-fraction', type=float, default=0.01)
+    parser.add_argument('--max-mean-delta', type=float, default=60.0)
     parser.add_argument('--label', default='capture')
     args = parser.parse_args()
 
@@ -182,6 +183,9 @@ def main():
         return 1
     if over_delta > total * args.max_high_delta_fraction:
         print(f'{label}: FAIL too many high-delta pixels {over_delta}')
+        return 1
+    if mean_delta > args.max_mean_delta:
+        print(f'{label}: FAIL mean delta {mean_delta:.2f} > {args.max_mean_delta}')
         return 1
     print(f'{label}: PASS')
     return 0

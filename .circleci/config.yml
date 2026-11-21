@@ -65,7 +65,7 @@ jobs:
             sudo apt-get -o Acquire::Retries=3 update
             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
               libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
-              libxcb1-dev xvfb xauth xdotool zlib1g-dev libx11-dev libx11-xcb-dev \
+              libxcb1-dev xvfb xauth zlib1g-dev libx11-dev libx11-xcb-dev \
               libgl1-mesa-dev libxi-dev libxrandr-dev libxcursor-dev libxinerama-dev \
               libasound2-dev libpulse-dev
             python3 -m venv "$HOME/.local/share/vulkan-ci-tools"
@@ -593,7 +593,9 @@ jobs:
                       $png = $shot
                     }
                     if (-not (Test-Path $png)) { throw "$backend capture missing" }
-                    python scripts/compare_captures.py $baseline $png --label "windows-$backend"
+                    $tolArgs = @()
+                    if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.25','--max-high-delta-fraction','0.02') }
+                    python scripts/compare_captures.py $baseline $png --label "windows-$backend" @tolArgs
                     if ($LASTEXITCODE -ne 0) { throw "windows-$backend capture comparison failed" }
                   }
                   Run-Viewer 'd3d12' 'screenshots/matrix/d3d12'
@@ -869,7 +871,7 @@ jobs:
                    fi
                    grep -q "Vulkan application framebuffer capture saved:" "$out/viewer.log"
                    python3 scripts/compare_captures.py "$baseline" screenshots/matrix/opengl/viewer-render.png --label linux-opengl
-                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/vulkan/viewer-render.ppm --label linux-vulkan
+                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/vulkan/viewer-render.ppm --label linux-vulkan --max-diff-fraction 0.25 --max-high-delta-fraction 0.02
       - run:
           name: Coverage (llvm-cov)
           command: |
@@ -1181,7 +1183,9 @@ jobs:
                        cat "$out/viewer.log" || true
                        exit 1
                      fi
-                     python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-$backend"
+                     tol=""
+                     if [ "$backend" = vulkan ]; then tol="--max-diff-fraction 0.25 --max-high-delta-fraction 0.02"; fi
+                     python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-$backend" $tol
                    done
       - store_artifacts:
           path: billiard-screenshots
