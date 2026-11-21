@@ -484,6 +484,107 @@ jobs:
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
               Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
             }
+      - when:
+          condition:
+            equal: [<< parameters.scope >>, full]
+          steps:
+            - run:
+                name: Viewer startup matrix and capture comparison
+                no_output_timeout: 30m
+                command: |
+                  $ErrorActionPreference = 'Stop'
+                  choco install python3 -y --no-progress
+                  $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+                  $baseline = 'screenshots/viewer-render.png'
+                  if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+                  $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+                  if (-not $viewer) { throw 'Viewer.exe not found' }
+                  $viewerDir = $viewer.DirectoryName
+
+                  # Mesa software drivers (llvmpipe OpenGL, lavapipe Vulkan) for the matrix.
+                  $mesa = Join-Path $env:TEMP 'mesa-matrix'
+                  New-Item -ItemType Directory -Force $mesa | Out-Null
+                  $archive = Join-Path $mesa 'mesa.7z'
+                  Invoke-WebRequest 'https://github.com/pal1000/mesa-dist-win/releases/download/26.3.0/mesa3d-26.3.0-release-msvc.7z' -OutFile $archive
+                  $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
+                  if (-not (Test-Path $sevenZip)) { choco install 7zip -y --no-progress }
+                  & $sevenZip x $archive "-o$mesa\extracted" -y | Out-Null
+                  function Find-MesaFile($name) {
+                    Get-ChildItem "$mesa\extracted" -Recurse -Filter $name |
+                      Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+                  }
+                  foreach ($name in @('opengl32.dll','libglapi.dll','libgallium_wgl.dll')) {
+                    $f = Find-MesaFile $name
+                    if ($f) { Copy-Item $f.FullName $viewerDir -Force }
+                  }
+                  $vloader = Find-MesaFile 'vulkan-1.dll'
+                  $lvp = Find-MesaFile 'vulkan_lvp.dll'
+                  $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
+                  if (-not ($vloader -and $lvp -and $icd)) { throw 'Mesa Vulkan components not found in package' }
+                  Copy-Item $vloader.FullName "$env:SystemRoot\System32\vulkan-1.dll" -Force
+                  Copy-Item $lvp.FullName "$mesa\vulkan_lvp.dll" -Force
+                  $json = Get-Content $icd.FullName -Raw | ConvertFrom-Json
+                  $json.ICD.library_path = "$mesa\vulkan_lvp.dll"
+                  $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd.json"
+                  [Environment]::SetEnvironmentVariable('VK_ICD_FILENAMES', "$mesa\lvp_icd.json", 'Machine')
+                  $env:VK_ICD_FILENAMES = "$mesa\lvp_icd.json"
+
+                  Add-Type -AssemblyName System.Drawing
+                  Add-Type @"
+                  using System;
+                  using System.Runtime.InteropServices;
+                  public class MatrixWin32 {
+                    [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowW(string cls, string title);
+                    [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
+                    [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+                    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
+                    [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
+                  }
+                  "@
+                  function Capture-Window($title, $path) {
+                    $hwnd = [MatrixWin32]::FindWindowW($null, $title)
+                    if ($hwnd -eq [IntPtr]::Zero) { throw "Window not found: $title" }
+                    $r = New-Object MatrixWin32+RECT
+                    [MatrixWin32]::GetClientRect($hwnd, [ref]$r) | Out-Null
+                    $p = New-Object MatrixWin32+POINT
+                    [MatrixWin32]::ClientToScreen($hwnd, [ref]$p) | Out-Null
+                    $w = $r.Right - $r.Left; $h = $r.Bottom - $r.Top
+                    $bmp = New-Object System.Drawing.Bitmap $w, $h
+                    $g = [System.Drawing.Graphics]::FromImage($bmp)
+                    $g.CopyFromScreen($p.X, $p.Y, 0, 0, (New-Object System.Drawing.Size $w, $h))
+                    $g.Dispose()
+                    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+                    $bmp.Dispose()
+                  }
+                  function Run-Viewer($backend, $outDir) {
+                    New-Item -ItemType Directory -Force $outDir | Out-Null
+                    $resolved = (Resolve-Path $outDir).Path
+                    if ($backend -eq 'opengl') {
+                      $png = Join-Path $resolved 'viewer-render.png'
+                      $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','opengl') -PassThru
+                      Start-Sleep -Seconds 60
+                      Capture-Window 'Viewer - Windows/OpenGL (Win32)' $png
+                      Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                      Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                    } else {
+                      $ext = 'png'
+                      if ($backend -eq 'vulkan') { $ext = 'ppm' }
+                      $shot = Join-Path $resolved "viewer-render.$ext"
+                      $env:GEFS_SCREENSHOT_PATH = $shot
+                      $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend) -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
+                      if (-not $proc.WaitForExit(240000)) { Stop-Process -Id $proc.Id -Force; throw "$backend matrix run timed out" }
+                      Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                      if ($proc.ExitCode -ne 0) { throw "$backend matrix run failed; see $outDir logs" }
+                      if (-not (Test-Path $shot)) { throw "$backend matrix capture missing" }
+                      $png = $shot
+                    }
+                    if (-not (Test-Path $png)) { throw "$backend capture missing" }
+                    python scripts/compare_captures.py $baseline $png --label "windows-$backend"
+                    if ($LASTEXITCODE -ne 0) { throw "windows-$backend capture comparison failed" }
+                  }
+                  Run-Viewer 'd3d12' 'screenshots/matrix/d3d12'
+                  Run-Viewer 'opengl' 'screenshots/matrix/opengl'
+                  Run-Viewer 'vulkan' 'screenshots/matrix/vulkan'
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots
@@ -726,6 +827,31 @@ jobs:
                xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                bash scripts/capture_billiard_linux.sh billiard-screenshots \
                > billiard-screenshots/capture.log 2>&1
+      - when:
+          condition:
+            equal: [<< parameters.scope >>, full]
+          steps:
+            - run:
+                name: Viewer startup matrix and capture comparison
+                no_output_timeout: 15m
+                command: |
+                   set -e
+                   baseline="screenshots/viewer-render.png"
+                   test -s "$baseline"
+                   out="screenshots/matrix/opengl"; mkdir -p "$out"
+                   LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
+                     xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                     bash scripts/capture_viewer_linux.sh "$out" --rhi opengl \
+                     > "$out/capture.log" 2>&1
+                   out="screenshots/matrix/vulkan"; mkdir -p "$out"
+                   timeout --kill-after=5s 240s \
+                     xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                     ./build/Viewer/Viewer --rhi vulkan -screenshot "$PWD/$out/viewer-render.ppm" \
+                     > "$out/viewer.log" 2>&1
+                   test -s "$out/viewer-render.ppm"
+                   grep -q "Vulkan application framebuffer capture saved:" "$out/viewer.log"
+                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/opengl/viewer-render.png --label linux-opengl
+                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/vulkan/viewer-render.ppm --label linux-vulkan
       - run:
           name: Coverage (llvm-cov)
           command: |
@@ -992,6 +1118,36 @@ jobs:
              trap - EXIT
              test -s "$output/physics-passed"
              test -s "$output/billiard-after.png"
+      - when:
+          condition:
+            equal: [<< parameters.scope >>, full]
+          steps:
+            - run:
+                name: Viewer startup matrix and capture comparison
+                no_output_timeout: 15m
+                command: |
+                   set -e
+                   baseline="screenshots/viewer-render.png"
+                   test -s "$baseline"
+                   APP=$(find build -type d -name Viewer.app | head -n 1)
+                   test -n "$APP"
+                   for backend in metal vulkan; do
+                     out="screenshots/matrix/$backend"; mkdir -p "$out"
+                     ext=png
+                     if [ "$backend" = vulkan ]; then ext=ppm; fi
+                     "$APP/Contents/MacOS/Viewer" --rhi "$backend" \
+                       -screenshot "$PWD/$out/viewer-render.$ext" -screenshotDelay 60 -screenshotFrame 480 \
+                       > "$out/viewer.log" 2>&1 &
+                     viewer_pid=$!
+                     for i in $(seq 1 16); do
+                       sleep 15
+                       kill -0 "$viewer_pid" 2>/dev/null || break
+                     done
+                     kill "$viewer_pid" 2>/dev/null || true
+                     wait "$viewer_pid" 2>/dev/null || true
+                     test -s "$out/viewer-render.$ext"
+                     python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-$backend"
+                   done
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots
