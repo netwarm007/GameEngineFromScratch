@@ -140,7 +140,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     D3dDrawBatchContext m_dbcSkyBox;
     std::vector<D3d12RHI::IndexBuffer> m_IndexBuffers;
     std::vector<D3d12RHI::VertexBuffer> m_VertexBuffers;
-    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerFrameConstantBuffers;
-    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerBatchConstantBuffers;
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerFrameConstantBuffers{};
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerBatchConstantBuffers{};
 };
 }  // namespace My
