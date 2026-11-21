@@ -144,8 +144,6 @@ jobs:
       size: large
     environment:
       CMAKE_BUILD_PARALLEL_LEVEL: "8"
-      CMAKE_C_COMPILER_LAUNCHER: sccache
-      CMAKE_CXX_COMPILER_LAUNCHER: sccache
       SCCACHE_DIR: C:/Users/circleci/sccache
       SCCACHE_CACHE_SIZE: 10G
     steps:
@@ -366,7 +364,7 @@ jobs:
               if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
               $env:Path = "$($dxc.DirectoryName);$env:Path"
             }
-            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT_DEBUG=Embedded
+            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT_DEBUG=Embedded -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             cmake --build build --config Debug
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -552,7 +550,7 @@ jobs:
                     if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
                     $env:Path = "$($dxc.DirectoryName);$env:Path"
                   }
-                  cmake -S . -B build-release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=OFF -DD3D12_RHI_DEBUG=OFF -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
+                  cmake -S . -B build-release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=OFF -DD3D12_RHI_DEBUG=OFF -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
                   cmake --build build-release --config Release
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -582,8 +580,6 @@ jobs:
         type: string
         default: ""
     environment:
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
       CCACHE_MAXSIZE: 2G
       CCACHE_BASEDIR: /home/circleci/project
     machine:
@@ -663,7 +659,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON" ./scripts/build-ninja.sh
+             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" ./scripts/build-ninja.sh
       - when:
           condition:
             equal: [ master, << pipeline.git.branch >> ]
@@ -800,7 +796,8 @@ jobs:
                 name: "Build Engine (Release)"
                 command: |
                   cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release \
-                    -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
+                    -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON \
+                    -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
                   cmake --build build-release
             - run:
                 name: "Test (Release)"
@@ -818,8 +815,6 @@ jobs:
         type: string
         default: ""
     environment:
-      CMAKE_C_COMPILER_LAUNCHER: ccache
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
       CCACHE_MAXSIZE: 2G
     macos:
       xcode: "16.4.0"
@@ -891,7 +886,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON" ./scripts/build-ninja.sh
+             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" ./scripts/build-ninja.sh
       - when:
           condition:
             equal: [ master, << pipeline.git.branch >> ]
@@ -1074,7 +1069,8 @@ jobs:
                 name: "Build Engine (Release)"
                 command: |
                   cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release \
-                    -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
+                    -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON \
+                    -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
                   cmake --build build-release
             - run:
                 name: "Test (Release)"
