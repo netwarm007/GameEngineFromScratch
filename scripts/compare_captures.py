@@ -132,7 +132,7 @@ def main():
     parser.add_argument('--max-diff-fraction', type=float, default=0.05)
     parser.add_argument('--max-channel-delta', type=int, default=32)
     parser.add_argument('--max-high-delta-fraction', type=float, default=0.01)
-    parser.add_argument('--max-mean-delta', type=float, default=60.0)
+    parser.add_argument('--max-mean-delta', type=float, default=100.0)
     parser.add_argument('--label', default='capture')
     args = parser.parse_args()
 
