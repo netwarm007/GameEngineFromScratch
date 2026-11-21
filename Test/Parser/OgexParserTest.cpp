@@ -130,7 +130,8 @@ int main(int, char**) {
         "VertexArray (attrib = \"position\") {float[3] {{0,0,0},{1,0,0},"
         "{0,1,0}}} IndexArray {";
     for (const auto& invalid : {"unsigned_int32[3] {{0, 1, 3}}",
-                                "unsigned_int8[3] {{0, 1, 255}}"}) {
+                                "unsigned_int8[3] {{0, 1, 255}}",
+                                "unsigned_int8[3] {{0, 1, 257}}"}) {
         if (ogexParser.Parse(indexPrefix + invalid + "}}}")) {
             cerr << "FAILED: invalid index array must fail parsing" << endl;
             return 1;
