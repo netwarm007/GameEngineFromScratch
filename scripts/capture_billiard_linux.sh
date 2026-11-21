@@ -24,7 +24,17 @@ for i in $(seq 1 6000); do
     test ! -s "$output_dir/physics-passed" || break
 done
 test -s "$output_dir/physics-passed"
-import -window Billiard "$output_dir/billiard-after.png"
+window_id=""
+for i in $(seq 1 10); do
+    window_id=$(xdotool search --onlyvisible --name "Billiard" 2>/dev/null | head -n 1) || true
+    [ -n "$window_id" ] && break
+    sleep 1
+done
+if [ -z "$window_id" ]; then
+    echo "Billiard window not found; see billiard.log" >&2
+    exit 1
+fi
+import -window "$window_id" "$output_dir/billiard-after.png"
 test -s "$output_dir/billiard-after.png"
 identify "$output_dir/billiard-after.png"
 touch "$output_dir/capture-complete"

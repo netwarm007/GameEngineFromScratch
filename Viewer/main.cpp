@@ -110,7 +110,11 @@ int main(int argc, char** argv) {
         std::cerr << selection.error << '\n';
         return 1;
     }
-    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer");
+    const std::string windowTitle = std::string("Viewer - ") +
+        std::string(RhiStartupPlatformName()) + "/" +
+        std::string(RhiBackendName(*selection.backend)) + " (" +
+        std::string(RhiStartupHostName(*selection.backend)) + ")";
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, windowTitle.c_str());
 #else
 #if defined(VIEWER_USE_WIN32_OPENGL)
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer (Win32/OpenGL)");

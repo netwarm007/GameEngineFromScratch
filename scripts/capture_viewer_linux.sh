@@ -34,6 +34,16 @@ if [ -n "${GEFS_SCREENSHOT_WAIT_FOR:-}" ] && [ ! -s "$GEFS_SCREENSHOT_WAIT_FOR" 
     exit 1
 fi
 
-import -window Viewer "$output_dir/viewer-render.png"
+window_id=""
+for i in $(seq 1 10); do
+    window_id=$(xdotool search --onlyvisible --name "Viewer" 2>/dev/null | head -n 1) || true
+    [ -n "$window_id" ] && break
+    sleep 1
+done
+if [ -z "$window_id" ]; then
+    echo "Viewer window not found; see viewer.log" >&2
+    exit 1
+fi
+import -window "$window_id" "$output_dir/viewer-render.png"
 test -s "$output_dir/viewer-render.png"
 identify "$output_dir/viewer-render.png"

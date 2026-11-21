@@ -102,4 +102,35 @@ std::vector<RhiBackendAvailability> ProbeRhiStartupAvailability() {
     return availability;
 }
 
+std::string_view RhiStartupPlatformName() {
+#if defined(OS_WINDOWS)
+    return "Windows";
+#elif defined(OS_MACOS)
+    return "macOS";
+#elif defined(OS_LINUX)
+    return "Linux";
+#else
+    return "Unknown";
+#endif
+}
+
+std::string_view RhiStartupHostName(RhiBackend backend) {
+#if defined(OS_LINUX)
+    if (backend == RhiBackend::OpenGL) {
+#if defined(HAS_SDL2)
+        return "SDL";
+#else
+        return "XCB";
+#endif
+    }
+    return "XCB";
+#elif defined(OS_WINDOWS)
+    return "Win32";
+#elif defined(OS_MACOS)
+    return "Cocoa";
+#else
+    return "native";
+#endif
+}
+
 }  // namespace My

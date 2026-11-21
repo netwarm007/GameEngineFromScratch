@@ -65,7 +65,7 @@ jobs:
             sudo apt-get -o Acquire::Retries=3 update
             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs ninja-build python3-venv g++ uuid-dev flex bison \
               libvulkan-dev mesa-vulkan-drivers vulkan-validationlayers spirv-tools \
-              libxcb1-dev xvfb xauth zlib1g-dev libx11-dev libx11-xcb-dev \
+              libxcb1-dev xvfb xauth xdotool zlib1g-dev libx11-dev libx11-xcb-dev \
               libgl1-mesa-dev libxi-dev libxrandr-dev libxcursor-dev libxinerama-dev \
               libasound2-dev libpulse-dev
             python3 -m venv "$HOME/.local/share/vulkan-ci-tools"

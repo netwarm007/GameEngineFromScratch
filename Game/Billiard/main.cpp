@@ -203,7 +203,15 @@ int main(int argc, char** argv) {
         }
     }
 
+#if defined(MYGE_RUNTIME_RHI)
+    const std::string windowTitle = std::string("Billiard - ") +
+        std::string(RhiStartupPlatformName()) + "/" +
+        std::string(RhiBackendName(*selection.backend)) + " (" +
+        std::string(RhiStartupHostName(*selection.backend)) + ")";
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, windowTitle.c_str());
+#else
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Billiard");
+#endif
 #if !defined(MYGE_RUNTIME_RHI)
 #if defined(MYGE_USE_VULKAN)
     VulkanApplication app(config);
