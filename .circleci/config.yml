@@ -571,8 +571,20 @@ jobs:
                       $png = Join-Path $resolved 'viewer-render.png'
                       $env:GALLIUM_DRIVER = 'llvmpipe'
                       $env:LIBGL_ALWAYS_SOFTWARE = '1'
-                      $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','opengl') -PassThru
-                      Start-Sleep -Seconds 60
+                      $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','opengl') -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
+                      # llvmpipe's first run can be slow; poll for the window.
+                      $hwnd = [IntPtr]::Zero
+                      for ($i = 0; $i -lt 36; $i++) {
+                        Start-Sleep -Seconds 5
+                        if ($proc.HasExited) { break }
+                        $hwnd = [MatrixWin32]::FindWindowW($null, 'Viewer - Windows/OpenGL (Win32)')
+                        if ($hwnd -ne [IntPtr]::Zero) { break }
+                      }
+                      if ($hwnd -eq [IntPtr]::Zero) {
+                        Get-Content "$outDir/viewer.log","$outDir/viewer-error.log" -ErrorAction SilentlyContinue
+                        throw "OpenGL window not found (process exited: $($proc.HasExited))"
+                      }
+                      Start-Sleep -Seconds 10
                       Capture-Window 'Viewer - Windows/OpenGL (Win32)' $png
                       Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
                       Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
@@ -719,6 +731,9 @@ jobs:
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libvulkan-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing flex bison ccache
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
+             # Vulkan runtime (lavapipe) and validation layers for the startup
+             # matrix; parity with the specialized Vulkan job's environment.
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing mesa-vulkan-drivers vulkan-validationlayers
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
@@ -860,10 +875,13 @@ jobs:
                      bash scripts/capture_viewer_linux.sh "$out" --rhi opengl \
                      > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
                    out="screenshots/matrix/vulkan"; mkdir -p "$out"
+                   lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+                   if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
+                   export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
                    timeout --kill-after=5s 240s \
                      xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                      ./build/Viewer/Viewer --rhi vulkan -screenshot "$PWD/$out/viewer-render.ppm" \
-                     > "$out/viewer.log" 2>&1
+                     > "$out/viewer.log" 2>&1 || true
                    if [ ! -s "$out/viewer-render.ppm" ]; then
                      echo "=== linux-vulkan viewer.log ==="
                      cat "$out/viewer.log" || true
