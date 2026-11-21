@@ -82,6 +82,44 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
   fields once. If repeated requests fail, stop and report the limitation
   instead of leaving an endless retry loop running.
 
+## Windows compiler-cache and generator learnings
+
+- A green pipeline does not prove a cache works. Verify mechanism activation
+  from step output: `sccache --show-stats` must show `Compile requests > 0`
+  with `Cache errors 0` and `Non-cacheable compilations 0`. Pipelines 1076/1078
+  passed while sccache intercepted nothing.
+- The `CMAKE_<LANG>_COMPILER_LAUNCHER` target property is implemented only by
+  the Makefile and Ninja generators. The Visual Studio generator silently
+  ignores it, so sccache/ccache require `-G Ninja` under `vcvars64.bat` on
+  Windows (the ISPC regression step shows the working pattern).
+- CMake initializes `CMAKE_<LANG>_COMPILER_LAUNCHER` from the environment since
+  3.17, but only on first configure and only for enabled languages. A local
+  probe using `project(... NONE)` proves nothing about launcher behavior.
+- There is no `CMAKE_MSVC_DEBUG_INFORMATION_FORMAT_<CONFIG>` variable. For
+  single-config Ninja, pass `-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded`
+  (yields `/Z7`) in the Debug configure; per-config values need generator
+  expressions on the base variable, and CMP0141 must be NEW.
+- The engine's global MSVC `/MP` flag conflicts with Ninja: concurrent cl
+  invocations contend on the shared `/Fd` PDB (fatal C1041), and sccache cannot
+  cache `/MP` compilations. Keep `/MP` only when the generator matches
+  `Visual Studio`.
+- After switching the engine to Ninja, run Windows ctest steps under vcvars64
+  too: `TEST_DesktopApplications` configures its fixture with the engine's
+  generator and compiler, and Ninja try-compile needs the MSVC environment
+  that the VS generator previously located implicitly.
+- Dependency cache keys must hash build inputs only (dependency build scripts,
+  submodule revisions, toolchain), never `config.yml`: hashing the whole CI
+  config invalidated Debug+Release dependency caches on every CI-only edit
+  (~15 min rebuild). The restore action verifies exact key equality, so a key
+  change is a full miss, not a fallback.
+- Branch runs restore but never save compiler caches (master-only save, the
+  ccache pattern). Expect 0% hits on branch verification runs; judge activation
+  by request/error counts and cached bytes, and measure warm speedup only after
+  a master run saves the cache.
+- When a diagnosis is later disproven (e.g. by official docs or a corrected
+  experiment), write the correction into the next commit message and the
+  verification record instead of silently editing history.
+
 ## Check submodule revisions
 
 1. Inspect `.gitmodules` and the gitlinks for the pipeline's revision, not just
