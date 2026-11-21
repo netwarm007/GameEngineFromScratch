@@ -1,5 +1,6 @@
 #include "VulkanLoader.hpp"
 
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 
@@ -91,7 +92,11 @@ PFN_vkVoidFunction VulkanLoader::GetExportedFunction(const char* name) const {
 }
 
 VulkanLoader& GetVulkanLoader() {
-    static VulkanLoader loader;
+    // An explicit GEFS_VULKAN_LIBRARY lets a deployment point at a newer or
+    // app-local loader (e.g. CI software-ICD setups) instead of the system one.
+    const char* overridePath = std::getenv("GEFS_VULKAN_LIBRARY");
+    static VulkanLoader loader(overridePath && *overridePath ? overridePath
+                                                             : nullptr);
     return loader;
 }
 
