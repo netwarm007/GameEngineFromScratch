@@ -14,6 +14,11 @@
 #include "ViewerLogic.hpp"
 #include "SplashSequence.hpp"
 
+#if defined(MYGE_RUNTIME_RHI)
+#include "RhiComposition.hpp"
+
+#include <iostream>
+#else
 #if defined(MYGE_USE_VULKAN)
 #include "VulkanApplication.hpp"
 #include "RHI/Vulkan/VulkanGraphicsManager.hpp"
@@ -45,6 +50,7 @@
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
+#endif
 
 #if defined(OS_WEBASSEMBLY)
 #include <emscripten.h>
@@ -63,6 +69,49 @@ int main(int argc, char** argv) {
     int ret;
     GuiContext gui;
 
+#if defined(MYGE_RUNTIME_RHI)
+    auto parsed = ParseRhiStartupArguments(
+        std::span<char* const>(argv, static_cast<size_t>(argc)));
+    if (!parsed.options) {
+        std::cerr << parsed.error << '\n';
+        return 1;
+    }
+    RhiStartupOptions& rhiOptions = *parsed.options;
+    const auto availability = ProbeRhiStartupAvailability();
+    if (rhiOptions.listBackends) {
+        for (const auto& entry : availability) {
+            std::cout << RhiBackendName(entry.backend) << ": ";
+            switch (entry.state) {
+                case RhiAvailability::NotCompiled:
+                    std::cout << "not compiled";
+                    break;
+                case RhiAvailability::RuntimeUnavailable:
+                    std::cout << "runtime unavailable";
+                    break;
+                case RhiAvailability::ReadyForInitialization:
+                    std::cout << "ready to attempt initialization";
+                    break;
+            }
+            if (!entry.reason.empty()) std::cout << " (" << entry.reason << ')';
+            std::cout << '\n';
+        }
+        return 0;
+    }
+#if defined(OS_WINDOWS)
+    constexpr RhiBackend defaultBackend = RhiBackend::D3d12;
+#elif defined(OS_MACOS)
+    constexpr RhiBackend defaultBackend = RhiBackend::Metal;
+#else
+    constexpr RhiBackend defaultBackend = RhiBackend::OpenGL;
+#endif
+    const auto selection = ResolveRhiStartupBackend(
+        rhiOptions.requestedBackend, defaultBackend, availability);
+    if (!selection.backend) {
+        std::cerr << selection.error << '\n';
+        return 1;
+    }
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer");
+#else
 #if defined(VIEWER_USE_WIN32_OPENGL)
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Viewer (Win32/OpenGL)");
 #else
@@ -71,6 +120,8 @@ int main(int argc, char** argv) {
 #if defined(IS_OPENGL)
     config.fixOpenGLPerspectiveMatrix = true;
 #endif
+#endif
+#if !defined(MYGE_RUNTIME_RHI)
 #if defined(MYGE_USE_VULKAN)
     VulkanApplication app(config);
 #elif defined(OS_MACOS)
@@ -79,6 +130,7 @@ int main(int argc, char** argv) {
     D3d12Application app(config);
 #else
     OpenGLApplication app(config);
+#endif
 #endif
     AssetLoader assetLoader;
     MemoryManager memoryManager;
@@ -93,7 +145,18 @@ int main(int argc, char** argv) {
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
-#if defined(MYGE_USE_VULKAN)
+#if defined(MYGE_RUNTIME_RHI)
+    auto composed = CreateRhiStartupComposition(
+        *selection.backend, config, sceneManager, assetLoader);
+    if (!composed.composition) {
+        std::cerr << composed.error << '\n';
+        return 1;
+    }
+    BaseApplication& app = *composed.composition->application;
+    IGraphicsManager* graphicsManager = composed.composition->graphicsManager.get();
+    IPipelineStateManager* pipelineStateManager =
+        composed.composition->pipelineStateManager.get();
+#elif defined(MYGE_USE_VULKAN)
     VulkanPipelineStateManager pipelineStateManager(app.GetRHI(), assetLoader);
     VulkanGraphicsManager graphicsManager(app.GetRHI(), sceneManager, pipelineStateManager);
 #else
@@ -101,16 +164,32 @@ int main(int argc, char** argv) {
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager);
 #endif
 
+#if defined(MYGE_RUNTIME_RHI)
+    // The borrowed argument strings and filtered pointer array live in
+    // rhiOptions until main exits, outliving the application.
+    app.SetCommandLineParameters(
+        static_cast<int>(rhiOptions.applicationArguments.size()) - 1,
+        rhiOptions.applicationArguments.data());
+#else
     app.SetCommandLineParameters(argc, argv);
+#endif
 
     app.RegisterManagerModule(&animationManager);
     app.RegisterManagerModule(&splashSequence);
     app.RegisterManagerModule(&assetLoader);
+#if defined(MYGE_RUNTIME_RHI)
+    app.RegisterManagerModule(graphicsManager);
+#else
     app.RegisterManagerModule(&graphicsManager);
+#endif
     app.RegisterManagerModule(&inputManager);
     app.RegisterManagerModule(&memoryManager);
     app.RegisterManagerModule(&physicsManager);
+#if defined(MYGE_RUNTIME_RHI)
+    app.RegisterManagerModule(pipelineStateManager);
+#else
     app.RegisterManagerModule(&pipelineStateManager);
+#endif
     app.RegisterManagerModule(&sceneManager);
     app.RegisterManagerModule(&gameLogic);
 #ifdef DEBUG

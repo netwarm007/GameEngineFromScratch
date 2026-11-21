@@ -18,7 +18,18 @@ endif()
 
 add_library(RuntimeComposition ${RHI_COMPOSITION_SOURCES})
 target_include_directories(RuntimeComposition PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(RuntimeComposition PUBLIC Manager PlatformInterface)
+target_link_libraries(RuntimeComposition PUBLIC Manager)
+if(OS_LINUX AND SDL2_FOUND)
+    # Keep the SDL OpenGL host (full ImGui platform integration) and take the
+    # XCB host pieces for Vulkan only; the XCB OpenGLApplication and its asset
+    # implementation would clash with the SDL variants in one executable.
+    target_link_libraries(RuntimeComposition PUBLIC PlatformInterfaceSDL2)
+    if(HAS_VULKAN)
+        target_link_libraries(RuntimeComposition PUBLIC PlatformVulkanXcb)
+    endif()
+else()
+    target_link_libraries(RuntimeComposition PUBLIC PlatformInterface)
+endif()
 if(OS_WINDOWS)
     target_link_libraries(RuntimeComposition PUBLIC D3dRHI)
 endif()

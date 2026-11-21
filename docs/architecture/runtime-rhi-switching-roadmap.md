@@ -336,7 +336,7 @@ platforms; default native and opt-in Vulkan application artifacts were inspected
 
 | Limitation or open decision | Owning checkpoint |
 | --- | --- |
-| M1 preserves SDL OpenGL startup when available; M2 must move runtime selection to the agreed XCB host and document the launch change. | M2 |
+| Linux runtime selection retains the SDL OpenGL host (no GUI regression): the XCB host has no ImGui platform input backend and disables multi-viewports, and the Vulkan plan introduces no new platform input backend. XCB ImGui parity is a prerequisite for the agreed XCB-only host; Vulkan selection uses the existing XCB path with its tracked GUI limits. | M2.4 deviation; XCB parity follow-on |
 | Static archives can discard unused backends until factories reference them; complete executable inclusion is not claimed by library linking alone. | M2 |
 | Application CLI wiring must land before runtime selection is advertised; the startup contract, Vulkan loader isolation, backend factories, and availability probes are in place. | M2.4-M2.5 |
 | Linux Vulkan environment parity and coverage migration remain prerequisites for removing the specialized CI job; Windows native Vulkan/OpenGL coverage is not established by SDK installation. | M2.6 |

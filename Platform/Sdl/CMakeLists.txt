@@ -12,7 +12,7 @@ ELSEIF(UNIX)
     list(APPEND CMAKE_MODULE_PATH "${MYGE_EXTERNAL_ROOT}/lib/cmake/SDL2")
 ENDIF(APPLE)
 
-target_include_directories(PlatformInterfaceSDL2 PRIVATE
+target_include_directories(PlatformInterfaceSDL2 PUBLIC
     ${SDL2_INCLUDE_DIR}
 )
 

@@ -92,6 +92,11 @@ ELSE()
         )
 ENDIF(ANDROID)
 
+set(VIEWER_RUNTIME_RHI OFF)
+if(BUILD_ALL_DESKTOP_RHIS AND NOT VULKAN_APPLICATIONS AND TARGET RuntimeComposition)
+    set(VIEWER_RUNTIME_RHI ON)
+endif()
+
 IF(VULKAN_APPLICATIONS)
     myge_vulkan_application(Viewer)
 endif()
@@ -201,7 +206,7 @@ ELSEIF(WA AND NOT VULKAN_APPLICATIONS)
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s DEMANGLE_SUPPORT=1 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
             )
 ELSEIF(WIN32 AND NOT VULKAN_APPLICATIONS)
-    if(VIEWER_USE_WIN32_OPENGL)
+    if(VIEWER_USE_WIN32_OPENGL AND NOT VIEWER_RUNTIME_RHI)
         target_compile_definitions(Viewer PRIVATE VIEWER_USE_WIN32_OPENGL)
         set_target_properties(Viewer PROPERTIES OUTPUT_NAME ViewerOpenGL)
         set(VIEWER_WINDOWS_RHI OpenGLRHI)
@@ -226,16 +231,21 @@ ELSEIF(WIN32 AND NOT VULKAN_APPLICATIONS)
         install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
     endif()
 ELSEIF(NOT VULKAN_APPLICATIONS) # LINUX
-if(SDL2_FOUND)
+if(SDL2_FOUND AND NOT VIEWER_RUNTIME_RHI)
 set(PLATFORM_INTERFACE PlatformInterfaceSDL2)
 else()
 set(PLATFORM_INTERFACE PlatformInterface)
-endif(SDL2_FOUND)
-    target_link_libraries(Viewer
-                            BulletPhysics
-                            OpenGLRHI
-                            Framework
-                            ${PLATFORM_INTERFACE})
+endif()
+if(VIEWER_RUNTIME_RHI)
+# RuntimeComposition brings the SDL OpenGL host and XCB Vulkan host.
+target_link_libraries(Viewer BulletPhysics Framework)
+else()
+target_link_libraries(Viewer
+                        BulletPhysics
+                        OpenGLRHI
+                        Framework
+                        ${PLATFORM_INTERFACE})
+endif()
 
     if(NOT BUILD_ALL_DESKTOP_RHIS)
         install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
@@ -249,6 +259,11 @@ ENDIF(APPLE)
 
 add_dependencies(Viewer Engine_Asset)
 target_link_libraries(Viewer SplashSequence)
+
+if(VIEWER_RUNTIME_RHI)
+    target_compile_definitions(Viewer PRIVATE MYGE_RUNTIME_RHI)
+    target_link_libraries(Viewer RuntimeComposition)
+endif()
 
 if(BUILD_ALL_DESKTOP_RHIS)
     myge_desktop_application(Viewer)

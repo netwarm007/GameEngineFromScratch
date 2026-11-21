@@ -4,6 +4,8 @@
 
 #if defined(OS_WINDOWS)
 #include "Platform/Windows/OpenGLApplication.hpp"
+#elif defined(OS_LINUX) && defined(HAS_SDL2)
+#include "Platform/Sdl/OpenGLApplication.hpp"
 #elif defined(OS_LINUX)
 #include "Platform/Linux/OpenGLApplication.hpp"
 #endif

@@ -19,6 +19,20 @@ if(Vulkan_FOUND)
 list (APPEND PlatformSources VulkanApplication.cpp)
 endif(Vulkan_FOUND)
 
+# XCB host pieces for runtime RHI selection builds that keep the SDL OpenGL
+# application: excludes the XCB OpenGLApplication and PlatformAssetIO so they
+# do not clash with the SDL variants in the same executable.
+if(Vulkan_FOUND)
+    add_library(PlatformVulkanXcb XcbApplication.cpp VulkanApplication.cpp)
+    target_link_libraries(PlatformVulkanXcb
+        ${XCB_LIBRARY}
+        ${X11_LIBRARY}
+        ${X11_XCB_LIBRARY}
+        ${DL_LIBRARY}
+        $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
+    )
+endif()
+
 add_library(PlatformInterface
     ${PlatformSources}
 )
