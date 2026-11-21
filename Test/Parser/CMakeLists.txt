@@ -6,6 +6,7 @@ set(PARSER_TEST_CASES
     JpegParserTest
     MGEMXParserTest
     OgexParserTest
+    ParserHardeningTest
     PngParserTest
     PvrParserTest
     TgaParserTest

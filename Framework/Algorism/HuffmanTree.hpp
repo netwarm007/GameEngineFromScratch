@@ -68,6 +68,10 @@ class HuffmanTree {
         for (int i = 0; i < 16; i++) {
             num_symbo += num_of_codes[i];
         }
+        if (num_symbo == 0) {
+            // empty table: nothing to build
+            return 0;
+        }
         const uint8_t* pCodeValueEnd = code_values + num_symbo - 1;
 
         std::queue<std::shared_ptr<HuffmanNode<uint8_t>>> node_queue;
@@ -146,7 +150,12 @@ class HuffmanTree {
                     pNode = pNode->GetRight();
                 }
 
-                assert(pNode);
+                if (!pNode) {
+                    // incomplete (corrupted) table: report decode failure
+                    *byte_offset = (size_t)-1;
+                    *bit_offset = 0;
+                    return res;
+                }
 
                 if (pNode->IsLeaf()) {
                     // move pointers to next bit

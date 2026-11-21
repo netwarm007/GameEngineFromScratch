@@ -78,27 +78,39 @@ static void zerr(int ret) {
 
 class PngParser : _implements_ ImageParser {
    protected:
-    uint16_t m_Width;
-    uint16_t m_Height;
-    uint8_t m_BitDepth;
-    uint8_t m_ColorType;
-    uint8_t m_CompressionMethod;
-    uint8_t m_FilterMethod;
-    uint8_t m_InterlaceMethod;
-    int32_t m_ScanLineSize;
-    uint8_t m_BytesPerPixel;
+    // sanity caps for file-declared geometry (PNG spec allows 2^31-1)
+    static constexpr uint32_t kMaxDimension = 0x10000;   // 65536
+    static constexpr size_t kMaxImageDataSize = 1ull << 28;  // 256 MB
+
+    uint32_t m_Width{0};
+    uint32_t m_Height{0};
+    uint8_t m_BitDepth{0};
+    uint8_t m_ColorType{0};
+    uint8_t m_CompressionMethod{0};
+    uint8_t m_FilterMethod{0};
+    uint8_t m_InterlaceMethod{0};
+    size_t m_ScanLineSize{0};
+    uint8_t m_BytesPerPixel{0};
 
    public:
     Image Parse(Buffer& buf) override {
         Image img;
 
-        uint8_t* pData = buf.GetData();
-        uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
+        const uint8_t* pData = buf.GetData();
+        const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
 
         bool imageDataStarted = false;
         bool imageDataEnded = false;
-        uint8_t* imageDataStartPos = nullptr;
-        uint8_t* imageDataEndPos = nullptr;
+        bool parseFailed = false;
+        // reassembled IDAT payload; must not alias the (possibly
+        // non-contiguous) chunks inside the source buffer
+        std::vector<uint8_t> compressed_data;
+
+        if (pData == nullptr ||
+            buf.GetDataSize() < sizeof(PNG_FILEHEADER)) {
+            std::cerr << "Truncated PNG file" << std::endl;
+            return img;
+        }
 
         const auto* pFileHeader =
             reinterpret_cast<const PNG_FILEHEADER*>(pData);
@@ -107,13 +119,31 @@ class PngParser : _implements_ ImageParser {
             endian_net_unsigned_int((uint64_t)0x89504E470D0A1A0A)) {
             std::cerr << "Asset is PNG file" << std::endl;
 
-            while (pData < pDataEnd) {
+            while (pData < pDataEnd && !parseFailed) {
+                if (pDataEnd - pData <
+                    (ptrdiff_t)(sizeof(PNG_CHUNK_HEADER) + 4 /* CRC */)) {
+                    std::cerr << "Truncated PNG chunk header" << std::endl;
+                    parseFailed = true;
+                    break;
+                }
                 const auto* pChunkHeader =
                     reinterpret_cast<const PNG_CHUNK_HEADER*>(pData);
                 auto type = static_cast<PNG_CHUNK_TYPE>(endian_net_unsigned_int(
                     static_cast<uint32_t>(pChunkHeader->Type)));
                 uint32_t chunk_data_size =
                     endian_net_unsigned_int(pChunkHeader->Length);
+
+                // the chunk payload plus its trailing CRC must fit in the
+                // remaining file
+                if ((uint64_t)chunk_data_size >
+                    (uint64_t)(pDataEnd - pData) -
+                        sizeof(PNG_CHUNK_HEADER) - 4) {
+                    std::cerr << "Truncated PNG chunk data" << std::endl;
+                    parseFailed = true;
+                    break;
+                }
+                const uint8_t* pChunkData = pData + sizeof(PNG_CHUNK_HEADER);
+                const uint8_t* pChunkDataEnd = pChunkData + chunk_data_size;
 
 #if DUMP_DETAILS
                 std::cerr << "============================" << std::endl;
@@ -126,6 +156,13 @@ class PngParser : _implements_ ImageParser {
                         std::cerr << "----------------------------"
                                   << std::endl;
 #endif
+                        if (chunk_data_size <
+                            sizeof(PNG_IHDR_HEADER) -
+                                sizeof(PNG_CHUNK_HEADER)) {
+                            std::cerr << "Truncated PNG IHDR chunk" << std::endl;
+                            parseFailed = true;
+                            break;
+                        }
                         const auto* pIHDRHeader =
                             reinterpret_cast<const PNG_IHDR_HEADER*>(pData);
                         m_Width = endian_net_unsigned_int(pIHDRHeader->Width);
@@ -136,8 +173,26 @@ class PngParser : _implements_ ImageParser {
                         m_FilterMethod = pIHDRHeader->FilterMethod;
                         m_InterlaceMethod = pIHDRHeader->InterlaceMethod;
 
+                        if (m_Width == 0 || m_Height == 0 ||
+                            m_Width > kMaxDimension ||
+                            m_Height > kMaxDimension ||
+                            m_InterlaceMethod != 0) {
+                            std::cerr << "Unsupported PNG dimensions ("
+                                      << m_Width << " x " << m_Height
+                                      << ", interlace "
+                                      << (int)m_InterlaceMethod << ")"
+                                      << std::endl;
+                            parseFailed = true;
+                            break;
+                        }
+
+                        img.pixel_format = PIXEL_FORMAT::UNKNOWN;
                         switch (m_ColorType) {
                             case 0:  // grayscale
+                                if (m_BitDepth != 8 && m_BitDepth != 16) {
+                                    m_BytesPerPixel = 0;
+                                    break;
+                                }
                                 m_BytesPerPixel = (m_BitDepth + 7) >> 3;
                                 switch (m_BytesPerPixel) {
                                     case 1:
@@ -146,14 +201,15 @@ class PngParser : _implements_ ImageParser {
                                     case 2:
                                         img.pixel_format = PIXEL_FORMAT::R16;
                                         break;
-                                    case 4:
-                                        img.pixel_format = PIXEL_FORMAT::R32;
-                                        break;
                                     default:
-                                        assert(0);
+                                        m_BytesPerPixel = 0;
                                 }
                                 break;
                             case 2:  // rgb true color
+                                if (m_BitDepth != 8 && m_BitDepth != 16) {
+                                    m_BytesPerPixel = 0;
+                                    break;
+                                }
                                 m_BytesPerPixel = (m_BitDepth * 3 + 7) >> 3;
                                 switch (m_BytesPerPixel) {
                                     case 3:
@@ -162,28 +218,27 @@ class PngParser : _implements_ ImageParser {
                                     case 6:
                                         img.pixel_format = PIXEL_FORMAT::RGB16;
                                         break;
-                                    case 12:
-                                        img.pixel_format = PIXEL_FORMAT::RGB32;
-                                        break;
                                     default:
-                                        assert(0);
+                                        m_BytesPerPixel = 0;
                                 }
                                 break;
                             case 3:  // indexed
-                                m_BytesPerPixel = (m_BitDepth + 7) >> 3;
                                 std::cerr
                                     << "Color Type 3 is not supported yet: "
                                     << m_ColorType << std::endl;
-                                assert(0);
+                                m_BytesPerPixel = 0;
                                 break;
                             case 4:  // grayscale with alpha
-                                m_BytesPerPixel = (m_BitDepth * 2 + 7) >> 3;
                                 std::cerr
                                     << "Color Type 4 is not supported yet: "
                                     << m_ColorType << std::endl;
-                                assert(0);
+                                m_BytesPerPixel = 0;
                                 break;
                             case 6:  // RGBA
+                                if (m_BitDepth != 8 && m_BitDepth != 16) {
+                                    m_BytesPerPixel = 0;
+                                    break;
+                                }
                                 m_BytesPerPixel = (m_BitDepth * 4 + 7) >> 3;
                                 switch (m_BytesPerPixel) {
                                     case 4:
@@ -192,23 +247,36 @@ class PngParser : _implements_ ImageParser {
                                     case 8:
                                         img.pixel_format = PIXEL_FORMAT::RGBA16;
                                         break;
-                                    case 16:
-                                        img.pixel_format = PIXEL_FORMAT::RGBA32;
-                                        break;
                                     default:
-                                        assert(0);
+                                        m_BytesPerPixel = 0;
                                 }
                                 break;
                             default:
                                 std::cerr
                                     << "Unkown Color Type: " << m_ColorType
                                     << std::endl;
-                                assert(0);
+                                m_BytesPerPixel = 0;
+                                break;
                         }
 
-                        assert(img.pixel_format != PIXEL_FORMAT::UNKNOWN);
+                        if (m_BytesPerPixel == 0 ||
+                            img.pixel_format == PIXEL_FORMAT::UNKNOWN) {
+                            std::cerr << "Unsupported PNG color type/bit depth "
+                                         "("
+                                      << (int)m_ColorType << "/"
+                                      << (int)m_BitDepth << ")" << std::endl;
+                            parseFailed = true;
+                            break;
+                        }
 
-                        m_ScanLineSize = m_BytesPerPixel * m_Width;
+                        m_ScanLineSize =
+                            (size_t)m_BytesPerPixel * (size_t)m_Width;
+                        if (m_ScanLineSize / m_BytesPerPixel != m_Width) {
+                            std::cerr << "PNG scanline size overflow"
+                                      << std::endl;
+                            parseFailed = true;
+                            break;
+                        }
 
                         img.Width = m_Width;
                         img.Height = m_Height;
@@ -217,6 +285,13 @@ class PngParser : _implements_ ImageParser {
                         img.pitch = ALIGN(m_Width * m_BytesPerPixel,
                                           4);  // for GPU address alignment
                         img.data_size = (size_t)img.pitch * img.Height;
+                        if (img.data_size / img.pitch != img.Height ||
+                            img.data_size > kMaxImageDataSize) {
+                            std::cerr << "PNG image too large: " << m_Width
+                                      << " x " << m_Height << std::endl;
+                            parseFailed = true;
+                            break;
+                        }
                         img.data = new uint8_t[img.data_size];
 
 #if DUMP_DETAILS
@@ -268,19 +343,10 @@ class PngParser : _implements_ ImageParser {
                             break;
                         }
 
-                        if (!imageDataStarted) {
-                            imageDataStarted = true;
-                            imageDataStartPos =
-                                pData + sizeof(PNG_CHUNK_HEADER);
-                            imageDataEndPos =
-                                imageDataStartPos + chunk_data_size;
-                        } else {
-                            // concat the IDAT blocks
-                            memcpy(imageDataEndPos,
-                                   pData + sizeof(PNG_CHUNK_HEADER),
-                                   chunk_data_size);
-                            imageDataEndPos += chunk_data_size;
-                        }
+                        // concat the IDAT blocks into the reassembly buffer
+                        compressed_data.insert(compressed_data.end(),
+                                               pChunkData, pChunkDataEnd);
+                        imageDataStarted = true;
                     } break;
                     case PNG_CHUNK_TYPE::IEND: {
 #if DUMP_DETAILS
@@ -288,9 +354,6 @@ class PngParser : _implements_ ImageParser {
                         std::cerr << "----------------------------"
                                   << std::endl;
 #endif
-
-                        size_t compressed_data_size =
-                            imageDataEndPos - imageDataStartPos;
 
                         if (!imageDataStarted) {
                             std::cerr << "PNG file looks corrupted. Found IEND "
@@ -300,6 +363,8 @@ class PngParser : _implements_ ImageParser {
                         }
 
                         imageDataEnded = true;
+
+                        size_t compressed_data_size = compressed_data.size();
 
                         const uint32_t kChunkSize = 256 * 1024;
                         z_stream strm;
@@ -317,8 +382,8 @@ class PngParser : _implements_ ImageParser {
                         }
 
                         const uint8_t* pIn =
-                            imageDataStartPos;  // point to the start of the
-                                                // input data buffer
+                            compressed_data.data();  // point to the start of
+                                                     // the input data buffer
                         auto* pOut = reinterpret_cast<uint8_t*>(
                             img.data);  // point to the start of the input data
                                         // buffer
@@ -353,7 +418,10 @@ class PngParser : _implements_ ImageParser {
                                         // now we de-filter the data into image
                                         uint8_t* p = pDecompressedBuffer;
                                         while (p - pDecompressedBuffer <
-                                               (kChunkSize - strm.avail_out)) {
+                                                   (kChunkSize -
+                                                    strm.avail_out) &&
+                                               current_row <
+                                                   (int)img.Height) {
                                             if (current_col == -1) {
                                                 // we are at start of scan line,
                                                 // get the filter type and
@@ -465,7 +533,8 @@ class PngParser : _implements_ ImageParser {
                                             }
 
                                             current_col++;
-                                            if (current_col == m_ScanLineSize) {
+                                            if (current_col ==
+                                                (int)m_ScanLineSize) {
                                                 current_col = -1;
                                                 current_row++;
                                             }
@@ -494,6 +563,10 @@ class PngParser : _implements_ ImageParser {
             }
         } else {
             std::cerr << "File is not a PNG file!" << std::endl;
+        }
+
+        if (parseFailed || img.data == nullptr) {
+            return Image {};
         }
 
         img.mipmaps.emplace_back(img.Width, img.Height, img.pitch, 0,
