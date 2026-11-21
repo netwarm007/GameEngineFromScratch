@@ -228,6 +228,21 @@ Billiard still use their existing startup paths; runtime selection is not yet
 advertised. See the
 [exact-revision verification](../verification/b8e0158b605571ad8aab775b3f85efbcf4be4408.md).
 
+M2.4 wires Viewer to the runtime selection contract: `--rhi`/`--rhi=` and
+`--list-rhi` are consumed before application arguments, the backend resolves
+against probed availability with Viewer defaults (Windows D3D12, Linux OpenGL,
+macOS Metal), and the owned composition constructs the selected application
+and managers. Render conventions follow the active backend; borrowed argument
+strings and the filtered pointer array outlive the application. Legacy trimmed
+builds and the opt-in Vulkan application build keep their compile-time paths.
+Linux OpenGL selection retains the SDL host (see the deviation in Known
+limitations); Vulkan selection uses the XCB host through a partial
+`PlatformVulkanXcb` library that avoids clashing with the SDL OpenGL
+application and asset implementation. Default startup through the runtime
+path is verified natively on all platforms; the per-backend startup matrix and
+`--list-rhi`/error-path native smoke remain M2.6 scope. See the
+[exact-revision verification](../verification/da41b5ce53f612784f0f6c15f67a79bede96e776.md).
+
 The canonical startup names are `d3d12`, `opengl`, `metal`, and `vulkan`.
 Accept `--rhi <name>` and `--rhi=<name>`; `--list-rhi` takes no value.
 Reject unknown/empty names and repeated `--rhi` options rather than letting
