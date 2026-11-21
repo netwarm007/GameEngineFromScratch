@@ -21,7 +21,10 @@ if(ACTION STREQUAL "key")
     endif()
     file(GLOB scripts RELATIVE "${root}" "${root}/scripts/build_*.sh")
     list(SORT scripts)
-    list(APPEND scripts ".circleci/config.yml" ".circleci/unix-dependency-cache.cmake")
+    # config.yml is intentionally excluded: CI-only edits must not invalidate
+    # the dependency cache. Dependency build inputs are the build scripts,
+    # submodule revisions and toolchain hashed here.
+    list(APPEND scripts ".circleci/unix-dependency-cache.cmake")
     foreach(script IN LISTS scripts)
         file(SHA256 "${root}/${script}" hash)
         string(APPEND inputs "\n${script}:${hash}")

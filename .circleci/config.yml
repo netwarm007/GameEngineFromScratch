@@ -144,6 +144,10 @@ jobs:
       size: large
     environment:
       CMAKE_BUILD_PARALLEL_LEVEL: "8"
+      CMAKE_C_COMPILER_LAUNCHER: sccache
+      CMAKE_CXX_COMPILER_LAUNCHER: sccache
+      SCCACHE_DIR: C:/Users/circleci/sccache
+      SCCACHE_CACHE_SIZE: 10G
     steps:
       - run: systeminfo
       - run:
@@ -190,6 +194,11 @@ jobs:
 
             if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
               choco install ninja -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+
+            if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
+              choco install sccache -y --no-progress
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
 
@@ -254,6 +263,10 @@ jobs:
           keys:
             - source-v2-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
             - source-v2-{{ arch }}-
+      - restore_cache:
+          keys:
+            - sccache-windows-v1-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
+            - sccache-windows-v1-{{ arch }}-
       - run:
           name: restore repo
           command: |
@@ -353,10 +366,11 @@ jobs:
               if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
               $env:Path = "$($dxc.DirectoryName);$env:Path"
             }
-            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON
+            cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT_DEBUG=Embedded
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             cmake --build build --config Debug
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            sccache --show-stats
       - run:
           name: "Cook Asset"
           command: |
@@ -542,6 +556,15 @@ jobs:
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
                   cmake --build build-release --config Release
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  sccache --show-stats
+            - when:
+                condition:
+                  equal: [ master, << pipeline.git.branch >> ]
+                steps:
+                  - save_cache:
+                      key: sccache-windows-v1-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
+                      paths:
+                        - "C:/Users/circleci/sccache"
             - run:
                 name: "Test (Release)"
                 command: |
