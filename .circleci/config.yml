@@ -545,6 +545,8 @@ jobs:
                     [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowW(string cls, string title);
                     [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
                     [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
+                    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+                    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
                     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
                     [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
                   }
@@ -563,6 +565,7 @@ jobs:
                     $g.Dispose()
                     $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
                     $bmp.Dispose()
+                    Write-Output "GDI capture ${w}x${h} -> $path"
                   }
                   function Run-Viewer($backend, $outDir) {
                     New-Item -ItemType Directory -Force $outDir | Out-Null
@@ -588,7 +591,15 @@ jobs:
                           Get-Content "$outDir/viewer.log","$outDir/viewer-error.log" -ErrorAction SilentlyContinue
                           throw "OpenGL window not found (process exited: $($proc.HasExited))"
                         }
-                        Start-Sleep -Seconds 10
+                        # GDI CopyFromScreen needs the window fully visible at a
+                        # known position; park it at the screen origin and raise
+                        # it. SWP_NOSIZE|SWP_NOZORDER keeps the client dimensions
+                        # identical to the D3D12 baseline capture.
+                        [MatrixWin32]::SetWindowPos($hwnd, [IntPtr]::Zero, 0, 0, 0, 0, 0x0005) | Out-Null
+                        [MatrixWin32]::SetForegroundWindow($hwnd) | Out-Null
+                        # Match the baseline's 45s render gate: llvmpipe needs the
+                        # scene fully loaded and drawn before the grab.
+                        Start-Sleep -Seconds 45
                         Capture-Window $title $png
                       } finally {
                         # A live child keeps the step console open and would
