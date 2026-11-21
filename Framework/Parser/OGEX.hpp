@@ -12,6 +12,7 @@ class OgexParser : _implements_ ISceneParser {
     void ConvertOddlStructureToSceneNode(
         const ODDL::Structure& structure,
         std::shared_ptr<BaseSceneNode>& base_node, Scene& scene);
+    void Fail(const std::string& message);
 
    public:
     OgexParser() = default;
@@ -21,7 +22,6 @@ class OgexParser : _implements_ ISceneParser {
 
    private:
     bool m_bUpIsYAxis{false};
-    bool m_bInvalidCameraTarget{false};
-    bool m_bInvalidExtension{false};
+    bool m_bInvalid{false};
 };
 }  // namespace My
