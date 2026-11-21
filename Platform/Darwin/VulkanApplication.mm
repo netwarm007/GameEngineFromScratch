@@ -36,7 +36,7 @@ int VulkanApplication::InitializeGuiPlatform() {
         @autoreleasepool {
             const auto nativeInstance = reinterpret_cast<VkInstance>(instance);
             const auto create = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
-                vkGetInstanceProcAddr(nativeInstance, "vkCreateMetalSurfaceEXT"));
+                GetVulkanLoader().GetInstanceFunction(nativeInstance, "vkCreateMetalSurfaceEXT"));
             if (!create) return VK_ERROR_EXTENSION_NOT_PRESENT;
             NSWindow* window = static_cast<NSWindow*>(viewport->PlatformHandleRaw);
             NSView* view = window.contentView;
@@ -71,7 +71,7 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance, VkSurface
 
         PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT;
         vkCreateMetalSurfaceEXT = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
-            vkGetInstanceProcAddr(instance, "vkCreateMetalSurfaceEXT"));
+            GetVulkanLoader().GetInstanceFunction(instance, "vkCreateMetalSurfaceEXT"));
         if (!vkCreateMetalSurfaceEXT) {
             printf("Cocoa: Vulkan instance missing VK_EXT_metal_surface extension\n");
             return VK_ERROR_EXTENSION_NOT_PRESENT;

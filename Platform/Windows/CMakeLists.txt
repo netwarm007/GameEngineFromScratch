@@ -16,3 +16,6 @@ add_library(PlatformInterface
     ${PlatformSources}
 )
 target_link_libraries(PlatformInterface PUBLIC PlatformAssetIO)
+if(TARGET VulkanLoader)
+    target_link_libraries(PlatformInterface PRIVATE VulkanLoader)
+endif()

@@ -13,7 +13,7 @@ int VulkanApplication::InitializeGuiPlatform() {
         [](ImGuiViewport* viewport, ImU64 instance, const void* allocator, ImU64* output) -> int {
         const auto nativeInstance = reinterpret_cast<VkInstance>(instance);
         const auto create = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
-            vkGetInstanceProcAddr(nativeInstance, "vkCreateWin32SurfaceKHR"));
+            GetVulkanLoader().GetInstanceFunction(nativeInstance, "vkCreateWin32SurfaceKHR"));
         if (!create) return VK_ERROR_EXTENSION_NOT_PRESENT;
         const auto window = static_cast<HWND>(viewport->PlatformHandleRaw);
         VkWin32SurfaceCreateInfoKHR info{};
@@ -35,7 +35,7 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
     PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
 
     vkCreateWin32SurfaceKHR =
-        reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(vkGetInstanceProcAddr(
+        reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(GetVulkanLoader().GetInstanceFunction(
             instance, "vkCreateWin32SurfaceKHR"));
     if (!vkCreateWin32SurfaceKHR) {
         fprintf(

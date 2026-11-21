@@ -254,7 +254,7 @@ VulkanRHI::Texture VulkanRHI::CreateTexture(
     texture.usage = usage | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst;
     const vk::ImageCreateFlags flags = cube ? vk::ImageCreateFlagBits::eCubeCompatible : vk::ImageCreateFlags{};
     VkImageFormatProperties support{};
-    const auto supported = vkGetPhysicalDeviceImageFormatProperties(
+    const auto supported = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceImageFormatProperties(
         m_vkPhysicalDevice, static_cast<VkFormat>(format), VK_IMAGE_TYPE_2D,
         VK_IMAGE_TILING_OPTIMAL, static_cast<VkImageUsageFlags>(texture.usage),
         static_cast<VkImageCreateFlags>(flags), &support);

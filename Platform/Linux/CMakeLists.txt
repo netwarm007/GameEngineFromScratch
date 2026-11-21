@@ -29,7 +29,7 @@ target_link_libraries(PlatformInterface
         ${X11_LIBRARY} 
         ${X11_XCB_LIBRARY} 
         ${DL_LIBRARY}
+        $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
 )
 
 target_include_directories(PlatformInterface PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-

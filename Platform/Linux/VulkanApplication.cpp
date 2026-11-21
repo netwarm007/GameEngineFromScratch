@@ -11,7 +11,7 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
     PFN_vkCreateXcbSurfaceKHR vkCreateXcbSurfaceKHR;
 
     vkCreateXcbSurfaceKHR = reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(
-        vkGetInstanceProcAddr(instance, "vkCreateXcbSurfaceKHR"));
+        GetVulkanLoader().GetInstanceFunction(instance, "vkCreateXcbSurfaceKHR"));
 
     if (!vkCreateXcbSurfaceKHR) {
         fprintf(stderr,

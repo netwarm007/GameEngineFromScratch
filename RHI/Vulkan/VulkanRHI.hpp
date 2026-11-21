@@ -4,9 +4,16 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
+#include "VulkanLoader.hpp"
+#ifndef VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#elif VULKAN_HPP_DISPATCH_LOADER_DYNAMIC != 1
+#error VulkanRHI requires Vulkan-Hpp dynamic dispatch
+#endif
 #include <vulkan/vulkan.hpp>
 #include "Buffer.hpp"
 #include "GfxConfiguration.hpp"
@@ -258,6 +265,7 @@ class VulkanRHI {
              std::owner_less<std::shared_ptr<TextureLayoutState>>> m_frameLayouts;
     bool m_swapChainCanCapture = false;
 
+    std::unique_lock<std::mutex> m_dispatchLock;
     vk::Instance m_vkInstance;
     vk::DebugUtilsMessengerEXT m_vkDebugMessenger;
     PFN_vkDestroyDebugUtilsMessengerEXT m_destroyDebugMessenger = nullptr;

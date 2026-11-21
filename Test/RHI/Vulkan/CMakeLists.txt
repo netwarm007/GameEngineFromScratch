@@ -25,6 +25,8 @@ else()
 endif()
 
 find_package(Vulkan REQUIRED)
+include("${root}/cmake/VulkanLoader.cmake")
+myge_add_vulkan_loader("${root}")
 find_program(GLSL_VALIDATOR NAMES glslang
     HINTS "${root}/External/${CMAKE_SYSTEM_NAME}/bin" "$ENV{VULKAN_SDK}/Bin" REQUIRED)
 find_program(SPIRV_CROSS NAMES spirv-cross SPIRV-Cross
@@ -88,7 +90,8 @@ add_library(VulkanRegressionRHI STATIC "${root}/RHI/Vulkan/VulkanRHI.cpp"
 target_include_directories(VulkanRegressionRHI PUBLIC
     $<TARGET_PROPERTY:VulkanShaderTest,INCLUDE_DIRECTORIES>
     "${root}/Framework/Interface")
-target_link_libraries(VulkanRegressionRHI PUBLIC Vulkan::Vulkan ${XG_LIBRARY})
+target_link_libraries(VulkanRegressionRHI PUBLIC VulkanLoader ${XG_LIBRARY})
+target_compile_definitions(VulkanRegressionRHI PRIVATE VK_NO_PROTOTYPES)
 if(USE_ISPC)
     target_link_libraries(VulkanRegressionRHI PUBLIC GeomMath)
 endif()
@@ -153,6 +156,7 @@ target_sources(VulkanRegressionGraphics PRIVATE
     "${root}/RHI/Vulkan/VulkanGraphicsShadow.cpp")
 target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/Framework/Geometries")
 target_include_directories(VulkanRegressionGraphics PUBLIC "${root}/External/src/imgui")
+target_compile_definitions(VulkanRegressionGraphics PRIVATE VK_NO_PROTOTYPES)
 add_executable(VulkanGraphicsTest VulkanGraphicsTest.cpp
     "${root}/Platform/Empty/AssetLoader.cpp")
 target_include_directories(VulkanGraphicsTest PRIVATE "${root}/Framework/DispatchPass")

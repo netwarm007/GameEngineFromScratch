@@ -9,8 +9,9 @@ stepwise implementation after reviewing the draft. M0 adopts the first-release
 contract below; M1's build/asset-staging foundation has passed full native
 three-platform CI and artifact review. See its
 [exact-revision verification](../verification/9e91a93eee1a80337165af7e40a5ea24d0f68acf.md)
-for the tested scope and distribution limitations. Later checkpoints remain separate
-implementation and acceptance steps, not completed functionality.
+for the tested scope and distribution limitations. M2 begins with the shared
+startup-selection contract; application integration and later checkpoints remain
+separate implementation and acceptance steps, not completed functionality.
 
 The working branch was fast-forwarded to master
 `175d3567bb032e5356a8b537b5c5bb5f50edc6b2` before preparing this draft.
@@ -178,6 +179,74 @@ application and invalidating every module's borrowed app pointer is not the
 target design. Preserve current frame participant order when introducing the
 session boundary instead of reopening frame-scheduler design.
 
+### M2 execution plan
+
+Implement and verify these increments separately. The first increment establishes
+the shared contract; it does not advertise runtime selection in applications
+before their factories and loader isolation are ready.
+
+| Increment | Work | Verification boundary |
+| --- | --- | --- |
+| M2.1: selection contract | Canonical backend identifiers, central `--rhi`/`--list-rhi` parsing, availability diagnostics, and explicit/default selection without fallback. | Headless tests of production parsing/resolution; no native startup or backend retention claim. |
+| M2.2: Vulkan loader isolation | Resolve Vulkan entry points through a controlled late-loaded loader, including platform calls and ImGui dispatch. | Missing Vulkan runtime does not prevent non-Vulkan startup; loader/dispatch failures are explicit. Preserve strict native WSI requirements. |
+| M2.3: owned startup composition | Add typed, explicit backend factories and owned application/graphics/pipeline composition. | Factories retain each included implementation and clean up failed construction without conflicting configuration aliases. |
+| M2.4: Viewer integration | Consume RHI arguments before application arguments, construct the selected backend, derive render conventions from it, and use the Linux XCB host. | Same Viewer executable starts each platform backend; scene/screenshot arguments and defaults remain valid. |
+| M2.5: Billiard integration | Reuse the composition and argument contract; preserve its application-specific default and dispatch capture through the active backend. | Same Billiard executable starts each backend; physics/capture regressions do not invoke OpenGL for another backend. |
+| M2.6: native acceptance and CI consolidation | Run the startup matrix and integrate existing Vulkan coverage into platform jobs, replacing separate Vulkan application builds. | Full exact-revision platform acceptance and inspected artifacts; retire the specialized job only after equivalent coverage is verified. |
+
+M2.1's [RhiStartup](../../Framework/Manager/RhiStartup.hpp) production library is
+implemented and covered by the existing Runtime suite's `fast`
+[startup-contract regression](../../Test/Runtime/RhiStartupTest.cpp). It neither
+probes devices nor creates applications; Viewer and Billiard still use their
+existing startup paths. This is not completed M2 or native acceptance.
+
+The canonical startup names are `d3d12`, `opengl`, `metal`, and `vulkan`.
+Accept `--rhi <name>` and `--rhi=<name>`; `--list-rhi` takes no value.
+Reject unknown/empty names and repeated `--rhi` options rather than letting
+argument order choose a backend. Respect `--` as the end of RHI option parsing
+and preserve the remaining application arguments, including their order and
+executable name. Client integration must keep the borrowed argument strings and
+filtered pointer array alive for the application's lifetime.
+
+Availability is supplied by composition/probes, not inferred from a linked
+library or SDK. Distinguish not compiled, runtime prerequisites unavailable, and
+ready to attempt initialization. The last state is not successful device/window
+initialization. Resolve the requested backend, or the caller's application
+default when omitted; a missing/unavailable choice returns a diagnostic and
+never selects another ready backend.
+
+### CI consolidation strategy
+
+The accepted strategy is to consolidate Vulkan coverage during M2, without
+waiting for reconstruction or hot switching. Keep the three platform jobs
+initially; splitting every platform into a serial build/test pair is not itself
+a latency optimization.
+
+- Prepare Linux environment parity early in M2. The standard job currently uses
+  Ubuntu 22.04 while the specialized Vulkan job uses Ubuntu 24.04 with lavapipe,
+  validation layers, SPIR-V tools, and native XCB/Xvfb coverage. Preserve the
+  required header, driver, and WSI capabilities when aligning environments.
+- Use the existing `VULKAN_RHI_TESTS` integrated test entry point. Preserve ABI,
+  compute, resources, pipelines, graphics, GUI, swapchain lifecycle, native
+  presentation, validation checks, and application captures, not just ABI tests.
+  macOS already exercises MoltenVK inside its platform job.
+- Once startup factories are integrated, run each backend from the same
+  application build instead of configuring a second Vulkan application tree.
+  Compare the migrated test set and inspect exact-revision artifacts before
+  removing `verify_vulkan_shader_abi`. Its existing coverage is Linux-specific;
+  migration does not establish missing Windows native backend evidence.
+- Revisit selective test fan-out as M3/M4 expand reconstruction and transition
+  cases. Split only when measured test/retry benefits outweigh repeated setup
+  and workspace transfer. Bind artifacts to revision, platform, configuration,
+  and toolchain; retain runtime libraries, assets, shader tools, source-based
+  fixtures, and generated CTest path requirements.
+- Linux coverage may be isolated separately, but its instrumented build cannot
+  reuse ordinary binaries. Its report-generation script continues after CTest
+  failure, so a coverage report is not a substitute for the required test gate.
+- Preserve normal-push full acceptance and API-triggered quick iteration.
+  Every required platform build/test job remains part of acceptance after any
+  topology change; quick/fast success is never acceptance.
+
 ### M1 implementation boundary
 
 `BUILD_ALL_DESKTOP_RHIS` defaults to `ON` for Windows, Linux, and macOS.
@@ -241,6 +310,8 @@ platforms; default native and opt-in Vulkan application artifacts were inspected
 | --- | --- |
 | M1 preserves SDL OpenGL startup when available; M2 must move runtime selection to the agreed XCB host and document the launch change. | M2 |
 | Static archives can discard unused backends until factories reference them; complete executable inclusion is not claimed by library linking alone. | M2 |
+| The shared startup-selection contract is the first M2 increment; application CLI wiring, real availability probes, and backend factories must land before runtime selection is advertised. | M2.2-M2.5 |
+| Linux Vulkan environment parity and coverage migration remain prerequisites for removing the specialized CI job; Windows native Vulkan/OpenGL coverage is not established by SDK installation. | M2.6 |
 | Real macOS bundles are exercised, but native project installers were not generated by the M1 feature-branch pipeline. Fixture installation checks do not replace installed native distribution validation. | M5 |
 | Loader linkage/packaging must allow non-Vulkan backends to start when the Vulkan runtime is absent; handle availability explicitly without requiring plugins. | M2 |
 | Material baking uses the native Utility executable; complete desktop cross-compilation needs an explicit host-tool path before it can be supported. | Follow-on build scope |

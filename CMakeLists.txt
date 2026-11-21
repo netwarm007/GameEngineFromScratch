@@ -196,6 +196,8 @@ include(${MYGE_EXTERNAL_LIBRARY_PATH}/cmake/OpenAL/OpenALConfig.cmake)
 if(Vulkan_FOUND)
     set(HAS_VULKAN 1)
     include_directories(${Vulkan_INCLUDE_DIRS})
+    include(VulkanLoader)
+    myge_add_vulkan_loader("${PROJECT_SOURCE_DIR}")
 endif(Vulkan_FOUND)
 
 if(VULKAN_APPLICATIONS)

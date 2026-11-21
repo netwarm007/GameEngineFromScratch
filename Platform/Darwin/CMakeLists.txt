@@ -27,4 +27,5 @@ target_link_libraries(PlatformInterface
         ${OPENGL_LIBRARY}
         ${GAMECONTROLLER_LIBRARY}
         dl
+        $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
     )
