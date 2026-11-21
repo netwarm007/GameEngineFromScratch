@@ -377,7 +377,10 @@ jobs:
       - run:
           name: "Test"
           command: |
-            ctest --test-dir build -C Debug --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
+            $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build -C Debug --output-on-failure --output-junit junit.xml << parameters.ctest_args >>"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - store_test_results:
           path: build/junit.xml
@@ -568,7 +571,10 @@ jobs:
             - run:
                 name: "Test (Release)"
                 command: |
-                  ctest --test-dir build-release -C Release --output-on-failure --output-junit junit.xml
+                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build-release -C Release --output-on-failure --output-junit junit.xml"
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             - store_test_results:
                 path: build-release/junit.xml
