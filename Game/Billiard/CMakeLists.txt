@@ -26,7 +26,13 @@ ENDIF(ANDROID)
 if(VULKAN_APPLICATIONS AND BILLIARD_USE_D3D12)
     message(FATAL_ERROR "BILLIARD_USE_D3D12 conflicts with VULKAN_APPLICATIONS")
 endif()
-if(WIN32 AND BILLIARD_USE_D3D12)
+
+set(BILLIARD_RUNTIME_RHI OFF)
+if(BUILD_ALL_DESKTOP_RHIS AND NOT VULKAN_APPLICATIONS AND TARGET RuntimeComposition)
+    set(BILLIARD_RUNTIME_RHI ON)
+endif()
+
+if(WIN32 AND BILLIARD_USE_D3D12 AND NOT BILLIARD_RUNTIME_RHI)
     target_compile_definitions(BilliardGame PRIVATE BILLIARD_USE_D3D12)
 endif()
 
@@ -102,18 +108,32 @@ ELSEIF(WA AND NOT VULKAN_APPLICATIONS)
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_SDL=2 -s USE_WEBGL2=1"
             )
 ELSEIF(NOT VULKAN_APPLICATIONS)
-    if(WIN32 AND BILLIARD_USE_D3D12)
-        set(BILLIARD_RHI D3dRHI)
+    if(BILLIARD_RUNTIME_RHI)
+        # RuntimeComposition brings the platform hosts and every included RHI;
+        # linking PlatformInterface here would clash with the SDL OpenGL host.
+        target_link_libraries(BilliardGame
+                                BulletPhysics
+                                Framework
+                            )
     else()
-        set(BILLIARD_RHI OpenGLRHI)
+        if(WIN32 AND BILLIARD_USE_D3D12)
+            set(BILLIARD_RHI D3dRHI)
+        else()
+            set(BILLIARD_RHI OpenGLRHI)
+        endif()
+        target_link_libraries(BilliardGame
+                                BulletPhysics
+                                ${BILLIARD_RHI}
+                                Framework
+                                PlatformInterface
+                            )
     endif()
-    target_link_libraries(BilliardGame 
-                            BulletPhysics
-                            ${BILLIARD_RHI}
-                            Framework
-                            PlatformInterface
-                        )
 ENDIF(APPLE)
+
+if(BILLIARD_RUNTIME_RHI)
+    target_compile_definitions(BilliardGame PRIVATE MYGE_RUNTIME_RHI)
+    target_link_libraries(BilliardGame RuntimeComposition)
+endif()
 
 if(BUILD_ALL_DESKTOP_RHIS)
     myge_desktop_application(BilliardGame)

@@ -19,10 +19,16 @@
 #include <iostream>
 #include <map>
 
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(OS_WINDOWS) && (defined(MYGE_RUNTIME_RHI) || (!defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)))
 #include "glad/glad.h"
 #endif
 
+#if defined(MYGE_RUNTIME_RHI)
+#include "RhiComposition.hpp"
+#if defined(HAS_VULKAN)
+#include "RHI/Vulkan/VulkanGraphicsManager.hpp"
+#endif
+#else
 #if defined(MYGE_USE_VULKAN)
 #include "VulkanApplication.hpp"
 #include "RHI/Vulkan/VulkanGraphicsManager.hpp"
@@ -54,6 +60,7 @@
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
+#endif
 
 #if defined(OS_WEBASSEMBLY)
 #include <emscripten.h>
@@ -68,7 +75,7 @@ void main_loop() { loop(); }
 
 using namespace My;
 
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(OS_WINDOWS) && (defined(MYGE_RUNTIME_RHI) || (!defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)))
 namespace {
 bool CaptureBilliardFrame(IApplication& app, const std::filesystem::path& path) {
     uint32_t width = 0, height = 0;
@@ -125,6 +132,48 @@ bool CaptureBilliardFrame(IApplication& app, const std::filesystem::path& path) 
 
 int main(int argc, char** argv) {
     int ret;
+#if defined(MYGE_RUNTIME_RHI)
+    auto parsed = ParseRhiStartupArguments(
+        std::span<char* const>(argv, static_cast<size_t>(argc)));
+    if (!parsed.options) {
+        std::cerr << parsed.error << '\n';
+        return 1;
+    }
+    RhiStartupOptions& rhiOptions = *parsed.options;
+    const auto availability = ProbeRhiStartupAvailability();
+    if (rhiOptions.listBackends) {
+        for (const auto& entry : availability) {
+            std::cout << RhiBackendName(entry.backend) << ": ";
+            switch (entry.state) {
+                case RhiAvailability::NotCompiled:
+                    std::cout << "not compiled";
+                    break;
+                case RhiAvailability::RuntimeUnavailable:
+                    std::cout << "runtime unavailable";
+                    break;
+                case RhiAvailability::ReadyForInitialization:
+                    std::cout << "ready to attempt initialization";
+                    break;
+            }
+            if (!entry.reason.empty()) std::cout << " (" << entry.reason << ')';
+            std::cout << '\n';
+        }
+        return 0;
+    }
+    // Billiard's ordinary Windows default is OpenGL; CI selects D3D12 explicitly.
+    constexpr RhiBackend defaultBackend =
+#if defined(OS_MACOS)
+        RhiBackend::Metal;
+#else
+        RhiBackend::OpenGL;
+#endif
+    const auto selection = ResolveRhiStartupBackend(
+        rhiOptions.requestedBackend, defaultBackend, availability);
+    if (!selection.backend) {
+        std::cerr << selection.error << '\n';
+        return 1;
+    }
+#endif
     std::filesystem::path regressionDir;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "-physicsRegression") == 0) {
@@ -155,6 +204,7 @@ int main(int argc, char** argv) {
     }
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Billiard");
+#if !defined(MYGE_RUNTIME_RHI)
 #if defined(MYGE_USE_VULKAN)
     VulkanApplication app(config);
 #elif defined(OS_MACOS)
@@ -168,6 +218,7 @@ int main(int argc, char** argv) {
 #else
     OpenGLApplication app(config);
 #endif
+#endif
     MemoryManager memoryManager;
     AssetLoader assetLoader;
     OgexParser sceneParser;
@@ -180,7 +231,18 @@ int main(int argc, char** argv) {
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
-#if defined(MYGE_USE_VULKAN)
+#if defined(MYGE_RUNTIME_RHI)
+    auto composed = CreateRhiStartupComposition(
+        *selection.backend, config, sceneManager, assetLoader);
+    if (!composed.composition) {
+        std::cerr << composed.error << '\n';
+        return 1;
+    }
+    BaseApplication& app = *composed.composition->application;
+    IGraphicsManager* graphicsManager = composed.composition->graphicsManager.get();
+    IPipelineStateManager* pipelineStateManager =
+        composed.composition->pipelineStateManager.get();
+#elif defined(MYGE_USE_VULKAN)
     VulkanPipelineStateManager pipelineStateManager(app.GetRHI(), assetLoader);
     VulkanGraphicsManager graphicsManager(app.GetRHI(), sceneManager, pipelineStateManager);
 #else
@@ -188,15 +250,31 @@ int main(int argc, char** argv) {
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager);
 #endif
 
+#if defined(MYGE_RUNTIME_RHI)
+    // The borrowed argument strings and filtered pointer array live in
+    // rhiOptions until main exits, outliving the application.
+    app.SetCommandLineParameters(
+        static_cast<int>(rhiOptions.applicationArguments.size()) - 1,
+        rhiOptions.applicationArguments.data());
+#else
     app.SetCommandLineParameters(argc, argv);
+#endif
 
     app.RegisterManagerModule(&animationManager);
     app.RegisterManagerModule(&assetLoader);
+#if defined(MYGE_RUNTIME_RHI)
+    app.RegisterManagerModule(graphicsManager);
+#else
     app.RegisterManagerModule(&graphicsManager);
+#endif
     app.RegisterManagerModule(&inputManager);
     app.RegisterManagerModule(&memoryManager);
     app.RegisterManagerModule(&physicsManager);
+#if defined(MYGE_RUNTIME_RHI)
+    app.RegisterManagerModule(pipelineStateManager);
+#else
     app.RegisterManagerModule(&pipelineStateManager);
+#endif
     app.RegisterManagerModule(&sceneManager);
     app.RegisterManagerModule(&gameLogic);
 #ifdef DEBUG
@@ -305,7 +383,15 @@ int main(int argc, char** argv) {
         }
         if (app.IsQuit()) continue;
         if (regressionFrame == 60) {
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(MYGE_RUNTIME_RHI)
+#if defined(OS_WINDOWS)
+            if (composed.composition->backend == RhiBackend::OpenGL &&
+                !CaptureBilliardFrame(app, regressionDir / "billiard-before.bmp")) {
+                app.RequestQuit();
+                continue;
+            }
+#endif
+#elif defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-before.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -319,7 +405,15 @@ int main(int argc, char** argv) {
                 app.RequestQuit();
                 continue;
             }
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(MYGE_RUNTIME_RHI)
+#if defined(OS_WINDOWS)
+            if (composed.composition->backend == RhiBackend::OpenGL &&
+                !CaptureBilliardFrame(app, regressionDir / "billiard-after.bmp")) {
+                app.RequestQuit();
+                continue;
+            }
+#endif
+#elif defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-after.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -336,7 +430,25 @@ int main(int argc, char** argv) {
             std::cout << "BILLIARD_PHYSICS_REGRESSION PASSED: cue=" << cueDisplacement
                       << " other=" << otherDisplacement << std::endl;
             regressionResult = 0;
-#if defined(MYGE_USE_VULKAN) && !defined(OS_LINUX)
+#if defined(MYGE_RUNTIME_RHI)
+            // Capture/quit dispatch follows the active backend, not the build.
+            // Linux completion is driven by the external capture script's
+            // capture-complete marker regardless of backend. D3D12/Metal capture
+            // paths retire the application themselves once the frame is saved.
+#if !defined(OS_LINUX)
+            if (composed.composition->backend == RhiBackend::Vulkan) {
+#if defined(HAS_VULKAN)
+                if (!static_cast<VulkanGraphicsManager*>(graphicsManager)->HasPendingScreenshot())
+                    app.RequestQuit();
+#endif
+            }
+#if defined(OS_WINDOWS)
+            else if (composed.composition->backend == RhiBackend::OpenGL) {
+                app.RequestQuit();
+            }
+#endif
+#endif
+#elif defined(MYGE_USE_VULKAN) && !defined(OS_LINUX)
             // Linux completion is driven by the external capture script's
             // capture-complete marker. Elsewhere quit automatically unless a
             // screenshot request is still pending; the capture path retires the

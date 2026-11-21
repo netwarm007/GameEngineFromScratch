@@ -465,7 +465,7 @@ jobs:
             $env:GEFS_SCREENSHOT_PATH = Join-Path $output.FullName "billiard-after.png"
             $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $output.FullName "physics-passed"
             $process = Start-Process -FilePath $billiard.FullName -PassThru `
-              -ArgumentList @('-physicsRegression', ('"' + $output.FullName + '"')) `
+              -ArgumentList @('--rhi', 'd3d12', '-physicsRegression', ('"' + $output.FullName + '"')) `
               -RedirectStandardOutput billiard-screenshots/billiard.log `
               -RedirectStandardError billiard-screenshots/billiard-error.log
             $handle = $process.Handle
