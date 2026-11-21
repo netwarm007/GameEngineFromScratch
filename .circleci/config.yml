@@ -537,93 +537,38 @@ jobs:
                   [Environment]::SetEnvironmentVariable('VK_ICD_FILENAMES', "$mesa\lvp_icd.json", 'Machine')
                   $env:VK_ICD_FILENAMES = "$mesa\lvp_icd.json"
 
-                  Add-Type -AssemblyName System.Drawing
-                  Add-Type @"
-                  using System;
-                  using System.Runtime.InteropServices;
-                  public class MatrixWin32 {
-                    [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowW(string cls, string title);
-                    [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
-                    [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
-                    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
-                    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
-                    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
-                    [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
-                  }
-                  "@
-                  function Capture-Window($title, $path) {
-                    $hwnd = [MatrixWin32]::FindWindowW($null, $title)
-                    if ($hwnd -eq [IntPtr]::Zero) { throw "Window not found: $title" }
-                    $r = New-Object MatrixWin32+RECT
-                    [MatrixWin32]::GetClientRect($hwnd, [ref]$r) | Out-Null
-                    $p = New-Object MatrixWin32+POINT
-                    [MatrixWin32]::ClientToScreen($hwnd, [ref]$p) | Out-Null
-                    $w = $r.Right - $r.Left; $h = $r.Bottom - $r.Top
-                    $bmp = New-Object System.Drawing.Bitmap $w, $h
-                    $g = [System.Drawing.Graphics]::FromImage($bmp)
-                    $g.CopyFromScreen($p.X, $p.Y, 0, 0, (New-Object System.Drawing.Size $w, $h))
-                    $g.Dispose()
-                    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
-                    $bmp.Dispose()
-                    Write-Output "GDI capture ${w}x${h} -> $path"
-                  }
                   function Run-Viewer($backend, $outDir) {
                     New-Item -ItemType Directory -Force $outDir | Out-Null
                     $resolved = (Resolve-Path $outDir).Path
+                    $ext = 'png'
+                    if ($backend -eq 'vulkan') { $ext = 'ppm' }
+                    $png = Join-Path $resolved "viewer-render.$ext"
                     if ($backend -eq 'opengl') {
-                      $png = Join-Path $resolved 'viewer-render.png'
                       $env:GALLIUM_DRIVER = 'llvmpipe'
                       $env:LIBGL_ALWAYS_SOFTWARE = '1'
-                      $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','opengl') -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
-                      # The title embeds the canonical lowercase backend id,
-                      # e.g. "Viewer - Windows/opengl (Win32)".
-                      $title = "Viewer - Windows/$backend (Win32)"
-                      try {
-                        # llvmpipe's first run can be slow; poll for the window.
-                        $hwnd = [IntPtr]::Zero
-                        for ($i = 0; $i -lt 36; $i++) {
-                          Start-Sleep -Seconds 5
-                          if ($proc.HasExited) { break }
-                          $hwnd = [MatrixWin32]::FindWindowW($null, $title)
-                          if ($hwnd -ne [IntPtr]::Zero) { break }
-                        }
-                        if ($hwnd -eq [IntPtr]::Zero) {
-                          Get-Content "$outDir/viewer.log","$outDir/viewer-error.log" -ErrorAction SilentlyContinue
-                          throw "OpenGL window not found (process exited: $($proc.HasExited))"
-                        }
-                        # GDI CopyFromScreen needs the window fully visible at a
-                        # known position; park it at the screen origin and raise
-                        # it. SWP_NOSIZE|SWP_NOZORDER keeps the client dimensions
-                        # identical to the D3D12 baseline capture.
-                        [MatrixWin32]::SetWindowPos($hwnd, [IntPtr]::Zero, 0, 0, 0, 0, 0x0005) | Out-Null
-                        [MatrixWin32]::SetForegroundWindow($hwnd) | Out-Null
-                        # Match the baseline's 45s render gate: llvmpipe needs the
-                        # scene fully loaded and drawn before the grab.
-                        Start-Sleep -Seconds 45
-                        Capture-Window $title $png
-                      } finally {
-                        # A live child keeps the step console open and would
-                        # trip the no-output timeout; always reap it.
-                        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                        Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                    }
+                    # All three backends honor GEFS_SCREENSHOT_PATH self-capture
+                    # (the Win32 OpenGL host reads the presented front buffer in
+                    # its main loop); no visible interactive desktop is needed.
+                    $env:GEFS_SCREENSHOT_PATH = $png
+                    $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend) -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
+                    try {
+                      if (-not $proc.WaitForExit(240000)) { throw "$backend matrix run timed out" }
+                    } finally {
+                      # A live child keeps the step console open and would trip
+                      # the no-output timeout; always reap it.
+                      Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                      Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                      Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                      if ($backend -eq 'opengl') {
                         Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
                         Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
                       }
-                    } else {
-                      $ext = 'png'
-                      if ($backend -eq 'vulkan') { $ext = 'ppm' }
-                      $shot = Join-Path $resolved "viewer-render.$ext"
-                      $env:GEFS_SCREENSHOT_PATH = $shot
-                      $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend) -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
-                      if (-not $proc.WaitForExit(240000)) { Stop-Process -Id $proc.Id -Force; throw "$backend matrix run timed out" }
-                      Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                      # Self-capture paths may exit nonzero after a successful
-                      # save (the baseline capture step also asserts the file,
-                      # not the exit code); the capture itself is the assertion.
-                      if (-not (Test-Path $shot)) { Get-Content "$outDir/viewer.log","$outDir/viewer-error.log" -ErrorAction SilentlyContinue; throw "$backend matrix capture missing" }
-                      $png = $shot
                     }
-                    if (-not (Test-Path $png)) { throw "$backend capture missing" }
+                    # Self-capture paths may exit nonzero after a successful
+                    # save (the baseline capture step also asserts the file,
+                    # not the exit code); the capture itself is the assertion.
+                    if (-not (Test-Path $png)) { Get-Content "$outDir/viewer.log","$outDir/viewer-error.log" -ErrorAction SilentlyContinue; throw "$backend matrix capture missing" }
                     $tolArgs = @()
                     if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
                     python scripts/compare_captures.py $baseline $png --label "windows-$backend" @tolArgs

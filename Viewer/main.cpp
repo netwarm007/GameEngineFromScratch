@@ -18,6 +18,17 @@
 #include "RhiComposition.hpp"
 
 #include <iostream>
+#if defined(OS_WINDOWS)
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+
+#include <zlib.h>
+
+#include "glad/glad.h"
+#endif
 #else
 #if defined(MYGE_USE_VULKAN)
 #include "VulkanApplication.hpp"
@@ -65,6 +76,94 @@ void main_loop() { loop(); }
 
 using namespace My;
 
+#if defined(OS_WINDOWS) && defined(MYGE_RUNTIME_RHI)
+namespace {
+// Minimal 8-bit RGB PNG writer (filter 0), mirroring the D3D12/Vulkan
+// self-capture contract without pulling in an image library.
+bool WriteViewerCapturePng(const std::filesystem::path& path, uint32_t width,
+                           uint32_t height,
+                           const std::vector<unsigned char>& rgb) {
+    auto put32 = [](std::vector<unsigned char>& out, uint32_t value) {
+        for (int i = 3; i >= 0; --i) out.push_back((value >> (8 * i)) & 0xFF);
+    };
+    auto chunk = [&](std::vector<unsigned char>& out, const char* type,
+                     const std::vector<unsigned char>& data) {
+        put32(out, static_cast<uint32_t>(data.size()));
+        const size_t start = out.size();
+        out.insert(out.end(), type, type + 4);
+        out.insert(out.end(), data.begin(), data.end());
+        uint32_t crc = 0xFFFFFFFFu;
+        for (size_t i = start; i < out.size(); ++i) {
+            crc ^= out[i];
+            for (int k = 0; k < 8; ++k)
+                crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+        }
+        put32(out, crc ^ 0xFFFFFFFFu);
+    };
+    std::vector<unsigned char> ihdr;
+    put32(ihdr, width);
+    put32(ihdr, height);
+    ihdr.push_back(8);  // bit depth
+    ihdr.push_back(2);  // color type: truecolor RGB
+    ihdr.push_back(0);
+    ihdr.push_back(0);
+    ihdr.push_back(0);
+    const size_t stride = size_t(width) * 3;
+    std::vector<unsigned char> raw;
+    raw.reserve((stride + 1) * height);
+    for (uint32_t y = 0; y < height; ++y) {
+        raw.push_back(0);  // filter: none
+        // glReadPixels returns bottom-up rows; PNG stores top-down.
+        const unsigned char* row = rgb.data() + size_t(height - 1 - y) * stride;
+        raw.insert(raw.end(), row, row + stride);
+    }
+    uLongf bound = compressBound(static_cast<uLong>(raw.size()));
+    std::vector<unsigned char> idat(bound);
+    if (compress2(idat.data(), &bound, raw.data(),
+                  static_cast<uLong>(raw.size()), Z_BEST_SPEED) != Z_OK) {
+        return false;
+    }
+    idat.resize(bound);
+    std::vector<unsigned char> png = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
+    chunk(png, "IHDR", ihdr);
+    chunk(png, "IDAT", idat);
+    chunk(png, "IEND", {});
+    std::ofstream output(path, std::ios::binary);
+    output.write(reinterpret_cast<const char*>(png.data()),
+                 static_cast<std::streamsize>(png.size()));
+    output.close();
+    return static_cast<bool>(output);
+}
+
+bool CaptureViewerFrame(IApplication& app, const std::filesystem::path& path) {
+    uint32_t width = 0, height = 0;
+    app.GetFramebufferSize(width, height);
+    if (!width || !height) {
+        std::cerr << "Invalid Viewer capture dimensions\n";
+        return false;
+    }
+    std::vector<unsigned char> pixels(size_t(width) * height * 3);
+    GLint framebuffer, readBuffer, alignment;
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &framebuffer);
+    glGetIntegerv(GL_READ_BUFFER, &readBuffer);
+    glGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glReadBuffer(GL_FRONT);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+    const auto error = glGetError();
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+    glReadBuffer(readBuffer);
+    glPixelStorei(GL_PACK_ALIGNMENT, alignment);
+    if (error != GL_NO_ERROR) {
+        std::cerr << "Viewer framebuffer capture failed: " << error << '\n';
+        return false;
+    }
+    return WriteViewerCapturePng(path, width, height, pixels);
+}
+}  // namespace
+#endif
+
 int main(int argc, char** argv) {
     int ret;
     GuiContext gui;
@@ -110,6 +209,23 @@ int main(int argc, char** argv) {
         std::cerr << selection.error << '\n';
         return 1;
     }
+#if defined(OS_WINDOWS)
+    // The Win32 OpenGL host has no RHI-level self-capture. Honor the shared
+    // GEFS_SCREENSHOT_PATH contract in the main loop (45s render gate or an
+    // explicit GEFS_SCREENSHOT_WAIT_FOR marker, then retire), so headless CI
+    // can grab the presented frame without a visible interactive desktop.
+    std::filesystem::path openglScreenshotPath;
+    std::filesystem::path openglScreenshotGate;
+    const bool openglScreenshotRequested =
+        *selection.backend == RhiBackend::OpenGL &&
+        std::getenv("GEFS_SCREENSHOT_PATH") != nullptr;
+    if (openglScreenshotRequested) {
+        openglScreenshotPath = std::getenv("GEFS_SCREENSHOT_PATH");
+        if (const auto* gate = std::getenv("GEFS_SCREENSHOT_WAIT_FOR"))
+            openglScreenshotGate = gate;
+    }
+    const auto openglCaptureStart = std::chrono::steady_clock::now();
+#endif
     const std::string windowTitle = std::string("Viewer - ") +
         std::string(RhiStartupPlatformName()) + "/" +
         std::string(RhiBackendName(*selection.backend)) + " (" +
@@ -245,6 +361,24 @@ int main(int argc, char** argv) {
 #else
     while (!app.IsQuit()) {
         app.Tick();
+#if defined(OS_WINDOWS) && defined(MYGE_RUNTIME_RHI)
+        if (openglScreenshotRequested) {
+            const bool ready =
+                openglScreenshotGate.empty()
+                    ? std::chrono::steady_clock::now() - openglCaptureStart >=
+                          std::chrono::seconds(45)
+                    : std::filesystem::exists(openglScreenshotGate);
+            if (ready) {
+                if (CaptureViewerFrame(app, openglScreenshotPath)) {
+                    std::cout << "Viewer OpenGL framebuffer capture saved: "
+                              << openglScreenshotPath.string() << '\n';
+                } else {
+                    std::cerr << "Viewer OpenGL framebuffer capture failed\n";
+                }
+                app.RequestQuit();
+            }
+        }
+#endif
     }
 #endif
 
