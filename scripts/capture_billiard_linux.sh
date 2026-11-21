@@ -26,7 +26,7 @@ done
 test -s "$output_dir/physics-passed"
 window_id=""
 for i in $(seq 1 10); do
-    window_id=$(xdotool search --onlyvisible --name "Billiard" 2>/dev/null | head -n 1) || true
+    window_id=$(xdotool search --name "Billiard" 2>/dev/null | head -n 1) || true
     [ -n "$window_id" ] && break
     sleep 1
 done

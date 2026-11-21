@@ -36,7 +36,7 @@ fi
 
 window_id=""
 for i in $(seq 1 10); do
-    window_id=$(xdotool search --onlyvisible --name "Viewer" 2>/dev/null | head -n 1) || true
+    window_id=$(xdotool search --name "Viewer" 2>/dev/null | head -n 1) || true
     [ -n "$window_id" ] && break
     sleep 1
 done
