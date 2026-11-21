@@ -109,6 +109,57 @@ int main(int, char**) {
         cerr << "FAILED: physics extension values were not preserved" << endl;
         return 1;
     }
+    auto deepNodes = [](int depth) {
+        string text;
+        for (int i = 0; i < depth; i++) text += "Node {";
+        for (int i = 0; i < depth; i++) text += "}";
+        return text;
+    };
+    if (!ogexParser.Parse(deepNodes(64)) || ogexParser.Parse(deepNodes(5000))) {
+        cerr << "FAILED: nesting must be bounded without rejecting normal "
+                "scenes"
+             << endl;
+        return 1;
+    }
+    if (ogexParser.Parse(string("Node {}\0Node {}", 15))) {
+        cerr << "FAILED: embedded NUL must fail parsing" << endl;
+        return 1;
+    }
+    const string indexPrefix =
+        "GeometryObject $geo { Mesh (primitive = \"triangles\") {"
+        "VertexArray (attrib = \"position\") {float[3] {{0,0,0},{1,0,0},"
+        "{0,1,0}}} IndexArray {";
+    for (const auto& invalid : {"unsigned_int32[3] {{0, 1, 3}}",
+                                "unsigned_int8[3] {{0, 1, 255}}",
+                                "unsigned_int8[3] {{0, 1, 257}}"}) {
+        if (ogexParser.Parse(indexPrefix + invalid + "}}}")) {
+            cerr << "FAILED: invalid index array must fail parsing" << endl;
+            return 1;
+        }
+    }
+    if (!ogexParser.Parse(indexPrefix + "unsigned_int16[3] {{0, 1, 2}}}}}")) {
+        cerr << "FAILED: valid index array must load" << endl;
+        return 1;
+    }
+    if (ogexParser.Parse(geometryPrefix + ext +
+                         "\"collision\") {string {\"cone\"}}" +
+                         geometrySuffix)) {
+        cerr << "FAILED: unknown collision shape must fail parsing" << endl;
+        return 1;
+    }
+    const string animationPrefix =
+        "Node $n { Translation %t (kind = \"x\") {float {0}}\n"
+        "Animation { Track (target = %t) { Time (curve = \"linear\") {Key "
+        "{float {0, 1, 2}}} Value (curve = \"linear\") {Key {float {";
+    if (ogexParser.Parse(animationPrefix + "0, 1}}}}}}") ||
+        ogexParser.Parse(animationPrefix + "0, 1, 0x7F800000}}}}}}")) {
+        cerr << "FAILED: inconsistent animation keys must fail parsing" << endl;
+        return 1;
+    }
+    if (!ogexParser.Parse(animationPrefix + "0, 1, 4}}}}}}")) {
+        cerr << "FAILED: valid animation must load" << endl;
+        return 1;
+    }
     {
         shared_ptr<Scene> pScene = ogexParser.Parse(ogex_text);
         if (!pScene) {
