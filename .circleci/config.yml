@@ -916,6 +916,14 @@ jobs:
           name: Coverage (llvm-cov)
           command: |
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing llvm
+             # clang selects the newest GCC toolchain on the image, which may
+             # ship without libstdc++ dev files; pin one that can link C++.
+             for d in /usr/lib/gcc/x86_64-linux-gnu/*/; do
+               if [ -e "${d}libstdc++.so" ]; then
+                 export CFLAGS="--gcc-install-dir=${d%/}" CXXFLAGS="--gcc-install-dir=${d%/}"
+                 break
+               fi
+             done
              ./scripts/coverage_linux.sh build-coverage coverage
              if [ -n "$CODECOV_TOKEN" ]; then
                curl -fsSL https://cli.codecov.io/latest/linux/codecov -o codecov
