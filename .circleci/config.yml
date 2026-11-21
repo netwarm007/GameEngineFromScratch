@@ -367,7 +367,7 @@ jobs:
             $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
             $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
             if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT_DEBUG=Embedded -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache && cmake --build build"
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=ON -DD3D12_RHI_DEBUG=ON -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache && cmake --build build"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             sccache --show-stats
       - run:

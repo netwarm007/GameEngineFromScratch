@@ -81,7 +81,13 @@ if(BUILD_ALL_DESKTOP_RHIS AND CMAKE_CROSSCOMPILING)
 endif()
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D _CRT_SECURE_NO_WARNINGS /MP /utf-8")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D _CRT_SECURE_NO_WARNINGS /utf-8")
+    # /MP parallelizes within one cl invocation, which suits the Visual
+    # Studio generator. Under Ninja it oversubscribes cores and contends
+    # on the shared /Fd PDB (C1041), and sccache cannot cache /MP builds.
+    if(CMAKE_GENERATOR MATCHES "Visual Studio")
+        string(APPEND CMAKE_CXX_FLAGS " /MP")
+    endif()
 endif(MSVC)
 
 if(ANDROID)
