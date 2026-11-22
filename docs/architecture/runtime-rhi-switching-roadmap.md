@@ -20,8 +20,9 @@ selection checkpoint is complete. M3 (isolated reconstruction) is complete:
 the session contract, RHI injection, host/backend boundary, owned session
 composition with same-backend reconstruction, hardening, and the native
 reconstruction matrix are implemented and verified by full native
-three-platform CI (pipeline 1138). Hot switching (M4) and UI rollout (M5)
-remain separate checkpoints, each requiring human confirmation. Deliverable acceptance is the later all-roadmap +
+three-platform CI (pipeline 1138). The M3 checkpoint is human-confirmed;
+M4 (cross-backend switching) is in progress under the execution plan below.
+UI rollout (M5) remains a separate checkpoint requiring human confirmation. Deliverable acceptance is the later all-roadmap +
 three-platform-CI + PR gate.
 
 The working branch was fast-forwarded to master
@@ -557,6 +558,61 @@ primitives with injected graphics/GUI-platform failures, rollback, retry,
 and idempotent finalization) plus the unchanged native error-path smoke;
 native partial-init injection is not claimed. See the
 [M3 exact-revision verification](../verification/2fb4c0e73ff67a60fab0569557b804c42f64e2e6.md).
+
+### M4 execution plan
+
+M4 is human-confirmed (M3 checkpoint accepted). Work steps follow the same
+rule: self-check plus CI verification, no human stop between steps; only the
+completed M4 checkpoint requires confirmation before M5. The switch trigger
+UI remains M5; M4 verifies through a diagnostic CLI switch sequence.
+
+Constraints carried from the target switching sequence:
+
+- The host application object persists across switches; every module's
+  borrowed application pointer remains valid. Backend-native state moves out
+  of the concrete application classes into session-owned backend objects
+  implementing `IRenderBackend` against the persistent host; the concrete
+  application classes remain only for the legacy compile-time paths.
+- One request at a complete frame boundary (after main and secondary
+  viewport submission); overlapping requests get an explicit result;
+  selecting the active backend is a no-op; unavailable targets fail
+  explicitly without fallback.
+- Sequence: Running → Preflight → Quiescing → Retiring → Creating →
+  Restoring → FirstFrame → Running. Preflight failure keeps the old session.
+  Failure after retirement attempts one previous-backend reconstruction;
+  the failed switch is reported even when recovery succeeds; recovery
+  failure exits orderly with both errors. The retired session is never
+  reused.
+- Success publishes only after the restored scene completes a
+  rendered/presented frame; minimized/zero-size windows neither produce
+  false success nor busy-wait. Simulation pauses during the switch without
+  accumulating catch-up; platform event processing continues; stale window
+  events are discarded and held input reconciled on ownership changes.
+- Render conventions follow the active session (OpenGL projection correction
+  updates camera/projection before the first restored frame). The session
+  generation invalidates borrowed GPU references and UI caches; the same
+  Scene is reconstructed without a new CPU revision; UI interaction state
+  persists in the GUI context.
+
+| Work step | Work | Verification boundary |
+| --- | --- | --- |
+| M4.1: backend lifecycle detachment | Move backend-native state (D3D12/Vulkan RHI, WGL/GLX/SDL contexts, Metal view creation, backend-specific GUI platform binding) out of the concrete applications into session-owned backend objects implementing `IRenderBackend` against the persistent host; runtime factories produce host + backend + session modules; root orchestrates the backend object directly. | Headless contract tests; native startup matrix and same-backend reconstruction matrix stay green (no behavior change). |
+| M4.2: switch state machine and request contract | Frame-boundary switch processing with the full state sequence, explicit request results, same-backend no-op, preflight (compiled inclusion + runtime availability), generation bump, render-convention update; diagnostic `--rhi-switch` sequence entry for verification runs. | Headless state-machine tests (ordering, overlap rejection, no-op, preflight failure keeps old session); native A/B switch smoke. |
+| M4.3: window/view rebinding, pause, and input reconciliation | Cross-backend window policy (recreate when either side's native constraints require it; preserve logical geometry, DPI-aware layout, floating-panel placement), Metal/Vulkan Cocoa view integration, simulation pause without catch-up, stale-event discard, held-input reconciliation, FirstFrame gate including minimized/zero-size windows. | Headless pause/gate tests where feasible; native A/B/A with state preservation. |
+| M4.4: failure recovery | Preflight failure keeps the old session; post-retirement failure triggers one previous-backend reconstruction with the failed switch reported; recovery failure exits orderly with both errors; retired sessions never reused. | Headless injected-failure coverage on the production state machine; native failure smoke where CI can drive it. |
+| M4.5: native A/B/A acceptance and CI consolidation | Directed switch matrix over the CI-feasible pairs (Windows d3d12/opengl/vulkan, Linux opengl/vulkan, macOS metal/vulkan): A/B/A restores the scene (capture comparison) and physics state; failure-path evidence; exact-revision verification records; resolve M4-owned limitation rows. | Full exact-revision three-platform CI; M4 checkpoint self-check complete, then human confirmation before M5. |
+
+Decision points to settle during implementation and record here:
+
+- Cross-backend window policy per pair: WGL/GLX/SDL sides force recreation;
+  Metal↔Vulkan on Cocoa may replace the content view/layer without window
+  recreation — choose per evidence, preserving geometry/DPI/panels either
+  way.
+- Backend-specific GUI platform binding (SDL `InitForOpenGL`, Win32
+  `InitForOpenGL`, Darwin Vulkan surface callback) moves with the backend
+  object; the host exposes the generic bind/unbind surface.
+- The diagnostic switch sequence syntax and frame pacing are verification
+  scaffolding, not the M5 UI contract.
 
 ## Verification and acceptance
 
