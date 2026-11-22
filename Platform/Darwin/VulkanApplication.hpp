@@ -17,6 +17,9 @@ class VulkanApplication : public CocoaApplication, public IRenderBackend {
 
     VulkanRHI& GetRHI() { return m_Backend->GetRHI(); }
 
+    void CreateMainWindow() override { CocoaApplication::CreateMainWindow(); }
+    void FinalizeGuiPlatform() final { m_Backend->FinalizeGuiPlatform(); }
+
    private:
     int InitializeGraphicsResources() final {
         return m_Backend->InitializeGraphicsResources();

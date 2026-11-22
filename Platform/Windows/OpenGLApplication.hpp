@@ -22,10 +22,13 @@ class OpenGLApplication : public WindowsApplication, public IRenderBackend {
         PresentFrame();
     }
 
+    void CreateMainWindow() override { WindowsApplication::CreateMainWindow(); }
+
    private:
     int InitializeGuiPlatform() override {
         return m_Backend.InitializeGuiPlatform();
     }
+    void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
     int InitializeGraphicsResources() override {
         return m_Backend.InitializeGraphicsResources();
     }

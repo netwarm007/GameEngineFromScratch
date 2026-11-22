@@ -23,6 +23,14 @@ class D3d12Application : public WindowsApplication, public IRenderBackend {
         return CreateEvent(nullptr, FALSE, FALSE, nullptr);
     }
 
+    void CreateMainWindow() override { WindowsApplication::CreateMainWindow(); }
+    int InitializeGuiPlatform() override {
+        return WindowsApplication::InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override {
+        WindowsApplication::FinalizeGuiPlatform();
+    }
+
    private:
     void BindFenceFactory() {
         m_Backend.SetFenceEventFactory([this] { return CreateFenceEvent(); });

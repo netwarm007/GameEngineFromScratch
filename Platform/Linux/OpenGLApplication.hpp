@@ -14,6 +14,11 @@ class OpenGLApplication : public XcbApplication, public IRenderBackend {
 
     void CreateMainWindow() override;
 
+    int InitializeGuiPlatform() override {
+        return XcbApplication::InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { XcbApplication::FinalizeGuiPlatform(); }
+
    private:
     int InitializeGraphicsResources() override;
     void WaitForGraphicsIdle() override;

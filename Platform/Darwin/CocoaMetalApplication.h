@@ -18,6 +18,12 @@ class CocoaMetalApplication : public CocoaApplication, public IRenderBackend {
     // resources exist or when the content view is not Metal.
     MetalView* GetMetalView() { return m_Backend.GetMetalView(); }
 
+    void CreateMainWindow() override { CocoaApplication::CreateMainWindow(); }
+    int InitializeGuiPlatform() override {
+        return m_Backend.InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
+
    private:
     int InitializeGraphicsResources() override {
         return m_Backend.InitializeGraphicsResources();

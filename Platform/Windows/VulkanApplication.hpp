@@ -17,10 +17,13 @@ class VulkanApplication : public WindowsApplication, public IRenderBackend {
 
     VulkanRHI& GetRHI() { return m_Backend->GetRHI(); }
 
+    void CreateMainWindow() override { WindowsApplication::CreateMainWindow(); }
+
    private:
     int InitializeGraphicsResources() final {
         return m_Backend->InitializeGraphicsResources();
     }
+    void FinalizeGuiPlatform() final { m_Backend->FinalizeGuiPlatform(); }
     int InitializeGuiPlatform() final {
         return m_Backend->InitializeGuiPlatform();
     }

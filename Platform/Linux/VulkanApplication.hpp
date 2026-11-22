@@ -19,6 +19,12 @@ class VulkanApplication : public XcbApplication, public IRenderBackend {
 
     VulkanRHI& GetRHI() { return m_Backend.GetRHI(); }
 
+    void CreateMainWindow() override { XcbApplication::CreateMainWindow(); }
+    int InitializeGuiPlatform() override {
+        return m_Backend.InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
+
    private:
     int InitializeGraphicsResources() final {
         return m_Backend.InitializeGraphicsResources();

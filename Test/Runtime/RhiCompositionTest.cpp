@@ -48,6 +48,11 @@ class CountingApplication : public BaseApplication, public IRenderBackend {
     static int live;
     CountingApplication() { ++live; }
     ~CountingApplication() override { --live; }
+    void CreateMainWindow() override { BaseApplication::CreateMainWindow(); }
+    int InitializeGuiPlatform() override {
+        return BaseApplication::InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { BaseApplication::FinalizeGuiPlatform(); }
 };
 int CountingApplication::live = 0;
 

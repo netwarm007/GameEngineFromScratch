@@ -38,7 +38,8 @@ if(Vulkan_FOUND)
         $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
     )
     if(SDL2_FOUND)
-        target_include_directories(PlatformVulkanXcb PRIVATE ${SDL2_INCLUDE_DIR})
+        target_include_directories(PlatformVulkanXcb PRIVATE
+            ${SDL2_INCLUDE_DIR} "${PROJECT_SOURCE_DIR}/Platform/Sdl")
         target_link_libraries(PlatformVulkanXcb ${SDL2_LIBRARY} ImGuiSDL2Backend)
     endif()
 endif()
