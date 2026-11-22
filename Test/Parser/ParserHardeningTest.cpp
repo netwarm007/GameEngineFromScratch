@@ -304,6 +304,7 @@ int main() {
 
         Buffer empty;
         CHECK(parser.Parse(empty).data == nullptr);
+        CHECK(ParseImage(parser, std::vector<uint8_t>{0x89}).data == nullptr);
     }
 
     // ---- TGA ----------------------------------------------------------------

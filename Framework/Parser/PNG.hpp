@@ -97,7 +97,6 @@ class PngParser : _implements_ ImageParser {
         Image img;
 
         const uint8_t* pData = buf.GetData();
-        const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
 
         bool imageDataStarted = false;
         bool imageDataEnded = false;
@@ -112,6 +111,7 @@ class PngParser : _implements_ ImageParser {
             return img;
         }
 
+        const uint8_t* pDataEnd = pData + buf.GetDataSize();
         const auto* pFileHeader =
             reinterpret_cast<const PNG_FILEHEADER*>(pData);
         pData += sizeof(PNG_FILEHEADER);

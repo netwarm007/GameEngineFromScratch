@@ -93,36 +93,37 @@ void GuiSubPass::DrawSceneNode(const std::shared_ptr<BaseSceneNode>& node) {
 
 void GuiSubPass::DrawSceneNodeDetail(const BaseSceneNode& node) {
     const auto kind = node.GetKind();
-    ImGui::Text((const char*)u8"名称: %s", node.GetName().c_str());
-    ImGui::Text((const char*)u8"类型: %s", SceneNodeKindName(kind));
-    ImGui::Text((const char*)u8"子节点数: %zu", node.GetChildCount());
-    ImGui::Text((const char*)u8"动画剪辑数: %zu", node.GetAnimationClipCount());
+    ImGui::Text("%s: %s", (const char*)u8"名称", node.GetName().c_str());
+    ImGui::Text("%s: %s", (const char*)u8"类型", SceneNodeKindName(kind));
+    ImGui::Text("%s: %zu", (const char*)u8"子节点数", node.GetChildCount());
+    ImGui::Text("%s: %zu", (const char*)u8"动画剪辑数", node.GetAnimationClipCount());
 
     switch (kind) {
         case SceneNodeKind::Geometry: {
             const auto& n = static_cast<const SceneGeometryNode&>(node);
-            ImGui::Text((const char*)u8"对象引用: %s",
+            ImGui::Text("%s: %s", (const char*)u8"对象引用",
                         n.GetSceneObjectRef().c_str());
-            ImGui::Text((const char*)u8"可见: %s  投射阴影: %s  运动模糊: %s",
-                        n.Visible() ? "Y" : "N", n.CastShadow() ? "Y" : "N",
+            ImGui::Text("%s: %s  %s: %s  %s: %s", (const char*)u8"可见",
+                        n.Visible() ? "Y" : "N", (const char*)u8"投射阴影",
+                        n.CastShadow() ? "Y" : "N", (const char*)u8"运动模糊",
                         n.MotionBlur() ? "Y" : "N");
             break;
         }
         case SceneNodeKind::Light: {
             const auto& n = static_cast<const SceneLightNode&>(node);
-            ImGui::Text((const char*)u8"对象引用: %s",
+            ImGui::Text("%s: %s", (const char*)u8"对象引用",
                         n.GetSceneObjectRef().c_str());
-            ImGui::Text((const char*)u8"投射阴影: %s",
+            ImGui::Text("%s: %s", (const char*)u8"投射阴影",
                         n.CastShadow() ? "Y" : "N");
             break;
         }
         case SceneNodeKind::Camera: {
             const auto& n = static_cast<const SceneCameraNode&>(node);
-            ImGui::Text((const char*)u8"对象引用: %s",
+            ImGui::Text("%s: %s", (const char*)u8"对象引用",
                         n.GetSceneObjectRef().c_str());
             const auto& t = n.GetTarget();
-            ImGui::Text((const char*)u8"目标: (%.3f, %.3f, %.3f)", t[0], t[1],
-                        t[2]);
+            ImGui::Text("%s: (%.3f, %.3f, %.3f)", (const char*)u8"目标",
+                        t[0], t[1], t[2]);
             break;
         }
         default:
@@ -131,15 +132,15 @@ void GuiSubPass::DrawSceneNodeDetail(const BaseSceneNode& node) {
 
     ImGui::Separator();
     const auto m = *node.GetCalculatedTransform();
-    ImGui::Text((const char*)u8"局部变换");
-    ImGui::Text((const char*)u8"  平移: (%.3f, %.3f, %.3f)", m[3][0], m[3][1],
-                m[3][2]);
+    ImGui::TextUnformatted((const char*)u8"局部变换");
+    ImGui::Text("  %s: (%.3f, %.3f, %.3f)", (const char*)u8"平移", m[3][0],
+                m[3][1], m[3][2]);
     auto row_len = [&m](int r) {
         return std::sqrt(m[r][0] * m[r][0] + m[r][1] * m[r][1] +
                          m[r][2] * m[r][2]);
     };
-    ImGui::Text((const char*)u8"  缩放: (%.3f, %.3f, %.3f)", row_len(0),
-                row_len(1), row_len(2));
+    ImGui::Text("  %s: (%.3f, %.3f, %.3f)", (const char*)u8"缩放",
+                row_len(0), row_len(1), row_len(2));
 }
 
 void GuiSubPass::DrawSceneGraphWindow(const Frame& frame, bool* open) {
@@ -291,8 +292,8 @@ void GuiSubPass::Draw(Frame& frame) {
             ImGui::Begin((const char*)u8"关于《从零开始手敲次世代游戏引擎》系列", &show_app_about, ImGuiWindowFlags_AlwaysAutoResize);
             ImGui::Text("Game Engine From Scratch, v0.1.0");
             ImGui::Separator();
-            ImGui::Text((const char*)u8"由陈文礼和所有社区贡献者创建");
-            ImGui::Text((const char*)u8"本项目代码采用 MIT 许可。对应文章采用 CC-BY 许可。具体请参照各自的许可证说明。");
+            ImGui::TextUnformatted((const char*)u8"由陈文礼和所有社区贡献者创建");
+            ImGui::TextUnformatted((const char*)u8"本项目代码采用 MIT 许可。对应文章采用 CC-BY 许可。具体请参照各自的许可证说明。");
             ImGui::End();
         }
 
@@ -333,8 +334,8 @@ void GuiSubPass::Draw(Frame& frame) {
                     (float*)frame.clearColor);  // Edit 3 floats representing a color
 
                 float fps = ImGui::GetIO().Framerate;
-                ImGui::Text((const char*)u8"平均渲染时间 %.3f 毫秒/帧 (%.1f FPS)",
-                            1000.0f / fps,
+                ImGui::Text("%s %.3f %s (%.1f FPS)", (const char*)u8"平均渲染时间",
+                            1000.0f / fps, (const char*)u8"毫秒/帧",
                             fps);
                 
                 fps_data.push_back(fps);
@@ -350,7 +351,7 @@ void GuiSubPass::Draw(Frame& frame) {
 
             ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
             if (ImGui::CollapsingHeader((const char*)u8"全局贴图")) {
-                ImGui::Text(
+                ImGui::TextUnformatted(
                     (const char*)u8"阴影贴图");
 
                 for (int32_t i = 0; i < frame.frameContext.globalShadowMap.size; i++) {
@@ -544,7 +545,7 @@ void GuiSubPass::Draw(Frame& frame) {
 
                 // BRDF LUT
                 }
-                ImGui::Text(
+                ImGui::TextUnformatted(
                     (const char*)u8"BRDF LUT");
 
                 TexturePreviewer(frame.brdfLUT);

@@ -205,15 +205,21 @@ Buffer AssetLoader::SyncOpenAndReadBinary(const char* filePath) {
 
         if (length > 0 && length <= kMaxAssetFileSize) {
             uint8_t* data = new uint8_t[length];
-            length = fread(data, 1, length, static_cast<FILE*>(fp));
-#ifdef DEBUG
-            fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
-#endif
-            if (length > 0) {
-                buff.SetData(data, length);
-            } else {
+            const size_t bytesRead =
+                fread(data, 1, length, static_cast<FILE*>(fp));
+            if (bytesRead != length) {
+                fprintf(stderr,
+                        "Error reading file '%s': expected %zu bytes, read %zu\n",
+                        filePath, length, bytesRead);
                 delete[] data;
+                CloseFile(fp);
+                return buff;
             }
+#ifdef DEBUG
+            fprintf(stderr, "Read file '%s', %zu bytes\n", filePath,
+                    bytesRead);
+#endif
+            buff.SetData(data, bytesRead);
         } else if (length > kMaxAssetFileSize) {
             fprintf(stderr, "File '%s' too large (%zu bytes), rejected\n",
                     filePath, length);

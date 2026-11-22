@@ -239,7 +239,7 @@ endif(SDL2_FOUND)
     install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
     install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
     install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
-ENDIF(APPLE)
+ENDIF()
 
 add_dependencies(Viewer Engine_Asset)
 target_link_libraries(Viewer SplashSequence)

@@ -11,6 +11,12 @@ Image LoadGuiIconImage(const char* path) {
         return {};
     }
     Buffer buffer = loader.SyncOpenAndReadBinary(path);
+    if (!buffer.GetData() || buffer.GetDataSize() < sizeof(PNG_FILEHEADER)) {
+        std::cerr << "[GuiIconLoader] Failed to read icon: " << path
+                  << std::endl;
+        return {};
+    }
+
     PngParser parser;
     Image image = parser.Parse(buffer);
     if (!image.data) {
