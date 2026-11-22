@@ -1,4 +1,6 @@
 #pragma once
+#include <bit>
+#include <cstdint>
 // based on https://gist.github.com/mertin-kallman/5049614
 // float32
 // Martin Kallman
@@ -27,5 +29,5 @@ inline float float32(const uint16_t in) {
 
     t1 |= t2;
 
-    return *reinterpret_cast<float *>(&t1);
+    return std::bit_cast<float>(t1);
 }

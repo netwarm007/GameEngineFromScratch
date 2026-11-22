@@ -151,7 +151,14 @@ Buffer AssetLoader::SyncOpenAndReadBinary(const char* filePath) {
         size_t length = GetSize(fp);
 
         uint8_t* data = new uint8_t[length];
-        fread(data, length, 1, static_cast<FILE*>(fp));
+        const size_t bytesRead = fread(data, 1, length, static_cast<FILE*>(fp));
+        if (bytesRead != length) {
+            fprintf(stderr, "Error reading file '%s': expected %zu bytes, read %zu\n",
+                    filePath, length, bytesRead);
+            delete[] data;
+            CloseFile(fp);
+            return buff;
+        }
 #ifdef DEBUG
         fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
 #endif

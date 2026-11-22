@@ -1,4 +1,6 @@
 #pragma once
+#include <cstddef>
+
 #include "Geometry.hpp"
 
 namespace My {
@@ -50,7 +52,7 @@ struct Polyhedron : public Geometry<T> {
         FacePtr<T> pFace = std::make_shared<Face<T>>();
         auto count = vertices.size();
         assert(count >= 3);
-        for (auto i = 0; i < vertices.size(); i++) {
+        for (std::size_t i = 0; i < count; i++) {
             pFace->Edges.push_back(std::make_shared<Edge<T>>(
                 vertices[i], vertices[(i + 1) == count ? 0 : i + 1]));
         }

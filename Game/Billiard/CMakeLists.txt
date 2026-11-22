@@ -99,7 +99,7 @@ ELSEIF(WA)
     set_target_properties(BilliardGame
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_SDL=2 -s USE_WEBGL2=1"
             )
-ELSE(APPLE)
+ELSE()
     if(WIN32 AND BILLIARD_USE_D3D12)
         set(BILLIARD_RHI D3dRHI)
     else()
@@ -111,4 +111,4 @@ ELSE(APPLE)
                             Framework
                             PlatformInterface
                         )
-ENDIF(APPLE)
+ENDIF()
