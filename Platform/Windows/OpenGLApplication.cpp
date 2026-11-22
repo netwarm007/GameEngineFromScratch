@@ -128,7 +128,10 @@ int OpenGLApplication::Initialize() {
 
 void OpenGLApplication::Tick() {
     WindowsApplication::Tick();
+    PresentFrame();
+}
 
+void OpenGLApplication::PresentFrame() {
     // Present the back buffer to the screen since rendering is complete.
     SwapBuffers(m_hDC);
 }

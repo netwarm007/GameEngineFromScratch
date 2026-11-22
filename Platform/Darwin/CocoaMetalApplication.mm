@@ -37,7 +37,9 @@ int CocoaMetalApplication::InitializeGraphicsResources() {
     return 0;
 }
 
-void CocoaMetalApplication::Tick() {
+void CocoaMetalApplication::Tick() { CocoaApplication::Tick(); }
+
+void CocoaMetalApplication::ProcessEvents() {
     // Physics advances a fixed step per tick. A headless `-screenshot` run without
     // `-screenshotWaitFor` is paced to 60 ticks/s so a timed capture sees the
     // same simulation time as a vsynced display, not tens of thousands of steps.
@@ -54,5 +56,5 @@ void CocoaMetalApplication::Tick() {
         }
         nextTick = (std::max)(nextTick, now) + 1.0 / 60.0;
     }
-    CocoaApplication::Tick();
+    CocoaApplication::ProcessEvents();
 }

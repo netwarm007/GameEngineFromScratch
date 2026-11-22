@@ -255,7 +255,11 @@ int OpenGLApplication::InitializeGraphicsResources() {
 void OpenGLApplication::Tick() {
     if (!m_Context) return;
     XcbApplication::Tick();
-    glXSwapBuffers(m_pDisplay, m_XWindow);
+    PresentFrame();
+}
+
+void OpenGLApplication::PresentFrame() {
+    if (m_Context) glXSwapBuffers(m_pDisplay, m_XWindow);
 }
 
 void OpenGLApplication::FinalizeGraphicsResources() {

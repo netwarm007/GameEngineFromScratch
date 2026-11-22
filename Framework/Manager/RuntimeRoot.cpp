@@ -98,6 +98,7 @@ void RuntimeRoot::Tick() {
     if (m_Platform) m_Platform->ProcessEvents();
     BeginFrame();
     TickFrame(m_FramePlan);
+    if (m_Backend) m_Backend->PresentFrame();
 }
 
 void RuntimeRoot::RetireSessionForReconstruction(bool recreateWindow) {

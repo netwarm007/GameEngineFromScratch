@@ -20,6 +20,7 @@ class OpenGLApplication : public SdlApplication, public IRenderBackend {
     void FinalizeGuiPlatform() override;
     void WaitForGraphicsIdle() override {}
     void FinalizeGraphicsResources() override;
+    void PresentFrame() override;
 
     SDL_GLContext m_hContext = nullptr;
 };

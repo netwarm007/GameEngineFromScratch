@@ -15,6 +15,7 @@ class OpenGLApplication : public WindowsApplication, public IRenderBackend {
     int InitializeGraphicsResources() override;
     void WaitForGraphicsIdle() override;
     void FinalizeGraphicsResources() override;
+    void PresentFrame() override;
     HDC m_hDC = nullptr;
     HGLRC m_RenderContext = nullptr;
     int m_nPixelFormat;

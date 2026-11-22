@@ -23,5 +23,10 @@ _Interface_ IRenderBackend {
     // Release backend-native state. Must be safe after partial
     // initialization and safe to call repeatedly.
     virtual void FinalizeGraphicsResources() = 0;
+
+    // Present the completed frame to the native window (buffer swap) after
+    // the module frame. Backends that present inside the graphics manager
+    // keep the default no-op.
+    virtual void PresentFrame() {}
 };
 }  // namespace My

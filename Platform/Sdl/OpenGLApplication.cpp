@@ -88,5 +88,7 @@ void OpenGLApplication::FinalizeGraphicsResources() {
 
 void OpenGLApplication::Tick() {
     SdlApplication::Tick();
-    SDL_GL_SwapWindow(m_pWindow);
+    PresentFrame();
 }
+
+void OpenGLApplication::PresentFrame() { SDL_GL_SwapWindow(m_pWindow); }

@@ -14,6 +14,7 @@ class CocoaMetalApplication : public CocoaApplication, public IRenderBackend {
     MetalView* GetMetalView();
 
     void Tick() override;
+    void ProcessEvents() override;
 
    protected:
     int InitializeGraphicsResources() override;

@@ -18,6 +18,7 @@ class OpenGLApplication : public XcbApplication, public IRenderBackend {
     int InitializeGraphicsResources() override;
     void WaitForGraphicsIdle() override;
     void FinalizeGraphicsResources() override;
+    void PresentFrame() override;
     GLXContext m_Context = nullptr;
     GLXWindow m_GlxWindow = 0;
     GLXFBConfig fb_config;
