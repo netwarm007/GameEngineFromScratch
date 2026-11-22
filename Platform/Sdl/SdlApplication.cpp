@@ -105,6 +105,8 @@ void SdlApplication::FinalizePlatformResources() {
     m_pWindow = nullptr;
 }
 
+void SdlApplication::ShutdownPlatform() { SDL_Quit(); }
+
 void SdlApplication::Tick() {
     ProcessEvents();
     BaseApplication::Tick();

@@ -6,6 +6,17 @@
 
 namespace My {
 
+RhiSessionModules ComposeMetalSession(BaseApplication& host,
+                                      ISceneManager& sceneManager) {
+    auto& application = static_cast<CocoaMetalApplication&>(host);
+    RhiSessionModules modules;
+    modules.pipelineStateManager = std::make_unique<MetalPipelineStateManager>();
+    modules.graphicsManager = std::make_unique<Metal2GraphicsManager>(
+        sceneManager, *modules.pipelineStateManager,
+        [&application] { return application.GetMetalView(); });
+    return modules;
+}
+
 std::unique_ptr<RhiStartupComposition> ComposeMetalStartup(
     GfxConfiguration& configuration, ISceneManager& sceneManager,
     IAssetReader& /*assetReader*/) {
@@ -14,13 +25,9 @@ std::unique_ptr<RhiStartupComposition> ComposeMetalStartup(
     configuration.fixOpenGLPerspectiveMatrix = false;
     composition->application =
         std::make_unique<CocoaMetalApplication>(configuration);
-    composition->pipelineStateManager =
-        std::make_unique<MetalPipelineStateManager>();
-    auto* application =
-        static_cast<CocoaMetalApplication*>(composition->application.get());
-    composition->graphicsManager = std::make_unique<Metal2GraphicsManager>(
-        sceneManager, *composition->pipelineStateManager,
-        [application] { return application->GetMetalView(); });
+    auto modules = ComposeMetalSession(*composition->application, sceneManager);
+    composition->pipelineStateManager = std::move(modules.pipelineStateManager);
+    composition->graphicsManager = std::move(modules.graphicsManager);
     return composition;
 }
 

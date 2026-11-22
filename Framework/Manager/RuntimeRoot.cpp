@@ -87,7 +87,10 @@ void RuntimeRoot::Finalize() {
         m_Backend->FinalizeGraphicsResources();
         m_GraphicsInitialized = false;
     }
-    if (m_Platform) m_Platform->FinalizePlatformResources();
+    if (m_Platform) {
+        m_Platform->FinalizePlatformResources();
+        m_Platform->ShutdownPlatform();
+    }
     ReleaseMemorySystem();
 }
 

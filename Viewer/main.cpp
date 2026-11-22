@@ -16,6 +16,7 @@
 
 #if defined(MYGE_RUNTIME_RHI)
 #include "RhiComposition.hpp"
+#include "Framework/Manager/RuntimeRoot.hpp"
 
 #include <iostream>
 #if defined(OS_WINDOWS)
@@ -266,8 +267,21 @@ int main(int argc, char** argv) {
     DebugManager debugManager;
 #endif
 #if defined(MYGE_RUNTIME_RHI)
+    // Same-backend reconstruction cycles requested for verification runs
+    // (M3.6); executed once after the first presented frame.
+    int rhiReconstructCycles = 0;
+    for (size_t i = 0; i + 1 < rhiOptions.applicationArguments.size(); ++i) {
+        if (std::string(rhiOptions.applicationArguments[i]) ==
+            "--rhi-reconstruct") {
+            rhiReconstructCycles =
+                std::atoi(rhiOptions.applicationArguments[i + 1]);
+        }
+    }
+
+    RuntimeRoot root;
     auto composed = CreateRhiStartupComposition(
-        *selection.backend, config, sceneManager, assetLoader);
+        *selection.backend, config, sceneManager, assetLoader,
+        [&root] { return root.GetMemorySystem(); });
     if (!composed.composition) {
         std::cerr << composed.error << '\n';
         return 1;
@@ -276,6 +290,23 @@ int main(int argc, char** argv) {
     IGraphicsManager* graphicsManager = composed.composition->graphicsManager.get();
     IPipelineStateManager* pipelineStateManager =
         composed.composition->pipelineStateManager.get();
+    auto* platformHost = dynamic_cast<IPlatformHost*>(&app);
+    auto* renderBackend = dynamic_cast<IRenderBackend*>(&app);
+    if (!platformHost || !renderBackend) {
+        std::cerr << "Selected backend does not provide a platform host\n";
+        return 1;
+    }
+    root.SetHost(app, *platformHost, *renderBackend);
+    auto buildFramePlan = [&] {
+        std::vector<IRuntimeModule*> plan = {
+            &animationManager, &splashSequence, &assetLoader, graphicsManager,
+            &inputManager, &memoryManager, &physicsManager, pipelineStateManager,
+            &sceneManager, &gameLogic};
+#ifdef DEBUG
+        plan.push_back(&debugManager);
+#endif
+        return plan;
+    };
 #elif defined(MYGE_USE_VULKAN)
     VulkanPipelineStateManager pipelineStateManager(app.GetRHI(), assetLoader);
     VulkanGraphicsManager graphicsManager(app.GetRHI(), sceneManager, pipelineStateManager);
@@ -303,26 +334,37 @@ int main(int argc, char** argv) {
     app.SetCommandLineParameters(argc, argv);
 #endif
 
+#if defined(MYGE_RUNTIME_RHI)
+    // Persistent CPU services outlive every render session; the session slot
+    // owns the replaceable graphics/pipeline managers. Frame order stays the
+    // historical interleaved registration order via buildFramePlan.
+    root.RegisterPersistentModule(animationManager);
+    root.RegisterPersistentModule(splashSequence);
+    root.RegisterPersistentModule(assetLoader);
+    root.RegisterPersistentModule(inputManager);
+    root.RegisterPersistentModule(memoryManager);
+    root.RegisterPersistentModule(physicsManager);
+    root.RegisterPersistentModule(sceneManager);
+    root.RegisterPersistentModule(gameLogic);
+#ifdef DEBUG
+    root.RegisterPersistentModule(debugManager);
+#endif
+    root.RegisterSessionModule(*graphicsManager);
+    root.RegisterSessionModule(*pipelineStateManager);
+#else
     app.RegisterManagerModule(&animationManager);
     app.RegisterManagerModule(&splashSequence);
     app.RegisterManagerModule(&assetLoader);
-#if defined(MYGE_RUNTIME_RHI)
-    app.RegisterManagerModule(graphicsManager);
-#else
     app.RegisterManagerModule(&graphicsManager);
-#endif
     app.RegisterManagerModule(&inputManager);
     app.RegisterManagerModule(&memoryManager);
     app.RegisterManagerModule(&physicsManager);
-#if defined(MYGE_RUNTIME_RHI)
-    app.RegisterManagerModule(pipelineStateManager);
-#else
     app.RegisterManagerModule(&pipelineStateManager);
-#endif
     app.RegisterManagerModule(&sceneManager);
     app.RegisterManagerModule(&gameLogic);
 #ifdef DEBUG
     app.RegisterManagerModule(&debugManager);
+#endif
 #endif
 
     // Initialize ImGui
@@ -356,11 +398,20 @@ int main(int argc, char** argv) {
     // Create Main Window
     app.CreateMainWindow();
 
+#if defined(MYGE_RUNTIME_RHI)
+    ret = root.Initialize();
+    if (ret != 0) {
+        root.Finalize();
+        return ret;
+    }
+    root.SetFramePlan(buildFramePlan());
+#else
     ret = app.Initialize();
     if (ret != 0) {
         app.Finalize();
         return ret;
     }
+#endif
 
     // Drive the modules ahead
 #if defined(OS_WEBASSEMBLY)
@@ -369,7 +420,30 @@ int main(int argc, char** argv) {
     emscripten_set_main_loop(main_loop, 0, true);
 #else
     while (!app.IsQuit()) {
+#if defined(MYGE_RUNTIME_RHI)
+        root.Tick();
+        if (rhiReconstructCycles > 0) {
+            const int cycles = rhiReconstructCycles;
+            rhiReconstructCycles = 0;
+            for (int i = 0; i < cycles; ++i) {
+                if (ReconstructRhiSession(
+                        root, *composed.composition, sceneManager, assetLoader,
+                        [&root] { return root.GetMemorySystem(); }) != 0) {
+                    std::cerr << "RHI session reconstruction failed\n";
+                    app.RequestQuit();
+                    break;
+                }
+                graphicsManager = composed.composition->graphicsManager.get();
+                pipelineStateManager =
+                    composed.composition->pipelineStateManager.get();
+                root.SetFramePlan(buildFramePlan());
+                std::cout << "RHI session reconstructed (cycle " << i + 1
+                          << ")\n";
+            }
+        }
+#else
         app.Tick();
+#endif
 #if defined(OS_WINDOWS) && defined(MYGE_RUNTIME_RHI)
         if (openglScreenshotRequested) {
             const bool ready =
@@ -393,7 +467,11 @@ int main(int argc, char** argv) {
 
 #if !defined(OS_WEBASSEMBLY)
     // Finalize App
+#if defined(MYGE_RUNTIME_RHI)
+    root.Finalize();
+#else
     app.Finalize();
+#endif
 #endif
 
     return ret;

@@ -24,6 +24,10 @@ _Interface_ IPlatformHost {
     // drawable survives session replacement skip it.
     virtual void FinalizePlatformResources() = 0;
 
+    // One-time platform subsystem shutdown at final teardown (e.g. SDL_Quit),
+    // after FinalizePlatformResources. Not called during reconstruction.
+    virtual void ShutdownPlatform() {}
+
     // Drain pending platform events and run GUI platform per-frame work
     // without ticking runtime modules. Safe to call while rendering is
     // paused.

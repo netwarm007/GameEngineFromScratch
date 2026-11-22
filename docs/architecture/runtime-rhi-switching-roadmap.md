@@ -499,6 +499,26 @@ no global state survives session replacement. The SDL host keeps the GL
 context coupled to the window lifetime; XCB ImGui parity remains the tracked
 follow-on.
 
+M3.4 makes the session boundary native. The composition layer splits each
+backend factory into a persistent host and a session-module factory
+(`CreateRhiSessionModules`); `ReconstructRhiSession` drives a same-backend
+cycle at a complete frame boundary — retire the session modules and native
+backend state, recreate the window where the backend requires it (OpenGL's
+WGL/GLX/SDL window-lifetime constraints; other backends rebuild on the
+existing drawable), recreate the backend and GUI platform binding, then
+compose, register, and activate fresh pipeline/graphics modules. The host
+application object persists across reconstruction, so every module's
+borrowed application pointer remains valid; persistent CPU services and the
+root's allocator stack are never touched. Viewer and Billiard orchestrate
+through `RuntimeRoot` (persistent group + session slot + caller-composed
+frame plan preserving the historical interleaved order); the legacy
+compile-time paths keep the application lifecycle. `--rhi-reconstruct N`
+runs N same-backend cycles after the first presented frame for verification
+runs. `IPlatformHost::ShutdownPlatform` carries one-time subsystem teardown
+(`SDL_Quit`) that the root path would otherwise bypass. The composition
+regression covers window/GPU-free session recomposition and the window
+policy flag; native reconstruction evidence is M3.6.
+
 ## Verification and acceptance
 
 - Add focused production-path headless tests for selection, ordering, rejected
