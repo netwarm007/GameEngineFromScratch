@@ -21,8 +21,10 @@ the session contract, RHI injection, host/backend boundary, owned session
 composition with same-backend reconstruction, hardening, and the native
 reconstruction matrix are implemented and verified by full native
 three-platform CI (pipeline 1138). The M3 checkpoint is human-confirmed;
-M4 (cross-backend switching) is in progress under the execution plan below.
-UI rollout (M5) remains a separate checkpoint requiring human confirmation. Deliverable acceptance is the later all-roadmap +
+the integration merge into `feat/runtime-rhi-build` is verified separately
+(pipeline 1139). M4 (cross-backend switching) is in progress under the
+execution plan below. UI rollout (M5) remains a separate checkpoint
+requiring human confirmation. Deliverable acceptance is the later all-roadmap +
 three-platform-CI + PR gate.
 
 The working branch was fast-forwarded to master
