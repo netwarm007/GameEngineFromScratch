@@ -618,6 +618,95 @@ jobs:
             Run-Billiard 'opengl' 'billiard-matrix/opengl'
             Run-Billiard 'vulkan' 'billiard-matrix/vulkan'
       - run:
+          name: Same-backend reconstruction matrix
+          no_output_timeout: 30m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+            $baseline = 'screenshots/viewer-render.png'
+            if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
+            if (-not ($viewer -and $billiard)) { throw 'Application executables not found' }
+            # Mesa software drivers and the lavapipe ICD registry entry were
+            # deployed by the startup matrix steps and persist machine-wide.
+            # Two same-backend destroy/recreate cycles run after the first
+            # presented frame; the capture must still match the startup
+            # baseline (CPU scene preserved, GPU resources rebuilt).
+            foreach ($backend in @('d3d12','opengl','vulkan')) {
+              $out = "screenshots/reconstruct/$backend"
+              New-Item -ItemType Directory -Force $out | Out-Null
+              $resolved = (Resolve-Path $out).Path
+              $ext = 'png'; if ($backend -eq 'vulkan') { $ext = 'ppm' }
+              $png = Join-Path $resolved "viewer-render.$ext"
+              if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+              $env:GEFS_SCREENSHOT_PATH = $png
+              $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend,'--rhi-reconstruct','2') -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+              try {
+                if (-not $proc.WaitForExit(240000)) { throw "$backend viewer reconstruction timed out" }
+              } finally {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                if ($backend -eq 'opengl') {
+                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                }
+              }
+              if (-not (Test-Path $png)) {
+                Get-Content "$out/viewer.log","$out/viewer-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                throw "$backend reconstruction capture missing"
+              }
+              if (-not (Select-String -Path "$out/viewer.log" -Pattern 'RHI session reconstructed \(cycle 2\)' -Quiet)) {
+                throw "$backend reconstruction cycles did not run"
+              }
+              $tolArgs = @()
+              if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
+              python scripts/compare_captures.py $baseline $png --label "windows-reconstruct-$backend" @tolArgs
+              if ($LASTEXITCODE -ne 0) { throw "windows-reconstruct-$backend capture comparison failed" }
+            }
+            foreach ($backend in @('d3d12','opengl','vulkan')) {
+              $out = "billiard-reconstruct/$backend"
+              New-Item -ItemType Directory -Force $out | Out-Null
+              $resolved = (Resolve-Path $out).Path
+              $shot = $null
+              if ($backend -eq 'd3d12') { $shot = Join-Path $resolved 'billiard.png' }
+              if ($backend -eq 'vulkan') { $shot = Join-Path $resolved 'billiard.ppm' }
+              if ($shot) { $env:GEFS_SCREENSHOT_PATH = $shot }
+              else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
+              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $resolved 'physics-passed'
+              if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$backend,'--rhi-reconstruct','2','-physicsRegression',$resolved) -PassThru -RedirectStandardOutput "$out/billiard.log" -RedirectStandardError "$out/billiard-error.log"
+              $null = $proc.Handle
+              try {
+                if (-not $proc.WaitForExit(600000)) { throw "$backend billiard reconstruction timed out" }
+                $proc.Refresh()
+                if ($proc.ExitCode -ne 0) {
+                  Get-Content "$out/billiard.log","$out/billiard-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                  throw "$backend billiard reconstruction failed (exit $($proc.ExitCode))"
+                }
+              } finally {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+                if ($backend -eq 'opengl') {
+                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                }
+              }
+              if (-not (Test-Path (Join-Path $resolved 'physics-passed'))) { throw "$backend reconstruction physics-passed missing" }
+              if ($shot) { if (-not (Test-Path $shot)) { throw "$backend reconstruction capture missing" } }
+              elseif (-not (Test-Path (Join-Path $resolved 'billiard-after.bmp'))) { throw "$backend reconstruction BMP capture missing" }
+              if (-not (Select-String -Path "$out/billiard.log" -Pattern 'RHI session reconstructed \(cycle 2\)' -Quiet)) {
+                throw "$backend billiard reconstruction cycles did not run"
+              }
+              Write-Output "windows-billiard-reconstruct-${backend}: reconstruction + physics + capture OK"
+            }
+      - store_artifacts:
+          path: billiard-reconstruct
+          destination: billiard-reconstruct
+      - run:
           name: RHI selection diagnostics smoke
           command: |
             $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
@@ -955,6 +1044,57 @@ jobs:
       - store_artifacts:
           path: billiard-matrix
           destination: billiard-matrix
+      - run:
+          name: Same-backend reconstruction matrix
+          no_output_timeout: 25m
+          command: |
+             # Two same-backend destroy/recreate cycles run after the first
+             # presented frame; captures must still match the startup baseline
+             # (CPU scene preserved, GPU resources rebuilt). OpenGL recreates
+             # the SDL window; Vulkan rebuilds on the existing XCB window.
+             set -e
+             baseline="screenshots/viewer-render.png"
+             test -s "$baseline"
+             for backend in opengl vulkan; do
+               out="screenshots/reconstruct/$backend"; mkdir -p "$out"
+               if [ "$backend" = vulkan ]; then
+                 lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+                 if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
+                 export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+                 timeout --kill-after=5s 240s \
+                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                   ./build/Viewer/Viewer --rhi vulkan --rhi-reconstruct 2 -screenshot "$PWD/$out/viewer-render.ppm" \
+                   > "$out/viewer.log" 2>&1 || true
+                 if [ ! -s "$out/viewer-render.ppm" ]; then
+                   echo "=== linux-reconstruct-vulkan viewer.log ==="; cat "$out/viewer.log" || true; exit 1
+                 fi
+                 grep -q "Vulkan application framebuffer capture saved:" "$out/viewer.log"
+                 grep -q "RHI session reconstructed (cycle 2)" "$out/viewer.log"
+                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.ppm" --label linux-reconstruct-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.02
+               else
+                 LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
+                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                   bash scripts/capture_viewer_linux.sh "$out" --rhi opengl --rhi-reconstruct 2 \
+                   > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
+                 grep -q "RHI session reconstructed (cycle 2)" "$out/viewer.log"
+                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label linux-reconstruct-opengl
+               fi
+               bout="billiard-reconstruct/$backend"; mkdir -p "$bout"
+               LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
+                 xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                 bash scripts/capture_billiard_linux.sh "$bout" --rhi "$backend" --rhi-reconstruct 2 \
+                 > "$bout/capture.log" 2>&1 || { cat "$bout/capture.log" "$bout/billiard.log" 2>/dev/null; exit 1; }
+               test -s "$bout/physics-passed"
+               test -s "$bout/billiard-after.png"
+               grep -q "RHI session reconstructed (cycle 2)" "$bout/billiard.log"
+               echo "linux-reconstruct-$backend: viewer + billiard reconstruction OK"
+             done
+      - store_artifacts:
+          path: screenshots/reconstruct
+          destination: screenshots-reconstruct
+      - store_artifacts:
+          path: billiard-reconstruct
+          destination: billiard-reconstruct
       - run:
           name: Coverage (llvm-cov)
           command: |
@@ -1320,6 +1460,83 @@ jobs:
                fi
                echo "macos-billiard-$backend: startup + physics + capture OK"
              done
+      - run:
+          name: Same-backend reconstruction matrix
+          no_output_timeout: 25m
+          command: |
+             # Two same-backend destroy/recreate cycles run after the first
+             # presented frame; captures must still match the startup baseline
+             # (CPU scene preserved, GPU resources rebuilt). Metal and Vulkan
+             # rebuild on the existing Cocoa window.
+             set -e
+             baseline="screenshots/viewer-render.png"
+             test -s "$baseline"
+             APP=$(find build -type d -name Viewer.app | head -n 1)
+             test -n "$APP"
+             BAPP=$(find build -type d -name BilliardGame.app | head -n 1)
+             test -n "$BAPP"
+             for backend in metal vulkan; do
+               out="screenshots/reconstruct/$backend"; mkdir -p "$out"
+               ext=png
+               if [ "$backend" = vulkan ]; then
+                 ext=ppm
+                 export HOMEBREW_NO_AUTO_UPDATE=1
+                 brew install molten-vk vulkan-validationlayers spirv-tools
+                 export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+                 export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+                 export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+                 export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+                 export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+               fi
+               "$APP/Contents/MacOS/Viewer" --rhi "$backend" --rhi-reconstruct 2 \
+                 -screenshot "$PWD/$out/viewer-render.$ext" -screenshotDelay 60 -screenshotFrame 480 \
+                 > "$out/viewer.log" 2>&1 &
+               viewer_pid=$!
+               for i in $(seq 1 16); do
+                 sleep 15
+                 kill -0 "$viewer_pid" 2>/dev/null || break
+               done
+               kill "$viewer_pid" 2>/dev/null || true
+               wait "$viewer_pid" 2>/dev/null || true
+               if [ ! -s "$out/viewer-render.$ext" ]; then
+                 echo "=== macos-reconstruct-$backend viewer.log ==="; cat "$out/viewer.log" || true; exit 1
+               fi
+               grep -q "RHI session reconstructed (cycle 2)" "$out/viewer.log"
+               tol=""
+               if [ "$backend" = vulkan ]; then tol="--max-diff-fraction 0.40 --max-high-delta-fraction 0.02"; fi
+               python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-reconstruct-$backend" $tol
+               bout="billiard-reconstruct/$backend"; mkdir -p "$bout"
+               if [ "$backend" = vulkan ]; then
+                 shot="$PWD/$bout/billiard.ppm"
+                 GEFS_SCREENSHOT_WAIT_FOR="$PWD/$bout/physics-passed" \
+                   "$BAPP/Contents/MacOS/BilliardGame" --rhi vulkan --rhi-reconstruct 2 -physicsRegression "$PWD/$bout" \
+                   -screenshot "$shot" > "$bout/billiard.log" 2>&1 &
+               else
+                 shot="$PWD/$bout/billiard.png"
+                 "$BAPP/Contents/MacOS/BilliardGame" --rhi metal --rhi-reconstruct 2 -physicsRegression "$PWD/$bout" \
+                   -screenshot "$shot" -screenshotWaitFor "$PWD/$bout/physics-passed" -screenshotDelay 0 \
+                   > "$bout/billiard.log" 2>&1 &
+               fi
+               pid=$!
+               for i in $(seq 1 120); do
+                 sleep 5
+                 kill -0 "$pid" 2>/dev/null || break
+               done
+               kill "$pid" 2>/dev/null || true
+               wait "$pid" 2>/dev/null || true
+               if [ ! -s "$bout/physics-passed" ] || [ ! -s "$shot" ]; then
+                 echo "=== macos-billiard-reconstruct-$backend billiard.log ==="; cat "$bout/billiard.log" || true
+                 exit 1
+               fi
+               grep -q "RHI session reconstructed (cycle 2)" "$bout/billiard.log"
+               echo "macos-reconstruct-$backend: viewer + billiard reconstruction OK"
+             done
+      - store_artifacts:
+          path: screenshots/reconstruct
+          destination: screenshots-reconstruct
+      - store_artifacts:
+          path: billiard-reconstruct
+          destination: billiard-reconstruct
       - run:
           name: RHI selection diagnostics smoke
           command: |
