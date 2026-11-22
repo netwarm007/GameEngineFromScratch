@@ -1,15 +1,18 @@
 #include "BaseApplication.hpp"
+#include "IPlatformHost.hpp"
 #include "portable.hpp"
 
 OBJC_CLASS(NSWindow);
 
 namespace My {
-class CocoaApplication : public BaseApplication {
+class CocoaApplication : public BaseApplication, public IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 
     // One cycle of the main loop
     void Tick() override;
+
+    void ProcessEvents() override;
 
     void* GetMainWindowHandler() override;
 
@@ -17,9 +20,10 @@ class CocoaApplication : public BaseApplication {
 
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
-   protected:
     int InitializeGuiPlatform() override;
     void FinalizeGuiPlatform() override;
+
+   protected:
     void FinalizePlatformResources() override;
     NSWindow* m_pWindow = nullptr;
 };

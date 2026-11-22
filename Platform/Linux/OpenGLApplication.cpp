@@ -275,3 +275,9 @@ void OpenGLApplication::FinalizeGraphicsResources() {
         XSync(m_pDisplay, False);
     }
 }
+
+void OpenGLApplication::WaitForGraphicsIdle() {
+    if (m_Context && glXGetCurrentContext() == m_Context) {
+        glFinish();
+    }
+}

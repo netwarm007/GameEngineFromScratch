@@ -23,7 +23,8 @@ int CocoaMetalApplication::InitializeGraphicsResources() {
     @autoreleasepool {
         MetalView* pView = [[MetalView alloc]
             initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)
-                     pApp:this];
+                    input:GetInputManager()
+              msaaSamples:m_Config.msaaSamples];
 
         if (!pView || !pView.device) {
             fprintf(stderr, "Metal view/device creation failed\n");

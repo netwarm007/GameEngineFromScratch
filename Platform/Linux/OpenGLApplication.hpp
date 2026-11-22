@@ -1,11 +1,12 @@
 #pragma once
 
+#include "IRenderBackend.hpp"
 #include "glad/glad_glx.h"
 
 #include "XcbApplication.hpp"
 
 namespace My {
-class OpenGLApplication : public XcbApplication {
+class OpenGLApplication : public XcbApplication, public IRenderBackend {
    public:
     using XcbApplication::XcbApplication;
 
@@ -15,6 +16,7 @@ class OpenGLApplication : public XcbApplication {
 
    private:
     int InitializeGraphicsResources() override;
+    void WaitForGraphicsIdle() override;
     void FinalizeGraphicsResources() override;
     GLXContext m_Context = nullptr;
     GLXWindow m_GlxWindow = 0;

@@ -1,8 +1,9 @@
 #pragma once
+#include "IRenderBackend.hpp"
 #include "WindowsApplication.hpp"
 
 namespace My {
-class OpenGLApplication : public WindowsApplication {
+class OpenGLApplication : public WindowsApplication, public IRenderBackend {
    public:
     using WindowsApplication::WindowsApplication;
 
@@ -12,6 +13,7 @@ class OpenGLApplication : public WindowsApplication {
    private:
     int InitializeGuiPlatform() override;
     int InitializeGraphicsResources() override;
+    void WaitForGraphicsIdle() override;
     void FinalizeGraphicsResources() override;
     HDC m_hDC = nullptr;
     HGLRC m_RenderContext = nullptr;

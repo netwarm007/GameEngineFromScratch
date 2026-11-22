@@ -44,6 +44,12 @@ void OpenGLApplication::FinalizeGraphicsResources() {
     }
 }
 
+void OpenGLApplication::WaitForGraphicsIdle() {
+    if (m_RenderContext && wglGetCurrentContext() == m_RenderContext) {
+        glFinish();
+    }
+}
+
 int OpenGLApplication::InitializeGuiPlatform() {
     if (!ImGui::GetCurrentContext()) return 0;
     if (!m_hWnd || ImGui::GetIO().BackendPlatformUserData) return -1;

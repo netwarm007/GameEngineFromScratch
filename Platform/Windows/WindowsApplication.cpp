@@ -82,6 +82,11 @@ void WindowsApplication::FinalizePlatformResources() {
 }
 
 void WindowsApplication::Tick() {
+    ProcessEvents();
+    BaseApplication::Tick();
+}
+
+void WindowsApplication::ProcessEvents() {
     // this struct holds Windows event messages
     MSG msg;
 
@@ -99,7 +104,6 @@ void WindowsApplication::Tick() {
     if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
         ImGui_ImplWin32_NewFrame();
     }
-    BaseApplication::Tick();
 }
 
 void WindowsApplication::onWindowResize(int new_width, int new_height) {

@@ -92,16 +92,20 @@ int SdlApplication::Initialize() {
 }
 
 void SdlApplication::Finalize() {
+    // GUI platform shutdown is owned by the backend's FinalizeGuiPlatform
+    // hook, which BaseApplication::Finalize runs before graphics teardown.
     BaseApplication::Finalize();
-    if (ImGui::GetCurrentContext()) {
-        ImGui_ImplSDL2_Shutdown();
-    }
 
     cleanup(m_pWindow);
     SDL_Quit();
 }
 
 void SdlApplication::Tick() {
+    ProcessEvents();
+    BaseApplication::Tick();
+}
+
+void SdlApplication::ProcessEvents() {
     SDL_Event e;
 
     while (SDL_PollEvent(&e)) {
@@ -150,7 +154,6 @@ void SdlApplication::Tick() {
     if (ImGui::GetCurrentContext()) {
         ImGui_ImplSDL2_NewFrame();
     }
-    BaseApplication::Tick();
 }
 
 void SdlApplication::CreateMainWindow() {

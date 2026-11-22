@@ -34,12 +34,16 @@ void OpenGLApplication::CreateMainWindow() {
     if (m_pWindow == nullptr) {
         logSDLError(std::cout, "SDL_CreateWindow");
         SDL_Quit();
+        return;
     }
 
     m_hContext = SDL_GL_CreateContext(m_pWindow);
     if (!m_hContext) {
         logSDLError(std::cout, "SDL_GL_CreateContext");
+        SDL_DestroyWindow(m_pWindow);
+        m_pWindow = nullptr;
         SDL_Quit();
+        return;
     }
     SDL_GL_MakeCurrent(m_pWindow, m_hContext);
     SDL_GL_SetSwapInterval(1);  // Enable vsync
@@ -50,9 +54,35 @@ void OpenGLApplication::CreateMainWindow() {
     printf("Initialized GL context: %d.%d\n", major_ver, minor_ver);
 
     SDL_GL_SetSwapInterval(1);
+}
 
-    if (ImGui::GetCurrentContext()) {
-        ImGui_ImplSDL2_InitForOpenGL(m_pWindow, m_hContext);
+int OpenGLApplication::InitializeGraphicsResources() {
+    if (!m_pWindow || !m_hContext) {
+        fprintf(stderr, "SDL OpenGL initialization requires a window and GL context\n");
+        return -1;
+    }
+    return 0;
+}
+
+int OpenGLApplication::InitializeGuiPlatform() {
+    if (!ImGui::GetCurrentContext()) return 0;
+    if (!m_pWindow || !m_hContext || ImGui::GetIO().BackendPlatformUserData) {
+        return -1;
+    }
+    if (!ImGui_ImplSDL2_InitForOpenGL(m_pWindow, m_hContext)) return -1;
+    return 0;
+}
+
+void OpenGLApplication::FinalizeGuiPlatform() {
+    if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
+        ImGui_ImplSDL2_Shutdown();
+    }
+}
+
+void OpenGLApplication::FinalizeGraphicsResources() {
+    if (m_hContext) {
+        SDL_GL_DeleteContext(m_hContext);
+        m_hContext = nullptr;
     }
 }
 

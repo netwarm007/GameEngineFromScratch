@@ -82,6 +82,11 @@ void CocoaApplication::FinalizePlatformResources() {
 }
 
 void CocoaApplication::Tick() {
+    ProcessEvents();
+    BaseApplication::Tick();
+}
+
+void CocoaApplication::ProcessEvents() {
     while (NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                untilDate:nil
                                                   inMode:NSDefaultRunLoopMode
@@ -178,5 +183,4 @@ void CocoaApplication::Tick() {
     if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
         ImGui_ImplOSX_NewFrame([m_pWindow contentView]);
     }
-    BaseApplication::Tick();
 }
