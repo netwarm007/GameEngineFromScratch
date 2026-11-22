@@ -61,7 +61,6 @@ int main() {
         return 1;
     }
 
-    std::cerr << "[diag] retry initialize\n";
     auto* rendererBackend = ImGui::GetIO().BackendRendererUserData;
     bool ok = rendererBackend && ImGui::GetIO().BackendPlatformUserData &&
               graphics.Initialize() != 0 &&
@@ -74,7 +73,6 @@ int main() {
     image.pixel_format = PIXEL_FORMAT::RGBA8;
     image.data = new uint8_t[4]{255, 0, 0, 255};
 
-    std::cerr << "[diag] create textures\n";
     auto first = graphics.CreateTexture(image);
     auto second = graphics.CreateTexture(image);
     const auto firstHandle = first.handler;
@@ -88,11 +86,9 @@ int main() {
     graphics.ReleaseTexture(replacement);
     if (!ok) std::cerr << "GUI texture descriptors were not allocated or reused correctly\n";
 
-    std::cerr << "[diag] finalize\n";
     app.Finalize();
     graphics.Finalize();
     app.Finalize();
-    std::cerr << "[diag] done\n";
     ok = ok && !ImGui::GetIO().BackendRendererUserData &&
          !ImGui::GetIO().BackendPlatformUserData;
     ImGui::DestroyContext();

@@ -109,7 +109,6 @@ int main() {
         app.CreateMainWindow();
         app.RegisterManagerModule(&module);
         const int result = app.Initialize();
-        std::cerr << "[diag] failAt=" << failAt << " initialize=" << result << '\n';
         if (result != ERROR_NOT_ENOUGH_MEMORY || module.initialized ||
             app.GetRHI().GetDevice() || !app.GetMainWindowHandler() ||
             app.events.size() != static_cast<size_t>(failAt)) {
@@ -123,11 +122,8 @@ int main() {
                 return 1;
             }
         }
-        std::cerr << "[diag] checks passed, tick\n";
         app.Tick();
-        std::cerr << "[diag] finalize 1\n";
         app.Finalize();
-        std::cerr << "[diag] finalize 1 done\n";
         // A newly allocated event may reuse a released fence handle. Repeated
         // cleanup must not close that unrelated handle.
         HANDLE sentinel = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -136,7 +132,6 @@ int main() {
             return 1;
         }
         app.Finalize();
-        std::cerr << "[diag] finalize 2 done\n";
         const bool valid = SetEvent(sentinel) &&
                            WaitForSingleObject(sentinel, 0) == WAIT_OBJECT_0;
         CloseHandle(sentinel);
@@ -149,18 +144,15 @@ int main() {
         app.failAt = -1;
         app.CreateMainWindow();
         app.RegisterManagerModule(&module);
-        std::cerr << "[diag] reinitialize\n";
         if (app.Initialize() != 0 || !app.GetRHI().GetDevice() ||
             module.initialized != 1) {
             std::cerr << "D3D12 initialization after cleanup failed\n";
             return 1;
         }
-        std::cerr << "[diag] reinit ok, final cleanup\n";
         int callbacks = 0;
         app.GetRHI().DestroyResourceCB([&] { ++callbacks; });
         app.Finalize();
         app.Finalize();
-        std::cerr << "[diag] iteration done\n";
         if (callbacks != 1 || module.finalized != 1) {
             std::cerr << "D3D12 resource cleanup repeated\n";
             return 1;
