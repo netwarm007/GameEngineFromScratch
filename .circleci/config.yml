@@ -669,6 +669,8 @@ jobs:
               $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $resolved 'physics-passed'
               if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
               $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$backend,'-physicsRegression',$resolved) -PassThru -RedirectStandardOutput "$outDir/billiard.log" -RedirectStandardError "$outDir/billiard-error.log"
+              # Retain the process handle so ExitCode is readable after exit.
+              $null = $proc.Handle
               try {
                 if (-not $proc.WaitForExit(600000)) { throw "$backend billiard timed out" }
                 $proc.Refresh()

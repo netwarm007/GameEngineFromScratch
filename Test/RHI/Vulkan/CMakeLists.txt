@@ -100,10 +100,18 @@ if(MSVC)
 endif()
 if(NOT TARGET ${XG_LIBRARY})
     # The integrated build links the prebuilt static crossguid library, which
-    # does not propagate its platform dependencies transitively; add them
-    # (libuuid on Linux) so uuid_generate resolves.
-    __add_xg_platform_dependencies(VulkanShaderTest)
-    __add_xg_platform_dependencies(VulkanRegressionRHI)
+    # does not propagate its platform dependencies transitively. Link them with
+    # the keyword signature: the plain-signature helper macro would conflict
+    # with these targets' existing PRIVATE/PUBLIC usage.
+    if(APPLE)
+        find_library(GEFS_CFLIB CoreFoundation)
+        target_link_libraries(VulkanShaderTest PRIVATE ${GEFS_CFLIB})
+        target_link_libraries(VulkanRegressionRHI PUBLIC ${GEFS_CFLIB})
+    elseif(NOT WIN32)
+        find_package(LibUUID REQUIRED)
+        target_link_libraries(VulkanShaderTest PRIVATE ${LIBUUID_LIBRARY})
+        target_link_libraries(VulkanRegressionRHI PUBLIC ${LIBUUID_LIBRARY})
+    endif()
 endif()
 add_executable(VulkanResourceTest VulkanResourceTest.cpp)
 target_link_libraries(VulkanResourceTest PRIVATE VulkanRegressionRHI)
