@@ -78,11 +78,11 @@ commands:
           command: |
             git submodule sync
             git submodule update --init --recursive
-      - run:
-          name: Prepare Windows dependency cache key
-          command: |
-            cmake -DACTION=key -P .circleci/windows-dependency-cache.cmake
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      # The dependency cache key hashes tool versions (cmake/python/VS),
+      # which can differ between jobs; reuse the exact key file computed
+      # by build_windows through the workspace instead of recomputing it.
+      - attach_workspace:
+          at: .
       - restore_cache:
           key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
       - run:
@@ -90,8 +90,6 @@ commands:
           command: |
             cmake -DACTION=restore -P .circleci/windows-dependency-cache.cmake
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - attach_workspace:
-          at: .
 
 jobs:
   build_windows:
@@ -421,6 +419,7 @@ jobs:
           root: .
           paths:
             - build
+            - .circleci/windows-deps-key.txt
       - when:
           condition:
             equal: [full, << parameters.scope >>]
@@ -594,6 +593,25 @@ jobs:
       size: large
     steps:
       - windows_test_setup
+      - run:
+          name: Capture Viewer baseline for matrix comparison
+          no_output_timeout: 5m
+          command: |
+            New-Item -ItemType Directory -Force screenshots | Out-Null
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse |
+              Select-Object -First 1
+            if (-not $viewer) { throw "Viewer.exe not found" }
+            $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path screenshots).Path "viewer-render.png"
+            $process = Start-Process -FilePath $viewer.FullName -PassThru `
+              -RedirectStandardOutput screenshots/viewer.log `
+              -RedirectStandardError screenshots/viewer-error.log
+            if (-not $process.WaitForExit(180000)) {
+              Stop-Process -Id $process.Id -ErrorAction SilentlyContinue
+              throw "Viewer baseline capture timed out after 180 seconds"
+            }
+            Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+            if ($process.ExitCode -ne 0) { throw "Viewer baseline capture exited $($process.ExitCode); see viewer logs" }
+            if (-not (Test-Path screenshots/viewer-render.png)) { throw "Viewer did not produce a baseline PNG" }
       - when:
           condition:
             equal: [<< parameters.scope >>, full]

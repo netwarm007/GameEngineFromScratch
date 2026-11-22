@@ -33,16 +33,14 @@ void SDLOpenGLBackend::CreateMainWindow() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
-    const auto config = m_Application.GetConfiguration();
-    // Leave color/depth/stencil sizes at SDL defaults: explicit size
-    // requests find no matching GLX fbconfig on Xvfb. The engine renders
-    // into offscreen targets with its own depth, so the window's default
-    // depth buffer is unused.
-    (void)config;
-    if (config.msaaSamples > 1) {
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, config.msaaSamples);
-    }
+    // Xvfb exposes only RGB visuals without alpha, depth or multisample
+    // GLX configs, and SDL defaults request alpha=8. The engine renders
+    // into offscreen targets with their own depth/MSAA (GraphicsManager),
+    // so the window framebuffer needs none of these; requesting them
+    // makes SDL_CreateWindow fail with "Couldn't find matching GLX visual".
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
     m_WindowFlagsSetter(SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
