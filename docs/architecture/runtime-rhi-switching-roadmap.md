@@ -167,12 +167,17 @@ geometry, DPI-aware layout, and floating-panel placement, not native handles.
 ## Implementation checkpoints
 
 Only the top-level milestones (M0–M5) are **checkpoints**. Each checkpoint
-depends on the preceding one and requires human confirmation before proceeding
-to the next checkpoint; accepting one checkpoint does not authorize the
-remaining checkpoints. The sub-increments within a checkpoint (M#.#, such as
-M2.1–M2.6) are **work steps**, not checkpoints: implement and verify them in
-order and self-confirm each by its full-CI acceptance result, without a human
-confirmation stop, until the parent checkpoint is complete.
+depends on the preceding one and, after a self-check, requires human
+confirmation before proceeding to the next checkpoint; confirming one
+checkpoint does not authorize the remaining checkpoints. The sub-increments
+within a checkpoint (M#.#, such as M2.1–M2.6) are **work steps**, not
+checkpoints: after completing one, self-check that its goal is achieved (CI may
+be submitted to verify) and continue without a human confirmation stop, until
+the parent checkpoint is complete. **Acceptance (验收) is deliverable
+acceptance**, distinct from per-revision CI verification: it normally requires
+all roadmap tasks to be complete, the three-platform CI to pass, and a pull
+request to be created. Per-revision full-CI runs are verification evidence
+(recorded under `docs/verification/`), not acceptance.
 
 | Checkpoint | Deliverables | Exit criteria |
 | --- | --- | --- |
