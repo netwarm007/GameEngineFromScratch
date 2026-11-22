@@ -460,7 +460,15 @@ class JfifParser : _implements_ ImageParser {
                     bit_offset = 0;
                     byte_offset++;
                 }
-                assert(byte_offset == scan_data.size());
+                // The entropy coded segment of a restart interval normally ends
+                // exactly on the boundary, but writers may leave bit stuffing or
+                // padding behind. Stop at the interval either way instead of
+                // asserting on it, so a valid file does not abort a debug build.
+                if (byte_offset != scan_data.size()) {
+                    std::cerr << "JPEG restart interval ended at byte "
+                              << byte_offset << " of " << scan_data.size()
+                              << std::endl;
+                }
                 break;
             }
         }
