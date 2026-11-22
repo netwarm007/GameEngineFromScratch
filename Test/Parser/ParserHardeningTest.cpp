@@ -330,6 +330,14 @@ int main() {
         Image img = ParseImage(parser, ok);
         CHECK(img.data != nullptr && img.Width == 2 && img.Height == 2);
 
+        // 32bpp with descriptor alpha bits == 0 (RGBX, as shipped in
+        // icelogo-*.tga) must still decode: the pixel layout is decided by the
+        // pixel depth, not the unreliable alpha count.
+        auto rgbx = MakeTgaHeader(2, 2, 32, 0);
+        for (int i = 0; i < 16; i++) rgbx.push_back((uint8_t)i);
+        Image img32 = ParseImage(parser, rgbx);
+        CHECK(img32.data != nullptr && img32.Width == 2 && img32.Height == 2);
+
         Buffer empty;
         CHECK(parser.Parse(empty).data == nullptr);
     }

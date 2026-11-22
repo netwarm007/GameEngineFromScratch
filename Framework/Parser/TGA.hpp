@@ -69,7 +69,7 @@ class TgaParser : _implements_ ImageParser {
         img.Height =
             (pFileHeader->ImageSpec[7] << 8) + pFileHeader->ImageSpec[6];
         uint8_t pixel_depth = pFileHeader->ImageSpec[8];
-        uint8_t alpha_depth = (pFileHeader->ImageSpec[9] & 0x0F);
+        [[maybe_unused]] uint8_t alpha_depth = (pFileHeader->ImageSpec[9] & 0x0F);
 #ifdef DEBUG
         std::cerr << "Image Width: " << img.Width << std::endl;
         std::cerr << "Image Height: " << img.Height << std::endl;
@@ -83,34 +83,22 @@ class TgaParser : _implements_ ImageParser {
             return img;
         }
 
+        // The pixel depth alone decides both how many bytes each pixel occupies
+        // in the file (used by the bounds check and the read loop below) and the
+        // output layout. Real writers disagree with the descriptor's alpha count
+        // (e.g. the shipped 32bpp RGBX icelogo-*.tga files store 0 alpha bits),
+        // so it is not validated against pixel_depth: rejecting mismatches
+        // wrongly refused well-formed assets, and the count affects no size.
         size_t bytes_per_pixel;
         switch (pixel_depth) {
             case 15:
-                if (alpha_depth != 0) {
-                    std::cerr << "Invalid TGA 15-bit alpha depth" << std::endl;
-                    return img;
-                }
-                bytes_per_pixel = 2;
-                break;
             case 16:
-                if (alpha_depth != 1) {
-                    std::cerr << "Invalid TGA 16-bit alpha depth" << std::endl;
-                    return img;
-                }
                 bytes_per_pixel = 2;
                 break;
             case 24:
-                if (alpha_depth != 0) {
-                    std::cerr << "Invalid TGA 24-bit alpha depth" << std::endl;
-                    return img;
-                }
                 bytes_per_pixel = 3;
                 break;
             case 32:
-                if (alpha_depth != 8) {
-                    std::cerr << "Invalid TGA 32-bit alpha depth" << std::endl;
-                    return img;
-                }
                 bytes_per_pixel = 4;
                 break;
             default:
@@ -136,11 +124,15 @@ class TgaParser : _implements_ ImageParser {
             return img;
         }
 
-        // reading the pixel data
-        img.bitcount = (alpha_depth ? 32 : 24);
+        // reading the pixel data. The output layout below is chosen by
+        // pixel_depth (15/24bpp write 3 bytes per pixel, 16/32bpp write 4),
+        // so label the format from pixel_depth too. Deriving it from the
+        // descriptor's alpha count mislabeled files whose writer disagreed
+        // with it, e.g. 32bpp RGBX assets with 0 alpha bits.
+        bool has_alpha = (pixel_depth == 32 || pixel_depth == 16);
+        img.bitcount = has_alpha ? 32 : 24;
         img.bitdepth = 8;
-        img.pixel_format =
-            (alpha_depth ? PIXEL_FORMAT::RGBA8 : PIXEL_FORMAT::RGB8);
+        img.pixel_format = has_alpha ? PIXEL_FORMAT::RGBA8 : PIXEL_FORMAT::RGB8;
         img.pitch = img.Width *
                     ALIGN((img.bitcount >> 3), 4);  // for GPU address alignment
 
@@ -176,7 +168,6 @@ class TgaParser : _implements_ ImageParser {
                           3) = ((color & 0x8000) ? 0xFF : 0x00);  // A
                     } break;
                     case 24: {
-                        assert(alpha_depth == 0);
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 +
                           2) = *pData++;  // B
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 +
@@ -185,7 +176,6 @@ class TgaParser : _implements_ ImageParser {
                             *pData++;  // R
                     } break;
                     case 32: {
-                        assert(alpha_depth == 8);
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
                           2) = *pData++;  // B
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
