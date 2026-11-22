@@ -34,6 +34,20 @@ if [ -n "${GEFS_SCREENSHOT_WAIT_FOR:-}" ] && [ ! -s "$GEFS_SCREENSHOT_WAIT_FOR" 
     exit 1
 fi
 
-import -window Viewer "$output_dir/viewer-render.png"
+window_id=""
+for i in $(seq 1 10); do
+    window_id=$(xwininfo -root -tree 2>/dev/null | grep -m1 '"Viewer' | awk '{print $1}') || true
+    [ -n "$window_id" ] && break
+    sleep 1
+done
+if [ -z "$window_id" ]; then
+    echo "Viewer window not found; see viewer.log" >&2
+    echo "=== process state ===" >&2
+    if kill -0 "$viewer_pid" 2>/dev/null; then echo "viewer alive" >&2; else echo "viewer EXITED" >&2; fi
+    echo "=== xwininfo -root -tree ===" >&2
+    xwininfo -root -tree 2>&1 | head -40 >&2 || true
+    exit 1
+fi
+import -window "$window_id" "$output_dir/viewer-render.png"
 test -s "$output_dir/viewer-render.png"
 identify "$output_dir/viewer-render.png"

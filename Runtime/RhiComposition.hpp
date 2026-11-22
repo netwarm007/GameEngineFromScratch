@@ -43,4 +43,9 @@ RhiCompositionResult CreateRhiStartupComposition(
 // creating a device here.
 std::vector<RhiBackendAvailability> ProbeRhiStartupAvailability();
 
+// Platform and windowing host labels for the active composition, used by
+// applications to show the current platform/backend combination in the title.
+std::string_view RhiStartupPlatformName();
+std::string_view RhiStartupHostName(RhiBackend backend);
+
 }  // namespace My

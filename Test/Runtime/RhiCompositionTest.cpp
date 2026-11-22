@@ -208,6 +208,31 @@ void TestAvailability() {
            "probed availability resolves the application default");
 #endif
 }
+void TestTitleLabels() {
+    const auto platform = RhiStartupPlatformName();
+#if defined(OS_WINDOWS)
+    Expect(platform == "Windows", "platform label matches the build platform");
+#elif defined(OS_MACOS)
+    Expect(platform == "macOS", "platform label matches the build platform");
+#elif defined(OS_LINUX)
+    Expect(platform == "Linux", "platform label matches the build platform");
+#endif
+    for (auto backend : CompiledBackends()) {
+        const auto host = RhiStartupHostName(backend);
+        Expect(!host.empty(), "every compiled backend has a host label");
+#if defined(OS_LINUX)
+        if (backend == RhiBackend::OpenGL) {
+#if defined(HAS_SDL2)
+            Expect(host == "SDL", "Linux OpenGL retains the SDL host");
+#else
+            Expect(host == "XCB", "Linux OpenGL falls back to the XCB host");
+#endif
+        } else {
+            Expect(host == "XCB", "Linux Vulkan uses the XCB host");
+        }
+#endif
+    }
+}
 }  // namespace
 
 int main() {
@@ -215,6 +240,7 @@ int main() {
     TestAbsentBackends();
     TestFailedConstructionCleanup();
     TestAvailability();
+    TestTitleLabels();
     if (failures) return 1;
     std::cout << "RHI composition tests passed without windows or GPU\n";
     return 0;

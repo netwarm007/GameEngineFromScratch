@@ -465,7 +465,7 @@ jobs:
             $env:GEFS_SCREENSHOT_PATH = Join-Path $output.FullName "billiard-after.png"
             $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $output.FullName "physics-passed"
             $process = Start-Process -FilePath $billiard.FullName -PassThru `
-              -ArgumentList @('-physicsRegression', ('"' + $output.FullName + '"')) `
+              -ArgumentList @('--rhi', 'd3d12', '-physicsRegression', ('"' + $output.FullName + '"')) `
               -RedirectStandardOutput billiard-screenshots/billiard.log `
               -RedirectStandardError billiard-screenshots/billiard-error.log
             $handle = $process.Handle
@@ -484,6 +484,151 @@ jobs:
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
               Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
             }
+      - when:
+          condition:
+            equal: [<< parameters.scope >>, full]
+          steps:
+            - run:
+                name: Viewer startup matrix and capture comparison
+                no_output_timeout: 30m
+                command: |
+                  $ErrorActionPreference = 'Stop'
+                  choco install python3 -y --no-progress
+                  $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+                  $baseline = 'screenshots/viewer-render.png'
+                  if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+                  $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+                  if (-not $viewer) { throw 'Viewer.exe not found' }
+                  $viewerDir = $viewer.DirectoryName
+
+                  # Mesa software drivers (llvmpipe OpenGL, lavapipe Vulkan) for the matrix.
+                  $mesa = Join-Path $env:TEMP 'mesa-matrix'
+                  New-Item -ItemType Directory -Force $mesa | Out-Null
+                  $archive = Join-Path $mesa 'mesa.7z'
+                  Invoke-WebRequest 'https://github.com/pal1000/mesa-dist-win/releases/download/26.3.0/mesa3d-26.3.0-release-msvc.7z' -OutFile $archive
+                  if ((Get-Item $archive).Length -lt 50MB) { throw 'Mesa archive download too small' }
+                  $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
+                  if (-not (Test-Path $sevenZip)) { choco install 7zip -y --no-progress }
+                  & $sevenZip x $archive "-o$mesa\extracted" -y | Out-Null
+                  if ($LASTEXITCODE -ne 0) { throw 'Mesa archive extraction failed' }
+                  function Find-MesaFile($name) {
+                    $all = Get-ChildItem "$mesa\extracted" -Recurse -Filter $name
+                    $x64 = $all | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+                    if ($x64) { return $x64 }
+                    return ($all | Select-Object -First 1)
+                  }
+                  foreach ($name in @('opengl32.dll','libgallium_wgl.dll','dxil.dll')) {
+                    $f = Find-MesaFile $name
+                    if ($f) { Copy-Item $f.FullName $viewerDir -Force }
+                  }
+                  # The Vulkan loader is the system one (the SDK installer
+                  # refreshes System32; the side-by-side SDK tree ships no
+                  # vulkan-1.dll). Mesa provides only the lavapipe ICD.
+                  $sysLoader = "$env:SystemRoot\System32\vulkan-1.dll"
+                  if (Test-Path $sysLoader) {
+                    Write-Output "System32 Vulkan loader version: $((Get-Item $sysLoader).VersionInfo.FileVersion)"
+                  } else {
+                    throw 'System32 Vulkan loader missing'
+                  }
+                  if ($env:VULKAN_SDK -and (Test-Path "$env:VULKAN_SDK\Bin\vulkan-1.dll")) {
+                    $env:GEFS_VULKAN_LIBRARY = "$env:VULKAN_SDK\Bin\vulkan-1.dll"
+                    Write-Output "Using SDK loader override: $env:GEFS_VULKAN_LIBRARY"
+                  }
+                  $lvp = Find-MesaFile 'vulkan_lvp.dll'
+                  $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
+                  if (-not ($lvp -and $icd)) {
+                    Get-ChildItem "$mesa\extracted" -Recurse -Directory | Select-Object -First 20 -ExpandProperty FullName
+                    throw 'Mesa lavapipe components not found in package'
+                  }
+                  # Deploy the lavapipe ICD together with every sibling DLL next
+                  # to the executable: the application directory is first in the
+                  # Windows DLL search order, so the ICD's dependencies resolve.
+                  # Copying vulkan_lvp.dll alone previously left it unable to load.
+                  Get-ChildItem $lvp.DirectoryName -Filter '*.dll' | ForEach-Object { Copy-Item $_.FullName $viewerDir -Force }
+                  $json = Get-Content $icd.FullName -Raw | ConvertFrom-Json
+                  $json.ICD.library_path = (Join-Path $viewerDir 'vulkan_lvp.dll')
+                  # ASCII (no BOM) so the loader's JSON parser accepts the file.
+                  $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd.json" -Encoding ascii
+                  [Environment]::SetEnvironmentVariable('VK_ICD_FILENAMES', "$mesa\lvp_icd.json", 'Machine')
+                  $env:VK_ICD_FILENAMES = "$mesa\lvp_icd.json"
+                  Write-Output "lavapipe ICD json:"; Get-Content "$mesa\lvp_icd.json"
+                  # The CI executor runs elevated, and the Vulkan loader ignores
+                  # VK_ICD_FILENAMES/VK_DRIVER_FILES under elevated permissions,
+                  # reading only the registry. Register the ICD machine-wide in
+                  # the 64-bit view so the 64-bit loader discovers lavapipe.
+                  $hive = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Registry64)
+                  $key = $hive.CreateSubKey('SOFTWARE\Khronos\Vulkan\Drivers')
+                  $key.SetValue("$mesa\lvp_icd.json", 0, [Microsoft.Win32.RegistryValueKind]::DWord)
+                  $key.Close(); $hive.Close()
+                  Write-Output "Registered lavapipe ICD (64-bit view) HKLM\SOFTWARE\Khronos\Vulkan\Drivers: $mesa\lvp_icd.json"
+                  # Diagnostic: confirm the ICD loads and which instance extensions
+                  # it exposes before the Viewer run.
+                  $vulkaninfo = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkaninfo.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+                  if ($vulkaninfo) {
+                    $env:VK_LOADER_DEBUG = 'all'
+                    & $vulkaninfo.FullName --summary *> "$mesa\vulkaninfo.log"
+                    Remove-Item Env:VK_LOADER_DEBUG -ErrorAction SilentlyContinue
+                    Write-Output '=== vulkaninfo lavapipe/ICD diagnostics ==='
+                    Get-Content "$mesa\vulkaninfo.log" | Where-Object { $_ -match 'lvp|lavapipe|ICD|ERROR|error|deviceName|VK_KHR_get_surface_capabilities2|VK_KHR_win32_surface' } | Select-Object -First 50
+                  } else {
+                    Write-Output 'vulkaninfo.exe not found in SDK; skipping ICD diagnostic'
+                  }
+
+                  function Run-Viewer($backend, $outDir) {
+                    New-Item -ItemType Directory -Force $outDir | Out-Null
+                    $resolved = (Resolve-Path $outDir).Path
+                    $ext = 'png'
+                    if ($backend -eq 'vulkan') { $ext = 'ppm' }
+                    $png = Join-Path $resolved "viewer-render.$ext"
+                    if ($backend -eq 'opengl') {
+                      $env:GALLIUM_DRIVER = 'llvmpipe'
+                      $env:LIBGL_ALWAYS_SOFTWARE = '1'
+                    }
+                    if ($backend -eq 'vulkan') {
+                      # Loader debug reveals whether the lavapipe ICD loads and
+                      # which instance extensions it exposes (stderr is captured).
+                      $env:VK_LOADER_DEBUG = 'all'
+                    }
+                    # All three backends honor GEFS_SCREENSHOT_PATH self-capture
+                    # (the Win32 OpenGL host reads the presented front buffer in
+                    # its main loop); no visible interactive desktop is needed.
+                    $env:GEFS_SCREENSHOT_PATH = $png
+                    $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend) -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
+                    try {
+                      if (-not $proc.WaitForExit(240000)) { throw "$backend matrix run timed out" }
+                    } finally {
+                      # A live child keeps the step console open and would trip
+                      # the no-output timeout; always reap it.
+                      Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                      Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                      Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                      if ($backend -eq 'opengl') {
+                        Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                        Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                      }
+                      if ($backend -eq 'vulkan') {
+                        Remove-Item Env:VK_LOADER_DEBUG -ErrorAction SilentlyContinue
+                      }
+                    }
+                    # Self-capture paths may exit nonzero after a successful
+                    # save (the baseline capture step also asserts the file,
+                    # not the exit code); the capture itself is the assertion.
+                    if (-not (Test-Path $png)) {
+                      Get-Content "$outDir/viewer.log" -ErrorAction SilentlyContinue
+                      Write-Output "=== $backend loader/stderr diagnostics ==="
+                      Get-Content "$outDir/viewer-error.log" -ErrorAction SilentlyContinue |
+                        Where-Object { $_ -match 'lvp|lavapipe|icd|ICD|ERROR|error|surface|Surface|extension|Extension|driver|Driver|Cannot|cannot|fail|Fail' } |
+                        Select-Object -First 80
+                      throw "$backend matrix capture missing"
+                    }
+                    $tolArgs = @()
+                    if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
+                    python scripts/compare_captures.py $baseline $png --label "windows-$backend" @tolArgs
+                    if ($LASTEXITCODE -ne 0) { throw "windows-$backend capture comparison failed" }
+                  }
+                  Run-Viewer 'd3d12' 'screenshots/matrix/d3d12'
+                  Run-Viewer 'opengl' 'screenshots/matrix/opengl'
+                  Run-Viewer 'vulkan' 'screenshots/matrix/vulkan'
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots
@@ -591,7 +736,7 @@ jobs:
       CCACHE_MAXSIZE: 2G
       CCACHE_BASEDIR: /home/circleci/project
     machine:
-      image: ubuntu-2204:2026.10.1
+      image: ubuntu-2404:2026.10.1
     resource_class: large
     steps:
       - run: 
@@ -599,9 +744,12 @@ jobs:
           command: |
              sudo apt-get -o Acquire::Retries=3 update
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing curl clang python3-pip ninja-build git uuid-dev
-             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libvulkan-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libgio2.0-cil-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses5-dev
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libvulkan-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses-dev
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing flex bison ccache
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
+             # Vulkan runtime (lavapipe) and validation layers for the startup
+             # matrix; parity with the specialized Vulkan job's environment.
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing mesa-vulkan-drivers vulkan-validationlayers
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
@@ -726,10 +874,55 @@ jobs:
                xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                bash scripts/capture_billiard_linux.sh billiard-screenshots \
                > billiard-screenshots/capture.log 2>&1
+      - when:
+          condition:
+            equal: [<< parameters.scope >>, full]
+          steps:
+            - run:
+                name: Viewer startup matrix and capture comparison
+                no_output_timeout: 15m
+                command: |
+                   set -e
+                   baseline="screenshots/viewer-render.png"
+                   test -s "$baseline"
+                   out="screenshots/matrix/opengl"; mkdir -p "$out"
+                   LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
+                     xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                     bash scripts/capture_viewer_linux.sh "$out" --rhi opengl \
+                     > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
+                   out="screenshots/matrix/vulkan"; mkdir -p "$out"
+                   lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+                   if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
+                   export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+                   timeout --kill-after=5s 240s \
+                     xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                     ./build/Viewer/Viewer --rhi vulkan -screenshot "$PWD/$out/viewer-render.ppm" \
+                     > "$out/viewer.log" 2>&1 || true
+                   if [ ! -s "$out/viewer-render.ppm" ]; then
+                     echo "=== linux-vulkan viewer.log ==="
+                     cat "$out/viewer.log" || true
+                     exit 1
+                   fi
+                   grep -q "Vulkan application framebuffer capture saved:" "$out/viewer.log"
+                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/opengl/viewer-render.png --label linux-opengl
+                   # lavapipe vs llvmpipe: broad low-amplitude rasterizer deltas
+                   # (measured 29.2% pixels, mean delta 4.7); the high-delta and
+                   # mean-delta guards still reject structural divergence.
+                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/vulkan/viewer-render.ppm --label linux-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.02
       - run:
           name: Coverage (llvm-cov)
           command: |
-             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing llvm
+             # clang-tools provides clang-scan-deps, which CMake >= 3.28 uses
+             # for C++ module dependency scanning with Clang + Ninja.
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing llvm clang-tools-18
+             # clang selects the newest GCC toolchain on the image, which may
+             # ship without libstdc++ dev files; pin one that can link C++.
+             for d in /usr/lib/gcc/x86_64-linux-gnu/*/; do
+               if [ -e "${d}libstdc++.so" ]; then
+                 export CFLAGS="--gcc-install-dir=${d%/}" CXXFLAGS="--gcc-install-dir=${d%/}"
+                 break
+               fi
+             done
              ./scripts/coverage_linux.sh build-coverage coverage
              if [ -n "$CODECOV_TOKEN" ]; then
                curl -fsSL https://cli.codecov.io/latest/linux/codecov -o codecov
@@ -992,6 +1185,55 @@ jobs:
              trap - EXIT
              test -s "$output/physics-passed"
              test -s "$output/billiard-after.png"
+      - when:
+          condition:
+            equal: [<< parameters.scope >>, full]
+          steps:
+            - run:
+                name: Viewer startup matrix and capture comparison
+                no_output_timeout: 15m
+                command: |
+                   set -e
+                   baseline="screenshots/viewer-render.png"
+                   test -s "$baseline"
+                   APP=$(find build -type d -name Viewer.app | head -n 1)
+                   test -n "$APP"
+                   for backend in metal vulkan; do
+                     out="screenshots/matrix/$backend"; mkdir -p "$out"
+                     ext=png
+                     if [ "$backend" = vulkan ]; then
+                       ext=ppm
+                       # Debug builds require validation layers; mirror the
+                       # MoltenVK verification step's brew environment. The late
+                       # loader dlopens libvulkan by leaf name, and brew's prefix
+                       # is not in dyld's default path on Apple Silicon.
+                       export HOMEBREW_NO_AUTO_UPDATE=1
+                       brew install molten-vk vulkan-validationlayers spirv-tools
+                       export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+                       export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+                       export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+                       export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+                       export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+                     fi
+                     "$APP/Contents/MacOS/Viewer" --rhi "$backend" \
+                       -screenshot "$PWD/$out/viewer-render.$ext" -screenshotDelay 60 -screenshotFrame 480 \
+                       > "$out/viewer.log" 2>&1 &
+                     viewer_pid=$!
+                     for i in $(seq 1 16); do
+                       sleep 15
+                       kill -0 "$viewer_pid" 2>/dev/null || break
+                     done
+                     kill "$viewer_pid" 2>/dev/null || true
+                     wait "$viewer_pid" 2>/dev/null || true
+                     if [ ! -s "$out/viewer-render.$ext" ]; then
+                       echo "=== macos-$backend viewer.log ==="
+                       cat "$out/viewer.log" || true
+                       exit 1
+                     fi
+                     tol=""
+                     if [ "$backend" = vulkan ]; then tol="--max-diff-fraction 0.40 --max-high-delta-fraction 0.02"; fi
+                     python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-$backend" $tol
+                   done
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots

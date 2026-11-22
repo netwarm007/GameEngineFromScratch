@@ -10,6 +10,16 @@
   changes and ensure any new pinned commits are available from their configured
   remotes before proposing them.
 
+## Workspace isolation
+
+- Before starting any modification to this repository, an agent must create a
+  dedicated Git worktree with its own branch (for example
+  `git worktree add ../GameEngineFromScratch-<task> -b <branch> origin/master`)
+  and make all edits, builds, and commits only inside that worktree. Do not
+  modify the primary checkout or a worktree owned by another session. Remove
+  the worktree (`git worktree remove`) and delete its branch once the work is
+  merged or abandoned.
+
 ## Vulkan implementation
 
 - For Vulkan backend work, read and follow the

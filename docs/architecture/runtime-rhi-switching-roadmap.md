@@ -11,9 +11,12 @@ three-platform CI and artifact review. See its
 [exact-revision verification](../verification/9e91a93eee1a80337165af7e40a5ea24d0f68acf.md)
 for the tested scope and distribution limitations. M2.1's startup-selection
 contract and M2.2's Vulkan loader isolation are implemented and verified at
-their headless boundaries with full native CI preservation; application
-integration and later checkpoints remain separate implementation and
-acceptance steps, not completed functionality.
+their headless boundaries. M2.3's owned startup composition, M2.4 Viewer and
+M2.5 Billiard runtime selection, the informative window titles, and M2.6
+stage 1's full-scope Viewer startup matrix are implemented and accepted by
+full native three-platform CI. Remaining M2.6 coverage migration,
+reconstruction (M3), hot switching (M4), and UI rollout (M5) remain separate
+implementation and acceptance steps, not completed functionality.
 
 The working branch was fast-forwarded to master
 `175d3567bb032e5356a8b537b5c5bb5f50edc6b2` before preparing this draft.
@@ -239,9 +242,52 @@ Linux OpenGL selection retains the SDL host (see the deviation in Known
 limitations); Vulkan selection uses the XCB host through a partial
 `PlatformVulkanXcb` library that avoids clashing with the SDL OpenGL
 application and asset implementation. Default startup through the runtime
-path is verified natively on all platforms; the per-backend startup matrix and
-`--list-rhi`/error-path native smoke remain M2.6 scope. See the
+path is verified natively on all platforms. See the
 [exact-revision verification](../verification/da41b5ce53f612784f0f6c15f67a79bede96e776.md).
+
+M2.5 reuses the startup contract and owned composition for Billiard with its
+application-specific defaults (Windows OpenGL, Linux OpenGL, macOS Metal);
+CI selects D3D12 explicitly through `--rhi d3d12`. Capture and quit dispatch
+follow the active backend rather than build macros: Windows OpenGL keeps the
+`glReadPixels` BMP capture, D3D12/Metal capture paths retire the application
+themselves, Vulkan checks pending screenshots, and Linux completion stays
+driven by the external `capture-complete` marker. Linux Billiard moves from
+the XCB OpenGL host to the composition's retained SDL host (full ImGui
+platform integration; the external X11 window capture is host-agnostic).
+Legacy trimmed builds and the opt-in Vulkan application build keep their
+compile-time paths.
+
+Runtime-selection builds title their windows
+`<App> - <Platform>/<Backend> (<Host>)` from the composition's platform and
+host labels, so the active combination is visible in the title bar. Linux
+capture scripts resolve the window id by name through `xwininfo -root -tree`
+instead of exact-title import. Legacy builds keep their existing titles.
+
+M2.6 stage 1 adds a full-scope Viewer startup matrix: every CI-feasible
+platform/backend combination launches from the same executable and its
+capture is compared against the platform baseline by
+[compare_captures.py](../../scripts/compare_captures.py) (pure-Python PNG/PPM
+decoding, blank-frame and dimension guards, calibrated differing-pixel and
+high-delta bounds). Linux covers OpenGL and Vulkan (lavapipe); macOS covers
+Metal and Vulkan (MoltenVK); Windows covers D3D12, OpenGL and Vulkan through
+Mesa llvmpipe/lavapipe deployed from mesa-dist-win. All Windows backends use
+GEFS_SCREENSHOT_PATH self-capture: the Win32 OpenGL host gained a glReadPixels
+front-buffer readback that writes an 8-bit RGB PNG through zlib and retires
+the app (the elevated CI executor has no enumerable interactive desktop, so
+GDI window capture is not viable), matching the D3D12/Vulkan paths. The
+Windows Vulkan run uses the system loader (the SDK installer refreshes
+System32) and discovers lavapipe through an ICD registered in
+HKLM\SOFTWARE\Khronos\Vulkan\Drivers: the executor runs elevated, and the
+Vulkan loader ignores VK_ICD_FILENAMES/VK_DRIVER_FILES under elevated
+permissions, reading only the registry. An opt-in GEFS_VULKAN_LIBRARY
+override can point the loader at an alternate runtime when needed.
+Cross-backend comparisons use a wider differing-fraction bound (0.40) with
+the high-delta and mean-delta guards unchanged, calibrated against measured
+software-rasterizer variation. Remaining M2.6 scope: Billiard per-backend
+matrix, `--list-rhi`/error-path native smoke, Vulkan coverage migration from
+the specialized job, and retirement of that job only after equivalent
+coverage is verified. See the
+[exact-revision verification](../verification/169f9c3d8f5e5b4f7fa469efffd9468a36fb4846.md).
 
 The canonical startup names are `d3d12`, `opengl`, `metal`, and `vulkan`.
 Accept `--rhi <name>` and `--rhi=<name>`; `--list-rhi` takes no value.
@@ -351,10 +397,10 @@ platforms; default native and opt-in Vulkan application artifacts were inspected
 
 | Limitation or open decision | Owning checkpoint |
 | --- | --- |
-| Linux runtime selection retains the SDL OpenGL host (no GUI regression): the XCB host has no ImGui platform input backend and disables multi-viewports, and the Vulkan plan introduces no new platform input backend. XCB ImGui parity is a prerequisite for the agreed XCB-only host; Vulkan selection uses the existing XCB path with its tracked GUI limits. | M2.4 deviation; XCB parity follow-on |
+| Linux runtime selection retains the SDL OpenGL host (no GUI regression): the XCB host has no ImGui platform input backend and disables multi-viewports. XCB ImGui parity is a prerequisite for the agreed XCB-only host; Vulkan selection uses the existing XCB path with its tracked GUI limits. | M2.4 deviation; XCB parity follow-on |
 | Static archives can discard unused backends until factories reference them; complete executable inclusion is not claimed by library linking alone. | M2 |
-| Application CLI wiring must land before runtime selection is advertised; the startup contract, Vulkan loader isolation, backend factories, and availability probes are in place. | M2.4-M2.5 |
-| Linux Vulkan environment parity and coverage migration remain prerequisites for removing the specialized CI job; Windows native Vulkan/OpenGL coverage is not established by SDK installation. | M2.6 |
+| Viewer (M2.4) and Billiard (M2.5) application CLI wiring is landed and natively verified; the startup contract, Vulkan loader isolation, backend factories, and availability probes are in place. Remaining coverage migration and switching milestones gate wider advertisement. | M2.6-M5 |
+| Linux Vulkan environment parity is aligned (Ubuntu 24.04, lavapipe, validation layers) and the Windows native D3D12/OpenGL/Vulkan startup matrix is established. Coverage migration from the specialized Vulkan job and its retirement remain open; retirement requires verified equivalent coverage. | M2.6 |
 | Real macOS bundles are exercised, but native project installers were not generated by the M1 feature-branch pipeline. Fixture installation checks do not replace installed native distribution validation. | M5 |
 | Vulkan loader isolation is implemented and headless-tested; native evidence that non-Vulkan startup ignores an absent Vulkan runtime lands with application CLI integration. | M2.4 |
 | Material baking uses the native Utility executable; complete desktop cross-compilation needs an explicit host-tool path before it can be supported. | Follow-on build scope |
