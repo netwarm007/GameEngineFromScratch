@@ -629,6 +629,87 @@ jobs:
                   Run-Viewer 'd3d12' 'screenshots/matrix/d3d12'
                   Run-Viewer 'opengl' 'screenshots/matrix/opengl'
                   Run-Viewer 'vulkan' 'screenshots/matrix/vulkan'
+      - run:
+          name: Billiard per-backend startup matrix
+          no_output_timeout: 20m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
+            if (-not $billiard) { throw 'BilliardGame.exe not found' }
+            $billiardDir = $billiard.DirectoryName
+            # Deploy the mesa software drivers next to Billiard too (the Viewer
+            # matrix deployed them only next to Viewer). Reuse the extracted package.
+            $mesa = Join-Path $env:TEMP 'mesa-matrix'
+            foreach ($name in @('opengl32.dll','libgallium_wgl.dll','dxil.dll')) {
+              $f = Get-ChildItem "$mesa\extracted" -Recurse -Filter $name -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+              if ($f) { Copy-Item $f.FullName $billiardDir -Force }
+            }
+            $lvp = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'vulkan_lvp.dll' -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+            if ($lvp) {
+              Get-ChildItem $lvp.DirectoryName -Filter '*.dll' | ForEach-Object { Copy-Item $_.FullName $billiardDir -Force }
+              $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
+              $json = Get-Content $icd.FullName -Raw | ConvertFrom-Json
+              $json.ICD.library_path = (Join-Path $billiardDir 'vulkan_lvp.dll')
+              $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd_billiard.json" -Encoding ascii
+              $hive = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Registry64)
+              $key = $hive.CreateSubKey('SOFTWARE\Khronos\Vulkan\Drivers')
+              $key.SetValue("$mesa\lvp_icd_billiard.json", 0, [Microsoft.Win32.RegistryValueKind]::DWord)
+              $key.Close(); $hive.Close()
+            }
+            function Run-Billiard($backend, $outDir) {
+              New-Item -ItemType Directory -Force $outDir | Out-Null
+              $resolved = (Resolve-Path $outDir).Path
+              $shot = $null
+              if ($backend -eq 'd3d12') { $shot = Join-Path $resolved 'billiard.png' }
+              if ($backend -eq 'vulkan') { $shot = Join-Path $resolved 'billiard.ppm' }
+              if ($shot) { $env:GEFS_SCREENSHOT_PATH = $shot }
+              else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
+              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $resolved 'physics-passed'
+              if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$backend,'-physicsRegression',$resolved) -PassThru -RedirectStandardOutput "$outDir/billiard.log" -RedirectStandardError "$outDir/billiard-error.log"
+              try {
+                if (-not $proc.WaitForExit(600000)) { throw "$backend billiard timed out" }
+                $proc.Refresh()
+                if ($proc.ExitCode -ne 0) {
+                  Get-Content "$outDir/billiard.log","$outDir/billiard-error.log" -ErrorAction SilentlyContinue
+                  throw "$backend billiard regression failed (exit $($proc.ExitCode))"
+                }
+              } finally {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+                if ($backend -eq 'opengl') {
+                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                }
+              }
+              if (-not (Test-Path (Join-Path $resolved 'physics-passed'))) { throw "$backend physics-passed missing" }
+              if ($shot) { if (-not (Test-Path $shot)) { throw "$backend capture missing" } }
+              elseif (-not (Test-Path (Join-Path $resolved 'billiard-after.bmp'))) { throw "$backend BMP capture missing" }
+              Write-Output "windows-billiard-$backend: startup + physics + capture OK"
+            }
+            Run-Billiard 'd3d12' 'billiard-matrix/d3d12'
+            Run-Billiard 'opengl' 'billiard-matrix/opengl'
+            Run-Billiard 'vulkan' 'billiard-matrix/vulkan'
+      - run:
+          name: RHI selection diagnostics smoke
+          command: |
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            & $viewer.FullName --list-rhi | Tee-Object -FilePath rhi-list.txt
+            if ($LASTEXITCODE -ne 0) { throw '--list-rhi failed' }
+            if (-not (Select-String -Path rhi-list.txt -Pattern 'opengl' -Quiet)) { throw '--list-rhi missing opengl' }
+            & $viewer.FullName --rhi bogus *> rhi-unknown.txt
+            if ($LASTEXITCODE -eq 0) { throw 'invalid --rhi unexpectedly succeeded' }
+            if (-not (Select-String -Path rhi-unknown.txt -Pattern "Unknown RHI 'bogus'" -Quiet)) { throw 'missing unknown-RHI diagnostic' }
+            & $viewer.FullName --rhi opengl --rhi vulkan *> rhi-dup.txt
+            if ($LASTEXITCODE -eq 0) { throw 'repeated --rhi unexpectedly succeeded' }
+            if (-not (Select-String -Path rhi-dup.txt -Pattern 'only once' -Quiet)) { throw 'missing repeated-RHI diagnostic' }
+      - store_artifacts:
+          path: billiard-matrix
+          destination: billiard-matrix
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots
@@ -749,7 +830,7 @@ jobs:
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              # Vulkan runtime (lavapipe) and validation layers for the startup
              # matrix; parity with the specialized Vulkan job's environment.
-             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing mesa-vulkan-drivers vulkan-validationlayers
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing mesa-vulkan-drivers vulkan-validationlayers spirv-tools
              curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing git-lfs
              python3 -m pip install --user 'cmake>=4.0,<5'
@@ -815,7 +896,7 @@ jobs:
       - run:
           name: "Build Engine"
           command: |
-             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" ./scripts/build-ninja.sh
+             CMAKE_ARGS="-DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DVULKAN_RHI_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" ./scripts/build-ninja.sh
       - when:
           condition:
             equal: [ master, << pipeline.git.branch >> ]
@@ -831,7 +912,12 @@ jobs:
       - run:
           name: Test
           command: |
-             ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
+             # VULKAN_RHI_TESTS adds native-presentation Vulkan tests that need an
+             # X display plus the lavapipe ICD and validation layers.
+             lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+             if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
+             export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+             xvfb-run -a ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
       - store_test_results:
           path: build/junit.xml
       - when:
@@ -839,6 +925,18 @@ jobs:
             equal: [quick, << parameters.scope >>]
           steps:
             - run: circleci-agent step halt
+      - run:
+          name: RHI selection diagnostics smoke
+          command: |
+             export LD_LIBRARY_PATH="$PWD/External/Linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+             ./build/Viewer/Viewer --list-rhi | tee rhi-list.txt
+             grep -q "opengl" rhi-list.txt
+             if ./build/Viewer/Viewer --rhi bogus > rhi-unknown.txt 2>&1; then
+               echo "invalid --rhi unexpectedly succeeded"; exit 1; fi
+             grep -q "Unknown RHI 'bogus'" rhi-unknown.txt
+             if ./build/Viewer/Viewer --rhi opengl --rhi vulkan > rhi-dup.txt 2>&1; then
+               echo "repeated --rhi unexpectedly succeeded"; exit 1; fi
+             grep -q "only once" rhi-dup.txt
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -909,6 +1007,31 @@ jobs:
                    # (measured 29.2% pixels, mean delta 4.7); the high-delta and
                    # mean-delta guards still reject structural divergence.
                    python3 scripts/compare_captures.py "$baseline" screenshots/matrix/vulkan/viewer-render.ppm --label linux-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.02
+      - run:
+          name: Billiard per-backend startup matrix
+          no_output_timeout: 15m
+          command: |
+             # Each backend runs the same physics regression from the one
+             # executable; physics-passed + a window capture prove startup,
+             # simulation, and backend-correct capture/quit dispatch.
+             for backend in opengl vulkan; do
+               out="billiard-matrix/$backend"; mkdir -p "$out"
+               if [ "$backend" = vulkan ]; then
+                 lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+                 if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
+                 export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+               fi
+               LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
+                 xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                 bash scripts/capture_billiard_linux.sh "$out" --rhi "$backend" \
+                 > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/billiard.log" 2>/dev/null; exit 1; }
+               test -s "$out/physics-passed"
+               test -s "$out/billiard-after.png"
+               echo "linux-billiard-$backend: startup + physics + capture OK"
+             done
+      - store_artifacts:
+          path: billiard-matrix
+          destination: billiard-matrix
       - run:
           name: Coverage (llvm-cov)
           command: |
@@ -1234,6 +1357,63 @@ jobs:
                      if [ "$backend" = vulkan ]; then tol="--max-diff-fraction 0.40 --max-high-delta-fraction 0.02"; fi
                      python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-$backend" $tol
                    done
+      - run:
+          name: Billiard per-backend startup matrix
+          no_output_timeout: 20m
+          command: |
+             set -e
+             APP=$(find build -type d -name BilliardGame.app | head -n 1)
+             test -n "$APP"
+             for backend in metal vulkan; do
+               out="billiard-matrix/$backend"; mkdir -p "$out"
+               if [ "$backend" = vulkan ]; then
+                 export HOMEBREW_NO_AUTO_UPDATE=1
+                 brew install molten-vk vulkan-validationlayers spirv-tools
+                 export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+                 export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+                 export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+                 export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+                 export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+                 shot="$PWD/$out/billiard.ppm"
+                 GEFS_SCREENSHOT_WAIT_FOR="$PWD/$out/physics-passed" \
+                   "$APP/Contents/MacOS/BilliardGame" --rhi vulkan -physicsRegression "$PWD/$out" \
+                   -screenshot "$shot" > "$out/billiard.log" 2>&1 &
+               else
+                 shot="$PWD/$out/billiard.png"
+                 "$APP/Contents/MacOS/BilliardGame" --rhi metal -physicsRegression "$PWD/$out" \
+                   -screenshot "$shot" -screenshotWaitFor "$PWD/$out/physics-passed" -screenshotDelay 0 \
+                   > "$out/billiard.log" 2>&1 &
+               fi
+               pid=$!
+               for i in $(seq 1 120); do
+                 sleep 5
+                 kill -0 "$pid" 2>/dev/null || break
+               done
+               kill "$pid" 2>/dev/null || true
+               wait "$pid" 2>/dev/null || true
+               if [ ! -s "$out/physics-passed" ] || [ ! -s "$shot" ]; then
+                 echo "=== macos-billiard-$backend billiard.log ==="; cat "$out/billiard.log" || true
+                 exit 1
+               fi
+               echo "macos-billiard-$backend: startup + physics + capture OK"
+             done
+      - run:
+          name: RHI selection diagnostics smoke
+          command: |
+             set -e
+             VAPP=$(find build -type d -name Viewer.app | head -n 1)
+             test -n "$VAPP"
+             "$VAPP/Contents/MacOS/Viewer" --list-rhi | tee rhi-list.txt
+             grep -q "opengl" rhi-list.txt || grep -q "metal" rhi-list.txt
+             if "$VAPP/Contents/MacOS/Viewer" --rhi bogus > rhi-unknown.txt 2>&1; then
+               echo "invalid --rhi unexpectedly succeeded"; exit 1; fi
+             grep -q "Unknown RHI 'bogus'" rhi-unknown.txt
+             if "$VAPP/Contents/MacOS/Viewer" --rhi metal --rhi vulkan > rhi-dup.txt 2>&1; then
+               echo "repeated --rhi unexpectedly succeeded"; exit 1; fi
+             grep -q "only once" rhi-dup.txt
+      - store_artifacts:
+          path: billiard-matrix
+          destination: billiard-matrix
       - store_artifacts:
           path: billiard-screenshots
           destination: billiard-screenshots
