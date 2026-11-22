@@ -81,9 +81,16 @@ void WindowsApplication::FinalizePlatformResources() {
         GetWindowRect(m_hWnd, &m_PreservedRect);
         m_HasPreservedGeometry = true;
         // Discard queued messages for the retiring window so stale input
-        // never reaches the recreated one.
+        // never reaches the recreated one. WM_PAINT regenerates until the
+        // update region is validated, so validate it and bound the drain.
         MSG stale;
-        while (PeekMessage(&stale, m_hWnd, 0, 0, PM_REMOVE)) {
+        int flushed = 0;
+        while (flushed < 1024 &&
+               PeekMessage(&stale, m_hWnd, 0, 0, PM_REMOVE)) {
+            ++flushed;
+            if (stale.message == WM_PAINT) {
+                ValidateRect(m_hWnd, nullptr);
+            }
         }
         DestroyWindow(m_hWnd);
         m_hWnd = nullptr;

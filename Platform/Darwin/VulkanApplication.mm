@@ -61,7 +61,7 @@ int InstallCocoaVkGuiOverrides() {
 }
 }  // namespace
 
-std::unique_ptr<VulkanBackend> MakeCocoaVulkanBackend(CocoaApplication& host) {
+std::unique_ptr<VulkanBackend> My::MakeCocoaVulkanBackend(CocoaApplication& host) {
     return std::make_unique<VulkanBackend>(
         host, host,
         std::vector<const char*>{"VK_KHR_surface", "VK_EXT_metal_surface",
