@@ -22,9 +22,9 @@ class CocoaApplication : public BaseApplication, public IPlatformHost {
 
     int InitializeGuiPlatform() override;
     void FinalizeGuiPlatform() override;
+    void FinalizePlatformResources() override;
 
    protected:
-    void FinalizePlatformResources() override;
     NSWindow* m_pWindow = nullptr;
 };
 }  // namespace My

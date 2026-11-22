@@ -25,9 +25,9 @@ class XcbApplication : public BaseApplication, public IPlatformHost {
 
     int InitializeGuiPlatform() override;
     void FinalizeGuiPlatform() override;
+    void FinalizePlatformResources() override;
 
    protected:
-    void FinalizePlatformResources() override;
     Display *m_pDisplay = nullptr;
     int m_nScreen;
 

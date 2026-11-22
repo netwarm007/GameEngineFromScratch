@@ -22,6 +22,8 @@ class SdlApplication : public BaseApplication, public IPlatformHost {
     int InitializeGuiPlatform() override { return 0; }
     void FinalizeGuiPlatform() override {}
 
+    void FinalizePlatformResources() override;
+
     void* GetMainWindowHandler() override { return m_pWindow; };
     void CreateMainWindow() override;
 

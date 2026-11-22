@@ -24,9 +24,9 @@ class WindowsApplication : public BaseApplication, public IPlatformHost {
 
     int InitializeGuiPlatform() override;
     void FinalizeGuiPlatform() override;
+    void FinalizePlatformResources() override;
 
    protected:
-    void FinalizePlatformResources() override;
     virtual void onWindowResize(int new_width, int new_height);
 
    private:

@@ -191,6 +191,192 @@ void TestFrameOrderPreserved() {
     root.PersistentModules().Finalize();
 }
 
+class StubHost : public IApplication, public IPlatformHost, public IRenderBackend {
+   public:
+    explicit StubHost(std::vector<std::string>& events) : m_Events(events) {}
+
+    int graphicsResult = 0;
+    int guiResult = 0;
+
+    // IRenderBackend
+    int InitializeGraphicsResources() override {
+        m_Events.push_back("graphics-init");
+        return graphicsResult;
+    }
+    void WaitForGraphicsIdle() override { m_Events.push_back("drain"); }
+    void FinalizeGraphicsResources() override {
+        m_Events.push_back("graphics-stop");
+    }
+
+    // IPlatformHost
+    int InitializeGuiPlatform() override {
+        m_Events.push_back("gui-init");
+        return guiResult;
+    }
+    void FinalizeGuiPlatform() override { m_Events.push_back("gui-stop"); }
+    void FinalizePlatformResources() override {
+        m_Events.push_back("platform-stop");
+    }
+    void ProcessEvents() override { m_Events.push_back("events"); }
+
+    // IApplication
+    void SetCommandLineParameters(int, char**) override {}
+    int GetCommandLineArgumentsCount() const override { return 0; }
+    const char* GetCommandLineArgument(int) const override { return nullptr; }
+    bool IsQuit() const override { return false; }
+    void RequestQuit() override {}
+    void CreateMainWindow() override { m_Events.push_back("window-create"); }
+    void* GetMainWindowHandler() override { return nullptr; }
+    const GfxConfiguration GetConfiguration() const override {
+        return GfxConfiguration();
+    }
+    void GetFramebufferSize(uint32_t& width, uint32_t& height) override {
+        width = 320;
+        height = 240;
+    }
+
+   private:
+    std::vector<std::string>& m_Events;
+};
+
+void TestRootStartupAndTeardownOrder() {
+    std::vector<std::string> events;
+    StubHost host(events);
+    RecordingModule p1("p1", events), p2("p2", events);
+    RecordingModule s1("s1", events), s2("s2", events);
+    RuntimeRoot root;
+    root.SetHost(host, host, host);
+    root.RegisterPersistentModule(p1);
+    root.RegisterPersistentModule(p2);
+    root.RegisterSessionModule(s1);
+    root.RegisterSessionModule(s2);
+    root.SetFramePlan({&p1, &s1, &p2, &s2});
+
+    Expect(root.Initialize() == 0, "root startup succeeds");
+    Expect(events == std::vector<std::string>{
+                         "graphics-init", "gui-init", "init p1", "init p2",
+                         "init s1", "init s2"},
+           "startup order: backend, GUI platform, persistent, session");
+    events.clear();
+
+    root.Tick();
+    Expect(events == std::vector<std::string>{"events", "tick p1", "tick s1",
+                                              "tick p2", "tick s2"},
+           "frame order: platform events then the caller-composed plan");
+    events.clear();
+
+    root.Finalize();
+    Expect(events == std::vector<std::string>{
+                         "drain", "stop s2", "stop s1", "stop p2", "stop p1",
+                         "gui-stop", "graphics-stop", "platform-stop"},
+           "teardown order: drain, session, persistent, GUI, backend, platform");
+    events.clear();
+    root.Finalize();
+    Expect(events == std::vector<std::string>{"drain", "platform-stop"},
+           "repeated Finalize does not double-finalize modules or hooks");
+}
+
+void TestRootFailurePaths() {
+    {
+        std::vector<std::string> events;
+        StubHost host(events);
+        host.graphicsResult = 5;
+        RecordingModule p1("p1", events), s1("s1", events);
+        RuntimeRoot root;
+        root.SetHost(host, host, host);
+        root.RegisterPersistentModule(p1);
+        root.RegisterSessionModule(s1);
+        Expect(root.Initialize() == 5, "graphics failure propagates");
+        Expect(events == std::vector<std::string>{"graphics-init"},
+               "graphics failure initializes no modules");
+        events.clear();
+        root.Finalize();
+        Expect(events == std::vector<std::string>{"drain", "platform-stop"},
+               "Finalize after graphics failure releases only platform");
+    }
+    {
+        std::vector<std::string> events;
+        StubHost host(events);
+        RecordingModule p1("p1", events), p2("p2", events);
+        RecordingModule s1("s1", events), s2("s2", events);
+        s2.result = 7;
+        RuntimeRoot root;
+        root.SetHost(host, host, host);
+        root.RegisterPersistentModule(p1);
+        root.RegisterPersistentModule(p2);
+        root.RegisterSessionModule(s1);
+        root.RegisterSessionModule(s2);
+        Expect(root.Initialize() == 7, "session failure propagates");
+        Expect(events == std::vector<std::string>{
+                             "graphics-init", "gui-init", "init p1", "init p2",
+                             "init s1", "init s2", "drain", "stop s1",
+                             "stop p2", "stop p1"},
+               "session failure rolls back session and persistent modules");
+        events.clear();
+        root.Finalize();
+        Expect(events == std::vector<std::string>{
+                     "drain", "gui-stop", "graphics-stop", "platform-stop"},
+               "Finalize after session failure releases native hooks once");
+    }
+}
+
+void TestRootReconstructionCycle() {
+    std::vector<std::string> events;
+    StubHost host(events);
+    RecordingModule p1("p1", events), p2("p2", events);
+    RecordingModule s1("s1", events), s2("s2", events);
+    RuntimeRoot root;
+    root.SetHost(host, host, host);
+    root.RegisterPersistentModule(p1);
+    root.RegisterPersistentModule(p2);
+    root.RegisterSessionModule(s1);
+    root.RegisterSessionModule(s2);
+    root.SetFramePlan({&p1, &s1, &p2, &s2});
+    Expect(root.Initialize() == 0, "startup before reconstruction");
+    const auto generation = root.Session().Generation();
+    events.clear();
+
+    // Same-backend reconstruction keeping the native window.
+    root.RetireSessionForReconstruction(false);
+    Expect(events == std::vector<std::string>{"drain", "stop s2", "stop s1",
+                                              "gui-stop", "graphics-stop"},
+           "retirement releases session and native state, not the window");
+    events.clear();
+    Expect(root.PrepareReconstructedSession(false) == 0,
+           "native backend recreates on the existing window");
+    Expect(events == std::vector<std::string>{"graphics-init", "gui-init"},
+           "preparation re-initializes backend and GUI platform only");
+    events.clear();
+
+    RecordingModule s3("s3", events);
+    root.RegisterSessionModule(s3);
+    Expect(root.Session().Activate(
+               [&] { host.WaitForGraphicsIdle(); }) == 0,
+           "fresh session modules activate");
+    Expect(root.Session().Generation() > generation,
+           "reconstruction publishes a new session generation");
+    root.SetFramePlan({&p1, &s3, &p2});
+    events.clear();
+    root.Tick();
+    Expect(events == std::vector<std::string>{"events", "tick p1", "tick s3",
+                                              "tick p2"},
+           "persistent services keep ticking across reconstruction");
+    events.clear();
+
+    // Window-recreating variant (WGL/GLX/SDL policy).
+    root.RetireSessionForReconstruction(true);
+    Expect(events.back() == "platform-stop",
+           "window policy releases platform resources");
+    host.CreateMainWindow();
+    Expect(root.PrepareReconstructedSession(true) == 0,
+           "backend recreates on the fresh window");
+    RecordingModule s4("s4", events);
+    root.RegisterSessionModule(s4);
+    Expect(root.Session().Activate() == 0, "second reconstruction activates");
+    root.SetFramePlan({&p1, &s4, &p2});
+    root.Finalize();
+}
+
 void TestRootMemorySystemOwnership() {
     std::vector<std::string> events;
     RecordingModule persistent("persistent", events);
@@ -260,6 +446,9 @@ int main() {
     TestSessionFailureRollbackAndRetry();
     TestGenerationSemantics();
     TestFrameOrderPreserved();
+    TestRootStartupAndTeardownOrder();
+    TestRootFailurePaths();
+    TestRootReconstructionCycle();
     TestRootMemorySystemOwnership();
     return failures == 0 ? 0 : 1;
 }

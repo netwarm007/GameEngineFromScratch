@@ -19,6 +19,11 @@ _Interface_ IPlatformHost {
     virtual int InitializeGuiPlatform() = 0;
     virtual void FinalizeGuiPlatform() = 0;
 
+    // Release native window/platform resources. Window recreation for
+    // reconstruction calls this before CreateMainWindow; backends whose
+    // drawable survives session replacement skip it.
+    virtual void FinalizePlatformResources() = 0;
+
     // Drain pending platform events and run GUI platform per-frame work
     // without ticking runtime modules. Safe to call while rendering is
     // paused.
