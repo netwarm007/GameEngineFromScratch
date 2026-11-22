@@ -286,6 +286,10 @@ void LinuxHost::GetFramebufferSize(uint32_t& width, uint32_t& height) {
         height = static_cast<uint32_t>(h);
         return;
     }
+    if (!m_pConn || m_XWindow == XCB_WINDOW_NONE) {
+        width = height = 0;
+        return;
+    }
     auto geom = xcb_get_geometry_reply(
         m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
     if (geom) {

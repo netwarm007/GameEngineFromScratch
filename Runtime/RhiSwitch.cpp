@@ -30,7 +30,7 @@ RhiSwitchController::RhiSwitchController(
     GfxConfiguration& configuration, ISceneManager& sceneManager,
     IAssetReader& assetReader, std::function<MemorySystem*()> memoryProvider,
     BackendFactory backendFactory, SessionFactory sessionFactory,
-    AvailabilityProbe availabilityProbe)
+    AvailabilityProbe availabilityProbe, FramebufferQuery framebufferQuery)
     : m_Root(root),
       m_Composition(composition),
       m_Configuration(configuration),
@@ -44,7 +44,8 @@ RhiSwitchController::RhiSwitchController(
                            : SessionFactory(CreateRhiSessionModules)),
       m_AvailabilityProbe(availabilityProbe
                               ? std::move(availabilityProbe)
-                              : AvailabilityProbe(ProbeRhiStartupAvailability)) {}
+                              : AvailabilityProbe(ProbeRhiStartupAvailability)),
+      m_FramebufferQuery(std::move(framebufferQuery)) {}
 
 RhiSwitchRequestResult RhiSwitchController::Request(RhiBackend target) {
     if (m_State != RhiSwitchState::Running || m_Pending) {
@@ -77,7 +78,11 @@ void RhiSwitchController::ProcessFrameBoundary() {
         // framebuffer size; a minimized/zero-size window keeps waiting
         // without busy-looping (one check per frame boundary).
         uint32_t width = 0, height = 0;
-        m_Root.Application()->GetFramebufferSize(width, height);
+        if (m_FramebufferQuery) {
+            m_FramebufferQuery(width, height);
+        } else {
+            m_Root.Application()->GetFramebufferSize(width, height);
+        }
         if (width > 0 && height > 0) {
             m_State = RhiSwitchState::Running;
             std::cout << "RHI switch complete: "

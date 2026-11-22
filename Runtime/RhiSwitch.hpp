@@ -39,6 +39,7 @@ class RhiSwitchController {
         RhiBackend, IRenderBackend&, ISceneManager&, IAssetReader&,
         std::function<MemorySystem*()>)>;
     using AvailabilityProbe = std::function<std::vector<RhiBackendAvailability>()>;
+    using FramebufferQuery = std::function<void(uint32_t&, uint32_t&)>;
 
     RhiSwitchController(RuntimeRoot& root, RhiStartupComposition& composition,
                         GfxConfiguration& configuration,
@@ -46,7 +47,8 @@ class RhiSwitchController {
                         std::function<MemorySystem*()> memoryProvider,
                         BackendFactory backendFactory = {},
                         SessionFactory sessionFactory = {},
-                        AvailabilityProbe availabilityProbe = {});
+                        AvailabilityProbe availabilityProbe = {},
+                        FramebufferQuery framebufferQuery = {});
 
     // Preflight and queue a switch for the next complete frame boundary.
     RhiSwitchRequestResult Request(RhiBackend target);
@@ -79,6 +81,7 @@ class RhiSwitchController {
     BackendFactory m_BackendFactory;
     SessionFactory m_SessionFactory;
     AvailabilityProbe m_AvailabilityProbe;
+    FramebufferQuery m_FramebufferQuery;
 
     RhiSwitchState m_State = RhiSwitchState::Running;
     bool m_Pending = false;

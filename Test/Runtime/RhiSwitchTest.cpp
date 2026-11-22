@@ -184,7 +184,8 @@ struct Fixture {
                    IAssetReader& a, std::function<MemorySystem*()> p) {
                 return MakeSession(t, b, s, a, p);
             },
-            [] { return AllReady(); });
+            [] { return AllReady(); },
+            [this](uint32_t& w, uint32_t& h) { w = app.fbWidth; h = app.fbHeight; });
     }
 };
 
@@ -290,7 +291,8 @@ void TestPreflightKeepsOldSession() {
              std::function<MemorySystem*()> p) {
             return f.MakeSession(t, b, s, a, p);
         },
-        probe);
+        probe,
+        [&f](uint32_t& w, uint32_t& h) { w = f.app.fbWidth; h = f.app.fbHeight; });
     Expect(withProbe.Request(RhiBackend::Metal) ==
                RhiSwitchRequestResult::NotCompiled,
            "uncompiled target fails preflight");
