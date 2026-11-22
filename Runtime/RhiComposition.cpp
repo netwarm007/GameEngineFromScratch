@@ -125,6 +125,11 @@ int ReconstructRhiSession(RuntimeRoot& root,
     if (!composition.application || !root.Backend()) return -1;
     const bool recreateWindow = composition.recreateWindowOnReconstruction;
 
+    // Clear the host's borrowed session pointers before retirement: window
+    // teardown routes resize messages through them, and the retired modules
+    // are about to be freed.
+    composition.application->BindSessionManagers(nullptr, nullptr);
+
     // Retire session modules while they are still alive, then release them.
     root.RetireSessionForReconstruction(recreateWindow);
     composition.graphicsManager.reset();

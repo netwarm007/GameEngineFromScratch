@@ -75,7 +75,7 @@ void SdlApplication::onResize(int width, int height) {
         height = 1;
     }
 
-    m_pGraphicsManager->ResizeCanvas(width, height);
+    if (m_pGraphicsManager) m_pGraphicsManager->ResizeCanvas(width, height);
 }
 
 int SdlApplication::Initialize() {
