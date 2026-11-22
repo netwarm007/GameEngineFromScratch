@@ -166,8 +166,13 @@ geometry, DPI-aware layout, and floating-panel placement, not native handles.
 
 ## Implementation checkpoints
 
-Each checkpoint depends on the preceding one. Confirm the next scope before
-implementation; checkpoint acceptance does not authorize all remaining stages.
+Only the top-level milestones (M0–M5) are **checkpoints**. Each checkpoint
+depends on the preceding one and requires human confirmation before proceeding
+to the next checkpoint; accepting one checkpoint does not authorize the
+remaining checkpoints. The sub-increments within a checkpoint (M#.#, such as
+M2.1–M2.6) are **work steps**, not checkpoints: implement and verify them in
+order and self-confirm each by its full-CI acceptance result, without a human
+confirmation stop, until the parent checkpoint is complete.
 
 | Checkpoint | Deliverables | Exit criteria |
 | --- | --- | --- |
@@ -186,11 +191,13 @@ session boundary instead of reopening frame-scheduler design.
 
 ### M2 execution plan
 
-Implement and verify these increments separately. The first increment establishes
-the shared contract; it does not advertise runtime selection in applications
-before their factories and loader isolation are ready.
+Implement and verify these work steps separately. The first work step
+establishes the shared contract; it does not advertise runtime selection in
+applications before their factories and loader isolation are ready. Work steps
+are self-confirmed by their full-CI acceptance; only the parent M2 checkpoint
+requires human confirmation before moving to M3.
 
-| Increment | Work | Verification boundary |
+| Work step | Work | Verification boundary |
 | --- | --- | --- |
 | M2.1: selection contract | Canonical backend identifiers, central `--rhi`/`--list-rhi` parsing, availability diagnostics, and explicit/default selection without fallback. | Headless tests of production parsing/resolution; no native startup or backend retention claim. |
 | M2.2: Vulkan loader isolation | Resolve Vulkan entry points through a controlled late-loaded loader, including platform calls and ImGui dispatch. | Missing Vulkan runtime does not prevent non-Vulkan startup; loader/dispatch failures are explicit. Preserve strict native WSI requirements. |
