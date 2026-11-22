@@ -1,0 +1,47 @@
+# CircleCI Smarter Testing suites for the engine's CTest runs.
+#
+# Test atoms are CTest test names. The build directory and label filter
+# come from the job environment so one suite serves every configuration:
+#   GEFS_CTEST_DIR   - CTest binary tree (default: build; build-release,
+#                      build-vulkan-abi, ... for the other configurations)
+#   GEFS_CTEST_LABEL - optional CTest label filter (e.g. "fast" for quick
+#                      workflows)
+#
+# Platform environment wrappers (vcvars64 on Windows, xvfb-run on Linux,
+# MoltenVK ICD/layer variables on macOS) stay in the job step that invokes
+# `circleci testsuite run`, so the suite commands stay portable.
+---
+name: engine-windows
+discover: |
+  $dir = if ($env:GEFS_CTEST_DIR) { $env:GEFS_CTEST_DIR } else { 'build' }
+  $labelArgs = @()
+  if ($env:GEFS_CTEST_LABEL) { $labelArgs = @('-L', $env:GEFS_CTEST_LABEL) }
+  $json = ctest --test-dir $dir -C Debug -N --show-only=json-v1 @labelArgs | Out-String
+  ($json | ConvertFrom-Json).tests | ForEach-Object { $_.name }
+run: |
+  $dir = if ($env:GEFS_CTEST_DIR) { $env:GEFS_CTEST_DIR } else { 'build' }
+  $labelArgs = @()
+  if ($env:GEFS_CTEST_LABEL) { $labelArgs = @('-L', $env:GEFS_CTEST_LABEL) }
+  $pattern = '^(' + ('<< test.atoms >>' -replace ' ', '|') + ')$'
+  ctest --test-dir $dir -C Debug --output-on-failure `
+    --output-junit '<< outputs.junit >>' -R $pattern @labelArgs
+  exit $LASTEXITCODE
+options:
+  store-test-results: true
+---
+name: engine-unix
+discover: |
+  dir="${GEFS_CTEST_DIR:-build}"
+  label_args=()
+  if [ -n "$GEFS_CTEST_LABEL" ]; then label_args=(-L "$GEFS_CTEST_LABEL"); fi
+  ctest --test-dir "$dir" -N --show-only=json-v1 "${label_args[@]}" |
+    python3 -c 'import json,sys; [print(t["name"]) for t in json.load(sys.stdin)["tests"]]'
+run: |
+  dir="${GEFS_CTEST_DIR:-build}"
+  label_args=()
+  if [ -n "$GEFS_CTEST_LABEL" ]; then label_args=(-L "$GEFS_CTEST_LABEL"); fi
+  pattern="^($(printf '%s' '<< test.atoms >>' | tr ' ' '|'))$"
+  ctest --test-dir "$dir" --output-on-failure \
+    --output-junit "<< outputs.junit >>" -R "$pattern" "${label_args[@]}"
+options:
+  store-test-results: true

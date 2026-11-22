@@ -98,9 +98,6 @@ jobs:
         type: enum
         enum: [quick, full]
         default: full
-      ctest_args:
-        type: string
-        default: ""
     executor:
       name: win/server-2022
       shell: powershell.exe
@@ -437,9 +434,6 @@ jobs:
         type: enum
         enum: [quick, full]
         default: full
-      ctest_args:
-        type: string
-        default: ""
     executor:
       name: win/server-2022
       shell: powershell.exe
@@ -452,10 +446,11 @@ jobs:
             $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
             $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
             if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build -C Debug --output-on-failure --output-junit junit.xml << parameters.ctest_args >>"
+            if ('<< parameters.scope >>' -eq 'quick') { $env:GEFS_CTEST_LABEL = 'fast' }
+            circleci testsuite --help *> $null
+            if ($LASTEXITCODE -ne 0) { circleci extension install testsuite }
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && circleci testsuite run engine-windows"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - store_test_results:
-          path: build/junit.xml
       - when:
           condition:
             equal: [full, << parameters.scope >>]
@@ -466,10 +461,9 @@ jobs:
                   $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
                   $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
                   if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build-release -C Release --output-on-failure --output-junit junit.xml"
+                  $env:GEFS_CTEST_DIR = 'build-release'
+                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && circleci testsuite run engine-windows"
                   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            - store_test_results:
-                path: build-release/junit.xml
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -1052,9 +1046,6 @@ jobs:
         type: enum
         enum: [quick, full]
         default: full
-      ctest_args:
-        type: string
-        default: ""
     environment:
       CCACHE_MAXSIZE: 2G
       CCACHE_BASEDIR: /home/circleci/project
@@ -1159,9 +1150,9 @@ jobs:
              lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
              if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
              export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
-             xvfb-run -a ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
-      - store_test_results:
-          path: build/junit.xml
+             if [ "<< parameters.scope >>" = quick ]; then export GEFS_CTEST_LABEL=fast; fi
+             circleci testsuite --help >/dev/null 2>&1 || circleci extension install testsuite
+             xvfb-run -a circleci testsuite run engine-unix
       - when:
           condition:
             equal: [quick, << parameters.scope >>]
@@ -1481,18 +1472,13 @@ jobs:
             - run:
                 name: "Test (Release)"
                 command: |
-                  ctest --test-dir build-release --output-on-failure --output-junit junit.xml
-            - store_test_results:
-                path: build-release/junit.xml
+                  GEFS_CTEST_DIR=build-release circleci testsuite run engine-unix
   build_macos:
     parameters:
       scope:
         type: enum
         enum: [quick, full]
         default: full
-      ctest_args:
-        type: string
-        default: ""
     environment:
       CCACHE_MAXSIZE: 2G
     macos:
@@ -1581,9 +1567,9 @@ jobs:
       - run:
           name: Test
           command: |
-             ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
-      - store_test_results:
-          path: build/junit.xml
+             if [ "<< parameters.scope >>" = quick ]; then export GEFS_CTEST_LABEL=fast; fi
+             circleci testsuite --help >/dev/null 2>&1 || circleci extension install testsuite
+             circleci testsuite run engine-unix
       - when:
           condition:
             equal: [quick, << parameters.scope >>]
@@ -1993,7 +1979,7 @@ jobs:
                -DSPIRV_CROSS="$PWD/External/Darwin/bin/spirv-cross" \
                -DZLIB_ROOT="$PWD/External/Darwin"
              cmake --build build-vulkan-abi --parallel 2
-             ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
+             GEFS_CTEST_DIR=build-vulkan-abi circleci testsuite run engine-unix
              status=0
              bash scripts/capture_vulkan_applications.sh moltenvk-applications || status=$?
              if [ "$status" -ne 0 ]; then
@@ -2013,8 +1999,6 @@ jobs:
           destination: moltenvk-applications
           when: always
 
-      - store_test_results:
-          path: build-vulkan-abi/junit.xml
       - store_artifacts:
           path: build-vulkan-abi/Testing
           destination: moltenvk-verification
@@ -2049,9 +2033,7 @@ jobs:
             - run:
                 name: "Test (Release)"
                 command: |
-                  ctest --test-dir build-release --output-on-failure --output-junit junit.xml
-            - store_test_results:
-                path: build-release/junit.xml
+                  GEFS_CTEST_DIR=build-release circleci testsuite run engine-unix
   build_android:
     working_directory: ~/project
     docker:
@@ -2169,7 +2151,6 @@ workflows:
           requires:
             - build_windows
           scope: quick
-          ctest_args: "-L fast"
   quick-linux:
     when:
       and:
@@ -2178,7 +2159,6 @@ workflows:
     jobs:
       - build_linux:
           scope: quick
-          ctest_args: "-L fast"
   quick-macos:
     when:
       and:
@@ -2187,7 +2167,6 @@ workflows:
     jobs:
       - build_macos:
           scope: quick
-          ctest_args: "-L fast"
   build-and-test-and-release: #for tags
     jobs:
       - build_windows:
