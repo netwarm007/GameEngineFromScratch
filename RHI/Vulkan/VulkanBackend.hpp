@@ -30,6 +30,13 @@ class VulkanBackend : public IRenderBackend {
 
     VulkanRHI& GetRHI() { return m_Rhi; }
 
+    // Runs only the backend-specific GUI binding (e.g. Cocoa ImGui Vulkan
+    // overrides). Legacy applications that are both the host and the backend
+    // owner must call this after their own (qualified) platform GUI init:
+    // calling InitializeGuiPlatform() through the host reference would
+    // dispatch back into the application's override and recurse forever.
+    int BindGuiOverrides() { return m_AfterGuiBind ? m_AfterGuiBind() : 0; }
+
     void CreateMainWindow() override;
     int InitializeGraphicsResources() override;
     void WaitForGraphicsIdle() override;

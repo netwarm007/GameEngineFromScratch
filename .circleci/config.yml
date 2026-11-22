@@ -606,12 +606,13 @@ jobs:
               Stop-Process -Id $process.Id -ErrorAction SilentlyContinue
               throw "Viewer baseline capture timed out after 180 seconds"
             }
-            # With redirected output, ExitCode is only cached after the
-            # parameterless WaitForExit drains the async readers.
             $process.WaitForExit()
             Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-            if ($process.ExitCode -ne 0) { throw "Viewer baseline capture exited $($process.ExitCode); see viewer logs" }
-            if (-not (Test-Path screenshots/viewer-render.png)) { throw "Viewer did not produce a baseline PNG" }
+            # The PNG is the success criterion: with redirected output the
+            # Process.ExitCode property can stay empty even after WaitForExit.
+            if (-not (Test-Path screenshots/viewer-render.png)) {
+              throw "Viewer did not produce a baseline PNG (exit $($process.ExitCode)); see viewer logs"
+            }
       - when:
           condition:
             equal: [<< parameters.scope >>, full]
@@ -1989,7 +1990,7 @@ jobs:
                echo "--- capture failed (exit $status); running Viewer under lldb without validation layers"
                unset VK_LAYER_PATH
                viewer=./build-vulkan-apps/Viewer/Viewer.app/Contents/MacOS/Viewer
-               lldb -b -o run -o "thread backtrace all" -o quit -- \
+               lldb -b -o run -o "thread backtrace -c 25" -o quit -- \
                  "$viewer" -screenshot moltenvk-applications/Viewer-novalidation.ppm \
                  > moltenvk-applications/Viewer-lldb.log 2>&1 || true
              fi

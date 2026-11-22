@@ -23,9 +23,11 @@ class VulkanApplication : public WindowsApplication, public IRenderBackend {
     int InitializeGraphicsResources() final {
         return m_Backend->InitializeGraphicsResources();
     }
-    void FinalizeGuiPlatform() final { m_Backend->FinalizeGuiPlatform(); }
+    void FinalizeGuiPlatform() final { WindowsApplication::FinalizeGuiPlatform(); }
     int InitializeGuiPlatform() final {
-        return m_Backend->InitializeGuiPlatform();
+        const int result = WindowsApplication::InitializeGuiPlatform();
+        if (result != 0) return result;
+        return m_Backend->BindGuiOverrides();
     }
     void WaitForGraphicsIdle() final { m_Backend->WaitForGraphicsIdle(); }
     void FinalizeGraphicsResources() final {

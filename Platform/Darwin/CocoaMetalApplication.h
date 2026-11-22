@@ -20,9 +20,9 @@ class CocoaMetalApplication : public CocoaApplication, public IRenderBackend {
 
     void CreateMainWindow() override { CocoaApplication::CreateMainWindow(); }
     int InitializeGuiPlatform() override {
-        return m_Backend.InitializeGuiPlatform();
+        return CocoaApplication::InitializeGuiPlatform();
     }
-    void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
+    void FinalizeGuiPlatform() override { CocoaApplication::FinalizeGuiPlatform(); }
     void WaitForGraphicsIdle() override { m_Backend.WaitForGraphicsIdle(); }
     void FinalizeGraphicsResources() override {
         m_Backend.FinalizeGraphicsResources();

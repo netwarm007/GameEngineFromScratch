@@ -18,14 +18,18 @@ class VulkanApplication : public CocoaApplication, public IRenderBackend {
     VulkanRHI& GetRHI() { return m_Backend->GetRHI(); }
 
     void CreateMainWindow() override { CocoaApplication::CreateMainWindow(); }
-    void FinalizeGuiPlatform() final { m_Backend->FinalizeGuiPlatform(); }
+    // Qualified base calls: delegating to the backend here would recurse
+    // (backend -> IPlatformHost& -> this override -> backend -> ...).
+    void FinalizeGuiPlatform() final { CocoaApplication::FinalizeGuiPlatform(); }
 
    private:
     int InitializeGraphicsResources() final {
         return m_Backend->InitializeGraphicsResources();
     }
     int InitializeGuiPlatform() final {
-        return m_Backend->InitializeGuiPlatform();
+        const int result = CocoaApplication::InitializeGuiPlatform();
+        if (result != 0) return result;
+        return m_Backend->BindGuiOverrides();
     }
     void WaitForGraphicsIdle() final { m_Backend->WaitForGraphicsIdle(); }
     void FinalizeGraphicsResources() final {

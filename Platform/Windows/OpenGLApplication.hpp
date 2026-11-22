@@ -28,7 +28,7 @@ class OpenGLApplication : public WindowsApplication, public IRenderBackend {
     int InitializeGuiPlatform() override {
         return m_Backend.InitializeGuiPlatform();
     }
-    void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
+    void FinalizeGuiPlatform() override { WindowsApplication::FinalizeGuiPlatform(); }
     int InitializeGraphicsResources() override {
         return m_Backend.InitializeGraphicsResources();
     }

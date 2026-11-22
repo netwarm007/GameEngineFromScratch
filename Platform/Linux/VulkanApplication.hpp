@@ -22,9 +22,11 @@ class VulkanApplication : public XcbApplication, public IRenderBackend {
 
     void CreateMainWindow() override { XcbApplication::CreateMainWindow(); }
     int InitializeGuiPlatform() override {
-        return m_Backend.InitializeGuiPlatform();
+        const int result = XcbApplication::InitializeGuiPlatform();
+        if (result != 0) return result;
+        return m_Backend.BindGuiOverrides();
     }
-    void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
+    void FinalizeGuiPlatform() override { XcbApplication::FinalizeGuiPlatform(); }
 
    private:
     int InitializeGraphicsResources() final {
