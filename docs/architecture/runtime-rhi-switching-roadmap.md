@@ -13,10 +13,12 @@ for the tested scope and distribution limitations. M2.1's startup-selection
 contract and M2.2's Vulkan loader isolation are implemented and verified at
 their headless boundaries. M2.3's owned startup composition, M2.4 Viewer and
 M2.5 Billiard runtime selection, the informative window titles, and M2.6
-stage 1's full-scope Viewer startup matrix are implemented and accepted by
-full native three-platform CI. Remaining M2.6 coverage migration,
-reconstruction (M3), hot switching (M4), and UI rollout (M5) remain separate
-implementation and acceptance steps, not completed functionality.
+(Viewer + Billiard per-backend startup matrices, RHI diagnostics smoke, Vulkan
+coverage migration, and retirement of the specialized Vulkan job) are
+implemented and verified by full native three-platform CI. The M2 startup
+selection checkpoint is complete. Reconstruction (M3), hot switching (M4), and
+UI rollout (M5) remain separate checkpoints, each requiring human confirmation;
+deliverable acceptance is the later all-roadmap + three-platform-CI + PR gate.
 
 The working branch was fast-forwarded to master
 `175d3567bb032e5356a8b537b5c5bb5f50edc6b2` before preparing this draft.
@@ -166,8 +168,18 @@ geometry, DPI-aware layout, and floating-panel placement, not native handles.
 
 ## Implementation checkpoints
 
-Each checkpoint depends on the preceding one. Confirm the next scope before
-implementation; checkpoint acceptance does not authorize all remaining stages.
+Only the top-level milestones (M0–M5) are **checkpoints**. Each checkpoint
+depends on the preceding one and, after a self-check, requires human
+confirmation before proceeding to the next checkpoint; confirming one
+checkpoint does not authorize the remaining checkpoints. The sub-increments
+within a checkpoint (M#.#, such as M2.1–M2.6) are **work steps**, not
+checkpoints: after completing one, self-check that its goal is achieved (CI may
+be submitted to verify) and continue without a human confirmation stop, until
+the parent checkpoint is complete. **Acceptance (验收) is deliverable
+acceptance**, distinct from per-revision CI verification: it normally requires
+all roadmap tasks to be complete, the three-platform CI to pass, and a pull
+request to be created. Per-revision full-CI runs are verification evidence
+(recorded under `docs/verification/`), not acceptance.
 
 | Checkpoint | Deliverables | Exit criteria |
 | --- | --- | --- |
@@ -186,11 +198,13 @@ session boundary instead of reopening frame-scheduler design.
 
 ### M2 execution plan
 
-Implement and verify these increments separately. The first increment establishes
-the shared contract; it does not advertise runtime selection in applications
-before their factories and loader isolation are ready.
+Implement and verify these work steps separately. The first work step
+establishes the shared contract; it does not advertise runtime selection in
+applications before their factories and loader isolation are ready. Work steps
+are self-confirmed by their full-CI acceptance; only the parent M2 checkpoint
+requires human confirmation before moving to M3.
 
-| Increment | Work | Verification boundary |
+| Work step | Work | Verification boundary |
 | --- | --- | --- |
 | M2.1: selection contract | Canonical backend identifiers, central `--rhi`/`--list-rhi` parsing, availability diagnostics, and explicit/default selection without fallback. | Headless tests of production parsing/resolution; no native startup or backend retention claim. |
 | M2.2: Vulkan loader isolation | Resolve Vulkan entry points through a controlled late-loaded loader, including platform calls and ImGui dispatch. | Missing Vulkan runtime does not prevent non-Vulkan startup; loader/dispatch failures are explicit. Preserve strict native WSI requirements. |
@@ -263,7 +277,7 @@ host labels, so the active combination is visible in the title bar. Linux
 capture scripts resolve the window id by name through `xwininfo -root -tree`
 instead of exact-title import. Legacy builds keep their existing titles.
 
-M2.6 stage 1 adds a full-scope Viewer startup matrix: every CI-feasible
+M2.6 adds a full-scope Viewer startup matrix: every CI-feasible
 platform/backend combination launches from the same executable and its
 capture is compared against the platform baseline by
 [compare_captures.py](../../scripts/compare_captures.py) (pure-Python PNG/PPM
@@ -283,11 +297,15 @@ permissions, reading only the registry. An opt-in GEFS_VULKAN_LIBRARY
 override can point the loader at an alternate runtime when needed.
 Cross-backend comparisons use a wider differing-fraction bound (0.40) with
 the high-delta and mean-delta guards unchanged, calibrated against measured
-software-rasterizer variation. Remaining M2.6 scope: Billiard per-backend
-matrix, `--list-rhi`/error-path native smoke, Vulkan coverage migration from
-the specialized job, and retirement of that job only after equivalent
-coverage is verified. See the
-[exact-revision verification](../verification/169f9c3d8f5e5b4f7fa469efffd9468a36fb4846.md).
+software-rasterizer variation. M2.6 also adds the Billiard per-backend startup
+matrix (physics regression + backend-correct capture per combination) and the
+`--list-rhi`/error-path native smoke on all platforms, migrates the Vulkan
+regression coverage into `build_linux` via the integrated `VULKAN_RHI_TESTS`
+entry point (a verified superset of the specialized job's tests), and retires
+the specialized `verify_vulkan_shader_abi` job; macOS keeps its in-job MoltenVK
+verification. See the stage-1
+[verification](../verification/169f9c3d8f5e5b4f7fa469efffd9468a36fb4846.md) and the
+[complete-M2.6 verification](../verification/6cf2c7d08853a81f4380611035e582525f828bcc.md).
 
 The canonical startup names are `d3d12`, `opengl`, `metal`, and `vulkan`.
 Accept `--rhi <name>` and `--rhi=<name>`; `--list-rhi` takes no value.
@@ -400,7 +418,7 @@ platforms; default native and opt-in Vulkan application artifacts were inspected
 | Linux runtime selection retains the SDL OpenGL host (no GUI regression): the XCB host has no ImGui platform input backend and disables multi-viewports. XCB ImGui parity is a prerequisite for the agreed XCB-only host; Vulkan selection uses the existing XCB path with its tracked GUI limits. | M2.4 deviation; XCB parity follow-on |
 | Static archives can discard unused backends until factories reference them; complete executable inclusion is not claimed by library linking alone. | M2 |
 | Viewer (M2.4) and Billiard (M2.5) application CLI wiring is landed and natively verified; the startup contract, Vulkan loader isolation, backend factories, and availability probes are in place. Remaining coverage migration and switching milestones gate wider advertisement. | M2.6-M5 |
-| Linux Vulkan environment parity is aligned (Ubuntu 24.04, lavapipe, validation layers) and the Windows native D3D12/OpenGL/Vulkan startup matrix is established. Coverage migration from the specialized Vulkan job and its retirement remain open; retirement requires verified equivalent coverage. | M2.6 |
+| Linux Vulkan environment parity is aligned (Ubuntu 24.04, lavapipe, validation layers); the Windows native D3D12/OpenGL/Vulkan startup matrix is established; Vulkan coverage is migrated into `build_linux` (`VULKAN_RHI_TESTS`) and the specialized job retired after verified equivalence. | M2.6 (resolved) |
 | Real macOS bundles are exercised, but native project installers were not generated by the M1 feature-branch pipeline. Fixture installation checks do not replace installed native distribution validation. | M5 |
 | Vulkan loader isolation is implemented and headless-tested; native evidence that non-Vulkan startup ignores an absent Vulkan runtime lands with application CLI integration. | M2.4 |
 | Material baking uses the native Utility executable; complete desktop cross-compilation needs an explicit host-tool path before it can be supported. | Follow-on build scope |

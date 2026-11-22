@@ -2,11 +2,12 @@
 set -eu
 
 output_dir=${1:-billiard-screenshots}
+if [ "$#" -gt 0 ]; then shift; fi
 mkdir -p "$output_dir"
 output_dir=$(cd "$output_dir" && pwd)
 export LD_LIBRARY_PATH="$PWD/External/Linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-stdbuf -oL -eL ./build/Game/Billiard/BilliardGame -physicsRegression "$output_dir" \
+stdbuf -oL -eL ./build/Game/Billiard/BilliardGame -physicsRegression "$output_dir" "$@" \
     > "$output_dir/billiard.log" 2>&1 &
 billiard_pid=$!
 cleanup() {
