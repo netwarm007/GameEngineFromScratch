@@ -37,6 +37,7 @@ bool TestBinaryRead(const char* data, size_t size, size_t expectedSize,
     TestBinaryLoader loader(file, expectedSize);
     Buffer buffer = loader.SyncOpenAndReadBinary("test binary");
     if (!expectSuccess) return !buffer.GetData() && buffer.GetDataSize() == 0;
+    if (size == 0) return !buffer.GetData() && buffer.GetDataSize() == 0;
     return buffer.GetData() && buffer.GetDataSize() == size &&
            std::memcmp(buffer.GetData(), data, size) == 0;
 }

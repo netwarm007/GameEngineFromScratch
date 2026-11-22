@@ -444,6 +444,11 @@ struct Image {
         }
 
         FILE* file = fopen(filename, "wb");
+        if (file == NULL) {
+            fprintf(stderr, "SaveTGA failed to open '%s' for writing.\n",
+                    filename);
+            return;
+        }
 
         // misc header information
         for (int i = 0; i < 18; i++) {
