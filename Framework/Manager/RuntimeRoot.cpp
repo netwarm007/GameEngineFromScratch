@@ -104,11 +104,10 @@ void RuntimeRoot::Tick() {
 void RuntimeRoot::RetireSessionForReconstruction(bool recreateWindow) {
     if (m_Backend) m_Backend->WaitForGraphicsIdle();
     m_Session.Retire();
-    // GUI platform callbacks are bound to the native window: unbind them only
-    // when the window is actually replaced. Keeping them bound across a
-    // same-window reconstruction also preserves the platform backend's frame
-    // timing (a fresh bind would yield a zero first DeltaTime).
-    if (recreateWindow && m_GuiPlatformInitialized && m_Platform) {
+    // The renderer backends' ImGui shutdown destroys platform windows
+    // (upstream multi-viewport behavior), so the GUI platform binding must
+    // always be released and rebuilt around reconstruction.
+    if (m_GuiPlatformInitialized && m_Platform) {
         m_Platform->FinalizeGuiPlatform();
         m_GuiPlatformInitialized = false;
     }
@@ -121,7 +120,7 @@ void RuntimeRoot::RetireSessionForReconstruction(bool recreateWindow) {
     }
 }
 
-int RuntimeRoot::PrepareReconstructedSession(bool windowRecreated) {
+int RuntimeRoot::PrepareReconstructedSession(bool /*windowRecreated*/) {
     if (!m_Backend || !m_Platform) return -1;
     const int graphics = m_Backend->InitializeGraphicsResources();
     if (graphics != 0) {
@@ -130,17 +129,15 @@ int RuntimeRoot::PrepareReconstructedSession(bool windowRecreated) {
         return graphics;
     }
     m_GraphicsInitialized = true;
-    if (windowRecreated) {
-        const int gui = m_Platform->InitializeGuiPlatform();
-        if (gui != 0) {
-            std::cerr << "Reconstructed GUI platform initialization failed (error "
-                      << gui << ")\n";
-            m_Backend->FinalizeGraphicsResources();
-            m_GraphicsInitialized = false;
-            return gui;
-        }
-        m_GuiPlatformInitialized = true;
+    const int gui = m_Platform->InitializeGuiPlatform();
+    if (gui != 0) {
+        std::cerr << "Reconstructed GUI platform initialization failed (error "
+                  << gui << ")\n";
+        m_Backend->FinalizeGraphicsResources();
+        m_GraphicsInitialized = false;
+        return gui;
     }
+    m_GuiPlatformInitialized = true;
     return 0;
 }
 

@@ -521,6 +521,10 @@ void    ImGui_ImplWin32_NewFrame()
     // Setup time step
     INT64 current_time = 0;
     ::QueryPerformanceCounter((LARGE_INTEGER*)&current_time);
+    // A platform rebind (session reconstruction) can land on the same clock
+    // tick; keep the step positive, as the SDL2 backend does.
+    if (current_time <= bd->Time)
+        current_time = bd->Time + 1;
     io.DeltaTime = (float)((double)(current_time - bd->Time) / (double)bd->TicksPerSecond);
     bd->Time = current_time;
 

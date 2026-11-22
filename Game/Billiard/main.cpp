@@ -332,10 +332,9 @@ int main(int argc, char** argv) {
     app.RegisterManagerModule(&debugManager);
     root.RegisterPersistentModule(debugManager);
 #endif
-    app.RegisterManagerModule(graphicsManager);
     root.RegisterSessionModule(*graphicsManager);
-    app.RegisterManagerModule(pipelineStateManager);
     root.RegisterSessionModule(*pipelineStateManager);
+    app.BindSessionManagers(graphicsManager, pipelineStateManager);
 #else
     app.RegisterManagerModule(&animationManager);
     app.RegisterManagerModule(&assetLoader);

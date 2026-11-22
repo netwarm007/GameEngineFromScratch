@@ -60,6 +60,16 @@ class BaseApplication : _implements_ IApplication {
     void RegisterManagerModule(IDebugManager* mgr);
 #endif
 
+    // Rebind the borrowed session-manager pointers without lifecycle
+    // registration: the runtime root owns module lifecycle, and replaced
+    // session modules may reuse freed addresses (duplicate registration
+    // would throw). Event/resize routing only borrows these pointers.
+    void BindSessionManagers(IGraphicsManager* graphics,
+                             IPipelineStateManager* pipelines) {
+        m_pGraphicsManager = graphics;
+        m_pPipelineStateManager = pipelines;
+    }
+
     IGraphicsManager* GetGraphicsManager() { return m_pGraphicsManager; }
     IMemoryManager* GetMemoryManager() { return m_pMemoryManager; }
     IAssetLoader* GetAssetLoader() { return m_pAssetLoader; }
