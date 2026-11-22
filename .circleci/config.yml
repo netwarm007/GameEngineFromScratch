@@ -1988,7 +1988,26 @@ jobs:
                -DZLIB_ROOT="$PWD/External/Darwin"
              cmake --build build-vulkan-abi --parallel 2
              ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
-             bash scripts/capture_vulkan_applications.sh moltenvk-applications
+             status=0
+             bash scripts/capture_vulkan_applications.sh moltenvk-applications || status=$?
+             if [ "$status" -ne 0 ]; then
+               mkdir -p moltenvk-applications/crash-reports
+               cp "$HOME/Library/Logs/DiagnosticReports/"*.ips moltenvk-applications/crash-reports/ 2>/dev/null || true
+               cp "$HOME/Library/Logs/DiagnosticReports/"*.crash moltenvk-applications/crash-reports/ 2>/dev/null || true
+               echo "--- capture failed (exit $status); retrying Viewer without validation layers"
+               unset VK_LAYER_PATH
+               viewer=./build-vulkan-apps/Viewer/Viewer.app/Contents/MacOS/Viewer
+               "$viewer" -screenshot moltenvk-applications/Viewer-novalidation.ppm \
+                 > moltenvk-applications/Viewer-novalidation.log 2>&1 &
+               retry_pid=$!
+               for attempt in $(seq 1 60); do
+                 sleep 2
+                 kill -0 "$retry_pid" 2>/dev/null || break
+               done
+               kill "$retry_pid" 2>/dev/null || true
+               wait "$retry_pid" 2>/dev/null || true
+             fi
+             exit "$status"
       - store_artifacts:
           path: moltenvk-applications
           destination: moltenvk-applications
