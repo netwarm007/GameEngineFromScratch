@@ -16,9 +16,9 @@ M2.5 Billiard runtime selection, the informative window titles, and M2.6
 (Viewer + Billiard per-backend startup matrices, RHI diagnostics smoke, Vulkan
 coverage migration, and retirement of the specialized Vulkan job) are
 implemented and verified by full native three-platform CI. The M2 startup
-selection checkpoint is complete. Reconstruction (M3), hot switching (M4), and
-UI rollout (M5) remain separate checkpoints, each requiring human confirmation;
-the M3 work-step breakdown is drafted below as a proposal awaiting that
+selection checkpoint is complete. M3 (isolated reconstruction) is confirmed
+and in progress; its work-step breakdown is recorded below. Hot switching
+(M4) and UI rollout (M5) remain separate checkpoints, each requiring human
 confirmation. Deliverable acceptance is the later all-roadmap +
 three-platform-CI + PR gate.
 
@@ -388,13 +388,12 @@ This is an explicit sequencing refinement, not a claim that either check has
 already passed. The full M1 source revision passed pipeline 1072 on all enabled
 platforms; default native and opt-in Vulkan application artifacts were inspected.
 
-### M3 execution plan (proposed)
+### M3 execution plan
 
-This breakdown is a proposal for review; implementation starts only after human
-confirmation of the M3 checkpoint. Work steps follow the M2 rule: self-check
-plus CI verification, no human stop between steps; only the completed M3
-checkpoint requires confirmation before M4. Cross-backend transitions remain
-M4 and UI rollout remains M5; this plan claims neither.
+This breakdown governs the confirmed M3 checkpoint. Work steps follow the M2
+rule: self-check plus CI verification, no human stop between steps; only the
+completed M3 checkpoint requires confirmation before M4. Cross-backend
+transitions remain M4 and UI rollout remains M5; this plan claims neither.
 
 Constraints carried from the target ownership section:
 
@@ -439,6 +438,25 @@ Decision points to settle during implementation and record here:
 Exit-criteria mapping: same-backend destruction/recreation preserves CPU
 state → M3.4/M3.6; repeated cleanup and failure recovery without
 whole-runtime restart → M3.5/M3.6.
+
+M3.1's [RenderSession](../../Framework/Manager/RenderSession.hpp) contract adds
+the replaceable session slot: borrowed session modules register per cycle in
+frame order, `Activate` initializes forward with reverse rollback (owner GPU
+drain via the rollback hook), and `Retire` finalizes in reverse and clears
+registrations. The session generation is independent of scene revision and
+changes on every successful activation and on retirement of an active session,
+so borrowed GPU references and UI caches invalidate immediately — including
+during the gap before recreation; failed activation and repeated retirement
+do not publish identities. [RuntimeRoot](../../Framework/Manager/RuntimeRoot.hpp)
+is the persistent composition root: long-lived CPU services in their own
+module group, one session slot, and the engine allocator stack owned at the
+root so session replacement never releases allocators persistent services
+use. Frame participant order stays caller-composed (`TickFrame` unchanged).
+The `fast` [session regression](../../Test/Runtime/RenderSessionTest.cpp)
+covers repeated cycles with persistent services untouched, failure rollback
+and retry, generation semantics, interleaved frame order across replacement,
+and allocator-stack ownership across session cycles and root destruction.
+Applications keep their existing startup paths; native wiring is M3.4.
 
 ## Verification and acceptance
 
