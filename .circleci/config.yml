@@ -552,6 +552,15 @@ jobs:
                   [Environment]::SetEnvironmentVariable('VK_ICD_FILENAMES', "$mesa\lvp_icd.json", 'Machine')
                   $env:VK_ICD_FILENAMES = "$mesa\lvp_icd.json"
                   Write-Output "lavapipe ICD json:"; Get-Content "$mesa\lvp_icd.json"
+                  # The CI executor runs elevated, and the Vulkan loader ignores
+                  # VK_ICD_FILENAMES/VK_DRIVER_FILES under elevated permissions,
+                  # reading only the registry. Register the ICD machine-wide in
+                  # the 64-bit view so the 64-bit loader discovers lavapipe.
+                  $hive = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Registry64)
+                  $key = $hive.CreateSubKey('SOFTWARE\Khronos\Vulkan\Drivers')
+                  $key.SetValue("$mesa\lvp_icd.json", 0, [Microsoft.Win32.RegistryValueKind]::DWord)
+                  $key.Close(); $hive.Close()
+                  Write-Output "Registered lavapipe ICD (64-bit view) HKLM\SOFTWARE\Khronos\Vulkan\Drivers: $mesa\lvp_icd.json"
                   # Diagnostic: confirm the ICD loads and which instance extensions
                   # it exposes before the Viewer run.
                   $vulkaninfo = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkaninfo.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
