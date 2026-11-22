@@ -489,6 +489,9 @@ int main(int argc, char** argv) {
             ret = 1;
         }
         if (switchController.ConsumeFramePlanDirty()) {
+            // Reconcile held input: keys physically released while the
+            // window was gone must not stay pressed in the new session.
+            inputManager.Initialize();
             graphicsManager = composed.composition->graphicsManager.get();
             pipelineStateManager =
                 composed.composition->pipelineStateManager.get();

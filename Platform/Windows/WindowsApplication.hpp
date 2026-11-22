@@ -43,6 +43,10 @@ class WindowsApplication : public BaseApplication, public IPlatformHost {
     HWND m_hWnd = NULL;
     HDC m_hDc = NULL;
     IRenderBackend* m_pActiveBackend = nullptr;
+    // Logical window geometry survives reconstruction/switching (M4.3);
+    // native handles are never preserved.
+    bool m_HasPreservedGeometry = false;
+    RECT m_PreservedRect{};
     bool m_bInLeftDrag = false;
     bool m_bInRightDrag = false;
     int m_iPreviousX = 0;

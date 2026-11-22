@@ -38,5 +38,7 @@ class CocoaApplication : public BaseApplication, public IPlatformHost {
     NSWindow* m_pWindow = nullptr;
     IRenderBackend* m_pActiveBackend = nullptr;
     bool m_HeadlessPacing = false;
+    bool m_HasPreservedFrame = false;
+    double m_PreservedX = 0, m_PreservedY = 0, m_PreservedW = 0, m_PreservedH = 0;
 };
 }  // namespace My

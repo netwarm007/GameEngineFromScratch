@@ -78,6 +78,13 @@ void WindowsApplication::FinalizePlatformResources() {
         m_hDc = nullptr;
     }
     if (m_hWnd) {
+        GetWindowRect(m_hWnd, &m_PreservedRect);
+        m_HasPreservedGeometry = true;
+        // Discard queued messages for the retiring window so stale input
+        // never reaches the recreated one.
+        MSG stale;
+        while (PeekMessage(&stale, m_hWnd, 0, 0, PM_REMOVE)) {
+        }
         DestroyWindow(m_hWnd);
         m_hWnd = nullptr;
     }

@@ -43,6 +43,8 @@ class SdlApplication : public BaseApplication, public IPlatformHost {
     SDL_Window* m_pWindow;
     Uint32 m_WindowFlags = SDL_WINDOW_SHOWN;
     IRenderBackend* m_pActiveBackend = nullptr;
+    bool m_HasPreservedGeometry = false;
+    int m_PreservedX = 0, m_PreservedY = 0, m_PreservedW = 0, m_PreservedH = 0;
 
     bool m_bInDrag = false;
 };

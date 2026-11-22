@@ -103,8 +103,16 @@ void SdlApplication::Finalize() {
 }
 
 void SdlApplication::FinalizePlatformResources() {
+    if (m_pWindow) {
+        SDL_GetWindowPosition(m_pWindow, &m_PreservedX, &m_PreservedY);
+        SDL_GetWindowSize(m_pWindow, &m_PreservedW, &m_PreservedH);
+        m_HasPreservedGeometry = true;
+    }
     cleanup(m_pWindow);
     m_pWindow = nullptr;
+    // Discard queued events for the retiring window.
+    SDL_PumpEvents();
+    SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
 }
 
 void SdlApplication::ShutdownPlatform() { SDL_Quit(); }
@@ -166,9 +174,13 @@ void SdlApplication::ProcessEvents() {
 }
 
 void SdlApplication::CreateMainWindow() {
-    m_pWindow = SDL_CreateWindow(m_Config.appName, SDL_WINDOWPOS_CENTERED,
-                                 SDL_WINDOWPOS_CENTERED, m_Config.screenWidth,
-                                 m_Config.screenHeight, m_WindowFlags);
+    m_pWindow = SDL_CreateWindow(
+        m_Config.appName,
+        m_HasPreservedGeometry ? m_PreservedX : SDL_WINDOWPOS_CENTERED,
+        m_HasPreservedGeometry ? m_PreservedY : SDL_WINDOWPOS_CENTERED,
+        m_HasPreservedGeometry ? m_PreservedW : m_Config.screenWidth,
+        m_HasPreservedGeometry ? m_PreservedH : m_Config.screenHeight,
+        m_WindowFlags);
     if (!m_pWindow) {
         logSDLError(cout, "CreateMainWindow");
         SDL_Quit();

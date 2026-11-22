@@ -205,9 +205,13 @@ void LinuxHost::CreateMainWindow() {
 }
 
 void LinuxHost::CreateSdlWindow() {
-    m_pWindow = SDL_CreateWindow(m_Config.appName, SDL_WINDOWPOS_CENTERED,
-                                 SDL_WINDOWPOS_CENTERED, m_Config.screenWidth,
-                                 m_Config.screenHeight, m_WindowFlags);
+    m_pWindow = SDL_CreateWindow(
+        m_Config.appName,
+        m_HasPreservedSdlGeometry ? m_PreservedSdlX : SDL_WINDOWPOS_CENTERED,
+        m_HasPreservedSdlGeometry ? m_PreservedSdlY : SDL_WINDOWPOS_CENTERED,
+        m_HasPreservedSdlGeometry ? m_PreservedSdlW : m_Config.screenWidth,
+        m_HasPreservedSdlGeometry ? m_PreservedSdlH : m_Config.screenHeight,
+        m_WindowFlags);
     if (!m_pWindow) {
         cerr << "SDL_CreateWindow error: " << SDL_GetError() << '\n';
         return;
@@ -259,8 +263,10 @@ void LinuxHost::CreateXcbWindow() {
     values[0] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS;
     values[1] = colormap;
     values[2] = 0;
-    xcb_create_window(m_pConn, XCB_COPY_FROM_PARENT, m_XWindow, root, 20, 20,
-                      m_Config.screenWidth, m_Config.screenHeight, 10,
+    xcb_create_window(m_pConn, XCB_COPY_FROM_PARENT, m_XWindow, root,
+                      m_PreservedXcbX, m_PreservedXcbY,
+                      m_HasPreservedXcbGeometry ? m_PreservedXcbW : m_Config.screenWidth,
+                      m_HasPreservedXcbGeometry ? m_PreservedXcbH : m_Config.screenHeight, 10,
                       XCB_WINDOW_CLASS_INPUT_OUTPUT, m_pScreen->root_visual,
                       mask, values);
 
@@ -320,13 +326,30 @@ void LinuxHost::FinalizeGuiPlatform() {
 void LinuxHost::FinalizePlatformResources() {
     if (m_Mode == Mode::Sdl) {
         if (m_pWindow) {
+            SDL_GetWindowPosition(m_pWindow, &m_PreservedSdlX, &m_PreservedSdlY);
+            SDL_GetWindowSize(m_pWindow, &m_PreservedSdlW, &m_PreservedSdlH);
+            m_HasPreservedSdlGeometry = true;
             SDL_DestroyWindow(m_pWindow);
             m_pWindow = nullptr;
         }
+        // Discard queued events for the retiring window (also covers mode
+        // switches away from SDL).
+        SDL_PumpEvents();
+        SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
         return;
     }
     if (m_pConn) {
         if (m_XWindow != XCB_WINDOW_NONE) {
+            auto geom = xcb_get_geometry_reply(
+                m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
+            if (geom) {
+                m_PreservedXcbX = geom->x;
+                m_PreservedXcbY = geom->y;
+                m_PreservedXcbW = geom->width;
+                m_PreservedXcbH = geom->height;
+                m_HasPreservedXcbGeometry = true;
+                free(geom);
+            }
             xcb_destroy_window(m_pConn, m_XWindow);
             m_XWindow = XCB_WINDOW_NONE;
         }

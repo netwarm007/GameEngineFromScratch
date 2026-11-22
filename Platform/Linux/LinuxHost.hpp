@@ -69,6 +69,8 @@ class LinuxHost : public BaseApplication, public IPlatformHost {
     Uint32 m_WindowFlags = SDL_WINDOW_SHOWN;
     bool m_bInDrag = false;
     bool m_bSdlInitialized = false;
+    bool m_HasPreservedSdlGeometry = false;
+    int m_PreservedSdlX = 0, m_PreservedSdlY = 0, m_PreservedSdlW = 0, m_PreservedSdlH = 0;
 
     // XCB mode state
     Display* m_pDisplay = nullptr;
@@ -76,5 +78,8 @@ class LinuxHost : public BaseApplication, public IPlatformHost {
     xcb_connection_t* m_pConn = nullptr;
     xcb_screen_t* m_pScreen = nullptr;
     xcb_window_t m_XWindow = XCB_WINDOW_NONE;
+    bool m_HasPreservedXcbGeometry = false;
+    int16_t m_PreservedXcbX = 20, m_PreservedXcbY = 20;
+    uint16_t m_PreservedXcbW = 0, m_PreservedXcbH = 0;
 };
 }  // namespace My
