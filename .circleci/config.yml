@@ -49,6 +49,50 @@ commands:
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
 
+  windows_test_setup:
+    steps:
+      - run:
+          name: Install CMake and Ninja
+          command: |
+            $chocolateyPath = "$env:AllUsersProfile\chocolatey\bin"
+            if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+              Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+              $env:Path += ";$chocolateyPath"
+            }
+            $cmakeVersion = [version]'0.0'
+            if (Get-Command cmake -ErrorAction SilentlyContinue) {
+              $cmakeVersion = [version]((cmake --version | Select-Object -First 1) -replace '^cmake version ', '')
+            }
+            if ($cmakeVersion -lt [version]'4.0') {
+              choco upgrade cmake.portable -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              $env:Path = "$chocolateyPath;$env:Path"
+            }
+            if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
+              choco install ninja -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+      - checkout
+      - run:
+          name: init submodules
+          command: |
+            git submodule sync
+            git submodule update --init --recursive
+      - run:
+          name: Prepare Windows dependency cache key
+          command: |
+            cmake -DACTION=key -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - restore_cache:
+          key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+      - run:
+          name: Restore Windows dependency files
+          command: |
+            cmake -DACTION=restore -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - attach_workspace:
+          at: .
+
 jobs:
   build_windows:
     parameters:
@@ -295,6 +339,111 @@ jobs:
           name: "Cook Asset"
           command: |
             scripts/cook_material
+      - when:
+          condition:
+            or:
+              - equal: [ master, << pipeline.git.branch >> ]
+              - << pipeline.git.tag >>
+          steps:
+          - run:
+              name: Package
+              command: |
+                 cmake --build ./build --target package
+          - persist_to_workspace:
+              root: build
+              paths:
+                - GEFS-0.1.0-win64.exe
+          - store_artifacts:
+              path: build/GEFS-0.1.0-win64.exe
+      - when:
+          condition:
+            equal: [full, << parameters.scope >>]
+          steps:
+            - restore_cache:
+                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+            - run:
+                name: "Build Windows dependencies (Release)"
+                command: |
+                  $ErrorActionPreference = 'Stop'
+                  if (Test-Path .circleci\windows-deps-cache-release\complete.txt) {
+                    Write-Output "Using cached Release dependencies"
+                    cmake -DACTION=restore -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  } else {
+                    scripts/build_crossguid Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_opengex Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_zlib Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_bullet Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_glslangValidator Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_spirvcross Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_libispc-texcomp Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_openal Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    cmake -DACTION=save -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  }
+            - save_cache:
+                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+                paths:
+                  - ".circleci/windows-deps-cache-release"
+            - run:
+                name: "Build Engine (Release)"
+                command: |
+                  if (-not (Get-Command dxc.exe -ErrorAction SilentlyContinue)) {
+                    $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter dxc.exe -Recurse |
+                      Where-Object { $_.DirectoryName -match '\\x64$' } |
+                      Sort-Object FullName -Descending | Select-Object -First 1
+                    if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
+                    $env:Path = "$($dxc.DirectoryName);$env:Path"
+                  }
+                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=OFF -DD3D12_RHI_DEBUG=OFF -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache && cmake --build build-release"
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  sccache --show-stats
+            - when:
+                condition:
+                  equal: [ master, << pipeline.git.branch >> ]
+                steps:
+                  - save_cache:
+                      key: sccache-windows-v1-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
+                      paths:
+                        - "C:/Users/circleci/sccache"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build
+      - when:
+          condition:
+            equal: [full, << parameters.scope >>]
+          steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - build-release
+  windows_regression:
+    parameters:
+      scope:
+        type: enum
+        enum: [quick, full]
+        default: full
+      ctest_args:
+        type: string
+        default: ""
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
       - run:
           name: "Test"
           command: |
@@ -307,9 +456,18 @@ jobs:
           path: build/junit.xml
       - when:
           condition:
-            equal: [quick, << parameters.scope >>]
+            equal: [full, << parameters.scope >>]
           steps:
-            - run: circleci-agent step halt
+            - run:
+                name: "Test (Release)"
+                command: |
+                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build-release -C Release --output-on-failure --output-junit junit.xml"
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            - store_test_results:
+                path: build-release/junit.xml
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -405,6 +563,37 @@ jobs:
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
               Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
             }
+      - run:
+          name: RHI selection diagnostics smoke
+          command: |
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            & $viewer.FullName --list-rhi | Tee-Object -FilePath rhi-list.txt
+            if ($LASTEXITCODE -ne 0) { throw '--list-rhi failed' }
+            if (-not (Select-String -Path rhi-list.txt -Pattern 'opengl' -Quiet)) { throw '--list-rhi missing opengl' }
+            & $viewer.FullName --rhi bogus *> rhi-unknown.txt
+            if ($LASTEXITCODE -eq 0) { throw 'invalid --rhi unexpectedly succeeded' }
+            if (-not (Select-String -Path rhi-unknown.txt -Pattern "Unknown RHI 'bogus'" -Quiet)) { throw 'missing unknown-RHI diagnostic' }
+            & $viewer.FullName --rhi opengl --rhi vulkan *> rhi-dup.txt
+            if ($LASTEXITCODE -eq 0) { throw 'repeated --rhi unexpectedly succeeded' }
+            if (-not (Select-String -Path rhi-dup.txt -Pattern 'only once' -Quiet)) { throw 'missing repeated-RHI diagnostic' }
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
+  windows_matrix:
+    parameters:
+      scope:
+        type: enum
+        enum: [quick, full]
+        default: full
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
       - when:
           condition:
             equal: [<< parameters.scope >>, full]
@@ -720,9 +909,9 @@ jobs:
             # A/B/A directed switches at frame boundaries; the final capture
             # must match the startup baseline (scene restored on backend A).
             $pairs = @(
-              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12'; billiard=$false },
+              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12'; billiard=$true },
               @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12'; billiard=$true },
-              @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl'; billiard=$false }
+              @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl'; billiard=$true }
             )
             foreach ($pair in $pairs) {
               $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
@@ -824,19 +1013,6 @@ jobs:
       - store_artifacts:
           path: billiard-switch
           destination: billiard-switch
-      - run:
-          name: RHI selection diagnostics smoke
-          command: |
-            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
-            & $viewer.FullName --list-rhi | Tee-Object -FilePath rhi-list.txt
-            if ($LASTEXITCODE -ne 0) { throw '--list-rhi failed' }
-            if (-not (Select-String -Path rhi-list.txt -Pattern 'opengl' -Quiet)) { throw '--list-rhi missing opengl' }
-            & $viewer.FullName --rhi bogus *> rhi-unknown.txt
-            if ($LASTEXITCODE -eq 0) { throw 'invalid --rhi unexpectedly succeeded' }
-            if (-not (Select-String -Path rhi-unknown.txt -Pattern "Unknown RHI 'bogus'" -Quiet)) { throw 'missing unknown-RHI diagnostic' }
-            & $viewer.FullName --rhi opengl --rhi vulkan *> rhi-dup.txt
-            if ($LASTEXITCODE -eq 0) { throw 'repeated --rhi unexpectedly succeeded' }
-            if (-not (Select-String -Path rhi-dup.txt -Pattern 'only once' -Quiet)) { throw 'missing repeated-RHI diagnostic' }
       - store_artifacts:
           path: billiard-matrix
           destination: billiard-matrix
@@ -846,94 +1022,6 @@ jobs:
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
-      - when:
-          condition:
-            or:
-              - equal: [ master, << pipeline.git.branch >> ]
-              - << pipeline.git.tag >>
-          steps:
-          - run:
-              name: Package
-              command: |
-                 cmake --build ./build --target package
-          - persist_to_workspace:
-              root: build
-              paths:
-                - GEFS-0.1.0-win64.exe
-          - store_artifacts:
-              path: build/GEFS-0.1.0-win64.exe
-      - when:
-          condition:
-            equal: [full, << parameters.scope >>]
-          steps:
-            - restore_cache:
-                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
-            - run:
-                name: "Build Windows dependencies (Release)"
-                command: |
-                  $ErrorActionPreference = 'Stop'
-                  if (Test-Path .circleci\windows-deps-cache-release\complete.txt) {
-                    Write-Output "Using cached Release dependencies"
-                    cmake -DACTION=restore -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  } else {
-                    scripts/build_crossguid Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_opengex Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_zlib Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_bullet Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_glslangValidator Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_spirvcross Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_libispc-texcomp Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_openal Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    cmake -DACTION=save -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  }
-            - save_cache:
-                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
-                paths:
-                  - ".circleci/windows-deps-cache-release"
-            - run:
-                name: "Build Engine (Release)"
-                command: |
-                  if (-not (Get-Command dxc.exe -ErrorAction SilentlyContinue)) {
-                    $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter dxc.exe -Recurse |
-                      Where-Object { $_.DirectoryName -match '\\x64$' } |
-                      Sort-Object FullName -Descending | Select-Object -First 1
-                    if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
-                    $env:Path = "$($dxc.DirectoryName);$env:Path"
-                  }
-                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=OFF -DD3D12_RHI_DEBUG=OFF -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache && cmake --build build-release"
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  sccache --show-stats
-            - when:
-                condition:
-                  equal: [ master, << pipeline.git.branch >> ]
-                steps:
-                  - save_cache:
-                      key: sccache-windows-v1-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
-                      paths:
-                        - "C:/Users/circleci/sccache"
-            - run:
-                name: "Test (Release)"
-                command: |
-                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build-release -C Release --output-on-failure --output-junit junit.xml"
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            - store_test_results:
-                path: build-release/junit.xml
   build_linux:
     parameters:
       scope:
@@ -2023,6 +2111,12 @@ workflows:
     when: << pipeline.parameters.run_full >>
     jobs:
       - build_windows
+      - windows_regression:
+          requires:
+            - build_windows
+      - windows_matrix:
+          requires:
+            - build_windows
       - build_linux
       - build_macos
       #- build_android
@@ -2033,6 +2127,10 @@ workflows:
         - matches: { pattern: ".*windows.*", value: << pipeline.parameters.platforms >> }
     jobs:
       - build_windows:
+          scope: quick
+      - windows_regression:
+          requires:
+            - build_windows
           scope: quick
           ctest_args: "-L fast"
   quick-linux:
@@ -2056,6 +2154,14 @@ workflows:
   build-and-test-and-release: #for tags
     jobs:
       - build_windows:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+      - windows_regression:
+          requires:
+            - build_windows
           filters:
             branches:
               ignore: /.*/
