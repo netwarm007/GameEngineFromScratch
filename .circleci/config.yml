@@ -707,6 +707,122 @@ jobs:
           path: billiard-reconstruct
           destination: billiard-reconstruct
       - run:
+          name: Cross-backend switch matrix
+          no_output_timeout: 40m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+            $baseline = 'screenshots/viewer-render.png'
+            if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
+            if (-not ($viewer -and $billiard)) { throw 'Application executables not found' }
+            # A/B/A directed switches at frame boundaries; the final capture
+            # must match the startup baseline (scene restored on backend A).
+            $pairs = @(
+              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; final='d3d12' },
+              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; final='d3d12' },
+              @{ initial='opengl'; switches='vulkan@120,opengl@300'; final='opengl' }
+            )
+            foreach ($pair in $pairs) {
+              $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
+              $out = "screenshots/switch/$tag"
+              New-Item -ItemType Directory -Force $out | Out-Null
+              $resolved = (Resolve-Path $out).Path
+              $ext = 'png'; if ($pair.final -eq 'vulkan') { $ext = 'ppm' }
+              $png = Join-Path $resolved "viewer-render.$ext"
+              if ($pair.initial -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+              $env:GEFS_SCREENSHOT_PATH = $png
+              $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.switches) -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+              try {
+                if (-not $proc.WaitForExit(240000)) { throw "$tag viewer switch timed out" }
+              } finally {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                if ($pair.initial -eq 'opengl') {
+                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                }
+              }
+              if (-not (Test-Path $png)) {
+                Get-Content "$out/viewer.log","$out/viewer-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                throw "$tag switch capture missing"
+              }
+              if (-not (Select-String -Path "$out/viewer.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
+                Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                throw "$tag switch did not complete"
+              }
+              $tolArgs = @()
+              if ($pair.final -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
+              python scripts/compare_captures.py $baseline $png --label "windows-switch-$tag" @tolArgs
+              if ($LASTEXITCODE -ne 0) { throw "windows-switch-$tag capture comparison failed" }
+
+              $bout = "billiard-switch/$tag"
+              New-Item -ItemType Directory -Force $bout | Out-Null
+              $bresolved = (Resolve-Path $bout).Path
+              $bshot = $null
+              if ($pair.final -eq 'd3d12') { $bshot = Join-Path $bresolved 'billiard.png' }
+              if ($pair.final -eq 'vulkan') { $bshot = Join-Path $bresolved 'billiard.ppm' }
+              if ($bshot) { $env:GEFS_SCREENSHOT_PATH = $bshot }
+              else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
+              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $bresolved 'physics-passed'
+              if ($pair.initial -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.switches,'-physicsRegression',$bresolved) -PassThru -RedirectStandardOutput "$bout/billiard.log" -RedirectStandardError "$bout/billiard-error.log"
+              $null = $proc.Handle
+              try {
+                if (-not $proc.WaitForExit(600000)) { throw "$tag billiard switch timed out" }
+                $proc.Refresh()
+                if ($proc.ExitCode -ne 0) {
+                  Get-Content "$bout/billiard.log","$bout/billiard-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                  throw "$tag billiard switch failed (exit $($proc.ExitCode))"
+                }
+              } finally {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+                if ($pair.initial -eq 'opengl') {
+                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                }
+              }
+              if (-not (Test-Path (Join-Path $bresolved 'physics-passed'))) { throw "$tag switch physics-passed missing" }
+              if (-not (Select-String -Path "$bout/billiard.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
+                throw "$tag billiard switch did not complete"
+              }
+              Write-Output "windows-billiard-switch-${tag}: A/B/A + physics OK"
+            }
+            # M4.4 preflight evidence: an unavailable Vulkan runtime (loader
+            # override pointing nowhere) must be rejected before retirement,
+            # keeping the old session rendering.
+            $out = 'screenshots/switch-preflight'
+            New-Item -ItemType Directory -Force $out | Out-Null
+            $resolved = (Resolve-Path $out).Path
+            $env:GEFS_VULKAN_LIBRARY = 'C:\nonexistent\vulkan-1.dll'
+            $env:GEFS_SCREENSHOT_PATH = Join-Path $resolved 'viewer-render.png'
+            $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','d3d12','--rhi-switch','vulkan@60') -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+            try {
+              if (-not $proc.WaitForExit(240000)) { throw 'preflight smoke timed out' }
+            } finally {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+              Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+              Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+              Remove-Item Env:GEFS_VULKAN_LIBRARY -ErrorAction SilentlyContinue
+            }
+            if (-not (Select-String -Path "$out/viewer.log" -Pattern 'RHI switch request vulkan: unavailable' -Quiet)) {
+              Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 40
+              throw 'preflight rejection not reported'
+            }
+            python scripts/compare_captures.py $baseline (Join-Path $resolved 'viewer-render.png') --label windows-switch-preflight
+            if ($LASTEXITCODE -ne 0) { throw 'preflight smoke capture comparison failed' }
+      - store_artifacts:
+          path: screenshots/switch
+          destination: screenshots-switch
+      - store_artifacts:
+          path: billiard-switch
+          destination: billiard-switch
+      - run:
           name: RHI selection diagnostics smoke
           command: |
             $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
@@ -1095,6 +1211,68 @@ jobs:
       - store_artifacts:
           path: billiard-reconstruct
           destination: billiard-reconstruct
+      - run:
+          name: Cross-backend switch matrix
+          no_output_timeout: 30m
+          command: |
+             # A/B/A directed switches (SDL OpenGL <-> XCB Vulkan through the
+             # dual-mode host); final captures must match the startup baseline.
+             set -e
+             baseline="screenshots/viewer-render.png"
+             test -s "$baseline"
+             run_switch() {
+               initial="$1"; switches="$2"; final="$3"; tag="$4"
+               out="screenshots/switch/$tag"; mkdir -p "$out"
+               if [ "$initial" = vulkan ] || [ "$final" = vulkan ]; then
+                 lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+                 if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
+                 export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+               fi
+               if [ "$final" = vulkan ]; then
+                 timeout --kill-after=5s 240s \
+                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                   ./build/Viewer/Viewer --rhi "$initial" --rhi-switch "$switches" -screenshot "$PWD/$out/viewer-render.ppm" \
+                   > "$out/viewer.log" 2>&1 || true
+                 test -s "$out/viewer-render.ppm"
+                 grep -q "RHI switch complete: $final" "$out/viewer.log"
+                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.ppm" --label "linux-switch-$tag" --max-diff-fraction 0.40 --max-high-delta-fraction 0.02
+               else
+                 LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 240s \
+                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                   bash scripts/capture_viewer_linux.sh "$out" --rhi "$initial" --rhi-switch "$switches" \
+                   > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
+                 grep -q "RHI switch complete: $final" "$out/viewer.log"
+                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label "linux-switch-$tag"
+               fi
+               bout="billiard-switch/$tag"; mkdir -p "$bout"
+               LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
+                 xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                 bash scripts/capture_billiard_linux.sh "$bout" --rhi "$initial" --rhi-switch "$switches" \
+                 > "$bout/capture.log" 2>&1 || { cat "$bout/capture.log" "$bout/billiard.log" 2>/dev/null; exit 1; }
+               test -s "$bout/physics-passed"
+               grep -q "RHI switch complete: $final" "$bout/billiard.log"
+               echo "linux-switch-$tag: viewer + billiard A/B/A OK"
+             }
+             run_switch opengl "vulkan@120,opengl@300" opengl opengl-vulkan-opengl
+             run_switch vulkan "opengl@120,vulkan@300" vulkan vulkan-opengl-vulkan
+             # M4.4 post-retirement recovery evidence: with no usable Vulkan
+             # ICD, the switch fails after retirement and the previous backend
+             # is reconstructed once; the failed switch is still reported.
+             out="screenshots/switch-recovery"; mkdir -p "$out"
+             VK_ICD_FILENAMES=/nonexistent/icd.json timeout --kill-after=5s 240s \
+               xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+               ./build/Viewer/Viewer --rhi opengl --rhi-switch vulkan@60 -screenshot "$PWD/$out/viewer-render.png" \
+               > "$out/viewer.log" 2>&1 || true
+             test -s "$out/viewer-render.png"
+             grep -q "recovered opengl" "$out/viewer.log"
+             grep -q "RHI switch complete: opengl" "$out/viewer.log"
+             python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label linux-switch-recovery
+      - store_artifacts:
+          path: screenshots/switch
+          destination: screenshots-switch
+      - store_artifacts:
+          path: billiard-switch
+          destination: billiard-switch
       - run:
           name: Coverage (llvm-cov)
           command: |
@@ -1537,6 +1715,100 @@ jobs:
       - store_artifacts:
           path: billiard-reconstruct
           destination: billiard-reconstruct
+      - run:
+          name: Cross-backend switch matrix
+          no_output_timeout: 30m
+          command: |
+             # A/B/A directed switches (Metal <-> Vulkan/MoltenVK on the
+             # persistent Cocoa host); final captures match the baseline.
+             set -e
+             baseline="screenshots/viewer-render.png"
+             test -s "$baseline"
+             APP=$(find build -type d -name Viewer.app | head -n 1)
+             test -n "$APP"
+             BAPP=$(find build -type d -name BilliardGame.app | head -n 1)
+             test -n "$BAPP"
+             export HOMEBREW_NO_AUTO_UPDATE=1
+             brew install molten-vk vulkan-validationlayers spirv-tools
+             export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+             export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+             export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+             export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+             run_switch() {
+               initial="$1"; switches="$2"; final="$3"; tag="$4"
+               out="screenshots/switch/$tag"; mkdir -p "$out"
+               ext=png
+               if [ "$final" = vulkan ]; then ext=ppm; fi
+               "$APP/Contents/MacOS/Viewer" --rhi "$initial" --rhi-switch "$switches" \
+                 -screenshot "$PWD/$out/viewer-render.$ext" -screenshotDelay 60 -screenshotFrame 480 \
+                 > "$out/viewer.log" 2>&1 &
+               pid=$!
+               for i in $(seq 1 16); do
+                 sleep 15
+                 kill -0 "$pid" 2>/dev/null || break
+               done
+               kill "$pid" 2>/dev/null || true
+               wait "$pid" 2>/dev/null || true
+               if [ ! -s "$out/viewer-render.$ext" ]; then
+                 echo "=== macos-switch-$tag viewer.log ==="; cat "$out/viewer.log" || true; exit 1
+               fi
+               grep -q "RHI switch complete: $final" "$out/viewer.log"
+               tol=""
+               if [ "$final" = vulkan ]; then tol="--max-diff-fraction 0.40 --max-high-delta-fraction 0.02"; fi
+               python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-switch-$tag" $tol
+               bout="billiard-switch/$tag"; mkdir -p "$bout"
+               if [ "$final" = vulkan ]; then
+                 shot="$PWD/$bout/billiard.ppm"
+                 GEFS_SCREENSHOT_WAIT_FOR="$PWD/$bout/physics-passed" \
+                   "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$switches" -physicsRegression "$PWD/$bout" \
+                   -screenshot "$shot" > "$bout/billiard.log" 2>&1 &
+               else
+                 shot="$PWD/$bout/billiard.png"
+                 "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$switches" -physicsRegression "$PWD/$bout" \
+                   -screenshot "$shot" -screenshotWaitFor "$PWD/$bout/physics-passed" -screenshotDelay 0 \
+                   > "$bout/billiard.log" 2>&1 &
+               fi
+               pid=$!
+               for i in $(seq 1 120); do
+                 sleep 5
+                 kill -0 "$pid" 2>/dev/null || break
+               done
+               kill "$pid" 2>/dev/null || true
+               wait "$pid" 2>/dev/null || true
+               if [ ! -s "$bout/physics-passed" ] || [ ! -s "$shot" ]; then
+                 echo "=== macos-billiard-switch-$tag billiard.log ==="; cat "$bout/billiard.log" || true; exit 1
+               fi
+               grep -q "RHI switch complete: $final" "$bout/billiard.log"
+               echo "macos-switch-$tag: viewer + billiard A/B/A OK"
+             }
+             run_switch metal "vulkan@120,metal@300" metal metal-vulkan-metal
+             run_switch vulkan "metal@120,vulkan@300" vulkan vulkan-metal-vulkan
+             # M4.4 post-retirement recovery evidence: with no MoltenVK ICD the
+             # switch fails after retirement; the previous backend is
+             # reconstructed once and the failed switch is reported.
+             out="screenshots/switch-recovery"; mkdir -p "$out"
+             VK_DRIVER_FILES=/nonexistent/icd.json VK_ICD_FILENAMES=/nonexistent/icd.json \
+               "$APP/Contents/MacOS/Viewer" --rhi metal --rhi-switch vulkan@60 \
+               -screenshot "$PWD/$out/viewer-render.png" -screenshotDelay 60 -screenshotFrame 480 \
+               > "$out/viewer.log" 2>&1 &
+             pid=$!
+             for i in $(seq 1 16); do
+               sleep 15
+               kill -0 "$pid" 2>/dev/null || break
+             done
+             kill "$pid" 2>/dev/null || true
+             wait "$pid" 2>/dev/null || true
+             test -s "$out/viewer-render.png"
+             grep -q "recovered metal" "$out/viewer.log"
+             grep -q "RHI switch complete: metal" "$out/viewer.log"
+             python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label macos-switch-recovery
+      - store_artifacts:
+          path: screenshots/switch
+          destination: screenshots-switch
+      - store_artifacts:
+          path: billiard-switch
+          destination: billiard-switch
       - run:
           name: RHI selection diagnostics smoke
           command: |
