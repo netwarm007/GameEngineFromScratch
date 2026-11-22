@@ -1,5 +1,7 @@
 #include "WindowsApplication.hpp"
 
+#include "IRenderBackend.hpp"
+
 #include <tchar.h>
 
 #include "InputManager.hpp"
@@ -109,6 +111,9 @@ void WindowsApplication::ProcessEvents() {
 void WindowsApplication::onWindowResize(int new_width, int new_height) {
     if (m_pGraphicsManager) {
         m_pGraphicsManager->ResizeCanvas(new_width, new_height);
+    }
+    if (m_pActiveBackend) {
+        m_pActiveBackend->OnWindowResize(new_width, new_height);
     }
 }
 

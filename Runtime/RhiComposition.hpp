@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Framework/Interface/IGraphicsManager.hpp"
+#include "Framework/Interface/IRenderBackend.hpp"
 #include "Framework/Interface/IPipelineStateManager.hpp"
 #include "Framework/Manager/BaseApplication.hpp"
 #include "Framework/Manager/RhiStartup.hpp"
@@ -30,6 +31,10 @@ struct RhiStartupComposition {
     // rebuild their drawable on the existing one.
     bool recreateWindowOnReconstruction = false;
     std::unique_ptr<BaseApplication> application;
+    // Session-owned backend lifecycle (M4.1 detachment). Null only for the
+    // legacy GLX fallback where the application implements the backend
+    // itself; the host application object persists across reconstruction.
+    std::unique_ptr<IRenderBackend> sessionBackend;
     std::unique_ptr<IPipelineStateManager> pipelineStateManager;
     std::unique_ptr<IGraphicsManager> graphicsManager;
 };
@@ -53,8 +58,8 @@ struct RhiSessionResult {
 };
 
 RhiSessionResult CreateRhiSessionModules(
-    RhiBackend backend, BaseApplication& host, ISceneManager& sceneManager,
-    IAssetReader& assetReader,
+    RhiBackend backend, IRenderBackend& backendObject,
+    ISceneManager& sceneManager, IAssetReader& assetReader,
     std::function<MemorySystem*()> memoryProvider = {});
 
 // Same-backend reconstruction at a complete frame boundary: retire the

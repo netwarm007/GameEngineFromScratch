@@ -1,5 +1,6 @@
 #include "SdlApplication.hpp"
 
+#include "IRenderBackend.hpp"
 #include <iostream>
 #include <utility>
 
@@ -76,6 +77,7 @@ void SdlApplication::onResize(int width, int height) {
     }
 
     if (m_pGraphicsManager) m_pGraphicsManager->ResizeCanvas(width, height);
+    if (m_pActiveBackend) m_pActiveBackend->OnWindowResize(width, height);
 }
 
 int SdlApplication::Initialize() {
@@ -166,7 +168,7 @@ void SdlApplication::ProcessEvents() {
 void SdlApplication::CreateMainWindow() {
     m_pWindow = SDL_CreateWindow(m_Config.appName, SDL_WINDOWPOS_CENTERED,
                                  SDL_WINDOWPOS_CENTERED, m_Config.screenWidth,
-                                 m_Config.screenHeight, SDL_WINDOW_SHOWN);
+                                 m_Config.screenHeight, m_WindowFlags);
     if (!m_pWindow) {
         logSDLError(cout, "CreateMainWindow");
         SDL_Quit();

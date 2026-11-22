@@ -43,7 +43,7 @@ class TestAssets : public IAssetReader {
     std::string SyncOpenAndReadTextFileToString(const char*) override { return {}; }
 };
 
-class CountingApplication : public BaseApplication {
+class CountingApplication : public BaseApplication, public IRenderBackend {
    public:
     static int live;
     CountingApplication() { ++live; }
@@ -151,9 +151,13 @@ void TestSessionModules() {
         Expect(startup.composition->recreateWindowOnReconstruction ==
                    (backend == RhiBackend::OpenGL),
                "window recreation policy follows backend constraints");
+        IRenderBackend& backendObject =
+            startup.composition->sessionBackend
+                ? *startup.composition->sessionBackend
+                : static_cast<IRenderBackend&>(*startup.composition->application);
         for (int cycle = 0; cycle < 3; ++cycle) {
             auto session = CreateRhiSessionModules(
-                backend, *startup.composition->application, scenes, assets);
+                backend, backendObject, scenes, assets);
             Expect(session.error.empty() &&
                        session.modules.pipelineStateManager &&
                        session.modules.graphicsManager,

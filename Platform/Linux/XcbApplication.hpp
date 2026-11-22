@@ -27,9 +27,14 @@ class XcbApplication : public BaseApplication, public IPlatformHost {
     void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
 
+    void SetActiveBackend(IRenderBackend* backend) override {
+        m_pActiveBackend = backend;
+    }
+
    protected:
     Display *m_pDisplay = nullptr;
     int m_nScreen;
+    IRenderBackend* m_pActiveBackend = nullptr;
 
     xcb_connection_t* m_pConn = nullptr;
     xcb_screen_t* m_pScreen = nullptr;

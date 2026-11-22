@@ -16,6 +16,7 @@ void RuntimeRoot::SetHost(IApplication& application, IPlatformHost& platform,
     m_Application = &application;
     m_Platform = &platform;
     m_Backend = &backend;
+    m_Platform->SetActiveBackend(&backend);
 }
 
 void RuntimeRoot::RegisterPersistentModule(IRuntimeModule& module) {
@@ -46,7 +47,7 @@ int RuntimeRoot::Initialize() {
     }
     m_GraphicsInitialized = true;
 
-    const int gui = m_Platform->InitializeGuiPlatform();
+    const int gui = m_Backend->InitializeGuiPlatform();
     if (gui != 0) {
         std::cerr << "GUI platform initialization failed (error " << gui
                   << ")\n";
@@ -72,6 +73,7 @@ int RuntimeRoot::Initialize() {
         m_Persistent.Finalize();
         return session;
     }
+    m_Backend->OnSessionActivated();
     return 0;
 }
 
@@ -80,7 +82,7 @@ void RuntimeRoot::Finalize() {
     m_Session.Retire();
     m_Persistent.Finalize();
     if (m_GuiPlatformInitialized && m_Platform) {
-        m_Platform->FinalizeGuiPlatform();
+        m_Backend->FinalizeGuiPlatform();
         m_GuiPlatformInitialized = false;
     }
     if (m_GraphicsInitialized && m_Backend) {
@@ -108,7 +110,7 @@ void RuntimeRoot::RetireSessionForReconstruction(bool recreateWindow) {
     // (upstream multi-viewport behavior), so the GUI platform binding must
     // always be released and rebuilt around reconstruction.
     if (m_GuiPlatformInitialized && m_Platform) {
-        m_Platform->FinalizeGuiPlatform();
+        m_Backend->FinalizeGuiPlatform();
         m_GuiPlatformInitialized = false;
     }
     if (m_GraphicsInitialized && m_Backend) {
@@ -129,7 +131,7 @@ int RuntimeRoot::PrepareReconstructedSession(bool /*windowRecreated*/) {
         return graphics;
     }
     m_GraphicsInitialized = true;
-    const int gui = m_Platform->InitializeGuiPlatform();
+    const int gui = m_Backend->InitializeGuiPlatform();
     if (gui != 0) {
         std::cerr << "Reconstructed GUI platform initialization failed (error "
                   << gui << ")\n";

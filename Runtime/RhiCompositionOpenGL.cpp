@@ -3,9 +3,11 @@
 #include "config.h"
 
 #if defined(OS_WINDOWS)
-#include "Platform/Windows/OpenGLApplication.hpp"
+#include "Platform/Windows/Win32OpenGLBackend.hpp"
+#include "Platform/Windows/WindowsApplication.hpp"
 #elif defined(OS_LINUX) && defined(HAS_SDL2)
-#include "Platform/Sdl/OpenGLApplication.hpp"
+#include "Platform/Linux/LinuxHost.hpp"
+#include "Platform/Sdl/SDLOpenGLBackend.hpp"
 #elif defined(OS_LINUX)
 #include "Platform/Linux/OpenGLApplication.hpp"
 #endif
@@ -14,7 +16,7 @@
 
 namespace My {
 
-RhiSessionModules ComposeOpenGLSession(BaseApplication& /*host*/,
+RhiSessionModules ComposeOpenGLSession(IRenderBackend& /*backendObject*/,
                                        ISceneManager& sceneManager) {
     RhiSessionModules modules;
     modules.pipelineStateManager = std::make_unique<OpenGLPipelineStateManager>();
@@ -31,11 +33,31 @@ std::unique_ptr<RhiStartupComposition> ComposeOpenGLStartup(
     // Render conventions follow the active session, not the build.
     composition->fixOpenGLPerspectiveMatrix = true;
     configuration.fixOpenGLPerspectiveMatrix = true;
-    // WGL pixel format and GLX/SDL contexts are window-lifetime bound.
+#if defined(OS_LINUX) && !defined(HAS_SDL2)
+    // Legacy GLX fallback: the application implements the backend itself.
+    composition->application = std::make_unique<OpenGLApplication>(configuration);
     composition->recreateWindowOnReconstruction = true;
-    composition->application =
-        std::make_unique<OpenGLApplication>(configuration);
-    auto modules = ComposeOpenGLSession(*composition->application, sceneManager);
+#else
+#if defined(OS_WINDOWS)
+    auto host = std::make_unique<WindowsApplication>(configuration);
+    composition->sessionBackend =
+        std::make_unique<Win32OpenGLBackend>(*host, *host);
+#else
+    auto host = std::make_unique<LinuxHost>(configuration);
+    host->SetMode(LinuxHost::Mode::Sdl);
+    composition->sessionBackend = std::make_unique<SDLOpenGLBackend>(
+        *host, *host, [host = host.get()] { return host->GetSdlWindow(); },
+        [host = host.get()](Uint32 flags) { host->SetWindowFlags(flags); });
+#endif
+    composition->recreateWindowOnReconstruction =
+        composition->sessionBackend->RequiresWindowRecreation();
+    composition->application = std::move(host);
+#endif
+    auto modules = ComposeOpenGLSession(
+        composition->sessionBackend
+            ? *composition->sessionBackend
+            : static_cast<IRenderBackend&>(*composition->application),
+        sceneManager);
     composition->pipelineStateManager = std::move(modules.pipelineStateManager);
     composition->graphicsManager = std::move(modules.graphicsManager);
     return composition;

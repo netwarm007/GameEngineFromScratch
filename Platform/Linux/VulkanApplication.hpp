@@ -1,22 +1,35 @@
 #pragma once
+#include <memory>
+
 #include "IRenderBackend.hpp"
-#include "Vulkan/VulkanRHI.hpp"
+#include "LinuxHost.hpp"
+#include "Vulkan/VulkanBackend.hpp"
 #include "XcbApplication.hpp"
 
 namespace My {
+// Legacy compile-time application: the XCB host plus an owned Vulkan
+// backend. The runtime path composes the host and backend separately.
 class VulkanApplication : public XcbApplication, public IRenderBackend {
-public:
-    using XcbApplication::XcbApplication;
+   public:
+    VulkanApplication();
+    explicit VulkanApplication(GfxConfiguration& cfg);
 
     VkResult CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface);
 
-    VulkanRHI& GetRHI() { return m_Rhi; }
+    VulkanRHI& GetRHI() { return m_Backend.GetRHI(); }
 
-private:
-    int InitializeGraphicsResources() final;
-    void WaitForGraphicsIdle() final;
-    void FinalizeGraphicsResources() final;
-    VulkanRHI m_Rhi;
+   private:
+    int InitializeGraphicsResources() final {
+        return m_Backend.InitializeGraphicsResources();
+    }
+    void WaitForGraphicsIdle() final { m_Backend.WaitForGraphicsIdle(); }
+    void FinalizeGraphicsResources() final {
+        m_Backend.FinalizeGraphicsResources();
+    }
+
+    VulkanBackend m_Backend;
 };
-} // namespace My
 
+// Runtime pairing: dual-mode Linux host in XCB mode + Vulkan backend.
+std::unique_ptr<VulkanBackend> MakeXcbVulkanBackend(LinuxHost& host);
+}  // namespace My

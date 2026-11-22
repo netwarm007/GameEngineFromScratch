@@ -5,6 +5,7 @@ myge_add_vulkan_loader("${PROJECT_SOURCE_DIR}")
 
 add_library(VulkanRHI
     VulkanRHI.cpp
+    VulkanBackend.cpp
     VulkanRHIResources.cpp
     VulkanPipelineStateManager.cpp
     VulkanGraphicsManager.cpp

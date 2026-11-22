@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include "IRenderBackend.hpp"
 #include <cstdio>
 #include <iostream>
 
@@ -142,6 +143,9 @@ void XcbApplication::ProcessEvents() {
                 XGetWindowAttributes(m_pDisplay, m_XWindow, &gwa);
                 m_Config.screenWidth = gwa.width;
                 m_Config.screenHeight = gwa.height;
+                if (m_pActiveBackend) {
+                    m_pActiveBackend->OnWindowResize(gwa.width, gwa.height);
+                }
                 break;
             }
             case XCB_KEY_PRESS: {

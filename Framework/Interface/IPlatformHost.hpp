@@ -5,6 +5,8 @@
 #include "Interface.hpp"
 
 namespace My {
+class IRenderBackend;
+
 // Persistent platform host surface consumed by a render session: GUI
 // platform backend binding and platform event processing, separate from
 // module frame updates. Window ownership and the window/configuration
@@ -13,6 +15,10 @@ namespace My {
 _Interface_ IPlatformHost {
    public:
     virtual ~IPlatformHost() = default;
+
+    // The active session backend receives native resize notifications
+    // through the host; null while no session is active.
+    virtual void SetActiveBackend(IRenderBackend* backend) = 0;
 
     // Bind/unbind the GUI platform backend to the native window. The ImGui
     // context must exist and be unbound before InitializeGuiPlatform.

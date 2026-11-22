@@ -24,7 +24,18 @@ class CocoaApplication : public BaseApplication, public IPlatformHost {
     void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
 
+    void SetActiveBackend(IRenderBackend* backend) override {
+        m_pActiveBackend = backend;
+    }
+
+    // Headless `-screenshot` runs without `-screenshotWaitFor` are paced to
+    // 60 ticks/s so timed captures see vsync-like simulation time (physics
+    // advances a fixed step per tick).
+    void SetHeadlessPacing(bool enabled) { m_HeadlessPacing = enabled; }
+
    protected:
     NSWindow* m_pWindow = nullptr;
+    IRenderBackend* m_pActiveBackend = nullptr;
+    bool m_HeadlessPacing = false;
 };
 }  // namespace My

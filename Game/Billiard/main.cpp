@@ -265,7 +265,10 @@ int main(int argc, char** argv) {
     IPipelineStateManager* pipelineStateManager =
         composed.composition->pipelineStateManager.get();
     auto* platformHost = dynamic_cast<IPlatformHost*>(&app);
-    auto* renderBackend = dynamic_cast<IRenderBackend*>(&app);
+    IRenderBackend* renderBackend =
+        composed.composition->sessionBackend
+            ? composed.composition->sessionBackend.get()
+            : dynamic_cast<IRenderBackend*>(&app);
     if (!platformHost || !renderBackend) {
         std::cerr << "Selected backend does not provide a platform host\n";
         return 1;
@@ -376,7 +379,11 @@ int main(int argc, char** argv) {
         im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+#if defined(MYGE_RUNTIME_RHI)
+    renderBackend->CreateMainWindow();
+#else
     app.CreateMainWindow();
+#endif
 
 #if defined(MYGE_RUNTIME_RHI)
     ret = root.Initialize();

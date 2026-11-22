@@ -8,6 +8,7 @@ add_platform_asset_io(PlatformAssetIO AssetLoader.mm)
 set (PlatformSources 
         CocoaApplication.mm 
         CocoaMetalApplication.mm
+        MetalBackend.mm
         AppDelegate.m
         WindowDelegate.mm
         MetalView.mm

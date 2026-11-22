@@ -25,8 +25,15 @@ class SdlApplication : public BaseApplication, public IPlatformHost {
     void FinalizePlatformResources() override;
     void ShutdownPlatform() override;
 
+    void SetActiveBackend(IRenderBackend* backend) override {
+        m_pActiveBackend = backend;
+    }
+
     void* GetMainWindowHandler() override { return m_pWindow; };
     void CreateMainWindow() override;
+
+    SDL_Window* GetSdlWindow() { return m_pWindow; }
+    void SetWindowFlags(Uint32 flags) { m_WindowFlags = flags; }
 
    protected:
     void logSDLError(std::ostream& os, const std::string& msg);
@@ -34,6 +41,8 @@ class SdlApplication : public BaseApplication, public IPlatformHost {
 
    protected:
     SDL_Window* m_pWindow;
+    Uint32 m_WindowFlags = SDL_WINDOW_SHOWN;
+    IRenderBackend* m_pActiveBackend = nullptr;
 
     bool m_bInDrag = false;
 };

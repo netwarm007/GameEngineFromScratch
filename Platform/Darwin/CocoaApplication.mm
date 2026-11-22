@@ -87,6 +87,21 @@ void CocoaApplication::Tick() {
 }
 
 void CocoaApplication::ProcessEvents() {
+    if (m_HeadlessPacing) {
+        static const bool paced = [] {
+            NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
+            return [defaults stringForKey:@"screenshot"] != nil &&
+                   [defaults stringForKey:@"screenshotWaitFor"] == nil;
+        }();
+        static CFTimeInterval nextTick = 0;
+        if (paced) {
+            const CFTimeInterval now = CACurrentMediaTime();
+            if (now < nextTick) {
+                [NSThread sleepForTimeInterval:nextTick - now];
+            }
+            nextTick = (std::max)(nextTick, now) + 1.0 / 60.0;
+        }
+    }
     while (NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                untilDate:nil
                                                   inMode:NSDefaultRunLoopMode

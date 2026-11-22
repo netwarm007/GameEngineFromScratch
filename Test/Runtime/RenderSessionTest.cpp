@@ -199,6 +199,7 @@ class StubHost : public IApplication, public IPlatformHost, public IRenderBacken
     int guiResult = 0;
 
     // IRenderBackend
+    void CreateMainWindow() override { m_Events.push_back("window-create"); }
     int InitializeGraphicsResources() override {
         m_Events.push_back("graphics-init");
         return graphicsResult;
@@ -207,13 +208,14 @@ class StubHost : public IApplication, public IPlatformHost, public IRenderBacken
     void FinalizeGraphicsResources() override {
         m_Events.push_back("graphics-stop");
     }
-
-    // IPlatformHost
     int InitializeGuiPlatform() override {
         m_Events.push_back("gui-init");
         return guiResult;
     }
     void FinalizeGuiPlatform() override { m_Events.push_back("gui-stop"); }
+
+    // IPlatformHost
+    void SetActiveBackend(IRenderBackend*) override {}
     void FinalizePlatformResources() override {
         m_Events.push_back("platform-stop");
     }
@@ -225,7 +227,6 @@ class StubHost : public IApplication, public IPlatformHost, public IRenderBacken
     const char* GetCommandLineArgument(int) const override { return nullptr; }
     bool IsQuit() const override { return false; }
     void RequestQuit() override {}
-    void CreateMainWindow() override { m_Events.push_back("window-create"); }
     void* GetMainWindowHandler() override { return nullptr; }
     const GfxConfiguration GetConfiguration() const override {
         return GfxConfiguration();
