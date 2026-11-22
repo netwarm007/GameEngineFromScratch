@@ -720,9 +720,9 @@ jobs:
             # A/B/A directed switches at frame boundaries; the final capture
             # must match the startup baseline (scene restored on backend A).
             $pairs = @(
-              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; final='d3d12' },
-              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; final='d3d12' },
-              @{ initial='opengl'; switches='vulkan@30,opengl@60'; final='opengl' }
+              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12' },
+              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12' },
+              @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl' }
             )
             foreach ($pair in $pairs) {
               $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
@@ -768,7 +768,7 @@ jobs:
               else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
               $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $bresolved 'physics-passed'
               if ($pair.initial -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
-              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.switches,'-physicsRegression',$bresolved) -PassThru -RedirectStandardOutput "$bout/billiard.log" -RedirectStandardError "$bout/billiard-error.log"
+              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.billiardSwitches,'-physicsRegression',$bresolved) -PassThru -RedirectStandardOutput "$bout/billiard.log" -RedirectStandardError "$bout/billiard-error.log"
               $null = $proc.Handle
               try {
                 if (-not $proc.WaitForExit(600000)) { throw "$tag billiard switch timed out" }
@@ -1221,7 +1221,7 @@ jobs:
              baseline="screenshots/viewer-render.png"
              test -s "$baseline"
              run_switch() {
-               initial="$1"; switches="$2"; final="$3"; tag="$4"
+               initial="$1"; switches="$2"; final="$3"; tag="$4"; bswitches="$5"
                out="screenshots/switch/$tag"; mkdir -p "$out"
                if [ "$initial" = vulkan ] || [ "$final" = vulkan ]; then
                  lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
@@ -1247,14 +1247,14 @@ jobs:
                bout="billiard-switch/$tag"; mkdir -p "$bout"
                LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
                  xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
-                 bash scripts/capture_billiard_linux.sh "$bout" --rhi "$initial" --rhi-switch "$switches" \
+                 bash scripts/capture_billiard_linux.sh "$bout" --rhi "$initial" --rhi-switch "$bswitches" \
                  > "$bout/capture.log" 2>&1 || { cat "$bout/capture.log" "$bout/billiard.log" 2>/dev/null; exit 1; }
                test -s "$bout/physics-passed"
                grep -q "RHI switch complete: $final" "$bout/billiard.log"
                echo "linux-switch-$tag: viewer + billiard A/B/A OK"
              }
-             run_switch opengl "vulkan@120,opengl@300" opengl opengl-vulkan-opengl
-             run_switch vulkan "opengl@120,vulkan@300" vulkan vulkan-opengl-vulkan
+             run_switch opengl "vulkan@120,opengl@300" opengl opengl-vulkan-opengl "vulkan@60,opengl@120"
+             run_switch vulkan "opengl@120,vulkan@300" vulkan vulkan-opengl-vulkan "opengl@60,vulkan@120"
              # M4.4 post-retirement recovery evidence: with no usable Vulkan
              # ICD, the switch fails after retirement and the previous backend
              # is reconstructed once; the failed switch is still reported.
@@ -1264,7 +1264,7 @@ jobs:
                ./build/Viewer/Viewer --rhi opengl --rhi-switch vulkan@60 -screenshot "$PWD/$out/viewer-render.png" \
                > "$out/viewer.log" 2>&1 || true
              test -s "$out/viewer-render.png"
-             grep -q "recovered opengl" "$out/viewer.log"
+             grep -q "recovering opengl" "$out/viewer.log"
              grep -q "RHI switch complete: opengl" "$out/viewer.log"
              python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label linux-switch-recovery
       - store_artifacts:
@@ -1736,7 +1736,7 @@ jobs:
              export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
              export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
              run_switch() {
-               initial="$1"; switches="$2"; final="$3"; tag="$4"
+               initial="$1"; switches="$2"; final="$3"; tag="$4"; bswitches="$5"
                out="screenshots/switch/$tag"; mkdir -p "$out"
                ext=png
                if [ "$final" = vulkan ]; then ext=ppm; fi
@@ -1761,11 +1761,11 @@ jobs:
                if [ "$final" = vulkan ]; then
                  shot="$PWD/$bout/billiard.ppm"
                  GEFS_SCREENSHOT_WAIT_FOR="$PWD/$bout/physics-passed" \
-                   "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$switches" -physicsRegression "$PWD/$bout" \
+                   "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$bswitches" -physicsRegression "$PWD/$bout" \
                    -screenshot "$shot" > "$bout/billiard.log" 2>&1 &
                else
                  shot="$PWD/$bout/billiard.png"
-                 "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$switches" -physicsRegression "$PWD/$bout" \
+                 "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$bswitches" -physicsRegression "$PWD/$bout" \
                    -screenshot "$shot" -screenshotWaitFor "$PWD/$bout/physics-passed" -screenshotDelay 0 \
                    > "$bout/billiard.log" 2>&1 &
                fi
@@ -1782,8 +1782,8 @@ jobs:
                grep -q "RHI switch complete: $final" "$bout/billiard.log"
                echo "macos-switch-$tag: viewer + billiard A/B/A OK"
              }
-             run_switch metal "vulkan@120,metal@300" metal metal-vulkan-metal
-             run_switch vulkan "metal@120,vulkan@300" vulkan vulkan-metal-vulkan
+             run_switch metal "vulkan@120,metal@300" metal metal-vulkan-metal "vulkan@60,metal@120"
+             run_switch vulkan "metal@120,vulkan@300" vulkan vulkan-metal-vulkan "metal@60,vulkan@120"
              # M4.4 post-retirement recovery evidence: with no MoltenVK ICD the
              # switch fails after retirement; the previous backend is
              # reconstructed once and the failed switch is reported.
@@ -1800,7 +1800,7 @@ jobs:
              kill "$pid" 2>/dev/null || true
              wait "$pid" 2>/dev/null || true
              test -s "$out/viewer-render.png"
-             grep -q "recovered metal" "$out/viewer.log"
+             grep -q "recovering metal" "$out/viewer.log"
              grep -q "RHI switch complete: metal" "$out/viewer.log"
              python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label macos-switch-recovery
       - store_artifacts:

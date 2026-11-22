@@ -33,12 +33,9 @@ void SDLOpenGLBackend::CreateMainWindow() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 #endif
     const auto config = m_Application.GetConfiguration();
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, config.redBits);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, config.blueBits);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, config.greenBits);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, config.alphaBits);
+    // Mirror the GLX host's proven visual request: color/stencil size
+    // requests find no matching fbconfig on Xvfb; depth + doublebuffer do.
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, config.depthBits);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, config.stencilBits);
     if (config.msaaSamples > 1) {
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, config.msaaSamples);
