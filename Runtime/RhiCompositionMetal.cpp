@@ -13,7 +13,7 @@ RhiSessionModules ComposeMetalSession(BaseApplication& host,
     modules.pipelineStateManager = std::make_unique<MetalPipelineStateManager>();
     modules.graphicsManager = std::make_unique<Metal2GraphicsManager>(
         sceneManager, *modules.pipelineStateManager,
-        [&application] { return application.GetMetalView(); });
+        [&application] { return (void*)application.GetMetalView(); });
     return modules;
 }
 

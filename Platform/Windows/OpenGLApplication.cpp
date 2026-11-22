@@ -45,9 +45,11 @@ void OpenGLApplication::FinalizeGraphicsResources() {
 }
 
 void OpenGLApplication::WaitForGraphicsIdle() {
-    if (m_RenderContext && wglGetCurrentContext() == m_RenderContext) {
-        glFinish();
-    }
+    // The WGL platform library links only the WGL loader, not the GL loader
+    // that defines glFinish, and WGL exposes no wait entry point. Context
+    // deletion at teardown keeps the existing synchronization semantics;
+    // explicit GL drain belongs to the OpenGL graphics manager, which links
+    // the GL loader.
 }
 
 int OpenGLApplication::InitializeGuiPlatform() {

@@ -313,7 +313,7 @@ int main(int argc, char** argv) {
 #elif defined(OS_MACOS)
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager,
-                                     [&app] { return app.GetMetalView(); });
+                                     [&app] { return (void*)app.GetMetalView(); });
 #elif defined(OS_WINDOWS) && !defined(VIEWER_USE_WIN32_OPENGL)
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(

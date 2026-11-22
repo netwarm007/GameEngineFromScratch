@@ -278,6 +278,8 @@ void OpenGLApplication::FinalizeGraphicsResources() {
 
 void OpenGLApplication::WaitForGraphicsIdle() {
     if (m_Context && glXGetCurrentContext() == m_Context) {
-        glFinish();
+        // glXWaitGL is provided by the GLX loader linked into the platform
+        // library; glFinish would require the GL loader (OpenGLRHI only).
+        glXWaitGL();
     }
 }

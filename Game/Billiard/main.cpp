@@ -287,7 +287,7 @@ int main(int argc, char** argv) {
 #elif defined(OS_MACOS)
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager,
-                                     [&app] { return app.GetMetalView(); });
+                                     [&app] { return (void*)app.GetMetalView(); });
 #elif defined(OS_WINDOWS) && defined(BILLIARD_USE_D3D12)
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(

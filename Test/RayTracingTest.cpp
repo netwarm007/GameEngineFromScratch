@@ -38,7 +38,7 @@ const My::raytrace_config config = {.samples_per_pixel = 512,
 class TestGraphicsManager : public TGraphicsManager {
    public:
 #if defined(OS_MACOS)
-    explicit TestGraphicsManager(std::function<MetalView*()> drawableProvider)
+    explicit TestGraphicsManager(std::function<void*()> drawableProvider)
         : TGraphicsManager(std::move(drawableProvider)) {}
 #elif defined(OS_WINDOWS)
     explicit TestGraphicsManager(D3d12RHI& rhi) : TGraphicsManager(rhi) {}
@@ -87,7 +87,7 @@ void gui_loop(GfxConfiguration & gui_config, int argc, char** argv, image& img) 
 
 #if defined(OS_MACOS)
     TestGraphicsManager graphicsManager([pApp] {
-        return static_cast<CocoaMetalApplication*>(pApp)->GetMetalView();
+        return (void*)static_cast<CocoaMetalApplication*>(pApp)->GetMetalView();
     });
 #elif defined(OS_WINDOWS)
     TestGraphicsManager graphicsManager(

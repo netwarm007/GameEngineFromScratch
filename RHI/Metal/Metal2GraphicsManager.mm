@@ -9,12 +9,12 @@ using namespace My;
 using namespace std;
 
 Metal2GraphicsManager::Metal2GraphicsManager(
-    std::function<MetalView*()> drawableProvider)
+    std::function<void*()> drawableProvider)
     : m_DrawableProvider(std::move(drawableProvider)) {}
 
 Metal2GraphicsManager::Metal2GraphicsManager(
     ISceneManager& scenes, IPipelineStateManager& pipelines,
-    std::function<MetalView*()> drawableProvider)
+    std::function<void*()> drawableProvider)
     : GraphicsManager(scenes, pipelines),
       m_DrawableProvider(std::move(drawableProvider)) {}
 
@@ -27,7 +27,8 @@ int Metal2GraphicsManager::Initialize() {
     const int result = GraphicsManager::Initialize();
     if (result != 0) return result;
 
-    MetalView* view = m_DrawableProvider ? m_DrawableProvider() : nullptr;
+    MetalView* view =
+        (MetalView*)(m_DrawableProvider ? m_DrawableProvider() : nullptr);
     if (!view) {
         NSLog(@"Metal graphics initialization requires a native drawable");
         Finalize();
