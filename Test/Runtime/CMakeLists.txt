@@ -57,3 +57,32 @@ if(TARGET RuntimeComposition)
     add_test(NAME TEST_RhiCompositionTest COMMAND RhiCompositionTest)
     set_tests_properties(TEST_RhiCompositionTest PROPERTIES LABELS fast TIMEOUT 30)
 endif()
+
+# M3 session contract: the persistent root lives in Manager for full builds;
+# standalone regression builds compile its allocator closure directly.
+if(TARGET Manager)
+    add_executable(RenderSessionTest RenderSessionTest.cpp)
+    target_link_libraries(RenderSessionTest PRIVATE Manager)
+else()
+    add_library(RuntimeRootDeps STATIC
+        ../../Framework/Manager/RuntimeRoot.cpp
+        ../../Framework/Manager/MemorySystem.cpp
+        ../../Framework/Manager/EngineAllocation.cpp
+        ../../Framework/Manager/MemoryManager.cpp
+        ../../Framework/Manager/RoutingAllocator.cpp
+        ../../Framework/Manager/ThreadCacheAllocator.cpp
+        ../../Framework/Manager/TlsfAllocator.cpp
+        ../../Framework/Manager/SizeClassAllocator.cpp
+        ../../Framework/Manager/SlabAllocator.cpp
+        ../../Framework/Manager/FrameAllocator.cpp
+        ../../Framework/Manager/LinearAllocator.cpp
+        ../../Framework/Manager/TrackingAllocator.cpp)
+    target_include_directories(RuntimeRootDeps PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Common"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Interface"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Manager")
+    add_executable(RenderSessionTest RenderSessionTest.cpp)
+    target_link_libraries(RenderSessionTest PRIVATE RuntimeRootDeps)
+endif()
+add_test(NAME TEST_RenderSessionTest COMMAND RenderSessionTest)
+set_tests_properties(TEST_RenderSessionTest PROPERTIES LABELS fast TIMEOUT 30)

@@ -1,15 +1,17 @@
 #import "MetalView.h"
-#import "BaseApplication.hpp"
-#include "InputManager.hpp"
 
 using namespace My;
 
 @implementation MetalView {
-    IApplication *m_pApp;
+    IInputManager* m_pInputManager;
+    uint32_t m_MsaaSamples;
 }
 
-- (instancetype)initWithFrame:(CGRect)frameRect pApp:(IApplication *)pApp {
-    m_pApp = pApp;
+- (instancetype)initWithFrame:(CGRect)frameRect
+                        input:(IInputManager*)inputManager
+                  msaaSamples:(uint32_t)msaaSamples {
+    m_pInputManager = inputManager;
+    m_MsaaSamples = msaaSamples;
 
     if (self = [super initWithFrame:frameRect]) {
         [self configure];
@@ -23,49 +25,45 @@ using namespace My;
     self.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
     self.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     self.framebufferOnly = YES;
-    self.sampleCount = m_pApp->GetConfiguration().msaaSamples;
+    self.sampleCount = m_MsaaSamples;
 
     self.paused = YES;
     self.enableSetNeedsDisplay = YES;
 }
 
 - (void)mouseDown:(NSEvent *)theEvent {
-    auto pInputManager = dynamic_cast<BaseApplication *>(m_pApp)->GetInputManager();
-    if (pInputManager) {
+    if (m_pInputManager) {
         if ([theEvent type] == NSEventTypeLeftMouseDown) {
-            pInputManager->LeftMouseButtonDown();
+            m_pInputManager->LeftMouseButtonDown();
         } else if ([theEvent type] == NSEventTypeRightMouseDown) {
-            pInputManager->RightMouseButtonDown();
+            m_pInputManager->RightMouseButtonDown();
         }
     }
 }
 
 - (void)mouseUp:(NSEvent *)theEvent {
-    auto pInputManager = dynamic_cast<BaseApplication *>(m_pApp)->GetInputManager();
-    if (pInputManager) {
+    if (m_pInputManager) {
         if ([theEvent type] == NSEventTypeLeftMouseUp) {
-            pInputManager->LeftMouseButtonUp();
+            m_pInputManager->LeftMouseButtonUp();
         } else if ([theEvent type] == NSEventTypeRightMouseUp) {
-            pInputManager->RightMouseButtonUp();
+            m_pInputManager->RightMouseButtonUp();
         }
     }
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent {
-    auto pInputManager = dynamic_cast<BaseApplication *>(m_pApp)->GetInputManager();
-    if (pInputManager) {
+    if (m_pInputManager) {
         if ([theEvent type] == NSEventTypeLeftMouseDragged) {
-            pInputManager->LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
+            m_pInputManager->LeftMouseDrag([theEvent deltaX], [theEvent deltaY]);
         } else if ([theEvent type] == NSEventTypeRightMouseDragged) {
-            pInputManager->RightMouseDrag([theEvent deltaX], [theEvent deltaY]);
+            m_pInputManager->RightMouseDrag([theEvent deltaX], [theEvent deltaY]);
         }
     }
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent {
-    auto pInputManager = dynamic_cast<BaseApplication *>(m_pApp)->GetInputManager();
-    if (pInputManager) {
-        pInputManager->RightMouseDrag([theEvent deltaX], [theEvent deltaY]);
+    if (m_pInputManager) {
+        m_pInputManager->RightMouseDrag([theEvent deltaX], [theEvent deltaY]);
     }
 }
 

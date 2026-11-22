@@ -36,6 +36,17 @@ const My::raytrace_config config = {.samples_per_pixel = 512,
                                     .max_depth = 50};
 
 class TestGraphicsManager : public TGraphicsManager {
+   public:
+#if defined(OS_MACOS)
+    explicit TestGraphicsManager(std::function<void*()> drawableProvider)
+        : TGraphicsManager(std::move(drawableProvider)) {}
+#elif defined(OS_WINDOWS)
+    explicit TestGraphicsManager(D3d12RHI& rhi) : TGraphicsManager(rhi) {}
+#else
+    using TGraphicsManager::TGraphicsManager;
+#endif
+
+   private:
     void Draw() override {
         static bool show_demo_window = true;
         auto& frame = m_Frames[m_nFrameIndex];
@@ -74,7 +85,16 @@ void gui_loop(GfxConfiguration & gui_config, int argc, char** argv, image& img) 
 
     auto pApp = CreateApplication(gui_config);
 
+#if defined(OS_MACOS)
+    TestGraphicsManager graphicsManager([pApp] {
+        return (void*)static_cast<CocoaMetalApplication*>(pApp)->GetMetalView();
+    });
+#elif defined(OS_WINDOWS)
+    TestGraphicsManager graphicsManager(
+        static_cast<D3d12Application*>(pApp)->GetRHI());
+#else
     TestGraphicsManager graphicsManager;
+#endif
 
     pApp->SetCommandLineParameters(argc, argv);
     pApp->RegisterManagerModule(&graphicsManager);

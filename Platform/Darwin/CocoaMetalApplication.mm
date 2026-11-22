@@ -7,6 +7,13 @@
 
 using namespace My;
 
+MetalView* CocoaMetalApplication::GetMetalView() {
+    if (!m_pWindow) return nullptr;
+    NSView* content = [m_pWindow contentView];
+    if (![content isKindOfClass:[MetalView class]]) return nullptr;
+    return (MetalView*)content;
+}
+
 int CocoaMetalApplication::InitializeGraphicsResources() {
     if (!GetMainWindowHandler()) {
         fprintf(stderr, "Metal initialization requires a native window\n");
@@ -16,7 +23,8 @@ int CocoaMetalApplication::InitializeGraphicsResources() {
     @autoreleasepool {
         MetalView* pView = [[MetalView alloc]
             initWithFrame:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)
-                     pApp:this];
+                    input:GetInputManager()
+              msaaSamples:m_Config.msaaSamples];
 
         if (!pView || !pView.device) {
             fprintf(stderr, "Metal view/device creation failed\n");
@@ -29,7 +37,9 @@ int CocoaMetalApplication::InitializeGraphicsResources() {
     return 0;
 }
 
-void CocoaMetalApplication::Tick() {
+void CocoaMetalApplication::Tick() { CocoaApplication::Tick(); }
+
+void CocoaMetalApplication::ProcessEvents() {
     // Physics advances a fixed step per tick. A headless `-screenshot` run without
     // `-screenshotWaitFor` is paced to 60 ticks/s so a timed capture sees the
     // same simulation time as a vsynced display, not tens of thousands of steps.
@@ -46,5 +56,5 @@ void CocoaMetalApplication::Tick() {
         }
         nextTick = (std::max)(nextTick, now) + 1.0 / 60.0;
     }
-    CocoaApplication::Tick();
+    CocoaApplication::ProcessEvents();
 }

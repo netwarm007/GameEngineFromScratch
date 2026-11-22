@@ -21,7 +21,7 @@ int main() {
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 1, 320, 240,
                             "DirectX 12 GUI Texture Test");
     D3d12Application app(config);
-    D3d12GraphicsManager graphics;
+    D3d12GraphicsManager graphics(app.GetRHI());
     LaterModule later;
     app.RegisterManagerModule(&graphics);
     app.RegisterManagerModule(&later);

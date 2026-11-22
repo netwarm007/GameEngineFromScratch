@@ -140,6 +140,37 @@ void TestCompiledCompositions() {
     }
 }
 
+void TestSessionModules() {
+    TestScenes scenes;
+    TestAssets assets;
+    GfxConfiguration config;
+    for (auto backend : CompiledBackends()) {
+        auto startup = CreateRhiStartupComposition(backend, config, scenes, assets);
+        Expect(startup.composition != nullptr, "host composition for session test");
+        if (!startup.composition) continue;
+        Expect(startup.composition->recreateWindowOnReconstruction ==
+                   (backend == RhiBackend::OpenGL),
+               "window recreation policy follows backend constraints");
+        for (int cycle = 0; cycle < 3; ++cycle) {
+            auto session = CreateRhiSessionModules(
+                backend, *startup.composition->application, scenes, assets);
+            Expect(session.error.empty() &&
+                       session.modules.pipelineStateManager &&
+                       session.modules.graphicsManager,
+                   "session modules compose window/GPU-free on the host");
+        }
+    }
+    for (auto backend : {RhiBackend::D3d12, RhiBackend::OpenGL,
+                         RhiBackend::Metal, RhiBackend::Vulkan}) {
+        if (IsCompiled(backend)) continue;
+        CountingApplication host;
+        auto session = CreateRhiSessionModules(backend, host, scenes, assets);
+        Expect(!session.modules.graphicsManager &&
+                   session.error.find("not compiled") != std::string::npos,
+               "absent backend session fails explicitly");
+    }
+}
+
 void TestAbsentBackends() {
     TestScenes scenes;
     TestAssets assets;
@@ -237,6 +268,7 @@ void TestTitleLabels() {
 
 int main() {
     TestCompiledCompositions();
+    TestSessionModules();
     TestAbsentBackends();
     TestFailedConstructionCleanup();
     TestAvailability();

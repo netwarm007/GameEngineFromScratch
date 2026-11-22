@@ -1,4 +1,5 @@
 #pragma once
+#include "IRenderBackend.hpp"
 #include "WindowsApplication.hpp"
 
 #include "config.h"
@@ -6,7 +7,7 @@
 #include "D3d/D3d12RHI.hpp"
 
 namespace My {
-class D3d12Application : public WindowsApplication {
+class D3d12Application : public WindowsApplication, public IRenderBackend {
    public:
     using WindowsApplication::WindowsApplication;
 

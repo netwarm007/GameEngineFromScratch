@@ -18,22 +18,35 @@
 
 namespace My {
 
+RhiSessionModules ComposeVulkanSession(BaseApplication& host,
+                                       ISceneManager& sceneManager,
+                                       IAssetReader& assetReader) {
+    auto& application = static_cast<VulkanApplication&>(host);
+    VulkanRHI& rhi = application.GetRHI();
+    RhiSessionModules modules;
+    // The Vulkan graphics manager borrows the concrete pipeline manager.
+    auto pipelines =
+        std::make_unique<VulkanPipelineStateManager>(rhi, assetReader);
+    modules.graphicsManager = std::make_unique<VulkanGraphicsManager>(
+        rhi, sceneManager, *pipelines);
+    modules.pipelineStateManager = std::move(pipelines);
+    return modules;
+}
+
 std::unique_ptr<RhiStartupComposition> ComposeVulkanStartup(
     GfxConfiguration& configuration, ISceneManager& sceneManager,
     IAssetReader& assetReader) {
     auto composition = std::make_unique<RhiStartupComposition>();
     composition->backend = RhiBackend::Vulkan;
     configuration.fixOpenGLPerspectiveMatrix = false;
-    auto application = std::make_unique<VulkanApplication>(configuration);
-    // The managers borrow the RHI owned by the application; the composition's
-    // member order destroys them before the application releases the session.
-    VulkanRHI& rhi = application->GetRHI();
-    composition->application = std::move(application);
-    auto pipelines =
-        std::make_unique<VulkanPipelineStateManager>(rhi, assetReader);
-    composition->graphicsManager = std::make_unique<VulkanGraphicsManager>(
-        rhi, sceneManager, *pipelines);
-    composition->pipelineStateManager = std::move(pipelines);
+    composition->application = std::make_unique<VulkanApplication>(configuration);
+    // The managers borrow the RHI owned by the persistent host application;
+    // the composition's member order destroys them before the application
+    // releases the session.
+    auto modules = ComposeVulkanSession(*composition->application, sceneManager,
+                                        assetReader);
+    composition->pipelineStateManager = std::move(modules.pipelineStateManager);
+    composition->graphicsManager = std::move(modules.graphicsManager);
     return composition;
 }
 

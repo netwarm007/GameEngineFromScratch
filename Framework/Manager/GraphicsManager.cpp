@@ -102,6 +102,15 @@ void GraphicsManager::Tick() {
     if (!UpdateConstants()) return;
 
     BeginFrame(m_Frames[m_nFrameIndex]);
+    // Session reconstruction rebinds the GUI platform mid-run; a missed
+    // platform beat must never feed ImGui a non-positive frame step.
+    if (ImGui::GetIO().DeltaTime <= 0.0f) {
+        std::cerr << "[GraphicsManager] non-positive ImGui DeltaTime; platform="
+                  << ImGui::GetIO().BackendPlatformUserData
+                  << " renderer=" << ImGui::GetIO().BackendRendererUserData
+                  << "; forcing 1/60s\n";
+        ImGui::GetIO().DeltaTime = 1.0f / 60.0f;
+    }
     ImGui::NewFrame();
     Draw();
     ImGui::EndFrame();

@@ -44,6 +44,14 @@ void OpenGLApplication::FinalizeGraphicsResources() {
     }
 }
 
+void OpenGLApplication::WaitForGraphicsIdle() {
+    // The WGL platform library links only the WGL loader, not the GL loader
+    // that defines glFinish, and WGL exposes no wait entry point. Context
+    // deletion at teardown keeps the existing synchronization semantics;
+    // explicit GL drain belongs to the OpenGL graphics manager, which links
+    // the GL loader.
+}
+
 int OpenGLApplication::InitializeGuiPlatform() {
     if (!ImGui::GetCurrentContext()) return 0;
     if (!m_hWnd || ImGui::GetIO().BackendPlatformUserData) return -1;
@@ -120,7 +128,10 @@ int OpenGLApplication::Initialize() {
 
 void OpenGLApplication::Tick() {
     WindowsApplication::Tick();
+    PresentFrame();
+}
 
+void OpenGLApplication::PresentFrame() {
     // Present the back buffer to the screen since rendering is complete.
     SwapBuffers(m_hDC);
 }

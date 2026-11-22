@@ -3,14 +3,17 @@
 #include <X11/Xlib-xcb.h>
 
 #include "BaseApplication.hpp"
+#include "IPlatformHost.hpp"
 
 namespace My {
-class XcbApplication : public BaseApplication {
+class XcbApplication : public BaseApplication, public IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 
     // One cycle of the main loop
     void Tick() override;
+
+    void ProcessEvents() override;
 
     void* GetMainWindowHandler() override {
         return reinterpret_cast<void*>(m_XWindow);
@@ -20,10 +23,11 @@ class XcbApplication : public BaseApplication {
 
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
-   protected:
     int InitializeGuiPlatform() override;
     void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
+
+   protected:
     Display *m_pDisplay = nullptr;
     int m_nScreen;
 

@@ -1,9 +1,10 @@
 #pragma once
+#include "IRenderBackend.hpp"
 #include "Vulkan/VulkanRHI.hpp"
 #include "WindowsApplication.hpp"
 
 namespace My {
-class VulkanApplication : public WindowsApplication {
+class VulkanApplication : public WindowsApplication, public IRenderBackend {
    public:
     using WindowsApplication::WindowsApplication;
 

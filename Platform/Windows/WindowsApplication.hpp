@@ -4,14 +4,17 @@
 #include <windowsx.h>
 
 #include "BaseApplication.hpp"
+#include "IPlatformHost.hpp"
 
 namespace My {
-class WindowsApplication : public BaseApplication {
+class WindowsApplication : public BaseApplication, public IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 
     // One cycle of the main loop
     void Tick() override;
+
+    void ProcessEvents() override;
 
     void* GetMainWindowHandler() override { return m_hWnd; };
 
@@ -19,10 +22,11 @@ class WindowsApplication : public BaseApplication {
 
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;
 
-   protected:
     int InitializeGuiPlatform() override;
     void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
+
+   protected:
     virtual void onWindowResize(int new_width, int new_height);
 
    private:

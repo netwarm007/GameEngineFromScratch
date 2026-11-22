@@ -36,6 +36,7 @@ add_library(Manager
         RoutingAllocator.cpp
         MemorySystem.cpp
         EngineAllocation.cpp
+        RuntimeRoot.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp

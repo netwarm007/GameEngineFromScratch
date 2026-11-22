@@ -129,6 +129,11 @@ void XcbApplication::FinalizePlatformResources() {
 }
 
 void XcbApplication::Tick() {
+    ProcessEvents();
+    BaseApplication::Tick();
+}
+
+void XcbApplication::ProcessEvents() {
     xcb_generic_event_t* pEvent;
     if ((pEvent = xcb_poll_for_event(m_pConn))) {
         switch (pEvent->response_type & ~0x80) {
@@ -203,8 +208,6 @@ void XcbApplication::Tick() {
         io.DisplaySize.x = static_cast<float>(m_Config.screenWidth);
         io.DisplaySize.y = static_cast<float>(m_Config.screenHeight);
     }
-
-    BaseApplication::Tick();
 }
 
 void XcbApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
