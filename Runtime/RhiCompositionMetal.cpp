@@ -16,8 +16,11 @@ std::unique_ptr<RhiStartupComposition> ComposeMetalStartup(
         std::make_unique<CocoaMetalApplication>(configuration);
     composition->pipelineStateManager =
         std::make_unique<MetalPipelineStateManager>();
+    auto* application =
+        static_cast<CocoaMetalApplication*>(composition->application.get());
     composition->graphicsManager = std::make_unique<Metal2GraphicsManager>(
-        sceneManager, *composition->pipelineStateManager);
+        sceneManager, *composition->pipelineStateManager,
+        [application] { return application->GetMetalView(); });
     return composition;
 }
 

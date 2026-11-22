@@ -1,14 +1,25 @@
 #pragma once
+#include <functional>
+
 #include "GraphicsManager.hpp"
 #include "IPipelineStateManager.hpp"
 #include "portable.hpp"
 
 OBJC_CLASS(Metal2RHI);
+OBJC_CLASS(MetalView);
 
 namespace My {
 class Metal2GraphicsManager : public GraphicsManager {
    public:
-    using GraphicsManager::GraphicsManager;
+    // The drawable is injected by the composition and resolved lazily at
+    // Initialize (the native view is created after composition construction);
+    // the graphics manager never resolves it through the application's window
+    // handle.
+    explicit Metal2GraphicsManager(
+        std::function<MetalView*()> drawableProvider = {});
+    Metal2GraphicsManager(ISceneManager& scenes,
+                          IPipelineStateManager& pipelines,
+                          std::function<MetalView*()> drawableProvider);
     int Initialize() final;
     void Finalize() final;
 
@@ -65,6 +76,7 @@ class Metal2GraphicsManager : public GraphicsManager {
     void EndScene() override;
 
    private:
+    std::function<MetalView*()> m_DrawableProvider;
     bool m_ImGuiInitialized = false;
     Metal2RHI* m_pRHI = nullptr;
 };

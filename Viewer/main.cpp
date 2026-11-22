@@ -279,6 +279,15 @@ int main(int argc, char** argv) {
 #elif defined(MYGE_USE_VULKAN)
     VulkanPipelineStateManager pipelineStateManager(app.GetRHI(), assetLoader);
     VulkanGraphicsManager graphicsManager(app.GetRHI(), sceneManager, pipelineStateManager);
+#elif defined(OS_MACOS)
+    TPipelineStateManager pipelineStateManager;
+    TGraphicsManager graphicsManager(sceneManager, pipelineStateManager,
+                                     [&app] { return app.GetMetalView(); });
+#elif defined(OS_WINDOWS) && !defined(VIEWER_USE_WIN32_OPENGL)
+    TPipelineStateManager pipelineStateManager;
+    TGraphicsManager graphicsManager(
+        app.GetRHI(), sceneManager, pipelineStateManager,
+        [&app] { return app.GetMemorySystem(); });
 #else
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager);

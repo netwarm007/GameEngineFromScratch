@@ -459,6 +459,22 @@ and allocator-stack ownership across session cycles and root destruction.
 Applications keep their existing startup paths; native wiring is M3.4. See
 the [exact-revision verification](../verification/252ac2abb32ab8db651adf4cdcce57a308043cbb.md).
 
+M3.2 injects the backend into the graphics managers, removing concrete
+application types from the render path. `D3d12GraphicsManager` now takes
+`D3d12RHI&` plus an optional lazy `MemorySystem` provider at construction (the
+allocator stack is created after composition construction); every
+`dynamic_cast<D3d12Application*>` site is gone, and the only remaining
+application borrow is the `IApplication` window/configuration surface.
+`Metal2GraphicsManager` takes a lazy `MetalView` drawable provider instead of
+casting the application's window handle; `CocoaMetalApplication::GetMetalView`
+exposes the installed drawable with a type check and returns nullptr before
+graphics resources exist, so a missing drawable fails explicitly. Vulkan
+already injected its RHI; OpenGL has no application casts. The runtime
+factories and the legacy compile-time Viewer/Billiard paths wire the
+providers, and the D3D12 GUI-texture regression constructs the manager with
+the injected RHI. Startup behavior is unchanged; the native matrix verifies
+the injection.
+
 ## Verification and acceptance
 
 - Add focused production-path headless tests for selection, ordering, rejected

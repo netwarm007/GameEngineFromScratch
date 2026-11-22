@@ -7,6 +7,13 @@
 
 using namespace My;
 
+MetalView* CocoaMetalApplication::GetMetalView() {
+    if (!m_pWindow) return nullptr;
+    NSView* content = [m_pWindow contentView];
+    if (![content isKindOfClass:[MetalView class]]) return nullptr;
+    return (MetalView*)content;
+}
+
 int CocoaMetalApplication::InitializeGraphicsResources() {
     if (!GetMainWindowHandler()) {
         fprintf(stderr, "Metal initialization requires a native window\n");
