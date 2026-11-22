@@ -616,6 +616,70 @@ Decision points to settle during implementation and record here:
 - The diagnostic switch sequence syntax and frame pacing are verification
   scaffolding, not the M5 UI contract.
 
+M4.1 detaches backend lifecycle from the concrete applications:
+session-owned backend objects (`D3d12Backend`, `Win32OpenGLBackend`,
+`SDLOpenGLBackend`, `MetalBackend`, and a platform-neutral `VulkanBackend`
+with injected surface factory, GUI-bind hook, framebuffer query, and
+drawable preparation) implement `IRenderBackend` against the persistent
+host. The concrete applications remain for the legacy compile-time paths
+as host + owned backend. Runtime factories compose plain hosts with
+separate backend objects; the dual-mode `LinuxHost` (SDL window for OpenGL,
+XCB window for Vulkan) keeps the application object persistent across
+Linux cross-backend switches. `IPlatformHost` gains `SetActiveBackend`
+(native resize routing) and `OnBackendSwitch` (windowing-mode selection);
+`IRenderBackend` gains window creation, GUI bind/unbind,
+`OnSessionActivated` (renderer-dependent platform setup such as WGL
+multi-viewport callbacks), resize notification, and the window-recreation
+policy. Linux CI now installs SDL2 so the documented SDL host and the
+dual-mode host are CI-verified; trimmed builds without SDL2 keep the plain
+XCB pieces.
+
+M4.2 adds the frame-boundary switch state machine
+(`RhiSwitchController`): one request at a time after main and secondary
+viewport submission; same-backend selection is a no-op; overlapping
+requests are rejected explicitly; preflight (compiled inclusion + runtime
+availability) keeps the old session on failure. A switch retires the
+session and native state (window recreation when either side requires it),
+creates the target backend on the persistent host, updates render
+conventions before restoring, composes and activates fresh session
+modules, and publishes success only after a rendered/presented frame at a
+usable framebuffer size (FirstFrame gate; minimized/zero-size windows wait
+without false success or busy-loop). Simulation pauses for the duration
+through a render-only frame plan; no catch-up interval accumulates.
+`CreateRhiBackendObject` dispatches per-platform backend objects;
+`BaseApplication::SetRenderConvention` updates the host configuration.
+Viewer and Billiard accept `--rhi-switch backend@frame,...` verification
+schedules. The headless `RhiSwitchTest` covers the request contract, A/B/A
+cycles with generation/convention updates, the zero-size gate, preflight
+retention, post-retirement recovery, recovery failure, and session-failure
+recovery.
+
+M4.3 preserves logical window geometry across reconstruction and switching
+on every host (Win32 outer rect, SDL position/size, XCB geometry, Cocoa
+frame); native handles are never preserved. Retiring windows flush queued
+platform messages/events (Win32 message drain, `SDL_FlushEvents`, including
+mode switches away from SDL) so stale input never reaches the recreated
+window; held input is reconciled by re-initializing the persistent input
+manager when session modules change. ImGui docking/floating layout persists
+in the GUI context; the FirstFrame gate handles minimized windows.
+
+M4.4 failure recovery is implemented in the controller: preflight failure
+keeps the old session; failure after retirement attempts one
+previous-backend reconstruction and reports the failed switch even when
+recovery succeeds; recovery failure requests an orderly exit with both
+errors; the retired session is never reused. Headless injected-failure
+tests cover all paths on the production controller. Native evidence:
+Windows preflight rejection with an unavailable Vulkan loader override;
+Linux/macOS post-retirement recovery with no usable Vulkan ICD.
+
+M4.5 adds the native cross-backend switch matrix: A/B/A directed switches
+for Viewer and Billiard on every CI-feasible pair (Windows
+d3d12/opengl/vulkan, Linux SDL-OpenGL↔XCB-Vulkan both directions, macOS
+Metal↔Vulkan both directions). Final captures must match the startup
+baseline (scene restored on the original backend), Billiard physics
+regression must pass, and the switch-complete marker is asserted so the
+matrix cannot pass vacuously.
+
 ## Verification and acceptance
 
 - Add focused production-path headless tests for selection, ordering, rejected
