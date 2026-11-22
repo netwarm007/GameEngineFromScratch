@@ -12,8 +12,11 @@
 #include "Platform/Darwin/CocoaApplication.h"
 #include "Platform/Darwin/VulkanApplication.hpp"
 #elif defined(OS_LINUX)
-#include "Platform/Linux/LinuxHost.hpp"
 #include "Platform/Linux/VulkanApplication.hpp"
+#include "Platform/Linux/XcbApplication.hpp"
+#if defined(HAS_SDL2)
+#include "Platform/Linux/LinuxHost.hpp"
+#endif
 #endif
 #include "RHI/Vulkan/VulkanGraphicsManager.hpp"
 #include "RHI/Vulkan/VulkanLoader.hpp"
@@ -49,9 +52,16 @@ std::unique_ptr<RhiStartupComposition> ComposeVulkanStartup(
     auto host = std::make_unique<CocoaApplication>(configuration);
     composition->sessionBackend = MakeCocoaVulkanBackend(*host);
 #elif defined(OS_LINUX)
+#if defined(HAS_SDL2)
     auto host = std::make_unique<LinuxHost>(configuration);
     host->SetMode(LinuxHost::Mode::Xcb);
-    composition->sessionBackend = MakeXcbVulkanBackend(*host);
+    composition->sessionBackend =
+        MakeXcbVulkanBackend(*host, *host, host->GetXcbConnection());
+#else
+    auto host = std::make_unique<XcbApplication>(configuration);
+    composition->sessionBackend =
+        MakeXcbVulkanBackend(*host, *host, host->GetXcbConnection());
+#endif
 #endif
     composition->recreateWindowOnReconstruction =
         composition->sessionBackend->RequiresWindowRecreation();

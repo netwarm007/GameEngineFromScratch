@@ -144,10 +144,13 @@ int ReconstructRhiSession(RuntimeRoot& root,
     const int prepared = root.PrepareReconstructedSession(recreateWindow);
     if (prepared != 0) return prepared;
 
-    IRenderBackend& backendObject = composition.sessionBackend
-                                        ? *composition.sessionBackend
-                                        : static_cast<IRenderBackend&>(*composition.application);
-    auto fresh = CreateRhiSessionModules(composition.backend, backendObject,
+    IRenderBackend* backendObject = composition.sessionBackend.get();
+    if (!backendObject) {
+        backendObject =
+            dynamic_cast<IRenderBackend*>(composition.application.get());
+    }
+    if (!backendObject) return -1;
+    auto fresh = CreateRhiSessionModules(composition.backend, *backendObject,
                                          sceneManager, assetReader,
                                          std::move(memoryProvider));
     if (!fresh.modules.graphicsManager || !fresh.modules.pipelineStateManager) {

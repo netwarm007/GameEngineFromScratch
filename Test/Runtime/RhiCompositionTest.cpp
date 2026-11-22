@@ -151,13 +151,14 @@ void TestSessionModules() {
         Expect(startup.composition->recreateWindowOnReconstruction ==
                    (backend == RhiBackend::OpenGL),
                "window recreation policy follows backend constraints");
-        IRenderBackend& backendObject =
-            startup.composition->sessionBackend
-                ? *startup.composition->sessionBackend
-                : static_cast<IRenderBackend&>(*startup.composition->application);
+        IRenderBackend* backendObject = startup.composition->sessionBackend.get();
+        if (!backendObject) {
+            backendObject =
+                dynamic_cast<IRenderBackend*>(startup.composition->application.get());
+        }
         for (int cycle = 0; cycle < 3; ++cycle) {
             auto session = CreateRhiSessionModules(
-                backend, backendObject, scenes, assets);
+                backend, *backendObject, scenes, assets);
             Expect(session.error.empty() &&
                        session.modules.pipelineStateManager &&
                        session.modules.graphicsManager,

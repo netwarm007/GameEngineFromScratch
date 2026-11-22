@@ -53,11 +53,12 @@ std::unique_ptr<RhiStartupComposition> ComposeOpenGLStartup(
         composition->sessionBackend->RequiresWindowRecreation();
     composition->application = std::move(host);
 #endif
-    auto modules = ComposeOpenGLSession(
-        composition->sessionBackend
-            ? *composition->sessionBackend
-            : static_cast<IRenderBackend&>(*composition->application),
-        sceneManager);
+    IRenderBackend* backendObject = composition->sessionBackend.get();
+    if (!backendObject) {
+        backendObject =
+            dynamic_cast<IRenderBackend*>(composition->application.get());
+    }
+    auto modules = ComposeOpenGLSession(*backendObject, sceneManager);
     composition->pipelineStateManager = std::move(modules.pipelineStateManager);
     composition->graphicsManager = std::move(modules.graphicsManager);
     return composition;

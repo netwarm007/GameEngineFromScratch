@@ -23,17 +23,24 @@ endif(Vulkan_FOUND)
 # application: excludes the XCB OpenGLApplication and PlatformAssetIO so they
 # do not clash with the SDL variants in the same executable.
 if(Vulkan_FOUND)
-    add_library(PlatformVulkanXcb XcbApplication.cpp VulkanApplication.cpp LinuxHost.cpp)
-    target_include_directories(PlatformVulkanXcb PRIVATE ${SDL2_INCLUDE_DIR})
+    set(PLATFORM_VULKAN_XCB_SOURCES XcbApplication.cpp VulkanApplication.cpp)
+    if(SDL2_FOUND)
+        # The dual-mode Linux host needs SDL2; trimmed builds without SDL2
+        # keep the plain XCB pieces.
+        list(APPEND PLATFORM_VULKAN_XCB_SOURCES LinuxHost.cpp)
+    endif()
+    add_library(PlatformVulkanXcb ${PLATFORM_VULKAN_XCB_SOURCES})
     target_link_libraries(PlatformVulkanXcb
         ${XCB_LIBRARY}
         ${X11_LIBRARY}
         ${X11_XCB_LIBRARY}
         ${DL_LIBRARY}
-        ${SDL2_LIBRARY}
-        $<$<TARGET_EXISTS:ImGuiSDL2Backend>:ImGuiSDL2Backend>
         $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
     )
+    if(SDL2_FOUND)
+        target_include_directories(PlatformVulkanXcb PRIVATE ${SDL2_INCLUDE_DIR})
+        target_link_libraries(PlatformVulkanXcb ${SDL2_LIBRARY} ImGuiSDL2Backend)
+    endif()
 endif()
 
 add_library(PlatformInterface

@@ -41,11 +41,13 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
     return vkCreateXcbSurfaceKHR(instance, &sci, nullptr, &surface);
 }
 
-std::unique_ptr<VulkanBackend> My::MakeXcbVulkanBackend(LinuxHost& host) {
+std::unique_ptr<VulkanBackend> My::MakeXcbVulkanBackend(
+    IApplication& application, IPlatformHost& platform,
+    xcb_connection_t* connection) {
     return std::make_unique<VulkanBackend>(
-        host, host,
+        application, platform,
         std::vector<const char*>{"VK_KHR_surface", "VK_KHR_xcb_surface"},
-        [&host](vk::Instance instance, VkSurfaceKHR& surface) -> VkResult {
+        [&application, connection](vk::Instance instance, VkSurfaceKHR& surface) -> VkResult {
             PFN_vkCreateXcbSurfaceKHR create =
                 reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(
                     GetVulkanLoader().GetInstanceFunction(instance, "vkCreateXcbSurfaceKHR"));
@@ -55,9 +57,9 @@ std::unique_ptr<VulkanBackend> My::MakeXcbVulkanBackend(LinuxHost& host) {
             }
             VkXcbSurfaceCreateInfoKHR sci{};
             sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-            sci.connection = host.GetXcbConnection();
+            sci.connection = connection;
             sci.window = static_cast<xcb_window_t>(
-                reinterpret_cast<uintptr_t>(host.GetMainWindowHandler()));
+                reinterpret_cast<uintptr_t>(application.GetMainWindowHandler()));
             return create(instance, &sci, nullptr, &surface);
         });
 }

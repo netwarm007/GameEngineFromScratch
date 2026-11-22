@@ -2,7 +2,8 @@
 #include <memory>
 
 #include "IRenderBackend.hpp"
-#include "LinuxHost.hpp"
+#include "IApplication.hpp"
+#include "IPlatformHost.hpp"
 #include "Vulkan/VulkanBackend.hpp"
 #include "XcbApplication.hpp"
 
@@ -30,6 +31,9 @@ class VulkanApplication : public XcbApplication, public IRenderBackend {
     VulkanBackend m_Backend;
 };
 
-// Runtime pairing: dual-mode Linux host in XCB mode + Vulkan backend.
-std::unique_ptr<VulkanBackend> MakeXcbVulkanBackend(LinuxHost& host);
+// Runtime pairing: an XCB-window host (dual-mode Linux host in XCB mode or
+// the plain XCB application) + Vulkan backend.
+std::unique_ptr<VulkanBackend> MakeXcbVulkanBackend(IApplication& application,
+                                                  IPlatformHost& platform,
+                                                  xcb_connection_t* connection);
 }  // namespace My

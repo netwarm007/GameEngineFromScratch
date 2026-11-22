@@ -31,6 +31,8 @@ class XcbApplication : public BaseApplication, public IPlatformHost {
         m_pActiveBackend = backend;
     }
 
+    xcb_connection_t* GetXcbConnection() { return m_pConn; }
+
    protected:
     Display *m_pDisplay = nullptr;
     int m_nScreen;
