@@ -1884,8 +1884,8 @@ jobs:
              ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
              bash scripts/capture_vulkan_applications.sh moltenvk-applications
       - store_artifacts:
-          path: vulkan-applications
-          destination: vulkan-applications
+          path: moltenvk-applications
+          destination: moltenvk-applications
           when: always
 
       - store_test_results:

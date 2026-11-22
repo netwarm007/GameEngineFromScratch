@@ -31,6 +31,7 @@ void SDLOpenGLBackend::CreateMainWindow() {
 #else
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
     const auto config = m_Application.GetConfiguration();
     // Leave color/depth/stencil sizes at SDL defaults: explicit size
