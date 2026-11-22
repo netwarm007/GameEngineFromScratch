@@ -17,9 +17,10 @@
   `git worktree add ../GameEngineFromScratch-<task> -b <branch> origin/master`)
   and make all edits, builds, and commits only inside that worktree. Do not
   modify the primary checkout or a worktree owned by another session. Remove
-  the worktree (`git worktree remove`) and delete its branch only once the
-  work's pull request is merged, or the work is abandoned. A passing CI run or
-  an integration into an intermediate branch is not the cleanup trigger.
+  the worktree (`git worktree remove`) and delete its branch once acceptance
+  (验收) is complete, or the work is abandoned; there is no need to wait for the
+  pull request to be merged. A passing CI run or an integration into an
+  intermediate branch is not the cleanup trigger.
 
 ## Vulkan implementation
 
