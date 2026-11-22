@@ -143,6 +143,10 @@ int ReconstructRhiSession(RuntimeRoot& root,
     }
     composition.pipelineStateManager = std::move(fresh.modules.pipelineStateManager);
     composition.graphicsManager = std::move(fresh.modules.graphicsManager);
+    // Rebind the host's borrowed manager pointers to the fresh modules so
+    // resize/input routing never references the retired session.
+    composition.application->RegisterManagerModule(composition.graphicsManager.get());
+    composition.application->RegisterManagerModule(composition.pipelineStateManager.get());
     root.RegisterSessionModule(*composition.graphicsManager);
     root.RegisterSessionModule(*composition.pipelineStateManager);
     const int activated = root.Session().Activate(

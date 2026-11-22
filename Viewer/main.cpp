@@ -338,18 +338,32 @@ int main(int argc, char** argv) {
     // Persistent CPU services outlive every render session; the session slot
     // owns the replaceable graphics/pipeline managers. Frame order stays the
     // historical interleaved registration order via buildFramePlan.
+    // RegisterManagerModule additionally binds the host's borrowed manager
+    // pointers (input routing, resize notification); the application's own
+    // module group is never initialized on the root path.
+    app.RegisterManagerModule(&animationManager);
     root.RegisterPersistentModule(animationManager);
+    app.RegisterManagerModule(&splashSequence);
     root.RegisterPersistentModule(splashSequence);
+    app.RegisterManagerModule(&assetLoader);
     root.RegisterPersistentModule(assetLoader);
+    app.RegisterManagerModule(&inputManager);
     root.RegisterPersistentModule(inputManager);
+    app.RegisterManagerModule(&memoryManager);
     root.RegisterPersistentModule(memoryManager);
+    app.RegisterManagerModule(&physicsManager);
     root.RegisterPersistentModule(physicsManager);
+    app.RegisterManagerModule(&sceneManager);
     root.RegisterPersistentModule(sceneManager);
+    app.RegisterManagerModule(&gameLogic);
     root.RegisterPersistentModule(gameLogic);
 #ifdef DEBUG
+    app.RegisterManagerModule(&debugManager);
     root.RegisterPersistentModule(debugManager);
 #endif
+    app.RegisterManagerModule(graphicsManager);
     root.RegisterSessionModule(*graphicsManager);
+    app.RegisterManagerModule(pipelineStateManager);
     root.RegisterSessionModule(*pipelineStateManager);
 #else
     app.RegisterManagerModule(&animationManager);
