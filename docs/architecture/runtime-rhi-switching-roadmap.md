@@ -18,7 +18,9 @@ coverage migration, and retirement of the specialized Vulkan job) are
 implemented and verified by full native three-platform CI. The M2 startup
 selection checkpoint is complete. Reconstruction (M3), hot switching (M4), and
 UI rollout (M5) remain separate checkpoints, each requiring human confirmation;
-deliverable acceptance is the later all-roadmap + three-platform-CI + PR gate.
+the M3 work-step breakdown is drafted below as a proposal awaiting that
+confirmation. Deliverable acceptance is the later all-roadmap +
+three-platform-CI + PR gate.
 
 The working branch was fast-forwarded to master
 `175d3567bb032e5356a8b537b5c5bb5f50edc6b2` before preparing this draft.
@@ -385,6 +387,58 @@ Native project installer generation also remains a distinct M5 rollout check.
 This is an explicit sequencing refinement, not a claim that either check has
 already passed. The full M1 source revision passed pipeline 1072 on all enabled
 platforms; default native and opt-in Vulkan application artifacts were inspected.
+
+### M3 execution plan (proposed)
+
+This breakdown is a proposal for review; implementation starts only after human
+confirmation of the M3 checkpoint. Work steps follow the M2 rule: self-check
+plus CI verification, no human stop between steps; only the completed M3
+checkpoint requires confirmation before M4. Cross-backend transitions remain
+M4 and UI rollout remains M5; this plan claims neither.
+
+Constraints carried from the target ownership section:
+
+- The composition root retains long-lived CPU services (asset loading, scene,
+  physics, animation, game logic, input), the platform host, the ImGui
+  context/font data, and the engine memory system. The replaceable render
+  session owns the backend RHI lifecycle, graphics/pipeline managers, passes,
+  GPU resources, and the ImGui renderer backend.
+- No application-type dependency in the live path: reconstruction must not
+  replace the application object or invalidate every module's borrowed app
+  pointer. Concrete-application casts (D3D12 graphics operations) and
+  window-handle casts (Metal device/view) are replaced by injected RHI
+  references and explicit drawable hooks.
+- Frame participant order is preserved (`TickFrame` unchanged); the frame
+  scheduler is not redesigned.
+- A render-session generation independent of scene revision invalidates
+  borrowed GPU references and UI caches. Reconstruction reuses the same Scene
+  without publishing a new CPU revision; UI interaction state persists in the
+  GUI context while GPU-owned pass instances are reconstructed.
+
+| Work step | Work | Verification boundary |
+| --- | --- | --- |
+| M3.1: session contract and module lifecycle | Define the persistent-root/render-session ownership contract; split module registration into persistent and session-scoped groups so the session group supports repeated initialize/finalize without touching persistent modules; move engine memory-system ownership to the persistent root; introduce the session generation counter. | Headless `fast` tests with stub modules: repeated session initialize/finalize preserves persistent module state, failure rollback, generation monotonicity. No native claim. |
+| M3.2: RHI injection | Inject the backend RHI into graphics/pipeline managers: D3D12 removes the concrete-application `dynamic_cast` sites (Vulkan already injects); Metal obtains device/view through session drawable hooks instead of window-handle casts; narrow the graphics manager's application borrow to window/configuration services. | Headless composition/runtime suites; the native startup matrix stays unchanged. |
+| M3.3: platform host and backend hooks | Extract persistent window ownership and event routing from the concrete applications (Windows, Cocoa, Linux SDL/XCB) behind a common host interface; explicit backend hooks for drawable/view creation, resize, wait-idle, GUI platform bind/unbind, and teardown including partial initialization state; audit static platform/ImGui callbacks so none survives session replacement; apply per-backend window-recreation policy where native constraints require it (WGL pixel format, GLX visual), preserving logical geometry, DPI, and panel placement. | Per-platform native startup matrix stays green; hook and partial-cleanup tests where headless-feasible. Linux keeps the SDL (OpenGL) and XCB (Vulkan) hosts; XCB ImGui parity remains the tracked follow-on, not reopened here. |
+| M3.4: owned session composition and same-backend reconstruction | Factories produce replaceable render sessions on the persistent host instead of concrete applications; same-backend destroy/recreate API with a generation bump; Viewer and Billiard consume the new composition; startup behavior, defaults, and window titles unchanged. | Headless reconstruction tests assert CPU state preservation (scene revision, camera, physics, ImGui layout); native startup matrix. |
+| M3.5: reconstruction hardening and failure recovery | Injected partial-initialization failures (graphics, GUI renderer, drawable) roll back the session without touching persistent services; repeated cleanup is idempotent; generation-based invalidation of GPU caches, UI pass state, queued events, and held input for same-backend reconstruction (full switch behavior remains M4). | `fast` regression covers repeated cleanup and failure recovery without whole-runtime restart; native failure-path smoke where CI can drive it. |
+| M3.6: native acceptance and CI consolidation | Same-backend destroy/recreate matrix on every CI-feasible platform×backend combination with before/after capture comparison and repeated reconstruction cycles; failure-recovery smoke; exact-revision verification records; resolve the M3-owned known-limitation rows. | Full exact-revision three-platform CI; M3 checkpoint self-check complete, then human confirmation before M4. |
+
+Decision points to settle during implementation and record here:
+
+- Whether same-backend reconstruction keeps the native window (D3D12, Metal,
+  Vulkan on an existing drawable) or recreates it (WGL/GLX constraints);
+  logical geometry, DPI-aware layout, and floating-panel placement are
+  preserved either way, never native handles.
+- The input manager stays persistent; held-input reconciliation and stale
+  event discard on window ownership change are M4 scope — M3 only provides
+  the hooks.
+- `WaitForGraphicsIdle` before rollback remains mandatory for every session
+  teardown path, including partial initialization.
+
+Exit-criteria mapping: same-backend destruction/recreation preserves CPU
+state → M3.4/M3.6; repeated cleanup and failure recovery without
+whole-runtime restart → M3.5/M3.6.
 
 ## Verification and acceptance
 
