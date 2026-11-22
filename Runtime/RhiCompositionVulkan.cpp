@@ -24,10 +24,12 @@ RhiSessionModules ComposeVulkanSession(BaseApplication& host,
     auto& application = static_cast<VulkanApplication&>(host);
     VulkanRHI& rhi = application.GetRHI();
     RhiSessionModules modules;
-    modules.pipelineStateManager =
+    // The Vulkan graphics manager borrows the concrete pipeline manager.
+    auto pipelines =
         std::make_unique<VulkanPipelineStateManager>(rhi, assetReader);
     modules.graphicsManager = std::make_unique<VulkanGraphicsManager>(
-        rhi, sceneManager, *modules.pipelineStateManager);
+        rhi, sceneManager, *pipelines);
+    modules.pipelineStateManager = std::move(pipelines);
     return modules;
 }
 
