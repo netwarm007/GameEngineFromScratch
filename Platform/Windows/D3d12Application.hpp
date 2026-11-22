@@ -18,17 +18,17 @@ class D3d12Application : public WindowsApplication, public IRenderBackend {
 
     D3d12RHI& GetRHI() { return m_Backend.GetRHI(); }
 
-   protected:
-    virtual HANDLE CreateFenceEvent() {
-        return CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    }
-
     void CreateMainWindow() override { WindowsApplication::CreateMainWindow(); }
     int InitializeGuiPlatform() override {
         return WindowsApplication::InitializeGuiPlatform();
     }
     void FinalizeGuiPlatform() override {
         WindowsApplication::FinalizeGuiPlatform();
+    }
+
+   protected:
+    virtual HANDLE CreateFenceEvent() {
+        return CreateEvent(nullptr, FALSE, FALSE, nullptr);
     }
 
    private:
