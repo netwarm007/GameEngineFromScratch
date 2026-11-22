@@ -537,6 +537,20 @@ untouched, generation semantics), GUI-platform failure rollback of the
 recreated graphics state, retry/recovery without whole-runtime restart, and
 idempotent finalization after a failed cycle.
 
+M3.6 adds the native same-backend reconstruction matrix: on every CI-feasible
+platform/backend combination, Viewer and Billiard run two destroy/recreate
+cycles (`--rhi-reconstruct 2`) after the first presented frame. Viewer
+captures must still match the startup baseline (the CPU scene is preserved
+while every GPU resource is rebuilt); Billiard must pass the physics
+regression and capture, proving simulation state survives reconstruction.
+Each run asserts the cycle-2 log marker so the matrix cannot pass vacuously.
+OpenGL recreates the native window (WGL/GLX/SDL window-lifetime constraints);
+D3D12, Metal, and Vulkan rebuild on the existing drawable. Failure recovery
+is covered by the `fast` headless session regression (production root
+primitives with injected graphics/GUI-platform failures, rollback, retry,
+and idempotent finalization) plus the unchanged native error-path smoke;
+native partial-init injection is not claimed.
+
 ## Verification and acceptance
 
 - Add focused production-path headless tests for selection, ordering, rejected

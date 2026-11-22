@@ -336,16 +336,17 @@ void TestRootReconstructionCycle() {
     const auto generation = root.Session().Generation();
     events.clear();
 
-    // Same-backend reconstruction keeping the native window.
+    // Same-backend reconstruction keeping the native window: the GUI
+    // platform binding survives (it belongs to the window, not the session).
     root.RetireSessionForReconstruction(false);
     Expect(events == std::vector<std::string>{"drain", "stop s2", "stop s1",
-                                              "gui-stop", "graphics-stop"},
-           "retirement releases session and native state, not the window");
+                                              "graphics-stop"},
+           "retirement releases session and backend state, not window/GUI");
     events.clear();
     Expect(root.PrepareReconstructedSession(false) == 0,
            "native backend recreates on the existing window");
-    Expect(events == std::vector<std::string>{"graphics-init", "gui-init"},
-           "preparation re-initializes backend and GUI platform only");
+    Expect(events == std::vector<std::string>{"graphics-init"},
+           "preparation re-initializes only the backend on a kept window");
     events.clear();
 
     RecordingModule s3("s3", events);
@@ -409,10 +410,10 @@ void TestRootReconstructionFailure() {
                "failed reconstruction never touches persistent services");
         events.clear();
         root.Finalize();
-        Expect(events == std::vector<std::string>{"drain", "stop p1",
+        Expect(events == std::vector<std::string>{"drain", "stop p1", "gui-stop",
                                                   "platform-stop"},
                "Finalize after failed reconstruction finalizes persistent "
-               "services and platform only");
+               "services, the kept GUI binding, and platform");
     }
     {
         std::vector<std::string> events;
@@ -425,19 +426,21 @@ void TestRootReconstructionFailure() {
         Expect(root.Initialize() == 0, "startup before GUI failure");
         events.clear();
 
-        root.RetireSessionForReconstruction(false);
+        root.RetireSessionForReconstruction(true);
+        host.CreateMainWindow();
         host.guiResult = 19;
-        Expect(root.PrepareReconstructedSession(false) == 19,
+        Expect(root.PrepareReconstructedSession(true) == 19,
                "reconstruction GUI platform failure propagates");
         Expect(events == std::vector<std::string>{
                      "drain", "stop s1", "gui-stop", "graphics-stop",
+                     "platform-stop", "window-create",
                      "graphics-init", "gui-init", "graphics-stop"},
                "GUI failure rolls back the recreated graphics state");
         events.clear();
 
         // Recovery: a second attempt succeeds without restarting the runtime.
         host.guiResult = 0;
-        Expect(root.PrepareReconstructedSession(false) == 0,
+        Expect(root.PrepareReconstructedSession(true) == 0,
                "reconstruction retry succeeds");
         RecordingModule s2("s2", events);
         root.RegisterSessionModule(s2);

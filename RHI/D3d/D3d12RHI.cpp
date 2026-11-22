@@ -876,6 +876,11 @@ void D3d12RHI::CreateRenderTargets() {
             (std::wstring(L"Render Target ") + std::to_wstring(i)).c_str());
     }
 
+    // A freshly (re)created swapchain starts at back buffer 0; sync the frame
+    // index so the first frame after session reconstruction targets the
+    // current back buffer (the RHI outlives the replaced graphics manager).
+    m_nCurrentFrame = m_pSwapChain->GetCurrentBackBufferIndex();
+
     uint32_t width, height;
     m_fQueryFramebufferSize(width, height);
 
