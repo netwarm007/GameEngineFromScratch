@@ -722,7 +722,7 @@ jobs:
             $pairs = @(
               @{ initial='d3d12'; switches='opengl@120,d3d12@300'; final='d3d12' },
               @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; final='d3d12' },
-              @{ initial='opengl'; switches='vulkan@120,opengl@300'; final='opengl' }
+              @{ initial='opengl'; switches='vulkan@30,opengl@60'; final='opengl' }
             )
             foreach ($pair in $pairs) {
               $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'

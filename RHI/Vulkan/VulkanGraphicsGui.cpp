@@ -16,8 +16,11 @@ vk::ImageLayout SampledLayout(const VulkanRHI::Texture& texture) {
 }  // namespace
 
 void VulkanGraphicsManager::RequestScreenshot(const std::filesystem::path& path) {
-    if (!m_rhi.HasSurface() || !m_screenshot.empty() || path.empty() || path.extension() != ".ppm") {
-        throw std::invalid_argument("Vulkan screenshot requires an idle capture request and a native-window .ppm output path");
+    // The output always carries PPM content regardless of the requested
+    // extension: cross-backend switch runs name the capture after the final
+    // backend, and the capture comparator decodes by content magic.
+    if (!m_rhi.HasSurface() || !m_screenshot.empty() || path.empty()) {
+        throw std::invalid_argument("Vulkan screenshot requires an idle capture request and a native-window output path");
     }
     m_screenshot = path;
     m_screenshotDue = std::chrono::steady_clock::now();

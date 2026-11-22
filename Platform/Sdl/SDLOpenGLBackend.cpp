@@ -19,6 +19,12 @@ SDLOpenGLBackend::SDLOpenGLBackend(IApplication& application,
       m_WindowFlagsSetter(std::move(windowFlagsSetter)) {}
 
 void SDLOpenGLBackend::CreateMainWindow() {
+    // SDL_VideoInit resets GL attributes to defaults (2.1); initialize the
+    // video subsystem before setting the requested context version.
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
+        fprintf(stderr, "SDL_InitSubSystem(VIDEO) error: %s\n", SDL_GetError());
+        return;
+    }
 #if defined(OS_WEBASSEMBLY)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
