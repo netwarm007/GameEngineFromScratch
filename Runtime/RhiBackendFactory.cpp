@@ -73,14 +73,18 @@ RhiBackendResult CreateRhiBackendObject(RhiBackend backend,
 #elif defined(OS_LINUX) && defined(HAS_SDL2)
             {
                 auto& linuxHost = static_cast<LinuxHost&>(host);
+                // OnBackendSwitch selects XCB mode before window creation;
+                // the connection only exists once the XCB window is open.
                 result.backend = MakeXcbVulkanBackend(
-                    linuxHost, linuxHost, linuxHost.GetXcbConnection());
+                    linuxHost, linuxHost,
+                    [&linuxHost] { return linuxHost.GetXcbConnection(); });
             }
 #elif defined(OS_LINUX)
             {
                 auto& xcbHost = static_cast<XcbApplication&>(host);
                 result.backend = MakeXcbVulkanBackend(
-                    xcbHost, xcbHost, xcbHost.GetXcbConnection());
+                    xcbHost, xcbHost,
+                    [&xcbHost] { return xcbHost.GetXcbConnection(); });
             }
 #else
             result.error = "Vulkan support was not configured";
