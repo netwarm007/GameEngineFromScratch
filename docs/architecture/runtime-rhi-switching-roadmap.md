@@ -456,7 +456,8 @@ The `fast` [session regression](../../Test/Runtime/RenderSessionTest.cpp)
 covers repeated cycles with persistent services untouched, failure rollback
 and retry, generation semantics, interleaved frame order across replacement,
 and allocator-stack ownership across session cycles and root destruction.
-Applications keep their existing startup paths; native wiring is M3.4.
+Applications keep their existing startup paths; native wiring is M3.4. See
+the [exact-revision verification](../verification/252ac2abb32ab8db651adf4cdcce57a308043cbb.md).
 
 ## Verification and acceptance
 
