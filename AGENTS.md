@@ -17,8 +17,9 @@
   `git worktree add ../GameEngineFromScratch-<task> -b <branch> origin/master`)
   and make all edits, builds, and commits only inside that worktree. Do not
   modify the primary checkout or a worktree owned by another session. Remove
-  the worktree (`git worktree remove`) and delete its branch once the work is
-  merged or abandoned.
+  the worktree (`git worktree remove`) and delete its branch only once the
+  work's pull request is merged, or the work is abandoned. A passing CI run or
+  an integration into an intermediate branch is not the cleanup trigger.
 
 ## Vulkan implementation
 
@@ -43,7 +44,10 @@
   scope on the listed platforms: ccache builds and `ctest -L fast`, with no
   screenshots, coverage, or packaging. A quick result never counts as
   acceptance. Label new tests that need no window or GPU as `fast` (see
-  `Test/CMakeLists.txt`).
+  `Test/CMakeLists.txt`). Triggering CI to verify multi-platform behavior during
+  a work step is verification, not acceptance: this cross-platform project cannot
+  be fully verified locally, so CI is the verification aid, while acceptance is
+  the formal full-scope gate on the exact revision.
 - A project commit is accepted only after the CircleCI pipeline for that exact
   revision completes successfully on every enabled platform: currently Windows,
   Linux, and macOS. Each platform must complete its configured build and tests.
@@ -84,9 +88,10 @@
 - For CircleCI investigation, use
   [the CircleCI troubleshooting skill](.github/skills/circleci-troubleshooting/SKILL.md).
 - When monitoring a running CircleCI pipeline, run one background loop that
-  checks the commit status about every 30 seconds and exits as soon as every
-  enabled platform has finished or any has failed, then read its result on
-  notification. Do not poll with fixed multi-minute sleeps unless the user
+  checks the commit status about every 30 seconds and exits once every enabled
+  platform has finished, then read its result on notification. For iteration it
+  may stop at the first failure, but acceptance requires every enabled platform's
+  terminal result. Do not poll with fixed multi-minute sleeps unless the user
   requests a specific interval. Report platforms that never appear as
   unknown, not passed. A push whose latest commit contains `[ci skip]` starts
   no pipeline, so push the revision to verify without it.
