@@ -23,6 +23,10 @@ class CocoaMetalApplication : public CocoaApplication, public IRenderBackend {
         return m_Backend.InitializeGuiPlatform();
     }
     void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
+    void WaitForGraphicsIdle() override { m_Backend.WaitForGraphicsIdle(); }
+    void FinalizeGraphicsResources() override {
+        m_Backend.FinalizeGraphicsResources();
+    }
 
    private:
     int InitializeGraphicsResources() override {

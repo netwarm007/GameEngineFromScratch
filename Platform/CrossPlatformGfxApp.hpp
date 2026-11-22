@@ -15,8 +15,13 @@
 #else
 #include "OpenGLESApplication.hpp"
 #endif
+#elif defined(HAS_SDL2)
+// Pair with the runtime composition's SDL host; the GLX header pulls in
+// X11, whose None macro collides with engine enums in mixed translation
+// units.
+#include "Platform/Sdl/OpenGLApplication.hpp"
 #else
-#include "OpenGLApplication.hpp"
+#include "Platform/Linux/OpenGLApplication.hpp"
 #endif
 
 namespace My {
