@@ -689,7 +689,7 @@ jobs:
               if (-not (Test-Path (Join-Path $resolved 'physics-passed'))) { throw "$backend physics-passed missing" }
               if ($shot) { if (-not (Test-Path $shot)) { throw "$backend capture missing" } }
               elseif (-not (Test-Path (Join-Path $resolved 'billiard-after.bmp'))) { throw "$backend BMP capture missing" }
-              Write-Output "windows-billiard-$backend: startup + physics + capture OK"
+              Write-Output "windows-billiard-${backend}: startup + physics + capture OK"
             }
             Run-Billiard 'd3d12' 'billiard-matrix/d3d12'
             Run-Billiard 'opengl' 'billiard-matrix/opengl'

@@ -98,6 +98,13 @@ endif()
 if(MSVC)
     target_compile_options(VulkanRegressionRHI PUBLIC /utf-8)
 endif()
+if(NOT TARGET ${XG_LIBRARY})
+    # The integrated build links the prebuilt static crossguid library, which
+    # does not propagate its platform dependencies transitively; add them
+    # (libuuid on Linux) so uuid_generate resolves.
+    __add_xg_platform_dependencies(VulkanShaderTest)
+    __add_xg_platform_dependencies(VulkanRegressionRHI)
+endif()
 add_executable(VulkanResourceTest VulkanResourceTest.cpp)
 target_link_libraries(VulkanResourceTest PRIVATE VulkanRegressionRHI)
 add_test(NAME TEST_VulkanResources COMMAND VulkanResourceTest)
