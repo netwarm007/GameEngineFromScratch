@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "RhiSwitch.hpp"
+#include "Framework/Manager/GraphicsManager.hpp"
 #include "config.h"
 
 #include "Framework/Interface/IAssetReader.hpp"
@@ -42,6 +43,31 @@ class TestAssets : public IAssetReader {
     Buffer SyncOpenAndReadBinary(const char*) override { return {}; }
     std::string SyncOpenAndReadTextFileToString(const char*) override { return {}; }
 };
+
+class StubPipelineManager : public IPipelineStateManager {
+   public:
+    int Initialize() override { return 0; }
+    void Finalize() override {}
+    void Tick() override {}
+    bool RegisterPipelineState(PipelineState&) override { return true; }
+    void UnregisterPipelineState(PipelineState&) override {}
+    void Clear() override {}
+    const std::shared_ptr<PipelineState> GetPipelineState(std::string) const override {
+        return {};
+    }
+};
+
+// The initial composition must use a backend compiled on this platform;
+// switch targets use stub backends/managers, so they are platform-agnostic.
+RhiBackend CompiledInitialBackend() {
+#if defined(OS_WINDOWS)
+    return RhiBackend::D3d12;
+#elif defined(OS_MACOS)
+    return RhiBackend::Metal;
+#else
+    return RhiBackend::OpenGL;
+#endif
+}
 
 class TestApp : public BaseApplication {
    public:
@@ -132,9 +158,14 @@ struct Fixture {
             sessionFailures.end()) {
             return {{}, "injected session failure"};
         }
-        // Headless-constructible managers regardless of the stub backend.
-        return CreateRhiSessionModules(RhiBackend::OpenGL, backend, scenes,
-                                       assets, provider);
+        // Headless stub managers: the base GraphicsManager initializes
+        // without a window or GPU; no real backend cast is involved.
+        (void)backend; (void)assets; (void)provider;
+        RhiSessionModules modules;
+        modules.pipelineStateManager = std::make_unique<StubPipelineManager>();
+        modules.graphicsManager =
+            std::make_unique<GraphicsManager>(scenes, *modules.pipelineStateManager);
+        return {std::move(modules), {}};
     }
 
     explicit Fixture(RhiBackend initial = RhiBackend::Vulkan) {
@@ -183,11 +214,13 @@ void TestRequestContract() {
 }
 
 void TestSuccessfulSwitchCycle() {
-    Fixture f(RhiBackend::OpenGL);
+    Fixture f(CompiledInitialBackend());
     auto controller = f.MakeController();
     const auto generation0 = f.root->Session().Generation();
     const auto* graphics0 = f.composition->graphicsManager.get();
-    Expect(f.config.fixOpenGLPerspectiveMatrix, "initial OpenGL convention");
+    Expect(f.config.fixOpenGLPerspectiveMatrix ==
+               (CompiledInitialBackend() == RhiBackend::OpenGL),
+           "initial convention follows the initial backend");
 
     Expect(controller->Request(RhiBackend::Vulkan) ==
                RhiSwitchRequestResult::Accepted, "request A->B");
@@ -213,7 +246,9 @@ void TestSuccessfulSwitchCycle() {
     controller->ProcessFrameBoundary();
     Expect(controller->State() == RhiSwitchState::Running, "B->A completes");
     Expect(controller->ActiveBackend() == RhiBackend::OpenGL, "restored backend A");
-    Expect(f.config.fixOpenGLPerspectiveMatrix, "OpenGL convention restored");
+    Expect(f.config.fixOpenGLPerspectiveMatrix ==
+               (CompiledInitialBackend() == RhiBackend::OpenGL),
+           "initial convention restored");
 }
 
 void TestZeroSizeGate() {
@@ -267,7 +302,7 @@ void TestPreflightKeepsOldSession() {
 }
 
 void TestRecoveryAfterRetirement() {
-    Fixture f(RhiBackend::OpenGL);
+    Fixture f(CompiledInitialBackend());
     f.backendFailures.push_back(RhiBackend::Vulkan);
     auto controller = f.MakeController();
     controller->Request(RhiBackend::Vulkan);
@@ -279,7 +314,7 @@ void TestRecoveryAfterRetirement() {
            "failed switch reported even when recovery succeeds");
     controller->ProcessFrameBoundary();
     Expect(controller->State() == RhiSwitchState::Running, "recovery completes");
-    Expect(controller->ActiveBackend() == RhiBackend::OpenGL,
+    Expect(controller->ActiveBackend() == CompiledInitialBackend(),
            "previous backend reconstructed");
 }
 
@@ -299,7 +334,7 @@ void TestRecoveryFailureExits() {
 }
 
 void TestSessionFailureRecovers() {
-    Fixture f(RhiBackend::OpenGL);
+    Fixture f(CompiledInitialBackend());
     f.sessionFailures.push_back(RhiBackend::Vulkan);
     auto controller = f.MakeController();
     controller->Request(RhiBackend::Vulkan);
@@ -307,7 +342,7 @@ void TestSessionFailureRecovers() {
     controller->ProcessFrameBoundary();
     Expect(controller->State() == RhiSwitchState::Running,
            "session creation failure recovers the previous backend");
-    Expect(controller->ActiveBackend() == RhiBackend::OpenGL,
+    Expect(controller->ActiveBackend() == CompiledInitialBackend(),
            "previous backend active after session failure");
 }
 }  // namespace
