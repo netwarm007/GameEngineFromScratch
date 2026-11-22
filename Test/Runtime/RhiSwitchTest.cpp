@@ -139,6 +139,7 @@ struct Fixture {
     std::vector<RhiBackend> backendFailures;
     std::vector<RhiBackend> sessionFailures;
     bool failAllBackends = false;
+    int sessionCreations = 0;
 
     RhiBackendResult MakeBackend(RhiBackend target, BaseApplication&) {
         if (failAllBackends ||
@@ -161,6 +162,7 @@ struct Fixture {
         // Headless stub managers: the base GraphicsManager initializes
         // without a window or GPU; no real backend cast is involved.
         (void)backend; (void)assets; (void)provider;
+        ++sessionCreations;
         RhiSessionModules modules;
         modules.pipelineStateManager = std::make_unique<StubPipelineManager>();
         modules.graphicsManager =
@@ -218,7 +220,7 @@ void TestSuccessfulSwitchCycle() {
     Fixture f(CompiledInitialBackend());
     auto controller = f.MakeController();
     const auto generation0 = f.root->Session().Generation();
-    const auto* graphics0 = f.composition->graphicsManager.get();
+    const int creations0 = f.sessionCreations;
     Expect(f.config.fixOpenGLPerspectiveMatrix ==
                (CompiledInitialBackend() == RhiBackend::OpenGL),
            "initial convention follows the initial backend");
@@ -229,7 +231,7 @@ void TestSuccessfulSwitchCycle() {
     controller->ProcessFrameBoundary();
     Expect(controller->State() == RhiSwitchState::Running, "A->B completes");
     Expect(controller->ActiveBackend() == RhiBackend::Vulkan, "active backend is B");
-    Expect(f.composition->graphicsManager.get() != graphics0,
+    Expect(f.sessionCreations > creations0,
            "session modules were replaced");
     Expect(f.root->Session().Generation() > generation0,
            "switch publishes new generations");
@@ -241,12 +243,13 @@ void TestSuccessfulSwitchCycle() {
                f.platform.switchNotifications[0] == RhiBackend::Vulkan,
            "host notified of the backend switch");
 
-    Expect(controller->Request(RhiBackend::OpenGL) ==
+    Expect(controller->Request(CompiledInitialBackend()) ==
                RhiSwitchRequestResult::Accepted, "request B->A");
     controller->ProcessFrameBoundary();
     controller->ProcessFrameBoundary();
     Expect(controller->State() == RhiSwitchState::Running, "B->A completes");
-    Expect(controller->ActiveBackend() == RhiBackend::OpenGL, "restored backend A");
+    Expect(controller->ActiveBackend() == CompiledInitialBackend(),
+           "restored backend A");
     Expect(f.config.fixOpenGLPerspectiveMatrix ==
                (CompiledInitialBackend() == RhiBackend::OpenGL),
            "initial convention restored");
@@ -272,7 +275,7 @@ void TestZeroSizeGate() {
 void TestPreflightKeepsOldSession() {
     Fixture f;
     auto controller = f.MakeController();
-    const auto* graphics0 = f.composition->graphicsManager.get();
+    const int creations0 = f.sessionCreations;
     auto probe = [] {
         auto availability = AllReady();
         for (auto& a : availability) {
@@ -299,7 +302,7 @@ void TestPreflightKeepsOldSession() {
     withProbe.ProcessFrameBoundary();
     Expect(withProbe.State() == RhiSwitchState::Running,
            "preflight failure keeps the old session running");
-    Expect(f.composition->graphicsManager.get() == graphics0,
+    Expect(f.sessionCreations == creations0,
            "preflight failure does not touch the session");
 }
 

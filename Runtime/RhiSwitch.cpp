@@ -114,10 +114,12 @@ int RhiSwitchController::ActivateBackend(RhiBackend target) {
     m_Root.RetireSessionForReconstruction(recreateWindow);
     m_Composition.graphicsManager.reset();
     m_Composition.pipelineStateManager.reset();
-    m_Composition.sessionBackend.reset();
 
     auto backendResult = m_BackendFactory(target, *m_Composition.application);
     if (!backendResult.backend) {
+        // The retired backend object stays alive (finalized) so recovery can
+        // still drain through the root's backend pointer; it is replaced
+        // only once the target backend exists.
         m_LastError = "backend creation failed: " + backendResult.error;
         std::cerr << "RHI switch: " << m_LastError << '\n';
         return -1;
