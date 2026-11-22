@@ -420,6 +420,9 @@ jobs:
           paths:
             - build
             - .circleci/windows-deps-key.txt
+            # Generated in-source by configure_file; downstream jobs check
+            # out fresh sources and need it for shader preprocessing tests.
+            - config.h
       - when:
           condition:
             equal: [full, << parameters.scope >>]
@@ -609,6 +612,9 @@ jobs:
               Stop-Process -Id $process.Id -ErrorAction SilentlyContinue
               throw "Viewer baseline capture timed out after 180 seconds"
             }
+            # With redirected output, ExitCode is only cached after the
+            # parameterless WaitForExit drains the async readers.
+            $process.WaitForExit()
             Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
             if ($process.ExitCode -ne 0) { throw "Viewer baseline capture exited $($process.ExitCode); see viewer logs" }
             if (-not (Test-Path screenshots/viewer-render.png)) { throw "Viewer did not produce a baseline PNG" }
@@ -1994,18 +2000,12 @@ jobs:
                mkdir -p moltenvk-applications/crash-reports
                cp "$HOME/Library/Logs/DiagnosticReports/"*.ips moltenvk-applications/crash-reports/ 2>/dev/null || true
                cp "$HOME/Library/Logs/DiagnosticReports/"*.crash moltenvk-applications/crash-reports/ 2>/dev/null || true
-               echo "--- capture failed (exit $status); retrying Viewer without validation layers"
+               echo "--- capture failed (exit $status); running Viewer under lldb without validation layers"
                unset VK_LAYER_PATH
                viewer=./build-vulkan-apps/Viewer/Viewer.app/Contents/MacOS/Viewer
-               "$viewer" -screenshot moltenvk-applications/Viewer-novalidation.ppm \
-                 > moltenvk-applications/Viewer-novalidation.log 2>&1 &
-               retry_pid=$!
-               for attempt in $(seq 1 60); do
-                 sleep 2
-                 kill -0 "$retry_pid" 2>/dev/null || break
-               done
-               kill "$retry_pid" 2>/dev/null || true
-               wait "$retry_pid" 2>/dev/null || true
+               lldb -b -o run -o "thread backtrace all" -o quit -- \
+                 "$viewer" -screenshot moltenvk-applications/Viewer-novalidation.ppm \
+                 > moltenvk-applications/Viewer-lldb.log 2>&1 || true
              fi
              exit "$status"
       - store_artifacts:
