@@ -33,9 +33,11 @@ void SDLOpenGLBackend::CreateMainWindow() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 #endif
     const auto config = m_Application.GetConfiguration();
-    // Mirror the GLX host's proven visual request: color/stencil size
-    // requests find no matching fbconfig on Xvfb; depth + doublebuffer do.
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, config.depthBits);
+    // Leave color/depth/stencil sizes at SDL defaults: explicit size
+    // requests find no matching GLX fbconfig on Xvfb. The engine renders
+    // into offscreen targets with its own depth, so the window's default
+    // depth buffer is unused.
+    (void)config;
     if (config.msaaSamples > 1) {
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, config.msaaSamples);

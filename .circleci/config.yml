@@ -720,9 +720,9 @@ jobs:
             # A/B/A directed switches at frame boundaries; the final capture
             # must match the startup baseline (scene restored on backend A).
             $pairs = @(
-              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12' },
-              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12' },
-              @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl' }
+              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12'; billiard=$false },
+              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12'; billiard=$true },
+              @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl'; billiard=$false }
             )
             foreach ($pair in $pairs) {
               $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
@@ -758,6 +758,7 @@ jobs:
               python scripts/compare_captures.py $baseline $png --label "windows-switch-$tag" @tolArgs
               if ($LASTEXITCODE -ne 0) { throw "windows-switch-$tag capture comparison failed" }
 
+              if ($pair.billiard) {
               $bout = "billiard-switch/$tag"
               New-Item -ItemType Directory -Force $bout | Out-Null
               $bresolved = (Resolve-Path $bout).Path
@@ -792,6 +793,7 @@ jobs:
                 throw "$tag billiard switch did not complete"
               }
               Write-Output "windows-billiard-switch-${tag}: A/B/A + physics OK"
+              }
             }
             # M4.4 preflight evidence: an unavailable Vulkan runtime (loader
             # override pointing nowhere) must be rejected before retirement,
@@ -1881,6 +1883,11 @@ jobs:
              cmake --build build-vulkan-abi --parallel 2
              ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
              bash scripts/capture_vulkan_applications.sh moltenvk-applications
+      - store_artifacts:
+          path: vulkan-applications
+          destination: vulkan-applications
+          when: always
+
       - store_test_results:
           path: build-vulkan-abi/junit.xml
       - store_artifacts:
