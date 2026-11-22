@@ -36,6 +36,7 @@ if(Vulkan_FOUND)
         ${X11_XCB_LIBRARY}
         ${DL_LIBRARY}
         $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
+        $<$<TARGET_EXISTS:VulkanRHI>:VulkanRHI>
     )
     if(SDL2_FOUND)
         target_include_directories(PlatformVulkanXcb PRIVATE
@@ -55,6 +56,7 @@ target_link_libraries(PlatformInterface
         ${X11_XCB_LIBRARY} 
         ${DL_LIBRARY}
         $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
+        $<$<TARGET_EXISTS:VulkanRHI>:VulkanRHI>
 )
 
 target_include_directories(PlatformInterface PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
