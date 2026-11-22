@@ -41,6 +41,13 @@ class BaseApplication : _implements_ IApplication {
         return m_Config;
     }
 
+    // Render conventions follow the active render session (M4 switching):
+    // update the host configuration before the restored scene prepares
+    // camera/light data.
+    void SetRenderConvention(bool fixOpenGLPerspectiveMatrix) {
+        m_Config.fixOpenGLPerspectiveMatrix = fixOpenGLPerspectiveMatrix;
+    }
+
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override {}
 
     void CreateMainWindow() override {}

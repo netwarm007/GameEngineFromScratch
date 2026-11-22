@@ -56,6 +56,11 @@ if(TARGET RuntimeComposition)
     target_link_libraries(RhiCompositionTest PRIVATE RuntimeComposition)
     add_test(NAME TEST_RhiCompositionTest COMMAND RhiCompositionTest)
     set_tests_properties(TEST_RhiCompositionTest PROPERTIES LABELS fast TIMEOUT 30)
+
+    add_executable(RhiSwitchTest RhiSwitchTest.cpp)
+    target_link_libraries(RhiSwitchTest PRIVATE RuntimeComposition)
+    add_test(NAME TEST_RhiSwitchTest COMMAND RhiSwitchTest)
+    set_tests_properties(TEST_RhiSwitchTest PROPERTIES LABELS fast TIMEOUT 30)
 endif()
 
 # M3 session contract: the persistent root lives in Manager for full builds;

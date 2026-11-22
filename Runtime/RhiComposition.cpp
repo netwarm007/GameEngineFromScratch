@@ -241,3 +241,10 @@ std::string_view RhiStartupHostName(RhiBackend backend) {
 }
 
 }  // namespace My
+namespace My {
+
+bool RhiBackendRequiresWindowRecreation(RhiBackend backend) {
+    return backend == RhiBackend::OpenGL;
+}
+
+}  // namespace My

@@ -2,7 +2,7 @@
 # Each backend factory lives in its own translation unit and includes only its
 # own backend headers, so no configuration aliases conflict. The central
 # dispatch references every included factory, retaining its implementation.
-set(RHI_COMPOSITION_SOURCES RhiComposition.cpp)
+set(RHI_COMPOSITION_SOURCES RhiComposition.cpp RhiBackendFactory.cpp RhiSwitch.cpp)
 if(OS_WINDOWS)
     list(APPEND RHI_COMPOSITION_SOURCES RhiCompositionD3d12.cpp)
 endif()

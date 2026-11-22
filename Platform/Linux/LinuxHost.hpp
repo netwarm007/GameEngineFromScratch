@@ -43,6 +43,10 @@ class LinuxHost : public BaseApplication, public IPlatformHost {
         m_pActiveBackend = backend;
     }
 
+    void OnBackendSwitch(RhiBackend target) override {
+        SetMode(target == RhiBackend::OpenGL ? Mode::Sdl : Mode::Xcb);
+    }
+
     // Native accessors for the paired backend's surface factory.
     xcb_connection_t* GetXcbConnection() { return m_pConn; }
     SDL_Window* GetSdlWindow() { return m_pWindow; }

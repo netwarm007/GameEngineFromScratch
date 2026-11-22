@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "Interface.hpp"
+#include "RhiStartup.hpp"
 
 namespace My {
 class IRenderBackend;
@@ -38,5 +39,10 @@ _Interface_ IPlatformHost {
     // without ticking runtime modules. Safe to call while rendering is
     // paused.
     virtual void ProcessEvents() = 0;
+
+    // Notify the host that the active backend is changing (before the new
+    // window/drawable is created): the dual-mode Linux host selects its
+    // windowing mode here. Default no-op for single-mode hosts.
+    virtual void OnBackendSwitch(RhiBackend target) {}
 };
 }  // namespace My

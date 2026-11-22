@@ -62,6 +62,22 @@ RhiSessionResult CreateRhiSessionModules(
     ISceneManager& sceneManager, IAssetReader& assetReader,
     std::function<MemorySystem*()> memoryProvider = {});
 
+// Session-owned backend object for a target backend on the persistent host
+// (M4 switching). Construction is window/GPU-free.
+struct RhiBackendResult {
+    std::unique_ptr<IRenderBackend> backend;
+    bool fixOpenGLPerspectiveMatrix = false;
+    bool recreateWindowOnReconstruction = false;
+    std::string error;
+};
+
+RhiBackendResult CreateRhiBackendObject(RhiBackend backend,
+                                        BaseApplication& host);
+
+// Static window policy for a backend (used before the target backend object
+// exists): WGL/GLX/SDL contexts are window-lifetime bound.
+bool RhiBackendRequiresWindowRecreation(RhiBackend backend);
+
 // Same-backend reconstruction at a complete frame boundary: retire the
 // session modules and native backend state (recreating the window when the
 // backend requires it), recreate them, and replace the composition's
