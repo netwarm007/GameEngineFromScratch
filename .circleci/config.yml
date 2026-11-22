@@ -521,39 +521,18 @@ jobs:
                     $f = Find-MesaFile $name
                     if ($f) { Copy-Item $f.FullName $viewerDir -Force }
                   }
-                  # The Vulkan loader comes from the installed Vulkan SDK; Mesa
-                  # ships only the lavapipe ICD. The choco vulkan-sdk package
-                  # installs side-by-side under C:\VulkanSDK and does NOT refresh
-                  # System32, so the system loader can predate the instance
-                  # extensions the native WSI path requires. Point the engine at
-                  # the SDK's current loader through GEFS_VULKAN_LIBRARY.
+                  # The Vulkan loader is the system one (the SDK installer
+                  # refreshes System32; the side-by-side SDK tree ships no
+                  # vulkan-1.dll). Mesa provides only the lavapipe ICD.
                   $sysLoader = "$env:SystemRoot\System32\vulkan-1.dll"
                   if (Test-Path $sysLoader) {
                     Write-Output "System32 Vulkan loader version: $((Get-Item $sysLoader).VersionInfo.FileVersion)"
+                  } else {
+                    throw 'System32 Vulkan loader missing'
                   }
-                  Write-Output "VULKAN_SDK env: '$env:VULKAN_SDK'"
-                  $sdkLoader = $null
                   if ($env:VULKAN_SDK -and (Test-Path "$env:VULKAN_SDK\Bin\vulkan-1.dll")) {
-                    $sdkLoader = Get-Item "$env:VULKAN_SDK\Bin\vulkan-1.dll"
-                  } else {
-                    $sdkLoader = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkan-1.dll' -ErrorAction SilentlyContinue |
-                      Sort-Object LastWriteTime -Descending |
-                      Select-Object -First 1
-                  }
-                  if ($sdkLoader) {
-                    $env:GEFS_VULKAN_LIBRARY = $sdkLoader.FullName
-                    Write-Output "Using Vulkan SDK loader: $($sdkLoader.FullName) ($($sdkLoader.VersionInfo.FileVersion))"
-                  } else {
-                    Write-Output 'SDK loader search diagnostics:'
-                    Write-Output "C:\VulkanSDK exists: $(Test-Path 'C:\VulkanSDK')"
-                    Get-ChildItem 'C:\VulkanSDK' -ErrorAction SilentlyContinue | ForEach-Object { Write-Output "  $($_.FullName)" }
-                    Get-ChildItem 'C:\VulkanSDK' -Recurse -Directory -ErrorAction SilentlyContinue |
-                      Select-Object -First 30 -ExpandProperty FullName | ForEach-Object { Write-Output "  dir: $_" }
-                    if (Test-Path $sysLoader) {
-                      Write-Output 'No SDK loader found; falling back to the System32 Vulkan loader'
-                    } else {
-                      throw 'No Vulkan loader available (SDK or System32)'
-                    }
+                    $env:GEFS_VULKAN_LIBRARY = "$env:VULKAN_SDK\Bin\vulkan-1.dll"
+                    Write-Output "Using SDK loader override: $env:GEFS_VULKAN_LIBRARY"
                   }
                   $lvp = Find-MesaFile 'vulkan_lvp.dll'
                   $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
@@ -561,12 +540,30 @@ jobs:
                     Get-ChildItem "$mesa\extracted" -Recurse -Directory | Select-Object -First 20 -ExpandProperty FullName
                     throw 'Mesa lavapipe components not found in package'
                   }
-                  Copy-Item $lvp.FullName "$mesa\vulkan_lvp.dll" -Force
+                  # Deploy the lavapipe ICD together with every sibling DLL next
+                  # to the executable: the application directory is first in the
+                  # Windows DLL search order, so the ICD's dependencies resolve.
+                  # Copying vulkan_lvp.dll alone previously left it unable to load.
+                  Get-ChildItem $lvp.DirectoryName -Filter '*.dll' | ForEach-Object { Copy-Item $_.FullName $viewerDir -Force }
                   $json = Get-Content $icd.FullName -Raw | ConvertFrom-Json
-                  $json.ICD.library_path = "$mesa\vulkan_lvp.dll"
-                  $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd.json"
+                  $json.ICD.library_path = (Join-Path $viewerDir 'vulkan_lvp.dll')
+                  # ASCII (no BOM) so the loader's JSON parser accepts the file.
+                  $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd.json" -Encoding ascii
                   [Environment]::SetEnvironmentVariable('VK_ICD_FILENAMES', "$mesa\lvp_icd.json", 'Machine')
                   $env:VK_ICD_FILENAMES = "$mesa\lvp_icd.json"
+                  Write-Output "lavapipe ICD json:"; Get-Content "$mesa\lvp_icd.json"
+                  # Diagnostic: confirm the ICD loads and which instance extensions
+                  # it exposes before the Viewer run.
+                  $vulkaninfo = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkaninfo.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+                  if ($vulkaninfo) {
+                    $env:VK_LOADER_DEBUG = 'all'
+                    & $vulkaninfo.FullName --summary *> "$mesa\vulkaninfo.log"
+                    Remove-Item Env:VK_LOADER_DEBUG -ErrorAction SilentlyContinue
+                    Write-Output '=== vulkaninfo lavapipe/ICD diagnostics ==='
+                    Get-Content "$mesa\vulkaninfo.log" | Where-Object { $_ -match 'lvp|lavapipe|ICD|ERROR|error|deviceName|VK_KHR_get_surface_capabilities2|VK_KHR_win32_surface' } | Select-Object -First 50
+                  } else {
+                    Write-Output 'vulkaninfo.exe not found in SDK; skipping ICD diagnostic'
+                  }
 
                   function Run-Viewer($backend, $outDir) {
                     New-Item -ItemType Directory -Force $outDir | Out-Null
