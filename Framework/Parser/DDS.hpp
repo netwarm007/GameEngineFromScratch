@@ -186,29 +186,52 @@ class DdsParser : _implements_ ImageParser {
    public:
     Image Parse(Buffer& buf) override {
         Image img;
-        uint8_t* pData = buf.GetData();
+        const uint8_t* pData = buf.GetData();
+        const size_t buffer_size = buf.GetDataSize();
 
-        [[maybe_unused]] const auto* pdwMagic =
-            reinterpret_cast<const uint32_t*>(pData);
+        if (pData == nullptr ||
+            buffer_size < sizeof(uint32_t) + sizeof(DDS_HEADER)) {
+            std::cerr << "Truncated DDS header" << std::endl;
+            return img;
+        }
+
+        const auto* pdwMagic = reinterpret_cast<const uint32_t*>(pData);
         pData += sizeof(uint32_t);
-        assert(*pdwMagic == endian_net_unsigned_int("DDS "_u32));
+        if (*pdwMagic != endian_net_unsigned_int("DDS "_u32)) {
+            std::cerr << "File is not a DDS file!" << std::endl;
+            return img;
+        }
         std::cerr << "The image is DDS format" << std::endl;
 
         const auto* pHeader = reinterpret_cast<const DDS_HEADER*>(pData);
         pData += sizeof(DDS_HEADER);
 
-        assert(pHeader->dwSize == 124);
+        if (pHeader->dwSize != 124 || pHeader->ddspf.dwSize != 32 ||
+            pHeader->dwWidth == 0 || pHeader->dwHeight == 0 ||
+            pHeader->dwWidth > kMaxDimension ||
+            pHeader->dwHeight > kMaxDimension) {
+            std::cerr << "Invalid or unsupported DDS header" << std::endl;
+            return img;
+        }
         img.Width = pHeader->dwWidth;
         img.Height = pHeader->dwHeight;
         img.pitch = pHeader->dwPitchOrLinearSize;  // unreliable
         auto mipmap_count = pHeader->dwMipMapCount;
-        assert(pHeader->ddspf.dwSize == 32);
+        if (mipmap_count == 0) mipmap_count = 1;
+        if (mipmap_count > 32) {
+            std::cerr << "Invalid DDS mipmap count: " << mipmap_count
+                      << std::endl;
+            return img;
+        }
 
         if (pHeader->ddspf.dwFlags & 0x4 /* DDPF_FOURCC */) {
             const uint32_t* pdwFourCC = &pHeader->ddspf.dwFourCC;
             const char* pCC = reinterpret_cast<const char*>(pdwFourCC);
             auto format = (MY_D3DFMT)*pdwFourCC;
-            img.bitcount = pHeader->ddspf.dwRGBBitCount;
+            const uint32_t rgb_bit_count = pHeader->ddspf.dwRGBBitCount;
+            img.bitcount = (rgb_bit_count <= 0xFFFF)
+                               ? static_cast<uint16_t>(rgb_bit_count)
+                               : 0;
 
             switch (format) {
                 case MY_D3DFMT::D3DFMT_A16B16G16R16F:
@@ -216,14 +239,22 @@ class DdsParser : _implements_ ImageParser {
                     img.compressed = false;
                     img.is_float = true;
                     img.pixel_format = PIXEL_FORMAT::RGBA16;
-                    assert(img.bitcount == 64);
+                    if (img.bitcount != 64) {
+                        std::cerr << "Invalid DDS bit count: "
+                                  << rgb_bit_count << std::endl;
+                        return img;
+                    }
                     break;
                 case MY_D3DFMT::D3DFMT_A32B32G32R32F:
                     std::cerr << "D3DFMT_A32B32G32R32F" << std::endl;
                     img.compressed = false;
                     img.is_float = true;
                     img.pixel_format = PIXEL_FORMAT::RGBA32;
-                    assert(img.bitcount == 128);
+                    if (img.bitcount != 128) {
+                        std::cerr << "Invalid DDS bit count: "
+                                  << rgb_bit_count << std::endl;
+                        return img;
+                    }
                     break;
                 default:
                     std::cerr << "Compressed: ";
@@ -235,6 +266,10 @@ class DdsParser : _implements_ ImageParser {
         }
 
         img.mipmaps.reserve(mipmap_count);
+
+        auto remaining = [&]() {
+            return (uint64_t)(buf.GetData() + buffer_size - pData);
+        };
 
         if (img.compressed) {
             const uint32_t* pdwFourCC = &pHeader->ddspf.dwFourCC;
@@ -259,6 +294,10 @@ class DdsParser : _implements_ ImageParser {
                 img.pitch = std::max(1u, ALIGN(img.Width, 4)) * 4;
                 img.bitcount = 8;
             } else if (*pdwFourCC == endian_net_unsigned_int("DX10"_u32)) {
+                if (remaining() < sizeof(DDS_HEADER_DXT10)) {
+                    std::cerr << "Truncated DDS DX10 header" << std::endl;
+                    return img;
+                }
                 img.compress_format = COMPRESSED_FORMAT::DXT10;
                 const auto* pHeaderDXT10 =
                     reinterpret_cast<const DDS_HEADER_DXT10*>(pData);
@@ -271,6 +310,11 @@ class DdsParser : _implements_ ImageParser {
                 img.bitcount = 8;
             }
 
+            if (img.compress_format == COMPRESSED_FORMAT::NONE) {
+                std::cerr << "Unsupported DDS compressed format" << std::endl;
+                return img;
+            }
+
             if (mipmap_count > 0) {
                 uint32_t width = img.Width;
                 uint32_t height = img.Height;
@@ -278,9 +322,17 @@ class DdsParser : _implements_ ImageParser {
                 for (decltype(mipmap_count) i = 0; i < mipmap_count; i++) {
                     if (width > 0 && height > 0) {
                         auto pitch = std::max(1u, (ALIGN(width, 4)) >> 2) * ((img.compress_format == COMPRESSED_FORMAT::DXT1)? 8 : 16);
+                        auto level_size = (uint64_t)pitch *
+                                          ((ALIGN(height, 4)) >> 2);
+                        if ((uint64_t)img.data_size + level_size >
+                            remaining()) {
+                            std::cerr << "Truncated DDS image data"
+                                      << std::endl;
+                            return Image {};
+                        }
                         img.mipmaps.emplace_back(
                             width, height, pitch,
-                            img.data_size, pitch * (ALIGN(height, 4) >> 2));
+                            img.data_size, (size_t)level_size);
                         img.data_size += img.mipmaps[i].data_size;
 
                         width >>= 1;   // /2
@@ -300,9 +352,17 @@ class DdsParser : _implements_ ImageParser {
                 for (decltype(mipmap_count) i = 0; i < mipmap_count; i++) {
                     if (width > 0 && height > 0) {
                         auto pitch = ALIGN(width * img.bitcount, 8) / 8;
+                        auto level_size = (uint64_t)pitch * height;
+                        if ((uint64_t)img.data_size + level_size >
+                            remaining()) {
+                            std::cerr << "Truncated DDS image data"
+                                      << std::endl;
+                            return Image {};
+                        }
                         img.mipmaps.emplace_back(
-                            width, height, pitch, img.data_size /* as offset */,
-                            pitch * height /* as data_size */);
+                            width, height, pitch,
+                            img.data_size /* as offset */,
+                            (size_t)level_size /* as data_size */);
                         img.data_size += img.mipmaps[i].data_size;
 
                         width >>= 1;
@@ -314,7 +374,10 @@ class DdsParser : _implements_ ImageParser {
             }
         }
 
-        assert(img.data_size < buf.GetDataSize());
+        if (img.data_size > remaining()) {
+            std::cerr << "Truncated DDS image data" << std::endl;
+            return Image {};
+        }
 
         img.data = new uint8_t[img.data_size];
 
@@ -322,5 +385,8 @@ class DdsParser : _implements_ ImageParser {
 
         return img;
     }
+
+   private:
+    static constexpr uint32_t kMaxDimension = 0x4000;  // 16384
 };
 }  // namespace My

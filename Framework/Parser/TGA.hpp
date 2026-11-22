@@ -27,10 +27,16 @@ class TgaParser : _implements_ ImageParser {
         Image img;
 
         const uint8_t* pData = buf.GetData();
-        [[maybe_unused]] const uint8_t* pDataEnd =
+        const uint8_t* pDataEnd =
             buf.GetData() + buf.GetDataSize();
 
         std::cerr << "Parsing as TGA file:" << std::endl;
+
+        if (pData == nullptr ||
+            buf.GetDataSize() < sizeof(TGA_FILEHEADER)) {
+            std::cerr << "Truncated TGA header" << std::endl;
+            return img;
+        }
 
         const auto* pFileHeader =
             reinterpret_cast<const TGA_FILEHEADER*>(pData);
@@ -63,7 +69,7 @@ class TgaParser : _implements_ ImageParser {
         img.Height =
             (pFileHeader->ImageSpec[7] << 8) + pFileHeader->ImageSpec[6];
         uint8_t pixel_depth = pFileHeader->ImageSpec[8];
-        uint8_t alpha_depth = (pFileHeader->ImageSpec[9] & 0x0F);
+        [[maybe_unused]] uint8_t alpha_depth = (pFileHeader->ImageSpec[9] & 0x0F);
 #ifdef DEBUG
         std::cerr << "Image Width: " << img.Width << std::endl;
         std::cerr << "Image Height: " << img.Height << std::endl;
@@ -72,16 +78,61 @@ class TgaParser : _implements_ ImageParser {
         std::cerr << "Image Alpha Depth: " << (uint16_t)alpha_depth
                   << std::endl;
 #endif
+        if (img.Width == 0 || img.Height == 0) {
+            std::cerr << "Invalid TGA image dimensions" << std::endl;
+            return img;
+        }
+
+        // The pixel depth alone decides both how many bytes each pixel occupies
+        // in the file (used by the bounds check and the read loop below) and the
+        // output layout. Real writers disagree with the descriptor's alpha count
+        // (e.g. the shipped 32bpp RGBX icelogo-*.tga files store 0 alpha bits),
+        // so it is not validated against pixel_depth: rejecting mismatches
+        // wrongly refused well-formed assets, and the count affects no size.
+        size_t bytes_per_pixel;
+        switch (pixel_depth) {
+            case 15:
+            case 16:
+                bytes_per_pixel = 2;
+                break;
+            case 24:
+                bytes_per_pixel = 3;
+                break;
+            case 32:
+                bytes_per_pixel = 4;
+                break;
+            default:
+                std::cerr << "Unsupported TGA pixel depth: "
+                          << (uint16_t)pixel_depth << std::endl;
+                return img;
+        }
+
         // skip Image ID
+        if ((size_t)pFileHeader->IDLength > (size_t)(pDataEnd - pData)) {
+            std::cerr << "Truncated TGA image ID" << std::endl;
+            return img;
+        }
         pData += pFileHeader->IDLength;
         // skip the Color Map. since we assume the Color Map Type is 0,
         // nothing to skip
 
-        // reading the pixel data
-        img.bitcount = (alpha_depth ? 32 : 24);
+        // the pixel data must be completely present in the file
+        const size_t row_size = (size_t)img.Width * bytes_per_pixel;
+        if (row_size / bytes_per_pixel != img.Width ||
+            (size_t)img.Height > (size_t)(pDataEnd - pData) / row_size) {
+            std::cerr << "Truncated TGA pixel data" << std::endl;
+            return img;
+        }
+
+        // reading the pixel data. The output layout below is chosen by
+        // pixel_depth (15/24bpp write 3 bytes per pixel, 16/32bpp write 4),
+        // so label the format from pixel_depth too. Deriving it from the
+        // descriptor's alpha count mislabeled files whose writer disagreed
+        // with it, e.g. 32bpp RGBX assets with 0 alpha bits.
+        bool has_alpha = (pixel_depth == 32 || pixel_depth == 16);
+        img.bitcount = has_alpha ? 32 : 24;
         img.bitdepth = 8;
-        img.pixel_format =
-            (alpha_depth ? PIXEL_FORMAT::RGBA8 : PIXEL_FORMAT::RGB8);
+        img.pixel_format = has_alpha ? PIXEL_FORMAT::RGBA8 : PIXEL_FORMAT::RGB8;
         img.pitch = img.Width *
                     ALIGN((img.bitcount >> 3), 4);  // for GPU address alignment
 
@@ -93,8 +144,8 @@ class TgaParser : _implements_ ImageParser {
             for (decltype(img.Width) j = 0; j < img.Width; j++) {
                 switch (pixel_depth) {
                     case 15: {
-                        assert(alpha_depth == 0);
-                        uint16_t color = *(uint16_t*)pData;
+                        uint16_t color;
+                        memcpy(&color, pData, sizeof(color));
                         pData += 2;
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3) =
                             ((color & 0x7C00) >> 10);  // R
@@ -104,8 +155,8 @@ class TgaParser : _implements_ ImageParser {
                           2) = (color & 0x001F);  // B
                     } break;
                     case 16: {
-                        assert(alpha_depth == 1);
-                        uint16_t color = *(uint16_t*)pData;
+                        uint16_t color;
+                        memcpy(&color, pData, sizeof(color));
                         pData += 2;
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4) =
                             ((color & 0x7C00) >> 10);  // R
@@ -117,7 +168,6 @@ class TgaParser : _implements_ ImageParser {
                           3) = ((color & 0x8000) ? 0xFF : 0x00);  // A
                     } break;
                     case 24: {
-                        assert(alpha_depth == 0);
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 +
                           2) = *pData++;  // B
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 3 +
@@ -126,7 +176,6 @@ class TgaParser : _implements_ ImageParser {
                             *pData++;  // R
                     } break;
                     case 32: {
-                        assert(alpha_depth == 8);
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
                           2) = *pData++;  // B
                         *(pOut + (ptrdiff_t)img.pitch * i + (ptrdiff_t)j * 4 +
