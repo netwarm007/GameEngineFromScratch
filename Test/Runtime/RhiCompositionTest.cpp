@@ -53,6 +53,13 @@ class CountingApplication : public BaseApplication, public IRenderBackend {
         return BaseApplication::InitializeGuiPlatform();
     }
     void FinalizeGuiPlatform() override { BaseApplication::FinalizeGuiPlatform(); }
+    int InitializeGraphicsResources() override {
+        return BaseApplication::InitializeGraphicsResources();
+    }
+    void WaitForGraphicsIdle() override { BaseApplication::WaitForGraphicsIdle(); }
+    void FinalizeGraphicsResources() override {
+        BaseApplication::FinalizeGraphicsResources();
+    }
 };
 int CountingApplication::live = 0;
 
