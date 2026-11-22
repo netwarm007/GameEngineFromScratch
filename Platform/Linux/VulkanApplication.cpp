@@ -43,7 +43,7 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
 
 std::unique_ptr<VulkanBackend> My::MakeXcbVulkanBackend(
     IApplication& application, IPlatformHost& platform,
-    xcb_connection_t* connection) {
+    std::function<xcb_connection_t*()> connection) {
     return std::make_unique<VulkanBackend>(
         application, platform,
         std::vector<const char*>{"VK_KHR_surface", "VK_KHR_xcb_surface"},
@@ -57,7 +57,11 @@ std::unique_ptr<VulkanBackend> My::MakeXcbVulkanBackend(
             }
             VkXcbSurfaceCreateInfoKHR sci{};
             sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-            sci.connection = connection;
+            sci.connection = connection();
+            if (!sci.connection) {
+                fprintf(stderr, "Xcb: Vulkan surface requires an open XCB connection\n");
+                return VK_ERROR_INITIALIZATION_FAILED;
+            }
             sci.window = static_cast<xcb_window_t>(
                 reinterpret_cast<uintptr_t>(application.GetMainWindowHandler()));
             return create(instance, &sci, nullptr, &surface);

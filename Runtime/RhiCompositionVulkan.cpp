@@ -55,12 +55,12 @@ std::unique_ptr<RhiStartupComposition> ComposeVulkanStartup(
 #if defined(HAS_SDL2)
     auto host = std::make_unique<LinuxHost>(configuration);
     host->SetMode(LinuxHost::Mode::Xcb);
-    composition->sessionBackend =
-        MakeXcbVulkanBackend(*host, *host, host->GetXcbConnection());
+    composition->sessionBackend = MakeXcbVulkanBackend(
+        *host, *host, [host = host.get()] { return host->GetXcbConnection(); });
 #else
     auto host = std::make_unique<XcbApplication>(configuration);
-    composition->sessionBackend =
-        MakeXcbVulkanBackend(*host, *host, host->GetXcbConnection());
+    composition->sessionBackend = MakeXcbVulkanBackend(
+        *host, *host, [host = host.get()] { return host->GetXcbConnection(); });
 #endif
 #endif
     composition->recreateWindowOnReconstruction =

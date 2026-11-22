@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <memory>
 
 #include "IRenderBackend.hpp"
@@ -38,8 +39,10 @@ class VulkanApplication : public XcbApplication, public IRenderBackend {
 };
 
 // Runtime pairing: an XCB-window host (dual-mode Linux host in XCB mode or
-// the plain XCB application) + Vulkan backend.
-std::unique_ptr<VulkanBackend> MakeXcbVulkanBackend(IApplication& application,
-                                                  IPlatformHost& platform,
-                                                  xcb_connection_t* connection);
+// the plain XCB application) + Vulkan backend. The connection is queried
+// lazily at surface creation: the dual-mode host only opens it when its
+// XCB window is created, after composition.
+std::unique_ptr<VulkanBackend> MakeXcbVulkanBackend(
+    IApplication& application, IPlatformHost& platform,
+    std::function<xcb_connection_t*()> connection);
 }  // namespace My
