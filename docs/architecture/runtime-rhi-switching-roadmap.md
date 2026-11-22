@@ -519,6 +519,24 @@ runs. `IPlatformHost::ShutdownPlatform` carries one-time subsystem teardown
 regression covers window/GPU-free session recomposition and the window
 policy flag; native reconstruction evidence is M3.6.
 
+M3.5 hardens reconstruction and covers failure recovery. Audit: the D3D12
+RHI's `DestroyAll` releases every native object and nulls its handles, and
+re-initialization recreates them on the persistent host; the Vulkan RHI's
+`destroyAll`/`initializeDevice` pair is guarded and null-safe for re-entry;
+graphics-manager finalization drains the GPU and shuts down the ImGui
+renderer before the backend's native teardown. Scene texture objects retain
+only prepared CPU images, and GPU upload tracking (`m_nSceneRevision`) plus
+material/geometry caches are per-manager state, so a fresh session re-uploads
+the same Scene without publishing a new CPU revision; the session generation
+is the explicit epoch for borrowed GPU references and UI caches (cross-backend
+invalidation is M4). The input manager stays persistent; window recreation
+under the OpenGL policy discards stale native event queues, while full
+held-input reconciliation remains M4. The `fast` session regression now also
+covers mid-cycle graphics failure (no session published, persistent services
+untouched, generation semantics), GUI-platform failure rollback of the
+recreated graphics state, retry/recovery without whole-runtime restart, and
+idempotent finalization after a failed cycle.
+
 ## Verification and acceptance
 
 - Add focused production-path headless tests for selection, ordering, rejected
@@ -556,7 +574,7 @@ policy flag; native reconstruction evidence is M3.6.
 | Vulkan loader isolation is implemented and headless-tested; native evidence that non-Vulkan startup ignores an absent Vulkan runtime lands with application CLI integration. | M2.4 |
 | Material baking uses the native Utility executable; complete desktop cross-compilation needs an explicit host-tool path before it can be supported. | Follow-on build scope |
 | Backend partial-initialization and static platform/ImGui callback audit is complete (M3.3): ImGui platform backends are per-context, Win32 routing is per-window, and SDL/WGL/GLX cleanup paths are hardened. Repeatable session replacement itself lands with M3.4. | M3 (audit resolved) |
-| GPU caches, UI pass state, queued events, and held input require explicit reconstruction/invalidation behavior. | M3, M4 |
+| Same-backend reconstruction invalidates GPU caches and UI pass state through fresh session objects and the session generation (M3.5). Cross-backend invalidation and held-input/queued-event reconciliation remain open. | M4 (M3 portion resolved) |
 | Minimized windows and quit requests during switching need a cancellable, non-busy-wait first-frame/recovery contract. | M4 |
 | Vulkan Retina/mixed-DPI and floating-input acceptance remains open in the Vulkan plan; this roadmap does not resolve or duplicate its evidence. | M5 depends on the Vulkan plan |
 | Complete native switching coverage is not established by current single-backend CI runs. | M5 |

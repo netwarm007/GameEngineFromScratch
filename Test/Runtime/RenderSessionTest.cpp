@@ -377,6 +377,80 @@ void TestRootReconstructionCycle() {
     root.Finalize();
 }
 
+void TestRootReconstructionFailure() {
+    {
+        std::vector<std::string> events;
+        StubHost host(events);
+        RecordingModule p1("p1", events), s1("s1", events);
+        RuntimeRoot root;
+        root.SetHost(host, host, host);
+        root.RegisterPersistentModule(p1);
+        root.RegisterSessionModule(s1);
+        root.SetFramePlan({&p1, &s1});
+        Expect(root.Initialize() == 0, "startup before failed reconstruction");
+        const auto generation = root.Session().Generation();
+        events.clear();
+
+        root.RetireSessionForReconstruction(false);
+        host.graphicsResult = 13;
+        Expect(root.PrepareReconstructedSession(false) == 13,
+               "reconstruction graphics failure propagates");
+        Expect(!root.Session().IsActive(),
+               "failed reconstruction leaves no session");
+        Expect(root.Session().Generation() == generation + 1,
+               "retirement bumped the generation; failure publishes nothing");
+        bool persistentUntouched = true;
+        for (const auto& event : events) {
+            if (event == "init p1" || event == "stop p1") {
+                persistentUntouched = false;
+            }
+        }
+        Expect(persistentUntouched,
+               "failed reconstruction never touches persistent services");
+        events.clear();
+        root.Finalize();
+        Expect(events == std::vector<std::string>{"drain", "stop p1",
+                                                  "platform-stop"},
+               "Finalize after failed reconstruction finalizes persistent "
+               "services and platform only");
+    }
+    {
+        std::vector<std::string> events;
+        StubHost host(events);
+        RecordingModule p1("p1", events), s1("s1", events);
+        RuntimeRoot root;
+        root.SetHost(host, host, host);
+        root.RegisterPersistentModule(p1);
+        root.RegisterSessionModule(s1);
+        Expect(root.Initialize() == 0, "startup before GUI failure");
+        events.clear();
+
+        root.RetireSessionForReconstruction(false);
+        host.guiResult = 19;
+        Expect(root.PrepareReconstructedSession(false) == 19,
+               "reconstruction GUI platform failure propagates");
+        Expect(events == std::vector<std::string>{
+                     "drain", "stop s1", "gui-stop", "graphics-stop",
+                     "graphics-init", "gui-init", "graphics-stop"},
+               "GUI failure rolls back the recreated graphics state");
+        events.clear();
+
+        // Recovery: a second attempt succeeds without restarting the runtime.
+        host.guiResult = 0;
+        Expect(root.PrepareReconstructedSession(false) == 0,
+               "reconstruction retry succeeds");
+        RecordingModule s2("s2", events);
+        root.RegisterSessionModule(s2);
+        Expect(root.Session().Activate() == 0, "recovered session activates");
+        root.SetFramePlan({&p1, &s2});
+        events.clear();
+        root.Tick();
+        Expect(events == std::vector<std::string>{"events", "tick p1", "tick s2"},
+               "persistent services resume with the recovered session");
+        root.Finalize();
+    }
+}
+
 void TestRootMemorySystemOwnership() {
     std::vector<std::string> events;
     RecordingModule persistent("persistent", events);
@@ -449,6 +523,7 @@ int main() {
     TestRootStartupAndTeardownOrder();
     TestRootFailurePaths();
     TestRootReconstructionCycle();
+    TestRootReconstructionFailure();
     TestRootMemorySystemOwnership();
     return failures == 0 ? 0 : 1;
 }
