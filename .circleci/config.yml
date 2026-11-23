@@ -1381,7 +1381,7 @@ jobs:
              # -screenshot is consumed only by the Vulkan RHI; the recovered
              # backend here is OpenGL, so use the host-agnostic external X11
              # capture script (same mechanism as the OpenGL-final pair runs).
-             VK_ICD_FILENAMES=/nonexistent/icd.json LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 240s \
+             VK_ICD_FILENAMES=/nonexistent/icd.json LIBGL_ALWAYS_SOFTWARE=1 GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 timeout --kill-after=5s 240s \
                xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                bash scripts/capture_viewer_linux.sh "$out" --rhi opengl --rhi-switch vulkan@60 \
                > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
@@ -1905,6 +1905,7 @@ jobs:
              # reconstructed once and the failed switch is reported.
              out="screenshots/switch-recovery"; mkdir -p "$out"
              VK_DRIVER_FILES=/nonexistent/icd.json VK_ICD_FILENAMES=/nonexistent/icd.json \
+               GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 \
                "$APP/Contents/MacOS/Viewer" --rhi metal --rhi-switch vulkan@60 \
                -screenshot "$PWD/$out/viewer-render.png" -screenshotDelay 60 -screenshotFrame 480 \
                > "$out/viewer.log" 2>&1 &

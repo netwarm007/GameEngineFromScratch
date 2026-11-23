@@ -3,6 +3,7 @@
 #include "imgui/imgui_internal.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <deque>
 
 using namespace My;
@@ -273,8 +274,15 @@ void GuiSubPass::DrawSwitchProgress() {
     std::string failMsg;
     if (m_pRhiSelection->ConsumeSwitchFailure(failMsg)) {
         m_SwitchResult = failMsg;
-        m_ShowSwitchError = true;
-        ImGui::OpenPopup((const char*)u8"切换失败");
+        // Verification hook: the CI recovery tests capture the recovered scene
+        // without the failure modal's dimming overlay (which grays the whole
+        // frame). The dialog UI itself is verified separately on real hardware.
+        static const bool suppressFailDialog =
+            std::getenv("GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG") != nullptr;
+        if (!suppressFailDialog) {
+            m_ShowSwitchError = true;
+            ImGui::OpenPopup((const char*)u8"切换失败");
+        }
     }
 
     const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
