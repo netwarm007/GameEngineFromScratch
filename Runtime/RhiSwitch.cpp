@@ -1,5 +1,6 @@
 #include "RhiSwitch.hpp"
 
+#include <cstdlib>
 #include <iostream>
 #include <utility>
 
@@ -115,6 +116,21 @@ int RhiSwitchController::ActivateBackend(RhiBackend target) {
     m_Root.RetireSessionForReconstruction(recreateWindow);
     m_Composition.graphicsManager.reset();
     m_Composition.pipelineStateManager.reset();
+
+    // Verification-only failure injection (GEFS_RHI_SWITCH_FAIL_ONCE=1): force
+    // a single post-retirement failure to exercise recovery and the error UI.
+    // Self-clearing so subsequent switches succeed; never affects normal runs.
+    if (const char* failOnce = std::getenv("GEFS_RHI_SWITCH_FAIL_ONCE");
+        failOnce && failOnce[0] == '1') {
+#ifdef _WIN32
+        _putenv_s("GEFS_RHI_SWITCH_FAIL_ONCE", "");
+#else
+        unsetenv("GEFS_RHI_SWITCH_FAIL_ONCE");
+#endif
+        m_LastError = "GEFS_RHI_SWITCH_FAIL_ONCE: injected ActivateBackend failure";
+        std::cerr << "RHI switch: " << m_LastError << '\n';
+        return -1;
+    }
 
     auto backendResult = m_BackendFactory(target, *m_Composition.application);
     if (!backendResult.backend) {
