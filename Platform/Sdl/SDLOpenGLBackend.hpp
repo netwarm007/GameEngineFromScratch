@@ -30,6 +30,7 @@ class SDLOpenGLBackend : _implements_ IRenderBackend {
     void WaitForGraphicsIdle() override {}
     void FinalizeGraphicsResources() override;
     void PresentFrame() override;
+    void BeginFrame() override;
     bool RequiresWindowRecreation() const override { return true; }
 
    private:

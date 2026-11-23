@@ -78,6 +78,7 @@ class RuntimeRoot {
 
     void BeginFrame() {
         if (m_pMemorySystem) m_pMemorySystem->BeginFrame();
+        if (m_Backend) m_Backend->BeginFrame();
     }
 
    private:

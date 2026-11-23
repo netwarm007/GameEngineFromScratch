@@ -47,6 +47,12 @@ _Interface_ IRenderBackend {
     // keep the default no-op.
     virtual void PresentFrame() {}
 
+    // Called at the start of each frame before the module frame plan runs.
+    // Backends whose render context can be displaced by multi-viewport GUI
+    // rendering re-bind it here so scene passes (e.g. shadow-map FBO) always
+    // run with the correct context current.
+    virtual void BeginFrame() {}
+
     // Native window resize notification from the host (swapchain/drawable
     // recreation where the backend requires it).
     virtual void OnWindowResize(int new_width, int new_height) {}
