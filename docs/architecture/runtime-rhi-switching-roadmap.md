@@ -86,8 +86,8 @@ application support. A preliminary probe cannot guarantee initialization.
 | Windows | D3D12, OpenGL, Vulkan | Probe each backend's device, driver, and presentation requirements. |
 | Linux | OpenGL, Vulkan | Use native XCB for the future switching host; M1 preserves current SDL/OpenGL startup when SDL is available. |
 | macOS | Metal, Vulkan through MoltenVK | The OpenGL library target alone does not establish a supported native application path. |
-| Android | Retain existing OpenGL ES path | Vulkan integration and mobile lifecycle switching are deferred. |
-| WebAssembly | Retain existing WebGL path | WebGPU would be a separate backend effort. |
+| Android | Not a supported build of this effort | Unmaintained for years and disabled in CI; the existing OpenGL ES path predates the runtime architecture. Revival requires refactor/rewrite against the host/backend composition model (known limitation), not re-enabling the old build. |
+| WebAssembly | Not a supported build of this effort | Unmaintained for years and disabled in CI; the existing WebGL/SDL path predates the runtime architecture. Revival requires refactor/rewrite (and a separate WebGPU decision) before any support claim (known limitation). |
 | FreeBSD and other targets | Preserve existing behavior | No new runtime-switching support claim without native evidence. |
 
 D2D and Empty remain available for their existing specialized/test uses; they
@@ -725,7 +725,9 @@ matrix cannot pass vacuously.
 | Minimized windows and quit requests during switching need a cancellable, non-busy-wait first-frame/recovery contract. | M4 |
 | Vulkan Retina/mixed-DPI and floating-input acceptance remains open in the Vulkan plan; this roadmap does not resolve or duplicate its evidence. | M5 depends on the Vulkan plan |
 | Complete native switching coverage is not established by current single-backend CI runs. | M5 |
-| Android, WebAssembly, other desktop targets, macOS OpenGL, plugins, seamless switching, and device-loss recovery are deferred, not supported by implication. | Follow-on scope after M5 |
+| Android and WebAssembly are unmaintained (years), disabled, and not verified by CI. Their compile-time paths predate the runtime architecture; reviving them requires refactor/rewrite against the host/backend composition model, not re-enabling the old builds. | Known limitation; follow-on rewrite after M5 |
+| Other desktop targets, macOS OpenGL, plugins, seamless switching, and device-loss recovery are deferred, not supported by implication. | Follow-on scope after M5 |
+| Legacy desktop application classes (host + `IRenderBackend` sibling inheritance) are retained through M4/M5 as the compile-time path and comparison baseline. Candidate post-acceptance simplification (maintainer decision recorded 2026-11-23): retire them once runtime switching is fully verified with no regression — trimmed builds are then served by the runtime factory with a reduced backend set, and validation-layer capture coverage migrates to runtime builds. This removes the sibling-override and delegation-recursion maintenance surface. Formal retirement is a roadmap amendment after acceptance, not part of M4/M5 scope. | Candidate after M5 acceptance |
 
 Keep open limitations here with their owning checkpoint and resolve/update them
 in the same implementation change. Per-revision evidence belongs in verification
