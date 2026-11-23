@@ -935,6 +935,11 @@ jobs:
               @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12'; billiard=$true },
               @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl'; billiard=$true }
             )
+            # The failure modal's dimming overlay grays the whole captured frame
+            # (same root cause as the macOS/Linux recovery tests); suppress it so
+            # the matrix captures the clean restored scene. The dialog UI itself
+            # is verified separately on real hardware.
+            $env:GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG = '1'
             foreach ($pair in $pairs) {
               $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
               $out = "screenshots/switch/$tag"
