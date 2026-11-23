@@ -151,7 +151,26 @@ void Win32OpenGLBackend::OnSessionActivated() {
 
 void Win32OpenGLBackend::PresentFrame() {
     // Present the back buffer to the screen since rendering is complete.
-    SwapBuffers(m_hDC);
+    // Diagnostic (Finding 4): log before SwapBuffers so a vsync stall on an
+    // invalid drawable is captured, with the DC pixel format / double-buffer flag.
+    static unsigned s_presentCount = 0;
+    if (s_presentCount < 3 || (s_presentCount % 120) == 0) {
+        const int pf = m_hDC ? GetPixelFormat(m_hDC) : 0;
+        PIXELFORMATDESCRIPTOR pfd{};
+        const bool db = pf && DescribePixelFormat(m_hDC, pf, sizeof(pfd), &pfd) &&
+                        (pfd.dwFlags & PFD_DOUBLEBUFFER);
+        fprintf(stderr,
+                "[WGL] PresentFrame #%u enter dc=%p hwnd=%p pf=%d doublebuf=%d "
+                "curRC=%p curDC=%p\n",
+                s_presentCount, (void*)m_hDC,
+                (void*)m_Application.GetMainWindowHandler(), pf, (int)db,
+                (void*)wglGetCurrentContext(), (void*)wglGetCurrentDC());
+    }
+    const BOOL ok = SwapBuffers(m_hDC);
+    if (s_presentCount < 3 || !ok) {
+        fprintf(stderr, "[WGL] PresentFrame #%u SwapBuffers=%d\n", s_presentCount, (int)ok);
+    }
+    ++s_presentCount;
 }
 
 void Win32OpenGLBackend::BeginFrame() {
@@ -302,6 +321,17 @@ int Win32OpenGLBackend::InitializeGraphicsResources() {
 
     if (GLAD_WGL_EXT_swap_control) {
         wglSwapIntervalEXT(1);
+    }
+    {
+        PIXELFORMATDESCRIPTOR pfd{};
+        const int pf = GetPixelFormat(m_hDC);
+        DescribePixelFormat(m_hDC, pf, sizeof(pfd), &pfd);
+        fprintf(stderr,
+                "[WGL] InitGraphics hwnd=%p dc=%p rc=%p chosenPF=%d actualPF=%d "
+                "flags=0x%x doublebuf=%d swapInterval=%d\n",
+                (void*)hWnd, (void*)m_hDC, (void*)m_RenderContext, m_nPixelFormat,
+                pf, (unsigned)pfd.dwFlags, (int)((pfd.dwFlags & PFD_DOUBLEBUFFER) != 0),
+                GLAD_WGL_EXT_swap_control ? wglGetSwapIntervalEXT() : -1);
     }
     return 0;
 }
