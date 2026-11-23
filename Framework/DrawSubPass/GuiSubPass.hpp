@@ -30,12 +30,17 @@ class GuiSubPass : public BaseSubPass {
     void DrawSceneNode(const std::shared_ptr<BaseSceneNode>& node);
     void DrawSceneNodeDetail(const BaseSceneNode& node);
     void DrawRhiSelectionMenu();
+    void DrawSwitchProgress();
 
     std::array<Texture2D, 5> m_SceneIcons{};
     IconImageLoader m_LoadIconImage;
     IRhiSelectionProvider* m_pRhiSelection{nullptr};
     std::vector<RhiBackendAvailability> m_BackendCache;
     double m_LastBackendProbe{-1.0};
+    bool m_SwitchModalOpen{false};
+    bool m_SwitchWasActive{false};
+    bool m_ShowSwitchError{false};
+    std::string m_SwitchResult;
     bool m_SceneIconsLoaded{false};
     const Scene* m_LastScene{nullptr};
     std::weak_ptr<BaseSceneNode> m_SelectedNode;

@@ -257,6 +257,46 @@ void GuiSubPass::DrawRhiSelectionMenu() {
     }
 }
 
+void GuiSubPass::DrawSwitchProgress() {
+    if (!m_pRhiSelection) return;
+    const bool switching = m_pRhiSelection->IsSwitching();
+    // Open the modal progress popup when a switch begins; it blocks input
+    // behind it for the duration of the switch (safer than concurrent edits).
+    if (switching && !m_SwitchWasActive) {
+        ImGui::OpenPopup((const char*)u8"切换渲染后端");
+    }
+    if (!switching && m_SwitchWasActive) {
+        m_SwitchResult = m_pRhiSelection->SwitchStatus();
+        if (!m_SwitchResult.empty()) {
+            ImGui::OpenPopup((const char*)u8"切换失败");
+        }
+    }
+    m_SwitchWasActive = switching;
+
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal((const char*)u8"切换渲染后端", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+        ImGui::TextUnformatted((const char*)u8"正在切换渲染后端，请稍候…");
+        const std::string st = m_pRhiSelection->SwitchStatus();
+        if (!st.empty()) ImGui::TextWrapped("%s", st.c_str());
+        if (!switching) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+    // Explicit failure dialog (no silent fallback); recovery is reported.
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal((const char*)u8"切换失败", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextWrapped((const char*)u8"渲染后端切换失败：%s", m_SwitchResult.c_str());
+        ImGui::TextUnformatted((const char*)u8"已保留或恢复原后端。");
+        if (ImGui::Button((const char*)u8"确定")) {
+            m_SwitchResult.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
 void GuiSubPass::Draw(Frame& frame) {
     if (ImGui::GetCurrentContext()) {
         const std::array<TextureHandler, 4> sources{
@@ -365,6 +405,8 @@ void GuiSubPass::Draw(Frame& frame) {
             }
             ImGui::EndMainMenuBar();
         }
+
+        DrawSwitchProgress();
 
         if (show_app_debug_panel) {
             static std::deque<float> fps_data;

@@ -85,6 +85,7 @@ void RhiSwitchController::ProcessFrameBoundary() {
         }
         if (width > 0 && height > 0) {
             m_State = RhiSwitchState::Running;
+            m_LastError.clear();
             std::cout << "RHI switch complete: "
                       << RhiBackendName(m_Composition.backend) << '\n';
         }
