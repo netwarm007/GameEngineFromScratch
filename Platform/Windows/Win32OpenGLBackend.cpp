@@ -159,12 +159,16 @@ void Win32OpenGLBackend::PresentFrame() {
         PIXELFORMATDESCRIPTOR pfd{};
         const bool db = pf && DescribePixelFormat(m_hDC, pf, sizeof(pfd), &pfd) &&
                         (pfd.dwFlags & PFD_DOUBLEBUFFER);
+        GLint drawFB = -1, readFB = -1;
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFB);
+        glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFB);
         fprintf(stderr,
                 "[WGL] PresentFrame #%u enter dc=%p hwnd=%p pf=%d doublebuf=%d "
-                "curRC=%p curDC=%p\n",
+                "curRC=%p curDC=%p drawFB=%d readFB=%d\n",
                 s_presentCount, (void*)m_hDC,
                 (void*)m_Application.GetMainWindowHandler(), pf, (int)db,
-                (void*)wglGetCurrentContext(), (void*)wglGetCurrentDC());
+                (void*)wglGetCurrentContext(), (void*)wglGetCurrentDC(),
+                drawFB, readFB);
     }
     // ImGui multi-viewport rendering at frame end makes a viewport context
     // current and does not restore the main one, so re-bind m_hDC/m_RenderContext
