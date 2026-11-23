@@ -19,28 +19,28 @@ std::unique_ptr<RhiStartupComposition> ComposeD3d12Startup(
     GfxConfiguration& configuration, ISceneManager& sceneManager,
     IAssetReader& assetReader, std::function<MemorySystem*()> memoryProvider);
 RhiSessionModules ComposeD3d12Session(
-    BaseApplication& host, ISceneManager& sceneManager,
+    IRenderBackend& backendObject, ISceneManager& sceneManager,
     std::function<MemorySystem*()> memoryProvider);
 #endif
 #if defined(OS_WINDOWS) || defined(OS_LINUX)
 std::unique_ptr<RhiStartupComposition> ComposeOpenGLStartup(
     GfxConfiguration& configuration, ISceneManager& sceneManager,
     IAssetReader& assetReader);
-RhiSessionModules ComposeOpenGLSession(BaseApplication& host,
+RhiSessionModules ComposeOpenGLSession(IRenderBackend& backendObject,
                                        ISceneManager& sceneManager);
 #endif
 #if defined(OS_MACOS)
 std::unique_ptr<RhiStartupComposition> ComposeMetalStartup(
     GfxConfiguration& configuration, ISceneManager& sceneManager,
     IAssetReader& assetReader);
-RhiSessionModules ComposeMetalSession(BaseApplication& host,
+RhiSessionModules ComposeMetalSession(IRenderBackend& backendObject,
                                       ISceneManager& sceneManager);
 #endif
 #if defined(HAS_VULKAN)
 std::unique_ptr<RhiStartupComposition> ComposeVulkanStartup(
     GfxConfiguration& configuration, ISceneManager& sceneManager,
     IAssetReader& assetReader);
-RhiSessionModules ComposeVulkanSession(BaseApplication& host,
+RhiSessionModules ComposeVulkanSession(IRenderBackend& backendObject,
                                        ISceneManager& sceneManager,
                                        IAssetReader& assetReader);
 RhiBackendAvailability ProbeVulkanRuntimeAvailability();
@@ -85,12 +85,13 @@ RhiCompositionResult CreateRhiStartupComposition(
 }
 
 RhiSessionResult CreateRhiSessionModules(
-    RhiBackend backend, BaseApplication& host, ISceneManager& sceneManager,
-    IAssetReader& assetReader, std::function<MemorySystem*()> memoryProvider) {
+    RhiBackend backend, IRenderBackend& backendObject,
+    ISceneManager& sceneManager, IAssetReader& assetReader,
+    std::function<MemorySystem*()> memoryProvider) {
     switch (backend) {
         case RhiBackend::D3d12:
 #if defined(OS_WINDOWS)
-            return {ComposeD3d12Session(host, sceneManager,
+            return {ComposeD3d12Session(backendObject, sceneManager,
                                         std::move(memoryProvider)),
                     {}};
 #else
@@ -98,19 +99,19 @@ RhiSessionResult CreateRhiSessionModules(
 #endif
         case RhiBackend::OpenGL:
 #if defined(OS_WINDOWS) || defined(OS_LINUX)
-            return {ComposeOpenGLSession(host, sceneManager), {}};
+            return {ComposeOpenGLSession(backendObject, sceneManager), {}};
 #else
             return {{}, NotCompiledError(backend)};
 #endif
         case RhiBackend::Metal:
 #if defined(OS_MACOS)
-            return {ComposeMetalSession(host, sceneManager), {}};
+            return {ComposeMetalSession(backendObject, sceneManager), {}};
 #else
             return {{}, NotCompiledError(backend)};
 #endif
         case RhiBackend::Vulkan:
 #if defined(HAS_VULKAN)
-            return {ComposeVulkanSession(host, sceneManager, assetReader), {}};
+            return {ComposeVulkanSession(backendObject, sceneManager, assetReader), {}};
 #else
             return {{}, NotCompiledError(backend)};
 #endif
@@ -135,13 +136,23 @@ int ReconstructRhiSession(RuntimeRoot& root,
     composition.graphicsManager.reset();
     composition.pipelineStateManager.reset();
 
-    if (recreateWindow) composition.application->CreateMainWindow();
+    if (recreateWindow) {
+        // Backend-driven creation: constrained windows (SDL GL attributes)
+        // need the backend's creation path, not the host's generic one.
+        root.Backend()->CreateMainWindow();
+    }
     const int prepared = root.PrepareReconstructedSession(recreateWindow);
     if (prepared != 0) return prepared;
 
-    auto fresh = CreateRhiSessionModules(composition.backend,
-                                         *composition.application, sceneManager,
-                                         assetReader, std::move(memoryProvider));
+    IRenderBackend* backendObject = composition.sessionBackend.get();
+    if (!backendObject) {
+        backendObject =
+            dynamic_cast<IRenderBackend*>(composition.application.get());
+    }
+    if (!backendObject) return -1;
+    auto fresh = CreateRhiSessionModules(composition.backend, *backendObject,
+                                         sceneManager, assetReader,
+                                         std::move(memoryProvider));
     if (!fresh.modules.graphicsManager || !fresh.modules.pipelineStateManager) {
         std::cerr << "Session reconstruction failed: " << fresh.error << '\n';
         return -1;
@@ -162,6 +173,7 @@ int ReconstructRhiSession(RuntimeRoot& root,
         composition.pipelineStateManager.reset();
         return activated;
     }
+    root.Backend()->OnSessionActivated();
     return 0;
 }
 
@@ -226,6 +238,13 @@ std::string_view RhiStartupHostName(RhiBackend backend) {
 #else
     return "native";
 #endif
+}
+
+}  // namespace My
+namespace My {
+
+bool RhiBackendRequiresWindowRecreation(RhiBackend backend) {
+    return backend == RhiBackend::OpenGL;
 }
 
 }  // namespace My

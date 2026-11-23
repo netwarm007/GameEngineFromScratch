@@ -7,10 +7,16 @@
 
 #if defined(OS_WINDOWS)
 #include "Platform/Windows/VulkanApplication.hpp"
+#include "Platform/Windows/WindowsApplication.hpp"
 #elif defined(OS_MACOS)
+#include "Platform/Darwin/CocoaApplication.h"
 #include "Platform/Darwin/VulkanApplication.hpp"
 #elif defined(OS_LINUX)
 #include "Platform/Linux/VulkanApplication.hpp"
+#include "Platform/Linux/XcbApplication.hpp"
+#if defined(HAS_SDL2)
+#include "Platform/Linux/LinuxHost.hpp"
+#endif
 #endif
 #include "RHI/Vulkan/VulkanGraphicsManager.hpp"
 #include "RHI/Vulkan/VulkanLoader.hpp"
@@ -18,11 +24,11 @@
 
 namespace My {
 
-RhiSessionModules ComposeVulkanSession(BaseApplication& host,
+RhiSessionModules ComposeVulkanSession(IRenderBackend& backendObject,
                                        ISceneManager& sceneManager,
                                        IAssetReader& assetReader) {
-    auto& application = static_cast<VulkanApplication&>(host);
-    VulkanRHI& rhi = application.GetRHI();
+    auto& backend = static_cast<VulkanBackend&>(backendObject);
+    VulkanRHI& rhi = backend.GetRHI();
     RhiSessionModules modules;
     // The Vulkan graphics manager borrows the concrete pipeline manager.
     auto pipelines =
@@ -39,12 +45,29 @@ std::unique_ptr<RhiStartupComposition> ComposeVulkanStartup(
     auto composition = std::make_unique<RhiStartupComposition>();
     composition->backend = RhiBackend::Vulkan;
     configuration.fixOpenGLPerspectiveMatrix = false;
-    composition->application = std::make_unique<VulkanApplication>(configuration);
-    // The managers borrow the RHI owned by the persistent host application;
-    // the composition's member order destroys them before the application
-    // releases the session.
-    auto modules = ComposeVulkanSession(*composition->application, sceneManager,
-                                        assetReader);
+#if defined(OS_WINDOWS)
+    auto host = std::make_unique<WindowsApplication>(configuration);
+    composition->sessionBackend = MakeWin32VulkanBackend(*host);
+#elif defined(OS_MACOS)
+    auto host = std::make_unique<CocoaApplication>(configuration);
+    composition->sessionBackend = MakeCocoaVulkanBackend(*host);
+#elif defined(OS_LINUX)
+#if defined(HAS_SDL2)
+    auto host = std::make_unique<LinuxHost>(configuration);
+    host->SetMode(LinuxHost::Mode::Xcb);
+    composition->sessionBackend = MakeXcbVulkanBackend(
+        *host, *host, [host = host.get()] { return host->GetXcbConnection(); });
+#else
+    auto host = std::make_unique<XcbApplication>(configuration);
+    composition->sessionBackend = MakeXcbVulkanBackend(
+        *host, *host, [host = host.get()] { return host->GetXcbConnection(); });
+#endif
+#endif
+    composition->recreateWindowOnReconstruction =
+        composition->sessionBackend->RequiresWindowRecreation();
+    auto modules = ComposeVulkanSession(*composition->sessionBackend,
+                                        sceneManager, assetReader);
+    composition->application = std::move(host);
     composition->pipelineStateManager = std::move(modules.pipelineStateManager);
     composition->graphicsManager = std::move(modules.graphicsManager);
     return composition;

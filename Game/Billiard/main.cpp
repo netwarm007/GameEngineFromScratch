@@ -26,6 +26,7 @@
 #if defined(MYGE_RUNTIME_RHI)
 #include "RhiComposition.hpp"
 #include "Framework/Manager/RuntimeRoot.hpp"
+#include "RhiSwitch.hpp"
 #if defined(HAS_VULKAN)
 #include "RHI/Vulkan/VulkanGraphicsManager.hpp"
 #endif
@@ -252,6 +253,34 @@ int main(int argc, char** argv) {
         }
     }
 
+    // Scheduled cross-backend switches for verification runs (M4):
+    // --rhi-switch backend@frame,backend@frame,...
+    struct RhiSwitchStep { RhiBackend backend; int frame; };
+    std::vector<RhiSwitchStep> rhiSwitchSchedule;
+    for (size_t i = 0; i + 1 < rhiOptions.applicationArguments.size(); ++i) {
+        if (std::string(rhiOptions.applicationArguments[i]) != "--rhi-switch") {
+            continue;
+        }
+        std::string spec = rhiOptions.applicationArguments[i + 1];
+        size_t start = 0;
+        while (start < spec.size()) {
+            size_t comma = spec.find(',', start);
+            if (comma == std::string::npos) comma = spec.size();
+            std::string step = spec.substr(start, comma - start);
+            size_t at = step.find('@');
+            auto backend = at == std::string::npos
+                               ? std::nullopt
+                               : ParseRhiBackendName(step.substr(0, at));
+            if (!backend || at == std::string::npos) {
+                std::cerr << "Invalid --rhi-switch step: " << step << '\n';
+                return 1;
+            }
+            rhiSwitchSchedule.push_back(
+                {*backend, std::atoi(step.substr(at + 1).c_str())});
+            start = comma + 1;
+        }
+    }
+
     RuntimeRoot root;
     auto composed = CreateRhiStartupComposition(
         *selection.backend, config, sceneManager, assetLoader,
@@ -265,7 +294,10 @@ int main(int argc, char** argv) {
     IPipelineStateManager* pipelineStateManager =
         composed.composition->pipelineStateManager.get();
     auto* platformHost = dynamic_cast<IPlatformHost*>(&app);
-    auto* renderBackend = dynamic_cast<IRenderBackend*>(&app);
+    IRenderBackend* renderBackend =
+        composed.composition->sessionBackend
+            ? composed.composition->sessionBackend.get()
+            : dynamic_cast<IRenderBackend*>(&app);
     if (!platformHost || !renderBackend) {
         std::cerr << "Selected backend does not provide a platform host\n";
         return 1;
@@ -276,6 +308,17 @@ int main(int argc, char** argv) {
             &animationManager, &assetLoader, graphicsManager, &inputManager,
             &memoryManager, &physicsManager, pipelineStateManager, &sceneManager,
             &gameLogic};
+#ifdef DEBUG
+        plan.push_back(&debugManager);
+#endif
+        return plan;
+    };
+    // Simulation pauses during a switch; rendering, input, and asset loading
+    // continue (no catch-up interval accumulates).
+    auto buildPausedFramePlan = [&] {
+        std::vector<IRuntimeModule*> plan = {
+            &assetLoader, graphicsManager, &inputManager, &memoryManager,
+            pipelineStateManager};
 #ifdef DEBUG
         plan.push_back(&debugManager);
 #endif
@@ -376,7 +419,11 @@ int main(int argc, char** argv) {
         im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+#if defined(MYGE_RUNTIME_RHI)
+    renderBackend->CreateMainWindow();
+#else
     app.CreateMainWindow();
+#endif
 
 #if defined(MYGE_RUNTIME_RHI)
     ret = root.Initialize();
@@ -386,6 +433,12 @@ int main(int argc, char** argv) {
         return ret;
     }
     root.SetFramePlan(buildFramePlan());
+    RhiSwitchController switchController(
+        root, *composed.composition, config, sceneManager, assetLoader,
+        [&root] { return root.GetMemorySystem(); });
+    size_t nextSwitch = 0;
+    int rhiFrameCount = 0;
+    bool rhiSimulationPaused = false;
 #else
     ret = app.Initialize();
     if (ret != 0) {
@@ -420,6 +473,36 @@ int main(int argc, char** argv) {
     while (!app.IsQuit()) {
 #if defined(MYGE_RUNTIME_RHI)
         root.Tick();
+        ++rhiFrameCount;
+        while (nextSwitch < rhiSwitchSchedule.size() &&
+               rhiFrameCount >= rhiSwitchSchedule[nextSwitch].frame) {
+            const auto target = rhiSwitchSchedule[nextSwitch].backend;
+            const auto result = switchController.Request(target);
+            std::cout << "RHI switch request " << RhiBackendName(target)
+                      << ": " << RhiSwitchRequestResultName(result) << '\n';
+            ++nextSwitch;
+        }
+        switchController.ProcessFrameBoundary();
+        if (switchController.ExitRequested()) {
+            std::cerr << "RHI switch: " << switchController.LastError() << '\n';
+            app.RequestQuit();
+            ret = 1;
+        }
+        if (switchController.ConsumeFramePlanDirty()) {
+            // Reconcile held input: keys physically released while the
+            // window was gone must not stay pressed in the new session.
+            inputManager.Initialize();
+            graphicsManager = composed.composition->graphicsManager.get();
+            pipelineStateManager =
+                composed.composition->pipelineStateManager.get();
+            root.SetFramePlan(rhiSimulationPaused ? buildPausedFramePlan()
+                                                  : buildFramePlan());
+        }
+        if (switchController.IsSimulationPaused() != rhiSimulationPaused) {
+            rhiSimulationPaused = switchController.IsSimulationPaused();
+            root.SetFramePlan(rhiSimulationPaused ? buildPausedFramePlan()
+                                                  : buildFramePlan());
+        }
         if (rhiReconstructCycles > 0) {
             const int cycles = rhiReconstructCycles;
             rhiReconstructCycles = 0;

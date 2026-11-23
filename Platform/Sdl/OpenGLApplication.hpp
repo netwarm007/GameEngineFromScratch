@@ -1,27 +1,38 @@
 #pragma once
 #include "IRenderBackend.hpp"
+#include "SDLOpenGLBackend.hpp"
 #include "SdlApplication.hpp"
 
 namespace My {
-class OpenGLApplication : public SdlApplication, public IRenderBackend {
+// Legacy compile-time application: the SDL host plus an owned OpenGL
+// backend. The runtime path composes the host and backend separately.
+class OpenGLApplication : public SdlApplication, _implements_ IRenderBackend {
    public:
-    using SdlApplication::SdlApplication;
+    OpenGLApplication();
+    explicit OpenGLApplication(GfxConfiguration& cfg);
 
-    void Tick() override;
+    void Tick() override {
+        SdlApplication::Tick();
+        PresentFrame();
+    }
 
-    void CreateMainWindow() override;
+    void CreateMainWindow() override { m_Backend.CreateMainWindow(); }
 
    private:
-    // The SDL host couples the GL context to the window lifetime: the
-    // context is created with the window and released here before the
-    // window is destroyed.
-    int InitializeGraphicsResources() override;
-    int InitializeGuiPlatform() override;
-    void FinalizeGuiPlatform() override;
+    int InitializeGraphicsResources() override {
+        return m_Backend.InitializeGraphicsResources();
+    }
+    int InitializeGuiPlatform() override {
+        return m_Backend.InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { m_Backend.FinalizeGuiPlatform(); }
     void WaitForGraphicsIdle() override {}
-    void FinalizeGraphicsResources() override;
-    void PresentFrame() override;
+    void FinalizeGraphicsResources() override {
+        m_Backend.FinalizeGraphicsResources();
+    }
+    void PresentFrame() override { m_Backend.PresentFrame(); }
+    bool RequiresWindowRecreation() const override { return true; }
 
-    SDL_GLContext m_hContext = nullptr;
+    SDLOpenGLBackend m_Backend;
 };
 }  // namespace My

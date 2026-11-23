@@ -12,13 +12,14 @@ constexpr std::array backendNames = {
     std::pair{RhiBackend::Metal, std::string_view{"metal"}},
     std::pair{RhiBackend::Vulkan, std::string_view{"vulkan"}}};
 
-std::optional<RhiBackend> ParseBackendName(std::string_view name) {
+}  // namespace
+
+std::optional<RhiBackend> ParseRhiBackendName(std::string_view name) {
     for (const auto& [backend, canonicalName] : backendNames) {
         if (name == canonicalName) return backend;
     }
     return std::nullopt;
 }
-}  // namespace
 
 std::string_view RhiBackendName(RhiBackend backend) {
     for (const auto& [candidate, name] : backendNames) {
@@ -63,7 +64,7 @@ RhiStartupParseResult ParseRhiStartupArguments(
             if (name.empty()) {
                 return {std::nullopt, "--rhi requires a backend name"};
             }
-            options.requestedBackend = ParseBackendName(name);
+            options.requestedBackend = ParseRhiBackendName(name);
             if (!options.requestedBackend) {
                 return {std::nullopt,
                         "Unknown RHI '" + std::string(name) +

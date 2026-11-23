@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include "IRenderBackend.hpp"
 #include <cstdio>
 #include <iostream>
 
@@ -68,9 +69,9 @@ void XcbApplication::CreateMainWindow() {
                       XCB_COPY_FROM_PARENT,          /* depth */
                       m_XWindow,                     /* window ID */
                       m_pScreen->root,               /* parent window */
-                      20, 20,                        /* x, y */
-                      m_Config.screenWidth,          /* width */
-                      m_Config.screenHeight,         /* height */
+                      m_PreservedX, m_PreservedY,    /* x, y */
+                      m_HasPreservedGeometry ? m_PreservedW : m_Config.screenWidth,
+                      m_HasPreservedGeometry ? m_PreservedH : m_Config.screenHeight,
                       10,                            /* boarder width */
                       XCB_WINDOW_CLASS_INPUT_OUTPUT, /* class */
                       m_pScreen->root_visual,        /* visual */
@@ -115,6 +116,16 @@ void XcbApplication::FinalizeGuiPlatform() {
 void XcbApplication::FinalizePlatformResources() {
     if (m_pConn) {
         if (m_XWindow != XCB_WINDOW_NONE) {
+            auto geom = xcb_get_geometry_reply(
+                m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
+            if (geom) {
+                m_PreservedX = geom->x;
+                m_PreservedY = geom->y;
+                m_PreservedW = geom->width;
+                m_PreservedH = geom->height;
+                m_HasPreservedGeometry = true;
+                free(geom);
+            }
             xcb_destroy_window(m_pConn, m_XWindow);
             m_XWindow = XCB_WINDOW_NONE;
         }
@@ -142,6 +153,9 @@ void XcbApplication::ProcessEvents() {
                 XGetWindowAttributes(m_pDisplay, m_XWindow, &gwa);
                 m_Config.screenWidth = gwa.width;
                 m_Config.screenHeight = gwa.height;
+                if (m_pActiveBackend) {
+                    m_pActiveBackend->OnWindowResize(gwa.width, gwa.height);
+                }
                 break;
             }
             case XCB_KEY_PRESS: {
@@ -211,6 +225,10 @@ void XcbApplication::ProcessEvents() {
 }
 
 void XcbApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
+    if (!m_pConn || m_XWindow == XCB_WINDOW_NONE) {
+        width = height = 0;
+        return;
+    }
     auto geom = xcb_get_geometry_reply(
         m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
 

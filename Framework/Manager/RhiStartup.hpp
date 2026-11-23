@@ -12,6 +12,9 @@ enum class RhiBackend { D3d12, OpenGL, Metal, Vulkan };
 
 std::string_view RhiBackendName(RhiBackend backend);
 
+// Canonical backend name parsing (shared by startup and switch contracts).
+std::optional<RhiBackend> ParseRhiBackendName(std::string_view name);
+
 struct RhiStartupOptions {
     std::optional<RhiBackend> requestedBackend;
     bool listBackends = false;

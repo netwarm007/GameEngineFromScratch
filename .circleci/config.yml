@@ -49,6 +49,48 @@ commands:
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
 
+  windows_test_setup:
+    steps:
+      - run:
+          name: Install CMake and Ninja
+          command: |
+            $chocolateyPath = "$env:AllUsersProfile\chocolatey\bin"
+            if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+              Invoke-Expression ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+              $env:Path += ";$chocolateyPath"
+            }
+            $cmakeVersion = [version]'0.0'
+            if (Get-Command cmake -ErrorAction SilentlyContinue) {
+              $cmakeVersion = [version]((cmake --version | Select-Object -First 1) -replace '^cmake version ', '')
+            }
+            if ($cmakeVersion -lt [version]'4.0') {
+              choco upgrade cmake.portable -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              $env:Path = "$chocolateyPath;$env:Path"
+            }
+            if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
+              choco install ninja -y --no-progress
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+      - checkout
+      - run:
+          name: init submodules
+          command: |
+            git submodule sync
+            git submodule update --init --recursive
+      # The dependency cache key hashes tool versions (cmake/python/VS),
+      # which can differ between jobs; reuse the exact key file computed
+      # by build_windows through the workspace instead of recomputing it.
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+      - run:
+          name: Restore Windows dependency files
+          command: |
+            cmake -DACTION=restore -P .circleci/windows-dependency-cache.cmake
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 jobs:
   build_windows:
     parameters:
@@ -56,9 +98,6 @@ jobs:
         type: enum
         enum: [quick, full]
         default: full
-      ctest_args:
-        type: string
-        default: ""
     executor:
       name: win/server-2022
       shell: powershell.exe
@@ -295,21 +334,136 @@ jobs:
           name: "Cook Asset"
           command: |
             scripts/cook_material
+      - when:
+          condition:
+            or:
+              - equal: [ master, << pipeline.git.branch >> ]
+              - << pipeline.git.tag >>
+          steps:
+          - run:
+              name: Package
+              command: |
+                 cmake --build ./build --target package
+          - persist_to_workspace:
+              root: build
+              paths:
+                - GEFS-0.1.0-win64.exe
+          - store_artifacts:
+              path: build/GEFS-0.1.0-win64.exe
+      - when:
+          condition:
+            equal: [full, << parameters.scope >>]
+          steps:
+            - restore_cache:
+                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+            - run:
+                name: "Build Windows dependencies (Release)"
+                command: |
+                  $ErrorActionPreference = 'Stop'
+                  if (Test-Path .circleci\windows-deps-cache-release\complete.txt) {
+                    Write-Output "Using cached Release dependencies"
+                    cmake -DACTION=restore -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  } else {
+                    scripts/build_crossguid Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_opengex Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_zlib Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_bullet Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_glslangValidator Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_spirvcross Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_libispc-texcomp Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    scripts/build_openal Release
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    cmake -DACTION=save -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  }
+            - save_cache:
+                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
+                paths:
+                  - ".circleci/windows-deps-cache-release"
+            - run:
+                name: "Build Engine (Release)"
+                command: |
+                  if (-not (Get-Command dxc.exe -ErrorAction SilentlyContinue)) {
+                    $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter dxc.exe -Recurse |
+                      Where-Object { $_.DirectoryName -match '\\x64$' } |
+                      Sort-Object FullName -Descending | Select-Object -First 1
+                    if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
+                    $env:Path = "$($dxc.DirectoryName);$env:Path"
+                  }
+                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=OFF -DD3D12_RHI_DEBUG=OFF -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache && cmake --build build-release"
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  sccache --show-stats
+            - when:
+                condition:
+                  equal: [ master, << pipeline.git.branch >> ]
+                steps:
+                  - save_cache:
+                      key: sccache-windows-v1-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
+                      paths:
+                        - "C:/Users/circleci/sccache"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build
+            - .circleci/windows-deps-key.txt
+            # Generated in-source by configure_file; downstream jobs check
+            # out fresh sources and need it for shader preprocessing tests.
+            - config.h
+      - when:
+          condition:
+            equal: [full, << parameters.scope >>]
+          steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - build-release
+  windows_regression:
+    parameters:
+      scope:
+        type: enum
+        enum: [quick, full]
+        default: full
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
       - run:
           name: "Test"
           command: |
             $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
             $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
             if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build -C Debug --output-on-failure --output-junit junit.xml << parameters.ctest_args >>"
+            if ('<< parameters.scope >>' -eq 'quick') { $env:GEFS_CTEST_LABEL = 'fast' }
+            circleci testsuite --help *> $null
+            if ($LASTEXITCODE -ne 0) { circleci extension install testsuite }
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && circleci testsuite run engine-windows"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - store_test_results:
-          path: build/junit.xml
       - when:
           condition:
-            equal: [quick, << parameters.scope >>]
+            equal: [full, << parameters.scope >>]
           steps:
-            - run: circleci-agent step halt
+            - run:
+                name: "Test (Release)"
+                command: |
+                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+                  $env:GEFS_CTEST_DIR = 'build-release'
+                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && circleci testsuite run engine-windows"
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - run:
           name: Capture Viewer screenshot
           when: always
@@ -405,6 +559,60 @@ jobs:
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
               Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
             }
+      - run:
+          name: RHI selection diagnostics smoke
+          command: |
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            & $viewer.FullName --list-rhi | Tee-Object -FilePath rhi-list.txt
+            if ($LASTEXITCODE -ne 0) { throw '--list-rhi failed' }
+            if (-not (Select-String -Path rhi-list.txt -Pattern 'opengl' -Quiet)) { throw '--list-rhi missing opengl' }
+            & $viewer.FullName --rhi bogus *> rhi-unknown.txt
+            if ($LASTEXITCODE -eq 0) { throw 'invalid --rhi unexpectedly succeeded' }
+            if (-not (Select-String -Path rhi-unknown.txt -Pattern "Unknown RHI 'bogus'" -Quiet)) { throw 'missing unknown-RHI diagnostic' }
+            & $viewer.FullName --rhi opengl --rhi vulkan *> rhi-dup.txt
+            if ($LASTEXITCODE -eq 0) { throw 'repeated --rhi unexpectedly succeeded' }
+            if (-not (Select-String -Path rhi-dup.txt -Pattern 'only once' -Quiet)) { throw 'missing repeated-RHI diagnostic' }
+      - store_artifacts:
+          path: billiard-screenshots
+          destination: billiard-screenshots
+      - store_artifacts:
+          path: screenshots
+          destination: viewer-screenshots
+  windows_matrix:
+    parameters:
+      scope:
+        type: enum
+        enum: [quick, full]
+        default: full
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
+      - run:
+          name: Capture Viewer baseline for matrix comparison
+          no_output_timeout: 5m
+          command: |
+            New-Item -ItemType Directory -Force screenshots | Out-Null
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse |
+              Select-Object -First 1
+            if (-not $viewer) { throw "Viewer.exe not found" }
+            $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path screenshots).Path "viewer-render.png"
+            $process = Start-Process -FilePath $viewer.FullName -PassThru `
+              -RedirectStandardOutput screenshots/viewer.log `
+              -RedirectStandardError screenshots/viewer-error.log
+            if (-not $process.WaitForExit(180000)) {
+              Stop-Process -Id $process.Id -ErrorAction SilentlyContinue
+              throw "Viewer baseline capture timed out after 180 seconds"
+            }
+            $process.WaitForExit()
+            Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+            # The PNG is the success criterion: with redirected output the
+            # Process.ExitCode property can stay empty even after WaitForExit.
+            if (-not (Test-Path screenshots/viewer-render.png)) {
+              throw "Viewer did not produce a baseline PNG (exit $($process.ExitCode)); see viewer logs"
+            }
       - when:
           condition:
             equal: [<< parameters.scope >>, full]
@@ -415,6 +623,9 @@ jobs:
                 command: |
                   $ErrorActionPreference = 'Stop'
                   choco install python3 -y --no-progress
+                  # The build job installs the SDK in its own VM; the matrix
+                  # job needs the System32 Vulkan loader for the lavapipe runs.
+                  choco install vulkan-sdk -y --no-progress
                   $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
                   $baseline = 'screenshots/viewer-render.png'
                   if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
@@ -707,18 +918,129 @@ jobs:
           path: billiard-reconstruct
           destination: billiard-reconstruct
       - run:
-          name: RHI selection diagnostics smoke
+          name: Cross-backend switch matrix
+          no_output_timeout: 40m
           command: |
+            $ErrorActionPreference = 'Stop'
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+            $baseline = 'screenshots/viewer-render.png'
+            if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
             $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
-            & $viewer.FullName --list-rhi | Tee-Object -FilePath rhi-list.txt
-            if ($LASTEXITCODE -ne 0) { throw '--list-rhi failed' }
-            if (-not (Select-String -Path rhi-list.txt -Pattern 'opengl' -Quiet)) { throw '--list-rhi missing opengl' }
-            & $viewer.FullName --rhi bogus *> rhi-unknown.txt
-            if ($LASTEXITCODE -eq 0) { throw 'invalid --rhi unexpectedly succeeded' }
-            if (-not (Select-String -Path rhi-unknown.txt -Pattern "Unknown RHI 'bogus'" -Quiet)) { throw 'missing unknown-RHI diagnostic' }
-            & $viewer.FullName --rhi opengl --rhi vulkan *> rhi-dup.txt
-            if ($LASTEXITCODE -eq 0) { throw 'repeated --rhi unexpectedly succeeded' }
-            if (-not (Select-String -Path rhi-dup.txt -Pattern 'only once' -Quiet)) { throw 'missing repeated-RHI diagnostic' }
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
+            if (-not ($viewer -and $billiard)) { throw 'Application executables not found' }
+            # A/B/A directed switches at frame boundaries; the final capture
+            # must match the startup baseline (scene restored on backend A).
+            $pairs = @(
+              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12'; billiard=$true },
+              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12'; billiard=$true },
+              @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl'; billiard=$true }
+            )
+            foreach ($pair in $pairs) {
+              $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
+              $out = "screenshots/switch/$tag"
+              New-Item -ItemType Directory -Force $out | Out-Null
+              $resolved = (Resolve-Path $out).Path
+              $ext = 'png'; if ($pair.final -eq 'vulkan') { $ext = 'ppm' }
+              $png = Join-Path $resolved "viewer-render.$ext"
+              if ($pair.initial -eq 'opengl') {
+                $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1'
+                # llvmpipe + switch simulation pauses delay splash completion;
+                # the default 45s gate captured before the main scene loaded.
+                $env:GEFS_SCREENSHOT_GATE_SECONDS = '120'
+              }
+              $env:GEFS_SCREENSHOT_PATH = $png
+              $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.switches) -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+              try {
+                if (-not $proc.WaitForExit(240000)) { throw "$tag viewer switch timed out" }
+              } finally {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                if ($pair.initial -eq 'opengl') {
+                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                  Remove-Item Env:GEFS_SCREENSHOT_GATE_SECONDS -ErrorAction SilentlyContinue
+                }
+              }
+              if (-not (Test-Path $png)) {
+                Get-Content "$out/viewer.log","$out/viewer-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                throw "$tag switch capture missing"
+              }
+              if (-not (Select-String -Path "$out/viewer.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
+                Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                throw "$tag switch did not complete"
+              }
+              $tolArgs = @()
+              if ($pair.final -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
+              python scripts/compare_captures.py $baseline $png --label "windows-switch-$tag" @tolArgs
+              if ($LASTEXITCODE -ne 0) { throw "windows-switch-$tag capture comparison failed" }
+
+              if ($pair.billiard) {
+              $bout = "billiard-switch/$tag"
+              New-Item -ItemType Directory -Force $bout | Out-Null
+              $bresolved = (Resolve-Path $bout).Path
+              $bshot = $null
+              if ($pair.final -eq 'd3d12') { $bshot = Join-Path $bresolved 'billiard.png' }
+              if ($pair.final -eq 'vulkan') { $bshot = Join-Path $bresolved 'billiard.ppm' }
+              if ($bshot) { $env:GEFS_SCREENSHOT_PATH = $bshot }
+              else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
+              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $bresolved 'physics-passed'
+              if ($pair.initial -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.billiardSwitches,'-physicsRegression',$bresolved) -PassThru -RedirectStandardOutput "$bout/billiard.log" -RedirectStandardError "$bout/billiard-error.log"
+              $null = $proc.Handle
+              try {
+                if (-not $proc.WaitForExit(600000)) { throw "$tag billiard switch timed out" }
+                $proc.Refresh()
+                if ($proc.ExitCode -ne 0) {
+                  Get-Content "$bout/billiard.log","$bout/billiard-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                  throw "$tag billiard switch failed (exit $($proc.ExitCode))"
+                }
+              } finally {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+                if ($pair.initial -eq 'opengl') {
+                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                }
+              }
+              if (-not (Test-Path (Join-Path $bresolved 'physics-passed'))) { throw "$tag switch physics-passed missing" }
+              if (-not (Select-String -Path "$bout/billiard.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
+                throw "$tag billiard switch did not complete"
+              }
+              Write-Output "windows-billiard-switch-${tag}: A/B/A + physics OK"
+              }
+            }
+            # M4.4 preflight evidence: an unavailable Vulkan runtime (loader
+            # override pointing nowhere) must be rejected before retirement,
+            # keeping the old session rendering.
+            $out = 'screenshots/switch-preflight'
+            New-Item -ItemType Directory -Force $out | Out-Null
+            $resolved = (Resolve-Path $out).Path
+            $env:GEFS_VULKAN_LIBRARY = 'C:\nonexistent\vulkan-1.dll'
+            $env:GEFS_SCREENSHOT_PATH = Join-Path $resolved 'viewer-render.png'
+            $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','d3d12','--rhi-switch','vulkan@60') -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+            try {
+              if (-not $proc.WaitForExit(240000)) { throw 'preflight smoke timed out' }
+            } finally {
+              Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+              Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+              Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+              Remove-Item Env:GEFS_VULKAN_LIBRARY -ErrorAction SilentlyContinue
+            }
+            if (-not (Select-String -Path "$out/viewer.log" -Pattern 'RHI switch request vulkan: unavailable' -Quiet)) {
+              Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 40
+              throw 'preflight rejection not reported'
+            }
+            python scripts/compare_captures.py $baseline (Join-Path $resolved 'viewer-render.png') --label windows-switch-preflight
+            if ($LASTEXITCODE -ne 0) { throw 'preflight smoke capture comparison failed' }
+      - store_artifacts:
+          path: screenshots/switch
+          destination: screenshots-switch
+      - store_artifacts:
+          path: billiard-switch
+          destination: billiard-switch
       - store_artifacts:
           path: billiard-matrix
           destination: billiard-matrix
@@ -728,103 +1050,12 @@ jobs:
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
-      - when:
-          condition:
-            or:
-              - equal: [ master, << pipeline.git.branch >> ]
-              - << pipeline.git.tag >>
-          steps:
-          - run:
-              name: Package
-              command: |
-                 cmake --build ./build --target package
-          - persist_to_workspace:
-              root: build
-              paths:
-                - GEFS-0.1.0-win64.exe
-          - store_artifacts:
-              path: build/GEFS-0.1.0-win64.exe
-      - when:
-          condition:
-            equal: [full, << parameters.scope >>]
-          steps:
-            - restore_cache:
-                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
-            - run:
-                name: "Build Windows dependencies (Release)"
-                command: |
-                  $ErrorActionPreference = 'Stop'
-                  if (Test-Path .circleci\windows-deps-cache-release\complete.txt) {
-                    Write-Output "Using cached Release dependencies"
-                    cmake -DACTION=restore -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  } else {
-                    scripts/build_crossguid Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_opengex Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_zlib Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_bullet Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_glslangValidator Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_spirvcross Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_libispc-texcomp Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    scripts/build_openal Release
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                    cmake -DACTION=save -DCONFIG=Release -P .circleci/windows-dependency-cache.cmake
-                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  }
-            - save_cache:
-                key: windows-deps-release-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
-                paths:
-                  - ".circleci/windows-deps-cache-release"
-            - run:
-                name: "Build Engine (Release)"
-                command: |
-                  if (-not (Get-Command dxc.exe -ErrorAction SilentlyContinue)) {
-                    $dxc = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter dxc.exe -Recurse |
-                      Where-Object { $_.DirectoryName -match '\\x64$' } |
-                      Sort-Object FullName -Descending | Select-Object -First 1
-                    if (-not $dxc) { throw "Windows SDK dxc.exe was not found" }
-                    $env:Path = "$($dxc.DirectoryName);$env:Path"
-                  }
-                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DOPENGL_RHI_DEBUG=OFF -DD3D12_RHI_DEBUG=OFF -DBILLIARD_USE_D3D12=ON -DUSE_ENGINE_ALLOCATORS=ON -DENABLE_ALLOCATOR_TRACKING=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache && cmake --build build-release"
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                  sccache --show-stats
-            - when:
-                condition:
-                  equal: [ master, << pipeline.git.branch >> ]
-                steps:
-                  - save_cache:
-                      key: sccache-windows-v1-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
-                      paths:
-                        - "C:/Users/circleci/sccache"
-            - run:
-                name: "Test (Release)"
-                command: |
-                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && ctest --test-dir build-release -C Release --output-on-failure --output-junit junit.xml"
-                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            - store_test_results:
-                path: build-release/junit.xml
   build_linux:
     parameters:
       scope:
         type: enum
         enum: [quick, full]
         default: full
-      ctest_args:
-        type: string
-        default: ""
     environment:
       CCACHE_MAXSIZE: 2G
       CCACHE_BASEDIR: /home/circleci/project
@@ -837,7 +1068,7 @@ jobs:
           command: |
              sudo apt-get -o Acquire::Retries=3 update
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing curl clang python3-pip ninja-build git uuid-dev
-             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libvulkan-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses-dev
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing libx11-dev libx11-xcb-dev libgl1-mesa-dev libvulkan-dev libnss3-dev libxss-dev libatk1.0-dev libatk-bridge2.0-dev libglib2.0-dev libpango1.0-dev libxi-dev libfontconfig1-dev libnspr4-dev libxcomposite-dev libxcursor-dev libxrender-dev libxtst-dev libxrandr-dev libdbus-1-dev libasound2-dev libcups2-dev libncurses-dev libsdl2-dev
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing flex bison ccache
              sudo apt-get -o Acquire::Retries=3 install -y --fix-missing xvfb xauth mesa-utils libgl1-mesa-dri imagemagick
              # Vulkan runtime (lavapipe) and validation layers for the startup
@@ -929,9 +1160,9 @@ jobs:
              lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
              if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
              export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
-             xvfb-run -a ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
-      - store_test_results:
-          path: build/junit.xml
+             if [ "<< parameters.scope >>" = quick ]; then export GEFS_CTEST_LABEL=fast; fi
+             circleci testsuite --help >/dev/null 2>&1 || circleci extension install testsuite
+             xvfb-run -a circleci testsuite run engine-unix
       - when:
           condition:
             equal: [quick, << parameters.scope >>]
@@ -1016,9 +1247,11 @@ jobs:
                    grep -q "Vulkan application framebuffer capture saved:" "$out/viewer.log"
                    python3 scripts/compare_captures.py "$baseline" screenshots/matrix/opengl/viewer-render.png --label linux-opengl
                    # lavapipe vs llvmpipe: broad low-amplitude rasterizer deltas
-                   # (measured 29.2% pixels, mean delta 4.7); the high-delta and
-                   # mean-delta guards still reject structural divergence.
-                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/vulkan/viewer-render.ppm --label linux-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.02
+                   # (measured 30.2% pixels, mean delta 4.6 over all pixels);
+                   # edge-aliasing high deltas vary run to run around 2-3%, so
+                   # the high-delta guard allows 3% while an explicit mean-delta
+                   # guard (25 over differing pixels) rejects structural divergence.
+                   python3 scripts/compare_captures.py "$baseline" screenshots/matrix/vulkan/viewer-render.ppm --label linux-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.03 --max-mean-delta 25
       - run:
           name: Billiard per-backend startup matrix
           no_output_timeout: 15m
@@ -1070,7 +1303,7 @@ jobs:
                  fi
                  grep -q "Vulkan application framebuffer capture saved:" "$out/viewer.log"
                  grep -q "RHI session reconstructed (cycle 2)" "$out/viewer.log"
-                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.ppm" --label linux-reconstruct-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.02
+                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.ppm" --label linux-reconstruct-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.03 --max-mean-delta 25
                else
                  LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
                    xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
@@ -1095,6 +1328,72 @@ jobs:
       - store_artifacts:
           path: billiard-reconstruct
           destination: billiard-reconstruct
+      - run:
+          name: Cross-backend switch matrix
+          no_output_timeout: 30m
+          command: |
+             # A/B/A directed switches (SDL OpenGL <-> XCB Vulkan through the
+             # dual-mode host); final captures must match the startup baseline.
+             set -e
+             baseline="screenshots/viewer-render.png"
+             test -s "$baseline"
+             run_switch() {
+               initial="$1"; switches="$2"; final="$3"; tag="$4"; bswitches="$5"
+               out="screenshots/switch/$tag"; mkdir -p "$out"
+               if [ "$initial" = vulkan ] || [ "$final" = vulkan ]; then
+                 lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+                 if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
+                 export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
+               fi
+               if [ "$final" = vulkan ]; then
+                 timeout --kill-after=5s 240s \
+                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                   ./build/Viewer/Viewer --rhi "$initial" --rhi-switch "$switches" -screenshot "$PWD/$out/viewer-render.ppm" \
+                   > "$out/viewer.log" 2>&1 || true
+                 test -s "$out/viewer-render.ppm"
+                 grep -q "RHI switch complete: $final" "$out/viewer.log"
+                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.ppm" --label "linux-switch-$tag" --max-diff-fraction 0.40 --max-high-delta-fraction 0.03 --max-mean-delta 25
+               else
+                 # llvmpipe + switch pauses can push scene loading past the
+                 # default 60s capture window (empty-scene false negative).
+                 LIBGL_ALWAYS_SOFTWARE=1 GEFS_CAPTURE_WAIT_LOOPS=40 timeout --kill-after=5s 240s \
+                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                   bash scripts/capture_viewer_linux.sh "$out" --rhi "$initial" --rhi-switch "$switches" \
+                   > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
+                 grep -q "RHI switch complete: $final" "$out/viewer.log"
+                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label "linux-switch-$tag"
+               fi
+               bout="billiard-switch/$tag"; mkdir -p "$bout"
+               LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
+                 xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+                 bash scripts/capture_billiard_linux.sh "$bout" --rhi "$initial" --rhi-switch "$bswitches" \
+                 > "$bout/capture.log" 2>&1 || { cat "$bout/capture.log" "$bout/billiard.log" 2>/dev/null; exit 1; }
+               test -s "$bout/physics-passed"
+               grep -q "RHI switch complete: $final" "$bout/billiard.log"
+               echo "linux-switch-$tag: viewer + billiard A/B/A OK"
+             }
+             run_switch opengl "vulkan@120,opengl@300" opengl opengl-vulkan-opengl "vulkan@60,opengl@120"
+             run_switch vulkan "opengl@120,vulkan@300" vulkan vulkan-opengl-vulkan "opengl@60,vulkan@120"
+             # M4.4 post-retirement recovery evidence: with no usable Vulkan
+             # ICD, the switch fails after retirement and the previous backend
+             # is reconstructed once; the failed switch is still reported.
+             out="screenshots/switch-recovery"; mkdir -p "$out"
+             # -screenshot is consumed only by the Vulkan RHI; the recovered
+             # backend here is OpenGL, so use the host-agnostic external X11
+             # capture script (same mechanism as the OpenGL-final pair runs).
+             VK_ICD_FILENAMES=/nonexistent/icd.json LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 240s \
+               xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
+               bash scripts/capture_viewer_linux.sh "$out" --rhi opengl --rhi-switch vulkan@60 \
+               > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
+             grep -q "recovering opengl" "$out/viewer.log"
+             grep -q "RHI switch complete: opengl" "$out/viewer.log"
+             python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label linux-switch-recovery
+      - store_artifacts:
+          path: screenshots/switch
+          destination: screenshots-switch
+      - store_artifacts:
+          path: billiard-switch
+          destination: billiard-switch
       - run:
           name: Coverage (llvm-cov)
           command: |
@@ -1189,18 +1488,13 @@ jobs:
             - run:
                 name: "Test (Release)"
                 command: |
-                  ctest --test-dir build-release --output-on-failure --output-junit junit.xml
-            - store_test_results:
-                path: build-release/junit.xml
+                  GEFS_CTEST_DIR=build-release circleci testsuite run engine-unix
   build_macos:
     parameters:
       scope:
         type: enum
         enum: [quick, full]
         default: full
-      ctest_args:
-        type: string
-        default: ""
     environment:
       CCACHE_MAXSIZE: 2G
     macos:
@@ -1289,9 +1583,9 @@ jobs:
       - run:
           name: Test
           command: |
-             ctest --test-dir ./build --output-on-failure --output-junit junit.xml << parameters.ctest_args >>
-      - store_test_results:
-          path: build/junit.xml
+             if [ "<< parameters.scope >>" = quick ]; then export GEFS_CTEST_LABEL=fast; fi
+             circleci testsuite --help >/dev/null 2>&1 || circleci extension install testsuite
+             circleci testsuite run engine-unix
       - when:
           condition:
             equal: [quick, << parameters.scope >>]
@@ -1538,6 +1832,100 @@ jobs:
           path: billiard-reconstruct
           destination: billiard-reconstruct
       - run:
+          name: Cross-backend switch matrix
+          no_output_timeout: 30m
+          command: |
+             # A/B/A directed switches (Metal <-> Vulkan/MoltenVK on the
+             # persistent Cocoa host); final captures match the baseline.
+             set -e
+             baseline="screenshots/viewer-render.png"
+             test -s "$baseline"
+             APP=$(find build -type d -name Viewer.app | head -n 1)
+             test -n "$APP"
+             BAPP=$(find build -type d -name BilliardGame.app | head -n 1)
+             test -n "$BAPP"
+             export HOMEBREW_NO_AUTO_UPDATE=1
+             brew install molten-vk vulkan-validationlayers spirv-tools
+             export VK_DRIVER_FILES="$(brew --prefix molten-vk)/etc/vulkan/icd.d/MoltenVK_icd.json"
+             export VK_ICD_FILENAMES="$VK_DRIVER_FILES"
+             export VK_LAYER_PATH="$(brew --prefix vulkan-validationlayers)/share/vulkan/explicit_layer.d"
+             export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix vulkan-validationlayers)/lib:$(brew --prefix molten-vk)/lib:$(brew --prefix vulkan-loader)/lib${DYLD_FALLBACK_LIBRARY_PATH:+:$DYLD_FALLBACK_LIBRARY_PATH}"
+             export DYLD_LIBRARY_PATH="$(brew --prefix)/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+             run_switch() {
+               initial="$1"; switches="$2"; final="$3"; tag="$4"; bswitches="$5"
+               out="screenshots/switch/$tag"; mkdir -p "$out"
+               ext=png
+               if [ "$final" = vulkan ]; then ext=ppm; fi
+               "$APP/Contents/MacOS/Viewer" --rhi "$initial" --rhi-switch "$switches" \
+                 -screenshot "$PWD/$out/viewer-render.$ext" -screenshotDelay 60 -screenshotFrame 480 \
+                 > "$out/viewer.log" 2>&1 &
+               pid=$!
+               for i in $(seq 1 16); do
+                 sleep 15
+                 kill -0 "$pid" 2>/dev/null || break
+               done
+               kill "$pid" 2>/dev/null || true
+               wait "$pid" 2>/dev/null || true
+               if [ ! -s "$out/viewer-render.$ext" ]; then
+                 echo "=== macos-switch-$tag viewer.log ==="; cat "$out/viewer.log" || true; exit 1
+               fi
+               grep -q "RHI switch complete: $final" "$out/viewer.log"
+               tol=""
+               if [ "$final" = vulkan ]; then tol="--max-diff-fraction 0.40 --max-high-delta-fraction 0.02"; fi
+               python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.$ext" --label "macos-switch-$tag" $tol
+               bout="billiard-switch/$tag"; mkdir -p "$bout"
+               if [ "$final" = vulkan ]; then
+                 shot="$PWD/$bout/billiard.ppm"
+                 GEFS_SCREENSHOT_WAIT_FOR="$PWD/$bout/physics-passed" \
+                   "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$bswitches" -physicsRegression "$PWD/$bout" \
+                   -screenshot "$shot" > "$bout/billiard.log" 2>&1 &
+               else
+                 shot="$PWD/$bout/billiard.png"
+                 "$BAPP/Contents/MacOS/BilliardGame" --rhi "$initial" --rhi-switch "$bswitches" -physicsRegression "$PWD/$bout" \
+                   -screenshot "$shot" -screenshotWaitFor "$PWD/$bout/physics-passed" -screenshotDelay 0 \
+                   > "$bout/billiard.log" 2>&1 &
+               fi
+               pid=$!
+               for i in $(seq 1 120); do
+                 sleep 5
+                 kill -0 "$pid" 2>/dev/null || break
+               done
+               kill "$pid" 2>/dev/null || true
+               wait "$pid" 2>/dev/null || true
+               if [ ! -s "$bout/physics-passed" ] || [ ! -s "$shot" ]; then
+                 echo "=== macos-billiard-switch-$tag billiard.log ==="; cat "$bout/billiard.log" || true; exit 1
+               fi
+               grep -q "RHI switch complete: $final" "$bout/billiard.log"
+               echo "macos-switch-$tag: viewer + billiard A/B/A OK"
+             }
+             run_switch metal "vulkan@120,metal@300" metal metal-vulkan-metal "vulkan@60,metal@120"
+             run_switch vulkan "metal@120,vulkan@300" vulkan vulkan-metal-vulkan "metal@60,vulkan@120"
+             # M4.4 post-retirement recovery evidence: with no MoltenVK ICD the
+             # switch fails after retirement; the previous backend is
+             # reconstructed once and the failed switch is reported.
+             out="screenshots/switch-recovery"; mkdir -p "$out"
+             VK_DRIVER_FILES=/nonexistent/icd.json VK_ICD_FILENAMES=/nonexistent/icd.json \
+               "$APP/Contents/MacOS/Viewer" --rhi metal --rhi-switch vulkan@60 \
+               -screenshot "$PWD/$out/viewer-render.png" -screenshotDelay 60 -screenshotFrame 480 \
+               > "$out/viewer.log" 2>&1 &
+             pid=$!
+             for i in $(seq 1 16); do
+               sleep 15
+               kill -0 "$pid" 2>/dev/null || break
+             done
+             kill "$pid" 2>/dev/null || true
+             wait "$pid" 2>/dev/null || true
+             test -s "$out/viewer-render.png"
+             grep -q "recovering metal" "$out/viewer.log"
+             grep -q "RHI switch complete: metal" "$out/viewer.log"
+             python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label macos-switch-recovery
+      - store_artifacts:
+          path: screenshots/switch
+          destination: screenshots-switch
+      - store_artifacts:
+          path: billiard-switch
+          destination: billiard-switch
+      - run:
           name: RHI selection diagnostics smoke
           command: |
              set -e
@@ -1607,10 +1995,26 @@ jobs:
                -DSPIRV_CROSS="$PWD/External/Darwin/bin/spirv-cross" \
                -DZLIB_ROOT="$PWD/External/Darwin"
              cmake --build build-vulkan-abi --parallel 2
-             ctest --test-dir build-vulkan-abi -V --output-junit junit.xml
-             bash scripts/capture_vulkan_applications.sh moltenvk-applications
-      - store_test_results:
-          path: build-vulkan-abi/junit.xml
+             GEFS_CTEST_DIR=build-vulkan-abi circleci testsuite run engine-unix
+             status=0
+             bash scripts/capture_vulkan_applications.sh moltenvk-applications || status=$?
+             if [ "$status" -ne 0 ]; then
+               mkdir -p moltenvk-applications/crash-reports
+               cp "$HOME/Library/Logs/DiagnosticReports/"*.ips moltenvk-applications/crash-reports/ 2>/dev/null || true
+               cp "$HOME/Library/Logs/DiagnosticReports/"*.crash moltenvk-applications/crash-reports/ 2>/dev/null || true
+               echo "--- capture failed (exit $status); running Viewer under lldb without validation layers"
+               unset VK_LAYER_PATH
+               viewer=./build-vulkan-apps/Viewer/Viewer.app/Contents/MacOS/Viewer
+               lldb -b -o run -o "thread backtrace -c 25" -o quit -- \
+                 "$viewer" -screenshot moltenvk-applications/Viewer-novalidation.ppm \
+                 > moltenvk-applications/Viewer-lldb.log 2>&1 || true
+             fi
+             exit "$status"
+      - store_artifacts:
+          path: moltenvk-applications
+          destination: moltenvk-applications
+          when: always
+
       - store_artifacts:
           path: build-vulkan-abi/Testing
           destination: moltenvk-verification
@@ -1645,9 +2049,7 @@ jobs:
             - run:
                 name: "Test (Release)"
                 command: |
-                  ctest --test-dir build-release --output-on-failure --output-junit junit.xml
-            - store_test_results:
-                path: build-release/junit.xml
+                  GEFS_CTEST_DIR=build-release circleci testsuite run engine-unix
   build_android:
     working_directory: ~/project
     docker:
@@ -1744,6 +2146,12 @@ workflows:
     when: << pipeline.parameters.run_full >>
     jobs:
       - build_windows
+      - windows_regression:
+          requires:
+            - build_windows
+      - windows_matrix:
+          requires:
+            - build_windows
       - build_linux
       - build_macos
       #- build_android
@@ -1755,7 +2163,10 @@ workflows:
     jobs:
       - build_windows:
           scope: quick
-          ctest_args: "-L fast"
+      - windows_regression:
+          requires:
+            - build_windows
+          scope: quick
   quick-linux:
     when:
       and:
@@ -1764,7 +2175,6 @@ workflows:
     jobs:
       - build_linux:
           scope: quick
-          ctest_args: "-L fast"
   quick-macos:
     when:
       and:
@@ -1773,10 +2183,17 @@ workflows:
     jobs:
       - build_macos:
           scope: quick
-          ctest_args: "-L fast"
   build-and-test-and-release: #for tags
     jobs:
       - build_windows:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+      - windows_regression:
+          requires:
+            - build_windows
           filters:
             branches:
               ignore: /.*/

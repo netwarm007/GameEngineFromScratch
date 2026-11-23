@@ -1,5 +1,7 @@
 #include "WindowsApplication.hpp"
 
+#include "IRenderBackend.hpp"
+
 #include <tchar.h>
 
 #include "InputManager.hpp"
@@ -76,6 +78,20 @@ void WindowsApplication::FinalizePlatformResources() {
         m_hDc = nullptr;
     }
     if (m_hWnd) {
+        GetWindowRect(m_hWnd, &m_PreservedRect);
+        m_HasPreservedGeometry = true;
+        // Discard queued messages for the retiring window so stale input
+        // never reaches the recreated one. WM_PAINT regenerates until the
+        // update region is validated, so validate it and bound the drain.
+        MSG stale;
+        int flushed = 0;
+        while (flushed < 1024 &&
+               PeekMessage(&stale, m_hWnd, 0, 0, PM_REMOVE)) {
+            ++flushed;
+            if (stale.message == WM_PAINT) {
+                ValidateRect(m_hWnd, nullptr);
+            }
+        }
         DestroyWindow(m_hWnd);
         m_hWnd = nullptr;
     }
@@ -109,6 +125,9 @@ void WindowsApplication::ProcessEvents() {
 void WindowsApplication::onWindowResize(int new_width, int new_height) {
     if (m_pGraphicsManager) {
         m_pGraphicsManager->ResizeCanvas(new_width, new_height);
+    }
+    if (m_pActiveBackend) {
+        m_pActiveBackend->OnWindowResize(new_width, new_height);
     }
 }
 

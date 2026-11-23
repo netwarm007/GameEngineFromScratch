@@ -7,7 +7,7 @@
 #include "IPlatformHost.hpp"
 
 namespace My {
-class WindowsApplication : public BaseApplication, public IPlatformHost {
+class WindowsApplication : public BaseApplication, _implements_ IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 
@@ -26,6 +26,10 @@ class WindowsApplication : public BaseApplication, public IPlatformHost {
     void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
 
+    void SetActiveBackend(IRenderBackend* backend) override {
+        m_pActiveBackend = backend;
+    }
+
    protected:
     virtual void onWindowResize(int new_width, int new_height);
 
@@ -38,6 +42,11 @@ class WindowsApplication : public BaseApplication, public IPlatformHost {
     HINSTANCE m_hInstance = NULL;
     HWND m_hWnd = NULL;
     HDC m_hDc = NULL;
+    IRenderBackend* m_pActiveBackend = nullptr;
+    // Logical window geometry survives reconstruction/switching (M4.3);
+    // native handles are never preserved.
+    bool m_HasPreservedGeometry = false;
+    RECT m_PreservedRect{};
     bool m_bInLeftDrag = false;
     bool m_bInRightDrag = false;
     int m_iPreviousX = 0;

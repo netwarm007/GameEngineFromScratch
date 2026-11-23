@@ -69,7 +69,9 @@ foreach(TEST_CASE IN LISTS GRAPHICS_TEST_CASES)
     elseif(OS_WINDOWS)
         target_link_libraries(${TEST_CASE} Framework PlatformInterface D3dRHI D2dRHI OpenGLRHI ${VULKAN_RHI})
     else()
-        target_link_libraries(${TEST_CASE} Framework PlatformInterface OpenGLRHI ${VULKAN_RHI})
+        target_link_libraries(${TEST_CASE} Framework
+            $<IF:$<TARGET_EXISTS:PlatformInterfaceSDL2>,PlatformInterfaceSDL2,PlatformInterface>
+            OpenGLRHI ${VULKAN_RHI})
     endif(OS_MACOS)
 endforeach(TEST_CASE)
 

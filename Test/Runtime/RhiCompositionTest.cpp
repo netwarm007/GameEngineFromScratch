@@ -22,7 +22,7 @@ void Expect(bool condition, const char* message) {
     }
 }
 
-class TestScenes : public ISceneManager {
+class TestScenes : _implements_ ISceneManager {
    public:
     int Initialize() override { return 0; }
     void Finalize() override {}
@@ -37,21 +37,33 @@ class TestScenes : public ISceneManager {
     std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(const std::string&) const override { return {}; }
 };
 
-class TestAssets : public IAssetReader {
+class TestAssets : _implements_ IAssetReader {
    public:
     Buffer SyncOpenAndReadBinary(const char*) override { return {}; }
     std::string SyncOpenAndReadTextFileToString(const char*) override { return {}; }
 };
 
-class CountingApplication : public BaseApplication {
+class CountingApplication : public BaseApplication, _implements_ IRenderBackend {
    public:
     static int live;
     CountingApplication() { ++live; }
     ~CountingApplication() override { --live; }
+    void CreateMainWindow() override { BaseApplication::CreateMainWindow(); }
+    int InitializeGuiPlatform() override {
+        return BaseApplication::InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { BaseApplication::FinalizeGuiPlatform(); }
+    int InitializeGraphicsResources() override {
+        return BaseApplication::InitializeGraphicsResources();
+    }
+    void WaitForGraphicsIdle() override { BaseApplication::WaitForGraphicsIdle(); }
+    void FinalizeGraphicsResources() override {
+        BaseApplication::FinalizeGraphicsResources();
+    }
 };
 int CountingApplication::live = 0;
 
-class ThrowingPipelineManager : public IPipelineStateManager {
+class ThrowingPipelineManager : _implements_ IPipelineStateManager {
    public:
     ThrowingPipelineManager() {
         throw std::runtime_error("pipeline construction failed");
@@ -151,9 +163,14 @@ void TestSessionModules() {
         Expect(startup.composition->recreateWindowOnReconstruction ==
                    (backend == RhiBackend::OpenGL),
                "window recreation policy follows backend constraints");
+        IRenderBackend* backendObject = startup.composition->sessionBackend.get();
+        if (!backendObject) {
+            backendObject =
+                dynamic_cast<IRenderBackend*>(startup.composition->application.get());
+        }
         for (int cycle = 0; cycle < 3; ++cycle) {
             auto session = CreateRhiSessionModules(
-                backend, *startup.composition->application, scenes, assets);
+                backend, *backendObject, scenes, assets);
             Expect(session.error.empty() &&
                        session.modules.pipelineStateManager &&
                        session.modules.graphicsManager,

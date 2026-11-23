@@ -6,7 +6,7 @@
 #include "IPlatformHost.hpp"
 
 namespace My {
-class XcbApplication : public BaseApplication, public IPlatformHost {
+class XcbApplication : public BaseApplication, _implements_ IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 
@@ -27,9 +27,19 @@ class XcbApplication : public BaseApplication, public IPlatformHost {
     void FinalizeGuiPlatform() override;
     void FinalizePlatformResources() override;
 
+    void SetActiveBackend(IRenderBackend* backend) override {
+        m_pActiveBackend = backend;
+    }
+
+    xcb_connection_t* GetXcbConnection() { return m_pConn; }
+
    protected:
     Display *m_pDisplay = nullptr;
     int m_nScreen;
+    IRenderBackend* m_pActiveBackend = nullptr;
+    bool m_HasPreservedGeometry = false;
+    int16_t m_PreservedX = 20, m_PreservedY = 20;
+    uint16_t m_PreservedW = 0, m_PreservedH = 0;
 
     xcb_connection_t* m_pConn = nullptr;
     xcb_screen_t* m_pScreen = nullptr;

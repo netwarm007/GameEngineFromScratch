@@ -3,6 +3,10 @@
 ## Status and scope
 
 This is the maintained, incremental implementation roadmap.
+Engineering lessons from this effort are curated in
+[engineering-lessons.md](../engineering-lessons.md), split into long-term
+principles and version-dependent practical notes (the latter must be
+re-verified when their dependency changes).
 The user requested a path from compile-time selection to building all supported
 backends for a platform and switching between them at runtime, and authorized
 stepwise implementation after reviewing the draft. M0 adopts the first-release
@@ -20,8 +24,11 @@ selection checkpoint is complete. M3 (isolated reconstruction) is complete:
 the session contract, RHI injection, host/backend boundary, owned session
 composition with same-backend reconstruction, hardening, and the native
 reconstruction matrix are implemented and verified by full native
-three-platform CI (pipeline 1138). Hot switching (M4) and UI rollout (M5)
-remain separate checkpoints, each requiring human confirmation. Deliverable acceptance is the later all-roadmap +
+three-platform CI (pipeline 1138). The M3 checkpoint is human-confirmed;
+the integration merge into `feat/runtime-rhi-build` is verified separately
+(pipeline 1139). M4 (cross-backend switching) is in progress under the
+execution plan below. UI rollout (M5) remains a separate checkpoint
+requiring human confirmation. Deliverable acceptance is the later all-roadmap +
 three-platform-CI + PR gate.
 
 The working branch was fast-forwarded to master
@@ -79,8 +86,8 @@ application support. A preliminary probe cannot guarantee initialization.
 | Windows | D3D12, OpenGL, Vulkan | Probe each backend's device, driver, and presentation requirements. |
 | Linux | OpenGL, Vulkan | Use native XCB for the future switching host; M1 preserves current SDL/OpenGL startup when SDL is available. |
 | macOS | Metal, Vulkan through MoltenVK | The OpenGL library target alone does not establish a supported native application path. |
-| Android | Retain existing OpenGL ES path | Vulkan integration and mobile lifecycle switching are deferred. |
-| WebAssembly | Retain existing WebGL path | WebGPU would be a separate backend effort. |
+| Android | Not a supported build of this effort | Unmaintained for years and disabled in CI; the existing OpenGL ES path predates the runtime architecture. Revival requires refactor/rewrite against the host/backend composition model (known limitation), not re-enabling the old build. |
+| WebAssembly | Not a supported build of this effort | Unmaintained for years and disabled in CI; the existing WebGL/SDL path predates the runtime architecture. Revival requires refactor/rewrite (and a separate WebGPU decision) before any support claim (known limitation). |
 | FreeBSD and other targets | Preserve existing behavior | No new runtime-switching support claim without native evidence. |
 
 D2D and Empty remain available for their existing specialized/test uses; they
@@ -558,6 +565,200 @@ and idempotent finalization) plus the unchanged native error-path smoke;
 native partial-init injection is not claimed. See the
 [M3 exact-revision verification](../verification/2fb4c0e73ff67a60fab0569557b804c42f64e2e6.md).
 
+### M4 execution plan
+
+M4 is human-confirmed (M3 checkpoint accepted). Work steps follow the same
+rule: self-check plus CI verification, no human stop between steps; only the
+completed M4 checkpoint requires confirmation before M5. The switch trigger
+UI remains M5; M4 verifies through a diagnostic CLI switch sequence.
+
+Constraints carried from the target switching sequence:
+
+- The host application object persists across switches; every module's
+  borrowed application pointer remains valid. Backend-native state moves out
+  of the concrete application classes into session-owned backend objects
+  implementing `IRenderBackend` against the persistent host; the concrete
+  application classes remain only for the legacy compile-time paths.
+- One request at a complete frame boundary (after main and secondary
+  viewport submission); overlapping requests get an explicit result;
+  selecting the active backend is a no-op; unavailable targets fail
+  explicitly without fallback.
+- Sequence: Running → Preflight → Quiescing → Retiring → Creating →
+  Restoring → FirstFrame → Running. Preflight failure keeps the old session.
+  Failure after retirement attempts one previous-backend reconstruction;
+  the failed switch is reported even when recovery succeeds; recovery
+  failure exits orderly with both errors. The retired session is never
+  reused.
+- Success publishes only after the restored scene completes a
+  rendered/presented frame; minimized/zero-size windows neither produce
+  false success nor busy-wait. Simulation pauses during the switch without
+  accumulating catch-up; platform event processing continues; stale window
+  events are discarded and held input reconciled on ownership changes.
+- Render conventions follow the active session (OpenGL projection correction
+  updates camera/projection before the first restored frame). The session
+  generation invalidates borrowed GPU references and UI caches; the same
+  Scene is reconstructed without a new CPU revision; UI interaction state
+  persists in the GUI context.
+
+| Work step | Work | Verification boundary |
+| --- | --- | --- |
+| M4.1: backend lifecycle detachment | Move backend-native state (D3D12/Vulkan RHI, WGL/GLX/SDL contexts, Metal view creation, backend-specific GUI platform binding) out of the concrete applications into session-owned backend objects implementing `IRenderBackend` against the persistent host; runtime factories produce host + backend + session modules; root orchestrates the backend object directly. | Headless contract tests; native startup matrix and same-backend reconstruction matrix stay green (no behavior change). |
+| M4.2: switch state machine and request contract | Frame-boundary switch processing with the full state sequence, explicit request results, same-backend no-op, preflight (compiled inclusion + runtime availability), generation bump, render-convention update; diagnostic `--rhi-switch` sequence entry for verification runs. | Headless state-machine tests (ordering, overlap rejection, no-op, preflight failure keeps old session); native A/B switch smoke. |
+| M4.3: window/view rebinding, pause, and input reconciliation | Cross-backend window policy (recreate when either side's native constraints require it; preserve logical geometry, DPI-aware layout, floating-panel placement), Metal/Vulkan Cocoa view integration, simulation pause without catch-up, stale-event discard, held-input reconciliation, FirstFrame gate including minimized/zero-size windows. | Headless pause/gate tests where feasible; native A/B/A with state preservation. |
+| M4.4: failure recovery | Preflight failure keeps the old session; post-retirement failure triggers one previous-backend reconstruction with the failed switch reported; recovery failure exits orderly with both errors; retired sessions never reused. | Headless injected-failure coverage on the production state machine; native failure smoke where CI can drive it. |
+| M4.5: native A/B/A acceptance and CI consolidation | Directed switch matrix over the CI-feasible pairs (Windows d3d12/opengl/vulkan, Linux opengl/vulkan, macOS metal/vulkan): A/B/A restores the scene (capture comparison) and physics state; failure-path evidence; exact-revision verification records; resolve M4-owned limitation rows. | Full exact-revision three-platform CI; M4 checkpoint self-check complete, then human confirmation before M5. |
+
+Decision points to settle during implementation and record here:
+
+- Cross-backend window policy per pair: WGL/GLX/SDL sides force recreation;
+  Metal↔Vulkan on Cocoa may replace the content view/layer without window
+  recreation — choose per evidence, preserving geometry/DPI/panels either
+  way.
+- Backend-specific GUI platform binding (SDL `InitForOpenGL`, Win32
+  `InitForOpenGL`, Darwin Vulkan surface callback) moves with the backend
+  object; the host exposes the generic bind/unbind surface.
+- The diagnostic switch sequence syntax and frame pacing are verification
+  scaffolding, not the M5 UI contract.
+
+M4.1 detaches backend lifecycle from the concrete applications:
+session-owned backend objects (`D3d12Backend`, `Win32OpenGLBackend`,
+`SDLOpenGLBackend`, `MetalBackend`, and a platform-neutral `VulkanBackend`
+with injected surface factory, GUI-bind hook, framebuffer query, and
+drawable preparation) implement `IRenderBackend` against the persistent
+host. The concrete applications remain for the legacy compile-time paths
+as host + owned backend. Runtime factories compose plain hosts with
+separate backend objects; the dual-mode `LinuxHost` (SDL window for OpenGL,
+XCB window for Vulkan) keeps the application object persistent across
+Linux cross-backend switches. `IPlatformHost` gains `SetActiveBackend`
+(native resize routing) and `OnBackendSwitch` (windowing-mode selection);
+`IRenderBackend` gains window creation, GUI bind/unbind,
+`OnSessionActivated` (renderer-dependent platform setup such as WGL
+multi-viewport callbacks), resize notification, and the window-recreation
+policy. Linux CI now installs SDL2 so the documented SDL host and the
+dual-mode host are CI-verified; trimmed builds without SDL2 keep the plain
+XCB pieces.
+
+M4.2 adds the frame-boundary switch state machine
+(`RhiSwitchController`): one request at a time after main and secondary
+viewport submission; same-backend selection is a no-op; overlapping
+requests are rejected explicitly; preflight (compiled inclusion + runtime
+availability) keeps the old session on failure. A switch retires the
+session and native state (window recreation when either side requires it),
+creates the target backend on the persistent host, updates render
+conventions before restoring, composes and activates fresh session
+modules, and publishes success only after a rendered/presented frame at a
+usable framebuffer size (FirstFrame gate; minimized/zero-size windows wait
+without false success or busy-loop). Simulation pauses for the duration
+through a render-only frame plan; no catch-up interval accumulates.
+`CreateRhiBackendObject` dispatches per-platform backend objects;
+`BaseApplication::SetRenderConvention` updates the host configuration.
+Viewer and Billiard accept `--rhi-switch backend@frame,...` verification
+schedules. The headless `RhiSwitchTest` covers the request contract, A/B/A
+cycles with generation/convention updates, the zero-size gate, preflight
+retention, post-retirement recovery, recovery failure, and session-failure
+recovery.
+
+M4.3 preserves logical window geometry across reconstruction and switching
+on every host (Win32 outer rect, SDL position/size, XCB geometry, Cocoa
+frame); native handles are never preserved. Retiring windows flush queued
+platform messages/events (Win32 message drain, `SDL_FlushEvents`, including
+mode switches away from SDL) so stale input never reaches the recreated
+window; held input is reconciled by re-initializing the persistent input
+manager when session modules change. ImGui docking/floating layout persists
+in the GUI context; the FirstFrame gate handles minimized windows.
+
+M4.4 failure recovery is implemented in the controller: preflight failure
+keeps the old session; failure after retirement attempts one
+previous-backend reconstruction and reports the failed switch even when
+recovery succeeds; recovery failure requests an orderly exit with both
+errors; the retired session is never reused. Headless injected-failure
+tests cover all paths on the production controller. Native evidence:
+Windows preflight rejection with an unavailable Vulkan loader override;
+Linux/macOS post-retirement recovery with no usable Vulkan ICD.
+
+M4.5 adds the native cross-backend switch matrix: A/B/A directed switches
+for Viewer and Billiard on every CI-feasible pair (Windows
+d3d12/opengl/vulkan, Linux SDL-OpenGL↔XCB-Vulkan both directions, macOS
+Metal↔Vulkan both directions). Final captures must match the startup
+baseline (scene restored on the original backend), Billiard physics
+regression must pass, and the switch-complete marker is asserted so the
+matrix cannot pass vacuously.
+
+M4 acceptance is verified at
+[4ea0cf6a](../verification/4ea0cf6a0132100a77c15396e40c07e069d1790d.md):
+full three-platform CI green (Windows three-job split, Linux, macOS), all
+CI-feasible A/B/A pairs restore the scene and physics, failure/recovery
+smokes pass, and the explicit-failure contract is additionally confirmed on
+a real AMD Windows driver (TIM-UMPC). The M4 checkpoint self-check is
+complete; it awaits human confirmation before M5.
+
+### M5 execution plan
+
+M5 is gated on M4 human confirmation. Work steps follow the same rule:
+self-check plus CI verification, no human stop between steps; only the
+completed M5 checkpoint requires confirmation, which culminates in deliverable
+acceptance (the pull request).
+
+Maintainer decisions (2026-11-23) shaping M5:
+
+- **UI keeps its current form and style.** The requirement is *no regression*
+  of the existing Viewer UI and docking, not a redesign. Backend selection is a
+  minimal addition in the existing menu pattern (the `调试`/`帮助` main menu bar
+  in `GuiSubPass.cpp`), not a new panel paradigm.
+- **Switch requests execute immediately.** A modal progress indicator blocks
+  user input for the duration of the switch (safer than concurrent interaction),
+  showing state-machine progress and the success/failure/recovery result.
+- **Billiard needs no selection panel.** The ImGui infrastructure is retained
+  (for a future in-game debug interface) but hidden by default.
+- **Installed-distribution verification is best-effort.** The project is
+  incomplete; verify as much as the CI environment allows rather than treating
+  installed-app validation as a hard gate.
+- **Retina/mixed-DPI acceptance carries over existing evidence.** No dedicated
+  real machine is available currently; reference the Vulkan-plan evidence rather
+  than building a new rig.
+
+Constraints carried from M4 and the Viewer UI verification guidance:
+
+- The selection UI drives the same `RhiSwitchController` (frame boundary, one
+  request at a time, explicit results, no fallback); it replaces the diagnostic
+  `--rhi-switch` CLI as the user-facing entry, while the CLI remains for
+  verification runs. Unavailable targets are disabled with a reason from the
+  availability probe; the active backend is shown (window title already carries
+  `<Platform>/<Backend> (<Host>)`).
+- Existing docking/floating layout and GUI interaction state persist across
+  switches: the dock tree is not rebuilt, saved layouts are preserved
+  (`FindWindowSettingsByID`), defaults initialize only when no saved layout
+  exists, and floating panels reposition by desktop coordinates (work position
+  and size, not fixed coordinates or framebuffer pixels) after any window
+  recreation.
+- The modal progress indicator reflects the FirstFrame gate; it neither
+  busy-waits nor false-succeeds on minimized/zero-size windows, and it releases
+  input only after the restored scene presents a frame (or the switch fails and
+  recovery/exit completes).
+
+| Work step | Work | Verification boundary |
+| --- | --- | --- |
+| M5.1: minimal selection and status UI | Add backend selection to the existing Viewer menu pattern: list probe-available backends, mark the active one, disable unavailable targets with a reason; show current backend/host/platform status. No redesign of existing panels; existing UI/docking must not regress. | Headless layout regression (`GuiSubPassLayoutTest`) stays green; native selection→switch smoke; existing panels/docking verified unchanged on real screenshots. |
+| M5.2: immediate switch, modal progress, state preservation | Wire selection to `RhiSwitchController` for immediate execution; a modal progress indicator blocks input during the switch and reports state progress, success, failure, and recovery; preserve docking/floating layout and GUI interaction state across window recreation; failed switches show an explicit error (no fallback). | Native A/B/A with layout/interaction preservation; failure-path UI evidence; modal gate respects minimized/zero-size windows. |
+| M5.3: Billiard composition reuse | Refactor Billiard to the same runtime composition and switch controller, removing duplicated orchestration; retain ImGui infrastructure but hidden by default (no selection panel); preserve Billiard physics-regression behavior. Precursor to the post-M5 Core entry extraction. | Billiard physics regression and switch matrix stay green; no visible panel by default. |
+| M5.4: backend-specific visual and layout acceptance | Per-backend panel visibility/non-overlap/viewport containment after switches; multi-viewport placement and floating input; Retina/mixed-DPI carried over from the Vulkan plan (no new rig). Headless layout regression plus real screenshot inspection per platform/backend. | `GuiSubPassLayoutTest` covers docking/non-overlap/containment/resize/Retina/saved-layout; real Viewer screenshots inspected per backend; Vulkan-plan DPI evidence referenced. |
+| M5.5: acceptance matrix and best-effort installed verification | Integrate the complete directed-transition acceptance matrix with native evidence; generate native installers and verify installed applications launch/switch as far as the CI environment allows (best-effort, not a hard gate); exact-revision three-platform CI; verification records; resolve M5-owned limitation rows. | Full exact-revision three-platform CI; installed-app checks recorded with their limits; M5 checkpoint self-check complete, then human confirmation → deliverable acceptance (PR). |
+
+Decision points settled (maintainer, 2026-11-23):
+
+- Selection UI form: minimal addition in the existing menu pattern; no
+  regression of current UI is the binding requirement.
+- Switch UX: immediate execution with a modal progress indicator blocking input
+  during the switch.
+- Billiard scope: composition reuse only; ImGui retained but hidden by default.
+- Installed verification: best-effort given the incomplete project and unknown
+  CI installed-app capability; not a hard acceptance gate.
+- Retina/DPI: carry over existing Vulkan-plan evidence; no new real-machine rig.
+
+M5.3 (Billiard composition reuse) is the natural precursor to the post-M5 Core
+entry extraction; the System/Core architecture adjustments themselves remain
+after M5 acceptance (see Post-M5 architecture adjustments).
+
 ## Verification and acceptance
 
 - Add focused production-path headless tests for selection, ordering, rejected
@@ -595,12 +796,93 @@ native partial-init injection is not claimed. See the
 | Vulkan loader isolation is implemented and headless-tested; native evidence that non-Vulkan startup ignores an absent Vulkan runtime lands with application CLI integration. | M2.4 |
 | Material baking uses the native Utility executable; complete desktop cross-compilation needs an explicit host-tool path before it can be supported. | Follow-on build scope |
 | Backend partial-initialization and static platform/ImGui callback audit is complete (M3.3): ImGui platform backends are per-context, Win32 routing is per-window, and SDL/WGL/GLX cleanup paths are hardened. Repeatable same-backend session replacement is implemented and natively verified (M3.4–M3.6, pipeline 1138). | M3 (resolved) |
-| Same-backend reconstruction invalidates GPU caches and UI pass state through fresh session objects and the session generation (M3.5). Cross-backend invalidation and held-input/queued-event reconciliation remain open. | M4 (M3 portion resolved) |
-| Minimized windows and quit requests during switching need a cancellable, non-busy-wait first-frame/recovery contract. | M4 |
+| Same-backend reconstruction invalidates GPU caches and UI pass state through fresh session objects and the session generation (M3.5). Cross-backend invalidation and held-input/queued-event reconciliation are implemented (M4.2 generation bump + render-convention update; M4.3 stale-event discard + input re-initialization) and natively verified across the A/B/A switch matrix. | M4 (resolved) |
+| Minimized windows and quit requests during switching: the FirstFrame gate waits without busy-looping on minimized/zero-size windows (one check per frame boundary), and failure/recovery exits orderly via ExitRequested (M4.3/M4.4). A user-cancel of an in-flight switch is not exposed (the M5 modal progress indicator blocks input during the switch instead). | M4 (resolved; cancel UX deferred to M5 modal) |
 | Vulkan Retina/mixed-DPI and floating-input acceptance remains open in the Vulkan plan; this roadmap does not resolve or duplicate its evidence. | M5 depends on the Vulkan plan |
 | Complete native switching coverage is not established by current single-backend CI runs. | M5 |
-| Android, WebAssembly, other desktop targets, macOS OpenGL, plugins, seamless switching, and device-loss recovery are deferred, not supported by implication. | Follow-on scope after M5 |
+| Android and WebAssembly are unmaintained (years), disabled, and not verified by CI. Their compile-time paths predate the runtime architecture; reviving them requires refactor/rewrite against the host/backend composition model, not re-enabling the old builds. | Known limitation; follow-on rewrite after M5 |
+| Other desktop targets, macOS OpenGL, plugins, seamless switching, and device-loss recovery are deferred, not supported by implication. | Follow-on scope after M5 |
+| Legacy desktop application classes (host + `IRenderBackend` sibling inheritance) are retained through M4/M5 as the compile-time path and comparison baseline. Candidate post-acceptance simplification (maintainer decision recorded 2026-11-23): retire them once runtime switching is fully verified with no regression — trimmed builds are then served by the runtime factory with a reduced backend set, and validation-layer capture coverage migrates to runtime builds. This removes the sibling-override and delegation-recursion maintenance surface. Formal retirement is a roadmap amendment after acceptance, not part of M4/M5 scope. | Candidate after M5 acceptance |
 
 Keep open limitations here with their owning checkpoint and resolve/update them
 in the same implementation change. Per-revision evidence belongs in verification
 records, not a rolling result index.
+
+## Post-M5 architecture adjustments (maintainer decisions, 2026-11-23)
+
+Decided in discussion after M4; implementation is gated on M5 acceptance.
+Each phase verifies through the full three-platform CI matrix before the next.
+
+### Service layer (Framework/System/) and two-tier module contract
+
+The frame pipeline is not a universal module contract. Split IRuntimeModule:
+
+- `IRuntimeModule` keeps the common lifecycle only: `Initialize`/`Finalize`
+  (and the borrowed application pointer). No `Tick`.
+- New `IFrameModule : _inherits_ IRuntimeModule` adds `Tick() = 0` — the
+  contract for genuinely frame-driven modules: rendering, animation solving,
+  physics simulation, game logic (`IGameLogic` rebases onto it), debug draw,
+  and audio when implemented.
+- The frame plan takes `IFrameModule` only. Services leave the plan; their
+  current Ticks are all no-ops, so removal is behavior-preserving (the CI
+  matrix is the regression net).
+
+New `Framework/System/` parallel to `Manager/`, holding application-lifetime,
+demand/event-driven services:
+
+- `System/Memory/`: MemorySystem, MemoryManager, and the allocator stack
+  (Frame/Ring/Slab/Buddy/Linear/SizeClass/Routing/ThreadCache/Tracking
+  allocators, PmrAdapter, AllocatorUtils). Allocators belong with the memory
+  service, not Algorism (which holds scene/geometry algorithms).
+- `System/Input/`: InputManager (event-driven).
+- `System/IO/`: AssetLoader (synchronous IO service; parsers stay in
+  Framework/Parser as codecs).
+
+Stay in `Manager/` by semantic role, not empty-Tick mechanics:
+
+- SceneManager: the scene graph is the game world's structural description;
+  scene change carries the passage of time and is Tick-bound. It may gain a
+  real Tick (scene animation/interpolation) later.
+- PhysicsManager: driven by in-game time; the empty base-class Tick is
+  acceptable (the Bullet subclass ticks).
+- PipelineStateManager: session-level service (rebuilt on switch), base
+  lifecycle contract only.
+
+The classification criterion is the semantic role (time-driven simulation /
+rendering vs demand-driven service) and lifetime (app vs session), not whether
+a Tick body happens to be empty today.
+
+### Engine entry (Runtime/ renamed Core/) and app-as-consumer
+
+The application shell (bootstrap, main loop, switch orchestration, capture
+contract, System ownership) moves out of the apps into the engine. The
+existing `Runtime/` composition layer is extended and renamed `Core/`;
+Framework stays the subsystem library, Platform stays the hosts.
+
+Target app content: an `IGameLogic` implementation, an AppDescriptor (title,
+default scene, configuration, asset search paths, provided frame modules),
+and the app's own assets. Engine-common assets are already staged separately
+(M1).
+
+Phased for stability (maintainer: 分步实现，稳妥为上):
+
+1. Extract the shared orchestration duplicated in Viewer/Billiard main into a
+   Core engine runner parameterized by the AppDescriptor. Apps keep a ~10-line
+   main forwarding to `EngineMain(argc, argv, descriptor)`. Executables and
+   behavior unchanged; the existing matrices verify equivalence.
+2. Optional later polish: the engine entry library provides `main()` itself
+   (app exports a logic factory symbol); Core absorbs platform entry quirks
+   (WinMain/SDL_main/emscripten).
+
+The frame-plan ownership question dissolves under the two-tier contract: Core
+assembles the canonical plan from the frame modules the app provides; the app
+does not specify the plan. Implementation must verify that the Viewer and
+Billiard frame-module subsequences agree (their historical differences were
+service modules with no-op Ticks).
+
+### Sequencing relative to other follow-ups
+
+These adjustments and the legacy desktop application-class retirement
+candidate (Known limitations) are separate post-acceptance efforts; none is
+part of M4/M5 scope. The retirement candidate removes the sibling-inheritance
+maintenance surface that the System/Core split does not itself address.

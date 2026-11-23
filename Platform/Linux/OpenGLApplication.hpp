@@ -6,13 +6,18 @@
 #include "XcbApplication.hpp"
 
 namespace My {
-class OpenGLApplication : public XcbApplication, public IRenderBackend {
+class OpenGLApplication : public XcbApplication, _implements_ IRenderBackend {
    public:
     using XcbApplication::XcbApplication;
 
     void Tick() override;
 
     void CreateMainWindow() override;
+
+    int InitializeGuiPlatform() override {
+        return XcbApplication::InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { XcbApplication::FinalizeGuiPlatform(); }
 
    private:
     int InitializeGraphicsResources() override;

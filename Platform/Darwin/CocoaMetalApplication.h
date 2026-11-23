@@ -1,28 +1,38 @@
 #pragma once
 #include "CocoaApplication.h"
 #include "IRenderBackend.hpp"
+#include "MetalBackend.h"
 
 OBJC_CLASS(MetalView);
 
 namespace My {
-class CocoaMetalApplication : public CocoaApplication, public IRenderBackend {
+// Legacy compile-time application: the Cocoa host plus an owned Metal
+// backend, with headless capture pacing. The runtime path composes the host
+// and backend separately.
+class CocoaMetalApplication : public CocoaApplication, _implements_ IRenderBackend {
    public:
-    using CocoaApplication::CocoaApplication;
+    CocoaMetalApplication();
+    explicit CocoaMetalApplication(GfxConfiguration& cfg);
 
-    // The Metal drawable installed by InitializeGraphicsResources; nullptr
-    // before graphics resources exist or when the content view is not Metal.
-    MetalView* GetMetalView();
+    // The Metal drawable installed by the backend; nullptr before graphics
+    // resources exist or when the content view is not Metal.
+    MetalView* GetMetalView() { return m_Backend.GetMetalView(); }
 
-    void Tick() override;
-    void ProcessEvents() override;
+    void CreateMainWindow() override { CocoaApplication::CreateMainWindow(); }
+    int InitializeGuiPlatform() override {
+        return CocoaApplication::InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { CocoaApplication::FinalizeGuiPlatform(); }
+    void WaitForGraphicsIdle() override { m_Backend.WaitForGraphicsIdle(); }
+    void FinalizeGraphicsResources() override {
+        m_Backend.FinalizeGraphicsResources();
+    }
 
-   protected:
-    int InitializeGraphicsResources() override;
-    // The Metal RHI is owned by the graphics manager (which drains it in its
-    // own Finalize); the drawable is window-owned and released with the
-    // window, so the application-level hooks have no native state to drain
-    // or release.
-    void WaitForGraphicsIdle() override {}
-    void FinalizeGraphicsResources() override {}
+   private:
+    int InitializeGraphicsResources() override {
+        return m_Backend.InitializeGraphicsResources();
+    }
+
+    MetalBackend m_Backend;
 };
 }  // namespace My

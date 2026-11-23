@@ -1,21 +1,44 @@
 #pragma once
+#include <memory>
+
 #include "CocoaApplication.h"
 #include "IRenderBackend.hpp"
-#include "Vulkan/VulkanRHI.hpp"
+#include "Vulkan/VulkanBackend.hpp"
 
 namespace My {
-class VulkanApplication : public CocoaApplication, public IRenderBackend {
+// Legacy compile-time application: the Cocoa host plus an owned Vulkan
+// backend. The runtime path composes the host and backend separately.
+class VulkanApplication : public CocoaApplication, _implements_ IRenderBackend {
    public:
-    using CocoaApplication::CocoaApplication;
+    VulkanApplication();
+    explicit VulkanApplication(GfxConfiguration& cfg);
+
     VkResult CreateWindowSurface(vk::Instance instance, VkSurfaceKHR& surface);
 
-    VulkanRHI& GetRHI() { return m_Rhi; }
+    VulkanRHI& GetRHI() { return m_Backend->GetRHI(); }
+
+    void CreateMainWindow() override { CocoaApplication::CreateMainWindow(); }
+    // Qualified base calls: delegating to the backend here would recurse
+    // (backend -> IPlatformHost& -> this override -> backend -> ...).
+    void FinalizeGuiPlatform() final { CocoaApplication::FinalizeGuiPlatform(); }
 
    private:
-    int InitializeGraphicsResources() final;
-    int InitializeGuiPlatform() final;
-    void WaitForGraphicsIdle() final;
-    void FinalizeGraphicsResources() final;
-    VulkanRHI m_Rhi;
+    int InitializeGraphicsResources() final {
+        return m_Backend->InitializeGraphicsResources();
+    }
+    int InitializeGuiPlatform() final {
+        const int result = CocoaApplication::InitializeGuiPlatform();
+        if (result != 0) return result;
+        return m_Backend->BindGuiOverrides();
+    }
+    void WaitForGraphicsIdle() final { m_Backend->WaitForGraphicsIdle(); }
+    void FinalizeGraphicsResources() final {
+        m_Backend->FinalizeGraphicsResources();
+    }
+
+    std::unique_ptr<VulkanBackend> m_Backend;
 };
+
+// Runtime pairing: Cocoa host + Vulkan backend (shared with the legacy app).
+std::unique_ptr<VulkanBackend> MakeCocoaVulkanBackend(CocoaApplication& host);
 }  // namespace My

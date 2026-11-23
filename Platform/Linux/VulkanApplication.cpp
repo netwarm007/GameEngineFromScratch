@@ -1,9 +1,25 @@
 #include "VulkanApplication.hpp"
+
 #include <cstdio>
-#include <exception>
 #include <vulkan/vulkan_xcb.h>
 
 using namespace My;
+
+VulkanApplication::VulkanApplication()
+    : XcbApplication(),
+      m_Backend(*this, *this,
+                {"VK_KHR_surface", "VK_KHR_xcb_surface"},
+                [this](vk::Instance instance, VkSurfaceKHR& surface) {
+                    return CreateWindowSurface(instance, surface);
+                }) {}
+
+VulkanApplication::VulkanApplication(GfxConfiguration& cfg)
+    : XcbApplication(cfg),
+      m_Backend(*this, *this,
+                {"VK_KHR_surface", "VK_KHR_xcb_surface"},
+                [this](vk::Instance instance, VkSurfaceKHR& surface) {
+                    return CreateWindowSurface(instance, surface);
+                }) {}
 
 VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
                                                 VkSurfaceKHR& surface) {
@@ -25,45 +41,29 @@ VkResult VulkanApplication::CreateWindowSurface(vk::Instance instance,
     return vkCreateXcbSurfaceKHR(instance, &sci, nullptr, &surface);
 }
 
-int VulkanApplication::InitializeGraphicsResources() {
-    if (!m_pConn || m_XWindow == XCB_WINDOW_NONE) {
-        fprintf(stderr, "Vulkan initialization requires a native window\n");
-        return -1;
-    }
-
-    std::vector<const char*> extensions = {"VK_KHR_surface",
-                                           "VK_KHR_xcb_surface"};
-
-    // 设置回调函数
-    auto getFramebufferSize = [this](uint32_t& width, uint32_t& height) {
-        GetFramebufferSize(width, height);
-    };
-
-    // 设置回调函数
-    m_Rhi.setFramebufferSizeQueryCB(getFramebufferSize);
-
-    m_Rhi.SetGetGfxConfigCB([this] { return GetConfiguration(); });
-    try {
-        m_Rhi.Initialize(extensions, [this](const vk::Instance& instance, vk::SurfaceKHR& surface) {
-            VkSurfaceKHR nativeSurface = VK_NULL_HANDLE;
-            const auto result = CreateWindowSurface(instance, nativeSurface);
-            if (result != VK_SUCCESS) {
-                throw std::runtime_error("Xcb Vulkan surface creation failed: " +
-                                         std::to_string(result));
+std::unique_ptr<VulkanBackend> My::MakeXcbVulkanBackend(
+    IApplication& application, IPlatformHost& platform,
+    std::function<xcb_connection_t*()> connection) {
+    return std::make_unique<VulkanBackend>(
+        application, platform,
+        std::vector<const char*>{"VK_KHR_surface", "VK_KHR_xcb_surface"},
+        [&application, connection](vk::Instance instance, VkSurfaceKHR& surface) -> VkResult {
+            PFN_vkCreateXcbSurfaceKHR create =
+                reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(
+                    GetVulkanLoader().GetInstanceFunction(instance, "vkCreateXcbSurfaceKHR"));
+            if (!create) {
+                fprintf(stderr, "Xcb: Vulkan instance missing VK_KHR_xcb_surface extension\n");
+                return VK_ERROR_EXTENSION_NOT_PRESENT;
             }
-            surface = nativeSurface;
+            VkXcbSurfaceCreateInfoKHR sci{};
+            sci.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+            sci.connection = connection();
+            if (!sci.connection) {
+                fprintf(stderr, "Xcb: Vulkan surface requires an open XCB connection\n");
+                return VK_ERROR_INITIALIZATION_FAILED;
+            }
+            sci.window = static_cast<xcb_window_t>(
+                reinterpret_cast<uintptr_t>(application.GetMainWindowHandler()));
+            return create(instance, &sci, nullptr, &surface);
         });
-    } catch (const std::exception& error) {
-        // The RHI has already rolled back its partial state.
-        fprintf(stderr, "Vulkan initialization failed: %s\n", error.what());
-        return -1;
-    }
-    return 0;
-}
-
-void VulkanApplication::WaitForGraphicsIdle() { m_Rhi.WaitGPU(); }
-
-void VulkanApplication::FinalizeGraphicsResources() {
-    // 销毁 Vulkan 上下文
-    m_Rhi.destroyAll();
 }

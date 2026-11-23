@@ -41,8 +41,14 @@ void CocoaApplication::CreateMainWindow() {
     NSInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                       NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
 
+    NSRect contentRect =
+        m_HasPreservedFrame
+            ? [NSWindow contentRectForFrameRect:
+                  NSMakeRect(m_PreservedX, m_PreservedY, m_PreservedW, m_PreservedH)
+                                      styleMask:style]
+            : NSMakeRect(0, 0, m_Config.screenWidth, m_Config.screenHeight);
     m_pWindow = [[NSWindow alloc]
-        initWithContentRect:CGRectMake(0, 0, m_Config.screenWidth, m_Config.screenHeight)
+        initWithContentRect:contentRect
                   styleMask:style
                     backing:NSBackingStoreBuffered
                       defer:NO];
@@ -77,6 +83,14 @@ void CocoaApplication::FinalizeGuiPlatform() {
 }
 
 void CocoaApplication::FinalizePlatformResources() {
+    if (m_pWindow) {
+        const NSRect frame = [m_pWindow frame];
+        m_PreservedX = frame.origin.x;
+        m_PreservedY = frame.origin.y;
+        m_PreservedW = frame.size.width;
+        m_PreservedH = frame.size.height;
+        m_HasPreservedFrame = true;
+    }
     [m_pWindow release];
     m_pWindow = nil;
 }
@@ -87,6 +101,21 @@ void CocoaApplication::Tick() {
 }
 
 void CocoaApplication::ProcessEvents() {
+    if (m_HeadlessPacing) {
+        static const bool paced = [] {
+            NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
+            return [defaults stringForKey:@"screenshot"] != nil &&
+                   [defaults stringForKey:@"screenshotWaitFor"] == nil;
+        }();
+        static CFTimeInterval nextTick = 0;
+        if (paced) {
+            const CFTimeInterval now = CACurrentMediaTime();
+            if (now < nextTick) {
+                [NSThread sleepForTimeInterval:nextTick - now];
+            }
+            nextTick = (std::max)(nextTick, now) + 1.0 / 60.0;
+        }
+    }
     while (NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                                untilDate:nil
                                                   inMode:NSDefaultRunLoopMode

@@ -5,6 +5,7 @@ myge_add_vulkan_loader("${PROJECT_SOURCE_DIR}")
 
 add_library(VulkanRHI
     VulkanRHI.cpp
+    VulkanBackend.cpp
     VulkanRHIResources.cpp
     VulkanPipelineStateManager.cpp
     VulkanGraphicsManager.cpp
@@ -15,7 +16,7 @@ add_library(VulkanRHI
     ${imgui_vulkan_backend}
 )
 
-target_link_libraries(VulkanRHI VulkanLoader)
+target_link_libraries(VulkanRHI VulkanLoader Manager)
 target_compile_definitions(VulkanRHI PRIVATE VK_NO_PROTOTYPES)
 if(OS_MACOS)
 target_link_libraries(VulkanRHI
