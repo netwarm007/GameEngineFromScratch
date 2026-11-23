@@ -11,3 +11,5 @@ add_library(DrawSubPass
     ${PROJECT_SOURCE_DIR}/External/src/imgui/imgui_tables.cpp
 )
 target_link_libraries(DrawSubPass PRIVATE ImageDecoders)
+# GuiSubPass names backends via RhiBackendName (M5.1 selection menu).
+target_link_libraries(DrawSubPass PUBLIC RhiStartup)
