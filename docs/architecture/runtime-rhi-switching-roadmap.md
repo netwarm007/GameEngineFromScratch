@@ -684,6 +684,73 @@ baseline (scene restored on the original backend), Billiard physics
 regression must pass, and the switch-complete marker is asserted so the
 matrix cannot pass vacuously.
 
+### M5 execution plan
+
+M5 is gated on M4 human confirmation. Work steps follow the same rule:
+self-check plus CI verification, no human stop between steps; only the
+completed M5 checkpoint requires confirmation, which culminates in deliverable
+acceptance (the pull request).
+
+Maintainer decisions (2026-11-23) shaping M5:
+
+- **UI keeps its current form and style.** The requirement is *no regression*
+  of the existing Viewer UI and docking, not a redesign. Backend selection is a
+  minimal addition in the existing menu pattern (the `调试`/`帮助` main menu bar
+  in `GuiSubPass.cpp`), not a new panel paradigm.
+- **Switch requests execute immediately.** A modal progress indicator blocks
+  user input for the duration of the switch (safer than concurrent interaction),
+  showing state-machine progress and the success/failure/recovery result.
+- **Billiard needs no selection panel.** The ImGui infrastructure is retained
+  (for a future in-game debug interface) but hidden by default.
+- **Installed-distribution verification is best-effort.** The project is
+  incomplete; verify as much as the CI environment allows rather than treating
+  installed-app validation as a hard gate.
+- **Retina/mixed-DPI acceptance carries over existing evidence.** No dedicated
+  real machine is available currently; reference the Vulkan-plan evidence rather
+  than building a new rig.
+
+Constraints carried from M4 and the Viewer UI verification guidance:
+
+- The selection UI drives the same `RhiSwitchController` (frame boundary, one
+  request at a time, explicit results, no fallback); it replaces the diagnostic
+  `--rhi-switch` CLI as the user-facing entry, while the CLI remains for
+  verification runs. Unavailable targets are disabled with a reason from the
+  availability probe; the active backend is shown (window title already carries
+  `<Platform>/<Backend> (<Host>)`).
+- Existing docking/floating layout and GUI interaction state persist across
+  switches: the dock tree is not rebuilt, saved layouts are preserved
+  (`FindWindowSettingsByID`), defaults initialize only when no saved layout
+  exists, and floating panels reposition by desktop coordinates (work position
+  and size, not fixed coordinates or framebuffer pixels) after any window
+  recreation.
+- The modal progress indicator reflects the FirstFrame gate; it neither
+  busy-waits nor false-succeeds on minimized/zero-size windows, and it releases
+  input only after the restored scene presents a frame (or the switch fails and
+  recovery/exit completes).
+
+| Work step | Work | Verification boundary |
+| --- | --- | --- |
+| M5.1: minimal selection and status UI | Add backend selection to the existing Viewer menu pattern: list probe-available backends, mark the active one, disable unavailable targets with a reason; show current backend/host/platform status. No redesign of existing panels; existing UI/docking must not regress. | Headless layout regression (`GuiSubPassLayoutTest`) stays green; native selection→switch smoke; existing panels/docking verified unchanged on real screenshots. |
+| M5.2: immediate switch, modal progress, state preservation | Wire selection to `RhiSwitchController` for immediate execution; a modal progress indicator blocks input during the switch and reports state progress, success, failure, and recovery; preserve docking/floating layout and GUI interaction state across window recreation; failed switches show an explicit error (no fallback). | Native A/B/A with layout/interaction preservation; failure-path UI evidence; modal gate respects minimized/zero-size windows. |
+| M5.3: Billiard composition reuse | Refactor Billiard to the same runtime composition and switch controller, removing duplicated orchestration; retain ImGui infrastructure but hidden by default (no selection panel); preserve Billiard physics-regression behavior. Precursor to the post-M5 Core entry extraction. | Billiard physics regression and switch matrix stay green; no visible panel by default. |
+| M5.4: backend-specific visual and layout acceptance | Per-backend panel visibility/non-overlap/viewport containment after switches; multi-viewport placement and floating input; Retina/mixed-DPI carried over from the Vulkan plan (no new rig). Headless layout regression plus real screenshot inspection per platform/backend. | `GuiSubPassLayoutTest` covers docking/non-overlap/containment/resize/Retina/saved-layout; real Viewer screenshots inspected per backend; Vulkan-plan DPI evidence referenced. |
+| M5.5: acceptance matrix and best-effort installed verification | Integrate the complete directed-transition acceptance matrix with native evidence; generate native installers and verify installed applications launch/switch as far as the CI environment allows (best-effort, not a hard gate); exact-revision three-platform CI; verification records; resolve M5-owned limitation rows. | Full exact-revision three-platform CI; installed-app checks recorded with their limits; M5 checkpoint self-check complete, then human confirmation → deliverable acceptance (PR). |
+
+Decision points settled (maintainer, 2026-11-23):
+
+- Selection UI form: minimal addition in the existing menu pattern; no
+  regression of current UI is the binding requirement.
+- Switch UX: immediate execution with a modal progress indicator blocking input
+  during the switch.
+- Billiard scope: composition reuse only; ImGui retained but hidden by default.
+- Installed verification: best-effort given the incomplete project and unknown
+  CI installed-app capability; not a hard acceptance gate.
+- Retina/DPI: carry over existing Vulkan-plan evidence; no new real-machine rig.
+
+M5.3 (Billiard composition reuse) is the natural precursor to the post-M5 Core
+entry extraction; the System/Core architecture adjustments themselves remain
+after M5 acceptance (see Post-M5 architecture adjustments).
+
 ## Verification and acceptance
 
 - Add focused production-path headless tests for selection, ordering, rejected
