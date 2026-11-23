@@ -27,7 +27,10 @@ done
 test -s "$output_dir/physics-passed"
 window_id=""
 for i in $(seq 1 10); do
-    window_id=$(xwininfo -root -tree 2>/dev/null | grep -m1 '"Billiard' | awk '{print $1}') || true
+    # Match the main window by its live title prefix "Billiard -" (not the
+    # WM_CLASS "BilliardGame"), mirroring the Viewer capture fix so a future
+    # dialog sharing the class cannot be grabbed instead of the scene.
+    window_id=$(xwininfo -root -tree 2>/dev/null | grep -m1 '"Billiard -' | awk '{print $1}') || true
     [ -n "$window_id" ] && break
     sleep 1
 done
