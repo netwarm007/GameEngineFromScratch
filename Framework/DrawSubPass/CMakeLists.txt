@@ -1,3 +1,14 @@
+# GuiSubPass names backends via RhiBackendName (RhiStartup). Full-engine builds
+# define RhiStartup in Framework/Manager first; standalone test configurations
+# (e.g. Test/RHI/Vulkan) add DrawSubPass without Manager, so define a fallback
+# here once to cover every such configuration.
+if(NOT TARGET RhiStartup)
+    add_library(RhiStartup "${CMAKE_CURRENT_SOURCE_DIR}/../Manager/RhiStartup.cpp")
+    target_include_directories(RhiStartup PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/../Manager"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../Interface")
+endif()
+
 add_library(DrawSubPass
     GeometrySubPass.cpp
     GuiSubPass.cpp

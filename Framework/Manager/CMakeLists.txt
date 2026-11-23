@@ -1,7 +1,9 @@
 add_library(AssetIO AssetLoader.cpp)
 
-add_library(RhiStartup RhiStartup.cpp)
-target_include_directories(RhiStartup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+if(NOT TARGET RhiStartup)
+    add_library(RhiStartup RhiStartup.cpp)
+    target_include_directories(RhiStartup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
 
 add_library(SceneResources SceneResourceLoader.cpp)
 target_link_libraries(SceneResources PUBLIC SceneGraph PRIVATE ImageDecoders)
