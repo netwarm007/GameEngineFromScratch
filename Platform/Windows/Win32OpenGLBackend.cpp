@@ -154,6 +154,17 @@ void Win32OpenGLBackend::PresentFrame() {
     SwapBuffers(m_hDC);
 }
 
+void Win32OpenGLBackend::BeginFrame() {
+    // ImGui multi-viewport rendering binds a viewport DC and restores the prior
+    // DC, which can leave the main render context not current on m_hDC after a
+    // switch/recovery. Re-bind it so scene passes render into m_hDC's back
+    // buffer and PresentFrame's SwapBuffers(m_hDC) presents that same buffer;
+    // otherwise the back buffer has the scene but the window stays gray.
+    if (m_hDC && m_RenderContext) {
+        wglMakeCurrent(m_hDC, m_RenderContext);
+    }
+}
+
 int Win32OpenGLBackend::InitializeGraphicsResources() {
     HWND hWnd = (HWND)m_Application.GetMainWindowHandler();
     if (!hWnd) {

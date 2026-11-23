@@ -22,6 +22,7 @@ class Win32OpenGLBackend : _implements_ IRenderBackend {
     int InitializeGuiPlatform() override;
     void FinalizeGuiPlatform() override;
     void PresentFrame() override;
+    void BeginFrame() override;
     void OnSessionActivated() override;
     bool RequiresWindowRecreation() const override { return true; }
 
