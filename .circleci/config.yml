@@ -947,7 +947,7 @@ jobs:
               $resolved = (Resolve-Path $out).Path
               $ext = 'png'; if ($pair.final -eq 'vulkan') { $ext = 'ppm' }
               $png = Join-Path $resolved "viewer-render.$ext"
-              if ($pair.initial -eq 'opengl') {
+              if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
                 $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1'
                 # llvmpipe + switch simulation pauses delay splash completion;
                 # the default 45s gate captured before the main scene loaded.
@@ -961,7 +961,7 @@ jobs:
                 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
                 Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
                 Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                if ($pair.initial -eq 'opengl') {
+                if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
                   Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
                   Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
                   Remove-Item Env:GEFS_SCREENSHOT_GATE_SECONDS -ErrorAction SilentlyContinue
