@@ -684,6 +684,14 @@ baseline (scene restored on the original backend), Billiard physics
 regression must pass, and the switch-complete marker is asserted so the
 matrix cannot pass vacuously.
 
+M4 acceptance is verified at
+[4ea0cf6a](../verification/4ea0cf6a0132100a77c15396e40c07e069d1790d.md):
+full three-platform CI green (Windows three-job split, Linux, macOS), all
+CI-feasible A/B/A pairs restore the scene and physics, failure/recovery
+smokes pass, and the explicit-failure contract is additionally confirmed on
+a real AMD Windows driver (TIM-UMPC). The M4 checkpoint self-check is
+complete; it awaits human confirmation before M5.
+
 ### M5 execution plan
 
 M5 is gated on M4 human confirmation. Work steps follow the same rule:
@@ -788,8 +796,8 @@ after M5 acceptance (see Post-M5 architecture adjustments).
 | Vulkan loader isolation is implemented and headless-tested; native evidence that non-Vulkan startup ignores an absent Vulkan runtime lands with application CLI integration. | M2.4 |
 | Material baking uses the native Utility executable; complete desktop cross-compilation needs an explicit host-tool path before it can be supported. | Follow-on build scope |
 | Backend partial-initialization and static platform/ImGui callback audit is complete (M3.3): ImGui platform backends are per-context, Win32 routing is per-window, and SDL/WGL/GLX cleanup paths are hardened. Repeatable same-backend session replacement is implemented and natively verified (M3.4–M3.6, pipeline 1138). | M3 (resolved) |
-| Same-backend reconstruction invalidates GPU caches and UI pass state through fresh session objects and the session generation (M3.5). Cross-backend invalidation and held-input/queued-event reconciliation remain open. | M4 (M3 portion resolved) |
-| Minimized windows and quit requests during switching need a cancellable, non-busy-wait first-frame/recovery contract. | M4 |
+| Same-backend reconstruction invalidates GPU caches and UI pass state through fresh session objects and the session generation (M3.5). Cross-backend invalidation and held-input/queued-event reconciliation are implemented (M4.2 generation bump + render-convention update; M4.3 stale-event discard + input re-initialization) and natively verified across the A/B/A switch matrix. | M4 (resolved) |
+| Minimized windows and quit requests during switching: the FirstFrame gate waits without busy-looping on minimized/zero-size windows (one check per frame boundary), and failure/recovery exits orderly via ExitRequested (M4.3/M4.4). A user-cancel of an in-flight switch is not exposed (the M5 modal progress indicator blocks input during the switch instead). | M4 (resolved; cancel UX deferred to M5 modal) |
 | Vulkan Retina/mixed-DPI and floating-input acceptance remains open in the Vulkan plan; this roadmap does not resolve or duplicate its evidence. | M5 depends on the Vulkan plan |
 | Complete native switching coverage is not established by current single-backend CI runs. | M5 |
 | Android and WebAssembly are unmaintained (years), disabled, and not verified by CI. Their compile-time paths predate the runtime architecture; reviving them requires refactor/rewrite against the host/backend composition model, not re-enabling the old builds. | Known limitation; follow-on rewrite after M5 |
