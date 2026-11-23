@@ -16,7 +16,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-for i in $(seq 1 24); do
+# GEFS_CAPTURE_WAIT_LOOPS extends the fixed render window (5s per loop,
+# capture at half); switch runs with slow software rasterizers need more
+# time for the splash/main-scene sequence to complete after reconstruction.
+wait_loops=${GEFS_CAPTURE_WAIT_LOOPS:-24}
+for i in $(seq 1 "$wait_loops"); do
     sleep 5
     if ! kill -0 "$viewer_pid" 2>/dev/null; then
         echo "Viewer exited before capture; see viewer.log" >&2
@@ -24,7 +28,7 @@ for i in $(seq 1 24); do
     fi
     if [ -n "${GEFS_SCREENSHOT_WAIT_FOR:-}" ]; then
         if [ -s "$GEFS_SCREENSHOT_WAIT_FOR" ]; then break; fi
-    elif [ "$i" -eq 12 ]; then
+    elif [ "$i" -eq $((wait_loops / 2)) ]; then
         break
     fi
 done

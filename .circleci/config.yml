@@ -1354,7 +1354,9 @@ jobs:
                  grep -q "RHI switch complete: $final" "$out/viewer.log"
                  python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.ppm" --label "linux-switch-$tag" --max-diff-fraction 0.40 --max-high-delta-fraction 0.03 --max-mean-delta 25
                else
-                 LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 240s \
+                 # llvmpipe + switch pauses can push scene loading past the
+                 # default 60s capture window (empty-scene false negative).
+                 LIBGL_ALWAYS_SOFTWARE=1 GEFS_CAPTURE_WAIT_LOOPS=40 timeout --kill-after=5s 240s \
                    xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                    bash scripts/capture_viewer_linux.sh "$out" --rhi "$initial" --rhi-switch "$switches" \
                    > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
