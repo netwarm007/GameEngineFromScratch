@@ -689,7 +689,7 @@ M4 acceptance is verified at
 full three-platform CI green (Windows three-job split, Linux, macOS), all
 CI-feasible A/B/A pairs restore the scene and physics, failure/recovery
 smokes pass, and the explicit-failure contract is additionally confirmed on
-a real AMD Windows driver (TIM-UMPC). The M4 checkpoint self-check is
+a real AMD Windows driver. The M4 checkpoint self-check is
 complete; it awaits human confirmation before M5.
 
 ### M5 execution plan
