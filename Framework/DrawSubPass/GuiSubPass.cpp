@@ -216,7 +216,14 @@ static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64},
 void GuiSubPass::DrawRhiSelectionMenu() {
     if (!m_pRhiSelection) return;
     if (ImGui::BeginMenu((const char*)u8"渲染后端")) {
-        const auto backends = m_pRhiSelection->Backends();
+        // Probe at most once per second: availability probing may enumerate
+        // devices, so avoid running it every frame while the menu is open.
+        const double now = ImGui::GetTime();
+        if (now - m_LastBackendProbe > 1.0) {
+            m_BackendCache = m_pRhiSelection->Backends();
+            m_LastBackendProbe = now;
+        }
+        const auto& backends = m_BackendCache;
         const RhiBackend active = m_pRhiSelection->ActiveBackend();
         const bool switching = m_pRhiSelection->IsSwitching();
         for (const auto& b : backends) {

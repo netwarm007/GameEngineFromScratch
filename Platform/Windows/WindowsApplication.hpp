@@ -18,7 +18,10 @@ class WindowsApplication : public BaseApplication, _implements_ IPlatformHost {
 
     void* GetMainWindowHandler() override { return m_hWnd; };
     void SetWindowTitle(const char* title) override {
-        if (m_hWnd) SetWindowTextA(m_hWnd, title);
+        if (!m_hWnd || !title) return;
+        wchar_t wbuf[512];
+        int n = MultiByteToWideChar(CP_UTF8, 0, title, -1, wbuf, 512);
+        if (n > 0) SetWindowTextW(m_hWnd, wbuf);
     }
 
     void CreateMainWindow() override;

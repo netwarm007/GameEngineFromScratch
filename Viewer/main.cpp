@@ -549,10 +549,10 @@ int main(int argc, char** argv) {
             // switch completes (the title is otherwise static at startup).
             const RhiBackend active = switchController.ActiveBackend();
             const std::string title =
-                std::string("Viewer - ") + RhiStartupPlatformName() + "/" +
+                std::string("Viewer - ") + std::string(RhiStartupPlatformName()) + "/" +
                 std::string(RhiBackendName(active)) + " (" +
-                RhiStartupHostName(active) + ")";
-            platformHost->SetWindowTitle(title.c_str());
+                std::string(RhiStartupHostName(active)) + ")";
+            if (platformHost) platformHost->SetWindowTitle(title.c_str());
         }
         if (switchController.IsSimulationPaused() != rhiSimulationPaused) {
             rhiSimulationPaused = switchController.IsSimulationPaused();

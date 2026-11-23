@@ -34,6 +34,8 @@ class GuiSubPass : public BaseSubPass {
     std::array<Texture2D, 5> m_SceneIcons{};
     IconImageLoader m_LoadIconImage;
     IRhiSelectionProvider* m_pRhiSelection{nullptr};
+    std::vector<RhiBackendAvailability> m_BackendCache;
+    double m_LastBackendProbe{-1.0};
     bool m_SceneIconsLoaded{false};
     const Scene* m_LastScene{nullptr};
     std::weak_ptr<BaseSceneNode> m_SelectedNode;
