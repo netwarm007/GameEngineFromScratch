@@ -94,6 +94,34 @@ reviewable distillation.
   while a needed pipeline is running. Skip markers scan the entire head-commit
   message, subject and body.
 
+### Cross-environment agent collaboration
+
+- Cross-machine agent messaging is **pull-based**: a remote session's messages
+  do not push into your turn; they are visible only when you connect and read.
+  A warning the remote sends while you are idle or down is missed until your
+  next read. Design collaboration around explicit read/poll cycles, not push
+  delivery, and persist state on both sides so a missed message is recoverable.
+- **Idle-await, not task-complete**: while awaiting collaboration, CI, or
+  messages, keep the turn idle *without* calling task_complete. task_complete
+  defers subsequent notifications until a manual ping, presenting as
+  false-death (the agent looks asleep and only wakes when prodded). An idle
+  turn auto-resumes on the completion/message notification. This failure was
+  confirmed independently on two agents (the local driver and the remote
+  Windows verifier); both corrected to idle-await.
+- **Real hardware complements CI**: CI executors run headless, elevated service
+  sessions (no interactive desktop; software rasterizers). A connected
+  real-desktop machine verifies GUI behavior and real GPU driver quirks that CI
+  cannot expose — e.g. an AMD Windows driver lacking swapchain/surface
+  maintenance1, which makes the engine explicitly reject Vulkan startup. Use
+  the remote machine for fast real-driver checks; CI remains the formal
+  multi-platform verification gate.
+- **Extension absence can be real, not a promotion artifact**: before assuming
+  a missing extension was promoted to core, check the Vulkan release summary
+  (maintenance1 is *not* promoted to Vulkan 1.4 core, so a 1.4 driver may truly
+  lack it). A pure extension-string availability check is correct for
+  non-promoted extensions. The probe-and-reject contract must fail explicitly:
+  clear diagnostic, non-zero exit, no crash or hang — verified on real hardware.
+
 ## Part 2 — Current practical notes (re-verify when the dependency changes)
 
 ### CircleCI plan, open-source allowance, and topology
@@ -223,3 +251,25 @@ reviewable distillation.
   SDL2).
 - `ctest -N --show-only=json-v1` emits a `tests[].name` array; `-C` is accepted
   on single-config generators. The testsuite suites rely on both.
+
+### AHP remote session connection (cross-machine collaboration)
+
+- **Depends on:** Copilot CLI 1.0.114 + Agent Host Protocol (AHP). **Re-verify
+  when:** the CLI or AHP connection model changes.
+- `copilot --connect <session-id>` opens a remote AHP session. Non-interactive
+  `-p` is **not** supported for remote steering ("requires an interactive
+  terminal"); drive it under a pseudo-terminal (pty) to send prompts and capture
+  the rendered reply.
+- The session picker source tabs are All → Local → Remote; raw AHP session IDs
+  do not match in the picker, so navigate to Remote and select the live session
+  (arrow keys + Enter). Navigation timing/state varies and is fragile after a
+  host restart; input drafts persist across connections, and a lone Enter
+  submits a persisted draft. An empty prompt connects read-only to view history.
+- AHP **compute IDs** (`mc://<uuid>`) identify remote hosts and are distinct from
+  session IDs; the connection registry lives in settings.json under
+  `ahpEnvironment.outgoingConnections` (name + hostUrl + connected). A session
+  mirrored from a remote compute is readable as summary metadata locally; its
+  full turn history is fetched only on connect.
+- Because messaging is pull-based (see Part 1), schedule explicit reads of the
+  remote session rather than expecting inbound notifications; keep a durable
+  state summary on each side so either can resume after a restart.
