@@ -27,5 +27,8 @@ _Interface_ IRhiSelectionProvider {
     virtual bool IsSwitching() = 0;
     // Human-readable status / last error for the progress and error UI.
     virtual std::string SwitchStatus() = 0;
+    // Consume a pending switch-failure event for a persistent error dialog.
+    // Returns true once per failure (filling msg); false when none pending.
+    virtual bool ConsumeSwitchFailure(std::string& msg) = 0;
 };
 }  // namespace My

@@ -260,18 +260,22 @@ void GuiSubPass::DrawRhiSelectionMenu() {
 void GuiSubPass::DrawSwitchProgress() {
     if (!m_pRhiSelection) return;
     const bool switching = m_pRhiSelection->IsSwitching();
-    // Open the modal progress popup when a switch begins; it blocks input
-    // behind it for the duration of the switch (safer than concurrent edits).
-    if (switching && !m_SwitchWasActive) {
+    // Progress modal: open while a switch is in progress (blocks input behind
+    // it), close once it completes.
+    if (switching && !m_SwitchModalOpen) {
         ImGui::OpenPopup((const char*)u8"切换渲染后端");
+        m_SwitchModalOpen = true;
     }
-    if (!switching && m_SwitchWasActive) {
-        m_SwitchResult = m_pRhiSelection->SwitchStatus();
-        if (!m_SwitchResult.empty()) {
-            ImGui::OpenPopup((const char*)u8"切换失败");
-        }
+    // Failure dialog driven by the controller's event queue, NOT per-frame edge
+    // detection: a synchronous switch+recovery can complete within one frame
+    // boundary, so edge detection misses it. The event persists until consumed
+    // and the dialog stays open until dismissed, whenever the GUI next renders.
+    std::string failMsg;
+    if (m_pRhiSelection->ConsumeSwitchFailure(failMsg)) {
+        m_SwitchResult = failMsg;
+        m_ShowSwitchError = true;
+        ImGui::OpenPopup((const char*)u8"切换失败");
     }
-    m_SwitchWasActive = switching;
 
     const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -280,20 +284,26 @@ void GuiSubPass::DrawSwitchProgress() {
         ImGui::TextUnformatted((const char*)u8"正在切换渲染后端，请稍候…");
         const std::string st = m_pRhiSelection->SwitchStatus();
         if (!st.empty()) ImGui::TextWrapped("%s", st.c_str());
-        if (!switching) ImGui::CloseCurrentPopup();
-        ImGui::EndPopup();
-    }
-    // Explicit failure dialog (no silent fallback); recovery is reported.
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal((const char*)u8"切换失败", nullptr,
-            ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextWrapped((const char*)u8"渲染后端切换失败：%s", m_SwitchResult.c_str());
-        ImGui::TextUnformatted((const char*)u8"已保留或恢复原后端。");
-        if (ImGui::Button((const char*)u8"确定")) {
-            m_SwitchResult.clear();
+        if (!switching) {
+            m_SwitchModalOpen = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
+    }
+    // Explicit failure dialog (no silent fallback); recovery is reported.
+    if (m_ShowSwitchError) {
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal((const char*)u8"切换失败", nullptr,
+                ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextWrapped((const char*)u8"渲染后端切换失败：%s", m_SwitchResult.c_str());
+            ImGui::TextUnformatted((const char*)u8"已保留或恢复原后端。");
+            if (ImGui::Button((const char*)u8"确定")) {
+                m_ShowSwitchError = false;
+                m_SwitchResult.clear();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
     }
 }
 

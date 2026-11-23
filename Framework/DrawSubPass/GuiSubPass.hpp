@@ -38,7 +38,6 @@ class GuiSubPass : public BaseSubPass {
     std::vector<RhiBackendAvailability> m_BackendCache;
     double m_LastBackendProbe{-1.0};
     bool m_SwitchModalOpen{false};
-    bool m_SwitchWasActive{false};
     bool m_ShowSwitchError{false};
     std::string m_SwitchResult;
     bool m_SceneIconsLoaded{false};

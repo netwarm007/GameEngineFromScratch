@@ -345,6 +345,9 @@ int main(int argc, char** argv) {
         std::string SwitchStatus() override {
             return controller ? controller->LastError() : std::string();
         }
+        bool ConsumeSwitchFailure(std::string& msg) override {
+            return controller && controller->ConsumeSwitchFailure(msg);
+        }
     };
     ViewerRhiSelection rhiSelection;
     rhiSelection.initial = *selection.backend;

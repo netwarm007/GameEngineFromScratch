@@ -213,13 +213,24 @@ void RhiSwitchController::RecoverPrevious(RhiBackend previous,
         // The failed switch is reported even when recovery succeeds.
         m_LastError = "switch failed: " + switchError + "; recovered " +
                       std::string(RhiBackendName(previous));
+        m_HasSwitchFailure = true;
+        m_SwitchFailureMsg = m_LastError;
         m_State = RhiSwitchState::FirstFrame;
         return;
     }
     m_LastError = "switch failed: " + switchError + "; recovery failed: " +
                   m_LastError;
+    m_HasSwitchFailure = true;
+    m_SwitchFailureMsg = m_LastError;
     std::cerr << "RHI switch: " << m_LastError << "; exiting orderly\n";
     m_State = RhiSwitchState::ExitRequested;
+}
+
+bool RhiSwitchController::ConsumeSwitchFailure(std::string& msg) {
+    if (!m_HasSwitchFailure) return false;
+    msg = m_SwitchFailureMsg;
+    m_HasSwitchFailure = false;
+    return true;
 }
 
 bool RhiSwitchController::ConsumeFramePlanDirty() {
