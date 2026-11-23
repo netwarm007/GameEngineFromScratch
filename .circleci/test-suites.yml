@@ -12,20 +12,21 @@
 # `circleci testsuite run`, so the suite commands stay portable.
 ---
 name: engine-windows
+# The testsuite CLI executes suite commands through bash (Git Bash) on
+# Windows as well, so this uses the same shell syntax as engine-unix.
 discover: |
-  $dir = if ($env:GEFS_CTEST_DIR) { $env:GEFS_CTEST_DIR } else { 'build' }
-  $labelArgs = @()
-  if ($env:GEFS_CTEST_LABEL) { $labelArgs = @('-L', $env:GEFS_CTEST_LABEL) }
-  $json = ctest --test-dir $dir -C Debug -N --show-only=json-v1 @labelArgs | Out-String
-  ($json | ConvertFrom-Json).tests | ForEach-Object { $_.name }
+  dir="${GEFS_CTEST_DIR:-build}"
+  label_args=()
+  if [ -n "$GEFS_CTEST_LABEL" ]; then label_args=(-L "$GEFS_CTEST_LABEL"); fi
+  ctest --test-dir "$dir" -C Debug -N "${label_args[@]}" |
+    sed -n 's/^[[:space:]]*Test[[:space:]]*#[0-9]*:[[:space:]]*//p'
 run: |
-  $dir = if ($env:GEFS_CTEST_DIR) { $env:GEFS_CTEST_DIR } else { 'build' }
-  $labelArgs = @()
-  if ($env:GEFS_CTEST_LABEL) { $labelArgs = @('-L', $env:GEFS_CTEST_LABEL) }
-  $pattern = '^(' + ('<< test.atoms >>' -replace ' ', '|') + ')$'
-  ctest --test-dir $dir -C Debug --output-on-failure `
-    --output-junit '<< outputs.junit >>' -R $pattern @labelArgs
-  exit $LASTEXITCODE
+  dir="${GEFS_CTEST_DIR:-build}"
+  label_args=()
+  if [ -n "$GEFS_CTEST_LABEL" ]; then label_args=(-L "$GEFS_CTEST_LABEL"); fi
+  pattern="^($(printf '%s' '<< test.atoms >>' | tr ' ' '|'))$"
+  ctest --test-dir "$dir" -C Debug --output-on-failure \
+    --output-junit "<< outputs.junit >>" -R "$pattern" "${label_args[@]}"
 options:
   store-test-results: true
 ---
