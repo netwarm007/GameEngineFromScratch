@@ -213,6 +213,43 @@ static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64},
     }
 }
 
+void GuiSubPass::DrawRhiSelectionMenu() {
+    if (!m_pRhiSelection) return;
+    if (ImGui::BeginMenu((const char*)u8"渲染后端")) {
+        const auto backends = m_pRhiSelection->Backends();
+        const RhiBackend active = m_pRhiSelection->ActiveBackend();
+        const bool switching = m_pRhiSelection->IsSwitching();
+        for (const auto& b : backends) {
+            const bool isActive = (b.backend == active);
+            const bool available =
+                (b.state == RhiAvailability::ReadyForInitialization);
+            std::string label(RhiBackendName(b.backend));
+            const bool disabled = !available || (switching && !isActive);
+            if (disabled) ImGui::BeginDisabled();
+            if (ImGui::MenuItem(label.c_str(), nullptr, isActive)) {
+                if (!isActive && available) {
+                    m_pRhiSelection->RequestSwitch(b.backend);
+                }
+            }
+            if (disabled) ImGui::EndDisabled();
+            if (!available &&
+                ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                ImGui::SetTooltip("%s",
+                                  b.reason.empty() ? "unavailable" : b.reason.c_str());
+            }
+        }
+        ImGui::Separator();
+        if (switching) {
+            ImGui::TextUnformatted((const char*)u8"切换中…");
+        }
+        const std::string status = m_pRhiSelection->SwitchStatus();
+        if (!status.empty()) {
+            ImGui::TextWrapped("%s", status.c_str());
+        }
+        ImGui::EndMenu();
+    }
+}
+
 void GuiSubPass::Draw(Frame& frame) {
     if (ImGui::GetCurrentContext()) {
         const std::array<TextureHandler, 4> sources{
@@ -313,6 +350,7 @@ void GuiSubPass::Draw(Frame& frame) {
                 }
                 ImGui::EndMenu();
             }
+            DrawRhiSelectionMenu();
             if (ImGui::BeginMenu((const char*)u8"帮助"))
             {
 			    ImGui::MenuItem((const char*)u8"关于本应用", NULL, &show_app_about);

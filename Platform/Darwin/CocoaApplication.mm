@@ -76,6 +76,13 @@ void CocoaApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
     }
 }
 
+void CocoaApplication::SetWindowTitle(const char* title) {
+    if (!m_pWindow || !title) return;
+    @autoreleasepool {
+        [m_pWindow setTitle:[NSString stringWithUTF8String:title]];
+    }
+}
+
 void CocoaApplication::FinalizeGuiPlatform() {
     if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
         ImGui_ImplOSX_Shutdown();

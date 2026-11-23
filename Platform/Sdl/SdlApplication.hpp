@@ -30,6 +30,9 @@ class SdlApplication : public BaseApplication, _implements_ IPlatformHost {
     }
 
     void* GetMainWindowHandler() override { return m_pWindow; };
+    void SetWindowTitle(const char* title) override {
+        if (m_pWindow) SDL_SetWindowTitle(m_pWindow, title);
+    }
     void CreateMainWindow() override;
 
     SDL_Window* GetSdlWindow() { return m_pWindow; }

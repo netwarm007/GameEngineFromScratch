@@ -17,6 +17,9 @@ class WindowsApplication : public BaseApplication, _implements_ IPlatformHost {
     void ProcessEvents() override;
 
     void* GetMainWindowHandler() override { return m_hWnd; };
+    void SetWindowTitle(const char* title) override {
+        if (m_hWnd) SetWindowTextA(m_hWnd, title);
+    }
 
     void CreateMainWindow() override;
 

@@ -301,6 +301,20 @@ void LinuxHost::GetFramebufferSize(uint32_t& width, uint32_t& height) {
     }
 }
 
+void LinuxHost::SetWindowTitle(const char* title) {
+    if (!title) return;
+    if (m_Mode == Mode::Sdl) {
+        if (m_pWindow) SDL_SetWindowTitle(m_pWindow, title);
+        return;
+    }
+    if (m_pConn && m_XWindow != XCB_WINDOW_NONE) {
+        xcb_change_property(m_pConn, XCB_PROP_MODE_REPLACE, m_XWindow,
+                            XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8,
+                            strlen(title), title);
+        xcb_flush(m_pConn);
+    }
+}
+
 int LinuxHost::InitializeGuiPlatform() {
     if (m_Mode == Mode::Sdl) {
         // The SDL OpenGL backend binds ImGui_ImplSDL2 itself.

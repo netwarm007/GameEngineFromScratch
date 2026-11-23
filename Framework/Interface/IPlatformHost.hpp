@@ -44,5 +44,10 @@ _Interface_ IPlatformHost {
     // window/drawable is created): the dual-mode Linux host selects its
     // windowing mode here. Default no-op for single-mode hosts.
     virtual void OnBackendSwitch(RhiBackend target) {}
+
+    // M5.1: update the native window title (e.g. to reflect the active
+    // backend after a switch). Default no-op for hosts without a titleable
+    // window.
+    virtual void SetWindowTitle(const char* title) {}
 };
 }  // namespace My
