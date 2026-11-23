@@ -106,9 +106,15 @@ void RhiSwitchController::ProcessFrameBoundary() {
 }
 
 int RhiSwitchController::ActivateBackend(RhiBackend target) {
+    // If a prior failed switch already tore the window down, recreate it even
+    // for a backend that normally keeps its window (e.g. recovering to D3D12
+    // after an OpenGL switch failed post-retirement): initializing on a missing
+    // window would otherwise fail and defeat recovery.
+    const bool windowAbsent = !m_Composition.application->GetMainWindowHandler();
     const bool recreateWindow =
         m_Composition.recreateWindowOnReconstruction ||
-        RhiBackendRequiresWindowRecreation(target);
+        RhiBackendRequiresWindowRecreation(target) ||
+        windowAbsent;
 
     // Clear the host's borrowed session pointers before retirement: window
     // teardown routes resize messages through them.
