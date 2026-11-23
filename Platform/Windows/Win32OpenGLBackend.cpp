@@ -80,8 +80,17 @@ void Win32OpenGLBackend::OnSessionActivated() {
 
     auto& platform = ImGui::GetPlatformIO();
     auto* mainViewport = ImGui::GetMainViewport();
-    if (!platform.Renderer_RenderWindow || mainViewport->RendererUserData) return;
+    if (!platform.Renderer_RenderWindow) return;
     HWND hWnd = (HWND)m_Application.GetMainWindowHandler();
+    // After a window-recreating switch the previous WglViewportData still
+    // references the destroyed HWND/DC (the ImGui context survives
+    // reconstruction). Refresh it so the main viewport renders to the new
+    // window instead of presenting a stale drawable (Finding 4: a recovered
+    // OpenGL window stayed unpainted at the class background brush).
+    if (mainViewport->RendererUserData) {
+        delete static_cast<WglViewportData*>(mainViewport->RendererUserData);
+        mainViewport->RendererUserData = nullptr;
+    }
     mainViewport->RendererUserData =
         new WglViewportData{hWnd, m_hDC, platform.Renderer_RenderWindow};
 

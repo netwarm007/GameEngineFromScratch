@@ -544,6 +544,10 @@ int main(int argc, char** argv) {
             // window was gone must not stay pressed in the new session.
             inputManager.Initialize();
             graphicsManager = composed.composition->graphicsManager.get();
+            // The switch built a fresh GraphicsManager/GuiSubPass; re-bind the
+            // selection provider so the backend menu and switch-failure dialog
+            // remain reachable on the new instance (Finding 5).
+            graphicsManager->SetRhiSelectionProvider(&rhiSelection);
             pipelineStateManager =
                 composed.composition->pipelineStateManager.get();
             root.SetFramePlan(rhiSimulationPaused ? buildPausedFramePlan()
@@ -574,6 +578,7 @@ int main(int argc, char** argv) {
                     break;
                 }
                 graphicsManager = composed.composition->graphicsManager.get();
+                graphicsManager->SetRhiSelectionProvider(&rhiSelection);
                 pipelineStateManager =
                     composed.composition->pipelineStateManager.get();
                 root.SetFramePlan(buildFramePlan());
