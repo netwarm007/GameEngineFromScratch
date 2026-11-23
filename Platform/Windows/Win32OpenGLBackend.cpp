@@ -93,6 +93,8 @@ void Win32OpenGLBackend::OnSessionActivated() {
     }
     mainViewport->RendererUserData =
         new WglViewportData{hWnd, m_hDC, platform.Renderer_RenderWindow};
+    fprintf(stderr, "[WGL] OnSessionActivated main viewport refreshed hwnd=%p dc=%p render=%p\n",
+            (void*)hWnd, (void*)m_hDC, (void*)platform.Renderer_RenderWindow);
 
     platform.Renderer_CreateWindow = [](ImGuiViewport* viewport) {
         auto* main = static_cast<WglViewportData*>(ImGui::GetMainViewport()->RendererUserData);
@@ -143,15 +145,41 @@ void Win32OpenGLBackend::OnSessionActivated() {
     };
     platform.Renderer_SwapBuffers = [](ImGuiViewport* viewport, void*) {
         auto* data = static_cast<WglViewportData*>(viewport->RendererUserData);
-        if (data && data->rendered && !SwapBuffers(data->dc)) {
-            fprintf(stderr, "Cannot present ImGui WGL viewport\n");
+        static unsigned s_swapCount = 0;
+        const bool verbose = s_swapCount < 3 || (s_swapCount % 120) == 0;
+        if (data && data->rendered) {
+            if (verbose) {
+                fprintf(stderr, "[WGL] viewport #%u SwapBuffers enter dc=%p hwnd=%p main=%d\n",
+                        s_swapCount, (void*)data->dc, (void*)data->window,
+                        (int)(viewport == ImGui::GetMainViewport()));
+            }
+            const BOOL ok = SwapBuffers(data->dc);
+            if (verbose || !ok) {
+                fprintf(stderr, "[WGL] viewport #%u SwapBuffers=%d\n", s_swapCount, (int)ok);
+            }
         }
+        ++s_swapCount;
     };
 }
 
 void Win32OpenGLBackend::PresentFrame() {
     // Present the back buffer to the screen since rendering is complete.
-    SwapBuffers(m_hDC);
+    // Diagnostic heartbeat (Finding 4): log the first few presents, a periodic
+    // beat, and any failure so a stall inside SwapBuffers is distinguishable
+    // from a stall earlier in the frame Tick.
+    static unsigned s_presentCount = 0;
+    const bool verbose = s_presentCount < 3 || (s_presentCount % 120) == 0;
+    if (verbose) {
+        fprintf(stderr, "[WGL] PresentFrame #%u enter dc=%p hwnd=%p\n",
+                s_presentCount, (void*)m_hDC,
+                (void*)m_Application.GetMainWindowHandler());
+    }
+    const BOOL ok = SwapBuffers(m_hDC);
+    if (verbose || !ok) {
+        fprintf(stderr, "[WGL] PresentFrame #%u SwapBuffers=%d\n",
+                s_presentCount, (int)ok);
+    }
+    ++s_presentCount;
 }
 
 int Win32OpenGLBackend::InitializeGraphicsResources() {
@@ -292,5 +320,7 @@ int Win32OpenGLBackend::InitializeGraphicsResources() {
     if (GLAD_WGL_EXT_swap_control) {
         wglSwapIntervalEXT(1);
     }
+    fprintf(stderr, "[WGL] InitializeGraphicsResources ok hwnd=%p dc=%p rc=%p\n",
+            (void*)hWnd, (void*)m_hDC, (void*)m_RenderContext);
     return 0;
 }
