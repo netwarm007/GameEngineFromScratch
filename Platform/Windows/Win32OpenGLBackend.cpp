@@ -166,6 +166,14 @@ void Win32OpenGLBackend::PresentFrame() {
                 (void*)m_Application.GetMainWindowHandler(), pf, (int)db,
                 (void*)wglGetCurrentContext(), (void*)wglGetCurrentDC());
     }
+    // ImGui multi-viewport rendering at frame end makes a viewport context
+    // current and does not restore the main one, so re-bind m_hDC/m_RenderContext
+    // immediately before swapping (BeginFrame alone is too early on Windows,
+    // where multi-viewport is enabled); otherwise SwapBuffers presents the wrong
+    // context's buffer and the main window stays gray.
+    if (m_hDC && m_RenderContext) {
+        wglMakeCurrent(m_hDC, m_RenderContext);
+    }
     const BOOL ok = SwapBuffers(m_hDC);
     if (s_presentCount < 3 || !ok) {
         fprintf(stderr, "[WGL] PresentFrame #%u SwapBuffers=%d\n", s_presentCount, (int)ok);
