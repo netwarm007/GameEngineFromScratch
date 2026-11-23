@@ -40,7 +40,12 @@ fi
 
 window_id=""
 for i in $(seq 1 10); do
-    window_id=$(xwininfo -root -tree 2>/dev/null | grep -m1 '"Viewer' | awk '{print $1}') || true
+    # Match the main render window by its title prefix "Viewer -" (the live
+    # backend title), NOT the WM_CLASS "Viewer": after a failed switch the
+    # failure dialog is a separate SDL viewport window titled "切换失败" that
+    # shares the "Viewer" WM_CLASS and stacks topmost, so a class/prefix match
+    # on "Viewer" alone grabs the 150x164 dialog instead of the scene.
+    window_id=$(xwininfo -root -tree 2>/dev/null | grep -m1 '"Viewer -' | awk '{print $1}') || true
     [ -n "$window_id" ] && break
     sleep 1
 done
