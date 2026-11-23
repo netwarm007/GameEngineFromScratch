@@ -308,6 +308,12 @@ void GuiSubPass::DrawSwitchProgress() {
 }
 
 void GuiSubPass::Draw(Frame& frame) {
+    // The provider is re-bound to the manager only after a switch completes,
+    // which is later than this sub-pass's construction (the new GraphicsManager
+    // builds OverlayPass before main.cpp re-binds). Refresh from the manager each
+    // frame so the backend menu and switch-failure dialog follow the live
+    // manager rather than a null cached at construction (Finding 5).
+    m_pRhiSelection = m_pGraphicsManager->GetRhiSelectionProvider();
     if (ImGui::GetCurrentContext()) {
         const std::array<TextureHandler, 4> sources{
             frame.frameContext.globalShadowMap.handler, frame.frameContext.shadowMap.handler,
