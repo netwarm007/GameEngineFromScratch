@@ -1370,11 +1370,13 @@ jobs:
              # ICD, the switch fails after retirement and the previous backend
              # is reconstructed once; the failed switch is still reported.
              out="screenshots/switch-recovery"; mkdir -p "$out"
-             VK_ICD_FILENAMES=/nonexistent/icd.json timeout --kill-after=5s 240s \
+             # -screenshot is consumed only by the Vulkan RHI; the recovered
+             # backend here is OpenGL, so use the host-agnostic external X11
+             # capture script (same mechanism as the OpenGL-final pair runs).
+             VK_ICD_FILENAMES=/nonexistent/icd.json LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 240s \
                xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
-               ./build/Viewer/Viewer --rhi opengl --rhi-switch vulkan@60 -screenshot "$PWD/$out/viewer-render.png" \
-               > "$out/viewer.log" 2>&1 || true
-             test -s "$out/viewer-render.png"
+               bash scripts/capture_viewer_linux.sh "$out" --rhi opengl --rhi-switch vulkan@60 \
+               > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
              grep -q "recovering opengl" "$out/viewer.log"
              grep -q "RHI switch complete: opengl" "$out/viewer.log"
              python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label linux-switch-recovery
