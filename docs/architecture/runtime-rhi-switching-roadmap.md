@@ -732,3 +732,82 @@ matrix cannot pass vacuously.
 Keep open limitations here with their owning checkpoint and resolve/update them
 in the same implementation change. Per-revision evidence belongs in verification
 records, not a rolling result index.
+
+## Post-M5 architecture adjustments (maintainer decisions, 2026-11-23)
+
+Decided in discussion after M4; implementation is gated on M5 acceptance.
+Each phase verifies through the full three-platform CI matrix before the next.
+
+### Service layer (Framework/System/) and two-tier module contract
+
+The frame pipeline is not a universal module contract. Split IRuntimeModule:
+
+- `IRuntimeModule` keeps the common lifecycle only: `Initialize`/`Finalize`
+  (and the borrowed application pointer). No `Tick`.
+- New `IFrameModule : _inherits_ IRuntimeModule` adds `Tick() = 0` — the
+  contract for genuinely frame-driven modules: rendering, animation solving,
+  physics simulation, game logic (`IGameLogic` rebases onto it), debug draw,
+  and audio when implemented.
+- The frame plan takes `IFrameModule` only. Services leave the plan; their
+  current Ticks are all no-ops, so removal is behavior-preserving (the CI
+  matrix is the regression net).
+
+New `Framework/System/` parallel to `Manager/`, holding application-lifetime,
+demand/event-driven services:
+
+- `System/Memory/`: MemorySystem, MemoryManager, and the allocator stack
+  (Frame/Ring/Slab/Buddy/Linear/SizeClass/Routing/ThreadCache/Tracking
+  allocators, PmrAdapter, AllocatorUtils). Allocators belong with the memory
+  service, not Algorism (which holds scene/geometry algorithms).
+- `System/Input/`: InputManager (event-driven).
+- `System/IO/`: AssetLoader (synchronous IO service; parsers stay in
+  Framework/Parser as codecs).
+
+Stay in `Manager/` by semantic role, not empty-Tick mechanics:
+
+- SceneManager: the scene graph is the game world's structural description;
+  scene change carries the passage of time and is Tick-bound. It may gain a
+  real Tick (scene animation/interpolation) later.
+- PhysicsManager: driven by in-game time; the empty base-class Tick is
+  acceptable (the Bullet subclass ticks).
+- PipelineStateManager: session-level service (rebuilt on switch), base
+  lifecycle contract only.
+
+The classification criterion is the semantic role (time-driven simulation /
+rendering vs demand-driven service) and lifetime (app vs session), not whether
+a Tick body happens to be empty today.
+
+### Engine entry (Runtime/ renamed Core/) and app-as-consumer
+
+The application shell (bootstrap, main loop, switch orchestration, capture
+contract, System ownership) moves out of the apps into the engine. The
+existing `Runtime/` composition layer is extended and renamed `Core/`;
+Framework stays the subsystem library, Platform stays the hosts.
+
+Target app content: an `IGameLogic` implementation, an AppDescriptor (title,
+default scene, configuration, asset search paths, provided frame modules),
+and the app's own assets. Engine-common assets are already staged separately
+(M1).
+
+Phased for stability (maintainer: 分步实现，稳妥为上):
+
+1. Extract the shared orchestration duplicated in Viewer/Billiard main into a
+   Core engine runner parameterized by the AppDescriptor. Apps keep a ~10-line
+   main forwarding to `EngineMain(argc, argv, descriptor)`. Executables and
+   behavior unchanged; the existing matrices verify equivalence.
+2. Optional later polish: the engine entry library provides `main()` itself
+   (app exports a logic factory symbol); Core absorbs platform entry quirks
+   (WinMain/SDL_main/emscripten).
+
+The frame-plan ownership question dissolves under the two-tier contract: Core
+assembles the canonical plan from the frame modules the app provides; the app
+does not specify the plan. Implementation must verify that the Viewer and
+Billiard frame-module subsequences agree (their historical differences were
+service modules with no-op Ticks).
+
+### Sequencing relative to other follow-ups
+
+These adjustments and the legacy desktop application-class retirement
+candidate (Known limitations) are separate post-acceptance efforts; none is
+part of M4/M5 scope. The retirement candidate removes the sibling-inheritance
+maintenance surface that the System/Core split does not itself address.
