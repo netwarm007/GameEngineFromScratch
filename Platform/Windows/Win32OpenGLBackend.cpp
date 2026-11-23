@@ -170,9 +170,14 @@ void Win32OpenGLBackend::PresentFrame() {
     static unsigned s_presentCount = 0;
     const bool verbose = s_presentCount < 3 || (s_presentCount % 120) == 0;
     if (verbose) {
-        fprintf(stderr, "[WGL] PresentFrame #%u enter dc=%p hwnd=%p\n",
+        fprintf(stderr,
+                "[WGL] PresentFrame #%u enter dc=%p hwnd=%p tid=%lu curRC=%p "
+                "curDC=%p expectRC=%p\n",
                 s_presentCount, (void*)m_hDC,
-                (void*)m_Application.GetMainWindowHandler());
+                (void*)m_Application.GetMainWindowHandler(),
+                (unsigned long)GetCurrentThreadId(),
+                (void*)wglGetCurrentContext(), (void*)wglGetCurrentDC(),
+                (void*)m_RenderContext);
     }
     const BOOL ok = SwapBuffers(m_hDC);
     if (verbose || !ok) {

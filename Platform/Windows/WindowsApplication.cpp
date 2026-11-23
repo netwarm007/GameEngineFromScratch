@@ -21,7 +21,10 @@ void WindowsApplication::CreateMainWindow() {
 
     // fill in the struct with the needed information
     wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
+    // CS_OWNDC gives each window a private DC whose pixel format persists, which
+    // WGL double-buffered presentation requires; without it a recreated window's
+    // SwapBuffers can return TRUE yet present nothing (Finding 4).
+    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.lpfnWndProc = m_fWindowProc;
     wc.hInstance = m_hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
