@@ -3,6 +3,7 @@
 #include "IRenderBackend.hpp"
 
 #include <tchar.h>
+#include <dwmapi.h>
 
 #include "InputManager.hpp"
 #include "imgui_impl_win32.h"
@@ -66,6 +67,11 @@ void WindowsApplication::CreateMainWindow() {
     // SetForegroundWindow activates it so DWM composes the surface.
     UpdateWindow(m_hWnd);
     SetForegroundWindow(m_hWnd);
+    // Force DWM to compose the newly (re)created window's surface before the
+    // first SwapBuffers: a recovery window can otherwise present before its
+    // redirection surface is realized, so SwapBuffers(swapInterval=1) waits on
+    // a vblank that never arrives (gray window + intermittent stall).
+    DwmFlush();
 }
 
 int WindowsApplication::InitializeGuiPlatform() {
