@@ -8,7 +8,7 @@
 namespace My {
 // Legacy compile-time application: the Win32 host plus an owned Vulkan
 // backend. The runtime path composes the host and backend separately.
-class VulkanApplication : public WindowsApplication, public IRenderBackend {
+class VulkanApplication : public WindowsApplication, _implements_ IRenderBackend {
    public:
     VulkanApplication();
     explicit VulkanApplication(GfxConfiguration& cfg);

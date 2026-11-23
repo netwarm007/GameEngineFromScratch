@@ -14,7 +14,7 @@ class IPlatformHost;
 // (M4.1 detachment). Platform specifics (native surface creation and the
 // ImGui secondary-viewport surface callback) are injected by the pairing
 // host/factory, so one class serves Win32, XCB, and Cocoa.
-class VulkanBackend : public IRenderBackend {
+class VulkanBackend : _implements_ IRenderBackend {
    public:
     using SurfaceFactory =
         std::function<VkResult(vk::Instance instance, VkSurfaceKHR& surface)>;

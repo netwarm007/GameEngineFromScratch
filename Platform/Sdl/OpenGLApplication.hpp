@@ -6,7 +6,7 @@
 namespace My {
 // Legacy compile-time application: the SDL host plus an owned OpenGL
 // backend. The runtime path composes the host and backend separately.
-class OpenGLApplication : public SdlApplication, public IRenderBackend {
+class OpenGLApplication : public SdlApplication, _implements_ IRenderBackend {
    public:
     OpenGLApplication();
     explicit OpenGLApplication(GfxConfiguration& cfg);

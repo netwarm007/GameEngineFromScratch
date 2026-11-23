@@ -8,7 +8,7 @@
 namespace My {
 // Legacy compile-time application: the Cocoa host plus an owned Vulkan
 // backend. The runtime path composes the host and backend separately.
-class VulkanApplication : public CocoaApplication, public IRenderBackend {
+class VulkanApplication : public CocoaApplication, _implements_ IRenderBackend {
    public:
     VulkanApplication();
     explicit VulkanApplication(GfxConfiguration& cfg);

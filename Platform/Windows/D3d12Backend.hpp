@@ -12,7 +12,7 @@ class IPlatformHost;
 // Session-owned D3D12 backend lifecycle against a persistent Win32 host
 // (M4.1 detachment). The host keeps window ownership and event routing;
 // this object owns the RHI and its native state.
-class D3d12Backend : public IRenderBackend {
+class D3d12Backend : _implements_ IRenderBackend {
    public:
     D3d12Backend(IApplication& application, IPlatformHost& platform);
 

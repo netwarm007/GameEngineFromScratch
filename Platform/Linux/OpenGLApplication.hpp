@@ -6,7 +6,7 @@
 #include "XcbApplication.hpp"
 
 namespace My {
-class OpenGLApplication : public XcbApplication, public IRenderBackend {
+class OpenGLApplication : public XcbApplication, _implements_ IRenderBackend {
    public:
     using XcbApplication::XcbApplication;
 

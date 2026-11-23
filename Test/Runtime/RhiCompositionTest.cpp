@@ -22,7 +22,7 @@ void Expect(bool condition, const char* message) {
     }
 }
 
-class TestScenes : public ISceneManager {
+class TestScenes : _implements_ ISceneManager {
    public:
     int Initialize() override { return 0; }
     void Finalize() override {}
@@ -37,13 +37,13 @@ class TestScenes : public ISceneManager {
     std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(const std::string&) const override { return {}; }
 };
 
-class TestAssets : public IAssetReader {
+class TestAssets : _implements_ IAssetReader {
    public:
     Buffer SyncOpenAndReadBinary(const char*) override { return {}; }
     std::string SyncOpenAndReadTextFileToString(const char*) override { return {}; }
 };
 
-class CountingApplication : public BaseApplication, public IRenderBackend {
+class CountingApplication : public BaseApplication, _implements_ IRenderBackend {
    public:
     static int live;
     CountingApplication() { ++live; }
@@ -63,7 +63,7 @@ class CountingApplication : public BaseApplication, public IRenderBackend {
 };
 int CountingApplication::live = 0;
 
-class ThrowingPipelineManager : public IPipelineStateManager {
+class ThrowingPipelineManager : _implements_ IPipelineStateManager {
    public:
     ThrowingPipelineManager() {
         throw std::runtime_error("pipeline construction failed");

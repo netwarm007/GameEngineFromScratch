@@ -16,7 +16,7 @@ class IInputManager;
 // (M4.1 detachment). Creates the Metal drawable on the host window; the
 // Metal RHI itself is owned by the graphics manager, and the drawable is
 // window-owned, so the native teardown hooks have no state to release.
-class MetalBackend : public IRenderBackend {
+class MetalBackend : _implements_ IRenderBackend {
    public:
     MetalBackend(IApplication& application, IPlatformHost& platform,
                  std::function<IInputManager*()> inputProvider);

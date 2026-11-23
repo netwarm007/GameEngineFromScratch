@@ -11,7 +11,7 @@
 namespace My {
 // Legacy compile-time application: the XCB host plus an owned Vulkan
 // backend. The runtime path composes the host and backend separately.
-class VulkanApplication : public XcbApplication, public IRenderBackend {
+class VulkanApplication : public XcbApplication, _implements_ IRenderBackend {
    public:
     VulkanApplication();
     explicit VulkanApplication(GfxConfiguration& cfg);

@@ -15,7 +15,7 @@ class IPlatformHost;
 // the native window. Window creation flags and the window accessor are
 // injected so the backend pairs with either the legacy SDL application or
 // the dual-mode Linux host.
-class SDLOpenGLBackend : public IRenderBackend {
+class SDLOpenGLBackend : _implements_ IRenderBackend {
    public:
     SDLOpenGLBackend(IApplication& application, IPlatformHost& platform,
                      std::function<SDL_Window*()> windowProvider,

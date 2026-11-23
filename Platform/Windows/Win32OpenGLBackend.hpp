@@ -11,7 +11,7 @@ class IPlatformHost;
 // Session-owned Win32 OpenGL (WGL) backend lifecycle against a persistent
 // Win32 host (M4.1 detachment). The pixel format is window-lifetime bound,
 // so reconstruction/switching recreates the native window.
-class Win32OpenGLBackend : public IRenderBackend {
+class Win32OpenGLBackend : _implements_ IRenderBackend {
    public:
     Win32OpenGLBackend(IApplication& application, IPlatformHost& platform);
 

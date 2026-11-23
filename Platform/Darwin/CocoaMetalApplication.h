@@ -9,7 +9,7 @@ namespace My {
 // Legacy compile-time application: the Cocoa host plus an owned Metal
 // backend, with headless capture pacing. The runtime path composes the host
 // and backend separately.
-class CocoaMetalApplication : public CocoaApplication, public IRenderBackend {
+class CocoaMetalApplication : public CocoaApplication, _implements_ IRenderBackend {
    public:
     CocoaMetalApplication();
     explicit CocoaMetalApplication(GfxConfiguration& cfg);

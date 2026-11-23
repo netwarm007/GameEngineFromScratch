@@ -23,7 +23,7 @@ void Expect(bool condition, const char* message) {
     }
 }
 
-class TestScenes : public ISceneManager {
+class TestScenes : _implements_ ISceneManager {
    public:
     int Initialize() override { return 0; }
     void Finalize() override {}
@@ -38,13 +38,13 @@ class TestScenes : public ISceneManager {
     std::weak_ptr<SceneObjectGeometry> GetSceneGeometryObject(const std::string&) const override { return {}; }
 };
 
-class TestAssets : public IAssetReader {
+class TestAssets : _implements_ IAssetReader {
    public:
     Buffer SyncOpenAndReadBinary(const char*) override { return {}; }
     std::string SyncOpenAndReadTextFileToString(const char*) override { return {}; }
 };
 
-class StubPipelineManager : public IPipelineStateManager {
+class StubPipelineManager : _implements_ IPipelineStateManager {
    public:
     int Initialize() override { return 0; }
     void Finalize() override {}
@@ -79,7 +79,7 @@ class TestApp : public BaseApplication {
     }
 };
 
-class StubPlatform : public IPlatformHost {
+class StubPlatform : _implements_ IPlatformHost {
    public:
     explicit StubPlatform(std::vector<std::string>& events) : m_Events(events) {}
     std::vector<RhiBackend> switchNotifications;
@@ -96,7 +96,7 @@ class StubPlatform : public IPlatformHost {
     std::vector<std::string>& m_Events;
 };
 
-class StubBackend : public IRenderBackend {
+class StubBackend : _implements_ IRenderBackend {
    public:
     StubBackend(std::vector<std::string>& events, bool recreateWindow)
         : m_Events(events), m_RecreateWindow(recreateWindow) {}

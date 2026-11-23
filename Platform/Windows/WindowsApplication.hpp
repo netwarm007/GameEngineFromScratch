@@ -7,7 +7,7 @@
 #include "IPlatformHost.hpp"
 
 namespace My {
-class WindowsApplication : public BaseApplication, public IPlatformHost {
+class WindowsApplication : public BaseApplication, _implements_ IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 

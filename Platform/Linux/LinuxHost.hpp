@@ -13,7 +13,7 @@ namespace My {
 // (Vulkan, tracked GUI limits). The object persists across backend switches;
 // switching modes recreates the native window through the usual teardown/
 // creation hooks. XCB ImGui parity remains the tracked follow-on.
-class LinuxHost : public BaseApplication, public IPlatformHost {
+class LinuxHost : public BaseApplication, _implements_ IPlatformHost {
    public:
     enum class Mode { Sdl, Xcb };
 

@@ -6,7 +6,7 @@
 OBJC_CLASS(NSWindow);
 
 namespace My {
-class CocoaApplication : public BaseApplication, public IPlatformHost {
+class CocoaApplication : public BaseApplication, _implements_ IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 

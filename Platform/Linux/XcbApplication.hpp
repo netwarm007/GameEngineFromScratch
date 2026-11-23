@@ -6,7 +6,7 @@
 #include "IPlatformHost.hpp"
 
 namespace My {
-class XcbApplication : public BaseApplication, public IPlatformHost {
+class XcbApplication : public BaseApplication, _implements_ IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 

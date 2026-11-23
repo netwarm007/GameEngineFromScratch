@@ -6,7 +6,7 @@
 #include "IPlatformHost.hpp"
 
 namespace My {
-class SdlApplication : public BaseApplication, public IPlatformHost {
+class SdlApplication : public BaseApplication, _implements_ IPlatformHost {
    public:
     using BaseApplication::BaseApplication;
 

@@ -6,7 +6,7 @@
 namespace My {
 // Legacy compile-time application: the Win32 host plus an owned WGL OpenGL
 // backend. The runtime path composes the host and backend separately.
-class OpenGLApplication : public WindowsApplication, public IRenderBackend {
+class OpenGLApplication : public WindowsApplication, _implements_ IRenderBackend {
    public:
     OpenGLApplication() : m_Backend(*this, *this) {}
     explicit OpenGLApplication(GfxConfiguration& cfg)

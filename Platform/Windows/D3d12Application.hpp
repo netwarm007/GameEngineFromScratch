@@ -8,7 +8,7 @@ namespace My {
 // Legacy compile-time application: the Win32 host plus an owned D3D12
 // backend. The runtime path composes the host and backend separately; the
 // backend logic lives in D3d12Backend for both paths.
-class D3d12Application : public WindowsApplication, public IRenderBackend {
+class D3d12Application : public WindowsApplication, _implements_ IRenderBackend {
    public:
     D3d12Application() : m_Backend(*this, *this) { BindFenceFactory(); }
     explicit D3d12Application(GfxConfiguration& cfg)
