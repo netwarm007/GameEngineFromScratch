@@ -3,6 +3,10 @@
 ## Status and scope
 
 This is the maintained, incremental implementation roadmap.
+Engineering lessons from this effort are curated in
+[engineering-lessons.md](../engineering-lessons.md), split into long-term
+principles and version-dependent practical notes (the latter must be
+re-verified when their dependency changes).
 The user requested a path from compile-time selection to building all supported
 backends for a platform and switching between them at runtime, and authorized
 stepwise implementation after reviewing the draft. M0 adopts the first-release
