@@ -58,7 +58,14 @@ void WindowsApplication::CreateMainWindow() {
     m_hDc = GetDC(m_hWnd);
 
     // display the window on the screen
-    ShowWindow(m_hWnd, SW_SHOW);
+    ShowWindow(m_hWnd, SW_SHOWNORMAL);
+    // Force the window to realize and compose: a recreated (recovery) window
+    // shown with SW_SHOW alone can stay un-realized for DWM, so its OpenGL
+    // drawable never receives a vblank and SwapBuffers(swapInterval=1) blocks
+    // forever (gray window + stalled main loop). UpdateWindow paints it and
+    // SetForegroundWindow activates it so DWM composes the surface.
+    UpdateWindow(m_hWnd);
+    SetForegroundWindow(m_hWnd);
 }
 
 int WindowsApplication::InitializeGuiPlatform() {
