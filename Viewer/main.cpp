@@ -227,6 +227,13 @@ int main(int argc, char** argv) {
             openglScreenshotGate = gate;
     }
     const auto openglCaptureStart = std::chrono::steady_clock::now();
+    // Software rasterizers plus switch pauses can delay scene loading past
+    // the default gate; switch runs extend it via the environment.
+    int openglGateSeconds = 45;
+    if (const auto* gateEnv = std::getenv("GEFS_SCREENSHOT_GATE_SECONDS")) {
+        const int parsed = std::atoi(gateEnv);
+        if (parsed > 0 && parsed <= 600) openglGateSeconds = parsed;
+    }
 #endif
     const std::string windowTitle = std::string("Viewer - ") +
         std::string(RhiStartupPlatformName()) + "/" +
@@ -545,7 +552,7 @@ int main(int argc, char** argv) {
             const bool ready =
                 openglScreenshotGate.empty()
                     ? std::chrono::steady_clock::now() - openglCaptureStart >=
-                          std::chrono::seconds(45)
+                          std::chrono::seconds(openglGateSeconds)
                     : std::filesystem::exists(openglScreenshotGate);
             if (ready) {
                 if (CaptureViewerFrame(app, openglScreenshotPath)) {

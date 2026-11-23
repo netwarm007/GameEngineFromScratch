@@ -942,7 +942,12 @@ jobs:
               $resolved = (Resolve-Path $out).Path
               $ext = 'png'; if ($pair.final -eq 'vulkan') { $ext = 'ppm' }
               $png = Join-Path $resolved "viewer-render.$ext"
-              if ($pair.initial -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+              if ($pair.initial -eq 'opengl') {
+                $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1'
+                # llvmpipe + switch simulation pauses delay splash completion;
+                # the default 45s gate captured before the main scene loaded.
+                $env:GEFS_SCREENSHOT_GATE_SECONDS = '120'
+              }
               $env:GEFS_SCREENSHOT_PATH = $png
               $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.switches) -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
               try {
@@ -954,6 +959,7 @@ jobs:
                 if ($pair.initial -eq 'opengl') {
                   Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
                   Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                  Remove-Item Env:GEFS_SCREENSHOT_GATE_SECONDS -ErrorAction SilentlyContinue
                 }
               }
               if (-not (Test-Path $png)) {
