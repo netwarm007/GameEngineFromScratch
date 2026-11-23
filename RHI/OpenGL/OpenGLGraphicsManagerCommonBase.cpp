@@ -981,6 +981,12 @@ void OpenGLGraphicsManagerCommonBase::BeginShadowMap(
     // Always check that our framebuffer is ok
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
+        fprintf(stderr,
+                "[ShadowMap] FBO incomplete status=0x%x handler=%u w=%u h=%u "
+                "layer=%d lightType=%d\n",
+                (unsigned)status, (uint32_t)pShadowmap->handler,
+                pShadowmap->width, pShadowmap->height, layer_index,
+                (int)frame.lightInfo.lights[light_index].lightType);
         assert(0);
     }
 
