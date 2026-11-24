@@ -18,6 +18,8 @@
 #include "RhiComposition.hpp"
 #include "Framework/Manager/RuntimeRoot.hpp"
 #include "RhiSwitch.hpp"
+#include "RhiFrameDriver.hpp"
+#include "IRhiSelectionProvider.hpp"
 
 #include <iostream>
 #if defined(OS_WINDOWS)
@@ -288,7 +290,6 @@ int main(int argc, char** argv) {
 
     // Scheduled cross-backend switches for verification runs (M4):
     // --rhi-switch backend@frame,backend@frame,...
-    struct RhiSwitchStep { RhiBackend backend; int frame; };
     std::vector<RhiSwitchStep> rhiSwitchSchedule;
     for (size_t i = 0; i + 1 < rhiOptions.applicationArguments.size(); ++i) {
         if (std::string(rhiOptions.applicationArguments[i]) != "--rhi-switch") {
@@ -324,6 +325,33 @@ int main(int argc, char** argv) {
     }
     BaseApplication& app = *composed.composition->application;
     IGraphicsManager* graphicsManager = composed.composition->graphicsManager.get();
+    // M5.1: backend-selection UI provider. Bound to the switch controller after
+    // it is constructed (below); until then the menu shows the startup backend.
+    struct ViewerRhiSelection : public IRhiSelectionProvider {
+        RhiSwitchController* controller = nullptr;
+        RhiBackend initial;
+        std::vector<RhiBackendAvailability> Backends() override {
+            return ProbeRhiStartupAvailability();
+        }
+        RhiBackend ActiveBackend() override {
+            return controller ? controller->ActiveBackend() : initial;
+        }
+        int RequestSwitch(RhiBackend target) override {
+            return controller ? static_cast<int>(controller->Request(target)) : -1;
+        }
+        bool IsSwitching() override {
+            return controller && controller->IsSimulationPaused();
+        }
+        std::string SwitchStatus() override {
+            return controller ? controller->LastError() : std::string();
+        }
+        bool ConsumeSwitchFailure(std::string& msg) override {
+            return controller && controller->ConsumeSwitchFailure(msg);
+        }
+    };
+    ViewerRhiSelection rhiSelection;
+    rhiSelection.initial = *selection.backend;
+    graphicsManager->SetRhiSelectionProvider(&rhiSelection);
     IPipelineStateManager* pipelineStateManager =
         composed.composition->pipelineStateManager.get();
     auto* platformHost = dynamic_cast<IPlatformHost*>(&app);
@@ -475,9 +503,31 @@ int main(int argc, char** argv) {
     RhiSwitchController switchController(
         root, *composed.composition, config, sceneManager, assetLoader,
         [&root] { return root.GetMemorySystem(); });
-    size_t nextSwitch = 0;
-    int rhiFrameCount = 0;
-    bool rhiSimulationPaused = false;
+    rhiSelection.controller = &switchController;
+    RhiFrameDriver frameDriver(
+        switchController, root, *composed.composition, app, inputManager,
+        sceneManager, assetLoader, graphicsManager, pipelineStateManager,
+        [&root] { return root.GetMemorySystem(); }, rhiSwitchSchedule,
+        rhiReconstructCycles,
+        RhiFrameDriver::Hooks{
+            [&](bool paused) {
+                root.SetFramePlan(paused ? buildPausedFramePlan()
+                                         : buildFramePlan());
+            },
+            [&]() {
+                // The switch built a fresh GraphicsManager/GuiSubPass; re-bind
+                // the selection provider so the backend menu and switch-failure
+                // dialog remain reachable (Finding 5), and reflect the active
+                // backend in the window title (M5.1).
+                graphicsManager->SetRhiSelectionProvider(&rhiSelection);
+                const RhiBackend active = switchController.ActiveBackend();
+                const std::string title =
+                    std::string("Viewer - ") +
+                    std::string(RhiStartupPlatformName()) + "/" +
+                    std::string(RhiBackendName(active)) + " (" +
+                    std::string(RhiStartupHostName(active)) + ")";
+                if (platformHost) platformHost->SetWindowTitle(title.c_str());
+            }});
 #else
     ret = app.Initialize();
     if (ret != 0) {
@@ -494,56 +544,7 @@ int main(int argc, char** argv) {
 #else
     while (!app.IsQuit()) {
 #if defined(MYGE_RUNTIME_RHI)
-        root.Tick();
-        ++rhiFrameCount;
-        while (nextSwitch < rhiSwitchSchedule.size() &&
-               rhiFrameCount >= rhiSwitchSchedule[nextSwitch].frame) {
-            const auto target = rhiSwitchSchedule[nextSwitch].backend;
-            const auto result = switchController.Request(target);
-            std::cout << "RHI switch request " << RhiBackendName(target)
-                      << ": " << RhiSwitchRequestResultName(result) << '\n';
-            ++nextSwitch;
-        }
-        switchController.ProcessFrameBoundary();
-        if (switchController.ExitRequested()) {
-            std::cerr << "RHI switch: " << switchController.LastError() << '\n';
-            app.RequestQuit();
-            ret = 1;
-        }
-        if (switchController.ConsumeFramePlanDirty()) {
-            // Reconcile held input: keys physically released while the
-            // window was gone must not stay pressed in the new session.
-            inputManager.Initialize();
-            graphicsManager = composed.composition->graphicsManager.get();
-            pipelineStateManager =
-                composed.composition->pipelineStateManager.get();
-            root.SetFramePlan(rhiSimulationPaused ? buildPausedFramePlan()
-                                                  : buildFramePlan());
-        }
-        if (switchController.IsSimulationPaused() != rhiSimulationPaused) {
-            rhiSimulationPaused = switchController.IsSimulationPaused();
-            root.SetFramePlan(rhiSimulationPaused ? buildPausedFramePlan()
-                                                  : buildFramePlan());
-        }
-        if (rhiReconstructCycles > 0) {
-            const int cycles = rhiReconstructCycles;
-            rhiReconstructCycles = 0;
-            for (int i = 0; i < cycles; ++i) {
-                if (ReconstructRhiSession(
-                        root, *composed.composition, sceneManager, assetLoader,
-                        [&root] { return root.GetMemorySystem(); }) != 0) {
-                    std::cerr << "RHI session reconstruction failed\n";
-                    app.RequestQuit();
-                    break;
-                }
-                graphicsManager = composed.composition->graphicsManager.get();
-                pipelineStateManager =
-                    composed.composition->pipelineStateManager.get();
-                root.SetFramePlan(buildFramePlan());
-                std::cout << "RHI session reconstructed (cycle " << i + 1
-                          << ")\n";
-            }
-        }
+        if (frameDriver.Tick() != 0) ret = 1;
 #else
         app.Tick();
 #endif

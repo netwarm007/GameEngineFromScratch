@@ -13,7 +13,8 @@ class OverlayPass : public BaseDrawPass {
         m_DrawSubPasses.push_back(std::make_shared<DebugOverlaySubPass>(
             m_pGraphicsManager, m_pPipelineStateManager));
         m_DrawSubPasses.push_back(std::make_shared<GuiSubPass>(
-            m_pGraphicsManager, m_pPipelineStateManager, LoadGuiIconImage));
+            m_pGraphicsManager, m_pPipelineStateManager, LoadGuiIconImage,
+            m_pGraphicsManager->GetRhiSelectionProvider()));
     }
 };
 }  // namespace My

@@ -80,8 +80,17 @@ void Win32OpenGLBackend::OnSessionActivated() {
 
     auto& platform = ImGui::GetPlatformIO();
     auto* mainViewport = ImGui::GetMainViewport();
-    if (!platform.Renderer_RenderWindow || mainViewport->RendererUserData) return;
+    if (!platform.Renderer_RenderWindow) return;
     HWND hWnd = (HWND)m_Application.GetMainWindowHandler();
+    // After a window-recreating switch the previous WglViewportData still
+    // references the destroyed HWND/DC (the ImGui context survives
+    // reconstruction). Refresh it so the main viewport renders to the new
+    // window instead of presenting a stale drawable (Finding 4: a recovered
+    // OpenGL window stayed unpainted at the class background brush).
+    if (mainViewport->RendererUserData) {
+        delete static_cast<WglViewportData*>(mainViewport->RendererUserData);
+        mainViewport->RendererUserData = nullptr;
+    }
     mainViewport->RendererUserData =
         new WglViewportData{hWnd, m_hDC, platform.Renderer_RenderWindow};
 
@@ -141,8 +150,26 @@ void Win32OpenGLBackend::OnSessionActivated() {
 }
 
 void Win32OpenGLBackend::PresentFrame() {
-    // Present the back buffer to the screen since rendering is complete.
+    // ImGui multi-viewport rendering at frame end makes a viewport context
+    // current and does not restore the main one, so re-bind m_hDC/m_RenderContext
+    // immediately before swapping (BeginFrame alone is too early on Windows,
+    // where multi-viewport is enabled); otherwise SwapBuffers presents the wrong
+    // context's buffer and the main window stays gray.
+    if (m_hDC && m_RenderContext) {
+        wglMakeCurrent(m_hDC, m_RenderContext);
+    }
     SwapBuffers(m_hDC);
+}
+
+void Win32OpenGLBackend::BeginFrame() {
+    // ImGui multi-viewport rendering binds a viewport DC and restores the prior
+    // DC, which can leave the main render context not current on m_hDC after a
+    // switch/recovery. Re-bind it so scene passes render into m_hDC's back
+    // buffer and PresentFrame's SwapBuffers(m_hDC) presents that same buffer;
+    // otherwise the back buffer has the scene but the window stays gray.
+    if (m_hDC && m_RenderContext) {
+        wglMakeCurrent(m_hDC, m_RenderContext);
+    }
 }
 
 int Win32OpenGLBackend::InitializeGraphicsResources() {

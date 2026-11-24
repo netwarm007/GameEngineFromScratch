@@ -7,6 +7,8 @@
 #include "IPipelineStateManager.hpp"
 
 namespace My {
+class IRhiSelectionProvider;
+
 _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
    public:
     IGraphicsManager() = default;
@@ -14,6 +16,10 @@ _Interface_ IGraphicsManager : _inherits_ IRuntimeModule {
     virtual void Draw() = 0;
     virtual void Present() = 0;
     virtual bool RenderTargetHasTopLeftOrigin() const { return false; }
+
+    // M5.1: optional backend-selection UI provider (Viewer runtime builds).
+    virtual void SetRhiSelectionProvider(IRhiSelectionProvider*) {}
+    virtual IRhiSelectionProvider* GetRhiSelectionProvider() { return nullptr; }
 
     virtual void ResizeCanvas(int32_t width, int32_t height) = 0;
 

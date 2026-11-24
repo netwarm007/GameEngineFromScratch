@@ -101,3 +101,14 @@ void SDLOpenGLBackend::PresentFrame() {
         SDL_GL_SwapWindow(window);
     }
 }
+
+void SDLOpenGLBackend::BeginFrame() {
+    // ImGui multi-viewport rendering makes a viewport's GL context current and
+    // does not restore the main one, so after a switch/recovery (or any frame
+    // with extra viewports) the main context may no longer be current. Re-bind
+    // it before the scene passes run; otherwise shadow-map FBO checks return 0
+    // (no current context) and the recovery frame aborts.
+    if (SDL_Window* window = m_WindowProvider()) {
+        if (m_hContext) SDL_GL_MakeCurrent(window, m_hContext);
+    }
+}

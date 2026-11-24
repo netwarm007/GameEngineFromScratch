@@ -237,3 +237,21 @@ void XcbApplication::GetFramebufferSize(uint32_t& width, uint32_t& height) {
 
     free(geom);
 }
+
+void XcbApplication::SetWindowTitle(const char* title) {
+    if (!m_pConn || m_XWindow == XCB_WINDOW_NONE || !title) return;
+    const size_t len = strlen(title);
+    xcb_change_property(m_pConn, XCB_PROP_MODE_REPLACE, m_XWindow,
+                        XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8, len, title);
+    auto net = xcb_intern_atom_reply(
+        m_pConn, xcb_intern_atom(m_pConn, 0, 12, "_NET_WM_NAME"), nullptr);
+    auto utf8 = xcb_intern_atom_reply(
+        m_pConn, xcb_intern_atom(m_pConn, 0, 11, "UTF8_STRING"), nullptr);
+    if (net && utf8) {
+        xcb_change_property(m_pConn, XCB_PROP_MODE_REPLACE, m_XWindow,
+                            net->atom, utf8->atom, 8, len, title);
+    }
+    free(net);
+    free(utf8);
+    xcb_flush(m_pConn);
+}

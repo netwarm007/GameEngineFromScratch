@@ -759,7 +759,7 @@ static const NSUInteger GEFSMaxBuffersInFlight = GfxConfiguration::kMaxInFlightF
 
     if (renderPassDescriptor != nil) {
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(
-            frame.clearColor[0], frame.clearColor[1], frame.clearColor[2], frame.clearColor[3]);
+            frame.clearColor[0], frame.clearColor[1], frame.clearColor[2], 1.0f);
         if (frame.clearRT) {
             renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
             renderPassDescriptor.depthAttachment.loadAction = MTLLoadActionClear;

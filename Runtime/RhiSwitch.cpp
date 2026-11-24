@@ -1,5 +1,6 @@
 #include "RhiSwitch.hpp"
 
+#include <cstdlib>
 #include <iostream>
 #include <utility>
 
@@ -85,6 +86,7 @@ void RhiSwitchController::ProcessFrameBoundary() {
         }
         if (width > 0 && height > 0) {
             m_State = RhiSwitchState::Running;
+            m_LastError.clear();
             std::cout << "RHI switch complete: "
                       << RhiBackendName(m_Composition.backend) << '\n';
         }
@@ -104,9 +106,15 @@ void RhiSwitchController::ProcessFrameBoundary() {
 }
 
 int RhiSwitchController::ActivateBackend(RhiBackend target) {
+    // If a prior failed switch already tore the window down, recreate it even
+    // for a backend that normally keeps its window (e.g. recovering to D3D12
+    // after an OpenGL switch failed post-retirement): initializing on a missing
+    // window would otherwise fail and defeat recovery.
+    const bool windowAbsent = !m_Composition.application->GetMainWindowHandler();
     const bool recreateWindow =
         m_Composition.recreateWindowOnReconstruction ||
-        RhiBackendRequiresWindowRecreation(target);
+        RhiBackendRequiresWindowRecreation(target) ||
+        windowAbsent;
 
     // Clear the host's borrowed session pointers before retirement: window
     // teardown routes resize messages through them.
@@ -114,6 +122,21 @@ int RhiSwitchController::ActivateBackend(RhiBackend target) {
     m_Root.RetireSessionForReconstruction(recreateWindow);
     m_Composition.graphicsManager.reset();
     m_Composition.pipelineStateManager.reset();
+
+    // Verification-only failure injection (GEFS_RHI_SWITCH_FAIL_ONCE=1): force
+    // a single post-retirement failure to exercise recovery and the error UI.
+    // Self-clearing so subsequent switches succeed; never affects normal runs.
+    if (const char* failOnce = std::getenv("GEFS_RHI_SWITCH_FAIL_ONCE");
+        failOnce && failOnce[0] == '1') {
+#ifdef _WIN32
+        _putenv_s("GEFS_RHI_SWITCH_FAIL_ONCE", "");
+#else
+        unsetenv("GEFS_RHI_SWITCH_FAIL_ONCE");
+#endif
+        m_LastError = "GEFS_RHI_SWITCH_FAIL_ONCE: injected ActivateBackend failure";
+        std::cerr << "RHI switch: " << m_LastError << '\n';
+        return -1;
+    }
 
     auto backendResult = m_BackendFactory(target, *m_Composition.application);
     if (!backendResult.backend) {
@@ -190,13 +213,24 @@ void RhiSwitchController::RecoverPrevious(RhiBackend previous,
         // The failed switch is reported even when recovery succeeds.
         m_LastError = "switch failed: " + switchError + "; recovered " +
                       std::string(RhiBackendName(previous));
+        m_HasSwitchFailure = true;
+        m_SwitchFailureMsg = m_LastError;
         m_State = RhiSwitchState::FirstFrame;
         return;
     }
     m_LastError = "switch failed: " + switchError + "; recovery failed: " +
                   m_LastError;
+    m_HasSwitchFailure = true;
+    m_SwitchFailureMsg = m_LastError;
     std::cerr << "RHI switch: " << m_LastError << "; exiting orderly\n";
     m_State = RhiSwitchState::ExitRequested;
+}
+
+bool RhiSwitchController::ConsumeSwitchFailure(std::string& msg) {
+    if (!m_HasSwitchFailure) return false;
+    msg = m_SwitchFailureMsg;
+    m_HasSwitchFailure = false;
+    return true;
 }
 
 bool RhiSwitchController::ConsumeFramePlanDirty() {

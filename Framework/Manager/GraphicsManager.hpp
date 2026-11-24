@@ -35,6 +35,13 @@ class GraphicsManager : _implements_ IGraphicsManager {
 
     void ResizeCanvas(int32_t width, int32_t height) override;
 
+    void SetRhiSelectionProvider(IRhiSelectionProvider* provider) override {
+        m_pRhiSelectionProvider = provider;
+    }
+    IRhiSelectionProvider* GetRhiSelectionProvider() override {
+        return m_pRhiSelectionProvider;
+    }
+
     void SetPipelineState(const std::shared_ptr<PipelineState>& pipelineState,
                           const Frame& frame) override {}
 
@@ -113,6 +120,7 @@ class GraphicsManager : _implements_ IGraphicsManager {
 
    protected:
     uint64_t m_nSceneRevision{0};
+    IRhiSelectionProvider* m_pRhiSelectionProvider{nullptr};
     uint32_t m_nFrameIndex{0};
 
     std::vector<Frame> m_Frames;

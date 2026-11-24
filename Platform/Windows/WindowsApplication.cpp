@@ -3,6 +3,7 @@
 #include "IRenderBackend.hpp"
 
 #include <tchar.h>
+#include <dwmapi.h>
 
 #include "InputManager.hpp"
 #include "imgui_impl_win32.h"
@@ -21,7 +22,10 @@ void WindowsApplication::CreateMainWindow() {
 
     // fill in the struct with the needed information
     wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
+    // CS_OWNDC gives each window a private DC whose pixel format persists, which
+    // WGL double-buffered presentation requires; without it a recreated window's
+    // SwapBuffers can return TRUE yet present nothing (Finding 4).
+    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.lpfnWndProc = m_fWindowProc;
     wc.hInstance = m_hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -55,7 +59,19 @@ void WindowsApplication::CreateMainWindow() {
     m_hDc = GetDC(m_hWnd);
 
     // display the window on the screen
-    ShowWindow(m_hWnd, SW_SHOW);
+    ShowWindow(m_hWnd, SW_SHOWNORMAL);
+    // Force the window to realize and compose: a recreated (recovery) window
+    // shown with SW_SHOW alone can stay un-realized for DWM, so its OpenGL
+    // drawable never receives a vblank and SwapBuffers(swapInterval=1) blocks
+    // forever (gray window + stalled main loop). UpdateWindow paints it and
+    // SetForegroundWindow activates it so DWM composes the surface.
+    UpdateWindow(m_hWnd);
+    SetForegroundWindow(m_hWnd);
+    // Force DWM to compose the newly (re)created window's surface before the
+    // first SwapBuffers: a recovery window can otherwise present before its
+    // redirection surface is realized, so SwapBuffers(swapInterval=1) waits on
+    // a vblank that never arrives (gray window + intermittent stall).
+    DwmFlush();
 }
 
 int WindowsApplication::InitializeGuiPlatform() {

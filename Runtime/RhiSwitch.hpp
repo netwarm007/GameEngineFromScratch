@@ -66,6 +66,12 @@ class RhiSwitchController {
     // The session modules changed; the caller must rebuild its frame plan.
     bool ConsumeFramePlanDirty();
 
+    // Consume a pending switch-failure event (failed switch, whether recovered
+    // or exiting). The GUI shows a persistent error dialog from this event queue
+    // rather than per-frame edge detection, which misses synchronous switches.
+    // Returns true once per failure, filling msg; false when none pending.
+    bool ConsumeSwitchFailure(std::string& msg);
+
    private:
     // Returns 0 on success; on failure the session is absent and the error
     // is recorded. Never recovers internally.
@@ -88,6 +94,8 @@ class RhiSwitchController {
     RhiBackend m_PendingTarget = RhiBackend::OpenGL;
     bool m_FramePlanDirty = false;
     std::string m_LastError;
+    bool m_HasSwitchFailure = false;
+    std::string m_SwitchFailureMsg;
 };
 
 }  // namespace My

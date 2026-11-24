@@ -935,6 +935,11 @@ jobs:
               @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12'; billiard=$true },
               @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl'; billiard=$true }
             )
+            # The failure modal's dimming overlay grays the whole captured frame
+            # (same root cause as the macOS/Linux recovery tests); suppress it so
+            # the matrix captures the clean restored scene. The dialog UI itself
+            # is verified separately on real hardware.
+            $env:GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG = '1'
             foreach ($pair in $pairs) {
               $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
               $out = "screenshots/switch/$tag"
@@ -942,7 +947,7 @@ jobs:
               $resolved = (Resolve-Path $out).Path
               $ext = 'png'; if ($pair.final -eq 'vulkan') { $ext = 'ppm' }
               $png = Join-Path $resolved "viewer-render.$ext"
-              if ($pair.initial -eq 'opengl') {
+              if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
                 $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1'
                 # llvmpipe + switch simulation pauses delay splash completion;
                 # the default 45s gate captured before the main scene loaded.
@@ -956,7 +961,7 @@ jobs:
                 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
                 Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
                 Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                if ($pair.initial -eq 'opengl') {
+                if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
                   Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
                   Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
                   Remove-Item Env:GEFS_SCREENSHOT_GATE_SECONDS -ErrorAction SilentlyContinue
@@ -1381,7 +1386,7 @@ jobs:
              # -screenshot is consumed only by the Vulkan RHI; the recovered
              # backend here is OpenGL, so use the host-agnostic external X11
              # capture script (same mechanism as the OpenGL-final pair runs).
-             VK_ICD_FILENAMES=/nonexistent/icd.json LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 240s \
+             VK_ICD_FILENAMES=/nonexistent/icd.json LIBGL_ALWAYS_SOFTWARE=1 GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 timeout --kill-after=5s 240s \
                xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                bash scripts/capture_viewer_linux.sh "$out" --rhi opengl --rhi-switch vulkan@60 \
                > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
@@ -1905,6 +1910,7 @@ jobs:
              # reconstructed once and the failed switch is reported.
              out="screenshots/switch-recovery"; mkdir -p "$out"
              VK_DRIVER_FILES=/nonexistent/icd.json VK_ICD_FILENAMES=/nonexistent/icd.json \
+               GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 \
                "$APP/Contents/MacOS/Viewer" --rhi metal --rhi-switch vulkan@60 \
                -screenshot "$PWD/$out/viewer-render.png" -screenshotDelay 60 -screenshotFrame 480 \
                > "$out/viewer.log" 2>&1 &

@@ -17,6 +17,8 @@ class CocoaApplication : public BaseApplication, _implements_ IPlatformHost {
 
     void* GetMainWindowHandler() override;
 
+    void SetWindowTitle(const char* title) override;
+
     void CreateMainWindow() override;
 
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override;

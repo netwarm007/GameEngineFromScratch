@@ -32,6 +32,7 @@ class XcbApplication : public BaseApplication, _implements_ IPlatformHost {
     }
 
     xcb_connection_t* GetXcbConnection() { return m_pConn; }
+    void SetWindowTitle(const char* title) override;
 
    protected:
     Display *m_pDisplay = nullptr;
