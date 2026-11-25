@@ -10,6 +10,7 @@
 // GEFS_REQUIRE_WM=1, turning "no WM" into a failure.
 #include "Platform/Sdl/SdlApplication.hpp"
 
+#include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 

@@ -11,6 +11,7 @@
 // manager and sets GEFS_REQUIRE_WM=1, which turns "no WM" into a failure.
 #include "Platform/Linux/XcbApplication.hpp"
 
+#include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <xcb/xcb.h>
@@ -45,13 +46,13 @@ bool WmRunning(Display* dpy) {
     return running;
 }
 
-struct Geometry {
+struct WinRect {
     int x = 0, y = 0;
     unsigned width = 0, height = 0;
 };
 
-Geometry ClientRootGeometry(Display* dpy, xcb_window_t win) {
-    Geometry g;
+WinRect ClientRootGeometry(Display* dpy, xcb_window_t win) {
+    WinRect g;
     int absX = 0, absY = 0;
     Window child = None;
     XWindowAttributes attrs{};
@@ -71,11 +72,11 @@ Geometry ClientRootGeometry(Display* dpy, xcb_window_t win) {
 // A freshly mapped window is reparented and positioned asynchronously by the
 // WM; return the placement once two consecutive samples agree (or the last
 // one after the deadline so callers still get printable numbers on failure).
-Geometry WaitForSettledPlacement(Display* dpy, xcb_window_t win) {
-    Geometry prev = ClientRootGeometry(dpy, win);
+WinRect WaitForSettledPlacement(Display* dpy, xcb_window_t win) {
+    WinRect prev = ClientRootGeometry(dpy, win);
     for (int i = 0; i < 60; ++i) {
         usleep(50 * 1000);
-        Geometry now = ClientRootGeometry(dpy, win);
+        WinRect now = ClientRootGeometry(dpy, win);
         if (now.x == prev.x && now.y == prev.y && now.width == prev.width &&
             now.height == prev.height) {
             return now;
@@ -85,13 +86,13 @@ Geometry WaitForSettledPlacement(Display* dpy, xcb_window_t win) {
     return prev;
 }
 
-bool GeometryClose(const Geometry& a, const Geometry& b, int tol) {
+bool GeometryClose(const WinRect& a, const WinRect& b, int tol) {
     return abs(a.x - b.x) <= tol && abs(a.y - b.y) <= tol &&
            abs(static_cast<int>(a.width) - static_cast<int>(b.width)) <= tol &&
            abs(static_cast<int>(a.height) - static_cast<int>(b.height)) <= tol;
 }
 
-void PrintGeometry(const char* label, const Geometry& g) {
+void PrintGeometry(const char* label, const WinRect& g) {
     std::printf("  %s = (%d, %d, %ux%u)\n", label, g.x, g.y, g.width,
                 g.height);
 }
@@ -128,7 +129,7 @@ int main() {
     }
 
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 800, 600,
-                            "Xcb Window Geometry Preservation Test");
+                            "Xcb Window WinRect Preservation Test");
     XcbApplication app(config);
 
     // 1) Move/resize the initial window through the WM, then simulate the
@@ -144,7 +145,7 @@ int main() {
     WaitForSettledPlacement(dpy, first);
     XMoveResizeWindow(dpy, static_cast<Window>(first), 140, 120, 1040, 720);
     XFlush(dpy);
-    Geometry expected = WaitForSettledPlacement(dpy, first);
+    WinRect expected = WaitForSettledPlacement(dpy, first);
 
     app.FinalizePlatformResources();
     app.CreateMainWindow();
@@ -160,7 +161,7 @@ int main() {
         XCloseDisplay(dpy);
         return 1;
     }
-    Geometry got = WaitForSettledPlacement(dpy, second);
+    WinRect got = WaitForSettledPlacement(dpy, second);
     if (!GeometryClose(got, expected, kTolerancePx)) {
         std::printf("FAIL: recreated geometry not preserved\n");
         PrintGeometry("expected", expected);
