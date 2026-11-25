@@ -437,12 +437,27 @@ jobs:
             - run:
                 name: Archive build-release for workspace transfer
                 command: |
-                  if (Test-Path build-release.zip) { Remove-Item build-release.zip -Force }
-                  Add-Type -AssemblyName System.IO.Compression.FileSystem
-                  [System.IO.Compression.ZipFile]::CreateFromDirectory(
-                    "$PWD\build-release", "$PWD\build-release.zip",
-                    [System.IO.Compression.CompressionLevel]::Fast, $false)
-                  Get-Item build-release.zip | Format-List Name,Length
+                  # Windows PowerShell 5.1 does not bind the 4-argument
+                  # ZipFile.CreateFromDirectory overload (master PR #88 run
+                  # 5357 died in 5s with MethodCountCouldNotFindBest), and the
+                  # .NET zip APIs also choke on deep Ninja output paths unless
+                  # LongPathsEnabled is set on the VM. 7-Zip handles both;
+                  # archive entries are stored relative to build-release, the
+                  # same layout CreateFromDirectory produced, and
+                  # windows_regression extracts with the same tool.
+                  $zip = "$PWD\build-release.zip"
+                  if (Test-Path $zip) { Remove-Item $zip -Force }
+                  $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
+                  if (-not (Test-Path $sevenZip)) {
+                    choco install 7zip -y --no-progress
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                  }
+                  Push-Location build-release
+                  & $sevenZip a -tzip -mx1 "$zip" * | Select-Object -Last 6
+                  $archiveRc = $LASTEXITCODE
+                  Pop-Location
+                  if ($archiveRc -ne 0) { exit $archiveRc }
+                  Get-Item $zip | Format-List Name,Length
             - persist_to_workspace:
                 root: .
                 paths:
@@ -478,9 +493,15 @@ jobs:
                 name: Unpack build-release archive
                 command: |
                   if (-not (Test-Path build-release) -and (Test-Path build-release.zip)) {
-                    Add-Type -AssemblyName System.IO.Compression.FileSystem
-                    [System.IO.Compression.ZipFile]::ExtractToDirectory(
-                      "$PWD\build-release.zip", "$PWD\build-release")
+                    # Same rationale as the archive step: extract with 7-Zip so
+                    # deep paths are not gated on LongPathsEnabled.
+                    $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
+                    if (-not (Test-Path $sevenZip)) {
+                      choco install 7zip -y --no-progress
+                      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                    }
+                    & $sevenZip x build-release.zip "-o$PWD\build-release" -y | Select-Object -Last 6
+                    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
                   }
             - run:
                 name: "Test (Release)"
