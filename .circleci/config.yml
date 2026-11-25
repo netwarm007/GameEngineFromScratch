@@ -1448,6 +1448,27 @@ jobs:
           path: billiard-switch
           destination: billiard-switch
       - run:
+          name: Window geometry preservation under WM
+          no_output_timeout: 10m
+          command: |
+             # The RHI-switch geometry preservation of the XCB and SDL hosts is
+             # only observable under a reparenting window manager (decoration
+             # offsets, ICCCM placement hints). The plain engine-unix run
+             # skips these tests; here a minimal WM claims the display and
+             # GEFS_REQUIRE_WM=1 turns any missing-WM skip into a failure.
+             sudo apt-get -o Acquire::Retries=3 install -y --fix-missing openbox x11-utils
+             xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" bash -c '
+               openbox 2>/dev/null &
+               WM_OK=""
+               for i in $(seq 1 40); do
+                 if xprop -root _NET_SUPPORTING_WM_CHECK 2>/dev/null | grep -q "window id # 0x"; then WM_OK=1; break; fi
+                 sleep 0.25
+               done
+               if [ -z "$WM_OK" ]; then echo "openbox never claimed _NET_SUPPORTING_WM_CHECK"; exit 1; fi
+               export GEFS_REQUIRE_WM=1 LIBGL_ALWAYS_SOFTWARE=1
+               ctest --test-dir build -R "TEST_(Xcb|Sdl)WindowGeometryPreservationTest" --output-on-failure
+             '
+      - run:
           name: Coverage (llvm-cov)
           command: |
              # clang-tools provides clang-scan-deps, which CMake >= 3.28 uses

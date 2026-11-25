@@ -72,6 +72,7 @@ class LinuxHost : public BaseApplication, _implements_ IPlatformHost {
     bool m_bSdlInitialized = false;
     bool m_HasPreservedSdlGeometry = false;
     int m_PreservedSdlX = 0, m_PreservedSdlY = 0, m_PreservedSdlW = 0, m_PreservedSdlH = 0;
+    bool m_bPreservedSdlMaximized = false;
 
     // XCB mode state
     Display* m_pDisplay = nullptr;

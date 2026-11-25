@@ -53,6 +53,7 @@ class WindowsApplication : public BaseApplication, _implements_ IPlatformHost {
     // native handles are never preserved.
     bool m_HasPreservedGeometry = false;
     RECT m_PreservedRect{};
+    bool m_PreservedMaximized = false;
     bool m_bInLeftDrag = false;
     bool m_bInRightDrag = false;
     int m_iPreviousX = 0;

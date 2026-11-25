@@ -48,6 +48,7 @@ class SdlApplication : public BaseApplication, _implements_ IPlatformHost {
     IRenderBackend* m_pActiveBackend = nullptr;
     bool m_HasPreservedGeometry = false;
     int m_PreservedX = 0, m_PreservedY = 0, m_PreservedW = 0, m_PreservedH = 0;
+    bool m_PreservedMaximized = false;
 
     bool m_bInDrag = false;
 };

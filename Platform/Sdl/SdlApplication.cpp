@@ -106,6 +106,12 @@ void SdlApplication::FinalizePlatformResources() {
     if (m_pWindow) {
         SDL_GetWindowPosition(m_pWindow, &m_PreservedX, &m_PreservedY);
         SDL_GetWindowSize(m_pWindow, &m_PreservedW, &m_PreservedH);
+        // A maximized host stays maximized across the switch. A minimized one
+        // is treated as normal: a recreated minimized window never yields a
+        // non-zero framebuffer, which would stall the switch-complete
+        // handshake (see RhiSwitchController::ProcessFrameBoundary).
+        m_PreservedMaximized =
+            (SDL_GetWindowFlags(m_pWindow) & SDL_WINDOW_MAXIMIZED) != 0;
         m_HasPreservedGeometry = true;
     }
     cleanup(m_pWindow);
@@ -180,9 +186,23 @@ void SdlApplication::CreateMainWindow() {
         m_HasPreservedGeometry ? m_PreservedY : SDL_WINDOWPOS_CENTERED,
         m_HasPreservedGeometry ? m_PreservedW : m_Config.screenWidth,
         m_HasPreservedGeometry ? m_PreservedH : m_Config.screenHeight,
-        m_WindowFlags);
+        m_WindowFlags | SDL_WINDOW_RESIZABLE);
     if (!m_pWindow) {
         logSDLError(cout, "CreateMainWindow");
         SDL_Quit();
+    } else if (m_HasPreservedGeometry) {
+        // SDL's X11 position semantics are not symmetric across APIs:
+        // SDL_CreateWindow's x/y lands the *client* rect while
+        // SDL_GetWindowPosition (used at retirement) reports the decorated
+        // *frame* origin. Recreating via CreateWindow coordinates alone
+        // therefore drifts the window by the decoration size on every RHI
+        // switch. Re-pin the placement with the Get/Set pair, which are
+        // frame-symmetric, then restore the state the retiring window had.
+        SDL_SetWindowPosition(m_pWindow, m_PreservedX, m_PreservedY);
+        if (m_PreservedMaximized) {
+            // M4.3 contract, matching the Windows host's SW_SHOWMAXIMIZED
+            // recreation; minimized counts as normal.
+            SDL_MaximizeWindow(m_pWindow);
+        }
     }
 }

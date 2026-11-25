@@ -35,6 +35,15 @@ void WindowsApplication::CreateMainWindow() {
     // register the window class
     RegisterClassEx(&wc);
 
+    // A recreated (RHI-switch/recovery) window restores the placement captured
+    // at retirement, matching the SDL/XCB/Cocoa hosts' M4.3 contract. The
+    // preserved rect is the *normal* (restored) window rect in physical pixels
+    // and already includes the frame, so no adjustment terms apply.
+    const bool hasPreserved =
+        m_HasPreservedGeometry &&
+        (m_PreservedRect.right - m_PreservedRect.left) > 0 &&
+        (m_PreservedRect.bottom - m_PreservedRect.top) > 0;
+
     int height_adjust =
         (GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CYCAPTION) +
          GetSystemMetrics(SM_CXPADDEDBORDER));
@@ -47,10 +56,12 @@ void WindowsApplication::CreateMainWindow() {
         _T("GameEngineFromScratch"),            // name of the window class
         m_Config.appName,                       // title of the window
         WS_OVERLAPPEDWINDOW,                    // window style
-        CW_USEDEFAULT,                          // x-position of the window
-        CW_USEDEFAULT,                          // y-position of the window
-        m_Config.screenWidth + width_adjust,    // width of the window
-        m_Config.screenHeight + height_adjust,  // height of the window
+        hasPreserved ? m_PreservedRect.left : CW_USEDEFAULT,  // x
+        hasPreserved ? m_PreservedRect.top : CW_USEDEFAULT,   // y
+        hasPreserved ? m_PreservedRect.right - m_PreservedRect.left
+                     : m_Config.screenWidth + width_adjust,   // width
+        hasPreserved ? m_PreservedRect.bottom - m_PreservedRect.top
+                     : m_Config.screenHeight + height_adjust, // height
         NULL,         // we have no parent window, NULL
         NULL,         // we aren't using menus, NULL
         m_hInstance,  // application handle
@@ -58,8 +69,12 @@ void WindowsApplication::CreateMainWindow() {
 
     m_hDc = GetDC(m_hWnd);
 
-    // display the window on the screen
-    ShowWindow(m_hWnd, SW_SHOWNORMAL);
+    // display the window on the screen. A maximized host stays maximized across
+    // the switch; a minimized one reappears normal because a recreated minimized
+    // window never yields a non-zero framebuffer, which would stall the
+    // switch-complete handshake (see RhiSwitchController::ProcessFrameBoundary).
+    ShowWindow(m_hWnd, hasPreserved && m_PreservedMaximized ? SW_SHOWMAXIMIZED
+                                                            : SW_SHOWNORMAL);
     // Force the window to realize and compose: a recreated (recovery) window
     // shown with SW_SHOW alone can stay un-realized for DWM, so its OpenGL
     // drawable never receives a vblank and SwapBuffers(swapInterval=1) blocks
@@ -94,8 +109,16 @@ void WindowsApplication::FinalizePlatformResources() {
         m_hDc = nullptr;
     }
     if (m_hWnd) {
-        GetWindowRect(m_hWnd, &m_PreservedRect);
-        m_HasPreservedGeometry = true;
+        // Record the normal (restored) placement and maximized state so the
+        // recreated window lands at the same size/position without baking in
+        // maximized or off-screen (-32000) minimized bounds.
+        WINDOWPLACEMENT placement{};
+        placement.length = sizeof(placement);
+        if (GetWindowPlacement(m_hWnd, &placement)) {
+            m_PreservedRect = placement.rcNormalPosition;
+            m_PreservedMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+            m_HasPreservedGeometry = true;
+        }
         // Discard queued messages for the retiring window so stale input
         // never reaches the recreated one. WM_PAINT regenerates until the
         // update region is validated, so validate it and bound the drain.

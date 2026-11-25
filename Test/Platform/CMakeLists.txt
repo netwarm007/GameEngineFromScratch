@@ -14,6 +14,33 @@ if(OS_WINDOWS OR OS_LINUX OR OS_MACOS)
 endif()
 
 if(OS_LINUX)
+    # The Linux desktop hosts (XCB native, SDL) must restore the retiring
+    # window's placement across an RHI switch like the Windows host does.
+    # These need a reparenting window manager to observe the failure mode;
+    # they SKIP (77) without one, and the dedicated CI step provides
+    # Xvfb+Openbox and sets GEFS_REQUIRE_WM=1. They stay out of the fast label.
+    find_library(GEFS_TEST_X11_LIBRARY X11)
+    add_executable(XcbWindowGeometryPreservationTest
+        XcbWindowGeometryPreservationTest.cpp)
+    target_link_libraries(XcbWindowGeometryPreservationTest
+        Framework PlatformInterface ${GEFS_TEST_X11_LIBRARY})
+    add_test(NAME TEST_XcbWindowGeometryPreservationTest
+        COMMAND $<TARGET_FILE:XcbWindowGeometryPreservationTest>)
+    set_tests_properties(TEST_XcbWindowGeometryPreservationTest PROPERTIES
+        SKIP_RETURN_CODE 77)
+    if(SDL2_FOUND)
+        add_executable(SdlWindowGeometryPreservationTest
+            SdlWindowGeometryPreservationTest.cpp)
+        target_link_libraries(SdlWindowGeometryPreservationTest
+            Framework PlatformInterfaceSDL2 ${GEFS_TEST_X11_LIBRARY})
+        add_test(NAME TEST_SdlWindowGeometryPreservationTest
+            COMMAND $<TARGET_FILE:SdlWindowGeometryPreservationTest>)
+        set_tests_properties(TEST_SdlWindowGeometryPreservationTest
+            PROPERTIES SKIP_RETURN_CODE 77)
+    endif()
+endif()
+
+if(OS_LINUX)
     add_executable(LinuxApplicationLifetimeTest LinuxApplicationLifetimeTest.cpp)
     target_link_libraries(LinuxApplicationLifetimeTest PRIVATE Framework PlatformInterface)
     add_test(NAME TEST_LinuxApplicationLifetimeTest
@@ -39,6 +66,14 @@ if(OS_WINDOWS)
             "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
             "-DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/VisualStudioGeneratorTest.cmake")
+
+    # Needs the desktop windowing stack, so it stays out of the fast label.
+    add_executable(WindowGeometryPreservationTest MACOSX_BUNDLE
+        WindowGeometryPreservationTest.cpp)
+    target_link_libraries(WindowGeometryPreservationTest
+        Framework PlatformInterface)
+    add_test(NAME TEST_WindowGeometryPreservationTest
+        COMMAND $<TARGET_FILE:WindowGeometryPreservationTest>)
 endif()
 
 foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
