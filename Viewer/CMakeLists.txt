@@ -90,7 +90,7 @@ ELSE()
     add_executable(Viewer 
         main.cpp ViewerLogic.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${ICON_TEXTURES} ${HDR_TEXTURES}
         )
-ENDIF(ANDROID)
+ENDIF()
 
 set(VIEWER_RUNTIME_RHI OFF)
 if(BUILD_ALL_DESKTOP_RHIS AND NOT VULKAN_APPLICATIONS AND TARGET RuntimeComposition)
@@ -255,7 +255,7 @@ endif()
         install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
         install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
     endif()
-ENDIF(APPLE)
+ENDIF()
 
 add_dependencies(Viewer Engine_Asset)
 target_link_libraries(Viewer SplashSequence)

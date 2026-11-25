@@ -83,8 +83,8 @@ class TestGraphicsManager : public TGraphicsManager {
 
         {
             ImGui::Begin((const char*)u8"图形管道测试");
-            ImGui::Text((const char*)u8"平均渲染时间 %.3f 毫秒/帧 (%.1f FPS)",
-                        1000.0f / ImGui::GetIO().Framerate,
+            ImGui::Text("%s %.3f %s (%.1f FPS)", (const char*)u8"平均渲染时间",
+                        1000.0f / ImGui::GetIO().Framerate, (const char*)u8"毫秒/帧",
                         ImGui::GetIO().Framerate);
             ImGui::End();
 

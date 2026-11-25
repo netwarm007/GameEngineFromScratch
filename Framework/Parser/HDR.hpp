@@ -1,7 +1,10 @@
 #pragma once
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <string_view>
+#include <vector>
 
 #include "IImageParser.hpp"
 
@@ -40,6 +43,7 @@ class HdrParser : _implements_ ImageParser {
    public:
     Image Parse(Buffer& buf) override {
         Image img;
+        if (buf.GetData() == nullptr) return img;
         std::string_view sbuf((char *)buf.GetData(), buf.GetDataSize());
 
         if (sbuf.starts_with("#?RADIANCE\n")) {
@@ -47,20 +51,26 @@ class HdrParser : _implements_ ImageParser {
             sbuf.remove_prefix(strlen("#?RADIANCE\n"));
 
             // process the header
-            while (sbuf[0] != '\n') {
+            while (!sbuf.empty() && sbuf[0] != '\n') {
                 // find the line end
-                auto line_end = sbuf.find_first_of('\n') + 1;
-                if (line_end == sbuf.npos)
-                    assert(false && "file is currputed!\n");
-                if (sbuf[0] == '#') {
-                    // comment line, just ignore it
-                    std::cerr << sbuf.substr(0, line_end) << std::endl;
-                } else {
-                    // assignments
-                    std::cerr << sbuf.substr(0, line_end) << std::endl;
+                auto line_end = sbuf.find_first_of('\n');
+                if (line_end == sbuf.npos) {
+                    std::cerr << "HDR file is corrupted: unterminated header "
+                                 "line!"
+                              << std::endl;
+                    return img;
                 }
+                ++line_end;
+                // assignments and comment lines, just dump them
+                std::cerr << sbuf.substr(0, line_end) << std::endl;
 
                 sbuf.remove_prefix(line_end);
+            }
+
+            if (sbuf.empty()) {
+                std::cerr << "HDR file is corrupted: truncated header!"
+                          << std::endl;
+                return img;
             }
 
             // process dimension
@@ -69,28 +79,62 @@ class HdrParser : _implements_ ImageParser {
             sbuf.remove_prefix(1);
 
             // find the line end
-            auto line_end = sbuf.find_first_of('\n') + 1;
-            if (line_end == sbuf.npos) assert(false && "file is currputed!\n");
-
-            char axis1[2];
-            char axis2[2];
-            uint32_t dimension1;
-            uint32_t dimension2;
-            std::sscanf(sbuf.data(), "%2c %u %2c %u", axis1, &dimension1, axis2,
-                        &dimension2);
-
-            if (axis1[1] == 'Y') {
-                img.Height = dimension1;
-                assert(axis2[1] == 'X');
-                img.Width = dimension2;
-            } else {
-                assert(axis1[1] == 'X');
-                img.Width = dimension1;
-                assert(axis2[1] == 'X');
-                img.Height = dimension2;
+            auto dimension_line_end = sbuf.find_first_of('\n');
+            if (dimension_line_end == sbuf.npos) {
+                std::cerr << "HDR file is corrupted: unterminated dimension "
+                             "line!"
+                          << std::endl;
+                return img;
             }
 
-            sbuf.remove_prefix(line_end);
+            char axis1[2] = {0, 0};
+            char axis2[2] = {0, 0};
+            uint32_t dimension1 = 0;
+            uint32_t dimension2 = 0;
+            const std::string dimension_line(
+                sbuf.substr(0, dimension_line_end));
+            if (std::sscanf(dimension_line.c_str(), "%2c %u %2c %u", axis1,
+                            &dimension1, axis2, &dimension2) != 4) {
+                std::cerr << "HDR file is corrupted: malformed dimension line!"
+                          << std::endl;
+                return img;
+            }
+
+            auto is_axis = [](char c, char expected) {
+                return c == expected ||
+                       c == (char)(expected + ('a' - 'A'));
+            };
+            if (is_axis(axis1[1], 'Y')) {
+                img.Height = dimension1;
+                if (!is_axis(axis2[1], 'X')) {
+                    std::cerr << "HDR file is corrupted: bad dimension axis!"
+                              << std::endl;
+                    return img;
+                }
+                img.Width = dimension2;
+            } else if (is_axis(axis1[1], 'X')) {
+                img.Width = dimension1;
+                if (!is_axis(axis2[1], 'Y')) {
+                    std::cerr << "HDR file is corrupted: bad dimension axis!"
+                              << std::endl;
+                    return img;
+                }
+                img.Height = dimension2;
+            } else {
+                std::cerr << "HDR file is corrupted: bad dimension axis!"
+                          << std::endl;
+                return img;
+            }
+
+            sbuf.remove_prefix(dimension_line_end + 1);
+
+            // reject absurd dimensions before any allocation
+            if (img.Width == 0 || img.Height == 0 ||
+                (uint64_t)img.Width * img.Height > kMaxPixels) {
+                std::cerr << "HDR file has invalid dimensions: " << img.Width
+                          << " x " << img.Height << std::endl;
+                return img;
+            }
 
             img.bitcount = 32 * 3;  // float[3]
             img.bitdepth = 32;
@@ -101,65 +145,120 @@ class HdrParser : _implements_ ImageParser {
             img.data = new uint8_t[img.data_size];
 
             // now data section
-            assert(sbuf.size() <= (size_t)4 * img.Height * img.Width);
             auto* pRGBE =
                 reinterpret_cast<const unsigned char(*)[4]>(sbuf.data());
             auto* pOutData = reinterpret_cast<float(*)[3]>(img.data);
 
             if (img.Width < 8 || img.Width > 0x7fff) {
                 // run length encoding is not allowed so read flat
+                if (sbuf.size() < (size_t)4 * img.Width * img.Height) {
+                    std::cerr << "HDR file is corrupted: truncated scanline "
+                                 "data!"
+                              << std::endl;
+                    return Image {};
+                }
                 for (uint32_t y = 0; y < img.Height; y++) {
                     for (uint32_t x = 0; x < img.Width; x++) {
                         rgbe2float(*pOutData++, *pRGBE++);
                     }
                 }
             } else {
-                auto scanline = new uint8_t[4 * img.Width];
+                std::vector<uint8_t> scanline((size_t)4 * img.Width);
 
                 for (uint32_t i = 0; i < img.Height; i++) {
-                    assert(sbuf.size() >= 4 && "corrupted file");
+                    if (sbuf.size() < 4) {
+                        std::cerr
+                            << "HDR file is corrupted: truncated scanline!"
+                            << std::endl;
+                        return Image {};
+                    }
 
                     if ((*pRGBE)[0] != 2 || (*pRGBE)[1] != 2 ||
                         (*pRGBE)[2] & 0x80) {
                         // the remain part is not run length encoded
+                        if (sbuf.size() <
+                            (size_t)4 * (img.Height - i) * img.Width) {
+                            std::cerr << "HDR file is corrupted: truncated "
+                                         "scanline data!"
+                                      << std::endl;
+                            return Image {};
+                        }
                         for (uint32_t y = i; y < img.Height; y++) {
                             for (uint32_t x = 0; x < img.Width; x++) {
                                 rgbe2float(*pOutData++, *pRGBE++);
                             }
                         }
+                        break;
                     } else {
-                        assert (((*pRGBE)[2] << 8) + (*pRGBE)[3] == img.Width && "wrong scanline width");
-                        sbuf.remove_prefix(4); // move forward by 4 bytes
-                        uint8_t *pdat = scanline;
+                        if ((uint32_t)((*pRGBE)[2] << 8) + (*pRGBE)[3] !=
+                            img.Width) {
+                            std::cerr << "HDR file is corrupted: wrong "
+                                         "scanline width!"
+                                      << std::endl;
+                            return Image {};
+                        }
+                        sbuf.remove_prefix(4);  // move forward by 4 bytes
+                        pRGBE = reinterpret_cast<const unsigned char(*)[4]>(
+                            sbuf.data());
+                        uint8_t *pdat = scanline.data();
                         for (uint32_t j = 0; j < 4; j++) {
-                            uint8_t *pend = scanline + (j + 1) * img.Width;
-                            while(pdat < pend) {
-                                if (sbuf.size() < 2) assert(false && "corrupted file");
-                                if (static_cast<unsigned char>(sbuf[0]) > 128) {
-                                    int count = static_cast<unsigned char>(sbuf[0]) - 128;
-                                    assert(count && count <= pend - pdat && "corrupted file");
-                                    while (count--) {
-                                        *pdat++ = sbuf[1];
-                                    }
-                                } else {
-                                    int count = static_cast<unsigned char>(sbuf[0]);
-                                    assert(count && count <= pend - pdat && "corrupted file");
-                                    *pdat++ = sbuf[1];
-                                    if (--count > 0) {
-                                        assert(sbuf.size() >= count && "corrupted file");
-                                        memcpy(pdat, sbuf.data(), count);
-                                        sbuf.remove_prefix(count);
-                                        pdat += count;
-                                    }
+                            uint8_t *pend = scanline.data() +
+                                            (j + 1) * (size_t)img.Width;
+                            while (pdat < pend) {
+                                if (sbuf.size() < 2) {
+                                    std::cerr << "HDR file is corrupted: "
+                                                 "truncated scanline!"
+                                              << std::endl;
+                                    return Image {};
                                 }
-                                sbuf.remove_prefix(2);
+                                if (static_cast<unsigned char>(sbuf[0]) >
+                                    128) {
+                                    int count =
+                                        static_cast<unsigned char>(sbuf[0]) -
+                                        128;
+                                    if (count > pend - pdat) {
+                                        std::cerr << "HDR file is corrupted: "
+                                                     "run overflows scanline!"
+                                                  << std::endl;
+                                        return Image {};
+                                    }
+                                    while (count--) {
+                                        *pdat++ =
+                                            static_cast<unsigned char>(sbuf[1]);
+                                    }
+                                    sbuf.remove_prefix(2);
+                                } else {
+                                    int count =
+                                        static_cast<unsigned char>(sbuf[0]);
+                                    if (count == 0 ||
+                                        count > pend - pdat ||
+                                        sbuf.size() <
+                                            (size_t)count + 1) {
+                                        std::cerr << "HDR file is corrupted: "
+                                                     "bad literal run!"
+                                                  << std::endl;
+                                        return Image {};
+                                    }
+                                    *pdat++ =
+                                        static_cast<unsigned char>(sbuf[1]);
+                                    if (count > 1) {
+                                        memcpy(pdat, sbuf.data() + 2,
+                                               count - 1);
+                                        pdat += count - 1;
+                                    }
+                                    sbuf.remove_prefix((size_t)count + 1);
+                                }
+                                pRGBE =
+                                    reinterpret_cast<
+                                        const unsigned char(*)[4]>(sbuf.data());
                             }
                         }
-                        rgbe2float(reinterpret_cast<float *>(img.data), scanline, img.Width);
+                        rgbe2float(
+                            reinterpret_cast<float *>(img.data) +
+                                (ptrdiff_t)img.pitch / sizeof(float) * i,
+                            scanline.data(), img.Width);
                     }
                 }
-
-                delete[] scanline;
             }
         }
 
@@ -168,5 +267,9 @@ class HdrParser : _implements_ ImageParser {
 
         return img;
     }
+
+   private:
+    // sanity cap against absurd file-declared dimensions (64M pixels)
+    static constexpr uint64_t kMaxPixels = 64ull * 1024 * 1024;
 };
 }  // namespace My

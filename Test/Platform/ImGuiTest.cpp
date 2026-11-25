@@ -96,10 +96,7 @@ class TestGraphicsManager : public TGraphicsManager {
                                                  // "Hello, world!" and append
                                                  // into it.
 
-            ImGui::Text(
-                (const char*)u8"这里有一些重要信息。");  // Display some text
-                                                         // (you can use a
-                                                         // format strings too)
+            ImGui::TextUnformatted((const char*)u8"这里有一些重要信息。");
             ImGui::Checkbox((const char*)u8"演示窗口",
                             &show_demo_window);  // Edit bools storing our
                                                  // window open/close state
@@ -121,10 +118,10 @@ class TestGraphicsManager : public TGraphicsManager {
                                              // edited/activated)
                 counter++;
             ImGui::SameLine();
-            ImGui::Text((const char*)u8"按压次数 = %d", counter);
+            ImGui::Text("%s = %d", (const char*)u8"按压次数", counter);
 
-            ImGui::Text((const char*)u8"平均渲染时间 %.3f 毫秒/帧 (%.1f FPS)",
-                        1000.0f / ImGui::GetIO().Framerate,
+            ImGui::Text("%s %.3f %s (%.1f FPS)", (const char*)u8"平均渲染时间",
+                        1000.0f / ImGui::GetIO().Framerate, (const char*)u8"毫秒/帧",
                         ImGui::GetIO().Framerate);
             ImGui::End();
 

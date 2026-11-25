@@ -36,31 +36,58 @@ class WaveParser : _implements_ AudioClipParser {
         AudioClip audio_clip;
 
         const uint8_t* pData = buf.GetData();
-        [[maybe_unused]] const uint8_t* pDataEnd =
-            buf.GetData() + buf.GetDataSize();
+        const uint8_t* pDataEnd = buf.GetData() + buf.GetDataSize();
 
         std::cerr << "Parsing as Wave file:" << std::endl;
+
+        if (pData == nullptr ||
+            buf.GetDataSize() < sizeof(WAVE_FILEHEADER)) {
+            std::cerr << "Truncated WAVE header" << std::endl;
+            return audio_clip;
+        }
 
         const auto* pFileHeader =
             reinterpret_cast<const WAVE_FILEHEADER*>(pData);
         pData += sizeof(WAVE_FILEHEADER);
 
-        assert(pFileHeader->Magic[0] == 'R' && pFileHeader->Magic[1] == 'I' &&
-               pFileHeader->Magic[2] == 'F' && pFileHeader->Magic[3] == 'F');
-        assert(pFileHeader->FileSize + RIFF_HEADER_SIZE == buf.GetDataSize());
-        assert(pFileHeader->FileTypeHeader[0] == 'W' &&
-               pFileHeader->FileTypeHeader[1] == 'A' &&
-               pFileHeader->FileTypeHeader[2] == 'V' &&
-               pFileHeader->FileTypeHeader[3] == 'E');
+        if (!(pFileHeader->Magic[0] == 'R' && pFileHeader->Magic[1] == 'I' &&
+              pFileHeader->Magic[2] == 'F' && pFileHeader->Magic[3] == 'F') ||
+            !(pFileHeader->FileTypeHeader[0] == 'W' &&
+              pFileHeader->FileTypeHeader[1] == 'A' &&
+              pFileHeader->FileTypeHeader[2] == 'V' &&
+              pFileHeader->FileTypeHeader[3] == 'E')) {
+            std::cerr << "File is not a WAVE file!" << std::endl;
+            return audio_clip;
+        }
 
+        bool format_found = false;
         while (pData < pDataEnd) {
+            if (pDataEnd - pData < (ptrdiff_t)sizeof(WAVE_CHUNKHEADER)) {
+                std::cerr << "Truncated WAVE chunk header" << std::endl;
+                return audio_clip;
+            }
+
             const auto* pChunkHeader =
                 reinterpret_cast<const WAVE_CHUNKHEADER*>(pData);
+            // chunk payload plus the 4-byte chunk header must fit in the file
+            const size_t chunk_payload_size = pChunkHeader->ChunkSize;
+            if (chunk_payload_size >
+                (size_t)(pDataEnd - pData) - sizeof(WAVE_CHUNKHEADER)) {
+                std::cerr << "Truncated WAVE chunk data" << std::endl;
+                return audio_clip;
+            }
 
             if (pChunkHeader->ChunkMarker[0] == 'f' &&
                 pChunkHeader->ChunkMarker[1] == 'm' &&
                 pChunkHeader->ChunkMarker[2] == 't' &&
                 pChunkHeader->ChunkMarker[3] == ' ') {
+                if (chunk_payload_size <
+                    sizeof(WAVE_FORMAT_CHUNKHEADER) -
+                        sizeof(WAVE_CHUNKHEADER)) {
+                    std::cerr << "Truncated WAVE format chunk" << std::endl;
+                    return audio_clip;
+                }
+
                 const auto* pFormatChunkHeader =
                     reinterpret_cast<const WAVE_FORMAT_CHUNKHEADER*>(pData);
 
@@ -81,8 +108,11 @@ class WaveParser : _implements_ AudioClipParser {
                                 break;
 
                             default:
-                                assert(0);
-                                break;
+                                std::cerr
+                                    << "Unsupported WAVE sample format: mono "
+                                    << (uint16_t)audio_clip.bits_per_sample
+                                    << " bit" << std::endl;
+                                return AudioClip {};
                         }
                         break;
 
@@ -93,28 +123,37 @@ class WaveParser : _implements_ AudioClipParser {
                                 break;
 
                             case 16:
-                                audio_clip.format = AudioClipFormat::STEREO_16;
+                                audio_clip.format =
+                                    AudioClipFormat::STEREO_16;
                                 break;
 
                             default:
-                                assert(0);
-                                break;
+                                std::cerr
+                                    << "Unsupported WAVE sample format: stereo "
+                                    << (uint16_t)audio_clip.bits_per_sample
+                                    << " bit" << std::endl;
+                                return AudioClip {};
                         }
                         break;
 
                     default:
-                        assert(0);
-                        break;
+                        std::cerr << "Unsupported WAVE channel count: "
+                                  << (uint16_t)audio_clip.channel_num
+                                  << std::endl;
+                        return AudioClip {};
                 }
+                format_found = true;
             } else if (pChunkHeader->ChunkMarker[0] == 'd' &&
                        pChunkHeader->ChunkMarker[1] == 'a' &&
                        pChunkHeader->ChunkMarker[2] == 't' &&
                        pChunkHeader->ChunkMarker[3] == 'a') {
-                const auto* pDataChunkHeader =
-                    reinterpret_cast<const WAVE_DATA_CHUNKHEADER*>(pData);
+                if (!format_found) {
+                    std::cerr << "WAVE data chunk before format chunk"
+                              << std::endl;
+                    return AudioClip {};
+                }
                 audio_clip.data = pData + sizeof(WAVE_DATA_CHUNKHEADER);
-                audio_clip.data_length = pDataChunkHeader->ChunkSize;
-                assert(audio_clip.data < pDataEnd);
+                audio_clip.data_length = chunk_payload_size;
             } else {
                 fprintf(
                     stderr, "Ignore Unknown Chunk: %c%c%c%c\n",
@@ -123,10 +162,10 @@ class WaveParser : _implements_ AudioClipParser {
             }
 
             pData += sizeof(WAVE_CHUNKHEADER);
-            pData += pChunkHeader->ChunkSize;
+            pData += chunk_payload_size;
+            // RIFF chunks are word aligned
+            if (chunk_payload_size & 1) pData += 1;
         }
-
-        assert(pData == pDataEnd);
 
         return audio_clip;
     }

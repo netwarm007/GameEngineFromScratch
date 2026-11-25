@@ -12,13 +12,13 @@ namespace My {
     };
 
     struct AudioClip {
-        const void* data;
-        size_t data_length;
-        uint16_t channel_num;
-        uint16_t bits_per_sample;
-        uint32_t sample_rate;
-        uint32_t block_size;
-        AudioClipFormat format;
+        const void* data{nullptr};
+        size_t data_length{0};
+        uint16_t channel_num{0};
+        uint16_t bits_per_sample{0};
+        uint32_t sample_rate{0};
+        uint32_t block_size{0};
+        AudioClipFormat format{AudioClipFormat::MONO_8};
     };
 
     std::ostream& operator<<(std::ostream& out, const AudioClip& audio_clip);

@@ -18,10 +18,10 @@ ELSEIF(APPLE)
         main.cpp BilliardGameLogic.cpp
         ${BILLIARD_SHADER_LIBRARY}
         )
-ELSE(ANDROID)
+ELSE()
     add_executable(BilliardGame
         main.cpp BilliardGameLogic.cpp)
-ENDIF(ANDROID)
+ENDIF()
 
 if(VULKAN_APPLICATIONS AND BILLIARD_USE_D3D12)
     message(FATAL_ERROR "BILLIARD_USE_D3D12 conflicts with VULKAN_APPLICATIONS")
@@ -128,7 +128,7 @@ ELSEIF(NOT VULKAN_APPLICATIONS)
                                 PlatformInterface
                             )
     endif()
-ENDIF(APPLE)
+ENDIF()
 
 if(BILLIARD_RUNTIME_RHI)
     target_compile_definitions(BilliardGame PRIVATE MYGE_RUNTIME_RHI)

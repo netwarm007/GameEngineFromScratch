@@ -60,7 +60,10 @@ class TestGraphicsManager : public TGraphicsManager {
                                                          // world!" and append
                                                          // into it.
             auto gfx_cfg = m_pApp->GetConfiguration();
-            ImGui::Text((const char*)u8"宽：%d 高：%d 采样率：%d 最大深度：%d", gfx_cfg.screenWidth, gfx_cfg.screenHeight, config.samples_per_pixel, config.max_depth);
+            ImGui::Text("%s%d %s%d %s%d %s%d", (const char*)u8"宽：", gfx_cfg.screenWidth,
+                        (const char*)u8"高：", gfx_cfg.screenHeight,
+                        (const char*)u8"采样率：", config.samples_per_pixel,
+                        (const char*)u8"最大深度：", config.max_depth);
             size_t start_pos = 0;
             size_t end_pos = 0;
             std::string str(oss.str());

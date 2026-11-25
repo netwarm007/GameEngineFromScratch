@@ -1,3 +1,4 @@
+#include <bit>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -36,6 +37,11 @@ Image MakeImage(uint32_t width, uint32_t height, uint16_t bitcount,
 }  // namespace
 
 int main() {
+    CHECK(float32(0x3c00) == 1.0f);
+    CHECK(float32(0xc000) == -2.0f);
+    CHECK(std::bit_cast<uint32_t>(float32(0x8000)) == 0x80000000u);
+    CHECK(float32(0x0001) == 0.0f);
+
     auto rgba = MakeImage(1, 1, 32, 4, PIXEL_FORMAT::RGBA8);
     rgba.data[0] = 10;
     rgba.data[1] = 20;

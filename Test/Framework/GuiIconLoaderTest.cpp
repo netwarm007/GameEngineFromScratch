@@ -26,6 +26,7 @@ void TestIconLoading() {
                                              .time_since_epoch()
                                              .count()));
     const auto invalidIcon = tempDir / "Asset" / "Textures" / "invalid.png";
+    const auto emptyIcon = tempDir / "Asset" / "Textures" / "empty.png";
     std::filesystem::create_directories(invalidIcon.parent_path());
     bool invalidIconWritten = false;
     {
@@ -34,6 +35,10 @@ void TestIconLoading() {
         invalidIconWritten = file.good();
     }
     Expect(invalidIconWritten, "invalid PNG fixture is written");
+    {
+        std::ofstream file(emptyIcon, std::ios::binary);
+        Expect(file.good(), "empty PNG fixture is created");
+    }
 
     AssetLoader assetLoader;
     assetLoader.ClearSearchPath();
@@ -44,6 +49,8 @@ void TestIconLoading() {
            "temporary icon search path is added");
     Expect(assetLoader.FileExists("Textures/invalid.png"),
            "invalid PNG fixture is found by the asset loader");
+    Expect(assetLoader.FileExists("Textures/empty.png"),
+           "empty PNG fixture is found by the asset loader");
 
     Image valid = LoadGuiIconImage("Textures/Icons/scene_empty.png");
     Expect(valid.data != nullptr && valid.Width > 0 && valid.Height > 0,
@@ -54,6 +61,9 @@ void TestIconLoading() {
 
     Image invalid = LoadGuiIconImage("Textures/invalid.png");
     Expect(invalid.data == nullptr, "invalid PNG returns an empty image");
+
+    Image empty = LoadGuiIconImage("Textures/empty.png");
+    Expect(empty.data == nullptr, "empty PNG returns an empty image");
 
     assetLoader.ClearSearchPath();
     std::filesystem::remove_all(tempDir);

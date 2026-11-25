@@ -7,6 +7,42 @@ std::string AssetLoader::m_strTargetPath;
 
 std::vector<std::string> AssetLoader::m_strSearchPath;
 
+namespace {
+// Upper bound for a single asset file read into memory (512 MB)
+constexpr size_t kMaxAssetFileSize = 512ull * 1024 * 1024;
+
+// Reject asset names that could escape the configured search roots: absolute
+// paths, drive specs, UNC prefixes and any ".." path segment.
+bool IsSafeAssetPath(const char* name) {
+    if (name == nullptr || name[0] == '\0') return false;
+
+    const std::string path(name);
+    for (size_t i = 0; i < path.size(); i++) {
+        const char c = path[i];
+        if (c == '/' || c == '\\') {
+            if (i == 0) return false;  // rooted path
+            if (i + 1 < path.size() && path[i + 1] == '/' &&
+                path[i + 2] == '/')
+                return false;  // UNC prefix
+        } else if (c == ':') {
+            return false;  // drive spec or embedded scheme
+        }
+    }
+
+    // scan for ".." segments
+    size_t start = 0;
+    while (start <= path.size()) {
+        size_t end = path.find_first_of("/\\", start);
+        if (end == std::string::npos) end = path.size();
+        if (end - start == 2 && path.compare(start, 2, "..") == 0)
+            return false;
+        start = end + 1;
+    }
+
+    return true;
+}
+}  // namespace
+
 void AssetLoader::ClearSearchPath() { m_strSearchPath.clear(); }
 
 bool AssetLoader::AddSearchPath(const char* path) {
@@ -36,6 +72,12 @@ bool AssetLoader::RemoveSearchPath(const char* path) {
 }
 
 std::string AssetLoader::GetFileRealPath(const char* filePath) {
+    if (!IsSafeAssetPath(filePath)) {
+        fprintf(stderr, "Rejected unsafe asset path '%s'\n",
+                filePath ? filePath : "(null)");
+        return std::string();
+    }
+
     FILE* fp = nullptr;
     // loop N times up the hierarchy, testing at each level
     std::string upPath(m_strTargetPath);
@@ -80,6 +122,12 @@ bool AssetLoader::FileExists(const char* filePath) {
 
 AssetLoader::AssetFilePtr AssetLoader::OpenFile(const char* name,
                                                 AssetOpenMode mode) {
+    if (!IsSafeAssetPath(name)) {
+        fprintf(stderr, "Rejected unsafe asset path '%s'\n",
+                name ? name : "(null)");
+        return nullptr;
+    }
+
     FILE* fp = nullptr;
     // loop N times up the hierarchy, testing at each level
     std::string upPath(m_strTargetPath);
@@ -126,14 +174,19 @@ Buffer AssetLoader::SyncOpenAndReadText(const char* filePath) {
     if (fp) {
         size_t length = GetSize(fp);
 
-        uint8_t* data = new uint8_t[length + 1];
-        length = fread(data, 1, length, static_cast<FILE*>(fp));
+        if (length > 0 && length <= kMaxAssetFileSize) {
+            uint8_t* data = new uint8_t[length + 1];
+            length = fread(data, 1, length, static_cast<FILE*>(fp));
 #ifdef DEBUG
-        fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
+            fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
 #endif
 
-        data[length] = '\0';
-        buff.SetData(data, length + 1);
+            data[length] = '\0';
+            buff.SetData(data, length + 1);
+        } else if (length > kMaxAssetFileSize) {
+            fprintf(stderr, "File '%s' too large (%zu bytes), rejected\n",
+                    filePath, length);
+        }
 
         CloseFile(fp);
     } else {
@@ -150,12 +203,27 @@ Buffer AssetLoader::SyncOpenAndReadBinary(const char* filePath) {
     if (fp) {
         size_t length = GetSize(fp);
 
-        uint8_t* data = new uint8_t[length];
-        fread(data, length, 1, static_cast<FILE*>(fp));
+        if (length > 0 && length <= kMaxAssetFileSize) {
+            uint8_t* data = new uint8_t[length];
+            const size_t bytesRead =
+                fread(data, 1, length, static_cast<FILE*>(fp));
+            if (bytesRead != length) {
+                fprintf(stderr,
+                        "Error reading file '%s': expected %zu bytes, read %zu\n",
+                        filePath, length, bytesRead);
+                delete[] data;
+                CloseFile(fp);
+                return buff;
+            }
 #ifdef DEBUG
-        fprintf(stderr, "Read file '%s', %zu bytes\n", filePath, length);
+            fprintf(stderr, "Read file '%s', %zu bytes\n", filePath,
+                    bytesRead);
 #endif
-        buff.SetData(data, length);
+            buff.SetData(data, bytesRead);
+        } else if (length > kMaxAssetFileSize) {
+            fprintf(stderr, "File '%s' too large (%zu bytes), rejected\n",
+                    filePath, length);
+        }
 
         CloseFile(fp);
     } else {
@@ -174,11 +242,13 @@ size_t AssetLoader::GetSize(const AssetFilePtr& fp) {
     FILE* _fp = static_cast<FILE*>(fp);
 
     long pos = ftell(_fp);
-    fseek(_fp, 0, SEEK_END);
-    size_t length = ftell(_fp);
-    fseek(_fp, pos, SEEK_SET);
+    if (pos < 0) return 0;
+    if (fseek(_fp, 0, SEEK_END) != 0) return 0;
+    long end = ftell(_fp);
+    if (fseek(_fp, pos, SEEK_SET) != 0) return 0;
+    if (end < pos) return 0;
 
-    return length;
+    return (size_t)(end - pos);
 }
 
 size_t AssetLoader::SyncRead(const AssetFilePtr& fp, Buffer& buf) {
