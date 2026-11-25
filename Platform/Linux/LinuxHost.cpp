@@ -211,10 +211,20 @@ void LinuxHost::CreateSdlWindow() {
         m_HasPreservedSdlGeometry ? m_PreservedSdlY : SDL_WINDOWPOS_CENTERED,
         m_HasPreservedSdlGeometry ? m_PreservedSdlW : m_Config.screenWidth,
         m_HasPreservedSdlGeometry ? m_PreservedSdlH : m_Config.screenHeight,
-        m_WindowFlags);
+        m_WindowFlags | SDL_WINDOW_RESIZABLE);
     if (!m_pWindow) {
         cerr << "SDL_CreateWindow error: " << SDL_GetError() << '\n';
         return;
+    }
+    if (m_HasPreservedSdlGeometry) {
+        // SDL_CreateWindow applies x/y to the client rect while
+        // SDL_GetWindowPosition (retirement capture) reports the decorated
+        // frame origin; re-pin with the frame-symmetric Get/Set pair so
+        // repeated mode switches do not drift by the decoration size.
+        SDL_SetWindowPosition(m_pWindow, m_PreservedSdlX, m_PreservedSdlY);
+        if (m_bPreservedSdlMaximized) {
+            SDL_MaximizeWindow(m_pWindow);
+        }
     }
     // SDL_CreateWindow implicitly initializes the video subsystem.
     m_bSdlInitialized = true;
@@ -356,6 +366,8 @@ void LinuxHost::FinalizePlatformResources() {
         if (m_pWindow) {
             SDL_GetWindowPosition(m_pWindow, &m_PreservedSdlX, &m_PreservedSdlY);
             SDL_GetWindowSize(m_pWindow, &m_PreservedSdlW, &m_PreservedSdlH);
+            m_bPreservedSdlMaximized =
+                (SDL_GetWindowFlags(m_pWindow) & SDL_WINDOW_MAXIMIZED) != 0;
             m_HasPreservedSdlGeometry = true;
             SDL_DestroyWindow(m_pWindow);
             m_pWindow = nullptr;

@@ -186,7 +186,7 @@ void SdlApplication::CreateMainWindow() {
         m_HasPreservedGeometry ? m_PreservedY : SDL_WINDOWPOS_CENTERED,
         m_HasPreservedGeometry ? m_PreservedW : m_Config.screenWidth,
         m_HasPreservedGeometry ? m_PreservedH : m_Config.screenHeight,
-        m_WindowFlags);
+        m_WindowFlags | SDL_WINDOW_RESIZABLE);
     if (!m_pWindow) {
         logSDLError(cout, "CreateMainWindow");
         SDL_Quit();
