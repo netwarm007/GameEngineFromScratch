@@ -342,6 +342,12 @@ jobs:
           steps:
           - run:
               name: Package
+              # CPack/NSIS can compress debug payloads for tens of minutes
+              # with no stdout; the 5m default no-output killed master runs
+              # ecdc78a9 and d05652f1 mid-package. 40m ~= 1.2GB at the
+              # measured ~30MB/min LZMA throughput, sized for M5's
+              # Debug+Embedded build tree growth.
+              no_output_timeout: 40m
               command: |
                  cmake --build ./build --target package
           - persist_to_workspace:
