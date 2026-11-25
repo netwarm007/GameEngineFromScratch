@@ -1,6 +1,5 @@
 # Game Engine From Scratch
 [![CircleCI Build Status](https://circleci.com/gh/netwarm007/GameEngineFromScratch.svg?style=shield)](https://circleci.com/gh/netwarm007/GameEngineFromScratch) 
-[![Build status](https://ci.appveyor.com/api/projects/status/hld88pk7py29thx5?svg=true&branch=master)](https://ci.appveyor.com/project/netwarm007/gameenginefromscratch)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/netwarm007/GameEngineFromScratch/master/LICENSE)
 
 配合我的知乎[专栏](https://zhuanlan.zhihu.com/c_119702958)当中的系列文章《从零开始手敲次世代游戏引擎》所写的项目。
@@ -314,7 +313,7 @@ copyright and license notices.
   - Windows Platform SDK
   - Visual Studio or Clang
   - CMake and Ninja
-  - Vulkan SDK (used by AppVeyor)
+  - Vulkan SDK
 
 - MacOS
   - Xcode and command line tools

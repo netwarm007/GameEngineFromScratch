@@ -9,7 +9,7 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
 
 - Inspect `.circleci/config.yml` and the requested pipeline before diagnosing. This
   project normally runs `build_windows`, `build_linux`, and `build_macos`;
-  Android is currently disabled. Treat `appveyor.yml` as a separate CI system.
+  Android is currently disabled.
 - Diagnose the requested branch and exact revision. Do not silently substitute
   the newest pipeline or assume a running, canceled, or skipped job passed.
 - If GitHub or CircleCI connectivity is unstable, compare DNS resolution using a
