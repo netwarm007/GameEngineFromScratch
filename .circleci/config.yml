@@ -430,10 +430,23 @@ jobs:
           condition:
             equal: [full, << parameters.scope >>]
           steps:
+            # Workspace upload cost scales with file count: persisting the raw
+            # Ninja build-release tree ran >=19.6min and was killed by the 60min
+            # Windows job cap (master run 3b438d4d).  Pack it into a single
+            # archive first; windows_regression unpacks before Test (Release).
+            - run:
+                name: Archive build-release for workspace transfer
+                command: |
+                  if (Test-Path build-release.zip) { Remove-Item build-release.zip -Force }
+                  Add-Type -AssemblyName System.IO.Compression.FileSystem
+                  [System.IO.Compression.ZipFile]::CreateFromDirectory(
+                    "$PWD\build-release", "$PWD\build-release.zip",
+                    [System.IO.Compression.CompressionLevel]::Fast, $false)
+                  Get-Item build-release.zip | Format-List Name,Length
             - persist_to_workspace:
                 root: .
                 paths:
-                  - build-release
+                  - build-release.zip
   windows_regression:
     parameters:
       scope:
@@ -461,6 +474,14 @@ jobs:
           condition:
             equal: [full, << parameters.scope >>]
           steps:
+            - run:
+                name: Unpack build-release archive
+                command: |
+                  if (-not (Test-Path build-release) -and (Test-Path build-release.zip)) {
+                    Add-Type -AssemblyName System.IO.Compression.FileSystem
+                    [System.IO.Compression.ZipFile]::ExtractToDirectory(
+                      "$PWD\build-release.zip", "$PWD\build-release")
+                  }
             - run:
                 name: "Test (Release)"
                 command: |
