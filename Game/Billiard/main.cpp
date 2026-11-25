@@ -19,10 +19,19 @@
 #include <iostream>
 #include <map>
 
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(OS_WINDOWS) && (defined(MYGE_RUNTIME_RHI) || (!defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)))
 #include "glad/glad.h"
 #endif
 
+#if defined(MYGE_RUNTIME_RHI)
+#include "RhiComposition.hpp"
+#include "Framework/Manager/RuntimeRoot.hpp"
+#include "RhiSwitch.hpp"
+#include "RhiFrameDriver.hpp"
+#if defined(HAS_VULKAN)
+#include "RHI/Vulkan/VulkanGraphicsManager.hpp"
+#endif
+#else
 #if defined(MYGE_USE_VULKAN)
 #include "VulkanApplication.hpp"
 #include "RHI/Vulkan/VulkanGraphicsManager.hpp"
@@ -54,6 +63,7 @@
 #else
 #include "RHI/OpenGL/OpenGLConfig.hpp"
 #endif
+#endif
 
 #if defined(OS_WEBASSEMBLY)
 #include <emscripten.h>
@@ -68,7 +78,7 @@ void main_loop() { loop(); }
 
 using namespace My;
 
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(OS_WINDOWS) && (defined(MYGE_RUNTIME_RHI) || (!defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)))
 namespace {
 bool CaptureBilliardFrame(IApplication& app, const std::filesystem::path& path) {
     uint32_t width = 0, height = 0;
@@ -125,6 +135,48 @@ bool CaptureBilliardFrame(IApplication& app, const std::filesystem::path& path) 
 
 int main(int argc, char** argv) {
     int ret;
+#if defined(MYGE_RUNTIME_RHI)
+    auto parsed = ParseRhiStartupArguments(
+        std::span<char* const>(argv, static_cast<size_t>(argc)));
+    if (!parsed.options) {
+        std::cerr << parsed.error << '\n';
+        return 1;
+    }
+    RhiStartupOptions& rhiOptions = *parsed.options;
+    const auto availability = ProbeRhiStartupAvailability();
+    if (rhiOptions.listBackends) {
+        for (const auto& entry : availability) {
+            std::cout << RhiBackendName(entry.backend) << ": ";
+            switch (entry.state) {
+                case RhiAvailability::NotCompiled:
+                    std::cout << "not compiled";
+                    break;
+                case RhiAvailability::RuntimeUnavailable:
+                    std::cout << "runtime unavailable";
+                    break;
+                case RhiAvailability::ReadyForInitialization:
+                    std::cout << "ready to attempt initialization";
+                    break;
+            }
+            if (!entry.reason.empty()) std::cout << " (" << entry.reason << ')';
+            std::cout << '\n';
+        }
+        return 0;
+    }
+    // Billiard's ordinary Windows default is OpenGL; CI selects D3D12 explicitly.
+    constexpr RhiBackend defaultBackend =
+#if defined(OS_MACOS)
+        RhiBackend::Metal;
+#else
+        RhiBackend::OpenGL;
+#endif
+    const auto selection = ResolveRhiStartupBackend(
+        rhiOptions.requestedBackend, defaultBackend, availability);
+    if (!selection.backend) {
+        std::cerr << selection.error << '\n';
+        return 1;
+    }
+#endif
     std::filesystem::path regressionDir;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "-physicsRegression") == 0) {
@@ -154,7 +206,16 @@ int main(int argc, char** argv) {
         }
     }
 
+#if defined(MYGE_RUNTIME_RHI)
+    const std::string windowTitle = std::string("Billiard - ") +
+        std::string(RhiStartupPlatformName()) + "/" +
+        std::string(RhiBackendName(*selection.backend)) + " (" +
+        std::string(RhiStartupHostName(*selection.backend)) + ")";
+    GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, windowTitle.c_str());
+#else
     GfxConfiguration config(8, 8, 8, 8, 24, 8, 4, 1024, 768, "Billiard");
+#endif
+#if !defined(MYGE_RUNTIME_RHI)
 #if defined(MYGE_USE_VULKAN)
     VulkanApplication app(config);
 #elif defined(OS_MACOS)
@@ -168,6 +229,7 @@ int main(int argc, char** argv) {
 #else
     OpenGLApplication app(config);
 #endif
+#endif
     MemoryManager memoryManager;
     AssetLoader assetLoader;
     OgexParser sceneParser;
@@ -180,16 +242,143 @@ int main(int argc, char** argv) {
 #ifdef DEBUG
     DebugManager debugManager;
 #endif
-#if defined(MYGE_USE_VULKAN)
+#if defined(MYGE_RUNTIME_RHI)
+    // Same-backend reconstruction cycles requested for verification runs
+    // (M3.6); executed once after the first presented frame.
+    int rhiReconstructCycles = 0;
+    for (size_t i = 0; i + 1 < rhiOptions.applicationArguments.size(); ++i) {
+        if (std::string(rhiOptions.applicationArguments[i]) ==
+            "--rhi-reconstruct") {
+            rhiReconstructCycles =
+                std::atoi(rhiOptions.applicationArguments[i + 1]);
+        }
+    }
+
+    // Scheduled cross-backend switches for verification runs (M4):
+    // --rhi-switch backend@frame,backend@frame,...
+    std::vector<RhiSwitchStep> rhiSwitchSchedule;
+    for (size_t i = 0; i + 1 < rhiOptions.applicationArguments.size(); ++i) {
+        if (std::string(rhiOptions.applicationArguments[i]) != "--rhi-switch") {
+            continue;
+        }
+        std::string spec = rhiOptions.applicationArguments[i + 1];
+        size_t start = 0;
+        while (start < spec.size()) {
+            size_t comma = spec.find(',', start);
+            if (comma == std::string::npos) comma = spec.size();
+            std::string step = spec.substr(start, comma - start);
+            size_t at = step.find('@');
+            auto backend = at == std::string::npos
+                               ? std::nullopt
+                               : ParseRhiBackendName(step.substr(0, at));
+            if (!backend || at == std::string::npos) {
+                std::cerr << "Invalid --rhi-switch step: " << step << '\n';
+                return 1;
+            }
+            rhiSwitchSchedule.push_back(
+                {*backend, std::atoi(step.substr(at + 1).c_str())});
+            start = comma + 1;
+        }
+    }
+
+    RuntimeRoot root;
+    auto composed = CreateRhiStartupComposition(
+        *selection.backend, config, sceneManager, assetLoader,
+        [&root] { return root.GetMemorySystem(); });
+    if (!composed.composition) {
+        std::cerr << composed.error << '\n';
+        return 1;
+    }
+    BaseApplication& app = *composed.composition->application;
+    IGraphicsManager* graphicsManager = composed.composition->graphicsManager.get();
+    IPipelineStateManager* pipelineStateManager =
+        composed.composition->pipelineStateManager.get();
+    auto* platformHost = dynamic_cast<IPlatformHost*>(&app);
+    IRenderBackend* renderBackend =
+        composed.composition->sessionBackend
+            ? composed.composition->sessionBackend.get()
+            : dynamic_cast<IRenderBackend*>(&app);
+    if (!platformHost || !renderBackend) {
+        std::cerr << "Selected backend does not provide a platform host\n";
+        return 1;
+    }
+    root.SetHost(app, *platformHost, *renderBackend);
+    auto buildFramePlan = [&] {
+        std::vector<IRuntimeModule*> plan = {
+            &animationManager, &assetLoader, graphicsManager, &inputManager,
+            &memoryManager, &physicsManager, pipelineStateManager, &sceneManager,
+            &gameLogic};
+#ifdef DEBUG
+        plan.push_back(&debugManager);
+#endif
+        return plan;
+    };
+    // Simulation pauses during a switch; rendering, input, and asset loading
+    // continue (no catch-up interval accumulates).
+    auto buildPausedFramePlan = [&] {
+        std::vector<IRuntimeModule*> plan = {
+            &assetLoader, graphicsManager, &inputManager, &memoryManager,
+            pipelineStateManager};
+#ifdef DEBUG
+        plan.push_back(&debugManager);
+#endif
+        return plan;
+    };
+#elif defined(MYGE_USE_VULKAN)
     VulkanPipelineStateManager pipelineStateManager(app.GetRHI(), assetLoader);
     VulkanGraphicsManager graphicsManager(app.GetRHI(), sceneManager, pipelineStateManager);
+#elif defined(OS_MACOS)
+    TPipelineStateManager pipelineStateManager;
+    TGraphicsManager graphicsManager(sceneManager, pipelineStateManager,
+                                     [&app] { return (void*)app.GetMetalView(); });
+#elif defined(OS_WINDOWS) && defined(BILLIARD_USE_D3D12)
+    TPipelineStateManager pipelineStateManager;
+    TGraphicsManager graphicsManager(
+        app.GetRHI(), sceneManager, pipelineStateManager,
+        [&app] { return app.GetMemorySystem(); });
 #else
     TPipelineStateManager pipelineStateManager;
     TGraphicsManager graphicsManager(sceneManager, pipelineStateManager);
 #endif
 
+#if defined(MYGE_RUNTIME_RHI)
+    // The borrowed argument strings and filtered pointer array live in
+    // rhiOptions until main exits, outliving the application.
+    app.SetCommandLineParameters(
+        static_cast<int>(rhiOptions.applicationArguments.size()) - 1,
+        rhiOptions.applicationArguments.data());
+#else
     app.SetCommandLineParameters(argc, argv);
+#endif
 
+#if defined(MYGE_RUNTIME_RHI)
+    // Persistent CPU services outlive every render session; the session slot
+    // owns the replaceable graphics/pipeline managers. RegisterManagerModule
+    // additionally binds the host's borrowed manager pointers (input routing,
+    // resize notification); the application's own module group is never
+    // initialized on the root path.
+    app.RegisterManagerModule(&animationManager);
+    root.RegisterPersistentModule(animationManager);
+    app.RegisterManagerModule(&assetLoader);
+    root.RegisterPersistentModule(assetLoader);
+    app.RegisterManagerModule(&inputManager);
+    root.RegisterPersistentModule(inputManager);
+    app.RegisterManagerModule(&memoryManager);
+    root.RegisterPersistentModule(memoryManager);
+    app.RegisterManagerModule(&physicsManager);
+    root.RegisterPersistentModule(physicsManager);
+    app.RegisterManagerModule(&sceneManager);
+    root.RegisterPersistentModule(sceneManager);
+    app.RegisterManagerModule(&gameLogic);
+    root.RegisterPersistentModule(gameLogic);
+#ifdef DEBUG
+    app.RegisterManagerModule(&debugManager);
+    root.RegisterPersistentModule(debugManager);
+#endif
+    root.RegisterSessionModule(*graphicsManager);
+    root.RegisterSessionModule(*pipelineStateManager);
+    app.BindSessionManagers(graphicsManager, pipelineStateManager);
+#else
     app.RegisterManagerModule(&animationManager);
     app.RegisterManagerModule(&assetLoader);
     app.RegisterManagerModule(&graphicsManager);
@@ -201,6 +390,7 @@ int main(int argc, char** argv) {
     app.RegisterManagerModule(&gameLogic);
 #ifdef DEBUG
     app.RegisterManagerModule(&debugManager);
+#endif
 #endif
 
     // Initialize ImGui
@@ -229,19 +419,54 @@ int main(int argc, char** argv) {
         im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
+#if defined(MYGE_RUNTIME_RHI)
+    renderBackend->CreateMainWindow();
+#else
     app.CreateMainWindow();
+#endif
 
+#if defined(MYGE_RUNTIME_RHI)
+    ret = root.Initialize();
+    if (ret != 0) {
+        root.Finalize();
+        ImGui::DestroyContext();
+        return ret;
+    }
+    root.SetFramePlan(buildFramePlan());
+    RhiSwitchController switchController(
+        root, *composed.composition, config, sceneManager, assetLoader,
+        [&root] { return root.GetMemorySystem(); });
+    // Billiard reuses the same runtime composition and switch orchestration as
+    // Viewer (M5.3); it binds no selection provider, so ImGui stays hidden by
+    // default (no selection panel) and there is no post-rebind hook.
+    RhiFrameDriver frameDriver(
+        switchController, root, *composed.composition, app, inputManager,
+        sceneManager, assetLoader, graphicsManager, pipelineStateManager,
+        [&root] { return root.GetMemorySystem(); }, rhiSwitchSchedule,
+        rhiReconstructCycles,
+        RhiFrameDriver::Hooks{
+            [&](bool paused) {
+                root.SetFramePlan(paused ? buildPausedFramePlan()
+                                         : buildFramePlan());
+            },
+            nullptr});
+#else
     ret = app.Initialize();
     if (ret != 0) {
         app.Finalize();
         ImGui::DestroyContext();
         return ret;
     }
+#endif
 
     if (!regressionDir.empty() &&
         !sceneManager.GetSceneForRendering()->GetFirstCameraNode()) {
         std::cerr << "BILLIARD_PHYSICS_REGRESSION FAILED: camera missing\n";
+#if defined(MYGE_RUNTIME_RHI)
+        root.Finalize();
+#else
         app.Finalize();
+#endif
         ImGui::DestroyContext();
         return 1;
     }
@@ -257,7 +482,11 @@ int main(int argc, char** argv) {
     std::map<std::string, Vector3f> initialPositions;
     float cueDisplacement = 0.0f, otherDisplacement = 0.0f;
     while (!app.IsQuit()) {
+#if defined(MYGE_RUNTIME_RHI)
+        if (frameDriver.Tick() != 0) ret = 1;
+#else
         app.Tick();
+#endif
         if (regressionDir.empty()) continue;
         if (regressionFrame >= 180) {
 #if defined(OS_LINUX)
@@ -305,7 +534,15 @@ int main(int argc, char** argv) {
         }
         if (app.IsQuit()) continue;
         if (regressionFrame == 60) {
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(MYGE_RUNTIME_RHI)
+#if defined(OS_WINDOWS)
+            if (composed.composition->backend == RhiBackend::OpenGL &&
+                !CaptureBilliardFrame(app, regressionDir / "billiard-before.bmp")) {
+                app.RequestQuit();
+                continue;
+            }
+#endif
+#elif defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-before.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -319,7 +556,15 @@ int main(int argc, char** argv) {
                 app.RequestQuit();
                 continue;
             }
-#if defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
+#if defined(MYGE_RUNTIME_RHI)
+#if defined(OS_WINDOWS)
+            if (composed.composition->backend == RhiBackend::OpenGL &&
+                !CaptureBilliardFrame(app, regressionDir / "billiard-after.bmp")) {
+                app.RequestQuit();
+                continue;
+            }
+#endif
+#elif defined(OS_WINDOWS) && !defined(BILLIARD_USE_D3D12) && !defined(MYGE_USE_VULKAN)
             if (!CaptureBilliardFrame(app, regressionDir / "billiard-after.bmp")) {
                 app.RequestQuit();
                 continue;
@@ -336,7 +581,25 @@ int main(int argc, char** argv) {
             std::cout << "BILLIARD_PHYSICS_REGRESSION PASSED: cue=" << cueDisplacement
                       << " other=" << otherDisplacement << std::endl;
             regressionResult = 0;
-#if defined(MYGE_USE_VULKAN) && !defined(OS_LINUX)
+#if defined(MYGE_RUNTIME_RHI)
+            // Capture/quit dispatch follows the active backend, not the build.
+            // Linux completion is driven by the external capture script's
+            // capture-complete marker regardless of backend. D3D12/Metal capture
+            // paths retire the application themselves once the frame is saved.
+#if !defined(OS_LINUX)
+            if (composed.composition->backend == RhiBackend::Vulkan) {
+#if defined(HAS_VULKAN)
+                if (!static_cast<VulkanGraphicsManager*>(graphicsManager)->HasPendingScreenshot())
+                    app.RequestQuit();
+#endif
+            }
+#if defined(OS_WINDOWS)
+            else if (composed.composition->backend == RhiBackend::OpenGL) {
+                app.RequestQuit();
+            }
+#endif
+#endif
+#elif defined(MYGE_USE_VULKAN) && !defined(OS_LINUX)
             // Linux completion is driven by the external capture script's
             // capture-complete marker. Elsewhere quit automatically unless a
             // screenshot request is still pending; the capture path retires the
@@ -352,7 +615,11 @@ int main(int argc, char** argv) {
 
 #if !defined(OS_WEBASSEMBLY)
     // Finalize App
+#if defined(MYGE_RUNTIME_RHI)
+    root.Finalize();
+#else
     app.Finalize();
+#endif
 #endif
 
     ImGui::DestroyContext();

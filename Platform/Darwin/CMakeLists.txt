@@ -8,6 +8,7 @@ add_platform_asset_io(PlatformAssetIO AssetLoader.mm)
 set (PlatformSources 
         CocoaApplication.mm 
         CocoaMetalApplication.mm
+        MetalBackend.mm
         AppDelegate.m
         WindowDelegate.mm
         MetalView.mm
@@ -26,5 +27,8 @@ target_link_libraries(PlatformInterface
         ${COCOA_LIBRARY} 
         ${OPENGL_LIBRARY}
         ${GAMECONTROLLER_LIBRARY}
+        # Headless capture pacing (CACurrentMediaTime) lives in the host.
+        "-framework QuartzCore"
         dl
+        $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
     )

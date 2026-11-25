@@ -255,7 +255,11 @@ int OpenGLApplication::InitializeGraphicsResources() {
 void OpenGLApplication::Tick() {
     if (!m_Context) return;
     XcbApplication::Tick();
-    glXSwapBuffers(m_pDisplay, m_XWindow);
+    PresentFrame();
+}
+
+void OpenGLApplication::PresentFrame() {
+    if (m_Context) glXSwapBuffers(m_pDisplay, m_XWindow);
 }
 
 void OpenGLApplication::FinalizeGraphicsResources() {
@@ -273,5 +277,13 @@ void OpenGLApplication::FinalizeGraphicsResources() {
     if (m_pDisplay) {
         // XCB owns the native window on a separate connection.
         XSync(m_pDisplay, False);
+    }
+}
+
+void OpenGLApplication::WaitForGraphicsIdle() {
+    if (m_Context && glXGetCurrentContext() == m_Context) {
+        // glXWaitGL is provided by the GLX loader linked into the platform
+        // library; glFinish would require the GL loader (OpenGLRHI only).
+        glXWaitGL();
     }
 }

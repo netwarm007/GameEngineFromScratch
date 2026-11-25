@@ -1,5 +1,18 @@
 set(PLATFORM_TEST_CASES BasicWindowTest)
 
+if(OS_WINDOWS OR OS_LINUX OR OS_MACOS)
+    add_test(NAME TEST_DesktopApplications
+        COMMAND "${CMAKE_COMMAND}"
+            "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
+            "-DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+            "-DGENERATOR=${CMAKE_GENERATOR}"
+            "-DGENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}"
+            "-DGENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}"
+            "-DCOMPILER=${CMAKE_CXX_COMPILER}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/DesktopApplicationsTest.cmake")
+    set_tests_properties(TEST_DesktopApplications PROPERTIES LABELS fast)
+endif()
+
 if(OS_LINUX)
     add_executable(LinuxApplicationLifetimeTest LinuxApplicationLifetimeTest.cpp)
     target_link_libraries(LinuxApplicationLifetimeTest PRIVATE Framework PlatformInterface)
@@ -56,7 +69,9 @@ foreach(TEST_CASE IN LISTS GRAPHICS_TEST_CASES)
     elseif(OS_WINDOWS)
         target_link_libraries(${TEST_CASE} Framework PlatformInterface D3dRHI D2dRHI OpenGLRHI ${VULKAN_RHI})
     else()
-        target_link_libraries(${TEST_CASE} Framework PlatformInterface OpenGLRHI ${VULKAN_RHI})
+        target_link_libraries(${TEST_CASE} Framework
+            $<IF:$<TARGET_EXISTS:PlatformInterfaceSDL2>,PlatformInterfaceSDL2,PlatformInterface>
+            OpenGLRHI ${VULKAN_RHI})
     endif(OS_MACOS)
 endforeach(TEST_CASE)
 

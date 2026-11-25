@@ -1,0 +1,53 @@
+#pragma once
+
+#include <cstdint>
+
+#include "Interface.hpp"
+#include "RhiStartup.hpp"
+
+namespace My {
+class IRenderBackend;
+
+// Persistent platform host surface consumed by a render session: GUI
+// platform backend binding and platform event processing, separate from
+// module frame updates. Window ownership and the window/configuration
+// surface remain on IApplication, which the host also implements; the host
+// object persists across render-session replacement.
+_Interface_ IPlatformHost {
+   public:
+    virtual ~IPlatformHost() = default;
+
+    // The active session backend receives native resize notifications
+    // through the host; null while no session is active.
+    virtual void SetActiveBackend(IRenderBackend* backend) = 0;
+
+    // Bind/unbind the GUI platform backend to the native window. The ImGui
+    // context must exist and be unbound before InitializeGuiPlatform.
+    virtual int InitializeGuiPlatform() = 0;
+    virtual void FinalizeGuiPlatform() = 0;
+
+    // Release native window/platform resources. Window recreation for
+    // reconstruction calls this before CreateMainWindow; backends whose
+    // drawable survives session replacement skip it.
+    virtual void FinalizePlatformResources() = 0;
+
+    // One-time platform subsystem shutdown at final teardown (e.g. SDL_Quit),
+    // after FinalizePlatformResources. Not called during reconstruction.
+    virtual void ShutdownPlatform() {}
+
+    // Drain pending platform events and run GUI platform per-frame work
+    // without ticking runtime modules. Safe to call while rendering is
+    // paused.
+    virtual void ProcessEvents() = 0;
+
+    // Notify the host that the active backend is changing (before the new
+    // window/drawable is created): the dual-mode Linux host selects its
+    // windowing mode here. Default no-op for single-mode hosts.
+    virtual void OnBackendSwitch(RhiBackend target) {}
+
+    // M5.1: update the native window title (e.g. to reflect the active
+    // backend after a switch). Default no-op for hosts without a titleable
+    // window.
+    virtual void SetWindowTitle(const char* title) {}
+};
+}  // namespace My

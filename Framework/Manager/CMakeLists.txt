@@ -1,5 +1,10 @@
 add_library(AssetIO AssetLoader.cpp)
 
+if(NOT TARGET RhiStartup)
+    add_library(RhiStartup RhiStartup.cpp)
+    target_include_directories(RhiStartup PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
 add_library(SceneResources SceneResourceLoader.cpp)
 target_link_libraries(SceneResources PUBLIC SceneGraph PRIVATE ImageDecoders)
 
@@ -33,12 +38,13 @@ add_library(Manager
         RoutingAllocator.cpp
         MemorySystem.cpp
         EngineAllocation.cpp
+        RuntimeRoot.cpp
         PipelineStateManager.cpp
         RingAllocator.cpp
         SizeClassAllocator.cpp
         SlabAllocator.cpp
 )
-target_link_libraries(Manager PUBLIC AssetIO SceneServices SceneResources RenderServices)
+target_link_libraries(Manager PUBLIC AssetIO RhiStartup SceneServices SceneResources RenderServices)
 if(USE_ENGINE_ALLOCATORS)
     target_compile_definitions(Manager PUBLIC USE_ENGINE_ALLOCATORS)
     if(ENABLE_ALLOCATOR_TRACKING)

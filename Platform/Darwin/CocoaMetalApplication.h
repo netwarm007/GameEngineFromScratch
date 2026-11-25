@@ -1,14 +1,38 @@
 #pragma once
 #include "CocoaApplication.h"
+#include "IRenderBackend.hpp"
+#include "MetalBackend.h"
+
+OBJC_CLASS(MetalView);
 
 namespace My {
-class CocoaMetalApplication : public CocoaApplication {
+// Legacy compile-time application: the Cocoa host plus an owned Metal
+// backend, with headless capture pacing. The runtime path composes the host
+// and backend separately.
+class CocoaMetalApplication : public CocoaApplication, _implements_ IRenderBackend {
    public:
-    using CocoaApplication::CocoaApplication;
+    CocoaMetalApplication();
+    explicit CocoaMetalApplication(GfxConfiguration& cfg);
 
-    void Tick() override;
+    // The Metal drawable installed by the backend; nullptr before graphics
+    // resources exist or when the content view is not Metal.
+    MetalView* GetMetalView() { return m_Backend.GetMetalView(); }
 
-   protected:
-    int InitializeGraphicsResources() override;
+    void CreateMainWindow() override { CocoaApplication::CreateMainWindow(); }
+    int InitializeGuiPlatform() override {
+        return CocoaApplication::InitializeGuiPlatform();
+    }
+    void FinalizeGuiPlatform() override { CocoaApplication::FinalizeGuiPlatform(); }
+    void WaitForGraphicsIdle() override { m_Backend.WaitForGraphicsIdle(); }
+    void FinalizeGraphicsResources() override {
+        m_Backend.FinalizeGraphicsResources();
+    }
+
+   private:
+    int InitializeGraphicsResources() override {
+        return m_Backend.InitializeGraphicsResources();
+    }
+
+    MetalBackend m_Backend;
 };
 }  // namespace My

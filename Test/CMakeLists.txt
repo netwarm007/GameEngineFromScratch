@@ -4,7 +4,11 @@ if(OS_MACOS)
 elseif(OS_WINDOWS)
     target_link_libraries(RayTracingTest Framework PlatformInterface D3dRHI D2dRHI OpenGLRHI ${VULKAN_RHI})
 else()
-    target_link_libraries(RayTracingTest Framework PlatformInterface OpenGLRHI ${VULKAN_RHI})
+    # CrossPlatformGfxApp pairs with the SDL OpenGL application when SDL2 is
+    # available (matching the runtime composition).
+    target_link_libraries(RayTracingTest Framework
+        $<IF:$<TARGET_EXISTS:PlatformInterfaceSDL2>,PlatformInterfaceSDL2,PlatformInterface>
+        OpenGLRHI ${VULKAN_RHI})
 endif(OS_MACOS)
 
 # CUDA

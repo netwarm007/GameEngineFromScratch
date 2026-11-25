@@ -73,3 +73,6 @@ External/*/astcenc
 CMakeFiles/
 
 Proprietary
+# CircleCI Smarter Testing local selection/impact state (never commit)
+.circleci/state*.json
+.circleci/impact*.json

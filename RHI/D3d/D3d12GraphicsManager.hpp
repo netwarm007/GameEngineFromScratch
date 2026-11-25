@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include <array>
+#include <functional>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,9 +18,19 @@
 #include "D3d12RHI.hpp"
 
 namespace My {
+class MemorySystem;
+
 class D3d12GraphicsManager : public GraphicsManager {
    public:
-    using GraphicsManager::GraphicsManager;
+    // The RHI is injected by the composition; the graphics manager never
+    // resolves it through a concrete application type. The optional memory
+    // provider resolves the persistent allocator stack lazily (it is created
+    // after composition construction).
+    explicit D3d12GraphicsManager(
+        D3d12RHI& rhi, std::function<MemorySystem*()> memoryProvider = {});
+    D3d12GraphicsManager(D3d12RHI& rhi, ISceneManager& scenes,
+                         IPipelineStateManager& pipelines,
+                         std::function<MemorySystem*()> memoryProvider = {});
     ~D3d12GraphicsManager() override;
 
     int Initialize() final;
@@ -97,6 +108,8 @@ class D3d12GraphicsManager : public GraphicsManager {
     void UpdateDebugViews();
 
    private:
+    D3d12RHI& m_rhi;
+    std::function<MemorySystem*()> m_MemoryProvider;
     struct RenderTexture {
         ID3D12DescriptorHeap* viewHeap = nullptr;
         D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
@@ -140,7 +153,7 @@ class D3d12GraphicsManager : public GraphicsManager {
     D3dDrawBatchContext m_dbcSkyBox;
     std::vector<D3d12RHI::IndexBuffer> m_IndexBuffers;
     std::vector<D3d12RHI::VertexBuffer> m_VertexBuffers;
-    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerFrameConstantBuffers;
-    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerBatchConstantBuffers;
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerFrameConstantBuffers{};
+    std::array<D3d12RHI::ConstantBuffer, GfxConfiguration::kMaxInFlightFrameCount> m_PerBatchConstantBuffers{};
 };
 }  // namespace My

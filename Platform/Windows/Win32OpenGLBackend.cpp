@@ -1,8 +1,10 @@
-#include "OpenGLApplication.hpp"
+#include "Win32OpenGLBackend.hpp"
 
 #include <stdio.h>
 #include <tchar.h>
 
+#include "IApplication.hpp"
+#include "IPlatformHost.hpp"
 #include "glad/glad_wgl.h"
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -32,35 +34,65 @@ static LRESULT CALLBACK TmpWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam,
     return 0;
 }
 
-void OpenGLApplication::FinalizeGraphicsResources() {
+Win32OpenGLBackend::Win32OpenGLBackend(IApplication& application,
+                                       IPlatformHost& platform)
+    : m_Application(application), m_Platform(platform) {}
+
+void Win32OpenGLBackend::CreateMainWindow() {
+    m_Application.CreateMainWindow();
+}
+
+void Win32OpenGLBackend::FinalizeGraphicsResources() {
     if (m_RenderContext) {
         wglMakeCurrent(NULL, NULL);
         wglDeleteContext(m_RenderContext);
         m_RenderContext = 0;
     }
     if (m_hDC) {
-        ReleaseDC(m_hWnd, m_hDC);
+        ReleaseDC((HWND)m_Application.GetMainWindowHandler(), m_hDC);
         m_hDC = nullptr;
     }
 }
 
-int OpenGLApplication::InitializeGuiPlatform() {
+void Win32OpenGLBackend::WaitForGraphicsIdle() {
+    // The WGL platform library links only the WGL loader, not the GL loader
+    // that defines glFinish, and WGL exposes no wait entry point. Context
+    // deletion at teardown keeps the existing synchronization semantics;
+    // explicit GL drain belongs to the OpenGL graphics manager, which links
+    // the GL loader.
+}
+
+int Win32OpenGLBackend::InitializeGuiPlatform() {
     if (!ImGui::GetCurrentContext()) return 0;
-    if (!m_hWnd || ImGui::GetIO().BackendPlatformUserData) return -1;
-    if (!ImGui_ImplWin32_InitForOpenGL(m_hWnd)) return -1;
+    HWND hWnd = (HWND)m_Application.GetMainWindowHandler();
+    if (!hWnd || ImGui::GetIO().BackendPlatformUserData) return -1;
+    if (!ImGui_ImplWin32_InitForOpenGL(hWnd)) return -1;
     ImGui_ImplWin32_EnableDpiAwareness();
     return 0;
 }
 
-int OpenGLApplication::Initialize() {
-    const int result = WindowsApplication::Initialize();
-    if (result != 0 || !ImGui::GetCurrentContext()) return result;
+void Win32OpenGLBackend::FinalizeGuiPlatform() {
+    m_Platform.FinalizeGuiPlatform();
+}
+
+void Win32OpenGLBackend::OnSessionActivated() {
+    if (!ImGui::GetCurrentContext()) return;
 
     auto& platform = ImGui::GetPlatformIO();
     auto* mainViewport = ImGui::GetMainViewport();
-    if (!platform.Renderer_RenderWindow || mainViewport->RendererUserData) return 0;
+    if (!platform.Renderer_RenderWindow) return;
+    HWND hWnd = (HWND)m_Application.GetMainWindowHandler();
+    // After a window-recreating switch the previous WglViewportData still
+    // references the destroyed HWND/DC (the ImGui context survives
+    // reconstruction). Refresh it so the main viewport renders to the new
+    // window instead of presenting a stale drawable (Finding 4: a recovered
+    // OpenGL window stayed unpainted at the class background brush).
+    if (mainViewport->RendererUserData) {
+        delete static_cast<WglViewportData*>(mainViewport->RendererUserData);
+        mainViewport->RendererUserData = nullptr;
+    }
     mainViewport->RendererUserData =
-        new WglViewportData{m_hWnd, m_hDC, platform.Renderer_RenderWindow};
+        new WglViewportData{hWnd, m_hDC, platform.Renderer_RenderWindow};
 
     platform.Renderer_CreateWindow = [](ImGuiViewport* viewport) {
         auto* main = static_cast<WglViewportData*>(ImGui::GetMainViewport()->RendererUserData);
@@ -115,25 +147,39 @@ int OpenGLApplication::Initialize() {
             fprintf(stderr, "Cannot present ImGui WGL viewport\n");
         }
     };
-    return 0;
 }
 
-void OpenGLApplication::Tick() {
-    WindowsApplication::Tick();
-
-    // Present the back buffer to the screen since rendering is complete.
+void Win32OpenGLBackend::PresentFrame() {
+    // ImGui multi-viewport rendering at frame end makes a viewport context
+    // current and does not restore the main one, so re-bind m_hDC/m_RenderContext
+    // immediately before swapping (BeginFrame alone is too early on Windows,
+    // where multi-viewport is enabled); otherwise SwapBuffers presents the wrong
+    // context's buffer and the main window stays gray.
+    if (m_hDC && m_RenderContext) {
+        wglMakeCurrent(m_hDC, m_RenderContext);
+    }
     SwapBuffers(m_hDC);
 }
 
-int OpenGLApplication::InitializeGraphicsResources() {
-    if (!GetMainWindowHandler()) {
+void Win32OpenGLBackend::BeginFrame() {
+    // ImGui multi-viewport rendering binds a viewport DC and restores the prior
+    // DC, which can leave the main render context not current on m_hDC after a
+    // switch/recovery. Re-bind it so scene passes render into m_hDC's back
+    // buffer and PresentFrame's SwapBuffers(m_hDC) presents that same buffer;
+    // otherwise the back buffer has the scene but the window stays gray.
+    if (m_hDC && m_RenderContext) {
+        wglMakeCurrent(m_hDC, m_RenderContext);
+    }
+}
+
+int Win32OpenGLBackend::InitializeGraphicsResources() {
+    HWND hWnd = (HWND)m_Application.GetMainWindowHandler();
+    if (!hWnd) {
         fprintf(stderr, "OpenGL initialization requires a native window\n");
         return -1;
     }
-    auto colorBits =
-        m_Config.redBits + m_Config.greenBits +
-        m_Config
-            .blueBits;  // note on windows this does not include alpha bitplane
+    const auto config = m_Application.GetConfiguration();
+    auto colorBits = config.redBits + config.greenBits + config.blueBits;
 
     DWORD Style = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
     WNDCLASSEX WndClassEx;
@@ -161,12 +207,12 @@ int OpenGLApplication::InitializeGraphicsResources() {
     m_pfd.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW;
     m_pfd.iPixelType = PFD_TYPE_RGBA;
     m_pfd.cColorBits = colorBits;
-    m_pfd.cRedBits = m_Config.redBits;
-    m_pfd.cGreenBits = m_Config.greenBits;
-    m_pfd.cBlueBits = m_Config.blueBits;
-    m_pfd.cAlphaBits = m_Config.alphaBits;
-    m_pfd.cDepthBits = m_Config.depthBits;
-    m_pfd.cStencilBits = m_Config.stencilBits;
+    m_pfd.cRedBits = config.redBits;
+    m_pfd.cGreenBits = config.greenBits;
+    m_pfd.cBlueBits = config.blueBits;
+    m_pfd.cAlphaBits = config.alphaBits;
+    m_pfd.cDepthBits = config.depthBits;
+    m_pfd.cStencilBits = config.stencilBits;
     m_pfd.iLayerType = PFD_MAIN_PLANE;
 
     HDC TemphDC = GetDC(TemphWnd);
@@ -188,7 +234,7 @@ int OpenGLApplication::InitializeGraphicsResources() {
         return -1;
     }
 
-    m_hDC = GetDC(m_hWnd);
+    m_hDC = GetDC(hWnd);
 
     // now we try to init OpenGL Core profile context
     if (GLAD_WGL_ARB_pixel_format && GLAD_WGL_ARB_multisample &&
@@ -205,21 +251,21 @@ int OpenGLApplication::InitializeGraphicsResources() {
                                   WGL_COLOR_BITS_ARB,
                                   (const int)colorBits,
                                   WGL_RED_BITS_ARB,
-                                  (const int)m_Config.redBits,
+                                  (const int)config.redBits,
                                   WGL_GREEN_BITS_ARB,
-                                  (const int)m_Config.greenBits,
+                                  (const int)config.greenBits,
                                   WGL_BLUE_BITS_ARB,
-                                  (const int)m_Config.blueBits,
+                                  (const int)config.blueBits,
                                   WGL_ALPHA_BITS_ARB,
-                                  (const int)m_Config.alphaBits,
+                                  (const int)config.alphaBits,
                                   WGL_DEPTH_BITS_ARB,
-                                  (const int)m_Config.depthBits,
+                                  (const int)config.depthBits,
                                   WGL_STENCIL_BITS_ARB,
-                                  (const int)m_Config.stencilBits,
+                                  (const int)config.stencilBits,
                                   WGL_SAMPLE_BUFFERS_ARB,
                                   1,
                                   WGL_SAMPLES_ARB,
-                                  (const int)m_Config.msaaSamples,
+                                  (const int)config.msaaSamples,
                                   0};
 
         UINT numFormats = 0;

@@ -19,6 +19,32 @@ if(Vulkan_FOUND)
 list (APPEND PlatformSources VulkanApplication.cpp)
 endif(Vulkan_FOUND)
 
+# XCB host pieces for runtime RHI selection builds that keep the SDL OpenGL
+# application: excludes the XCB OpenGLApplication and PlatformAssetIO so they
+# do not clash with the SDL variants in the same executable.
+if(Vulkan_FOUND)
+    set(PLATFORM_VULKAN_XCB_SOURCES XcbApplication.cpp VulkanApplication.cpp)
+    if(SDL2_FOUND)
+        # The dual-mode Linux host needs SDL2; trimmed builds without SDL2
+        # keep the plain XCB pieces.
+        list(APPEND PLATFORM_VULKAN_XCB_SOURCES LinuxHost.cpp)
+    endif()
+    add_library(PlatformVulkanXcb ${PLATFORM_VULKAN_XCB_SOURCES})
+    target_link_libraries(PlatformVulkanXcb
+        ${XCB_LIBRARY}
+        ${X11_LIBRARY}
+        ${X11_XCB_LIBRARY}
+        ${DL_LIBRARY}
+        $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
+        $<$<TARGET_EXISTS:VulkanRHI>:VulkanRHI>
+    )
+    if(SDL2_FOUND)
+        target_include_directories(PlatformVulkanXcb PRIVATE
+            ${SDL2_INCLUDE_DIR} "${PROJECT_SOURCE_DIR}/Platform/Sdl")
+        target_link_libraries(PlatformVulkanXcb ${SDL2_LIBRARY} ImGuiSDL2Backend)
+    endif()
+endif()
+
 add_library(PlatformInterface
     ${PlatformSources}
 )
@@ -29,7 +55,8 @@ target_link_libraries(PlatformInterface
         ${X11_LIBRARY} 
         ${X11_XCB_LIBRARY} 
         ${DL_LIBRARY}
+        $<$<TARGET_EXISTS:VulkanLoader>:VulkanLoader>
+        $<$<TARGET_EXISTS:VulkanRHI>:VulkanRHI>
 )
 
 target_include_directories(PlatformInterface PRIVATE "${PROJECT_SOURCE_DIR}/External/src/glad/include")
-

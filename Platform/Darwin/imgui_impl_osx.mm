@@ -675,6 +675,10 @@ void ImGui_ImplOSX_NewFrame(NSView* view)
         bd->Time = GetMachAbsoluteTimeInSeconds();
 
     double current_time = GetMachAbsoluteTimeInSeconds();
+    // A platform rebind (session reconstruction) can land on the same clock
+    // tick; keep the step positive, as the SDL2 backend does.
+    if (current_time <= bd->Time)
+        current_time = bd->Time + 1.0 / 60.0;
     io.DeltaTime = (float)(current_time - bd->Time);
     bd->Time = current_time;
 

@@ -398,7 +398,7 @@ void OpenGLGraphicsManager::BeginPass(Frame& frame) {
     if (frame.clearRT) {
         // Set the color to clear the screen to.
         glClearColor(frame.clearColor[0], frame.clearColor[1], frame.clearColor[2],
-                    frame.clearColor[3]);
+                    1.0f);
 
         // Clear the screen and depth buffer.
         glDepthMask(GL_TRUE);

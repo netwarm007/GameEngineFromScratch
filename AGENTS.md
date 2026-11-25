@@ -17,8 +17,12 @@
   `git worktree add ../GameEngineFromScratch-<task> -b <branch> origin/master`)
   and make all edits, builds, and commits only inside that worktree. Do not
   modify the primary checkout or a worktree owned by another session. Remove
-  the worktree (`git worktree remove`) and delete its branch once the work is
-  merged or abandoned.
+  the worktree (`git worktree remove`) and delete its branch once the work's
+  pull request is merged, or the work is abandoned (the standard GitHub flow);
+  keep them until merge so pull-request review revisions remain possible. A
+  passing CI run, deliverable acceptance, or an integration into an intermediate
+  branch is not the cleanup trigger. Remove the worktree before deleting its
+  branch, since a branch checked out in a worktree cannot be deleted.
 
 ## Vulkan implementation
 
@@ -37,26 +41,31 @@
   `ctest -L fast` for the headless unit tests.
 - CircleCI has two scopes. A normal push runs the full scope on all enabled
   platforms (every test, screenshots, coverage), which needs no API token and
-  is what acceptance uses. For iteration, trigger the branch through the
+  is what verification uses. For iteration, trigger the branch through the
   CircleCI API with `{"parameters": {"run_full": false, "platforms": "macos"}}`
   (token from the user's environment; never record it) to run only the quick
   scope on the listed platforms: ccache builds and `ctest -L fast`, with no
   screenshots, coverage, or packaging. A quick result never counts as
-  acceptance. Label new tests that need no window or GPU as `fast` (see
-  `Test/CMakeLists.txt`).
-- A project commit is accepted only after the CircleCI pipeline for that exact
+  full verification. Label new tests that need no window or GPU as `fast` (see
+  `Test/CMakeLists.txt`). Triggering CI to verify multi-platform behavior during
+  a work step is verification, not acceptance: this cross-platform project cannot
+  be fully verified locally, so CI is the verification aid. The per-revision
+  full-scope result is the verification gate for a commit. Acceptance (验收) is
+  deliverable acceptance, the later culmination that normally requires all
+  roadmap tasks complete, the three-platform CI passing, and a pull request.
+- A project commit is verified only after the CircleCI pipeline for that exact
   revision completes successfully on every enabled platform: currently Windows,
   Linux, and macOS. Each platform must complete its configured build and tests.
   Update this list when the enabled CircleCI platforms change; disabled Android
-  is not currently part of this acceptance gate.
+  is not currently part of this verification gate.
 - Local tests or a successful job on one platform do not replace the complete
   CircleCI result. Pending, canceled, skipped, unavailable, or failed jobs do
-  not satisfy acceptance. Report the pipeline link, revision, each platform's
-  result, and any blockers; do not claim acceptance while results are unknown.
-- In this repository, complete acceptance before creating a pull request.
-  Push the branch, verify its exact revision on all enabled CircleCI platforms,
-  inspect required visual artifacts, then open the PR. Documentation-only
-  changes covered by the exemption below do not require CI.
+  not satisfy verification. Report the pipeline link, revision, each platform's
+  result, and any blockers; do not claim verification while results are unknown.
+- In this repository, verify the exact revision on all enabled CircleCI
+  platforms and inspect required visual artifacts before opening a pull
+  request; the PR is part of deliverable acceptance (roadmap tasks complete).
+  Documentation-only changes covered by the exemption below do not require CI.
 - Documentation-only commits are exempt from the CircleCI gate: do not run or
   wait for CircleCI, and put `[ci skip]` in the commit message so the push does
   not start a pipeline. A commit is documentation-only when every changed file
@@ -78,15 +87,16 @@
   keep the per-revision limitations, but the roadmap is the single place that
   lists open ones. Add new limitations when found and remove or mark them
   resolved when fixed, in the same change.
-- Do not update `README.md` for routine acceptance results or maintain a shared
+- Do not update `README.md` for routine verification results or maintain a shared
   "latest verified revision" or result index. README links to the records
   directory and changes only for durable instructions, support, or behavior.
 - For CircleCI investigation, use
   [the CircleCI troubleshooting skill](.github/skills/circleci-troubleshooting/SKILL.md).
 - When monitoring a running CircleCI pipeline, run one background loop that
-  checks the commit status about every 30 seconds and exits as soon as every
-  enabled platform has finished or any has failed, then read its result on
-  notification. Do not poll with fixed multi-minute sleeps unless the user
+  checks the commit status about every 30 seconds and exits once every enabled
+  platform has finished, then read its result on notification. For iteration it
+  may stop at the first failure, but full-scope verification requires every
+  enabled platform's terminal result. Do not poll with fixed multi-minute sleeps unless the user
   requests a specific interval. Report platforms that never appear as
   unknown, not passed. A push whose latest commit contains `[ci skip]` starts
   no pipeline, so push the revision to verify without it.

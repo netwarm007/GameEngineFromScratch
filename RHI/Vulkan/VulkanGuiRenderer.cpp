@@ -76,12 +76,13 @@ void VulkanGuiRenderer::Initialize(vk::RenderPass renderPass, uint32_t imageCoun
         if (std::strcmp(name, "vkQueuePresentKHR") == 0) {
             return reinterpret_cast<PFN_vkVoidFunction>(&VulkanGuiRenderer::Present);
         }
-        const auto function = vkGetInstanceProcAddr(static_cast<VulkanRHI*>(owner)->GetInstance(), name);
+        const auto& loader = GetVulkanLoader();
+        const auto function = loader.GetInstanceFunction(static_cast<VulkanRHI*>(owner)->GetInstance(), name);
         if (function) return function;
         // The helper loads WSI entry points even for offscreen use. Loader
         // trampolines are available without enabling or invoking those extensions.
 #define WSI_TRAMPOLINE(functionName) \
-        if (std::strcmp(name, #functionName) == 0) return reinterpret_cast<PFN_vkVoidFunction>(functionName)
+        if (std::strcmp(name, #functionName) == 0) return loader.GetExportedFunction(name)
         WSI_TRAMPOLINE(vkAcquireNextImageKHR);
         WSI_TRAMPOLINE(vkCreateSwapchainKHR);
         WSI_TRAMPOLINE(vkDestroySwapchainKHR);

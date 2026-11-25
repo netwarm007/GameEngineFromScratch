@@ -3,6 +3,7 @@
 #include "imgui/imgui_internal.h"
 
 #include <cmath>
+#include <cstdlib>
 #include <deque>
 
 using namespace My;
@@ -214,7 +215,114 @@ static void TexturePreviewer(const TextureBase& texture, ImVec2 size = {64, 64},
     }
 }
 
+void GuiSubPass::DrawRhiSelectionMenu() {
+    if (!m_pRhiSelection) return;
+    if (ImGui::BeginMenu((const char*)u8"渲染后端")) {
+        // Probe at most once per second: availability probing may enumerate
+        // devices, so avoid running it every frame while the menu is open.
+        const double now = ImGui::GetTime();
+        if (now - m_LastBackendProbe > 1.0) {
+            m_BackendCache = m_pRhiSelection->Backends();
+            m_LastBackendProbe = now;
+        }
+        const auto& backends = m_BackendCache;
+        const RhiBackend active = m_pRhiSelection->ActiveBackend();
+        const bool switching = m_pRhiSelection->IsSwitching();
+        for (const auto& b : backends) {
+            const bool isActive = (b.backend == active);
+            const bool available =
+                (b.state == RhiAvailability::ReadyForInitialization);
+            std::string label(RhiBackendName(b.backend));
+            const bool disabled = !available || (switching && !isActive);
+            if (disabled) ImGui::BeginDisabled();
+            if (ImGui::MenuItem(label.c_str(), nullptr, isActive)) {
+                if (!isActive && available) {
+                    m_pRhiSelection->RequestSwitch(b.backend);
+                }
+            }
+            if (disabled) ImGui::EndDisabled();
+            if (!available &&
+                ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                ImGui::SetTooltip("%s",
+                                  b.reason.empty() ? "unavailable" : b.reason.c_str());
+            }
+        }
+        ImGui::Separator();
+        if (switching) {
+            ImGui::TextUnformatted((const char*)u8"切换中…");
+        }
+        const std::string status = m_pRhiSelection->SwitchStatus();
+        if (!status.empty()) {
+            ImGui::TextWrapped("%s", status.c_str());
+        }
+        ImGui::EndMenu();
+    }
+}
+
+void GuiSubPass::DrawSwitchProgress() {
+    if (!m_pRhiSelection) return;
+    const bool switching = m_pRhiSelection->IsSwitching();
+    // Progress modal: open while a switch is in progress (blocks input behind
+    // it), close once it completes.
+    if (switching && !m_SwitchModalOpen) {
+        ImGui::OpenPopup((const char*)u8"切换渲染后端");
+        m_SwitchModalOpen = true;
+    }
+    // Failure dialog driven by the controller's event queue, NOT per-frame edge
+    // detection: a synchronous switch+recovery can complete within one frame
+    // boundary, so edge detection misses it. The event persists until consumed
+    // and the dialog stays open until dismissed, whenever the GUI next renders.
+    std::string failMsg;
+    if (m_pRhiSelection->ConsumeSwitchFailure(failMsg)) {
+        m_SwitchResult = failMsg;
+        // Verification hook: the CI recovery tests capture the recovered scene
+        // without the failure modal's dimming overlay (which grays the whole
+        // frame). The dialog UI itself is verified separately on real hardware.
+        static const bool suppressFailDialog =
+            std::getenv("GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG") != nullptr;
+        if (!suppressFailDialog) {
+            m_ShowSwitchError = true;
+            ImGui::OpenPopup((const char*)u8"切换失败");
+        }
+    }
+
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal((const char*)u8"切换渲染后端", nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+        ImGui::TextUnformatted((const char*)u8"正在切换渲染后端，请稍候…");
+        const std::string st = m_pRhiSelection->SwitchStatus();
+        if (!st.empty()) ImGui::TextWrapped("%s", st.c_str());
+        if (!switching) {
+            m_SwitchModalOpen = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    // Explicit failure dialog (no silent fallback); recovery is reported.
+    if (m_ShowSwitchError) {
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal((const char*)u8"切换失败", nullptr,
+                ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextWrapped((const char*)u8"渲染后端切换失败：%s", m_SwitchResult.c_str());
+            ImGui::TextUnformatted((const char*)u8"已保留或恢复原后端。");
+            if (ImGui::Button((const char*)u8"确定")) {
+                m_ShowSwitchError = false;
+                m_SwitchResult.clear();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
 void GuiSubPass::Draw(Frame& frame) {
+    // The provider is re-bound to the manager only after a switch completes,
+    // which is later than this sub-pass's construction (the new GraphicsManager
+    // builds OverlayPass before main.cpp re-binds). Refresh from the manager each
+    // frame so the backend menu and switch-failure dialog follow the live
+    // manager rather than a null cached at construction (Finding 5).
+    m_pRhiSelection = m_pGraphicsManager->GetRhiSelectionProvider();
     if (ImGui::GetCurrentContext()) {
         const std::array<TextureHandler, 4> sources{
             frame.frameContext.globalShadowMap.handler, frame.frameContext.shadowMap.handler,
@@ -314,6 +422,7 @@ void GuiSubPass::Draw(Frame& frame) {
                 }
                 ImGui::EndMenu();
             }
+            DrawRhiSelectionMenu();
             if (ImGui::BeginMenu((const char*)u8"帮助"))
             {
 			    ImGui::MenuItem((const char*)u8"关于本应用", NULL, &show_app_about);
@@ -321,6 +430,8 @@ void GuiSubPass::Draw(Frame& frame) {
             }
             ImGui::EndMainMenuBar();
         }
+
+        DrawSwitchProgress();
 
         if (show_app_debug_panel) {
             static std::deque<float> fps_data;

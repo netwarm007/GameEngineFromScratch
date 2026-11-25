@@ -41,6 +41,13 @@ class BaseApplication : _implements_ IApplication {
         return m_Config;
     }
 
+    // Render conventions follow the active render session (M4 switching):
+    // update the host configuration before the restored scene prepares
+    // camera/light data.
+    void SetRenderConvention(bool fixOpenGLPerspectiveMatrix) {
+        m_Config.fixOpenGLPerspectiveMatrix = fixOpenGLPerspectiveMatrix;
+    }
+
     void GetFramebufferSize(uint32_t& width, uint32_t& height) override {}
 
     void CreateMainWindow() override {}
@@ -59,6 +66,16 @@ class BaseApplication : _implements_ IApplication {
 #ifdef DEBUG
     void RegisterManagerModule(IDebugManager* mgr);
 #endif
+
+    // Rebind the borrowed session-manager pointers without lifecycle
+    // registration: the runtime root owns module lifecycle, and replaced
+    // session modules may reuse freed addresses (duplicate registration
+    // would throw). Event/resize routing only borrows these pointers.
+    void BindSessionManagers(IGraphicsManager* graphics,
+                             IPipelineStateManager* pipelines) {
+        m_pGraphicsManager = graphics;
+        m_pPipelineStateManager = pipelines;
+    }
 
     IGraphicsManager* GetGraphicsManager() { return m_pGraphicsManager; }
     IMemoryManager* GetMemoryManager() { return m_pMemoryManager; }

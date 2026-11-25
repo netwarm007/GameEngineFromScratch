@@ -1,6 +1,9 @@
 #include "WindowsApplication.hpp"
 
+#include "IRenderBackend.hpp"
+
 #include <tchar.h>
+#include <dwmapi.h>
 
 #include "InputManager.hpp"
 #include "imgui_impl_win32.h"
@@ -19,7 +22,10 @@ void WindowsApplication::CreateMainWindow() {
 
     // fill in the struct with the needed information
     wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
+    // CS_OWNDC gives each window a private DC whose pixel format persists, which
+    // WGL double-buffered presentation requires; without it a recreated window's
+    // SwapBuffers can return TRUE yet present nothing (Finding 4).
+    wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wc.lpfnWndProc = m_fWindowProc;
     wc.hInstance = m_hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
@@ -53,7 +59,19 @@ void WindowsApplication::CreateMainWindow() {
     m_hDc = GetDC(m_hWnd);
 
     // display the window on the screen
-    ShowWindow(m_hWnd, SW_SHOW);
+    ShowWindow(m_hWnd, SW_SHOWNORMAL);
+    // Force the window to realize and compose: a recreated (recovery) window
+    // shown with SW_SHOW alone can stay un-realized for DWM, so its OpenGL
+    // drawable never receives a vblank and SwapBuffers(swapInterval=1) blocks
+    // forever (gray window + stalled main loop). UpdateWindow paints it and
+    // SetForegroundWindow activates it so DWM composes the surface.
+    UpdateWindow(m_hWnd);
+    SetForegroundWindow(m_hWnd);
+    // Force DWM to compose the newly (re)created window's surface before the
+    // first SwapBuffers: a recovery window can otherwise present before its
+    // redirection surface is realized, so SwapBuffers(swapInterval=1) waits on
+    // a vblank that never arrives (gray window + intermittent stall).
+    DwmFlush();
 }
 
 int WindowsApplication::InitializeGuiPlatform() {
@@ -76,12 +94,31 @@ void WindowsApplication::FinalizePlatformResources() {
         m_hDc = nullptr;
     }
     if (m_hWnd) {
+        GetWindowRect(m_hWnd, &m_PreservedRect);
+        m_HasPreservedGeometry = true;
+        // Discard queued messages for the retiring window so stale input
+        // never reaches the recreated one. WM_PAINT regenerates until the
+        // update region is validated, so validate it and bound the drain.
+        MSG stale;
+        int flushed = 0;
+        while (flushed < 1024 &&
+               PeekMessage(&stale, m_hWnd, 0, 0, PM_REMOVE)) {
+            ++flushed;
+            if (stale.message == WM_PAINT) {
+                ValidateRect(m_hWnd, nullptr);
+            }
+        }
         DestroyWindow(m_hWnd);
         m_hWnd = nullptr;
     }
 }
 
 void WindowsApplication::Tick() {
+    ProcessEvents();
+    BaseApplication::Tick();
+}
+
+void WindowsApplication::ProcessEvents() {
     // this struct holds Windows event messages
     MSG msg;
 
@@ -99,12 +136,14 @@ void WindowsApplication::Tick() {
     if (ImGui::GetCurrentContext() && ImGui::GetIO().BackendPlatformUserData) {
         ImGui_ImplWin32_NewFrame();
     }
-    BaseApplication::Tick();
 }
 
 void WindowsApplication::onWindowResize(int new_width, int new_height) {
     if (m_pGraphicsManager) {
         m_pGraphicsManager->ResizeCanvas(new_width, new_height);
+    }
+    if (m_pActiveBackend) {
+        m_pActiveBackend->OnWindowResize(new_width, new_height);
     }
 }
 

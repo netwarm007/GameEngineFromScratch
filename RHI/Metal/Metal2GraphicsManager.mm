@@ -8,6 +8,16 @@
 using namespace My;
 using namespace std;
 
+Metal2GraphicsManager::Metal2GraphicsManager(
+    std::function<void*()> drawableProvider)
+    : m_DrawableProvider(std::move(drawableProvider)) {}
+
+Metal2GraphicsManager::Metal2GraphicsManager(
+    ISceneManager& scenes, IPipelineStateManager& pipelines,
+    std::function<void*()> drawableProvider)
+    : GraphicsManager(scenes, pipelines),
+      m_DrawableProvider(std::move(drawableProvider)) {}
+
 int Metal2GraphicsManager::Initialize() {
     if (IsInitialized() || !ImGui::GetCurrentContext() ||
         ImGui::GetIO().BackendRendererUserData) {
@@ -17,8 +27,13 @@ int Metal2GraphicsManager::Initialize() {
     const int result = GraphicsManager::Initialize();
     if (result != 0) return result;
 
-    NSWindow* pWindow = (NSWindow*)m_pApp->GetMainWindowHandler();
-    MetalView* view = [pWindow contentView];
+    MetalView* view =
+        (MetalView*)(m_DrawableProvider ? m_DrawableProvider() : nullptr);
+    if (!view) {
+        NSLog(@"Metal graphics initialization requires a native drawable");
+        Finalize();
+        return -1;
+    }
     m_pRHI = [[Metal2RHI alloc] initWithMetalKitView:view device:view.device];
     if (!m_pRHI || ![m_pRHI initialize]) {
         NSLog(@"Metal graphics manager initialization failed");

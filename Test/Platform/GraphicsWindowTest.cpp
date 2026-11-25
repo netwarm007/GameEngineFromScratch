@@ -58,6 +58,17 @@ int test(BaseApplication& app) {
 }
 
 class TestGraphicsManager : public TGraphicsManager {
+   public:
+#if defined(OS_MACOS)
+    explicit TestGraphicsManager(std::function<void*()> drawableProvider)
+        : TGraphicsManager(std::move(drawableProvider)) {}
+#elif defined(OS_WINDOWS)
+    explicit TestGraphicsManager(D3d12RHI& rhi) : TGraphicsManager(rhi) {}
+#else
+    using TGraphicsManager::TGraphicsManager;
+#endif
+
+   private:
     void Draw() override {
         static bool show_demo_window = false;
         auto& frame = m_Frames[m_nFrameIndex];
@@ -126,7 +137,16 @@ int main(int argc, char** argv) {
     renderPipeline.render_passes.emplace_back(render_pass);
 
     auto app = My::CreateApplication(config);
+#if defined(OS_MACOS)
+    TestGraphicsManager graphicsManager([app] {
+        return (void*)static_cast<CocoaMetalApplication*>(app)->GetMetalView();
+    });
+#elif defined(OS_WINDOWS)
+    TestGraphicsManager graphicsManager(
+        static_cast<D3d12Application*>(app)->GetRHI());
+#else
     TestGraphicsManager graphicsManager;
+#endif
 
     app->SetCommandLineParameters(argc, argv);
     app->RegisterManagerModule(&graphicsManager);

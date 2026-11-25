@@ -19,7 +19,7 @@ void Expect(bool condition, const char* message) {
     }
 }
 
-class RecordingModule : public IRuntimeModule {
+class RecordingModule : _implements_ IRuntimeModule {
    public:
     RecordingModule(std::string name, std::vector<std::string>& events)
         : m_Name(std::move(name)), m_Events(events) {}

@@ -20,9 +20,12 @@ if(ACTION STREQUAL "key")
     endif()
     file(GLOB scripts RELATIVE "${root}" "${root}/scripts/build_*.bat")
     list(SORT scripts)
+    # config.yml is intentionally excluded: CI-only edits must not invalidate
+    # the dependency cache. Dependency build inputs are the build scripts,
+    # submodule revisions and toolchain hashed here.
     list(APPEND scripts "scripts/select-vs-generator.bat"
                         "scripts/install-ispc.cmake"
-                        ".circleci/config.yml" ".circleci/windows-dependency-cache.cmake")
+                        ".circleci/windows-dependency-cache.cmake")
     foreach(script IN LISTS scripts)
         file(SHA256 "${root}/${script}" hash)
         string(APPEND inputs "\n${script}:${hash}")

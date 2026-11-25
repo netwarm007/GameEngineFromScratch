@@ -88,6 +88,8 @@ bool checkValidationLayerSupport() {
 using namespace My;
 
 namespace {
+std::mutex vulkanDispatchMutex;
+
 #if defined(VK_KHR_swapchain_maintenance1)
 using MaintenanceFeatures = VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR;
 using PresentFenceInfo = VkSwapchainPresentFenceInfoKHR;
@@ -123,7 +125,7 @@ const char* findPresentFenceExtension(vk::PhysicalDevice device, bool khrSurface
     if (name) {
         MaintenanceFeatures maintenance{maintenanceFeaturesType, nullptr, VK_FALSE};
         VkPhysicalDeviceFeatures2 features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, &maintenance, {}};
-        vkGetPhysicalDeviceFeatures2(device, &features);
+        VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceFeatures2(device, &features);
         if (maintenance.swapchainMaintenance1) return name;
     }
 #endif
@@ -163,7 +165,12 @@ void VulkanRHI::initializeDevice(const std::vector<const char*>& extensions,
     if (m_vkInstance) {
         throw std::logic_error("Vulkan RHI is already initialized");
     }
+    m_dispatchLock = std::unique_lock(vulkanDispatchMutex, std::try_to_lock);
+    if (!m_dispatchLock.owns_lock()) {
+        throw std::logic_error("Another Vulkan RHI owns the active dispatch context");
+    }
     try {
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(GetVulkanLoader().GetInstanceProcAddr());
         createInstance(extensions);
         setupDebugMessenger();
         if (surface) createSurface(surface);
@@ -253,6 +260,10 @@ void VulkanRHI::destroyAll() {
     m_surfaceMaintenanceKHR = false;
     m_surfaceMaintenanceEXT = false;
     m_presentationFencesEnabled = false;
+    if (m_dispatchLock.owns_lock()) {
+        VULKAN_HPP_DEFAULT_DISPATCHER = {};
+        m_dispatchLock.unlock();
+    }
 }
 
 void VulkanRHI::createInstance(std::vector<const char*> extensions) {
@@ -341,6 +352,7 @@ void VulkanRHI::createInstance(std::vector<const char*> extensions) {
 #endif
 
     m_vkInstance = vk::createInstance(instanceCreateInfo);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkInstance);
 }
 
 void VulkanRHI::setupDebugMessenger() {
@@ -579,6 +591,7 @@ void VulkanRHI::createLogicalDevice() {
     if (m_vkSurface) throw std::runtime_error("Native Vulkan SDK lacks swapchain-maintenance1");
 #endif
     m_vkDevice = m_vkPhysicalDevice.createDevice(createInfo);
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkDevice);
     m_presentationFencesEnabled = static_cast<bool>(m_vkSurface);
 }
 
@@ -1082,7 +1095,7 @@ bool VulkanRHI::BeginFrame() {
     if (m_vkDevice.waitForFences(fence, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
         throw std::runtime_error("Vulkan frame fence wait failed");
     }
-    const auto result = static_cast<vk::Result>(vkAcquireNextImageKHR(
+    const auto result = static_cast<vk::Result>(VULKAN_HPP_DEFAULT_DISPATCHER.vkAcquireNextImageKHR(
         m_vkDevice, m_vkSwapChain, UINT64_MAX,
         m_vkImageAvailableSemaphores[m_nCurrentFrame], VK_NULL_HANDLE, &m_currentImage));
     if (result == vk::Result::eErrorOutOfDateKHR) {
@@ -1140,7 +1153,7 @@ vk::Result VulkanRHI::PresentAndWait(vk::Queue queue, const VkPresentInfoKHR& pr
     const PresentFenceInfo fenceInfo{presentFenceInfoType, nullptr, present.swapchainCount, nativeFences.data()};
     auto info = present;
     info.pNext = &fenceInfo;
-    const auto result = static_cast<vk::Result>(vkQueuePresentKHR(queue, &info));
+    const auto result = static_cast<vk::Result>(VULKAN_HPP_DEFAULT_DISPATCHER.vkQueuePresentKHR(queue, &info));
     if (result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR ||
         result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eErrorSurfaceLostKHR) {
         if (m_vkDevice.waitForFences(waits, VK_TRUE, UINT64_MAX) != vk::Result::eSuccess) {
@@ -1195,7 +1208,7 @@ void VulkanRHI::EndFrame() {
 #endif
     const VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, presentNext,
                                   1, &semaphore, 1, &swapchain, &m_currentImage, nullptr};
-    const auto result = static_cast<vk::Result>(vkQueuePresentKHR(m_vkPresentQueue, &present));
+    const auto result = static_cast<vk::Result>(VULKAN_HPP_DEFAULT_DISPATCHER.vkQueuePresentKHR(m_vkPresentQueue, &present));
     // WSI rejection still enqueues the presentation waits and fence.
     if (result == vk::Result::eSuccess || result == vk::Result::eSuboptimalKHR ||
         result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eErrorSurfaceLostKHR) {

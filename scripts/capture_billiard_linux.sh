@@ -2,11 +2,12 @@
 set -eu
 
 output_dir=${1:-billiard-screenshots}
+if [ "$#" -gt 0 ]; then shift; fi
 mkdir -p "$output_dir"
 output_dir=$(cd "$output_dir" && pwd)
 export LD_LIBRARY_PATH="$PWD/External/Linux/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-stdbuf -oL -eL ./build/Game/Billiard/BilliardGame -physicsRegression "$output_dir" \
+stdbuf -oL -eL ./build/Game/Billiard/BilliardGame -physicsRegression "$output_dir" "$@" \
     > "$output_dir/billiard.log" 2>&1 &
 billiard_pid=$!
 cleanup() {
@@ -24,7 +25,21 @@ for i in $(seq 1 6000); do
     test ! -s "$output_dir/physics-passed" || break
 done
 test -s "$output_dir/physics-passed"
-import -window Billiard "$output_dir/billiard-after.png"
+window_id=""
+for i in $(seq 1 10); do
+    # Match the main window by its live title prefix "Billiard -" (not the
+    # WM_CLASS "BilliardGame"), mirroring the Viewer capture fix so a future
+    # dialog sharing the class cannot be grabbed instead of the scene.
+    window_id=$(xwininfo -root -tree 2>/dev/null | grep -m1 '"Billiard -' | awk '{print $1}') || true
+    [ -n "$window_id" ] && break
+    sleep 1
+done
+if [ -z "$window_id" ]; then
+    echo "Billiard window not found; see billiard.log" >&2
+    xwininfo -root -tree 2>&1 | head -40 >&2 || true
+    exit 1
+fi
+import -window "$window_id" "$output_dir/billiard-after.png"
 test -s "$output_dir/billiard-after.png"
 identify "$output_dir/billiard-after.png"
 touch "$output_dir/capture-complete"

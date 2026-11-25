@@ -79,7 +79,7 @@ IF(ANDROID)
     add_library(Viewer SHARED 
         ViewerLogic.cpp)
 ELSEIF(APPLE)
-    if(NOT VULKAN_APPLICATIONS)
+    if(BUILD_ALL_DESKTOP_RHIS OR NOT VULKAN_APPLICATIONS)
         set(VIEWER_SHADER_LIBRARY Main.metallib)
     endif()
     add_executable(Viewer MACOSX_BUNDLE
@@ -90,11 +90,18 @@ ELSE()
     add_executable(Viewer 
         main.cpp ViewerLogic.cpp ${SCENE_FILES} ${SDR_TEXTURES} ${ICON_TEXTURES} ${HDR_TEXTURES}
         )
-ENDIF(ANDROID)
+ENDIF()
+
+set(VIEWER_RUNTIME_RHI OFF)
+if(BUILD_ALL_DESKTOP_RHIS AND NOT VULKAN_APPLICATIONS AND TARGET RuntimeComposition)
+    set(VIEWER_RUNTIME_RHI ON)
+endif()
 
 IF(VULKAN_APPLICATIONS)
     myge_vulkan_application(Viewer)
-ELSEIF(APPLE)
+endif()
+
+IF(APPLE AND (BUILD_ALL_DESKTOP_RHIS OR NOT VULKAN_APPLICATIONS))
     list(APPEND SHADER_SOURCES material_texture_copy.comp shadowmap_omni_metal.vert)
     foreach(SHADER IN LISTS SHADER_SOURCES)
         add_custom_command(OUTPUT ${SHADER}.air
@@ -175,7 +182,7 @@ ELSEIF(APPLE)
         )
     endforeach(HDR_TEXTURE_FILE)
 
-ELSEIF(WA)
+ELSEIF(WA AND NOT VULKAN_APPLICATIONS)
     target_link_libraries(Viewer
                             BulletPhysics
                             OpenGLRHI
@@ -198,8 +205,8 @@ ELSEIF(WA)
     set_target_properties(Viewer
             PROPERTIES LINK_FLAGS "-s FULL_ES2=1 -s FULL_ES3=1 -s USE_WEBGL2=1 -s USE_SDL=2 -s DEMANGLE_SUPPORT=1 --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/Viewer.html"
             )
-ELSEIF(WIN32)
-    if(VIEWER_USE_WIN32_OPENGL)
+ELSEIF(WIN32 AND NOT VULKAN_APPLICATIONS)
+    if(VIEWER_USE_WIN32_OPENGL AND NOT VIEWER_RUNTIME_RHI)
         target_compile_definitions(Viewer PRIVATE VIEWER_USE_WIN32_OPENGL)
         set_target_properties(Viewer PROPERTIES OUTPUT_NAME ViewerOpenGL)
         set(VIEWER_WINDOWS_RHI OpenGLRHI)
@@ -215,33 +222,59 @@ ELSEIF(WIN32)
                             PlatformInterface
                         )
 
-    install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/${VIEWER_WINDOWS_SHADERS} DESTINATION Asset/Shaders)
-    install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
-    install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
-    install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
-    install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
-    install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
-ELSE() # LINUX
-if(SDL2_FOUND)
+    if(NOT BUILD_ALL_DESKTOP_RHIS)
+        install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/${VIEWER_WINDOWS_SHADERS} DESTINATION Asset/Shaders)
+        install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
+        install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
+        install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
+        install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
+        install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
+    endif()
+ELSEIF(NOT VULKAN_APPLICATIONS) # LINUX
+if(SDL2_FOUND AND NOT VIEWER_RUNTIME_RHI)
 set(PLATFORM_INTERFACE PlatformInterfaceSDL2)
 else()
 set(PLATFORM_INTERFACE PlatformInterface)
-endif(SDL2_FOUND)
-    target_link_libraries(Viewer
-                            BulletPhysics
-                            OpenGLRHI
-                            Framework
-                            ${PLATFORM_INTERFACE})
+endif()
+if(VIEWER_RUNTIME_RHI)
+# RuntimeComposition brings the SDL OpenGL host and XCB Vulkan host.
+target_link_libraries(Viewer BulletPhysics Framework)
+else()
+target_link_libraries(Viewer
+                        BulletPhysics
+                        OpenGLRHI
+                        Framework
+                        ${PLATFORM_INTERFACE})
+endif()
 
-    install(DIRECTORY ${PROJECT_SOURCE_DIR}/build/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
-    install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
-    install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
-    install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
-    install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
-    install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
+    if(NOT BUILD_ALL_DESKTOP_RHIS)
+        install(DIRECTORY ${PROJECT_BINARY_DIR}/Asset/Shaders/OpenGL DESTINATION Asset/Shaders)
+        install(FILES ${FONT_FILES} DESTINATION Asset/Fonts)
+        install(FILES ${SCENE_FILES} DESTINATION Asset/Scene)
+        install(FILES ${SDR_TEXTURES} DESTINATION Asset/Textures)
+        install(FILES ${ICON_TEXTURES} DESTINATION Asset/Textures/Icons)
+        install(FILES ${HDR_TEXTURES} DESTINATION Asset/Textures/hdr)
+    endif()
 ENDIF()
 
 add_dependencies(Viewer Engine_Asset)
 target_link_libraries(Viewer SplashSequence)
+
+if(VIEWER_RUNTIME_RHI)
+    target_compile_definitions(Viewer PRIVATE MYGE_RUNTIME_RHI)
+    target_link_libraries(Viewer RuntimeComposition)
+    if(WIN32)
+        # The Win32 OpenGL self-capture writes PNG through zlib.
+        if(MSVC)
+            target_link_libraries(Viewer optimized ${ZLIB_LIBRARY} debug ${ZLIB_LIBRARY_DEBUG})
+        else()
+            target_link_libraries(Viewer ${ZLIB_LIBRARY})
+        endif()
+    endif()
+endif()
+
+if(BUILD_ALL_DESKTOP_RHIS)
+    myge_desktop_application(Viewer)
+endif()
 
 install(TARGETS Viewer RUNTIME BUNDLE DESTINATION bin)
