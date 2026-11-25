@@ -65,17 +65,51 @@ void XcbApplication::CreateMainWindow() {
     values[0] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS;
     values[1] = colormap;
     values[2] = 0;
+    const uint16_t createdWidth =
+        m_HasPreservedGeometry ? m_PreservedW : m_Config.screenWidth;
+    const uint16_t createdHeight =
+        m_HasPreservedGeometry ? m_PreservedH : m_Config.screenHeight;
     xcb_create_window(m_pConn,                       /* connection */
                       XCB_COPY_FROM_PARENT,          /* depth */
                       m_XWindow,                     /* window ID */
                       m_pScreen->root,               /* parent window */
                       m_PreservedX, m_PreservedY,    /* x, y */
-                      m_HasPreservedGeometry ? m_PreservedW : m_Config.screenWidth,
-                      m_HasPreservedGeometry ? m_PreservedH : m_Config.screenHeight,
+                      createdWidth, createdHeight,
                       10,                            /* boarder width */
                       XCB_WINDOW_CLASS_INPUT_OUTPUT, /* class */
                       m_pScreen->root_visual,        /* visual */
                       mask, values);                 /* masks */
+
+    // A recreated (RHI-switch/recovery) window must keep the placement the
+    // user left it in. WMs ignore create-window coordinates unless the ICCCM
+    // WM_NORMAL_HINTS property declares a user-specified position/size, so
+    // publish it before mapping. StaticGravity pins the client origin to the
+    // requested root coordinates; the WM frame then grows around it, which is
+    // exactly how the capture in FinalizePlatformResources reads it back.
+    if (m_HasPreservedGeometry) {
+        auto normalHints = xcb_intern_atom_reply(
+            m_pConn, xcb_intern_atom(m_pConn, 0, 15, "WM_NORMAL_HINTS"), NULL);
+        auto sizeHints = xcb_intern_atom_reply(
+            m_pConn, xcb_intern_atom(m_pConn, 0, 13, "WM_SIZE_HINTS"), NULL);
+        if (normalHints && sizeHints) {
+            // WM_SIZE_HINTS layout (ICCCM 4.1.2.4): flags, x, y, width,
+            // height, min/max size, resize increments, aspect ratios, base
+            // size, gravity.
+            uint32_t hints[18] = {0};
+            hints[0] = 1 /* USPosition */ | 2 /* USSize */ |
+                       512 /* PWinGravity */;
+            hints[1] = static_cast<uint32_t>(m_PreservedX);
+            hints[2] = static_cast<uint32_t>(m_PreservedY);
+            hints[3] = createdWidth;
+            hints[4] = createdHeight;
+            hints[17] = XCB_GRAVITY_STATIC;
+            xcb_change_property(m_pConn, XCB_PROP_MODE_REPLACE, m_XWindow,
+                                normalHints->atom, sizeHints->atom, 32, 18,
+                                hints);
+        }
+        free(normalHints);
+        free(sizeHints);
+    }
 
     /* set the title of the window */
     xcb_change_property(m_pConn, XCB_PROP_MODE_REPLACE, m_XWindow,
@@ -119,8 +153,22 @@ void XcbApplication::FinalizePlatformResources() {
             auto geom = xcb_get_geometry_reply(
                 m_pConn, xcb_get_geometry(m_pConn, m_XWindow), NULL);
             if (geom) {
-                m_PreservedX = geom->x;
-                m_PreservedY = geom->y;
+                // geom->x/y are relative to the parent window: under a
+                // reparenting WM that is the frame, so copying them would
+                // bake the decoration offset into the next placement. Record
+                // the client origin in root (screen) coordinates instead.
+                int absX = geom->x, absY = geom->y;
+                Window sibling = XCB_WINDOW_NONE;
+                if (m_pDisplay &&
+                    XTranslateCoordinates(m_pDisplay, m_XWindow,
+                                          m_pScreen->root, 0, 0, &absX, &absY,
+                                          &sibling)) {
+                    m_PreservedX = static_cast<int16_t>(absX);
+                    m_PreservedY = static_cast<int16_t>(absY);
+                } else {
+                    m_PreservedX = geom->x;
+                    m_PreservedY = geom->y;
+                }
                 m_PreservedW = geom->width;
                 m_PreservedH = geom->height;
                 m_HasPreservedGeometry = true;
