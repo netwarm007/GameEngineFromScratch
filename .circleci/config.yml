@@ -83,6 +83,22 @@ commands:
       # by build_windows through the workspace instead of recomputing it.
       - attach_workspace:
           at: .
+      - run:
+          name: Unpack build archive when present
+          no_output_timeout: 10m
+          command: |
+            # Branch/PR context ships build.zip (Phase A); tag context ships
+            # the raw build tree and this no-ops. Same guarded pattern as the
+            # build-release.zip unpack in windows_regression.
+            if ((Test-Path build.zip) -and -not (Test-Path build)) {
+              $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
+              if (-not (Test-Path $sevenZip)) {
+                choco install 7zip -y --no-progress
+                if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              }
+              & $sevenZip x build.zip "-o$PWD\build" -y | Select-Object -Last 6
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
       - restore_cache:
           key: windows-deps-v1-{{ arch }}-{{ checksum ".circleci/windows-deps-key.txt" }}
       - run:
@@ -418,14 +434,84 @@ jobs:
                       key: sccache-windows-v1-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
                       paths:
                         - "C:/Users/circleci/sccache"
-      - persist_to_workspace:
-          root: .
-          paths:
-            - build
-            - .circleci/windows-deps-key.txt
-            # Generated in-source by configure_file; downstream jobs check
-            # out fresh sources and need it for shader preprocessing tests.
-            - config.h
+      - unless:
+          condition: << pipeline.git.tag >>
+          steps:
+          # Branch/PR context: ship the Debug tree as a single archive too
+          # (mirrors the build-release.zip lesson from #88). Master runs pay
+          # a 14m+ raw-tree workspace attach per consumer on top of Package
+          # blobs, which pushed windows_matrix over the 60m cap twice
+          # (runs 5400/5402, killed at exactly 60.0m with no step failure).
+          # Tag pipelines keep the raw persist unchanged: publish attaches
+          # the installer files directly and no matrix runs there.
+          - when:
+              condition:
+                equal: [full, << parameters.scope >>]
+              steps:
+                - run:
+                    name: Capture Viewer baseline for matrix comparison
+                    no_output_timeout: 5m
+                    command: |
+                      New-Item -ItemType Directory -Force screenshots | Out-Null
+                      $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse |
+                        Select-Object -First 1
+                      if (-not $viewer) { throw "Viewer.exe not found" }
+                      $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path screenshots).Path "viewer-render.png"
+                      $process = Start-Process -FilePath $viewer.FullName -PassThru `
+                        -RedirectStandardOutput screenshots/viewer.log `
+                        -RedirectStandardError screenshots/viewer-error.log
+                      if (-not $process.WaitForExit(180000)) {
+                        Stop-Process -Id $process.Id -ErrorAction SilentlyContinue
+                        throw "Viewer baseline capture timed out after 180 seconds"
+                      }
+                      $process.WaitForExit()
+                      Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                      if (-not (Test-Path screenshots/viewer-render.png)) {
+                        throw "Viewer did not produce the baseline PNG (exit $($process.ExitCode))"
+                      }
+          - run:
+              name: Archive build (Debug) for workspace transfer
+              no_output_timeout: 15m
+              command: |
+                $zip = "$PWD\build.zip"
+                if (Test-Path $zip) { Remove-Item $zip -Force }
+                $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
+                if (-not (Test-Path $sevenZip)) {
+                  choco install 7zip -y --no-progress
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                }
+                Get-PSDrive C | Select-Object Used,Free | Format-List
+                Push-Location build
+                & $sevenZip a -tzip -mx1 "$zip" * | Select-Object -Last 6
+                $archiveRc = $LASTEXITCODE
+                Pop-Location
+                if ($archiveRc -ne 0) { exit $archiveRc }
+                Get-Item $zip | Format-List Name,Length
+          - persist_to_workspace:
+              root: .
+              paths:
+                - build.zip
+                - .circleci/windows-deps-key.txt
+                # Generated in-source by configure_file; downstream jobs check
+                # out fresh sources and need it for shader preprocessing tests.
+                - config.h
+          - when:
+              condition:
+                equal: [full, << parameters.scope >>]
+              steps:
+                - persist_to_workspace:
+                    root: .
+                    paths:
+                      - screenshots/viewer-render.png
+      - when:
+          condition: << pipeline.git.tag >>
+          steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - build
+                  - .circleci/windows-deps-key.txt
+                  - config.h
       - when:
           condition:
             equal: [full, << parameters.scope >>]
@@ -638,29 +724,8 @@ jobs:
       size: large
     steps:
       - windows_test_setup
-      - run:
-          name: Capture Viewer baseline for matrix comparison
-          no_output_timeout: 5m
-          command: |
-            New-Item -ItemType Directory -Force screenshots | Out-Null
-            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse |
-              Select-Object -First 1
-            if (-not $viewer) { throw "Viewer.exe not found" }
-            $env:GEFS_SCREENSHOT_PATH = Join-Path (Resolve-Path screenshots).Path "viewer-render.png"
-            $process = Start-Process -FilePath $viewer.FullName -PassThru `
-              -RedirectStandardOutput screenshots/viewer.log `
-              -RedirectStandardError screenshots/viewer-error.log
-            if (-not $process.WaitForExit(180000)) {
-              Stop-Process -Id $process.Id -ErrorAction SilentlyContinue
-              throw "Viewer baseline capture timed out after 180 seconds"
-            }
-            $process.WaitForExit()
-            Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-            # The PNG is the success criterion: with redirected output the
-            # Process.ExitCode property can stay empty even after WaitForExit.
-            if (-not (Test-Path screenshots/viewer-render.png)) {
-              throw "Viewer did not produce a baseline PNG (exit $($process.ExitCode)); see viewer logs"
-            }
+      # The baseline PNG now comes from build_windows via the
+      # workspace (Phase A); matrix compares against the shared artifact.
       - when:
           condition:
             equal: [<< parameters.scope >>, full]
