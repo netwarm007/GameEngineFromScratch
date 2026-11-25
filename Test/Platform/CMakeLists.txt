@@ -39,6 +39,14 @@ if(OS_WINDOWS)
             "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
             "-DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/VisualStudioGeneratorTest.cmake")
+
+    # Needs the desktop windowing stack, so it stays out of the fast label.
+    add_executable(WindowGeometryPreservationTest MACOSX_BUNDLE
+        WindowGeometryPreservationTest.cpp)
+    target_link_libraries(WindowGeometryPreservationTest
+        Framework PlatformInterface)
+    add_test(NAME TEST_WindowGeometryPreservationTest
+        COMMAND $<TARGET_FILE:WindowGeometryPreservationTest>)
 endif()
 
 foreach(TEST_CASE IN LISTS PLATFORM_TEST_CASES)
