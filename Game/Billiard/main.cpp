@@ -418,6 +418,9 @@ int main(int argc, char** argv) {
         im_style.WindowRounding = 0.0f;
         im_style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+    // The dark style's light-gray modal dim reads as a washed-out render over
+    // the scene (e.g. behind the switch-failure dialog); dim dark instead.
+    im_style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5f);
 
 #if defined(MYGE_RUNTIME_RHI)
     renderBackend->CreateMainWindow();

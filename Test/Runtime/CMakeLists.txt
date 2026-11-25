@@ -63,6 +63,25 @@ if(TARGET RuntimeComposition)
     set_tests_properties(TEST_RhiSwitchTest PROPERTIES LABELS fast TIMEOUT 30)
 endif()
 
+# The WSI probe is a self-contained translation unit (engine interface headers
+# plus the late-loaded Vulkan loader), so its fixture regression builds even
+# in the standalone Test/Runtime tree without the full composition library.
+if(TARGET VulkanLoader)
+    add_library(VulkanWsiProbeFixture SHARED VulkanLoaderFixture.cpp)
+    target_include_directories(VulkanWsiProbeFixture PRIVATE "${Vulkan_INCLUDE_DIR}")
+    target_compile_definitions(VulkanWsiProbeFixture PRIVATE
+        VK_NO_PROTOTYPES MYGE_FIXTURE_WSI_PROBE)
+    add_executable(VulkanWsiProbeTest VulkanWsiProbeTest.cpp
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../Runtime/RhiCompositionVulkanProbe.cpp")
+    target_include_directories(VulkanWsiProbeTest PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../Framework/Manager")
+    target_link_libraries(VulkanWsiProbeTest PRIVATE VulkanLoader)
+    add_dependencies(VulkanWsiProbeTest VulkanWsiProbeFixture)
+    add_test(NAME TEST_VulkanWsiProbeTest COMMAND VulkanWsiProbeTest
+        "$<TARGET_FILE:VulkanWsiProbeFixture>")
+    set_tests_properties(TEST_VulkanWsiProbeTest PROPERTIES LABELS fast TIMEOUT 10)
+endif()
+
 # M3 session contract: the persistent root lives in Manager for full builds;
 # standalone regression builds compile its allocator closure directly.
 if(TARGET Manager)

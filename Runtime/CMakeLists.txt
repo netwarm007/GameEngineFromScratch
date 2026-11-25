@@ -13,7 +13,7 @@ if(OS_MACOS)
     list(APPEND RHI_COMPOSITION_SOURCES RhiCompositionMetal.cpp)
 endif()
 if(HAS_VULKAN)
-    list(APPEND RHI_COMPOSITION_SOURCES RhiCompositionVulkan.cpp)
+    list(APPEND RHI_COMPOSITION_SOURCES RhiCompositionVulkan.cpp RhiCompositionVulkanProbe.cpp)
 endif()
 
 add_library(RuntimeComposition ${RHI_COMPOSITION_SOURCES})

@@ -305,7 +305,7 @@ void GuiSubPass::DrawSwitchProgress() {
         if (ImGui::BeginPopupModal((const char*)u8"切换失败", nullptr,
                 ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::TextWrapped((const char*)u8"渲染后端切换失败：%s", m_SwitchResult.c_str());
-            ImGui::TextUnformatted((const char*)u8"已保留或恢复原后端。");
+            ImGui::TextUnformatted((const char*)u8"已保留或恢复原后端，关闭本对话框后画面即恢复正常。");
             if (ImGui::Button((const char*)u8"确定")) {
                 m_ShowSwitchError = false;
                 m_SwitchResult.clear();

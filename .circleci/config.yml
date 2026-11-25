@@ -1379,14 +1379,18 @@ jobs:
              }
              run_switch opengl "vulkan@120,opengl@300" opengl opengl-vulkan-opengl "vulkan@60,opengl@120"
              run_switch vulkan "opengl@120,vulkan@300" vulkan vulkan-opengl-vulkan "opengl@60,vulkan@120"
-             # M4.4 post-retirement recovery evidence: with no usable Vulkan
-             # ICD, the switch fails after retirement and the previous backend
-             # is reconstructed once; the failed switch is still reported.
+             # M4.4 post-retirement recovery evidence: the WSI preflight now
+             # rejects an unusable Vulkan ICD before retirement, so inject a
+             # one-shot post-retirement failure (GEFS_RHI_SWITCH_FAIL_ONCE)
+             # with a working lavapipe ICD; the previous backend is
+             # reconstructed once and the failed switch is still reported.
              out="screenshots/switch-recovery"; mkdir -p "$out"
+             lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
+             if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
              # -screenshot is consumed only by the Vulkan RHI; the recovered
              # backend here is OpenGL, so use the host-agnostic external X11
              # capture script (same mechanism as the OpenGL-final pair runs).
-             VK_ICD_FILENAMES=/nonexistent/icd.json LIBGL_ALWAYS_SOFTWARE=1 GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 timeout --kill-after=5s 240s \
+             LIBGL_ALWAYS_SOFTWARE=1 GEFS_RHI_SWITCH_FAIL_ONCE=1 GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 timeout --kill-after=5s 240s \
                xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
                bash scripts/capture_viewer_linux.sh "$out" --rhi opengl --rhi-switch vulkan@60 \
                > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
@@ -1905,12 +1909,13 @@ jobs:
              }
              run_switch metal "vulkan@120,metal@300" metal metal-vulkan-metal "vulkan@60,metal@120"
              run_switch vulkan "metal@120,vulkan@300" vulkan vulkan-metal-vulkan "metal@60,vulkan@120"
-             # M4.4 post-retirement recovery evidence: with no MoltenVK ICD the
-             # switch fails after retirement; the previous backend is
+             # M4.4 post-retirement recovery evidence: the WSI preflight now
+             # rejects an unusable Vulkan ICD before retirement, so inject a
+             # one-shot post-retirement failure (GEFS_RHI_SWITCH_FAIL_ONCE)
+             # with the working MoltenVK ICD; the previous backend is
              # reconstructed once and the failed switch is reported.
              out="screenshots/switch-recovery"; mkdir -p "$out"
-             VK_DRIVER_FILES=/nonexistent/icd.json VK_ICD_FILENAMES=/nonexistent/icd.json \
-               GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 \
+             GEFS_RHI_SWITCH_FAIL_ONCE=1 GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG=1 \
                "$APP/Contents/MacOS/Viewer" --rhi metal --rhi-switch vulkan@60 \
                -screenshot "$PWD/$out/viewer-render.png" -screenshotDelay 60 -screenshotFrame 480 \
                > "$out/viewer.log" 2>&1 &

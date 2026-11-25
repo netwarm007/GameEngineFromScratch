@@ -942,6 +942,24 @@ consistent with the reported validation failure. Raw validation messages/VUIDs
 have not been delivered here; the remote report is user-provided evidence, not
 an independent local reproduction.
 
+A subsequent real-machine investigation on the blocked AMD Windows machine
+(driver 26.11.2) resolved the "washed-out frame after switching to Vulkan"
+report: the switch never succeeded there (native initialization rejects the
+missing maintenance1 WSI extensions and recovers the previous backend), and
+the washout was the failure modal's light-gray dimming overlay — the pinned
+ImGui `StyleColorsDark` sets `ModalWindowDimBg` to (0.80, 0.80, 0.80, 0.35) —
+not a frame rendered by Vulkan. Windows-side evidence: an affine fit of
+dimmed vs. baseline pixels, a `GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG` ablation
+restoring the baseline, and bit-identical captures across both fallback
+backends. The blocked record above stands. The UX follow-up makes the
+availability probe enumerate the native WSI gate (surface/swapchain
+maintenance1, `VK_KHR_get_surface_capabilities2`, and the
+`swapchainMaintenance1` feature) so such drivers mark Vulkan unavailable with
+a reason instead of "ready", darkens the modal dim to (0, 0, 0, 0.5), and
+tells the user in the failure dialog that the display recovers once it is
+closed. These extensions are not promoted to core through Vulkan 1.4, so
+extension enumeration is the correct evidence.
+
 A narrow [versioned backport](../../External/patches/README.md) removes that
 eager submission, based on upstream ImGui
 `4cb4b17cb5db3d9c581c4c5d539802303e7e9777`, without upgrading the pinned submodule

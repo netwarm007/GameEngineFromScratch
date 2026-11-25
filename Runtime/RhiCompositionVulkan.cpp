@@ -19,7 +19,6 @@
 #endif
 #endif
 #include "RHI/Vulkan/VulkanGraphicsManager.hpp"
-#include "RHI/Vulkan/VulkanLoader.hpp"
 #include "RHI/Vulkan/VulkanPipelineStateManager.hpp"
 
 namespace My {
@@ -71,16 +70,6 @@ std::unique_ptr<RhiStartupComposition> ComposeVulkanStartup(
     composition->pipelineStateManager = std::move(modules.pipelineStateManager);
     composition->graphicsManager = std::move(modules.graphicsManager);
     return composition;
-}
-
-RhiBackendAvailability ProbeVulkanRuntimeAvailability() {
-    try {
-        GetVulkanLoader();
-        return {RhiBackend::Vulkan, RhiAvailability::ReadyForInitialization, {}};
-    } catch (const std::exception& error) {
-        return {RhiBackend::Vulkan, RhiAvailability::RuntimeUnavailable,
-                error.what()};
-    }
 }
 
 }  // namespace My

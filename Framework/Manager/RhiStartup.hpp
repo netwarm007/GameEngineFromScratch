@@ -48,6 +48,13 @@ struct RhiStartupSelection {
     std::string error;
 };
 
+class VulkanLoader;
+// Vulkan WSI preflight against an explicit loader (headless fixture test seam):
+// enumerates instance and device extensions for the native presentation gate
+// (surface/swapchain maintenance1) without creating a device or window.
+// ProbeRhiStartupAvailability is the application entry point.
+RhiBackendAvailability ProbeVulkanWsiAvailability(VulkanLoader& loader);
+
 // Availability is preflight evidence, not successful native initialization.
 RhiStartupSelection ResolveRhiStartupBackend(
     std::optional<RhiBackend> requestedBackend, RhiBackend defaultBackend,
