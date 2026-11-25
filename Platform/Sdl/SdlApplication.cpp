@@ -106,6 +106,12 @@ void SdlApplication::FinalizePlatformResources() {
     if (m_pWindow) {
         SDL_GetWindowPosition(m_pWindow, &m_PreservedX, &m_PreservedY);
         SDL_GetWindowSize(m_pWindow, &m_PreservedW, &m_PreservedH);
+        // A maximized host stays maximized across the switch. A minimized one
+        // is treated as normal: a recreated minimized window never yields a
+        // non-zero framebuffer, which would stall the switch-complete
+        // handshake (see RhiSwitchController::ProcessFrameBoundary).
+        m_PreservedMaximized =
+            (SDL_GetWindowFlags(m_pWindow) & SDL_WINDOW_MAXIMIZED) != 0;
         m_HasPreservedGeometry = true;
     }
     cleanup(m_pWindow);
@@ -184,5 +190,9 @@ void SdlApplication::CreateMainWindow() {
     if (!m_pWindow) {
         logSDLError(cout, "CreateMainWindow");
         SDL_Quit();
+    } else if (m_HasPreservedGeometry && m_PreservedMaximized) {
+        // Restore the maximized state the retiring window had (M4.3 contract,
+        // matching the Windows host's SW_SHOWMAXIMIZED recreation).
+        SDL_MaximizeWindow(m_pWindow);
     }
 }
