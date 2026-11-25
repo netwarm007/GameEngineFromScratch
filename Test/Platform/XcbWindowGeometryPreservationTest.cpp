@@ -155,8 +155,22 @@ int main() {
         XCloseDisplay(dpy);
         return 1;
     }
-    if (second == first) {
-        std::printf("FAIL: switch must recreate the native window\n");
+    // The X server legitimately reuses freshly freed XIDs, so second ==
+    // first proves nothing about recreation; instead require the window to
+    // be mapped/viewable after recreate. The WM_NORMAL_HINTS check below is
+    // the true recreation proof (initial creation publishes no hints, so
+    // their presence shows the preserved-recreation path ran).
+    bool recreatedMapped = false;
+    for (int i = 0; i < 40 && !recreatedMapped; ++i) {
+        XWindowAttributes wa{};
+        if (XGetWindowAttributes(dpy, static_cast<Window>(second), &wa) &&
+            wa.map_state == IsViewable) {
+            recreatedMapped = true;
+        }
+        usleep(50 * 1000);
+    }
+    if (!recreatedMapped) {
+        std::printf("FAIL: recreated window never became viewable\n");
         app.FinalizePlatformResources();
         XCloseDisplay(dpy);
         return 1;

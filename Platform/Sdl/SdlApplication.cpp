@@ -190,9 +190,19 @@ void SdlApplication::CreateMainWindow() {
     if (!m_pWindow) {
         logSDLError(cout, "CreateMainWindow");
         SDL_Quit();
-    } else if (m_HasPreservedGeometry && m_PreservedMaximized) {
-        // Restore the maximized state the retiring window had (M4.3 contract,
-        // matching the Windows host's SW_SHOWMAXIMIZED recreation).
-        SDL_MaximizeWindow(m_pWindow);
+    } else if (m_HasPreservedGeometry) {
+        // SDL's X11 position semantics are not symmetric across APIs:
+        // SDL_CreateWindow's x/y lands the *client* rect while
+        // SDL_GetWindowPosition (used at retirement) reports the decorated
+        // *frame* origin. Recreating via CreateWindow coordinates alone
+        // therefore drifts the window by the decoration size on every RHI
+        // switch. Re-pin the placement with the Get/Set pair, which are
+        // frame-symmetric, then restore the state the retiring window had.
+        SDL_SetWindowPosition(m_pWindow, m_PreservedX, m_PreservedY);
+        if (m_PreservedMaximized) {
+            // M4.3 contract, matching the Windows host's SW_SHOWMAXIMIZED
+            // recreation; minimized counts as normal.
+            SDL_MaximizeWindow(m_pWindow);
+        }
     }
 }
