@@ -75,7 +75,12 @@ void XcbApplication::CreateMainWindow() {
                       m_pScreen->root,               /* parent window */
                       m_PreservedX, m_PreservedY,    /* x, y */
                       createdWidth, createdHeight,
-                      10,                            /* boarder width */
+                      0,                             /* border width (X11
+                         legacy; modern WMs draw their own decorations and a
+                         non-zero border offsets the client origin from the
+                         ICCCM-hinted position by the border under
+                         StaticGravity. Keep 0: hints, create and capture are
+                         then the same point. */
                       XCB_WINDOW_CLASS_INPUT_OUTPUT, /* class */
                       m_pScreen->root_visual,        /* visual */
                       mask, values);                 /* masks */
