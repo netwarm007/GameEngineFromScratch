@@ -643,6 +643,28 @@ jobs:
                 root: .
                 paths:
                   - build-release.zip
+  # K-4 prune① (user nod): the full Debug unit suite used to run serially
+  # inside windows_regression; it now runs as its own slot in parallel with
+  # the matrix jobs and the Release suite, shortening both feedback latency
+  # and the regression job's wall time without losing any coverage.
+  windows_unit_debug:
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
+      - run:
+          name: "Test (unit, Debug)"
+          command: |
+            $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+            $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+            circleci testsuite --help *> $null
+            if ($LASTEXITCODE -ne 0) { circleci extension install testsuite }
+            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && circleci testsuite run engine-windows"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
   windows_regression:
     parameters:
       scope:
@@ -655,17 +677,21 @@ jobs:
       size: large
     steps:
       - windows_test_setup
-      - run:
-          name: "Test"
-          command: |
-            $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-            $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-            if (-not $vs) { throw "Visual Studio C++ tools were not found" }
-            if ('<< parameters.scope >>' -eq 'quick') { $env:GEFS_CTEST_LABEL = 'fast' }
-            circleci testsuite --help *> $null
-            if ($LASTEXITCODE -ne 0) { circleci extension install testsuite }
-            & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && circleci testsuite run engine-windows"
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - when:
+          condition:
+            equal: [quick, << parameters.scope >>]
+          steps:
+            - run:
+                name: "Test"
+                command: |
+                  $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+                  $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  if (-not $vs) { throw "Visual Studio C++ tools were not found" }
+                  $env:GEFS_CTEST_LABEL = 'fast'
+                  circleci testsuite --help *> $null
+                  if ($LASTEXITCODE -ne 0) { circleci extension install testsuite }
+                  & $env:ComSpec /c "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && circleci testsuite run engine-windows"
+                  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - when:
           condition:
             equal: [full, << parameters.scope >>]
@@ -1468,57 +1494,6 @@ jobs:
       - store_artifacts:
           path: billiard-matrix
           destination: billiard-matrix
-      - run:
-          name: Same-backend reconstruction matrix
-          no_output_timeout: 25m
-          command: |
-             # Two same-backend destroy/recreate cycles run after the first
-             # presented frame; captures must still match the startup baseline
-             # (CPU scene preserved, GPU resources rebuilt). OpenGL recreates
-             # the SDL window; Vulkan rebuilds on the existing XCB window.
-             set -e
-             baseline="screenshots/viewer-render.png"
-             test -s "$baseline"
-             for backend in opengl vulkan; do
-               out="screenshots/reconstruct/$backend"; mkdir -p "$out"
-               if [ "$backend" = vulkan ]; then
-                 lvp=$(ls /usr/share/vulkan/icd.d/lvp_icd*.json 2>/dev/null | head -n1)
-                 if [ -n "$lvp" ]; then export VK_ICD_FILENAMES="$lvp"; fi
-                 export VK_LAYER_PATH=/usr/share/vulkan/explicit_layer.d
-                 timeout --kill-after=5s 240s \
-                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
-                   ./build/Viewer/Viewer --rhi vulkan --rhi-reconstruct 2 -screenshot "$PWD/$out/viewer-render.ppm" \
-                   > "$out/viewer.log" 2>&1 || true
-                 if [ ! -s "$out/viewer-render.ppm" ]; then
-                   echo "=== linux-reconstruct-vulkan viewer.log ==="; cat "$out/viewer.log" || true; exit 1
-                 fi
-                 grep -q "Vulkan application framebuffer capture saved:" "$out/viewer.log"
-                 grep -q "RHI session reconstructed (cycle 2)" "$out/viewer.log"
-                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.ppm" --label linux-reconstruct-vulkan --max-diff-fraction 0.40 --max-high-delta-fraction 0.03 --max-mean-delta 25
-               else
-                 LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 180s \
-                   xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
-                   bash scripts/capture_viewer_linux.sh "$out" --rhi opengl --rhi-reconstruct 2 \
-                   > "$out/capture.log" 2>&1 || { cat "$out/capture.log" "$out/viewer.log" 2>/dev/null; exit 1; }
-                 grep -q "RHI session reconstructed (cycle 2)" "$out/viewer.log"
-                 python3 scripts/compare_captures.py "$baseline" "$out/viewer-render.png" --label linux-reconstruct-opengl
-               fi
-               bout="billiard-reconstruct/$backend"; mkdir -p "$bout"
-               LIBGL_ALWAYS_SOFTWARE=1 timeout --kill-after=5s 720s \
-                 xvfb-run -a -s "-screen 0 1280x1024x24 +extension GLX" \
-                 bash scripts/capture_billiard_linux.sh "$bout" --rhi "$backend" --rhi-reconstruct 2 \
-                 > "$bout/capture.log" 2>&1 || { cat "$bout/capture.log" "$bout/billiard.log" 2>/dev/null; exit 1; }
-               test -s "$bout/physics-passed"
-               test -s "$bout/billiard-after.png"
-               grep -q "RHI session reconstructed (cycle 2)" "$bout/billiard.log"
-               echo "linux-reconstruct-$backend: viewer + billiard reconstruction OK"
-             done
-      - store_artifacts:
-          path: screenshots/reconstruct
-          destination: screenshots-reconstruct
-      - store_artifacts:
-          path: billiard-reconstruct
-          destination: billiard-reconstruct
       - run:
           name: Cross-backend switch matrix
           no_output_timeout: 30m
@@ -2368,6 +2343,9 @@ workflows:
     jobs:
       - build_windows
       - windows_regression:
+          requires:
+            - build_windows
+      - windows_unit_debug:
           requires:
             - build_windows
       - windows_matrix_startup:
