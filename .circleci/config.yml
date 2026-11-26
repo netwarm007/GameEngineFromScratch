@@ -1237,7 +1237,6 @@ jobs:
                             throw "$tag billiard switch did not complete"
                           }
                           Write-Output "windows-billiard-switch-${tag}: A/B/A + physics OK"
-                          }
       - store_artifacts:
           path: billiard-switch
           destination: billiard-switch
