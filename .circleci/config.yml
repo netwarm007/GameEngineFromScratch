@@ -122,6 +122,21 @@ commands:
               choco install ninja -y --no-progress
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
+      - cache_period_windows
+      - restore_cache:
+          keys:
+            # K-4c: consumer jobs reuse build_windows' weekly source cache
+            # (.git with submodules objects), turning the cold 5-7m checkout
+            # + submodule init into a near no-op. Save stays master-only in
+            # build_windows; misses fall back to the full path below.
+            - source-v2-{{ arch }}-{{ checksum "C:/cache-period.txt" }}
+            - source-v2-{{ arch }}-
+      - run:
+          name: restore repo
+          command: |
+            if (Test-Path -Path ".git") {
+              git restore .
+            }
       - checkout
       - run:
           name: init submodules
