@@ -49,6 +49,56 @@ commands:
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
 
+  # Deploy the cached Mesa drivers next to both executables and register the
+  # lavapipe ICDs machine-wide (elevated runners ignore VK_ICD_FILENAMES).
+  windows_matrix_deploy:
+    steps:
+      - run:
+          name: Deploy Mesa drivers and lavapipe ICDs
+          no_output_timeout: 10m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $mesa = Join-Path (Get-Location) 'mesa-matrix'
+            if (-not (Test-Path "$mesa\extracted")) { throw 'Mesa extract missing (windows_matrix_env must run first)' }
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
+            if (-not ($viewer -and $billiard)) { throw 'Application executables not found' }
+            function Find-MesaFile($name) {
+              $all = Get-ChildItem "$mesa\extracted" -Recurse -Filter $name
+              $x64 = $all | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
+              if ($x64) { return $x64 }
+              return ($all | Select-Object -First 1)
+            }
+            $sysLoader = "$env:SystemRoot\System32\vulkan-1.dll"
+            if (-not (Test-Path $sysLoader)) { throw 'System32 Vulkan loader missing' }
+            Write-Output "System32 Vulkan loader version: $((Get-Item $sysLoader).VersionInfo.FileVersion)"
+            if ($env:VULKAN_SDK -and (Test-Path "$env:VULKAN_SDK\Bin\vulkan-1.dll")) {
+              $env:GEFS_VULKAN_LIBRARY = "$env:VULKAN_SDK\Bin\vulkan-1.dll"
+              Write-Output "Using SDK loader override: $env:GEFS_VULKAN_LIBRARY"
+            }
+            $lvp = Find-MesaFile 'vulkan_lvp.dll'
+            $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
+            if (-not ($lvp -and $icd)) { throw 'Mesa lavapipe components not found in package' }
+            $hive = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Registry64)
+            $reg = $hive.CreateSubKey('SOFTWARE\Khronos\Vulkan\Drivers')
+            foreach ($app in @($viewer.DirectoryName, $billiard.DirectoryName)) {
+              # App-directory deployment: the application directory is first in
+              # the Windows DLL search order, so the ICD's dependencies resolve.
+              foreach ($name in @('opengl32.dll','libgallium_wgl.dll','dxil.dll')) {
+                $f = Find-MesaFile $name
+                if ($f) { Copy-Item $f.FullName $app -Force }
+              }
+              Get-ChildItem $lvp.DirectoryName -Filter '*.dll' | ForEach-Object { Copy-Item $_.FullName $app -Force }
+              $json = Get-Content $icd.FullName -Raw | ConvertFrom-Json
+              $json.ICD.library_path = (Join-Path $app 'vulkan_lvp.dll')
+              $leaf = Split-Path $app -Leaf
+              # ASCII (no BOM) so the loader's JSON parser accepts the file.
+              $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd_$leaf.json" -Encoding ascii
+              $reg.SetValue("$mesa\lvp_icd_$leaf.json", 0, [Microsoft.Win32.RegistryValueKind]::DWord)
+              Write-Output "Registered lavapipe ICD for $leaf ($mesa\lvp_icd_$leaf.json)"
+            }
+            $reg.Close(); $hive.Close()
+
   windows_test_setup:
     steps:
       - run:
@@ -106,6 +156,51 @@ commands:
           command: |
             cmake -DACTION=restore -P .circleci/windows-dependency-cache.cmake
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  # Phase B: shared environment for all Windows matrix scenario jobs.
+  # Choco installs retry transient community-repo 504s (job 5411 class);
+  # the Mesa lavapipe/llvmpipe bundle is cached across jobs by URL hash.
+  windows_matrix_env:
+    steps:
+      - run:
+          name: Install matrix tooling (retried)
+          no_output_timeout: 15m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            function Install-ChocoRetry($pkg) {
+              for ($i = 1; $i -le 3; $i++) {
+                choco install $pkg -y --no-progress
+                if ($LASTEXITCODE -eq 0) { return }
+                Write-Output "choco install $pkg attempt $i failed (exit $LASTEXITCODE); retrying"
+                Start-Sleep -Seconds 20
+              }
+              throw "choco install $pkg failed after 3 attempts"
+            }
+            Install-ChocoRetry python3
+            Install-ChocoRetry vulkan-sdk
+            if (-not (Test-Path 'C:\Program Files\7-Zip\7z.exe')) { Install-ChocoRetry 7zip }
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+      - restore_cache:
+          keys:
+            - mesa-matrix-v1-{{ arch }}-26-3-0
+      - run:
+          name: Stage Mesa software drivers
+          no_output_timeout: 15m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $mesa = Join-Path (Get-Location) 'mesa-matrix'
+            New-Item -ItemType Directory -Force $mesa | Out-Null
+            if (Test-Path "$mesa\extracted") { Write-Output 'Mesa extracted present (cache hit)'; exit 0 }
+            $archive = Join-Path $mesa 'mesa.7z'
+            Invoke-WebRequest 'https://github.com/pal1000/mesa-dist-win/releases/download/26.3.0/mesa3d-26.3.0-release-msvc.7z' -OutFile $archive
+            if ((Get-Item $archive).Length -lt 50MB) { throw 'Mesa archive download too small' }
+            $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
+            & $sevenZip x $archive "-o$mesa\extracted" -y | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Mesa archive extraction failed' }
+      - save_cache:
+          key: mesa-matrix-v1-{{ arch }}-26-3-0
+          paths:
+            - mesa-matrix/extracted
 
 jobs:
   build_windows:
@@ -712,237 +807,17 @@ jobs:
       - store_artifacts:
           path: screenshots
           destination: viewer-screenshots
-  windows_matrix:
-    parameters:
-      scope:
-        type: enum
-        enum: [quick, full]
-        default: full
+  windows_matrix_startup:
     executor:
       name: win/server-2022
       shell: powershell.exe
       size: large
     steps:
       - windows_test_setup
-      # The baseline PNG now comes from build_windows via the
-      # workspace (Phase A); matrix compares against the shared artifact.
-      - when:
-          condition:
-            equal: [<< parameters.scope >>, full]
-          steps:
-            - run:
-                name: Viewer startup matrix and capture comparison
-                no_output_timeout: 30m
-                command: |
-                  $ErrorActionPreference = 'Stop'
-                  choco install python3 -y --no-progress
-                  # The build job installs the SDK in its own VM; the matrix
-                  # job needs the System32 Vulkan loader for the lavapipe runs.
-                  choco install vulkan-sdk -y --no-progress
-                  $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
-                  $baseline = 'screenshots/viewer-render.png'
-                  if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
-                  $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
-                  if (-not $viewer) { throw 'Viewer.exe not found' }
-                  $viewerDir = $viewer.DirectoryName
-
-                  # Mesa software drivers (llvmpipe OpenGL, lavapipe Vulkan) for the matrix.
-                  $mesa = Join-Path $env:TEMP 'mesa-matrix'
-                  New-Item -ItemType Directory -Force $mesa | Out-Null
-                  $archive = Join-Path $mesa 'mesa.7z'
-                  Invoke-WebRequest 'https://github.com/pal1000/mesa-dist-win/releases/download/26.3.0/mesa3d-26.3.0-release-msvc.7z' -OutFile $archive
-                  if ((Get-Item $archive).Length -lt 50MB) { throw 'Mesa archive download too small' }
-                  $sevenZip = 'C:\Program Files\7-Zip\7z.exe'
-                  if (-not (Test-Path $sevenZip)) { choco install 7zip -y --no-progress }
-                  & $sevenZip x $archive "-o$mesa\extracted" -y | Out-Null
-                  if ($LASTEXITCODE -ne 0) { throw 'Mesa archive extraction failed' }
-                  function Find-MesaFile($name) {
-                    $all = Get-ChildItem "$mesa\extracted" -Recurse -Filter $name
-                    $x64 = $all | Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
-                    if ($x64) { return $x64 }
-                    return ($all | Select-Object -First 1)
-                  }
-                  foreach ($name in @('opengl32.dll','libgallium_wgl.dll','dxil.dll')) {
-                    $f = Find-MesaFile $name
-                    if ($f) { Copy-Item $f.FullName $viewerDir -Force }
-                  }
-                  # The Vulkan loader is the system one (the SDK installer
-                  # refreshes System32; the side-by-side SDK tree ships no
-                  # vulkan-1.dll). Mesa provides only the lavapipe ICD.
-                  $sysLoader = "$env:SystemRoot\System32\vulkan-1.dll"
-                  if (Test-Path $sysLoader) {
-                    Write-Output "System32 Vulkan loader version: $((Get-Item $sysLoader).VersionInfo.FileVersion)"
-                  } else {
-                    throw 'System32 Vulkan loader missing'
-                  }
-                  if ($env:VULKAN_SDK -and (Test-Path "$env:VULKAN_SDK\Bin\vulkan-1.dll")) {
-                    $env:GEFS_VULKAN_LIBRARY = "$env:VULKAN_SDK\Bin\vulkan-1.dll"
-                    Write-Output "Using SDK loader override: $env:GEFS_VULKAN_LIBRARY"
-                  }
-                  $lvp = Find-MesaFile 'vulkan_lvp.dll'
-                  $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
-                  if (-not ($lvp -and $icd)) {
-                    Get-ChildItem "$mesa\extracted" -Recurse -Directory | Select-Object -First 20 -ExpandProperty FullName
-                    throw 'Mesa lavapipe components not found in package'
-                  }
-                  # Deploy the lavapipe ICD together with every sibling DLL next
-                  # to the executable: the application directory is first in the
-                  # Windows DLL search order, so the ICD's dependencies resolve.
-                  # Copying vulkan_lvp.dll alone previously left it unable to load.
-                  Get-ChildItem $lvp.DirectoryName -Filter '*.dll' | ForEach-Object { Copy-Item $_.FullName $viewerDir -Force }
-                  $json = Get-Content $icd.FullName -Raw | ConvertFrom-Json
-                  $json.ICD.library_path = (Join-Path $viewerDir 'vulkan_lvp.dll')
-                  # ASCII (no BOM) so the loader's JSON parser accepts the file.
-                  $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd.json" -Encoding ascii
-                  [Environment]::SetEnvironmentVariable('VK_ICD_FILENAMES', "$mesa\lvp_icd.json", 'Machine')
-                  $env:VK_ICD_FILENAMES = "$mesa\lvp_icd.json"
-                  Write-Output "lavapipe ICD json:"; Get-Content "$mesa\lvp_icd.json"
-                  # The CI executor runs elevated, and the Vulkan loader ignores
-                  # VK_ICD_FILENAMES/VK_DRIVER_FILES under elevated permissions,
-                  # reading only the registry. Register the ICD machine-wide in
-                  # the 64-bit view so the 64-bit loader discovers lavapipe.
-                  $hive = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Registry64)
-                  $key = $hive.CreateSubKey('SOFTWARE\Khronos\Vulkan\Drivers')
-                  $key.SetValue("$mesa\lvp_icd.json", 0, [Microsoft.Win32.RegistryValueKind]::DWord)
-                  $key.Close(); $hive.Close()
-                  Write-Output "Registered lavapipe ICD (64-bit view) HKLM\SOFTWARE\Khronos\Vulkan\Drivers: $mesa\lvp_icd.json"
-                  # Diagnostic: confirm the ICD loads and which instance extensions
-                  # it exposes before the Viewer run.
-                  $vulkaninfo = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkaninfo.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
-                  if ($vulkaninfo) {
-                    $env:VK_LOADER_DEBUG = 'all'
-                    & $vulkaninfo.FullName --summary *> "$mesa\vulkaninfo.log"
-                    Remove-Item Env:VK_LOADER_DEBUG -ErrorAction SilentlyContinue
-                    Write-Output '=== vulkaninfo lavapipe/ICD diagnostics ==='
-                    Get-Content "$mesa\vulkaninfo.log" | Where-Object { $_ -match 'lvp|lavapipe|ICD|ERROR|error|deviceName|VK_KHR_get_surface_capabilities2|VK_KHR_win32_surface' } | Select-Object -First 50
-                  } else {
-                    Write-Output 'vulkaninfo.exe not found in SDK; skipping ICD diagnostic'
-                  }
-
-                  function Run-Viewer($backend, $outDir) {
-                    New-Item -ItemType Directory -Force $outDir | Out-Null
-                    $resolved = (Resolve-Path $outDir).Path
-                    $ext = 'png'
-                    if ($backend -eq 'vulkan') { $ext = 'ppm' }
-                    $png = Join-Path $resolved "viewer-render.$ext"
-                    if ($backend -eq 'opengl') {
-                      $env:GALLIUM_DRIVER = 'llvmpipe'
-                      $env:LIBGL_ALWAYS_SOFTWARE = '1'
-                    }
-                    if ($backend -eq 'vulkan') {
-                      # Loader debug reveals whether the lavapipe ICD loads and
-                      # which instance extensions it exposes (stderr is captured).
-                      $env:VK_LOADER_DEBUG = 'all'
-                    }
-                    # All three backends honor GEFS_SCREENSHOT_PATH self-capture
-                    # (the Win32 OpenGL host reads the presented front buffer in
-                    # its main loop); no visible interactive desktop is needed.
-                    $env:GEFS_SCREENSHOT_PATH = $png
-                    $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend) -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
-                    try {
-                      if (-not $proc.WaitForExit(240000)) { throw "$backend matrix run timed out" }
-                    } finally {
-                      # A live child keeps the step console open and would trip
-                      # the no-output timeout; always reap it.
-                      Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                      Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
-                      Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                      if ($backend -eq 'opengl') {
-                        Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
-                        Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
-                      }
-                      if ($backend -eq 'vulkan') {
-                        Remove-Item Env:VK_LOADER_DEBUG -ErrorAction SilentlyContinue
-                      }
-                    }
-                    # Self-capture paths may exit nonzero after a successful
-                    # save (the baseline capture step also asserts the file,
-                    # not the exit code); the capture itself is the assertion.
-                    if (-not (Test-Path $png)) {
-                      Get-Content "$outDir/viewer.log" -ErrorAction SilentlyContinue
-                      Write-Output "=== $backend loader/stderr diagnostics ==="
-                      Get-Content "$outDir/viewer-error.log" -ErrorAction SilentlyContinue |
-                        Where-Object { $_ -match 'lvp|lavapipe|icd|ICD|ERROR|error|surface|Surface|extension|Extension|driver|Driver|Cannot|cannot|fail|Fail' } |
-                        Select-Object -First 80
-                      throw "$backend matrix capture missing"
-                    }
-                    $tolArgs = @()
-                    if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
-                    python scripts/compare_captures.py $baseline $png --label "windows-$backend" @tolArgs
-                    if ($LASTEXITCODE -ne 0) { throw "windows-$backend capture comparison failed" }
-                  }
-                  Run-Viewer 'd3d12' 'screenshots/matrix/d3d12'
-                  Run-Viewer 'opengl' 'screenshots/matrix/opengl'
-                  Run-Viewer 'vulkan' 'screenshots/matrix/vulkan'
+      - windows_matrix_env
+      - windows_matrix_deploy
       - run:
-          name: Billiard per-backend startup matrix
-          no_output_timeout: 20m
-          command: |
-            $ErrorActionPreference = 'Stop'
-            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
-            if (-not $billiard) { throw 'BilliardGame.exe not found' }
-            $billiardDir = $billiard.DirectoryName
-            # Deploy the mesa software drivers next to Billiard too (the Viewer
-            # matrix deployed them only next to Viewer). Reuse the extracted package.
-            $mesa = Join-Path $env:TEMP 'mesa-matrix'
-            foreach ($name in @('opengl32.dll','libgallium_wgl.dll','dxil.dll')) {
-              $f = Get-ChildItem "$mesa\extracted" -Recurse -Filter $name -ErrorAction SilentlyContinue |
-                Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
-              if ($f) { Copy-Item $f.FullName $billiardDir -Force }
-            }
-            $lvp = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'vulkan_lvp.dll' -ErrorAction SilentlyContinue |
-              Where-Object { $_.FullName -match 'x64' } | Select-Object -First 1
-            if ($lvp) {
-              Get-ChildItem $lvp.DirectoryName -Filter '*.dll' | ForEach-Object { Copy-Item $_.FullName $billiardDir -Force }
-              $icd = Get-ChildItem "$mesa\extracted" -Recurse -Filter 'lvp_icd.x86_64.json' | Select-Object -First 1
-              $json = Get-Content $icd.FullName -Raw | ConvertFrom-Json
-              $json.ICD.library_path = (Join-Path $billiardDir 'vulkan_lvp.dll')
-              $json | ConvertTo-Json -Depth 10 | Set-Content "$mesa\lvp_icd_billiard.json" -Encoding ascii
-              $hive = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, [Microsoft.Win32.RegistryView]::Registry64)
-              $key = $hive.CreateSubKey('SOFTWARE\Khronos\Vulkan\Drivers')
-              $key.SetValue("$mesa\lvp_icd_billiard.json", 0, [Microsoft.Win32.RegistryValueKind]::DWord)
-              $key.Close(); $hive.Close()
-            }
-            function Run-Billiard($backend, $outDir) {
-              New-Item -ItemType Directory -Force $outDir | Out-Null
-              $resolved = (Resolve-Path $outDir).Path
-              $shot = $null
-              if ($backend -eq 'd3d12') { $shot = Join-Path $resolved 'billiard.png' }
-              if ($backend -eq 'vulkan') { $shot = Join-Path $resolved 'billiard.ppm' }
-              if ($shot) { $env:GEFS_SCREENSHOT_PATH = $shot }
-              else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
-              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $resolved 'physics-passed'
-              if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
-              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$backend,'-physicsRegression',$resolved) -PassThru -RedirectStandardOutput "$outDir/billiard.log" -RedirectStandardError "$outDir/billiard-error.log"
-              # Retain the process handle so ExitCode is readable after exit.
-              $null = $proc.Handle
-              try {
-                if (-not $proc.WaitForExit(600000)) { throw "$backend billiard timed out" }
-                $proc.Refresh()
-                if ($proc.ExitCode -ne 0) {
-                  Get-Content "$outDir/billiard.log","$outDir/billiard-error.log" -ErrorAction SilentlyContinue
-                  throw "$backend billiard regression failed (exit $($proc.ExitCode))"
-                }
-              } finally {
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
-                if ($backend -eq 'opengl') {
-                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
-                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
-                }
-              }
-              if (-not (Test-Path (Join-Path $resolved 'physics-passed'))) { throw "$backend physics-passed missing" }
-              if ($shot) { if (-not (Test-Path $shot)) { throw "$backend capture missing" } }
-              elseif (-not (Test-Path (Join-Path $resolved 'billiard-after.bmp'))) { throw "$backend BMP capture missing" }
-              Write-Output "windows-billiard-${backend}: startup + physics + capture OK"
-            }
-            Run-Billiard 'd3d12' 'billiard-matrix/d3d12'
-            Run-Billiard 'opengl' 'billiard-matrix/opengl'
-            Run-Billiard 'vulkan' 'billiard-matrix/vulkan'
-      - run:
-          name: Same-backend reconstruction matrix
+          name: Viewer startup matrix and capture comparison
           no_output_timeout: 30m
           command: |
             $ErrorActionPreference = 'Stop'
@@ -950,89 +825,212 @@ jobs:
             $baseline = 'screenshots/viewer-render.png'
             if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
             $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
-            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
-            if (-not ($viewer -and $billiard)) { throw 'Application executables not found' }
-            # Mesa software drivers and the lavapipe ICD registry entry were
-            # deployed by the startup matrix steps and persist machine-wide.
-            # Two same-backend destroy/recreate cycles run after the first
-            # presented frame; the capture must still match the startup
-            # baseline (CPU scene preserved, GPU resources rebuilt).
-            foreach ($backend in @('d3d12','opengl','vulkan')) {
-              $out = "screenshots/reconstruct/$backend"
-              New-Item -ItemType Directory -Force $out | Out-Null
-              $resolved = (Resolve-Path $out).Path
-              $ext = 'png'; if ($backend -eq 'vulkan') { $ext = 'ppm' }
-              $png = Join-Path $resolved "viewer-render.$ext"
-              if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
-              $env:GEFS_SCREENSHOT_PATH = $png
-              $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend,'--rhi-reconstruct','2') -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
-              try {
-                if (-not $proc.WaitForExit(240000)) { throw "$backend viewer reconstruction timed out" }
-              } finally {
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                if ($backend -eq 'opengl') {
-                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
-                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
-                }
-              }
-              if (-not (Test-Path $png)) {
-                Get-Content "$out/viewer.log","$out/viewer-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
-                throw "$backend reconstruction capture missing"
-              }
-              if (-not (Select-String -Path "$out/viewer.log" -Pattern 'RHI session reconstructed \(cycle 2\)' -Quiet)) {
-                throw "$backend reconstruction cycles did not run"
-              }
-              $tolArgs = @()
-              if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
-              python scripts/compare_captures.py $baseline $png --label "windows-reconstruct-$backend" @tolArgs
-              if ($LASTEXITCODE -ne 0) { throw "windows-reconstruct-$backend capture comparison failed" }
-            }
-            foreach ($backend in @('d3d12','opengl','vulkan')) {
-              $out = "billiard-reconstruct/$backend"
-              New-Item -ItemType Directory -Force $out | Out-Null
-              $resolved = (Resolve-Path $out).Path
-              $shot = $null
-              if ($backend -eq 'd3d12') { $shot = Join-Path $resolved 'billiard.png' }
-              if ($backend -eq 'vulkan') { $shot = Join-Path $resolved 'billiard.ppm' }
-              if ($shot) { $env:GEFS_SCREENSHOT_PATH = $shot }
-              else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
-              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $resolved 'physics-passed'
-              if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
-              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$backend,'--rhi-reconstruct','2','-physicsRegression',$resolved) -PassThru -RedirectStandardOutput "$out/billiard.log" -RedirectStandardError "$out/billiard-error.log"
-              $null = $proc.Handle
-              try {
-                if (-not $proc.WaitForExit(600000)) { throw "$backend billiard reconstruction timed out" }
-                $proc.Refresh()
-                if ($proc.ExitCode -ne 0) {
-                  Get-Content "$out/billiard.log","$out/billiard-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
-                  throw "$backend billiard reconstruction failed (exit $($proc.ExitCode))"
-                }
-              } finally {
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
-                if ($backend -eq 'opengl') {
-                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
-                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
-                }
-              }
-              if (-not (Test-Path (Join-Path $resolved 'physics-passed'))) { throw "$backend reconstruction physics-passed missing" }
-              if ($shot) { if (-not (Test-Path $shot)) { throw "$backend reconstruction capture missing" } }
-              elseif (-not (Test-Path (Join-Path $resolved 'billiard-after.bmp'))) { throw "$backend reconstruction BMP capture missing" }
-              if (-not (Select-String -Path "$out/billiard.log" -Pattern 'RHI session reconstructed \(cycle 2\)' -Quiet)) {
-                throw "$backend billiard reconstruction cycles did not run"
-              }
-              Write-Output "windows-billiard-reconstruct-${backend}: reconstruction + physics + capture OK"
-            }
+            $viewerDir = $viewer.DirectoryName
+            # Diagnostic: confirm the ICD loads and which instance extensions
+                              # it exposes before the Viewer run.
+                              $vulkaninfo = Get-ChildItem 'C:\VulkanSDK' -Recurse -Filter 'vulkaninfo.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+                              if ($vulkaninfo) {
+                                $env:VK_LOADER_DEBUG = 'all'
+                                & $vulkaninfo.FullName --summary *> "$mesa\vulkaninfo.log"
+                                Remove-Item Env:VK_LOADER_DEBUG -ErrorAction SilentlyContinue
+                                Write-Output '=== vulkaninfo lavapipe/ICD diagnostics ==='
+                                Get-Content "$mesa\vulkaninfo.log" | Where-Object { $_ -match 'lvp|lavapipe|ICD|ERROR|error|deviceName|VK_KHR_get_surface_capabilities2|VK_KHR_win32_surface' } | Select-Object -First 50
+                              } else {
+                                Write-Output 'vulkaninfo.exe not found in SDK; skipping ICD diagnostic'
+                              }
+
+
+            function Run-Viewer($backend, $outDir) {
+                                New-Item -ItemType Directory -Force $outDir | Out-Null
+                                $resolved = (Resolve-Path $outDir).Path
+                                $ext = 'png'
+                                if ($backend -eq 'vulkan') { $ext = 'ppm' }
+                                $png = Join-Path $resolved "viewer-render.$ext"
+                                if ($backend -eq 'opengl') {
+                                  $env:GALLIUM_DRIVER = 'llvmpipe'
+                                  $env:LIBGL_ALWAYS_SOFTWARE = '1'
+                                }
+                                if ($backend -eq 'vulkan') {
+                                  # Loader debug reveals whether the lavapipe ICD loads and
+                                  # which instance extensions it exposes (stderr is captured).
+                                  $env:VK_LOADER_DEBUG = 'all'
+                                }
+                                # All three backends honor GEFS_SCREENSHOT_PATH self-capture
+                                # (the Win32 OpenGL host reads the presented front buffer in
+                                # its main loop); no visible interactive desktop is needed.
+                                $env:GEFS_SCREENSHOT_PATH = $png
+                                $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend) -PassThru -RedirectStandardOutput "$outDir/viewer.log" -RedirectStandardError "$outDir/viewer-error.log"
+                                try {
+                                  if (-not $proc.WaitForExit(240000)) { throw "$backend matrix run timed out" }
+                                } finally {
+                                  # A live child keeps the step console open and would trip
+                                  # the no-output timeout; always reap it.
+                                  Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                                  Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                                  Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                                  if ($backend -eq 'opengl') {
+                                    Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                                    Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                                  }
+                                  if ($backend -eq 'vulkan') {
+                                    Remove-Item Env:VK_LOADER_DEBUG -ErrorAction SilentlyContinue
+                                  }
+                                }
+                                # Self-capture paths may exit nonzero after a successful
+                                # save (the baseline capture step also asserts the file,
+                                # not the exit code); the capture itself is the assertion.
+                                if (-not (Test-Path $png)) {
+                                  Get-Content "$outDir/viewer.log" -ErrorAction SilentlyContinue
+                                  Write-Output "=== $backend loader/stderr diagnostics ==="
+                                  Get-Content "$outDir/viewer-error.log" -ErrorAction SilentlyContinue |
+                                    Where-Object { $_ -match 'lvp|lavapipe|icd|ICD|ERROR|error|surface|Surface|extension|Extension|driver|Driver|Cannot|cannot|fail|Fail' } |
+                                    Select-Object -First 80
+                                  throw "$backend matrix capture missing"
+                                }
+                                $tolArgs = @()
+                                if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
+                                python scripts/compare_captures.py $baseline $png --label "windows-$backend" @tolArgs
+                                if ($LASTEXITCODE -ne 0) { throw "windows-$backend capture comparison failed" }
+                              }
+                              Run-Viewer 'd3d12' 'screenshots/matrix/d3d12'
+            Run-Viewer 'opengl' 'screenshots/matrix/opengl'
+            Run-Viewer 'vulkan' 'screenshots/matrix/vulkan'
       - store_artifacts:
-          path: billiard-reconstruct
-          destination: billiard-reconstruct
+          path: screenshots/matrix
+          destination: screenshots-matrix
+  windows_matrix_physics:
+    parameters:
+      backend:
+        type: enum
+        enum: [d3d12, opengl, vulkan]
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
+      - windows_matrix_env
+      - windows_matrix_deploy
       - run:
-          name: Cross-backend switch matrix
-          no_output_timeout: 40m
+          name: "Billiard startup matrix (<< parameters.backend >>)"
+          no_output_timeout: 20m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+            $baseline = 'screenshots/viewer-render.png'
+            if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
+            if (-not $billiard) { throw 'BilliardGame.exe not found' }
+            function Run-Billiard($backend, $outDir) {
+                          New-Item -ItemType Directory -Force $outDir | Out-Null
+                          $resolved = (Resolve-Path $outDir).Path
+                          $shot = $null
+                          if ($backend -eq 'd3d12') { $shot = Join-Path $resolved 'billiard.png' }
+                          if ($backend -eq 'vulkan') { $shot = Join-Path $resolved 'billiard.ppm' }
+                          if ($shot) { $env:GEFS_SCREENSHOT_PATH = $shot }
+                          else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
+                          $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $resolved 'physics-passed'
+                          if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+                          $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$backend,'-physicsRegression',$resolved) -PassThru -RedirectStandardOutput "$outDir/billiard.log" -RedirectStandardError "$outDir/billiard-error.log"
+                          # Retain the process handle so ExitCode is readable after exit.
+                          $null = $proc.Handle
+                          try {
+                            if (-not $proc.WaitForExit(600000)) { throw "$backend billiard timed out" }
+                            $proc.Refresh()
+                            if ($proc.ExitCode -ne 0) {
+                              Get-Content "$outDir/billiard.log","$outDir/billiard-error.log" -ErrorAction SilentlyContinue
+                              throw "$backend billiard regression failed (exit $($proc.ExitCode))"
+                            }
+                          } finally {
+                            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                            Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                            Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                            Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+                            if ($backend -eq 'opengl') {
+                              Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                              Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                            }
+                          }
+                          if (-not (Test-Path (Join-Path $resolved 'physics-passed'))) { throw "$backend physics-passed missing" }
+                          if ($shot) { if (-not (Test-Path $shot)) { throw "$backend capture missing" } }
+                          elseif (-not (Test-Path (Join-Path $resolved 'billiard-after.bmp'))) { throw "$backend BMP capture missing" }
+                          Write-Output "windows-billiard-${backend}: startup + physics + capture OK"
+                        }
+                        Run-Billiard '<< parameters.backend >>' 'billiard-matrix/<< parameters.backend >>'
+      - store_artifacts:
+          path: billiard-matrix
+          destination: billiard-matrix
+  windows_matrix_reconstruct_viewer:
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
+      - windows_matrix_env
+      - windows_matrix_deploy
+      - run:
+          name: Same-backend viewer reconstruction matrix
+          no_output_timeout: 30m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+            $baseline = 'screenshots/viewer-render.png'
+            if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            if (-not $viewer) { throw 'Viewer.exe not found' }
+            foreach ($backend in @('d3d12','opengl','vulkan')) {
+                          $out = "screenshots/reconstruct/$backend"
+                          New-Item -ItemType Directory -Force $out | Out-Null
+                          $resolved = (Resolve-Path $out).Path
+                          $ext = 'png'; if ($backend -eq 'vulkan') { $ext = 'ppm' }
+                          $png = Join-Path $resolved "viewer-render.$ext"
+                          if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+                          $env:GEFS_SCREENSHOT_PATH = $png
+                          $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$backend,'--rhi-reconstruct','2') -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+                          try {
+                            if (-not $proc.WaitForExit(240000)) { throw "$backend viewer reconstruction timed out" }
+                          } finally {
+                            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                            Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                            Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                            if ($backend -eq 'opengl') {
+                              Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                              Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                            }
+                          }
+                          if (-not (Test-Path $png)) {
+                            Get-Content "$out/viewer.log","$out/viewer-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                            throw "$backend reconstruction capture missing"
+                          }
+                          if (-not (Select-String -Path "$out/viewer.log" -Pattern 'RHI session reconstructed \(cycle 2\)' -Quiet)) {
+                            throw "$backend reconstruction cycles did not run"
+                          }
+                          $tolArgs = @()
+                          if ($backend -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
+                          python scripts/compare_captures.py $baseline $png --label "windows-reconstruct-$backend" @tolArgs
+                          if ($LASTEXITCODE -ne 0) { throw "windows-reconstruct-$backend capture comparison failed" }
+                        }
+      - store_artifacts:
+          path: screenshots/reconstruct
+          destination: screenshots-reconstruct
+  windows_matrix_reconstruct_billiard:
+    parameters:
+      backend:
+        type: enum
+        enum: [d3d12, opengl, vulkan]
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
+      - windows_matrix_env
+      - windows_matrix_deploy
+      - run:
+          name: "Same-backend billiard reconstruction (<< parameters.backend >>)"
+          no_output_timeout: 20m
           command: |
             $ErrorActionPreference = 'Stop'
             $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
@@ -1041,133 +1039,208 @@ jobs:
             $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
             $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
             if (-not ($viewer -and $billiard)) { throw 'Application executables not found' }
-            # A/B/A directed switches at frame boundaries; the final capture
-            # must match the startup baseline (scene restored on backend A).
-            $pairs = @(
-              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12'; billiard=$true },
-              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12'; billiard=$true },
-              @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl'; billiard=$true }
-            )
-            # The failure modal's dimming overlay grays the whole captured frame
-            # (same root cause as the macOS/Linux recovery tests); suppress it so
-            # the matrix captures the clean restored scene. The dialog UI itself
-            # is verified separately on real hardware.
-            $env:GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG = '1'
-            foreach ($pair in $pairs) {
-              $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
-              $out = "screenshots/switch/$tag"
-              New-Item -ItemType Directory -Force $out | Out-Null
-              $resolved = (Resolve-Path $out).Path
-              $ext = 'png'; if ($pair.final -eq 'vulkan') { $ext = 'ppm' }
-              $png = Join-Path $resolved "viewer-render.$ext"
-              if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
-                $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1'
-                # llvmpipe + switch simulation pauses delay splash completion;
-                # the default 45s gate captured before the main scene loaded.
-                $env:GEFS_SCREENSHOT_GATE_SECONDS = '120'
-              }
-              $env:GEFS_SCREENSHOT_PATH = $png
-              $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.switches) -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
-              try {
-                if (-not $proc.WaitForExit(240000)) { throw "$tag viewer switch timed out" }
-              } finally {
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
-                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
-                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
-                  Remove-Item Env:GEFS_SCREENSHOT_GATE_SECONDS -ErrorAction SilentlyContinue
-                }
-              }
-              if (-not (Test-Path $png)) {
-                Get-Content "$out/viewer.log","$out/viewer-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
-                throw "$tag switch capture missing"
-              }
-              if (-not (Select-String -Path "$out/viewer.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
-                Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 60
-                throw "$tag switch did not complete"
-              }
-              $tolArgs = @()
-              if ($pair.final -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
-              python scripts/compare_captures.py $baseline $png --label "windows-switch-$tag" @tolArgs
-              if ($LASTEXITCODE -ne 0) { throw "windows-switch-$tag capture comparison failed" }
-
-              if ($pair.billiard) {
-              $bout = "billiard-switch/$tag"
-              New-Item -ItemType Directory -Force $bout | Out-Null
-              $bresolved = (Resolve-Path $bout).Path
-              $bshot = $null
-              if ($pair.final -eq 'd3d12') { $bshot = Join-Path $bresolved 'billiard.png' }
-              if ($pair.final -eq 'vulkan') { $bshot = Join-Path $bresolved 'billiard.ppm' }
-              if ($bshot) { $env:GEFS_SCREENSHOT_PATH = $bshot }
-              else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
-              $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $bresolved 'physics-passed'
-              if ($pair.initial -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
-              $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.billiardSwitches,'-physicsRegression',$bresolved) -PassThru -RedirectStandardOutput "$bout/billiard.log" -RedirectStandardError "$bout/billiard-error.log"
-              $null = $proc.Handle
-              try {
-                if (-not $proc.WaitForExit(600000)) { throw "$tag billiard switch timed out" }
-                $proc.Refresh()
-                if ($proc.ExitCode -ne 0) {
-                  Get-Content "$bout/billiard.log","$bout/billiard-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
-                  throw "$tag billiard switch failed (exit $($proc.ExitCode))"
-                }
-              } finally {
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-                Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
-                if ($pair.initial -eq 'opengl') {
-                  Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
-                  Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
-                }
-              }
-              if (-not (Test-Path (Join-Path $bresolved 'physics-passed'))) { throw "$tag switch physics-passed missing" }
-              if (-not (Select-String -Path "$bout/billiard.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
-                throw "$tag billiard switch did not complete"
-              }
-              Write-Output "windows-billiard-switch-${tag}: A/B/A + physics OK"
-              }
-            }
-            # M4.4 preflight evidence: an unavailable Vulkan runtime (loader
-            # override pointing nowhere) must be rejected before retirement,
-            # keeping the old session rendering.
-            $out = 'screenshots/switch-preflight'
+            $backend = '<< parameters.backend >>'
+            $out = "billiard-reconstruct/$backend"
             New-Item -ItemType Directory -Force $out | Out-Null
             $resolved = (Resolve-Path $out).Path
-            $env:GEFS_VULKAN_LIBRARY = 'C:\nonexistent\vulkan-1.dll'
-            $env:GEFS_SCREENSHOT_PATH = Join-Path $resolved 'viewer-render.png'
-            $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','d3d12','--rhi-switch','vulkan@60') -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+            $shot = $null
+            if ($backend -eq 'd3d12') { $shot = Join-Path $resolved 'billiard.png' }
+            if ($backend -eq 'vulkan') { $shot = Join-Path $resolved 'billiard.ppm' }
+            if ($shot) { $env:GEFS_SCREENSHOT_PATH = $shot }
+            else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
+            $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $resolved 'physics-passed'
+            if ($backend -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+            $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$backend,'--rhi-reconstruct','2','-physicsRegression',$resolved) -PassThru -RedirectStandardOutput "$out/billiard.log" -RedirectStandardError "$out/billiard-error.log"
+            $null = $proc.Handle
             try {
-              if (-not $proc.WaitForExit(240000)) { throw 'preflight smoke timed out' }
+              if (-not $proc.WaitForExit(600000)) { throw "$backend billiard reconstruction timed out" }
+              $proc.Refresh()
+              if ($proc.ExitCode -ne 0) {
+                Get-Content "$out/billiard.log","$out/billiard-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                throw "$backend billiard reconstruction failed (exit $($proc.ExitCode))"
+              }
             } finally {
               Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
               Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
               Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
-              Remove-Item Env:GEFS_VULKAN_LIBRARY -ErrorAction SilentlyContinue
+              Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+              if ($backend -eq 'opengl') {
+                Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+              }
             }
-            if (-not (Select-String -Path "$out/viewer.log" -Pattern 'RHI switch request vulkan: unavailable' -Quiet)) {
-              Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 40
-              throw 'preflight rejection not reported'
+            if (-not (Test-Path (Join-Path $resolved 'physics-passed'))) { throw "$backend reconstruction physics-passed missing" }
+            if ($shot) { if (-not (Test-Path $shot)) { throw "$backend reconstruction capture missing" } }
+            elseif (-not (Test-Path (Join-Path $resolved 'billiard-after.bmp'))) { throw "$backend reconstruction BMP capture missing" }
+            if (-not (Select-String -Path "$out/billiard.log" -Pattern 'RHI session reconstructed \(cycle 2\)' -Quiet)) {
+              throw "$backend billiard reconstruction cycles did not run"
             }
-            python scripts/compare_captures.py $baseline (Join-Path $resolved 'viewer-render.png') --label windows-switch-preflight
-            if ($LASTEXITCODE -ne 0) { throw 'preflight smoke capture comparison failed' }
+            Write-Output "windows-billiard-reconstruct-${backend}: reconstruction + physics + capture OK"
+      - store_artifacts:
+          path: billiard-reconstruct
+          destination: billiard-reconstruct
+  windows_matrix_switch_viewer:
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
+      - windows_matrix_env
+      - windows_matrix_deploy
+      - run:
+          name: Cross-backend switch matrix viewer and preflight
+          no_output_timeout: 40m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+            $baseline = 'screenshots/viewer-render.png'
+            if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            if (-not $viewer) { throw 'Viewer.exe not found' }
+            $pairs = @(
+              @{ initial='d3d12'; switches='opengl@120,d3d12@300'; final='d3d12' },
+              @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; final='d3d12' },
+              @{ initial='opengl'; switches='vulkan@30,opengl@60'; final='opengl' }
+            )
+            $env:GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG = '1'
+            foreach ($pair in $pairs) {
+            $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
+                          $out = "screenshots/switch/$tag"
+                          New-Item -ItemType Directory -Force $out | Out-Null
+                          $resolved = (Resolve-Path $out).Path
+                          $ext = 'png'; if ($pair.final -eq 'vulkan') { $ext = 'ppm' }
+                          $png = Join-Path $resolved "viewer-render.$ext"
+                          if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
+                            $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1'
+                            # llvmpipe + switch simulation pauses delay splash completion;
+                            # the default 45s gate captured before the main scene loaded.
+                            $env:GEFS_SCREENSHOT_GATE_SECONDS = '120'
+                          }
+                          $env:GEFS_SCREENSHOT_PATH = $png
+                          $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.switches) -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+                          try {
+                            if (-not $proc.WaitForExit(240000)) { throw "$tag viewer switch timed out" }
+                          } finally {
+                            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                            Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                            Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                            if ($pair.initial -eq 'opengl' -or $pair.switches -match 'opengl') {
+                              Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                              Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                              Remove-Item Env:GEFS_SCREENSHOT_GATE_SECONDS -ErrorAction SilentlyContinue
+                            }
+                          }
+                          if (-not (Test-Path $png)) {
+                            Get-Content "$out/viewer.log","$out/viewer-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                            throw "$tag switch capture missing"
+                          }
+                          if (-not (Select-String -Path "$out/viewer.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
+                            Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                            throw "$tag switch did not complete"
+                          }
+                          $tolArgs = @()
+                          if ($pair.final -ne 'd3d12') { $tolArgs = @('--max-diff-fraction','0.40','--max-high-delta-fraction','0.02') }
+                          python scripts/compare_captures.py $baseline $png --label "windows-switch-$tag" @tolArgs
+                          if ($LASTEXITCODE -ne 0) { throw "windows-switch-$tag capture comparison failed" }
+
+                          }
+            # M4.4 preflight evidence: an unavailable Vulkan runtime (loader
+                        # override pointing nowhere) must be rejected before retirement,
+                        # keeping the old session rendering.
+                        $out = 'screenshots/switch-preflight'
+                        New-Item -ItemType Directory -Force $out | Out-Null
+                        $resolved = (Resolve-Path $out).Path
+                        $env:GEFS_VULKAN_LIBRARY = 'C:\nonexistent\vulkan-1.dll'
+                        $env:GEFS_SCREENSHOT_PATH = Join-Path $resolved 'viewer-render.png'
+                        $proc = Start-Process -FilePath $viewer.FullName -ArgumentList @('--rhi','d3d12','--rhi-switch','vulkan@60') -PassThru -RedirectStandardOutput "$out/viewer.log" -RedirectStandardError "$out/viewer-error.log"
+                        try {
+                          if (-not $proc.WaitForExit(240000)) { throw 'preflight smoke timed out' }
+                        } finally {
+                          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                          Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                          Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                          Remove-Item Env:GEFS_VULKAN_LIBRARY -ErrorAction SilentlyContinue
+                        }
+                        if (-not (Select-String -Path "$out/viewer.log" -Pattern 'RHI switch request vulkan: unavailable' -Quiet)) {
+                          Get-Content "$out/viewer.log" -ErrorAction SilentlyContinue | Select-Object -First 40
+                          throw 'preflight rejection not reported'
+                        }
+                        python scripts/compare_captures.py $baseline (Join-Path $resolved 'viewer-render.png') --label windows-switch-preflight
+                        if ($LASTEXITCODE -ne 0) { throw 'preflight smoke capture comparison failed' }
       - store_artifacts:
           path: screenshots/switch
           destination: screenshots-switch
+  windows_matrix_switch_billiard:
+    parameters:
+      pair:
+        type: enum
+        enum: [d3d12-opengl, d3d12-vulkan, opengl-vulkan]
+    executor:
+      name: win/server-2022
+      shell: powershell.exe
+      size: large
+    steps:
+      - windows_test_setup
+      - windows_matrix_env
+      - windows_matrix_deploy
+      - run:
+          name: "Cross-backend billiard switch (<< parameters.pair >>)"
+          no_output_timeout: 20m
+          command: |
+            $ErrorActionPreference = 'Stop'
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')
+            $baseline = 'screenshots/viewer-render.png'
+            if (-not (Test-Path $baseline)) { throw 'Baseline Viewer capture missing' }
+            $viewer = Get-ChildItem build/Viewer -Filter Viewer.exe -Recurse | Select-Object -First 1
+            $billiard = Get-ChildItem build/Game/Billiard -Filter BilliardGame.exe -Recurse | Select-Object -First 1
+            if (-not ($viewer -and $billiard)) { throw 'Application executables not found' }
+            $pair = $null
+            switch ('<< parameters.pair >>') {
+              'd3d12-opengl' { $pair = @{ initial='d3d12'; switches='opengl@120,d3d12@300'; billiardSwitches='opengl@60,d3d12@120'; final='d3d12' } }
+              'd3d12-vulkan' { $pair = @{ initial='d3d12'; switches='vulkan@120,d3d12@300'; billiardSwitches='vulkan@60,d3d12@120'; final='d3d12' } }
+              'opengl-vulkan' { $pair = @{ initial='opengl'; switches='vulkan@30,opengl@60'; billiardSwitches='vulkan@30,opengl@60'; final='opengl' } }
+            }
+            $env:GEFS_RHI_SWITCH_SUPPRESS_FAIL_DIALOG = '1'
+            $tag = "$($pair.initial)-$($pair.switches)" -replace '[@,]','-'
+            $bout = "billiard-switch/$tag"
+                          New-Item -ItemType Directory -Force $bout | Out-Null
+                          $bresolved = (Resolve-Path $bout).Path
+                          $bshot = $null
+                          if ($pair.final -eq 'd3d12') { $bshot = Join-Path $bresolved 'billiard.png' }
+                          if ($pair.final -eq 'vulkan') { $bshot = Join-Path $bresolved 'billiard.ppm' }
+                          if ($bshot) { $env:GEFS_SCREENSHOT_PATH = $bshot }
+                          else { Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue }
+                          $env:GEFS_SCREENSHOT_WAIT_FOR = Join-Path $bresolved 'physics-passed'
+                          if ($pair.initial -eq 'opengl') { $env:GALLIUM_DRIVER = 'llvmpipe'; $env:LIBGL_ALWAYS_SOFTWARE = '1' }
+                          $proc = Start-Process -FilePath $billiard.FullName -ArgumentList @('--rhi',$pair.initial,'--rhi-switch',$pair.billiardSwitches,'-physicsRegression',$bresolved) -PassThru -RedirectStandardOutput "$bout/billiard.log" -RedirectStandardError "$bout/billiard-error.log"
+                          $null = $proc.Handle
+                          try {
+                            if (-not $proc.WaitForExit(600000)) { throw "$tag billiard switch timed out" }
+                            $proc.Refresh()
+                            if ($proc.ExitCode -ne 0) {
+                              Get-Content "$bout/billiard.log","$bout/billiard-error.log" -ErrorAction SilentlyContinue | Select-Object -First 60
+                              throw "$tag billiard switch failed (exit $($proc.ExitCode))"
+                            }
+                          } finally {
+                            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+                            Wait-Process -Id $proc.Id -ErrorAction SilentlyContinue
+                            Remove-Item Env:GEFS_SCREENSHOT_PATH -ErrorAction SilentlyContinue
+                            Remove-Item Env:GEFS_SCREENSHOT_WAIT_FOR -ErrorAction SilentlyContinue
+                            if ($pair.initial -eq 'opengl') {
+                              Remove-Item Env:GALLIUM_DRIVER -ErrorAction SilentlyContinue
+                              Remove-Item Env:LIBGL_ALWAYS_SOFTWARE -ErrorAction SilentlyContinue
+                            }
+                          }
+                          if (-not (Test-Path (Join-Path $bresolved 'physics-passed'))) { throw "$tag switch physics-passed missing" }
+                          if (-not (Select-String -Path "$bout/billiard.log" -Pattern "RHI switch complete: $($pair.final)" -Quiet)) {
+                            throw "$tag billiard switch did not complete"
+                          }
+                          Write-Output "windows-billiard-switch-${tag}: A/B/A + physics OK"
       - store_artifacts:
           path: billiard-switch
           destination: billiard-switch
-      - store_artifacts:
-          path: billiard-matrix
-          destination: billiard-matrix
-      - store_artifacts:
-          path: billiard-screenshots
-          destination: billiard-screenshots
-      - store_artifacts:
-          path: screenshots
-          destination: viewer-screenshots
+
   build_linux:
     parameters:
       scope:
@@ -1626,8 +1699,12 @@ jobs:
                   cmake --build build-release
             - run:
                 name: "Test (Release)"
+                no_output_timeout: 40m
                 command: |
-                  GEFS_CTEST_DIR=build-release circleci testsuite run engine-unix
+                  # Plain ctest: the testsuite CLI derives its budget from the
+                  # job's remaining time and went negative (−2m5s, job 5413)
+                  # when a cold-cache build ate the machine time limit.
+                  ctest --test-dir build-release --output-on-failure
   build_macos:
     parameters:
       scope:
@@ -2188,8 +2265,12 @@ jobs:
                   cmake --build build-release
             - run:
                 name: "Test (Release)"
+                no_output_timeout: 40m
                 command: |
-                  GEFS_CTEST_DIR=build-release circleci testsuite run engine-unix
+                  # Plain ctest: the testsuite CLI derives its budget from the
+                  # job's remaining time and went negative (−2m5s, job 5413)
+                  # when a cold-cache build ate the machine time limit.
+                  ctest --test-dir build-release --output-on-failure
   build_android:
     working_directory: ~/project
     docker:
@@ -2289,9 +2370,33 @@ workflows:
       - windows_regression:
           requires:
             - build_windows
-      - windows_matrix:
+      - windows_matrix_startup:
           requires:
             - build_windows
+      - windows_matrix_physics:
+          requires:
+            - build_windows
+          matrix:
+            parameters:
+              backend: [d3d12, opengl, vulkan]
+      - windows_matrix_reconstruct_viewer:
+          requires:
+            - build_windows
+      - windows_matrix_reconstruct_billiard:
+          requires:
+            - build_windows
+          matrix:
+            parameters:
+              backend: [d3d12, opengl, vulkan]
+      - windows_matrix_switch_viewer:
+          requires:
+            - build_windows
+      - windows_matrix_switch_billiard:
+          requires:
+            - build_windows
+          matrix:
+            parameters:
+              pair: [d3d12-opengl, d3d12-vulkan, opengl-vulkan]
       - build_linux
       - build_macos
       #- build_android
