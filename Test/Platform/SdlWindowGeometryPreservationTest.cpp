@@ -222,6 +222,68 @@ int main() {
     std::printf("PASS: minimized window restores to preserved placement\n");
 
     app.FinalizePlatformResources();
+
+    // E1 negative coordinates: SDL accepts frame-origin negatives on X11;
+    // whatever the WM settles on must survive a recreation.
+    app.CreateMainWindow();
+    SDL_SetWindowPosition(app.GetSdlWindow(), -320, 180);
+    SDL_SetWindowSize(app.GetSdlWindow(), 900, 600);
+    PumpEvents(200);
+    const Rect neg = CurrentRect(app.GetSdlWindow());
+    app.FinalizePlatformResources();
+    app.CreateMainWindow();
+    PumpEvents(200);
+    const Rect gotNeg = CurrentRect(app.GetSdlWindow());
+    if (!RectClose(gotNeg, neg, kTolerancePx)) {
+        std::printf("FAIL: negative placement not preserved\n");
+        PrintRect("expected", neg);
+        PrintRect("actual", gotNeg);
+        app.FinalizePlatformResources();
+        SDL_Quit();
+        return 1;
+    }
+    std::printf("PASS: negative coordinates survive recreation\n");
+
+    // E4 transitivity: two back-to-back switches keep the placement.
+    app.FinalizePlatformResources();
+    app.CreateMainWindow();
+    app.FinalizePlatformResources();
+    app.CreateMainWindow();
+    PumpEvents(200);
+    const Rect twice = CurrentRect(app.GetSdlWindow());
+    if (!RectClose(twice, gotNeg, kTolerancePx)) {
+        std::printf("FAIL: double switch lost geometry\n");
+        PrintRect("before", gotNeg);
+        PrintRect("after x2", twice);
+        app.FinalizePlatformResources();
+        SDL_Quit();
+        return 1;
+    }
+    std::printf("PASS: two consecutive switches keep the placement\n");
+
+    // E6 maximize -> restore -> switch: the restored normal rect (not the
+    // maximized extents) must be what survives, and state must be normal.
+    SDL_MaximizeWindow(app.GetSdlWindow());
+    PumpEvents(300);
+    SDL_RestoreWindow(app.GetSdlWindow());
+    PumpEvents(200);
+    const Rect normal = CurrentRect(app.GetSdlWindow());
+    app.FinalizePlatformResources();
+    app.CreateMainWindow();
+    PumpEvents(200);
+    const Uint32 f = SDL_GetWindowFlags(app.GetSdlWindow());
+    const Rect after = CurrentRect(app.GetSdlWindow());
+    if ((f & SDL_WINDOW_MAXIMIZED) || !RectClose(after, normal, kTolerancePx)) {
+        std::printf("FAIL: maximize->restore->switch order broken\n");
+        PrintRect("expected", normal);
+        PrintRect("actual", after);
+        app.FinalizePlatformResources();
+        SDL_Quit();
+        return 1;
+    }
+    std::printf("PASS: restore-before-switch keeps normal rect and state\n");
+
+    app.FinalizePlatformResources();
     SDL_Quit();
     std::printf("All Sdl window geometry preservation checks passed.\n");
     return 0;
