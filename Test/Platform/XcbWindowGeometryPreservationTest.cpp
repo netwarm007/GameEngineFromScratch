@@ -221,6 +221,69 @@ int main() {
                 "position hints\n");
 
     app.FinalizePlatformResources();
+
+    // E1: negative-coordinate placement (multi-monitor left of primary /
+    // offscreen drag). Capture the WM-settled placement, switch once, and
+    // require the recreation to preserve it, negatives included.
+    // E1 needs a live window: the case-2 window was destroyed at the
+    // retire above, so recreate and drive the negative-coordinate case.
+    app.CreateMainWindow();
+    {
+        xcb_window_t w = CurrentWindow(app);
+        WaitForSettledPlacement(dpy, w);
+        XMoveResizeWindow(dpy, static_cast<Window>(w), -400, -300, 900, 600);
+        XFlush(dpy);
+        WinRect neg = WaitForSettledPlacement(dpy, w);
+        app.FinalizePlatformResources();
+        app.CreateMainWindow();
+        WinRect gotNeg = WaitForSettledPlacement(dpy, CurrentWindow(app));
+        if (!GeometryClose(gotNeg, neg, kTolerancePx)) {
+            std::printf("FAIL: negative-coordinate placement not preserved\n");
+            PrintGeometry("expected", neg);
+            PrintGeometry("actual", gotNeg);
+            app.FinalizePlatformResources();
+            XCloseDisplay(dpy);
+            return 1;
+        }
+        std::printf("PASS: negative coordinates survive recreation\n");
+
+        // E3: minimum-size floor — request a tiny size, WM/engine floor it,
+        // recreation must keep the settled (floored) geometry.
+        xcb_window_t w3 = CurrentWindow(app);
+        XMoveResizeWindow(dpy, static_cast<Window>(w3), 60, 60, 40, 30);
+        XFlush(dpy);
+        WinRect tiny = WaitForSettledPlacement(dpy, w3);
+        app.FinalizePlatformResources();
+        app.CreateMainWindow();
+        WinRect gotTiny = WaitForSettledPlacement(dpy, CurrentWindow(app));
+        if (!GeometryClose(gotTiny, tiny, kTolerancePx)) {
+            std::printf("FAIL: minimum-size geometry not preserved\n");
+            PrintGeometry("expected", tiny);
+            PrintGeometry("actual", gotTiny);
+            app.FinalizePlatformResources();
+            XCloseDisplay(dpy);
+            return 1;
+        }
+        std::printf("PASS: minimum-size geometry survives recreation\n");
+
+        // E4: transitivity across two back-to-back switches.
+        app.FinalizePlatformResources();
+        app.CreateMainWindow();
+        app.FinalizePlatformResources();
+        app.CreateMainWindow();
+        WinRect twice = WaitForSettledPlacement(dpy, CurrentWindow(app));
+        if (!GeometryClose(twice, gotTiny, kTolerancePx)) {
+            std::printf("FAIL: double switch lost geometry (not transitive)\n");
+            PrintGeometry("first", gotTiny);
+            PrintGeometry("after x2", twice);
+            app.FinalizePlatformResources();
+            XCloseDisplay(dpy);
+            return 1;
+        }
+        std::printf("PASS: two consecutive switches keep the placement\n");
+    }
+
+    app.FinalizePlatformResources();
     XCloseDisplay(dpy);
     std::printf("All Xcb window geometry preservation checks passed.\n");
     return 0;
