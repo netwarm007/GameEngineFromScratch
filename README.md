@@ -404,8 +404,7 @@ projection convention, with no Application, RHI, ImGui, or asset loading linkage
 `GraphicsManager` supplies the same frame snapshot used for camera preparation.
 Omni, spot, area, and directional lights retain their existing transforms,
 attenuation, shadow projections, and shader layout. Directional shadows retain
-their camera-relative target and bounded orthographic extent. Shadow-map
-allocation and index assignment remain in the rendering passes.
+their camera-relative target and bounded orthographic extent.
 
 Each successful preparation replaces the light set, so scene replacement and
 light-type changes cannot retain previous per-light data. Expired nodes are
