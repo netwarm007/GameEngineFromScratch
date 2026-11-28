@@ -35,13 +35,16 @@ description: Diagnose CircleCI pipelines for this project, including platform fa
 2. Confirm CLI authentication with `circleci auth me`. If it fails, do not loop
    on `circleci auth login`; report that the user must configure CircleCI
    authentication through the system interface.
-3. When authentication is available, monitor an exact pushed revision with one
-   command:
+3. For iteration, when authentication is available, monitor an exact pushed
+   revision with one command:
    `circleci run watch --sha "$(git rev-parse HEAD)" --failfast`.
    This is more efficient than polling GitHub status or multiple job endpoints.
-   If the CLI is unavailable, use the GitHub commit status as a read-only
-   fallback and poll about every 30 seconds.
-4. On the first failure, stop monitoring and run
+   For full-scope verification or when the CLI is unavailable, use one read-only
+   background commit-status loop about every 30 seconds until every enabled
+   platform's jobs have terminal results.
+4. For iteration, stop monitoring on the first failure; for full-scope
+   verification, keep the background monitor collecting every enabled
+   platform's terminal results while you retrieve
    `circleci run get <run-id> --failure-report`. Start with the reported first
    failing step; do not fetch all logs for the workflow. Do not rerun a failed
    job until that report identifies a transient or corrected cause.
